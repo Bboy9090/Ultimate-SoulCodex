@@ -1,0 +1,27 @@
+services:
+  # Web Service
+  - type: web
+    name: ultimate-soulcodex-engine
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: soulcodex-db
+          property: connectionString
+      # Add other environment variables manually in Render Dashboard
+      # Required: OPENAI_API_KEY, STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY,
+      # STRIPE_WEBHOOK_SECRET, SESSION_SECRET, SENDER_EMAIL, MAIL_HOST,
+      # MAIL_PORT, MAIL_USER, MAIL_PASS, STRIPE_PRICE_WEEKLY,
+      # STRIPE_PRICE_MONTHLY, STRIPE_PRICE_YEARLY
+    healthCheckPath: /health
+
+databases:
+  # Managed PostgreSQL Database
+  - name: soulcodex-db
+    databaseName: soulcodex
+    plan: starter
