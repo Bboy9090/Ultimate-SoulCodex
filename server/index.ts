@@ -97,11 +97,8 @@ app.get("/health", (_req: Request, res: Response) => {
     const DATABASE_URL_SET = process.env.DATABASE_URL ? "set" : "not set";
 
     server.listen(
-      {
-        port: PORT,
-        host: "0.0.0.0",
-        reusePort: true,
-      },
+      PORT,
+      "0.0.0.0",
       async () => {
         // Enhanced startup logging as required
         console.info("=".repeat(50));
