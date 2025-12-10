@@ -1,6 +1,6 @@
 import express, { type Express } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { registerRoutes } from "../routes";
+import { setupVite, serveStatic, log } from "../vite";
 
 const app: Express = express();
 
@@ -73,16 +73,17 @@ app.use((req, res, next) => {
       reusePort: true,
     },
     () => {
-      // Log startup information
+      // Log startup information (without exposing secrets)
       console.info(`
 ========================================
-Server starting up...
+🚀 Server Starting Up
 ========================================
 NODE_ENV: ${process.env.NODE_ENV || 'development'}
 PORT: ${PORT}
 DATABASE_URL: ${process.env.DATABASE_URL ? '✓ Set' : '✗ Not set'}
 ========================================
 Server listening on http://0.0.0.0:${PORT}
+Health check: http://0.0.0.0:${PORT}/health
 ========================================
 `);
       log(`Server ready on port ${PORT}`);
