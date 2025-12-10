@@ -1,15 +1,22 @@
 import express, { type Express } from "express";
 import { registerRoutes } from "../routes";
 import { setupVite, serveStatic, log } from "../vite";
+import rateLimit from "express-rate-limit";
 
-const app: Express = express();
+// Rate limiter for health check endpoint
+const healthCheckLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // limit each IP to 30 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Add /health endpoint for health checks (useful for Render and other platforms)
-app.get('/health', (_req, res) => {
+app.get('/health', healthCheckLimiter, (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
