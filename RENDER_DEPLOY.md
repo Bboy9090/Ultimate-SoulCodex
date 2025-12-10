@@ -165,7 +165,7 @@ To avoid spin down and get better performance:
 
 ```bash
 # Test database connection from Shell
-node -e "const { Pool } = require('pg'); const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }); pool.query('SELECT NOW()', (err, res) => { console.log(err || res.rows); pool.end(); });"
+node -e "const { Pool } = require('pg'); const pool = new Pool({ connectionString: process.env.DATABASE_URL }); pool.query('SELECT NOW()', (err, res) => { console.log(err || res.rows); pool.end(); });"
 ```
 
 ### Migrations Not Running
