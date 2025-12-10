@@ -55,7 +55,8 @@ let serverInstance: any = null;
   app.use((err: any, _req: any, res: any, _next: any) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    console.error('Error handler caught:', err);
+    log(`Error handler caught: ${message}`, 'error');
+    console.error('Full error details:', err);
     res.status(status).json({ message });
   });
 
