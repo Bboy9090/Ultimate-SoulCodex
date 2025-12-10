@@ -1,22 +1,16 @@
 import express, { type Express } from "express";
 import { registerRoutes } from "../routes";
 import { setupVite, serveStatic, log } from "../vite";
-import rateLimit from "express-rate-limit";
+import { type Server } from "http";
 
-// Rate limiter for health check endpoint
-const healthCheckLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // limit each IP to 30 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const app: Express = express();
 
 // Parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Add /health endpoint for health checks (useful for Render and other platforms)
-app.get('/health', healthCheckLimiter, (_req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
@@ -52,7 +46,7 @@ app.use((req, res, next) => {
 });
 
 // Store server instance for graceful shutdown
-let serverInstance: any = null;
+let serverInstance: Server | null = null;
 
 // Setup routes and start server
 (async () => {
@@ -121,15 +115,17 @@ process.on('uncaughtException', (error) => {
 process.on('SIGTERM', () => {
   console.info('SIGTERM signal received: closing HTTP server gracefully');
   if (serverInstance) {
-    serverInstance.close(() => {
-      console.info('HTTP server closed');
-      process.exit(0);
-    });
-    // Force close after 10 seconds
-    setTimeout(() => {
+    // Set timeout for forced shutdown
+    const forceCloseTimeout = setTimeout(() => {
       console.error('Forcing server close after timeout');
       process.exit(1);
     }, 10000);
+    
+    serverInstance.close(() => {
+      console.info('HTTP server closed');
+      clearTimeout(forceCloseTimeout);
+      process.exit(0);
+    });
   } else {
     process.exit(0);
   }
@@ -139,15 +135,17 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.info('SIGINT signal received: closing HTTP server gracefully');
   if (serverInstance) {
-    serverInstance.close(() => {
-      console.info('HTTP server closed');
-      process.exit(0);
-    });
-    // Force close after 10 seconds
-    setTimeout(() => {
+    // Set timeout for forced shutdown
+    const forceCloseTimeout = setTimeout(() => {
       console.error('Forcing server close after timeout');
       process.exit(1);
     }, 10000);
+    
+    serverInstance.close(() => {
+      console.info('HTTP server closed');
+      clearTimeout(forceCloseTimeout);
+      process.exit(0);
+    });
   } else {
     process.exit(0);
   }

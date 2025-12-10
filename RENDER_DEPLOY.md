@@ -164,8 +164,8 @@ To avoid spin down and get better performance:
 ### Database Connection Issues
 
 ```bash
-# Test database connection from Shell
-node -e "const { Pool } = require('pg'); const pool = new Pool({ connectionString: process.env.DATABASE_URL }); pool.query('SELECT NOW()', (err, res) => { console.log(err || res.rows); pool.end(); });"
+# Test database connection from Shell (ESM compatible)
+node -e "import('pg').then(({ Pool }) => { const pool = new Pool({ connectionString: process.env.DATABASE_URL }); pool.query('SELECT NOW()', (err, res) => { console.log(err || res.rows); pool.end(); }); });"
 ```
 
 ### Migrations Not Running
