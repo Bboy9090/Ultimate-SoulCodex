@@ -44,6 +44,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Store server instance for graceful shutdown
+let serverInstance: any = null;
+
 // Setup routes and start server
 (async () => {
   const server = await registerRoutes(app);
@@ -52,8 +55,8 @@ app.use((req, res, next) => {
   app.use((err: any, _req: any, res: any, _next: any) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    console.error('Error handler caught:', err);
     res.status(status).json({ message });
-    throw err;
   });
 
   // Setup Vite dev server in development or serve static files in production
@@ -66,7 +69,7 @@ app.use((req, res, next) => {
   // Use PORT from environment (Render and other platforms set this)
   const PORT = parseInt(process.env.PORT || "3000", 10);
   
-  server.listen(
+  serverInstance = server.listen(
     {
       port: PORT,
       host: "0.0.0.0",
@@ -109,11 +112,35 @@ process.on('uncaughtException', (error) => {
 // Handle SIGTERM gracefully (e.g., from Render shutdown)
 process.on('SIGTERM', () => {
   console.info('SIGTERM signal received: closing HTTP server gracefully');
-  process.exit(0);
+  if (serverInstance) {
+    serverInstance.close(() => {
+      console.info('HTTP server closed');
+      process.exit(0);
+    });
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('Forcing server close after timeout');
+      process.exit(1);
+    }, 10000);
+  } else {
+    process.exit(0);
+  }
 });
 
 // Handle SIGINT gracefully (e.g., Ctrl+C)
 process.on('SIGINT', () => {
   console.info('SIGINT signal received: closing HTTP server gracefully');
-  process.exit(0);
+  if (serverInstance) {
+    serverInstance.close(() => {
+      console.info('HTTP server closed');
+      process.exit(0);
+    });
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('Forcing server close after timeout');
+      process.exit(1);
+    }, 10000);
+  } else {
+    process.exit(0);
+  }
 });
