@@ -1,95 +1,9 @@
-import express, { type Express } from "express";
-import { registerRoutes } from "../routes";
-import { setupVite, serveStatic, log } from "../vite";
-import { type Server } from "http";
-
-const app: Express = express();
-
-// Parse JSON bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// Add /health endpoint for health checks (useful for Render and other platforms)
-app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-// Request logging middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
-});
-
-// Store server instance for graceful shutdown
-let serverInstance: Server | null = null;
-
-// Setup routes and start server
-(async () => {
-  const server = await registerRoutes(app);
-
-  // Error handling middleware
-  app.use((err: any, _req: any, res: any, _next: any) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    log(`Error handler caught: ${message}`, 'error');
-    console.error('Full error details:', err);
-    res.status(status).json({ message });
-  });
-
-  // Setup Vite dev server in development or serve static files in production
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-
-  // Use PORT from environment (Render and other platforms set this)
-  const PORT = parseInt(process.env.PORT || "3000", 10);
-  
-  serverInstance = server.listen(
-    {
-      port: PORT,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      // Log startup information (without exposing secrets)
-      console.info(`
-========================================
 🚀 Server Starting Up
-========================================
 NODE_ENV: ${process.env.NODE_ENV || 'development'}
 PORT: ${PORT}
 DATABASE_URL: ${process.env.DATABASE_URL ? '✓ Set' : '✗ Not set'}
-========================================
 Server listening on http://0.0.0.0:${PORT}
 Health check: http://0.0.0.0:${PORT}/health
-========================================
 `);
       log(`Server ready on port ${PORT}`);
     }
@@ -149,4 +63,21 @@ process.on('SIGINT', () => {
   } else {
     process.exit(0);
   }
+import express from 'express';
+import cors from 'cors';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+// 🔥 Test route for the mobile app
+app.get('/hello', (_req, res) => {
+  res.json({ message: 'Soul Codex API is alive.' });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`SoulCodex API listening on http://localhost:${PORT}`);
 });
