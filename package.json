@@ -3,14 +3,15 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/index.ts",
-    "build:client": "vite build",
-    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --external:../routes.js --external:../ema-scheduler.js",
-    "build": "bash build.sh",
-    "start": "NODE_ENV=production node dist/index.js",
-    "check": "tsc",
-    "db:push": "drizzle-kit push"
+  "build": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+  "start": "node dist/index.js",
+  "desktop": "electron electron-main.cjs"
+}
+
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
@@ -55,12 +56,13 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "connect-pg-simple": "^10.0.0",
+    "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "date-fns-tz": "^3.2.0",
     "drizzle-orm": "^0.39.1",
     "drizzle-zod": "^0.7.0",
     "embla-carousel-react": "^8.6.0",
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "express-session": "^1.18.1",
     "framer-motion": "^11.13.1",
     "geo-tz": "^8.1.4",
@@ -111,7 +113,8 @@
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.30.4",
-    "esbuild": "^0.25.0",
+    "electron": "^39.2.6",
+    "esbuild": "^0.25.12",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
