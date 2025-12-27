@@ -247,7 +247,8 @@ Soul Codex uses a freemium pricing model with a clear value ladder: Free tier fo
 - Hero: "Become a Soul Master"
 - Comparison table (Free vs. Premium)
 - Testimonials (future): "Premium changed my relationship game!" - User
-- FAQ: "Can I cancel anytime? What happens to my data? Is my payment secure?"
+- FAQ: "Can I cancel anytime? What happens to my data? Is my payment secure? How do I restore my purchase if I switch devices?"
+- Note: "Restore purchases" in Soul Codex means reconnecting an existing Stripe subscription to your Soul Codex account (for example by signing in with the same email or using an account settings option). There is no native iOS App Store or Google Play billing in the current PWA/Stripe setup.
 - CTAs: "Start 7-Day Free Trial" (prominent) | "See Features"
 
 ### Payment Flow
