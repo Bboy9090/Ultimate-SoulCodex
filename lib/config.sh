@@ -38,8 +38,9 @@ set_worktree_base_dir() {
     if [[ -f "$config_file" ]]; then
         # Update existing config
         if grep -q "^WORKTREE_BASE_DIR=" "$config_file"; then
-            # Replace existing setting
-            sed -i.bak "s|^WORKTREE_BASE_DIR=.*|WORKTREE_BASE_DIR=\"$base_dir\"|" "$config_file"
+            # Replace existing setting - escape special characters in base_dir
+            local escaped_base_dir="${base_dir//\//\\/}"
+            sed -i.bak "s/^WORKTREE_BASE_DIR=.*/WORKTREE_BASE_DIR=\"${escaped_base_dir}\"/" "$config_file"
             rm -f "${config_file}.bak"
         else
             # Append new setting

@@ -51,7 +51,8 @@ canonicalize_path() {
                 "..")
                     # Go up one directory if possible
                     if [[ ${#result_components[@]} -gt 0 ]]; then
-                        unset 'result_components[-1]'
+                        # Use array slicing for better portability
+                        result_components=("${result_components[@]:0:$((${#result_components[@]}-1))}")
                     fi
                     ;;
                 *)

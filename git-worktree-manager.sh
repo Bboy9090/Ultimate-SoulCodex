@@ -167,8 +167,6 @@ cmd_validate() {
         echo "  Resolved to: $resolved_dir"
         return 0
     else
-        # Run it again to show the error message
-        resolve_base_dir "$path" "$repo_root" 2>&1 | grep -v "^Error:" | head -1 > /dev/null
         echo "✗ Path is invalid"
         return 1
     fi
