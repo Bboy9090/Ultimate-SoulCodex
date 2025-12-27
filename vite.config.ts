@@ -4,6 +4,8 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  // ONLY add this line if your index.html is inside the 'client' folder
+  // root: path.resolve(__dirname, "client"), 
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client/src"),
@@ -11,7 +13,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist/public",
+    outDir: "../dist/public", // Goes up one level if root is 'client'
     emptyOutDir: true,
   },
 });
