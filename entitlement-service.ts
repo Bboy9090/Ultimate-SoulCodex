@@ -1,5 +1,5 @@
 import memoize from 'memoizee';
-import { storage } from '../storage';
+import { storage } from './storage';
 
 export interface PremiumStatus {
   isPremium: boolean;
