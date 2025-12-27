@@ -74,7 +74,7 @@ This document outlines the complete user experience flow for Soul Codex, from fi
 
 **Validation:**
 - Date of birth required
-- Birth time: HH:MM format if entered
+- Birth time: UI accepts HH:MM format; stored as TIME (HH:MM:SS) with seconds defaulted to :00 if entered
 - Birth place: Must resolve to valid location (geocoding check)
 
 **Design Notes:**
