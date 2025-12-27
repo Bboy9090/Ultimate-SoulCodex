@@ -495,7 +495,7 @@ This document outlines the complete user experience flow for Soul Codex, from fi
 **Content:**
 
 **Section 1: Today's Energy**
-- Date: "Friday, December 27, 2025"
+- Date: "<Weekday>, <Month> <Day>, <Year>"
 - Moon phase icon + text: "Waxing Gibbous in Pisces"
 - Biorhythm mini chart (physical, emotional, intellectual curves)
 - Energy summary: "Your emotional and intuitive energies are heightened today. Physical energy is moderate—pace yourself."
