@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { randomUUID } from "crypto";
-import type { IStorage } from "../storage";
-import type { InsertProfile, User, Profile } from "../shared/schema";
+import type { IStorage } from "./storage";
+import type { InsertProfile, User, Profile } from "./shared/schema";
 import { entitlementService } from "./entitlement-service";
 
 interface SubscriptionServiceConfig {
