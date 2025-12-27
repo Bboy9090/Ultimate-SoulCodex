@@ -1,16 +1,19 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Use the standard key name we set in Render
-const apiKey = process.env.GEMINI_API_KEY;
+// Standardizing for Render deployment
+const apiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 
-if (!apiKey) {
-  console.error("CRITICAL: GEMINI_API_KEY is missing!");
+if (!apiKey || apiKey === "_DUMMY_API_KEY_") {
+  console.warn("GEMINI_API_KEY is missing or dummy. AI features will be disabled.");
 }
 
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
+export function isGeminiAvailable() {
+  return !!apiKey && apiKey !== "_DUMMY_API_KEY_";
+}
+
 export async function* streamChat({ model, systemInstruction, history, message, temperature }: any) {
-  // Use "gemini-1.5-flash" or "gemini-2.0-flash" for 2025 speed
   const geminiModel = genAI.getGenerativeModel({ 
     model: model || "gemini-1.5-flash",
     systemInstruction 
@@ -21,11 +24,20 @@ export async function* streamChat({ model, systemInstruction, history, message, 
       role: h.role === 'user' ? 'user' : 'model',
       parts: [{ text: h.content }]
     })),
-    generationConfig: { temperature: temperature || 0.7 }
+    generationConfig: { 
+      temperature: temperature || 0.7,
+      maxOutputTokens: 1000,
+    }
   });
 
-  const result = await chat.sendMessageStream(message);
-  for await (const chunk of result.stream) {
-    yield chunk.text();
+  try {
+    const result = await chat.sendMessageStream(message);
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) yield text;
+    }
+  } catch (error) {
+    console.error("Gemini Stream Error:", error);
+    throw error;
   }
 }
