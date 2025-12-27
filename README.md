@@ -143,6 +143,7 @@ For major changes, please open an issue first to discuss what you would like to 
 
 ## 📧 Contact
 
+_Note: The following email addresses are illustrative placeholders. Please use the project's GitHub issues for contact until official channels are published._
 - **Support:** support@soulcodex.app
 - **Ethics Questions:** ethics@soulcodex.app
 - **Business Inquiries:** business@soulcodex.app
