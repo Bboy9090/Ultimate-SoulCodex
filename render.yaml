@@ -5,9 +5,11 @@ services:
     env: node
     region: oregon
     plan: free # Can upgrade to starter or higher for better performance
-    buildCommand: npm run build
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     envVars:
+      - key: NODE_VERSION
+        value: 20
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL

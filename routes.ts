@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "@shared/schema";
-import { sendTestNotificationSchema, broadcastNotificationSchema } from "@shared/notification-schemas";
+import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
+import { sendTestNotificationSchema, broadcastNotificationSchema } from "./shared/notification-schemas";
 import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
@@ -106,7 +106,7 @@ function handleError(error: unknown, res: any, context: string) {
 
 import compatibilityRoutes from "./routes/compatibility";
 import { getVapidPublicKey } from "./services/push-notifications";
-import { insertPushSubscriptionSchema } from "@shared/schema";
+import { insertPushSubscriptionSchema } from "./shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
