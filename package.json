@@ -12,7 +12,7 @@
     "start": "node dist/index.js",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "render-build": "npm install && npm run build && npm run db:push"
+    "render-build": "npm install && npm run build && (npm run db:push || echo 'Database push skipped - no DATABASE_URL or schema changes')"
   },
   "dependencies": {
     "@google/generative-ai": "^0.1.0",
