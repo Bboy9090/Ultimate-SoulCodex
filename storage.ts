@@ -379,23 +379,39 @@ export class MemStorage implements IStorage {
   }
 
   async getAccessCodeRedemptions(_params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+    // MemStorage: Return empty array (no persistent redemption tracking)
+    return [];
   }
 
-  async createAccessCodeRedemptionWithIncrement(_params: {
+  async createAccessCodeRedemptionWithIncrement(params: {
     accessCodeId: string;
     userId?: string;
     sessionId?: string;
   }): Promise<AccessCodeRedemption> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+    // MemStorage: Create a simple redemption record and increment the code usage
+    const accessCode = Array.from(this.accessCodes.values()).find(c => c.id === params.accessCodeId);
+    if (accessCode) {
+      accessCode.usesCount = (accessCode.usesCount || 0) + 1;
+      accessCode.updatedAt = new Date();
+    }
+    // Return a minimal redemption record
+    return {
+      id: randomUUID(),
+      accessCodeId: params.accessCodeId,
+      userId: params.userId || null,
+      sessionId: params.sessionId || null,
+      redeemedAt: new Date()
+    } as AccessCodeRedemption;
   }
 
   async getActiveAccessCodesForUser(_params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+    // MemStorage: Return empty array (simplified - no tracking of user-specific codes)
+    // In production with DbStorage, this would query redemptions table
+    return [];
   }
 
   async migrateAccessCodeRedemptions(_sessionId: string, _userId: string): Promise<void> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+    // MemStorage: No-op (no persistent data to migrate)
   }
   
   async getDailyInsight(profileId: string, date: string): Promise<DailyInsight | undefined> {

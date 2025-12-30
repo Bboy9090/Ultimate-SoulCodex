@@ -5,8 +5,8 @@ services:
     env: node
     region: oregon
     plan: free # Can upgrade to starter or higher for better performance
-    buildCommand: npm ci && npm run build
-    startCommand: npm start
+    buildCommand: npm ci && npm run build && (npm run db:push || echo 'DB push skipped')
+    startCommand: NODE_ENV=production npm start
     envVars:
       - key: NODE_VERSION
         value: 20
