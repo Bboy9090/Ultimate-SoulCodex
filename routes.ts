@@ -29,6 +29,7 @@ import { calculateAsteroids } from "./services/asteroids";
 import { calculateArabicParts } from "./services/arabic-parts";
 import { calculateFixedStars } from "./services/fixed-stars";
 import { generatePalmReading } from "./services/palmistry";
+import { calculateElementalProfile, generateSoulArchetype, getDailyElementalGuidance } from "./services/elemental-medicine";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -883,7 +884,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fixedStarsData,
         palmistryData,
         biography,
-        dailyGuidance
+        dailyGuidance,
+        // New: Elemental Medicine & Soul Archetype
+        elementalData: calculateElementalProfile(
+          birthData.birthDate,
+          numerologyData?.lifePath,
+          astrologyData?.sunSign,
+          astrologyData?.moonSign,
+          humanDesignData?.type
+        ),
+        soulArchetypeData: generateSoulArchetype(
+          birthData.name,
+          numerologyData?.lifePath || 7,
+          astrologyData?.sunSign,
+          astrologyData?.moonSign,
+          humanDesignData?.type,
+          undefined // enneagramType - added later via assessment
+        )
       });
       
       console.log(`[CreateProfile] Profile created successfully: ${profile.id}`);
@@ -1652,6 +1669,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       return handleError(error, res, "GetAnalytics");
+    }
+  });
+
+  // Get daily elemental guidance for a profile
+  app.get("/api/elemental-guidance/:profileId", async (req, res) => {
+    try {
+      const { profileId } = req.params;
+      
+      console.log(`[GetElementalGuidance] Fetching guidance for profile ${profileId}`);
+      
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      // Get elemental data from profile or calculate fresh
+      let elementalData = profile.elementalData as any;
+      
+      if (!elementalData) {
+        // Calculate on the fly if not stored
+        const numData = profile.numerologyData as any;
+        const astroData = profile.astrologyData as any;
+        const hdData = profile.humanDesignData as any;
+        
+        elementalData = calculateElementalProfile(
+          profile.birthDate,
+          numData?.lifePath,
+          astroData?.sunSign,
+          astroData?.moonSign,
+          hdData?.type
+        );
+      }
+      
+      // Get today's guidance
+      const dailyGuidance = getDailyElementalGuidance(elementalData.primaryElement);
+      
+      res.json({
+        ...elementalData,
+        todayGuidance: dailyGuidance
+      });
+    } catch (error) {
+      return handleError(error, res, "GetElementalGuidance");
     }
   });
 

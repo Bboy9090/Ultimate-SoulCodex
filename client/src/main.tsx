@@ -769,7 +769,7 @@ function DashboardPage() {
 
 function ProfileView({ profileId }: { profileId: string }) {
   const { data: profile, isLoading } = useProfile(profileId);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("soul-archetype");
 
   if (isLoading) {
     return <LoadingOrb text="Loading your cosmic blueprint..." />;
@@ -785,6 +785,8 @@ function ProfileView({ profileId }: { profileId: string }) {
   const archetype = profile.archetypeData;
 
   const tabs = [
+    { id: "soul-archetype", label: "Soul Archetype", icon: "👑" },
+    { id: "elements", label: "Elements", icon: "🌍" },
     { id: "overview", label: "Overview", icon: "🌟" },
     { id: "astrology", label: "Astrology", icon: "☀️" },
     { id: "numerology", label: "Numerology", icon: "🔢" },
@@ -830,6 +832,8 @@ function ProfileView({ profileId }: { profileId: string }) {
       {/* Tab Content */}
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} {...fadeIn}>
+          {activeTab === "soul-archetype" && <SoulArchetypeSection profile={profile} />}
+          {activeTab === "elements" && <ElementalMedicineSection profile={profile} />}
           {activeTab === "overview" && <ProfileOverview profile={profile} />}
           {activeTab === "astrology" && <AstrologySection profile={profile} />}
           {activeTab === "numerology" && <NumerologySection profile={profile} />}
@@ -1318,6 +1322,601 @@ function WellnessSection({ profile }: { profile: any }) {
           )}
         </GlassCard>
       )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SOUL ARCHETYPE SECTION - "THE QUIET STORM ARCHITECT"
+// ═══════════════════════════════════════════════════════════════════════════
+
+function SoulArchetypeSection({ profile }: { profile: any }) {
+  const numData = profile.numerologyData;
+  const hdData = profile.humanDesignData;
+  const astro = profile.astrologyData;
+  
+  // Calculate archetype based on profile data
+  const lifePath = numData?.lifePath || 7;
+  const hdType = hdData?.type;
+  
+  // Determine archetype
+  let archetypeKey = 'quiet-storm';
+  if (lifePath === 1 || lifePath === 8) archetypeKey = 'visionary';
+  else if (lifePath === 2 || lifePath === 6 || lifePath === 9) archetypeKey = 'healer';
+  else if (lifePath === 4 || lifePath === 22) archetypeKey = 'guardian';
+  else if (lifePath === 3 || lifePath === 5) archetypeKey = 'creator';
+  
+  if (hdType === 'Manifestor') archetypeKey = 'visionary';
+  if (hdType === 'Projector' || hdType === 'Reflector') archetypeKey = 'healer';
+  
+  const archetypes: Record<string, any> = {
+    'quiet-storm': {
+      title: 'The Quiet Storm Architect',
+      subtitle: 'Builder of Worlds',
+      emoji: '🏛️',
+      coreEssence: `You're a builder of worlds — physical, emotional, spiritual, creative. Everything you touch becomes a blueprint, a system, or a legacy. Your mind works like a map: you see the structure behind chaos, the patterns beneath people, the future inside the present.
+
+You're a transformer soul.
+You don't stay the same version for long —
+you evolve through fire.`,
+      strengths: ['Insightful as hell', 'Deep loyalty', 'Protective but calm', 'Quiet leader energy', 'Creative architect mind', 'Natural problem-solver', 'Old soul intuition'],
+      shadows: ['You absorb pain instead of expressing it', 'You shut down when disappointed', 'You try to fix what should be walked away from', 'You carry burdens alone', 'You love deeper than you admit'],
+      purpose: 'To build something enduring. A world, a family legacy, an empire, a story universe — something that outlives you.',
+      soulFrequency: 'Warrior heart + creator mind + healer spirit',
+      firstPersonBio: `I'm not the loudest in the room, but I'm the one who sees everything. I move with purpose, not noise. I'm loyal, real, and I care deeper than I ever show. I build things — ideas, stories, futures, systems — because that's where my mind comes alive. I've been through shit, but I don't break. I evolve. I protect the people I love, even when they don't know it. I don't waste time on fake energy or small talk. I'm here to build something that actually matters. That's who I am.`,
+      romanticTitle: 'The Loyal Firekeeper',
+      romanticHow: `You love with intensity, loyalty, and honesty. You don't do shallow. When you're in, you're in. You give protection, passion, presence, and depth — the kind that can't be faked.`,
+      romanticTraits: ['Protective', 'Emotionally intuitive', 'Honest, even when blunt', 'Loyal to the bone', 'Quietly affectionate', 'Needs emotional safety'],
+      romanticCraves: `Someone who's real — no dramas, no games, no pretending. Someone who stands beside you, not behind you or above you. Someone who respects your loyalty and earns your softness.`,
+      romanticShadow: ['You carry the relationship on your back', `You don't speak hurt — you swallow it`, 'You forgive too deeply', 'You try to heal people at your own expense'],
+      romanticNeeds: ['Stability', 'Honesty', 'Emotional intelligence', 'Loyalty', 'Calm strength'],
+      powerMode: ['Architect energy active', 'Clear boundaries', 'Centered and calm', 'Direct with your truth', 'Creating instead of reacting', 'Building something big', 'Leading without saying a word'],
+      shadowMode: ['Silent when hurt', 'Overthinking', 'Carrying everyone', 'Trust issues', 'Feeling misunderstood', 'Feeling responsible for everything', 'Trying to fix people who can\'t be fixed']
+    },
+    'healer': {
+      title: 'The Mystic Healer',
+      subtitle: 'Channel of Light',
+      emoji: '🌙',
+      coreEssence: `You're a bridge between worlds — the seen and unseen, the broken and whole. Your presence alone shifts energy in a room. You feel everything, sometimes too much, but that sensitivity is your superpower.
+
+You're a transmuter of pain.
+What breaks others, you alchemize into wisdom.`,
+      strengths: ['Profound empathy', 'Natural healer energy', 'Spiritual depth', 'Intuitive knowing', 'Gentle strength', 'Transformative presence', 'Wisdom beyond years'],
+      shadows: ['You absorb others\' pain as your own', 'You neglect your own needs for others', 'Boundaries feel like walls to you', 'You over-give until empty', 'You attract broken people to fix'],
+      purpose: 'To heal what others cannot see. To be the medicine for souls who have forgotten their light.',
+      soulFrequency: 'Healer heart + mystic mind + warrior spirit',
+      firstPersonBio: `I feel things others don't notice. It's not a choice — it's how I'm wired. I've learned to carry that weight, to transmute pain into understanding. People come to me when they're broken, and I don't turn them away. But I'm learning that I need healing too. My power isn't in fixing — it's in holding space. I'm here to remind people of their own light.`,
+      romanticTitle: 'The Soul Tender',
+      romanticHow: `You love through presence, understanding, and spiritual connection. For you, intimacy is soul-deep. You see your partner's wounds and love them anyway.`,
+      romanticTraits: ['Deeply empathic lover', 'Nurturing presence', 'Spiritually connected', 'Intuitive about partner\'s needs', 'Healing through love'],
+      romanticCraves: `Someone who sees your depth without drowning in it. A partner who can hold space for you, not just receive your care.`,
+      romanticShadow: ['You lose yourself in your partner', 'You attract wounded souls to fix', 'You give until empty'],
+      romanticNeeds: ['Spiritual connection', 'Mutual nurturing', 'Emotional reciprocity', 'Space for your healing'],
+      powerMode: ['Healer energy flowing', 'Boundaries with compassion', 'Receiving as much as giving', 'Channeling light', 'Grounded in your gifts'],
+      shadowMode: ['Absorbing everyone\'s pain', 'Neglecting self-care', 'Attracting broken people', 'Feeling drained', 'Losing yourself']
+    },
+    'visionary': {
+      title: 'The Visionary Revolutionary',
+      subtitle: 'Breaker of Chains',
+      emoji: '⚡',
+      coreEssence: `You see what others can't — the future, the truth, the possibility. You're not here to fit in; you're here to reshape reality. Your mind operates ahead of time, and your soul refuses to accept "impossible."
+
+You're a pattern-breaker.
+What holds others down, you burn through.`,
+      strengths: ['Visionary thinking', 'Fearless authenticity', 'Innovation mastery', 'Magnetic presence', 'Strategic brilliance', 'Unshakeable conviction', 'Catalyst energy'],
+      shadows: ['Impatience with slower minds', 'Isolation from feeling misunderstood', 'Burning bridges too fast', 'Difficulty with mundane tasks', 'Exhaustion from carrying the vision alone'],
+      purpose: 'To shatter limitations and build the future others are afraid to imagine.',
+      soulFrequency: 'Visionary mind + rebel heart + creator spirit',
+      firstPersonBio: `I see the future before it arrives. I don't follow trends — I set them. People call me intense, ahead of my time, sometimes difficult. That's because I refuse to accept limitations that everyone else just tolerates. I'm here to break patterns, not repeat them. My vision is my power.`,
+      romanticTitle: 'The Flame Keeper',
+      romanticHow: `You love with intensity and vision. You see your partner's potential and help them rise to it. Your passion is magnetic but can be overwhelming.`,
+      romanticTraits: ['Intensely passionate', 'Visionary about the relationship', 'Demanding of authenticity', 'Protective of your time', 'All or nothing'],
+      romanticCraves: `Someone who can match your intensity. A partner who has their own vision and doesn't shrink from yours.`,
+      romanticShadow: ['Expecting too much too fast', 'Impatience with partner\'s growth', 'Running from boredom'],
+      romanticNeeds: ['Intellectual stimulation', 'Shared vision', 'Independence', 'Passionate connection'],
+      powerMode: ['Vision crystal clear', 'Leading with conviction', 'Building the future', 'Inspiring others', 'Breaking limits'],
+      shadowMode: ['Isolated in your vision', 'Impatient with reality', 'Burning out', 'Feeling alone at the top']
+    },
+    'guardian': {
+      title: 'The Guardian Protector',
+      subtitle: 'Shield of the Sacred',
+      emoji: '🛡️',
+      coreEssence: `You're the one who stands between chaos and those you love. Protection isn't a choice for you — it's coded into your soul. You move in silence but strike with precision when needed.
+
+You're a silent fortress.
+Your strength is in your stillness.`,
+      strengths: ['Fierce loyalty', 'Calm under pressure', 'Protective instinct', 'Strategic patience', 'Physical presence', 'Dependable strength', 'Quiet authority'],
+      shadows: ['Carrying weight that isn\'t yours', 'Suppressing vulnerability', 'Hypervigilance exhaustion', 'Difficulty receiving help', 'Over-responsibility for others\' safety'],
+      purpose: 'To be the shield. To protect what is sacred when no one else will.',
+      soulFrequency: 'Warrior heart + guardian mind + protector spirit',
+      firstPersonBio: `I'm the one who shows up when it matters. I don't talk about loyalty — I live it. When someone I love is threatened, I don't hesitate. I move in silence, but my presence speaks. Protection isn't a role I play. It's who I am at my core.`,
+      romanticTitle: 'The Steady Flame',
+      romanticHow: `You love through protection, consistency, and unwavering presence. You're the rock your partner can always lean on.`,
+      romanticTraits: ['Steadfast devotion', 'Protective love', 'Actions over words', 'Physical presence', 'Unshakeable loyalty'],
+      romanticCraves: `Someone who appreciates your protection without taking it for granted. A partner who doesn't mistake your silence for coldness.`,
+      romanticShadow: ['Difficulty expressing feelings', 'Overprotecting', 'Neglecting your own needs'],
+      romanticNeeds: ['Trust', 'Appreciation', 'Physical affection', 'Stability'],
+      powerMode: ['Protective energy balanced', 'Present and grounded', 'Receiving help gracefully', 'Strong but soft', 'Clear priorities'],
+      shadowMode: ['Hypervigilant', 'Carrying everyone', 'Suppressing emotions', 'Exhausted from protecting']
+    },
+    'creator': {
+      title: 'The Cosmic Creator',
+      subtitle: 'Weaver of Realities',
+      emoji: '✨',
+      coreEssence: `You don't just imagine worlds — you build them. Art, stories, systems, experiences — your mind is a universe generator. Creation isn't a hobby; it's your soul's native language.
+
+You're a world-weaver.
+What you envision, you manifest.`,
+      strengths: ['Boundless creativity', 'Original thinking', 'Artistic vision', 'Universe-building mind', 'Emotional depth in creation', 'Prolific output', 'Timeless perspective'],
+      shadows: ['Perfectionism paralysis', 'Difficulty finishing projects', 'Isolation in creative worlds', 'Undervaluing your work', 'Losing yourself in creation'],
+      purpose: 'To create what has never existed. To leave beauty, meaning, and wonder behind.',
+      soulFrequency: 'Creator heart + cosmic mind + artist spirit',
+      firstPersonBio: `I see universes where others see blank pages. My mind never stops creating — stories, worlds, systems, art. It's not a hobby; it's my soul's language. I'm here to leave something behind that didn't exist before me.`,
+      romanticTitle: 'The Muse Keeper',
+      romanticHow: `You love through creation — making things for your partner, seeing them as art. You need a relationship that feeds your creativity, not drains it.`,
+      romanticTraits: ['Creative expressions of love', 'Deep emotional connection', 'Need for inspiration', 'Unconventional romance', 'Soul-deep intimacy'],
+      romanticCraves: `A muse who inspires you. Someone who understands your creative obsessions and supports your visions.`,
+      romanticShadow: ['Losing yourself in projects', 'Partner feeling secondary to art', 'Emotional unavailability when creating'],
+      romanticNeeds: ['Creative freedom', 'Inspiration', 'Deep understanding', 'Space to create'],
+      powerMode: ['Creating freely', 'Finishing projects', 'Sharing your work', 'Inspired and flowing', 'Connected to source'],
+      shadowMode: ['Perfectionism paralysis', 'Procrastinating on art', 'Feeling blocked', 'Undervaluing your gifts']
+    }
+  };
+  
+  const arch = archetypes[archetypeKey];
+  const [showPowerMode, setShowPowerMode] = useState(true);
+
+  return (
+    <div className="grid gap-6">
+      {/* Main Archetype Card */}
+      <GlassCard className="p-8">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="zodiac-icon" style={{ width: '5rem', height: '5rem', fontSize: '2.5rem' }}>
+            {arch.emoji}
+          </div>
+          <div>
+            <h2 className="gradient-text" style={{ fontSize: '2rem', fontWeight: 700 }}>{arch.title}</h2>
+            <p className="text-cosmic-lavender" style={{ fontSize: '1.1rem' }}>{arch.subtitle}</p>
+          </div>
+        </div>
+        
+        <div className="mb-6" style={{ whiteSpace: 'pre-line', lineHeight: 1.8, color: 'var(--muted-foreground)' }}>
+          {arch.coreEssence}
+        </div>
+        
+        <div className="p-4 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%)' }}>
+          <p className="text-center" style={{ fontStyle: 'italic', color: 'var(--cosmic-lavender)' }}>
+            <strong>Soul Frequency:</strong> {arch.soulFrequency}
+          </p>
+        </div>
+      </GlassCard>
+      
+      {/* First Person Bio */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="zodiac-icon">📜</div>
+          <h3 className="card-title">Who I Am — In My Own Words</h3>
+        </div>
+        <blockquote style={{ 
+          borderLeft: '3px solid var(--cosmic-purple)', 
+          paddingLeft: '1.5rem', 
+          fontStyle: 'italic',
+          lineHeight: 1.8,
+          color: 'var(--foreground)'
+        }}>
+          "{arch.firstPersonBio}"
+        </blockquote>
+      </GlassCard>
+      
+      {/* Strengths & Shadows */}
+      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+        <GlassCard className="p-6">
+          <h3 className="card-title mb-4">💪 Core Strengths</h3>
+          <ul className="flex flex-col gap-2">
+            {arch.strengths.map((s: string, i: number) => (
+              <li key={i} className="flex items-start gap-2">
+                <span style={{ color: 'var(--cosmic-cyan)' }}>✓</span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+        
+        <GlassCard className="p-6">
+          <h3 className="card-title mb-4">🌑 Shadow Aspects</h3>
+          <ul className="flex flex-col gap-2">
+            {arch.shadows.map((s: string, i: number) => (
+              <li key={i} className="flex items-start gap-2">
+                <span style={{ color: 'var(--cosmic-pink)' }}>○</span>
+                <span className="text-muted-foreground">{s}</span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      </div>
+      
+      {/* Purpose */}
+      <GlassCard className="p-6 text-center">
+        <h3 className="card-title mb-4">🎯 Your Purpose</h3>
+        <p style={{ fontSize: '1.25rem', lineHeight: 1.8, color: 'var(--foreground)' }}>
+          {arch.purpose}
+        </p>
+      </GlassCard>
+      
+      {/* Romantic Profile */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="zodiac-icon" style={{ background: 'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)' }}>💜</div>
+          <div>
+            <h3 className="card-title">Romantic Energy Profile</h3>
+            <p className="text-cosmic-rose">{arch.romanticTitle}</p>
+          </div>
+        </div>
+        
+        <div className="mb-4">
+          <h4 className="font-semibold mb-2">How You Love:</h4>
+          <p className="text-muted-foreground" style={{ lineHeight: 1.7 }}>{arch.romanticHow}</p>
+        </div>
+        
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+          <div>
+            <h4 className="font-semibold mb-2 text-cosmic-cyan">Your Romantic Traits:</h4>
+            <ul className="flex flex-col gap-1">
+              {arch.romanticTraits.map((t: string, i: number) => (
+                <li key={i} className="text-muted-foreground text-sm">• {t}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2 text-cosmic-pink">Shadow in Love:</h4>
+            <ul className="flex flex-col gap-1">
+              {arch.romanticShadow.map((s: string, i: number) => (
+                <li key={i} className="text-muted-foreground text-sm">• {s}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        
+        <div className="mt-4 p-4 rounded-lg" style={{ background: 'var(--muted)' }}>
+          <h4 className="font-semibold mb-2">You Crave:</h4>
+          <p className="text-muted-foreground text-sm">{arch.romanticCraves}</p>
+        </div>
+        
+        <div className="mt-4">
+          <h4 className="font-semibold mb-2">What You Need:</h4>
+          <div className="flex flex-wrap gap-2">
+            {arch.romanticNeeds.map((n: string, i: number) => (
+              <span key={i} className="system-badge">{n}</span>
+            ))}
+          </div>
+        </div>
+      </GlassCard>
+      
+      {/* Power Mode vs Shadow Mode */}
+      <GlassCard className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="card-title">Mode Status</h3>
+          <div className="flex gap-2">
+            <button 
+              className={`system-tab ${showPowerMode ? 'active' : ''}`}
+              onClick={() => setShowPowerMode(true)}
+            >
+              🔵 Power Mode
+            </button>
+            <button 
+              className={`system-tab ${!showPowerMode ? 'active' : ''}`}
+              onClick={() => setShowPowerMode(false)}
+            >
+              ⚫ Shadow Mode
+            </button>
+          </div>
+        </div>
+        
+        <AnimatePresence mode="wait">
+          {showPowerMode ? (
+            <motion.div key="power" {...fadeIn} className="p-4 rounded-lg" style={{ background: 'rgba(34, 211, 238, 0.1)', border: '1px solid rgba(34, 211, 238, 0.3)' }}>
+              <h4 className="font-semibold mb-3 text-cosmic-cyan">🔵 Power Mode You:</h4>
+              <ul className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                {arch.powerMode.map((p: string, i: number) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span style={{ color: 'var(--cosmic-cyan)' }}>⚡</span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Power Mode is your natural state — you just slip out of it when chaos or emotional noise gets too loud.
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div key="shadow" {...fadeIn} className="p-4 rounded-lg" style={{ background: 'rgba(100, 100, 100, 0.1)', border: '1px solid rgba(100, 100, 100, 0.3)' }}>
+              <h4 className="font-semibold mb-3" style={{ color: '#888' }}>⚫ Shadow Mode You:</h4>
+              <ul className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                {arch.shadowMode.map((s: string, i: number) => (
+                  <li key={i} className="flex items-center gap-2 text-muted-foreground">
+                    <span>○</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-sm text-muted-foreground">
+                When you're in Shadow Mode, awareness is the first step back to Power Mode.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </GlassCard>
+      
+      {/* Destiny Reading */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="zodiac-icon" style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}>🌟</div>
+          <h3 className="card-title">Destiny Reading — The Builder of Legacy</h3>
+        </div>
+        
+        <p className="text-muted-foreground mb-6">Your path is not random — it follows a pattern:</p>
+        
+        <div className="grid gap-4">
+          {[
+            { phase: 'Phase 1: Fire & Lessons', age: '0–25', desc: 'Learning through pain, betrayal, chaos, mistakes, and broken trust. But every wound taught you a skill, a boundary, or a strength.', color: '#ef4444' },
+            { phase: 'Phase 2: Construction Era', age: '25–40', desc: 'You start building: projects, apps, sagas, systems, creative universes, new identities for yourself. This is where the Architect shows up.', color: '#f59e0b' },
+            { phase: 'Phase 3: Rise Into Leadership', age: '40–55', desc: "You become the mentor, the master builder, the quiet leader people look to. You guide, create, protect, and shape the future. You'll be known for something by this stage.", color: '#22d3ee' },
+            { phase: 'Phase 4: Legacy Era', age: '55+', desc: 'What you built becomes your mark. Your kids, your art, your game universes, your apps — they outlive you.', color: '#a78bfa' }
+          ].map((p, i) => (
+            <div key={i} className="p-4 rounded-lg" style={{ borderLeft: `4px solid ${p.color}`, background: 'var(--muted)' }}>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-semibold" style={{ color: p.color }}>{p.phase}</h4>
+                <span className="system-badge">{p.age}</span>
+              </div>
+              <p className="text-muted-foreground text-sm">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-6 p-4 rounded-xl text-center" style={{ background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(251, 191, 36, 0.1) 100%)' }}>
+          <p style={{ fontSize: '1.1rem', fontWeight: 500 }}>
+            <span className="gradient-text-gold">Your destiny is to leave something behind.</span>
+          </p>
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ELEMENTAL MEDICINE SECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function ElementalMedicineSection({ profile }: { profile: any }) {
+  const numData = profile.numerologyData;
+  const astro = profile.astrologyData;
+  const hdData = profile.humanDesignData;
+  
+  // Calculate elemental profile (simplified client-side version)
+  const lifePath = numData?.lifePath || 7;
+  const sunSign = astro?.sunSign;
+  const moonSign = astro?.moonSign;
+  
+  // Element scoring
+  const scores: Record<string, number> = { Earth: 20, Water: 20, Fire: 20, Air: 20, Metal: 20 };
+  
+  // Sun sign element
+  const signElements: Record<string, string> = {
+    Aries: 'Fire', Leo: 'Fire', Sagittarius: 'Fire',
+    Taurus: 'Earth', Virgo: 'Earth', Capricorn: 'Earth',
+    Gemini: 'Air', Libra: 'Air', Aquarius: 'Air',
+    Cancer: 'Water', Scorpio: 'Water', Pisces: 'Water'
+  };
+  
+  if (sunSign && signElements[sunSign]) scores[signElements[sunSign]] += 20;
+  if (moonSign && signElements[moonSign]) scores[signElements[moonSign]] += 15;
+  
+  // Life path influence
+  if ([2, 4, 6].includes(lifePath)) scores.Earth += 15;
+  if ([7, 9, 11].includes(lifePath)) scores.Water += 15;
+  if ([1, 3, 5].includes(lifePath)) scores.Fire += 15;
+  if ([8, 22].includes(lifePath)) scores.Metal += 15;
+  
+  // Sort to find primary/secondary
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const primaryElement = sorted[0][0];
+  const secondaryElement = sorted[1][0];
+  const deficientElement = sorted[4][0];
+  
+  const elementData: Record<string, any> = {
+    Earth: { symbol: '🌍', color: '#8B7355', balanced: ['Grounded', 'Steady', 'Nurturing', 'Practical'], imbalanced: ['Overwhelm', 'Worry', 'Stagnation'], helps: ['Warm meals', 'Consistent schedule', 'Nature walks', 'Strength training'], avoid: ['Skipping meals', 'Chaos', 'Irregular sleep'] },
+    Water: { symbol: '💧', color: '#4A90D9', balanced: ['Calm', 'Intuitive', 'Empathetic', 'Wise'], imbalanced: ['Anxiety', 'Exhaustion', 'Fear'], helps: ['Hydration', 'Baths', 'Journaling', 'Rest'], avoid: ['Noise', 'Emotional vampires', 'Overwork'] },
+    Fire: { symbol: '🔥', color: '#E85D4C', balanced: ['Motivated', 'Passionate', 'Warm', 'Leader'], imbalanced: ['Anger', 'Burnout', 'Insomnia'], helps: ['Exercise', 'Morning sun', 'Cooling foods', 'Creative outlets'], avoid: ['Late nights', 'Stimulants', 'Conflict'] },
+    Air: { symbol: '🌬️', color: '#87CEEB', balanced: ['Clear-minded', 'Communicative', 'Adaptable', 'Inspired'], imbalanced: ['Overthinking', 'Restless', 'Scattered'], helps: ['Breathwork', 'Media limits', 'Walking', 'Single-tasking'], avoid: ['Multitasking', 'Info overload', 'Chaos'] },
+    Metal: { symbol: '⚔️', color: '#C0C0C0', balanced: ['Disciplined', 'Clear boundaries', 'Organized', 'Strong integrity'], imbalanced: ['Rigidity', 'Grief', 'Perfectionism'], helps: ['Schedules', 'Saying no', 'Decluttering', 'Strength training'], avoid: ['People-pleasing', 'Clutter', 'Broken promises'] }
+  };
+  
+  const primary = elementData[primaryElement];
+  const secondary = elementData[secondaryElement];
+  const deficient = elementData[deficientElement];
+  
+  // Daily element based on day of week
+  const dayOfWeek = new Date().getDay();
+  const dailyElements = ['Earth', 'Air', 'Fire', 'Water', 'Metal', 'Earth', 'Water'];
+  const todayElement = dailyElements[dayOfWeek];
+  const todayData = elementData[todayElement];
+  
+  const dailyGuidance: Record<string, { focus: string; action: string; affirmation: string }> = {
+    Earth: { focus: 'Grounding & Structure', action: 'Complete one task fully. Eat a nourishing meal. Touch the ground.', affirmation: 'I am grounded. I am stable. I am enough.' },
+    Water: { focus: 'Rest & Emotion', action: 'Journal your feelings. Take a bath. Listen to calming music.', affirmation: 'I flow with life. My emotions are wisdom.' },
+    Fire: { focus: 'Action & Purpose', action: 'Move your body. Start a project. Express your passion.', affirmation: 'I am the fire. I create. I transform.' },
+    Air: { focus: 'Clarity & Communication', action: 'Breathe deeply. Write your thoughts. Speak your truth.', affirmation: 'My mind is clear. My voice matters.' },
+    Metal: { focus: 'Boundaries & Order', action: 'Say no to one thing. Organize something. Honor your limits.', affirmation: 'I protect my energy. I honor my boundaries.' }
+  };
+  
+  const today = dailyGuidance[todayElement];
+
+  return (
+    <div className="grid gap-6">
+      {/* Primary Element */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="zodiac-icon" style={{ width: '5rem', height: '5rem', fontSize: '2.5rem', background: `linear-gradient(135deg, ${primary.color} 0%, var(--cosmic-purple) 100%)` }}>
+            {primary.symbol}
+          </div>
+          <div>
+            <p className="text-muted-foreground text-sm">Your Primary Element</p>
+            <h2 className="gradient-text" style={{ fontSize: '2rem', fontWeight: 700 }}>{primaryElement}</h2>
+          </div>
+        </div>
+        
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+          <div>
+            <h4 className="font-semibold mb-2 text-cosmic-cyan">When Balanced:</h4>
+            <div className="flex flex-wrap gap-2">
+              {primary.balanced.map((b: string, i: number) => (
+                <span key={i} className="system-badge">{b}</span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2 text-cosmic-pink">When Imbalanced:</h4>
+            <div className="flex flex-wrap gap-2">
+              {primary.imbalanced.map((b: string, i: number) => (
+                <span key={i} className="system-badge" style={{ borderColor: 'var(--cosmic-pink)' }}>{b}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </GlassCard>
+      
+      {/* Element Scores */}
+      <GlassCard className="p-6">
+        <h3 className="card-title mb-4">Elemental Constitution</h3>
+        <div className="grid gap-3">
+          {sorted.map(([element, score], i) => (
+            <div key={element}>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="flex items-center gap-2">
+                  <span>{elementData[element].symbol}</span>
+                  <span>{element}</span>
+                  {i === 0 && <span className="text-cosmic-purple text-xs">(Primary)</span>}
+                  {i === 1 && <span className="text-cosmic-lavender text-xs">(Secondary)</span>}
+                  {i === 4 && <span className="text-cosmic-pink text-xs">(Needs attention)</span>}
+                </span>
+                <span>{Math.round((score / 100) * 100)}%</span>
+              </div>
+              <div className="h-3 rounded-full" style={{ background: 'var(--muted)' }}>
+                <motion.div 
+                  className="h-full rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(score, 100)}%` }}
+                  transition={{ duration: 0.8, delay: i * 0.1 }}
+                  style={{ background: elementData[element].color }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+      
+      {/* Daily Elemental Guidance */}
+      <GlassCard className="p-6" style={{ border: `2px solid ${todayData.color}` }}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="zodiac-icon" style={{ background: todayData.color }}>{todayData.symbol}</div>
+          <div>
+            <p className="text-muted-foreground text-sm">Today's Elemental Focus</p>
+            <h3 className="card-title">{todayElement}: {today.focus}</h3>
+          </div>
+        </div>
+        
+        <div className="mb-4 p-4 rounded-lg" style={{ background: 'var(--muted)' }}>
+          <h4 className="font-semibold mb-2">Today's Action:</h4>
+          <p className="text-muted-foreground">{today.action}</p>
+        </div>
+        
+        <div className="p-4 rounded-lg text-center" style={{ background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(34, 211, 238, 0.1) 100%)' }}>
+          <p style={{ fontStyle: 'italic', color: 'var(--cosmic-lavender)' }}>
+            "{today.affirmation}"
+          </p>
+        </div>
+      </GlassCard>
+      
+      {/* Remedies */}
+      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+        <GlassCard className="p-6">
+          <h3 className="card-title mb-4">✅ What Helps You</h3>
+          <ul className="flex flex-col gap-2">
+            {primary.helps.map((h: string, i: number) => (
+              <li key={i} className="flex items-center gap-2">
+                <span style={{ color: 'var(--cosmic-cyan)' }}>+</span>
+                <span className="text-muted-foreground">{h}</span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+        
+        <GlassCard className="p-6">
+          <h3 className="card-title mb-4">⚠️ What to Avoid</h3>
+          <ul className="flex flex-col gap-2">
+            {primary.avoid.map((a: string, i: number) => (
+              <li key={i} className="flex items-center gap-2">
+                <span style={{ color: 'var(--cosmic-pink)' }}>−</span>
+                <span className="text-muted-foreground">{a}</span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      </div>
+      
+      {/* Strengthen Deficient Element */}
+      <GlassCard className="p-6" style={{ borderColor: 'var(--cosmic-gold)' }}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="zodiac-icon" style={{ background: deficient.color }}>{deficient.symbol}</div>
+          <div>
+            <p className="text-muted-foreground text-sm">Element to Strengthen</p>
+            <h3 className="card-title">{deficientElement}</h3>
+          </div>
+        </div>
+        
+        <p className="text-muted-foreground mb-4">
+          Your {deficientElement} element could use attention. Here's how to cultivate it:
+        </p>
+        
+        <div className="flex flex-wrap gap-2">
+          {deficient.helps.map((h: string, i: number) => (
+            <span key={i} className="system-badge" style={{ background: 'var(--secondary)' }}>
+              {h}
+            </span>
+          ))}
+        </div>
+      </GlassCard>
+      
+      {/* Weekly Rhythm */}
+      <GlassCard className="p-6">
+        <h3 className="card-title mb-4">📅 Weekly Elemental Rhythm</h3>
+        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => {
+            const el = ['Earth', 'Fire', 'Air', 'Water', 'Metal', 'Fire', 'Water'][i];
+            const isToday = i === (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+            return (
+              <div 
+                key={day} 
+                className="text-center p-3 rounded-lg"
+                style={{ 
+                  background: isToday ? elementData[el].color : 'var(--muted)',
+                  color: isToday ? 'white' : 'var(--muted-foreground)'
+                }}
+              >
+                <div className="text-xs">{day}</div>
+                <div style={{ fontSize: '1.5rem' }}>{elementData[el].symbol}</div>
+                <div className="text-xs">{el}</div>
+              </div>
+            );
+          })}
+        </div>
+      </GlassCard>
+      
+      {/* Disclaimer */}
+      <div className="text-center text-muted-foreground text-sm p-4" style={{ opacity: 0.7 }}>
+        <p>Soul Codex Elemental Insights are for personal reflection and wellness education.</p>
+        <p>They do not diagnose or treat medical conditions. Always consult a licensed professional for medical concerns.</p>
+      </div>
     </div>
   );
 }
