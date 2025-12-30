@@ -7,8 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
-  // ONLY add this line if your index.html is inside the 'client' folder
-  // root: path.resolve(__dirname, "client"), 
+  root: path.resolve(__dirname, "client"),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client/src"),
@@ -16,7 +15,15 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist/public",
+    outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
+  },
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
   },
 });

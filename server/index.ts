@@ -1,6 +1,6 @@
 import express, { type Express } from "express";
 import { registerRoutes } from "../routes";
-import { setupVite, serveStatic, log } from "../vite";
+import { setupVite, serveStatic, log } from "../vite-server";
 
 const app: Express = express();
 
