@@ -1,12 +1,25 @@
-const CACHE_NAME = 'soul-codex-v1';
-const RUNTIME_CACHE = 'soul-codex-runtime-v1';
+// ═══════════════════════════════════════════════════════════════════════════
+// SOUL CODEX - SERVICE WORKER
+// Production-Ready PWA with Offline Support
+// ═══════════════════════════════════════════════════════════════════════════
 
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `soul-codex-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `soul-codex-runtime-${CACHE_VERSION}`;
+const API_CACHE = `soul-codex-api-${CACHE_VERSION}`;
+
+// Assets to precache for offline support
 const PRECACHE_URLS = [
   '/',
-  '/manifest.json',
-  '/icons/icon-192x192.svg',
-  '/icons/icon-512x512.svg'
+  '/manifest.json'
 ];
+
+// Cache duration settings (in milliseconds)
+const CACHE_DURATIONS = {
+  static: 7 * 24 * 60 * 60 * 1000,  // 7 days for static assets
+  api: 5 * 60 * 1000,               // 5 minutes for API responses
+  fonts: 30 * 24 * 60 * 60 * 1000   // 30 days for fonts
+};
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

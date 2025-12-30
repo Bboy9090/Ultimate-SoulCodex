@@ -2,12 +2,23 @@
   "name": "Soul Codex - Engine of Eternal Now",
   "short_name": "Soul Codex",
   "description": "Discover your cosmic blueprint through 30+ mystical systems. Astrology, numerology, Human Design, Gene Keys, I Ching, Kabbalah, and AI-powered spiritual guidance unified in one legendary experience.",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "id": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
   "background_color": "#0a0118",
   "theme_color": "#7c3aed",
   "orientation": "portrait-primary",
   "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/icons/icon-48x48.png",

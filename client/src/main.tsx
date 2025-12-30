@@ -1,9 +1,56 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from "react";
+import React, { useState, useEffect, createContext, useContext, useCallback, Suspense, lazy, memo, Component, ErrorInfo, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Switch, Route, useLocation, Link } from "wouter";
 import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import "./index.css";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ERROR BOUNDARY - Graceful Error Handling
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode; fallback?: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Soul Codex Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="min-h-screen flex items-center justify-center p-8">
+          <div className="glass-card p-8 max-w-md text-center">
+            <div className="text-6xl mb-4">🌌</div>
+            <h2 className="text-2xl font-bold mb-4 gradient-text">Cosmic Disruption</h2>
+            <p className="text-muted-foreground mb-6">
+              The stars have momentarily misaligned. Please refresh to restore harmony.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="btn-primary"
+            >
+              Realign the Cosmos
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // API HOOKS & QUERY CLIENT
@@ -13,25 +60,56 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes cache
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors
+        if (error instanceof Error && error.message.includes("4")) return false;
+        return failureCount < 2;
+      },
+      refetchOnWindowFocus: false, // Reduce unnecessary refetches
+      refetchOnReconnect: true,
+    },
+    mutations: {
       retry: 1,
     },
   },
 });
 
-// API fetch wrapper
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-  });
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: "Request failed" }));
-    throw new Error(error.message || "Request failed");
+// API fetch wrapper with timeout and enhanced error handling
+async function apiFetch<T>(url: string, options?: RequestInit & { timeout?: number }): Promise<T> {
+  const timeout = options?.timeout || 30000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: `Request failed with status ${res.status}` }));
+      throw new Error(error.message || `Request failed with status ${res.status}`);
+    }
+
+    // Handle empty responses
+    const text = await res.text();
+    if (!text) return {} as T;
+    
+    return JSON.parse(text);
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
+    }
+    throw error;
   }
-  return res.json();
 }
 
 // Auth hooks
@@ -117,6 +195,70 @@ function useLogout() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// TOAST NOTIFICATION SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface Toast {
+  id: string;
+  message: string;
+  type: "success" | "error" | "info";
+}
+
+const ToastContext = createContext<{
+  toasts: Toast[];
+  addToast: (message: string, type?: Toast["type"]) => void;
+  removeToast: (id: string) => void;
+} | null>(null);
+
+function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const addToast = useCallback((message: string, type: Toast["type"] = "info") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => removeToast(id), 5000);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+      {children}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        <AnimatePresence>
+          {toasts.map(toast => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              className={`glass-card p-4 min-w-[280px] flex items-center gap-3 ${
+                toast.type === "success" ? "border-green-500/50" :
+                toast.type === "error" ? "border-red-500/50" : "border-purple-500/50"
+              }`}
+              onClick={() => removeToast(toast.id)}
+            >
+              <span className="text-xl">
+                {toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "ℹ"}
+              </span>
+              <span className="text-sm">{toast.message}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  return ctx;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // CONTEXT - App State
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -197,27 +339,34 @@ const staggerContainer = {
   animate: { transition: { staggerChildren: 0.1 } },
 };
 
-// Loading spinner
-function LoadingSpinner({ size = 40 }: { size?: number }) {
+// Loading spinner - Memoized
+const LoadingSpinner = memo(function LoadingSpinner({ size = 40 }: { size?: number }) {
   return (
     <div className="flex items-center justify-center p-8">
       <div className="spinner" style={{ width: size, height: size }} />
     </div>
   );
-}
+});
 
-// Loading orb (mystical)
-function LoadingOrb({ text }: { text?: string }) {
+// Loading orb (mystical) - Memoized
+const LoadingOrb = memo(function LoadingOrb({ text }: { text?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 p-12">
       <div className="loading-orb" />
       {text && <p className="text-muted-foreground animate-pulse">{text}</p>}
     </div>
   );
-}
+});
 
-// Glass card wrapper
-function GlassCard({ children, className = "", hover = true }: { children: React.ReactNode; className?: string; hover?: boolean }) {
+// Skeleton loader for content loading states
+const Skeleton = memo(function Skeleton({ className = "", animate = true }: { className?: string; animate?: boolean }) {
+  return (
+    <div className={`bg-purple-500/10 rounded-lg ${animate ? "animate-pulse" : ""} ${className}`} />
+  );
+});
+
+// Glass card wrapper - Memoized
+const GlassCard = memo(function GlassCard({ children, className = "", hover = true }: { children: React.ReactNode; className?: string; hover?: boolean }) {
   return (
     <motion.div 
       className={`${hover ? 'glass-card' : 'glass-card-static'} ${className}`}
@@ -228,7 +377,7 @@ function GlassCard({ children, className = "", hover = true }: { children: React
       {children}
     </motion.div>
   );
-}
+});
 
 // Button component
 function Button({ 

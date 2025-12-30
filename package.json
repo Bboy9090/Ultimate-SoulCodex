@@ -1,18 +1,28 @@
 {
   "name": "soul-codex-engine",
   "version": "1.0.0",
+  "description": "Soul Codex - Engine of Eternal Now. Discover your cosmic blueprint through 30+ mystical systems.",
   "type": "module",
   "license": "MIT",
+  "author": "Soul Codex Team",
+  "keywords": ["astrology", "numerology", "human-design", "spiritual", "wellness", "pwa"],
   "engines": {
-    "node": "20.x"
+    "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node patch-build.mjs",
+    "dev": "tsx watch server/index.ts",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node patch-build.mjs",
     "start": "node dist/index.js",
+    "start:prod": "NODE_ENV=production node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Add ESLint configuration for linting'",
+    "clean": "rm -rf dist node_modules/.cache",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "render-build": "npm install && npm run build && (npm run db:push || echo 'Database push skipped - no DATABASE_URL or schema changes')"
+    "render-build": "npm ci --production=false && npm run build && (npm run db:push || echo 'Database push skipped')",
+    "health": "curl -s http://localhost:3000/health || echo 'Server not running'"
   },
   "dependencies": {
     "@google/generative-ai": "^0.1.0",

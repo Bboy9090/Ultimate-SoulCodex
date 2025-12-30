@@ -8,20 +8,40 @@ import { verifyPassword } from "./passwordUtils";
 
 const MemoryStore = MemoryStoreFactory(session);
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTHENTICATION SETUP - Production-Grade Security
+// ═══════════════════════════════════════════════════════════════════════════
+
 export async function setupAuth(app: Express) {
+  const isProduction = process.env.NODE_ENV === "production";
+  
+  // Warn if using default session secret in production
+  if (isProduction && !process.env.SESSION_SECRET) {
+    console.error("⚠️  CRITICAL: SESSION_SECRET not set in production!");
+    console.error("⚠️  Generate a secure secret: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\"");
+  }
+
+  // Trust proxy for proper IP detection behind reverse proxies
   app.set("trust proxy", 1);
 
+  // Session configuration with security best practices
   app.use(
     session({
-      store: new MemoryStore({ checkPeriod: 86400000 }),
-      secret: process.env.SESSION_SECRET || "dev-session-secret",
+      store: new MemoryStore({ 
+        checkPeriod: 86400000, // Prune expired entries every 24h
+        max: 10000 // Maximum number of sessions
+      }),
+      secret: process.env.SESSION_SECRET || "dev-session-secret-change-in-prod",
+      name: "soulcodex.sid", // Custom session cookie name (avoid default "connect.sid")
       resave: false,
       saveUninitialized: false,
+      rolling: true, // Refresh session on each request
       cookie: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
-        maxAge: 1000 * 60 * 60 * 24 * 7,
+        httpOnly: true, // Prevent XSS access to cookie
+        secure: isProduction, // HTTPS only in production
+        sameSite: "lax", // CSRF protection
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        path: "/",
       },
     })
   );

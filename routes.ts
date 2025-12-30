@@ -64,8 +64,30 @@ if (process.env.STRIPE_SECRET_KEY &&
   console.warn("[SubscriptionService] Not initialized - missing Stripe configuration");
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ERROR HANDLING - Production-Ready Error Responses
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Sanitize error messages for production (don't leak internal details)
+function sanitizeErrorMessage(message: string): string {
+  // Remove file paths, stack traces, and internal details
+  const sensitivePatterns = [
+    /at\s+[\w./\\]+:\d+:\d+/g,  // Stack trace locations
+    /\/[\w/.-]+\.(ts|js)/g,     // File paths
+    /password|secret|key|token/gi, // Sensitive keywords
+  ];
+  let sanitized = message;
+  for (const pattern of sensitivePatterns) {
+    sanitized = sanitized.replace(pattern, "[REDACTED]");
+  }
+  return sanitized.slice(0, 200); // Limit length
+}
+
 // Utility function for consistent error responses
 function handleError(error: unknown, res: any, context: string) {
+  const isProduction = process.env.NODE_ENV === "production";
+  
+  // Log full error internally
   console.error(`[${context}] Error:`, error);
   
   // Handle Zod validation errors
@@ -73,41 +95,146 @@ function handleError(error: unknown, res: any, context: string) {
     const validationError = fromZodError(error);
     return res.status(400).json({ 
       message: "Validation failed", 
-      errors: validationError.details,
-      details: error.errors 
+      errors: validationError.details.map(d => ({
+        path: d.path,
+        message: d.message
+      }))
     });
   }
   
   // Handle known error types
   if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    
     // Check for specific error messages
-    if (error.message.includes("not found")) {
-      return res.status(404).json({ message: error.message });
+    if (message.includes("not found")) {
+      return res.status(404).json({ message: "Resource not found" });
     }
-    if (error.message.includes("already exists")) {
-      return res.status(409).json({ message: error.message });
+    if (message.includes("already exists") || message.includes("duplicate")) {
+      return res.status(409).json({ message: "Resource already exists" });
     }
-    if (error.message.includes("unauthorized") || error.message.includes("forbidden")) {
-      return res.status(403).json({ message: error.message });
+    if (message.includes("unauthorized") || message.includes("forbidden") || message.includes("permission")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    if (message.includes("invalid") || message.includes("malformed")) {
+      return res.status(400).json({ message: isProduction ? "Invalid request" : sanitizeErrorMessage(error.message) });
     }
     
-    // Generic error with message
+    // Generic error with sanitized message
     return res.status(500).json({ 
-      message: error.message || "An unexpected error occurred",
-      context 
+      message: isProduction ? "An unexpected error occurred" : sanitizeErrorMessage(error.message),
+      ...(isProduction ? {} : { context })
     });
   }
   
   // Unknown error type
   return res.status(500).json({ 
-    message: "An unexpected error occurred",
-    context 
+    message: "An unexpected error occurred"
   });
 }
 
 import compatibilityRoutes from "./routes/compatibility";
 import { getVapidPublicKey } from "./services/push-notifications";
 import { insertPushSubscriptionSchema } from "./shared/schema";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RESPONSE CACHING HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Simple in-memory cache for expensive computations
+interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+}
+
+const responseCache = new Map<string, CacheEntry<any>>();
+
+function getCached<T>(key: string): T | null {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache<T>(key: string, data: T, ttlMs: number): void {
+  responseCache.set(key, {
+    data,
+    expiry: Date.now() + ttlMs
+  });
+  
+  // Limit cache size
+  if (responseCache.size > 1000) {
+    const firstKey = responseCache.keys().next().value;
+    if (firstKey) responseCache.delete(firstKey);
+  }
+}
+
+// Cache control header helper
+function setCacheHeaders(res: any, seconds: number, isPrivate = true): void {
+  res.setHeader('Cache-Control', `${isPrivate ? 'private' : 'public'}, max-age=${seconds}`);
+  res.setHeader('Vary', 'Accept-Encoding');
+}
+
+// Generate ETag for response caching
+function generateETag(data: any): string {
+  const str = JSON.stringify(data);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return `"${Math.abs(hash).toString(16)}"`;
+}
+
+// Check If-None-Match header for conditional responses
+function checkETag(req: any, res: any, data: any): boolean {
+  const etag = generateETag(data);
+  res.setHeader('ETag', etag);
+  
+  const clientETag = req.get('If-None-Match');
+  if (clientETag === etag) {
+    res.status(304).end();
+    return true;
+  }
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INPUT VALIDATION HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(id: string): boolean {
+  return typeof id === "string" && UUID_REGEX.test(id);
+}
+
+// Validate and sanitize profile ID
+function validateProfileId(id: string | undefined, res: any): string | null {
+  if (!id || typeof id !== "string") {
+    res.status(400).json({ message: "Profile ID is required" });
+    return null;
+  }
+  if (!isValidUUID(id)) {
+    res.status(400).json({ message: "Invalid profile ID format" });
+    return null;
+  }
+  return id;
+}
+
+// Sanitize string input
+function sanitizeInput(input: string): string {
+  return input
+    .replace(/[<>]/g, "") // Remove HTML brackets
+    .replace(/javascript:/gi, "") // Remove JS protocol
+    .trim()
+    .slice(0, 1000); // Limit length
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
@@ -1733,6 +1860,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (dailyInsight) {
         console.log(`[GetDailyInsights] Returning cached insights for ${today}`);
+        // Cache for 1 hour (daily content doesn't change often)
+        setCacheHeaders(res, 3600, true);
         return res.json(dailyInsight.insightsData);
       }
       

@@ -1,8 +1,39 @@
 import { type User, type UpsertUser, type Profile, type InsertProfile, type Person, type InsertPerson, type Assessment, type InsertAssessment, type AccessCode, type AccessCodeRedemption, type InsertAccessCode, type DailyInsight, type InsertDailyInsight, type CompatibilityAnalysis, type InsertCompatibility, type LocalUser, type PushSubscription, type InsertPushSubscription, type FrequencyLog, type InsertFrequencyLog, type WebhookEvent, type InsertWebhookEvent } from "./shared/schema";
 import { randomUUID } from "crypto";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STORAGE LAYER - Production-Ready Data Management
+// ═══════════════════════════════════════════════════════════════════════════
+//
 // NOTE: For Render bootstrap we use in-memory storage by default.
 // Avoid importing DB modules and table schemas to prevent build-time resolution.
 // Removed drizzle imports to avoid schema resolution in bundle
+//
+// PRODUCTION CONSIDERATIONS:
+// - Data is ephemeral in MemStorage (lost on restart)
+// - For persistence, configure DATABASE_URL and use DbStorage
+// - MemStorage is suitable for demos and testing
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Storage metrics for monitoring
+interface StorageMetrics {
+  totalProfiles: number;
+  totalUsers: number;
+  totalSessions: number;
+  lastAccess: Date;
+}
+
+let storageMetrics: StorageMetrics = {
+  totalProfiles: 0,
+  totalUsers: 0,
+  totalSessions: 0,
+  lastAccess: new Date()
+};
+
+// Export metrics for monitoring
+export function getStorageMetrics(): StorageMetrics {
+  return { ...storageMetrics };
+}
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -80,6 +111,15 @@ export interface IStorage {
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// IN-MEMORY STORAGE IMPLEMENTATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Maximum limits to prevent memory issues
+const MAX_PROFILES = 10000;
+const MAX_DAILY_INSIGHTS = 50000;
+const MAX_FREQUENCY_LOGS = 100000;
+
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private localUsers: Map<string, LocalUser>;
@@ -91,6 +131,10 @@ export class MemStorage implements IStorage {
   private compatibilities: Map<string, CompatibilityAnalysis>;
   private pushSubscriptions: Map<string, PushSubscription>;
   private frequencyLogs: Map<string, FrequencyLog>;
+  
+  // Track storage statistics
+  private createdAt: Date = new Date();
+  private lastCleanup: Date = new Date();
   private webhookEvents: Map<string, WebhookEvent>;
 
   constructor() {
@@ -105,6 +149,69 @@ export class MemStorage implements IStorage {
     this.pushSubscriptions = new Map();
     this.frequencyLogs = new Map();
     this.webhookEvents = new Map();
+    
+    console.log("[MemStorage] Initialized in-memory storage");
+    console.log("[MemStorage] ⚠️  Data will not persist across restarts");
+    
+    // Schedule periodic cleanup (every hour)
+    setInterval(() => this.cleanup(), 60 * 60 * 1000);
+  }
+  
+  // Cleanup old data to prevent memory bloat
+  private cleanup(): void {
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    
+    let cleaned = 0;
+    
+    // Clean old daily insights (keep 7 days)
+    for (const [key, insight] of this.dailyInsights.entries()) {
+      if (insight.createdAt && new Date(insight.createdAt).getTime() < oneWeekAgo) {
+        this.dailyInsights.delete(key);
+        cleaned++;
+      }
+    }
+    
+    // Clean old webhook events (keep 1 day for idempotency)
+    for (const [key, event] of this.webhookEvents.entries()) {
+      if (event.receivedAt && new Date(event.receivedAt).getTime() < oneDayAgo) {
+        this.webhookEvents.delete(key);
+        cleaned++;
+      }
+    }
+    
+    // Enforce max limits
+    if (this.dailyInsights.size > MAX_DAILY_INSIGHTS) {
+      const toDelete = this.dailyInsights.size - MAX_DAILY_INSIGHTS;
+      const keys = Array.from(this.dailyInsights.keys()).slice(0, toDelete);
+      keys.forEach(k => this.dailyInsights.delete(k));
+      cleaned += toDelete;
+    }
+    
+    if (cleaned > 0) {
+      console.log(`[MemStorage] Cleaned ${cleaned} old entries`);
+    }
+    
+    this.lastCleanup = new Date();
+    
+    // Update metrics
+    storageMetrics = {
+      totalProfiles: this.profiles.size,
+      totalUsers: this.users.size,
+      totalSessions: this.profiles.size,
+      lastAccess: new Date()
+    };
+  }
+  
+  // Get storage statistics
+  getStats(): { profiles: number; users: number; insights: number; uptime: number } {
+    return {
+      profiles: this.profiles.size,
+      users: this.users.size,
+      insights: this.dailyInsights.size,
+      uptime: Date.now() - this.createdAt.getTime()
+    };
   }
 
   async getUser(id: string): Promise<User | undefined> {
