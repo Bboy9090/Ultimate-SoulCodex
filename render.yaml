@@ -1,0 +1,95 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SOUL CODEX - RENDER DEPLOYMENT CONFIGURATION
+# Production-Ready Infrastructure as Code
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+  # Primary Web Service
+  - type: web
+    name: soulcodex-engine
+    env: node
+    runtime: node
+    region: oregon
+    plan: free # Upgrade to starter ($7/mo) or standard for production
+    
+    # Build Configuration
+    buildCommand: npm ci --production=false && npm run build && (npm run db:push || echo 'DB push skipped - using MemStorage')
+    startCommand: NODE_ENV=production node dist/index.js
+    
+    # Node.js Configuration
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=512"
+      - key: TZ
+        value: UTC
+      - key: LOG_LEVEL
+        value: info
+      
+      # Database (optional - uses MemStorage if not configured)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: soulcodex-db
+          property: connectionString
+      
+      # ═══════════════════════════════════════════════════════════════════
+      # SECRETS - Configure in Render Dashboard (Settings > Environment)
+      # ═══════════════════════════════════════════════════════════════════
+      # 
+      # REQUIRED FOR FULL FUNCTIONALITY:
+      # --------------------------------
+      # SESSION_SECRET     - Generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+      # OPENAI_API_KEY     - From OpenAI dashboard (for AI chat)
+      #
+      # OPTIONAL - PAYMENTS:
+      # --------------------
+      # STRIPE_SECRET_KEY
+      # STRIPE_PUBLISHABLE_KEY
+      # STRIPE_WEBHOOK_SECRET
+      # STRIPE_PRICE_WEEKLY
+      # STRIPE_PRICE_MONTHLY
+      # STRIPE_PRICE_YEARLY
+      #
+      # OPTIONAL - PUSH NOTIFICATIONS:
+      # ------------------------------
+      # VAPID_PUBLIC_KEY
+      # VAPID_PRIVATE_KEY
+      #
+      # OPTIONAL - EMAIL:
+      # -----------------
+      # SENDER_EMAIL
+      # MAIL_HOST
+      # MAIL_PORT
+      # MAIL_USER
+      # MAIL_PASS
+      # ═══════════════════════════════════════════════════════════════════
+    
+    # Health Monitoring
+    healthCheckPath: /health
+    
+    # Deployment Settings
+    autoDeploy: true
+    
+    # Headers for security (Render-level)
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+
+databases:
+  # Managed Postgres database
+  - name: soulcodex-db
+    databaseName: soulcodex
+    user: soulcodex
+    region: oregon
+    plan: free # Can upgrade for better performance and storage
+    # postgresMajorVersion: 16 # Optional: specify Postgres version

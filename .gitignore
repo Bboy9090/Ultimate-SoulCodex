@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -53,3 +54,35 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+=======
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Agent state files
+.agent_state_*.bin
+repl_state.bin
+
+# Build artifacts
+index.js
+index-*.js
+index-*.css
+index.es-*.js
+html2canvas.esm-*.js
+jspdf.es.min-*.js
+purify.es-*.js
+
+# Build markers
+rapid_build_started
+rapid_build_success
+
+# Zip files
+*.zip
+
+# Temporary scripts
+apply_vite_server_fix_and_push.sh
+create_pr_and_files.sh
+>>>>>>> d530d856fc17018d81aeafe0ffe8208dd5994963
