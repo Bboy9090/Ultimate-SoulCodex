@@ -29,7 +29,6 @@ import { calculateAsteroids } from "./services/asteroids";
 import { calculateArabicParts } from "./services/arabic-parts";
 import { calculateFixedStars } from "./services/fixed-stars";
 import { generatePalmReading } from "./services/palmistry";
-import { calculateElementalProfile, generateSoulArchetype, getDailyElementalGuidance } from "./services/elemental-medicine";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -64,30 +63,8 @@ if (process.env.STRIPE_SECRET_KEY &&
   console.warn("[SubscriptionService] Not initialized - missing Stripe configuration");
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ERROR HANDLING - Production-Ready Error Responses
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Sanitize error messages for production (don't leak internal details)
-function sanitizeErrorMessage(message: string): string {
-  // Remove file paths, stack traces, and internal details
-  const sensitivePatterns = [
-    /at\s+[\w./\\]+:\d+:\d+/g,  // Stack trace locations
-    /\/[\w/.-]+\.(ts|js)/g,     // File paths
-    /password|secret|key|token/gi, // Sensitive keywords
-  ];
-  let sanitized = message;
-  for (const pattern of sensitivePatterns) {
-    sanitized = sanitized.replace(pattern, "[REDACTED]");
-  }
-  return sanitized.slice(0, 200); // Limit length
-}
-
 // Utility function for consistent error responses
 function handleError(error: unknown, res: any, context: string) {
-  const isProduction = process.env.NODE_ENV === "production";
-  
-  // Log full error internally
   console.error(`[${context}] Error:`, error);
   
   // Handle Zod validation errors
@@ -95,146 +72,41 @@ function handleError(error: unknown, res: any, context: string) {
     const validationError = fromZodError(error);
     return res.status(400).json({ 
       message: "Validation failed", 
-      errors: validationError.details.map(d => ({
-        path: d.path,
-        message: d.message
-      }))
+      errors: validationError.details,
+      details: error.errors 
     });
   }
   
   // Handle known error types
   if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    
     // Check for specific error messages
-    if (message.includes("not found")) {
-      return res.status(404).json({ message: "Resource not found" });
+    if (error.message.includes("not found")) {
+      return res.status(404).json({ message: error.message });
     }
-    if (message.includes("already exists") || message.includes("duplicate")) {
-      return res.status(409).json({ message: "Resource already exists" });
+    if (error.message.includes("already exists")) {
+      return res.status(409).json({ message: error.message });
     }
-    if (message.includes("unauthorized") || message.includes("forbidden") || message.includes("permission")) {
-      return res.status(403).json({ message: "Access denied" });
-    }
-    if (message.includes("invalid") || message.includes("malformed")) {
-      return res.status(400).json({ message: isProduction ? "Invalid request" : sanitizeErrorMessage(error.message) });
+    if (error.message.includes("unauthorized") || error.message.includes("forbidden")) {
+      return res.status(403).json({ message: error.message });
     }
     
-    // Generic error with sanitized message
+    // Generic error with message
     return res.status(500).json({ 
-      message: isProduction ? "An unexpected error occurred" : sanitizeErrorMessage(error.message),
-      ...(isProduction ? {} : { context })
+      message: error.message || "An unexpected error occurred",
+      context 
     });
   }
   
   // Unknown error type
   return res.status(500).json({ 
-    message: "An unexpected error occurred"
+    message: "An unexpected error occurred",
+    context 
   });
 }
 
 import compatibilityRoutes from "./routes/compatibility";
 import { getVapidPublicKey } from "./services/push-notifications";
 import { insertPushSubscriptionSchema } from "./shared/schema";
-
-// ═══════════════════════════════════════════════════════════════════════════
-// RESPONSE CACHING HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Simple in-memory cache for expensive computations
-interface CacheEntry<T> {
-  data: T;
-  expiry: number;
-}
-
-const responseCache = new Map<string, CacheEntry<any>>();
-
-function getCached<T>(key: string): T | null {
-  const entry = responseCache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiry) {
-    responseCache.delete(key);
-    return null;
-  }
-  return entry.data;
-}
-
-function setCache<T>(key: string, data: T, ttlMs: number): void {
-  responseCache.set(key, {
-    data,
-    expiry: Date.now() + ttlMs
-  });
-  
-  // Limit cache size
-  if (responseCache.size > 1000) {
-    const firstKey = responseCache.keys().next().value;
-    if (firstKey) responseCache.delete(firstKey);
-  }
-}
-
-// Cache control header helper
-function setCacheHeaders(res: any, seconds: number, isPrivate = true): void {
-  res.setHeader('Cache-Control', `${isPrivate ? 'private' : 'public'}, max-age=${seconds}`);
-  res.setHeader('Vary', 'Accept-Encoding');
-}
-
-// Generate ETag for response caching
-function generateETag(data: any): string {
-  const str = JSON.stringify(data);
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return `"${Math.abs(hash).toString(16)}"`;
-}
-
-// Check If-None-Match header for conditional responses
-function checkETag(req: any, res: any, data: any): boolean {
-  const etag = generateETag(data);
-  res.setHeader('ETag', etag);
-  
-  const clientETag = req.get('If-None-Match');
-  if (clientETag === etag) {
-    res.status(304).end();
-    return true;
-  }
-  return false;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// INPUT VALIDATION HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
-
-// UUID validation regex
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isValidUUID(id: string): boolean {
-  return typeof id === "string" && UUID_REGEX.test(id);
-}
-
-// Validate and sanitize profile ID
-function validateProfileId(id: string | undefined, res: any): string | null {
-  if (!id || typeof id !== "string") {
-    res.status(400).json({ message: "Profile ID is required" });
-    return null;
-  }
-  if (!isValidUUID(id)) {
-    res.status(400).json({ message: "Invalid profile ID format" });
-    return null;
-  }
-  return id;
-}
-
-// Sanitize string input
-function sanitizeInput(input: string): string {
-  return input
-    .replace(/[<>]/g, "") // Remove HTML brackets
-    .replace(/javascript:/gi, "") // Remove JS protocol
-    .trim()
-    .slice(0, 1000); // Limit length
-}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
@@ -741,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Kabbalah (works with name + birth date + numerology)
       try {
-        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData.lifePath);
+        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData.calculateNumerology);
       } catch (error) {
         console.error("[CreateProfile] Kabbalah calculation failed:", error);
         kabbalahData = null;
@@ -757,7 +629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Chakra System (works with birth date + numerology)
       try {
-        chakraData = calculateChakraSystem(birthData.birthDate, numerologyData.lifePath, astrologyData);
+        chakraData = calculateChakraSystem(birthData.birthDate, numerologyData.calculateNumerology, astrologyData);
       } catch (error) {
         console.error("[CreateProfile] Chakra System calculation failed:", error);
         chakraData = null;
@@ -765,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Sacred Geometry (works with birth date + numerology)
       try {
-        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData.lifePath, birthData.name);
+        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData.calculateNumerology, birthData.name);
       } catch (error) {
         console.error("[CreateProfile] Sacred Geometry calculation failed:", error);
         sacredGeometryData = null;
@@ -773,7 +645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Runes (works with name + birth date + numerology)
       try {
-        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData.lifePath);
+        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData.calculateNumerology);
       } catch (error) {
         console.error("[CreateProfile] Runes calculation failed:", error);
         runesData = null;
@@ -813,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Palmistry (works with birth date + numerology life path)
       let palmistryData;
       try {
-        palmistryData = generatePalmReading(birthData.birthDate, numerologyData.lifePath);
+        palmistryData = generatePalmReading(birthData.birthDate, numerologyData.calculateNumerology);
         console.log("[CreateProfile] Palm reading generated successfully");
       } catch (error) {
         console.error("[CreateProfile] Palmistry calculation failed:", error);
@@ -1011,23 +883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fixedStarsData,
         palmistryData,
         biography,
-        dailyGuidance,
-        // New: Elemental Medicine & Soul Archetype
-        elementalData: calculateElementalProfile(
-          birthData.birthDate,
-          numerologyData?.lifePath,
-          astrologyData?.sunSign,
-          astrologyData?.moonSign,
-          humanDesignData?.type
-        ),
-        soulArchetypeData: generateSoulArchetype(
-          birthData.name,
-          numerologyData?.lifePath || 7,
-          astrologyData?.sunSign,
-          astrologyData?.moonSign,
-          humanDesignData?.type,
-          undefined // enneagramType - added later via assessment
-        )
+        dailyGuidance
       });
       
       console.log(`[CreateProfile] Profile created successfully: ${profile.id}`);
@@ -1745,7 +1601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enneagramTypes: {} as Record<string, number>,
         mbtiTypes: {} as Record<string, number>,
         sunSigns: {} as Record<string, number>,
-        lifePaths: {} as Record<string, number>,
+        calculateNumerologys: {} as Record<string, number>,
         premiumCount: 0,
       };
       
@@ -1785,9 +1641,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Life path numbers
         if (profile.numerologyData && typeof profile.numerologyData === 'object') {
           const numData = profile.numerologyData as any;
-          if (numData.lifePath) {
-            const lpKey = String(numData.lifePath);
-            stats.lifePaths[lpKey] = (stats.lifePaths[lpKey] || 0) + 1;
+          if (numData.calculateNumerology) {
+            const lpKey = String(numData.calculateNumerology);
+            stats.calculateNumerologys[lpKey] = (stats.calculateNumerologys[lpKey] || 0) + 1;
           }
         }
       });
@@ -1796,48 +1652,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       return handleError(error, res, "GetAnalytics");
-    }
-  });
-
-  // Get daily elemental guidance for a profile
-  app.get("/api/elemental-guidance/:profileId", async (req, res) => {
-    try {
-      const { profileId } = req.params;
-      
-      console.log(`[GetElementalGuidance] Fetching guidance for profile ${profileId}`);
-      
-      const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-      
-      // Get elemental data from profile or calculate fresh
-      let elementalData = profile.elementalData as any;
-      
-      if (!elementalData) {
-        // Calculate on the fly if not stored
-        const numData = profile.numerologyData as any;
-        const astroData = profile.astrologyData as any;
-        const hdData = profile.humanDesignData as any;
-        
-        elementalData = calculateElementalProfile(
-          profile.birthDate,
-          numData?.lifePath,
-          astroData?.sunSign,
-          astroData?.moonSign,
-          hdData?.type
-        );
-      }
-      
-      // Get today's guidance
-      const dailyGuidance = getDailyElementalGuidance(elementalData.primaryElement);
-      
-      res.json({
-        ...elementalData,
-        todayGuidance: dailyGuidance
-      });
-    } catch (error) {
-      return handleError(error, res, "GetElementalGuidance");
     }
   });
 
@@ -1860,8 +1674,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (dailyInsight) {
         console.log(`[GetDailyInsights] Returning cached insights for ${today}`);
-        // Cache for 1 hour (daily content doesn't change often)
-        setCacheHeaders(res, 3600, true);
         return res.json(dailyInsight.insightsData);
       }
       
@@ -1950,7 +1762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro1?.sunSign,
           moonSign: astro1?.moonSign,
           risingSign: astro1?.risingSign,
-          lifePath: num1?.lifePath,
+          calculateNumerology: num1?.calculateNumerology,
           hdType: hd1?.type,
           enneagramType: pers1?.enneagram?.type,
           mbtiType: pers1?.mbti?.type
@@ -1960,7 +1772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro2?.sunSign,
           moonSign: astro2?.moonSign,
           risingSign: astro2?.risingSign,
-          lifePath: num2?.lifePath,
+          calculateNumerology: num2?.calculateNumerology,
           hdType: hd2?.type,
           enneagramType: pers2?.enneagram?.type,
           mbtiType: pers2?.mbti?.type
@@ -2042,7 +1854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro1?.sunSign,
           moonSign: astro1?.moonSign,
           risingSign: astro1?.risingSign,
-          lifePath: num1?.lifePath,
+          calculateNumerology: num1?.calculateNumerology,
           hdType: hd1?.type,
           enneagramType: pers1?.enneagram?.type,
           mbtiType: pers1?.mbti?.type
@@ -2052,7 +1864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro2?.sunSign,
           moonSign: astro2?.moonSign,
           risingSign: astro2?.risingSign,
-          lifePath: num2?.lifePath,
+          calculateNumerology: num2?.calculateNumerology,
           hdType: hd2?.type,
           enneagramType: pers2?.enneagram?.type,
           mbtiType: pers2?.mbti?.type

@@ -23,7 +23,7 @@ app.use((req, res, next) => {
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson.apply(res, [bodyJson, ...args]);
-  } as any;
+  };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
@@ -70,26 +70,30 @@ let serverInstance: any = null;
 
   // Use PORT from environment (Render and other platforms set this)
   const PORT = parseInt(process.env.PORT || "3000", 10);
-  // On Windows, use 127.0.0.1 explicitly to avoid IPv6 issues. On Linux, use 0.0.0.0 for all interfaces
-  const HOST = process.platform === "win32" ? "127.0.0.1" : "0.0.0.0";
 
-  serverInstance = server.listen(PORT, HOST, () => {
-    // Log startup information (without exposing secrets)
-    console.info(`
+  serverInstance = server.listen(
+    {
+      port: PORT,
+      host: "0.0.0.0",
+      reusePort: true,
+    },
+    () => {
+      // Log startup information (without exposing secrets)
+      console.info(`
 ========================================
 🚀 Server Starting Up
 ========================================
 NODE_ENV: ${process.env.NODE_ENV || "development"}
 PORT: ${PORT}
-HOST: ${HOST}
-DATABASE_URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Not set (MemStorage bootstrap mode)"}
+DATABASE_URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Not set"}
 ========================================
-Server listening on http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}
-Health check: http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}/health
+Server listening on http://0.0.0.0:${PORT}
+Health check: http://0.0.0.0:${PORT}/health
 ========================================
 `);
-    log(`Server ready on port ${PORT}`);
-  });
+      log(`Server ready on port ${PORT}`);
+    }
+  );
 })();
 
 // Handle unhandled promise rejections

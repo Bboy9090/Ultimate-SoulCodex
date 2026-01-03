@@ -1,60 +1,3 @@
-<<<<<<< HEAD
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-.venv
-*.egg-info/
-dist/
-build/
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Frontend
-frontend/dist/
-frontend/.vite/
-frontend/tsconfig.tsbuildinfo
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-=======
 node_modules
 dist
 .DS_Store
@@ -85,4 +28,3 @@ rapid_build_success
 # Temporary scripts
 apply_vite_server_fix_and_push.sh
 create_pr_and_files.sh
->>>>>>> d530d856fc17018d81aeafe0ffe8208dd5994963
