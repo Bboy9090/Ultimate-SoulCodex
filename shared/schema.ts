@@ -9,6 +9,15 @@ export const birthDataSchema = z.object({
   timezone: z.string().optional(),
   latitude: z.union([z.string(), z.number()]).optional(),
   longitude: z.union([z.string(), z.number()]).optional(),
+  // Optional: Parent signs for parental influence calculation
+  fatherSign: z.string().optional(),
+  motherSign: z.string().optional(),
+  // Optional: Moral compass answers (1-3 simple questions)
+  moralCompassAnswers: z.object({
+    familyValues: z.enum(["traditional", "progressive", "mixed", "independent"]).optional(),
+    neighborhoodType: z.enum(["close-knit", "diverse", "individualistic", "supportive"]).optional(),
+    conflictResolution: z.enum(["direct", "diplomatic", "avoidant", "collaborative"]).optional(),
+  }).optional(),
 });
 
 export const signupSchema = z.object({

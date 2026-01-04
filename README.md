@@ -1,13 +1,16 @@
-# Soul Codex - Engine of Eternal Now
+# Ultimate Soul Codex - Engine of the Eternal Now
 
-A mobile-first personality and compatibility application that synthesizes 30+ spiritual and psychological systems (astrology, numerology, Human Design, psychology, and more) into personalized insights for self-discovery and relationships.
+A mobile-first personality and compatibility application that synthesizes 35+ spiritual and psychological systems (astrology, numerology, Human Design, Elemental Medicine, Moral Compass, Parental Influence, and more) into personalized insights for self-discovery and relationships.
 
 ## 🌟 What is Soul Codex?
 
 Soul Codex provides users with a comprehensive "soul blueprint" combining multiple mystical and psychological frameworks into one unified platform. Users can:
 
-- Generate complete personality profiles (natal charts, numerology, Human Design, etc.)
-- Check compatibility with partners, friends, family, or colleagues
+- Generate complete personality profiles (natal charts, numerology, Human Design, Elemental Medicine, Moral Compass, Parental Influence, etc.)
+- **NEW: Elemental Medicine System** - Eastern + West/Central African wisdom for wellness and balance
+- **NEW: Moral Compass System** - Values and ethics based on family and neighborhood experiences
+- **NEW: Parental Influence System** - Understand how parent signs affect your astrological blueprint
+- Check compatibility with partners, friends, family, or colleagues (now includes values and moral alignment)
 - Receive daily personalized insights based on current transits
 - Chat with an AI Soul Guide for clarification and guidance
 - Export professional PDF reports
