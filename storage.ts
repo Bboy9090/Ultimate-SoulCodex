@@ -92,6 +92,7 @@ export class MemStorage implements IStorage {
   private pushSubscriptions: Map<string, PushSubscription>;
   private frequencyLogs: Map<string, FrequencyLog>;
   private webhookEvents: Map<string, WebhookEvent>;
+  private passwordResetTokens: Map<string, {id: string, userId: string, expiresAt: Date, usedAt: Date | null}>;
 
   constructor() {
     this.users = new Map();
@@ -105,6 +106,7 @@ export class MemStorage implements IStorage {
     this.pushSubscriptions = new Map();
     this.frequencyLogs = new Map();
     this.webhookEvents = new Map();
+    this.passwordResetTokens = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -667,18 +669,36 @@ export class MemStorage implements IStorage {
       .sort((a, b) => b.loggedAt.getTime() - a.loggedAt.getTime());
   }
 
-  // Password reset operations (stub implementations for MemStorage)
+  // Password reset operations (MemStorage implementation)
   async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
-    // Stub - not implemented for in-memory storage
+    // In-memory storage for password reset tokens
+    this.passwordResetTokens.set(token, {
+      id: token,
+      userId,
+      expiresAt,
+      usedAt: null
+    });
   }
 
   async getPasswordResetToken(token: string): Promise<{id: string, userId: string, expiresAt: Date, usedAt: Date | null} | undefined> {
-    // Stub - not implemented for in-memory storage
-    return undefined;
+    const resetToken = this.passwordResetTokens.get(token);
+    if (!resetToken) return undefined;
+    
+    // Check if expired
+    if (new Date() > resetToken.expiresAt) {
+      this.passwordResetTokens.delete(token);
+      return undefined;
+    }
+    
+    return resetToken;
   }
 
   async markPasswordResetTokenUsed(token: string): Promise<void> {
-    // Stub - not implemented for in-memory storage
+    const resetToken = this.passwordResetTokens.get(token);
+    if (resetToken) {
+      resetToken.usedAt = new Date();
+      this.passwordResetTokens.set(token, resetToken);
+    }
   }
 
   async updateLocalUserPassword(userId: string, newPasswordHash: string): Promise<void> {

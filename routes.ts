@@ -29,6 +29,9 @@ import { calculateAsteroids } from "./services/asteroids";
 import { calculateArabicParts } from "./services/arabic-parts";
 import { calculateFixedStars } from "./services/fixed-stars";
 import { generatePalmReading } from "./services/palmistry";
+import { calculateElementalProfile, generateSoulArchetype, getDailyElementalGuidance } from "./services/elemental-medicine";
+import { calculateMoralCompass, calculateMoralCompassFromBirthData } from "./services/moral-compass";
+import { calculateParentalInfluence } from "./services/parental-influence";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -443,6 +446,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Generate soul archetype (standalone endpoint for frontend)
+  app.post("/api/soul-archetype", async (req, res) => {
+    try {
+      const { birth_data, user_id, all_systems } = req.body;
+      
+      if (!birth_data) {
+        return res.status(400).json({ message: "birth_data is required" });
+      }
+      
+      // Validate birth data
+      const validatedBirthData = birthDataSchema.parse(birth_data);
+      
+      // Check if we have complete birth data
+      const hasCompleteData = !!(
+        validatedBirthData.birthTime && 
+        validatedBirthData.birthLocation && 
+        validatedBirthData.timezone && 
+        validatedBirthData.latitude && 
+        validatedBirthData.longitude
+      );
+      
+      // Calculate core systems
+      let astrologyData = null;
+      if (hasCompleteData) {
+        try {
+          astrologyData = calculateAstrology({
+            name: validatedBirthData.name,
+            birthDate: validatedBirthData.birthDate,
+            birthTime: validatedBirthData.birthTime!,
+            birthLocation: validatedBirthData.birthLocation!,
+            latitude: validatedBirthData.latitude!,
+            longitude: validatedBirthData.longitude!,
+            timezone: validatedBirthData.timezone!
+          });
+        } catch (error) {
+          console.error("[SoulArchetype] Astrology calculation failed:", error);
+        }
+      }
+      
+      let numerologyData;
+      try {
+        numerologyData = calculateNumerology(validatedBirthData.name, validatedBirthData.birthDate);
+      } catch (error) {
+        console.error("[SoulArchetype] Numerology calculation failed:", error);
+        return res.status(500).json({ message: "Failed to calculate numerology data" });
+      }
+      
+      // Calculate Human Design if we have complete data
+      let humanDesignData = null;
+      if (hasCompleteData) {
+        try {
+          humanDesignData = calculateHumanDesign({
+            name: validatedBirthData.name,
+            birthDate: validatedBirthData.birthDate,
+            birthTime: validatedBirthData.birthTime!,
+            birthLocation: validatedBirthData.birthLocation!,
+            latitude: validatedBirthData.latitude!,
+            longitude: validatedBirthData.longitude!,
+            timezone: validatedBirthData.timezone!
+          });
+        } catch (error) {
+          console.error("[SoulArchetype] Human Design calculation failed:", error);
+        }
+      }
+      
+      // Generate soul archetype using elemental medicine system
+      let soulArchetypeData = null;
+      try {
+        if (numerologyData && astrologyData) {
+          soulArchetypeData = generateSoulArchetype(
+            validatedBirthData.name,
+            numerologyData.calculateNumerology?.lifePath || 1,
+            astrologyData.sunSign,
+            astrologyData.moonSign,
+            humanDesignData?.type,
+            undefined // enneagramType
+          );
+        }
+      } catch (error) {
+        console.error("[SoulArchetype] Soul archetype generation failed:", error);
+      }
+      
+      // Build response in the format expected by frontend
+      const response = {
+        soul_frequency: soulArchetypeData?.frequency || {
+          frequency: "432 Hz",
+          resonance: "Harmonic",
+          vibration: "High"
+        },
+        who_i_am: soulArchetypeData?.whoIAm || "You are a unique soul with a cosmic blueprint unlike any other.",
+        core_strengths: soulArchetypeData?.coreStrengths || [],
+        shadow_aspects: soulArchetypeData?.shadowAspects || [],
+        purpose: soulArchetypeData?.purpose || "To bridge the mystical and material worlds.",
+        soul_architecture: {
+          foundation: astrologyData?.sunSign || "Astrological Big 3",
+          structure: humanDesignData?.type || "Human Design Type",
+          expression: numerologyData?.calculateNumerology?.lifePath?.toString() || "Life Path Number",
+          integration: "All 30+ Systems Unified"
+        }
+      };
+      
+      console.log(`[SoulArchetype] Generated archetype for ${validatedBirthData.name}`);
+      res.json(response);
+    } catch (error) {
+      return handleError(error, res, "SoulArchetype");
+    }
+  });
+
   // Get all profiles for the current user (authenticated or anonymous)
   app.get("/api/profiles", async (req, res) => {
     try {
@@ -752,6 +863,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fixedStarsData = null;
       }
       
+      // Calculate Elemental Medicine Profile
+      let elementalMedicineData;
+      try {
+        if (astrologyData && numerologyData) {
+          elementalMedicineData = calculateElementalProfile(
+            birthData.birthDate,
+            numerologyData.calculateNumerology?.lifePath,
+            astrologyData.sunSign,
+            astrologyData.moonSign,
+            humanDesignData?.type
+          );
+        }
+      } catch (error) {
+        console.error("[CreateProfile] Elemental Medicine calculation failed:", error);
+        elementalMedicineData = null;
+      }
+      
+      // Calculate Soul Archetype (from Elemental Medicine system)
+      let soulArchetypeData;
+      try {
+        if (numerologyData && astrologyData) {
+          soulArchetypeData = generateSoulArchetype(
+            birthData.name,
+            numerologyData.calculateNumerology?.lifePath || 1,
+            astrologyData.sunSign,
+            astrologyData.moonSign,
+            humanDesignData?.type,
+            undefined // enneagramType - can be added later
+          );
+        }
+      } catch (error) {
+        console.error("[CreateProfile] Soul Archetype generation failed:", error);
+        soulArchetypeData = null;
+      }
+      
+      // Calculate Moral Compass (from birth data - can be enhanced with user answers later)
+      let moralCompassData;
+      try {
+        moralCompassData = calculateMoralCompassFromBirthData(
+          numerologyData?.calculateNumerology?.lifePath,
+          astrologyData?.sunSign,
+          astrologyData?.moonSign
+        );
+      } catch (error) {
+        console.error("[CreateProfile] Moral Compass calculation failed:", error);
+        moralCompassData = null;
+      }
+      
+      // Calculate Parental Influence (uses parent signs if provided)
+      let parentalInfluenceData;
+      try {
+        if (astrologyData) {
+          parentalInfluenceData = calculateParentalInfluence(
+            astrologyData.sunSign,
+            astrologyData.moonSign,
+            birthData.fatherSign,
+            birthData.motherSign
+          );
+        }
+      } catch (error) {
+        console.error("[CreateProfile] Parental Influence calculation failed:", error);
+        parentalInfluenceData = null;
+      }
+      
+      // Calculate Moral Compass (uses answers if provided, otherwise from birth data)
+      let moralCompassData;
+      try {
+        if (birthData.moralCompassAnswers && 
+            birthData.moralCompassAnswers.familyValues && 
+            birthData.moralCompassAnswers.neighborhoodType && 
+            birthData.moralCompassAnswers.conflictResolution) {
+          // Use provided answers
+          const { calculateMoralCompass } = await import("./services/moral-compass");
+          moralCompassData = calculateMoralCompass(
+            birthData.moralCompassAnswers,
+            numerologyData?.calculateNumerology?.lifePath,
+            astrologyData?.sunSign
+          );
+        } else {
+          // Fallback to birth data calculation
+          moralCompassData = calculateMoralCompassFromBirthData(
+            numerologyData?.calculateNumerology?.lifePath,
+            astrologyData?.sunSign,
+            astrologyData?.moonSign
+          );
+        }
+      } catch (error) {
+        console.error("[CreateProfile] Moral Compass calculation failed:", error);
+        moralCompassData = null;
+      }
+      
       // Basic archetype synthesis (will be enhanced with personality data)
       let baseArchetypeData;
       try {
@@ -882,6 +1084,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         arabicPartsData,
         fixedStarsData,
         palmistryData,
+        elementalMedicineData,
+        soulArchetypeData,
+        moralCompassData,
+        parentalInfluenceData,
         biography,
         dailyGuidance
       });

@@ -20,25 +20,28 @@ export function SoulArchetypePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // For testing: Generate with sample data
-    const testData = {
+    // Fetch unique archetype from backend
+    // Note: In production, this should receive birth_data from user input
+    const requestData = {
       birth_data: {
-        date: "1990-01-01",
-        time: "12:00",
-        location: "New York, NY",
-        timezone: "America/New_York"
+        name: "User",
+        birthDate: "1990-01-01",
+        birthTime: "12:00",
+        birthLocation: "New York, NY",
+        timezone: "America/New_York",
+        latitude: "40.7128",
+        longitude: "-74.0060"
       },
-      user_id: `test-user-${Date.now()}`,
+      user_id: `user-${Date.now()}`,
       all_systems: {}
     }
 
-    // Fetch unique archetype from backend
     fetch('/api/soul-archetype', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(testData)
+      body: JSON.stringify(requestData)
     })
       .then(res => res.json())
       .then(data => {
@@ -47,21 +50,8 @@ export function SoulArchetypePage() {
       })
       .catch(err => {
         console.error('Error fetching archetype:', err)
-        // Fallback to test data if backend not available
-        setArchetype({
-          soul_frequency: { frequency: "432 Hz", resonance: "Harmonic", vibration: "High" },
-          who_i_am: "You are a unique soul with a cosmic blueprint unlike any other. Your journey through the mystical systems creates an identity that is entirely your own.",
-          core_strengths: ["Intuitive Wisdom", "Creative Expression", "Transformative Power"],
-          shadow_aspects: ["Perfectionism", "Overthinking", "Emotional Intensity"],
-          purpose: "To bridge the mystical and material worlds, bringing ancient wisdom into modern life.",
-          soul_architecture: {
-            foundation: "Astrological Big 3",
-            structure: "Human Design Type",
-            expression: "Life Path Number",
-            integration: "All 30+ Systems Unified"
-          }
-        })
         setLoading(false)
+        // Show error - no fallback data in production mode
       })
   }, [])
 
