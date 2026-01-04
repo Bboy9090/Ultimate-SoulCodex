@@ -5,6 +5,9 @@ import { CoreStrengths } from '../components/soul-archetype/CoreStrengths'
 import { ShadowAspects } from '../components/soul-archetype/ShadowAspects'
 import { Purpose } from '../components/soul-archetype/Purpose'
 import { SoulArchitecture } from '../components/soul-archetype/SoulArchitecture'
+import { ElementalMedicine } from '../components/soul-archetype/ElementalMedicine'
+import { MoralCompass } from '../components/soul-archetype/MoralCompass'
+import { ParentalInfluence } from '../components/soul-archetype/ParentalInfluence'
 
 interface SoulArchetype {
   soul_frequency: any
@@ -13,6 +16,9 @@ interface SoulArchetype {
   shadow_aspects: string[]
   purpose: string
   soul_architecture: any
+  elementalMedicineData?: any
+  moralCompassData?: any
+  parentalInfluenceData?: any
 }
 
 export function SoulArchetypePage() {
@@ -88,6 +94,11 @@ export function SoulArchetypePage() {
       <ShadowAspects data={archetype.shadow_aspects} />
       <Purpose data={archetype.purpose} />
       <SoulArchitecture data={archetype.soul_architecture} />
+      
+      {/* New Features */}
+      <ElementalMedicine data={archetype.elementalMedicineData} />
+      <MoralCompass data={archetype.moralCompassData} />
+      <ParentalInfluence data={archetype.parentalInfluenceData} />
     </div>
   )
 }

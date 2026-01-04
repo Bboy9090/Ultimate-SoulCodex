@@ -78,6 +78,21 @@ export interface IStorage {
   // Webhook event operations (for idempotency)
   getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined>;
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
+  
+  // Journal operations
+  createJournalEntry(entry: any): Promise<any>;
+  getJournalEntries(params: { userId: string; profileId?: string; startDate?: Date; endDate?: Date; category?: string }): Promise<any[]>;
+  
+  // Shareable links operations
+  createShareableLink(link: any): Promise<any>;
+  getShareableLink(id: string): Promise<any | undefined>;
+  getShareableLinkByToken(token: string): Promise<any | undefined>;
+  updateShareableLink(id: string, updates: Partial<any>): Promise<any>;
+  getShareableLinksByUser(userId: string): Promise<any[]>;
+  
+  // Transit notification operations
+  createTransitNotification(notification: any): Promise<any>;
+  getTransitNotification(notificationId: string): Promise<any | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -93,6 +108,9 @@ export class MemStorage implements IStorage {
   private frequencyLogs: Map<string, FrequencyLog>;
   private webhookEvents: Map<string, WebhookEvent>;
   private passwordResetTokens: Map<string, {id: string, userId: string, expiresAt: Date, usedAt: Date | null}>;
+  private journalEntries: Map<string, any>;
+  private shareableLinks: Map<string, any>;
+  private transitNotifications: Map<string, any>;
 
   constructor() {
     this.users = new Map();
@@ -107,6 +125,9 @@ export class MemStorage implements IStorage {
     this.frequencyLogs = new Map();
     this.webhookEvents = new Map();
     this.passwordResetTokens = new Map();
+    this.journalEntries = new Map();
+    this.shareableLinks = new Map();
+    this.transitNotifications = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -729,6 +750,91 @@ export class MemStorage implements IStorage {
     };
     this.webhookEvents.set(event.stripeEventId, event);
     return event;
+  }
+
+  // Journal operations
+  async createJournalEntry(entryData: any): Promise<any> {
+    const id = randomUUID();
+    const entry = {
+      id,
+      ...entryData,
+      date: entryData.date || new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.journalEntries.set(id, entry);
+    return entry;
+  }
+
+  async getJournalEntries(params: { userId: string; profileId?: string; startDate?: Date; endDate?: Date; category?: string }): Promise<any[]> {
+    let entries = Array.from(this.journalEntries.values()).filter(e => e.userId === params.userId);
+    
+    if (params.profileId) {
+      entries = entries.filter(e => e.profileId === params.profileId);
+    }
+    
+    if (params.startDate) {
+      entries = entries.filter(e => new Date(e.date) >= params.startDate!);
+    }
+    
+    if (params.endDate) {
+      entries = entries.filter(e => new Date(e.date) <= params.endDate!);
+    }
+    
+    // Note: category filtering would require fetching prompt data
+    // For now, we'll skip category filtering at storage level
+    
+    return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  // Shareable links operations
+  async createShareableLink(linkData: any): Promise<any> {
+    const link = {
+      ...linkData,
+      createdAt: new Date(),
+      accessCount: 0,
+      isActive: true
+    };
+    this.shareableLinks.set(link.id, link);
+    return link;
+  }
+
+  async getShareableLink(id: string): Promise<any | undefined> {
+    return this.shareableLinks.get(id);
+  }
+
+  async getShareableLinkByToken(token: string): Promise<any | undefined> {
+    return Array.from(this.shareableLinks.values()).find(link => link.token === token);
+  }
+
+  async updateShareableLink(id: string, updates: Partial<any>): Promise<any> {
+    const link = this.shareableLinks.get(id);
+    if (!link) {
+      throw new Error('Shareable link not found');
+    }
+    const updated = { ...link, ...updates, updatedAt: new Date() };
+    this.shareableLinks.set(id, updated);
+    return updated;
+  }
+
+  async getShareableLinksByUser(userId: string): Promise<any[]> {
+    return Array.from(this.shareableLinks.values())
+      .filter(link => link.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  // Transit notification operations
+  async createTransitNotification(notificationData: any): Promise<any> {
+    const notification = {
+      ...notificationData,
+      createdAt: new Date()
+    };
+    this.transitNotifications.set(notification.notificationId, notification);
+    return notification;
+  }
+
+  async getTransitNotification(notificationId: string): Promise<any | undefined> {
+    return this.transitNotifications.get(notificationId);
   }
 }
 

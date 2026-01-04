@@ -41,6 +41,12 @@ import { calculateActiveTransits, extractNatalPositions } from "./services/trans
 import { getActiveTransmutationTechniques } from "./services/transmutation";
 import { calculateCongruenceScore } from "./services/congruence";
 import { registerChatRoutes } from "./routes/chat";
+import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, getMoodBasedPrompt } from "./services/journaling";
+import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
+import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
+import { generateProfilePDF, generateCompatibilityPDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
+import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks } from "./services/shareable-links";
+import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "./services/transit-notifications";
 import Stripe from "stripe";
 import { SubscriptionService } from "./services/subscription-service";
 import { entitlementService } from "./services/entitlement-service";
@@ -511,6 +517,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Calculate Elemental Medicine Profile
+      let elementalMedicineData = null;
+      try {
+        if (astrologyData && numerologyData) {
+          elementalMedicineData = calculateElementalProfile(
+            validatedBirthData.birthDate,
+            numerologyData.calculateNumerology?.lifePath,
+            astrologyData.sunSign,
+            astrologyData.moonSign,
+            humanDesignData?.type
+          );
+        }
+      } catch (error) {
+        console.error("[SoulArchetype] Elemental Medicine calculation failed:", error);
+      }
+      
       // Generate soul archetype using elemental medicine system
       let soulArchetypeData = null;
       try {
@@ -528,23 +550,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("[SoulArchetype] Soul archetype generation failed:", error);
       }
       
+      // Calculate Moral Compass
+      let moralCompassData = null;
+      try {
+        if (validatedBirthData.moralCompassAnswers && 
+            validatedBirthData.moralCompassAnswers.familyValues && 
+            validatedBirthData.moralCompassAnswers.neighborhoodType && 
+            validatedBirthData.moralCompassAnswers.conflictResolution) {
+          const { calculateMoralCompass } = await import("./services/moral-compass");
+          moralCompassData = calculateMoralCompass(
+            validatedBirthData.moralCompassAnswers,
+            numerologyData?.calculateNumerology?.lifePath,
+            astrologyData?.sunSign
+          );
+        } else {
+          moralCompassData = calculateMoralCompassFromBirthData(
+            numerologyData?.calculateNumerology?.lifePath,
+            astrologyData?.sunSign,
+            astrologyData?.moonSign
+          );
+        }
+      } catch (error) {
+        console.error("[SoulArchetype] Moral Compass calculation failed:", error);
+      }
+      
+      // Calculate Parental Influence
+      let parentalInfluenceData = null;
+      try {
+        if (astrologyData) {
+          parentalInfluenceData = calculateParentalInfluence(
+            astrologyData.sunSign,
+            astrologyData.moonSign,
+            validatedBirthData.fatherSign,
+            validatedBirthData.motherSign
+          );
+        }
+      } catch (error) {
+        console.error("[SoulArchetype] Parental Influence calculation failed:", error);
+      }
+      
       // Build response in the format expected by frontend
       const response = {
-        soul_frequency: soulArchetypeData?.frequency || {
+        soul_frequency: soulArchetypeData?.soulFrequency || {
           frequency: "432 Hz",
           resonance: "Harmonic",
           vibration: "High"
         },
-        who_i_am: soulArchetypeData?.whoIAm || "You are a unique soul with a cosmic blueprint unlike any other.",
-        core_strengths: soulArchetypeData?.coreStrengths || [],
-        shadow_aspects: soulArchetypeData?.shadowAspects || [],
+        who_i_am: soulArchetypeData?.firstPersonBio || "You are a unique soul with a cosmic blueprint unlike any other.",
+        core_strengths: soulArchetypeData?.strengths || [],
+        shadow_aspects: soulArchetypeData?.shadows || [],
         purpose: soulArchetypeData?.purpose || "To bridge the mystical and material worlds.",
         soul_architecture: {
           foundation: astrologyData?.sunSign || "Astrological Big 3",
           structure: humanDesignData?.type || "Human Design Type",
           expression: numerologyData?.calculateNumerology?.lifePath?.toString() || "Life Path Number",
-          integration: "All 30+ Systems Unified"
-        }
+          integration: "All 35+ Systems Unified"
+        },
+        // New features
+        elementalMedicineData,
+        moralCompassData,
+        parentalInfluenceData
       };
       
       console.log(`[SoulArchetype] Generated archetype for ${validatedBirthData.name}`);
@@ -2610,6 +2675,432 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       return handleError(error, res, "UpdatePurposeStatement");
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PREMIUM FEATURES: Journaling, Transits Calendar, Progressions, PDF, Shareable Links
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Journaling Endpoints
+  app.get("/api/journal/prompts", async (req, res) => {
+    try {
+      const { category, intensity } = req.query;
+      
+      let prompts;
+      if (category) {
+        prompts = getAllPrompts().filter(p => p.category === category);
+      } else if (intensity) {
+        prompts = getAllPrompts().filter(p => p.intensity === intensity);
+      } else {
+        prompts = getAllPrompts();
+      }
+      
+      res.json({ prompts, total: prompts.length });
+    } catch (error) {
+      return handleError(error, res, "GetJournalPrompts");
+    }
+  });
+
+  app.get("/api/journal/prompts/:id", async (req, res) => {
+    try {
+      const prompt = getPromptById(req.params.id);
+      if (!prompt) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+      res.json(prompt);
+    } catch (error) {
+      return handleError(error, res, "GetJournalPrompt");
+    }
+  });
+
+  app.get("/api/journal/prompts/category/:category", async (req, res) => {
+    try {
+      const prompts = getAllPrompts().filter(p => p.category === req.params.category);
+      res.json({ prompts, total: prompts.length });
+    } catch (error) {
+      return handleError(error, res, "GetPromptsByCategory");
+    }
+  });
+
+  app.post("/api/journal/entries", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { promptId, response, tags, mood, energyLevel, profileId } = req.body;
+      
+      if (!promptId || !response) {
+        return res.status(400).json({ message: "promptId and response are required" });
+      }
+
+      const prompt = getPromptById(promptId);
+      if (!prompt) {
+        return res.status(404).json({ message: "Prompt not found" });
+      }
+
+      // Get active transits if profile provided
+      let transitContext = null;
+      if (profileId) {
+        try {
+          const profile = await storage.getProfile(profileId);
+          if (profile && profile.astrologyData) {
+            const natalPositions = extractNatalPositions(profile.astrologyData);
+            const activeTransits = calculateActiveTransits(natalPositions, new Date());
+            transitContext = {
+              activeTransits: activeTransits.transits.map(t => `${t.planet} ${t.aspect} ${t.natalPlanet}`),
+              dominantTheme: activeTransits.dominantTheme
+            };
+          }
+        } catch (error) {
+          console.error("[Journal] Failed to get transits:", error);
+        }
+      }
+
+      const entry = await storage.createJournalEntry({
+        userId,
+        profileId: profileId || null,
+        date: new Date(),
+        prompt: prompt,
+        response,
+        tags: tags || [],
+        mood: mood || null,
+        energyLevel: energyLevel || null,
+        transitContext
+      });
+
+      res.json({ message: "Journal entry created", entry });
+    } catch (error) {
+      return handleError(error, res, "CreateJournalEntry");
+    }
+  });
+
+  app.get("/api/journal/entries", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { profileId, startDate, endDate, category } = req.query;
+      
+      const entries = await storage.getJournalEntries({
+        userId,
+        profileId: profileId as string | undefined,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        category: category as string | undefined
+      });
+
+      res.json({ entries, total: entries.length });
+    } catch (error) {
+      return handleError(error, res, "GetJournalEntries");
+    }
+  });
+
+  // Transits Calendar Endpoints
+  app.get("/api/transits/calendar", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const { startDate, endDate } = req.query;
+      const start = startDate ? new Date(startDate as string) : new Date();
+      const end = endDate ? new Date(endDate as string) : (() => {
+        const e = new Date();
+        e.setMonth(e.getMonth() + 1);
+        return e;
+      })();
+
+      const calendar = generateTransitsCalendar(profile, start, end);
+      res.json(calendar);
+    } catch (error) {
+      return handleError(error, res, "GetTransitsCalendar");
+    }
+  });
+
+  app.get("/api/transits/upcoming", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const days = parseInt(req.query.days as string) || 30;
+      const upcoming = getUpcomingSignificantTransits(profile, days);
+      res.json({ transits: upcoming, days });
+    } catch (error) {
+      return handleError(error, res, "GetUpcomingTransits");
+    }
+  });
+
+  // Progressions & Return Charts Endpoints
+  app.get("/api/progressions/solar-return", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const returnYear = parseInt(req.query.year as string) || new Date().getFullYear();
+      const solarReturn = calculateSolarReturn(profile, returnYear);
+      res.json(solarReturn);
+    } catch (error) {
+      return handleError(error, res, "GetSolarReturn");
+    }
+  });
+
+  app.get("/api/progressions/lunar-return", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const returnDate = req.query.date ? new Date(req.query.date as string) : new Date();
+      const lunarReturn = calculateLunarReturn(profile, returnDate);
+      res.json(lunarReturn);
+    } catch (error) {
+      return handleError(error, res, "GetLunarReturn");
+    }
+  });
+
+  app.get("/api/progressions/secondary", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const currentDate = req.query.date ? new Date(req.query.date as string) : new Date();
+      const progressions = calculateSecondaryProgressions(profile, currentDate);
+      res.json(progressions);
+    } catch (error) {
+      return handleError(error, res, "GetSecondaryProgressions");
+    }
+  });
+
+  // PDF Generation Endpoints
+  app.post("/api/pdf/profile", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const options = req.body.options || { template: 'full-profile', theme: 'mystical' };
+      const template = generateProfilePDF(profile, options);
+      const pdfBuffer = await renderPDF(template);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${profile.name}-soul-codex.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      return handleError(error, res, "GenerateProfilePDF");
+    }
+  });
+
+  app.post("/api/pdf/compatibility", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { profile1Id, profile2Id } = req.body;
+      if (!profile1Id || !profile2Id) {
+        return res.status(400).json({ message: "profile1Id and profile2Id are required" });
+      }
+
+      const profile1 = await storage.getProfile(profile1Id);
+      const profile2 = await storage.getProfile(profile2Id);
+      
+      if (!profile1 || !profile2) {
+        return res.status(404).json({ message: "One or both profiles not found" });
+      }
+
+      // Get compatibility data
+      const compatibility = await storage.getCompatibility(profile1Id, profile2Id);
+      if (!compatibility) {
+        return res.status(404).json({ message: "Compatibility analysis not found" });
+      }
+
+      const options = req.body.options || { template: 'compatibility', theme: 'mystical' };
+      const template = generateCompatibilityPDF(profile1, profile2, compatibility.compatibilityData, options);
+      const pdfBuffer = await renderPDF(template);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="compatibility-${profile1.name}-${profile2.name}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      return handleError(error, res, "GenerateCompatibilityPDF");
+    }
+  });
+
+  // Shareable Links Endpoints
+  app.post("/api/share/create", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { profileId, settings } = req.body;
+      if (!profileId) {
+        return res.status(400).json({ message: "profileId is required" });
+      }
+
+      const profile = await storage.getProfile(profileId);
+      if (!profile || profile.userId !== userId) {
+        return res.status(404).json({ message: "Profile not found or access denied" });
+      }
+
+      const shareableLink = await createShareableLink(storage, profileId, userId, settings);
+      res.json({ message: "Shareable link created", link: shareableLink });
+    } catch (error) {
+      return handleError(error, res, "CreateShareableLink");
+    }
+  });
+
+  app.get("/api/share/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { password } = req.query;
+
+      const shareableProfile = await getShareableProfile(storage, token, password as string | undefined);
+      if (!shareableProfile) {
+        return res.status(404).json({ message: "Shareable link not found or expired" });
+      }
+
+      res.json(shareableProfile);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Password required') {
+        return res.status(401).json({ message: "Password required", requiresPassword: true });
+      }
+      if (error instanceof Error && error.message === 'Invalid password') {
+        return res.status(401).json({ message: "Invalid password" });
+      }
+      return handleError(error, res, "GetShareableProfile");
+    }
+  });
+
+  app.get("/api/share/links", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const links = await getUserShareableLinks(storage, userId);
+      res.json({ links, total: links.length });
+    } catch (error) {
+      return handleError(error, res, "GetUserShareableLinks");
+    }
+  });
+
+  app.put("/api/share/links/:id", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { id } = req.params;
+      const { settings } = req.body;
+
+      const updated = await updateShareableLink(storage, id, settings);
+      res.json({ message: "Shareable link updated", link: updated });
+    } catch (error) {
+      return handleError(error, res, "UpdateShareableLink");
+    }
+  });
+
+  app.delete("/api/share/links/:id", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const { id } = req.params;
+      await deactivateShareableLink(storage, id);
+      res.json({ message: "Shareable link deactivated" });
+    } catch (error) {
+      return handleError(error, res, "DeactivateShareableLink");
+    }
+  });
+
+  // Transit Notifications Endpoints
+  app.post("/api/transits/check-notifications", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const count = await checkAndNotifySignificantTransits(profile, userId);
+      res.json({ message: `Checked transits and sent ${count} notifications`, count });
+    } catch (error) {
+      return handleError(error, res, "CheckTransitNotifications");
+    }
+  });
+
+  app.get("/api/transits/upcoming-notifications", async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const profile = await storage.getProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const days = parseInt(req.query.days as string) || 7;
+      const upcoming = await getUpcomingTransitNotifications(profile, days);
+      res.json({ notifications: upcoming, days });
+    } catch (error) {
+      return handleError(error, res, "GetUpcomingTransitNotifications");
     }
   });
 
