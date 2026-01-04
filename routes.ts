@@ -963,19 +963,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         soulArchetypeData = null;
       }
       
-      // Calculate Moral Compass (from birth data - can be enhanced with user answers later)
-      let moralCompassData;
-      try {
-        moralCompassData = calculateMoralCompassFromBirthData(
-          numerologyData?.calculateNumerology?.lifePath,
-          astrologyData?.sunSign,
-          astrologyData?.moonSign
-        );
-      } catch (error) {
-        console.error("[CreateProfile] Moral Compass calculation failed:", error);
-        moralCompassData = null;
-      }
-      
       // Calculate Parental Influence (uses parent signs if provided)
       let parentalInfluenceData;
       try {
