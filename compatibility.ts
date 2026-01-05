@@ -960,7 +960,8 @@ function createCompatibilitySynthesis(
   astro: CompatibilityResult['astrology'],
   num: CompatibilityResult['numerology'],
   hd: CompatibilityResult['humanDesign'],
-  pers: CompatibilityResult['personality']
+  pers: CompatibilityResult['personality'],
+  moralCompass?: { score: number; description: string; alignment: string[] }
 ): CompatibilityResult['synthesis'] {
   const strengths: string[] = [];
   const challenges: string[] = [];
@@ -973,6 +974,7 @@ function createCompatibilitySynthesis(
   if (num.lifePathCompatibility.score >= 85) strengths.push('Aligned life purposes');
   if (hd.channelConnections.count > 0) strengths.push('Energetic activation and chemistry');
   if (pers.enneagramCompatibility.score >= 85) strengths.push('Compatible core motivations');
+  if (moralCompass && moralCompass.score >= 80) strengths.push('Shared values and ethical alignment');
 
   // Identify challenges
   if (astro.sunCompatibility.score < 70) challenges.push('Different core values require understanding');
@@ -1018,11 +1020,70 @@ function createCompatibilitySynthesis(
   };
 }
 
+// Moral Compass & Values Compatibility
+function calculateMoralCompassCompatibility(profile1: Profile, profile2: Profile): { score: number; description: string; alignment: string[] } {
+  const moral1 = (profile1 as any).moralCompassData;
+  const moral2 = (profile2 as any).moralCompassData;
+  
+  if (!moral1 || !moral2) {
+    return { score: 50, description: 'Moral compass data unavailable', alignment: [] };
+  }
+  
+  // Compare compass types
+  let score = 50;
+  const alignment: string[] = [];
+  
+  if (moral1.compassType === moral2.compassType) {
+    score = 90;
+    alignment.push(`Both are ${moral1.compassType}s - shared values and ethical framework`);
+  } else {
+    // Check for complementary types
+    const complementaryPairs: Record<string, string[]> = {
+      'Guardian': ['Protector', 'Builder'],
+      'Explorer': ['Visionary', 'Builder'],
+      'Builder': ['Guardian', 'Protector'],
+      'Protector': ['Guardian', 'Visionary'],
+      'Visionary': ['Explorer', 'Protector']
+    };
+    
+    if (complementaryPairs[moral1.compassType]?.includes(moral2.compassType)) {
+      score = 75;
+      alignment.push(`${moral1.compassType} and ${moral2.compassType} complement each other's values`);
+    } else {
+      score = 60;
+      alignment.push(`${moral1.compassType} and ${moral2.compassType} have different value systems - growth through understanding`);
+    }
+  }
+  
+  // Compare core values overlap
+  const values1 = moral1.coreValues || [];
+  const values2 = moral2.coreValues || [];
+  const sharedValues = values1.filter(v => values2.includes(v));
+  
+  if (sharedValues.length > 0) {
+    score += Math.min(15, sharedValues.length * 3);
+    alignment.push(`Shared values: ${sharedValues.join(', ')}`);
+  }
+  
+  const description = score >= 80 
+    ? 'Strong alignment in values and ethical framework. You share similar moral compasses.'
+    : score >= 65
+    ? 'Complementary values that can balance each other. Different perspectives create growth.'
+    : 'Different value systems require conscious understanding and respect for each other\'s moral framework.';
+  
+  return {
+    score: Math.min(100, score),
+    description,
+    alignment
+  };
+}
+
 export function calculateCompatibility(profile1: Profile, profile2: Profile): any {
   const astrology = calculateAstrologyCompatibility(profile1, profile2);
   const numerology = calculateNumerologyCompatibility(profile1, profile2);
   const humanDesign = calculateHumanDesignCompatibility(profile1, profile2);
   const personality = calculatePersonalityCompatibility(profile1, profile2);
+  const moralCompass = calculateMoralCompassCompatibility(profile1, profile2);
 
   // Calculate ALL 15 new advanced systems compatibility
   const vedic = calculateVedicCompatibility(profile1, profile2);
@@ -1050,15 +1111,16 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
      arabicParts.score + fixedStars.score + kabbalah.score + tarot.score) / 16
   );
 
-  const synthesis = createCompatibilitySynthesis(astrology, numerology, humanDesign, personality);
+  const synthesis = createCompatibilitySynthesis(astrology, numerology, humanDesign, personality, moralCompass);
 
-  // Calculate overall score with proper weights (ALL 30+ SYSTEMS INCLUDED)
+  // Calculate overall score with proper weights (ALL 30+ SYSTEMS + MORAL COMPASS INCLUDED)
   const overallScore = Math.round(
-    astrology.score * 0.30 +
-    numerology.score * 0.20 +
-    humanDesign.score * 0.20 +
-    personality.score * 0.20 +
-    spiritualScore * 0.10  // Now calculated from ALL 15 advanced systems!
+    astrology.score * 0.25 +
+    numerology.score * 0.18 +
+    humanDesign.score * 0.18 +
+    personality.score * 0.18 +
+    moralCompass.score * 0.08 +
+    spiritualScore * 0.13  // Now calculated from ALL 15 advanced systems!
   );
 
   // Get profile data for astrology
@@ -1189,9 +1251,19 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
           }
         }
       },
+      moralCompass: {
+        score: moralCompass.score,
+        weight: 8,
+        details: {
+          compassAlignment: {
+            description: moralCompass.description,
+            alignment: moralCompass.alignment
+          }
+        }
+      },
       personality: {
         score: personality.score,
-        weight: 20,
+        weight: 18,
         details: {
           enneagramDynamics: {
             person1Type: String(pers1?.enneagram?.type || ''),
@@ -1212,7 +1284,7 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
       },
       spiritual: {
         score: spiritualScore,  // NOW CALCULATED FROM ALL 15 ADVANCED SYSTEMS!
-        weight: 10,
+        weight: 13,
         details: {
           vedic: { score: vedic.score, insights: [vedic.description] },
           chinese: { score: chinese.score, insights: [chinese.description] },

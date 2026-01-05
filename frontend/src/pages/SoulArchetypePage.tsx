@@ -5,6 +5,9 @@ import { CoreStrengths } from '../components/soul-archetype/CoreStrengths'
 import { ShadowAspects } from '../components/soul-archetype/ShadowAspects'
 import { Purpose } from '../components/soul-archetype/Purpose'
 import { SoulArchitecture } from '../components/soul-archetype/SoulArchitecture'
+import { ElementalMedicine } from '../components/soul-archetype/ElementalMedicine'
+import { MoralCompass } from '../components/soul-archetype/MoralCompass'
+import { ParentalInfluence } from '../components/soul-archetype/ParentalInfluence'
 
 interface SoulArchetype {
   soul_frequency: any
@@ -13,6 +16,9 @@ interface SoulArchetype {
   shadow_aspects: string[]
   purpose: string
   soul_architecture: any
+  elementalMedicineData?: any
+  moralCompassData?: any
+  parentalInfluenceData?: any
 }
 
 export function SoulArchetypePage() {
@@ -20,25 +26,28 @@ export function SoulArchetypePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // For testing: Generate with sample data
-    const testData = {
+    // Fetch unique archetype from backend
+    // Note: In production, this should receive birth_data from user input
+    const requestData = {
       birth_data: {
-        date: "1990-01-01",
-        time: "12:00",
-        location: "New York, NY",
-        timezone: "America/New_York"
+        name: "User",
+        birthDate: "1990-01-01",
+        birthTime: "12:00",
+        birthLocation: "New York, NY",
+        timezone: "America/New_York",
+        latitude: "40.7128",
+        longitude: "-74.0060"
       },
-      user_id: `test-user-${Date.now()}`,
+      user_id: `user-${Date.now()}`,
       all_systems: {}
     }
 
-    // Fetch unique archetype from backend
     fetch('/api/soul-archetype', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(testData)
+      body: JSON.stringify(requestData)
     })
       .then(res => res.json())
       .then(data => {
@@ -47,6 +56,7 @@ export function SoulArchetypePage() {
       })
       .catch(err => {
         console.error('Error fetching archetype:', err)
+<<<<<<< HEAD
         // Fallback to test data if backend not available - includes soul code, moral compass, environment, and parents
         setArchetype({
           soul_frequency: { frequency: "432 Hz", resonance: "Harmonic", vibration: "High" },
@@ -61,7 +71,10 @@ export function SoulArchetypePage() {
             integration: "All 30+ Systems Unified"
           }
         })
+=======
+>>>>>>> 62818d095dbb6f1e1db288353f35af30509dd6e3
         setLoading(false)
+        // Show error - no fallback data in production mode
       })
   }, [])
 
@@ -98,6 +111,11 @@ export function SoulArchetypePage() {
       <ShadowAspects data={archetype.shadow_aspects} />
       <Purpose data={archetype.purpose} />
       <SoulArchitecture data={archetype.soul_architecture} />
+      
+      {/* New Features */}
+      <ElementalMedicine data={archetype.elementalMedicineData} />
+      <MoralCompass data={archetype.moralCompassData} />
+      <ParentalInfluence data={archetype.parentalInfluenceData} />
     </div>
   )
 }

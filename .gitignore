@@ -28,3 +28,8 @@ rapid_build_success
 # Temporary scripts
 apply_vite_server_fix_and_push.sh
 create_pr_and_files.sh
+
+# Environment variables
+.env
+.env.local
+.env.*.local
