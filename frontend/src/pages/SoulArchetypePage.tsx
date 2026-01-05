@@ -47,10 +47,10 @@ export function SoulArchetypePage() {
       })
       .catch(err => {
         console.error('Error fetching archetype:', err)
-        // Fallback to test data if backend not available
+        // Fallback to test data if backend not available - includes soul code, moral compass, environment, and parents
         setArchetype({
           soul_frequency: { frequency: "432 Hz", resonance: "Harmonic", vibration: "High" },
-          who_i_am: "You are a unique soul with a cosmic blueprint unlike any other. Your journey through the mystical systems creates an identity that is entirely your own.",
+          who_i_am: "Your soul code is written in the stars and grounded in the streets where your moral compass was forged. You carry the wisdom of your ancestors and the resilience of your environment, blending cosmic patterns with real-world understanding. The elements flow through you—Water's deep intuition, Metal's protective boundaries, Air's clear communication, Fire's transformative power, Earth's steady grounding—expressed through Western, Eastern (TCM/Ayurveda), and African wisdom traditions. Your parents' legacy lives in you—their gifts, their struggles, their strength—woven into your unique elemental blueprint. This combination of celestial design, earthly context, and elemental energies makes you entirely your own.",
           core_strengths: ["Intuitive Wisdom", "Creative Expression", "Transformative Power"],
           shadow_aspects: ["Perfectionism", "Overthinking", "Emotional Intensity"],
           purpose: "To bridge the mystical and material worlds, bringing ancient wisdom into modern life.",

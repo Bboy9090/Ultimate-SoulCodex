@@ -1,8 +1,56 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { WhoIAm } from '../components/soul-archetype/WhoIAm'
 
 export function LandingPage() {
+  const [whoIAmContent, setWhoIAmContent] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Fetch Who I Am content for demo/landing
+    const testData = {
+      birth_data: {
+        date: "1990-01-01",
+        time: "12:00",
+        location: "New York, NY",
+        timezone: "America/New_York"
+      },
+      user_id: `landing-demo-${Date.now()}`,
+      all_systems: {}
+    }
+
+    fetch('/api/soul-archetype', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testData)
+    })
+      .then(res => res.json())
+      .then(data => {
+        setWhoIAmContent(data.who_i_am || "Your soul code is written in the stars and grounded in the streets where your moral compass was forged. You carry the wisdom of your ancestors and the resilience of your environment, blending cosmic patterns with real-world understanding. The elements flow through you—Water's deep intuition, Metal's protective boundaries, Air's clear communication, Fire's transformative power, Earth's steady grounding—expressed through Western, Eastern (TCM/Ayurveda), and African wisdom traditions. Your parents' legacy lives in you—their gifts, their struggles, their strength—woven into your unique elemental blueprint. This combination of celestial design, earthly context, and elemental energies makes you entirely your own.")
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Error fetching archetype:', err)
+        // Fallback content - includes soul code, moral compass, environment, parents, and elemental energies
+        setWhoIAmContent("Your soul code is written in the stars and grounded in the streets where your moral compass was forged. You carry the wisdom of your ancestors and the resilience of your environment, blending cosmic patterns with real-world understanding. The elements flow through you—Water's deep intuition, Metal's protective boundaries, Air's clear communication, Fire's transformative power, Earth's steady grounding—expressed through Western, Eastern (TCM/Ayurveda), and African wisdom traditions. Your parents' legacy lives in you—their gifts, their struggles, their strength—woven into your unique elemental blueprint. This combination of celestial design, earthly context, and elemental energies makes you entirely your own.")
+        setLoading(false)
+      })
+  }, [])
+
   return (
     <div className="landing-page">
+      {/* Who I Am Hero Section - Render's Clean + Replit's Mystical Colors */}
+      {!loading && whoIAmContent && (
+        <section className="hero-who-i-am">
+          <WhoIAm 
+            content={whoIAmContent}
+            className="favorite-section highlighted hero-who-i-am-content"
+          />
+        </section>
+      )}
+      
       <section className="hero-section">
         <h1 className="hero-title">Unveil Your Cosmic Blueprint</h1>
         <p className="hero-subtitle">

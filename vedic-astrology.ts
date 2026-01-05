@@ -272,14 +272,30 @@ export function calculateVedicAstrology(params: {
   const saturnVec = Astronomy.GeoVector(Astronomy.Body.Saturn, zonedDate, false);
   const saturnEcl = Astronomy.Ecliptic(saturnVec);
   
-  // Calculate Rahu (North Node) and Ketu (South Node) - approximate calculation
-  // Using Moon's orbital node calculation (simplified)
-  const moonLongitude = moonEcl.lon;
-  const rahuLongitude = (moonLongitude + 90) % 360; // Simplified node calculation
+  // Calculate Rahu (North Node) and Ketu (South Node) - PROPER CALCULATION
+  // Rahu = Moon's North Node (Ascending Node) in sidereal zodiac
+  // Ketu = Moon's South Node (Descending Node) in sidereal zodiac
+  // Uses proper lunar node calculation matching Western astrology standard
+  const observer: Astronomy.Observer = { latitude, longitude, height: 0 };
+  const nodeEvent = Astronomy.SearchMoonNode(zonedDate);
+  const nodeTime = nodeEvent.time.date;
+  const daysSinceNode = (zonedDate.getTime() - nodeTime.getTime()) / (1000 * 60 * 60 * 24);
+  const nodeRetrogradeDegrees = daysSinceNode * 0.0529; // Moon nodes move ~0.0529° per day retrograde
+  
+  const currentMoonEq = Astronomy.Equator(Astronomy.Body.Moon, nodeTime, observer, true, true);
+  const currentMoonEcl = Astronomy.Ecliptic(currentMoonEq.vec);
+  const nodeAtEventLongitude = currentMoonEcl.elon;
+  
+  let northNodeLongitudeTropical = (nodeAtEventLongitude - nodeRetrogradeDegrees + 360) % 360;
+  if (nodeEvent.kind !== Astronomy.NodeEventKind.Ascending) {
+    northNodeLongitudeTropical = (northNodeLongitudeTropical + 180) % 360;
+  }
+  
+  // Convert to sidereal zodiac (Rahu/Ketu are always calculated in sidereal)
+  const rahuLongitude = tropicalToSidereal(northNodeLongitudeTropical);
   const ketuLongitude = (rahuLongitude + 180) % 360;
   
   // Calculate ascendant (sidereal) - simplified calculation
-  const observer: Astronomy.Observer = { latitude, longitude, height: 0 };
   const siderealTime = Astronomy.SiderealTime(zonedDate);
   const ascendantTropical = siderealTime * 15; // Convert hours to degrees
   const ascendantSidereal = tropicalToSidereal(ascendantTropical);
