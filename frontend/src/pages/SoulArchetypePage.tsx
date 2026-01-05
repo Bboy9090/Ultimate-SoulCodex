@@ -56,7 +56,6 @@ export function SoulArchetypePage() {
       })
       .catch(err => {
         console.error('Error fetching archetype:', err)
-<<<<<<< HEAD
         // Fallback to test data if backend not available - includes soul code, moral compass, environment, and parents
         setArchetype({
           soul_frequency: { frequency: "432 Hz", resonance: "Harmonic", vibration: "High" },
@@ -71,8 +70,6 @@ export function SoulArchetypePage() {
             integration: "All 30+ Systems Unified"
           }
         })
-=======
->>>>>>> 62818d095dbb6f1e1db288353f35af30509dd6e3
         setLoading(false)
         // Show error - no fallback data in production mode
       })
