@@ -6,7 +6,7 @@ VOLUME VI — HUMAN DESIGN
 
 (Energy Mechanics · Decision Integrity · Burnout Prevention)
 
-⸻
+---
 
 SECTION 1 — HOW SOUL CODEX USES HUMAN DESIGN
 
@@ -23,13 +23,13 @@ In Soul Codex:
 
 Everything is framed as mechanics + awareness + choice.
 
-⸻
+---
 
 SECTION 2 — TYPES (ENERGY STRATEGY, NOT IDENTITY)
 
 Types describe how energy interacts with the world — not personality.
 
-⸻
+---
 
 GENERATOR — SUSTAINED ENERGY & RESPONSE
 
@@ -53,7 +53,7 @@ Initiating from the mind instead of responding with the body.
 Integration
 Let energy approve before commitment.
 
-⸻
+---
 
 MANIFESTING GENERATOR — MULTI-THREAD ENERGY
 
@@ -77,7 +77,7 @@ Skipping steps without alignment.
 Integration
 Pause briefly — then move fast.
 
-⸻
+---
 
 PROJECTOR — GUIDANCE & PERCEPTION
 
@@ -101,7 +101,7 @@ Trying to keep up with energy types.
 Integration
 Recognition validates insight.
 
-⸻
+---
 
 MANIFESTOR — INITIATION & IMPACT
 
@@ -125,7 +125,7 @@ Anger from restriction.
 Integration
 Informing others reduces resistance.
 
-⸻
+---
 
 REFLECTOR — ENVIRONMENTAL MIRROR
 
@@ -149,13 +149,13 @@ Staying in misaligned environments.
 Integration
 Environment determines well-being.
 
-⸻
+---
 
 SECTION 3 — AUTHORITIES (DECISION MECHANICS)
 
 Authority explains how decisions succeed.
 
-⸻
+---
 
 SACRAL AUTHORITY
 
@@ -168,7 +168,7 @@ Decisions fail when energy is overridden.
 Integration
 Wait for bodily confirmation.
 
-⸻
+---
 
 EMOTIONAL AUTHORITY
 
@@ -181,7 +181,7 @@ Emotional waves distort immediate decisions.
 Integration
 Wait for emotional neutrality.
 
-⸻
+---
 
 SPLENIC AUTHORITY
 
@@ -194,7 +194,7 @@ Safety and timing operate in the present.
 Integration
 Trust first impressions.
 
-⸻
+---
 
 EGO / HEART AUTHORITY
 
@@ -207,7 +207,7 @@ Commitment must be genuine.
 Integration
 Promise only what you mean.
 
-⸻
+---
 
 SELF-PROJECTED AUTHORITY
 
@@ -220,7 +220,7 @@ Truth emerges through hearing yourself speak.
 Integration
 Talk decisions out loud.
 
-⸻
+---
 
 ENVIRONMENTAL AUTHORITY (REFLECTOR)
 
@@ -233,7 +233,7 @@ Decisions reflect context.
 Integration
 Change environment before deciding.
 
-⸻
+---
 
 SECTION 4 — CENTERS (ENERGY FUNCTIONS)
 
@@ -250,7 +250,7 @@ Each center explains:
 
 (All 9 centers follow this structure.)
 
-⸻
+---
 
 SECTION 5 — GATES & CHANNELS (SKILL PATHWAYS)
 
@@ -264,7 +264,7 @@ Soul Codex always translates them into:
 
 No gate is listed without life context.
 
-⸻
+---
 
 SECTION 6 — PROFILE (INTERACTION STYLE)
 
@@ -281,7 +281,7 @@ Others see potential you may not claim yet.
 Growth
 Claim your skill consciously.
 
-⸻
+---
 
 SECTION 7 — CROSS-SYSTEM ALIGNMENT
 
@@ -293,7 +293,7 @@ Human Design insights are cross-checked against:
 Agreement = confidence
 Tension = explanation, not conflict
 
-⸻
+---
 
 STATUS
 
@@ -301,7 +301,7 @@ STATUS
 ✔ All authorities grounded
 ✔ No obedience or hierarchy language
 
-⸻
+---
 
 NEXT VOLUME
 

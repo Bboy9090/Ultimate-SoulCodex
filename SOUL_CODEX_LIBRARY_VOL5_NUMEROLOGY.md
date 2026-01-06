@@ -6,7 +6,7 @@ VOLUME V — NUMEROLOGY
 
 (Behavioral Drivers · Life Cycles · Repeating Signals)
 
-⸻
+---
 
 SECTION 1 — HOW SOUL CODEX USES NUMEROLOGY
 
@@ -23,7 +23,7 @@ Numerology in Soul Codex is:
 
 If a number does not repeat across systems, it is treated as context, not command.
 
-⸻
+---
 
 SECTION 2 — CORE NUMBERS & WHAT THEY MEAN
 
@@ -33,7 +33,7 @@ Each core number answers:
 •How growth stabilizes you
 •How maturity looks in practice
 
-⸻
+---
 
 NUMBER 1 — INITIATION & SELF-DEFINITION
 
@@ -59,7 +59,7 @@ Learning collaboration without losing self.
 Mature Expression
 Confident leadership that empowers others.
 
-⸻
+---
 
 NUMBER 2 — COOPERATION & SENSITIVITY
 
@@ -85,7 +85,7 @@ Maintaining boundaries while connecting.
 Mature Expression
 Balanced partnership and emotional wisdom.
 
-⸻
+---
 
 NUMBER 3 — EXPRESSION & CREATIVE FLOW
 
@@ -110,7 +110,7 @@ Depth over performance.
 Mature Expression
 Expression that inspires rather than seeks attention.
 
-⸻
+---
 
 NUMBER 4 — STRUCTURE & STABILITY
 
@@ -136,7 +136,7 @@ Flexibility without collapse.
 Mature Expression
 Stable systems that support growth.
 
-⸻
+---
 
 NUMBER 5 — FREEDOM & ADAPTATION
 
@@ -161,7 +161,7 @@ Consistency without confinement.
 Mature Expression
 Freedom guided by purpose.
 
-⸻
+---
 
 NUMBER 6 — RESPONSIBILITY & CARE
 
@@ -187,7 +187,7 @@ Care without self-erasure.
 Mature Expression
 Healthy leadership through compassion.
 
-⸻
+---
 
 NUMBER 7 — INSIGHT & TRUTH-SEEKING
 
@@ -213,7 +213,7 @@ Trusting lived experience.
 Mature Expression
 Quiet authority grounded in understanding.
 
-⸻
+---
 
 NUMBER 8 — POWER & MANIFESTATION
 
@@ -239,7 +239,7 @@ Power without exploitation.
 Mature Expression
 Ethical authority and sustainable success.
 
-⸻
+---
 
 NUMBER 9 — INTEGRATION & COMPLETION
 
@@ -264,7 +264,7 @@ Letting go without loss of self.
 Mature Expression
 Wisdom expressed through contribution.
 
-⸻
+---
 
 MASTER NUMBERS (11 · 22 · 33)
 
@@ -277,7 +277,7 @@ They follow the same rules:
 
 They are always paired with their base number for balance.
 
-⸻
+---
 
 SECTION 3 — LIFE CYCLES & PERSONAL YEARS
 
@@ -294,7 +294,7 @@ Example:
 
 “This cycle emphasizes consolidation rather than expansion.”
 
-⸻
+---
 
 SECTION 4 — REPEATING NUMBERS (WHY THEY SHOW UP)
 
@@ -305,7 +305,7 @@ Repeating numbers indicate:
 
 They are signals, not commands.
 
-⸻
+---
 
 SECTION 5 — CROSS-SYSTEM CONFIRMATION (CRITICAL)
 
@@ -317,7 +317,7 @@ Numerology insights are always cross-checked against:
 When systems agree → confidence increases
 When they differ → tension is explained
 
-⸻
+---
 
 STATUS
 
@@ -325,7 +325,7 @@ STATUS
 ✔ Behavioral framing locked
 ✔ No predictive language
 
-⸻
+---
 
 NEXT VOLUME
 

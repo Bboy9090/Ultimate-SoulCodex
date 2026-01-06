@@ -6,7 +6,7 @@ VOLUME VII — GENE KEYS
 
 (Shadow · Gift · Integration in Real Life)
 
-⸻
+---
 
 SECTION 1 — HOW SOUL CODEX USES GENE KEYS
 
@@ -24,7 +24,7 @@ Each Gene Key always includes:
 There is no bypassing the Shadow.
 Growth happens through awareness, not denial.
 
-⸻
+---
 
 SECTION 2 — THE GENE KEY TRANSLATION RULE
 
@@ -36,14 +36,14 @@ Every Gene Key must answer four questions:
 
 If any Gene Key cannot answer these, it is not shown.
 
-⸻
+---
 
 SECTION 3 — CORE GENE KEY THEMES (UNIVERSAL LANGUAGE)
 
 Below are canonical translations for the most common Gene Key themes.
 (All 64 keys follow this same structure.)
 
-⸻
+---
 
 THEME: REPRESSION → SENSITIVITY → REFINEMENT
 
@@ -68,7 +68,7 @@ How it shows up
 Integration
 Name feelings early. Sensitivity prevents explosion.
 
-⸻
+---
 
 THEME: GREED → ASPIRATION → DETACHMENT
 
@@ -92,7 +92,7 @@ How it shows up
 Integration
 Ask: “What am I trying to secure?”
 
-⸻
+---
 
 THEME: MEDIOCRITY → EXCELLENCE → MAGIC
 
@@ -115,7 +115,7 @@ How it shows up
 Integration
 Care creates magic.
 
-⸻
+---
 
 THEME: ARROGANCE → LEADERSHIP → HUMILITY
 
@@ -138,7 +138,7 @@ How it shows up
 Integration
 Leadership listens.
 
-⸻
+---
 
 THEME: DISHONOR → COURTESY → GRACE
 
@@ -161,7 +161,7 @@ How it shows up
 Integration
 Pause before reacting.
 
-⸻
+---
 
 SECTION 4 — GENE KEYS IN DAILY LIFE
 
@@ -178,7 +178,7 @@ Example:
 
 No abstract enlightenment claims.
 
-⸻
+---
 
 SECTION 5 — GENE KEYS & SHADOW COMPASSION
 
@@ -193,7 +193,7 @@ Every Shadow includes:
 
 This prevents shame-based interpretation.
 
-⸻
+---
 
 SECTION 6 — GENE KEYS & CROSS-SYSTEM ALIGNMENT
 
@@ -210,7 +210,7 @@ When they differ:
 
 “Different parts of you respond differently under stress.”
 
-⸻
+---
 
 SECTION 7 — HOW SOUL CODEX PRESENTS GENE KEYS (UX)
 •Shadow first (honesty)
@@ -220,7 +220,7 @@ SECTION 7 — HOW SOUL CODEX PRESENTS GENE KEYS (UX)
 
 Never overwhelming. Never moralizing.
 
-⸻
+---
 
 STATUS
 
@@ -228,7 +228,7 @@ STATUS
 ✔ Shadow framed with compassion
 ✔ No bypassing or spiritual superiority
 
-⸻
+---
 
 NEXT VOLUME
 
