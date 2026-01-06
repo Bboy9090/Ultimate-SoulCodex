@@ -28,6 +28,7 @@ This document captures the non-negotiable standards for the completed Soul Codex
 ## 3) System Translation Templates (Applies to 30+ Systems)
 Each template includes surface meaning, lived expression, shadow/overuse, and integration. No fatalism, no superiority language, no fear hooks.
 
+This section documents the template patterns using representative systems only. The subsections below (Astrology, Numerology, Human Design, Gene Keys, Tarot, I Ching, Runes, Elements, Chakras / Energy Systems) are examples, not an exhaustive enumeration of all 30+ systems wired into the engine. The full, authoritative list of supported systems MUST be maintained in the living **System Registry** (implementation document) and kept in sync with this canon.
 ### Astrology (Planets, Signs, Houses, Aspects)
 - Planet = function; Sign = style; House = life arena; Aspect = relationship between functions.
 - **Planet-in-Planet example (Moon in Jupiter):** emotional regulation operates through meaning and expansion; nourished by purpose; shadow is overextension or bypass via optimism; integration is growth with boundaries.
