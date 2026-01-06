@@ -3,6 +3,7 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
+<<<<<<< HEAD
 *.tar.gz
 
 # Agent state files
@@ -33,3 +34,6 @@ create_pr_and_files.sh
 .env
 .env.local
 .env.*.local
+=======
+*.tar.gz
+>>>>>>> 19a4477 (Update project structure and component styling across the application)
