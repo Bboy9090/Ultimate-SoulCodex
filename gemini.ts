@@ -1,33 +1,46 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-// Standardizing for Render deployment
-const apiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+// Use Replit AI integration for Gemini
+const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
-if (!apiKey || apiKey === "_DUMMY_API_KEY_") {
-  console.warn("GEMINI_API_KEY is missing or dummy. AI features will be disabled.");
+// Check if configured
+const hasReplitIntegration = !!baseUrl && !!apiKey;
+const hasManualKey = !baseUrl && !!apiKey && apiKey !== "_DUMMY_API_KEY_";
+
+if (!hasReplitIntegration && !hasManualKey) {
+  console.warn("Gemini AI not configured. AI features will use fallback templates.");
+} else {
+  console.log("Gemini AI configured via", hasReplitIntegration ? "Replit AI integration" : "manual API key");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey || "");
+// Create Gemini client with Replit AI integration
+const ai = hasReplitIntegration 
+  ? new GoogleGenAI({
+      apiKey: apiKey!,
+      httpOptions: {
+        apiVersion: "",
+        baseUrl: baseUrl,
+      },
+    })
+  : null;
 
 export function isGeminiAvailable() {
-  return !!apiKey && apiKey !== "_DUMMY_API_KEY_";
+  return hasReplitIntegration || hasManualKey;
 }
 
 export async function generateText({ model, prompt, temperature = 0.7 }: { model?: string; prompt: string; temperature?: number; }): Promise<string> {
-  if (!isGeminiAvailable()) return "";
+  if (!isGeminiAvailable() || !ai) return "";
   try {
-    const geminiModel = genAI.getGenerativeModel({ model: model || "gemini-1.5-flash" });
-    const result = await geminiModel.generateContent({
-      contents: [
-        { role: "user", parts: [{ text: prompt }] }
-      ],
-      generationConfig: {
+    const response = await ai.models.generateContent({
+      model: model || "gemini-2.5-flash",
+      contents: prompt,
+      config: {
         temperature,
         maxOutputTokens: 1024,
-      }
+      },
     });
-    const text = result.response.text();
-    return text || "";
+    return response.text || "";
   } catch (e) {
     console.error("Gemini generateText error:", e);
     return "";
@@ -35,26 +48,29 @@ export async function generateText({ model, prompt, temperature = 0.7 }: { model
 }
 
 export async function* streamChat({ model, systemInstruction, history, message, temperature }: any) {
-  const geminiModel = genAI.getGenerativeModel({ 
-    model: model || "gemini-1.5-flash",
-    systemInstruction 
-  });
-
-  const chat = geminiModel.startChat({
-    history: history.map((h: any) => ({
+  if (!ai) throw new Error("Gemini not configured");
+  
+  const contents = [
+    ...history.map((h: any) => ({
       role: h.role === 'user' ? 'user' : 'model',
       parts: [{ text: h.content }]
     })),
-    generationConfig: { 
-      temperature: temperature || 0.7,
-      maxOutputTokens: 1000,
-    }
-  });
+    { role: 'user', parts: [{ text: message }] }
+  ];
 
   try {
-    const result = await chat.sendMessageStream(message);
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
+    const stream = await ai.models.generateContentStream({
+      model: model || "gemini-2.5-flash",
+      contents,
+      config: {
+        systemInstruction,
+        temperature: temperature || 0.7,
+        maxOutputTokens: 1000,
+      },
+    });
+
+    for await (const chunk of stream) {
+      const text = chunk.text;
       if (text) yield text;
     }
   } catch (error) {
