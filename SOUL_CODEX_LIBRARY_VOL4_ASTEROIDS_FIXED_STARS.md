@@ -310,6 +310,6 @@ STATUS
 NEXT VOLUME
 
 Volume V — Numerology (All Numbers as Behavior Patterns)
-(Why numbers repeat · How cycles shape experience · No fortune-cookie math)
+(Behavioral Drivers · Life Cycles · Repeating Signals)
 
 Say “Continue” when ready.

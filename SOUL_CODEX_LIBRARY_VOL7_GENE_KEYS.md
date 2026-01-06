@@ -29,10 +29,10 @@ Growth happens through awareness, not denial.
 SECTION 2 — THE GENE KEY TRANSLATION RULE
 
 Every Gene Key must answer four questions:
-1.What does this look like when I’m stressed?
-2.What does this look like when I’m conscious?
-3.How does this show up in ordinary life?
-4.What helps me shift states?
+1. What does this look like when I’m stressed?
+2. What does this look like when I’m conscious?
+3. How does this show up in ordinary life?
+4. What helps me shift states?
 
 If any Gene Key cannot answer these, it is not shown.
 

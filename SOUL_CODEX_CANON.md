@@ -10,19 +10,27 @@ This document captures the non-negotiable standards for the completed Soul Codex
 ## 2) Explanation Engine Architecture
 - **Pipeline:** Raw calculation → Symbol resolver → Meaning translator → Personal context mapper → Cross-system synthesizer → UX narrator. Failure at any stage stops rendering and surfaces a user-facing state rather than placeholder text.
 - **MeaningTranslation contract:**
-  - `whatItIs`
-  - `whyItExists`
-  - `whyItMattersToUser`
-  - `realLifeManifestations[]` (patterns, habits, stress responses)
-  - `shadowPattern?`
-  - `growthPotential`
-  - `integrationPrompt`
+  ```ts
+  interface MeaningTranslation {
+    whatItIs: string;
+    whyItExists: string;
+    whyItMattersToUser: string;
+    realLifeManifestations: string[]; // patterns, habits, stress responses
+    shadowPattern?: string;
+    growthPotential: string;
+    integrationPrompt: string;
+  }
+  ```
 - **SynthesisInsight contract:**
-  - `coreTheme`
-  - `supportingSignals[]`
-  - `conflictingSignals[]?`
-  - `livedExperienceSummary`
-  - `integrationGuidance`
+  ```ts
+  interface SynthesisInsight {
+    coreTheme: string;
+    supportingSignals: string[];
+    conflictingSignals?: string[];
+    livedExperienceSummary: string;
+    integrationGuidance: string;
+  }
+  ```
 - **Explanation density modes:** `essence` (2–3 sentences), `expanded` (1–2 paragraphs), `deepDive` (system mechanics), `scholar` (lineage + math). Scholar is opt-in only.
 
 ## 3) System Translation Templates (Applies to 30+ Systems)

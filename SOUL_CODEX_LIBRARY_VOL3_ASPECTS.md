@@ -158,4 +158,4 @@ No fear. No hierarchy.
 
 ## Next Volume
 
-Volume IV — Asteroids & Fixed Stars (Micro-archetypes · Subtle destiny tones · No trivia allowed)
+Volume IV — Asteroids & Fixed Stars (Micro-Archetypes · Subtle Destiny Tones · Zero Trivia)

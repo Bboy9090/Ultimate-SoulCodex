@@ -330,6 +330,6 @@ STATUS
 NEXT VOLUME
 
 Volume VI — Human Design (Biology + Psychology, No Dogma)
-(How energy moves · How decisions succeed · Why burnout happens)
+(Energy Mechanics · Decision Integrity · Burnout Prevention)
 
 Say “Continue” when ready.

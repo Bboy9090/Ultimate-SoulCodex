@@ -306,6 +306,6 @@ STATUS
 NEXT VOLUME
 
 Volume VII — Gene Keys
-(Shadow → Gift → Integration · Real Life Translation)
+(Shadow · Gift · Integration in Real Life)
 
 Say “Continue” when ready.

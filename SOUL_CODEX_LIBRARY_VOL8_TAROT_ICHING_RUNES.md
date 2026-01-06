@@ -228,10 +228,10 @@ If symbolism contradicts mechanics, mechanics win.
 ---
 
 SECTION 8 — UX RULES FOR SYMBOLIC SYSTEMS
-•Symbols appear after core synthesis
-•Never appear without explanation
-•Always include choice framing
-•Never appear alone or out of context
+•Symbols appear after core synthesis.
+•Never appear without explanation.
+•Always include choice framing.
+•Never appear alone or out of context.
 
 These systems support awareness, they never dominate it.
 
