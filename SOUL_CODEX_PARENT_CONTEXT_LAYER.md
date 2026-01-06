@@ -117,7 +117,7 @@ Example UI Copy (Inline)
 
 Early Environment Influence
 
-This trait may have adapted early in response to emotional expectations around you.
+This trait may have adapted early in response to the emotional expectations that caregivers and others placed on you.
 
 Expandable, dismissible, optional.
 
