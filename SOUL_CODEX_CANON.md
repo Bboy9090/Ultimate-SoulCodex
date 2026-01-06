@@ -31,7 +31,7 @@ Each template includes surface meaning, lived expression, shadow/overuse, and in
 This section documents the template patterns using representative systems only. The subsections below (Astrology, Numerology, Human Design, Gene Keys, Tarot, I Ching, Runes, Elements, Chakras / Energy Systems) are examples, not an exhaustive enumeration of all 30+ systems wired into the engine. The full, authoritative list of supported systems MUST be maintained in the living **System Registry** (implementation document) and kept in sync with this canon.
 ### Astrology (Planets, Signs, Houses, Aspects)
 - Planet = function; Sign = style; House = life arena; Aspect = relationship between functions.
-- **Planet-in-Planet example (Moon in Jupiter):** emotional regulation operates through meaning and expansion; nourished by purpose; shadow is overextension or bypass via optimism; integration is growth with boundaries.
+- **Moon–Jupiter relationship example (Moon in strong aspect to Jupiter):** emotional regulation operates through meaning and expansion; nourished by purpose; shadow is overextension or bypass via optimism; integration is growth with boundaries.
 - **Sun in Venus example:** identity expresses through harmony/beauty/relationship; shadow is approval-seeking; integration pairs truth with beauty.
 - **Asteroids:** archetype role → activated domain → behavioral pattern → healthy expression → misalignment → integration (e.g., Chiron = pain-to-wisdom training, not brokenness).
 - **Fixed Stars:** psychological theme + modern expression + projection risk; never fate claims.
