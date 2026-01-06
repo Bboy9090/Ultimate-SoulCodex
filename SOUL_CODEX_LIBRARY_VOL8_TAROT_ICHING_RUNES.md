@@ -6,7 +6,7 @@ VOLUME VIII — TAROT · I CHING · RUNES
 
 (Symbolic Mirrors · Choice Awareness · Pattern Illumination)
 
-⸻
+---
 
 SECTION 1 — THE NON-NEGOTIABLE RULE
 
@@ -17,7 +17,7 @@ They reveal what is active now — and what choice is being asked for.
 
 They illuminate context, not outcome.
 
-⸻
+---
 
 SECTION 2 — HOW SYMBOLIC SYSTEMS FUNCTION
 
@@ -35,7 +35,7 @@ They do not:
 
 Soul Codex never frames symbols as commands.
 
-⸻
+---
 
 SECTION 3 — TAROT (ARCHETYPAL STATES)
 
@@ -43,7 +43,7 @@ Tarot describes states of consciousness moving through experience.
 
 Every Tarot card in Soul Codex answers four questions.
 
-⸻
+---
 
 TAROT TRANSLATION TEMPLATE (LOCKED)
 
@@ -52,7 +52,7 @@ How does it show up in real life?
 What choice is present?
 What happens if ignored vs engaged?
 
-⸻
+---
 
 MAJOR ARCANA (EXAMPLES)
 
@@ -75,7 +75,7 @@ Stagnation through fear.
 If Engaged
 Growth through experience.
 
-⸻
+---
 
 🧙 THE MAGICIAN — AGENCY & SKILL
 
@@ -96,7 +96,7 @@ Wasted potential.
 If Engaged
 Effective manifestation.
 
-⸻
+---
 
 ⚖️ JUSTICE — ALIGNMENT & CONSEQUENCE
 
@@ -117,17 +117,17 @@ Delayed consequences.
 If Engaged
 Clarity and balance.
 
-⸻
+---
 
 (All Major and Minor Arcana follow this exact structure.)
 
-⸻
+---
 
 SECTION 4 — I CHING (DYNAMIC CHANGE)
 
 The I Ching describes how situations evolve, not what they become.
 
-⸻
+---
 
 I CHING TRANSLATION TEMPLATE
 
@@ -136,7 +136,7 @@ Underlying Dynamic
 Optimal Attitude
 What Advances vs What Obstructs
 
-⸻
+---
 
 Example: HEXAGRAM 24 — RETURN
 
@@ -155,7 +155,7 @@ Small corrective actions.
 What Obstructs
 Forcing acceleration.
 
-⸻
+---
 
 I Ching insights always emphasize:
 •timing
@@ -164,7 +164,7 @@ I Ching insights always emphasize:
 
 Never prediction.
 
-⸻
+---
 
 SECTION 5 — RUNES (PRIMAL SIGNALS)
 
@@ -175,7 +175,7 @@ They are interpreted as:
 •instinctual cues
 •foundational dynamics
 
-⸻
+---
 
 RUNE TRANSLATION TEMPLATE
 
@@ -184,7 +184,7 @@ Life Expression
 Response Required
 Integration Path
 
-⸻
+---
 
 Example: ᚠ FEHU — RESOURCE FLOW
 
@@ -200,7 +200,7 @@ Stewardship, not hoarding.
 Integration
 Flow increases when shared responsibly.
 
-⸻
+---
 
 SECTION 6 — SYMBOLIC SYSTEMS IN DAILY LIFE
 
@@ -214,7 +214,7 @@ Example:
 
 “This symbol often appears when a familiar pattern is ready to be consciously redirected.”
 
-⸻
+---
 
 SECTION 7 — CROSS-SYSTEM INTEGRATION
 
@@ -225,7 +225,7 @@ Symbolic insights are always cross-checked with:
 
 If symbolism contradicts mechanics, mechanics win.
 
-⸻
+---
 
 SECTION 8 — UX RULES FOR SYMBOLIC SYSTEMS
 •Symbols appear after core synthesis
@@ -235,7 +235,7 @@ SECTION 8 — UX RULES FOR SYMBOLIC SYSTEMS
 
 These systems support awareness, they never dominate it.
 
-⸻
+---
 
 STATUS
 
@@ -243,7 +243,7 @@ STATUS
 ✔ I Ching grounded in timing and attitude
 ✔ Runes restored to functional symbolism
 
-⸻
+---
 
 NEXT VOLUME (FINAL)
 
