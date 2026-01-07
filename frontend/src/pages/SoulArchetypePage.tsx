@@ -56,7 +56,6 @@ export function SoulArchetypePage() {
       })
       .catch(err => {
         console.error('Error fetching archetype:', err)
-<<<<<<< HEAD
         // Fallback to test data if backend not available - includes soul code, moral compass, environment, and parents
         setArchetype({
           soul_frequency: { frequency: "432 Hz", resonance: "Harmonic", vibration: "High" },
@@ -71,8 +70,6 @@ export function SoulArchetypePage() {
             integration: "All 30+ Systems Unified"
           }
         })
-=======
->>>>>>> 62818d095dbb6f1e1db288353f35af30509dd6e3
         setLoading(false)
         // Show error - no fallback data in production mode
       })
@@ -98,20 +95,20 @@ export function SoulArchetypePage() {
   return (
     <div className="soul-archetype-container">
       {/* Render's clean vertical layout with Replit's polish */}
-      
+
       <SoulFrequency data={archetype.soul_frequency} />
-      
+
       {/* YOUR FAVORITE SECTION - Must be unique per user */}
-      <WhoIAm 
+      <WhoIAm
         content={archetype.who_i_am}
         className="favorite-section highlighted"
       />
-      
+
       <CoreStrengths data={archetype.core_strengths} />
       <ShadowAspects data={archetype.shadow_aspects} />
       <Purpose data={archetype.purpose} />
       <SoulArchitecture data={archetype.soul_architecture} />
-      
+
       {/* New Features */}
       <ElementalMedicine data={archetype.elementalMedicineData} />
       <MoralCompass data={archetype.moralCompassData} />
