@@ -37,6 +37,8 @@ function startServer() {
   serverProcess = spawn('node', [distPath], {
     cwd: __dirname,
     shell: false,
+    windowsHide: true, // Hide CMD window on Windows
+    stdio: ['ignore', 'pipe', 'pipe'], // Redirect stdio to prevent window flashing
   });
 
   serverProcess.stdout.on('data', (data) => {

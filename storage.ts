@@ -1,39 +1,8 @@
 import { type User, type UpsertUser, type Profile, type InsertProfile, type Person, type InsertPerson, type Assessment, type InsertAssessment, type AccessCode, type AccessCodeRedemption, type InsertAccessCode, type DailyInsight, type InsertDailyInsight, type CompatibilityAnalysis, type InsertCompatibility, type LocalUser, type PushSubscription, type InsertPushSubscription, type FrequencyLog, type InsertFrequencyLog, type WebhookEvent, type InsertWebhookEvent } from "./shared/schema";
 import { randomUUID } from "crypto";
-
-// ═══════════════════════════════════════════════════════════════════════════
-// STORAGE LAYER - Production-Ready Data Management
-// ═══════════════════════════════════════════════════════════════════════════
-//
 // NOTE: For Render bootstrap we use in-memory storage by default.
 // Avoid importing DB modules and table schemas to prevent build-time resolution.
 // Removed drizzle imports to avoid schema resolution in bundle
-//
-// PRODUCTION CONSIDERATIONS:
-// - Data is ephemeral in MemStorage (lost on restart)
-// - For persistence, configure DATABASE_URL and use DbStorage
-// - MemStorage is suitable for demos and testing
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Storage metrics for monitoring
-interface StorageMetrics {
-  totalProfiles: number;
-  totalUsers: number;
-  totalSessions: number;
-  lastAccess: Date;
-}
-
-let storageMetrics: StorageMetrics = {
-  totalProfiles: 0,
-  totalUsers: 0,
-  totalSessions: 0,
-  lastAccess: new Date()
-};
-
-// Export metrics for monitoring
-export function getStorageMetrics(): StorageMetrics {
-  return { ...storageMetrics };
-}
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -109,16 +78,22 @@ export interface IStorage {
   // Webhook event operations (for idempotency)
   getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined>;
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
+  
+  // Journal operations
+  createJournalEntry(entry: any): Promise<any>;
+  getJournalEntries(params: { userId: string; profileId?: string; startDate?: Date; endDate?: Date; category?: string }): Promise<any[]>;
+  
+  // Shareable links operations
+  createShareableLink(link: any): Promise<any>;
+  getShareableLink(id: string): Promise<any | undefined>;
+  getShareableLinkByToken(token: string): Promise<any | undefined>;
+  updateShareableLink(id: string, updates: Partial<any>): Promise<any>;
+  getShareableLinksByUser(userId: string): Promise<any[]>;
+  
+  // Transit notification operations
+  createTransitNotification(notification: any): Promise<any>;
+  getTransitNotification(notificationId: string): Promise<any | undefined>;
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// IN-MEMORY STORAGE IMPLEMENTATION
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Maximum limits to prevent memory issues
-const MAX_PROFILES = 10000;
-const MAX_DAILY_INSIGHTS = 50000;
-const MAX_FREQUENCY_LOGS = 100000;
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
@@ -131,11 +106,11 @@ export class MemStorage implements IStorage {
   private compatibilities: Map<string, CompatibilityAnalysis>;
   private pushSubscriptions: Map<string, PushSubscription>;
   private frequencyLogs: Map<string, FrequencyLog>;
-  
-  // Track storage statistics
-  private createdAt: Date = new Date();
-  private lastCleanup: Date = new Date();
   private webhookEvents: Map<string, WebhookEvent>;
+  private passwordResetTokens: Map<string, {id: string, userId: string, expiresAt: Date, usedAt: Date | null}>;
+  private journalEntries: Map<string, any>;
+  private shareableLinks: Map<string, any>;
+  private transitNotifications: Map<string, any>;
 
   constructor() {
     this.users = new Map();
@@ -149,69 +124,10 @@ export class MemStorage implements IStorage {
     this.pushSubscriptions = new Map();
     this.frequencyLogs = new Map();
     this.webhookEvents = new Map();
-    
-    console.log("[MemStorage] Initialized in-memory storage");
-    console.log("[MemStorage] ⚠️  Data will not persist across restarts");
-    
-    // Schedule periodic cleanup (every hour)
-    setInterval(() => this.cleanup(), 60 * 60 * 1000);
-  }
-  
-  // Cleanup old data to prevent memory bloat
-  private cleanup(): void {
-    const now = Date.now();
-    const oneDayAgo = now - 24 * 60 * 60 * 1000;
-    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
-    
-    let cleaned = 0;
-    
-    // Clean old daily insights (keep 7 days)
-    for (const [key, insight] of this.dailyInsights.entries()) {
-      if (insight.createdAt && new Date(insight.createdAt).getTime() < oneWeekAgo) {
-        this.dailyInsights.delete(key);
-        cleaned++;
-      }
-    }
-    
-    // Clean old webhook events (keep 1 day for idempotency)
-    for (const [key, event] of this.webhookEvents.entries()) {
-      if (event.receivedAt && new Date(event.receivedAt).getTime() < oneDayAgo) {
-        this.webhookEvents.delete(key);
-        cleaned++;
-      }
-    }
-    
-    // Enforce max limits
-    if (this.dailyInsights.size > MAX_DAILY_INSIGHTS) {
-      const toDelete = this.dailyInsights.size - MAX_DAILY_INSIGHTS;
-      const keys = Array.from(this.dailyInsights.keys()).slice(0, toDelete);
-      keys.forEach(k => this.dailyInsights.delete(k));
-      cleaned += toDelete;
-    }
-    
-    if (cleaned > 0) {
-      console.log(`[MemStorage] Cleaned ${cleaned} old entries`);
-    }
-    
-    this.lastCleanup = new Date();
-    
-    // Update metrics
-    storageMetrics = {
-      totalProfiles: this.profiles.size,
-      totalUsers: this.users.size,
-      totalSessions: this.profiles.size,
-      lastAccess: new Date()
-    };
-  }
-  
-  // Get storage statistics
-  getStats(): { profiles: number; users: number; insights: number; uptime: number } {
-    return {
-      profiles: this.profiles.size,
-      users: this.users.size,
-      insights: this.dailyInsights.size,
-      uptime: Date.now() - this.createdAt.getTime()
-    };
+    this.passwordResetTokens = new Map();
+    this.journalEntries = new Map();
+    this.shareableLinks = new Map();
+    this.transitNotifications = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -486,39 +402,23 @@ export class MemStorage implements IStorage {
   }
 
   async getAccessCodeRedemptions(_params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
-    // MemStorage: Return empty array (no persistent redemption tracking)
-    return [];
+    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
   }
 
-  async createAccessCodeRedemptionWithIncrement(params: {
+  async createAccessCodeRedemptionWithIncrement(_params: {
     accessCodeId: string;
     userId?: string;
     sessionId?: string;
   }): Promise<AccessCodeRedemption> {
-    // MemStorage: Create a simple redemption record and increment the code usage
-    const accessCode = Array.from(this.accessCodes.values()).find(c => c.id === params.accessCodeId);
-    if (accessCode) {
-      accessCode.usesCount = (accessCode.usesCount || 0) + 1;
-      accessCode.updatedAt = new Date();
-    }
-    // Return a minimal redemption record
-    return {
-      id: randomUUID(),
-      accessCodeId: params.accessCodeId,
-      userId: params.userId || null,
-      sessionId: params.sessionId || null,
-      redeemedAt: new Date()
-    } as AccessCodeRedemption;
+    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
   }
 
   async getActiveAccessCodesForUser(_params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
-    // MemStorage: Return empty array (simplified - no tracking of user-specific codes)
-    // In production with DbStorage, this would query redemptions table
-    return [];
+    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
   }
 
   async migrateAccessCodeRedemptions(_sessionId: string, _userId: string): Promise<void> {
-    // MemStorage: No-op (no persistent data to migrate)
+    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
   }
   
   async getDailyInsight(profileId: string, date: string): Promise<DailyInsight | undefined> {
@@ -790,18 +690,36 @@ export class MemStorage implements IStorage {
       .sort((a, b) => b.loggedAt.getTime() - a.loggedAt.getTime());
   }
 
-  // Password reset operations (stub implementations for MemStorage)
+  // Password reset operations (MemStorage implementation)
   async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
-    // Stub - not implemented for in-memory storage
+    // In-memory storage for password reset tokens
+    this.passwordResetTokens.set(token, {
+      id: token,
+      userId,
+      expiresAt,
+      usedAt: null
+    });
   }
 
   async getPasswordResetToken(token: string): Promise<{id: string, userId: string, expiresAt: Date, usedAt: Date | null} | undefined> {
-    // Stub - not implemented for in-memory storage
-    return undefined;
+    const resetToken = this.passwordResetTokens.get(token);
+    if (!resetToken) return undefined;
+    
+    // Check if expired
+    if (new Date() > resetToken.expiresAt) {
+      this.passwordResetTokens.delete(token);
+      return undefined;
+    }
+    
+    return resetToken;
   }
 
   async markPasswordResetTokenUsed(token: string): Promise<void> {
-    // Stub - not implemented for in-memory storage
+    const resetToken = this.passwordResetTokens.get(token);
+    if (resetToken) {
+      resetToken.usedAt = new Date();
+      this.passwordResetTokens.set(token, resetToken);
+    }
   }
 
   async updateLocalUserPassword(userId: string, newPasswordHash: string): Promise<void> {
@@ -832,6 +750,91 @@ export class MemStorage implements IStorage {
     };
     this.webhookEvents.set(event.stripeEventId, event);
     return event;
+  }
+
+  // Journal operations
+  async createJournalEntry(entryData: any): Promise<any> {
+    const id = randomUUID();
+    const entry = {
+      id,
+      ...entryData,
+      date: entryData.date || new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.journalEntries.set(id, entry);
+    return entry;
+  }
+
+  async getJournalEntries(params: { userId: string; profileId?: string; startDate?: Date; endDate?: Date; category?: string }): Promise<any[]> {
+    let entries = Array.from(this.journalEntries.values()).filter(e => e.userId === params.userId);
+    
+    if (params.profileId) {
+      entries = entries.filter(e => e.profileId === params.profileId);
+    }
+    
+    if (params.startDate) {
+      entries = entries.filter(e => new Date(e.date) >= params.startDate!);
+    }
+    
+    if (params.endDate) {
+      entries = entries.filter(e => new Date(e.date) <= params.endDate!);
+    }
+    
+    // Note: category filtering would require fetching prompt data
+    // For now, we'll skip category filtering at storage level
+    
+    return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  // Shareable links operations
+  async createShareableLink(linkData: any): Promise<any> {
+    const link = {
+      ...linkData,
+      createdAt: new Date(),
+      accessCount: 0,
+      isActive: true
+    };
+    this.shareableLinks.set(link.id, link);
+    return link;
+  }
+
+  async getShareableLink(id: string): Promise<any | undefined> {
+    return this.shareableLinks.get(id);
+  }
+
+  async getShareableLinkByToken(token: string): Promise<any | undefined> {
+    return Array.from(this.shareableLinks.values()).find(link => link.token === token);
+  }
+
+  async updateShareableLink(id: string, updates: Partial<any>): Promise<any> {
+    const link = this.shareableLinks.get(id);
+    if (!link) {
+      throw new Error('Shareable link not found');
+    }
+    const updated = { ...link, ...updates, updatedAt: new Date() };
+    this.shareableLinks.set(id, updated);
+    return updated;
+  }
+
+  async getShareableLinksByUser(userId: string): Promise<any[]> {
+    return Array.from(this.shareableLinks.values())
+      .filter(link => link.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  // Transit notification operations
+  async createTransitNotification(notificationData: any): Promise<any> {
+    const notification = {
+      ...notificationData,
+      createdAt: new Date()
+    };
+    this.transitNotifications.set(notification.notificationId, notification);
+    return notification;
+  }
+
+  async getTransitNotification(notificationId: string): Promise<any | undefined> {
+    return this.transitNotifications.get(notificationId);
   }
 }
 

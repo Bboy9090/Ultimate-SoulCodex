@@ -1,0 +1,102 @@
+modules = ["nodejs-20", "web", "postgresql-16"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
+run = ["npm", "run", "start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 33313
+externalPort = 8000
+
+[[ports]]
+localPort = 34547
+externalPort = 8008
+
+[[ports]]
+localPort = 37131
+externalPort = 3002
+
+[[ports]]
+localPort = 37569
+externalPort = 8099
+
+[[ports]]
+localPort = 39287
+externalPort = 8080
+
+[[ports]]
+localPort = 39529
+externalPort = 3003
+
+[[ports]]
+localPort = 42187
+externalPort = 5000
+
+[[ports]]
+localPort = 42829
+externalPort = 5173
+
+[[ports]]
+localPort = 43657
+externalPort = 8081
+
+[[ports]]
+localPort = 44195
+externalPort = 3001
+
+[[ports]]
+localPort = 44945
+externalPort = 6000
+
+[[ports]]
+localPort = 45553
+externalPort = 9000
+
+[[ports]]
+localPort = 46249
+externalPort = 3000
+
+[[ports]]
+localPort = 46283
+externalPort = 4200
+
+[[ports]]
+localPort = 46521
+externalPort = 6800
+
+[env]
+PORT = "5000"
+
+[agent]
+integrations = ["javascript_mem_db:1.0.0", "javascript_database:1.0.0", "javascript_openai:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_gemini_ai_integrations:1.0.0", "javascript_stripe:1.0.0"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000

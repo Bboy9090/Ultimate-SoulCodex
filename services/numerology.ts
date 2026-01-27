@@ -1,1 +1,1 @@
-export { calculateNumerology } from "../numerology";
+﻿export * from "../numerology";
