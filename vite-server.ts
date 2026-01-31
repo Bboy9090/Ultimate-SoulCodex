@@ -72,7 +72,7 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  app.use(express.static("dist"));
 
   // fall through to index.html ONLY for non-API routes
   app.use("*", (req, res) => {
