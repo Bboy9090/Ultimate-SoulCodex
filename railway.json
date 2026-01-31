@@ -1,23 +1,11 @@
 {
-  "$schema": "https://railway.com/railway.schema.json",
+{
+  "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "RAILPACK",
-    "buildEnvironment": "V3"
+    "builder": "NIXPACKS"
   },
   "deploy": {
-    "runtime": "V2",
-    "numReplicas": 1,
-    "startCommand": "npm run start",
-    "overlapSeconds": 0,
-    "drainingSeconds": 0,
-    "sleepApplication": false,
-    "useLegacyStacker": false,
-    "multiRegionConfig": {
-      "us-west2": {
-        "numReplicas": 1
-      }
-    },
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "startCommand": "npm start",
+    "healthcheckPath": "/health"
   }
 }
