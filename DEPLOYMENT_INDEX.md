@@ -12,6 +12,8 @@
 
 **Just testing?** → [Render](./RENDER_DEPLOY.md) (spins down)
 
+**Need DNS/CDN in front of Railway?** → [Cloudflare](./CLOUDFLARE_DEPLOY.md)
+
 ---
 
 ## 📚 Complete Deployment Guides
@@ -72,28 +74,22 @@
 
 ### Quick Start Tools
 
-7. **[deploy.sh](./deploy.sh)** - Interactive deployment helper
+7. **[CLOUDFLARE_DEPLOY.md](./CLOUDFLARE_DEPLOY.md)** - Cloudflare DNS + CDN
+   - ✅ Custom domains via Cloudflare
+   - ✅ Optional CDN caching for static assets
+   - 🎯 **Best for:** Fronting Railway with Cloudflare
+
+8. **[deploy.sh](./deploy.sh)** - Interactive deployment helper
    - Run `./deploy.sh` for guided setup
    - Helps you choose the right platform
    - Installs necessary CLI tools
    - Provides next steps
-
-8. **[Dockerfile](./Dockerfile)** - Container configuration
-   - Multi-stage build for optimal size
-   - Security hardened (non-root user)
-   - Health checks included
-   - Used by: Fly.io, Koyeb, VPS deployments
 
 9. **[docker-compose.yml](./docker-compose.yml)** - Local development & self-hosting
    - PostgreSQL + App in containers
    - One-command startup
    - Volume persistence
    - Health checks
-
-10. **[fly.toml](./fly.toml)** - Fly.io configuration
-    - Pre-configured for free tier
-    - Health checks setup
-    - Auto-scaling disabled (keep costs $0)
 
 ---
 
@@ -189,9 +185,7 @@ Before deploying to ANY platform:
 - **package.json** - Already configured ✅
 
 ### Platform-Specific (Already Included)
-- **Dockerfile** - For container deployments (Fly.io, Koyeb, VPS)
 - **docker-compose.yml** - For local dev and self-hosting
-- **fly.toml** - Fly.io configuration
 - **railway.json** - Railway configuration
 - **render.yaml** - Render configuration
 - **Procfile** - Generic process file
