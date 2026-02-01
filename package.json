@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx vite-server.ts",
     "build": "vite build",
-    "start": "node vite-server.ts"
+    "start": "tsx server/index.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.1.0",
