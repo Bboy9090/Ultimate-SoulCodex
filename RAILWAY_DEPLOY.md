@@ -344,6 +344,11 @@ railway variables --environment production
 4. **Sleep Unused Services**
    - If not needed 24/7, use Render instead (free with spin-down)
 
+## Cloudflare DNS + CDN (Optional)
+
+If you want Cloudflare in front of Railway for DNS or caching, follow
+[CLOUDFLARE_DEPLOY.md](./CLOUDFLARE_DEPLOY.md) after your Railway service is live.
+
 ## Comparison with Other Platforms
 
 | Feature | Railway | Fly.io | Koyeb | Render |
