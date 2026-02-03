@@ -1,0 +1,49 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+.github
+
+# Documentation (not needed in runtime)
+*.md
+!README.md
+AGENTS.md
+*.png
+*.jpg
+
+# Test and build artifacts
+coverage
+.nyc_output
+dist-test
+tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Temporary files
+/tmp

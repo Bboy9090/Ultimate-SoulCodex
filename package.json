@@ -1,18 +1,12 @@
 {
-  "name": "soul-codex-engine",
+  "name": "soul-codex",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
-  "license": "MIT",
-  "engines": {
-    "node": "20.x"
-  },
   "scripts": {
-    "dev": "tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node patch-build.mjs",
-    "start": "node dist/index.js",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "render-build": "npm install && npm run build && npm run db:push"
+    "dev": "tsx vite-server.ts",
+    "build": "vite build",
+    "start": "tsx server/index.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.1.0",
@@ -87,6 +81,7 @@
     "stripe": "^19.3.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.19.1",
     "vaul": "^1.1.2",
     "web-push": "^3.6.7",
     "wouter": "^3.3.5",
@@ -111,7 +106,6 @@
     "esbuild": "^0.25.12",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.19.1",
     "typescript": "5.6.3",
     "vite": "^5.4.19"
   }
