@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { randomUUID } from "crypto";
-import type { IStorage } from "../storage";
-import type { InsertProfile, User, Profile } from "@shared/schema";
+import type { IStorage } from "./storage";
+import type { InsertProfile, User, Profile } from "./shared/schema";
 import { entitlementService } from "./entitlement-service";
 
 interface SubscriptionServiceConfig {
@@ -201,7 +201,7 @@ export class SubscriptionService {
       userId: userId || null,
       sessionId: sessionId || null,
       name: email ? email.split('@')[0] : 'Premium User',
-      birthDate: '2000-01-01', // Placeholder - user can update later
+      birthDate: new Date().toISOString().split('T')[0], // Default to today - user should update with actual birth date
       birthTime: null,
       birthLocation: null,
       timezone: null,

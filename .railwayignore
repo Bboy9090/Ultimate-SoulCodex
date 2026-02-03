@@ -1,5 +1,0 @@
-﻿.agent_state_*.bin
-node_modules
-.replit
-repl_state.bin
-*.zip

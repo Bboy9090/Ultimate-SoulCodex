@@ -1,4 +1,4 @@
-import type { Profile } from '@shared/schema';
+import type { Profile } from './shared/schema';
 import { getDailyContext, type DailyContext } from './daily-context';
 import { selectTemplates } from './template-bank';
 import { generateDailyAffirmations, type Affirmation } from './affirmations';

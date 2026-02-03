@@ -1,8 +1,8 @@
-import { type User, type UpsertUser, type Profile, type InsertProfile, type Person, type InsertPerson, type Assessment, type InsertAssessment, type AccessCode, type AccessCodeRedemption, type InsertAccessCode, type DailyInsight, type InsertDailyInsight, type CompatibilityAnalysis, type InsertCompatibility, type LocalUser, type PushSubscription, type InsertPushSubscription, type FrequencyLog, type InsertFrequencyLog, type WebhookEvent, type InsertWebhookEvent } from "@shared/schema";
+import { type User, type UpsertUser, type Profile, type InsertProfile, type Person, type InsertPerson, type Assessment, type InsertAssessment, type AccessCode, type AccessCodeRedemption, type InsertAccessCode, type DailyInsight, type InsertDailyInsight, type CompatibilityAnalysis, type InsertCompatibility, type LocalUser, type PushSubscription, type InsertPushSubscription, type FrequencyLog, type InsertFrequencyLog, type WebhookEvent, type InsertWebhookEvent } from "./shared/schema";
 import { randomUUID } from "crypto";
-import { db } from "./db";
-import { users, localUsers, profiles, assessmentResponses, accessCodes, accessCodeRedemptions, dailyInsights, persons, compatibilityAnalyses, pushSubscriptions, frequencyLogs, webhookEvents } from "@shared/schema";
-import { eq, and, or, desc, gte, lte, sql as drizzleSql } from "drizzle-orm";
+// NOTE: For Render bootstrap we use in-memory storage by default.
+// Avoid importing DB modules and table schemas to prevent build-time resolution.
+// Removed drizzle imports to avoid schema resolution in bundle
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -78,6 +78,21 @@ export interface IStorage {
   // Webhook event operations (for idempotency)
   getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined>;
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
+  
+  // Journal operations
+  createJournalEntry(entry: any): Promise<any>;
+  getJournalEntries(params: { userId: string; profileId?: string; startDate?: Date; endDate?: Date; category?: string }): Promise<any[]>;
+  
+  // Shareable links operations
+  createShareableLink(link: any): Promise<any>;
+  getShareableLink(id: string): Promise<any | undefined>;
+  getShareableLinkByToken(token: string): Promise<any | undefined>;
+  updateShareableLink(id: string, updates: Partial<any>): Promise<any>;
+  getShareableLinksByUser(userId: string): Promise<any[]>;
+  
+  // Transit notification operations
+  createTransitNotification(notification: any): Promise<any>;
+  getTransitNotification(notificationId: string): Promise<any | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -92,6 +107,10 @@ export class MemStorage implements IStorage {
   private pushSubscriptions: Map<string, PushSubscription>;
   private frequencyLogs: Map<string, FrequencyLog>;
   private webhookEvents: Map<string, WebhookEvent>;
+  private passwordResetTokens: Map<string, {id: string, userId: string, expiresAt: Date, usedAt: Date | null}>;
+  private journalEntries: Map<string, any>;
+  private shareableLinks: Map<string, any>;
+  private transitNotifications: Map<string, any>;
 
   constructor() {
     this.users = new Map();
@@ -105,6 +124,10 @@ export class MemStorage implements IStorage {
     this.pushSubscriptions = new Map();
     this.frequencyLogs = new Map();
     this.webhookEvents = new Map();
+    this.passwordResetTokens = new Map();
+    this.journalEntries = new Map();
+    this.shareableLinks = new Map();
+    this.transitNotifications = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -667,18 +690,36 @@ export class MemStorage implements IStorage {
       .sort((a, b) => b.loggedAt.getTime() - a.loggedAt.getTime());
   }
 
-  // Password reset operations (stub implementations for MemStorage)
+  // Password reset operations (MemStorage implementation)
   async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
-    // Stub - not implemented for in-memory storage
+    // In-memory storage for password reset tokens
+    this.passwordResetTokens.set(token, {
+      id: token,
+      userId,
+      expiresAt,
+      usedAt: null
+    });
   }
 
   async getPasswordResetToken(token: string): Promise<{id: string, userId: string, expiresAt: Date, usedAt: Date | null} | undefined> {
-    // Stub - not implemented for in-memory storage
-    return undefined;
+    const resetToken = this.passwordResetTokens.get(token);
+    if (!resetToken) return undefined;
+    
+    // Check if expired
+    if (new Date() > resetToken.expiresAt) {
+      this.passwordResetTokens.delete(token);
+      return undefined;
+    }
+    
+    return resetToken;
   }
 
   async markPasswordResetTokenUsed(token: string): Promise<void> {
-    // Stub - not implemented for in-memory storage
+    const resetToken = this.passwordResetTokens.get(token);
+    if (resetToken) {
+      resetToken.usedAt = new Date();
+      this.passwordResetTokens.set(token, resetToken);
+    }
   }
 
   async updateLocalUserPassword(userId: string, newPasswordHash: string): Promise<void> {
@@ -710,235 +751,178 @@ export class MemStorage implements IStorage {
     this.webhookEvents.set(event.stripeEventId, event);
     return event;
   }
+
+  // Journal operations
+  async createJournalEntry(entryData: any): Promise<any> {
+    const id = randomUUID();
+    const entry = {
+      id,
+      ...entryData,
+      date: entryData.date || new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.journalEntries.set(id, entry);
+    return entry;
+  }
+
+  async getJournalEntries(params: { userId: string; profileId?: string; startDate?: Date; endDate?: Date; category?: string }): Promise<any[]> {
+    let entries = Array.from(this.journalEntries.values()).filter(e => e.userId === params.userId);
+    
+    if (params.profileId) {
+      entries = entries.filter(e => e.profileId === params.profileId);
+    }
+    
+    if (params.startDate) {
+      entries = entries.filter(e => new Date(e.date) >= params.startDate!);
+    }
+    
+    if (params.endDate) {
+      entries = entries.filter(e => new Date(e.date) <= params.endDate!);
+    }
+    
+    // Note: category filtering would require fetching prompt data
+    // For now, we'll skip category filtering at storage level
+    
+    return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  // Shareable links operations
+  async createShareableLink(linkData: any): Promise<any> {
+    const link = {
+      ...linkData,
+      createdAt: new Date(),
+      accessCount: 0,
+      isActive: true
+    };
+    this.shareableLinks.set(link.id, link);
+    return link;
+  }
+
+  async getShareableLink(id: string): Promise<any | undefined> {
+    return this.shareableLinks.get(id);
+  }
+
+  async getShareableLinkByToken(token: string): Promise<any | undefined> {
+    return Array.from(this.shareableLinks.values()).find(link => link.token === token);
+  }
+
+  async updateShareableLink(id: string, updates: Partial<any>): Promise<any> {
+    const link = this.shareableLinks.get(id);
+    if (!link) {
+      throw new Error('Shareable link not found');
+    }
+    const updated = { ...link, ...updates, updatedAt: new Date() };
+    this.shareableLinks.set(id, updated);
+    return updated;
+  }
+
+  async getShareableLinksByUser(userId: string): Promise<any[]> {
+    return Array.from(this.shareableLinks.values())
+      .filter(link => link.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  // Transit notification operations
+  async createTransitNotification(notificationData: any): Promise<any> {
+    const notification = {
+      ...notificationData,
+      createdAt: new Date()
+    };
+    this.transitNotifications.set(notification.notificationId, notification);
+    return notification;
+  }
+
+  async getTransitNotification(notificationId: string): Promise<any | undefined> {
+    return this.transitNotifications.get(notificationId);
+  }
 }
 
-export class DbStorage implements IStorage {
+class DbStorage implements IStorage {
   // User operations
+  // STUB - DbStorage is disabled for bootstrap; all methods are no-ops
   async getUser(id: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+    return undefined;
   }
 
   async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.stripeCustomerId, stripeCustomerId));
-    return result[0];
+    return undefined;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const result = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          profileImageUrl: userData.profileImageUrl,
-          stripeCustomerId: userData.stripeCustomerId,
-          stripeSubscriptionId: userData.stripeSubscriptionId,
-          subscriptionStatus: userData.subscriptionStatus,
-          subscriptionPlan: userData.subscriptionPlan,
-          subscriptionEndsAt: userData.subscriptionEndsAt,
-          updatedAt: drizzleSql`now()`,
-        },
-      })
-      .returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   // Local authentication operations
   async getLocalUserByEmail(email: string): Promise<LocalUser | undefined> {
-    const result = await db.select().from(localUsers).where(eq(localUsers.email, email));
-    return result[0];
+    return undefined;
   }
 
   async createLocalUser(userId: string, email: string, passwordHash: string): Promise<LocalUser> {
-    const result = await db
-      .insert(localUsers)
-      .values({
-        id: userId,
-        email,
-        passwordHash,
-        passwordVersion: 1,
-      })
-      .returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async updateLocalUserLastLogin(id: string): Promise<void> {
-    await db
-      .update(localUsers)
-      .set({ lastLoginAt: drizzleSql`now()`, updatedAt: drizzleSql`now()` })
-      .where(eq(localUsers.id, id));
+    // Stub
   }
 
   // Profile operations
   async getProfile(id: string): Promise<Profile | undefined> {
-    const result = await db.select().from(profiles).where(eq(profiles.id, id));
-    return result[0];
+    return undefined;
   }
 
   async getProfileByUserId(userId: string): Promise<Profile | undefined> {
-    const result = await db.select().from(profiles).where(eq(profiles.userId, userId));
-    return result[0];
+    return undefined;
   }
 
   async getProfileBySessionId(sessionId: string): Promise<Profile | undefined> {
-    const result = await db.select().from(profiles).where(eq(profiles.sessionId, sessionId));
-    return result[0];
+    return undefined;
   }
 
   async getAllProfiles(): Promise<Profile[]> {
-    return await db.select().from(profiles);
+    return [];
   }
 
   async createProfile(profile: InsertProfile): Promise<Profile> {
-    const id = randomUUID();
-    const now = new Date();
-    const result = await db.insert(profiles).values({
-      ...profile,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    }).returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async updateProfile(id: string, updates: Partial<Profile>): Promise<Profile> {
-    const result = await db
-      .update(profiles)
-      .set({ ...updates, updatedAt: drizzleSql`now()` })
-      .where(eq(profiles.id, id))
-      .returning();
-    if (!result[0]) throw new Error("Profile not found");
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   // Assessment operations
   async getAssessment(profileId: string, type: string): Promise<Assessment | undefined> {
-    const result = await db
-      .select()
-      .from(assessmentResponses)
-      .where(and(eq(assessmentResponses.profileId, profileId), eq(assessmentResponses.assessmentType, type)));
-    return result[0];
+    return undefined;
   }
 
   async createAssessment(assessment: InsertAssessment): Promise<Assessment> {
-    const id = randomUUID();
-    const result = await db.insert(assessmentResponses).values({
-      ...assessment,
-      id,
-      createdAt: new Date(),
-    }).returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   // Access code operations
   async getAccessCode(code: string): Promise<AccessCode | undefined> {
-    // Case-insensitive lookup using SQL LOWER()
-    const result = await db
-      .select()
-      .from(accessCodes)
-      .where(drizzleSql`LOWER(${accessCodes.code}) = LOWER(${code})`);
-    return result[0];
+    return undefined;
   }
 
   async createAccessCode(insertAccessCode: InsertAccessCode): Promise<AccessCode> {
-    const maxUses = insertAccessCode.maxUses || 1;
-    if (maxUses < 1) {
-      throw new Error("maxUses must be at least 1");
-    }
-    if (insertAccessCode.expiresAt && insertAccessCode.expiresAt < new Date()) {
-      throw new Error("expiresAt must be in the future");
-    }
-
-    const id = randomUUID();
-    const now = new Date();
-    const result = await db
-      .insert(accessCodes)
-      .values({
-        ...insertAccessCode,
-        id,
-        maxUses,
-        usesCount: 0,
-        isActive: insertAccessCode.isActive ?? true,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async updateAccessCode(id: string, updates: Partial<AccessCode>): Promise<AccessCode> {
-    if (updates.maxUses !== undefined && updates.maxUses < 1) {
-      throw new Error("maxUses must be at least 1");
-    }
-    if (updates.usesCount !== undefined && updates.usesCount < 0) {
-      throw new Error("usesCount cannot be negative");
-    }
-    if (updates.expiresAt && updates.expiresAt < new Date()) {
-      throw new Error("expiresAt must be in the future");
-    }
-
-    const result = await db
-      .update(accessCodes)
-      .set({ ...updates, updatedAt: drizzleSql`now()` })
-      .where(eq(accessCodes.id, id))
-      .returning();
-    
-    if (!result[0]) throw new Error("Access code not found");
-    
-    if (result[0].usesCount > result[0].maxUses) {
-      throw new Error("usesCount cannot exceed maxUses");
-    }
-    
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async getAllAccessCodes(): Promise<AccessCode[]> {
-    return await db.select().from(accessCodes);
+    return [];
   }
 
   async incrementAccessCodeUse(code: string): Promise<AccessCode> {
-    const accessCode = await this.getAccessCode(code);
-    if (!accessCode) {
-      throw new Error("Access code not found");
-    }
-    if (!accessCode.isActive) {
-      throw new Error("Access code is inactive");
-    }
-    if (accessCode.expiresAt && accessCode.expiresAt < new Date()) {
-      throw new Error("Access code has expired");
-    }
-    if (accessCode.usesCount >= accessCode.maxUses) {
-      throw new Error("Access code has reached maximum uses");
-    }
-
-    return await this.updateAccessCode(accessCode.id, {
-      usesCount: accessCode.usesCount + 1,
-    });
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async getAccessCodeRedemptions(params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
-    if (!params.userId && !params.sessionId) {
-      throw new Error("userId or sessionId required");
-    }
-
-    const whereClause = params.userId && params.sessionId
-      ? or(
-          eq(accessCodeRedemptions.userId, params.userId),
-          eq(accessCodeRedemptions.sessionId, params.sessionId)
-        )
-      : params.userId
-      ? eq(accessCodeRedemptions.userId, params.userId)
-      : eq(accessCodeRedemptions.sessionId, params.sessionId!);
-
-    return await db
-      .select()
-      .from(accessCodeRedemptions)
-      .where(whereClause)
-      .orderBy(desc(accessCodeRedemptions.redeemedAt));
+    return [];
   }
 
   async createAccessCodeRedemptionWithIncrement(params: {
@@ -946,374 +930,116 @@ export class DbStorage implements IStorage {
     userId?: string;
     sessionId?: string;
   }): Promise<AccessCodeRedemption> {
-    if ((!params.userId && !params.sessionId) || (params.userId && params.sessionId)) {
-      throw new Error("Exactly one of userId or sessionId required");
-    }
-
-    return await db.transaction(async (tx) => {
-      const code = await tx
-        .select()
-        .from(accessCodes)
-        .where(eq(accessCodes.id, params.accessCodeId))
-        .for("update")
-        .limit(1);
-
-      if (!code[0]) {
-        throw new Error("Access code not found");
-      }
-
-      const accessCode = code[0];
-
-      if (!accessCode.isActive) {
-        throw new Error("Access code is inactive");
-      }
-
-      if (accessCode.expiresAt && accessCode.expiresAt < new Date()) {
-        throw new Error("Access code has expired");
-      }
-
-      if (accessCode.usesCount >= accessCode.maxUses) {
-        throw new Error("Access code has reached maximum uses");
-      }
-
-      let redemption;
-      try {
-        const result = await tx
-          .insert(accessCodeRedemptions)
-          .values({
-            id: randomUUID(),
-            accessCodeId: params.accessCodeId,
-            userId: params.userId || null,
-            sessionId: params.sessionId || null,
-            redeemedAt: new Date(),
-          })
-          .returning();
-        
-        redemption = result[0];
-      } catch (err: any) {
-        if (err.code === '23505' || err.message?.includes('unique')) {
-          throw new Error("Access code already redeemed by this user");
-        }
-        throw err;
-      }
-
-      await tx
-        .update(accessCodes)
-        .set({ 
-          usesCount: drizzleSql`${accessCodes.usesCount} + 1`,
-          updatedAt: new Date()
-        })
-        .where(eq(accessCodes.id, params.accessCodeId));
-
-      return redemption;
-    });
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async getActiveAccessCodesForUser(params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
-    if (!params.userId && !params.sessionId) {
-      throw new Error("userId or sessionId required");
-    }
-
-    const redemptionFilter = params.userId && params.sessionId
-      ? or(
-          eq(accessCodeRedemptions.userId, params.userId),
-          eq(accessCodeRedemptions.sessionId, params.sessionId)
-        )
-      : params.userId
-      ? eq(accessCodeRedemptions.userId, params.userId)
-      : eq(accessCodeRedemptions.sessionId, params.sessionId!);
-
-    const results = await db
-      .selectDistinctOn([accessCodes.id], {
-        id: accessCodes.id,
-        code: accessCodes.code,
-        maxUses: accessCodes.maxUses,
-        usesCount: accessCodes.usesCount,
-        expiresAt: accessCodes.expiresAt,
-        isActive: accessCodes.isActive,
-        createdAt: accessCodes.createdAt,
-        updatedAt: accessCodes.updatedAt,
-      })
-      .from(accessCodes)
-      .innerJoin(accessCodeRedemptions, eq(accessCodes.id, accessCodeRedemptions.accessCodeId))
-      .where(
-        and(
-          eq(accessCodes.isActive, true),
-          or(
-            drizzleSql`${accessCodes.expiresAt} IS NULL`,
-            drizzleSql`${accessCodes.expiresAt} > NOW()`
-          ),
-          drizzleSql`${accessCodes.usesCount} < ${accessCodes.maxUses}`,
-          redemptionFilter
-        )
-      );
-
-    return results;
+    return [];
   }
 
   async migrateAccessCodeRedemptions(sessionId: string, userId: string): Promise<void> {
-    await db.transaction(async (tx) => {
-      const existingRedemptions = await tx
-        .select({ accessCodeId: accessCodeRedemptions.accessCodeId })
-        .from(accessCodeRedemptions)
-        .where(eq(accessCodeRedemptions.userId, userId));
-
-      const existingCodeIds = existingRedemptions.map(r => r.accessCodeId);
-
-      if (existingCodeIds.length === 0) {
-        const result = await tx
-          .update(accessCodeRedemptions)
-          .set({
-            userId,
-            sessionId: null,
-          })
-          .where(eq(accessCodeRedemptions.sessionId, sessionId))
-          .returning();
-        
-        console.log(`[Storage] Migrated ${result.length} access code redemptions from session ${sessionId} to user ${userId}`);
-        return;
-      }
-
-      const result = await tx
-        .update(accessCodeRedemptions)
-        .set({
-          userId,
-          sessionId: null,
-        })
-        .where(
-          and(
-            eq(accessCodeRedemptions.sessionId, sessionId),
-            drizzleSql`${accessCodeRedemptions.accessCodeId} NOT IN (${drizzleSql.join(existingCodeIds.map(id => drizzleSql`${id}`), drizzleSql`, `)})`
-          )
-        )
-        .returning();
-
-      console.log(`[Storage] Migrated ${result.length} access code redemptions from session ${sessionId} to user ${userId}`);
-    });
+    // Stub
   }
 
   // Daily insight operations
   async getDailyInsight(profileId: string, date: string): Promise<DailyInsight | undefined> {
-    const result = await db
-      .select()
-      .from(dailyInsights)
-      .where(and(eq(dailyInsights.profileId, profileId), eq(dailyInsights.date, date)));
-    return result[0];
+    return undefined;
   }
 
   async createDailyInsight(insight: InsertDailyInsight): Promise<DailyInsight> {
-    const id = randomUUID();
-    const result = await db.insert(dailyInsights).values({
-      ...insight,
-      id,
-      createdAt: new Date(),
-    }).returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async getRecentTemplateIds(profileId: string, days: number): Promise<string[]> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    const cutoffDateStr = cutoffDate.toISOString().split("T")[0];
-
-    const insights = await db
-      .select()
-      .from(dailyInsights)
-      .where(and(eq(dailyInsights.profileId, profileId), gte(dailyInsights.date, cutoffDateStr)));
-
-    const templateIds: string[] = [];
-    for (const insight of insights) {
-      if (Array.isArray(insight.templateIds)) {
-        templateIds.push(...(insight.templateIds as string[]));
-      }
-    }
-    return templateIds;
+    return [];
   }
 
   // Person operations
   async getPerson(id: string): Promise<Person | undefined> {
-    const result = await db.select().from(persons).where(eq(persons.id, id));
-    return result[0];
+    return undefined;
   }
 
   async getPersonsByUserId(userId: string): Promise<Person[]> {
-    return await db.select().from(persons).where(eq(persons.userId, userId)).orderBy(desc(persons.createdAt));
+    return [];
   }
 
   async getPersonsBySessionId(sessionId: string): Promise<Person[]> {
-    return await db.select().from(persons).where(eq(persons.sessionId, sessionId)).orderBy(desc(persons.createdAt));
+    return [];
   }
 
   async migratePersonsFromSessionToUser(sessionId: string, userId: string): Promise<number> {
-    const result = await db
-      .update(persons)
-      .set({ userId, sessionId: null })
-      .where(and(eq(persons.sessionId, sessionId), drizzleSql`${persons.userId} IS NULL`))
-      .returning();
-    return result.length;
+    return 0;
   }
 
   async migrateSoulProfileFromSessionToUser(sessionId: string, userId: string): Promise<boolean> {
-    console.log(`[Profile Migration] Starting migration - sessionId: ${sessionId}, userId: ${userId}`);
-    
-    // Check if user already has a profile
-    const existingUserProfile = await this.getProfileByUserId(userId);
-    if (existingUserProfile) {
-      console.log(`[Profile Migration] User ${userId} already has a profile (${existingUserProfile.id}), skipping migration`);
-      return false;
-    }
-
-    // Migrate the profile
-    const result = await db
-      .update(profiles)
-      .set({ userId, sessionId: null, updatedAt: new Date() })
-      .where(and(eq(profiles.sessionId, sessionId), drizzleSql`${profiles.userId} IS NULL`))
-      .returning();
-    
-    if (result.length > 0) {
-      console.log(`[Profile Migration] ✅ Successfully migrated profile ${result[0].id} from session ${sessionId} to user ${userId}`);
-      console.log(`[Profile Migration] Profile name: ${result[0].name}, userId now: ${result[0].userId}`);
-      
-      // Verify the migration worked
-      const verifyProfile = await this.getProfileByUserId(userId);
-      console.log(`[Profile Migration] Verification: Profile found by userId? ${verifyProfile ? 'YES (id: ' + verifyProfile.id + ')' : 'NO'}`);
-      
-      return true;
-    }
-    
-    console.log(`[Profile Migration] ❌ No profile found for session ${sessionId}`);
     return false;
   }
 
   async createPerson(person: InsertPerson): Promise<Person> {
-    const id = randomUUID();
-    const now = new Date();
-    const result = await db.insert(persons).values({
-      ...person,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    }).returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async updatePerson(id: string, updates: Partial<Person>): Promise<Person> {
-    const result = await db
-      .update(persons)
-      .set({ ...updates, updatedAt: drizzleSql`now()` })
-      .where(eq(persons.id, id))
-      .returning();
-    if (!result[0]) throw new Error("Person not found");
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async deletePerson(id: string): Promise<void> {
-    await db.delete(persons).where(eq(persons.id, id));
+    // Stub
   }
 
   // Compatibility operations
   async getCompatibility(profile1Id: string, profile2Id: string): Promise<CompatibilityAnalysis | undefined> {
-    const result = await db
-      .select()
-      .from(compatibilityAnalyses)
-      .where(
-        or(
-          and(eq(compatibilityAnalyses.profile1Id, profile1Id), eq(compatibilityAnalyses.profile2Id, profile2Id)),
-          and(eq(compatibilityAnalyses.profile1Id, profile2Id), eq(compatibilityAnalyses.profile2Id, profile1Id))
-        )
-      );
-    return result[0];
+    return undefined;
   }
 
   async createCompatibility(compatibility: InsertCompatibility): Promise<CompatibilityAnalysis> {
-    const id = randomUUID();
-    const now = new Date();
-    const result = await db.insert(compatibilityAnalyses).values({
-      ...compatibility,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    }).returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async getProfileCompatibilities(profileId: string): Promise<CompatibilityAnalysis[]> {
-    return await db
-      .select()
-      .from(compatibilityAnalyses)
-      .where(or(eq(compatibilityAnalyses.profile1Id, profileId), eq(compatibilityAnalyses.profile2Id, profileId)));
+    return [];
   }
 
   // Push subscription operations
   async getPushSubscription(endpoint: string): Promise<PushSubscription | undefined> {
-    const result = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
-    return result[0];
+    return undefined;
   }
 
   async getPushSubscriptionsByUser(userId: string): Promise<PushSubscription[]> {
-    return await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+    return [];
   }
 
   async getPushSubscriptionsBySession(sessionId: string): Promise<PushSubscription[]> {
-    return await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.sessionId, sessionId));
+    return [];
   }
 
   async getAllPushSubscriptions(): Promise<PushSubscription[]> {
-    return await db.select().from(pushSubscriptions);
+    return [];
   }
 
   async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
-    const id = randomUUID();
-    const now = new Date();
-    const result = await db.insert(pushSubscriptions).values({
-      ...subscription,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    }).returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async updatePushSubscription(id: string, updates: Partial<PushSubscription>): Promise<PushSubscription> {
-    const result = await db
-      .update(pushSubscriptions)
-      .set({ ...updates, updatedAt: drizzleSql`now()` })
-      .where(eq(pushSubscriptions.id, id))
-      .returning();
-    if (!result[0]) throw new Error("Push subscription not found");
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async deletePushSubscription(endpoint: string): Promise<void> {
-    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+    // Stub
   }
 
   // Frequency log operations
   async createFrequencyLog(log: InsertFrequencyLog): Promise<FrequencyLog> {
-    const id = randomUUID();
-    const result = await db.insert(frequencyLogs).values({
-      ...log,
-      id,
-      loggedAt: log.loggedAt || new Date(),
-      createdAt: new Date(),
-    }).returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 
   async getFrequencyLogsByUser(userId: string): Promise<FrequencyLog[]> {
-    return await db
-      .select()
-      .from(frequencyLogs)
-      .where(eq(frequencyLogs.userId, userId))
-      .orderBy(desc(frequencyLogs.loggedAt));
+    return [];
   }
 
   async getFrequencyLogsBySession(sessionId: string): Promise<FrequencyLog[]> {
-    return await db
-      .select()
-      .from(frequencyLogs)
-      .where(eq(frequencyLogs.sessionId, sessionId))
-      .orderBy(desc(frequencyLogs.loggedAt));
+    return [];
   }
 
   async getFrequencyLogsInRange(
@@ -1322,60 +1048,38 @@ export class DbStorage implements IStorage {
     startDate: Date,
     endDate: Date
   ): Promise<FrequencyLog[]> {
-    const userCondition = userId ? eq(frequencyLogs.userId, userId) : eq(frequencyLogs.sessionId, sessionId!);
-    return await db
-      .select()
-      .from(frequencyLogs)
-      .where(and(userCondition, gte(frequencyLogs.loggedAt, startDate), lte(frequencyLogs.loggedAt, endDate)))
-      .orderBy(desc(frequencyLogs.loggedAt));
+    return [];
   }
 
   // Password reset operations
   async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
-    const { passwordResetTokens } = await import("@shared/schema");
-    await db.insert(passwordResetTokens).values({
-      userId,
-      token,
-      expiresAt,
-    });
+    // Stub
   }
 
   async getPasswordResetToken(token: string): Promise<{id: string, userId: string, expiresAt: Date, usedAt: Date | null} | undefined> {
-    const { passwordResetTokens } = await import("@shared/schema");
-    const result = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token));
-    return result[0];
+    return undefined;
   }
 
   async markPasswordResetTokenUsed(token: string): Promise<void> {
-    const { passwordResetTokens } = await import("@shared/schema");
-    await db
-      .update(passwordResetTokens)
-      .set({ usedAt: drizzleSql`now()` })
-      .where(eq(passwordResetTokens.token, token));
+    // Stub
   }
 
   async updateLocalUserPassword(userId: string, newPasswordHash: string): Promise<void> {
-    await db
-      .update(localUsers)
-      .set({ passwordHash: newPasswordHash, updatedAt: drizzleSql`now()` })
-      .where(eq(localUsers.id, userId));
+    // Stub
   }
 
   // Webhook event operations (for idempotency)
   async getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined> {
-    const result = await db.select().from(webhookEvents).where(eq(webhookEvents.stripeEventId, stripeEventId));
-    return result[0];
+    return undefined;
   }
 
   async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {
-    const result = await db
-      .insert(webhookEvents)
-      .values(eventData)
-      .returning();
-    return result[0];
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
 }
 
+
 // Switch to DbStorage for production-ready persistence
-export const storage = new DbStorage();
-// export const storage = new MemStorage();
+// Switch to MemStorage for initial deployment; swap to DbStorage when schema is in place
+// export const storage = new DbStorage();
+export const storage = new MemStorage();
