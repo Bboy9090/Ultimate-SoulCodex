@@ -1,4 +1,4 @@
-import type { BirthData } from "@shared/schema";
+import type { BirthData } from "./shared/schema";
 import { 
   getPlanetSignInterpretation, 
   getHouseInterpretation, 

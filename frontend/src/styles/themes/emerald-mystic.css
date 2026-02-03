@@ -1,0 +1,66 @@
+/* 🎨 Soul Codex - Emerald Mystic Theme */
+
+:root {
+  --bg-primary: #0a0a0b;
+  --bg-secondary: #0f1a0f;
+  --bg-tertiary: #1f2a1f;
+  --bg-card: #0f1a0f;
+  --bg-hover: #1f2a1f;
+  --bg-overlay: rgba(10, 10, 11, 0.95);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #6b6b6b;
+  --text-accent: #10b981;
+  --text-on-accent: #0a0a0b;
+  
+  --accent-primary: #10b981;      /* Emerald */
+  --accent-secondary: #06b6d4;    /* Cyan */
+  --accent-tertiary: #8b5cf6;     /* Purple */
+  --accent-success: #10b981;
+  --accent-warning: #f59e0b;
+  --accent-error: #ef4444;
+  
+  --accent-glow: rgba(16, 185, 129, 0.3);
+  --accent-glow-strong: rgba(16, 185, 129, 0.5);
+  --accent-glow-subtle: rgba(16, 185, 129, 0.1);
+  
+  --border-color: rgba(16, 185, 129, 0.1);
+  --border-hover: rgba(16, 185, 129, 0.3);
+  --border-active: rgba(16, 185, 129, 0.5);
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-lg: 16px;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 40px rgba(16, 185, 129, 0.3);
+  --shadow-glow-strong: 0 0 60px rgba(16, 185, 129, 0.5);
+  
+  --gradient-primary: linear-gradient(135deg, #0f1a0f 0%, rgba(16, 185, 129, 0.1) 100%);
+  --gradient-accent: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  --gradient-mystical: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+  --gradient-card: linear-gradient(135deg, #0f1a0f 0%, #1f2a1f 100%);
+  --gradient-hover: linear-gradient(135deg, #1f2a1f 0%, rgba(16, 185, 129, 0.15) 100%);
+  
+  --transition-fast: all 0.15s ease;
+  --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  --spacing-2xl: 4rem;
+  
+  --font-heading: 'Inter', -apple-system, sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+::selection {
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+}

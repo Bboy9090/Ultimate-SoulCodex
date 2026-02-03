@@ -1,4 +1,4 @@
-import type { Profile } from '@shared/schema';
+import type { Profile } from './shared/schema';
 
 export interface Affirmation {
   text: string;

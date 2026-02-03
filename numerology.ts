@@ -50,3 +50,12 @@ export const expressionNumber = (fullName?: string): number | null => {
   }, 0);
   return reduceCore(sum);
 };
+
+export const calculateNumerology = (name?: string, birthDate?: string) => {
+  return {
+    lifePath: lifePath(birthDate),
+    birthDay: birthDay(birthDate),
+    expressionNumber: expressionNumber(name),
+    personalYear: personalYear(birthDate),
+  };
+};

@@ -13,6 +13,27 @@ export function isGeminiAvailable() {
   return !!apiKey && apiKey !== "_DUMMY_API_KEY_";
 }
 
+export async function generateText({ model, prompt, temperature = 0.7 }: { model?: string; prompt: string; temperature?: number; }): Promise<string> {
+  if (!isGeminiAvailable()) return "";
+  try {
+    const geminiModel = genAI.getGenerativeModel({ model: model || "gemini-1.5-flash" });
+    const result = await geminiModel.generateContent({
+      contents: [
+        { role: "user", parts: [{ text: prompt }] }
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: 1024,
+      }
+    });
+    const text = result.response.text();
+    return text || "";
+  } catch (e) {
+    console.error("Gemini generateText error:", e);
+    return "";
+  }
+}
+
 export async function* streamChat({ model, systemInstruction, history, message, temperature }: any) {
   const geminiModel = genAI.getGenerativeModel({ 
     model: model || "gemini-1.5-flash",

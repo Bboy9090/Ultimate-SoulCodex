@@ -1,0 +1,43 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Deploy to Fly.io
+    runs-on: ubuntu-latest
+    
+    # Uncomment when ready to enable auto-deploy
+    # if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Fly.io CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      
+      - name: Deployment notification
+        if: success()
+        run: echo "✅ Successfully deployed to Fly.io"
+      
+      - name: Deployment failed
+        if: failure()
+        run: echo "❌ Deployment failed - check logs above"
+
+# To enable this workflow:
+# 1. Sign up at https://fly.io
+# 2. Deploy initially with: fly launch
+# 3. Get your API token: fly auth token
+# 4. Add to GitHub Secrets: FLY_API_TOKEN
+# 5. Uncomment the 'if' condition above
+# 6. Push to main branch to auto-deploy
