@@ -51,6 +51,8 @@ Complete product documentation is available in the following files:
 
 This app can be deployed to multiple platforms for **24/7 availability at the lowest cost**:
 
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?source=github)
+
 | Platform | Cost | Always On? | Best For |
 |----------|------|------------|----------|
 | **[Fly.io](./FLY_IO_DEPLOY.md)** | **FREE** | ✅ | Most users (recommended) |
