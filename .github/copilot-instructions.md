@@ -93,9 +93,10 @@ npm run dev
 # Build for production
 npm run build
 
-# Database migrations
-npx drizzle-kit generate  # Generate migrations
-npx drizzle-kit migrate   # Run migrations
+# Database schema management (Drizzle Kit)
+npx drizzle-kit generate    # Generate migration files from schema
+npx drizzle-kit push        # Push schema changes to database
+npx drizzle-kit studio      # Open Drizzle Studio GUI
 ```
 
 ## Testing Requirements
