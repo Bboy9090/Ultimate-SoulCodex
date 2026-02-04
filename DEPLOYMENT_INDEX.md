@@ -1,5 +1,16 @@
 # Deployment Documentation Index
 
+## 🚀 Migrating from Replit?
+
+**👉 [MIGRATION_FROM_REPLIT.md](./MIGRATION_FROM_REPLIT.md)** - Complete step-by-step migration guide
+
+**Quick Start:**
+```bash
+./migrate.sh  # Interactive migration helper
+```
+
+---
+
 ## 🎯 Quick Decision: Which Platform?
 
 **Need FREE 24/7?** → [Fly.io](./FLY_IO_DEPLOY.md) ⭐ RECOMMENDED
