@@ -1,53 +1,38 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Stage 1: Build the Application
+# We use node:20 as the base for building and installing dependencies.
+FROM node:20 AS build
 
-# Install build dependencies
-RUN apk add --no-cache python3 make g++
+# Set the working directory inside the container
+WORKDIR /usr/src/app
 
-WORKDIR /app
-
-# Copy package files
+# Copy package.json and package-lock.json first to leverage Docker caching.
+# If these files don't change, subsequent builds can skip 'npm install'.
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --omit=dev
+RUN npm install
 
-# Copy source code
+# Copy the rest of the application source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Stage 2: Create the Final Production Image
+# We use node:20 as the runtime image with all the necessary tools.
+FROM node:20
 
-# Production stage
-FROM node:20-alpine
+# Set the working directory
+WORKDIR /usr/src/app
 
-# Install runtime dependencies for sharp and other native modules
-RUN apk add --no-cache \
-    vips-dev \
-    fftw-dev \
-    build-base \
-    python3
+# Copy the node_modules and built application files from the 'build' stage
+COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/package*.json ./
+COPY --from=build /usr/src/app .
 
-WORKDIR /app
+# Expose the port your app runs on
+ENV PORT=8080
+EXPOSE $PORT
 
-# Copy built application from builder
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
+# Run the application using the non-root user (recommended for security)
+USER node
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
-
-USER nodejs
-
-# Expose port
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Start application
-CMD ["node", "dist/index.js"]
+# Define the command to start your application
+CMD [ "node", "index.js" ]

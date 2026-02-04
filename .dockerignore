@@ -1,49 +1,27 @@
-# Node
+# Dependency/Build Directories
 node_modules
 npm-debug.log
-yarn-error.log
+.npm
 
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Development
-.vscode
-.idea
-*.swp
-*.swo
-*~
-
-# Git
+# Project Files
 .git
 .gitignore
-.github
+.dockerignore
+Dockerfile
+fly.toml # Fly.io configuration file
 
-# Documentation (not needed in runtime)
-*.md
-!README.md
-AGENTS.md
-*.png
-*.jpg
-
-# Test and build artifacts
-coverage
-.nyc_output
-dist-test
-tmp
-
-# OS
+# Environment/Configuration Files
+.env
 .DS_Store
-Thumbs.db
-
-# Logs
-logs
 *.log
 
-# Database
-*.db
-*.sqlite
-
-# Temporary files
-/tmp
+# Development/Testing files and directories (adjust as needed)
+test
+tests
+docs
+coverage
+tmp
+*~
+# Any files generated during development or testing, e.g.:
+dist
+build
