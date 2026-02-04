@@ -72,10 +72,12 @@ This repository operates in **reality, not simulation**:
 
 ## Important Files
 
-- `AGENTS.md` - AI agent operating system and discipline
+- `AGENTS.md` - AI agent operating system and discipline (root directory)
+- `.github/AGENTS.md` - Specialized Copilot agent roles for team deployment
 - `PRODUCT_REQUIREMENTS.md` - Complete product requirements
 - `DATA_MODEL.md` - Database schema and data architecture
 - `SAFETY_ETHICS.md` - Ethical guidelines (READ BEFORE MODIFYING AI FEATURES)
+- `DOCUMENTATION_INDEX.md` - Overview of all project documentation
 - `package.json` - Dependencies and scripts
 - `drizzle.config.ts` - Database ORM configuration
 
