@@ -35,7 +35,7 @@ install_fly_cli() {
 echo "Choose your deployment platform:"
 echo ""
 echo "1) Fly.io (FREE 24/7 - RECOMMENDED)"
-echo "   • $0/month forever"
+echo "   • \$0/month forever"
 echo "   • No credit card required"
 echo "   • Includes 3GB PostgreSQL"
 echo "   • True 24/7 uptime"
