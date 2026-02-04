@@ -12,7 +12,7 @@
 
 **Just testing?** → [Render](./RENDER_DEPLOY.md) (spins down)
 
-**Need DNS/CDN in front of Railway?** → [Cloudflare (CDN/DNS add-on — requires an existing Railway deployment; does not host the application)](./CLOUDFLARE_DEPLOY.md)
+**Need DNS/CDN in front of Railway?** → [Cloudflare](./CLOUDFLARE_DEPLOY.md)
 
 ---
 
@@ -74,8 +74,7 @@
 
 ### Quick Start Tools
 
-7. **[CLOUDFLARE_DEPLOY.md](./CLOUDFLARE_DEPLOY.md)** - Cloudflare DNS + CDN (add-on only)
-   - ℹ️ **CDN/DNS add-on** — requires an existing Railway deployment; does not host the application
+7. **[CLOUDFLARE_DEPLOY.md](./CLOUDFLARE_DEPLOY.md)** - Cloudflare DNS + CDN
    - ✅ Custom domains via Cloudflare
    - ✅ Optional CDN caching for static assets
    - 🎯 **Best for:** Fronting Railway with Cloudflare
