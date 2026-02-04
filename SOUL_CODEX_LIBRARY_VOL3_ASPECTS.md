@@ -4,7 +4,7 @@ Inner Relationships · Psychological Dynamics
 
 ---
 
-## Section 1 — How to Read Aspects in Soul Codex
+SECTION 1 — HOW TO READ ASPECTS IN SOUL CODEX
 
 Aspects describe relationships between inner functions. They are not event predictors; they reveal internal dynamics:
 •how two parts of you communicate
@@ -16,7 +16,7 @@ There are no bad aspects — only unintegrated ones.
 
 ---
 
-## Section 2 — Major Aspects (Core Psychological Relationships)
+SECTION 2 — MAJOR ASPECTS (CORE PSYCHOLOGICAL RELATIONSHIPS)
 
 ### Conjunction — Fusion & Intensity
 •**What this is:** two inner functions operate as one unified force.
@@ -60,7 +60,7 @@ There are no bad aspects — only unintegrated ones.
 
 ---
 
-## Section 3 — Minor Aspects (Subtle Developmental Dynamics)
+SECTION 3 — MINOR ASPECTS (SUBTLE DEVELOPMENTAL DYNAMICS)
 
 ### Quincunx (Inconjunct) — Adjustment
 •**What this is:** two functions operate without natural understanding.
@@ -75,7 +75,7 @@ There are no bad aspects — only unintegrated ones.
 
 ---
 
-## Section 4 — Planetary Aspect Interpretation Rules
+SECTION 4 — PLANETARY ASPECT INTERPRETATION RULES
 
 Every aspect explanation must include:
 1. the two functions involved
@@ -88,7 +88,7 @@ No aspect is ever listed without translation.
 
 ---
 
-## Section 5 — Common Aspect Pairs (Canon)
+SECTION 5 — COMMON ASPECT PAIRS (CANON)
 
 ### Sun Square Saturn
 •**Dynamic:** identity challenged by responsibility.
@@ -119,7 +119,7 @@ No aspect is ever listed without translation.
 
 ---
 
-## Section 6 — Aspect Patterns (Chart-Level Dynamics)
+SECTION 6 — ASPECT PATTERNS (CHART-LEVEL DYNAMICS)
 
 ### T-Squares — Focused Development
 •**What it is:** multiple tensions converging.
@@ -138,11 +138,11 @@ No aspect is ever listed without translation.
 
 ---
 
-## Section 7 — How Soul Codex Presents Aspects (UX Rule)
-•Aspects are grouped by theme, not listed.
-•Tension aspects are framed as developmental.
-•Supportive aspects are framed as potential.
-•Every aspect ends with an integration statement.
+SECTION 7 — HOW SOUL CODEX PRESENTS ASPECTS (UX RULE)
+- Aspects are grouped by theme, not listed.
+- Tension aspects are framed as developmental.
+- Supportive aspects are framed as potential.
+- Every aspect ends with an integration statement.
 
 No fear. No hierarchy.
 

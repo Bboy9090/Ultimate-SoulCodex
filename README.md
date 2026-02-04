@@ -44,8 +44,24 @@ Complete product documentation is available in the following files:
 - **ORM:** Drizzle ORM
 - **AI:** OpenAI GPT-4 Turbo (streaming)
 - **Payments:** Stripe (subscriptions)
-- **Deployment:** Render.com + Cloudflare CDN
+- **Deployment:** Multiple options (Fly.io, Railway, Render, VPS)
 - **Analytics:** Microsoft Clarity (GDPR compliant)
+
+## 🌐 Deployment Options
+
+This app can be deployed to multiple platforms for **24/7 availability at the lowest cost**:
+
+| Platform | Cost | Always On? | Best For |
+|----------|------|------------|----------|
+| **[Fly.io](./FLY_IO_DEPLOY.md)** | **FREE** | ✅ | Most users (recommended) |
+| **[Koyeb](./KOYEB_DEPLOY.md)** | **FREE** | ✅ | GUI-based setup |
+| **[Railway](./RAILWAY_DEPLOY.md)** | ~$5/mo | ✅ | Easiest setup |
+| **[Hetzner VPS](./VPS_SELF_HOSTING.md)** | €4/mo | ✅ | Best value, full control |
+| **[Render](./RENDER_DEPLOY.md)** | Free/Paid | ⚠️ | Existing option |
+
+**Quick Start:** Run `./deploy.sh` for an interactive deployment helper.
+
+📊 **See [DEPLOYMENT_COMPARISON.md](./DEPLOYMENT_COMPARISON.md) for detailed cost comparison and recommendations.**
 
 ## ✨ Key Features
 
