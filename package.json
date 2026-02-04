@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx vite-server.ts",
-    "build": "vite build",
-    "start": "node server/index.ts"
+    "dev": "tsx server/index.ts",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "node build-client.js",
+    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.1.0",
@@ -99,14 +101,12 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.5.13",
-    "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.12",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
-    "typescript": "5.6.3",
-    "vite": "^5.4.19"
+    "typescript": "5.6.3"
   }
 }
