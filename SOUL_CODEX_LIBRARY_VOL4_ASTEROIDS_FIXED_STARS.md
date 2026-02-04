@@ -6,7 +6,7 @@ VOLUME IV — ASTEROIDS & FIXED STARS
 
 (Micro-Archetypes · Subtle Destiny Tones · Zero Trivia)
 
-⸻
+---
 
 SECTION 1 — WHY ASTEROIDS & STARS MATTER (AND WHEN THEY DON’T)
 
@@ -22,7 +22,7 @@ Think of them as:
 •themes, not drivers
 •whispers, not commands
 
-⸻
+---
 
 SECTION 2 — ASTEROIDS (MICRO-ARCHETYPES)
 
@@ -33,7 +33,7 @@ Each asteroid answers:
 •What skill is being trained?
 •Where does subtle pressure appear?
 
-⸻
+---
 
 ⚷ CHIRON — THE WOUND THAT TRAINS WISDOM
 
@@ -58,7 +58,7 @@ Shadow pattern
 Integration
 Wisdom emerges when pain is engaged consciously, not avoided or romanticized.
 
-⸻
+---
 
 ⚳ CERES — CARE, NOURISHMENT & LOSS
 
@@ -82,7 +82,7 @@ Over-caretaking or fear of abandonment.
 Integration
 Care becomes sustainable when boundaries exist.
 
-⸻
+---
 
 ⚴ PALLAS ATHENA — STRATEGY & PATTERN RECOGNITION
 
@@ -106,7 +106,7 @@ Over-intellectualization or detachment.
 Integration
 Wisdom integrates insight with empathy.
 
-⸻
+---
 
 ⚵ JUNO — COMMITMENT & CONTRACTS
 
@@ -130,7 +130,7 @@ Power struggles or unrealistic expectations.
 Integration
 Commitment deepens through mutual respect.
 
-⸻
+---
 
 ⚶ VESTA — DEVOTION & FOCUS
 
@@ -154,7 +154,7 @@ Isolation or burnout.
 Integration
 Devotion thrives when balanced with life.
 
-⸻
+---
 
 ⚸ LILITH (BLACK MOON) — INSTINCT & AUTONOMY
 
@@ -178,11 +178,11 @@ Rebellion without direction.
 Integration
 Instinct becomes power when consciously owned.
 
-⸻
+---
 
 (All other asteroids follow this same template: archetype → life pattern → integration.)
 
-⸻
+---
 
 SECTION 3 — ASTEROIDS IN CONTEXT (MANDATORY RULE)
 
@@ -198,7 +198,7 @@ Example:
 Chiron conjunct Mercury in the 3rd House
 → Pain around expression becomes communication wisdom.
 
-⸻
+---
 
 SECTION 4 — FIXED STARS (BACKGROUND TONES)
 
@@ -207,7 +207,7 @@ Fixed stars represent long-range psychological tones, not fate.
 They do not predict events.
 They describe how identity is colored.
 
-⸻
+---
 
 HOW FIXED STARS ARE PRESENTED
 
@@ -219,7 +219,7 @@ Each star includes:
 
 No myth dumping. No destiny claims.
 
-⸻
+---
 
 ★ REGULUS — LEADERSHIP & INTEGRITY
 
@@ -235,7 +235,7 @@ Ego inflation or entitlement.
 Integration
 True leadership requires humility.
 
-⸻
+---
 
 ★ SPICA — SKILL & CREATIVE GRACE
 
@@ -251,7 +251,7 @@ Taking ability for granted.
 Integration
 Skill matures through contribution.
 
-⸻
+---
 
 ★ ALGOL — RAW EMOTION & POWER
 
@@ -267,7 +267,7 @@ Fear-based interpretation.
 Integration
 Emotional mastery through awareness.
 
-⸻
+---
 
 ★ SIRIUS — PURPOSE & RADIANCE
 
@@ -283,11 +283,11 @@ Messiah complex.
 Integration
 Purpose serves life, not ego.
 
-⸻
+---
 
 (Only stars with meaningful psychological impact are included.)
 
-⸻
+---
 
 SECTION 5 — UX RULES FOR ASTEROIDS & STARS
 •Display after core planetary synthesis
@@ -297,7 +297,7 @@ SECTION 5 — UX RULES FOR ASTEROIDS & STARS
 
 These are precision tools, not spectacle.
 
-⸻
+---
 
 STATUS
 
@@ -305,11 +305,11 @@ STATUS
 ✔ Fixed stars grounded and ethical
 ✔ No fatalism or trivia
 
-⸻
+---
 
 NEXT VOLUME
 
 Volume V — Numerology (All Numbers as Behavior Patterns)
-(Why numbers repeat · How cycles shape experience · No fortune-cookie math)
+(Behavioral Drivers · Life Cycles · Repeating Signals)
 
 Say “Continue” when ready.
