@@ -3,7 +3,18 @@ import "dotenv/config";
 
 import express, { type Express } from "express";
 import { registerRoutes } from "../routes";
-import { setupVite, serveStatic, log } from "../vite";
+import { serveStatic } from "../vite-server";
+
+// Simple logger function
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
 
 const app: Express = express();
 
@@ -63,13 +74,8 @@ let serverInstance: any = null;
     res.status(status).json({ message });
   });
 
-  // Setup Vite dev server in development or serve static files in production
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    // Ensure the fallback serves the built Vite output (dist/public)
-    serveStatic(app);
-  }
+  // Serve static files (built Vite output from dist/public)
+  serveStatic(app);
 
   // Use PORT from environment (Render and other platforms set this)
   const PORT = parseInt(process.env.PORT || "3000", 10);

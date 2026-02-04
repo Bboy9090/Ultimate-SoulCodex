@@ -3,15 +3,13 @@ import path from "path";
 import fs from "fs";
 
 export function serveStatic(app: express.Express) {
-  const distPath = path.resolve("dist");
+  const distPath = path.resolve("dist/public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error("Build folder not found. Run `npm run build` first.");
   }
 
   app.use(express.static(distPath));
-
-  app.get("/health", (_, res) => res.sendStatus(200));
 
   app.get("*", (req, res) => {
     if (req.path.startsWith("/api")) {
