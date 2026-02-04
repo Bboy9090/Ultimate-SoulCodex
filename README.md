@@ -47,6 +47,21 @@ Complete product documentation is available in the following files:
 - **Deployment:** Multiple options (Fly.io, Railway, Render, VPS)
 - **Analytics:** Microsoft Clarity (GDPR compliant)
 
+## 🚀 Migrating from Replit?
+
+If you're currently on Replit and want to save money or avoid payment issues:
+
+**👉 [Start Here: MIGRATION_FROM_REPLIT.md](./MIGRATION_FROM_REPLIT.md)** - Complete migration guide
+
+**Quick Migration:**
+```bash
+./migrate.sh  # Interactive migration helper
+```
+
+**Recommended:** Migrate to **Fly.io** for completely FREE 24/7 hosting with database included!
+
+---
+
 ## 🌐 Deployment Options
 
 This app can be deployed to multiple platforms for **24/7 availability at the lowest cost**:
