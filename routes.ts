@@ -38,6 +38,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { hashPassword, verifyPassword } from "./auth/passwordUtils";
 import { randomUUID } from "crypto";
 import { calculateActiveTransits, extractNatalPositions } from "./services/transits";
+import { generateDailyHoroscope } from "./services/horoscope";
 import { getActiveTransmutationTechniques } from "./services/transmutation";
 import { calculateCongruenceScore } from "./services/congruence";
 import { registerChatRoutes } from "./routes/chat";
@@ -51,6 +52,10 @@ import Stripe from "stripe";
 import { SubscriptionService } from "./services/subscription-service";
 import { entitlementService } from "./services/entitlement-service";
 import { runWithTimeoutAndTiming, TIMEOUT_VALUES } from "./utils/timeout";
+import { buildSoulProfile } from "./soulcodex/index";
+import type { UserInputs } from "./soulcodex/types";
+import { geocodeLocation } from "./geocoding";
+import * as geoTz from "geo-tz";
 
 // Initialize SubscriptionService (if Stripe is configured)
 let subscriptionService: SubscriptionService | null = null;
@@ -464,6 +469,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate birth data
       const validatedBirthData = birthDataSchema.parse(birth_data);
       
+      // Geocode if lat/lng/timezone are missing but birthLocation is provided
+      if (validatedBirthData.birthLocation && (!validatedBirthData.latitude || !validatedBirthData.longitude)) {
+        const geo = geocodeLocation(validatedBirthData.birthLocation);
+        if (geo) {
+          validatedBirthData.latitude = geo.lat;
+          validatedBirthData.longitude = geo.lon;
+          if (!validatedBirthData.timezone) {
+            try {
+              const tzs = geoTz.find(parseFloat(geo.lat), parseFloat(geo.lon));
+              if (tzs.length > 0) validatedBirthData.timezone = tzs[0];
+            } catch (e) {
+              console.error("[SoulArchetype] Timezone lookup failed:", e);
+            }
+          }
+        }
+      }
+      
       // Check if we have complete birth data
       const hasCompleteData = !!(
         validatedBirthData.birthTime && 
@@ -589,27 +611,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("[SoulArchetype] Parental Influence calculation failed:", error);
       }
       
+      // Run Soul Codex synthesis engine
+      let soulCodexResult = null;
+      try {
+        const soulInputs: UserInputs = {
+          birthData: {
+            name: validatedBirthData.name,
+            birthDate: validatedBirthData.birthDate,
+            birthTime: validatedBirthData.birthTime,
+            birthLocation: validatedBirthData.birthLocation,
+            timezone: validatedBirthData.timezone,
+            latitude: validatedBirthData.latitude,
+            longitude: validatedBirthData.longitude,
+          },
+          stressElement: req.body.stressElement ?? "air",
+          decisionStyle: req.body.decisionStyle ?? "gut",
+          pressureStyle: req.body.pressureStyle ?? "adapt",
+          nonNegotiables: req.body.nonNegotiables ?? [],
+          goals: req.body.goals ?? [],
+          socialEnergy: req.body.socialEnergy ?? "steady",
+        };
+
+        soulCodexResult = buildSoulProfile(soulInputs, {
+          sunSign: astrologyData?.sunSign,
+          moonSign: astrologyData?.moonSign,
+          risingSign: astrologyData?.risingSign,
+          lifePath: numerologyData?.calculateNumerology?.lifePath,
+        });
+      } catch (error) {
+        console.error("[SoulArchetype] Soul Codex synthesis failed:", error);
+      }
+
+      // Persist profile to database so daily horoscope can reference it
+      let userId = null;
+      let sessionId = null;
+      if (req.user?.id) {
+        userId = req.user.id;
+      } else if (req.sessionID) {
+        sessionId = req.sessionID;
+      }
+
+      let savedProfile: any = null;
+      try {
+        savedProfile = await storage.createProfile({
+          userId,
+          sessionId,
+          name: validatedBirthData.name,
+          birthDate: validatedBirthData.birthDate,
+          birthTime: validatedBirthData.birthTime || "",
+          birthLocation: validatedBirthData.birthLocation || "",
+          timezone: validatedBirthData.timezone || "",
+          latitude: validatedBirthData.latitude?.toString() || "",
+          longitude: validatedBirthData.longitude?.toString() || "",
+          isPremium: false,
+          astrologyData,
+          numerologyData,
+          personalityData: {},
+          archetypeData: soulArchetypeData,
+          humanDesignData,
+          soulArchetypeData,
+          elementalMedicineData,
+          moralCompassData,
+          parentalInfluenceData,
+        });
+        console.log(`[SoulArchetype] Profile saved with id: ${savedProfile.id}`);
+      } catch (saveErr) {
+        console.error("[SoulArchetype] Profile save failed (non-blocking):", saveErr);
+      }
+
       // Build response in the format expected by frontend
       const response = {
+        id: savedProfile?.id ?? null,
+        profileId: savedProfile?.id ?? null,
         soul_frequency: soulArchetypeData?.soulFrequency || {
           frequency: "432 Hz",
           resonance: "Harmonic",
           vibration: "High"
         },
-        who_i_am: soulArchetypeData?.firstPersonBio || "You are a unique soul with a cosmic blueprint unlike any other.",
+        who_i_am: soulArchetypeData?.firstPersonBio || "You are a unique soul with a distinct pattern unlike any other.",
         core_strengths: soulArchetypeData?.strengths || [],
         shadow_aspects: soulArchetypeData?.shadows || [],
-        purpose: soulArchetypeData?.purpose || "To bridge the mystical and material worlds.",
+        purpose: soulArchetypeData?.purpose || "To bridge ideas and action in the real world.",
         soul_architecture: {
           foundation: astrologyData?.sunSign || "Astrological Big 3",
           structure: humanDesignData?.type || "Human Design Type",
           expression: numerologyData?.calculateNumerology?.lifePath?.toString() || "Life Path Number",
           integration: "All 35+ Systems Unified"
         },
-        // New features
         elementalMedicineData,
         moralCompassData,
-        parentalInfluenceData
+        parentalInfluenceData,
+        archetype: soulCodexResult?.profile.archetype ?? null,
+        synthesis: soulCodexResult?.profile.synthesis ?? null,
       };
       
       console.log(`[SoulArchetype] Generated archetype for ${validatedBirthData.name}`);
@@ -1953,6 +2046,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(data);
     } catch (error) {
       return handleError(error, res, "GetDailyInsights");
+    }
+  });
+
+  app.get("/api/profiles/:id/daily-horoscope", async (req, res) => {
+    try {
+      const profileId = req.params.id;
+      if (!profileId || typeof profileId !== 'string') {
+        return res.status(400).json({ message: "Valid profile ID is required" });
+      }
+
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const horoscope = await generateDailyHoroscope(profile);
+      res.json(horoscope);
+    } catch (error) {
+      return handleError(error, res, "GetDailyHoroscope");
     }
   });
 

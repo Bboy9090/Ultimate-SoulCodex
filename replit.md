@@ -15,6 +15,30 @@ The frontend utilizes React, TypeScript, Vite, Tailwind CSS with shadcn/ui, TanS
 **Profile Migration System (November 2025):**
 Implemented automatic profile migration when users authenticate after creating anonymous profiles. When a user creates a profile as an anonymous visitor then signs up or logs in, their profile is automatically transferred to their authenticated account. The system uses `req.sessionID` to track anonymous sessions and migrates both soul profiles and person entries during authentication. Migration process: (1) Capture previous sessionId before login, (2) Execute login/signup, (3) Migrate soul profile from session to userId, (4) Migrate persons from session to userId, (5) Clear sessionId from migrated records. This ensures users never need to re-enter profile information after authentication.
 
+**Soul Codex Synthesis Engine (March 2026):**
+New `soulcodex/` directory implements a deterministic personality synthesis engine:
+- `types.ts`: Core interfaces — StressElement, DecisionStyle, PressureStyle, SoulSignals, Archetype, Synthesis, SoulProfile, CompatibilityScore
+- `compute/archetype.ts`: Element + Role naming system (12 elements × 12 roles = 144 archetypes: Iron Architect, Ocean Sage, Solar Catalyst, etc.)
+- `compute/synthesis.ts`: Builds first-person behavioral text for coreEssence, stressPattern, relationshipPattern, powerMode, growthEdges
+- `compute/moral.ts`: Derives moral code (The Enforcer, The Sentinel, The Diplomat, etc.) from pressureStyle + nonNegotiables
+- `compute/compatibility.ts`: 4-dimension compatibility scoring (identity, stress, values, decisions) with friction/synergy explanations
+- `validators/blandnessFilter.ts`: Validates AI output against BANNED phrases list and enforces first-person behavioral language
+- `index.ts`: Main `buildSoulProfile(inputs, overrides)` entry point
+
+**Language Policy:**
+ALL AI-generated content must use first-person "inner voice" (I/my/me). BANNED phrases: "cosmic blueprint," "sacred blueprint," "divine timing," "vibrational frequency," "holistic convergence," "incarnation," "celestial influence," "divine nature," "cosmic signature." Enforced by blandnessFilter.ts.
+
+**Daily Horoscope System (March 2026):**
+`horoscope.ts` calculates today's planetary positions (all 10 planets), inter-planetary aspects with behavioral interpretations, personal transits vs natal chart, and AI first-person reading via Gemini (with fallback). `GET /api/profiles/:id/daily-horoscope` endpoint with per-day memory caching.
+
+**Frontend (March 2026):**
+Complete React frontend with Wouter routing:
+- `OnboardingPage`: 5-step form (birth data → stress element → decision style → non-negotiables → goals/social energy)
+- `ProfilePage`: Archetype identity display with synthesis sections (Who I Am, Stress Pattern, Relationships, Moral Compass, Power Mode, Growth Edges)
+- `DailyHoroscopePage`: Moon phase, AI reading, interactive PlanetWheel SVG component with colored aspect lines and planet tooltips
+- Profile data persists to DB on onboarding completion; profile ID stored in localStorage for daily horoscope lookups
+- Auto-geocoding: birthLocation resolved to lat/lng/timezone via `geocoding.ts` + `geo-tz` when not provided
+
 **Feature Specifications:**
 Core services include:
 - **Astrology, Synastry, Numerology, Personality (Enneagram, MBTI), and Archetype Services**: For comprehensive profile generation.

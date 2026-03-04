@@ -1,16 +1,14 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
-
-function App() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>Ultimate SoulCodex</h1>
-      <p>Your cosmic journey starts here.</p>
-    </div>
-  );
-}
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import App from "./App";
+import "./index.css";
 
 const rootEl = document.getElementById("root");
 if (rootEl) {
-  createRoot(rootEl).render(<App />);
+  createRoot(rootEl).render(
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  );
 }
