@@ -4,13 +4,13 @@ Style + Arena · How & Where Life Happens
 
 ---
 
-SECTION 1 — HOW SIGNS & HOUSES WORK TOGETHER
+SECTION 1 — How Signs & Houses Work Together
 
 Planets describe **what** is acting. Signs describe **how** it acts. Houses describe **where** life expresses it. Signs and houses never change who you are; they shape how inner functions move through life.
 
 ---
 
-SECTION 2 — THE TWELVE SIGNS (STYLE OF EXPRESSION)
+SECTION 2 — The Twelve Signs (Style of Expression)
 
 Signs are styles, not personalities. They describe how energy moves, not what it wants.
 
@@ -100,7 +100,7 @@ Signs are styles, not personalities. They describe how energy moves, not what it
 
 ---
 
-SECTION 3 — THE TWELVE HOUSES (LIFE ARENAS)
+SECTION 3 — The Twelve Houses (Life Arenas)
 
 Houses describe where life teaches you.
 
@@ -154,7 +154,7 @@ Houses describe where life teaches you.
 
 ---
 
-SECTION 4 — COMBINING PLANET + SIGN + HOUSE
+SECTION 4 — Combining Planet + Sign + House
 
 Soul Codex synthesizes each placement by pairing the planet’s function with the sign’s style and the house’s arena. Example: **Moon in Sagittarius, 9th House** — emotional regulation seeks meaning and exploration; safety comes from understanding the bigger picture and trusting life’s direction. Outputs are always readable, grounded, and psychologically accurate.
 
