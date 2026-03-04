@@ -1,4 +1,6 @@
 import * as Astronomy from 'astronomy-engine';
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import { generateText, isGeminiAvailable } from './gemini';
 import { calculatePersonalDayNumber, getMoonPhase, getMoonSign } from './daily-context';
 import { calculateActiveTransits, extractNatalPositions } from './transits';
@@ -284,10 +286,23 @@ function generateFallbackHoroscope(
 
 const horoscopeCache = new Map<string, DailyHoroscope>();
 
+/** Get date string in user's timezone for cache key (production checklist: timezone + date) */
+function getDateKeyInTimezone(now: Date, timezone: string | null | undefined): string {
+  if (!timezone) return now.toISOString().split('T')[0];
+  try {
+    const zoned = toZonedTime(now, timezone);
+    return format(zoned, 'yyyy-MM-dd');
+  } catch {
+    return now.toISOString().split('T')[0];
+  }
+}
+
 export async function generateDailyHoroscope(profile: any): Promise<DailyHoroscope> {
   const now = new Date();
-  const dateKey = now.toISOString().split('T')[0];
-  const cacheKey = `${profile.id}+${dateKey}`;
+  const tz = profile.timezone || 'UTC';
+  const dateKey = getDateKeyInTimezone(now, tz);
+  const profileUpdatedAt = profile.updatedAt ? String(profile.updatedAt) : '';
+  const cacheKey = `${profile.id}+${dateKey}+${tz}+${profileUpdatedAt}`;
 
   const cached = horoscopeCache.get(cacheKey);
   if (cached) return cached;
