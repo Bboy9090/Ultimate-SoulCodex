@@ -61,6 +61,7 @@ import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
 import { resolveGeo } from "./server/geo/index";
 import { computeConfidence } from "./soulcodex/compute/confidence";
+import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
@@ -3320,6 +3321,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       return handleError(error, res, "FullChart");
+    }
+  });
+
+  app.post("/api/today/card", async (req, res) => {
+    try {
+      const { profileId, profile, codexSynthesis } = req.body;
+
+      let horoscopeData: any = null;
+
+      if (profileId) {
+        try {
+          const storedProfile = await storage.getProfile(profileId);
+          if (storedProfile) {
+            const { generateDailyHoroscope } = await import("./horoscope");
+            horoscopeData = await generateDailyHoroscope(storedProfile);
+          }
+        } catch (e) {
+          console.warn("[TodayCard] horoscope gen failed:", e);
+        }
+      }
+
+      if (!horoscopeData) {
+        const today = new Date();
+        const birth = profile?.signals?.lifePath ?? 4;
+        const daySum = today.getDate() + today.getMonth() + today.getFullYear() % 100;
+        const personalDay = ((daySum + birth - 1) % 9) + 1;
+        horoscopeData = {
+          date: today.toISOString().slice(0, 10),
+          personalDayNumber: personalDay,
+          moonPhase: { phase: "Waxing Gibbous", percentage: 65 },
+          personalTransits: [],
+          alignments: [],
+          horoscope: ""
+        };
+      }
+
+      const card = buildTodayCard(horoscopeData, profile ?? {}, codexSynthesis);
+      return res.json({ ok: true, card });
+    } catch (error) {
+      return handleError(error, res, "TodayCard");
+    }
+  });
+
+  app.post("/api/today/render", async (req, res) => {
+    try {
+      const { card, format = "square" } = req.body;
+      if (!card) return res.status(400).json({ ok: false, error: "card data required" });
+
+      const svg = buildTodayCardSvg(card, format as "square" | "story");
+      const sharp = (await import("sharp")).default;
+      const W = 1080, H = format === "story" ? 1920 : 1080;
+
+      const png = await sharp(Buffer.from(svg), { density: 150 })
+        .resize(W, H)
+        .png()
+        .toBuffer();
+
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Content-Disposition", `attachment; filename="soul-codex-${format}-${card.date}.png"`);
+      return res.send(png);
+    } catch (error) {
+      return handleError(error, res, "TodayRender");
     }
   });
 

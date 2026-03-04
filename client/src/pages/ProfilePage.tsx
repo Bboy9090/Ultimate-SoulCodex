@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
 
 interface Archetype {
   name: string;
@@ -56,11 +57,6 @@ function getConfidence(): ConfidenceData | null {
   }
 }
 
-const BADGE_STYLES: Record<string, { bg: string; border: string; color: string; dot: string }> = {
-  verified: { bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.3)", color: "#4ade80", dot: "#22c55e" },
-  partial: { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.3)", color: "#fbbf24", dot: "#f59e0b" },
-  unverified: { bg: "rgba(148,163,184,0.1)", border: "rgba(148,163,184,0.2)", color: "#94a3b8", dot: "#64748b" },
-};
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
@@ -104,34 +100,17 @@ export default function ProfilePage() {
             >
               {archetype.element} {archetype.role}
             </div>
-            {confidence && (() => {
-              const s = BADGE_STYLES[confidence.badge] ?? BADGE_STYLES.unverified;
-              return (
-                <div
-                  title={confidence.reason}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.375rem",
-                    padding: "0.375rem 0.875rem",
-                    background: s.bg,
-                    border: `1px solid ${s.border}`,
-                    borderRadius: 9999,
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    color: s.color,
-                    letterSpacing: "0.05em",
-                    cursor: "default",
-                  }}
-                >
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
-                  {confidence.label}
-                </div>
-              );
-            })()}
+            {confidence && (
+              <ConfidenceBadge
+                badge={confidence.badge}
+                label={confidence.label}
+                reason={confidence.reason}
+                size="md"
+              />
+            )}
           </div>
-          {confidence && (
-            <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "0.75rem", fontStyle: "italic" }}>
+          {confidence?.reason && (
+            <p style={{ fontSize: "0.78rem", color: "var(--muted-foreground)", marginBottom: "0.75rem", fontStyle: "italic" }}>
               {confidence.reason}
             </p>
           )}
