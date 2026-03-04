@@ -12,10 +12,9 @@ await esbuild.build({
   bundle: true,
   minify: true,
   sourcemap: true,
-  format: 'esm',
+  format: 'iife',
   target: ['es2020'],
   outdir: distDir,
-  splitting: false,
   loader: {
     '.tsx': 'tsx',
     '.ts': 'ts',
@@ -44,7 +43,7 @@ await esbuild.build({
 let html = fs.readFileSync('client/index.html', 'utf8');
 html = html.replace(
   '<script type="module" src="/src/main.tsx"></script>',
-  '<link rel="stylesheet" href="/main.css">\n    <script type="module" src="/main.js"></script>'
+  '<link rel="stylesheet" href="/main.css">\n    <script src="/main.js" defer></script>'
 );
 fs.writeFileSync(path.join(distDir, 'index.html'), html);
 
