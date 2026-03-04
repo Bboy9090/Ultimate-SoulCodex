@@ -62,21 +62,27 @@ If you're currently on Replit and want to save money or avoid payment issues:
 
 ---
 
-## 🌐 Deployment Options
+## 🌐 One-Click Deploy
 
-This app can be deployed to multiple platforms for **24/7 availability at the lowest cost**:
+**Deploy with one click.** Add 3 env vars. Done.
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?source=github)
+| Platform | Cost | Click |
+|----------|------|-------|
+| [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Bboy9090/Ultimate-SoulCodex-Engine-of-the-Eternal-Now) | Free/Paid | ✅ DB included |
+| [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?source=github) | ~$5/mo | Easiest |
+| [Fly.io](./FLY_IO_DEPLOY.md) | **FREE** 24/7 | One-time CLI setup |
+
+**👉 [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md)** — Full instructions
 
 | Platform | Cost | Always On? | Best For |
 |----------|------|------------|----------|
-| **[Fly.io](./FLY_IO_DEPLOY.md)** | **FREE** | ✅ | Most users (recommended) |
-| **[Koyeb](./KOYEB_DEPLOY.md)** | **FREE** | ✅ | GUI-based setup |
-| **[Railway](./RAILWAY_DEPLOY.md)** | ~$5/mo | ✅ | Easiest setup |
-| **[Hetzner VPS](./VPS_SELF_HOSTING.md)** | €4/mo | ✅ | Best value, full control |
-| **[Render](./RENDER_DEPLOY.md)** | Free/Paid | ⚠️ | Existing option |
+| **[Render](./RENDER_DEPLOY.md)** | Free (spins down) | ⚠️ | One-click + DB |
+| **[Railway](./RAILWAY_DEPLOY.md)** | ~$5/mo | ✅ | Easiest DX |
+| **[Fly.io](./FLY_IO_DEPLOY.md)** | **FREE** | ✅ | Free 24/7 |
+| **[Koyeb](./KOYEB_DEPLOY.md)** | **FREE** | ✅ | GUI setup |
+| **[VPS](./VPS_SELF_HOSTING.md)** | €4/mo | ✅ | Full control |
 
-**Quick Start:** Run `./deploy.sh` for an interactive deployment helper.
+**Quick Start:** Run `./deploy.sh` for an interactive helper.
 
 📊 **See [DEPLOYMENT_COMPARISON.md](./DEPLOYMENT_COMPARISON.md) for detailed cost comparison and recommendations.**
 
