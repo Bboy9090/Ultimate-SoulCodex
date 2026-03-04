@@ -1,5 +1,13 @@
 # Deployment Documentation Index
 
+## 📖 Overview & Local Setup
+
+**👉 [DEPLOYMENT.md](./DEPLOYMENT.md)** - Stack overview, local dev, checklist
+
+**👉 [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md)** - **Deploy with one click** (Render, Railway, Fly.io)
+
+---
+
 ## 🚀 Migrating from Replit?
 
 **👉 [MIGRATION_FROM_REPLIT.md](./MIGRATION_FROM_REPLIT.md)** - Complete step-by-step migration guide
