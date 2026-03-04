@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
 
 interface ThemeScore {
   tag: string;
@@ -53,11 +54,6 @@ function parseNarrative(text: string) {
   return sections;
 }
 
-const BADGE_COLORS: Record<string, string> = {
-  Verified:   "#22c55e",
-  Partial:    "#f59e0b",
-  Unverified: "#6b7280",
-};
 
 const THEME_ICONS: Record<string, string> = {
   precision:          "◈",
@@ -158,7 +154,6 @@ export default function CodexReadingPage() {
   }
 
   const sections = parseNarrative(synthesis?.narrative ?? "");
-  const badgeColor = BADGE_COLORS[synthesis?.badges?.confidenceLabel ?? "Unverified"] ?? "#6b7280";
 
   if (generateMutation.isPending && !synthesis) {
     return (
@@ -231,16 +226,12 @@ export default function CodexReadingPage() {
         }}>
           {synthesis.codename}
         </h1>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem" }}>
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: "0.35rem",
-            background: `${badgeColor}20`, border: `1px solid ${badgeColor}50`,
-            borderRadius: "99px", padding: "0.2rem 0.75rem",
-            fontSize: "0.72rem", color: badgeColor, letterSpacing: "0.08em"
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: badgeColor, display: "inline-block" }} />
-            {synthesis.badges.confidenceLabel}
-          </span>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+          <ConfidenceBadge
+            badge={synthesis.badges.confidenceLabel}
+            reason={synthesis.badges.reason}
+            size="sm"
+          />
           {synthesis.badges.reason && (
             <span style={{ fontSize: "0.72rem", color: "var(--muted-foreground)" }}>
               — {synthesis.badges.reason}
