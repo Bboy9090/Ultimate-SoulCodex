@@ -1,0 +1,551 @@
+Good. Now we make your “Ultimate Soul Codex” stop guessing like a drunk fortune cookie and start behaving like a proper system.
+
+Below is Wave 2A implemented: Geocoding + Timezone resolution + caching + Accuracy Mode + Confidence Labels + schema expansion for planets/houses.
+
+Everything is copy/paste into Replit/Cursor.
+
+⸻
+
+0) Install the missing packages
+
+npm i tz-lookup luxon
+
+	•	tz-lookup: offline lat/lon → IANA timezone (no paid API)
+	•	luxon: compute UTC offset + DST for a specific date/time
+
+⸻
+
+1) Prisma: add GeoCache + TimezoneCache (+ optional AstroCache if you didn’t add it)
+
+Update prisma/schema.prisma by adding these models:
+
+model GeoCache {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  query           String
+  normalizedPlace String
+  lat             Float
+  lon             Float
+  provider        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TimezoneCache {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  lat             Float
+  lon             Float
+  dateISO         String
+  time24          String
+  timezone        String
+  utcOffsetMin    Int
+  isDST           Boolean
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+/* If you didn't add this earlier, keep it too: */
+model AstroCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+Run migration:
+
+npx prisma migrate dev --name wave2a_geo_timezone
+
+
+⸻
+
+2) New files to add (file tree)
+
+You’ll add these:
+
+src/geo/normalize.ts
+src/geo/cache.ts
+src/geo/nominatim.ts
+src/geo/index.ts
+
+src/timezone/cache.ts
+src/timezone/resolve.ts
+
+src/app/api/geo/lookup/route.ts
+src/app/api/timezone/resolve/route.ts
+
+src/soulcodex/compute/confidence.ts
+
+And you’ll patch:
+	•	src/astro/provider.ts (use lat/lon + timezone)
+	•	src/app/api/soulcodex/generate/route.ts (auto geo + tz + confidence badge)
+	•	src/app/soulcodex/page.tsx (Accuracy Mode toggle + confidence badge)
+
+⸻
+
+3) Geocoding layer (free, cached)
+
+src/geo/normalize.ts
+
+export function normalizePlaceQuery(q: string) {
+  return q.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export function geoCacheKey(q: string) {
+  return `geo:v1:${normalizePlaceQuery(q)}`;
+}
+
+src/geo/cache.ts
+
+import { prisma } from "@/lib/prisma";
+import { geoCacheKey, normalizePlaceQuery } from "./normalize";
+
+export async function getGeoCached(query: string) {
+  const key = geoCacheKey(query);
+  return prisma.geoCache.findUnique({ where: { key } });
+}
+
+export async function setGeoCached(input: {
+  query: string;
+  normalizedPlace: string;
+  lat: number;
+  lon: number;
+  provider: string;
+}) {
+  const key = geoCacheKey(input.query);
+  return prisma.geoCache.upsert({
+    where: { key },
+    update: {
+      query: normalizePlaceQuery(input.query),
+      normalizedPlace: input.normalizedPlace,
+      lat: input.lat,
+      lon: input.lon,
+      provider: input.provider
+    },
+    create: {
+      key,
+      query: normalizePlaceQuery(input.query),
+      normalizedPlace: input.normalizedPlace,
+      lat: input.lat,
+      lon: input.lon,
+      provider: input.provider
+    }
+  });
+}
+
+src/geo/nominatim.ts
+
+type NominatimResult = {
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
+export async function geocodeNominatim(place: string) {
+  // Nominatim requires a valid User-Agent
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", place);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("addressdetails", "0");
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      "User-Agent": "SoulCodex/1.0 (contact: you@example.com)",
+      "Accept": "application/json"
+    }
+  });
+
+  if (!res.ok) throw new Error(`Geocode error: ${res.status} ${await res.text()}`);
+
+  const data = (await res.json()) as NominatimResult[];
+  if (!data?.length) throw new Error("No geocode results.");
+
+  const first = data[0];
+  const lat = Number(first.lat);
+  const lon = Number(first.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error("Invalid lat/lon from geocoder.");
+
+  return {
+    normalizedPlace: first.display_name,
+    lat,
+    lon
+  };
+}
+
+src/geo/index.ts
+
+import { getGeoCached, setGeoCached } from "./cache";
+import { geocodeNominatim } from "./nominatim";
+
+export async function resolveGeo(place: string) {
+  const cached = await getGeoCached(place);
+  if (cached) {
+    return {
+      normalizedPlace: cached.normalizedPlace,
+      lat: cached.lat,
+      lon: cached.lon,
+      provider: cached.provider,
+      cached: true
+    };
+  }
+
+  const fresh = await geocodeNominatim(place);
+  await setGeoCached({
+    query: place,
+    normalizedPlace: fresh.normalizedPlace,
+    lat: fresh.lat,
+    lon: fresh.lon,
+    provider: "nominatim"
+  });
+
+  return {
+    ...fresh,
+    provider: "nominatim",
+    cached: false
+  };
+}
+
+
+⸻
+
+4) Timezone + DST layer (offline, cached)
+
+src/timezone/cache.ts
+
+import { prisma } from "@/lib/prisma";
+
+export function tzCacheKey(lat: number, lon: number, dateISO: string, time24: string) {
+  const a = lat.toFixed(5);
+  const o = lon.toFixed(5);
+  return `tz:v1:${a}:${o}:${dateISO}:${time24}`;
+}
+
+export async function getTzCached(lat: number, lon: number, dateISO: string, time24: string) {
+  const key = tzCacheKey(lat, lon, dateISO, time24);
+  return prisma.timezoneCache.findUnique({ where: { key } });
+}
+
+export async function setTzCached(input: {
+  lat: number;
+  lon: number;
+  dateISO: string;
+  time24: string;
+  timezone: string;
+  utcOffsetMin: number;
+  isDST: boolean;
+}) {
+  const key = tzCacheKey(input.lat, input.lon, input.dateISO, input.time24);
+  return prisma.timezoneCache.upsert({
+    where: { key },
+    update: {
+      lat: input.lat,
+      lon: input.lon,
+      dateISO: input.dateISO,
+      time24: input.time24,
+      timezone: input.timezone,
+      utcOffsetMin: input.utcOffsetMin,
+      isDST: input.isDST
+    },
+    create: {
+      key,
+      lat: input.lat,
+      lon: input.lon,
+      dateISO: input.dateISO,
+      time24: input.time24,
+      timezone: input.timezone,
+      utcOffsetMin: input.utcOffsetMin,
+      isDST: input.isDST
+    }
+  });
+}
+
+src/timezone/resolve.ts
+
+import tzLookup from "tz-lookup";
+import { DateTime } from "luxon";
+import { getTzCached, setTzCached } from "./cache";
+
+export async function resolveTimezone(lat: number, lon: number, dateISO: string, time24: string) {
+  const cached = await getTzCached(lat, lon, dateISO, time24);
+  if (cached) {
+    return {
+      timezone: cached.timezone,
+      utcOffsetMin: cached.utcOffsetMin,
+      isDST: cached.isDST,
+      cached: true
+    };
+  }
+
+  const timezone = tzLookup(lat, lon);
+
+  // Build local time in that timezone
+  const dt = DateTime.fromISO(`${dateISO}T${time24}`, { zone: timezone });
+  if (!dt.isValid) throw new Error("Invalid date/time for timezone resolution.");
+
+  const utcOffsetMin = dt.offset; // minutes
+  const isDST = dt.isInDST;
+
+  await setTzCached({ lat, lon, dateISO, time24, timezone, utcOffsetMin, isDST });
+
+  return { timezone, utcOffsetMin, isDST, cached: false };
+}
+
+
+⸻
+
+5) API endpoints
+
+src/app/api/geo/lookup/route.ts
+
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { resolveGeo } from "@/geo";
+
+const Schema = z.object({ place: z.string().min(2) });
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { place } = Schema.parse(body);
+
+    const geo = await resolveGeo(place);
+    return NextResponse.json({ ok: true, geo });
+  } catch (err: any) {
+    return NextResponse.json({ ok: false, error: err?.message ?? "Unknown error" }, { status: 400 });
+  }
+}
+
+src/app/api/timezone/resolve/route.ts
+
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { resolveTimezone } from "@/timezone/resolve";
+
+const Schema = z.object({
+  lat: z.number(),
+  lon: z.number(),
+  dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time24: z.string().regex(/^\d{2}:\d{2}$/)
+});
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const data = Schema.parse(body);
+
+    const tz = await resolveTimezone(data.lat, data.lon, data.dateISO, data.time24);
+    return NextResponse.json({ ok: true, tz });
+  } catch (err: any) {
+    return NextResponse.json({ ok: false, error: err?.message ?? "Unknown error" }, { status: 400 });
+  }
+}
+
+
+⸻
+
+6) Confidence labels (Verified / Partial / Unverified)
+
+src/soulcodex/compute/confidence.ts
+
+export type ConfidenceBadge = "verified" | "partial" | "unverified";
+
+export function computeConfidence(input: {
+  timeUnknown: boolean;
+  hasGeo: boolean;
+  hasTimezone: boolean;
+}) {
+  const { timeUnknown, hasGeo, hasTimezone } = input;
+
+  if (!hasGeo || !hasTimezone) {
+    return {
+      badge: "unverified" as ConfidenceBadge,
+      label: "Unverified",
+      reason: "Missing geolocation/timezone lock. Rising/Houses may be inaccurate."
+    };
+  }
+
+  if (timeUnknown) {
+    return {
+      badge: "partial" as ConfidenceBadge,
+      label: "Partial",
+      reason: "Birth time unknown: Rising sign and Houses are omitted."
+    };
+  }
+
+  return {
+    badge: "verified" as ConfidenceBadge,
+    label: "Verified",
+    reason: "Time + geolocation + timezone locked."
+  };
+}
+
+
+⸻
+
+7) Patch Astro Provider to actually USE lat/lon + timezone
+
+Patch src/astro/types.ts (if you didn’t already)
+
+Make sure AstroRequest includes lat/lon/timezone (you already had that in my earlier scaffold).
+
+⸻
+
+8) Patch your Soul Codex generate route (auto geo + tz + confidence)
+
+In src/app/api/soulcodex/generate/route.ts:
+
+Add imports:
+
+import { resolveGeo } from "@/geo";
+import { resolveTimezone } from "@/timezone/resolve";
+import { computeConfidence } from "@/soulcodex/compute/confidence";
+import { getAstroProvider } from "@/astro/provider";
+
+Then inside POST, right after parsing inputs, add this block:
+
+// 1) Resolve geo (lat/lon) from place
+const geo = await resolveGeo(parsed.birth.place);
+
+// 2) Resolve timezone + DST if time is known (Accuracy Mode)
+let tz: { timezone: string; utcOffsetMin: number; isDST: boolean } | null = null;
+
+if (!parsed.birth.timeUnknown && parsed.birth.time24) {
+  tz = await resolveTimezone(geo.lat, geo.lon, parsed.birth.dateISO, parsed.birth.time24);
+}
+
+// 3) Inject locked values into parsed inputs (so everything downstream sees it)
+(parsed.birth as any).lat = geo.lat;
+(parsed.birth as any).lon = geo.lon;
+(parsed.birth as any).normalizedPlace = geo.normalizedPlace;
+
+if (tz?.timezone) {
+  parsed.birth.timezone = tz.timezone;
+}
+
+// 4) Compute confidence badge
+const confidence = computeConfidence({
+  timeUnknown: parsed.birth.timeUnknown,
+  hasGeo: !!geo?.lat && !!geo?.lon,
+  hasTimezone: !!parsed.birth.timezone
+});
+
+Now compute astrology from provider (instead of trusting manual entries):
+
+const astroProvider = getAstroProvider();
+
+const astro = await astroProvider.getChart({
+  dateISO: parsed.birth.dateISO,
+  time24: parsed.birth.time24,
+  timeUnknown: parsed.birth.timeUnknown,
+  place: geo.normalizedPlace,
+  timezone: parsed.birth.timezone,
+  lat: geo.lat,
+  lon: geo.lon,
+  houseSystem: "placidus"
+});
+
+parsed.astrology = {
+  sun: astro.sun,
+  moon: astro.moon,
+  rising: astro.rising
+};
+
+// OPTIONAL: store planets/houses if provider returns them
+(parsed as any).astrology.planets = astro.planets ?? {};
+(parsed as any).astrology.houses = astro.houses ?? null;
+
+Then when you build your profile, store confidence somewhere in profile signals/synthesis (best place: profile.signals.meta or profile.user.meta). If your profile structure doesn’t have it yet, do this simple safe add after buildSoulProfile:
+
+(profile as any).meta = {
+  confidence,
+  geo: { ...geo },
+  timezone: tz
+};
+
+And include it in the API response:
+
+return NextResponse.json({
+  ok: true,
+  saved,
+  confidence,
+  geo,
+  timezone: tz,
+  profile,
+  output: text,
+  validation
+});
+
+
+⸻
+
+9) UI: add Accuracy Mode toggle + show badge
+
+In src/app/soulcodex/page.tsx you already have timeUnknown. That IS the toggle.
+Just label it properly and display confidence.
+
+Add state:
+
+const [confidence, setConfidence] = useState<any>(null);
+
+In generate() after success:
+
+setConfidence(data.confidence);
+
+Render the badge:
+
+{confidence && (
+  <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd" }}>
+    <strong>Confidence:</strong> {confidence.label} <br/>
+    <span style={{ opacity: 0.8 }}>{confidence.reason}</span>
+  </div>
+)}
+
+Change your “Birth Time Unknown?” label to “Accuracy Mode” (because humans understand that):
+
+<label>
+  Accuracy Mode
+  <select
+    value={String(timeUnknown)}
+    onChange={(e) => setTimeUnknown(e.target.value === "true")}
+    style={{ width: "100%" }}
+  >
+    <option value="false">Accurate (I know my birth time)</option>
+    <option value="true">Time Unknown (no rising/houses)</option>
+  </select>
+</label>
+
+
+⸻
+
+10) Planet + house expansion (schema-ready)
+
+Even if your astro provider returns only Sun/Moon/Rising for now, your system is now structured to carry:
+	•	astrology.planets (Mercury…Pluto)
+	•	astrology.houses (cusps + system)
+
+So your “Whole Birth Chart” tab can stop being fake and start being expandable.
+
+⸻
+
+What Wave 2A now gives you
+
+✅ Place text → lat/lon (cached)
+✅ lat/lon + date/time → timezone + DST offset (cached)
+✅ Clear Verified/Partial/Unverified badge
+✅ Inputs become locked + reproducible, not “type whatever”
+✅ Astrology pipeline now supports planets/houses without rewrites
+
+⸻
+
+Next Wave (Wave 2B) if you want the real “birth chart poster” accuracy
+
+Geocode is done. Timezone is done. Next is:
+	•	Full planet placements
+	•	Houses + aspects
+	•	Proper chart wheel math
+	•	Poster SVG that shows planets on wheel (not just labels)
+
+When you’re ready, I’ll drop the Planet + Aspects engine interface the same way (swappable provider + caching), so your app becomes a machine, not a mood.

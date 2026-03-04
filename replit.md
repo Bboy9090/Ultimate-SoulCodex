@@ -15,6 +15,25 @@ The frontend utilizes React, TypeScript, Vite, Tailwind CSS with shadcn/ui, TanS
 **Profile Migration System (November 2025):**
 Implemented automatic profile migration when users authenticate after creating anonymous profiles. When a user creates a profile as an anonymous visitor then signs up or logs in, their profile is automatically transferred to their authenticated account. The system uses `req.sessionID` to track anonymous sessions and migrates both soul profiles and person entries during authentication. Migration process: (1) Capture previous sessionId before login, (2) Execute login/signup, (3) Migrate soul profile from session to userId, (4) Migrate persons from session to userId, (5) Clear sessionId from migrated records. This ensures users never need to re-enter profile information after authentication.
 
+**Astro Provider Architecture (March 2026):**
+Clean swappable astrology computation layer under `server/astro/`:
+- `types.ts`: `AstroRequest`, `AstroResult`, `AstroProvider` interfaces
+- `key.ts`: `astroCacheKey()` — deterministic cache key from date/time/place/lat-lon/houseSystem
+- `providers/localProvider.ts`: Wraps `calculateAstrology()` (astronomy-engine) into the provider interface
+- `cachedProvider.ts`: `withAstroCache()` — in-memory Map cache; logs HIT/MISS per request
+- `provider.ts`: `getAstroProvider()` — singleton that returns `localProvider+cache`
+- `POST /api/soul-archetype` uses `getAstroProvider().getChart()` — same birth data is never recomputed twice
+- Architecture ready to swap `localProvider` for a paid API or Swiss Ephemeris with one line change
+
+**Birthday Chart Poster Generator (March 2026):**
+Premium `/poster` page at `client/src/pages/PosterPage.tsx`:
+- Live-editing form (name, birth date/time/location, sun/moon/rising signs, life path, master number)
+- Inline SVG preview updates live as user types — `BirthChartPosterSVG.tsx` component
+- SVG layout (1080×1350 viewBox): cosmic teal space gradient background with 60 fixed star dots, outer gold ring with `textPath` showing Sun/Moon/Rising, 12-segment zodiac wheel with Unicode glyphs, planet dots at correct longitude, center name/date/location block, large life path number, banner ribbon with archetype label, bottom master number line
+- `POST /api/poster/render?width=2048|4096`: server-side SVG → PNG conversion using `sharp` (already installed); returns `image/png` binary for download
+- `server/posterSvg.ts`: pure string SVG builder (no JSX) shared between server PNG export and client preview logic
+- Nav link "Poster" added
+
 **Soul Codex Synthesis Engine (March 2026):**
 New `soulcodex/` directory implements a deterministic personality synthesis engine:
 - `types.ts`: Core interfaces — StressElement, DecisionStyle, PressureStyle, SoulSignals, Archetype, Synthesis, SoulProfile, CompatibilityScore

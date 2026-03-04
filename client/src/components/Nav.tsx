@@ -7,6 +7,7 @@ export default function Nav() {
     { href: "/", label: "Start" },
     { href: "/profile", label: "Profile" },
     { href: "/horoscope", label: "Daily" },
+    { href: "/poster", label: "Poster" },
   ];
 
   return (
