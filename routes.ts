@@ -4,6 +4,9 @@ import { storage } from "./storage";
 import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
 import { sendTestNotificationSchema, broadcastNotificationSchema } from "./shared/notification-schemas";
 import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
+import { getAstroProvider } from "./server/astro/provider";
+import { buildPosterSvg, type PosterData as PosterSvgData } from "./server/posterSvg";
+import sharp from "sharp";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype, generateIntegrationAnalysis, generatePersonalizedInsights } from "./services/archetype";
@@ -495,10 +498,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedBirthData.longitude
       );
       
-      // Calculate core systems
+      // Calculate core systems via cached astro provider
       let astrologyData = null;
-      if (hasCompleteData) {
-        try {
+      try {
+        const astroProvider = getAstroProvider();
+        const astroResult = await astroProvider.getChart({
+          dateISO: validatedBirthData.birthDate,
+          time24: validatedBirthData.birthTime,
+          timeUnknown: !validatedBirthData.birthTime,
+          place: validatedBirthData.birthLocation ?? "Unknown",
+          timezone: validatedBirthData.timezone,
+          lat: validatedBirthData.latitude ? parseFloat(validatedBirthData.latitude.toString()) : undefined,
+          lon: validatedBirthData.longitude ? parseFloat(validatedBirthData.longitude.toString()) : undefined,
+          houseSystem: "equal",
+        });
+        if (hasCompleteData) {
           astrologyData = calculateAstrology({
             name: validatedBirthData.name,
             birthDate: validatedBirthData.birthDate,
@@ -508,9 +522,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             longitude: validatedBirthData.longitude!,
             timezone: validatedBirthData.timezone!
           });
-        } catch (error) {
-          console.error("[SoulArchetype] Astrology calculation failed:", error);
         }
+      } catch (error) {
+        console.error("[SoulArchetype] Astrology calculation failed:", error);
       }
       
       let numerologyData;
@@ -3200,6 +3214,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ notifications: upcoming, days });
     } catch (error) {
       return handleError(error, res, "GetUpcomingTransitNotifications");
+    }
+  });
+
+  // Poster PNG render endpoint
+  app.post("/api/poster/render", async (req, res) => {
+    try {
+      const width = Math.min(parseInt(req.query.width as string) || 2048, 4096);
+      const height = Math.round(width * 1350 / 1080);
+
+      const data = req.body as PosterSvgData;
+      if (!data.birthDate || !data.sunSign || !data.moonSign || !data.lifePathNumber) {
+        return res.status(400).json({ message: "birthDate, sunSign, moonSign, and lifePathNumber are required" });
+      }
+
+      const svg = buildPosterSvg(data);
+      const png = await sharp(Buffer.from(svg))
+        .resize(width, height)
+        .png()
+        .toBuffer();
+
+      res.set("Content-Type", "image/png");
+      res.set("Content-Disposition", `attachment; filename="soul-codex-poster-${width}.png"`);
+      res.send(png);
+    } catch (error) {
+      return handleError(error, res, "PosterRender");
     }
   });
 
