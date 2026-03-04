@@ -3,7 +3,7 @@ import "dotenv/config";
 
 import express, { type Express } from "express";
 import { registerRoutes } from "../routes";
-import { serveStatic } from "../vite-server";
+import { setupVite } from "../vite-server";
 
 // Simple logger function
 function log(message: string, source = "express") {
@@ -74,13 +74,13 @@ let serverInstance: any = null;
     res.status(status).json({ message });
   });
 
-  // Serve static files (built Vite output from dist/public)
-  serveStatic(app);
-
   // Use PORT from environment (Render and other platforms set this)
   const PORT = parseInt(process.env.PORT || "3000", 10);
   // On Windows, use 127.0.0.1 explicitly to avoid IPv6 issues. On Linux, use 0.0.0.0 for all interfaces
   const HOST = process.platform === "win32" ? "127.0.0.1" : "0.0.0.0";
+
+  // Setup Vite (dev middleware or static serving)
+  await setupVite(app, server);
 
   serverInstance = server.listen(PORT, HOST, () => {
     // Log startup information (without exposing secrets)
