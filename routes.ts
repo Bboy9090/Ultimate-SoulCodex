@@ -61,6 +61,13 @@ import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
 import { resolveGeo } from "./server/geo/index";
 import { computeConfidence } from "./soulcodex/compute/confidence";
+import { collectSignals } from "./soulcodex/codex30/registry";
+import { scoreThemes } from "./soulcodex/codex30/synth/score";
+import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
+import { isGeneric } from "./soulcodex/codex30/synth/quality";
+import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
+import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
+import { generateText, isGeminiAvailable } from "./gemini";
 
 // Initialize SubscriptionService (if Stripe is configured)
 let subscriptionService: SubscriptionService | null = null;
@@ -3316,6 +3323,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/codex30/generate", async (req, res) => {
+    try {
+      const { profile, fullChart, userInputs } = req.body;
+
+      if (!profile && !userInputs) {
+        return res.status(400).json({ ok: false, error: "profile and userInputs are required" });
+      }
+
+      const signals  = collectSignals({ profile: profile ?? {}, fullChart, userInputs: userInputs ?? {} });
+      const themes   = scoreThemes(signals);
+      const codename = pickCodename(themes);
+      const { strengths, shadows, triggers, prescriptions } = compileBulletLists(signals, themes);
+
+      const anchors = signals.flatMap(s => s.evidence).filter(Boolean).slice(0, 14);
+
+      let narrative = "";
+
+      if (isGeminiAvailable()) {
+        const prompt = narratorPrompt({
+          codename,
+          archetype: codename,
+          themes: themes.slice(0, 6).map(t => ({ tag: t.tag, score: t.score })),
+          strengths,
+          shadows,
+          triggers,
+          prescriptions,
+          anchors
+        });
+
+        narrative = await generateText({ model: "gemini-2.0-flash", prompt, temperature: 0.82 });
+
+        if (!narrative || isGeneric(narrative)) {
+          const rPrompt = rewritePrompt(narrative || "No output generated.", anchors);
+          narrative = await generateText({ model: "gemini-2.0-flash", prompt: rPrompt, temperature: 0.88 });
+        }
+      }
+
+      if (!narrative) {
+        narrative = buildFallbackNarrative(codename, anchors, themes, strengths, triggers);
+      }
+
+      const conf = profile?.meta?.confidence ?? profile?.confidence;
+      const badges = {
+        confidenceLabel: conf?.label ?? conf?.badge ?? "Unverified",
+        reason: conf?.reason ?? ""
+      };
+
+      return res.json({
+        ok: true,
+        synthesis: {
+          codename,
+          archetype: codename,
+          badges,
+          topThemes: themes,
+          strengths,
+          shadows,
+          triggers,
+          prescriptions,
+          narrative,
+          debug: { signals, themeScores: themes }
+        }
+      });
+    } catch (error) {
+      return handleError(error, res, "Codex30");
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+function buildFallbackNarrative(
+  codename: string,
+  anchors: string[],
+  themes: { tag: string; score: number }[],
+  strengths: string[],
+  triggers: string[]
+): string {
+  const topTheme = themes[0]?.tag ?? "precision";
+  const anchor1 = anchors[0] ?? "my chart";
+  const anchor2 = anchors[1] ?? "my patterns";
+  const anchor3 = anchors[2] ?? "my signals";
+  const s1 = strengths[0] ?? "Pattern recognition";
+  const t1 = triggers[0] ?? "Sloppy work and vague promises.";
+
+  return `CODENAME: ${codename}
+MOTTO: I build what others talk about.
+
+WHO I AM
+I operate from a core of ${topTheme}. Everything I do — how I decide, how I rest, how I protect my attention — runs through that filter. When I look at ${anchor1}, I see the same pattern show up across different contexts. I am not confused about what I value; I may not always know how to get there, but I know what I'm pointing at.
+
+I have learned not to explain myself to people who aren't willing to understand. ${anchor2} tells me something about the shape of my inner life that I've confirmed through lived experience — not theory. My strengths include: ${s1}.
+
+HOW I MOVE UNDER PRESSURE
+When things get hard, my system defaults to what it knows. I do not perform calm — I find it, or I go quiet until I do. Pressure is not inherently a problem. The problem is pressure combined with noise, with vague demands, with people who haven't done the work.
+
+I have a limited tolerance for inefficiency under stress. I move toward what I can control and cut what I cannot. That is not rigidity — it is resource management.
+
+WHAT I WON'T TOLERATE
+${t1} I do not negotiate with people who have already decided they won't change. I know the cost of letting that slide.
+
+WHAT I'M BUILDING
+${anchor3} suggests I am in a longer build cycle than most people realize. I am not optimizing for applause. I am building something that will outlast the moment I'm in.
+
+THIS WEEK
+- Complete one thing you've been circling. Completion is data.
+- Reduce noise. Your best thinking requires space, not stimulation.
+- Say no to one thing that belongs to someone else's urgency.`;
 }

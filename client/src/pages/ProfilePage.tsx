@@ -238,7 +238,15 @@ export default function ProfilePage() {
           </ul>
         </ProfileSection>
 
-        <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        <div style={{ textAlign: "center", marginTop: "2rem", display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate("/codex")}
+            type="button"
+            style={{ fontSize: "0.95rem", padding: "0.75rem 1.75rem" }}
+          >
+            ✦ Open Codex Reading
+          </button>
           <button
             className="btn btn-glow btn-large"
             onClick={() => navigate("/horoscope")}

@@ -4,10 +4,11 @@ export default function Nav() {
   const [location] = useLocation();
 
   const links = [
-    { href: "/", label: "Start" },
+    { href: "/",        label: "Start"   },
     { href: "/profile", label: "Profile" },
+    { href: "/codex",   label: "Codex"   },
     { href: "/horoscope", label: "Daily" },
-    { href: "/poster", label: "Poster" },
+    { href: "/poster",  label: "Poster"  },
   ];
 
   return (
