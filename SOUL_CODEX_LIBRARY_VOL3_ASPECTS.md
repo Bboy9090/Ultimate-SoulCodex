@@ -4,7 +4,7 @@ Inner Relationships · Psychological Dynamics
 
 ---
 
-SECTION 1 — HOW TO READ ASPECTS IN SOUL CODEX
+SECTION 1 — How to Read Aspects in Soul Codex
 
 Aspects describe relationships between inner functions. They are not event predictors; they reveal internal dynamics:
 •how two parts of you communicate
@@ -16,7 +16,7 @@ There are no bad aspects — only unintegrated ones.
 
 ---
 
-SECTION 2 — MAJOR ASPECTS (CORE PSYCHOLOGICAL RELATIONSHIPS)
+SECTION 2 — Major Aspects (Core Psychological Relationships)
 
 ### Conjunction — Fusion & Intensity
 •**What this is:** two inner functions operate as one unified force.
@@ -60,7 +60,7 @@ SECTION 2 — MAJOR ASPECTS (CORE PSYCHOLOGICAL RELATIONSHIPS)
 
 ---
 
-SECTION 3 — MINOR ASPECTS (SUBTLE DEVELOPMENTAL DYNAMICS)
+SECTION 3 — Minor Aspects (Subtle Developmental Dynamics)
 
 ### Quincunx (Inconjunct) — Adjustment
 •**What this is:** two functions operate without natural understanding.
@@ -75,7 +75,7 @@ SECTION 3 — MINOR ASPECTS (SUBTLE DEVELOPMENTAL DYNAMICS)
 
 ---
 
-SECTION 4 — PLANETARY ASPECT INTERPRETATION RULES
+SECTION 4 — Planetary Aspect Interpretation Rules
 
 Every aspect explanation must include:
 1. the two functions involved
@@ -88,7 +88,7 @@ No aspect is ever listed without translation.
 
 ---
 
-SECTION 5 — COMMON ASPECT PAIRS (CANON)
+SECTION 5 — Common Aspect Pairs (Canon)
 
 ### Sun Square Saturn
 •**Dynamic:** identity challenged by responsibility.
@@ -119,7 +119,7 @@ SECTION 5 — COMMON ASPECT PAIRS (CANON)
 
 ---
 
-SECTION 6 — ASPECT PATTERNS (CHART-LEVEL DYNAMICS)
+SECTION 6 — Aspect Patterns (Chart-Level Dynamics)
 
 ### T-Squares — Focused Development
 •**What it is:** multiple tensions converging.
@@ -138,7 +138,7 @@ SECTION 6 — ASPECT PATTERNS (CHART-LEVEL DYNAMICS)
 
 ---
 
-SECTION 7 — HOW SOUL CODEX PRESENTS ASPECTS (UX RULE)
+SECTION 7 — How Soul Codex Presents Aspects (UX Rule)
 - Aspects are grouped by theme, not listed.
 - Tension aspects are framed as developmental.
 - Supportive aspects are framed as potential.
@@ -158,4 +158,4 @@ No fear. No hierarchy.
 
 ## Next Volume
 
-Volume IV — Asteroids & Fixed Stars (Micro-archetypes · Subtle destiny tones · No trivia allowed)
+Volume IV — Asteroids & Fixed Stars (Micro-Archetypes · Subtle Destiny Tones · Zero Trivia)
