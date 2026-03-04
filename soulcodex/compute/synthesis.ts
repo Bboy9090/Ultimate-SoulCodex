@@ -3,12 +3,16 @@ import { stressNotes } from "./elements";
 import { deriveMoralCode } from "./moral";
 
 function buildCoreEssence(s: SoulSignals): string {
-  const sun = s.sunSign ?? "unknown sign";
-  const moon = s.moonSign ?? "unknown moon";
-  return (
-    `I lead with my ${sun} drive and process the world through my ${moon} instincts. ` +
-    `My life path (${s.lifePath}) shapes how I build, and my energy style is ${s.socialEnergy}.`
-  );
+  const parts: string[] = [];
+  if (s.sunSign && s.moonSign) {
+    parts.push(`I lead with my ${s.sunSign} drive and process the world through my ${s.moonSign} instincts.`);
+  } else if (s.sunSign) {
+    parts.push(`I lead with my ${s.sunSign} drive.`);
+  } else if (s.moonSign) {
+    parts.push(`I process the world through my ${s.moonSign} instincts.`);
+  }
+  parts.push(`My life path (${s.lifePath}) shapes how I build, and my energy style is ${s.socialEnergy}.`);
+  return parts.join(" ");
 }
 
 function buildStressPattern(s: SoulSignals): string {

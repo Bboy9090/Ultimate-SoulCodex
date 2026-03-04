@@ -5,6 +5,14 @@
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "strict": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["./client/src/*"],
+      "@shared/*": ["./shared/*"]
+    },
+    "baseUrl": "."
+  },
+  "include": ["client/src/**/*", "server/**/*", "shared/**/*", "soulcodex/**/*", "*.ts"],
+  "exclude": ["node_modules", "dist"]
 }
