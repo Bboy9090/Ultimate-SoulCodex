@@ -1,0 +1,366 @@
+Good. “Real deal” means we stop pretending sign names are a chart and we start shipping degrees → houses → aspects → plotted wheel → downloadable PNG. The boring part is it’s a lot of plumbing. The fun part is it works and nobody can call it fake.
+
+Here’s Wave 2B locked in: full chart endpoint + aspects + poster page + PNG export (2048/4096). Copy/paste this into your repo.
+
+⸻
+
+1) Install the last missing packages
+
+npm i @resvg/resvg-js
+
+(You already installed tz-lookup + luxon earlier.)
+
+⸻
+
+2) Add the Poster PNG render endpoint (this is the “real product” part)
+
+src/app/api/poster/render/route.ts
+
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { Resvg } from "@resvg/resvg-js";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { BirthChartPosterSVG } from "@/poster/BirthChartPosterSVG";
+
+// Poster input schema (keep it strict so garbage doesn't break rendering)
+const Schema = z.object({
+  size: z.enum(["2048", "4096"]).default("2048"),
+
+  title: z.string().default("Soul Codex Birth Chart"),
+  dateText: z.string(),
+  timeText: z.string().optional().default(""),
+  placeText: z.string().default(""),
+  rimText: z.string().default(""),
+
+  lifePath: z.union([z.string(), z.number()]).transform(String).default(""),
+  lifePathTitle: z.string().default(""),
+  masterNumber: z.string().optional().default(""),
+  masterSubtitle: z.string().optional().default(""),
+
+  // planets must include lon degrees if you want plotting
+  planets: z.record(z.string(), z.object({ lon: z.number() })).default({})
+});
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const data = Schema.parse(body);
+
+    const svg = renderToStaticMarkup(React.createElement(BirthChartPosterSVG, { data }));
+
+    // Base poster is 1080x1350. Scale to requested size.
+    const target = Number(data.size);
+    const scale = target / 1080;
+
+    const resvg = new Resvg(svg, {
+      fitTo: { mode: "zoom", value: scale }
+    });
+
+    const pngData = resvg.render().asPng();
+
+    return new NextResponse(pngData, {
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="soul-codex-poster-${data.size}.png"`
+      }
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { ok: false, error: err?.message ?? "Unknown error" },
+      { status: 400 }
+    );
+  }
+}
+
+
+⸻
+
+3) Add the /poster page that pulls FullChart and exports PNG
+
+This page:
+	•	Calls your existing geo+timezone (Wave 2A)
+	•	Calls /api/astro/fullchart
+	•	Builds a poster payload (rimText, planets, life path)
+	•	Lets user download 2048/4096 PNG via /api/poster/render
+
+src/app/poster/page.tsx
+
+"use client";
+
+import React, { useMemo, useState } from "react";
+
+async function postJSON(url: string, payload: any) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return res;
+}
+
+export default function PosterPage() {
+  const [loading, setLoading] = useState(false);
+  const [fullChart, setFullChart] = useState<any>(null);
+  const [error, setError] = useState("");
+
+  // Demo defaults (change these)
+  const [name, setName] = useState("Bobby");
+  const [dateISO, setDateISO] = useState("1990-09-17");
+  const [timeUnknown, setTimeUnknown] = useState(false);
+  const [time24, setTime24] = useState("11:11");
+  const [place, setPlace] = useState("New York City, NY, USA");
+
+  const [lifePath, setLifePath] = useState("9");
+  const [lifePathTitle, setLifePathTitle] = useState("THE HUMANITARIAN");
+  const [masterNumber, setMasterNumber] = useState("11:11");
+  const [masterSubtitle, setMasterSubtitle] = useState("Master Number 11 • Intuition");
+
+  const rimText = useMemo(() => {
+    if (!fullChart?.planets) return "";
+    // Pull sign labels if available
+    const sun = fullChart.planets.sun?.sign ?? "—";
+    const moon = fullChart.planets.moon?.sign ?? "—";
+    const rising = fullChart.houses?.asc ? "ASC" : "RISING";
+    const ascSign = fullChart.houses?.ascSign ?? fullChart.houses?.asc ?? null;
+
+    return `SUN IN ${sun} • MOON IN ${moon} • ${rising} • SOUL CODEX •`;
+  }, [fullChart]);
+
+  async function buildChart() {
+    setLoading(true);
+    setError("");
+    setFullChart(null);
+
+    try {
+      // 1) Geo lookup
+      const geoRes = await postJSON("/api/geo/lookup", { place });
+      const geoData = await geoRes.json();
+      if (!geoData.ok) throw new Error(geoData.error || "Geo lookup failed");
+
+      const { lat, lon, normalizedPlace } = geoData.geo;
+
+      // 2) Timezone resolve (only if time known)
+      let tzInfo: any = null;
+      if (!timeUnknown) {
+        const tzRes = await postJSON("/api/timezone/resolve", {
+          lat, lon, dateISO, time24
+        });
+        const tzData = await tzRes.json();
+        if (!tzData.ok) throw new Error(tzData.error || "Timezone resolve failed");
+        tzInfo = tzData.tz;
+      }
+
+      // 3) Full chart
+      const fullRes = await postJSON("/api/astro/fullchart", {
+        dateISO,
+        time24: timeUnknown ? undefined : time24,
+        timeUnknown,
+        place: normalizedPlace,
+        lat,
+        lon,
+        timezone: tzInfo?.timezone,
+        utcOffsetMin: tzInfo?.utcOffsetMin,
+        isDST: tzInfo?.isDST,
+        houseSystem: "placidus"
+      });
+
+      const fullData = await fullRes.json();
+      if (!fullData.ok) throw new Error(fullData.error || "Full chart failed");
+
+      setFullChart(fullData.full);
+    } catch (e: any) {
+      setError(e?.message || "Something broke");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function download(size: "2048" | "4096") {
+    if (!fullChart) return;
+
+    // Build payload for render endpoint
+    const payload = {
+      size,
+      title: `${name}'s Birth Chart`,
+      dateText: dateISO,
+      timeText: timeUnknown ? "Time Unknown" : time24,
+      placeText: place,
+      rimText,
+      lifePath,
+      lifePathTitle,
+      masterNumber,
+      masterSubtitle,
+      planets: fullChart.planets // must include {lon}
+    };
+
+    const res = await postJSON("/api/poster/render", payload);
+    if (!res.ok) {
+      const txt = await res.text();
+      setError(`Poster render failed: ${txt}`);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `soul-codex-poster-${size}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div style={{ maxWidth: 980, margin: "40px auto", padding: 16, fontFamily: "system-ui" }}>
+      <h1 style={{ fontSize: 28, marginBottom: 8 }}>Poster Generator</h1>
+      <p style={{ opacity: 0.75, marginTop: 0 }}>
+        Full chart → plotted wheel → export PNG. The adult version.
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <label>Name
+          <input value={name} onChange={(e) => setName(e.target.value)} style={{ width: "100%" }} />
+        </label>
+
+        <label>Birth Date (YYYY-MM-DD)
+          <input value={dateISO} onChange={(e) => setDateISO(e.target.value)} style={{ width: "100%" }} />
+        </label>
+
+        <label>Accuracy Mode
+          <select value={String(timeUnknown)} onChange={(e) => setTimeUnknown(e.target.value === "true")} style={{ width: "100%" }}>
+            <option value="false">Accurate (I know time)</option>
+            <option value="true">Time Unknown (no houses)</option>
+          </select>
+        </label>
+
+        <label>Birth Time (HH:MM)
+          <input value={time24} onChange={(e) => setTime24(e.target.value)} style={{ width: "100%" }} disabled={timeUnknown} />
+        </label>
+
+        <label style={{ gridColumn: "1 / -1" }}>Place
+          <input value={place} onChange={(e) => setPlace(e.target.value)} style={{ width: "100%" }} />
+        </label>
+
+        <label>Life Path
+          <input value={lifePath} onChange={(e) => setLifePath(e.target.value)} style={{ width: "100%" }} />
+        </label>
+
+        <label>Life Path Title
+          <input value={lifePathTitle} onChange={(e) => setLifePathTitle(e.target.value)} style={{ width: "100%" }} />
+        </label>
+
+        <label>Master Number
+          <input value={masterNumber} onChange={(e) => setMasterNumber(e.target.value)} style={{ width: "100%" }} />
+        </label>
+
+        <label>Master Subtitle
+          <input value={masterSubtitle} onChange={(e) => setMasterSubtitle(e.target.value)} style={{ width: "100%" }} />
+        </label>
+      </div>
+
+      <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button onClick={buildChart} disabled={loading} style={{ padding: "10px 14px" }}>
+          {loading ? "Building chart..." : "Build Full Chart"}
+        </button>
+
+        <button onClick={() => download("2048")} disabled={!fullChart} style={{ padding: "10px 14px" }}>
+          Download PNG 2048
+        </button>
+
+        <button onClick={() => download("4096")} disabled={!fullChart} style={{ padding: "10px 14px" }}>
+          Download PNG 4096
+        </button>
+      </div>
+
+      {error && <p style={{ color: "crimson" }}>{error}</p>}
+
+      {fullChart && (
+        <div style={{ marginTop: 18, padding: 14, border: "1px solid #ddd" }}>
+          <strong>Chart Ready.</strong>
+          <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {Object.entries(fullChart.planets).slice(0, 10).map(([k, v]: any) => (
+              <div key={k} style={{ padding: 10, border: "1px solid #eee" }}>
+                <div><strong>{k}</strong></div>
+                <div>lon: {Number(v.lon).toFixed(2)}°</div>
+                <div>sign: {v.sign}</div>
+                {v.house ? <div>house: {v.house}</div> : null}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <strong>Top Aspects:</strong>
+            <ul>
+              {fullChart.aspects.slice(0, 8).map((a: any, i: number) => (
+                <li key={i}>{a.a} {a.aspect} {a.b} (orb {a.orb}°)</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+⸻
+
+4) Reality check (the only thing that can still block you)
+
+Your astro provider MUST return degrees
+
+Wave 2B needs:
+	•	longitudes: { sun: 123.45, moon: 210.12, ... }
+	•	houses: { cusps:[...12], asc, mc } when time is known
+
+If your provider still only returns “Virgo/Scorpio/etc”, then the FullChart endpoint will (correctly) refuse. That’s not me being difficult. That’s math.
+
+⸻
+
+5) The exact “Provider Upgrade” prompt you paste into Replit/Cursor
+
+This forces your provider to return degrees or switch endpoints:
+
+Upgrade my Astro Provider to Wave 2B (degrees-based) output.
+
+Current provider returns:
+- sun/moon/rising sign strings, maybe houses.
+
+Required provider output:
+Return AstroResult with these additional fields:
+1) longitudes: Record<PlanetKey, number> where PlanetKey includes:
+   sun, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto, north_node(optional)
+   Values are ecliptic longitude degrees 0..360.
+
+2) houses (only if birth time is known):
+   {
+     system: "placidus" | "whole_sign",
+     cusps: number[12] (degrees),
+     asc: number (degrees),
+     mc: number (degrees)
+   }
+
+Rules:
+- If timeUnknown is true: still return longitudes for planets, but omit houses/asc/mc.
+- Must use the Wave 2A geo+timezone locked inputs (lat/lon + IANA timezone + date/time).
+- Must keep caching (AstroCache) and keying stable.
+- Update /api/astro/fullchart to succeed end-to-end with this data.
+
+If my current astro API cannot return degrees, switch to an endpoint/provider that does.
+Return complete code patches with updated types and parsing.
+
+
+⸻
+
+6) After this, you’ll have:
+
+✅ Full chart JSON (planets/houses/aspects)
+✅ A plotted wheel poster that’s actually based on degrees
+✅ Downloadable poster PNG at 2048/4096
+✅ A system that can scale to “Ultimate Codex” without collapsing into nonsense
+
+When your provider starts returning degrees, the poster becomes the same kind of “birthday chart image” you showed me, except yours is generated from the user’s real chart, not a template.
