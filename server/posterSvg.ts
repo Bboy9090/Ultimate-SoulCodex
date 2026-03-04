@@ -35,8 +35,9 @@ const STARS: [number, number, number][] = [
 ];
 
 const PLANET_LABELS: Record<string, string> = {
-  sun:"Su", moon:"Mo", mercury:"Me", venus:"Ve", mars:"Ma",
-  jupiter:"Ju", saturn:"Sa", uranus:"Ur", neptune:"Ne", pluto:"Pl",
+  sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
+  jupiter: "♃", saturn: "♄", uranus: "♅", neptune: "♆", pluto: "♇",
+  north_node: "☊",
 };
 
 function formatDate(iso: string): string {
@@ -114,8 +115,8 @@ export function buildPosterSvg(data: PosterData): string {
   ).join("");
 
   const planetDotsSvg = planetDots.map(d =>
-    `<circle cx="${d.px}" cy="${d.py}" r="7" fill="#d6b25e" opacity="0.9"/>
-     <text x="${d.px}" y="${d.py + 1}" font-family="sans-serif" font-size="9" fill="#071013" font-weight="bold" text-anchor="middle" dominant-baseline="central">${d.label}</text>`
+    `<circle cx="${d.px}" cy="${d.py}" r="14" fill="rgba(15,25,40,0.85)" stroke="#d6b25e" stroke-width="1.5" opacity="0.95"/>
+     <text x="${d.px}" y="${d.py + 1}" font-family="serif" font-size="14" fill="#d6b25e" text-anchor="middle" dominant-baseline="central">${d.label}</text>`
   ).join("");
 
   const nameText = data.name || "Soul Codex";

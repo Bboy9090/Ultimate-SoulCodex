@@ -14,6 +14,7 @@ interface PlanetData {
   sign: string;
   house: number;
   degree: number;
+  longitude: number;
   interpretation: {
     title: string;
     description: string;
@@ -373,6 +374,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
       sign: pos.sign,
       house,
       degree: pos.degree,
+      longitude: pos.longitude,
       interpretation: getPlanetSignInterpretation(planetName, pos.sign),
       houseInterpretation: getHouseInterpretation(house)
     };

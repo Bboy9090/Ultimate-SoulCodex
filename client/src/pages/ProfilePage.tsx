@@ -33,9 +33,39 @@ function getProfile(): SoulProfile | null {
   }
 }
 
+interface ConfidenceData {
+  badge: "verified" | "partial" | "unverified";
+  label: string;
+  reason: string;
+}
+
+function getConfidence(): ConfidenceData | null {
+  try {
+    const raw = localStorage.getItem("soulConfidence");
+    if (!raw) {
+      const profile = localStorage.getItem("soulProfile");
+      if (profile) {
+        const p = JSON.parse(profile);
+        if (p.confidence) return p.confidence as ConfidenceData;
+      }
+      return null;
+    }
+    return JSON.parse(raw) as ConfidenceData;
+  } catch {
+    return null;
+  }
+}
+
+const BADGE_STYLES: Record<string, { bg: string; border: string; color: string; dot: string }> = {
+  verified: { bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.3)", color: "#4ade80", dot: "#22c55e" },
+  partial: { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.3)", color: "#fbbf24", dot: "#f59e0b" },
+  unverified: { bg: "rgba(148,163,184,0.1)", border: "rgba(148,163,184,0.2)", color: "#94a3b8", dot: "#64748b" },
+};
+
 export default function ProfilePage() {
   const [, navigate] = useLocation();
   const profile = getProfile();
+  const confidence = getConfidence();
 
   if (!profile) {
     return (
@@ -57,23 +87,54 @@ export default function ProfilePage() {
     <div className="container" style={{ padding: "2rem 1rem 4rem", maxWidth: 720 }}>
       <div className="stagger">
         <section style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <div
-            style={{
-              display: "inline-block",
-              padding: "0.375rem 1rem",
-              background: "rgba(124, 58, 237, 0.15)",
-              border: "1px solid rgba(124, 58, 237, 0.3)",
-              borderRadius: 9999,
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              color: "var(--cosmic-lavender)",
-              letterSpacing: "0.05em",
-              textTransform: "uppercase",
-              marginBottom: "1rem",
-            }}
-          >
-            {archetype.element} {archetype.role}
+          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1rem" }}>
+            <div
+              style={{
+                display: "inline-block",
+                padding: "0.375rem 1rem",
+                background: "rgba(124, 58, 237, 0.15)",
+                border: "1px solid rgba(124, 58, 237, 0.3)",
+                borderRadius: 9999,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "var(--cosmic-lavender)",
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+              }}
+            >
+              {archetype.element} {archetype.role}
+            </div>
+            {confidence && (() => {
+              const s = BADGE_STYLES[confidence.badge] ?? BADGE_STYLES.unverified;
+              return (
+                <div
+                  title={confidence.reason}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.375rem",
+                    padding: "0.375rem 0.875rem",
+                    background: s.bg,
+                    border: `1px solid ${s.border}`,
+                    borderRadius: 9999,
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: s.color,
+                    letterSpacing: "0.05em",
+                    cursor: "default",
+                  }}
+                >
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block", flexShrink: 0 }} />
+                  {confidence.label}
+                </div>
+              );
+            })()}
           </div>
+          {confidence && (
+            <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "0.75rem", fontStyle: "italic" }}>
+              {confidence.reason}
+            </p>
+          )}
           <h1
             className="gradient-text"
             style={{

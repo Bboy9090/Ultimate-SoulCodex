@@ -57,10 +57,50 @@ function SignSelect({ value, onChange }: { value: string; onChange: (v: string) 
 export default function PosterPage() {
   const [data, setData] = useState<PosterData>(DEMO);
   const [downloading, setDownloading] = useState<number | null>(null);
+  const [computing, setComputing] = useState(false);
+  const [computeError, setComputeError] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 
   const update = (field: keyof PosterData, value: any) => {
     setData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleComputeChart = async () => {
+    if (!data.birthDate || !data.birthLocation) {
+      setComputeError("Birth date and location are required to compute the chart.");
+      return;
+    }
+    setComputing(true);
+    setComputeError(null);
+    try {
+      const res = await fetch("/api/astro/fullchart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          birthDate: data.birthDate,
+          birthTime: data.birthTime || undefined,
+          timeUnknown: !data.birthTime,
+          birthLocation: data.birthLocation,
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setComputeError(json.error ?? "Chart computation failed.");
+        return;
+      }
+      const planetEntries = Object.entries(json.planets ?? {}) as [string, { longitude: number }][];
+      const planets = planetEntries
+        .filter(([, v]) => typeof v?.longitude === "number")
+        .map(([name, v]) => ({ name, longitude: v.longitude }));
+      update("planets", planets);
+      if (json.sun && !data.sunSign) update("sunSign", json.sun);
+      if (json.moon && !data.moonSign) update("moonSign", json.moon);
+      if (json.rising && !data.risingSign) update("risingSign", json.rising);
+    } catch (err: any) {
+      setComputeError(err?.message ?? "Network error.");
+    } finally {
+      setComputing(false);
+    }
   };
 
   const validateAndGetData = (): PosterData | null => {
@@ -145,8 +185,28 @@ export default function PosterPage() {
           </Field>
 
           <Field label="Birth Location (optional)">
-            <input className="input" value={data.birthLocation ?? ""} onChange={(e) => update("birthLocation", e.target.value)} placeholder="City, State" />
+            <input className="input" value={data.birthLocation ?? ""} onChange={(e) => update("birthLocation", e.target.value)} placeholder="City, State or Country" />
           </Field>
+
+          <div style={{ marginBottom: "1rem" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleComputeChart}
+              disabled={computing || !data.birthDate || !data.birthLocation}
+              type="button"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              {computing ? "Computing…" : data.planets?.length ? `✓ Chart Computed (${data.planets.length} planets)` : "Compute Chart from Birth Data"}
+            </button>
+            {computeError && (
+              <p style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "0.375rem", marginBottom: 0 }}>{computeError}</p>
+            )}
+            {!computeError && data.planets?.length ? (
+              <p style={{ color: "#4ade80", fontSize: "0.75rem", marginTop: "0.375rem", marginBottom: 0 }}>
+                Planets plotted at real ecliptic positions.
+              </p>
+            ) : null}
+          </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
             <Field label="Sun Sign">

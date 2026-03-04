@@ -26,8 +26,9 @@ const MASTER_NUMBER_MEANINGS: Record<number, string> = {
 };
 
 const PLANET_LABELS: Record<string, string> = {
-  sun: "Su", moon: "Mo", mercury: "Me", venus: "Ve", mars: "Ma",
-  jupiter: "Ju", saturn: "Sa", uranus: "Ur", neptune: "Ne", pluto: "Pl",
+  sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
+  jupiter: "♃", saturn: "♄", uranus: "♅", neptune: "♆", pluto: "♇",
+  north_node: "☊",
 };
 
 const STARS: [number, number, number][] = [
@@ -165,8 +166,8 @@ export default function BirthChartPosterSVG({ data }: { data: PosterData }) {
         const [px, py] = polarToXY(cx, cy, planetR, deg);
         return (
           <g key={i}>
-            <circle cx={px} cy={py} r={9} fill="#d6b25e" opacity={0.9} />
-            <text x={px} y={py + 1} fontFamily="sans-serif" fontSize={9} fill="#071013" fontWeight="bold" textAnchor="middle" dominantBaseline="central">
+            <circle cx={px} cy={py} r={14} fill="rgba(15,25,40,0.85)" stroke="#d6b25e" strokeWidth={1.5} opacity={0.95} />
+            <text x={px} y={py + 1} fontFamily="serif" fontSize={14} fill="#d6b25e" textAnchor="middle" dominantBaseline="central">
               {label}
             </text>
           </g>

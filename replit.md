@@ -44,6 +44,23 @@ New `soulcodex/` directory implements a deterministic personality synthesis engi
 - `validators/blandnessFilter.ts`: Validates AI output against BANNED phrases list and enforces first-person behavioral language
 - `index.ts`: Main `buildSoulProfile(inputs, overrides)` entry point
 
+**Wave 2A: World Geocoding + Confidence Badges (March 2026):**
+- `server/geo/nominatim.ts`: Nominatim (OpenStreetMap) geocoder — any city in the world, no API key required. Uses `User-Agent: SoulCodex/1.0`.
+- `server/geo/cache.ts`: In-memory `Map` cache for geocoding results. Key format: `geo:v1:{normalized query}`. First call hits static DB or Nominatim; subsequent calls are instant.
+- `server/geo/index.ts`: `resolveGeo(place)` — checks cache → static lookup (`geocoding.ts`) → Nominatim. Returns `{ normalizedPlace, lat, lon, provider, cached }`.
+- `soulcodex/compute/confidence.ts`: `computeConfidence({ timeUnknown, hasGeo, hasTimezone })` → `{ badge: "verified"|"partial"|"unverified", label, reason }`. Verified = full time + geo locked; Partial = no birth time; Unverified = no geo.
+- `POST /api/soul-archetype`: Now uses `resolveGeo()` for world geocoding; returns `confidence` and `geo` in response body.
+- `ProfilePage`: Shows colored confidence badge (green=Verified, amber=Partial, gray=Unverified) next to the archetype element+role pill, with reason subtitle.
+- `OnboardingPage`: Birth time field relabeled "Accuracy Mode" with contextual helper text.
+
+**Wave 2B: Full Chart Engine + Data-Driven Poster (March 2026):**
+- `astrology.ts PlanetData`: Added `longitude: number` to interface and `createPlanetData()` return — exposes full ecliptic longitude (0-360°) for all planets.
+- `server/astro/providers/localProvider.ts`: Now uses `.longitude` directly from planet data (exact ecliptic degrees); exposes `aspects` from `calculateAstrology()` via `AstroResult.aspects`.
+- `server/astro/types.ts`: Added `aspects?: Array<{ planet1, planet2, aspect, orb }>` to `AstroResult`.
+- `POST /api/astro/fullchart`: New endpoint — takes `{ birthDate, birthTime, timeUnknown, birthLocation }`, geocodes via `resolveGeo`, resolves timezone via `geo-tz`, calls the cached astro provider. Returns all 10 planet positions with exact ecliptic longitudes, 12 house cusps, and aspect list.
+- `BirthChartPosterSVG.tsx` + `server/posterSvg.ts`: Planet labels upgraded from `"Su","Mo","Me"` to Unicode `☉☽☿♀♂♃♄♅♆♇`. Planet circle indicators now use dark fill with gold border instead of solid gold.
+- `PosterPage.tsx`: Added "Compute Chart from Birth Data" button — calls `/api/astro/fullchart`, extracts planet longitudes, sets them on `data.planets` state → planets appear at real ecliptic positions on the live SVG preview and are included in PNG export.
+
 **Language Policy:**
 ALL AI-generated content must use first-person "inner voice" (I/my/me). BANNED phrases: "cosmic blueprint," "sacred blueprint," "divine timing," "vibrational frequency," "holistic convergence," "incarnation," "celestial influence," "divine nature," "cosmic signature." Enforced by blandnessFilter.ts.
 
