@@ -23,12 +23,15 @@ export default function Nav() {
     { href: "/",        label: "Start"   },
     { href: "/profile", label: "Profile" },
     { href: "/today",   label: "Today"   },
+    { href: "/guide",   label: "Guide"   },
+    { href: "/tracker", label: "Tracker" },
     { href: "/codex",   label: "Codex"   },
-    { href: "/poster",  label: "Poster"  },
   ];
 
   const advancedLinks = [
-    { href: "/horoscope", label: "Chart" },
+    { href: "/compat",    label: "Compat" },
+    { href: "/poster",    label: "Poster" },
+    { href: "/horoscope", label: "Chart"  },
   ];
 
   const links = mode === "advanced" ? [...baseLinks, ...advancedLinks] : baseLinks;
