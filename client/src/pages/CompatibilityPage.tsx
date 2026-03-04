@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "../lib/queryClient";
 import { ChevronDown, ChevronUp, Plus, User, Heart, Sparkles, Brain, Zap } from "lucide-react";
+import ConfidenceBadge from "../components/ConfidenceBadge";
 
 interface Person {
   id: string;
@@ -26,6 +27,7 @@ interface CompatibilityResult {
 export default function CompatibilityPage() {
   const [myProfile, setMyProfile] = useState<any>(null);
   const [myProfileId, setMyProfileId] = useState<string | null>(null);
+  const [myConfidence, setMyConfidence] = useState<any>(null);
   const [persons, setPersons] = useState<Person[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [compatibilityResult, setCompatibilityResult] = useState<CompatibilityResult | null>(null);
@@ -41,17 +43,13 @@ export default function CompatibilityPage() {
 
   useEffect(() => {
     const savedProfile = localStorage.getItem("soulProfile");
-    if (savedProfile) {
-      setMyProfile(JSON.parse(savedProfile));
-    }
+    if (savedProfile) setMyProfile(JSON.parse(savedProfile));
     const savedId = localStorage.getItem("soulMyProfileId");
-    if (savedId) {
-      setMyProfileId(savedId);
-    }
+    if (savedId) setMyProfileId(savedId);
     const savedPersons = localStorage.getItem("soulPersons");
-    if (savedPersons) {
-      setPersons(JSON.parse(savedPersons));
-    }
+    if (savedPersons) setPersons(JSON.parse(savedPersons));
+    const savedConf = localStorage.getItem("soulConfidence");
+    if (savedConf) setMyConfidence(JSON.parse(savedConf));
   }, []);
 
   const saveMyProfileMutation = useMutation({
@@ -182,12 +180,15 @@ export default function CompatibilityPage() {
             </div>
             <div>
               <h3 style={{ margin: 0 }}>{myProfile?.birth_data?.name || "My Profile"}</h3>
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.3rem", alignItems: "center" }}>
                 {myProfile?.archetype && (
                   <span className="system-badge">{myProfile.archetype.name}</span>
                 )}
                 {myProfile?.archetype?.element && (
                   <span className="system-badge">{myProfile.archetype.element} • {myProfile.archetype.role}</span>
+                )}
+                {myConfidence && (
+                  <ConfidenceBadge badge={myConfidence.badge} reason={myConfidence.reason} size="sm" />
                 )}
               </div>
             </div>

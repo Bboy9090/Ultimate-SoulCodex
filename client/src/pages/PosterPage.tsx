@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { z } from "zod";
 import BirthChartPosterSVG, { type PosterData } from "../components/BirthChartPosterSVG";
+import ConfidenceBadge from "../components/ConfidenceBadge";
 
 const ZODIAC_SIGNS = [
   "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
@@ -150,11 +151,20 @@ export default function PosterPage() {
     }
   };
 
+  const posterConfidence = useMemo(() => {
+    if (data.birthTime && data.birthLocation) return { badge: "verified", reason: "Time + location locked. Highest accuracy." };
+    if (data.birthDate) return { badge: "partial", reason: "Birth time unknown. No houses or rising-based conclusions." };
+    return { badge: "unverified", reason: "Missing geo/timezone lock. Chart positions may drift." };
+  }, [data.birthTime, data.birthLocation, data.birthDate]);
+
   return (
     <div className="container animate-fade-in" style={{ padding: "2rem 1rem 4rem", maxWidth: "1200px" }}>
-      <h1 className="gradient-text" style={{ marginBottom: "0.25rem", fontSize: "clamp(1.75rem, 4vw, 2.5rem)" }}>
-        Birth Chart Poster
-      </h1>
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+        <h1 className="gradient-text" style={{ margin: 0, fontSize: "clamp(1.75rem, 4vw, 2.5rem)" }}>
+          Birth Chart Poster
+        </h1>
+        <ConfidenceBadge badge={posterConfidence.badge} reason={posterConfidence.reason} size="md" />
+      </div>
       <p style={{ color: "var(--muted-foreground)", marginBottom: "2rem" }}>
         Customize your chart and download a high-resolution poster.
       </p>
