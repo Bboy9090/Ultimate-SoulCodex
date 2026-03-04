@@ -1116,7 +1116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("[CreateProfile] Integration analysis failed:", error);
         // Provide defaults if analysis fails
-        integrationAnalysis = "Your unique cosmic blueprint reveals deep insights into your soul's journey.";
+        integrationAnalysis = "Your personality patterns reveal how you process the world and what drives your decisions.";
         personalizedInsights = "Your path is one of growth and self-discovery.";
       }
       
