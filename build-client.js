@@ -2,13 +2,11 @@ import * as esbuild from 'esbuild';
 import fs from 'fs';
 import path from 'path';
 
-// Create dist/public directory
 const distDir = 'dist/public';
 if (!fs.existsSync(distDir)) {
   fs.mkdirSync(distDir, { recursive: true });
 }
 
-// Build the client bundle with esbuild
 await esbuild.build({
   entryPoints: ['client/src/main.tsx'],
   bundle: true,
@@ -16,20 +14,40 @@ await esbuild.build({
   sourcemap: true,
   format: 'esm',
   target: ['es2020'],
-  outfile: 'dist/public/index.js',
+  outdir: distDir,
+  splitting: false,
   loader: {
     '.tsx': 'tsx',
     '.ts': 'ts',
     '.jsx': 'jsx',
-    '.js': 'js'
+    '.js': 'js',
+    '.css': 'css',
+    '.png': 'file',
+    '.jpg': 'file',
+    '.svg': 'file',
+    '.gif': 'file',
+    '.woff': 'file',
+    '.woff2': 'file',
   },
   jsx: 'automatic',
+  alias: {
+    '@': path.resolve('client/src'),
+    '@shared': path.resolve('shared'),
+    '@assets': path.resolve('attached_assets'),
+  },
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
+  entryNames: '[name]',
 });
 
-// Copy index.html
-fs.copyFileSync('client/index.html', 'dist/public/index.html');
+let html = fs.readFileSync('client/index.html', 'utf8');
+html = html.replace(
+  '<script type="module" src="/src/main.tsx"></script>',
+  '<link rel="stylesheet" href="/main.css">\n    <script type="module" src="/main.js"></script>'
+);
+fs.writeFileSync(path.join(distDir, 'index.html'), html);
 
-// Copy static assets if they exist
 const staticAssets = ['manifest.json', 'sw.js', 'favicon.png'];
 for (const asset of staticAssets) {
   if (fs.existsSync(asset)) {
@@ -37,7 +55,6 @@ for (const asset of staticAssets) {
   }
 }
 
-// Copy public directory if it exists
 const publicDir = 'client/public';
 if (fs.existsSync(publicDir)) {
   fs.cpSync(publicDir, distDir, { recursive: true });
