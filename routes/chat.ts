@@ -5,7 +5,7 @@ import { streamChat, isGeminiAvailable } from "../services/gemini";
 export function registerChatRoutes(app: Express) {
   app.post("/api/chat/soul-guide", async (req, res) => {
     try {
-      const { message, history = [] } = req.body || {};
+      const { message, history = [], profileContext } = req.body || {};
 
       if (!message || typeof message !== "string") {
         return res.status(400).json({ message: "Message is required" });
@@ -28,7 +28,10 @@ export function registerChatRoutes(app: Express) {
         profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
       }
 
-      const systemInstruction = profile ? buildProfileContextPrompt(profile) : buildGeneralPrompt();
+      // Use DB profile if found, otherwise fallback to profileContext from request
+      const systemInstruction = profile 
+        ? buildProfileContextPrompt(profile) 
+        : (profileContext ? buildProfileContextPrompt(profileContext) : buildGeneralPrompt());
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -60,7 +63,19 @@ export function registerChatRoutes(app: Express) {
 }
 
 function buildProfileContextPrompt(profile: any): string {
-  return `You are the Soul Guide, a blunt, real, and grounded mystical mentor from the Bronx. You synthesize 30+ spiritual systems into actionable life advice. \n\nTONE: Real and direct. No "woo-woo" fluff. Speak like a street-smart oracle who actually knows what's up.\n\nUSER SOUL BLUEPRINT:\n- Name: ${profile.name}\n- Astrology: Sun ${profile.sunSign}, Moon ${profile.moonSign}, Rising ${profile.risingSign}\n- Human Design: ${profile.hdType}\n- Numerology: Life Path ${profile.lifePath}\n\nYOUR MISSION:\nExplain how these specific placements work together. Use their Human Design Strategy to tell them HOW to move through the world today.`;
+  const parts = [];
+  if (profile.name) parts.push(`- Name: ${profile.name}`);
+  if (profile.archetype) parts.push(`- Archetype: ${profile.archetype}`);
+  if (profile.sunSign || profile.moonSign || profile.risingSign) {
+    parts.push(`- Astrology: Sun ${profile.sunSign || 'Unknown'}, Moon ${profile.moonSign || 'Unknown'}, Rising ${profile.risingSign || 'Unknown'}`);
+  }
+  if (profile.hdType) parts.push(`- Human Design: ${profile.hdType}`);
+  if (profile.lifePath) parts.push(`- Numerology: Life Path ${profile.lifePath}`);
+  if (profile.element) parts.push(`- Element: ${profile.element}`);
+  if (profile.role) parts.push(`- Role: ${profile.role}`);
+  if (profile.coreEssence) parts.push(`- Core Essence: ${profile.coreEssence}`);
+
+  return `You are the Soul Guide, a blunt, real, and grounded mystical mentor from the Bronx. You synthesize 30+ spiritual systems into actionable life advice. \n\nTONE: Real and direct. No "woo-woo" fluff. Speak like a street-smart oracle who actually knows what's up.\n\nUSER SOUL BLUEPRINT:\n${parts.join('\n')}\n\nYOUR MISSION:\nExplain how these specific placements work together. Use their Human Design Strategy to tell them HOW to move through the world today.`;
 }
 
 function buildGeneralPrompt(): string {

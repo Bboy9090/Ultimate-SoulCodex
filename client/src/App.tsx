@@ -6,6 +6,9 @@ import DailyHoroscopePage from "./pages/DailyHoroscopePage";
 import PosterPage from "./pages/PosterPage";
 import CodexReadingPage from "./pages/CodexReadingPage";
 import TodayPage from "./pages/TodayPage";
+import SoulGuidePage from "./pages/SoulGuidePage";
+import TrackerPage from "./pages/TrackerPage";
+import CompatibilityPage from "./pages/CompatibilityPage";
 
 export default function App() {
   return (
@@ -16,6 +19,9 @@ export default function App() {
           <Route path="/" component={OnboardingPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/today" component={TodayPage} />
+          <Route path="/guide" component={SoulGuidePage} />
+          <Route path="/tracker" component={TrackerPage} />
+          <Route path="/compat" component={CompatibilityPage} />
           <Route path="/horoscope" component={DailyHoroscopePage} />
           <Route path="/poster" component={PosterPage} />
           <Route path="/codex" component={CodexReadingPage} />
