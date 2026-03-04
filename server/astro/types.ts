@@ -17,6 +17,7 @@ export interface AstroResult {
   rising?: string;
   planets?: Record<string, { sign: string; degree: number; longitude: number }>;
   houses?: { system: HouseSystem; cusps: number[] };
+  aspects?: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
   notes?: string[];
 }
 

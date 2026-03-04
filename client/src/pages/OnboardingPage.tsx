@@ -101,6 +101,9 @@ export default function OnboardingPage() {
     onSuccess: (result) => {
       localStorage.setItem("soulProfile", JSON.stringify(result));
       localStorage.setItem("onboardingData", JSON.stringify(form));
+      if (result?.confidence) {
+        localStorage.setItem("soulConfidence", JSON.stringify(result.confidence));
+      }
       navigate("/profile");
     },
   });
@@ -228,13 +231,24 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
         />
       </div>
       <div className="form-group" style={{ marginBottom: "1rem" }}>
-        <label className="label">Birth Time <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional — makes it more accurate)</span></label>
+        <label className="label">
+          Accuracy Mode{" "}
+          <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>
+            — enter your birth time for a Verified chart (rising sign, houses, full aspects)
+          </span>
+        </label>
         <input
           className="input"
           type="time"
           value={form.birthTime}
           onChange={(e) => update("birthTime", e.target.value)}
+          placeholder="HH:MM — leave blank if unknown"
         />
+        {!form.birthTime && (
+          <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.25rem", marginBottom: 0 }}>
+            No birth time → Partial accuracy. Sun + Moon calculated; rising sign and houses omitted.
+          </p>
+        )}
       </div>
       <div className="form-group">
         <label className="label">Birth Location <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional)</span></label>

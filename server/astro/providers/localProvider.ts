@@ -39,11 +39,18 @@ export const localAstroProvider: AstroProvider = {
         planets[name] = {
           sign: (pd as any).sign,
           degree: (pd as any).degree,
-          longitude: (pd as any).degree + getSignOffset((pd as any).sign),
+          longitude: (pd as any).longitude,
         };
       }
 
       const cusps = data.houses.map((h: any) => h.degree);
+
+      const aspects: AstroResult["aspects"] = (data.aspects ?? []).map((a: any) => ({
+        planet1: a.planet1,
+        planet2: a.planet2,
+        aspect: a.aspect,
+        orb: a.orb,
+      }));
 
       return {
         sun: data.sunSign,
@@ -51,6 +58,7 @@ export const localAstroProvider: AstroProvider = {
         rising: data.risingSign,
         planets,
         houses: { system: "equal", cusps },
+        aspects,
         notes,
       };
     } catch (err) {
@@ -76,13 +84,4 @@ function computeBasic(req: AstroRequest): Pick<AstroResult, "sun" | "moon"> {
   } catch {
     return { sun: "Unknown", moon: "Unknown" };
   }
-}
-
-const SIGN_OFFSETS: Record<string, number> = {
-  Aries: 0, Taurus: 30, Gemini: 60, Cancer: 90,
-  Leo: 120, Virgo: 150, Libra: 180, Scorpio: 210,
-  Sagittarius: 240, Capricorn: 270, Aquarius: 300, Pisces: 330,
-};
-function getSignOffset(sign: string): number {
-  return SIGN_OFFSETS[sign] ?? 0;
 }

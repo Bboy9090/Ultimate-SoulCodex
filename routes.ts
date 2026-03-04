@@ -59,6 +59,8 @@ import { buildSoulProfile } from "./soulcodex/index";
 import type { UserInputs } from "./soulcodex/types";
 import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
+import { resolveGeo } from "./server/geo/index";
+import { computeConfidence } from "./soulcodex/compute/confidence";
 
 // Initialize SubscriptionService (if Stripe is configured)
 let subscriptionService: SubscriptionService | null = null;
@@ -473,20 +475,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedBirthData = birthDataSchema.parse(birth_data);
       
       // Geocode if lat/lng/timezone are missing but birthLocation is provided
+      let resolvedGeo: Awaited<ReturnType<typeof resolveGeo>> = null;
       if (validatedBirthData.birthLocation && (!validatedBirthData.latitude || !validatedBirthData.longitude)) {
-        const geo = geocodeLocation(validatedBirthData.birthLocation);
-        if (geo) {
-          validatedBirthData.latitude = geo.lat;
-          validatedBirthData.longitude = geo.lon;
-          if (!validatedBirthData.timezone) {
-            try {
-              const tzs = geoTz.find(parseFloat(geo.lat), parseFloat(geo.lon));
-              if (tzs.length > 0) validatedBirthData.timezone = tzs[0];
-            } catch (e) {
-              console.error("[SoulArchetype] Timezone lookup failed:", e);
+        try {
+          resolvedGeo = await resolveGeo(validatedBirthData.birthLocation);
+          if (resolvedGeo) {
+            validatedBirthData.latitude = resolvedGeo.lat.toString();
+            validatedBirthData.longitude = resolvedGeo.lon.toString();
+            if (!validatedBirthData.timezone) {
+              try {
+                const tzs = geoTz.find(resolvedGeo.lat, resolvedGeo.lon);
+                if (tzs.length > 0) validatedBirthData.timezone = tzs[0];
+              } catch (e) {
+                console.error("[SoulArchetype] Timezone lookup failed:", e);
+              }
             }
           }
+        } catch (e) {
+          console.error("[SoulArchetype] Geocoding failed:", e);
         }
+      } else if (validatedBirthData.latitude && validatedBirthData.longitude) {
+        resolvedGeo = {
+          normalizedPlace: validatedBirthData.birthLocation ?? "",
+          lat: parseFloat(validatedBirthData.latitude.toString()),
+          lon: parseFloat(validatedBirthData.longitude.toString()),
+          provider: "static",
+        };
       }
       
       // Check if we have complete birth data
@@ -497,6 +511,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedBirthData.latitude && 
         validatedBirthData.longitude
       );
+
+      // Compute confidence badge
+      const confidence = computeConfidence({
+        timeUnknown: !validatedBirthData.birthTime,
+        hasGeo: !!(resolvedGeo?.lat && resolvedGeo?.lon),
+        hasTimezone: !!validatedBirthData.timezone,
+      });
       
       // Calculate core systems via cached astro provider
       let astrologyData = null;
@@ -717,6 +738,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parentalInfluenceData,
         archetype: soulCodexResult?.profile.archetype ?? null,
         synthesis: soulCodexResult?.profile.synthesis ?? null,
+        confidence,
+        geo: resolvedGeo ? { lat: resolvedGeo.lat, lon: resolvedGeo.lon, normalizedPlace: resolvedGeo.normalizedPlace, provider: resolvedGeo.provider } : null,
       };
       
       console.log(`[SoulArchetype] Generated archetype for ${validatedBirthData.name}`);
@@ -3239,6 +3262,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(png);
     } catch (error) {
       return handleError(error, res, "PosterRender");
+    }
+  });
+
+  // Full chart endpoint — returns all planet longitudes, houses, and aspects
+  app.post("/api/astro/fullchart", async (req, res) => {
+    try {
+      const { birthDate, birthTime, timeUnknown = false, birthLocation, houseSystem = "equal" } = req.body;
+
+      if (!birthDate || !birthLocation) {
+        return res.status(400).json({ ok: false, error: "birthDate and birthLocation are required" });
+      }
+
+      const geo = await resolveGeo(birthLocation);
+      if (!geo) {
+        return res.status(422).json({ ok: false, error: `Could not geocode location: ${birthLocation}` });
+      }
+
+      let timezone: string | undefined;
+      try {
+        const tzs = geoTz.find(geo.lat, geo.lon);
+        if (tzs.length > 0) timezone = tzs[0];
+      } catch (e) {
+        console.warn("[FullChart] Timezone lookup failed:", e);
+      }
+
+      const astroProvider = getAstroProvider();
+      const result = await astroProvider.getChart({
+        dateISO: birthDate,
+        time24: timeUnknown ? undefined : birthTime,
+        timeUnknown: !!timeUnknown || !birthTime,
+        place: geo.normalizedPlace,
+        lat: geo.lat,
+        lon: geo.lon,
+        timezone,
+        houseSystem,
+      });
+
+      return res.json({
+        ok: true,
+        sun: result.sun,
+        moon: result.moon,
+        rising: result.rising,
+        planets: result.planets ?? {},
+        houses: result.houses,
+        aspects: result.aspects ?? [],
+        notes: result.notes ?? [],
+        geo: { lat: geo.lat, lon: geo.lon, normalizedPlace: geo.normalizedPlace, provider: geo.provider },
+        timezone,
+      });
+    } catch (error) {
+      return handleError(error, res, "FullChart");
     }
   });
 
