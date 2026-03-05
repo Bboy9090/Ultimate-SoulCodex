@@ -4,9 +4,9 @@
 
 | Category | Platform | Monthly Cost | Why It's Best |
 |----------|----------|--------------|---------------|
-| **🥇 Cheapest (Free)** | **Fly.io** or **Koyeb** | **$0** | True 24/7, no credit card, generous limits |
-| **🥈 Best Value** | **Hetzner VPS** | **€4.15** (~$4.50) | Most resources per dollar, full control |
-| **🥉 Easiest Setup** | **Railway** | **$5 credit** (~$4-7/mo) | One-click deploy, integrated database |
+| **🥇 Recommended** | **Railway** | **$5 credit** (~$4-7/mo) | Easiest setup, integrated PostgreSQL, always on |
+| **🥈 Cheapest (Free)** | **Koyeb** | **$0** | True 24/7, no credit card, generous limits |
+| **🥉 Best Value** | **Hetzner VPS** | **€4.15** (~$4.50) | Most resources per dollar, full control |
 | **💪 Most Control** | **Self-host VPS** | **$3-6** | Full infrastructure access, multiple apps |
 
 ---
@@ -317,21 +317,20 @@ First 60 days:    $0/month (with promo)
 
 ## My Top 3 Recommendations
 
-### 🥇 1. Fly.io (FREE)
-**Best for:** Most users wanting free 24/7
+### 🥇 1. Railway (RECOMMENDED)
+**Best for:** Most users wanting simplest deployment
 
 **Pros:**
-- ✅ Truly free
-- ✅ No credit card
-- ✅ Includes database (3GB)
+- ✅ $5 free credit/month (no CC first month)
+- ✅ One-click PostgreSQL
+- ✅ GitHub auto-deploy
 - ✅ True 24/7
-- ✅ Good performance
-- ✅ Great CLI
+- ✅ Excellent developer experience
+- ✅ Always on, no spin-down
 
 **Cons:**
-- ⚠️ Shared CPU
-- ⚠️ Limited RAM (256MB per VM)
-- ⚠️ CLI-based setup
+- ⚠️ ~$4-7/month after free credit
+- ⚠️ Credit card required after first month
 
 **Setup Time:** ~15 minutes
 
@@ -352,7 +351,7 @@ First 60 days:    $0/month (with promo)
 
 **Setup Time:** ~20 minutes
 
-### 🥉 3. Hetzner VPS (€4.15/month)
+### 🥉 3. Hetzner VPS (€4.15/month — Best Value)
 **Best for:** Tech-savvy users wanting best value
 
 **Pros:**
@@ -389,29 +388,29 @@ First 60 days:    $0/month (with promo)
 
 ## Final Verdict
 
-### For Cheapest 24/7 Deployment:
+### For Deployment:
 
-1. **FREE (Best):** Fly.io or Koyeb + Neon
-2. **Paid (Best Value):** Hetzner VPS (€4.15/month)
-3. **Easiest (Paid):** Railway (~$5/month)
+1. **Recommended (Easiest):** Railway (~$5/month, $5 free credit)
+2. **FREE:** Koyeb + Neon
+3. **Best Value (Paid):** Hetzner VPS (€4.15/month)
 
 ### My Personal Recommendation:
 
-**Start with Fly.io** (free, 24/7, includes database)
+**Start with Railway** — simplest setup, integrated PostgreSQL, always on, GitHub auto-deploy.
 
-If you need more resources later:
-- **Upgrade to:** Hetzner VPS (best value)
-- **Or:** Railway (if you want managed)
+If budget is $0: **Koyeb + Neon** (free 24/7)
+If you want best value and don't mind VPS: **Hetzner** (€4.15/month)
 
 ---
 
 ## Action Plan
 
 ### Quick Start (15 minutes):
-1. Sign up for Fly.io
-2. Follow FLY_IO_DEPLOY.md
-3. Deploy and test
-4. Done! $0/month ✨
+1. Sign up for Railway
+2. Follow [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)
+3. Connect GitHub repo and deploy
+4. Add PostgreSQL, set env vars, run migrations
+5. Done! ~$4-7/month (first month free with $5 credit) 🚂
 
 ### Best Long-Term (2 hours setup):
 1. Sign up for Hetzner
@@ -424,12 +423,11 @@ If you need more resources later:
 ## Questions?
 
 See detailed guides for your chosen platform:
-- [FLY_IO_DEPLOY.md](./FLY_IO_DEPLOY.md) - Free 24/7
+- [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) - **Recommended** — Easiest setup (~$5/mo)
 - [KOYEB_DEPLOY.md](./KOYEB_DEPLOY.md) - Free 24/7 alternative
-- [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) - Easiest (~$5/mo)
 - [VPS_SELF_HOSTING.md](./VPS_SELF_HOSTING.md) - Best value (€4/mo)
-- [RENDER_DEPLOY.md](./RENDER_DEPLOY.md) - Existing option
+- [RENDER_DEPLOY.md](./RENDER_DEPLOY.md) - Free (spins down)
 
 ---
 
-**🎯 TL;DR: Use Fly.io for free 24/7 deployment. It's the cheapest option that actually works 24/7!**
+**🎯 TL;DR: Use Railway for deployment. $5 free credit/month, always on, integrated PostgreSQL, simplest setup.**
