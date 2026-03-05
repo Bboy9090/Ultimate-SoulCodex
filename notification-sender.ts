@@ -5,15 +5,14 @@ import { getNotificationTemplate, type NotificationType, type NotificationContex
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
-if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-  console.warn('[NotificationSender] VAPID keys not configured');
-}
+const hasValidKeys = VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY &&
+  VAPID_PUBLIC_KEY.length >= 50 && !/your_|_here|placeholder/i.test(VAPID_PUBLIC_KEY);
 
-webpush.setVapidDetails(
-  'mailto:support@soulcodex.app',
-  VAPID_PUBLIC_KEY || '',
-  VAPID_PRIVATE_KEY || ''
-);
+if (hasValidKeys) {
+  webpush.setVapidDetails('mailto:support@soulcodex.app', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+} else {
+  console.warn('[NotificationSender] VAPID keys not configured - push send will fail');
+}
 
 export interface SendNotificationOptions {
   type: NotificationType;
