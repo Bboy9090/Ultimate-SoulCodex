@@ -1,5 +1,7 @@
 # Railway Deployment Guide
 
+**Primary deployment option for Soul Codex.** Pivot from Fly.io — Railway offers the simplest setup with integrated PostgreSQL.
+
 ## Cost: **$5 FREE CREDIT/month** - Good for small 24/7 apps
 
 Railway offers a simple deployment experience:

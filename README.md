@@ -44,7 +44,7 @@ Complete product documentation is available in the following files:
 - **ORM:** Drizzle ORM
 - **AI:** OpenAI GPT-4 Turbo (streaming)
 - **Payments:** Stripe (subscriptions)
-- **Deployment:** Multiple options (Fly.io, Railway, Render, VPS)
+- **Deployment:** Railway (primary), Render, Koyeb, VPS
 - **Analytics:** Microsoft Clarity (GDPR compliant)
 
 ## 🚀 Migrating from Replit?
@@ -58,7 +58,7 @@ If you're currently on Replit and want to save money or avoid payment issues:
 ./migrate.sh  # Interactive migration helper
 ```
 
-**Recommended:** Migrate to **Fly.io** for completely FREE 24/7 hosting with database included!
+**Recommended:** Migrate to **Railway** for easy 24/7 hosting with integrated PostgreSQL (~$5/mo with free credit).
 
 ---
 
@@ -68,18 +68,16 @@ If you're currently on Replit and want to save money or avoid payment issues:
 
 | Platform | Cost | Click |
 |----------|------|-------|
-| [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Bboy9090/Ultimate-SoulCodex-Engine-of-the-Eternal-Now) | Free/Paid | ✅ DB included |
-| [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?source=github) | ~$5/mo | Easiest |
-| [Fly.io](./FLY_IO_DEPLOY.md) | **FREE** 24/7 | One-time CLI setup |
+| [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?source=github) | ~$5/mo | Easiest, always on |
+| [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Bboy9090/Ultimate-SoulCodex-Engine-of-the-Eternal-Now) | Free/Paid | DB included |
 
-**👉 [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md)** — Full instructions
+**👉 [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)** — Full Railway deployment instructions
 
 | Platform | Cost | Always On? | Best For |
 |----------|------|------------|----------|
+| **[Railway](./RAILWAY_DEPLOY.md)** | ~$5/mo | ✅ | **Recommended** — Easiest, integrated DB |
+| **[Koyeb](./KOYEB_DEPLOY.md)** | **FREE** | ✅ | Free 24/7 |
 | **[Render](./RENDER_DEPLOY.md)** | Free (spins down) | ⚠️ | One-click + DB |
-| **[Railway](./RAILWAY_DEPLOY.md)** | ~$5/mo | ✅ | Easiest DX |
-| **[Fly.io](./FLY_IO_DEPLOY.md)** | **FREE** | ✅ | Free 24/7 |
-| **[Koyeb](./KOYEB_DEPLOY.md)** | **FREE** | ✅ | GUI setup |
 | **[VPS](./VPS_SELF_HOSTING.md)** | €4/mo | ✅ | Full control |
 
 **Quick Start:** Run `./deploy.sh` for an interactive helper.
