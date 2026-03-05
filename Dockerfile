@@ -17,8 +17,13 @@ ENV PORT=8080
 EXPOSE 8080
 
 COPY --from=build /usr/src/app/package*.json ./
+# Copy pre-compiled node_modules from the build stage (avoids recompiling
+# native modules like argon2/sharp that require build toolchains)
+COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
-RUN npm ci --omit=dev
+
+# Remove dev-only packages to keep the image lean
+RUN npm prune --production
 
 USER node
 CMD ["node", "dist/index.js"]
