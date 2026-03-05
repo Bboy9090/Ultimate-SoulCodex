@@ -1,18 +1,6 @@
-# Soul Codex — Deployment Setup Guide
+# Soul Codex — Development & Production Deployment Guide
 
 **C for production, A for development.** Replit was training wheels. Now we run on real infrastructure like responsible lunatics.
-
----
-
-## Start Here
-
-| You want to… | Go to |
-|--------------|-------|
-| **Choose a hosting platform** | [DEPLOYMENT_INDEX.md](./DEPLOYMENT_INDEX.md) — Platform comparison and quick decision |
-| **Deploy to a specific platform** | [DEPLOYMENT_INDEX.md](./DEPLOYMENT_INDEX.md) → Platform guides (Fly.io, Railway, Koyeb, etc.) |
-| **Set up local development** | You're in the right place — see below |
-| **Compare costs** | [DEPLOYMENT_COMPARISON.md](./DEPLOYMENT_COMPARISON.md) |
-| **Self-host on VPS** | [VPS_SELF_HOSTING.md](./VPS_SELF_HOSTING.md) |
 
 ---
 
@@ -20,30 +8,34 @@
 
 | Layer | Technology |
 |-------|------------|
-| **Runtime** | Node.js 20 (LTS) |
+| **Runtime** | Node.js (LTS) |
 | **Framework** | Express + Vite (React) — *not* Next.js |
-| **Database** | PostgreSQL (Neon, Fly Postgres, or self-hosted) |
-| **ORM** | Drizzle |
-| **Production hosts** | Fly.io, Koyeb, Railway, Render, VPS |
+| **Database** | PostgreSQL (Neon in prod, optional SQLite for dev) |
+| **ORM** | Drizzle — *not* Prisma |
+| **Production Host** | Railway / Render / Fly.io (Express works here; Vercel is for Next.js) |
 
 ---
 
-## A) Local Development (Your Mac)
+## A) Development on Your Mac (Fast, Cheap, Under Your Control)
 
 ### 1) Install Prerequisites
 
 ```bash
-# Homebrew (if needed)
+# Homebrew (if you don't have it)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-brew install node git
+# Node LTS
+brew install node
+
+# Git (usually already there)
+brew install git
 ```
 
 ### 2) Clone and Run
 
 ```bash
 git clone <YOUR_REPO_URL>
-cd soul-codex  # or your project folder name
+cd soul-codex
 npm install
 npm run dev
 ```
@@ -52,11 +44,7 @@ Open: **http://localhost:3000**
 
 ### 3) Database for Dev
 
-**Option A: No database (in-memory)**
-
-If `DATABASE_URL` is unset or invalid, the app uses **MemStorage** — great for quick UI hacking.
-
-**Option B: PostgreSQL (matches production)**
+**Option A: PostgreSQL (matches production)**
 
 ```bash
 brew install postgresql@16
@@ -65,127 +53,157 @@ createdb soul_codex_dev
 ```
 
 `.env`:
-```
+```env
 DATABASE_URL="postgresql://$(whoami)@localhost:5432/soul_codex_dev"
 ```
 
-**Option C: Docker Compose (Postgres + app)**
+**Option B: In-memory (no DB)**
+
+If `DATABASE_URL` is unset or invalid, the app uses `MemStorage` for bootstrap — useful for quick UI/dev without a database.
+
+### 4) Run Migrations (when using PostgreSQL)
 
 ```bash
-cp .env.example .env
-# Edit .env with DB_PASSWORD, SESSION_SECRET, etc.
-docker compose up -d
+npx drizzle-kit push    # Push schema to DB
+# or
+npx drizzle-kit generate
+npx drizzle-kit migrate
 ```
 
-See [docker-compose.yml](./docker-compose.yml).
+---
 
-### 4) Migrations (when using PostgreSQL)
+## C) Production Deployment (Real Internet App)
+
+### Production Stack
+
+| Component | Service |
+|-----------|---------|
+| **App host** | Railway, Render, or Fly.io |
+| **Database** | Neon (or Supabase) — hosted Postgres |
+| **Optional later** | Upstash Redis (caching), Cloudflare (assets) |
+
+### Step 1) Create a Neon Postgres DB
+
+1. Go to [neon.tech](https://neon.tech)
+2. Create project/database
+3. Copy the connection string: `postgresql://...`
+
+### Step 2) Add Production Environment Variables
+
+Set these in your host (Railway → Variables, Render → Environment, etc.):
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Neon connection string |
+| `OPENAI_API_KEY` | If using OpenAI (e.g. `sk-...`) |
+| `OPENAI_MODEL` | e.g. `gpt-4.1-mini` |
+| `VITE_APP_NAME` or `APP_NAME` | e.g. `Soul Codex` |
+| `STRIPE_SECRET_KEY` | Payment processing |
+| `STRIPE_WEBHOOK_SECRET` | Webhook signing |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Push notifications |
+
+### Step 3) Push Repo to GitHub
 
 ```bash
-npm run db:push     # Push schema to DB
-npm run db:studio   # Open Drizzle Studio (optional)
+git add .
+git commit -m "Deploy Soul Codex"
+git push origin main
 ```
 
----
+### Step 4) Deploy to Railway / Render / Fly.io
 
-## C) Production Deployment
+**Railway** (already configured via `railway.json`):
 
-### Quick Platform Picks
+- Import GitHub repo
+- Add `DATABASE_URL` and other env vars
+- Deploy — `npm start` runs the built app
 
-| Goal | Platform | Cost | Guide |
-|------|----------|------|-------|
-| **Free 24/7** | Fly.io | $0 | [FLY_IO_DEPLOY.md](./FLY_IO_DEPLOY.md) |
-| **Free 24/7, GUI** | Koyeb + Neon | $0 | [KOYEB_DEPLOY.md](./KOYEB_DEPLOY.md) |
-| **Easiest, paid** | Railway | ~$5/mo | [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) |
-| **Full control** | VPS (Hetzner) | €4/mo | [VPS_SELF_HOSTING.md](./VPS_SELF_HOSTING.md) |
-| **Testing only** | Render | $0 (spins down) | [RENDER_DEPLOY.md](./RENDER_DEPLOY.md) |
+**Render**:
 
-**Full comparison:** [DEPLOYMENT_COMPARISON.md](./DEPLOYMENT_COMPARISON.md)
+- New Web Service → Connect repo
+- Build: `npm run build`
+- Start: `npm start`
+- Add env vars
 
-### Pre-Deployment Checklist
+**Fly.io**:
 
-Before deploying to any platform:
+- `fly launch` then `fly deploy`
+- Set secrets: `fly secrets set DATABASE_URL=...`
 
-- [ ] **OPENAI_API_KEY** ([get one](https://platform.openai.com/api-keys))
-- [ ] **STRIPE keys** (test mode OK) ([dashboard](https://dashboard.stripe.com/apikeys))
-- [ ] **SESSION_SECRET**: `openssl rand -hex 64`
-- [ ] **ADMIN_PASSWORD** (strong password)
-- [ ] **DATABASE_URL** — from Neon, Fly Postgres, or platform DB
-- [ ] Optional: VAPID keys for push notifications (`web-push generate-vapid-keys`)
+### Step 5) Run Migrations in Production
 
-### Environment Variables (Production)
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes* | PostgreSQL connection string (*unless MemStorage) |
-| `SESSION_SECRET` | Yes | Random hex string for sessions |
-| `OPENAI_API_KEY` | For AI | OpenAI API key |
-| `STRIPE_SECRET_KEY` | For payments | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | For webhooks | Stripe webhook signing secret |
-| `ADMIN_PASSWORD` | Yes | Admin panel access |
-| `VAPID_PUBLIC_KEY` | For push | Web Push public key |
-| `VAPID_PRIVATE_KEY` | For push | Web Push private key |
-
-See [.env.example](./.env.example) for the full list.
-
-### Run Migrations in Production
-
-One-time (with production `DATABASE_URL`):
+One-time from your local machine with production `DATABASE_URL`:
 
 ```bash
-DATABASE_URL="postgresql://..." npm run db:push
+DATABASE_URL="postgresql://..." npx drizzle-kit push
 ```
 
----
-
-## Build & Run
-
-```
-npm install
-npm run build
-npm start
-```
-
-- **Build:** Bundles client (Vite) + server (esbuild → `dist/index.js`)
-- **Start:** `node dist/index.js` — serves on `PORT` (default 3000)
-- **Health:** `GET /health` → `{ "status": "ok" }`
+Or use Neon's SQL editor for manual schema if needed.
 
 ---
 
-## Production Checklist (Avoid Explosions)
+## Build Scripts (package.json)
 
-1. **Cache keys:** Horoscope cache includes `userId` + `dateISO` (user timezone) + `timezone` + `profileUpdatedAt` ✅
-2. **Profile updates:** When birth info changes, `updatedAt` invalidates related caches ✅
-3. **Provider missing degrees:** Return HTTP 501 with clear error (not fake data) if astro provider can't return longitudes
-4. **Health check:** `/health` for load balancers ✅
+The build process includes:
 
----
+- `npm run build` → client + server bundles
+- `postinstall` can run `drizzle-kit generate` if schema is bundled
 
-## Optional Add-Ons
-
-- **Custom domain + CDN:** [CLOUDFLARE_DEPLOY.md](./CLOUDFLARE_DEPLOY.md) — Cloudflare in front of Railway
-- **Cron jobs:** Pre-generate daily cards (Upstash QStash, Railway cron, or host cron)
-- **Share images:** Endpoint for social share cards (`@resvg/resvg-js`)
-- **App Store:** [APP_STORE_DEPLOYMENT_GUIDE.md](./APP_STORE_DEPLOYMENT_GUIDE.md) — Capacitor wrapping
+Production hosts run `npm install` then `npm run build` and `npm start`.
 
 ---
 
-## Recommended Workflow
+## Production Checklist (So It Doesn’t Explode Later)
+
+### 1) Cache Keys Must Include Timezone + Date
+
+- **Horoscope cache**: `userId` + `dateISO` (in user timezone) + `timezone` + `profileUpdatedAt`
+- **Compatibility**: Stored in DB keyed by `profile1Id` + `profile2Id`; in-memory cache would use `hash(A+B)`
+
+### 2) If Birth Info Changes → Invalidate Caches
+
+- Use `profile.updatedAt` in cache keys so profile changes invalidate horoscope/compat caches
+- `cacheKey = sha256(userId + dateISO + tz + profileUpdatedAt)` for stricter hashing if needed
+
+### 3) "Provider Missing Degrees" → Return 501 (Not Lie)
+
+- If an astro provider doesn’t return planet longitudes, return HTTP 501 with a clear message
+- Example: `{ error: "Provider does not return planet longitudes yet. Upgrade provider to Wave 2B spec." }`
+
+### 4) Health Check
+
+- `/health` returns `{ status: "ok" }` for load balancers and platforms
+
+---
+
+## Recommended Workflow (C + A Together)
 
 1. Develop locally (A) with `npm run dev`
-2. Commit and push to GitHub
-3. Host auto-deploys (Fly, Railway, etc.) on push
-4. Neon / Fly Postgres holds production data
+2. Commit changes, push to GitHub
+3. Railway/Render auto-deploys to production (C)
+4. Neon holds production data
+5. Optional: SQLite or in-memory for quick local dev
 
-**Result:** Fast dev, stable prod, no Replit limits, no mystery downtime.
+**Result:**
+
+- Fast local development
+- Stable production
+- No Replit limits
+- No mystery downtime
 
 ---
 
-## Documentation
+## Optional Upgrades (After Basic Deploy)
 
-- **Deployment index:** [DEPLOYMENT_INDEX.md](./DEPLOYMENT_INDEX.md)
-- **Migration from Replit:** [MIGRATION_FROM_REPLIT.md](./MIGRATION_FROM_REPLIT.md) (if applicable)
-- **All docs:** [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)
+1. **Cron**: Pre-generate daily cards at 6–9am user timezone (e.g. via Upstash QStash, Railway cron, or host cron)
+2. **Share card rendering**: Endpoint using `@resvg/resvg-js` (or similar) for social share images
+3. **Capacitor**: Wrap in Capacitor for App Store later
+
+---
+
+## VPS Self-Hosting
+
+See **[VPS_SELF_HOSTING.md](./VPS_SELF_HOSTING.md)** for the cheapest 24/7 option ($3–6/month) with full control.
 
 ---
 
