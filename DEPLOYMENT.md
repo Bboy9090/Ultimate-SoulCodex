@@ -78,15 +78,15 @@ npx drizzle-kit migrate
 
 | Component | Service |
 |-----------|---------|
-| **App host** | Railway, Render, or Fly.io |
-| **Database** | Neon (or Supabase) — hosted Postgres |
+| **App host** | **Railway** (recommended), Render, or Koyeb |
+| **Database** | Railway PostgreSQL (or Neon) |
 | **Optional later** | Upstash Redis (caching), Cloudflare (assets) |
 
-### Step 1) Create a Neon Postgres DB
+### Step 1) Create Database
 
-1. Go to [neon.tech](https://neon.tech)
-2. Create project/database
-3. Copy the connection string: `postgresql://...`
+**Railway:** Add PostgreSQL via Dashboard (New → Database → PostgreSQL). `DATABASE_URL` is auto-injected.
+
+**Or Neon:** Go to [neon.tech](https://neon.tech), create project/database, copy connection string.
 
 ### Step 2) Add Production Environment Variables
 
@@ -110,25 +110,17 @@ git commit -m "Deploy Soul Codex"
 git push origin main
 ```
 
-### Step 4) Deploy to Railway / Render / Fly.io
+### Step 4) Deploy to Railway (Recommended)
 
-**Railway** (already configured via `railway.json`):
+**Railway** (configured via `railway.json`):
 
-- Import GitHub repo
-- Add `DATABASE_URL` and other env vars
-- Deploy — `npm start` runs the built app
+- New Project → Deploy from GitHub repo
+- Add PostgreSQL (New → Database → PostgreSQL)
+- Set env vars in Variables tab
+- Deploy — Railway auto-builds and runs `npm start`
+- Run migrations: `railway run npm run db:push`
 
-**Render**:
-
-- New Web Service → Connect repo
-- Build: `npm run build`
-- Start: `npm start`
-- Add env vars
-
-**Fly.io**:
-
-- `fly launch` then `fly deploy`
-- Set secrets: `fly secrets set DATABASE_URL=...`
+**Alternatives:** See [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) for full Railway guide, or [RENDER_DEPLOY.md](./RENDER_DEPLOY.md) / [KOYEB_DEPLOY.md](./KOYEB_DEPLOY.md) for other options.
 
 ### Step 5) Run Migrations in Production
 
@@ -180,8 +172,8 @@ Production hosts run `npm install` then `npm run build` and `npm start`.
 
 1. Develop locally (A) with `npm run dev`
 2. Commit changes, push to GitHub
-3. Railway/Render auto-deploys to production (C)
-4. Neon holds production data
+3. Railway auto-deploys to production (C) when repo is connected
+4. Railway PostgreSQL (or Neon) holds production data
 5. Optional: SQLite or in-memory for quick local dev
 
 **Result:**
