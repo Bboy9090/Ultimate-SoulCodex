@@ -95,7 +95,7 @@ let serverInstance: any = null;
 NODE_ENV: ${process.env.NODE_ENV || "production (default)"}
 PORT: ${PORT}
 HOST: ${HOST}
-DATABASE_URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Not set (MemStorage bootstrap mode)"}
+DATABASE_URL: ${process.env.DATABASE_URL ? "✓ Set (DB connectivity available; app currently uses in-memory storage)" : "✗ Not set (DB features disabled; using in-memory storage only)"}
 DEMO_MODE: ${process.env.DEMO_MODE === "true" ? "✓ Enabled (demo@soulcodex.app / demo1234)" : "✗ Disabled"}
 ========================================
 Server listening on http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}
