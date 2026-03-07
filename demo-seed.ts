@@ -39,6 +39,10 @@ const DEMO_PROFILE_SEED = {
 };
 
 export async function seedDemoData(): Promise<void> {
+  if (process.env.NODE_ENV === "production") {
+    console.warn("[Demo] Demo data seeding is disabled in production environments.");
+    return;
+  }
   if (process.env.DEMO_MODE !== "true") {
     return;
   }
