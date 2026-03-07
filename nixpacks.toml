@@ -1,0 +1,10 @@
+# Nixpacks config for Railway
+# Node version from .nvmrc or package.json engines
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "NODE_ENV=production node dist/index.js"

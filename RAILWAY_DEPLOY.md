@@ -37,9 +37,9 @@ With $5 free credit/month, you can run:
    - Authorize Railway to access your repos
    - Select: `Bboy9090/Ultimate-SoulCodex-Engine-of-the-Eternal-Now`
 
-3. **Railway Auto-Detects Configuration**
-   - Railway will detect `railway.json` and Node.js
-   - Uses the configuration already in the repo
+3. **Railway Uses Dockerfile**
+   - Railway builds with the `Dockerfile` (builder: DOCKERFILE in railway.json)
+   - No Nixpacks/Node version issues — Docker ensures Node 20 and correct build
 
 ### 2. Add PostgreSQL Database
 
@@ -263,13 +263,18 @@ railway run psql $DATABASE_URL < backup.sql
 ## Troubleshooting
 
 ### Build Fails
-```bash
-# Check build logs
-railway logs --build
+- **Dockerfile build:** Railway uses `Dockerfile` (see railway.json). Build runs `npm ci` then `npm run build`.
+- **Check build logs:** `railway logs --build` or Dashboard → Deployments → Build logs
+- **If Docker ignored:** Ensure `railway.json` has `"builder": "DOCKERFILE"`. Filename must be exactly `Dockerfile` at repo root.
 
-# Redeploy
-railway up
-```
+### App Crashes on Startup (VAPID / Push)
+- **Leave VAPID keys empty** or add valid keys. Placeholder values like `your_public_key_here` will crash.
+- Generate real keys: `npx web-push generate-vapid-keys`
+- Or remove VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY from variables — app uses temp keys (subscriptions won't persist across restarts).
+
+### Build Succeeds but App Won't Start
+- **Required vars:** `NODE_ENV=production` (set in Dockerfile), `DATABASE_URL` (if using DB), `SESSION_SECRET`, `ADMIN_PASSWORD`
+- **PORT:** Railway injects PORT — app listens on `process.env.PORT`. No config needed.
 
 ### App Crashes
 ```bash
