@@ -10,11 +10,16 @@ npm install
 cp .env.example .env
 # Edit .env with your values (see below for minimum config)
 
-# 3. Start development server
-npm run dev
+# 3. Build
+npm run build
+
+# 4. Start
+npm start
 ```
 
 Visit: [http://localhost:3000](http://localhost:3000)
+
+> **`npm run dev`** uses Vite for hot-reload. It requires a Vite-capable environment (e.g., Replit, or with `vite` installed). For standard local use, `npm run build && npm start` is the reliable path.
 
 ---
 

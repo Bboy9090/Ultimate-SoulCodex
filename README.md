@@ -77,14 +77,16 @@ npm install
 cp .env.example .env
 # Edit .env — minimum required: DATABASE_URL (or set DEMO_MODE=true to skip DB)
 
-# 4. Push database schema (skip if using DEMO_MODE=true)
-npm run db:push
+# 4. Build
+npm run build
 
 # 5. Run
-npm run dev
+npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+> **Note on `npm run dev`:** The dev script uses Vite for hot-module reloading. If you're running locally without a Vite-enabled platform environment, use `npm run build && npm start` instead. `npm start` always works after a build.
 
 ### Demo Mode (No Database Required)
 
