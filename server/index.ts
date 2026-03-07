@@ -92,7 +92,7 @@ let serverInstance: any = null;
 ========================================
 🚀 Server Starting Up
 ========================================
-NODE_ENV: ${process.env.NODE_ENV || "development"}
+NODE_ENV: ${process.env.NODE_ENV || "production (default)"}
 PORT: ${PORT}
 HOST: ${HOST}
 DATABASE_URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Not set (MemStorage bootstrap mode)"}
