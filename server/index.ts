@@ -4,6 +4,7 @@ import "dotenv/config";
 import express, { type Express } from "express";
 import { registerRoutes } from "../routes";
 import { setupVite } from "../vite-server";
+import { seedDemoData } from "../demo-seed";
 
 // Simple logger function
 function log(message: string, source = "express") {
@@ -63,6 +64,9 @@ let serverInstance: any = null;
 
 // Setup routes and start server
 (async () => {
+  // Seed demo data if DEMO_MODE=true (must run before routes so demo user is available)
+  await seedDemoData();
+
   const server = await registerRoutes(app);
 
   // Error handling middleware
@@ -92,6 +96,7 @@ NODE_ENV: ${process.env.NODE_ENV || "development"}
 PORT: ${PORT}
 HOST: ${HOST}
 DATABASE_URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Not set (MemStorage bootstrap mode)"}
+DEMO_MODE: ${process.env.DEMO_MODE === "true" ? "✓ Enabled (demo@soulcodex.app / demo1234)" : "✗ Disabled"}
 ========================================
 Server listening on http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}
 Health check: http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}/health
