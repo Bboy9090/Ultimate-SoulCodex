@@ -1,13 +1,22 @@
 # Soul Codex Documentation Index
 
-**Last Updated:** December 27, 2025  
-**Status:** Complete & Shippable  
+**Last Updated:** March 7, 2026  
+**Status:** v1.0 Shipped  
 
 ---
 
 ## Overview
 
-This directory contains comprehensive product documentation for Soul Codex, a mobile-first personality and compatibility application that synthesizes 30+ spiritual and psychological systems into actionable insights for self-discovery and relationships.
+This directory contains comprehensive product documentation for Soul Codex, a mobile-first personality and compatibility application that synthesizes 35+ spiritual and psychological systems into actionable insights for self-discovery and relationships.
+
+---
+
+## Start Here
+
+- **[README.md](./README.md)** — What the app is, how to run it, the 35+ systems explained plainly
+- **[QUICK_START.md](./QUICK_START.md)** — Fastest path from clone to running app (Node.js, not Python)
+- **[CHANGELOG.md](./CHANGELOG.md)** — What shipped in v1.0.0
+- **[ROADMAP.md](./ROADMAP.md)** — What's live, what's coming, what's intentionally deferred
 
 ---
 
