@@ -4,7 +4,13 @@ import fs from "fs";
 import type { Server } from "http";
 
 export async function setupVite(app: express.Express, server: Server) {
-  if (process.env.NODE_ENV === "production") {
+  // Treat undefined NODE_ENV as production — the compiled dist/index.js bundle
+  // is only created for production use and does not bundle Vite. Running the
+  // built server without setting NODE_ENV should serve static assets, not
+  // attempt to start a Vite dev server.
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (!isDev) {
     serveStatic(app);
   } else {
     const { createServer: createViteServer } = await import("vite");
