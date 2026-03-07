@@ -1,96 +1,85 @@
-# ⚡ Quick Start - Soul Codex
+# ⚡ Quick Start — Soul Codex
 
-## 🎨 Play with Colors!
+## Run the App
 
-**All colors are in:** `frontend/src/styles/themes/`
-
-### Change Colors Instantly:
-1. Open any theme file (e.g., `mystical-cyan.css`)
-2. Change `--accent-primary` to your favorite color
-3. Save and refresh - instant transformation!
-
-### Switch Themes:
-- Use the ThemeSwitcher component in the header
-- Or edit `App.tsx` to import a different theme CSS file
-
-### Available Themes:
-- 🌊 **Mystical Cyan** (default) - `#06b6d4`
-- 💜 **Cosmic Purple** - `#8b5cf6`
-- 🌟 **Solar Gold** - `#f59e0b`
-- 🌿 **Emerald Mystic** - `#10b981`
-- 🌹 **Rose Mystic** - `#ec4899`
-
----
-
-## 🚀 Run the App
-
-### Backend
 ```bash
-cd soul-codex/backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-### Frontend
-```bash
-cd soul-codex/frontend
+# 1. Install dependencies
 npm install
+
+# 2. Set up environment
+cp .env.example .env
+# Edit .env with your values (see below for minimum config)
+
+# 3. Start development server
 npm run dev
 ```
 
-Visit: http://localhost:5173
+Visit: [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## ✨ What's Included
+## Minimum Configuration
 
-### ✅ Fixed Issues
-- **Unique Generation** - "Who I Am" is never duplicated
-- **Render's Layout** - Clean soul archetype page structure
-- **Replit's Polish** - Legendary design details
+For local development without a database, enable demo mode:
 
-### ✅ Features
-- 5 customizable color themes
-- Theme switcher component
-- Soul archetype page with all sections
-- Landing page with pricing
-- Unique content generation system
+```env
+DEMO_MODE=true
+SESSION_SECRET=any-random-string-here
+```
 
-### ✅ Components
-- Soul Frequency
-- Who I Am (unique per user)
-- Core Strengths
-- Shadow Aspects
-- Purpose
-- Soul Architecture
+For full functionality:
+
+```env
+DATABASE_URL=postgresql://user:password@host:port/dbname
+SESSION_SECRET=your-random-secret-here
+GEMINI_API_KEY=your-gemini-key          # AI synthesis
+OPENAI_API_KEY=your-openai-key          # AI fallback
+STRIPE_SECRET_KEY=sk_test_...           # Payments (optional)
+```
 
 ---
 
-## 🎨 Customize Colors
+## Core Pages
 
-### Quick Method:
-1. Open `frontend/src/styles/themes/mystical-cyan.css`
-2. Find `--accent-primary: #06b6d4;`
-3. Change to your color (e.g., `#ff6b9d`)
-4. Save and see instant changes!
-
-### Create New Theme:
-1. Copy any theme file
-2. Rename it (e.g., `my-custom-theme.css`)
-3. Change all the color values
-4. Import in `App.tsx`
-
----
-
-## 📝 Next Steps
-
-1. **Customize colors** - Play with the theme files!
-2. **Add your AI client** - Update `archetype_generator.py`
-3. **Connect backend** - Add your API keys
-4. **Deploy** - Use the deployment guides from Sonic Codex
+| URL | What it does |
+|---|---|
+| `/` | Onboarding — enter birth data, create your profile |
+| `/profile` | Your full Soul Codex (35+ systems) |
+| `/today` | Daily soul context — transits, Gene Key, Tarot |
+| `/compat` | Compatibility — add people, run 5-pillar analysis |
+| `/codex` | Deep AI-powered Codex reading with PDF export |
+| `/guide` | AI Soul Guide chat |
+| `/horoscope` | Daily horoscope & transit calendar |
+| `/poster` | Generate a shareable soul profile poster |
 
 ---
 
-**Have fun customizing!** 🎨✨
+## Build & Database
+
+```bash
+# Build for production
+npm run build
+
+# Push DB schema (requires DATABASE_URL)
+npm run db:push
+
+# Generate migration files
+npm run db:generate
+
+# Open Drizzle Studio (DB GUI)
+npm run db:studio
+```
+
+---
+
+## Customize the Theme
+
+All colors are controlled via Tailwind CSS. The color palette is defined in `tailwind.config.ts` and documented in [COLOR_SYSTEM.md](COLOR_SYSTEM.md).
+
+---
+
+## Deployment
+
+- [Railway](RAILWAY_DEPLOY.md)
+- [Fly.io](FLY_IO_DEPLOY.md)
+- [VPS / Docker](VPS_SELF_HOSTING.md)
