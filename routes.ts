@@ -3453,6 +3453,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── Wave 7: Life Timeline Engine ────────────────────────────────────────────
+  app.post("/api/timeline/current", async (req, res) => {
+    try {
+      const { profile, fullChart, currentDateISO } = req.body;
+
+      if (!profile) {
+        return res.status(400).json({ error: "profile is required" });
+      }
+
+      const date = currentDateISO ?? new Date().toISOString();
+
+      const { generateTimeline } = await import("./services/timeline/index");
+      const result = generateTimeline({ profile, fullChart, currentDateISO: date });
+
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "TimelineCurrent");
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
