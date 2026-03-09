@@ -1,10 +1,12 @@
+import type { TimelinePhase } from "../../services/timeline/types";
+
 export interface DailyCardInput {
-  phase: string;
+  phase: TimelinePhase | string;
   decisionStyle?: string;
 }
 
 export interface DailyCard {
-  phase: string;
+  phase: TimelinePhase;
   focus: string;
   actions: string[];
   avoid: string[];
@@ -12,7 +14,7 @@ export interface DailyCard {
   date: string;
 }
 
-const PHASE_GUIDANCE: Record<string, { focus: string; actions: string[]; avoid: string[] }> = {
+const PHASE_GUIDANCE: Record<TimelinePhase, { focus: string; actions: string[]; avoid: string[] }> = {
   Ignition: {
     focus: "Start the one thing you've been circling.",
     actions: [
@@ -131,13 +133,17 @@ export function dailyCard(input: DailyCardInput): DailyCard {
   // Integration is the default fallback: it is the most universally applicable phase —
   // synthesizing experience and preparing for what comes next — and is safe to show
   // when the caller provides an unrecognized phase name.
-  const guidance = PHASE_GUIDANCE[input.phase] ?? PHASE_GUIDANCE.Integration;
+  const resolvedPhase: TimelinePhase =
+    (input.phase as TimelinePhase) in PHASE_GUIDANCE
+      ? (input.phase as TimelinePhase)
+      : "Integration";
+  const guidance = PHASE_GUIDANCE[resolvedPhase];
   const decisionAdvice =
     (input.decisionStyle ? DECISION_ADVICE[input.decisionStyle] : undefined) ??
     DEFAULT_DECISION_ADVICE;
 
   return {
-    phase: input.phase,
+    phase: resolvedPhase,
     focus: guidance.focus,
     actions: guidance.actions,
     avoid: guidance.avoid,
