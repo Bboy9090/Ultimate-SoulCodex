@@ -32,6 +32,7 @@ export default function Nav() {
     { href: "/guide",     label: "Guide"    },
     { href: "/tracker",   label: "Tracker"  },
     { href: "/horoscope", label: "Chart"    },
+    { href: "/timeline",  label: "Timeline" },
   ];
 
   const links = mode === "advanced" ? [...primaryLinks, ...advancedLinks] : primaryLinks;
