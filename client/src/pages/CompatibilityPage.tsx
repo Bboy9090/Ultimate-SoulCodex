@@ -20,8 +20,33 @@ interface CompatibilityResult {
   };
   friction: string[];
   synergy: string[];
+  growthOpportunities: string[];
   profile1Name?: string;
   profile2Name?: string;
+}
+
+function normalizeCompatData(data: any): CompatibilityResult {
+  const cd = data.compatibilityData || {};
+  const dims = cd.dimensions || {};
+  const cats = cd.categories ?? {};
+
+  const getScore = (dimKey: string, catKey: string) =>
+    dims[dimKey]?.score ?? dims[dimKey] ?? cats[catKey]?.score ?? 0;
+
+  return {
+    overallScore: data.overallScore ?? cd.overall ?? 0,
+    dimensions: {
+      identity:  getScore("identity",  "astrology"),
+      stress:    getScore("stress",    "personality"),
+      values:    getScore("values",    "spiritual"),
+      decisions: getScore("decisions", "numerology"),
+    },
+    synergy:             cd.synergy             ?? cd.strengths          ?? data.strengths          ?? [],
+    friction:            cd.friction            ?? cd.challenges         ?? data.challenges         ?? [],
+    growthOpportunities: cd.growthOpportunities ?? data.growthOpportunities ?? [],
+    profile1Name: data.profile1?.name,
+    profile2Name: data.profile2?.name,
+  };
 }
 
 export default function CompatibilityPage() {
@@ -120,21 +145,7 @@ export default function CompatibilityPage() {
       });
     },
     onSuccess: (data: any) => {
-      const cd = data.compatibilityData || {};
-      const dims = cd.dimensions || {};
-      setCompatibilityResult({
-        overallScore: data.overallScore ?? cd.overall ?? 0,
-        dimensions: {
-          identity:  dims.identity?.score  ?? dims.identity  ?? 0,
-          stress:    dims.stress?.score    ?? dims.stress    ?? 0,
-          values:    dims.values?.score    ?? dims.values    ?? 0,
-          decisions: dims.decisions?.score ?? dims.decisions ?? 0,
-        },
-        friction: cd.friction || [],
-        synergy:  cd.synergy  || [],
-        profile1Name: data.profile1?.name,
-        profile2Name: data.profile2?.name,
-      });
+      setCompatibilityResult(normalizeCompatData(data));
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     },
     onError: (err: any) => {
@@ -316,17 +327,31 @@ export default function CompatibilityPage() {
 
           {compatibilityResult.synergy.length > 0 && (
             <div style={{ marginBottom: "1rem" }}>
-              <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--cosmic-lavender)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Synergy</p>
+              <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--cosmic-lavender)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                ✦ Why It Works
+              </p>
               {compatibilityResult.synergy.map((s, i) => (
                 <p key={i} style={{ fontSize: "0.85rem", color: "var(--foreground)", marginBottom: "0.25rem" }}>✦ {s}</p>
               ))}
             </div>
           )}
           {compatibilityResult.friction.length > 0 && (
-            <div style={{ paddingTop: "1rem", borderTop: "1px solid var(--glass-border)" }}>
-              <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Watch Points</p>
+            <div style={{ paddingTop: "1rem", borderTop: "1px solid var(--glass-border)", marginBottom: "1rem" }}>
+              <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "#f87171", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                ⚡ Friction Points
+              </p>
               {compatibilityResult.friction.map((f, i) => (
                 <p key={i} style={{ fontSize: "0.82rem", color: "var(--muted-foreground)", marginBottom: "0.25rem" }}>◦ {f}</p>
+              ))}
+            </div>
+          )}
+          {compatibilityResult.growthOpportunities.length > 0 && (
+            <div style={{ paddingTop: "1rem", borderTop: "1px solid var(--glass-border)" }}>
+              <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", color: "#22c55e", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                ◈ How To Win Anyway
+              </p>
+              {compatibilityResult.growthOpportunities.map((g, i) => (
+                <p key={i} style={{ fontSize: "0.82rem", color: "rgba(200,255,200,0.8)", marginBottom: "0.25rem" }}>→ {g}</p>
               ))}
             </div>
           )}

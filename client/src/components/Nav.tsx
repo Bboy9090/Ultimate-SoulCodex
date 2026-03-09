@@ -19,22 +19,22 @@ export default function Nav() {
   const [location] = useLocation();
   const { mode, toggle } = useMode();
 
-  const baseLinks = [
-    { href: "/",        label: "Start"   },
-    { href: "/profile", label: "Profile" },
-    { href: "/today",   label: "Today"   },
-    { href: "/guide",   label: "Guide"   },
-    { href: "/tracker", label: "Tracker" },
+  const primaryLinks = [
+    { href: "/",        label: "Home"    },
     { href: "/codex",   label: "Codex"   },
+    { href: "/today",   label: "Today"   },
+    { href: "/compat",  label: "Compat"  },
+    { href: "/poster",  label: "Poster"  },
   ];
 
   const advancedLinks = [
-    { href: "/compat",    label: "Compat" },
-    { href: "/poster",    label: "Poster" },
-    { href: "/horoscope", label: "Chart"  },
+    { href: "/profile",   label: "Profile"  },
+    { href: "/guide",     label: "Guide"    },
+    { href: "/tracker",   label: "Tracker"  },
+    { href: "/horoscope", label: "Chart"    },
   ];
 
-  const links = mode === "advanced" ? [...baseLinks, ...advancedLinks] : baseLinks;
+  const links = mode === "advanced" ? [...primaryLinks, ...advancedLinks] : primaryLinks;
 
   return (
     <nav className="navbar">
@@ -62,7 +62,7 @@ export default function Nav() {
           ))}
           <button
             onClick={toggle}
-            title={mode === "beginner" ? "Switch to Advanced mode" : "Switch to Beginner mode"}
+            title={mode === "beginner" ? "Show Advanced links" : "Show Standard links"}
             style={{
               background: "none", border: "1px solid rgba(139,92,246,0.2)", borderRadius: "6px",
               padding: "0.28rem 0.55rem", marginLeft: "0.5rem", cursor: "pointer",
@@ -71,7 +71,7 @@ export default function Nav() {
               transition: "all 0.2s"
             }}
           >
-            {mode === "advanced" ? "ADV" : "STD"}
+            {mode === "advanced" ? "ADV ✦" : "ADV"}
           </button>
         </div>
       </div>
