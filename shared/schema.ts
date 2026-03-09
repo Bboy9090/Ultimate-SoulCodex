@@ -48,7 +48,16 @@ export const mbtiAssessmentSchema = z.object({
 });
 
 export const dailyCardSchema = z.object({
-  phase: z.string().min(1),
+  phase: z.enum([
+    "Ignition",
+    "Exposure",
+    "Construction",
+    "Expansion",
+    "Friction",
+    "Refinement",
+    "Integration",
+    "Legacy",
+  ]),
   decisionStyle: z.string().optional(),
 });
 
