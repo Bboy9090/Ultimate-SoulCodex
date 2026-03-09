@@ -19,6 +19,14 @@ interface TodayCard {
   date: string;
 }
 
+const THEME_ICONS: Record<string, string> = {
+  precision: "◈", service: "✦", privacy: "◉", intensity: "⬡",
+  freedom: "◎", leadership: "▲", healing: "✿", order: "⊞",
+  innovation: "⚙", intuition: "☽", discipline: "⬛", rebellion: "⚡",
+  craft: "⬟", legacy: "⧫", emotion_depth: "◇", social_sensitivity: "◌",
+  truth: "◆", boundaries: "▪", courage: "▶", focus: "⊕",
+};
+
 const MOON_GLYPHS: Record<string, string> = {
   "new moon": "🌑", "waxing crescent": "🌒", "first quarter": "🌓",
   "waxing gibbous": "🌔", "full moon": "🌕", "waning gibbous": "🌖",
@@ -108,6 +116,7 @@ export default function TodayPage() {
   const [, navigate] = useLocation();
   const [card, setCard] = useState<TodayCard | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeThemes, setActiveThemes] = useState<{ tag: string; score: number }[]>([]);
   const streak = useStreak();
 
   const cardMutation = useMutation({
@@ -136,12 +145,25 @@ export default function TodayPage() {
         const { card: cached, ts } = JSON.parse(raw);
         if (cached?.date === todayStr && Date.now() - ts < 3600_000 * 4) {
           setCard(cached);
+          loadThemes();
           return;
         }
       }
     } catch {}
     loadCard();
   }, []);
+
+  function loadThemes() {
+    try {
+      const rawCodex = localStorage.getItem("soulCodexReading");
+      if (rawCodex) {
+        const codex = JSON.parse(rawCodex);
+        if (Array.isArray(codex?.topThemes)) {
+          setActiveThemes(codex.topThemes.slice(0, 3));
+        }
+      }
+    } catch {}
+  }
 
   function loadCard() {
     const rawProfile = localStorage.getItem("soulProfile");
@@ -152,6 +174,10 @@ export default function TodayPage() {
     let codexSynthesis: any = undefined;
     try { profile = JSON.parse(rawProfile ?? "{}"); } catch {}
     try { if (rawCodex) codexSynthesis = JSON.parse(rawCodex); } catch {}
+
+    if (codexSynthesis?.topThemes) {
+      setActiveThemes(codexSynthesis.topThemes.slice(0, 3));
+    }
 
     const profileId = profile?.id ?? profile?.profileId;
     cardMutation.mutate({ profileId, profile, codexSynthesis });
@@ -229,6 +255,25 @@ export default function TodayPage() {
           {card.focus}
         </p>
       </div>
+
+      {/* Active Themes */}
+      {activeThemes.length > 0 && (
+        <div style={{
+          display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.75rem"
+        }}>
+          {activeThemes.map(t => (
+            <span key={t.tag} style={{
+              display: "inline-flex", alignItems: "center", gap: "0.3rem",
+              background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)",
+              borderRadius: "8px", padding: "0.25rem 0.65rem",
+              fontSize: "0.75rem", color: "var(--cosmic-lavender)"
+            }}>
+              <span style={{ opacity: 0.7 }}>{THEME_ICONS[t.tag] ?? "◈"}</span>
+              {t.tag.replace(/_/g, " ")}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Do / Don't */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
