@@ -130,7 +130,8 @@ export function getAstrologySignals(
   _fullChart?: unknown
 ): PhaseSignal[] {
   const age = ageAt(birthDate, currentDate);
-  if (age < 0 || age > 120) return [];
+  if (age < 0) return []; // birth date is in the future relative to currentDate
+  if (age > 120) return [];
 
   return [
     ...saturnSignals(age),
