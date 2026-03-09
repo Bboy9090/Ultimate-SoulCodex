@@ -18,10 +18,12 @@ export type AstroInput = {
  */
 export async function generateChart(input: AstroInput): Promise<AstroResult> {
   const provider = getAstroProvider();
+  const trimmedTime = input.time?.trim();
+  const normalizedTime = trimmedTime === "" ? undefined : trimmedTime;
   return provider.getChart({
     dateISO: input.date,
-    time24: input.time,
-    timeUnknown: !input.time,
+    time24: normalizedTime,
+    timeUnknown: !normalizedTime,
     place: input.place ?? "",
     timezone: input.timezone,
     lat: input.lat,
