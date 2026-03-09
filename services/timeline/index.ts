@@ -23,8 +23,13 @@ export function generateTimeline(input: TimelineInput): TimelineOutput {
     signals.push(...astroSigs);
   }
 
-  // 3. Profile themes from Codex30
-  const topThemes = (profile as any)?.topThemes ?? (profile as any)?.signals?.topThemes;
+  // 3. Profile themes from Codex30 (can be at top-level or nested in signals)
+  const profileAny = profile as Record<string, unknown>;
+  const topThemes =
+    (profileAny.topThemes as { tag: string; score: number }[] | undefined) ??
+    ((profileAny.signals as Record<string, unknown> | undefined)?.topThemes as
+      | { tag: string; score: number }[]
+      | undefined);
   if (Array.isArray(topThemes)) {
     const themeSigs = getThemeSignals(topThemes);
     signals.push(...themeSigs);

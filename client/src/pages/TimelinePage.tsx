@@ -52,6 +52,8 @@ const PHASE_ORDER: TimelinePhase[] = [
   "Friction", "Refinement", "Integration", "Legacy",
 ];
 
+const CACHE_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
+
 export default function TimelinePage() {
   const [, navigate] = useLocation();
   const [timeline, setTimeline] = useState<TimelineData | null>(null);
@@ -78,17 +80,19 @@ export default function TimelinePage() {
   });
 
   useEffect(() => {
-    // Try cache first (valid for 4 h)
+    // Try cache first
     try {
       const raw = localStorage.getItem("soulTimeline");
       if (raw) {
         const { timeline: cached, ts } = JSON.parse(raw);
-        if (cached && Date.now() - ts < 3_600_000 * 4) {
+        if (cached && Date.now() - ts < CACHE_DURATION_MS) {
           setTimeline(cached);
           return;
         }
       }
-    } catch {}
+    } catch (e) {
+      console.warn("[TimelinePage] Failed to read cache:", e);
+    }
 
     loadTimeline();
   }, []);
@@ -106,8 +110,12 @@ export default function TimelinePage() {
     let profile: Record<string, unknown> = {};
     let fullChart: unknown = undefined;
 
-    try { profile = JSON.parse(rawProfile); } catch {}
-    try { if (rawChart) fullChart = JSON.parse(rawChart); } catch {}
+    try { profile = JSON.parse(rawProfile); } catch (e) {
+      console.warn("[TimelinePage] Failed to parse profile:", e);
+    }
+    try { if (rawChart) fullChart = JSON.parse(rawChart); } catch (e) {
+      console.warn("[TimelinePage] Failed to parse chart:", e);
+    }
 
     // Merge Codex30 topThemes into profile if available
     try {
@@ -117,7 +125,9 @@ export default function TimelinePage() {
           profile = { ...profile, topThemes: codex.topThemes };
         }
       }
-    } catch {}
+    } catch (e) {
+      console.warn("[TimelinePage] Failed to parse codex reading:", e);
+    }
 
     mutation.mutate({
       profile,
