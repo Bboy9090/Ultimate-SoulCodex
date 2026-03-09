@@ -3473,6 +3473,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── Wave 8+: Mirror Engine ──────────────────────────────────────────────────
+  app.post("/api/mirror/analyze", async (req, res) => {
+    try {
+      const { analyzeMirror } = await import("./src/mirror/analyze");
+      const result = analyzeMirror(req.body);
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "MirrorAnalyze");
+    }
+  });
+
+  // ── Wave 8+: Life Event Decoder ─────────────────────────────────────────────
+  app.post("/api/events/decode", async (req, res) => {
+    try {
+      const { event, phase, driver } = req.body;
+      if (!event || !phase || !driver) {
+        return res.status(400).json({ error: "event, phase, and driver are required" });
+      }
+      const { decodeEvent } = await import("./src/events/decode");
+      const result = decodeEvent({ event, phase, driver });
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "EventsDecode");
+    }
+  });
+
+  // ── Wave 8+: Compatibility Engine ──────────────────────────────────────────
+  app.post("/api/compat/analyze", async (req, res) => {
+    try {
+      const { a, b } = req.body;
+      if (!a || !b) {
+        return res.status(400).json({ error: "profiles a and b are required" });
+      }
+      const { analyzeCompatibility } = await import("./src/compat/analyze");
+      const result = analyzeCompatibility(a, b);
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "CompatAnalyze");
+    }
+  });
+
+  // ── Wave 8+: Life Map Forecast ─────────────────────────────────────────────
+  app.post("/api/lifemap/forecast", async (req, res) => {
+    try {
+      const { currentYear, personalYear, horizonYears } = req.body;
+      if (typeof currentYear !== "number" || typeof personalYear !== "number") {
+        return res.status(400).json({ error: "currentYear and personalYear must be numbers" });
+      }
+      const { generateLifeMap } = await import("./src/lifemap/forecast");
+      const result = generateLifeMap(currentYear, personalYear, horizonYears);
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "LifeMapForecast");
+    }
+  });
+
+  // ── Wave 8+: Daily Transit Card ────────────────────────────────────────────
+  app.post("/api/transits/today", async (req, res) => {
+    try {
+      const { phase, decisionStyle } = req.body;
+      if (!phase || !decisionStyle) {
+        return res.status(400).json({ error: "phase and decisionStyle are required" });
+      }
+      const { dailyCard } = await import("./src/transits/daily");
+      const result = dailyCard({ phase, decisionStyle });
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "TransitsToday");
+    }
+  });
+
+  // ── Wave 8+: Insight Trace ─────────────────────────────────────────────────
+  app.post("/api/trace", async (req, res) => {
+    try {
+      const { signals } = req.body;
+      if (!Array.isArray(signals)) {
+        return res.status(400).json({ error: "signals array is required" });
+      }
+      const { buildTrace } = await import("./src/trace/insight");
+      const result = buildTrace(signals);
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "InsightTrace");
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
