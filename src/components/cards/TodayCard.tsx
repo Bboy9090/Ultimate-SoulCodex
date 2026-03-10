@@ -37,12 +37,29 @@ export default function TodayCard({ data }: { data?: DailyCard | null }){
         </ul>
       </div>
 
-      {data.watchouts && data.watchouts.length > 0 && (
-        <div className="mt-4">
-          <p className="text-xs text-codex-textMuted">Active transits</p>
-          <ul className="text-xs text-codex-purple mt-1 space-y-1">
-            {data.watchouts.map((w, i) => <li key={i}>{w}</li>)}
-          </ul>
+      {data.transits && data.transits.length > 0 && (
+        <div className="mt-5 space-y-4">
+          {data.transits.map((t, i) => (
+            <div key={i} className="border-t border-codex-border pt-3">
+              <p className="text-sm font-semibold text-codex-purple">{t.title}</p>
+              <p className="text-xs text-codex-textMuted mt-1">Affects: {t.whatItAffects}</p>
+              <p className="text-sm mt-2">{t.realLifeExample}</p>
+              <div className="flex gap-6 mt-2">
+                <div>
+                  <p className="text-xs text-codex-gold">Do</p>
+                  <ul className="text-xs list-disc pl-3">
+                    {t.do.map((d, j) => <li key={j}>{d}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs text-red-400">Avoid</p>
+                  <ul className="text-xs list-disc pl-3">
+                    {t.avoid.map((a, j) => <li key={j}>{a}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
