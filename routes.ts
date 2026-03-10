@@ -69,6 +69,7 @@ import { isGeneric } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
 import { generateText, isGeminiAvailable } from "./gemini";
+import { validateAndClean } from "./src/ai/pipeline";
 
 // Initialize SubscriptionService (if Stripe is configured)
 let subscriptionService: SubscriptionService | null = null;
@@ -3558,6 +3559,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!narrative) {
         narrative = buildFallbackNarrative(codename, anchors, themes, strengths, triggers);
+      }
+
+      const clarityReport = await validateAndClean(narrative, (p) =>
+        generateText({ model: "gemini-2.0-flash", prompt: p, temperature: 0.85 })
+      );
+      narrative = clarityReport.finalText;
+
+      if (clarityReport.rewroteText) {
+        console.log(`[Codex30] Clarity rewrite triggered. Score: ${clarityReport.clarityScore}. Problems: ${clarityReport.clarityProblems.join(", ")}`);
       }
 
       const conf = profile?.meta?.confidence ?? profile?.confidence;

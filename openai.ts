@@ -1,6 +1,7 @@
 import { generateText, isGeminiAvailable } from "./gemini";
 import { BANNED_PHRASES, stripBannedPhrases } from "./soulcodex/validators/blandnessFilter";
 import { buildResultsPrompt } from "./soulcodex/prompts/resultsEngine";
+import { validateAndClean } from "./src/ai/pipeline";
 
 interface BiographyRequest {
   name: string;
@@ -74,13 +75,23 @@ export async function generateBiography(data: BiographyRequest): Promise<string>
       themes: data.archetype?.themes,
     }, "deep");
 
-    const biography = await generateText({
+    const rawBiography = await generateText({
       model: "gemini-2.5-flash",
       temperature: 0.8,
       prompt
     });
 
-    return stripBannedPhrases(biography) || generateFallbackBiography(data);
+    if (!rawBiography) return generateFallbackBiography(data);
+
+    const report = await validateAndClean(rawBiography, (p) =>
+      generateText({ model: "gemini-2.5-flash", temperature: 0.85, prompt: p })
+    );
+
+    if (report.rewroteText) {
+      console.log(`[Biography] Clarity rewrite triggered. Score: ${report.clarityScore}. Problems: ${report.clarityProblems.join(", ")}`);
+    }
+
+    return report.finalText || generateFallbackBiography(data);
   } catch (error) {
     console.error("Error generating biography with Gemini AI, using fallback:", error);
     return generateFallbackBiography(data);
@@ -124,13 +135,17 @@ RULES:
 
 Return only the guidance text.`;
 
-    const guidance = await generateText({
+    const rawGuidance = await generateText({
       model: "gemini-2.5-flash",
       temperature: 0.8,
       prompt
     });
 
-    return stripBannedPhrases(guidance) || generateFallbackDailyGuidance(data);
+    if (!rawGuidance) return generateFallbackDailyGuidance(data);
+
+    const report = await validateAndClean(rawGuidance);
+
+    return report.finalText || generateFallbackDailyGuidance(data);
   } catch (error) {
     console.error("Error generating daily guidance with Gemini AI, using fallback:", error);
     return generateFallbackDailyGuidance(data);

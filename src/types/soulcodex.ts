@@ -112,11 +112,20 @@ export type TimelineProfile = {
 
 /* DAILY TRANSIT */
 
+export type TransitDetail = {
+  title: string;
+  whatItAffects: string;
+  realLifeExample: string;
+  do: string[];
+  avoid: string[];
+};
+
 export type DailyCard = {
   focus: string;
   do: string[];
   dont: string[];
   watchouts?: string[];
+  transits?: TransitDetail[];
   decisionAdvice: string;
 };
 
