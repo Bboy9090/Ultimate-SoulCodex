@@ -588,7 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (astrologyData && numerologyData) {
           elementalMedicineData = calculateElementalProfile(
             validatedBirthData.birthDate,
-            numerologyData.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData.sunSign,
             astrologyData.moonSign,
             humanDesignData?.type
@@ -604,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (numerologyData && astrologyData) {
           soulArchetypeData = generateSoulArchetype(
             validatedBirthData.name,
-            numerologyData.calculateNumerology?.lifePath || 1,
+            numerologyData?.lifePath || 1,
             astrologyData.sunSign,
             astrologyData.moonSign,
             humanDesignData?.type,
@@ -927,7 +927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Kabbalah (works with name + birth date + numerology)
       try {
-        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData.calculateNumerology);
+        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData);
       } catch (error) {
         console.error("[CreateProfile] Kabbalah calculation failed:", error);
         kabbalahData = null;
@@ -943,7 +943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Chakra System (works with birth date + numerology)
       try {
-        chakraData = calculateChakraSystem(birthData.birthDate, numerologyData.calculateNumerology, astrologyData);
+        chakraData = calculateChakraSystem(birthData.birthDate, numerologyData, astrologyData);
       } catch (error) {
         console.error("[CreateProfile] Chakra System calculation failed:", error);
         chakraData = null;
@@ -951,7 +951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Sacred Geometry (works with birth date + numerology)
       try {
-        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData.calculateNumerology, birthData.name);
+        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData, birthData.name);
       } catch (error) {
         console.error("[CreateProfile] Sacred Geometry calculation failed:", error);
         sacredGeometryData = null;
@@ -959,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Runes (works with name + birth date + numerology)
       try {
-        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData.calculateNumerology);
+        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData);
       } catch (error) {
         console.error("[CreateProfile] Runes calculation failed:", error);
         runesData = null;
@@ -999,7 +999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Palmistry (works with birth date + numerology life path)
       let palmistryData;
       try {
-        palmistryData = generatePalmReading(birthData.birthDate, numerologyData.calculateNumerology);
+        palmistryData = generatePalmReading(birthData.birthDate, numerologyData);
         console.log("[CreateProfile] Palm reading generated successfully");
       } catch (error) {
         console.error("[CreateProfile] Palmistry calculation failed:", error);
@@ -1072,7 +1072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (astrologyData && numerologyData) {
           elementalMedicineData = calculateElementalProfile(
             birthData.birthDate,
-            numerologyData.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData.sunSign,
             astrologyData.moonSign,
             humanDesignData?.type
@@ -1089,7 +1089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (numerologyData && astrologyData) {
           soulArchetypeData = generateSoulArchetype(
             birthData.name,
-            numerologyData.calculateNumerology?.lifePath || 1,
+            numerologyData?.lifePath || 1,
             astrologyData.sunSign,
             astrologyData.moonSign,
             humanDesignData?.type,
