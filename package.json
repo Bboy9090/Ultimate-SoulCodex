@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "tsx server/index.ts",
+    "dev:next": "next dev",
     "build": "npm run build:client && npm run build:server",
+    "build:next": "next build",
     "build:client": "node build-client.js",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "node dist/index.js",
@@ -74,6 +76,7 @@
     "lucide-react": "^0.453.0",
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
+    "next": "^16.1.6",
     "next-themes": "^0.4.6",
     "openai": "^5.20.1",
     "passport": "^0.7.0",
