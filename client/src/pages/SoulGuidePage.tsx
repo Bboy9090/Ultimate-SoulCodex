@@ -79,14 +79,12 @@ export default function SoulGuidePage() {
         })
       });
 
-      if (response.status === 503) {
-        setError("Your Soul Guide is resting — AI features are temporarily offline.");
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        const fallbackMsg = errData?.message || "The Soul Guide is reconnecting. Please try again in a moment.";
+        setMessages(prev => [...prev, { role: "model", text: fallbackMsg }]);
         setIsLoading(false);
         return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to connect to Soul Guide");
       }
 
       const reader = response.body?.getReader();
@@ -128,7 +126,10 @@ export default function SoulGuidePage() {
       }
     } catch (err) {
       console.error("Chat error:", err);
-      setError("An error occurred while connecting to your Soul Guide.");
+      setMessages(prev => [...prev, {
+        role: "model",
+        text: "The Soul Guide is reconnecting. Please try again in a moment."
+      }]);
     } finally {
       setIsLoading(false);
     }
