@@ -3,11 +3,13 @@ export default function MirrorSummary(){
   return(
     <div className="card">
 
-      <h2>Mirror Summary</h2>
+      <h2 className="card-title">Mirror Summary</h2>
 
-      <p>Driver: Truth-seeking precision</p>
-      <p>Shadow Trigger: Dishonesty and chaos</p>
-      <p>Decision Style: Analytical, data-first</p>
+      <div className="space-y-2 text-sm">
+        <p><span className="text-codex-textMuted">Driver:</span> Truth-seeking precision</p>
+        <p><span className="text-codex-textMuted">Shadow Trigger:</span> <span className="text-red-400">Dishonesty and chaos</span></p>
+        <p><span className="text-codex-textMuted">Decision Style:</span> <span className="text-codex-blue">Analytical, data-first</span></p>
+      </div>
 
     </div>
   )

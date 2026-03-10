@@ -3,11 +3,13 @@ export default function CompatibilityResult(){
   return(
     <div className="card">
 
-      <h2>Compatibility Result</h2>
+      <h2 className="card-title">Compatibility Result</h2>
 
-      <p>Score: —</p>
+      <p className="text-lg font-semibold text-codex-textMuted">Score: —</p>
 
-      <p>Submit two birthdates above to see your compatibility analysis.</p>
+      <p className="card-subtitle mt-2">
+        Submit two birthdates above to see your compatibility analysis.
+      </p>
 
     </div>
   )
