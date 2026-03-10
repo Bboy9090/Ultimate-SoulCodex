@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../storage";
-import { streamChat, isGeminiAvailable } from "../services/gemini";
+import { isAnyProviderAvailable, streamChatMulti } from "../services/ai-provider";
 
 export function registerChatRoutes(app: Express) {
   app.post("/api/chat/soul-guide", async (req, res) => {
@@ -9,12 +9,6 @@ export function registerChatRoutes(app: Express) {
 
       if (!message || typeof message !== "string") {
         return res.status(400).json({ message: "Message is required" });
-      }
-
-      if (!isGeminiAvailable()) {
-        return res.status(503).json({
-          message: "AI Soul Guide is temporarily unavailable. Please try again later.",
-        });
       }
 
       const userId = (req as any).user?.id;
@@ -28,21 +22,24 @@ export function registerChatRoutes(app: Express) {
         profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
       }
 
-      // Use DB profile if found, otherwise fallback to profileContext from request
-      const systemInstruction = profile 
-        ? buildProfileContextPrompt(profile) 
+      const systemInstruction = profile
+        ? buildProfileContextPrompt(profile)
         : (profileContext ? buildProfileContextPrompt(profileContext) : buildGeneralPrompt());
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const stream = streamChat({
-        model: "gemini-1.5-flash",
-        temperature: 0.8,
+      const chatHistory = history.map((h: any) => ({
+        role: h.role === "user" ? "user" : "model",
+        content: h.parts?.[0]?.text || h.text || h.content || "",
+      }));
+
+      const stream = streamChatMulti({
         systemInstruction,
-        history,
+        history: chatHistory,
         message,
+        temperature: 0.8,
       });
 
       for await (const content of stream) {
@@ -56,28 +53,70 @@ export function registerChatRoutes(app: Express) {
     } catch (error) {
       console.error("[Soul Guide Chat] Error:", error);
       if (!res.headersSent) {
-        return res.status(500).json({ message: "An error occurred while connecting to your Soul Guide" });
+        return res.status(500).json({
+          message: "The Soul Guide is reconnecting. Please try again in a moment."
+        });
       }
     }
   });
 }
 
 function buildProfileContextPrompt(profile: any): string {
-  const parts = [];
-  if (profile.name) parts.push(`- Name: ${profile.name}`);
-  if (profile.archetype) parts.push(`- Archetype: ${profile.archetype}`);
-  if (profile.sunSign || profile.moonSign || profile.risingSign) {
-    parts.push(`- Astrology: Sun ${profile.sunSign || 'Unknown'}, Moon ${profile.moonSign || 'Unknown'}, Rising ${profile.risingSign || 'Unknown'}`);
-  }
-  if (profile.hdType) parts.push(`- Human Design: ${profile.hdType}`);
-  if (profile.lifePath) parts.push(`- Numerology: Life Path ${profile.lifePath}`);
-  if (profile.element) parts.push(`- Element: ${profile.element}`);
-  if (profile.role) parts.push(`- Role: ${profile.role}`);
-  if (profile.coreEssence) parts.push(`- Core Essence: ${profile.coreEssence}`);
+  const astro = profile.astrologyData || profile;
+  const numData = profile.numerologyData || profile;
+  const hdData = profile.humanDesignData || profile;
+  const archData = profile.archetypeData || profile;
+  const moralData = profile.moralCompassData || profile;
 
-  return `You are the Soul Guide, a blunt, real, and grounded mystical mentor from the Bronx. You synthesize 30+ spiritual systems into actionable life advice. \n\nTONE: Real and direct. No "woo-woo" fluff. Speak like a street-smart oracle who actually knows what's up.\n\nUSER SOUL BLUEPRINT:\n${parts.join('\n')}\n\nYOUR MISSION:\nExplain how these specific placements work together. Use their Human Design Strategy to tell them HOW to move through the world today.`;
+  const parts: string[] = [];
+
+  if (profile.name) parts.push(`Name: ${profile.name}`);
+  if (archData?.archetype || archData?.name || profile.archetype)
+    parts.push(`Archetype: ${archData.archetype || archData.name || (typeof profile.archetype === "string" ? profile.archetype : profile.archetype?.name) || ""}`);
+  if (astro?.sunSign || profile.sunSign)
+    parts.push(`Sun: ${astro.sunSign || profile.sunSign}`);
+  if (astro?.moonSign || profile.moonSign)
+    parts.push(`Moon: ${astro.moonSign || profile.moonSign}`);
+  if (astro?.risingSign || profile.risingSign)
+    parts.push(`Rising: ${astro.risingSign || profile.risingSign}`);
+  if (numData?.lifePath || profile.lifePath)
+    parts.push(`Life Path: ${numData.lifePath || profile.lifePath}`);
+  if (hdData?.type || profile.hdType)
+    parts.push(`Human Design: ${hdData.type || profile.hdType}`);
+  if (hdData?.strategy) parts.push(`Strategy: ${hdData.strategy}`);
+  if (hdData?.authority) parts.push(`Authority: ${hdData.authority}`);
+  if (archData?.element || profile.element)
+    parts.push(`Element: ${archData.element || profile.element}`);
+  if (archData?.role || profile.role)
+    parts.push(`Role: ${archData.role || profile.role}`);
+  if (moralData?.compassType)
+    parts.push(`Moral Compass: ${moralData.compassType}`);
+  if (profile.synthesis?.coreEssence || profile.coreEssence)
+    parts.push(`Core Essence: ${profile.synthesis?.coreEssence || profile.coreEssence}`);
+
+  return `You are the Soul Guide inside the Soul Codex app.
+
+User profile:
+${parts.join("\n")}
+
+Rules:
+- Answer directly and clearly.
+- Avoid vague mystical phrases. No "the universe," no "cosmic blueprint," no "your journey."
+- Explain behavior patterns in real life terms.
+- Give practical, actionable insight.
+- Use their specific placements to personalize every answer.
+- Reference how their Human Design Strategy affects their decisions when relevant.
+- Tone: confident, grounded, direct. Like a street-smart oracle who actually knows what's up.`;
 }
 
 function buildGeneralPrompt(): string {
-  return `You are the Soul Guide. The seeker hasn't made a profile yet.\n\nTONE: Blunt, real, Bronx vibe.\n\nYOUR ROLE:\n1. Encourage creating a profile for personalized guidance.\n2. Answer general spiritual questions without fluff.`;
+  return `You are the Soul Guide inside the Soul Codex app.
+
+The user hasn't created a profile yet.
+
+Rules:
+- Encourage creating a profile for personalized guidance.
+- Answer general questions without vague filler.
+- Be direct and practical.
+- No "cosmic blueprint," no "your journey," no spiritual clichés.`;
 }
