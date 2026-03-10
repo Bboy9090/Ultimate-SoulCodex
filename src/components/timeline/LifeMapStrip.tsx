@@ -1,9 +1,11 @@
-export default function LifeMapStrip(){
+import type { LifeMap } from "@/types/soulcodex"
 
-  const years = [
-    { year: 2024, phase: "Construction" },
-    { year: 2025, phase: "Construction" },
-    { year: 2026, phase: "Expansion" },
+export default function LifeMapStrip({ data }: { data?: LifeMap | null }){
+
+  const years = data?.years || [
+    { year: 2024, phase: "Construction" as const },
+    { year: 2025, phase: "Construction" as const },
+    { year: 2026, phase: "Expansion" as const },
   ]
 
   return(
