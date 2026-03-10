@@ -155,15 +155,48 @@ export type InsightTrace = {
   explanation: string;
 };
 
+/* HUMAN DESIGN */
+
+export type HumanDesignProfile = {
+  type: string;
+  strategy: string;
+  authority: string;
+  profile?: string;
+};
+
+/* ARCHETYPE */
+
+export type Archetype = {
+  name: string;
+  tagline: string;
+  element: string;
+  role: string;
+};
+
+/* CONFIDENCE */
+
+export type ConfidenceBadge = "verified" | "partial" | "unverified";
+
+export type Confidence = {
+  badge: ConfidenceBadge;
+  label: string;
+  reason: string;
+};
+
 /* FULL SOUL PROFILE */
 
 export type SoulProfile = {
   birth: BirthData;
+  confidence?: Confidence;
+  archetype?: Archetype;
   mirror?: MirrorProfile;
   numerology?: NumerologyProfile;
   chart?: FullChart;
+  aspects?: Aspect[];
+  humanDesign?: HumanDesignProfile;
   elements?: ElementBalance;
   morals?: MoralCompass;
   themes?: CodexThemes;
   timeline?: TimelineProfile;
+  dailyCard?: DailyCard;
 };
