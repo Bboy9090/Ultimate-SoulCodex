@@ -625,12 +625,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { calculateMoralCompass } = await import("./services/moral-compass");
           moralCompassData = calculateMoralCompass(
             validatedBirthData.moralCompassAnswers,
-            numerologyData?.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData?.sunSign
           );
         } else {
           moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData?.sunSign,
             astrologyData?.moonSign
           );
@@ -679,7 +679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astrologyData?.sunSign,
           moonSign: astrologyData?.moonSign,
           risingSign: astrologyData?.risingSign,
-          lifePath: numerologyData?.calculateNumerology?.lifePath,
+          lifePath: numerologyData?.lifePath,
         });
       } catch (error) {
         console.error("[SoulArchetype] Soul Codex synthesis failed:", error);
@@ -707,6 +707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           latitude: validatedBirthData.latitude?.toString() || "",
           longitude: validatedBirthData.longitude?.toString() || "",
           isPremium: false,
+          confidence,
           astrologyData,
           numerologyData,
           personalityData: {},
@@ -738,7 +739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         soul_architecture: {
           foundation: astrologyData?.sunSign || "Astrological Big 3",
           structure: humanDesignData?.type || "Human Design Type",
-          expression: numerologyData?.calculateNumerology?.lifePath?.toString() || "Life Path Number",
+          expression: numerologyData?.lifePath?.toString() || "Life Path Number",
           integration: "All 35+ Systems Unified"
         },
         elementalMedicineData,
@@ -1128,13 +1129,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { calculateMoralCompass } = await import("./services/moral-compass");
           moralCompassData = calculateMoralCompass(
             birthData.moralCompassAnswers,
-            numerologyData?.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData?.sunSign
           );
         } else {
           // Fallback to birth data calculation
           moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData?.sunSign,
             astrologyData?.moonSign
           );
@@ -1454,6 +1455,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Unified profile: assembles all engine outputs into one canonical object
+  app.get("/api/profiles/:id/unified", async (req, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const astro = profile.astrologyData as any;
+      const numData = profile.numerologyData as any;
+      const hdData = profile.humanDesignData as any;
+      const archData = profile.archetypeData as any;
+      const elemData = profile.elementalMedicineData as any;
+      const moralData = profile.moralCompassData as any;
+      const conf = (profile as any).confidence as any;
+
+      const { dailyCard } = await import("./src/transits/daily");
+      const { generateTimeline } = await import("./services/timeline/index");
+
+      let timeline = null;
+      try {
+        timeline = await generateTimeline({
+          profile,
+          fullChart: astro,
+          currentDateISO: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error("[Unified] Timeline generation failed:", e);
+      }
+
+      let daily = null;
+      try {
+        daily = dailyCard({
+          phase: timeline?.phase || "Construction",
+          decisionStyle: "Calm Logic",
+          astrologyData: astro,
+        });
+      } catch (e) {
+        console.error("[Unified] Daily card generation failed:", e);
+      }
+
+      const unified = {
+        birth: {
+          name: profile.name,
+          birthDate: profile.birthDate,
+          birthTime: profile.birthTime || undefined,
+          birthPlace: profile.birthLocation || "",
+          lat: profile.latitude ? parseFloat(profile.latitude) : undefined,
+          lon: profile.longitude ? parseFloat(profile.longitude) : undefined,
+          timezone: profile.timezone || undefined,
+          timeKnown: !!profile.birthTime,
+        },
+        confidence: conf || null,
+        archetype: archData?.archetype || archData?.name
+          ? {
+              name: archData.archetype || archData.name || "",
+              tagline: archData.tagline || "",
+              element: archData.element || "",
+              role: archData.role || "",
+            }
+          : null,
+        numerology: numData
+          ? {
+              lifePath: numData.lifePath ?? null,
+              expression: numData.expressionNumber ?? null,
+              soulUrge: numData.soulUrge ?? null,
+              personality: numData.personalityNumber ?? null,
+              personalYear: numData.personalYear ?? null,
+            }
+          : null,
+        chart: astro
+          ? {
+              sun: { planet: "Sun", sign: astro.sunSign, degree: astro.planets?.sun?.longitude },
+              moon: { planet: "Moon", sign: astro.moonSign, degree: astro.planets?.moon?.longitude },
+              rising: astro.risingSign
+                ? { planet: "Ascendant", sign: astro.risingSign, degree: astro.ascendant?.longitude }
+                : undefined,
+              mercury: astro.planets?.mercury ? { planet: "Mercury", sign: astro.planets.mercury.sign, degree: astro.planets.mercury.longitude } : undefined,
+              venus: astro.planets?.venus ? { planet: "Venus", sign: astro.planets.venus.sign, degree: astro.planets.venus.longitude } : undefined,
+              mars: astro.planets?.mars ? { planet: "Mars", sign: astro.planets.mars.sign, degree: astro.planets.mars.longitude } : undefined,
+              jupiter: astro.planets?.jupiter ? { planet: "Jupiter", sign: astro.planets.jupiter.sign, degree: astro.planets.jupiter.longitude } : undefined,
+              saturn: astro.planets?.saturn ? { planet: "Saturn", sign: astro.planets.saturn.sign, degree: astro.planets.saturn.longitude } : undefined,
+            }
+          : null,
+        aspects: astro?.aspects || [],
+        humanDesign: hdData
+          ? {
+              type: hdData.type || "",
+              strategy: hdData.strategy || "",
+              authority: hdData.authority || "",
+              profile: hdData.profile || undefined,
+            }
+          : null,
+        elements: elemData?.elementalBalance
+          ? {
+              earth: elemData.elementalBalance.Earth ?? 0,
+              air: elemData.elementalBalance.Air ?? 0,
+              fire: elemData.elementalBalance.Fire ?? 0,
+              water: elemData.elementalBalance.Water ?? 0,
+            }
+          : null,
+        morals: moralData
+          ? {
+              values: moralData.coreValues || moralData.values || [],
+              intolerances: moralData.intolerances || [],
+              crisisResponse: moralData.crisisResponse || moralData.compassType || "",
+            }
+          : null,
+        themes: archData?.themes
+          ? {
+              topThemes: archData.themes || [],
+              strengths: archData.strengths || [],
+              shadows: archData.shadows || [],
+            }
+          : null,
+        timeline: timeline
+          ? {
+              currentPhase: timeline.phase,
+              nextPhase: timeline.nextPhase || undefined,
+              reasons: timeline.reasons || [],
+            }
+          : null,
+        dailyCard: daily,
+      };
+
+      console.log(`[Unified] Assembled profile for ${profile.name}`);
+      return res.json(unified);
+    } catch (error) {
+      return handleError(error, res, "UnifiedProfile");
+    }
+  });
+
   // Get personalized rituals and practices
   app.get("/api/profiles/:id/rituals", async (req, res) => {
     try {
@@ -1997,7 +2130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enneagramTypes: {} as Record<string, number>,
         mbtiTypes: {} as Record<string, number>,
         sunSigns: {} as Record<string, number>,
-        calculateNumerologys: {} as Record<string, number>,
+        lifePaths: {} as Record<string, number>,
         premiumCount: 0,
       };
       
@@ -2037,9 +2170,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Life path numbers
         if (profile.numerologyData && typeof profile.numerologyData === 'object') {
           const numData = profile.numerologyData as any;
-          if (numData.calculateNumerology) {
-            const lpKey = String(numData.calculateNumerology);
-            stats.calculateNumerologys[lpKey] = (stats.calculateNumerologys[lpKey] || 0) + 1;
+          if (numData.lifePath) {
+            const lpKey = String(numData.lifePath);
+            stats.lifePaths[lpKey] = (stats.lifePaths[lpKey] || 0) + 1;
           }
         }
       });
@@ -2177,7 +2310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro1?.sunSign,
           moonSign: astro1?.moonSign,
           risingSign: astro1?.risingSign,
-          calculateNumerology: num1?.calculateNumerology,
+          lifePath: num1?.lifePath,
           hdType: hd1?.type,
           enneagramType: pers1?.enneagram?.type,
           mbtiType: pers1?.mbti?.type
@@ -2187,7 +2320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro2?.sunSign,
           moonSign: astro2?.moonSign,
           risingSign: astro2?.risingSign,
-          calculateNumerology: num2?.calculateNumerology,
+          lifePath: num2?.lifePath,
           hdType: hd2?.type,
           enneagramType: pers2?.enneagram?.type,
           mbtiType: pers2?.mbti?.type
@@ -2269,7 +2402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro1?.sunSign,
           moonSign: astro1?.moonSign,
           risingSign: astro1?.risingSign,
-          calculateNumerology: num1?.calculateNumerology,
+          lifePath: num1?.lifePath,
           hdType: hd1?.type,
           enneagramType: pers1?.enneagram?.type,
           mbtiType: pers1?.mbti?.type
@@ -2279,7 +2412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro2?.sunSign,
           moonSign: astro2?.moonSign,
           risingSign: astro2?.risingSign,
-          calculateNumerology: num2?.calculateNumerology,
+          lifePath: num2?.lifePath,
           hdType: hd2?.type,
           enneagramType: pers2?.enneagram?.type,
           mbtiType: pers2?.mbti?.type
@@ -3532,12 +3665,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ── Wave 8+: Daily Transit Card ────────────────────────────────────────────
   app.post("/api/transits/today", async (req, res) => {
     try {
-      const { phase, decisionStyle } = req.body;
+      const { phase, decisionStyle, astrologyData } = req.body;
       if (!phase || !decisionStyle) {
         return res.status(400).json({ error: "phase and decisionStyle are required" });
       }
       const { dailyCard } = await import("./src/transits/daily");
-      const result = dailyCard({ phase, decisionStyle });
+      const result = dailyCard({ phase, decisionStyle, astrologyData });
       return res.json(result);
     } catch (error) {
       return handleError(error, res, "TransitsToday");
