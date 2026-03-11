@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import Link from "next/link"
 import PageContainer from "@/components/layout/PageContainer"
 import TodayCard from "@/components/cards/TodayCard"
 import PhaseCard from "@/components/cards/PhaseCard"
@@ -29,6 +29,13 @@ export default function HomePage() {
       <div className="flex gap-2 flex-wrap">
         {themes.map(t => <ThemeTag key={t} label={t} />)}
       </div>
+
+      <Link
+        href="/decode"
+        className="block w-full text-center bg-codex-card border border-codex-border text-sm font-semibold py-3 rounded-codex hover:border-codex-gold/60 transition-colors"
+      >
+        Decode My Patterns
+      </Link>
 
     </PageContainer>
   )
