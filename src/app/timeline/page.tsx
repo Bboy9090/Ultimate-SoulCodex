@@ -5,8 +5,9 @@ import Link from "next/link"
 import CurrentPhaseCard from "@/components/timeline/CurrentPhaseCard"
 import WhyActiveList from "@/components/timeline/WhyActiveList"
 import DoDontCard from "@/components/timeline/DoDontCard"
+import PastYearReflection from "@/components/timeline/PastYearReflection"
+import NextYearSignal from "@/components/timeline/NextYearSignal"
 import YearStrip from "@/components/timeline/YearStrip"
-import NextPhaseCard from "@/components/timeline/NextPhaseCard"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
@@ -113,7 +114,9 @@ export default function TimelinePage() {
 
       <DoDontCard doList={result.do} dontList={result.dont} />
 
-      <NextPhaseCard nextPhase={result.nextPhase} />
+      <PastYearReflection years={result.years} currentYear={new Date().getFullYear()} />
+
+      <NextYearSignal years={result.years} currentYear={new Date().getFullYear()} />
 
       <YearStrip years={result.years} currentYear={new Date().getFullYear()} />
 
