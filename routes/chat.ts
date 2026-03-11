@@ -1,8 +1,38 @@
 import type { Express } from "express";
 import { storage } from "../storage";
 import { isAnyProviderAvailable, streamChatMulti } from "../services/ai-provider";
+import { soulGuideFallback, answerFromProfile } from "../services/soul-guide-fallback";
 
 export function registerChatRoutes(app: Express) {
+
+  app.post("/api/chat/soul-guide/fallback", async (req, res) => {
+    try {
+      const { profileContext, question } = req.body || {};
+
+      const userId = (req as any).user?.id;
+      const sessionId = (req as any).sessionID;
+
+      let profile: any = profileContext || null;
+      if (!profile && userId) {
+        profile = await storage.getProfileByUserId(userId);
+      } else if (!profile && sessionId) {
+        const profiles = await storage.getAllProfiles();
+        profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
+      }
+
+      if (question && profile) {
+        const answer = answerFromProfile(question, profile);
+        return res.json({ status: "fallback", answer });
+      }
+
+      const fallback = soulGuideFallback(profile || {});
+      return res.json(fallback);
+    } catch (error) {
+      console.error("[Soul Guide Fallback] Error:", error);
+      return res.json(soulGuideFallback({}));
+    }
+  });
+
   app.post("/api/chat/soul-guide", async (req, res) => {
     try {
       const { message, history = [], profileContext } = req.body || {};
