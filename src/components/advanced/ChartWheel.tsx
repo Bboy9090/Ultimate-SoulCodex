@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import * as d3 from "d3"
 
 const zodiac = [
@@ -29,6 +29,9 @@ const ASPECT_COLORS: Record<string, string> = {
   opposition: "#f97316",
 }
 
+const SIGN_FOR_DEGREE = (deg: number) => zodiac[Math.floor(((deg % 360) + 360) % 360 / 30)]
+const DEGREE_IN_SIGN = (deg: number) => Math.floor(((deg % 360) + 360) % 360 % 30)
+
 function planetXY(degree: number, r: number): [number, number] {
   const angle = (degree * Math.PI) / 180
   return [Math.sin(angle) * r, -Math.cos(angle) * r]
@@ -43,6 +46,8 @@ export default function ChartWheel({
 }){
 
   const ref = useRef<SVGSVGElement>(null)
+  const [tooltip, setTooltip] = useState<{ name: string; sign: string; degree: number } | null>(null)
+  const [scale, setScale] = useState(1)
 
   useEffect(() => {
 
@@ -54,6 +59,7 @@ export default function ChartWheel({
     const svg = d3.select(ref.current)
       .attr("width", size)
       .attr("height", size)
+      .attr("viewBox", `0 0 ${size} ${size}`)
 
     svg.selectAll("*").remove()
 
@@ -65,7 +71,6 @@ export default function ChartWheel({
       .outerRadius(radius)
 
     const pieGen = d3.pie<string>().value(() => 1)
-
     const arcs = pieGen(zodiac)
 
     g.selectAll(".zodiac-segment")
@@ -113,7 +118,6 @@ export default function ChartWheel({
     if (planets && aspects && aspects.length > 0) {
       const planetMap = new Map(planets.map(p => [p.name, p.degree]))
       const planetOrbit = radius - 60
-
       const aspectGroup = g.append("g").attr("class", "aspects")
 
       for (const aspect of aspects) {
@@ -144,9 +148,17 @@ export default function ChartWheel({
         .enter()
         .append("g")
         .attr("class", "planet")
+        .style("cursor", "pointer")
+        .on("click", (_, d) => {
+          setTooltip({
+            name: d.name,
+            sign: SIGN_FOR_DEGREE(d.degree),
+            degree: DEGREE_IN_SIGN(d.degree),
+          })
+        })
 
       planetDots.append("circle")
-        .attr("r", 5)
+        .attr("r", 6)
         .attr("fill", "#E6C27A")
         .attr("stroke", "#0B0E14")
         .attr("stroke-width", 1.5)
@@ -168,10 +180,51 @@ export default function ChartWheel({
   return(
     <div className="card flex flex-col items-center">
 
-      <h2 className="card-title self-start">Birth Chart Wheel</h2>
+      <h2 className="card-title">Birth Chart Wheel</h2>
 
-      <svg ref={ref} className="mt-2" />
+      <div
+        className="overflow-hidden touch-manipulation"
+        style={{ transform: `scale(${scale})`, transformOrigin: "center", transition: "transform 0.2s" }}
+      >
+        <svg ref={ref} className="mt-2 w-full max-w-[380px]" />
+      </div>
 
+      {/* Zoom controls */}
+      <div className="flex gap-2 mt-2">
+        <button
+          onClick={() => setScale(s => Math.min(s + 0.2, 2))}
+          className="text-xs px-3 py-1 bg-codex-surface border border-codex-border rounded-codex hover:border-codex-purple/60 transition-colors"
+        >
+          +
+        </button>
+        <button
+          onClick={() => setScale(1)}
+          className="text-xs px-3 py-1 bg-codex-surface border border-codex-border rounded-codex hover:border-codex-purple/60 transition-colors"
+        >
+          Reset
+        </button>
+        <button
+          onClick={() => setScale(s => Math.max(s - 0.2, 0.6))}
+          className="text-xs px-3 py-1 bg-codex-surface border border-codex-border rounded-codex hover:border-codex-purple/60 transition-colors"
+        >
+          −
+        </button>
+      </div>
+
+      {/* Planet tooltip */}
+      {tooltip && (
+        <div className="mt-3 p-3 bg-codex-surface border border-codex-border rounded-codex w-full">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm font-semibold text-codex-gold">{tooltip.name}</p>
+              <p className="text-xs text-codex-textMuted">{tooltip.sign} {tooltip.degree}°</p>
+            </div>
+            <button onClick={() => setTooltip(null)} className="text-xs text-codex-textMuted">Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Aspect legend */}
       {aspects && aspects.length > 0 && (
         <div className="flex flex-wrap gap-3 mt-3 self-start">
           {Object.entries(ASPECT_COLORS).map(([type, color]) => (

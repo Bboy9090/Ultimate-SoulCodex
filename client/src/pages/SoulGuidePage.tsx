@@ -25,6 +25,8 @@ const SUGGESTIONS = [
   "What is this phase trying to teach me?"
 ];
 
+type Tone = "oracle" | "mirror" | "strategy";
+
 export default function SoulGuidePage() {
   const [, navigate] = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -32,6 +34,7 @@ export default function SoulGuidePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [fallback, setFallback] = useState<FallbackData | null>(null);
   const [statusLine, setStatusLine] = useState("");
+  const [tone, setTone] = useState<Tone>("oracle");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,7 +129,7 @@ export default function SoulGuidePage() {
       const response = await fetch("/api/chat/soul-guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history, profileContext })
+        body: JSON.stringify({ message: text, history, profileContext, tone })
       });
 
       if (!response.ok) {
@@ -424,11 +427,103 @@ export default function SoulGuidePage() {
       </div>
 
       {/* Input Area */}
+      {/* Tone selector + Ask Deeper */}
+      <div style={{
+        padding: "0.5rem 1rem",
+        display: "flex",
+        gap: "0.5rem",
+        alignItems: "center",
+        borderTop: "1px solid var(--glass-border)",
+        background: "rgba(10, 1, 24, 0.4)",
+      }}>
+        {(["oracle", "mirror", "strategy"] as Tone[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTone(t)}
+            style={{
+              fontSize: "0.7rem",
+              padding: "0.3rem 0.6rem",
+              borderRadius: "1rem",
+              border: tone === t ? "1px solid var(--cosmic-purple)" : "1px solid rgba(255,255,255,0.1)",
+              background: tone === t ? "rgba(139, 92, 246, 0.3)" : "transparent",
+              color: tone === t ? "white" : "var(--muted-foreground)",
+              cursor: "pointer",
+              textTransform: "capitalize",
+            }}
+          >
+            {t}
+          </button>
+        ))}
+        <div style={{ flex: 1 }} />
+        {messages.length > 1 && (
+          <button
+            onClick={() => {
+              const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+              if (lastUserMsg) {
+                const deeper = lastUserMsg.text;
+                fetch("/api/chat/soul-guide", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    message: deeper,
+                    history: messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+                    profileContext: getProfileContext(),
+                    tone,
+                    deeper: true,
+                  })
+                }).then(async r => {
+                  if (!r.ok) return;
+                  const reader = r.body?.getReader();
+                  const decoder = new TextDecoder();
+                  let text = "";
+                  setMessages(prev => [...prev, { role: "model", text: "" }]);
+                  if (reader) {
+                    while (true) {
+                      const { done, value } = await reader.read();
+                      if (done) break;
+                      const chunk = decoder.decode(value);
+                      for (const line of chunk.split("\n")) {
+                        if (line.startsWith("data: ")) {
+                          const d = line.slice(6).trim();
+                          if (d === "[DONE]") continue;
+                          try {
+                            const { content } = JSON.parse(d);
+                            if (content) {
+                              text += content;
+                              setMessages(prev => {
+                                const next = [...prev];
+                                next[next.length - 1] = { role: "model", text };
+                                return next;
+                              });
+                            }
+                          } catch {}
+                        }
+                      }
+                    }
+                  }
+                });
+              }
+            }}
+            style={{
+              fontSize: "0.7rem",
+              padding: "0.3rem 0.6rem",
+              borderRadius: "1rem",
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "transparent",
+              color: "var(--muted-foreground)",
+              cursor: "pointer",
+            }}
+          >
+            Ask deeper
+          </button>
+        )}
+      </div>
+
+      {/* Input Area */}
       <div style={{
         padding: "1rem",
         background: "rgba(10, 1, 24, 0.6)",
         backdropFilter: "blur(15px)",
-        borderTop: "1px solid var(--glass-border)"
       }}>
         <form
           onSubmit={(e) => { e.preventDefault(); handleSend(input); }}

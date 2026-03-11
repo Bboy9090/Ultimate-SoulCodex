@@ -3,6 +3,20 @@ import { storage } from "../storage";
 import { isAnyProviderAvailable, streamChatMulti } from "../services/ai-provider";
 import { soulGuideFallback, answerFromProfile } from "../services/soul-guide-fallback";
 
+const REFLECTION_PROMPTS = [
+  "What pattern am I not seeing right now?",
+  "Where am I confusing comfort with growth?",
+  "What would I do differently if I trusted myself more?",
+  "What am I tolerating that I shouldn't be?",
+  "What is this phase actually teaching me?",
+];
+
+const TONE_INSTRUCTIONS: Record<string, string> = {
+  oracle: "Respond as a grounded oracle. Centered, authoritative, slightly poetic but never vague. Speak truth with calm certainty.",
+  mirror: "Respond as a behavioral mirror. Describe what the person actually does, how it shows up in real life, and what drives it. No judgment, just accurate reflection.",
+  strategy: "Respond as a strategic advisor. Focus on what to do next, what to stop, and what to prioritize. Concrete, actionable, zero filler.",
+};
+
 export function registerChatRoutes(app: Express) {
 
   app.post("/api/chat/soul-guide/fallback", async (req, res) => {
@@ -22,11 +36,15 @@ export function registerChatRoutes(app: Express) {
 
       if (question && profile) {
         const answer = answerFromProfile(question, profile);
-        return res.json({ status: "fallback", answer });
+        return res.json({
+          status: "fallback",
+          answer,
+          reflectionPrompts: REFLECTION_PROMPTS.slice(0, 3),
+        });
       }
 
       const fallback = soulGuideFallback(profile || {});
-      return res.json(fallback);
+      return res.json({ ...fallback, reflectionPrompts: REFLECTION_PROMPTS });
     } catch (error) {
       console.error("[Soul Guide Fallback] Error:", error);
       return res.json(soulGuideFallback({}));
@@ -35,7 +53,7 @@ export function registerChatRoutes(app: Express) {
 
   app.post("/api/chat/soul-guide", async (req, res) => {
     try {
-      const { message, history = [], profileContext } = req.body || {};
+      const { message, history = [], profileContext, tone, deeper } = req.body || {};
 
       if (!message || typeof message !== "string") {
         return res.status(400).json({ message: "Message is required" });
@@ -52,9 +70,18 @@ export function registerChatRoutes(app: Express) {
         profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
       }
 
-      const systemInstruction = profile
+      let systemInstruction = profile
         ? buildProfileContextPrompt(profile)
         : (profileContext ? buildProfileContextPrompt(profileContext) : buildGeneralPrompt());
+
+      const toneKey = (tone || "oracle").toLowerCase();
+      if (TONE_INSTRUCTIONS[toneKey]) {
+        systemInstruction += `\n\nTone: ${TONE_INSTRUCTIONS[toneKey]}`;
+      }
+
+      if (deeper) {
+        systemInstruction += "\n\nThe user wants a deeper answer. Go further than the surface. Explain the underlying pattern, why it formed, and what maintaining or changing it would cost.";
+      }
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -109,8 +136,13 @@ function buildProfileContextPrompt(profile: any): string {
     parts.push(`Moon: ${astro.moonSign || profile.moonSign}`);
   if (astro?.risingSign || profile.risingSign)
     parts.push(`Rising: ${astro.risingSign || profile.risingSign}`);
+  if (astro?.planets?.mercury?.sign) parts.push(`Mercury: ${astro.planets.mercury.sign}`);
+  if (astro?.planets?.venus?.sign) parts.push(`Venus: ${astro.planets.venus.sign}`);
+  if (astro?.planets?.mars?.sign) parts.push(`Mars: ${astro.planets.mars.sign}`);
   if (numData?.lifePath || profile.lifePath)
     parts.push(`Life Path: ${numData.lifePath || profile.lifePath}`);
+  if (numData?.soulUrge) parts.push(`Soul Urge: ${numData.soulUrge}`);
+  if (numData?.expressionNumber) parts.push(`Expression: ${numData.expressionNumber}`);
   if (hdData?.type || profile.hdType)
     parts.push(`Human Design: ${hdData.type || profile.hdType}`);
   if (hdData?.strategy) parts.push(`Strategy: ${hdData.strategy}`);
@@ -121,22 +153,26 @@ function buildProfileContextPrompt(profile: any): string {
     parts.push(`Role: ${archData.role || profile.role}`);
   if (moralData?.compassType)
     parts.push(`Moral Compass: ${moralData.compassType}`);
+  if (moralData?.coreValues?.length)
+    parts.push(`Values: ${moralData.coreValues.slice(0, 3).join(", ")}`);
   if (profile.synthesis?.coreEssence || profile.coreEssence)
     parts.push(`Core Essence: ${profile.synthesis?.coreEssence || profile.coreEssence}`);
+  if (profile.synthesis?.stressPattern)
+    parts.push(`Stress Pattern: ${profile.synthesis.stressPattern}`);
 
   return `You are the Soul Guide inside the Soul Codex app.
 
-User profile:
+User's full chart and profile:
 ${parts.join("\n")}
 
 Rules:
-- Answer directly and clearly.
-- Avoid vague mystical phrases. No "the universe," no "cosmic blueprint," no "your journey."
-- Explain behavior patterns in real life terms.
+- Reference their specific placements when answering. Cite Sun, Moon, Mercury, Venus, Mars signs by name.
+- Explain how their Human Design type, strategy, and authority affect the situation.
+- Connect numerology Life Path to the broader pattern.
+- Use behavioral language: what they do, how it shows up, what it costs.
 - Give practical, actionable insight.
-- Use their specific placements to personalize every answer.
-- Reference how their Human Design Strategy affects their decisions when relevant.
-- Tone: confident, grounded, direct. Like a street-smart oracle who actually knows what's up.`;
+- No vague mystical phrases. No "the universe," no "cosmic blueprint."
+- Tone: confident, grounded, direct.`;
 }
 
 function buildGeneralPrompt(): string {
