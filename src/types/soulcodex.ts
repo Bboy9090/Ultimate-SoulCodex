@@ -149,9 +149,22 @@ export type LifeMapYear = {
   isCurrent: boolean;
 };
 
+export type CurrentEra = {
+  phase: TimelinePhase;
+  meaning: string;
+  reasons: string[];
+  do: string[];
+  dont: string[];
+  nextPhase: TimelinePhase;
+  nextMeaning: string;
+  previousPhase: TimelinePhase;
+  previousMeaning: string;
+};
+
 export type LifeMap = {
   birthYear: number;
   currentYear: number;
+  currentEra: CurrentEra;
   years: LifeMapYear[];
 };
 

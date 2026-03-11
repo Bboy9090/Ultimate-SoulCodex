@@ -12,9 +12,22 @@ type LifeMapYear = {
   isCurrent: boolean
 }
 
+type CurrentEra = {
+  phase: string
+  meaning: string
+  reasons: string[]
+  do: string[]
+  dont: string[]
+  nextPhase: string
+  nextMeaning: string
+  previousPhase: string
+  previousMeaning: string
+}
+
 type LifeMap = {
   birthYear: number
   currentYear: number
+  currentEra: CurrentEra
   years: LifeMapYear[]
 }
 
