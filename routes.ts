@@ -3542,6 +3542,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/codex/soul-reading", async (req, res) => {
+    try {
+      const { profile } = req.body;
+      if (!profile) {
+        return res.status(400).json({ error: "profile is required" });
+      }
+      const { generateSoulReading } = await import("./src/codex/soul-reading");
+      const reading = generateSoulReading(profile);
+      return res.json(reading);
+    } catch (error) {
+      return handleError(error, res, "SoulReading");
+    }
+  });
+
+  app.get("/api/profiles/:profileId/soul-reading", async (req, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.profileId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
+      const { dailyCard } = await import("./src/transits/daily");
+      const { generateTimeline } = await import("./services/timeline/index");
+      const { synthesizeCodex } = await import("./src/codex/synthesize");
+      const { generateSoulReading } = await import("./src/codex/soul-reading");
+
+      const astro = profile.astrologyData as any;
+      const numData = profile.numerologyData as any;
+      const hdData = profile.humanDesignData as any;
+      const elemData = profile.elementalMedicineData as any;
+      const moralData = profile.moralCompassData as any;
+
+      let timeline = null;
+      try {
+        timeline = await generateTimeline({
+          profile,
+          fullChart: astro,
+          currentDateISO: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error("[SoulReading] Timeline failed:", e);
+      }
+
+      const unified = {
+        birth: {
+          name: profile.name,
+          birthDate: profile.birthDate,
+          birthPlace: profile.birthLocation || "",
+          timeKnown: !!profile.birthTime,
+        },
+        numerology: numData ? { lifePath: numData.lifePath, expression: numData.expressionNumber, soulUrge: numData.soulUrge, personality: numData.personalityNumber, personalYear: numData.personalYear } : undefined,
+        chart: astro ? {
+          sun: { planet: "Sun", sign: astro.sunSign, degree: astro.planets?.sun?.longitude },
+          moon: { planet: "Moon", sign: astro.moonSign, degree: astro.planets?.moon?.longitude },
+          rising: astro.risingSign ? { planet: "Ascendant", sign: astro.risingSign } : undefined,
+          mercury: astro.planets?.mercury ? { planet: "Mercury", sign: astro.planets.mercury.sign, degree: astro.planets.mercury.longitude } : undefined,
+          venus: astro.planets?.venus ? { planet: "Venus", sign: astro.planets.venus.sign, degree: astro.planets.venus.longitude } : undefined,
+          mars: astro.planets?.mars ? { planet: "Mars", sign: astro.planets.mars.sign, degree: astro.planets.mars.longitude } : undefined,
+        } : undefined,
+        humanDesign: hdData ? { type: hdData.type, strategy: hdData.strategy, authority: hdData.authority, profile: hdData.profile } : undefined,
+        elements: elemData?.elementalBalance ? { earth: elemData.elementalBalance.Earth ?? 0, air: elemData.elementalBalance.Air ?? 0, fire: elemData.elementalBalance.Fire ?? 0, water: elemData.elementalBalance.Water ?? 0 } : undefined,
+        morals: moralData ? { values: moralData.coreValues || moralData.values || [], intolerances: moralData.intolerances || [], crisisResponse: moralData.crisisResponse || moralData.compassType || "" } : undefined,
+        timeline: timeline ? { currentPhase: timeline.phase, nextPhase: timeline.nextPhase, reasons: timeline.reasons } : undefined,
+      } as any;
+
+      const reading = generateSoulReading(unified);
+      return res.json(reading);
+    } catch (error) {
+      return handleError(error, res, "SoulReadingProfile");
+    }
+  });
+
   app.post("/api/codex30/generate", async (req, res) => {
     try {
       const { profile, fullChart, userInputs } = req.body;
