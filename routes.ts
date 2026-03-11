@@ -3751,18 +3751,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ── Wave 8+: Life Map Forecast ─────────────────────────────────────────────
+  // ── Life Map: full past/present/future timeline ────────────────────────────
   app.post("/api/lifemap/forecast", async (req, res) => {
     try {
-      const { currentYear, personalYear, horizonYears } = req.body;
-      if (typeof currentYear !== "number" || typeof personalYear !== "number") {
-        return res.status(400).json({ error: "currentYear and personalYear must be numbers" });
+      const { birthDate, futureYears, themes } = req.body;
+      if (!birthDate || typeof birthDate !== "string") {
+        return res.status(400).json({ error: "birthDate (ISO string) is required" });
       }
       const { generateLifeMap } = await import("./src/lifemap/forecast");
-      const result = generateLifeMap(currentYear, personalYear, horizonYears);
+      const result = generateLifeMap(birthDate, futureYears, themes);
       return res.json(result);
     } catch (error) {
       return handleError(error, res, "LifeMapForecast");
+    }
+  });
+
+  app.get("/api/profiles/:profileId/lifemap", async (req, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.profileId);
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      const { generateLifeMap } = await import("./src/lifemap/forecast");
+      const archData = profile.archetypeData as any;
+      const themes = archData?.themes || [];
+      const result = generateLifeMap(profile.birthDate, 5, themes);
+      return res.json(result);
+    } catch (error) {
+      return handleError(error, res, "LifeMapProfile");
     }
   });
 
