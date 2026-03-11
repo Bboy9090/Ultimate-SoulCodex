@@ -5,8 +5,8 @@ export type { LifeMap, LifeMapYear, CurrentEra };
 
 const PHASE_EXPLANATIONS: Record<TimelinePhase, { felt: string; lesson: string }> = {
   Ignition: {
-    felt: "Something new was starting. Raw energy, fresh direction, a sense of beginning whether you chose it or not.",
-    lesson: "This year asked you to commit to a direction before the spark faded.",
+    felt: "A new chapter was starting. A concrete beginning — a project, a move, a decision — whether you chose it or life forced it.",
+    lesson: "This year rewarded action and punished hesitation.",
   },
   Exposure: {
     felt: "Things that were hidden came to the surface. You became more visible, or truths you avoided became impossible to ignore.",
@@ -33,20 +33,20 @@ const PHASE_EXPLANATIONS: Record<TimelinePhase, { felt: string; lesson: string }
     lesson: "This year asked you to stop doing and let the understanding land.",
   },
   Legacy: {
-    felt: "Something bigger than yourself was calling. Building for others, passing things forward, thinking beyond your own timeline.",
-    lesson: "This year asked you to create something that survives without you.",
+    felt: "Building for others became central. The focus shifted from personal achievement to what you leave behind.",
+    lesson: "This year rewarded long-term thinking and contribution over short-term wins.",
   },
 };
 
 const PHASE_MEANING: Record<TimelinePhase, string> = {
-  Ignition: "A period of new beginnings and raw initiative. Life is asking you to start.",
-  Exposure: "A period of visibility and truth. What was hidden is becoming undeniable.",
-  Construction: "A period of discipline, structure, and narrowing your focus. Life is asking you to build.",
-  Expansion: "A period of growth, opportunity, and scaling what works.",
-  Friction: "A period of pressure and forced change. What isn't working is breaking down.",
-  Refinement: "A period of cutting, sharpening, and quality over quantity.",
-  Integration: "A period of rest, absorption, and processing what you've been through.",
-  Legacy: "A period of building for others and thinking beyond your own timeline.",
+  Ignition: "New beginnings and raw initiative. Start now, refine later.",
+  Exposure: "Visibility and truth. What was hidden is becoming undeniable.",
+  Construction: "Discipline, structure, and narrowing your focus. Build deliberately.",
+  Expansion: "Growth, new options, and scaling what works. Choose carefully.",
+  Friction: "Pressure and forced change. What isn't working is breaking down.",
+  Refinement: "Cutting, sharpening, and quality over quantity. Simplify.",
+  Integration: "Rest, absorption, and processing what you've been through.",
+  Legacy: "Building for others and thinking beyond your own timeline.",
 };
 
 const PHASE_DO: Record<TimelinePhase, string[]> = {
@@ -72,15 +72,15 @@ const PHASE_DONT: Record<TimelinePhase, string[]> = {
 };
 
 const PY_REASON: Record<number, string> = {
-  1: "Personal Year 1 supports new beginnings and initiative.",
-  2: "Personal Year 2 supports cooperation and inner processing.",
-  3: "Personal Year 3 supports creative expression and expansion.",
-  4: "Personal Year 4 supports structure, discipline, and building.",
-  5: "Personal Year 5 supports change, freedom, and disruption.",
-  6: "Personal Year 6 supports responsibility, service, and healing.",
-  7: "Personal Year 7 supports reflection, analysis, and inner work.",
-  8: "Personal Year 8 supports material mastery and consolidation.",
-  9: "Personal Year 9 supports completion, release, and legacy.",
+  1: "Personal Year 1 favors new beginnings and initiative.",
+  2: "Personal Year 2 favors cooperation and inner processing.",
+  3: "Personal Year 3 favors creative expression and expansion.",
+  4: "Personal Year 4 favors structure, discipline, and building.",
+  5: "Personal Year 5 favors change, freedom, and disruption.",
+  6: "Personal Year 6 favors responsibility, service, and healing.",
+  7: "Personal Year 7 favors reflection, analysis, and inner work.",
+  8: "Personal Year 8 favors material mastery and consolidation.",
+  9: "Personal Year 9 favors completion, release, and legacy.",
 };
 
 const AGE_MARKERS: { age: number; label: string; phase_influence?: TimelinePhase }[] = [
@@ -226,7 +226,7 @@ export function generateLifeMap(
     do: PHASE_DO[currentPhase],
     dont: PHASE_DONT[currentPhase],
     nextPhase,
-    nextMeaning: `Once this ${currentPhase} phase stabilizes, ${nextPhase} opens. ${PHASE_MEANING[nextPhase]}`,
+    nextMeaning: `Once this ${currentPhase} phase stabilizes, ${nextPhase} begins. ${PHASE_MEANING[nextPhase]}`,
     previousPhase: prevPhase,
     previousMeaning: `You came from ${prevPhase}. ${PHASE_EXPLANATIONS[prevPhase].felt}`,
   };

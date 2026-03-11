@@ -166,7 +166,7 @@ export default function LifeMapPage() {
 
       <div className="pt-6 pb-4 text-center">
         <p className="text-xs text-codex-textMuted uppercase tracking-widest">Life Map</p>
-        <h1 className="text-2xl font-bold mt-2">Your Timeline</h1>
+        <h1 className="text-xl font-bold mt-2">Your Timeline</h1>
         <p className="text-xs text-codex-textMuted mt-1">
           {lifeMap.birthYear} — {lifeMap.currentYear + 5} · {lifeMap.years.length} years mapped
         </p>

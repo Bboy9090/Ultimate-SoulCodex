@@ -9,7 +9,7 @@ export function phaseSummary(phase: LifeMapPhase): string {
     case "Construction":
       return "A building phase. Structure, discipline, and follow-through matter most.";
     case "Expansion":
-      return "A growth phase. Opportunity opens, but focus still matters.";
+      return "A growth phase. New options appear; the challenge is choosing what actually deserves your time.";
     case "Friction":
       return "A pressure phase. Resistance is showing you what must change.";
     case "Refinement":
@@ -19,7 +19,7 @@ export function phaseSummary(phase: LifeMapPhase): string {
     case "Legacy":
       return "A long-view phase. Meaning, contribution, and what lasts take center stage.";
     default:
-      return "A transitional phase.";
+      return "A phase between cycles. Mixed signals until the next clear direction forms.";
   }
 }
 

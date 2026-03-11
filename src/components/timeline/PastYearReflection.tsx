@@ -12,12 +12,12 @@ function reflectionFromPhase(phase: string) {
     case "Ignition":
       return {
         title: "A starting point",
-        text: "Last year likely pushed you to begin something new. Momentum mattered more than certainty.",
+        text: "Last year likely pushed you to begin a new project or direction. Momentum mattered more than certainty.",
       };
     case "Expansion":
       return {
         title: "Growth pressure",
-        text: "Opportunities or movement probably increased. The challenge was choosing what actually deserved your energy.",
+        text: "Opportunities or movement probably increased. The challenge was choosing what actually deserved your time and attention.",
       };
     case "Construction":
       return {
@@ -46,13 +46,13 @@ function reflectionFromPhase(phase: string) {
       };
     case "Legacy":
       return {
-        title: "Meaning phase",
-        text: "Focus may have shifted toward work or choices that actually matter long-term.",
+        title: "Contribution phase",
+        text: "Focus may have shifted toward work or choices that outlast the moment.",
       };
     default:
       return {
         title: "Transitional year",
-        text: "It was a pivot period preparing the ground for the next phase.",
+        text: "It was a year of transition before the next clear phase.",
       };
   }
 }

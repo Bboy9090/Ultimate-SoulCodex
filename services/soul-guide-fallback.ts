@@ -68,14 +68,14 @@ export function soulGuideFallback(
   const focus = dailyCard?.focus || "one grounded next step";
 
   const strengthBody = strengths.length > 0
-    ? `Your profile consistently points to ${topTheme}. Your strongest edges are ${strengths.slice(0, 2).join(" and ")}. You operate best when you lean into precision instead of trying to do everything at once.`
-    : `Your current profile keeps pointing back to ${topTheme}. This is the part of you that works best when life gets noisy. ${archName ? `As ${archName}, you're built to cut through confusion and act on what matters.` : "You cut through confusion and act on what matters."}`;
+    ? `Your profile emphasizes ${topTheme}. Your strongest edges are ${strengths.slice(0, 2).join(" and ")}. You operate best when you prioritize precision instead of trying to do everything at once.`
+    : `Your profile emphasizes ${topTheme}. This is the part of you that works best when life gets noisy. ${archName ? `As ${archName}, you're built to cut through confusion and act on what matters.` : "You cut through confusion and act on what matters."}`;
 
   const blindSpotBody = shadows.length > 0
     ? `Your blind spot tends to show up as ${shadows[0].toLowerCase()}. Under stress, ${shadowTrigger.toLowerCase()} takes over — your mind speeds up and tries to solve everything at once.`
     : `Your stress pattern leans toward ${shadowTrigger.toLowerCase()}. When pressure rises, your default is to speed up instead of slow down. Watch for the moment when thinking replaces doing.`;
 
-  const focusBody = `You are moving through ${phase}. The best move today is ${focus}. Narrow your attention. One finished action will help more than ten partially solved thoughts.`;
+  const focusBody = `You are in ${phase}. The best move today is ${focus}. Narrow your attention. One finished action will help more than ten partially solved thoughts.`;
 
   return {
     status: "fallback",

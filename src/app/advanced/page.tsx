@@ -22,13 +22,7 @@ export default function AdvancedPage(){
           name: (v as any).planet || key,
           degree: (v as any).degree ?? 0,
         }))
-    : [
-        { name: "Sun", degree: 175 },
-        { name: "Moon", degree: 182 },
-        { name: "Mercury", degree: 168 },
-        { name: "Venus", degree: 210 },
-        { name: "Mars", degree: 88 },
-      ]
+    : undefined
 
   return(
     <PageContainer>
@@ -37,9 +31,9 @@ export default function AdvancedPage(){
 
       <ChartWheel planets={planets} />
 
-      <AspectTable />
+      <AspectTable aspects={profile?.aspects} />
 
-      <InsightTrace />
+      <InsightTrace synthesis={profile?.synthesis} />
 
       <PosterGenerator />
 

@@ -10,11 +10,11 @@ type YearItem = {
 function signalFromPhase(phase: string) {
   switch (phase) {
     case "Ignition":
-      return "Next year opens with fresh momentum. Something new will demand your attention — the question is whether you choose it or let it choose you.";
+      return "Next year starts with fresh momentum. A new project, relationship, or direction will demand your attention — the question is whether you choose it or let it choose you.";
     case "Expansion":
       return "Next year brings growth opportunities. Your world gets bigger, but only the growth you actively choose will stick.";
     case "Construction":
-      return "Next year shifts toward building. The energy moves from exploring to constructing. Patience and structure will matter more than speed.";
+      return "Next year shifts toward building. The focus moves from exploring to constructing. Patience and structure will matter more than speed.";
     case "Friction":
       return "Next year brings pressure. Things that aren't working will become harder to ignore. The discomfort is diagnostic, not punitive.";
     case "Exposure":
@@ -22,11 +22,11 @@ function signalFromPhase(phase: string) {
     case "Refinement":
       return "Next year is about editing. Less becomes more. The work is cutting what doesn't serve the core.";
     case "Integration":
-      return "Next year settles into consolidation. The pace slows so the lessons can land. Rest is part of the progress.";
+      return "Next year settles into consolidation. The pace slows so you can absorb what you've learned. Rest is part of the progress.";
     case "Legacy":
-      return "Next year turns toward meaning. The focus shifts from personal achievement to what you're building for others.";
+      return "Next year turns toward contribution. The focus shifts from personal achievement to what you're building for others.";
     default:
-      return "Next year brings a transition. The current pattern is shifting and the new direction will become clearer as it arrives.";
+      return "Next year brings a transition. The current phase is ending. Watch for clearer direction in the first months.";
   }
 }
 

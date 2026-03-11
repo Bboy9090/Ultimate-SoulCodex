@@ -28,6 +28,18 @@ export const bannedPhrases = [
   "a gentle reminder",
   "holds space for",
   "brings an opportunity",
+  "points to",
+  "pointing at",
+  "pointing back",
+  "life is asking",
+  "this phase is asking",
+  "phase is asking",
+  "something new",
+  "something inside",
+  "a sense of",
+  "revolves around",
+  "phase energy",
+  "the energy moves",
 ];
 
 export interface ClarityResult {

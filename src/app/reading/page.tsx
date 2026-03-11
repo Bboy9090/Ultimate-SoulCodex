@@ -130,7 +130,7 @@ export default function SoulReadingPage() {
 
       <div className="pt-6 pb-2 text-center">
         <p className="text-xs text-codex-textMuted uppercase tracking-widest">Soul Reading</p>
-        <h1 className="text-2xl font-bold mt-2">{reading.archetype}</h1>
+        <h1 className="text-xl font-bold mt-2">{reading.archetype}</h1>
         <p className="text-xs text-codex-textMuted mt-1">
           {reading.steps.length} revelations
         </p>
