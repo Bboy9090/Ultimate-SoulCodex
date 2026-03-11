@@ -3542,6 +3542,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/pattern/decode", async (req, res) => {
+    try {
+      const { question, profile } = req.body;
+      if (!question || typeof question !== "string") {
+        return res.status(400).json({ error: "question is required" });
+      }
+      const { decodePattern } = await import("./src/decoder/engine");
+      const result = decodePattern(question, profile || {});
+      return res.json({ ok: true, result });
+    } catch (error) {
+      return handleError(error, res, "PatternDecode");
+    }
+  });
+
   app.post("/api/codex/soul-reading", async (req, res) => {
     try {
       const { profile } = req.body;
