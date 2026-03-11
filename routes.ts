@@ -1474,6 +1474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { dailyCard } = await import("./src/transits/daily");
       const { generateTimeline } = await import("./services/timeline/index");
+      const { synthesizeCodex } = await import("./src/codex/synthesize");
 
       let timeline = null;
       try {
@@ -1581,8 +1582,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dailyCard: daily,
       };
 
+      let synthesis = null;
+      try {
+        synthesis = synthesizeCodex(unified);
+      } catch (e) {
+        console.error("[Unified] Synthesis failed:", e);
+      }
+
       console.log(`[Unified] Assembled profile for ${profile.name}`);
-      return res.json(unified);
+      return res.json({ ...unified, synthesis });
     } catch (error) {
       return handleError(error, res, "UnifiedProfile");
     }
@@ -3517,6 +3525,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.send(png);
     } catch (error) {
       return handleError(error, res, "TodayRender");
+    }
+  });
+
+  app.post("/api/codex/synthesize", async (req, res) => {
+    try {
+      const { profile } = req.body;
+      if (!profile) {
+        return res.status(400).json({ error: "profile is required" });
+      }
+      const { synthesizeCodex } = await import("./src/codex/synthesize");
+      const synthesis = synthesizeCodex(profile);
+      return res.json(synthesis);
+    } catch (error) {
+      return handleError(error, res, "CodexSynthesize");
     }
   });
 
