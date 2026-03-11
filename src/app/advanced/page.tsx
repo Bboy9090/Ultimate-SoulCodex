@@ -29,7 +29,7 @@ export default function AdvancedPage(){
 
       <h1 className="text-xl font-bold">Birth Chart</h1>
 
-      <ChartWheel planets={planets} />
+      <ChartWheel planets={planets} aspects={profile?.aspects} />
 
       <AspectTable aspects={profile?.aspects} />
 
