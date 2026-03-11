@@ -1,12 +1,17 @@
 import "@/styles/globals.css"
 import BottomNav from "@/components/layout/BottomNav"
+import AppShell from "@/components/layout/AppShell"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className="font-codex">
 
-        <main>{children}</main>
+        <main>
+          <AppShell>
+            {children}
+          </AppShell>
+        </main>
 
         <BottomNav />
 

@@ -1,6 +1,7 @@
 "use client"
 
 import PageContainer from "@/components/layout/PageContainer"
+import LoadingCards from "@/components/ui/LoadingCards"
 import ChartWheel from "@/components/advanced/ChartWheel"
 import AspectTable from "@/components/advanced/AspectTable"
 import InsightTrace from "@/components/advanced/InsightTrace"
@@ -13,7 +14,16 @@ export default function AdvancedPage(){
     ? localStorage.getItem("profileId") ?? undefined
     : undefined
 
-  const { profile } = useProfile(profileId)
+  const { profile, loading } = useProfile(profileId)
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <h1 className="text-xl font-bold">Birth Chart</h1>
+        <LoadingCards count={2} />
+      </PageContainer>
+    )
+  }
 
   const planets = profile?.chart
     ? Object.entries(profile.chart)

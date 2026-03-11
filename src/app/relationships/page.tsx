@@ -7,7 +7,7 @@ import { useCompatibility } from "@/hooks/useCompatibility"
 
 export default function RelationshipsPage(){
 
-  const { result } = useCompatibility()
+  const { result, loading } = useCompatibility()
 
   return(
     <PageContainer>

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import ConfidenceBadge from "@/components/ui/ConfidenceBadge"
+import LoadingCards from "@/components/ui/LoadingCards"
 import TodayCard from "@/components/cards/TodayCard"
 import PatternInsight from "@/components/cards/PatternInsight"
 import { useProfile } from "@/hooks/useProfile"
@@ -12,7 +13,18 @@ export default function HomePage() {
     ? localStorage.getItem("profileId") ?? undefined
     : undefined
 
-  const { profile } = useProfile(profileId)
+  const { profile, loading } = useProfile(profileId)
+
+  if (loading) {
+    return (
+      <div className="max-w-xl mx-auto p-4 pb-24 space-y-6">
+        <div className="pt-4 pb-2 text-center">
+          <p className="text-xs text-codex-textMuted uppercase tracking-widest">Soul Codex</p>
+        </div>
+        <LoadingCards count={3} />
+      </div>
+    )
+  }
 
   const synthesis = profile?.synthesis
   const phase = profile?.timeline?.currentPhase || synthesis?.currentPhaseMeaning?.split("—")[0]?.trim()
