@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import PageContainer from "@/components/layout/PageContainer"
 import CoreSnapshot from "@/components/codex/CoreSnapshot"
 import MirrorSummary from "@/components/codex/MirrorSummary"
@@ -19,6 +20,13 @@ export default function CodexPage(){
     <PageContainer>
 
       <h1 className="text-xl font-bold">Your Codex</h1>
+
+      <Link
+        href="/reading"
+        className="block w-full text-center bg-codex-purple text-sm font-semibold py-3 rounded-codex hover:opacity-90 transition-opacity"
+      >
+        Read My Soul
+      </Link>
 
       <CoreSnapshot profile={profile} />
 
