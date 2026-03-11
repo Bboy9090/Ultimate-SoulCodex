@@ -55,6 +55,9 @@ export function buildLifeMap(input: LifeMapInput): LifeMapResult {
       year,
       phase,
       summary: phaseSummary(phase),
+      why: `This year leans toward ${phase} based on your numerology cycle and the broader patterns in your profile.`,
+      do: phaseDoList(phase).slice(0, 3),
+      dont: phaseDontList(phase).slice(0, 3),
     });
   }
 

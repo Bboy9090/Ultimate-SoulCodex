@@ -20,6 +20,9 @@ export type LifeMapYear = {
   year: number;
   phase: LifeMapPhase;
   summary: string;
+  why?: string;
+  do?: string[];
+  dont?: string[];
 };
 
 export type LifeMapInput = {
