@@ -53,24 +53,60 @@ export default function TimelinePage() {
         if (profileId) {
           const res = await fetch(`${API_BASE}/api/profiles/${profileId}/lifemap`)
           if (res.ok) {
-            setData(await res.json())
-            setLoading(false)
-            return
+            const json = await res.json()
+            const result = json.result || json
+            if (result.currentPhase) {
+              setData({
+                currentEra: {
+                  phase: result.currentPhase,
+                  meaning: result.years?.find((y: any) => y.year === new Date().getFullYear())?.summary || "",
+                  reasons: (result.reasons || []).map((r: any) => r.label || r),
+                  do: result.do || [],
+                  dont: result.dont || [],
+                  nextPhase: result.nextPhase || "",
+                  nextMeaning: result.years?.find((y: any) => y.phase === result.nextPhase)?.summary || "",
+                  previousPhase: result.previousPhase || "",
+                  previousMeaning: result.years?.find((y: any) => y.phase === result.previousPhase)?.summary || "",
+                },
+                years: result.years || [],
+                currentYear: new Date().getFullYear(),
+              })
+              setLoading(false)
+              return
+            }
           }
         }
 
         const rawProfile = localStorage.getItem("soulProfile")
         if (rawProfile) {
           const profile = JSON.parse(rawProfile)
-          const birthDate = profile.birthDate || profile.birth?.birthDate
-          if (birthDate) {
-            const res = await fetch(`${API_BASE}/api/lifemap/forecast`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ birthDate, futureYears: 5 }),
-            })
-            if (res.ok) {
-              setData(await res.json())
+          const res = await fetch(`${API_BASE}/api/lifemap`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              currentYear: new Date().getFullYear(),
+              profile,
+            }),
+          })
+          if (res.ok) {
+            const json = await res.json()
+            const result = json.result || json
+            if (result.currentPhase) {
+              setData({
+                currentEra: {
+                  phase: result.currentPhase,
+                  meaning: result.years?.find((y: any) => y.year === new Date().getFullYear())?.summary || "",
+                  reasons: (result.reasons || []).map((r: any) => r.label || r),
+                  do: result.do || [],
+                  dont: result.dont || [],
+                  nextPhase: result.nextPhase || "",
+                  nextMeaning: result.years?.find((y: any) => y.phase === result.nextPhase)?.summary || "",
+                  previousPhase: result.previousPhase || "",
+                  previousMeaning: result.years?.find((y: any) => y.phase === result.previousPhase)?.summary || "",
+                },
+                years: result.years || [],
+                currentYear: new Date().getFullYear(),
+              })
               setLoading(false)
               return
             }

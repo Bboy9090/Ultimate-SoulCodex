@@ -3751,15 +3751,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ── Life Map: full past/present/future timeline ────────────────────────────
+  // ── Life Map Engine (canonical) ─────────────────────────────────────────────
+  app.post("/api/lifemap", async (req, res) => {
+    try {
+      const { currentYear, profile, fullChart } = req.body;
+      const { buildLifeMap } = await import("./src/lifemap/engine");
+      const result = buildLifeMap({
+        currentYear: currentYear || new Date().getFullYear(),
+        profile: profile || {},
+        fullChart,
+      });
+      return res.json({ ok: true, result });
+    } catch (error) {
+      return handleError(error, res, "LifeMap");
+    }
+  });
+
   app.post("/api/lifemap/forecast", async (req, res) => {
     try {
-      const { birthDate, futureYears, themes } = req.body;
-      if (!birthDate || typeof birthDate !== "string") {
-        return res.status(400).json({ error: "birthDate (ISO string) is required" });
-      }
-      const { generateLifeMap } = await import("./src/lifemap/forecast");
-      const result = generateLifeMap(birthDate, futureYears, themes);
+      const { birthDate, profile, fullChart } = req.body;
+      const { buildLifeMap } = await import("./src/lifemap/engine");
+      const result = buildLifeMap({
+        currentYear: new Date().getFullYear(),
+        profile: profile || {},
+        fullChart,
+      });
       return res.json(result);
     } catch (error) {
       return handleError(error, res, "LifeMapForecast");
@@ -3772,11 +3788,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!profile) {
         return res.status(404).json({ error: "Profile not found" });
       }
-      const { generateLifeMap } = await import("./src/lifemap/forecast");
+      const { buildLifeMap } = await import("./src/lifemap/engine");
+
+      const numData = profile.numerologyData as any;
       const archData = profile.archetypeData as any;
-      const themes = archData?.themes || [];
-      const result = generateLifeMap(profile.birthDate, 5, themes);
-      return res.json(result);
+      const confData = (profile as any).confidence as any;
+
+      const result = buildLifeMap({
+        currentYear: new Date().getFullYear(),
+        profile: {
+          confidence: confData ? { badge: confData.badge } : undefined,
+          numerology: numData ? {
+            personalYear: numData.personalYear,
+            lifePath: numData.lifePath,
+          } : undefined,
+          themes: archData?.themes ? {
+            topThemes: archData.themes,
+          } : undefined,
+          mirror: profile.archetypeData ? {
+            driver: (archData as any)?.driver,
+          } : undefined,
+        },
+      });
+      return res.json({ ok: true, result });
     } catch (error) {
       return handleError(error, res, "LifeMapProfile");
     }
