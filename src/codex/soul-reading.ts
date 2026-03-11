@@ -76,7 +76,7 @@ const LP_PURPOSE: Record<number, string> = {
   1:  "My path is about learning to stand alone and trust my own direction, even when no one else can see where I'm going.",
   2:  "My path is about partnership — not dependency, but learning to create something with another person that neither could build alone.",
   3:  "My path is about expression. The things I hold inside need a form — a voice, a project, a creation that makes the internal external.",
-  4:  "My path is about building structures that outlast the moment. Not for recognition, but because something inside me needs to create order from chaos.",
+  4:  "My path is about building structures that outlast the moment. Not for recognition, but because I need to create order from chaos.",
   5:  "My path is about freedom and experience. I learn by doing, not by studying. Routine kills something essential in me.",
   6:  "My path is about responsibility and service. I'm drawn to fix, heal, and improve the lives of people I care about — sometimes at my own expense.",
   7:  "My path is about truth-seeking. Surface answers frustrate me. I need to understand why things work, not just that they work.",

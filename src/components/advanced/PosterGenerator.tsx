@@ -11,8 +11,11 @@ export default function PosterGenerator(){
         Generate a shareable poster of your soul profile.
       </p>
 
-      <button className="mt-4 bg-codex-purple text-sm font-semibold px-6 py-2 rounded-codex hover:opacity-90 transition-opacity">
-        Generate Poster
+      <button
+        disabled
+        className="mt-4 bg-codex-card border border-codex-border text-sm font-semibold px-6 py-2 rounded-codex text-codex-textMuted cursor-not-allowed"
+      >
+        Coming in v2
       </button>
 
     </div>

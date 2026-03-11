@@ -94,7 +94,7 @@ function buildTransitDetails(transits: ActiveTransits): TransitDetail[] {
     .slice(0, 3)
     .map((t) => ({
       title: `${t.planet} ${t.aspect} ${t.natalPlanet}`,
-      whatItAffects: TRANSIT_AFFECTS[t.planet] || "general awareness and energy",
+      whatItAffects: TRANSIT_AFFECTS[t.planet] || "daily focus and mental clarity",
       realLifeExample: TRANSIT_EXAMPLES[t.planet]?.[t.aspect] || t.interpretation,
       do: buildTransitDo(t),
       avoid: buildTransitAvoid(t),
@@ -183,7 +183,7 @@ export function dailyCard(input: TransitInput): DailyCard {
   }
 
   return {
-    focus: `Operate within the ${input.phase} phase energy.`,
+    focus: `Focus on the themes of the ${input.phase} phase.`,
     do: [
       "prioritize clarity",
       "complete unfinished work",

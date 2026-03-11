@@ -65,7 +65,7 @@ const PHASE_MEANINGS: Record<string, { meaning: string; focus: string }> = {
   Exposure:     { meaning: "becoming visible, testing ideas in public", focus: "stop editing and let people respond to the real thing" },
   Construction: { meaning: "building foundations, slow deliberate work", focus: "finish what matters before starting something new" },
   Expansion:    { meaning: "scaling what works, saying yes to growth", focus: "expand without losing the standards that got you here" },
-  Friction:     { meaning: "tension is revealing what needs to change", focus: "don't run from the discomfort — it's pointing at the fix" },
+  Friction:     { meaning: "tension is revealing what needs to change", focus: "don't run from the discomfort — it's showing you exactly what to fix" },
   Refinement:   { meaning: "cutting what doesn't work, sharpening what does", focus: "reduce noise and protect your best output" },
   Integration:  { meaning: "absorbing lessons, resting with new awareness", focus: "stop doing and let the understanding land" },
   Legacy:       { meaning: "building for others, passing something forward", focus: "think beyond yourself — what survives without you?" },
@@ -209,7 +209,7 @@ function buildCoreNature(
   const parts: string[] = [];
 
   if (sunTrait) {
-    parts.push(`I lead with ${sun} energy — ${sunTrait.drive}.`);
+    parts.push(`I lead with ${sun} instincts — ${sunTrait.drive}.`);
   }
 
   if (moonTrait && moon !== sun) {
@@ -387,9 +387,9 @@ function buildGrowthEdge(profile: SoulProfile, themes: string[]): string {
 function buildCurrentPhaseMeaning(phase: string, themes: string[]): string {
   const phaseData = PHASE_MEANINGS[phase];
   if (phaseData) {
-    return `I'm in ${phase} — ${phaseData.meaning}. This phase is asking me to work through ${themes.slice(0, 3).join(", ")} with more discipline than enthusiasm. ${phaseData.focus}.`;
+    return `I'm in ${phase} — ${phaseData.meaning}. This phase rewards working through ${themes.slice(0, 3).join(", ")} with deliberate pacing and clearer choices. ${phaseData.focus}.`;
   }
-  return `My current phase is ${phase}. This phase is asking me to work through the themes of ${themes.slice(0, 3).join(", ")} in a more mature and deliberate way.`;
+  return `My current phase is ${phase}. This phase rewards working through ${themes.slice(0, 3).join(", ")} with slower pacing and clearer choices.`;
 }
 
 function buildPracticalGuidance(profile: SoulProfile, phase: string, themes: string[]): string[] {

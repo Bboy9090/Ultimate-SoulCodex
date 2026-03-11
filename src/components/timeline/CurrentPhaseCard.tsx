@@ -16,7 +16,7 @@ export default function CurrentPhaseCard({ phase, confidence }: Props) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs text-codex-textMuted uppercase tracking-wide">Current Era</p>
-          <h1 className="text-2xl font-bold">{phase}</h1>
+          <h1 className="text-xl font-bold">{phase}</h1>
         </div>
 
         <span className={`text-xs px-2 py-1 rounded text-black ${badgeColor}`}>

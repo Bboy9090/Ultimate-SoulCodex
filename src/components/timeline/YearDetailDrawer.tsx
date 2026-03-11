@@ -26,13 +26,13 @@ export default function YearDetailDrawer({ item, open, onClose }: Props) {
         onClick={onClose}
       />
 
-      <div className="relative w-full md:max-w-lg bg-codex-surface border border-codex-border rounded-t-codex md:rounded-codex shadow-codex p-5 max-h-[85vh] overflow-y-auto">
+      <div className="relative w-full md:max-w-lg card rounded-t-codex md:rounded-codex max-h-[85vh] overflow-y-auto">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs text-codex-textMuted uppercase tracking-wide">
               Year Detail
             </p>
-            <h2 className="text-2xl font-bold mt-1">
+            <h2 className="text-xl font-bold mt-1">
               {item.year} · {item.phase}
             </h2>
           </div>
