@@ -3808,6 +3808,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const archData = profile.archetypeData as any;
       const confData = (profile as any).confidence as any;
 
+      const range = req.query.range === "decade" ? 10 : 5;
+      const pastRange = req.query.range === "decade" ? 5 : 2;
+
       const result = buildLifeMap({
         currentYear: new Date().getFullYear(),
         profile: {
@@ -3823,7 +3826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             driver: (archData as any)?.driver,
           } : undefined,
         },
-      });
+      }, pastRange, range);
       return res.json({ ok: true, result });
     } catch (error) {
       return handleError(error, res, "LifeMapProfile");

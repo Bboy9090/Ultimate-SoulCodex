@@ -59,6 +59,7 @@ export default function LifeMapPage() {
   const [lifeMap, setLifeMap] = useState<LifeMap | null>(null)
   const [loading, setLoading] = useState(true)
   const [expandedYear, setExpandedYear] = useState<number | null>(null)
+  const [decadeView, setDecadeView] = useState(false)
   const currentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -89,9 +90,11 @@ export default function LifeMapPage() {
           })),
         })
 
+        const rangeParam = decadeView ? "?range=decade" : ""
+
         const profileId = localStorage.getItem("profileId")
         if (profileId) {
-          const res = await fetch(`${API_BASE}/api/profiles/${profileId}/lifemap`)
+          const res = await fetch(`${API_BASE}/api/profiles/${profileId}/lifemap${rangeParam}`)
           if (res.ok) {
             const json = await res.json()
             const result = json.result || json
@@ -125,7 +128,7 @@ export default function LifeMapPage() {
     }
 
     load()
-  }, [])
+  }, [decadeView])
 
   useEffect(() => {
     if (lifeMap && currentRef.current) {
@@ -168,8 +171,23 @@ export default function LifeMapPage() {
         <p className="text-xs text-codex-textMuted uppercase tracking-widest">Life Map</p>
         <h1 className="text-xl font-bold mt-2">Your Timeline</h1>
         <p className="text-xs text-codex-textMuted mt-1">
-          {lifeMap.birthYear} — {lifeMap.currentYear + 5} · {lifeMap.years.length} years mapped
+          {lifeMap.years[0]?.year} — {lifeMap.years[lifeMap.years.length - 1]?.year} · {lifeMap.years.length} years mapped
         </p>
+
+        <div className="flex justify-center gap-2 mt-3">
+          <button
+            onClick={() => setDecadeView(false)}
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${!decadeView ? "bg-codex-purple border-codex-purple" : "border-codex-border hover:border-codex-purple/60"}`}
+          >
+            7 Years
+          </button>
+          <button
+            onClick={() => setDecadeView(true)}
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${decadeView ? "bg-codex-purple border-codex-purple" : "border-codex-border hover:border-codex-purple/60"}`}
+          >
+            Decade
+          </button>
+        </div>
       </div>
 
       {/* Phase legend */}
@@ -240,7 +258,29 @@ export default function LifeMapPage() {
         )}
       </div>
 
-      <div className="text-center mt-8">
+      {/* Shareable Phase Card */}
+      {currentYearData && (
+        <div className="card text-center mt-6">
+          <p className="text-xs text-codex-textMuted uppercase tracking-widest mb-2">Your Life Phase</p>
+          <h3 className="text-xl font-bold">{currentYearData.phase}</h3>
+          <p className="text-xs text-codex-textMuted mt-1">{new Date().getFullYear()}</p>
+          <p className="oracle-text text-sm text-codex-textMuted mt-3">{currentYearData.explanation}</p>
+          <button
+            onClick={async () => {
+              const text = `${currentYearData.phase} Phase (${new Date().getFullYear()})\n\n${currentYearData.explanation}\n\n— Soul Codex`
+              if (navigator.share) {
+                try { await navigator.share({ text }); return } catch {}
+              }
+              await navigator.clipboard.writeText(text)
+            }}
+            className="mt-4 text-xs text-codex-purple underline"
+          >
+            Share this phase
+          </button>
+        </div>
+      )}
+
+      <div className="text-center mt-4">
         <Link
           href="/timeline"
           className="inline-block bg-codex-card border border-codex-border text-sm px-6 py-2 rounded-codex hover:bg-codex-surface transition-colors"
