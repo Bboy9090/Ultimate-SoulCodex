@@ -192,6 +192,21 @@ export type Confidence = {
   reason: string;
 };
 
+/* CODEX SYNTHESIS */
+
+export type CodexSynthesis = {
+  archetype: string;
+  topThemes: string[];
+  coreNature: string;
+  stressPattern: string;
+  decisionStyle: string;
+  relationshipStyle: string;
+  blindSpot: string;
+  growthEdge: string;
+  currentPhaseMeaning: string;
+  practicalGuidance: string[];
+};
+
 /* FULL SOUL PROFILE */
 
 export type SoulProfile = {
@@ -208,4 +223,5 @@ export type SoulProfile = {
   themes?: CodexThemes;
   timeline?: TimelineProfile;
   dailyCard?: DailyCard;
+  synthesis?: CodexSynthesis;
 };
