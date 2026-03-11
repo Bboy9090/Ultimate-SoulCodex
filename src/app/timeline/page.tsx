@@ -1,76 +1,34 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import PageContainer from "@/components/layout/PageContainer"
-
-type CurrentEra = {
-  phase: string
-  meaning: string
-  reasons: string[]
-  do: string[]
-  dont: string[]
-  nextPhase: string
-  nextMeaning: string
-  previousPhase: string
-  previousMeaning: string
-}
-
-type LifeMapYearData = {
-  year: number
-  age: number
-  phase: string
-  isCurrent: boolean
-}
-
-type LifeMapData = {
-  currentEra: CurrentEra
-  years: LifeMapYearData[]
-  currentYear: number
-}
-
-const PHASE_COLORS: Record<string, string> = {
-  Ignition: "text-orange-500",
-  Exposure: "text-yellow-500",
-  Construction: "text-codex-blue",
-  Expansion: "text-green-500",
-  Friction: "text-red-500",
-  Refinement: "text-codex-purple",
-  Integration: "text-indigo-400",
-  Legacy: "text-codex-gold",
-}
+import CurrentPhaseCard from "@/components/timeline/CurrentPhaseCard"
+import WhyActiveList from "@/components/timeline/WhyActiveList"
+import DoDontCard from "@/components/timeline/DoDontCard"
+import YearStrip from "@/components/timeline/YearStrip"
+import NextPhaseCard from "@/components/timeline/NextPhaseCard"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
 export default function TimelinePage() {
-  const [data, setData] = useState<LifeMapData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [result, setResult] = useState<any>(null)
+  const [error, setError] = useState("")
 
   useEffect(() => {
-    async function load() {
+    async function run() {
       try {
+        setLoading(true)
+        setError("")
+
         const profileId = localStorage.getItem("profileId")
         if (profileId) {
           const res = await fetch(`${API_BASE}/api/profiles/${profileId}/lifemap`)
           if (res.ok) {
             const json = await res.json()
-            const result = json.result || json
-            if (result.currentPhase) {
-              setData({
-                currentEra: {
-                  phase: result.currentPhase,
-                  meaning: result.years?.find((y: any) => y.year === new Date().getFullYear())?.summary || "",
-                  reasons: (result.reasons || []).map((r: any) => r.label || r),
-                  do: result.do || [],
-                  dont: result.dont || [],
-                  nextPhase: result.nextPhase || "",
-                  nextMeaning: result.years?.find((y: any) => y.phase === result.nextPhase)?.summary || "",
-                  previousPhase: result.previousPhase || "",
-                  previousMeaning: result.years?.find((y: any) => y.phase === result.previousPhase)?.summary || "",
-                },
-                years: result.years || [],
-                currentYear: new Date().getFullYear(),
-              })
+            const data = json.result || json
+            if (data.currentPhase) {
+              setResult(data)
               setLoading(false)
               return
             }
@@ -78,151 +36,94 @@ export default function TimelinePage() {
         }
 
         const rawProfile = localStorage.getItem("soulProfile")
+        let profile: any = null
+        let fullChart: any = undefined
+
         if (rawProfile) {
-          const profile = JSON.parse(rawProfile)
-          const res = await fetch(`${API_BASE}/api/lifemap`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              currentYear: new Date().getFullYear(),
-              profile,
-            }),
-          })
-          if (res.ok) {
-            const json = await res.json()
-            const result = json.result || json
-            if (result.currentPhase) {
-              setData({
-                currentEra: {
-                  phase: result.currentPhase,
-                  meaning: result.years?.find((y: any) => y.year === new Date().getFullYear())?.summary || "",
-                  reasons: (result.reasons || []).map((r: any) => r.label || r),
-                  do: result.do || [],
-                  dont: result.dont || [],
-                  nextPhase: result.nextPhase || "",
-                  nextMeaning: result.years?.find((y: any) => y.phase === result.nextPhase)?.summary || "",
-                  previousPhase: result.previousPhase || "",
-                  previousMeaning: result.years?.find((y: any) => y.phase === result.previousPhase)?.summary || "",
-                },
-                years: result.years || [],
-                currentYear: new Date().getFullYear(),
-              })
-              setLoading(false)
-              return
-            }
+          const stored = JSON.parse(rawProfile)
+          profile = {
+            confidence: stored.confidence || stored.soulConfidence,
+            numerology: stored.numerology || {
+              personalYear: stored.numerologyData?.personalYear || stored.personalYear,
+              lifePath: stored.numerologyData?.lifePath || stored.lifePath,
+            },
+            themes: stored.themes || {
+              topThemes: stored.archetypeData?.themes || stored.archetype?.themes || [],
+            },
+            mirror: stored.mirror || {
+              driver: stored.synthesis?.moralCode?.name || stored.archetypeData?.driver,
+              decisionStyle: stored.mirror?.decisionStyle || stored.synthesis?.decisionStyle,
+            },
           }
         }
 
-        setLoading(false)
-      } catch {
+        const res = await fetch(`${API_BASE}/api/lifemap`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentYear: new Date().getFullYear(),
+            profile: profile || {},
+            fullChart,
+          }),
+        })
+
+        const json = await res.json()
+        if (!json.ok) throw new Error(json.error || "Failed to load timeline")
+        setResult(json.result)
+      } catch (e: any) {
+        setError(e.message || "Timeline failed")
+      } finally {
         setLoading(false)
       }
     }
-    load()
+
+    run()
   }, [])
 
-  const era = data?.currentEra
-  const phaseColor = era ? PHASE_COLORS[era.phase] || "text-codex-text" : ""
+  if (loading) {
+    return (
+      <div className="max-w-xl mx-auto p-4 pt-8">
+        <p className="text-codex-textMuted text-sm">Loading timeline...</p>
+      </div>
+    )
+  }
 
-  const nearYears = data?.years
-    .filter(y => Math.abs(y.year - (data.currentYear || 2026)) <= 3)
-    || []
+  if (error) {
+    return (
+      <div className="max-w-xl mx-auto p-4 pt-8 space-y-4">
+        <p className="text-red-400 text-sm">{error}</p>
+        <Link href="/home" className="text-codex-purple text-sm underline">Back to Home</Link>
+      </div>
+    )
+  }
+
+  if (!result) return null
 
   return (
-    <PageContainer>
+    <div className="max-w-xl mx-auto p-4 space-y-6 pb-24">
 
       <h1 className="text-xl font-bold">Timeline</h1>
 
-      {loading && (
-        <div className="card">
-          <p className="card-subtitle">Loading your timeline...</p>
-        </div>
-      )}
+      <CurrentPhaseCard
+        phase={result.currentPhase}
+        confidence={result.confidence}
+      />
 
-      {/* Current Era */}
-      {era && (
-        <>
-          <div className="card">
-            <p className="text-xs text-codex-textMuted uppercase tracking-widest mb-2">Your Current Era</p>
-            <h2 className={`text-2xl font-bold ${phaseColor}`}>{era.phase}</h2>
-            <p className="text-sm text-codex-text mt-2">{era.meaning}</p>
-          </div>
+      <WhyActiveList reasons={result.reasons} />
 
-          {/* Why this phase is active */}
-          {era.reasons.length > 0 && (
-            <div className="card">
-              <h3 className="card-title">Why This Phase Is Active</h3>
-              <ul className="space-y-2">
-                {era.reasons.map((r, i) => (
-                  <li key={i} className="text-sm text-codex-textMuted flex gap-2">
-                    <span className="text-codex-purple shrink-0">·</span>
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+      <DoDontCard doList={result.do} dontList={result.dont} />
 
-          {/* Do / Don't */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="card">
-              <p className="text-xs text-codex-gold font-semibold uppercase tracking-wider mb-2">What To Do</p>
-              <ul className="space-y-2">
-                {era.do.map((d, i) => (
-                  <li key={i} className="text-sm text-codex-text">{d}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="card">
-              <p className="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">What To Stop</p>
-              <ul className="space-y-2">
-                {era.dont.map((d, i) => (
-                  <li key={i} className="text-sm text-codex-text">{d}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
+      <NextPhaseCard nextPhase={result.nextPhase} />
 
-          {/* What opens next */}
-          <div className="card">
-            <p className="text-xs text-codex-textMuted uppercase tracking-widest mb-2">What Opens Next</p>
-            <h3 className={`text-lg font-semibold ${PHASE_COLORS[era.nextPhase] || "text-codex-text"}`}>
-              {era.nextPhase}
-            </h3>
-            <p className="text-sm text-codex-textMuted mt-1">{era.nextMeaning}</p>
-          </div>
-        </>
-      )}
-
-      {/* Year strip */}
-      {nearYears.length > 0 && (
-        <div className="card">
-          <h3 className="card-title">Your Life Map</h3>
-          <div className="space-y-2">
-            {nearYears.map(y => (
-              <div
-                key={y.year}
-                className={`flex justify-between text-sm border-b border-codex-border pb-2 last:border-0 ${y.isCurrent ? "font-semibold" : ""}`}
-              >
-                <span className={y.isCurrent ? "text-codex-gold" : "text-codex-textMuted"}>
-                  {y.year} {y.isCurrent && "←"}
-                </span>
-                <span className={PHASE_COLORS[y.phase] || "text-codex-text"}>
-                  {y.phase}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <YearStrip years={result.years} currentYear={new Date().getFullYear()} />
 
       <Link
         href="/lifemap"
-        className="block w-full text-center bg-codex-purple text-sm font-semibold py-3 rounded-codex hover:opacity-90 transition-opacity"
+        className="block w-full text-center bg-codex-card border border-codex-border text-sm font-semibold py-3 rounded-codex hover:bg-codex-surface transition-colors"
       >
         View Full Life Map
       </Link>
 
-    </PageContainer>
+    </div>
   )
 }
