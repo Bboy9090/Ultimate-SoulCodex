@@ -64,12 +64,38 @@ export default function LifeMapPage() {
   useEffect(() => {
     async function load() {
       try {
+        const currentYear = new Date().getFullYear()
+
+        const mapFromResult = (result: any): LifeMap => ({
+          birthYear: result.years?.[0]?.year || currentYear - 2,
+          currentYear,
+          currentEra: {
+            phase: result.currentPhase || "Integration",
+            meaning: result.years?.find((y: any) => y.year === currentYear)?.summary || "",
+            reasons: (result.reasons || []).map((r: any) => r.label || r),
+            do: result.do || [],
+            dont: result.dont || [],
+            nextPhase: result.nextPhase || "",
+            nextMeaning: result.years?.find((y: any) => y.phase === result.nextPhase)?.summary || "",
+            previousPhase: result.previousPhase || "",
+            previousMeaning: "",
+          },
+          years: (result.years || []).map((y: any) => ({
+            ...y,
+            age: y.age ?? y.year - (result.years?.[0]?.year || currentYear - 2),
+            personalYear: y.personalYear ?? 0,
+            explanation: y.summary || y.explanation || "",
+            isCurrent: y.year === currentYear,
+          })),
+        })
+
         const profileId = localStorage.getItem("profileId")
         if (profileId) {
           const res = await fetch(`${API_BASE}/api/profiles/${profileId}/lifemap`)
           if (res.ok) {
-            const data = await res.json()
-            setLifeMap(data)
+            const json = await res.json()
+            const result = json.result || json
+            setLifeMap(mapFromResult(result))
             setLoading(false)
             return
           }
@@ -78,19 +104,17 @@ export default function LifeMapPage() {
         const rawProfile = localStorage.getItem("soulProfile")
         if (rawProfile) {
           const profile = JSON.parse(rawProfile)
-          const birthDate = profile.birthDate || profile.birth?.birthDate
-          if (birthDate) {
-            const res = await fetch(`${API_BASE}/api/lifemap/forecast`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ birthDate, futureYears: 5 }),
-            })
-            if (res.ok) {
-              const data = await res.json()
-              setLifeMap(data)
-              setLoading(false)
-              return
-            }
+          const res = await fetch(`${API_BASE}/api/lifemap`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ currentYear, profile }),
+          })
+          if (res.ok) {
+            const json = await res.json()
+            const result = json.result || json
+            setLifeMap(mapFromResult(result))
+            setLoading(false)
+            return
           }
         }
 
