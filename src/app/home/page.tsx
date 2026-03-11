@@ -21,23 +21,24 @@ export default function HomePage() {
   return (
     <div className="max-w-xl mx-auto p-4 pb-24 space-y-6">
 
-      {/* 1. Current Signal */}
-      <div className="pt-4 pb-2">
+      {/* Header */}
+      <div className="pt-4 pb-2 text-center">
         <p className="text-xs text-codex-textMuted uppercase tracking-widest">Soul Codex</p>
       </div>
 
+      {/* 1. Current Signal — centered title, left body */}
       <div className="card">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs text-codex-textMuted uppercase tracking-wide">Current Phase</p>
-            <h1 className="text-xl font-bold mt-1">
-              {phase || "—"}
-            </h1>
+        <p className="text-xs text-codex-textMuted uppercase tracking-wide text-center">Current Phase</p>
+        <h1 className="text-xl font-bold mt-1 text-center">
+          {phase || "—"}
+        </h1>
+        {confidence && (
+          <div className="flex justify-center mt-2">
+            <ConfidenceBadge level={confidence} />
           </div>
-          {confidence && <ConfidenceBadge level={confidence} />}
-        </div>
+        )}
         {synthesis?.currentPhaseMeaning && (
-          <p className="text-sm text-codex-textMuted mt-3 leading-relaxed">
+          <p className="oracle-text text-sm text-codex-textMuted mt-3">
             {synthesis.currentPhaseMeaning}
           </p>
         )}
@@ -46,13 +47,13 @@ export default function HomePage() {
       {/* 2. Today's Card */}
       <TodayCard data={profile?.dailyCard} />
 
-      {/* 3. Pattern Insight */}
+      {/* 3. Pattern Insight — oracle centered */}
       <PatternInsight synthesis={synthesis} />
 
-      {/* 4. Guidance */}
+      {/* 4. Guidance — centered title, left body */}
       {synthesis?.practicalGuidance && synthesis.practicalGuidance.length > 0 && (
         <div className="card">
-          <p className="text-xs text-codex-blue font-bold uppercase tracking-wider mb-3">
+          <p className="text-xs text-codex-blue font-bold uppercase tracking-wider mb-3 text-center">
             Guidance
           </p>
           <ul className="space-y-2">
@@ -63,7 +64,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 5. Ask the Codex */}
+      {/* 5. Actions */}
       <Link
         href="/decode"
         className="block w-full text-center bg-codex-purple text-sm font-semibold py-3 rounded-codex hover:opacity-90 transition-opacity"
