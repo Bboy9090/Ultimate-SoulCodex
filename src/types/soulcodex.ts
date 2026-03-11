@@ -142,10 +142,16 @@ export type CompatibilityResult = {
 
 export type LifeMapYear = {
   year: number;
+  age: number;
   phase: TimelinePhase;
+  personalYear: number;
+  explanation: string;
+  isCurrent: boolean;
 };
 
 export type LifeMap = {
+  birthYear: number;
+  currentYear: number;
   years: LifeMapYear[];
 };
 
