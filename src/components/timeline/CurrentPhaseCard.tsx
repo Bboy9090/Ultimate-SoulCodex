@@ -12,13 +12,10 @@ export default function CurrentPhaseCard({ phase, confidence }: Props) {
       : "bg-red-500";
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs text-codex-textMuted uppercase tracking-wide">Current Era</p>
-          <h1 className="text-xl font-bold">{phase}</h1>
-        </div>
-
+    <div className="card text-center">
+      <p className="text-xs text-codex-textMuted uppercase tracking-wide">Current Era</p>
+      <h1 className="text-xl font-bold mt-1">{phase}</h1>
+      <div className="flex justify-center mt-2">
         <span className={`text-xs px-2 py-1 rounded text-black ${badgeColor}`}>
           {confidence}
         </span>

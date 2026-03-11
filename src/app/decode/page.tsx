@@ -109,20 +109,18 @@ export default function DecodePage() {
         <div className="space-y-4" style={{ animation: "fadeIn 0.5s ease-out" }}>
 
           <div className="card">
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-xs text-codex-gold font-bold uppercase tracking-wider">Pattern</span>
-              <span className="text-xs text-codex-textMuted capitalize">{result.category}</span>
-            </div>
-            <p className="text-sm font-semibold">{result.pattern}</p>
+            <p className="text-xs text-codex-gold font-bold uppercase tracking-wider mb-1 text-center">Pattern</p>
+            <p className="text-xs text-codex-textMuted capitalize text-center mb-3">{result.category}</p>
+            <p className="oracle-text text-sm font-semibold">{result.pattern}</p>
           </div>
 
           <div className="card">
-            <p className="text-xs text-codex-blue font-bold uppercase tracking-wider mb-3">Mirror</p>
+            <p className="text-xs text-codex-blue font-bold uppercase tracking-wider mb-3 text-center">Mirror</p>
             <p className="text-sm leading-relaxed">{result.explanation}</p>
           </div>
 
           <div className="card">
-            <p className="text-xs text-codex-purple font-bold uppercase tracking-wider mb-3">Strategy</p>
+            <p className="text-xs text-codex-purple font-bold uppercase tracking-wider mb-3 text-center">Strategy</p>
             <p className="text-sm leading-relaxed">{result.strategy}</p>
           </div>
 

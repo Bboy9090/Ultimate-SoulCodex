@@ -144,11 +144,11 @@ export default function SoulReadingPage() {
             animation: i === revealedCount - 1 ? "fadeIn 0.6s ease-out" : undefined,
           }}
         >
-          <div className="flex items-baseline gap-3 mb-3">
+          <div className="text-center mb-3">
             <span className={`text-xs font-bold ${STEP_COLORS[step.id] || "text-codex-textMuted"}`}>
               {STEP_LABELS[step.id] || String(i + 1).padStart(2, "0")}
             </span>
-            <h2 className="text-lg font-semibold">{step.title}</h2>
+            <h2 className="text-lg font-semibold mt-1">{step.title}</h2>
           </div>
           <p className="text-sm leading-relaxed text-codex-text">
             {step.body}
