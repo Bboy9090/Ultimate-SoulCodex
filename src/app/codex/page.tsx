@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import PageContainer from "@/components/layout/PageContainer"
+import LoadingCards from "@/components/ui/LoadingCards"
 import CoreSnapshot from "@/components/codex/CoreSnapshot"
 import MirrorSummary from "@/components/codex/MirrorSummary"
 import SoulMirrorReport from "@/components/codex/SoulMirrorReport"
@@ -14,7 +15,16 @@ export default function CodexPage(){
     ? localStorage.getItem("profileId") ?? undefined
     : undefined
 
-  const { profile } = useProfile(profileId)
+  const { profile, loading } = useProfile(profileId)
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <h1 className="text-xl font-bold">Your Codex</h1>
+        <LoadingCards count={4} />
+      </PageContainer>
+    )
+  }
 
   return(
     <PageContainer>
