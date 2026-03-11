@@ -1,11 +1,18 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import ConfidenceBadge from "@/components/ui/ConfidenceBadge"
 import LoadingCards from "@/components/ui/LoadingCards"
+import OracleOnboarding from "@/components/cards/OracleOnboarding"
 import TodayCard from "@/components/cards/TodayCard"
 import PatternInsight from "@/components/cards/PatternInsight"
+import NextYearPreview from "@/components/cards/NextYearPreview"
+import ShareableInsight from "@/components/cards/ShareableInsight"
+import AskCodex from "@/components/cards/AskCodex"
 import { useProfile } from "@/hooks/useProfile"
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
 export default function HomePage() {
 
@@ -14,6 +21,39 @@ export default function HomePage() {
     : undefined
 
   const { profile, loading } = useProfile(profileId)
+  const [lifeMapYears, setLifeMapYears] = useState<any[]>([])
+
+  useEffect(() => {
+    async function fetchLifeMap() {
+      try {
+        if (profileId) {
+          const res = await fetch(`${API_BASE}/api/profiles/${profileId}/lifemap`)
+          if (res.ok) {
+            const json = await res.json()
+            const result = json.result || json
+            if (result.years) { setLifeMapYears(result.years); return }
+          }
+        }
+        const rawProfile = localStorage.getItem("soulProfile")
+        if (rawProfile) {
+          const stored = JSON.parse(rawProfile)
+          const res = await fetch(`${API_BASE}/api/lifemap`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ currentYear: new Date().getFullYear(), profile: stored }),
+          })
+          if (res.ok) {
+            const json = await res.json()
+            const result = json.result || json
+            if (result.years) setLifeMapYears(result.years)
+          }
+        }
+      } catch {
+        // non-critical
+      }
+    }
+    fetchLifeMap()
+  }, [profileId])
 
   if (loading) {
     return (
@@ -38,7 +78,10 @@ export default function HomePage() {
         <p className="text-xs text-codex-textMuted uppercase tracking-widest">Soul Codex</p>
       </div>
 
-      {/* 1. Current Signal — centered title, left body */}
+      {/* Onboarding — shows once */}
+      <OracleOnboarding />
+
+      {/* 1. Current Phase */}
       <div className="card">
         <p className="text-xs text-codex-textMuted uppercase tracking-wide text-center">Current Phase</p>
         <h1 className="text-xl font-bold mt-1 text-center">
@@ -59,10 +102,14 @@ export default function HomePage() {
       {/* 2. Today's Card */}
       <TodayCard data={profile?.dailyCard} />
 
-      {/* 3. Pattern Insight — oracle centered */}
+      {/* 3. Pattern Insight + Share */}
       <PatternInsight synthesis={synthesis} />
+      <ShareableInsight synthesis={synthesis} />
 
-      {/* 4. Guidance — centered title, left body */}
+      {/* 4. Next Year Signal */}
+      <NextYearPreview years={lifeMapYears} />
+
+      {/* 5. Guidance */}
       {synthesis?.practicalGuidance && synthesis.practicalGuidance.length > 0 && (
         <div className="card">
           <p className="text-xs text-codex-blue font-bold uppercase tracking-wider mb-3 text-center">
@@ -76,14 +123,10 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 5. Actions */}
-      <Link
-        href="/decode"
-        className="block w-full text-center bg-codex-purple text-sm font-semibold py-3 rounded-codex hover:opacity-90 transition-opacity"
-      >
-        Decode a Life Pattern
-      </Link>
+      {/* 6. Ask the Codex */}
+      <AskCodex />
 
+      {/* Actions */}
       <Link
         href="/reading"
         className="block w-full text-center bg-codex-card border border-codex-border text-sm font-semibold py-3 rounded-codex hover:border-codex-gold/60 transition-colors"

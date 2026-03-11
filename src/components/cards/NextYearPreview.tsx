@@ -1,5 +1,3 @@
-import type { SoulProfile } from "@/types/soulcodex"
-
 const PHASE_SIGNAL: Record<string, string> = {
   Ignition: "Fresh momentum. A new project or direction demands your attention.",
   Expansion: "Growth window. New options appear — choose what actually deserves your time.",
@@ -11,21 +9,29 @@ const PHASE_SIGNAL: Record<string, string> = {
   Legacy: "Contribution shift. The focus moves from personal achievement to what you leave behind.",
 }
 
-export default function NextYearPreview({ synthesis }: { synthesis?: { currentPhaseMeaning?: string; practicalGuidance?: string[] } | null }) {
+type LifeMapYear = {
+  year: number
+  phase: string
+  summary: string
+}
 
-  if (!synthesis?.currentPhaseMeaning) return null
+export default function NextYearPreview({ years }: { years?: LifeMapYear[] }) {
 
   const nextYear = new Date().getFullYear() + 1
+  const nextData = years?.find(y => y.year === nextYear)
 
-  const guidance = synthesis.practicalGuidance?.[0] || ""
+  if (!nextData) return null
+
+  const signal = PHASE_SIGNAL[nextData.phase] || nextData.summary
 
   return (
     <div className="card">
-      <p className="text-xs text-codex-textMuted uppercase tracking-wider mb-2">
+      <p className="text-xs text-codex-textMuted uppercase tracking-wider text-center mb-2">
         {nextYear} Signal
       </p>
-      <p className="text-sm leading-relaxed">
-        {guidance}
+      <h3 className="text-lg font-semibold text-center">{nextData.phase}</h3>
+      <p className="oracle-text text-sm text-codex-textMuted mt-2">
+        {signal}
       </p>
     </div>
   )
