@@ -135,6 +135,7 @@ function handleError(error: unknown, res: any, context: string) {
 import compatibilityRoutes from "./routes/compatibility";
 import { getVapidPublicKey } from "./services/push-notifications";
 import { insertPushSubscriptionSchema } from "./shared/schema";
+import { dailyCard } from "./src/transits/daily";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
@@ -3394,7 +3395,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/transits/today", async (req, res) => {
     try {
       const { phase, decisionStyle } = dailyCardSchema.parse(req.body);
-      const { dailyCard } = await import("./src/transits/daily");
       const card = dailyCard({ phase, decisionStyle });
       return res.json(card);
     } catch (error) {
