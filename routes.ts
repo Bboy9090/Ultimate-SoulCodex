@@ -3750,7 +3750,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ── Wave 8+: Compatibility Engine ──────────────────────────────────────────
+  // ── Compatibility Engine (full) ────────────────────────────────────────────
+  app.post("/api/compat/full", async (req, res) => {
+    try {
+      const { profileA, profileB } = req.body;
+      if (!profileA || !profileB) {
+        return res.status(400).json({ error: "profileA and profileB are required" });
+      }
+      const { analyzeFullCompatibility } = await import("./src/compat/engine");
+      const result = analyzeFullCompatibility(profileA, profileB);
+      return res.json({ ok: true, result });
+    } catch (error) {
+      return handleError(error, res, "CompatFull");
+    }
+  });
+
   app.post("/api/compat/analyze", async (req, res) => {
     try {
       const { a, b } = req.body;
