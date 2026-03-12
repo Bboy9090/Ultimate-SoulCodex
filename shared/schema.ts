@@ -47,6 +47,20 @@ export const mbtiAssessmentSchema = z.object({
   responses: z.array(z.number()).min(1),
 });
 
+export const dailyCardSchema = z.object({
+  phase: z.enum([
+    "Ignition",
+    "Exposure",
+    "Construction",
+    "Expansion",
+    "Friction",
+    "Refinement",
+    "Integration",
+    "Legacy",
+  ]),
+  decisionStyle: z.string().optional(),
+});
+
 // Type placeholders to satisfy type-only imports
 export type User = any;
 export type UpsertUser = any;

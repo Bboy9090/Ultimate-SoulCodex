@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
+import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, dailyCardSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
 import { sendTestNotificationSchema, broadcastNotificationSchema } from "./shared/notification-schemas";
 import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
 import { getAstroProvider } from "./server/astro/provider";
@@ -135,6 +135,7 @@ function handleError(error: unknown, res: any, context: string) {
 import compatibilityRoutes from "./routes/compatibility";
 import { getVapidPublicKey } from "./services/push-notifications";
 import { insertPushSubscriptionSchema } from "./shared/schema";
+import { dailyCard } from "./src/transits/daily";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
@@ -3387,6 +3388,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ notifications: upcoming, days });
     } catch (error) {
       return handleError(error, res, "GetUpcomingTransitNotifications");
+    }
+  });
+
+  // Daily transit card — lightweight phase + decision-style guidance
+  app.post("/api/transits/today", async (req, res) => {
+    try {
+      const { phase, decisionStyle } = dailyCardSchema.parse(req.body);
+      const card = dailyCard({ phase, decisionStyle });
+      return res.json(card);
+    } catch (error) {
+      return handleError(error, res, "DailyTransitCard");
     }
   });
 
