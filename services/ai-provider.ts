@@ -1,5 +1,6 @@
 import { generateText, isGeminiAvailable, streamChat as geminiStreamChat } from "../gemini";
 import { generateTextGroq, isGroqAvailable, streamChatGroq } from "./groq";
+import { getCached, setCached } from "./ai-cache";
 
 export type AIProvider = "gemini" | "groq" | "none";
 
@@ -17,16 +18,28 @@ export async function generateTextMulti({
   prompt,
   systemPrompt,
   temperature = 0.7,
+  useCache = true,
 }: {
   prompt: string;
   systemPrompt?: string;
   temperature?: number;
-}): Promise<{ text: string; provider: AIProvider }> {
+  useCache?: boolean;
+}): Promise<{ text: string; provider: AIProvider; cached: boolean }> {
+  const cacheKey = `${systemPrompt || ""}::${prompt}`;
+
+  if (useCache) {
+    const cached = getCached(cacheKey);
+    if (cached) return { text: cached, provider: "gemini", cached: true };
+  }
+
   if (isGeminiAvailable()) {
     try {
       const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
       const text = await generateText({ prompt: fullPrompt, temperature });
-      if (text) return { text, provider: "gemini" };
+      if (text) {
+        if (useCache) setCached(cacheKey, text);
+        return { text, provider: "gemini", cached: false };
+      }
     } catch (e) {
       console.warn("[AI Provider] Gemini failed, falling back to Groq:", e);
     }
@@ -35,13 +48,16 @@ export async function generateTextMulti({
   if (isGroqAvailable()) {
     try {
       const text = await generateTextGroq({ prompt, systemPrompt, temperature });
-      if (text) return { text, provider: "groq" };
+      if (text) {
+        if (useCache) setCached(cacheKey, text);
+        return { text, provider: "groq", cached: false };
+      }
     } catch (e) {
       console.error("[AI Provider] Groq also failed:", e);
     }
   }
 
-  return { text: "", provider: "none" };
+  return { text: "", provider: "none", cached: false };
 }
 
 export async function* streamChatMulti({

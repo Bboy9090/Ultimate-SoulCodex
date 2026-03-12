@@ -14,14 +14,22 @@ body {
   font-family: Inter, sans-serif;
   min-height: 100dvh;
   padding-bottom: 5rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Card system */
 .card {
   background: #1E2532;
   border-radius: 16px;
   padding: 20px;
   border: 1px solid #2C3547;
   box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.card:hover {
+  border-color: #3a4560;
 }
 
 .card-title {
@@ -29,21 +37,89 @@ body {
   font-weight: 600;
   margin-bottom: 10px;
   text-align: center;
+  letter-spacing: -0.01em;
 }
 
 .card-subtitle {
   color: #9DA7B8;
   font-size: 14px;
+  line-height: 1.6;
 }
 
+/* Oracle text — centered, constrained, poetic */
 .oracle-text {
   text-align: center;
   max-width: 420px;
   margin: 0 auto;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
+/* Page transitions */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out;
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, #2C3547 25%, #3a4560 50%, #2C3547 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Focus states */
+input:focus, textarea:focus, button:focus-visible {
+  outline: 2px solid #8C6BFF;
+  outline-offset: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2C3547;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4560;
 }
