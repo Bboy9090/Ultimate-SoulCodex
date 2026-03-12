@@ -2,15 +2,26 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./client/index.html",
+    "./client/src/**/*.{js,jsx,ts,tsx}",
+    "./src/app/**/*.{js,jsx,ts,tsx}",
+    "./src/components/**/*.{js,jsx,ts,tsx}",
+  ],
   theme: {
     extend: {
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
       colors: {
+        codex: {
+          void: "#0B0E14",
+          surface: "#151A23",
+          card: "#1E2532",
+          border: "#2C3547",
+          gold: "#E6C27A",
+          blue: "#6BA7FF",
+          purple: "#8C6BFF",
+          text: "#E7ECF3",
+          textMuted: "#9DA7B8",
+        },
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {
@@ -63,9 +74,19 @@ export default {
         },
       },
       fontFamily: {
+        codex: ["Inter", "sans-serif"],
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+      },
+      boxShadow: {
+        codex: "0 10px 25px rgba(0,0,0,0.45)",
+      },
+      borderRadius: {
+        codex: "16px",
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
         "accordion-down": {

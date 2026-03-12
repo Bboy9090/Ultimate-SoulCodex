@@ -51,11 +51,35 @@ export const expressionNumber = (fullName?: string): number | null => {
   return reduceCore(sum);
 };
 
+const VOWELS = new Set(['A', 'E', 'I', 'O', 'U']);
+
+export const soulUrge = (fullName?: string): number | null => {
+  if (!fullName) return null;
+  const sum = fullName
+    .toUpperCase()
+    .split('')
+    .filter(c => VOWELS.has(c))
+    .reduce((total, letter) => total + getLetterValue(letter), 0);
+  return sum === 0 ? null : reduceCore(sum);
+};
+
+export const personalityNumber = (fullName?: string): number | null => {
+  if (!fullName) return null;
+  const sum = fullName
+    .toUpperCase()
+    .split('')
+    .filter(c => /[A-Z]/.test(c) && !VOWELS.has(c))
+    .reduce((total, letter) => total + getLetterValue(letter), 0);
+  return sum === 0 ? null : reduceCore(sum);
+};
+
 export const calculateNumerology = (name?: string, birthDate?: string) => {
   return {
     lifePath: lifePath(birthDate),
     birthDay: birthDay(birthDate),
     expressionNumber: expressionNumber(name),
+    soulUrge: soulUrge(name),
+    personalityNumber: personalityNumber(name),
     personalYear: personalYear(birthDate),
   };
 };
