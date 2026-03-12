@@ -3,6 +3,7 @@
 import Link from "next/link"
 import PageContainer from "@/components/layout/PageContainer"
 import LoadingCards from "@/components/ui/LoadingCards"
+import ShareableArchetypeCard from "@/components/cards/ShareableArchetypeCard"
 import CoreSnapshot from "@/components/codex/CoreSnapshot"
 import MirrorSummary from "@/components/codex/MirrorSummary"
 import SoulMirrorReport from "@/components/codex/SoulMirrorReport"
@@ -37,6 +38,8 @@ export default function CodexPage(){
       >
         Read My Soul
       </Link>
+
+      <ShareableArchetypeCard synthesis={profile?.synthesis} />
 
       <CoreSnapshot profile={profile} />
 
