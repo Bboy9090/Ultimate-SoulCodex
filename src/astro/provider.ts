@@ -6,8 +6,8 @@ export type { AstroResult };
 export type AstroInput = {
   date: string;
   time?: string;
-  lat: number;
-  lon: number;
+  lat?: number;
+  lon?: number;
   place?: string;
   timezone?: string;
 };
@@ -24,7 +24,7 @@ export async function generateChart(input: AstroInput): Promise<AstroResult> {
     dateISO: input.date,
     time24: normalizedTime,
     timeUnknown: !normalizedTime,
-    place: input.place ?? "",
+    place: input.place ?? "Unknown",
     timezone: input.timezone,
     lat: input.lat,
     lon: input.lon,
