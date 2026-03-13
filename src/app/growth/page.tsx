@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useProfile } from "@/hooks/useProfile"
 import { analyzeGrowth, type GrowthSnapshot } from "@/growth/engine"
+import { computeMilestones, type Milestone } from "@/growth/milestones"
 
 const SIGNAL_COLORS: Record<string, string> = {
   up: "text-green-400",
@@ -26,6 +27,7 @@ const COMPASS_COLORS: Record<string, string> = {
 
 export default function GrowthPage() {
   const [snapshot, setSnapshot] = useState<GrowthSnapshot | null>(null)
+  const [milestones, setMilestones] = useState<Milestone[]>([])
 
   const profileId = typeof window !== "undefined"
     ? localStorage.getItem("profileId") ?? undefined
@@ -38,6 +40,7 @@ export default function GrowthPage() {
     const stored = localStorage.getItem("soul_journal")
     const entries = stored ? JSON.parse(stored) : []
     setSnapshot(analyzeGrowth(entries))
+    setMilestones(computeMilestones(entries))
   }, [])
 
   if (!snapshot) return null
@@ -161,6 +164,25 @@ export default function GrowthPage() {
       </div>
 
       {/* Actions */}
+      {/* Milestones */}
+      {milestones.length > 0 && (
+        <div className="card">
+          <p className="section-label text-center text-codex-gold mb-4">Milestones</p>
+          <div className="space-y-2">
+            {milestones.map(m => (
+              <div key={m.id} className="flex items-center gap-3 text-sm">
+                <span style={{ opacity: m.achieved ? 1 : 0.3 }}>
+                  {m.achieved ? "✦" : "○"}
+                </span>
+                <span className={m.achieved ? "text-codex-text" : "text-codex-textMuted"}>
+                  {m.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Link
         href="/journal"
         className="block w-full text-center py-3 rounded-codex text-sm font-semibold tracking-wide transition-all duration-200"
