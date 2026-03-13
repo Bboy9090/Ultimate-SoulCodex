@@ -12,15 +12,19 @@ export default {
     extend: {
       colors: {
         codex: {
-          void: "#0B0E14",
-          surface: "#151A23",
-          card: "#1E2532",
-          border: "#2C3547",
-          gold: "#E6C27A",
+          void: "#0B0E23",
+          deep: "#1A1338",
+          surface: "#141028",
+          card: "#1C1635",
+          border: "#2D2554",
+          gold: "#F2C94C",
+          "gold-soft": "#E6C27A",
           blue: "#6BA7FF",
-          purple: "#8C6BFF",
-          text: "#E7ECF3",
-          textMuted: "#9DA7B8",
+          purple: "#7B61FF",
+          "purple-soft": "#9B8AFF",
+          text: "#EAEAF5",
+          textMuted: "#8B87A8",
+          accent: "#FF6B9D",
         },
         background: "var(--background)",
         foreground: "var(--foreground)",
@@ -75,12 +79,15 @@ export default {
       },
       fontFamily: {
         codex: ["Inter", "sans-serif"],
+        display: ["Georgia", "Times New Roman", "serif"],
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
       boxShadow: {
         codex: "0 10px 25px rgba(0,0,0,0.45)",
+        glow: "0 0 20px rgba(123,97,255,0.15)",
+        "glow-gold": "0 0 20px rgba(242,201,76,0.1)",
       },
       borderRadius: {
         codex: "16px",
