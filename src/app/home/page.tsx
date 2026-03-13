@@ -11,6 +11,7 @@ import NextYearPreview from "@/components/cards/NextYearPreview"
 import ShareableInsight from "@/components/cards/ShareableInsight"
 import AskCodex from "@/components/cards/AskCodex"
 import { useProfile } from "@/hooks/useProfile"
+import { generateMotto, generatePersonalCode } from "@/codex/motto"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
@@ -22,6 +23,7 @@ export default function HomePage() {
 
   const { profile, loading } = useProfile(profileId)
   const [lifeMapYears, setLifeMapYears] = useState<any[]>([])
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     async function fetchLifeMap() {
@@ -59,7 +61,7 @@ export default function HomePage() {
         <div className="pt-8 pb-4 text-center">
           <p className="section-label">Soul Codex</p>
         </div>
-        <LoadingCards count={3} />
+        <LoadingCards count={2} />
       </div>
     )
   }
@@ -68,78 +70,116 @@ export default function HomePage() {
   const phase = profile?.timeline?.currentPhase || synthesis?.currentPhaseMeaning?.split("—")[0]?.trim()
   const confidence = profile?.confidence?.badge
   const archetype = synthesis?.archetype
+  const motto = profile ? generateMotto(profile) : null
+  const personalCode = profile ? generatePersonalCode(profile) : []
 
   return (
     <div className="max-w-xl mx-auto p-4 pb-24 space-y-6 animate-fadeIn">
 
-      {/* Header */}
-      <div className="pt-8 pb-2 text-center">
-        <p className="section-label">Soul Codex</p>
+      {/* Calm first screen — one focal element */}
+      <div className="pt-10 pb-4 text-center">
+        <p className="section-label mb-3">Soul Codex</p>
         {archetype && (
-          <h1 className="heading-display text-2xl mt-2">{archetype}</h1>
+          <h1 className="heading-display text-2xl">{archetype}</h1>
         )}
-      </div>
-
-      {/* Onboarding */}
-      <OracleOnboarding />
-
-      {/* Current Phase */}
-      <div className="card">
-        <p className="section-label text-center mb-2">Current Phase</p>
-        <h2 className="heading-display text-xl text-center">
-          {phase || "—"}
-        </h2>
+        {motto && (
+          <p className="oracle-text text-sm text-codex-textMuted mt-3 italic">
+            "{motto}"
+          </p>
+        )}
         {confidence && (
           <div className="flex justify-center mt-3">
             <ConfidenceBadge level={confidence} />
           </div>
         )}
-        {synthesis?.currentPhaseMeaning && (
-          <p className="oracle-text text-sm text-codex-textMuted mt-4">
-            {synthesis.currentPhaseMeaning}
-          </p>
-        )}
       </div>
 
-      {/* Today */}
-      <TodayCard data={profile?.dailyCard} />
+      <OracleOnboarding />
 
-      {/* Pattern Insight + Share */}
-      <PatternInsight synthesis={synthesis} />
-      <ShareableInsight synthesis={synthesis} />
-
-      {/* Next Year */}
-      <NextYearPreview years={lifeMapYears} />
-
-      {/* Guidance */}
-      {synthesis?.practicalGuidance && synthesis.practicalGuidance.length > 0 && (
-        <div className="card">
-          <p className="section-label text-center text-codex-blue mb-4">Guidance</p>
-          <ul className="space-y-3">
-            {synthesis.practicalGuidance.map((g, i) => (
-              <li key={i} className="text-sm leading-relaxed flex gap-3">
-                <span className="text-codex-purple shrink-0 mt-0.5">›</span>
-                <span>{g}</span>
-              </li>
-            ))}
-          </ul>
+      {/* Current phase — minimal */}
+      {phase && (
+        <div className="card text-center">
+          <p className="section-label mb-1">Current Phase</p>
+          <h2 className="heading-display text-lg">{phase}</h2>
+          {synthesis?.currentPhaseMeaning && (
+            <p className="oracle-text text-sm text-codex-textMuted mt-3">
+              {synthesis.currentPhaseMeaning}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Ask the Codex */}
-      <AskCodex />
+      {/* Expand for full insight */}
+      {!expanded && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="w-full text-center text-xs text-codex-purple font-medium tracking-wide py-2"
+        >
+          Open Full Insight
+        </button>
+      )}
+
+      {expanded && (
+        <>
+          <TodayCard data={profile?.dailyCard} />
+
+          <PatternInsight synthesis={synthesis} />
+          <ShareableInsight synthesis={synthesis} />
+
+          <NextYearPreview years={lifeMapYears} />
+
+          {synthesis?.practicalGuidance && synthesis.practicalGuidance.length > 0 && (
+            <div className="card">
+              <p className="section-label text-center text-codex-blue mb-4">Guidance</p>
+              <ul className="space-y-3">
+                {synthesis.practicalGuidance.map((g, i) => (
+                  <li key={i} className="text-sm leading-relaxed flex gap-3">
+                    <span className="text-codex-purple shrink-0 mt-0.5">›</span>
+                    <span>{g}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Personal Code */}
+          {personalCode.length > 0 && (
+            <div className="card text-center">
+              <p className="section-label text-codex-gold mb-4">Your Code</p>
+              <ul className="space-y-2">
+                {personalCode.map((line, i) => (
+                  <li key={i} className="text-sm font-medium">{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <AskCodex />
+        </>
+      )}
 
       {/* Actions */}
-      <Link
-        href="/reading"
-        className="block w-full text-center py-3.5 rounded-codex text-sm font-semibold tracking-wide transition-all duration-200"
-        style={{
-          background: "linear-gradient(135deg, rgba(123,97,255,0.2) 0%, rgba(242,201,76,0.1) 100%)",
-          border: "1px solid rgba(123,97,255,0.2)",
-        }}
-      >
-        Read My Soul
-      </Link>
+      <div className="space-y-3">
+        <Link
+          href="/reading"
+          className="block w-full text-center py-3 rounded-codex text-sm font-semibold tracking-wide transition-all duration-200"
+          style={{
+            background: "linear-gradient(135deg, rgba(123,97,255,0.2) 0%, rgba(242,201,76,0.1) 100%)",
+            border: "1px solid rgba(123,97,255,0.2)",
+          }}
+        >
+          Read My Soul
+        </Link>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/journal" className="block text-center py-2.5 rounded-codex text-xs font-medium border border-codex-border/50 hover:border-codex-purple/40 transition-colors">
+            Journal
+          </Link>
+          <Link href="/growth" className="block text-center py-2.5 rounded-codex text-xs font-medium border border-codex-border/50 hover:border-codex-gold/40 transition-colors">
+            Growth
+          </Link>
+        </div>
+      </div>
 
     </div>
   )
