@@ -193,6 +193,17 @@ export default function JournalPage() {
         </div>
       ))}
 
+      <Link
+        href="/growth"
+        className="block w-full text-center py-3 rounded-codex text-sm font-semibold tracking-wide transition-all duration-200"
+        style={{
+          background: "linear-gradient(135deg, rgba(123,97,255,0.2) 0%, rgba(242,201,76,0.1) 100%)",
+          border: "1px solid rgba(123,97,255,0.2)",
+        }}
+      >
+        View Growth Dashboard
+      </Link>
+
       <Link href="/home" className="block text-center text-xs text-codex-textMuted underline">
         Back to Oracle
       </Link>
