@@ -48,9 +48,7 @@ export default function HomePage() {
             if (result.years) setLifeMapYears(result.years)
           }
         }
-      } catch {
-        // non-critical
-      }
+      } catch {}
     }
     fetchLifeMap()
   }, [profileId])
@@ -58,8 +56,8 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="max-w-xl mx-auto p-4 pb-24 space-y-6">
-        <div className="pt-4 pb-2 text-center">
-          <p className="text-xs text-codex-textMuted uppercase tracking-widest">Soul Codex</p>
+        <div className="pt-8 pb-4 text-center">
+          <p className="section-label">Soul Codex</p>
         </div>
         <LoadingCards count={3} />
       </div>
@@ -69,67 +67,76 @@ export default function HomePage() {
   const synthesis = profile?.synthesis
   const phase = profile?.timeline?.currentPhase || synthesis?.currentPhaseMeaning?.split("—")[0]?.trim()
   const confidence = profile?.confidence?.badge
+  const archetype = synthesis?.archetype
 
   return (
-    <div className="max-w-xl mx-auto p-4 pb-24 space-y-6">
+    <div className="max-w-xl mx-auto p-4 pb-24 space-y-6 animate-fadeIn">
 
       {/* Header */}
-      <div className="pt-4 pb-2 text-center">
-        <p className="text-xs text-codex-textMuted uppercase tracking-widest">Soul Codex</p>
+      <div className="pt-8 pb-2 text-center">
+        <p className="section-label">Soul Codex</p>
+        {archetype && (
+          <h1 className="heading-display text-2xl mt-2">{archetype}</h1>
+        )}
       </div>
 
-      {/* Onboarding — shows once */}
+      {/* Onboarding */}
       <OracleOnboarding />
 
-      {/* 1. Current Phase */}
+      {/* Current Phase */}
       <div className="card">
-        <p className="text-xs text-codex-textMuted uppercase tracking-wide text-center">Current Phase</p>
-        <h1 className="text-xl font-bold mt-1 text-center">
+        <p className="section-label text-center mb-2">Current Phase</p>
+        <h2 className="heading-display text-xl text-center">
           {phase || "—"}
-        </h1>
+        </h2>
         {confidence && (
-          <div className="flex justify-center mt-2">
+          <div className="flex justify-center mt-3">
             <ConfidenceBadge level={confidence} />
           </div>
         )}
         {synthesis?.currentPhaseMeaning && (
-          <p className="oracle-text text-sm text-codex-textMuted mt-3">
+          <p className="oracle-text text-sm text-codex-textMuted mt-4">
             {synthesis.currentPhaseMeaning}
           </p>
         )}
       </div>
 
-      {/* 2. Today's Card */}
+      {/* Today */}
       <TodayCard data={profile?.dailyCard} />
 
-      {/* 3. Pattern Insight + Share */}
+      {/* Pattern Insight + Share */}
       <PatternInsight synthesis={synthesis} />
       <ShareableInsight synthesis={synthesis} />
 
-      {/* 4. Next Year Signal */}
+      {/* Next Year */}
       <NextYearPreview years={lifeMapYears} />
 
-      {/* 5. Guidance */}
+      {/* Guidance */}
       {synthesis?.practicalGuidance && synthesis.practicalGuidance.length > 0 && (
         <div className="card">
-          <p className="text-xs text-codex-blue font-bold uppercase tracking-wider mb-3 text-center">
-            Guidance
-          </p>
-          <ul className="space-y-2">
+          <p className="section-label text-center text-codex-blue mb-4">Guidance</p>
+          <ul className="space-y-3">
             {synthesis.practicalGuidance.map((g, i) => (
-              <li key={i} className="text-sm leading-relaxed">{g}</li>
+              <li key={i} className="text-sm leading-relaxed flex gap-3">
+                <span className="text-codex-purple shrink-0 mt-0.5">›</span>
+                <span>{g}</span>
+              </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* 6. Ask the Codex */}
+      {/* Ask the Codex */}
       <AskCodex />
 
       {/* Actions */}
       <Link
         href="/reading"
-        className="block w-full text-center bg-codex-card border border-codex-border text-sm font-semibold py-3 rounded-codex hover:border-codex-gold/60 transition-colors"
+        className="block w-full text-center py-3.5 rounded-codex text-sm font-semibold tracking-wide transition-all duration-200"
+        style={{
+          background: "linear-gradient(135deg, rgba(123,97,255,0.2) 0%, rgba(242,201,76,0.1) 100%)",
+          border: "1px solid rgba(123,97,255,0.2)",
+        }}
       >
         Read My Soul
       </Link>

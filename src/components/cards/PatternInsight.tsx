@@ -18,10 +18,8 @@ export default function PatternInsight({ synthesis }: { synthesis?: CodexSynthes
   if (!todayInsight) return null
 
   return (
-    <div className="card">
-      <p className="text-xs text-codex-gold font-bold uppercase tracking-wider mb-3 text-center">
-        Pattern Insight
-      </p>
+    <div className="card animate-pulseGlow">
+      <p className="section-label text-center text-codex-gold mb-4">Pattern Insight</p>
       <p className="oracle-text text-sm">{todayInsight}</p>
     </div>
   )

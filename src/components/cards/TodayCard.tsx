@@ -4,68 +4,64 @@ export default function TodayCard({ data }: { data?: DailyCard | null }){
 
   if (!data) {
     return(
-      <div className="card animate-pulse">
-        <h2 className="card-title">Today's Focus</h2>
-        <p className="card-subtitle">Loading daily guidance...</p>
+      <div className="card">
+        <p className="section-label text-center mb-3">Today</p>
+        <div className="skeleton h-4 w-3/4 mx-auto mb-3" />
+        <div className="skeleton h-3 w-full mb-2" />
+        <div className="skeleton h-3 w-4/5" />
       </div>
     )
   }
 
   return(
-
     <div className="card">
 
-      <h2 className="card-title">
-        Today's Focus
-      </h2>
+      <p className="section-label text-center mb-2">Today's Focus</p>
 
-      <p className="card-subtitle">
+      <p className="oracle-text text-sm text-codex-textMuted mb-4">
         {data.focus}
       </p>
 
-      <div className="mt-4">
-        <p className="text-sm text-codex-gold">Do</p>
-        <ul className="list-disc pl-4 text-sm">
-          {data.do.map((item, i) => <li key={i}>{item}</li>)}
-        </ul>
-      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="section-label text-codex-gold mb-2">Do</p>
+          <ul className="space-y-1.5">
+            {data.do.map((item, i) => (
+              <li key={i} className="text-sm flex gap-2">
+                <span className="text-codex-gold shrink-0">✦</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      <div className="mt-4">
-        <p className="text-sm text-red-400">Don't</p>
-        <ul className="list-disc pl-4 text-sm">
-          {data.dont.map((item, i) => <li key={i}>{item}</li>)}
-        </ul>
+        <div>
+          <p className="section-label text-red-400 mb-2">Don't</p>
+          <ul className="space-y-1.5">
+            {data.dont.map((item, i) => (
+              <li key={i} className="text-sm flex gap-2">
+                <span className="text-red-400 shrink-0">✕</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {data.transits && data.transits.length > 0 && (
         <div className="mt-5 space-y-4">
           {data.transits.map((t, i) => (
-            <div key={i} className="border-t border-codex-border pt-3">
+            <div key={i} className="pt-3 border-t border-codex-border/50">
               <p className="text-sm font-semibold text-codex-purple">{t.title}</p>
-              <p className="text-xs text-codex-textMuted mt-1">Affects: {t.whatItAffects}</p>
-              <p className="text-sm mt-2">{t.realLifeExample}</p>
-              <div className="flex gap-6 mt-2">
-                <div>
-                  <p className="text-xs text-codex-gold">Do</p>
-                  <ul className="text-xs list-disc pl-3">
-                    {t.do.map((d, j) => <li key={j}>{d}</li>)}
-                  </ul>
-                </div>
-                <div>
-                  <p className="text-xs text-red-400">Avoid</p>
-                  <ul className="text-xs list-disc pl-3">
-                    {t.avoid.map((a, j) => <li key={j}>{a}</li>)}
-                  </ul>
-                </div>
-              </div>
+              <p className="text-xs text-codex-textMuted mt-1">{t.whatItAffects}</p>
+              <p className="text-sm mt-2 leading-relaxed">{t.realLifeExample}</p>
             </div>
           ))}
         </div>
       )}
 
-      <p className="mt-4 text-xs text-codex-blue">{data.decisionAdvice}</p>
+      <p className="mt-4 text-xs text-codex-blue leading-relaxed">{data.decisionAdvice}</p>
 
     </div>
-
   )
 }
