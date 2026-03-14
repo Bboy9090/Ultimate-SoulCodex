@@ -6,6 +6,7 @@
  */
 
 import type { Profile } from '../shared/schema';
+import PDFDocument from 'pdfkit';
 
 export interface PDFOptions {
   template: 'full-profile' | 'summary' | 'compatibility' | 'transits' | 'custom';
@@ -327,19 +328,48 @@ function getElementFromSign(sign: string): string | null {
 }
 
 /**
- * Convert PDF template to actual PDF (placeholder - use pdfkit or puppeteer in production)
+ * Convert PDF template to actual PDF using pdfkit
  */
 export async function renderPDF(template: PDFTemplate): Promise<Buffer> {
-  // In production, use a library like:
-  // - pdfkit (Node.js)
-  // - puppeteer (HTML to PDF)
-  // - jsPDF (browser)
-  
-  // This is a placeholder that returns a mock PDF structure
-  // You would implement actual PDF generation here
-  
-  const pdfContent = JSON.stringify(template, null, 2);
-  return Buffer.from(pdfContent, 'utf-8');
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers: Buffer[] = [];
+      
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        resolve(Buffer.concat(buffers));
+      });
+      
+      // Title
+      doc.fontSize(24).text(template.title, { align: 'center' });
+      doc.moveDown();
+      
+      // Sections
+      for (const section of template.sections) {
+        if (section.title) {
+          doc.fontSize(16).text(section.title, { underline: true });
+          doc.moveDown(0.5);
+        }
+        
+        const contentStr = typeof section.content === 'object' 
+          ? JSON.stringify(section.content, null, 2) 
+          : String(section.content);
+          
+        doc.fontSize(12).text(contentStr);
+        doc.moveDown();
+      }
+      
+      // Footer
+      if (template.footer) {
+        doc.fontSize(10).text(template.footer, 50, doc.page.height - 50, { align: 'center' });
+      }
+      
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
 export default {

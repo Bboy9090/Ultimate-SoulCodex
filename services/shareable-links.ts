@@ -8,6 +8,7 @@
 import { randomUUID } from 'crypto';
 import type { IStorage } from '../storage';
 import type { Profile } from '../shared/schema';
+import * as argon2 from 'argon2';
 
 export interface ShareableLink {
   id: string;
@@ -127,8 +128,8 @@ export async function getShareableProfile(
     if (!password) {
       throw new Error('Password required');
     }
-    // In production, use proper password hashing
-    if (link.settings.passwordHash !== hashPassword(password)) {
+    // Use argon2 for proper password hashing
+    if (!await argon2.verify(link.settings.passwordHash!, password)) {
       throw new Error('Invalid password');
     }
   }
@@ -228,13 +229,10 @@ function generateSecureToken(): string {
 }
 
 /**
- * Hash password (simplified - use proper hashing in production)
+ * Hash password (to be used when creating a shareable link with a password)
  */
-function hashPassword(password: string): string {
-  // In production, use bcrypt or similar
-  // This is a placeholder
-  const crypto = require('crypto');
-  return crypto.createHash('sha256').update(password).digest('hex');
+export async function hashPassword(password: string): Promise<string> {
+  return await argon2.hash(password);
 }
 
 /**
