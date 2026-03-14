@@ -1,8 +1,10 @@
-# Soul Codex — Engine of the Eternal Now
+# SoulCodex
 
-**Soul Codex** is a mobile-first personality and compatibility app that synthesizes 35+ spiritual and psychological systems — Western & Vedic astrology, Human Design, Gene Keys, numerology, Tarot, I Ching, and more — into a single, unified reading of who you are and how you relate to others.
+AI-powered self-discovery engine combining astrology, numerology, and human design.
 
-It is not a horoscope generator. It is not incense smoke wrapped in JSON. It calculates your birth chart, derives your Human Design type and gates, maps your Gene Key profile, computes your numerology, and weaves these together into a coherent narrative that respects your intelligence and does not predict your fate.
+**Soul Codex** is a mobile-first personality and compatibility app that synthesizes 35+ spiritual and psychological systems into a single, unified reading of who you are and how you relate to others.
+
+It is not a horoscope generator. It calculates your birth chart, derives your Human Design type and gates, maps your Gene Key profile, computes your numerology, and weaves these together into a coherent narrative that respects your intelligence and does not predict your fate.
 
 ---
 
@@ -32,6 +34,29 @@ All calculations are performed on the server using real ephemeris data (`astrono
 
 ---
 
+## How It Works
+
+### Inputs
+- **Birth data** — Date, time, and location
+- **Name** — Full name for numerology calculations
+- **Personality metrics** — Optional: self-reported traits, preferences, life events
+
+### Engines
+- **Astrology** — Western & Vedic chart calculations, planetary positions, aspects, houses
+- **Numerology** — Life Path, Expression, Soul Urge, and core numbers derived from name and birthdate
+- **Human Design** — Type, Strategy, Authority, Profile, Centers, Gates, and Channels
+- **Gene Keys** — Activation Sequence mapping Shadow → Gift → Siddhi transformations
+- **Auxiliary Systems** — Tarot, I Ching, Runes, Chinese astrology, Mayan calendar, chakras, and more
+
+### Output
+- **Life blueprint** — Your comprehensive Soul Codex profile integrating all systems
+- **Behavioral analysis** — Core patterns, strengths, shadow tendencies, and life themes
+- **Growth recommendations** — Personalized insights for self-development and decision-making
+- **Compatibility reports** — Synastry, Human Design dynamics, and multi-system relationship analysis
+- **Daily context** — Transits, current energies, and reflective prompts for today
+
+---
+
 ## The 4 Core Experiences (MVP)
 
 ### 1. Profile
@@ -45,6 +70,57 @@ Add any person (partner, friend, colleague). The engine runs a 5-pillar compatib
 
 ### 4. Codex Reading
 A deeper dive into your full reading with AI-generated synthesis (powered by Google Gemini), section-by-section interpretation, and PDF export for offline use.
+
+---
+
+## Sample SoulCodex Profile
+
+**Example: Sarah Chen** (fictional profile for demonstration)
+
+```
+📊 Core Identity
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Sun Sign: Virgo ♍ | Moon: Pisces ♓ | Rising: Gemini ♊
+Life Path: 7 (Seeker/Analyst)
+Human Design: Manifesting Generator (5/1 Profile)
+Gene Key Life's Work: GK 33 → Privacy to Revelation
+
+🎯 Soul Archetype: The Pragmatic Mystic
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You bridge the analytical and the intuitive — a rare combination
+of precision and imagination. Your Virgo Sun seeks order and
+mastery, while your Pisces Moon dissolves boundaries and tunes
+into the collective unconscious.
+
+💪 Core Strengths
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Systems thinking meets spiritual intuition
+• Natural healer/advisor who sees both details and wholeness
+• Communicates complex ideas with clarity (Gemini Rising)
+• Responds rapidly to opportunities (MG Strategy)
+
+🌑 Shadow Patterns
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Perfectionism → analysis paralysis
+• Absorbing others' emotions without boundaries
+• Over-explaining or intellectualizing feelings
+• Burnout from saying yes too quickly (MG pitfall)
+
+🔑 Growth Recommendations
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Practice "good enough" over perfect
+2. Ground daily (Virgo) + float weekly (Pisces)
+3. Wait to respond, don't initiate (MG Strategy)
+4. Honor your need for solitude (Life Path 7)
+
+💖 Relationship Dynamics
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Best with: Projectors (HD), Earth signs (stability), 3/5/8 Life Paths
+Challenge with: Generators (pacing mismatch), Fire signs (too impulsive)
+Needs: Intellectual stimulation + emotional safety
+```
+
+> **Note:** This is a condensed example. Actual profiles include 15+ sections covering all 35 systems, daily transits, compatibility analysis, and AI-synthesized insights.
 
 ---
 
@@ -91,6 +167,19 @@ Open [http://localhost:3000](http://localhost:3000).
 ### Demo Mode (No Database Required)
 
 Set `DEMO_MODE=true` in your `.env` to run with a seeded demo profile. No PostgreSQL setup needed. All features work except persisting new users and payments.
+
+---
+
+## Screenshots
+
+> **Coming soon:** App mockups showing the profile view, daily context screen, compatibility analysis, and codex reading interface.
+
+In the meantime, you can run the app locally to explore the full experience:
+
+```bash
+npm run build && npm start
+# Open http://localhost:3000
+```
 
 ---
 
