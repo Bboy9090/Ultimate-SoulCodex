@@ -1,10 +1,12 @@
 # Nixpacks config for Railway
-# Node version from .nvmrc or package.json engines
+# Builds the Next.js src/ app (Emergent psychology engine)
+# next.config has output: "standalone" so the server is self-contained
+
 [phases.install]
 cmds = ["npm install"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["npm run build:next"]
 
 [start]
-cmd = "NODE_ENV=production node dist/index.js"
+cmd = "node .next/standalone/server.js"
