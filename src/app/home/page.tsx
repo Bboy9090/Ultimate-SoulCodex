@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import ConfidenceBadge from "@/components/ui/ConfidenceBadge"
 import LoadingCards from "@/components/ui/LoadingCards"
@@ -16,6 +17,7 @@ import { generateMotto, generatePersonalCode } from "@/codex/motto"
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
 export default function HomePage() {
+  const router = useRouter()
 
   const profileId = typeof window !== "undefined"
     ? localStorage.getItem("profileId") ?? undefined
@@ -24,6 +26,14 @@ export default function HomePage() {
   const { profile, loading } = useProfile(profileId)
   const [lifeMapYears, setLifeMapYears] = useState<any[]>([])
   const [expanded, setExpanded] = useState(false)
+
+  // Redirect new users to onboarding
+  useEffect(() => {
+    if (!loading && !profile) {
+      const hasData = localStorage.getItem("soulProfile") || localStorage.getItem("profileId")
+      if (!hasData) router.push("/onboarding")
+    }
+  }, [loading, profile, router])
 
   useEffect(() => {
     async function fetchLifeMap() {
@@ -171,12 +181,15 @@ export default function HomePage() {
           Read My Soul
         </Link>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Link href="/journal" className="block text-center py-2.5 rounded-codex text-xs font-medium border border-codex-border/50 hover:border-codex-purple/40 transition-colors">
             Journal
           </Link>
           <Link href="/growth" className="block text-center py-2.5 rounded-codex text-xs font-medium border border-codex-border/50 hover:border-codex-gold/40 transition-colors">
             Growth
+          </Link>
+          <Link href="/guide" className="block text-center py-2.5 rounded-codex text-xs font-medium border border-codex-border/50 hover:border-codex-blue/40 transition-colors">
+            Guide
           </Link>
         </div>
       </div>

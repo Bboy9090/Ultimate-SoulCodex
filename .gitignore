@@ -33,3 +33,10 @@ create_pr_and_files.sh
 .env
 .env.local
 .env.*.local.next
+
+# Next.js build output
+.next/
+out/
+
+# pnpm lock (optional)
+# pnpm-lock.yaml
