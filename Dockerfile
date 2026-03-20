@@ -1,29 +1,35 @@
-# Stage 1: Build
-FROM node:20 AS build
-WORKDIR /usr/src/app
+# ─────────────────────────────────────────────────────────────────────────────
+# Soul Codex — Next.js 16 Standalone Build
+# Serves the Emergent psychology engine (src/) via Next.js standalone server
+# ─────────────────────────────────────────────────────────────────────────────
 
+# Stage 1: Build
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Install dependencies (layer-cached)
 COPY package*.json ./
 RUN npm ci
 
+# Copy full source and build the Next.js app
+# next.config has output: "standalone" — produces a self-contained server
 COPY . .
-RUN npm run build
+RUN npm run build:next
 
-# Stage 2: Production
-FROM node:20-slim
-WORKDIR /usr/src/app
+# Stage 2: Production — only the standalone output is needed
+FROM node:20-alpine AS runner
+WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=8080
-EXPOSE 8080
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+EXPOSE 3000
 
-COPY --from=build /usr/src/app/package*.json ./
-# Copy pre-compiled node_modules from the build stage (avoids recompiling
-# native modules like argon2/sharp that require build toolchains)
-COPY --from=build /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/dist ./dist
-
-# Remove dev-only packages to keep the image lean
-RUN npm prune --production
+# The standalone folder contains everything needed to run the server
+COPY --from=build /app/.next/standalone ./
+# Static assets must be copied separately (Next.js standalone doesn't include them)
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
 
 USER node
-CMD ["node", "dist/index.js"]
+CMD ["node", "server.js"]
