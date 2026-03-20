@@ -1,28 +1,65 @@
-# Render Blueprint - One-Click Deploy
+# Render Blueprint — Soul Codex (Next.js + Express API)
 # https://render.com/docs/blueprint-spec
+#
+# Frontend : Next.js 16 App Router (src/) — Emergent psychology engine
+# Backend  : Express API (server/)        — shared API / astro engine
+#
 # Deploy: Connect GitHub repo at render.com → New Blueprint Instance
+
 services:
+  # ── Next.js Frontend ──────────────────────────────────────────────────────
   - type: web
     name: soul-codex
     runtime: node
     region: oregon
-    
-    buildCommand: npm install && npm run build
-    startCommand: NODE_ENV=production npm start
-    
-    healthCheckPath: /health
-    
+
+    # Builds the Next.js app; standalone output is enabled in next.config.mjs
+    buildCommand: npm install && npm run build:next
+    # Standalone server — self-contained, no extra runtime deps needed
+    startCommand: node .next/standalone/server.js
+
+    healthCheckPath: /
+
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
         value: 20
+      - key: PORT
+        value: 3000
+      # Points the Next.js app at the Express API service
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: soul-codex-api
+          type: web
+          property: host
+      # Add in Render dashboard: OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY
+
+  # ── Express API Backend ───────────────────────────────────────────────────
+  - type: web
+    name: soul-codex-api
+    runtime: node
+    region: oregon
+
+    # Builds only the Express server (skips the Vite client build)
+    buildCommand: npm install && npm run build:server
+    startCommand: NODE_ENV=production node dist/index.js
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 5000
       - key: DATABASE_URL
         fromDatabase:
           name: soulcodex-db
           property: connectionString
       # Add in Render dashboard: SESSION_SECRET, ADMIN_PASSWORD
-      # Optional: OPENAI_API_KEY, STRIPE_*, VAPID_*
+      # Optional: OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, STRIPE_*, VAPID_*
 
 databases:
   - name: soulcodex-db

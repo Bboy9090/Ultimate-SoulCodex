@@ -11,6 +11,7 @@
     "dev:next": "next dev",
     "build": "npm run build:client && npm run build:server",
     "build:next": "next build",
+    "start:next": "node .next/standalone/server.js",
     "build:client": "node build-client.js",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "node dist/index.js",
