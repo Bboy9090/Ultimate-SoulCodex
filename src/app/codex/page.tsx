@@ -41,7 +41,7 @@ export default function CodexPage(){
   const planetInsights = chart ? [
     buildPlanetInsight("Sun", chart.sun?.sign, chart.sun?.degree),
     buildPlanetInsight("Moon", chart.moon?.sign, chart.moon?.degree),
-    chart.rising ? buildPlanetInsight("Sun", chart.rising.sign, chart.rising.degree) : null,
+    chart.rising ? buildPlanetInsight("Rising", chart.rising.sign, chart.rising.degree) : null,
     chart.mercury ? buildPlanetInsight("Mercury", chart.mercury.sign, chart.mercury.degree) : null,
     chart.venus ? buildPlanetInsight("Venus", chart.venus.sign, chart.venus.degree) : null,
     chart.mars ? buildPlanetInsight("Mars", chart.mars.sign, chart.mars.degree) : null,

@@ -1,9 +1,8 @@
 import type { DailyCard } from "@/types/soulcodex"
 
-export default function TodayCard({ data }: { data?: DailyCard | null }){
-
+export default function TodayCard({ data }: { data?: DailyCard | null }) {
   if (!data) {
-    return(
+    return (
       <div className="card">
         <p className="section-label text-center mb-3">Today</p>
         <div className="skeleton h-4 w-3/4 mx-auto mb-3" />
@@ -13,34 +12,92 @@ export default function TodayCard({ data }: { data?: DailyCard | null }){
     )
   }
 
-  return(
-    <div className="card">
+  return (
+    <div
+      className="card"
+      style={{
+        background: "rgba(28,22,53,0.72)",
+        border: "1px solid rgba(107,167,255,0.14)",
+      }}
+    >
+      {/* Header */}
+      <p
+        style={{
+          fontSize: "0.65rem",
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "#6BA7FF",
+          textAlign: "center",
+          marginBottom: "0.75rem",
+        }}
+      >
+        Today&apos;s Focus
+      </p>
 
-      <p className="section-label text-center mb-2">Today's Focus</p>
-
-      <p className="oracle-text text-sm text-codex-textMuted mb-4">
+      <p
+        className="oracle-text"
+        style={{ fontSize: "0.9rem", color: "#8B87A8", marginBottom: "1.25rem", textAlign: "center", fontStyle: "italic" }}
+      >
         {data.focus}
       </p>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="section-label text-codex-gold mb-2">Do</p>
-          <ul className="space-y-1.5">
+      {/* Do / Don't grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem", marginBottom: "0.5rem" }}>
+        <div
+          style={{
+            padding: "0.75rem",
+            background: "rgba(242,201,76,0.05)",
+            border: "1px solid rgba(242,201,76,0.12)",
+            borderRadius: 12,
+          }}
+        >
+          <p
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#F2C94C",
+              marginBottom: "0.6rem",
+            }}
+          >
+            Do
+          </p>
+          <ul style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {data.do.map((item, i) => (
-              <li key={i} className="text-sm flex gap-2">
-                <span className="text-codex-gold shrink-0">✦</span>
+              <li key={i} style={{ fontSize: "0.8rem", display: "flex", gap: "0.4rem", lineHeight: 1.5 }}>
+                <span style={{ color: "#F2C94C", flexShrink: 0, marginTop: "0.05rem" }}>✦</span>
                 <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div>
-          <p className="section-label text-red-400 mb-2">Don't</p>
-          <ul className="space-y-1.5">
+        <div
+          style={{
+            padding: "0.75rem",
+            background: "rgba(239,68,68,0.05)",
+            border: "1px solid rgba(239,68,68,0.12)",
+            borderRadius: 12,
+          }}
+        >
+          <p
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#ef4444",
+              marginBottom: "0.6rem",
+            }}
+          >
+            Don&apos;t
+          </p>
+          <ul style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {data.dont.map((item, i) => (
-              <li key={i} className="text-sm flex gap-2">
-                <span className="text-red-400 shrink-0">✕</span>
+              <li key={i} style={{ fontSize: "0.8rem", display: "flex", gap: "0.4rem", lineHeight: 1.5 }}>
+                <span style={{ color: "#ef4444", flexShrink: 0, marginTop: "0.05rem" }}>✕</span>
                 <span>{item}</span>
               </li>
             ))}
@@ -48,20 +105,40 @@ export default function TodayCard({ data }: { data?: DailyCard | null }){
         </div>
       </div>
 
+      {/* Transits */}
       {data.transits && data.transits.length > 0 && (
-        <div className="mt-5 space-y-4">
+        <div style={{ marginTop: "1.1rem", display: "flex", flexDirection: "column", gap: "0.85rem" }}>
           {data.transits.map((t, i) => (
-            <div key={i} className="pt-3 border-t border-codex-border/50">
-              <p className="text-sm font-semibold text-codex-purple">{t.title}</p>
-              <p className="text-xs text-codex-textMuted mt-1">{t.whatItAffects}</p>
-              <p className="text-sm mt-2 leading-relaxed">{t.realLifeExample}</p>
+            <div
+              key={i}
+              style={{
+                paddingTop: "0.85rem",
+                borderTop: "1px solid rgba(45,37,84,0.5)",
+              }}
+            >
+              <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "#9B8AFF" }}>{t.title}</p>
+              <p style={{ fontSize: "0.72rem", color: "#8B87A8", marginTop: "0.25rem" }}>{t.whatItAffects}</p>
+              <p style={{ fontSize: "0.8rem", marginTop: "0.5rem", lineHeight: 1.65 }}>{t.realLifeExample}</p>
             </div>
           ))}
         </div>
       )}
 
-      <p className="mt-4 text-xs text-codex-blue leading-relaxed">{data.decisionAdvice}</p>
-
+      {/* Decision advice */}
+      {data.decisionAdvice && (
+        <p
+          style={{
+            marginTop: "1rem",
+            fontSize: "0.78rem",
+            color: "#6BA7FF",
+            lineHeight: 1.7,
+            paddingTop: "0.85rem",
+            borderTop: "1px solid rgba(45,37,84,0.4)",
+          }}
+        >
+          {data.decisionAdvice}
+        </p>
+      )}
     </div>
   )
 }

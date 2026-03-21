@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import type { BirthData, MirrorAnswers } from "@/types/soulcodex"
 
 const TOTAL_STEPS = 5
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || ""
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
 /* ─── Option Card Component (Replit-style) ─── */
 function OptionCard({
