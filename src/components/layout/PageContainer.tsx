@@ -1,10 +1,15 @@
-export default function PageContainer({ children }: { children: React.ReactNode }) {
+interface PageContainerProps {
+  children: React.ReactNode
+  className?: string
+  topPad?: boolean
+}
 
-  return(
-    <div className="max-w-xl mx-auto p-4 pb-24 space-y-6">
-
+export default function PageContainer({ children, className = "", topPad = false }: PageContainerProps) {
+  return (
+    <div
+      className={`max-w-xl mx-auto p-4 pb-28 space-y-6 animate-fadeIn ${topPad ? "pt-8" : ""} ${className}`}
+    >
       {children}
-
     </div>
   )
 }

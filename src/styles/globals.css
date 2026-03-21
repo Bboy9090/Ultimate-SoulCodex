@@ -662,3 +662,120 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 .animate-messageIn { animation: messageIn 0.3s var(--ease-out-expo); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOUL CODEX — PREMIUM & MONETIZATION STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Gold shimmer animation ─── */
+@keyframes goldShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.premium-shimmer {
+  background: linear-gradient(
+    90deg,
+    #F2C94C 0%, #fff8e0 40%, #F2C94C 60%, #E6A817 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmer 3s linear infinite;
+}
+
+/* ─── Premium badge ─── */
+.premium-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(242,201,76,0.18) 0%, rgba(123,97,255,0.12) 100%);
+  border: 1px solid rgba(242,201,76,0.35);
+  color: #F2C94C;
+}
+
+/* ─── Premium card variant ─── */
+.card-premium {
+  background: linear-gradient(135deg, rgba(28,22,53,0.85) 0%, rgba(20,16,40,0.9) 100%);
+  border: 1.5px solid rgba(242,201,76,0.22);
+  border-radius: 20px;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.card-premium::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(242,201,76,0.12) 0%, transparent 70%);
+  transform: translate(30%, -30%);
+  pointer-events: none;
+}
+.card-premium:hover {
+  border-color: rgba(242,201,76,0.38);
+  box-shadow: 0 8px 32px rgba(242,201,76,0.1), 0 0 0 1px rgba(242,201,76,0.08);
+}
+
+/* ─── Upgrade CTA button ─── */
+.btn-upgrade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.65rem 1.4rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #F2C94C 0%, #E6A817 100%);
+  color: #0B0E23;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(242,201,76,0.3);
+  min-height: 44px;
+}
+.btn-upgrade:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(242,201,76,0.45);
+}
+.btn-upgrade:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ─── Slide up animation ─── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slideUp {
+  animation: slideUp 0.4s var(--ease-out-expo) both;
+}
+
+/* ─── Stagger children ─── */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ─── Cosmic border glow animation ─── */
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(123,97,255,0.2); }
+  50%       { border-color: rgba(242,201,76,0.25); }
+}
+.animate-border-glow {
+  animation: borderGlow 4s ease-in-out infinite;
+}
+
+/* ─── Scale 98 active utility ─── */
+.active\:scale-98:active { transform: scale(0.98); }
