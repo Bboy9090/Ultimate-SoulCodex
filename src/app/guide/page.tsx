@@ -1,5 +1,7 @@
 "use client"
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { usePremium, FREE_LIMITS } from "@/hooks/usePremium"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
@@ -160,6 +162,8 @@ function FallbackCardItem({ card, index }: { card: FallbackCard; index: number }
 }
 
 export default function GuidePage() {
+  const router = useRouter()
+  const { isPremium, canUse, recordUsage, remaining, loading: premiumLoading } = usePremium()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -167,6 +171,7 @@ export default function GuidePage() {
   const [statusLine, setStatusLine] = useState("")
   const [fallback, setFallback] = useState<FallbackData | null>(null)
   const [streamingIndex, setStreamingIndex] = useState<number | null>(null)
+  const [limitReached, setLimitReached] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -336,11 +341,21 @@ export default function GuidePage() {
     async (text: string) => {
       if (!text.trim() || loading) return
 
+      // Check free tier limit
+      if (!isPremium && !canUse("chatMessages")) {
+        setLimitReached(true)
+        return
+      }
+
       setMessages(prev => [...prev, { role: "user", text }])
       setInput("")
       setLoading(true)
       setStatusLine("")
+      setLimitReached(false)
       if (fallback) setFallback(null)
+
+      // Record usage for free tier
+      if (!isPremium) recordUsage("chatMessages")
 
       const history = messages.map(m => ({
         role: m.role,
@@ -350,7 +365,7 @@ export default function GuidePage() {
       await streamResponse(text, history)
       setLoading(false)
     },
-    [loading, fallback, messages, streamResponse],
+    [loading, fallback, messages, streamResponse, isPremium, canUse, recordUsage],
   )
 
   const handleAskDeeper = useCallback(async () => {
@@ -744,6 +759,50 @@ export default function GuidePage() {
         )}
       </div>
 
+      {/* ─── Limit reached banner ─── */}
+      {limitReached && (
+        <div
+          className="animate-fadeIn"
+          style={{
+            margin: "0 1rem",
+            padding: "0.85rem 1rem",
+            borderRadius: 14,
+            background: "linear-gradient(135deg, rgba(242,201,76,0.12) 0%, rgba(123,97,255,0.08) 100%)",
+            border: "1.5px solid rgba(242,201,76,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+          }}
+        >
+          <div>
+            <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "#F2C94C", marginBottom: 2 }}>
+              Monthly limit reached
+            </p>
+            <p style={{ fontSize: "0.72rem", color: "#8B87A8" }}>
+              You've used all {FREE_LIMITS.chatMessages} free messages this month
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/upgrade")}
+            style={{
+              padding: "0.4rem 0.9rem",
+              borderRadius: 9999,
+              background: "linear-gradient(135deg, #F2C94C, #E6A817)",
+              color: "#0B0E23",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              border: "none",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            Upgrade ✦
+          </button>
+        </div>
+      )}
+
       {/* ─── Input bar ─── */}
       <div
         style={{
@@ -831,20 +890,42 @@ export default function GuidePage() {
             ›
           </button>
         </div>
-        <p
-          style={{
-            fontSize: "0.62rem",
-            color: "#8B87A8",
-            textAlign: "center",
-            marginTop: "0.35rem",
-            letterSpacing: "0.04em",
-          }}
-        >
-          <span style={{ color: activeTone.color, transition: "color 0.3s ease" }}>
-            {activeTone.label}
-          </span>{" "}
-          — {activeTone.description}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginTop: "0.35rem" }}>
+          <p
+            style={{
+              fontSize: "0.62rem",
+              color: "#8B87A8",
+              textAlign: "center",
+              letterSpacing: "0.04em",
+            }}
+          >
+            <span style={{ color: activeTone.color, transition: "color 0.3s ease" }}>
+              {activeTone.label}
+            </span>{" "}
+            — {activeTone.description}
+          </p>
+          {!isPremium && !premiumLoading && (
+            <button
+              onClick={() => router.push("/upgrade")}
+              style={{
+                fontSize: "0.58rem",
+                color: remaining("chatMessages") <= 3 ? "#F2C94C" : "#8B87A8",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                letterSpacing: "0.04em",
+                textDecoration: remaining("chatMessages") <= 3 ? "underline" : "none",
+                transition: "color 0.2s",
+              }}
+            >
+              {remaining("chatMessages")} msgs left
+            </button>
+          )}
+          {isPremium && (
+            <span style={{ fontSize: "0.58rem", color: "#F2C94C", letterSpacing: "0.06em" }}>✦ Premium</span>
+          )}
+        </div>
       </div>
 
       {/* ─── Keyframe injections ─── */}

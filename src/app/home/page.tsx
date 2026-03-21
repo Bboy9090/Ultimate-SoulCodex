@@ -13,11 +13,13 @@ import ShareableInsight from "@/components/cards/ShareableInsight"
 import AskCodex from "@/components/cards/AskCodex"
 import { useProfile } from "@/hooks/useProfile"
 import { generateMotto, generatePersonalCode } from "@/codex/motto"
+import { usePremium } from "@/hooks/usePremium"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
 export default function HomePage() {
   const router = useRouter()
+  const { isPremium, loading: premiumLoading } = usePremium()
 
   const profileId = typeof window !== "undefined"
     ? localStorage.getItem("profileId") ?? undefined
@@ -105,6 +107,50 @@ export default function HomePage() {
       </div>
 
       <OracleOnboarding />
+
+      {/* Premium upgrade banner for free users */}
+      {!premiumLoading && !isPremium && (
+        <button
+          onClick={() => router.push("/upgrade")}
+          className="w-full animate-fadeIn"
+          style={{
+            background: "linear-gradient(135deg, rgba(242,201,76,0.09) 0%, rgba(123,97,255,0.07) 50%, rgba(242,201,76,0.05) 100%)",
+            border: "1.5px solid rgba(242,201,76,0.18)",
+            borderRadius: 16,
+            padding: "0.85rem 1.1rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            textAlign: "left" as const,
+          }}
+        >
+          <div>
+            <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "#F2C94C", letterSpacing: "0.04em", marginBottom: 2 }}>
+              ✦ Unlock Premium
+            </p>
+            <p style={{ fontSize: "0.68rem", color: "#8B87A8" }}>
+              Unlimited AI · Full chart wheel · Poster generator
+            </p>
+          </div>
+          <span
+            style={{
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              color: "#0B0E23",
+              background: "linear-gradient(135deg, #F2C94C, #E6A817)",
+              borderRadius: 9999,
+              padding: "0.3rem 0.75rem",
+              whiteSpace: "nowrap" as const,
+              flexShrink: 0,
+              boxShadow: "0 2px 12px rgba(242,201,76,0.3)",
+            }}
+          >
+            $9.99/mo
+          </span>
+        </button>
+      )}
 
       {/* Current phase — minimal */}
       {phase && (

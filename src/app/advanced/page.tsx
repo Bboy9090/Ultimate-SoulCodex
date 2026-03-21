@@ -6,6 +6,7 @@ import ChartWheel from "@/components/advanced/ChartWheel"
 import AspectTable from "@/components/advanced/AspectTable"
 import InsightTrace from "@/components/advanced/InsightTrace"
 import PosterGenerator from "@/components/advanced/PosterGenerator"
+import PremiumGate from "@/components/premium/PremiumGate"
 import { useProfile } from "@/hooks/useProfile"
 
 export default function AdvancedPage(){
@@ -39,13 +40,25 @@ export default function AdvancedPage(){
 
       <h1 className="text-xl font-bold">Birth Chart</h1>
 
-      <ChartWheel planets={planets} aspects={profile?.aspects} />
+      {/* Chart Wheel — Premium */}
+      <PremiumGate
+        title="Interactive Chart Wheel"
+        description="See your full birth chart wheel with all planets, houses, and aspects visualized."
+      >
+        <ChartWheel planets={planets} aspects={profile?.aspects} />
+      </PremiumGate>
 
+      {/* Aspect Table — free */}
       <AspectTable aspects={profile?.aspects} />
-
       <InsightTrace synthesis={profile?.synthesis} />
 
-      <PosterGenerator />
+      {/* Poster Generator — Premium */}
+      <PremiumGate
+        title="Soul Poster Generator"
+        description="Generate a beautiful shareable poster of your soul's blueprint."
+      >
+        <PosterGenerator />
+      </PremiumGate>
 
     </PageContainer>
   )

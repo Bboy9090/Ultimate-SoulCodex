@@ -1,24 +1,28 @@
 "use client"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { usePremium } from "@/hooks/usePremium"
 
 const NAV_ITEMS = [
-  { href: "/home",     label: "Oracle",   icon: "◎" },
-  { href: "/codex",    label: "Codex",    icon: "⬡" },
-  { href: "/timeline", label: "Timeline", icon: "◈" },
-  { href: "/guide",    label: "Guide",    icon: "✦" },
-  { href: "/growth",   label: "Growth",   icon: "▲" },
+  { href: "/home",          label: "Oracle",   icon: "◎" },
+  { href: "/codex",         label: "Codex",    icon: "⬡" },
+  { href: "/timeline",      label: "Timeline", icon: "◈" },
+  { href: "/guide",         label: "Guide",    icon: "✦" },
+  { href: "/growth",        label: "Growth",   icon: "▲" },
 ]
 
 export default function BottomNav() {
   const pathname = usePathname()
-  if (pathname === "/" || pathname === "/onboarding") return null
+  const router = useRouter()
+  const { isPremium, loading: premiumLoading } = usePremium()
+
+  if (pathname === "/" || pathname === "/onboarding" || pathname === "/upgrade") return null
 
   return (
     <nav
       className="fixed bottom-0 w-full z-40"
       style={{
-        background: "rgba(9, 11, 28, 0.9)",
+        background: "rgba(9, 11, 28, 0.92)",
         backdropFilter: "blur(28px)",
         WebkitBackdropFilter: "blur(28px)",
         borderTop: "1px solid rgba(123, 97, 255, 0.1)",
@@ -39,6 +43,80 @@ export default function BottomNav() {
           pointerEvents: "none",
         }}
       />
+
+      {/* Premium upgrade strip — only for free users */}
+      {!premiumLoading && !isPremium && (
+        <button
+          onClick={() => router.push("/upgrade")}
+          style={{
+            width: "100%",
+            padding: "0.45rem 1rem",
+            background: "linear-gradient(90deg, rgba(242,201,76,0.08) 0%, rgba(123,97,255,0.06) 50%, rgba(242,201,76,0.08) 100%)",
+            borderBottom: "1px solid rgba(242,201,76,0.1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+            cursor: "pointer",
+            border: "none",
+            borderTop: "none",
+            transition: "background 0.2s ease",
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.background =
+              "linear-gradient(90deg, rgba(242,201,76,0.14) 0%, rgba(123,97,255,0.1) 50%, rgba(242,201,76,0.14) 100%)"
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background =
+              "linear-gradient(90deg, rgba(242,201,76,0.08) 0%, rgba(123,97,255,0.06) 50%, rgba(242,201,76,0.08) 100%)"
+          }}
+        >
+          <span style={{ fontSize: 10, color: "#F2C94C", letterSpacing: "0.08em", fontWeight: 600 }}>
+            ✦ UNLOCK PREMIUM
+          </span>
+          <span style={{ fontSize: 10, color: "#8B87A8", letterSpacing: "0.04em" }}>
+            — Unlimited AI · Full Chart · Poster
+          </span>
+          <span
+            style={{
+              fontSize: 9,
+              color: "#F2C94C",
+              background: "rgba(242,201,76,0.12)",
+              border: "1px solid rgba(242,201,76,0.25)",
+              borderRadius: 4,
+              padding: "1px 6px",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+            }}
+          >
+            $9.99
+          </span>
+        </button>
+      )}
+
+      {/* Premium active strip */}
+      {!premiumLoading && isPremium && (
+        <div
+          style={{
+            width: "100%",
+            padding: "0.3rem 1rem",
+            background: "linear-gradient(90deg, rgba(242,201,76,0.04) 0%, rgba(123,97,255,0.04) 100%)",
+            borderBottom: "1px solid rgba(242,201,76,0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.4rem",
+          }}
+        >
+          <span style={{ fontSize: 9, color: "#F2C94C", letterSpacing: "0.1em", fontWeight: 600 }}>
+            ✦ PREMIUM ACTIVE
+          </span>
+          <span style={{ fontSize: 9, color: "#4A4570" }}>·</span>
+          <span style={{ fontSize: 9, color: "#8B87A8", letterSpacing: "0.04em" }}>
+            All features unlocked
+          </span>
+        </div>
+      )}
 
       <div
         className="max-w-xl mx-auto flex justify-around px-1"
