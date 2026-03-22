@@ -1,40 +1,33 @@
-import { Route, Switch } from "wouter";
-import Nav from "./components/Nav";
-import OnboardingPage from "./pages/OnboardingPage";
-import ProfilePage from "./pages/ProfilePage";
-import DailyHoroscopePage from "./pages/DailyHoroscopePage";
-import PosterPage from "./pages/PosterPage";
-import CodexReadingPage from "./pages/CodexReadingPage";
-import TodayPage from "./pages/TodayPage";
-import SoulGuidePage from "./pages/SoulGuidePage";
-import TrackerPage from "./pages/TrackerPage";
-import CompatibilityPage from "./pages/CompatibilityPage";
-import TimelinePage from "./pages/TimelinePage";
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "./pages/not-found";
+import Home from "./pages/home";
+import InputForm from "./pages/input-form";
+import Profile from "./pages/profile";
 
-export default function App() {
+function Router() {
   return (
-    <>
-      <Nav />
-      <main style={{ flex: 1 }}>
-        <Switch>
-          <Route path="/" component={OnboardingPage} />
-          <Route path="/profile" component={ProfilePage} />
-          <Route path="/today" component={TodayPage} />
-          <Route path="/guide" component={SoulGuidePage} />
-          <Route path="/tracker" component={TrackerPage} />
-          <Route path="/compat" component={CompatibilityPage} />
-          <Route path="/horoscope" component={DailyHoroscopePage} />
-          <Route path="/poster" component={PosterPage} />
-          <Route path="/codex" component={CodexReadingPage} />
-          <Route path="/timeline" component={TimelinePage} />
-          <Route>
-            <div className="container" style={{ padding: "3rem 1rem", textAlign: "center" }}>
-              <h1>404</h1>
-              <p>Page not found</p>
-            </div>
-          </Route>
-        </Switch>
-      </main>
-    </>
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/create" component={InputForm} />
+      <Route path="/profile/:id" component={Profile} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
