@@ -11,9 +11,9 @@ They shape the conditions under which it first expressed itself.
 
 This layer exists to answer one question users silently ask:
 
-“Why did this part of me feel hard before it felt natural?”
+"Why did this part of me feel hard before it felt natural?"
 
-That’s it.
+That's it.
 No guilt. No destiny talk. No spiritualized trauma.
 
 II. ONBOARDING QUESTIONS (FINAL COPY)
@@ -73,8 +73,8 @@ Optional Depth (Clearly Labeled)
 Optional Reflection (Advanced)
 This adds nuance but is never required.
 
-   • “Which caregiver felt emotionally closer to you?”
-   • “Which caregiver set most of the rules?”
+   • "Which caregiver felt emotionally closer to you?"
+   • "Which caregiver set most of the rules?"
 
 Selectable answers:
    • Parent A
@@ -127,27 +127,27 @@ These phrases are canon. They do not change.
 
 Emotional Imprint (Moon)
 
-“Your emotional system learned to regulate itself early in a specific way.
+"Your emotional system learned to regulate itself early in a specific way.
 
-This was an intelligent adaptation — not a flaw.”
+This was an intelligent adaptation — not a flaw."
 
 Authority Imprint (Saturn)
 
-“Your relationship with responsibility was shaped early.
+"Your relationship with responsibility was shaped early.
 
-Mastery now comes from choosing structure, not inheriting it.”
+Mastery now comes from choosing structure, not inheriting it."
 
 Sensitivity / Wound (Chiron)
 
-“What felt difficult early in life often becomes a source of insight later.
+"What felt difficult early in life often becomes a source of insight later.
 
-This is where sensitivity turns into understanding.”
+This is where sensitivity turns into understanding."
 
 Undefined Centers (Human Design)
 
-“This area was especially responsive to your environment early on.
+"This area was especially responsive to your environment early on.
 
-With awareness, it becomes a place of flexibility rather than pressure.”
+With awareness, it becomes a place of flexibility rather than pressure."
 
 Mandatory Closing Statement (Always Shown)
 
@@ -167,7 +167,7 @@ Maximum Scope (Enforced)
    • No parent scoring
    • No synastry
    • No generational karma language
-   • No “because your parent was X…”
+   • No "because your parent was X…"
 
 If parent data is added later:
    • Max 3–5 traits per parent
@@ -183,13 +183,13 @@ Why not v1?
    • v1.1 adds context without confusion
    • This avoids overwhelming first-time users
 
-How It’s Framed Publicly
+How It's Framed Publicly
 
 Not as a feature.
 
 As:
 
-“Optional early-environment context for deeper understanding.”
+"Optional early-environment context for deeper understanding."
 
 No marketing push.
 Let users discover it.
@@ -215,7 +215,7 @@ This is the best possible version.
 Not because it adds more insight —
 but because it adds just enough context to release confusion.
 
-That’s mastery.
+That's mastery.
 
 If you want next:
    • I can package this as developer tickets
