@@ -123,7 +123,7 @@ export const mbtiAssessmentSchema = z.object({
 export const dailyCardSchema = z.object({
   phase: z.string(),
   decisionStyle: z.string(),
-  astrologyData: z.any().optional(),
+  astrologyData: z.unknown().optional(),
 });
 
 export type BirthData = z.infer<typeof birthDataSchema>;
