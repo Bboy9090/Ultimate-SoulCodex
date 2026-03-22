@@ -10,7 +10,7 @@ import sharp from "sharp";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype, generateIntegrationAnalysis, generatePersonalizedInsights } from "./services/archetype";
-import { generateBiography, generateDailyGuidance } from "./services/openai";
+import { generateBiography, generateDailyGuidance } from "./openai";
 import { calculateHumanDesign } from "./services/human-design";
 import { generateDailyInsights } from "./services/daily-insights";
 import { calculateCompatibility } from "./services/compatibility";

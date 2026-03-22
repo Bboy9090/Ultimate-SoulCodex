@@ -120,8 +120,15 @@ export const mbtiAssessmentSchema = z.object({
   responses: z.array(z.string()).length(20),
 });
 
+export const dailyCardSchema = z.object({
+  phase: z.string(),
+  decisionStyle: z.string(),
+  astrologyData: z.any().optional(),
+});
+
 export type BirthData = z.infer<typeof birthDataSchema>;
 export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
 export type MBTIAssessment = z.infer<typeof mbtiAssessmentSchema>;
 export type PushSubscription = any;
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type DailyCard = z.infer<typeof dailyCardSchema>;

@@ -200,3 +200,50 @@ See **[VPS_SELF_HOSTING.md](./VPS_SELF_HOSTING.md)** for the cheapest 24/7 optio
 ---
 
 *Replit ran out because you built something worth running.*
+
+---
+
+## Upgraded Next.js Frontend (src/)
+
+Soul Codex now ships an upgraded frontend built with **Next.js 14** (static export).
+It lives in the `src/` directory and offers an improved mobile-first UI with richer
+animations, better navigation, and additional pages (journal, growth, guide, lifemap, etc.).
+
+### Build the Next.js frontend
+
+```bash
+npm run build:next
+```
+
+This generates static HTML/CSS/JS to `dist/next-public/`.
+
+### Serve from the same Express server
+
+The Express server **automatically** detects and serves the Next.js frontend when
+`dist/next-public/` exists. Just run:
+
+```bash
+npm run build:next   # build the new frontend
+npm run build        # also rebuild the Express server
+npm start            # Express serves Next.js frontend + API
+```
+
+### Deploy to Vercel (recommended for the frontend)
+
+For best performance, deploy the Next.js frontend to Vercel and the Express API
+to Railway/Render/Fly.io:
+
+1. Deploy Express API to Railway (set `PORT`, `GEMINI_API_KEY`, `DATABASE_URL`)
+2. Deploy this repo to Vercel — it auto-detects Next.js
+3. Set `NEXT_PUBLIC_API_URL=https://your-express-api.railway.app` in Vercel env vars
+
+### Development
+
+```bash
+# Run the upgraded Next.js frontend (port 3001) + Express API (port 3000):
+npm run dev          # Express API at http://localhost:3000
+npm run dev:next     # Next.js frontend at http://localhost:3001
+```
+
+Set `NEXT_PUBLIC_API_URL=http://localhost:3000` in a `.env.local` file for the
+Next.js frontend to proxy API calls to the local Express server.

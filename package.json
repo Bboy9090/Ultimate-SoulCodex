@@ -5,8 +5,11 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
+    "dev:next": "next dev --port 3001",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build:next": "next build",
     "start": "NODE_ENV=production node dist/index.js",
+    "start:next": "node dist/next-public/server.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },
@@ -53,6 +56,7 @@
     "cmdk": "^1.1.1",
     "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
+    "d3": "^7.9.0",
     "date-fns": "^3.6.0",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.3",
@@ -69,6 +73,7 @@
     "lucide-react": "^0.453.0",
     "memoizee": "^0.4.17",
     "memorystore": "^1.6.7",
+    "next": "^14.2.35",
     "next-themes": "^0.4.6",
     "openai": "^4.104.0",
     "p-limit": "^7.2.0",

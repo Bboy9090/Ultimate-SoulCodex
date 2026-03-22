@@ -1,49 +1,21 @@
-# Render Blueprint — Soul Codex (Next.js + Express API)
+# Render Blueprint — Soul Codex
 # https://render.com/docs/blueprint-spec
 #
-# Frontend : Next.js 16 App Router (src/) — Emergent psychology engine
-# Backend  : Express API (server/)        — shared API / astro engine
+# Single service: Express API + Next.js static frontend served together.
+# The Express server builds the Next.js export and serves it as static files.
 #
 # Deploy: Connect GitHub repo at render.com → New Blueprint Instance
 
 services:
-  # ── Next.js Frontend ──────────────────────────────────────────────────────
   - type: web
     name: soul-codex
     runtime: node
     region: oregon
 
-    # Builds the Next.js app; standalone output is enabled in next.config.mjs
-    buildCommand: npm install && npm run build:next
-    # Standalone server — self-contained, no extra runtime deps needed
-    startCommand: node .next/standalone/server.js
-
-    healthCheckPath: /
-
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 20
-      - key: PORT
-        value: 3000
-      # Points the Next.js app at the Express API service
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          name: soul-codex-api
-          type: web
-          property: host
-      # Add in Render dashboard: OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY
-
-  # ── Express API Backend ───────────────────────────────────────────────────
-  - type: web
-    name: soul-codex-api
-    runtime: node
-    region: oregon
-
-    # Builds only the Express server (skips the Vite client build)
-    buildCommand: npm install && npm run build:server
-    startCommand: NODE_ENV=production node dist/index.js
+    # Build both the Next.js static export and the Express bundle
+    buildCommand: npm install && npm run build:next && npm run build
+    # Express server serves the API and the Next.js static files
+    startCommand: npm start
 
     healthCheckPath: /health
 
@@ -53,16 +25,10 @@ services:
       - key: NODE_VERSION
         value: 20
       - key: PORT
-        value: 5000
+        value: 3000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: soulcodex-db
-          property: connectionString
-      # Add in Render dashboard: SESSION_SECRET, ADMIN_PASSWORD
-      # Optional: OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, STRIPE_*, VAPID_*
-
-databases:
-  - name: soulcodex-db
-    plan: free
-    databaseName: soulcodex
-    user: soulcodex
+        sync: false

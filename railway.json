@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "node .next/standalone/server.js",
-    "healthcheckPath": "/"
+    "startCommand": "npm start",
+    "healthcheckPath": "/health"
   }
 }
