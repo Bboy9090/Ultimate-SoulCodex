@@ -5,6 +5,10 @@ server/public
 vite.config.ts.*
 *.tar.gz
 
+# Next.js build artifacts
+.next
+out
+
 # Agent state files
 .agent_state_*.bin
 repl_state.bin

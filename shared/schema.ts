@@ -155,6 +155,12 @@ export const mbtiAssessmentSchema = z.object({
   responses: z.array(z.string()).length(20),
 });
 
+export const dailyCardSchema = z.object({
+  phase: z.string(),
+  decisionStyle: z.string(),
+  astrologyData: z.any().optional(),
+});
+
 export type BirthData = z.infer<typeof birthDataSchema>;
 export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
 export type MBTIAssessment = z.infer<typeof mbtiAssessmentSchema>;
@@ -186,4 +192,5 @@ export type InsertFrequencyLog = any;
 export type WebhookEvent = any;
 export type InsertWebhookEvent = any;
 
+export type DailyCard = z.infer<typeof dailyCardSchema>;
 

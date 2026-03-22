@@ -1,15 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npx next build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
+  "buildCommand": "npm run build:next",
+  "outputDirectory": "dist/next-public",
+  "framework": null,
   "installCommand": "npm install",
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "${NEXT_PUBLIC_API_URL}/api/:path*"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
