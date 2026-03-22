@@ -1,6 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Soul Codex — Next.js 16 Standalone Build
-# Serves the Emergent psychology engine (src/) via Next.js standalone server
+# Soul Codex — Express API + Next.js Static Frontend
+# Builds both the Next.js upgraded UI (src/) and the Express API server (server/).
+# The Express server auto-detects and serves the Next.js static export.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Stage 1: Build
@@ -11,12 +12,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy full source and build the Next.js app
-# next.config has output: "standalone" — produces a self-contained server
+# Copy full source
 COPY . .
-RUN npm run build:next
 
-# Stage 2: Production — only the standalone output is needed
+# Build the Next.js static export (dist/next-public/) and the Express bundle (dist/)
+RUN npm run build:next && npm run build
+
+# Stage 2: Production
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -25,11 +27,14 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 EXPOSE 3000
 
-# The standalone folder contains everything needed to run the server
-COPY --from=build /app/.next/standalone ./
-# Static assets must be copied separately (Next.js standalone doesn't include them)
-COPY --from=build /app/.next/static ./.next/static
+# Copy the Express server bundle and Next.js static output
+COPY --from=build /app/dist ./dist
+# Copy package.json for any runtime peer resolution
+COPY --from=build /app/package.json ./package.json
+# Copy node_modules (Express uses --packages=external so they must be present)
+COPY --from=build /app/node_modules ./node_modules
+# Copy public assets
 COPY --from=build /app/public ./public
 
 USER node
-CMD ["node", "server.js"]
+CMD ["node", "dist/index.js"]

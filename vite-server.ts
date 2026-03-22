@@ -23,18 +23,52 @@ export async function setupVite(app: express.Express, server: Server) {
 }
 
 function serveStatic(app: express.Express) {
-  const distPath = path.resolve("dist/public");
+  // Prefer the Next.js static export if available, fall back to Vite build
+  const nextDistPath = path.resolve("dist/next-public");
+  const viteDistPath = path.resolve("dist/public");
 
-  if (!fs.existsSync(distPath)) {
-    throw new Error("Build folder not found. Run `npm run build` first.");
+  const nextAvailable = fs.existsSync(nextDistPath);
+  const viteAvailable = fs.existsSync(viteDistPath);
+
+  if (!nextAvailable && !viteAvailable) {
+    throw new Error(
+      "No build folder found. Run `npm run build` (Vite) or `npm run build:next` (Next.js) first."
+    );
   }
 
-  app.use(express.static(distPath));
+  if (nextAvailable) {
+    // Serve the upgraded Next.js static export
+    app.use(express.static(nextDistPath));
 
-  app.get("*", (req, res) => {
-    if (req.path.startsWith("/api")) {
-      return res.status(404).json({ message: "API route not found" });
-    }
-    res.sendFile(path.join(distPath, "index.html"));
-  });
+    app.get("*", (req, res) => {
+      if (req.path.startsWith("/api")) {
+        return res.status(404).json({ message: "API route not found" });
+      }
+      // Try to find a route-specific HTML file (Next.js static export pattern)
+      const routeHtml = path.join(nextDistPath, req.path, "index.html");
+      const exactHtml = path.join(nextDistPath, `${req.path}.html`);
+      if (fs.existsSync(routeHtml)) {
+        return res.sendFile(routeHtml);
+      }
+      if (fs.existsSync(exactHtml)) {
+        return res.sendFile(exactHtml);
+      }
+      // Fall back to root index.html
+      const rootHtml = path.join(nextDistPath, "index.html");
+      if (fs.existsSync(rootHtml)) {
+        return res.sendFile(rootHtml);
+      }
+      res.status(404).json({ message: "Not found" });
+    });
+  } else {
+    // Fall back to Vite build (legacy client app)
+    app.use(express.static(viteDistPath));
+
+    app.get("*", (req, res) => {
+      if (req.path.startsWith("/api")) {
+        return res.status(404).json({ message: "API route not found" });
+      }
+      res.sendFile(path.join(viteDistPath, "index.html"));
+    });
+  }
 }

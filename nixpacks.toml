@@ -1,12 +1,12 @@
 # Nixpacks config for Railway
-# Builds the Next.js src/ app (Emergent psychology engine)
-# next.config has output: "standalone" so the server is self-contained
+# Builds both the Next.js upgraded frontend (src/) and the Express API (server/)
+# The Express server auto-detects and serves the Next.js static export.
 
 [phases.install]
 cmds = ["npm install"]
 
 [phases.build]
-cmds = ["npm run build:next"]
+cmds = ["npm run build:next", "npm run build"]
 
 [start]
-cmd = "node .next/standalone/server.js"
+cmd = "npm start"
