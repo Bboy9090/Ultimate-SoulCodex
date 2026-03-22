@@ -23,7 +23,8 @@ export async function setupVite(app: express.Express, server: Server) {
 }
 
 function serveStatic(app: express.Express) {
-  // Prefer the Next.js static export if available, fall back to Vite build
+  // Prefer the Next.js static export if available, fall back to Vite build.
+  // Check once at startup — not on every request — for performance.
   const nextDistPath = path.resolve("dist/next-public");
   const viteDistPath = path.resolve("dist/public");
 
@@ -37,21 +38,46 @@ function serveStatic(app: express.Express) {
   }
 
   if (nextAvailable) {
-    // Serve the upgraded Next.js static export
+    // Serve the upgraded Next.js static export.
+    // Pre-compute the list of per-route HTML files at startup.
+    const routeFiles = new Set<string>();
+    try {
+      for (const entry of fs.readdirSync(nextDistPath)) {
+        if (entry.endsWith(".html")) {
+          routeFiles.add("/" + entry.replace(/\.html$/, ""));
+        }
+        // Also check one level of subdirectories (e.g. /home/index.html)
+        const sub = path.join(nextDistPath, entry);
+        if (fs.statSync(sub).isDirectory()) {
+          const indexHtml = path.join(sub, "index.html");
+          if (fs.existsSync(indexHtml)) {
+            routeFiles.add("/" + entry);
+          }
+        }
+      }
+    } catch {
+      // Non-critical — fall through to default handling
+    }
+
     app.use(express.static(nextDistPath));
 
     app.get("*", (req, res) => {
       if (req.path.startsWith("/api")) {
         return res.status(404).json({ message: "API route not found" });
       }
-      // Try to find a route-specific HTML file (Next.js static export pattern)
-      const routeHtml = path.join(nextDistPath, req.path, "index.html");
-      const exactHtml = path.join(nextDistPath, `${req.path}.html`);
-      if (fs.existsSync(routeHtml)) {
-        return res.sendFile(routeHtml);
-      }
-      if (fs.existsSync(exactHtml)) {
-        return res.sendFile(exactHtml);
+      // Try per-route HTML from the precomputed set
+      const routeBase = req.path.replace(/\/$/, "") || "/";
+      if (routeFiles.has(routeBase)) {
+        const htmlFile =
+          path.join(nextDistPath, `${routeBase.slice(1)}.html`).replace(/^\//, "");
+        const candidate = path.join(nextDistPath, `${routeBase.slice(1)}.html`);
+        if (fs.existsSync(candidate)) {
+          return res.sendFile(candidate);
+        }
+        const indexCandidate = path.join(nextDistPath, routeBase.slice(1), "index.html");
+        if (fs.existsSync(indexCandidate)) {
+          return res.sendFile(indexCandidate);
+        }
       }
       // Fall back to root index.html
       const rootHtml = path.join(nextDistPath, "index.html");
