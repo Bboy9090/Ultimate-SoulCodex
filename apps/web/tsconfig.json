@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["src/*"],
+      "@soulcodex/db/*": ["../../packages/db/*"],
+      "@soulcodex/core/*": ["../../packages/core/*"],
+      "@soulcodex/astrology/*": ["../../packages/astrology/*"],
+      "@soulcodex/ai/*": ["../../packages/ai/*"]
+    }
+  },
+  "include": ["src"]
+}

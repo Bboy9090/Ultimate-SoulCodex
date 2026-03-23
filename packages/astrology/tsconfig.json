@@ -1,0 +1,1 @@
+{\n  " extends\: \../../tsconfig.json\,\n \compilerOptions\: {\n \composite\: true,\n \outDir\: \./dist\,\n \rootDir\: \.\,\n \baseUrl\: \.\,\n \paths\: {\n \@soulcodex/db\: [\../db\],\n \@soulcodex/db/*\: [\../db/*\],\n \./shared/schema\: [\../db/schema\],\n \../shared/schema\: [\../db/schema\],\n \../storage\: [\../../apps/api/storage\]\n }\n },\n \include\: [\**/*.ts\]\n}

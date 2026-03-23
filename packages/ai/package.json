@@ -1,0 +1,10 @@
+{
+  "name": "@soulcodex/ai",
+  "version": "1.0.0",
+  "main": "pipeline.ts",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "openai": "^4.76.3",
+    "zod": "^3.24.1"
+  }
+}

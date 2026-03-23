@@ -201,7 +201,7 @@ export class SubscriptionService {
       userId: userId || null,
       sessionId: sessionId || null,
       name: email ? email.split('@')[0] : 'Premium User',
-      birthDate: new Date().toISOString().split('T')[0], // Default to today - user should update with actual birth date
+      birthDate: new Date(),
       birthTime: null,
       birthLocation: null,
       timezone: null,

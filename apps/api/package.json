@@ -1,0 +1,22 @@
+{
+  "name": "@soulcodex/api",
+  "version": "1.0.0",
+  "main": "server.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "esbuild server.ts --platform=node --bundle --format=esm --outdir=../../dist",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@soulcodex/db": "*",
+    "@soulcodex/core": "*",
+    "@soulcodex/astrology": "*",
+    "express": "^4.21.2",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "stripe": "^17.5.0",
+    "drizzle-orm": "^0.39.1",
+    "zod": "^3.24.1"
+  }
+}

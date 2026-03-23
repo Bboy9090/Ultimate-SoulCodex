@@ -7,18 +7,31 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status"),
+  subscriptionPlan: text("subscription_plan"),
+  subscriptionEndsAt: timestamp("subscription_ends_at"),
+  isPremium: boolean("is_premium").default(false),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
 export const profiles = pgTable("soul_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id"),
+  sessionId: varchar("session_id"),
   name: text("name").notNull(),
   birthDate: timestamp("birth_date").notNull(),
-  birthTime: text("birth_time").notNull(),
-  birthLocation: text("birth_location").notNull(),
-  timezone: text("timezone").notNull(),
-  latitude: text("latitude").notNull(),
-  longitude: text("longitude").notNull(),
+  birthTime: text("birth_time"),
+  birthLocation: text("birth_location"),
+  timezone: text("timezone"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
   isPremium: boolean("is_premium").default(false),
   
   // Astrology data
@@ -32,6 +45,25 @@ export const profiles = pgTable("soul_profiles", {
   
   // Archetype synthesis
   archetypeData: jsonb("archetype_data"),
+  
+  // Additional synthesis data
+  humanDesignData: jsonb("human_design_data"),
+  vedicAstrologyData: jsonb("vedic_astrology_data"),
+  geneKeysData: jsonb("gene_keys_data"),
+  iChingData: jsonb("i_ching_data"),
+  chineseAstrologyData: jsonb("chinese_astrology_data"),
+  kabbalahData: jsonb("kabbalah_data"),
+  mayanAstrologyData: jsonb("mayan_astrology_data"),
+  chakraData: jsonb("chakra_data"),
+  sacredGeometryData: jsonb("sacred_geometry_data"),
+  runesData: jsonb("runes_data"),
+  sabianSymbolsData: jsonb("sabian_symbols_data"),
+  ayurvedaData: jsonb("ayurveda_data"),
+  biorhythmsData: jsonb("biorhythms_data"),
+  asteroidsData: jsonb("asteroids_data"),
+  arabicPartsData: jsonb("arabic_parts_data"),
+  fixedStarsData: jsonb("fixed_stars_data"),
+  purposeStatement: text("purpose_statement"),
   
   // Generated content
   biography: text("biography"),
@@ -110,6 +142,9 @@ export const insertPushSubscriptionSchema = z.object({
     p256dh: z.string(),
     auth: z.string(),
   }),
+  userId: z.string().optional().nullable(),
+  sessionId: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
 });
 
 export const enneagramAssessmentSchema = z.object({
@@ -123,5 +158,32 @@ export const mbtiAssessmentSchema = z.object({
 export type BirthData = z.infer<typeof birthDataSchema>;
 export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
 export type MBTIAssessment = z.infer<typeof mbtiAssessmentSchema>;
-export type PushSubscription = any;
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+
+export interface PushSubscription extends InsertPushSubscription {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string | null;
+  sessionId: string | null;
+  isActive: boolean;
+}
+
+// Missing STUB types
+export type UpsertUser = any;
+export type Person = any;
+export type InsertPerson = any;
+export type AccessCode = any;
+export type AccessCodeRedemption = any;
+export type InsertAccessCode = any;
+export type DailyInsight = any;
+export type InsertDailyInsight = any;
+export type CompatibilityAnalysis = any;
+export type InsertCompatibility = any;
+export type LocalUser = any;
+export type FrequencyLog = any;
+export type InsertFrequencyLog = any;
+export type WebhookEvent = any;
+export type InsertWebhookEvent = any;
+
+

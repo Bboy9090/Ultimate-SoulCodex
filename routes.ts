@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, dailyCardSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
+import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
 import { sendTestNotificationSchema, broadcastNotificationSchema } from "./shared/notification-schemas";
 import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
 import { getAstroProvider } from "./server/astro/provider";
@@ -10,7 +10,7 @@ import sharp from "sharp";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype, generateIntegrationAnalysis, generatePersonalizedInsights } from "./services/archetype";
-import { generateBiography, generateDailyGuidance } from "./services/openai";
+import { generateBiography, generateDailyGuidance } from "./openai";
 import { calculateHumanDesign } from "./services/human-design";
 import { generateDailyInsights } from "./services/daily-insights";
 import { calculateCompatibility } from "./services/compatibility";
