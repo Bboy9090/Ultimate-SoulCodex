@@ -1114,7 +1114,5 @@ class DbStorage implements IStorage {
 }
 
 
-// Switch to DbStorage for production-ready persistence
-// Switch to MemStorage for initial deployment; swap to DbStorage when schema is in place
-// export const storage = new DbStorage();
-export const storage = new MemStorage();
+// Initial deployment: use MemStorage if no DB is provided, otherwise use DbStorage
+export const storage = process.env.DATABASE_URL ? new DbStorage() : new MemStorage();

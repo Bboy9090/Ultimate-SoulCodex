@@ -34,7 +34,7 @@ export default function TrackerPage() {
 
   const logMutation = useMutation({
     mutationFn: async (payload: { frequency: number; notes?: string }) => {
-      await apiRequest("/api/frequency/log", {
+      const res = await apiRequest("/api/frequency/log", {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -53,7 +53,7 @@ export default function TrackerPage() {
 
   const purposeMutation = useMutation({
     mutationFn: async (newPurpose: string) => {
-      await apiRequest("/api/profile/purpose", {
+      const res = await apiRequest("/api/profile/purpose", {
         method: "PATCH",
         body: JSON.stringify({ purpose: newPurpose }),
       });

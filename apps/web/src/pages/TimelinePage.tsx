@@ -61,10 +61,11 @@ export default function TimelinePage() {
 
   const mutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
-      const data = await apiRequest("/api/timeline/current", {
+      const res = await apiRequest("/api/timeline/current", {
         method: "POST",
         body: JSON.stringify(payload),
       });
+      const data = await res.json();
       return data as TimelineData;
     },
     onSuccess: (data) => {
