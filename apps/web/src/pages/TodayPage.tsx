@@ -121,11 +121,13 @@ export default function TodayPage() {
 
   const cardMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const data = await apiRequest("/api/today/card", {
+      const res = await apiRequest("/api/today/card", {
         method: "POST",
         body: JSON.stringify(payload)
       });
-      if (!data.ok) throw new Error(data.error ?? "Failed to build card");
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error ?? "Failed to build card");
       return data.card as TodayCard;
     },
     onSuccess: (data) => {
