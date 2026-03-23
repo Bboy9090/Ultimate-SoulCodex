@@ -1,18 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
+    "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
-    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
-    },
-    "baseUrl": "."
-  },
-  "include": ["client/src/**/*", "server/**/*", "shared/**/*", "soulcodex/**/*", "src/**/*", "*.ts"],
-  "exclude": ["node_modules", "dist"]
+      "@soulcodex/db": ["packages/db"],
+      "@soulcodex/db/*": ["packages/db/*"],
+      "@soulcodex/core": ["packages/core"],
+      "@soulcodex/core/*": ["packages/core/*"],
+      "@soulcodex/astrology": ["packages/astrology"],
+      "@soulcodex/astrology/*": ["packages/astrology/*"],
+      "@soulcodex/ai": ["packages/ai"],
+      "@soulcodex/ai/*": ["packages/ai/*"]
+    }
+  }
 }

@@ -1,0 +1,33 @@
+name: Ultimate SoulCodex CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build_and_check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Clean Install Dependencies
+      run: npm ci
+
+    - name: Run TypeScript Compiler Check (CI Surgeon)
+      run: npm run check
+
+    - name: Build Application (Frontend & Backend)
+      run: npm run build
+      
+    - name: Verify Build Output Exists
+      run: test -d dist/public && test -f dist/index.js

@@ -1,0 +1,11 @@
+{
+  "name": "@soulcodex/astrology",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19"
+  }
+}

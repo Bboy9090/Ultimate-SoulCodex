@@ -156,6 +156,9 @@ export class MemStorage implements IStorage {
     } else {
       const newUser: User = {
         id: userData.id!,
+        username: userData.username || `user_${Date.now()}`,
+        password: userData.password || '',
+        isPremium: userData.isPremium ?? false,
         email: userData.email || null,
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
@@ -1072,9 +1075,41 @@ class DbStorage implements IStorage {
   async getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined> {
     return undefined;
   }
-
   async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {
     throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+
+  // Journal operations
+  async createJournalEntry(entryData: any): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getJournalEntries(params: any): Promise<any[]> {
+    return [];
+  }
+
+  // Shareable links operations
+  async createShareableLink(linkData: any): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getShareableLink(id: string): Promise<any | undefined> {
+    return undefined;
+  }
+  async getShareableLinkByToken(token: string): Promise<any | undefined> {
+    return undefined;
+  }
+  async updateShareableLink(id: string, updates: Partial<any>): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getShareableLinksByUser(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  // Transit notification operations
+  async createTransitNotification(notificationData: any): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getTransitNotification(notificationId: string): Promise<any | undefined> {
+    return undefined;
   }
 }
 
