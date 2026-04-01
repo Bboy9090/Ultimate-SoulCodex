@@ -116,3 +116,55 @@ Every PR must include:
 - No agent may fabricate results or skip verification.
 - When in doubt, ask a human for guidance.
 - Document all assumptions and limitations.
+
+## Cursor Cloud specific instructions
+
+### Architecture overview
+
+This repo has a **dual architecture**: a working legacy root-level app and an incomplete monorepo refactor under `apps/` and `packages/`. The **working app** is the root-level setup:
+
+- **Backend entry**: `server/index.ts` (Express server with Vite middleware in dev mode)
+- **Frontend entry**: `client/src/main.tsx` (React SPA, served by root `vite.config.ts` which uses `client/` as root)
+- **Route definitions**: root-level `routes.ts` (~3900 lines, imports from `./services/`, `./soulcodex/`, `./shared/schema`)
+- **Vite dev server**: `vite-server.ts` at root (middleware mode, HMR via Express)
+
+The monorepo workspace packages (`packages/db`, `packages/core`) must be built before the dev server will start, since `@soulcodex/db` has `"main": "dist/index.js"`.
+
+### Running the dev server
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 20
+NODE_ENV=development npx tsx server/index.ts
+```
+
+The server starts on port 3000 and serves both the API (`/api/*`) and the Vite-proxied React frontend.
+
+**Do NOT use `npm run dev`** — the root `package.json` delegates to workspaces (`npm run dev --workspaces --if-present`), but `apps/api/server.ts` references root-level files via relative imports (`../routes`, `../vite-server`, `../demo-seed`) that don't resolve correctly from the `apps/api/` directory. Use the legacy command above instead.
+
+### Environment setup
+
+Copy `.env.example` to `.env`. For local development without a database, set:
+
+```
+DEMO_MODE=true
+SESSION_SECRET=<any-string>
+```
+
+This seeds a demo user (`demo@soulcodex.app` / `demo1234`) with in-memory storage (data lost on restart). No PostgreSQL, AI API keys, or Stripe keys needed for basic functionality.
+
+### TypeScript checking
+
+`npm run check` delegates to workspace `tsc --noEmit` commands. The `apps/api` check produces many TS2307 errors because the monorepo refactor is incomplete — `apps/api/routes.ts` imports services that only exist at the root level. These are **pre-existing** and not regressions.
+
+### Build commands
+
+- Frontend: `npx vite build` (outputs to `dist/public/`)
+- Server: `npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist`
+
+### Key gotchas
+
+- Node.js 20 is required (`.nvmrc`). The default system Node may be v22; always `nvm use 20` first.
+- The `packages/db` and `packages/core` packages must be built (`npm run build -w packages/db && npm run build -w packages/core`) before the dev server can start, since they export from `dist/`.
+- No automated test suite exists yet; `npm run test` is a no-op across workspaces.
+- AI features (Codex readings, Soul Guide chat) use deterministic fallback templates when `GEMINI_API_KEY` / `OPENAI_API_KEY` are not set.
+- The `/codex` page has a pre-existing bug with its fetch method configuration; it shows "Could not generate your reading" even when the server is running correctly.
