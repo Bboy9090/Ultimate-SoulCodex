@@ -63,7 +63,20 @@ What is happening — specific, grounded, behavioral
 Why it matters — the pattern, the cause, the cost
 
 **Action**
-What to do next — clear, simple, immediate`;
+What to do next — clear, simple, immediate
+
+**Do this today**
+One concrete action the user can take before the day ends
+
+PATTERN NAMING:
+If you detect a repeating behavior, give it a sticky name.
+Examples: "The Overthink → Delay → Regret Loop", "The Reactive Yes", "The Preparation Illusion"
+Named patterns stick. Unnamed patterns repeat.
+
+WHERE THIS SHOWS UP:
+After every insight, add 2-3 specific real-life examples of where this pattern appears.
+Not "in various areas" — name the actual situations: conversations, projects, decisions, habits.`;
+
 
 export const PATTERN_DETECTION_ADDON = `If you detect a repeating behavioral pattern, add:
 
