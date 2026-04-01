@@ -45,6 +45,7 @@ import { generateDailyHoroscope } from "./services/horoscope";
 import { getActiveTransmutationTechniques } from "./services/transmutation";
 import { calculateCongruenceScore } from "./services/congruence";
 import { registerChatRoutes } from "./routes/chat";
+import { registerAIRespondRoute } from "./routes/ai-respond";
 import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, getMoodBasedPrompt } from "./services/journaling";
 import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
 import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
@@ -289,6 +290,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount chat routes
   registerChatRoutes(app);
+  
+  // Mount shared AI gateway
+  registerAIRespondRoute(app);
   
   // Mount compatibility routes
   app.use("/api", compatibilityRoutes);

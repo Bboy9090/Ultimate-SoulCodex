@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../storage";
-import { isAnyProviderAvailable, streamChatMulti } from "../services/ai-provider";
+import { routeAIStream } from "../services/ai-router";
 import { soulGuideFallback, answerFromProfile } from "../services/soul-guide-fallback";
 import {
   buildSoulCodexSystemPrompt,
@@ -59,9 +59,10 @@ export function registerChatRoutes(app: Express) {
   });
 
   app.post("/api/chat/soul-guide", async (req, res) => {
-    try {
-      const { message, history = [], profileContext, tone, deeper, directMode } = req.body || {};
+    const { message, history = [], profileContext, tone, deeper, directMode } = req.body || {};
+    let profile: any = null;
 
+    try {
       if (!message || typeof message !== "string") {
         return res.status(400).json({ message: "Message is required" });
       }
@@ -69,7 +70,6 @@ export function registerChatRoutes(app: Express) {
       const userId = (req as any).user?.id;
       const sessionId = (req as any).sessionID;
 
-      let profile: any = null;
       if (userId) {
         profile = await storage.getProfileByUserId(userId);
       } else if (sessionId) {
@@ -107,27 +107,50 @@ export function registerChatRoutes(app: Express) {
         content: h.parts?.[0]?.text || h.text || h.content || "",
       }));
 
-      const stream = streamChatMulti({
+      const resolvedProfile = profile || (profileContext || null);
+
+      const stream = routeAIStream({
         systemInstruction,
         history: chatHistory,
         message,
         temperature: 0.8,
+        promptType: "soul_guide",
+        profile: resolvedProfile,
       });
 
-      for await (const content of stream) {
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      let currentStatus = "live";
+      for await (const { chunk, status, provider } of stream) {
+        if (chunk) {
+          currentStatus = status;
+          res.write(`data: ${JSON.stringify({ content: chunk, status, provider })}\n\n`);
         }
       }
 
+      res.write(`data: ${JSON.stringify({ status: currentStatus })}\n\n`);
       res.write("data: [DONE]\n\n");
       res.end();
     } catch (error) {
       console.error("[Soul Guide Chat] Error:", error);
       if (!res.headersSent) {
-        return res.status(500).json({
-          message: "The Soul Guide is reconnecting. Please try again in a moment."
-        });
+        try {
+          const fallbackProfile = profile || profileContext || {};
+          const fallbackResult = soulGuideFallback(fallbackProfile);
+          const fallbackContent = fallbackResult.cards
+            .map((c: any) => `**${c.title}**\n${c.body}`)
+            .join("\n\n");
+          res.setHeader("Content-Type", "text/event-stream");
+          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Connection", "keep-alive");
+          res.write(`data: ${JSON.stringify({ content: fallbackContent, status: "fallback", provider: "deterministic" })}\n\n`);
+          res.write("data: [DONE]\n\n");
+          res.end();
+        } catch {
+          res.status(200).json({
+            status: "fallback",
+            provider: "deterministic",
+            content: "Your Codex is available. Live AI interpretation is temporarily paused — use your daily card as the strongest signal for now.",
+          });
+        }
       }
     }
   });
