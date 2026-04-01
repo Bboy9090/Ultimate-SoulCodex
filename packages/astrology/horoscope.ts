@@ -218,13 +218,10 @@ async function generateAIHoroscope(
   const topAlignments = alignments.slice(0, 3).map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`).join(', ');
   const topTransits = personalTransits.slice(0, 3).map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`).join(', ');
 
-  const prompt = `Write a daily horoscope for ${name}.
+  const prompt = `Write a daily horoscope for ${name} (Sun in ${sunSign}, Moon in ${moonSign}).
 
-CORE PROFILE (reference these by name):
-- Sun: ${sunSign} | Moon: ${moonSign}${risingSign ? ` | Rising: ${risingSign}` : ''}
-${lifePath ? `- Life Path: ${lifePath}` : ''}
-${hdType ? `- Human Design: ${hdType}` : ''}
-${primaryElement ? `- Element (Elemental Medicine): ${primaryElement}` : ''}
+Profile (use where it adds meaning):
+${risingSign ? `Rising: ${risingSign} | ` : ''}${lifePath ? `Life Path: ${lifePath} | ` : ''}${hdType ? `HD: ${hdType} | ` : ''}${primaryElement ? `Element: ${primaryElement}` : ''}
 
 Today's sky: ${topAlignments || 'no major alignments'}.
 Personal transits: ${topTransits || 'none exact today'}.
@@ -234,17 +231,17 @@ Personal day number: ${personalDayNumber}.
 FORMAT — use this exact structure:
 
 **Observation**
-What I'm likely experiencing today — reference my ${sunSign} Sun drive or ${moonSign} Moon emotional state (1-2 sentences)
+What I'm likely experiencing today — specific, behavioral (1-2 sentences)
 
 **Meaning**
-Why it matters — connect to my ${lifePath ? `Life Path ${lifePath} pattern` : 'behavioral pattern'}${hdType ? ` or ${hdType} design` : ''} (1 sentence)
+Why it matters — the pattern or tension driving it (1 sentence)
 
 **Action**
-What to do about it — concrete, immediate${primaryElement ? `, consider my ${primaryElement} element needs` : ''} (1 sentence)
+What to do about it — concrete, immediate (1 sentence)
 
 RULES:
 - Write in FIRST PERSON (I/my/me) as if ${name} is reading their own inner voice.
-- MUST name at least 2 of: Sun sign, Moon sign, Rising sign, Life Path, Human Design type, Element.
+- Lead with the insight. Reference a placement only when it explains WHY.
 - Use behavioral, concrete language. Describe what I might feel, do, or notice today.
 - BANNED PHRASES (do NOT use): "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency", "holistic convergence", "incarnation", "celestial", "universe is telling you", "spiritual journey", "cosmic dance", "soul's evolution", "a shift is happening", "energy is present", "a door is opening".
 - Every sentence must describe something real — a behavior, decision, conversation, or habit.

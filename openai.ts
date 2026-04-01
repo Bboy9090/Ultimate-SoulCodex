@@ -143,35 +143,34 @@ export async function generateDailyGuidance(data: DailyGuidanceRequest): Promise
 
     const prompt = `Generate a daily guidance card for ${data.name}.
 
-CORE PROFILE (must reference ALL of these by name):
-- Big 3: Sun in ${sunSign || "unknown"} | Moon in ${moonSign || "unknown"} | Rising in ${risingSign || "unknown"}
-- Life Path: ${lifePath || "unknown"}
-${hdType ? `- Human Design: ${hdType}${hdStrategy ? ` (Strategy: ${hdStrategy})` : ""}` : ""}
-${primaryElement ? `- Primary Element (Elemental Medicine): ${primaryElement}` : ""}
+Profile (use when relevant — don't force all into the response):
 - Archetype: ${data.archetypeTitle}
+${sunSign ? `- Sun: ${sunSign}` : ""}${moonSign ? ` | Moon: ${moonSign}` : ""}${risingSign ? ` | Rising: ${risingSign}` : ""}
+${lifePath ? `- Life Path: ${lifePath}` : ""}
+${hdType ? `- Human Design: ${hdType}${hdStrategy ? ` (${hdStrategy})` : ""}` : ""}
+${primaryElement ? `- Element: ${primaryElement}` : ""}
 
 ${SOUL_CODEX_ENGINE_RULES}
 
 FORMAT — respond in this exact structure:
 
 **Observation**
-What is happening today — reference their Sun sign drive, Moon sign emotional pattern, or Element stress response (1-2 sentences)
+What is happening today — specific to this person's behavioral patterns (1-2 sentences)
 
 **Meaning**
-Why it matters — connect to their Life Path pattern, Human Design type, or Rising sign behavior (1-2 sentences)
+Why it matters — the pattern, cost, or tension driving it (1-2 sentences)
 
 **Action**
-What to do today — concrete, simple, immediate, aligned with their HD strategy (1-2 sentences)
+What to do today — concrete, simple, immediate (1-2 sentences)
 
 RULES:
 - Write in first person (I/my/me)
-- MUST reference at least 3 of: Sun sign, Moon sign, Rising sign, Life Path, Human Design type, Element
-- Name them explicitly (e.g. "my Scorpio Moon", "as a Manifestor", "Life Path 7", "my Earth element")
+- Reference 1-2 profile data points where they genuinely explain the insight
+- Lead with the behavior, not the astrology
 - Use behavioral language: what I notice, what I tend to do, what to practice today
 - Every sentence must describe something observable or actionable
 - BANNED PHRASES (never use): ${bannedList}
 - No fortune-cookie wisdom, no vague encouragement, no abstract language
-- No metaphors. No poetic padding.
 
 Return only the guidance text in the format above.`;
 

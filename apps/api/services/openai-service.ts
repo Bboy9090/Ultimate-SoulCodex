@@ -22,23 +22,24 @@ export async function generateBiography(data: BiographyRequest): Promise<string>
 
     const prompt = `Write a 2-3 paragraph first-person behavioral profile for ${data.name}.
 
-CORE PROFILE (MUST reference all by name):
-- Big 3: Sun in ${sunSign} | Moon in ${moonSign} | Rising in ${risingSign}
+Profile (use where it genuinely explains behavior):
+- Archetype: ${data.archetypeTitle}
+- Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${risingSign}
 - Life Path: ${lifePath}
 - Enneagram: ${data.personalityData?.enneagram?.type || 'Unknown'} | MBTI: ${data.personalityData?.mbti?.type || 'Unknown'}
-- Archetype: ${data.archetypeTitle}
 - Themes: ${data.archetype?.themes?.join(', ') || 'pattern recognition, decision-making, stress response'}
 
 Write in first person as if ${data.name} is describing how they actually operate.
-MUST reference Sun sign, Moon sign, Rising sign, and Life Path by name — explain what each one DOES.
+Reference profile data when it explains WHY a behavior exists — don't list them all.
 
 Focus on:
-1. What I'm built for — connect to my ${sunSign} Sun drive and how it shows up in decisions
-2. My blind spots — connect to my ${moonSign} Moon emotional patterns under pressure
-3. The tension inside me — how my ${risingSign} Rising (how others see me) clashes with my Moon (how I actually feel)
-4. My growth edge — connect to Life Path ${lifePath} purpose
+1. What I'm built for — my real strengths, how they show up in decisions
+2. My blind spots — what I default to under pressure, what it costs me
+3. The tension inside me — the competing pulls I live with
+4. My growth edge — the specific shift I need to make
 
 RULES:
+- Lead with behavior, support with data
 - Use behavioral, observable language only
 - Every sentence must describe something I actually do, feel, or avoid
 - BANNED: "cosmic blueprint", "sacred blueprint", "divine timing", "spiritual journey", "cosmic dance", "soul's evolution", "embrace", "universe", "celestial"
@@ -62,19 +63,19 @@ export async function generateDailyGuidance(data: BiographyRequest): Promise<str
   try {
     const prompt = `Generate daily guidance for ${data.name}.
 
-CORE PROFILE (reference by name):
+Profile (use where relevant):
+- Archetype: ${data.archetypeTitle}
 - Sun: ${data.astrologyData?.sunSign || 'Unknown'} | Moon: ${data.astrologyData?.moonSign || 'Unknown'} | Rising: ${data.astrologyData?.risingSign || 'Unknown'}
 - Life Path: ${data.numerologyData?.lifePath || 'Unknown'}
-- Archetype: ${data.archetypeTitle}
 
 FORMAT:
-**Observation** — What I'm dealing with today, referencing my Sun or Moon sign by name (1 sentence)
-**Meaning** — Why it matters, connecting to my Life Path pattern (1 sentence)
+**Observation** — What I'm dealing with today (1 sentence, behavioral)
+**Meaning** — Why it matters (1 sentence, the pattern or cost)
 **Action** — What to do about it, concrete and immediate (1 sentence)
 
 RULES:
 - Write in first person (I/my/me)
-- MUST name at least 2 of: Sun sign, Moon sign, Life Path number
+- Reference profile data when it explains the insight — not as decoration
 - Every sentence must describe something observable or actionable
 - No vague language. No metaphors. No "energy" or "cosmic" anything.
 - BANNED: "cosmic blueprint", "embrace", "energy of", "universe", "divine", "spiritual"
