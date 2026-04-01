@@ -1,6 +1,7 @@
 import { generateText, isGeminiAvailable, streamChat as geminiStreamChat } from "../gemini";
 import { generateTextGroq, isGroqAvailable, streamChatGroq } from "./groq";
 import { getCached, setCached } from "./ai-cache";
+import { deterministicFallback } from "./deterministic-fallback";
 
 export type AIProvider = "gemini" | "groq" | "none";
 
@@ -111,14 +112,22 @@ export async function* streamChatMulti({
         temperature,
       });
 
+      let yielded = false;
       for await (const chunk of stream) {
-        if (chunk) yield chunk;
+        if (chunk) {
+          yielded = true;
+          yield chunk;
+        }
       }
-      return;
+      if (yielded) return;
     } catch (e) {
       console.error("[AI Provider] Groq stream also failed:", e);
     }
   }
 
-  yield "The Soul Guide is reconnecting. Please try again in a moment.";
+  const fallback = deterministicFallback({
+    prompt: message,
+    promptType: "soul_guide",
+  });
+  yield fallback.content;
 }
