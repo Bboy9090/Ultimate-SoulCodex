@@ -139,31 +139,45 @@ function buildProfileContextPrompt(profile: any): string {
   const hdData = profile.humanDesignData || profile;
   const archData = profile.archetypeData || profile;
   const moralData = profile.moralCompassData || profile;
+  const elemData = profile.elementalMedicineData || {};
 
   const parts: string[] = [];
 
   if (profile.name) parts.push(`Name: ${profile.name}`);
   if (archData?.archetype || archData?.name || profile.archetype)
     parts.push(`Archetype: ${archData.archetype || archData.name || (typeof profile.archetype === "string" ? profile.archetype : profile.archetype?.name) || ""}`);
-  if (astro?.sunSign || profile.sunSign)
-    parts.push(`Sun: ${astro.sunSign || profile.sunSign}`);
-  if (astro?.moonSign || profile.moonSign)
-    parts.push(`Moon: ${astro.moonSign || profile.moonSign}`);
-  if (astro?.risingSign || profile.risingSign)
-    parts.push(`Rising: ${astro.risingSign || profile.risingSign}`);
+
+  const sunSign = astro?.sunSign || profile.sunSign || "";
+  const moonSign = astro?.moonSign || profile.moonSign || "";
+  const risingSign = astro?.risingSign || profile.risingSign || "";
+  if (sunSign) parts.push(`Sun: ${sunSign}`);
+  if (moonSign) parts.push(`Moon: ${moonSign}`);
+  if (risingSign) parts.push(`Rising: ${risingSign}`);
   if (astro?.planets?.mercury?.sign) parts.push(`Mercury: ${astro.planets.mercury.sign}`);
   if (astro?.planets?.venus?.sign) parts.push(`Venus: ${astro.planets.venus.sign}`);
   if (astro?.planets?.mars?.sign) parts.push(`Mars: ${astro.planets.mars.sign}`);
-  if (numData?.lifePath || profile.lifePath)
-    parts.push(`Life Path: ${numData.lifePath || profile.lifePath}`);
+
+  const lifePath = numData?.lifePath || profile.lifePath || "";
+  if (lifePath) parts.push(`Life Path: ${lifePath}`);
   if (numData?.soulUrge) parts.push(`Soul Urge: ${numData.soulUrge}`);
   if (numData?.expressionNumber) parts.push(`Expression: ${numData.expressionNumber}`);
-  if (hdData?.type || profile.hdType)
-    parts.push(`Human Design: ${hdData.type || profile.hdType}`);
-  if (hdData?.strategy) parts.push(`Strategy: ${hdData.strategy}`);
-  if (hdData?.authority) parts.push(`Authority: ${hdData.authority}`);
-  if (archData?.element || profile.element)
-    parts.push(`Element: ${archData.element || profile.element}`);
+
+  const hdType = hdData?.type || profile.hdType || "";
+  const hdStrategy = hdData?.strategy || "";
+  const hdAuthority = hdData?.authority || "";
+  if (hdType) parts.push(`Human Design Type: ${hdType}`);
+  if (hdStrategy) parts.push(`HD Strategy: ${hdStrategy}`);
+  if (hdAuthority) parts.push(`HD Authority: ${hdAuthority}`);
+
+  const primaryElement = elemData?.primaryElement || archData?.element || profile.element || "";
+  const secondaryElement = elemData?.secondaryElement || "";
+  const elementBalance = elemData?.balance || "";
+  const elementInterpretation = elemData?.interpretation || "";
+  if (primaryElement) parts.push(`Primary Element (Elemental Medicine): ${primaryElement}`);
+  if (secondaryElement) parts.push(`Secondary Element: ${secondaryElement}`);
+  if (elementBalance) parts.push(`Elemental Balance: ${elementBalance}`);
+  if (elementInterpretation) parts.push(`Element Reading: ${elementInterpretation}`);
+
   if (archData?.role || profile.role)
     parts.push(`Role: ${archData.role || profile.role}`);
   if (moralData?.compassType)
@@ -180,10 +194,19 @@ function buildProfileContextPrompt(profile: any): string {
 User's chart and profile:
 ${parts.join("\n")}
 
+MANDATORY — Every response MUST explicitly reference these by name:
+${sunSign ? `- Their ${sunSign} Sun — how it drives their identity, willpower, and conscious choices` : ""}
+${moonSign ? `- Their ${moonSign} Moon — how it shapes their emotional reactions, needs, and private self` : ""}
+${risingSign ? `- Their ${risingSign} Rising — how others see them, their first instinct in new situations` : ""}
+${hdType ? `- Their ${hdType} Human Design${hdStrategy ? ` (Strategy: ${hdStrategy})` : ""}${hdAuthority ? ` (Authority: ${hdAuthority})` : ""} — how it affects their energy, decisions, and interactions` : ""}
+${lifePath ? `- Life Path ${lifePath} — the pattern it creates in their choices and purpose` : ""}
+${primaryElement ? `- Their ${primaryElement} Element (Elemental Medicine) — how it shows up in their body, stress response, and daily rhythms` : ""}
+
 RULES:
-- Reference their specific placements when answering. Cite Sun, Moon, Mercury, Venus, Mars signs by name.
-- Explain how their Human Design type, strategy, and authority affect the situation.
-- Connect numerology Life Path to the broader pattern.
+- Reference the Big 3 (Sun, Moon, Rising) by name in every response. Explain what each one DOES, not just what it IS.
+- Explain how their Human Design type, strategy, and authority affect the specific situation being discussed.
+- Connect Life Path number to the behavioral pattern you're identifying.
+- Reference their Element — how it manifests in real situations (stress, health, energy, relationships).
 - Use behavioral language: what they do, how it shows up, what it costs.
 - Give practical, actionable insight — every response must include something the user can do today.
 - No vague mystical phrases. No "the universe," no "cosmic blueprint," no "a shift is happening."

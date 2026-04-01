@@ -30,21 +30,21 @@ CODENAME: ${payload.codename}
 MOTTO: [one powerful sentence about how I operate — must describe a real behavior, not an abstraction]
 
 WHO I AM
-[6-10 sentences about my core identity and instincts. What I actually do, how I react, what I default to. Concrete examples.]
+[6-10 sentences. MUST reference Sun sign, Moon sign, Rising sign by name. Explain what each one does in my actual life — identity, emotional patterns, how others see me. Include Human Design type and Life Path number. Concrete behavioral examples.]
 
 HOW I MOVE UNDER PRESSURE
-[4-7 sentences. Name the specific behaviors: what I say, what I avoid, how my body responds, what I reach for.]
+[4-7 sentences. MUST reference my Element (Elemental Medicine) and how stress shows up in my body. Name the specific behaviors: what I say, what I avoid, how my body responds, what I reach for. Connect to Moon sign emotional patterns and HD type energy management.]
 
 WHAT I WON'T TOLERATE
-[2-4 sentences. Specific dealbreakers with real examples of situations that trigger them.]
+[2-4 sentences. Connect dealbreakers to Sun sign identity and Life Path purpose. Specific examples of situations that trigger them.]
 
 WHAT I'M BUILDING
-[2-5 sentences. Not abstract goals — name the actual thing being built and the daily actions that move it forward.]
+[2-5 sentences. Connect to Life Path number and Human Design strategy. Not abstract goals — name the actual thing being built and the daily actions that move it forward.]
 
 THIS WEEK
-- [prescription 1 — specific, actionable, today-ready]
-- [prescription 2 — specific, actionable, today-ready]
-- [prescription 3 — specific, actionable, today-ready]
+- [prescription 1 — specific, actionable, today-ready, connected to a core data point]
+- [prescription 2 — specific, actionable, today-ready, connected to a core data point]
+- [prescription 3 — specific, actionable, today-ready, connected to a core data point]
 
 DATA:
 Top Themes: ${payload.themes.map(t => `${t.tag}(${t.score})`).join(", ")}
