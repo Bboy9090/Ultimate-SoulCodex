@@ -14,10 +14,10 @@ export type BirthData = {
 /* MIRROR ENGINE */
 
 export type MirrorAnswers = {
-  reaction: "fix" | "analyze" | "talk" | "withdraw";
-  betrayal: "disrespect" | "dishonesty" | "stupidity" | "emotional";
-  drain: "chaos" | "repetition" | "lies" | "misunderstood";
-  freedomBuild: "system" | "movement" | "masterpiece" | "sanctuary";
+  reaction: ("fix" | "analyze" | "talk" | "withdraw")[];
+  betrayal: ("disrespect" | "dishonesty" | "stupidity" | "emotional")[];
+  drain: ("chaos" | "repetition" | "lies" | "misunderstood")[];
+  freedomBuild: ("system" | "movement" | "masterpiece" | "sanctuary")[];
 };
 
 export type MirrorProfile = {
@@ -26,6 +26,7 @@ export type MirrorProfile = {
   decisionStyle: string;
   energyStyle: string;
   conflictStyle: string;
+  nuance?: string[];
 };
 
 /* NUMEROLOGY */
