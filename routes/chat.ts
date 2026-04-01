@@ -2,6 +2,12 @@ import type { Express } from "express";
 import { storage } from "../storage";
 import { isAnyProviderAvailable, streamChatMulti } from "../services/ai-provider";
 import { soulGuideFallback, answerFromProfile } from "../services/soul-guide-fallback";
+import {
+  buildSoulCodexSystemPrompt,
+  SOUL_CODEX_ENGINE_RULES,
+  OUTPUT_FORMAT_INSTRUCTIONS,
+  DIRECT_MODE_INSTRUCTIONS,
+} from "../src/ai/soulCodexEngine";
 
 const REFLECTION_PROMPTS = [
   "What pattern am I not seeing right now?",
@@ -12,9 +18,10 @@ const REFLECTION_PROMPTS = [
 ];
 
 const TONE_INSTRUCTIONS: Record<string, string> = {
-  oracle: "Respond as a grounded oracle. Centered, authoritative, slightly poetic but never vague. Speak truth with calm certainty.",
-  mirror: "Respond as a behavioral mirror. Describe what the person actually does, how it shows up in real life, and what drives it. No judgment, just accurate reflection.",
-  strategy: "Respond as a strategic advisor. Focus on what to do next, what to stop, and what to prioritize. Concrete, actionable, zero filler.",
+  oracle: "Respond as a grounded oracle. Centered, authoritative, slightly poetic but never vague. Speak truth with calm certainty. Every statement must be specific — no abstract generalizations.",
+  mirror: "Respond as a behavioral mirror. Describe what the person actually does, how it shows up in real life, and what drives it. No judgment, just accurate reflection. Name the behavior, the trigger, and the consequence.",
+  strategy: "Respond as a strategic advisor. Focus on what to do next, what to stop, and what to prioritize. Concrete, actionable, zero filler. Every recommendation must be something the person can do today.",
+  direct: "DIRECT MODE. Shorter. More blunt. No soft language. No metaphors. No hedging. Say the uncomfortable thing plainly. If there's a hard truth, lead with it.",
 };
 
 export function registerChatRoutes(app: Express) {
@@ -53,7 +60,7 @@ export function registerChatRoutes(app: Express) {
 
   app.post("/api/chat/soul-guide", async (req, res) => {
     try {
-      const { message, history = [], profileContext, tone, deeper } = req.body || {};
+      const { message, history = [], profileContext, tone, deeper, directMode } = req.body || {};
 
       if (!message || typeof message !== "string") {
         return res.status(400).json({ message: "Message is required" });
@@ -70,17 +77,25 @@ export function registerChatRoutes(app: Express) {
         profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
       }
 
-      let systemInstruction = profile
+      const isDirectMode = directMode === true || tone === "direct";
+
+      let systemInstruction = buildSoulCodexSystemPrompt({
+        directMode: isDirectMode,
+        includePatternDetection: true,
+      });
+
+      systemInstruction += "\n\n";
+      systemInstruction += profile
         ? buildProfileContextPrompt(profile)
         : (profileContext ? buildProfileContextPrompt(profileContext) : buildGeneralPrompt());
 
       const toneKey = (tone || "oracle").toLowerCase();
-      if (TONE_INSTRUCTIONS[toneKey]) {
+      if (toneKey !== "direct" && TONE_INSTRUCTIONS[toneKey]) {
         systemInstruction += `\n\nTone: ${TONE_INSTRUCTIONS[toneKey]}`;
       }
 
       if (deeper) {
-        systemInstruction += "\n\nThe user wants a deeper answer. Go further than the surface. Explain the underlying pattern, why it formed, and what maintaining or changing it would cost.";
+        systemInstruction += "\n\nThe user wants a deeper answer. Go further than the surface. Explain the underlying pattern, why it formed, and what maintaining or changing it would cost. Include a **Pattern** section if you detect repeated behavior.";
       }
 
       res.setHeader("Content-Type", "text/event-stream");
@@ -160,29 +175,32 @@ function buildProfileContextPrompt(profile: any): string {
   if (profile.synthesis?.stressPattern)
     parts.push(`Stress Pattern: ${profile.synthesis.stressPattern}`);
 
-  return `You are the Soul Guide inside the Soul Codex app.
+  return `CONTEXT — Soul Guide (personalized)
 
-User's full chart and profile:
+User's chart and profile:
 ${parts.join("\n")}
 
-Rules:
+RULES:
 - Reference their specific placements when answering. Cite Sun, Moon, Mercury, Venus, Mars signs by name.
 - Explain how their Human Design type, strategy, and authority affect the situation.
 - Connect numerology Life Path to the broader pattern.
 - Use behavioral language: what they do, how it shows up, what it costs.
-- Give practical, actionable insight.
-- No vague mystical phrases. No "the universe," no "cosmic blueprint."
+- Give practical, actionable insight — every response must include something the user can do today.
+- No vague mystical phrases. No "the universe," no "cosmic blueprint," no "a shift is happening."
+- Every statement must point to a real behavior, decision, or situation.
 - Tone: confident, grounded, direct.`;
 }
 
 function buildGeneralPrompt(): string {
-  return `You are the Soul Guide inside the Soul Codex app.
+  return `CONTEXT — Soul Guide (general)
 
 The user hasn't created a profile yet.
 
-Rules:
+RULES:
 - Encourage creating a profile for personalized guidance.
 - Answer general questions without vague filler.
 - Be direct and practical.
-- No "cosmic blueprint," no "your journey," no spiritual clichés.`;
+- Every response must include a concrete action the user can take.
+- No "cosmic blueprint," no "your journey," no spiritual clichés.
+- No abstract language — every sentence should describe something observable or actionable.`;
 }

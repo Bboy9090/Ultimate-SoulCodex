@@ -21,18 +21,18 @@ interface FallbackData {
   prompts: string[];
 }
 
-type Tone = "oracle" | "mirror" | "strategy";
+type Tone = "oracle" | "mirror" | "strategy" | "direct";
 
 const TONE_CONFIG: Record<Tone, { label: string; description: string; color: string; glow: string }> = {
   oracle: {
     label: "Oracle",
-    description: "Poetic, symbolic, archetypal",
+    description: "Grounded, authoritative, specific",
     color: "#F2C94C",
     glow: "rgba(242,201,76,0.25)",
   },
   mirror: {
     label: "Mirror",
-    description: "Direct, honest, no softening",
+    description: "Behavioral reflection, no judgment",
     color: "#7B61FF",
     glow: "rgba(123,97,255,0.25)",
   },
@@ -41,6 +41,12 @@ const TONE_CONFIG: Record<Tone, { label: string; description: string; color: str
     description: "Tactical, practical, actionable",
     color: "#6BA7FF",
     glow: "rgba(107,167,255,0.25)",
+  },
+  direct: {
+    label: "Direct",
+    description: "Blunt, short, no softening",
+    color: "#ef4444",
+    glow: "rgba(239,68,68,0.25)",
   },
 };
 

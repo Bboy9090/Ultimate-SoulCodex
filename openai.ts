@@ -2,6 +2,7 @@ import { generateText, isGeminiAvailable } from "./gemini";
 import { BANNED_PHRASES, stripBannedPhrases } from "./soulcodex/validators/blandnessFilter";
 import { buildResultsPrompt } from "./soulcodex/prompts/resultsEngine";
 import { validateAndClean } from "./src/ai/pipeline";
+import { SOUL_CODEX_ENGINE_RULES } from "./src/ai/soulCodexEngine";
 
 interface BiographyRequest {
   name: string;
@@ -120,20 +121,35 @@ export async function generateDailyGuidance(data: DailyGuidanceRequest): Promise
 
   try {
     const bannedList = BANNED_PHRASES.map((p) => `"${p}"`).join(", ");
-    const prompt = `Write a 2-3 sentence daily insight for ${data.name} in first person (I/my/me).
+    const prompt = `Generate a daily guidance card for ${data.name}.
 
 Profile:
 - Archetype: ${data.archetypeTitle}
 - Sun/Moon/Rising: ${data.astrologyData?.sunSign}/${data.astrologyData?.moonSign}/${data.astrologyData?.risingSign}
 - Life Path: ${data.numerologyData?.lifePath}
 
-RULES:
-- Use behavioral language: what I notice, what I tend to do, what to practice today
-- Include at least one of: strength, shadow, tension, or growth edge
-- BANNED PHRASES (never use): ${bannedList}
-- No fortune-cookie wisdom, no vague encouragement
+${SOUL_CODEX_ENGINE_RULES}
 
-Return only the guidance text.`;
+FORMAT — respond in this exact structure:
+
+**Observation**
+What is happening today — specific to this person's behavioral patterns (1-2 sentences)
+
+**Meaning**
+Why it matters — the pattern, cost, or tension driving it (1-2 sentences)
+
+**Action**
+What to do today — concrete, simple, immediate (1-2 sentences)
+
+RULES:
+- Write in first person (I/my/me)
+- Use behavioral language: what I notice, what I tend to do, what to practice today
+- Every sentence must describe something observable or actionable
+- BANNED PHRASES (never use): ${bannedList}
+- No fortune-cookie wisdom, no vague encouragement, no abstract language
+- No metaphors. No poetic padding.
+
+Return only the guidance text in the format above.`;
 
     const rawGuidance = await generateText({
       model: "gemini-2.5-flash",

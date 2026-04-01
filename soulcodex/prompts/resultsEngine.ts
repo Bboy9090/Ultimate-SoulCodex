@@ -55,11 +55,13 @@ ${profile.themes?.length ? `- Core themes: ${profile.themes.join(", ")}` : ""}
 DEPTH: ${mode}
 ${MODE_INSTRUCTIONS[mode]}
 
-STRUCTURE EACH SECTION WITH:
-1. Strength — what I'm naturally good at, where I shine
-2. Shadow — my blind spots, what I default to under pressure
-3. Tension — the competing pulls inside me
-4. Growth edge — what I need to practice or lean into
+STRUCTURE EACH SECTION AS Observation → Meaning → Action:
+1. Strength — Observation: what I actually do well. Meaning: why it works. Action: how to use it today.
+2. Shadow — Observation: what I default to under pressure. Meaning: what it costs me. Action: the specific shift to make.
+3. Tension — Observation: the competing pulls inside me. Meaning: why they exist. Action: how to hold both without collapsing.
+4. Growth edge — Observation: where I'm stuck. Meaning: what maintaining the pattern costs. Action: one concrete thing to practice.
 
+Every sentence must describe something observable — a behavior, decision, habit, or reaction.
+No vague encouragement. No abstract language. No metaphors.
 Return only the profile text. No headers, no markdown, no labels.`;
 }

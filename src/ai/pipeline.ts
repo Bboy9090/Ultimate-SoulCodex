@@ -2,6 +2,7 @@ import { clarityCheck, stripVaguePhrases } from "./validators/clarityValidator";
 import { structureCheck } from "./validators/structure";
 import { rewritePrompt } from "./validators/rewrite";
 import { runBlandnessFilter, stripBannedPhrases } from "../../soulcodex/validators/blandnessFilter";
+import { buildRewriteLayerPrompt } from "./soulCodexEngine";
 
 export interface ValidationReport {
   originalText: string;
@@ -17,7 +18,7 @@ export interface ValidationReport {
 
 /**
  * Validates AI-generated text through the full filter pipeline.
- * Returns the cleaned text and a report.
+ * Pipeline order: blandness strip → clarity strip → structure check → LLM rewrite (if needed) → final clarity pass.
  * If rewriteFn is provided, it will be called to rewrite vague text via LLM.
  */
 export async function validateAndClean(
@@ -56,6 +57,24 @@ export async function validateAndClean(
       }
     } catch (e) {
       console.error("[AI Pipeline] Rewrite failed:", e);
+    }
+  }
+
+  if (rewriteFn && clarity.ok && clarity.score < 85) {
+    try {
+      const enginePrompt = buildRewriteLayerPrompt(current);
+      const polished = await rewriteFn(enginePrompt);
+      if (polished && polished.length > current.length * 0.5) {
+        const polishedClarity = clarityCheck(polished);
+        if (polishedClarity.score >= clarity.score) {
+          current = stripBannedPhrases(polished);
+          current = stripVaguePhrases(current);
+          clarity = polishedClarity;
+          rewroteText = true;
+        }
+      }
+    } catch (e) {
+      console.error("[AI Pipeline] Engine rewrite layer failed:", e);
     }
   }
 

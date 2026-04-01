@@ -221,14 +221,26 @@ Personal transits: ${topTransits || 'none exact today'}.
 Moon phase: ${moonPhase.phase} (${moonPhase.percentage}% illuminated).
 Personal day number: ${personalDayNumber}.
 
+FORMAT — use this exact structure:
+
+**Observation**
+What I'm likely experiencing today — specific, behavioral (1-2 sentences)
+
+**Meaning**
+Why it matters — the pattern or tension driving it (1 sentence)
+
+**Action**
+What to do about it — concrete, immediate (1 sentence)
+
 RULES:
 - Write in FIRST PERSON (I/my/me) as if ${name} is reading their own inner voice.
 - Use behavioral, concrete language. Describe what I might feel, do, or notice today.
-- BANNED PHRASES (do NOT use): "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency", "holistic convergence", "incarnation", "celestial", "universe is telling you", "spiritual journey", "cosmic dance", "soul's evolution".
-- Include: one strength to lean into, one tension to watch, one practical action.
-- Keep it to 2-3 sentences. Direct and useful, not flowery.
+- BANNED PHRASES (do NOT use): "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency", "holistic convergence", "incarnation", "celestial", "universe is telling you", "spiritual journey", "cosmic dance", "soul's evolution", "a shift is happening", "energy is present", "a door is opening".
+- Every sentence must describe something real — a behavior, decision, conversation, or habit.
+- No metaphors. No poetic padding. No vague encouragement.
+- Direct and useful.
 
-Return only the horoscope text.`;
+Return only the horoscope text in the format above.`;
 
   if (!isGeminiAvailable()) {
     return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
