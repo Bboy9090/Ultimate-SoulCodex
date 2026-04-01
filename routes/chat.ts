@@ -217,19 +217,18 @@ function buildProfileContextPrompt(profile: any): string {
 User's chart and profile:
 ${parts.join("\n")}
 
-MANDATORY — Every response MUST explicitly reference these by name:
-${sunSign ? `- Their ${sunSign} Sun — how it drives their identity, willpower, and conscious choices` : ""}
-${moonSign ? `- Their ${moonSign} Moon — how it shapes their emotional reactions, needs, and private self` : ""}
-${risingSign ? `- Their ${risingSign} Rising — how others see them, their first instinct in new situations` : ""}
-${hdType ? `- Their ${hdType} Human Design${hdStrategy ? ` (Strategy: ${hdStrategy})` : ""}${hdAuthority ? ` (Authority: ${hdAuthority})` : ""} — how it affects their energy, decisions, and interactions` : ""}
-${lifePath ? `- Life Path ${lifePath} — the pattern it creates in their choices and purpose` : ""}
-${primaryElement ? `- Their ${primaryElement} Element (Elemental Medicine) — how it shows up in their body, stress response, and daily rhythms` : ""}
+PROFILE DATA — use when it adds genuine meaning:
+These are the user's core systems. Reference them when they explain WHY a pattern exists or what drives a behavior — not as a checklist in every response. Pick the 1-3 most relevant to the question.
+${sunSign ? `- ${sunSign} Sun (identity, drive, conscious choices)` : ""}
+${moonSign ? `- ${moonSign} Moon (emotional patterns, private needs)` : ""}
+${risingSign ? `- ${risingSign} Rising (how others experience them)` : ""}
+${hdType ? `- ${hdType} Human Design${hdStrategy ? ` / ${hdStrategy}` : ""}${hdAuthority ? ` / ${hdAuthority}` : ""}` : ""}
+${lifePath ? `- Life Path ${lifePath}` : ""}
+${primaryElement ? `- ${primaryElement} Element (Elemental Medicine)` : ""}
 
 RULES:
-- Reference the Big 3 (Sun, Moon, Rising) by name in every response. Explain what each one DOES, not just what it IS.
-- Explain how their Human Design type, strategy, and authority affect the specific situation being discussed.
-- Connect Life Path number to the behavioral pattern you're identifying.
-- Reference their Element — how it manifests in real situations (stress, health, energy, relationships).
+- Lead with the insight, not the astrology. The data supports the observation.
+- When you cite a placement, explain what it DOES in this specific situation.
 - Use behavioral language: what they do, how it shows up, what it costs.
 - Give practical, actionable insight — every response must include something the user can do today.
 - No vague mystical phrases. No "the universe," no "cosmic blueprint," no "a shift is happening."

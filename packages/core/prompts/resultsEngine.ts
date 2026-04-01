@@ -43,12 +43,12 @@ VOICE RULES:
 - BANNED PHRASES (never use these): ${bannedList}
 - Every section must include at least one of: strength, shadow, tension, growth edge
 
-PROFILE DATA (CORE — must reference all of these by name):
-- Big 3: Sun in ${profile.sunSign || "unknown"} | Moon in ${profile.moonSign || "unknown"} | Rising in ${profile.risingSign || "unknown"}
+PROFILE DATA (use when it adds genuine meaning — not as a checklist):
+- Archetype: ${profile.archetypeTitle}
+- Sun: ${profile.sunSign || "unknown"} | Moon: ${profile.moonSign || "unknown"} | Rising: ${profile.risingSign || "unknown"}
 - Life Path: ${profile.lifePath || "unknown"} | Expression: ${profile.expression || "unknown"} | Soul Urge: ${profile.soulUrge || "unknown"}
 ${profile.hdType ? `- Human Design: ${profile.hdType}${profile.hdStrategy ? ` | Strategy: ${profile.hdStrategy}` : ""}${profile.hdAuthority ? ` | Authority: ${profile.hdAuthority}` : ""}` : ""}
-${profile.primaryElement ? `- Primary Element (Elemental Medicine): ${profile.primaryElement}${profile.secondaryElement ? ` | Secondary: ${profile.secondaryElement}` : ""}` : ""}
-- Archetype: ${profile.archetypeTitle}
+${profile.primaryElement ? `- Element (Elemental Medicine): ${profile.primaryElement}${profile.secondaryElement ? ` | Secondary: ${profile.secondaryElement}` : ""}` : ""}
 ${profile.stressElement ? `- Stress response: ${profile.stressElement}` : ""}
 ${profile.decisionStyle ? `- Decision style: ${profile.decisionStyle}` : ""}
 ${profile.nonNegotiables?.length ? `- Non-negotiables: ${profile.nonNegotiables.join(", ")}` : ""}
@@ -56,13 +56,10 @@ ${profile.goals?.length ? `- Goals: ${profile.goals.join(", ")}` : ""}
 ${profile.socialEnergy ? `- Social energy: ${profile.socialEnergy}` : ""}
 ${profile.themes?.length ? `- Core themes: ${profile.themes.join(", ")}` : ""}
 
-MANDATORY REFERENCES — the profile MUST mention all of these by name:
-- Sun sign: how it drives identity and conscious choices
-- Moon sign: how it shapes emotional reactions and private behavior
-- Rising sign: how others experience this person
-- Human Design type: how it affects energy and decision-making
-- Life Path number: the pattern it creates
-- Element: how it shows up in body, stress, and daily rhythms
+PROFILE DATA USAGE:
+- Reference placements when they explain WHY a behavior exists
+- Lead with the insight, support with the data
+- Don't force all systems into every section — pick what's most relevant
 
 DEPTH: ${mode}
 ${MODE_INSTRUCTIONS[mode]}
