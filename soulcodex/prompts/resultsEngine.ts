@@ -13,6 +13,9 @@ interface ProfileData {
   soulUrge?: number | string;
   hdType?: string;
   hdAuthority?: string;
+  hdStrategy?: string;
+  primaryElement?: string;
+  secondaryElement?: string;
   stressElement?: string;
   decisionStyle?: string;
   nonNegotiables?: string[];
@@ -40,17 +43,26 @@ VOICE RULES:
 - BANNED PHRASES (never use these): ${bannedList}
 - Every section must include at least one of: strength, shadow, tension, growth edge
 
-PROFILE DATA:
-- Archetype: ${profile.archetypeTitle}
-- Sun: ${profile.sunSign || "unknown"} | Moon: ${profile.moonSign || "unknown"} | Rising: ${profile.risingSign || "unknown"}
+PROFILE DATA (CORE — must reference all of these by name):
+- Big 3: Sun in ${profile.sunSign || "unknown"} | Moon in ${profile.moonSign || "unknown"} | Rising in ${profile.risingSign || "unknown"}
 - Life Path: ${profile.lifePath || "unknown"} | Expression: ${profile.expression || "unknown"} | Soul Urge: ${profile.soulUrge || "unknown"}
-${profile.hdType ? `- Human Design: ${profile.hdType} | Authority: ${profile.hdAuthority || "unknown"}` : ""}
+${profile.hdType ? `- Human Design: ${profile.hdType}${profile.hdStrategy ? ` | Strategy: ${profile.hdStrategy}` : ""}${profile.hdAuthority ? ` | Authority: ${profile.hdAuthority}` : ""}` : ""}
+${profile.primaryElement ? `- Primary Element (Elemental Medicine): ${profile.primaryElement}${profile.secondaryElement ? ` | Secondary: ${profile.secondaryElement}` : ""}` : ""}
+- Archetype: ${profile.archetypeTitle}
 ${profile.stressElement ? `- Stress response: ${profile.stressElement}` : ""}
 ${profile.decisionStyle ? `- Decision style: ${profile.decisionStyle}` : ""}
 ${profile.nonNegotiables?.length ? `- Non-negotiables: ${profile.nonNegotiables.join(", ")}` : ""}
 ${profile.goals?.length ? `- Goals: ${profile.goals.join(", ")}` : ""}
 ${profile.socialEnergy ? `- Social energy: ${profile.socialEnergy}` : ""}
 ${profile.themes?.length ? `- Core themes: ${profile.themes.join(", ")}` : ""}
+
+MANDATORY REFERENCES — the profile MUST mention all of these by name:
+- Sun sign: how it drives identity and conscious choices
+- Moon sign: how it shapes emotional reactions and private behavior
+- Rising sign: how others experience this person
+- Human Design type: how it affects energy and decision-making
+- Life Path number: the pattern it creates
+- Element: how it shows up in body, stress, and daily rhythms
 
 DEPTH: ${mode}
 ${MODE_INSTRUCTIONS[mode]}
