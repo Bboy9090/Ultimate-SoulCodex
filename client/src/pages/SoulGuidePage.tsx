@@ -265,7 +265,7 @@ export default function SoulGuidePage() {
         });
 
         if (!res.ok) {
-          setStatusLine("Guide is reconnecting. Using backup guidance.");
+          setStatusLine("Using backup guidance from your Codex");
           await handleFallbackQuestion(text);
           return;
         }
@@ -274,8 +274,8 @@ export default function SoulGuidePage() {
         const decoder = new TextDecoder();
         let assistantText = "";
         let buffer = "";
+        let streamStatus = "live";
 
-        /* Add empty model message to stream into */
         setMessages((prev) => {
           const next = [...prev, { role: "model" as const, text: "", isDeeper: deeper }];
           setStreamingIndex(next.length - 1);
@@ -298,6 +298,7 @@ export default function SoulGuidePage() {
 
               try {
                 const parsed = JSON.parse(dataStr);
+                if (parsed.status) streamStatus = parsed.status;
                 if (parsed.content) {
                   assistantText += parsed.content;
                   setMessages((prev) => {
@@ -311,21 +312,28 @@ export default function SoulGuidePage() {
                   });
                 }
               } catch {
-                /* partial chunk — continue buffering */
+                /* partial chunk */
               }
             }
           }
         }
 
-        /* If nothing streamed, fall back */
+        if (streamStatus === "backup") {
+          setStatusLine("Using backup model");
+        } else if (streamStatus === "fallback") {
+          setStatusLine("Using backup guidance from your Codex");
+        } else {
+          setStatusLine("");
+        }
+
         if (!assistantText) {
-          setStatusLine("Guide is reconnecting. Using backup guidance.");
+          setStatusLine("Using backup guidance from your Codex");
           setMessages((prev) => prev.slice(0, -1));
           await handleFallbackQuestion(text);
         }
       } catch (err: any) {
         if (err?.name === "AbortError") return;
-        setStatusLine("Guide is reconnecting. Using backup guidance.");
+        setStatusLine("Using backup guidance from your Codex");
         setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last?.role === "model" && !last.text) return prev.slice(0, -1);
