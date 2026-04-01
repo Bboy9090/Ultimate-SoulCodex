@@ -19,6 +19,8 @@ import {
   whyThisKeepsHappening,
   stopDoingThis,
   oneMove,
+  codexDraw,
+  type SpreadType,
 } from "../services/codex-tools";
 import { storage } from "../storage";
 
@@ -81,13 +83,55 @@ export function registerCodexToolsRoutes(app: Express) {
     }
   });
 
+  app.post("/api/codex-draw", async (req, res) => {
+    try {
+      const { profile: bodyProfile, spread, question } = req.body || {};
+
+      let profile = bodyProfile || null;
+
+      if (!profile) {
+        const userId = (req as any).user?.id;
+        const sessionId = (req as any).sessionID;
+
+        if (userId) {
+          profile = await storage.getProfileByUserId(userId);
+        } else if (sessionId) {
+          const profiles = await storage.getAllProfiles();
+          profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
+        }
+      }
+
+      const spreadType: SpreadType = (spread === "situation" || spread === "deep") ? spread : "quick";
+      const result = codexDraw(profile || {}, spreadType, question);
+
+      return res.json(result);
+    } catch (error: any) {
+      console.error("[Codex Draw] Error:", error);
+      return res.status(200).json({
+        tool: "codex_draw",
+        title: "Codex Draw",
+        observation: "Your Codex Draw is available but encountered a temporary issue.",
+        meaning: "Your profile data is intact. The draw engine will recover on the next attempt.",
+        action: "Try again in a moment, or use your Daily Pull for today's guidance.",
+      });
+    }
+  });
+
   app.get("/api/codex-tools", (_req, res) => {
-    return res.json({
-      tools: Object.keys(TOOLS).map((key) => ({
+    const allTools = [
+      ...Object.keys(TOOLS).map((key) => ({
         id: key,
         endpoint: `/api/codex-tools/${key}`,
         method: "POST",
       })),
-    });
+      {
+        id: "codex-draw",
+        endpoint: "/api/codex-draw",
+        method: "POST",
+        spreads: ["quick", "situation", "deep"],
+      },
+    ];
+
+    return res.json({ tools: allTools });
   });
 }
