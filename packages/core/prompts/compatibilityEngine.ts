@@ -43,13 +43,29 @@ PERSON B — ${personB.name}:
 - Non-negotiables: ${personB.nonNegotiables?.join(", ") || "unknown"}
 - Social energy: ${personB.socialEnergy || "unknown"}
 
-WRITE 4 SECTIONS (no headers, just flowing paragraphs):
-1. Identity fit — how their archetypes and core drives interact. Where they click and where they talk past each other.
-2. Stress collision — what happens when both are under pressure. Who withdraws, who escalates, where the mismatch lives.
-3. Values alignment — where their non-negotiables overlap or clash. What triggers resentment between them.
-4. Decision friction — how they make choices together. Who leads, who stalls, where compromise breaks down.
+WRITE 4 SECTIONS. Each section must follow Observation → Meaning → Action:
 
-For each section include: one strength, one friction point, one growth opportunity.
+1. Identity fit
+   Observation: How their archetypes interact in daily life — specific behaviors, conversations, habits.
+   Meaning: Why they click or talk past each other — the pattern driving it.
+   Action: What to do about it — concrete adjustment.
 
+2. Stress collision
+   Observation: What each person actually does under pressure — who withdraws, who escalates.
+   Meaning: Why the mismatch creates damage.
+   Action: The specific protocol for high-stress moments.
+
+3. Values alignment
+   Observation: Where their non-negotiables overlap or clash — real examples.
+   Meaning: What triggers resentment and why.
+   Action: The conversation they need to have.
+
+4. Decision friction
+   Observation: How they make choices together — who leads, who stalls.
+   Meaning: Where compromise breaks down and why.
+   Action: The decision-making rule that would fix it.
+
+Every sentence must describe something observable — a behavior, conversation, or situation.
+No vague encouragement. No abstract language. No metaphors.
 Return only the narrative text. No markdown, no labels.`;
 }
