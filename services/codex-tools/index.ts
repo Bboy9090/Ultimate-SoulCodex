@@ -9,3 +9,4 @@ export { shadowPattern, energyLeak, innerConflict, whyThisKeepsHappening, stopDo
 export { oneMove } from "./one-move";
 export { codexDraw, type SpreadType, type CodexDrawResult, type DrawnCard } from "./codex-draw";
 export { FULL_DECK, MAJOR_ARCANA, MINOR_ARCANA, drawCards, type TarotCard } from "./tarot-deck";
+export { beforeYouAct, boundaryScript, decisionConfidence, whatYoureIgnoring } from "./advisor-tools";

@@ -20,6 +20,10 @@ import {
   stopDoingThis,
   oneMove,
   codexDraw,
+  beforeYouAct,
+  boundaryScript,
+  decisionConfidence,
+  whatYoureIgnoring,
   type SpreadType,
 } from "../services/codex-tools";
 import { storage } from "../storage";
@@ -37,6 +41,10 @@ const TOOLS: Record<string, (profile: any, ...args: any[]) => any> = {
   "why-this-keeps-happening": (p) => whyThisKeepsHappening(p),
   "stop-doing-this": (p) => stopDoingThis(p),
   "one-move": (p) => oneMove(p),
+  "before-you-act": (p, text) => beforeYouAct(p, text || ""),
+  "boundary-script": (p, situation) => boundaryScript(p, situation),
+  "decision-confidence": (p, decision) => decisionConfidence(p, decision || ""),
+  "what-youre-ignoring": (p) => whatYoureIgnoring(p),
 };
 
 export function registerCodexToolsRoutes(app: Express) {
@@ -52,7 +60,7 @@ export function registerCodexToolsRoutes(app: Express) {
         });
       }
 
-      const { profile: bodyProfile, decision } = req.body || {};
+      const { profile: bodyProfile, decision, text, situation } = req.body || {};
 
       let profile = bodyProfile || null;
 
@@ -68,7 +76,8 @@ export function registerCodexToolsRoutes(app: Express) {
         }
       }
 
-      const result = toolFn(profile || {}, decision);
+      const extraArg = text || decision || situation || undefined;
+      const result = toolFn(profile || {}, extraArg);
 
       return res.json(result);
     } catch (error: any) {
