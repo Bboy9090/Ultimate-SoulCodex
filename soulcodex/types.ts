@@ -1,20 +1,12 @@
-export type StressElement = "fire" | "water" | "air" | "earth" | "metal";
+export type StressElement = ("fire" | "water" | "air" | "earth" | "metal")[];
 
 export type DecisionStyle =
-  | "gut"
-  | "analysis"
-  | "consensus"
-  | "impulse"
-  | "avoidance";
+  | ("gut" | "analysis" | "consensus" | "impulse" | "avoidance")[];
 
 export type PressureStyle =
-  | "fight"
-  | "freeze"
-  | "adapt"
-  | "withdraw"
-  | "perform";
+  | ("fight" | "freeze" | "adapt" | "withdraw" | "perform")[];
 
-export type SocialEnergy = "steady" | "bursts" | "sensitive";
+export type SocialEnergy = ("steady" | "bursts" | "sensitive")[];
 
 export type DepthMode = "snapshot" | "deep" | "surgical";
 
@@ -30,12 +22,9 @@ export interface BirthData {
 
 export interface UserInputs {
   birthData: BirthData;
-  stressElement: StressElement;
-  decisionStyle: DecisionStyle;
-  pressureStyle: PressureStyle;
+  mirror: MirrorAnswers;
   nonNegotiables: string[];
   goals: string[];
-  socialEnergy: SocialEnergy;
 }
 
 export interface SoulSignals {
@@ -43,12 +32,9 @@ export interface SoulSignals {
   moonSign?: string;
   risingSign?: string;
   lifePath: number;
-  stressElement: StressElement;
-  decisionStyle: DecisionStyle;
-  pressureStyle: PressureStyle;
+  mirrorProfile: MirrorProfile;
   nonNegotiables: string[];
   goals: string[];
-  socialEnergy: SocialEnergy;
 }
 
 export interface Archetype {

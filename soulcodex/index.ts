@@ -3,6 +3,7 @@ import { calcLifePath } from "./compute/numerology";
 import { chooseArchetype } from "./compute/archetype";
 import { synthesize } from "./compute/synthesis";
 import { compatibility } from "./compute/compatibility";
+import { analyzeMirror } from "../src/mirror/analyze";
 
 export type { UserInputs, SoulSignals, SoulProfile, CompatibilityScore };
 
@@ -11,18 +12,16 @@ export function buildSoulProfile(inputs: UserInputs, overrides?: Partial<SoulSig
   signals: SoulSignals;
 } {
   const lifePath = overrides?.lifePath ?? calcLifePath(inputs.birthData.birthDate);
+  const mirrorProfile = analyzeMirror(inputs.mirror);
 
   const signals: SoulSignals = {
     sunSign: overrides?.sunSign,
     moonSign: overrides?.moonSign,
     risingSign: overrides?.risingSign,
     lifePath,
-    stressElement: inputs.stressElement,
-    decisionStyle: inputs.decisionStyle,
-    pressureStyle: inputs.pressureStyle,
+    mirrorProfile,
     nonNegotiables: inputs.nonNegotiables,
     goals: inputs.goals,
-    socialEnergy: inputs.socialEnergy,
   };
 
   const archetype = chooseArchetype(signals);
