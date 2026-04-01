@@ -46,6 +46,7 @@ import { getActiveTransmutationTechniques } from "./services/transmutation";
 import { calculateCongruenceScore } from "./services/congruence";
 import { registerChatRoutes } from "./routes/chat";
 import { registerAIRespondRoute } from "./routes/ai-respond";
+import { registerCodexToolsRoutes } from "./routes/codex-tools";
 import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, getMoodBasedPrompt } from "./services/journaling";
 import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
 import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
@@ -293,6 +294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount shared AI gateway
   registerAIRespondRoute(app);
+  
+  // Mount Codex tools (Daily Pull, Oracle Symbols, Timing, Shadow, etc.)
+  registerCodexToolsRoutes(app);
   
   // Mount compatibility routes
   app.use("/api", compatibilityRoutes);
