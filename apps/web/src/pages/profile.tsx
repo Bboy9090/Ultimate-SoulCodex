@@ -28,7 +28,7 @@ import {
   BookOpen,
   Calendar
 } from "lucide-react";
-import type { Profile } from "@shared/schema";
+import type { Profile } from "@soulcodex/db";
 
 export default function ProfilePage() {
   const { id } = useParams();
