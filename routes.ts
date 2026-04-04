@@ -62,7 +62,7 @@ import type { UserInputs } from "./soulcodex/types";
 import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
 import { resolveGeo } from "./server/geo/index";
-import { computeConfidence } from "./soulcodex/compute/confidence";
+import { buildCodexReadingBadges, computeConfidence } from "./soulcodex/compute/confidence";
 import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
@@ -3698,10 +3698,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Codex30] Clarity rewrite triggered. Score: ${clarityReport.clarityScore}. Problems: ${clarityReport.clarityProblems.join(", ")}`);
       }
 
-      const conf = profile?.meta?.confidence ?? profile?.confidence;
+      const conf = buildCodexReadingBadges(profile?.meta?.confidence ?? profile?.confidence);
       const badges = {
-        confidenceLabel: conf?.label ?? conf?.badge ?? "Unverified",
-        reason: conf?.reason ?? ""
+        badge: conf.badge,
+        label: conf.label,
+        reason: conf.reason,
+        aiAssuranceNote: conf.aiAssuranceNote,
       };
 
       return res.json({

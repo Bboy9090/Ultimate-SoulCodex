@@ -210,6 +210,7 @@ export type Confidence = {
   badge: ConfidenceBadge;
   label: string;
   reason: string;
+  aiAssuranceNote?: string;
 };
 
 /* CODEX SYNTHESIS */
