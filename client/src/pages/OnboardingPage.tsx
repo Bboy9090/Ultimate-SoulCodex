@@ -14,12 +14,11 @@ interface FormData {
   birthLocation: string;
   stressElement: StressElement | "";
   decisionStyle: DecisionStyle | "";
-  nonNegotiables: string[];
   goals: string[];
   socialEnergy: SocialEnergy | "";
 }
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 
 const STRESS_OPTIONS: { value: StressElement; label: string; description: string }[] = [
   { value: "air", label: "My mind races", description: "I loop, overthink, and can't stop analyzing every angle" },
@@ -35,17 +34,6 @@ const DECISION_OPTIONS: { value: DecisionStyle; label: string; description: stri
   { value: "consensus", label: "I ask people I trust", description: "I check in with others to see if my thinking makes sense" },
   { value: "impulse", label: "I just go for it", description: "I decide fast and deal with the consequences after" },
   { value: "avoidance", label: "I put it off", description: "I avoid choosing until the deadline forces my hand" },
-];
-
-const NON_NEGOTIABLES = [
-  "Dishonesty",
-  "Betrayal",
-  "Disrespect",
-  "Manipulation",
-  "Laziness",
-  "Cruelty",
-  "Incompetence",
-  "Selfishness",
 ];
 
 const GOALS = [
@@ -73,15 +61,15 @@ export default function OnboardingPage() {
     birthLocation: "",
     stressElement: "",
     decisionStyle: "",
-    nonNegotiables: [],
     goals: [],
     socialEnergy: "",
   });
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return apiRequest("/api/soul-archetype", {
+      const res = await apiRequest("/api/soul-archetype", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           birth_data: {
             name: data.name,
@@ -92,11 +80,12 @@ export default function OnboardingPage() {
           stressElement: data.stressElement,
           decisionStyle: data.decisionStyle,
           pressureStyle: "adapt",
-          nonNegotiables: data.nonNegotiables.map((n) => n.toLowerCase()),
+          nonNegotiables: [],
           goals: data.goals.map((g) => g.toLowerCase()),
           socialEnergy: data.socialEnergy,
         }),
       });
+      return res.json();
     },
     onSuccess: (result) => {
       localStorage.setItem("soulProfile", JSON.stringify(result));
@@ -112,7 +101,7 @@ export default function OnboardingPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleArrayItem = (field: "nonNegotiables" | "goals", item: string, max: number) => {
+  const toggleArrayItem = (field: "goals", item: string, max: number) => {
     setForm((prev) => {
       const arr = prev[field];
       if (arr.includes(item)) return { ...prev, [field]: arr.filter((x) => x !== item) };
@@ -130,9 +119,7 @@ export default function OnboardingPage() {
       case 3:
         return form.decisionStyle !== "";
       case 4:
-        return form.nonNegotiables.length === 2;
-      case 5:
-        return form.goals.length === 2 && form.socialEnergy !== "";
+        return form.goals.length >= 1 && form.socialEnergy !== "";
       default:
         return false;
     }
@@ -172,8 +159,7 @@ export default function OnboardingPage() {
         {step === 1 && <StepBasicInfo form={form} update={update} />}
         {step === 2 && <StepStress form={form} update={update} />}
         {step === 3 && <StepDecisions form={form} update={update} />}
-        {step === 4 && <StepNonNegotiables form={form} toggle={toggleArrayItem} />}
-        {step === 5 && <StepGoals form={form} toggle={toggleArrayItem} update={update} />}
+        {step === 4 && <StepGoals form={form} toggle={toggleArrayItem} update={update} />}
       </div>
 
       {mutation.isError && (
@@ -209,7 +195,7 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
         Let's start with the basics
       </h2>
       <p style={{ marginBottom: "1.5rem", color: "var(--muted-foreground)" }}>
-        Your name and birth details help calculate your profile.
+        Your name and birth details anchor the math. Add a city so we can lock timezone and rising sign when you have a birth time.
       </p>
       <div className="form-group" style={{ marginBottom: "1rem" }}>
         <label className="label">Name</label>
@@ -251,7 +237,12 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
         )}
       </div>
       <div className="form-group">
-        <label className="label">Birth Location <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional)</span></label>
+        <label className="label">
+          Birth location{" "}
+          <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>
+            (recommended — needed for Verified charts)
+          </span>
+        </label>
         <input
           className="input"
           type="text"
@@ -312,40 +303,14 @@ function StepDecisions({ form, update }: { form: FormData; update: (f: keyof For
   );
 }
 
-function StepNonNegotiables({ form, toggle }: { form: FormData; toggle: (f: "nonNegotiables" | "goals", item: string, max: number) => void }) {
-  return (
-    <div>
-      <h2 className="gradient-text" style={{ marginBottom: "0.5rem" }}>
-        I won't tolerate...
-      </h2>
-      <p style={{ marginBottom: "1.5rem", color: "var(--muted-foreground)" }}>
-        Pick exactly 2 things that cross your line.
-      </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-        {NON_NEGOTIABLES.map((item) => (
-          <ChipButton
-            key={item}
-            selected={form.nonNegotiables.includes(item)}
-            onClick={() => toggle("nonNegotiables", item, 2)}
-            label={item}
-          />
-        ))}
-      </div>
-      <p style={{ marginTop: "0.75rem", fontSize: "0.8rem", color: "var(--muted-foreground)" }}>
-        {form.nonNegotiables.length}/2 selected
-      </p>
-    </div>
-  );
-}
-
-function StepGoals({ form, toggle, update }: { form: FormData; toggle: (f: "nonNegotiables" | "goals", item: string, max: number) => void; update: (f: keyof FormData, v: any) => void }) {
+function StepGoals({ form, toggle, update }: { form: FormData; toggle: (f: "goals", item: string, max: number) => void; update: (f: keyof FormData, v: any) => void }) {
   return (
     <div>
       <h2 className="gradient-text" style={{ marginBottom: "0.5rem" }}>
         What I'm here to do
       </h2>
       <p style={{ marginBottom: "1.5rem", color: "var(--muted-foreground)" }}>
-        Pick 2 goals that drive you most.
+        Pick one or two goals that drive you most right now.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
         {GOALS.map((item) => (
@@ -358,7 +323,7 @@ function StepGoals({ form, toggle, update }: { form: FormData; toggle: (f: "nonN
         ))}
       </div>
       <p style={{ marginTop: "0.75rem", fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "1.5rem" }}>
-        {form.goals.length}/2 selected
+        {form.goals.length}/2 selected (at least 1)
       </p>
 
       <h3 style={{ marginBottom: "0.5rem", fontSize: "1.125rem" }}>My social energy</h3>

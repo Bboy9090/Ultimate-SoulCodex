@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import ConfidenceBadge from "@/components/ConfidenceBadge";
+import { apiRequest } from "../lib/queryClient";
+import ConfidenceBadge from "../components/ConfidenceBadge";
 
 interface ThemeScore {
   tag: string;
@@ -13,7 +13,14 @@ interface ThemeScore {
 interface CodexSynthesis {
   codename: string;
   archetype: string;
-  badges: { confidenceLabel: string; reason: string };
+  badges: {
+    badge: "verified" | "partial" | "unverified";
+    label: string;
+    reason: string;
+    aiAssuranceNote: string;
+    /** Legacy API shape */
+    confidenceLabel?: string;
+  };
   topThemes: ThemeScore[];
   strengths: string[];
   shadows: string[];
@@ -183,10 +190,12 @@ export default function CodexReadingPage() {
 
   const generateMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const data = await apiRequest("/api/codex30/generate", {
+      const res = await apiRequest("/api/codex30/generate", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Generation failed");
       return data.synthesis as CodexSynthesis;
     },
@@ -338,7 +347,8 @@ export default function CodexReadingPage() {
         </h1>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
           <ConfidenceBadge
-            badge={synthesis.badges.confidenceLabel}
+            badge={synthesis.badges.badge ?? (synthesis.badges.confidenceLabel as any) ?? "unverified"}
+            label={synthesis.badges.label ?? synthesis.badges.confidenceLabel}
             reason={synthesis.badges.reason}
             size="sm"
           />
@@ -348,6 +358,18 @@ export default function CodexReadingPage() {
             </span>
           )}
         </div>
+        {synthesis.badges.aiAssuranceNote && (
+          <p style={{
+            fontSize: "0.72rem",
+            color: "var(--muted-foreground)",
+            maxWidth: "34rem",
+            margin: "0.75rem auto 0",
+            lineHeight: 1.55,
+            fontStyle: "normal",
+          }}>
+            {synthesis.badges.aiAssuranceNote}
+          </p>
+        )}
       </div>
 
       {/* Identity Grid */}

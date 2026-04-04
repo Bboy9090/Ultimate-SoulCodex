@@ -38,6 +38,7 @@ interface ConfidenceData {
   badge: "verified" | "partial" | "unverified";
   label: string;
   reason: string;
+  aiAssuranceNote?: string;
 }
 
 function getConfidence(): ConfidenceData | null {
@@ -110,8 +111,13 @@ export default function ProfilePage() {
             )}
           </div>
           {confidence?.reason && (
-            <p style={{ fontSize: "0.78rem", color: "var(--muted-foreground)", marginBottom: "0.75rem", fontStyle: "italic" }}>
+            <p style={{ fontSize: "0.78rem", color: "var(--muted-foreground)", marginBottom: "0.5rem", fontStyle: "italic" }}>
               {confidence.reason}
+            </p>
+          )}
+          {confidence?.aiAssuranceNote && (
+            <p style={{ fontSize: "0.74rem", color: "var(--muted-foreground)", marginBottom: "0.75rem", lineHeight: 1.55 }}>
+              {confidence.aiAssuranceNote}
             </p>
           )}
           <h1

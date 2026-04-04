@@ -56,6 +56,7 @@ export default function CompatibilityPage() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [compatibilityResult, setCompatibilityResult] = useState<CompatibilityResult | null>(null);
+  const [compatPremium, setCompatPremium] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
@@ -75,6 +76,22 @@ export default function CompatibilityPage() {
     if (savedPersons) setPersons(JSON.parse(savedPersons));
     const savedConf = localStorage.getItem("soulConfidence");
     if (savedConf) setMyConfidence(JSON.parse(savedConf));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiRequest("/api/entitlements");
+        const data = await res.json();
+        if (!cancelled) setCompatPremium(!!data?.isPremium);
+      } catch {
+        if (!cancelled) setCompatPremium(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const saveMyProfileMutation = useMutation({
@@ -144,9 +161,16 @@ export default function CompatibilityPage() {
         }),
       });
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       setCompatibilityResult(normalizeCompatData(data));
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      try {
+        const res = await apiRequest("/api/entitlements");
+        const ent = await res.json();
+        setCompatPremium(!!ent?.isPremium);
+      } catch {
+        setCompatPremium(null);
+      }
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     },
     onError: (err: any) => {
       setError(err.message || "Comparison failed");
@@ -298,6 +322,24 @@ export default function CompatibilityPage() {
       {compatibilityResult && (
         <div className="glass-card-static animate-slide-up" style={{ padding: "2rem", border: "1px solid var(--cosmic-purple)" }}>
           <h2 className="gradient-text" style={{ textAlign: "center", marginBottom: "2rem" }}>Compatibility Analysis</h2>
+
+          {compatPremium === false && (
+            <div
+              style={{
+                marginBottom: "1.5rem",
+                padding: "0.85rem 1rem",
+                borderRadius: "var(--radius)",
+                border: "1px solid rgba(245, 158, 11, 0.35)",
+                background: "rgba(245, 158, 11, 0.08)",
+                fontSize: "0.85rem",
+                color: "var(--muted-foreground)",
+                lineHeight: 1.55,
+              }}
+            >
+              <strong style={{ color: "var(--foreground)" }}>Free overview</strong>
+              {" — "}You are seeing the relationship story and scores. Premium unlocks per-system breakdowns (astrology, numerology, and related layers) for deeper comparison.
+            </div>
+          )}
           
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
             <div style={{ position: "relative", width: 140, height: 140, display: "flex", alignItems: "center", justifyContent: "center" }}>

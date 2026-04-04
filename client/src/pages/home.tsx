@@ -54,7 +54,7 @@ export default function Home() {
                 <br />Profile
               </h1>
               <p className="text-xl text-muted-foreground mt-6 leading-relaxed">
-                Merge Western & Vedic astrology, Human Design, Gene Keys, Numerology, and 10+ mystical systems into your personalized Ultimate Soul Codex.
+                One calm map of how you decide, stress, relate, and grow — grounded in your birth data, with clear confidence labels so you always know what is locked in.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link href="/create">
