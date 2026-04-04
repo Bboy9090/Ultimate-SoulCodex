@@ -30,8 +30,10 @@ export interface CodexSynthesis {
   codename: string;
   archetype: string;
   badges: {
-    confidenceLabel: string;
+    badge: "verified" | "partial" | "unverified";
+    label: string;
     reason: string;
+    aiAssuranceNote: string;
   };
   topThemes: ThemeScore[];
   strengths: string[];
