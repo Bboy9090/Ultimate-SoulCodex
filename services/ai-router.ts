@@ -12,7 +12,8 @@ import { deterministicFallback } from "./deterministic-fallback";
 import type { AIResponse, AIRequest, AIStreamRequest, AIStatus, AIProvider } from "../src/types/ai";
 
 export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
-  const cacheKey = `${input.promptType}::${input.systemPrompt || ""}::${input.prompt}`.slice(0, 500);
+  // Full prompt in cache key — truncated keys caused wrong cached answers for different users.
+  const cacheKey = `${input.promptType}::${input.systemPrompt || ""}::${input.prompt}`;
 
   const cached = getCached(cacheKey);
   if (cached) {

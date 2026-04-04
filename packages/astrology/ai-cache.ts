@@ -7,14 +7,14 @@ const cache = new Map<string, CacheEntry>();
 const TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_ENTRIES = 200;
 
+/** Full-string FNV-1a — avoids collisions from the old 32-bit prefix hash. Safe in browser and Node. */
 function hashKey(prompt: string): string {
-  let hash = 0;
+  let h = 0x811c9dc5;
   for (let i = 0; i < prompt.length; i++) {
-    const char = prompt.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
+    h ^= prompt.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
   }
-  return `ai_${hash}`;
+  return `fnv_${(h >>> 0).toString(16)}_${prompt.length}`;
 }
 
 function evictOldest() {

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 type CacheEntry = {
   response: string;
   timestamp: number;
@@ -8,13 +10,7 @@ const TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_ENTRIES = 200;
 
 function hashKey(prompt: string): string {
-  let hash = 0;
-  for (let i = 0; i < prompt.length; i++) {
-    const char = prompt.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return `ai_${hash}`;
+  return createHash("sha256").update(prompt, "utf8").digest("hex");
 }
 
 function evictOldest() {
