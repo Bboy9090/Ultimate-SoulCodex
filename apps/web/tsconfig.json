@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "paths": {
       "@/*": ["src/*"],
+      "@soulcodex/db": ["../../packages/db/index.ts"],
       "@soulcodex/db/*": ["../../packages/db/*"],
       "@soulcodex/core/*": ["../../packages/core/*"],
       "@soulcodex/astrology/*": ["../../packages/astrology/*"],

@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "src"),
-        "@soulcodex/db": path.resolve(import.meta.dirname, "../../packages/db"),
+        // Bundle from TS sources (package "main" points at dist/, which may be absent in dev)
+        "@soulcodex/db": path.resolve(import.meta.dirname, "../../packages/db/index.ts"),
         "@soulcodex/core": path.resolve(import.meta.dirname, "../../packages/core"),
         "@soulcodex/astrology": path.resolve(import.meta.dirname, "../../packages/astrology"),
         "@soulcodex/ai": path.resolve(import.meta.dirname, "../../packages/ai"),
