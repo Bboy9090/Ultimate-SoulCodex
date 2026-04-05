@@ -1,1 +1,16 @@
-{\n  " extends\: \../../tsconfig.json\,\n \compilerOptions\: {\n \module\: \ESNext\,\n \moduleResolution\: \Bundler\,\n \baseUrl\: \.\,\n \skipLibCheck\: true,\n \paths\: {\n \@soulcodex/db\: [\../../packages/db\],\n \@soulcodex/core\: [\../../packages/core\],\n \@soulcodex/astrology\: [\../../packages/astrology\],\n \@soulcodex/ai\: [\../../packages/ai\]\n }\n },\n \include\: [\.\]\n}
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "paths": {
+      "@soulcodex/db": ["../../packages/db"],
+      "@soulcodex/core": ["../../packages/core"],
+      "@soulcodex/astrology": ["../../packages/astrology"],
+      "@soulcodex/ai": ["../../packages/ai"]
+    }
+  },
+  "include": ["."]
+}

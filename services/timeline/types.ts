@@ -10,9 +10,21 @@ export type TimelinePhase =
 
 export type TimelineConfidence = "Full" | "Partial";
 
+export type ConfidenceBadge = "verified" | "partial" | "unverified";
+
+export interface ConfidenceInfo {
+  badge: ConfidenceBadge;
+  label: "Verified" | "Partial" | "Unverified";
+  reason: string;
+  aiAssuranceNote?: string;
+}
+
 export interface TimelineOutput {
   phase: TimelinePhase;
-  confidence: TimelineConfidence;
+  /** Canonical confidence for UI. */
+  confidence: ConfidenceInfo;
+  /** Legacy confidence for older clients. */
+  confidenceLabel: TimelineConfidence;
   reasons: string[];
   focus: string;
   do: string[];
@@ -28,6 +40,8 @@ export interface TimelineInput {
     name?: string;
     signals?: Record<string, unknown>;
     confidenceLabel?: string;
+    confidence?: { badge?: string; label?: string; reason?: string; aiAssuranceNote?: string };
+    meta?: { confidence?: { badge?: string; label?: string; reason?: string; aiAssuranceNote?: string } };
   };
   fullChart?: {
     planets?: {
