@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "../lib/queryClient";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import { setJson, storageKeys } from "@/lib/storage";
 
 type StressElement = "fire" | "water" | "air" | "earth" | "metal";
 type DecisionStyle = "gut" | "analysis" | "consensus" | "impulse" | "avoidance";
@@ -89,13 +90,13 @@ export default function OnboardingPage() {
       return res.json();
     },
     onSuccess: (result) => {
-      localStorage.setItem("soulProfile", JSON.stringify(result));
-      localStorage.setItem("onboardingData", JSON.stringify(form));
+      setJson(storageKeys.profile, result);
+      setJson(storageKeys.onboardingData, form);
       if (result?.confidence) {
-        localStorage.setItem("soulConfidence", JSON.stringify(result.confidence));
+        setJson(storageKeys.confidence, result.confidence);
       }
       try {
-        localStorage.setItem("soulJustOnboarded", "1");
+        localStorage.setItem(storageKeys.justOnboarded, "1");
       } catch {}
       navigate("/profile");
     },

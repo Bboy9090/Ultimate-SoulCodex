@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import { getJson, removeKey, storageKeys } from "@/lib/storage";
 
 interface Archetype {
   name: string;
@@ -24,15 +25,9 @@ interface SoulProfile {
 }
 
 function getProfile(): SoulProfile | null {
-  try {
-    const raw = localStorage.getItem("soulProfile");
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    if (data.archetype && data.synthesis) return data as SoulProfile;
-    return null;
-  } catch {
-    return null;
-  }
+  const data = getJson<any>(storageKeys.profile);
+  if (data?.archetype && data?.synthesis) return data as SoulProfile;
+  return null;
 }
 
 interface ConfidenceData {
@@ -43,20 +38,10 @@ interface ConfidenceData {
 }
 
 function getConfidence(): ConfidenceData | null {
-  try {
-    const raw = localStorage.getItem("soulConfidence");
-    if (!raw) {
-      const profile = localStorage.getItem("soulProfile");
-      if (profile) {
-        const p = JSON.parse(profile);
-        if (p.confidence) return p.confidence as ConfidenceData;
-      }
-      return null;
-    }
-    return JSON.parse(raw) as ConfidenceData;
-  } catch {
-    return null;
-  }
+  const stored = getJson<ConfidenceData>(storageKeys.confidence);
+  if (stored) return stored;
+  const p = getJson<any>(storageKeys.profile);
+  return (p?.confidence as ConfidenceData) ?? null;
 }
 
 
@@ -66,7 +51,7 @@ export default function ProfilePage() {
   const confidence = getConfidence();
   const showWelcome = (() => {
     try {
-      return localStorage.getItem("soulJustOnboarded") === "1";
+      return localStorage.getItem(storageKeys.justOnboarded) === "1";
     } catch {
       return false;
     }
@@ -74,9 +59,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!showWelcome) return;
-    try {
-      localStorage.removeItem("soulJustOnboarded");
-    } catch {}
+    removeKey(storageKeys.justOnboarded);
   }, [showWelcome]);
 
   if (!profile) {
