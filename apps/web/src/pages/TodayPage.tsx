@@ -14,7 +14,13 @@ interface TodayCard {
   decisionAdvice: string;
   moonPhase: string;
   personalDayNumber: number;
-  confidenceLabel: string;
+  confidence: {
+    badge: "verified" | "partial" | "unverified";
+    label: string;
+    reason: string;
+    aiAssuranceNote?: string;
+  };
+  confidenceLabel: string; // legacy
   topTheme?: string;
   date: string;
 }
@@ -210,7 +216,7 @@ export default function TodayPage() {
   if (!card) return null;
 
   const moonGlyph = MOON_GLYPHS[(card.moonPhase ?? "").toLowerCase()] ?? "☽";
-  const conf = card.confidenceLabel as any;
+  const confBadge = (card.confidence?.badge ?? (card.confidenceLabel as any) ?? "unverified") as any;
 
   return (
     <div style={{ minHeight: "100vh", padding: "1.5rem 1rem", maxWidth: "520px", margin: "0 auto" }}>
@@ -224,7 +230,17 @@ export default function TodayPage() {
               {card.moonPhase}
             </span>
           </div>
-          <ConfidenceBadge badge={conf} size="sm" />
+          <ConfidenceBadge
+            badge={confBadge}
+            label={card.confidence?.label}
+            reason={card.confidence?.reason}
+            size="sm"
+          />
+          {card.confidence?.aiAssuranceNote && (
+            <div style={{ marginTop: "0.5rem", fontSize: "0.72rem", color: "var(--muted-foreground)", lineHeight: 1.55, maxWidth: 320 }}>
+              {card.confidence.aiAssuranceNote}
+            </div>
+          )}
         </div>
         {streak > 0 && (
           <div style={{

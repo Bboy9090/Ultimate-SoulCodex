@@ -1,8 +1,9 @@
 // Load environment variables from .env file
 import "dotenv/config";
 import express, { type Express } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite } from "./vite-server";
+// Use the canonical root router + vite middleware (apps/api contains legacy duplicates).
+import { registerRoutes } from "../../routes";
+import { setupVite } from "../../vite-server";
 
 // Simple logger function
 function log(message: string, source = "express") {
