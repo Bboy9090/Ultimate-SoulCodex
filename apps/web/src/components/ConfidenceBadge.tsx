@@ -16,21 +16,21 @@ const BADGE_CONFIG: Record<string, { color: string; bg: string; border: string; 
     bg: "rgba(34,197,94,0.12)",
     border: "rgba(34,197,94,0.35)",
     label: "Verified",
-    tooltip: "Time + location locked. Highest accuracy. Rising sign and houses included."
+    tooltip: "Birth time + location are set. Rising sign + houses included."
   },
   partial: {
     color: "#f59e0b",
     bg: "rgba(245,158,11,0.12)",
     border: "rgba(245,158,11,0.35)",
     label: "Partial",
-    tooltip: "Birth time unknown. No houses or rising-based conclusions. Sun and Moon are still accurate."
+    tooltip: "Birth time unknown. Rising sign + houses omitted; Sun + Moon stay grounded."
   },
   unverified: {
     color: "#6b7280",
     bg: "rgba(107,114,128,0.12)",
     border: "rgba(107,114,128,0.35)",
     label: "Unverified",
-    tooltip: "Missing geo/timezone lock. Chart positions may drift by up to a degree."
+    tooltip: "Location or timezone missing. Rising sign + houses are not reliable."
   }
 };
 

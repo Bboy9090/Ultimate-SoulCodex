@@ -8,6 +8,15 @@ export interface TodayCardData {
   decisionAdvice: string;
   moonPhase: string;
   personalDayNumber: number;
+  confidence: {
+    badge: "verified" | "partial" | "unverified";
+    label: "Verified" | "Partial" | "Unverified";
+    /** Why the badge is this value (data completeness). */
+    reason: string;
+    /** Short note separating chart math from interpretive wording. */
+    aiAssuranceNote?: string;
+  };
+  /** Legacy field used by share renderers and older clients. */
   confidenceLabel: string;
   topTheme?: string;
   date: string;
@@ -88,8 +97,39 @@ export function buildTodayCard(
     profile?.userInputs?.decisionStyle ??
     "";
 
-  const confidence = profile?.confidence ?? profile?.meta?.confidence;
-  const confidenceLabel = confidence?.label ?? confidence?.badge ?? "Unverified";
+  const rawConf = profile?.confidence ?? profile?.meta?.confidence ?? null;
+  const badge =
+    rawConf?.badge === "verified" || rawConf?.badge === "partial" || rawConf?.badge === "unverified"
+      ? rawConf.badge
+      : rawConf?.label === "Verified"
+        ? "verified"
+        : rawConf?.label === "Partial"
+          ? "partial"
+          : "unverified";
+
+  const label = (rawConf?.label ??
+    (badge === "verified" ? "Verified" : badge === "partial" ? "Partial" : "Unverified")) as
+    | "Verified"
+    | "Partial"
+    | "Unverified";
+
+  const reason =
+    rawConf?.reason ??
+    (badge === "verified"
+      ? "Birth time and location are set — full chart layer (houses, rising) is included."
+      : badge === "partial"
+        ? "Birth time unknown — rising sign and houses are omitted; Sun, Moon, and Life Path stay grounded."
+        : "Location or timezone is missing — rising sign and houses are not reliable.");
+
+  const aiAssuranceNote =
+    rawConf?.aiAssuranceNote ??
+    (badge === "verified"
+      ? "Your wheel data is computed from the birth record you gave. If something feels off, re-check time and place."
+      : badge === "partial"
+        ? "Sun and Moon placements are stable. Use this badge as your source of truth for what is locked in."
+        : "We only show placements we can compute from your date (and time when given). Interpretive text is guidance, not a guarantee.");
+
+  const confidenceLabel = label;
 
   const codename = codexSynthesis?.codename ?? profile?.archetype?.name ?? "The Quiet Builder";
   const topTheme = codexSynthesis?.topThemes?.[0]?.tag ?? "precision";
@@ -113,6 +153,7 @@ export function buildTodayCard(
     decisionAdvice: DECISION_ADVICE[decisionStyle] ?? "Give your decision time to breathe before committing. Clarity comes after the noise settles.",
     moonPhase: horoscopeData?.moonPhase?.phase ?? "Full Moon",
     personalDayNumber: dayNum,
+    confidence: { badge, label, reason, aiAssuranceNote },
     confidenceLabel,
     topTheme,
     date: horoscopeData?.date ?? new Date().toISOString().slice(0, 10)
