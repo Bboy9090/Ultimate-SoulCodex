@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 
@@ -63,6 +64,20 @@ export default function ProfilePage() {
   const [, navigate] = useLocation();
   const profile = getProfile();
   const confidence = getConfidence();
+  const showWelcome = (() => {
+    try {
+      return localStorage.getItem("soulJustOnboarded") === "1";
+    } catch {
+      return false;
+    }
+  })();
+
+  useEffect(() => {
+    if (!showWelcome) return;
+    try {
+      localStorage.removeItem("soulJustOnboarded");
+    } catch {}
+  }, [showWelcome]);
 
   if (!profile) {
     return (
@@ -84,6 +99,52 @@ export default function ProfilePage() {
     <div className="container" style={{ padding: "2rem 1rem 4rem", maxWidth: 720 }}>
       <div className="stagger">
         <section style={{ textAlign: "center", marginBottom: "3rem" }}>
+          {showWelcome && (
+            <div
+              className="glass-card-static animate-fade-in"
+              style={{
+                padding: "1rem 1.25rem",
+                margin: "0 auto 1.25rem",
+                maxWidth: 620,
+                border: "1px solid rgba(34,197,94,0.22)",
+                background: "rgba(34,197,94,0.06)",
+              }}
+            >
+              <div style={{ fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(230,230,255,0.7)", fontWeight: 700 }}>
+                Welcome
+              </div>
+              <div style={{ marginTop: "0.35rem", color: "rgba(230,230,255,0.92)", fontWeight: 600 }}>
+                Your profile is ready.
+              </div>
+              <div style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                Next: open your Codex Reading for the full synthesis, then check “Today” for one grounded step.
+              </div>
+              <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    try { localStorage.removeItem("soulJustOnboarded"); } catch {}
+                    navigate("/codex");
+                  }}
+                  type="button"
+                  style={{ padding: "0.6rem 1.2rem" }}
+                >
+                  Open Codex Reading
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    try { localStorage.removeItem("soulJustOnboarded"); } catch {}
+                    navigate("/horoscope");
+                  }}
+                  type="button"
+                  style={{ padding: "0.6rem 1.2rem" }}
+                >
+                  Today’s Reading
+                </button>
+              </div>
+            </div>
+          )}
           <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1rem" }}>
             <div
               style={{
