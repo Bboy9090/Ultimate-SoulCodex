@@ -336,8 +336,8 @@ export default function CompatibilityPage() {
                 lineHeight: 1.55,
               }}
             >
-              <strong style={{ color: "var(--foreground)" }}>Free overview</strong>
-              {" — "}You are seeing the relationship story and scores. Premium unlocks per-system breakdowns (astrology, numerology, and related layers) for deeper comparison.
+              <strong style={{ color: "var(--foreground)" }}>Included</strong>
+              {" — "}Story + scores are yours. Premium adds the per-system breakdown (astrology, numerology, and other layers) so you can see <em>why</em> the score is what it is.
             </div>
           )}
           

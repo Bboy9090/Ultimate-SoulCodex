@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import PlanetWheel from "../components/PlanetWheel";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
 
 interface PlanetPosition {
   name: string;
@@ -243,6 +244,14 @@ export default function DailyHoroscopePage() {
   })();
 
   const profileId = profileData?.id || profileData?.profileId;
+  const profileConfidence = (() => {
+    try {
+      const raw = localStorage.getItem("soulConfidence");
+      if (raw) return JSON.parse(raw);
+      if (profileData?.confidence) return profileData.confidence;
+    } catch {}
+    return null;
+  })();
 
   const {
     data,
@@ -296,6 +305,14 @@ export default function DailyHoroscopePage() {
     day: "numeric",
   });
 
+  const confBadge =
+    (profileConfidence?.badge ??
+      (profileConfidence?.label === "Verified"
+        ? "verified"
+        : profileConfidence?.label === "Partial"
+          ? "partial"
+          : "unverified")) as any;
+
   return (
     <div className="container animate-fade-in" style={{ padding: "2rem 1rem 4rem", maxWidth: "800px" }}>
       <div className="stagger" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -312,6 +329,21 @@ export default function DailyHoroscopePage() {
             <p style={{ color: "var(--cosmic-lavender)", fontSize: "0.8125rem", marginTop: "0.25rem" }}>
               {data.moonPhase.phase} · {data.moonPhase.percentage}% illuminated
             </p>
+            {profileConfidence && (
+              <div style={{ marginTop: "0.5rem" }}>
+                <ConfidenceBadge
+                  badge={confBadge}
+                  label={profileConfidence?.label}
+                  reason={profileConfidence?.reason}
+                  size="sm"
+                />
+              </div>
+            )}
+            {profileConfidence?.aiAssuranceNote && (
+              <div style={{ marginTop: "0.5rem", fontSize: "0.72rem", color: "var(--muted-foreground)", lineHeight: 1.55, maxWidth: 520 }}>
+                {profileConfidence.aiAssuranceNote}
+              </div>
+            )}
           </div>
         </section>
 
