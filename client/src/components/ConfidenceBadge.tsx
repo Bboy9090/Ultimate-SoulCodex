@@ -8,84 +8,114 @@ interface ConfidenceBadgeProps {
   reason?: string;
   size?: "sm" | "md";
   showTooltip?: boolean;
+  /** Render the reason text inline below the badge pill */
+  showReason?: boolean;
 }
 
-const BADGE_CONFIG: Record<string, { color: string; bg: string; border: string; label: string; tooltip: string }> = {
+export const BADGE_CONFIG: Record<string, {
+  color: string; bg: string; border: string; label: string; tooltip: string;
+}> = {
   verified: {
     color: "#22c55e",
     bg: "rgba(34,197,94,0.12)",
     border: "rgba(34,197,94,0.35)",
     label: "Verified",
-    tooltip: "Time + location locked. Highest accuracy. Rising sign and houses included."
+    tooltip: "Birth time and location confirmed. Rising sign and houses are included. Highest signal accuracy.",
   },
   partial: {
     color: "#f59e0b",
     bg: "rgba(245,158,11,0.12)",
     border: "rgba(245,158,11,0.35)",
     label: "Partial",
-    tooltip: "Birth time unknown. No houses or rising-based conclusions. Sun and Moon are still accurate."
+    tooltip: "Birth time not provided. Sun and Moon are accurate. Houses and rising sign are not included.",
   },
   unverified: {
     color: "#6b7280",
     bg: "rgba(107,114,128,0.12)",
     border: "rgba(107,114,128,0.35)",
     label: "Unverified",
-    tooltip: "Missing geo/timezone lock. Chart positions may drift by up to a degree."
-  }
+    tooltip: "Location data missing. Chart positions may vary by up to a degree.",
+  },
 };
+
+/** Normalize any casing / alternate string to one of the three keys */
+export function normalizeConfidenceKey(raw: string): ConfidenceLevel {
+  const lower = (raw ?? "").toLowerCase();
+  if (lower === "verified")   return "verified";
+  if (lower === "partial")    return "partial";
+  return "unverified";
+}
 
 export default function ConfidenceBadge({
   badge,
   label,
   reason,
   size = "sm",
-  showTooltip = true
+  showTooltip = true,
+  showReason = false,
 }: ConfidenceBadgeProps) {
   const [tooltipOpen, setTooltipOpen] = useState(false);
-  const key = (badge ?? "unverified").toLowerCase() as ConfidenceLevel;
-  const cfg = BADGE_CONFIG[key] ?? BADGE_CONFIG.unverified;
+  const key = normalizeConfidenceKey(badge ?? "");
+  const cfg = BADGE_CONFIG[key];
 
-  const dotSize = size === "md" ? 9 : 7;
+  const dotSize  = size === "md" ? 9 : 7;
   const fontSize = size === "md" ? "0.78rem" : "0.68rem";
   const padding  = size === "md" ? "0.3rem 0.85rem" : "0.18rem 0.6rem";
 
   return (
-    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-      <span
-        style={{
-          display: "inline-flex", alignItems: "center", gap: "0.32rem",
-          background: cfg.bg, border: `1px solid ${cfg.border}`,
-          borderRadius: "99px", padding, fontSize, color: cfg.color,
-          letterSpacing: "0.07em", cursor: showTooltip ? "help" : "default",
-          userSelect: "none"
-        }}
-        onMouseEnter={() => showTooltip && setTooltipOpen(true)}
-        onMouseLeave={() => setTooltipOpen(false)}
-        onClick={() => showTooltip && setTooltipOpen(v => !v)}
-      >
-        <span style={{
-          width: dotSize, height: dotSize, borderRadius: "50%",
-          background: cfg.color, display: "inline-block", flexShrink: 0
-        }} />
-        {label ?? cfg.label}
-        {showTooltip && <span style={{ opacity: 0.6, fontSize: "0.6rem" }}>?</span>}
+    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: "0.3rem" }}>
+      <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+        <span
+          style={{
+            display: "inline-flex", alignItems: "center", gap: "0.32rem",
+            background: cfg.bg, border: `1px solid ${cfg.border}`,
+            borderRadius: "99px", padding, fontSize, color: cfg.color,
+            letterSpacing: "0.07em", cursor: showTooltip ? "help" : "default",
+            userSelect: "none", transition: "opacity 0.15s",
+          }}
+          onMouseEnter={() => showTooltip && setTooltipOpen(true)}
+          onMouseLeave={() => setTooltipOpen(false)}
+          onClick={() => showTooltip && setTooltipOpen(v => !v)}
+        >
+          <span style={{
+            width: dotSize, height: dotSize, borderRadius: "50%",
+            background: cfg.color, display: "inline-block", flexShrink: 0,
+          }} />
+          {label ?? cfg.label}
+          {showTooltip && (
+            <span style={{ opacity: 0.55, fontSize: "0.65rem", fontStyle: "normal" }}>ⓘ</span>
+          )}
+        </span>
+
+        {tooltipOpen && showTooltip && (
+          <span style={{
+            position: "absolute", bottom: "calc(100% + 10px)", left: "50%",
+            transform: "translateX(-50%)", zIndex: 999,
+            background: "#1a1a2e", border: `1px solid ${cfg.border}`,
+            borderRadius: "10px", padding: "0.65rem 0.9rem",
+            fontSize: "0.73rem", color: "#e2e8f0", lineHeight: 1.55,
+            maxWidth: "260px", whiteSpace: "normal",
+            pointerEvents: "none",
+            boxShadow: "0 6px 24px rgba(0,0,0,0.55)",
+          }}>
+            <strong style={{ color: cfg.color, display: "block", marginBottom: "0.2rem" }}>
+              {cfg.label}
+            </strong>
+            {reason || cfg.tooltip}
+            <span style={{
+              position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+              border: "5px solid transparent", borderTopColor: cfg.border,
+            }} />
+          </span>
+        )}
       </span>
 
-      {tooltipOpen && showTooltip && (
+      {showReason && reason && (
         <span style={{
-          position: "absolute", bottom: "calc(100% + 8px)", left: "50%",
-          transform: "translateX(-50%)", zIndex: 999,
-          background: "#1a1a2e", border: `1px solid ${cfg.border}`,
-          borderRadius: "8px", padding: "0.6rem 0.85rem",
-          fontSize: "0.73rem", color: "#e2e8f0", lineHeight: 1.5,
-          whiteSpace: "nowrap", pointerEvents: "none",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
+          fontSize: "0.7rem", color: "var(--muted-foreground)",
+          fontStyle: "italic", lineHeight: 1.4,
         }}>
-          <strong style={{ color: cfg.color }}>{cfg.label}:</strong> {reason || cfg.tooltip}
-          <span style={{
-            position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
-            border: "5px solid transparent", borderTopColor: cfg.border
-          }} />
+          {reason}
         </span>
       )}
     </span>
