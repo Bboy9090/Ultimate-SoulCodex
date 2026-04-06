@@ -39,6 +39,13 @@ See `CONFIDENCE.md` for:
 - “where computed / where displayed”
 - display guidance
 
+## Canonical output contract (Schema v1)
+
+The engine-facing profile contract is `Soul Codex Output Schema v1`.
+
+- Spec: `SOUL_CODEX_OUTPUT_SCHEMA_V1.md`
+- Endpoint: `GET /api/profiles/:id/soul-codex-v1?tone_mode=clean|deep|raw`
+
 ## Repository rules
 
 See `AGENTS.md` (audit-first, no fake success, small PRs).

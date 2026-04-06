@@ -1,6 +1,5 @@
 import { BANNED_PHRASES } from "../validators/blandnessFilter";
-
-export type DepthMode = "snapshot" | "deep" | "surgical";
+import type { DepthMode } from "../types";
 
 interface ProfileData {
   name: string;

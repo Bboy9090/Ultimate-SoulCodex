@@ -5,11 +5,15 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json",
+    "test": "node --import tsx --test"
   },
   "dependencies": {
     "astronomy-engine": "^2.1.19",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
   }
 }

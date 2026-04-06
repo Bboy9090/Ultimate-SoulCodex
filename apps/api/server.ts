@@ -1,9 +1,7 @@
 // Load environment variables from .env file
 import "dotenv/config";
 import express, { type Express } from "express";
-// Use the canonical root router + vite middleware (apps/api contains legacy duplicates).
-import { registerRoutes } from "../../routes";
-import { setupVite } from "../../vite-server";
+import { registerRoutes } from "./routes.canonical";
 
 // Simple logger function
 function log(message: string, source = "express") {
@@ -28,7 +26,7 @@ app.get("/health", (_req, res) => {
 });
 
 (async () => {
-  const server = registerRoutes(app);
+  const server = await registerRoutes(app);
 
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -37,14 +35,7 @@ app.get("/health", (_req, res) => {
     throw err;
   });
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    // Production static serving handled via apps/web build
-    app.use(express.static("dist/public"));
-  }
-
-  const PORT = process.env.PORT || 5000;
+  const PORT = parseInt(process.env.PORT || "5000", 10);
   server.listen(PORT, "0.0.0.0", () => {
     log(`SoulCodex API serving on port ${PORT}`);
   });
