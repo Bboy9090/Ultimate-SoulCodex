@@ -1,0 +1,303 @@
+You are working inside an existing monorepo for:
+
+Bboy9090/Ultimate-SoulCodex-Engine-of-the-Eternal-Now
+
+Your job is NOT to rebuild the app.
+Your job is to add an anti-generic profile generation layer to the existing Soul Codex engine so profiles sound distinct, behaviorally sharp, and not repetitive across different users.
+
+==================================================
+PRIMARY GOAL
+==================================================
+
+Make Soul Codex profiles feel specific to the individual.
+
+Two users who share the same Sun sign or broad system labels must still get noticeably different profile blurbs if their behavioral patterns, timing, stress style, or signal intersections differ.
+
+The engine must stop producing:
+- generic zodiac clichés
+- therapist-blog filler
+- repeated “you are intuitive / deep / sensitive” sludge
+- same-person-different-name profiles
+
+==================================================
+ARCHITECTURE RULES
+==================================================
+
+1. Do NOT replace the current public contract.
+Keep SoulCodexOutputV1 as the canonical external output contract.
+
+2. The engine owns truth.
+Put the anti-generic logic in packages/core, not apps/web.
+
+3. Do NOT create a second competing profile engine.
+Upgrade the existing internal engine path.
+
+4. Prefer deterministic and testable logic over vague prompt-only behavior.
+
+5. Keep the current product UX direction:
+- snapshot first
+- progressive reveal
+- deep dive later
+Do NOT turn the frontend into a 30-system circus.
+
+==================================================
+WHAT TO BUILD
+==================================================
+
+Create an anti-generic generation system with these parts:
+
+A) DISTINCTIVENESS SCORING MODEL
+B) STATEMENT LIBRARY SCHEMA
+C) BANNED LANGUAGE FILTER
+D) REPETITION / TEMPLATE DETECTION
+E) CONTRADICTION-AWARE SELECTION
+F) PROFILE ASSEMBLY RULES
+
+==================================================
+PHASE 1 — TYPES AND FILE STRUCTURE
+==================================================
+
+Create or extend files under something like:
+
+packages/core/soulcodex-v1/
+  content/
+    statements/
+      core_pattern.json
+      pressure_pattern.json
+      blind_spot.json
+      current_phase.json
+      action_truth.json
+      relationship_pattern.json
+    banned_language.json
+  matrix/
+    signalMap.json
+    contradictionMap.json
+    sectionPriority.json
+  rules/
+    distinctiveness.ts
+    bannedLanguage.ts
+    repetition.ts
+    contradictions.ts
+    scoring.ts
+  engine/
+    statementSelector.ts
+    profileAssembler.ts
+    toneAdapter.ts
+  types.ts
+
+If nearby existing folders already exist, adapt them instead of duplicating structure.
+
+==================================================
+PHASE 2 — DISTINCTIVENESS SCORING MODEL
+==================================================
+
+Implement scoring for each candidate statement using these dimensions:
+
+1. behavioral_specificity
+2. distinguishing_power
+3. contradiction_depth
+4. phase_relevance
+5. action_usefulness
+6. language_originality
+
+Use a weighted scoring model.
+
+Suggested weighting:
+- behavioral_specificity: 0.25
+- distinguishing_power: 0.25
+- contradiction_depth: 0.15
+- phase_relevance: 0.15
+- action_usefulness: 0.10
+- language_originality: 0.10
+
+Add penalties for:
+- generic adjectives
+- zodiac stereotype phrasing
+- spiritual filler
+- highly reusable/template-like blurbs
+- repeating sentence frames too often
+
+Reject statements if:
+- final score is below threshold
+- they contain banned language
+- they contain no real behavior
+- they could fit too many users with only trivial edits
+
+==================================================
+PHASE 3 — STATEMENT LIBRARY SCHEMA
+==================================================
+
+Define a schema for profile statements.
+
+Each statement should support fields like:
+- id
+- text
+- section
+- tags
+- signal_requirements
+  - all
+  - any
+- signal_boosts
+- signal_exclusions
+- tone_modes
+- distinctiveness_base
+- generic_risk
+- contradiction_type
+- action_hint
+- banned_if_combined_with
+- priority
+
+Use JSON or TS data structures, whichever fits the repo better.
+Keep it deterministic and easy to test.
+
+==================================================
+PHASE 4 — BANNED LANGUAGE FILTER
+==================================================
+
+Create a banned or heavily penalized phrase list.
+
+Examples to block or penalize:
+- deeply intuitive
+- feel things deeply
+- complex soul
+- seek meaning
+- both strong and sensitive
+- powerful inner world
+- here to learn balance
+- old energy
+- transformation is happening
+- authenticity is important to you
+
+Do NOT just hardcode one giant ugly if/else.
+Make this maintainable.
+
+==================================================
+PHASE 5 — CONTRADICTION-AWARE PROFILE LOGIC
+==================================================
+
+Force profiles to sound human by using contradiction.
+
+Each profile should favor statements that capture tension like:
+- appears calm but is mentally braced for disappointment
+- looks independent but still longs for recognition
+- seems flexible but uses control as protection
+- gives a lot, then resents silently
+
+At least one major profile paragraph should contain:
+- surface pattern
+- hidden pattern
+- cost of that contradiction
+
+==================================================
+PHASE 6 — SECTION ASSEMBLY RULES
+==================================================
+
+Build profile sections around:
+1. core_pattern
+2. pressure_pattern
+3. blind_spot
+4. current_phase
+5. action_truth
+
+Rules:
+- no paragraph from one signal alone
+- every important paragraph should combine at least:
+  - one identity signal
+  - one modifier
+  - one behavior or pressure signal
+- timing/current phase must modify tone and advice
+- stress/behavior should outrank flattering generic copy
+- every section should end with a cost, interruption, or action when appropriate
+
+==================================================
+PHASE 7 — SELECTION ENGINE
+==================================================
+
+Implement selection flow:
+
+1. gather candidates from statement library based on signals
+2. remove excluded/conflicting statements
+3. score candidates
+4. choose strongest per section
+5. run anti-generic final pass
+6. assemble final internal profile output
+7. adapt back into SoulCodexOutputV1
+
+Do NOT break the external output contract.
+
+==================================================
+PHASE 8 — TESTS
+==================================================
+
+Add tests for:
+- banned phrase rejection
+- contradiction preference
+- generic statement penalty
+- different signal combinations producing different outputs
+- two same-sign users producing measurably different profile text
+- section assembly preserving distinctiveness
+- stable output shape for SoulCodexOutputV1
+
+Important:
+Create at least one test case where two users share the same Sun sign but differ in:
+- stress style
+- moon/emotional layer
+- decision style
+- current phase
+
+The outputs must NOT read like clones.
+
+==================================================
+PHASE 9 — INTEGRATION
+==================================================
+
+Integrate this into the existing internal profile/codex generation path in packages/core and/or canonical API path.
+
+Do NOT:
+- rewrite the frontend
+- replace the public schema
+- add giant new UI surfaces yet
+
+This is an engine upgrade first.
+
+==================================================
+STYLE RULES FOR GENERATED COPY
+==================================================
+
+Generated copy should:
+- lead with behavior, not labels
+- sound precise, not mystical-mushy
+- avoid repetitive sentence frames
+- avoid horoscope clichés
+- sound like a sharp observer describing a real person
+- feel emotionally accurate without sounding like therapy wallpaper
+
+Prefer:
+- “you over-explain when uncertain”
+- “you go quiet instead of saying you’re hurt”
+- “you delay until it feels airtight”
+- “you look composed, but your control is a defense”
+
+Avoid:
+- “you are deeply intuitive”
+- “you are both strong and sensitive”
+- “you carry profound energy”
+- “you seek authenticity and meaning”
+
+==================================================
+OUTPUT FORMAT
+==================================================
+
+At the end, provide:
+1. files created
+2. files modified
+3. where the anti-generic logic now lives
+4. how the current engine uses it
+5. what tests were added
+6. unresolved risks
+7. next recommended step
+
+Start with Phase 1 and Phase 2 first if the work is large.
+Do not wander into unrelated features.
+Do not create a second app.
+Do not bloat the repo.

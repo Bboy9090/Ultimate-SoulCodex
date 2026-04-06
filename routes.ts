@@ -68,6 +68,7 @@ import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/comp
 import { isGeneric } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
+import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext } from "./soulcodex/anti-generic/index";
 import { generateText, isGeminiAvailable } from "./gemini";
 
 // Initialize SubscriptionService (if Stripe is configured)
@@ -3401,6 +3402,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const anchors = signals.flatMap(s => s.evidence).filter(Boolean).slice(0, 14);
 
+      // Anti-generic enrichment (no output contract change)
+      const agCtx: AntiGenericContext = {
+        themeTags:     themes.slice(0, 8).map(t => t.tag),
+        stressElement: userInputs?.stressElement,
+        decisionStyle: userInputs?.decisionStyle,
+        socialEnergy:  userInputs?.socialEnergy,
+      };
+      const contradictionHint    = getContradictionHint(agCtx);
+      const behavioralStatements = getBehavioralStatements("pressure_pattern", agCtx, 3);
+
       let narrative = "";
 
       if (isGeminiAvailable()) {
@@ -3412,7 +3423,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           shadows,
           triggers,
           prescriptions,
-          anchors
+          anchors,
+          contradictionHint,
+          behavioralStatements,
         });
 
         narrative = await generateText({ model: "gemini-2.0-flash", prompt, temperature: 0.82 });
@@ -3425,6 +3438,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!narrative) {
         narrative = buildFallbackNarrative(codename, anchors, themes, strengths, triggers);
+      }
+
+      // Log any banned phrases that slipped through for audit (non-blocking)
+      const langCheck = checkNarrative(narrative);
+      if (!langCheck.pass) {
+        console.warn("[anti-generic] Hard-reject phrases in narrative:", langCheck.hardRejects);
       }
 
       const conf = profile?.meta?.confidence ?? profile?.confidence;
