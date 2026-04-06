@@ -61,6 +61,15 @@ function getCodexPrescription(): string | null {
   } catch { return null; }
 }
 
+function getSecondPrescription(): string | null {
+  try {
+    const raw = localStorage.getItem("soulCodexReading");
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return d?.prescriptions?.[1] ?? null;
+  } catch { return null; }
+}
+
 // Section visual config
 const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
   who:      { glyph: "◉", accent: "#8b5cf6", bg: "rgba(139,92,246,0.07)" },
@@ -76,17 +85,23 @@ export default function ProfilePage() {
   const profile      = getProfile();
   const confidence   = getConfidence();
   const prescription = getCodexPrescription();
+  const prescription2 = getSecondPrescription();
 
   if (!profile) {
     return (
       <div style={{ padding: "4rem 1rem", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
-        <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.4 }}>◉</div>
-        <h2 className="gradient-text" style={{ marginBottom: "1rem" }}>No profile found</h2>
-        <p style={{ marginBottom: "2rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+        <div style={{ fontSize: "3.5rem", marginBottom: "1.25rem", opacity: 0.25, color: "var(--cosmic-lavender)" }}>◉</div>
+        <h2 className="gradient-text" style={{ marginBottom: "0.75rem" }}>No profile found</h2>
+        <p style={{ marginBottom: "2rem", color: "var(--muted-foreground)", lineHeight: 1.65, fontSize: "0.9rem" }}>
           Complete the onboarding to generate your soul profile.
         </p>
-        <button className="btn btn-primary" onClick={() => navigate("/")} type="button">
-          Begin Onboarding
+        <button
+          className="btn btn-primary btn-large"
+          onClick={() => navigate("/")}
+          type="button"
+          style={{ minWidth: 200 }}
+        >
+          ◉ Begin Your Reading
         </button>
       </div>
     );
@@ -94,22 +109,48 @@ export default function ProfilePage() {
 
   const { archetype, synthesis } = profile;
 
-  // Snapshot strip data
+  // Build the four named snapshot cards
+  const firstSentence = (text: string) => {
+    const trimmed = (text ?? "").trim();
+    if (!trimmed) return "";
+    const s = trimmed.split(/(?<=[.!?])\s/)[0];
+    return s.endsWith(".") || s.endsWith("!") || s.endsWith("?") ? s : s + ".";
+  };
+
+  const whyNowValue = prescription
+    ? prescription
+    : synthesis.growthEdges?.[0]
+      ? `Now is the time to ${synthesis.growthEdges[0].replace(/^you (should|need to|must)\s+/i, "").toLowerCase()}`
+      : "";
+
+  const oneMoveValue = prescription2
+    ? prescription2
+    : synthesis.growthEdges?.[1] ?? synthesis.growthEdges?.[0] ?? "";
+
   const snapshotCards = [
     {
-      label: "Pattern",
-      value: (synthesis.coreEssence ?? "").split(".")[0] + ".",
+      label: "Who I Am",
+      value: firstSentence(synthesis.coreEssence ?? ""),
       accent: "#8b5cf6",
+      bg: "rgba(139,92,246,0.08)",
     },
     {
-      label: "Under Pressure",
-      value: (synthesis.stressPattern ?? "").split(".")[0] + ".",
+      label: "Why Now",
+      value: whyNowValue,
+      accent: "#22d3ee",
+      bg: "rgba(34,211,238,0.07)",
+    },
+    {
+      label: "One Pattern to Watch",
+      value: firstSentence(synthesis.stressPattern ?? ""),
       accent: "#f59e0b",
+      bg: "rgba(245,158,11,0.07)",
     },
     {
-      label: prescription ? "One Move" : "Growth Edge",
-      value: prescription ?? synthesis.growthEdges?.[0] ?? "",
+      label: "One Move Today",
+      value: oneMoveValue,
       accent: "#22c55e",
+      bg: "rgba(34,197,94,0.07)",
     },
   ];
 
@@ -117,13 +158,48 @@ export default function ProfilePage() {
     <div style={{ padding: "2rem 1rem 5rem", maxWidth: 720, margin: "0 auto" }}>
 
       {/* ── Identity header ─────────────────────────────────────────────── */}
-      <section style={{ textAlign: "center", marginBottom: "2.25rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1rem" }}>
+      <section style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+
+        {/* Eyebrow label */}
+        <div style={{
+          fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
+          color: "var(--muted-foreground)", marginBottom: "1rem", fontWeight: 500,
+        }}>
+          Soul Snapshot
+        </div>
+
+        {/* Glyph mark — larger, more weight */}
+        <div style={{
+          fontSize: "2.25rem", marginBottom: "0.75rem",
+          background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          filter: "drop-shadow(0 0 12px rgba(139,92,246,0.5))",
+        }}>
+          ◉
+        </div>
+
+        {/* Archetype name */}
+        <h1
+          className="gradient-text"
+          style={{
+            fontFamily: "var(--font-serif)",
+            fontSize: "clamp(2.2rem, 7vw, 3.75rem)",
+            fontWeight: 700, lineHeight: 1.1, marginBottom: "0.75rem",
+          }}
+        >
+          {archetype.name}
+        </h1>
+
+        {/* Element · Role pill + Confidence badge — co-located, clearly secondary */}
+        <div style={{
+          display: "flex", gap: "0.5rem", justifyContent: "center",
+          flexWrap: "wrap", marginBottom: "0.85rem",
+        }}>
           <span style={{
             display: "inline-block", padding: "0.3rem 0.9rem",
-            background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)",
-            borderRadius: 9999, fontSize: "0.72rem", fontWeight: 600,
-            color: "var(--cosmic-lavender)", letterSpacing: "0.06em", textTransform: "uppercase",
+            background: "rgba(124,58,237,0.13)", border: "1px solid rgba(124,58,237,0.28)",
+            borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600,
+            color: "var(--cosmic-lavender)", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
             {archetype.element} · {archetype.role}
           </span>
@@ -137,51 +213,49 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <h1
-          className="gradient-text"
-          style={{
-            fontFamily: "var(--font-serif)",
-            fontSize: "clamp(2.2rem, 7vw, 3.75rem)",
-            fontWeight: 700, lineHeight: 1.1, marginBottom: "0.75rem",
-          }}
-        >
-          {archetype.name}
-        </h1>
-
         <p style={{
-          fontSize: "clamp(0.95rem, 2.5vw, 1.15rem)",
+          fontSize: "clamp(0.9rem, 2.5vw, 1.05rem)",
           color: "var(--muted-foreground)", fontStyle: "italic",
-          maxWidth: 480, margin: "0 auto",
+          maxWidth: 460, margin: "0 auto",
         }}>
           {archetype.tagline}
         </p>
+
+        {/* Hairline separator */}
+        <div style={{
+          marginTop: "2rem",
+          height: 1,
+          background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent)",
+        }} />
       </section>
 
-      {/* ── Snapshot strip ───────────────────────────────────────────────── */}
+      {/* ── Snapshot strip — 4 named signal cards ────────────────────────── */}
       <div style={{
-        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-        gap: "0.75rem", marginBottom: "2.25rem",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: "0.85rem", marginBottom: "2.5rem",
       }}>
         {snapshotCards.map(card => (
           <div
             key={card.label}
             style={{
-              background: "rgba(15,20,40,0.6)", borderRadius: "12px",
-              padding: "1rem 1.1rem",
-              border: `1px solid ${card.accent}30`,
+              background: card.bg,
+              borderRadius: "14px",
+              padding: "1.25rem 1.35rem",
+              border: `1px solid ${card.accent}28`,
               borderLeft: `3px solid ${card.accent}`,
             }}
           >
             <div style={{
               fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase",
-              color: card.accent, fontWeight: 700, marginBottom: "0.45rem",
+              color: card.accent, fontWeight: 700, marginBottom: "0.55rem",
             }}>
               {card.label}
             </div>
             <p style={{
-              fontSize: "0.82rem", color: "rgba(230,228,255,0.82)",
-              lineHeight: 1.55, margin: 0,
-              display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
+              fontSize: "0.855rem", color: "rgba(230,228,255,0.88)",
+              lineHeight: 1.6, margin: 0,
+              display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}>
               {card.value}
@@ -190,23 +264,56 @@ export default function ProfilePage() {
         ))}
       </div>
 
+      {/* ── Action buttons — Today first (primary), Codex second ──────────── */}
+      <div style={{
+        display: "flex", gap: "0.85rem", flexWrap: "wrap",
+        justifyContent: "center", marginBottom: "2.75rem",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
+          <button
+            className="btn btn-glow btn-large"
+            onClick={() => navigate("/today")}
+            type="button"
+            style={{ fontSize: "0.9rem", width: "100%" }}
+          >
+            ☽ Today's Card
+          </button>
+          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+            Your daily signal, guidance &amp; focus
+          </span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/codex")}
+            type="button"
+            style={{ fontSize: "0.9rem", padding: "0.85rem 1.6rem", width: "100%" }}
+          >
+            ✦ Open Codex Reading
+          </button>
+          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+            Deep dive into your soul architecture
+          </span>
+        </div>
+      </div>
+
       {/* ── Deep sections ────────────────────────────────────────────────── */}
       <div className="stagger">
 
         <ProfileSection sectionKey="who" title="Who I Am">
-          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.9375rem" }}>
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
             {synthesis.coreEssence}
           </p>
         </ProfileSection>
 
         <ProfileSection sectionKey="stress" title="How I React Under Stress">
-          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.9375rem" }}>
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
             {synthesis.stressPattern}
           </p>
         </ProfileSection>
 
         <ProfileSection sectionKey="relate" title="How I Connect and Relate">
-          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.9375rem" }}>
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
             {synthesis.relationshipPattern}
           </p>
         </ProfileSection>
@@ -222,13 +329,13 @@ export default function ProfilePage() {
               {synthesis.moralCode.name}
             </span>
           </div>
-          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.9375rem" }}>
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
             {synthesis.moralCode.notes}
           </p>
         </ProfileSection>
 
         <ProfileSection sectionKey="build" title="What I'm Built to Build">
-          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.9375rem" }}>
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
             {synthesis.powerMode}
           </p>
         </ProfileSection>
@@ -247,7 +354,7 @@ export default function ProfilePage() {
                 }}
               >
                 <span style={{ color: "#22c55e", flexShrink: 0, fontSize: "0.85rem", marginTop: "0.1rem" }}>→</span>
-                <span style={{ color: "var(--card-foreground)", lineHeight: 1.6, fontSize: "0.9rem" }}>
+                <span style={{ color: "var(--card-foreground)", lineHeight: 1.6, fontSize: "0.875rem" }}>
                   {edge}
                 </span>
               </li>
@@ -255,29 +362,6 @@ export default function ProfilePage() {
           </ul>
         </ProfileSection>
 
-      </div>
-
-      {/* ── Actions ──────────────────────────────────────────────────────── */}
-      <div style={{
-        display: "flex", gap: "0.75rem", flexWrap: "wrap",
-        justifyContent: "center", marginTop: "2.5rem",
-      }}>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate("/codex")}
-          type="button"
-          style={{ fontSize: "0.9rem", padding: "0.7rem 1.6rem" }}
-        >
-          ✦ Open Codex Reading
-        </button>
-        <button
-          className="btn btn-glow btn-large"
-          onClick={() => navigate("/today")}
-          type="button"
-          style={{ fontSize: "0.9rem" }}
-        >
-          ☽ Today's Card
-        </button>
       </div>
 
     </div>
@@ -300,18 +384,21 @@ function ProfileSection({
     <section
       style={{
         background: s.bg,
-        border: "1px solid rgba(139,92,246,0.12)",
-        borderLeft: `3px solid ${s.accent}`,
+        border: `1px solid ${s.accent}18`,
         borderRadius: "12px",
         padding: "1.4rem 1.5rem",
-        marginBottom: "1rem",
+        marginBottom: "1.25rem",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "0.9rem" }}>
         <span style={{ color: s.accent, fontSize: "1rem", lineHeight: 1, flexShrink: 0 }}>
           {s.glyph}
         </span>
-        <h3 style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--foreground)", margin: 0 }}>
+        <h3 style={{
+          fontSize: "0.72rem", fontWeight: 700,
+          letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--foreground)", margin: 0,
+        }}>
           {title}
         </h3>
       </div>
