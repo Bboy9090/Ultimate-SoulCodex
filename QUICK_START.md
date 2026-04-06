@@ -14,12 +14,13 @@ cp .env.example .env
 npm run build
 
 # 4. Start
-npm start
+npm run start
 ```
 
 Visit: [http://localhost:3000](http://localhost:3000)
 
-> **`npm run dev`** uses Vite for hot-reload. It requires a Vite-capable environment (e.g., Replit, or with `vite` installed). For standard local use, `npm run build && npm start` is the reliable path.
+> **`npm run dev`** runs the API + web app in workspace dev mode (Vite + Express middleware).
+> For production-like behavior locally, use `npm run build && npm run start`.
 
 ---
 
