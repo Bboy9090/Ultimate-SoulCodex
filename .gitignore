@@ -13,6 +13,11 @@ build/
 
 # TypeScript build artifacts (tsc without outDir)
 *.js
+packages/**/**/*.js
+apps/**/**/*.js
+services/**/**/*.js
+server/**/*.js
+shared/**/*.js
 *.js.map
 *.d.ts.map
 

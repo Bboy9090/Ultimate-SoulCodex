@@ -96,3 +96,24 @@ test("section mapping correctness: engine produces all section keys", () => {
   }
 });
 
+test("mirror answers produce mirror-driven trait signals", () => {
+  const eng = runSoulCodexEngine({
+    toneMode: "clean",
+    astrology: fixture.astrologyData as any,
+    human_design: fixture.humanDesignData as any,
+    numerology: fixture.numerologyData as any,
+    mirror: {
+      reaction: ["fix", "analyze"],
+      betrayal: ["dishonesty"],
+      drain: ["chaos", "lies"],
+      freedomBuild: ["system", "sanctuary"],
+    },
+  });
+
+  // We don't assert exact ordering; just that the mirror layer emitted key traits.
+  const keys = new Set(eng.trait_signals.map((t: any) => t.trait_key));
+  assert.ok(keys.has("work_structure"), "expected mirror to emit work_structure");
+  assert.ok(keys.has("decision_fast") || keys.has("decision_wait"), "expected mirror to emit a decision trait");
+  assert.ok(keys.has("stress_truth_violation"), "expected mirror to emit stress_truth_violation");
+});
+

@@ -12,6 +12,35 @@ export type EngineConfidence = z.infer<typeof engineConfidenceSchema>;
 export const sourceSystemSchema = z.enum(["astrology", "human_design", "numerology"]);
 export type SourceSystem = z.infer<typeof sourceSystemSchema>;
 
+export const mirrorReactionSchema = z.enum(["fix", "analyze", "talk", "withdraw"]);
+export type MirrorReaction = z.infer<typeof mirrorReactionSchema>;
+
+export const mirrorBetrayalSchema = z.enum(["disrespect", "dishonesty", "stupidity", "emotional"]);
+export type MirrorBetrayal = z.infer<typeof mirrorBetrayalSchema>;
+
+export const mirrorDrainSchema = z.enum(["chaos", "repetition", "lies", "misunderstood"]);
+export type MirrorDrain = z.infer<typeof mirrorDrainSchema>;
+
+export const mirrorFreedomBuildSchema = z.enum(["system", "movement", "masterpiece", "sanctuary"]);
+export type MirrorFreedomBuild = z.infer<typeof mirrorFreedomBuildSchema>;
+
+export const mirrorAnswersSchema = z.object({
+  reaction: z.array(mirrorReactionSchema).default([]),
+  betrayal: z.array(mirrorBetrayalSchema).default([]),
+  drain: z.array(mirrorDrainSchema).default([]),
+  freedomBuild: z.array(mirrorFreedomBuildSchema).default([]),
+});
+export type MirrorAnswers = z.infer<typeof mirrorAnswersSchema>;
+
+export type MirrorProfile = {
+  driver: string;
+  shadowTrigger: string;
+  decisionStyle: string;
+  energyStyle: string;
+  conflictStyle: string;
+  nuance?: string[];
+};
+
 export const traitSignalSchema = z.object({
   trait_key: z.string().min(1),
   value: z.number().min(-10).max(10),
