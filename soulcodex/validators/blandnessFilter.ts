@@ -1,4 +1,4 @@
-import { HARD_REJECT_PHRASES } from "../anti-generic/banned-language";
+import { HARD_REJECT_PHRASES } from "../../packages/core/soulcodex-v1/content/banned-language";
 
 // Original hand-curated list
 const LEGACY_BANNED = [

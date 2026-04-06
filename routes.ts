@@ -68,7 +68,7 @@ import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/comp
 import { isGeneric } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
-import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext } from "./soulcodex/anti-generic/index";
+import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext } from "./packages/core/soulcodex-v1/engine/generate";
 import { generateText, isGeminiAvailable } from "./gemini";
 
 // Initialize SubscriptionService (if Stripe is configured)

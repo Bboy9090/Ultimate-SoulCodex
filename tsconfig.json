@@ -13,6 +13,6 @@
     },
     "baseUrl": "."
   },
-  "include": ["client/src/**/*", "server/**/*", "shared/**/*", "soulcodex/**/*", "*.ts"],
+  "include": ["client/src/**/*", "server/**/*", "shared/**/*", "soulcodex/**/*", "packages/**/*", "*.ts"],
   "exclude": ["node_modules", "dist"]
 }
