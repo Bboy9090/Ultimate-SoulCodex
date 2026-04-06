@@ -91,7 +91,7 @@ export default function OnboardingPage() {
     },
     onSuccess: (result) => {
       setJson(storageKeys.profile, result);
-      setJson(storageKeys.onboardingData, form);
+      setJson(storageKeys.onboardingData, form as any);
       if (result?.confidence) {
         setJson(storageKeys.confidence, result.confidence);
       }

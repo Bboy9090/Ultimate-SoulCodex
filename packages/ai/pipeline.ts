@@ -1,7 +1,7 @@
 import { clarityCheck, stripVaguePhrases } from "./validators/clarityValidator";
 import { structureCheck } from "./validators/structure";
 import { rewritePrompt } from "./validators/rewrite";
-import { runBlandnessFilter, stripBannedPhrases } from "../../soulcodex/validators/blandnessFilter";
+import { runBlandnessFilter, stripBannedPhrases } from "@soulcodex/core";
 
 export interface ValidationReport {
   originalText: string;

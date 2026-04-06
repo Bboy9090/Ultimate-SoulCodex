@@ -1,4 +1,4 @@
-import type { BirthData } from "./shared/schema";
+import type { BirthData } from "@soulcodex/core";
 import { 
   getPlanetSignInterpretation, 
   getHouseInterpretation, 
@@ -117,13 +117,16 @@ function getDegreesInSign(longitude: number): number {
 function createBirthTime(birthData: BirthData): Date {
   try {
     const [year, month, day] = birthData.birthDate.split('-').map(Number);
-    const [hours, minutes] = birthData.birthTime.split(':').map(Number);
+    const time = birthData.birthTime || "12:00";
+    const [hours, minutes] = time.split(':').map(Number);
     
     const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
     
-    const resolvedTimezone = resolveTimezone(birthData.timezone, 
-      parseFloat(birthData.latitude.toString()), 
-      parseFloat(birthData.longitude.toString()));
+    const resolvedTimezone = resolveTimezone(
+      birthData.timezone || "UTC",
+      parseFloat(String(birthData.latitude ?? 0)),
+      parseFloat(String(birthData.longitude ?? 0))
+    );
     
     return fromZonedTime(new Date(localTimeString), resolvedTimezone);
   } catch (error) {
@@ -344,8 +347,8 @@ function calculateChironPosition(birthTime: Date): { longitude: number; sign: st
 
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const birthTime = createBirthTime(birthData);
-  const latitude = parseFloat(birthData.latitude.toString());
-  const longitude = parseFloat(birthData.longitude.toString());
+  const latitude = parseFloat(String(birthData.latitude ?? 0));
+  const longitude = parseFloat(String(birthData.longitude ?? 0));
   
   const observer = new Astronomy.Observer(latitude, longitude, 0);
   
