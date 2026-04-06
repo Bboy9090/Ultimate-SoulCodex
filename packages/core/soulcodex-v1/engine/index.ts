@@ -11,6 +11,7 @@ export function runSoulCodexEngine(input: {
   astrology?: Record<string, unknown> | null;
   human_design?: Record<string, unknown> | null;
   numerology?: Record<string, unknown> | null;
+  mirror?: unknown;
 }): SoulCodexEngineOutput {
   const libs = loadEngineLibraries();
 
@@ -19,6 +20,7 @@ export function runSoulCodexEngine(input: {
       astrology: input.astrology,
       human_design: input.human_design,
       numerology: input.numerology,
+      mirror: input.mirror,
     },
     libs.matrix,
   );

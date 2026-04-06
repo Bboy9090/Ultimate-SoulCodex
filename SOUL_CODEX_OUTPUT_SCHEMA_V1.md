@@ -16,7 +16,7 @@ This contract is designed to be **stable, shareable, and testable**. It intentio
 
 - **Schema (zod + TS types)**: `packages/core/soulcodex-v1/schema.ts`
 - **Deterministic generator (no AI, internal engine-backed)**: `packages/core/soulcodex-v1/generate.ts`
-- **API route**: `routes.ts` (`/api/profiles/:id/soul-codex-v1`)
+- **API route**: `apps/api/routes.canonical.ts` (`/api/profiles/:id/soul-codex-v1`)
 
 ## Internal engine (Matrix v1)
 
@@ -36,6 +36,10 @@ Pipeline:
 3. **Statement selection**: tone-aware, confidence-thresholded, banned-language filtered (`engine/statementSelector.ts`)
 4. **Daily guidance**: deterministic daily object from trait hints (`engine/dailyGuidance.ts`)
 5. **Adapter**: map engine output into `identity_summary`, `sections`, `daily_guidance` (`generate.ts`)
+
+Mirror (behavioral) layer:
+
+- Optional user answers (`profile.mirror` or `profile.mirrorAnswers`) are analyzed deterministically (`engine/mirror.ts`) and converted into extra `TraitSignal[]` that sharpen statement selection + daily guidance without changing the public schema.
 
 ## Payload shape (v1)
 

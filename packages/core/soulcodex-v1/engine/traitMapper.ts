@@ -1,9 +1,11 @@
-import type { EngineConfidence, SourceSystem, TraitMappingMatrix, TraitSignal } from "./types";
+import type { EngineConfidence, MirrorAnswers, SourceSystem, TraitMappingMatrix, TraitSignal } from "./types";
+import { analyzeMirror, mirrorAnswersSchema, mirrorToTraitSignals } from "./mirror";
 
 type SoulCodexEngineInput = {
   astrology?: Record<string, unknown> | null;
   human_design?: Record<string, unknown> | null;
   numerology?: Record<string, unknown> | null;
+  mirror?: unknown;
 };
 
 function asNumber(x: unknown): number | null {
@@ -43,6 +45,18 @@ export function mapTraitSignals(input: SoulCodexEngineInput, matrix: TraitMappin
   const num = (input.numerology ?? null) as Record<string, unknown> | null;
 
   const signals: TraitSignal[] = [];
+
+  // Mirror signals are explicit user behavioral inputs. They should always be applied when present.
+  try {
+    const parsed: MirrorAnswers | null =
+      input.mirror && typeof input.mirror === "object" ? mirrorAnswersSchema.parse(input.mirror) : null;
+    if (parsed) {
+      const profile = analyzeMirror(parsed);
+      signals.push(...mirrorToTraitSignals(profile));
+    }
+  } catch {
+    // ignore invalid mirror shape — engine remains deterministic and resilient
+  }
 
   for (const entry of matrix.entries) {
     const srcObj = entry.source === "astrology" ? astro : entry.source === "human_design" ? hd : num;

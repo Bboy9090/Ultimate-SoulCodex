@@ -261,6 +261,7 @@ export function generateSoulCodexOutputV1(input: {
     astrology: (input.profile?.astrologyData ?? input.profile?.astrology ?? null) as any,
     human_design: (input.profile?.humanDesignData ?? input.profile?.humanDesign ?? null) as any,
     numerology: (input.profile?.numerologyData ?? input.profile?.numerology ?? null) as any,
+    mirror: (input.profile?.mirror ?? input.profile?.mirrorAnswers ?? null) as any,
   });
 
   const identity = buildIdentityFromEngine(input.profile, core, engine);
