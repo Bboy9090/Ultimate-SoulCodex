@@ -280,14 +280,18 @@ export default function TimelinePage() {
   const py = birthData ? calcPersonalYear(birthData.month, birthData.day, currentYear) : null;
   const pm = py        ? calcPersonalMonth(py, currentMonth) : null;
 
-  const nextPm       = pm ? (pm === 9 ? 1 : pm + 1) : null;
-  const yearData     = py   ? YEAR_DATA[py]    : null;
-  const monthData    = pm   ? MONTH_DATA[pm]   : null;
-  const nextMonthDat = nextPm ? MONTH_DATA[nextPm] : null;
+  const nextPm           = pm ? (pm === 9 ? 1 : pm + 1) : null;
+  const yearData         = py     ? YEAR_DATA[py]      : null;
+  const monthData        = pm     ? MONTH_DATA[pm]     : null;
+  const nextMonthDat     = nextPm ? MONTH_DATA[nextPm] : null;
+  const monthsRemaining  = 12 - currentMonth;          // 0 = December, 8 = April
+  const yearTurnsUrgent  = monthsRemaining <= 1;       // this month or next month
+  const yearTurnsNear    = monthsRemaining <= 3;       // within 3 months
+  const nextYearNum      = py ? (py === 9 ? 1 : py + 1) : null;
 
-  // Do / Don't: prefer TodayCard (today-specific), fallback to year archetype
-  const leanIntoItems: string[] = todayCard?.doList?.length   ? todayCard.doList   : (yearData?.leanInto   ?? []);
-  const releaseItems:  string[] = todayCard?.dontList?.length ? todayCard.dontList : (yearData?.release ?? []);
+  // Phase guidance always comes from the year archetype — never day-level to-do lists
+  const leanIntoItems: string[] = yearData?.leanInto ?? [];
+  const releaseItems:  string[] = yearData?.release  ?? [];
 
   const dateLabel = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
@@ -464,16 +468,44 @@ export default function TimelinePage() {
             ◌ What Opens Next
           </p>
 
+          {/* Next Personal Month — always show */}
           {nextMonthDat && nextPm && (
-            <p style={{ fontSize: "0.87rem", color: "rgba(200,240,255,0.88)", margin: "0 0 0.55rem", lineHeight: 1.65 }}>
-              <span style={{ color: "#22d3ee", marginRight: "0.4rem" }}>{nextMonthDat.glyph}</span>
-              <strong>Month {nextPm} — {nextMonthDat.label}:</strong> {nextMonthDat.note}
-            </p>
+            <div style={{
+              display: "flex", alignItems: "flex-start", gap: "0.6rem",
+              marginBottom: yearTurnsUrgent || yearTurnsNear ? "0.85rem" : 0,
+            }}>
+              <span style={{ color: "#22d3ee", fontSize: "0.9rem", marginTop: "0.1rem", flexShrink: 0 }}>{nextMonthDat.glyph}</span>
+              <p style={{ fontSize: "0.87rem", color: "rgba(200,240,255,0.9)", margin: 0, lineHeight: 1.65 }}>
+                <strong>Month {nextPm} — {nextMonthDat.label}</strong><br />
+                <span style={{ color: "rgba(180,230,255,0.75)" }}>{nextMonthDat.note}</span>
+              </p>
+            </div>
           )}
 
-          {yearData && (
-            <p style={{ fontSize: "0.84rem", color: "rgba(180,230,255,0.72)", margin: 0, lineHeight: 1.65 }}>
-              <span style={{ color: "#22d3ee", marginRight: "0.4rem", fontSize: "0.8rem" }}>→</span>
+          {/* Year transition — only show when approaching the boundary */}
+          {yearData && nextYearNum && yearTurnsNear && (
+            <div style={{
+              borderTop: "1px solid rgba(34,211,238,0.15)", paddingTop: "0.85rem",
+              display: "flex", alignItems: "flex-start", gap: "0.6rem",
+            }}>
+              <span style={{ color: yearTurnsUrgent ? "#22c55e" : "#22d3ee", fontSize: "0.8rem", marginTop: "0.15rem", flexShrink: 0 }}>
+                {yearTurnsUrgent ? "◉" : "→"}
+              </span>
+              <p style={{ fontSize: "0.85rem", color: yearTurnsUrgent ? "rgba(200,255,210,0.9)" : "rgba(180,230,255,0.78)", margin: 0, lineHeight: 1.65 }}>
+                <strong style={{ color: yearTurnsUrgent ? "#22c55e" : "#22d3ee" }}>
+                  {yearTurnsUrgent
+                    ? `Year ${nextYearNum} — ${YEAR_DATA[nextYearNum].label} opens ${monthsRemaining === 0 ? "this month" : "next month"}`
+                    : `Year ${nextYearNum} — ${YEAR_DATA[nextYearNum].label} arrives in ${monthsRemaining} months`}
+                </strong><br />
+                <span>{yearData.nextYearEssence}</span>
+              </p>
+            </div>
+          )}
+
+          {/* Mid-year (months 1-9): show the year arc note quietly */}
+          {yearData && !yearTurnsNear && (
+            <p style={{ fontSize: "0.82rem", color: "rgba(180,230,255,0.62)", margin: 0, lineHeight: 1.65, marginTop: nextMonthDat ? "0.7rem" : 0 }}>
+              <span style={{ color: "#22d3ee", marginRight: "0.4rem", fontSize: "0.75rem" }}>→</span>
               {yearData.nextYearEssence}
             </p>
           )}
@@ -507,18 +539,34 @@ export default function TimelinePage() {
       {/* ── Life Map teaser ──────────────────────────────────────────────────── */}
       <div style={{
         background: "rgba(15,20,40,0.4)",
-        border: "1px dashed rgba(139,92,246,0.2)",
+        border: "1px dashed rgba(139,92,246,0.22)",
         borderRadius: "14px",
-        padding: "1.5rem",
-        textAlign: "center",
+        padding: "1.5rem 1.75rem",
       }}>
-        <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.5rem" }}>
-          Coming Soon
-        </p>
-        <p style={{ fontSize: "1rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "0.4rem" }}>Life Map</p>
-        <p style={{ fontSize: "0.82rem", color: "var(--muted-foreground)", lineHeight: 1.6, maxWidth: 440, margin: "0 auto" }}>
-          A visual map of my 9-year cycles, personal years, and major threshold points — laid out as a timeline I can navigate.
-        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.85rem" }}>
+          <div>
+            <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.3rem" }}>
+              In Development
+            </p>
+            <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--foreground)", margin: 0 }}>Life Map</p>
+          </div>
+          <span style={{
+            display: "inline-block", padding: "0.2rem 0.65rem",
+            background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.22)",
+            borderRadius: "99px", fontSize: "0.68rem", color: "var(--cosmic-lavender)",
+          }}>Soon ✦</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+          {[
+            ["◎", "My full 9-year arc — Years 1 through 9 laid out as a scrollable timeline"],
+            ["◆", "Past years dimmed, current year highlighted, upcoming years shown as markers"],
+            ["☽", "Major threshold points marked — the years when my cycle resets or peaks"],
+          ].map(([glyph, text]) => (
+            <p key={text} style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", margin: 0, lineHeight: 1.6 }}>
+              <span style={{ color: "rgba(139,92,246,0.55)", marginRight: "0.5rem" }}>{glyph}</span>{text}
+            </p>
+          ))}
+        </div>
       </div>
     </div>
   );
