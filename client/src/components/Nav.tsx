@@ -24,8 +24,9 @@ export default function Nav() {
     { href: "/profile", label: "Profile" },
     { href: "/today",   label: "Today"   },
     { href: "/guide",   label: "Guide"   },
-    { href: "/tracker", label: "Tracker" },
-    { href: "/codex",   label: "Codex"   },
+    { href: "/tracker",  label: "Tracker"  },
+    { href: "/timeline", label: "Timeline" },
+    { href: "/codex",    label: "Codex"    },
   ];
 
   const advancedLinks = [
