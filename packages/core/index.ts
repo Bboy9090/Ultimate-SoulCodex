@@ -5,3 +5,5 @@ export * from './compute/numerology';
 export * from './compute/elements';
 export * from './compute/moral';
 export * from './compute/confidence';
+export * from './soulcodex-v1/schema';
+export * from './soulcodex-v1/generate';

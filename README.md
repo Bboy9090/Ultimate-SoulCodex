@@ -48,10 +48,14 @@ This project runs on rigorous engineering standards:
 2. **Audit-First**: TypeScript compiler flags must be addressed cleanly at the database layer (`IStorage`, `schema.ts`) to avoid silent runtime errors.
 3. **Continuous Enforcement**: The repository leverages comprehensive GitHub Actions to parse changes against our baseline architecture rules.
 
-## ✨ Recent Upgrades
-* Transformed legacy Next.js routing patterns securely into Vite dynamic single-page pathways.
-* Re-Architected backend memory interfaces for `astronomy-engine` vector calculations and complex JSONB postgres fields.
-* Fixed real-time SSE buffering engine for precise AI payload delivery directly onto typing indicators.
+## Canonical output contract (Schema v1)
+
+The engine-facing profile contract is `Soul Codex Output Schema v1`.
+
+- Spec: `SOUL_CODEX_OUTPUT_SCHEMA_V1.md`
+- Endpoint: `GET /api/profiles/:id/soul-codex-v1?tone_mode=clean|deep|raw`
+
+## Repository rules
 
 ---
 *Driven by the Engine of the Eternal Now.*
