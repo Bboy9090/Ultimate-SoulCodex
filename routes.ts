@@ -72,6 +72,7 @@ import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
 import { generateText, isGeminiAvailable } from "./gemini";
 import { validateAndClean } from "./src/ai/pipeline";
+import { generateSoulCodexOutputV1 } from "@soulcodex/core";
 
 // Initialize SubscriptionService (if Stripe is configured)
 let subscriptionService: SubscriptionService | null = null;
@@ -1602,6 +1603,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ ...unified, synthesis });
     } catch (error) {
       return handleError(error, res, "UnifiedProfile");
+    }
+  });
+
+  // Soul Codex Output Schema v1 (canonical profile response contract)
+  app.get("/api/profiles/:id/soul-codex-v1", async (req, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.id);
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+      const tone_mode =
+        (req.query.tone_mode === "clean" || req.query.tone_mode === "deep" || req.query.tone_mode === "raw")
+          ? (req.query.tone_mode as any)
+          : "clean";
+
+      const payload = generateSoulCodexOutputV1({
+        profile,
+        profileId: req.params.id,
+        toneMode: tone_mode,
+      });
+
+      return res.json(payload);
+    } catch (error) {
+      return handleError(error, res, "SoulCodexV1");
     }
   });
 
