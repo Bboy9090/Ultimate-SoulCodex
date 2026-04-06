@@ -3,8 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { entitlementService } from "../../services/entitlement-service";
 import { buildTodayCard } from "./todayRender";
-import { generateTimeline } from "../../services/timeline/index";
-import { generateSoulCodexOutputV1 } from "@soulcodex/core";
+import { generateTimeline, generateSoulCodexOutputV1 } from "@soulcodex/core";
 
 function asToneMode(raw: unknown): "clean" | "deep" | "raw" {
   return raw === "deep" || raw === "raw" ? raw : "clean";
