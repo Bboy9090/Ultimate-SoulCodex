@@ -13,9 +13,9 @@ const posterSchema = z.object({
   birthDate: z.string().min(1, "Birth date is required"),
   birthTime: z.string().optional(),
   birthLocation: z.string().optional(),
-  sunSign: z.enum(ZODIAC_SIGNS as [string, ...string[]]),
-  moonSign: z.enum(ZODIAC_SIGNS as [string, ...string[]]),
-  risingSign: z.enum([...ZODIAC_SIGNS, ""] as [string, ...string[]]).optional(),
+  sunSign: z.enum(ZODIAC_SIGNS as unknown as [string, ...string[]]),
+  moonSign: z.enum(ZODIAC_SIGNS as unknown as [string, ...string[]]),
+  risingSign: z.enum([...ZODIAC_SIGNS, ""] as unknown as [string, ...string[]]).optional(),
   lifePathNumber: z.number().int().min(1).max(33),
   masterNumber: z.number().int().optional(),
 });

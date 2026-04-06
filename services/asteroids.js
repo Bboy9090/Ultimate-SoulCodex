@@ -1,0 +1,1 @@
+export { calculateAsteroids } from "../asteroids";

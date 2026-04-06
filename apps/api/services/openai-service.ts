@@ -1,4 +1,4 @@
-import { generateText, isGeminiAvailable } from "../../gemini";
+import { generateText, isGeminiAvailable } from "../gemini";
 
 interface BiographyRequest {
   name: string;

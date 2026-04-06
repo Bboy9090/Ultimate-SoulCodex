@@ -24,7 +24,7 @@ class EntitlementService {
 
     const user = params.userId ? await storage.getUser(params.userId) : null;
 
-    if (user?.manualPremiumOverride) {
+    if ((user as any)?.manualPremiumOverride) {
       return {
         isPremium: true,
         source: 'manual_override',
