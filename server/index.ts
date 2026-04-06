@@ -75,7 +75,7 @@ let serverInstance: any = null;
   });
 
   // Use PORT from environment (Render and other platforms set this)
-  const PORT = parseInt(process.env.PORT || "3000", 10);
+  const PORT = parseInt(process.env.PORT || "5000", 10);
   // On Windows, use 127.0.0.1 explicitly to avoid IPv6 issues. On Linux, use 0.0.0.0 for all interfaces
   const HOST = process.platform === "win32" ? "127.0.0.1" : "0.0.0.0";
 
