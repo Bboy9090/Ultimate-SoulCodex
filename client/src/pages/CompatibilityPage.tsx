@@ -20,6 +20,7 @@ interface CompatibilityResult {
   };
   friction: string[];
   synergy: string[];
+  growthOpportunities: string[];
   profile1Name?: string;
   profile2Name?: string;
 }
@@ -32,15 +33,24 @@ const DIM_CONFIG = {
   decisions: { glyph: "◆", color: "#22d3ee", label: "Decisions" },
 };
 
+function scoreLabel(score: number): { text: string; color: string } {
+  if (score >= 75) return { text: "Deep Resonance",    color: "#22c55e" };
+  if (score >= 55) return { text: "Strong Connection", color: "#22d3ee" };
+  if (score >= 40) return { text: "Complex Dynamic",   color: "#f59e0b" };
+  return                  { text: "Friction-Heavy",    color: "#ef4444" };
+}
+
+const FREE_LIMIT = 5;
+
 export default function CompatibilityPage() {
-  const [myProfile, setMyProfile]     = useState<any>(null);
-  const [myProfileId, setMyProfileId] = useState<string | null>(null);
+  const [myProfile, setMyProfile]       = useState<any>(null);
+  const [myProfileId, setMyProfileId]   = useState<string | null>(null);
   const [myConfidence, setMyConfidence] = useState<any>(null);
-  const [persons, setPersons]         = useState<Person[]>([]);
-  const [isAddOpen, setIsAddOpen]     = useState(false);
-  const [result, setResult]           = useState<CompatibilityResult | null>(null);
-  const [error, setError]             = useState<string | null>(null);
-  const [success, setSuccess]         = useState<string | null>(null);
+  const [persons, setPersons]           = useState<Person[]>([]);
+  const [isAddOpen, setIsAddOpen]       = useState(false);
+  const [result, setResult]             = useState<CompatibilityResult | null>(null);
+  const [error, setError]               = useState<string | null>(null);
+  const [success, setSuccess]           = useState<string | null>(null);
 
   const [form, setForm] = useState({ name: "", birthDate: "", birthTime: "", birthLocation: "" });
 
@@ -57,7 +67,7 @@ export default function CompatibilityPage() {
 
   const flash = (fn: (v: string | null) => void, msg: string) => {
     fn(msg);
-    setTimeout(() => fn(null), 3000);
+    setTimeout(() => fn(null), 3500);
   };
 
   const saveMyProfileMutation = useMutation({
@@ -114,8 +124,9 @@ export default function CompatibilityPage() {
           values:    dims.values?.score    ?? dims.values    ?? 0,
           decisions: dims.decisions?.score ?? dims.decisions ?? 0,
         },
-        friction: cd.friction || [],
-        synergy:  cd.synergy  || [],
+        friction:           cd.friction            || [],
+        synergy:            cd.synergy             || [],
+        growthOpportunities: cd.growthOpportunities || [],
         profile1Name: data.profile1?.name,
         profile2Name: data.profile2?.name,
       });
@@ -129,32 +140,35 @@ export default function CompatibilityPage() {
     compareMutation.mutate(personId);
   };
 
+  const nearLimit = persons.length >= FREE_LIMIT - 1 && persons.length < FREE_LIMIT;
+  const atLimit   = persons.length >= FREE_LIMIT;
+
   return (
     <div style={{ padding: "2rem 1rem 4rem", maxWidth: 780, margin: "0 auto" }}>
 
-      {/* ── Header ───────────────────────────────────────────────────────── */}
+      {/* ── Header ───────────────────────────────────────────────────────────── */}
       <section style={{ textAlign: "center", marginBottom: "2rem" }}>
         <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.25rem)" }}>
           Compatibility
         </h1>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+        <p style={{ color: "var(--muted-foreground)", fontSize: "0.88rem", marginTop: "0.35rem" }}>
           Compare your blueprint with someone else to see where your energies meet.
         </p>
       </section>
 
-      {/* ── Toasts ───────────────────────────────────────────────────────── */}
+      {/* ── Toasts ───────────────────────────────────────────────────────────── */}
       {error && (
-        <div style={{ padding: "0.7rem 1rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "10px", color: "#ef4444", marginBottom: "1rem", fontSize: "0.85rem" }}>
+        <div style={{ padding: "0.7rem 1rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", color: "#ef4444", marginBottom: "1rem", fontSize: "0.85rem" }}>
           {error}
         </div>
       )}
       {success && (
-        <div style={{ padding: "0.7rem 1rem", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: "10px", color: "#22c55e", marginBottom: "1rem", fontSize: "0.85rem" }}>
+        <div style={{ padding: "0.7rem 1rem", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "10px", color: "#22c55e", marginBottom: "1rem", fontSize: "0.85rem" }}>
           {success}
         </div>
       )}
 
-      {/* ── My Profile Card ──────────────────────────────────────────────── */}
+      {/* ── My Profile Card ──────────────────────────────────────────────────── */}
       <div style={{
         background: "rgba(15,20,40,0.65)", border: "1px solid rgba(139,92,246,0.2)",
         borderLeft: "3px solid #8b5cf6", borderRadius: "14px",
@@ -167,9 +181,7 @@ export default function CompatibilityPage() {
               background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "1.2rem", color: "var(--cosmic-lavender)",
-            }}>
-              ◉
-            </div>
+            }}>◉</div>
             <div>
               <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--foreground)" }}>
                 {myProfile?.birth_data?.name || myProfile?.archetype?.name || "My Profile"}
@@ -203,7 +215,7 @@ export default function CompatibilityPage() {
 
         {/* Sun / Moon / Rising mini-row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
-          {([["Sun", myProfile?.astrology?.sunSign], ["Moon", myProfile?.astrology?.moonSign], ["Rising", myProfile?.astrology?.risingSign]] as [string, string][]).map(([label, val]) => (
+          {([ ["Sun", myProfile?.astrology?.sunSign], ["Moon", myProfile?.astrology?.moonSign], ["Rising", myProfile?.astrology?.risingSign] ] as [string, string][]).map(([label, val]) => (
             <div key={label} style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted-foreground)", marginBottom: "0.2rem" }}>{label}</div>
               <div style={{ fontWeight: 500, fontSize: "0.9rem", color: val ? "var(--foreground)" : "var(--muted-foreground)" }}>{val || "—"}</div>
@@ -212,28 +224,54 @@ export default function CompatibilityPage() {
         </div>
       </div>
 
-      {/* ── Connections ──────────────────────────────────────────────────── */}
+      {/* ── Connections ──────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
           <h2 style={{ fontSize: "1rem", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--foreground)" }}>
             <span style={{ color: "var(--cosmic-pink)" }}>◌</span> Connections
           </h2>
-          <button
-            className="btn btn-secondary"
-            style={{ padding: "0.45rem 0.9rem", fontSize: "0.8rem" }}
-            onClick={() => setIsAddOpen(!isAddOpen)}
-          >
-            {isAddOpen ? "✕ Close" : "+ Add Person"}
-          </button>
+          {!atLimit && (
+            <button
+              className="btn btn-secondary"
+              style={{ padding: "0.45rem 0.9rem", fontSize: "0.8rem" }}
+              onClick={() => setIsAddOpen(!isAddOpen)}
+            >
+              {isAddOpen ? "✕ Close" : "+ Add Person"}
+            </button>
+          )}
         </div>
 
-        {isAddOpen && (
+        {/* Approaching / at limit banner */}
+        {(nearLimit || atLimit) && (
+          <div style={{
+            padding: "0.75rem 1.1rem", marginBottom: "1rem",
+            background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)",
+            borderRadius: "10px", fontSize: "0.82rem",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
+          }}>
+            <span style={{ color: "var(--muted-foreground)" }}>
+              {atLimit
+                ? `Free tier limit reached (${FREE_LIMIT} connections).`
+                : `${FREE_LIMIT - persons.length} connection slot remaining on the free tier.`}
+            </span>
+            <span style={{
+              display: "inline-block", padding: "0.2rem 0.7rem",
+              background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)",
+              borderRadius: "99px", fontSize: "0.72rem", color: "var(--cosmic-lavender)",
+              whiteSpace: "nowrap", cursor: "pointer",
+            }}>
+              Upgrade ✦
+            </span>
+          </div>
+        )}
+
+        {isAddOpen && !atLimit && (
           <div style={{
             background: "rgba(15,20,40,0.65)", border: "1px dashed rgba(139,92,246,0.4)",
             borderRadius: "12px", padding: "1.5rem", marginBottom: "1.25rem",
           }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem", marginBottom: "1rem" }}>
-              {([["Name", "text", "name", "Name", ""], ["Birth Date", "date", "birthDate", "", ""], ["Birth Time (optional)", "time", "birthTime", "", ""], ["Birth Location", "text", "birthLocation", "City, Country", ""]] as [string, string, keyof typeof form, string, string][]).map(([label, type, key, ph]) => (
+              {([ ["Name", "text", "name", "Name"], ["Birth Date", "date", "birthDate", ""], ["Birth Time (optional)", "time", "birthTime", ""], ["Birth Location", "text", "birthLocation", "City, Country"] ] as [string, string, keyof typeof form, string][]).map(([label, type, key, ph]) => (
                 <div key={key} className="form-group" style={{ marginBottom: 0 }}>
                   <label className="label" style={{ fontSize: "0.75rem" }}>{label}</label>
                   <input className="input" type={type} placeholder={ph} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} />
@@ -259,7 +297,7 @@ export default function CompatibilityPage() {
           )}
           {persons.map(person => (
             <div key={person.id} style={{
-              background: "rgba(15,20,40,0.55)", border: "1px solid rgba(139,92,246,0.15)",
+              background: "rgba(15,20,40,0.55)", border: "1px solid rgba(244,114,182,0.15)",
               borderRadius: "12px", padding: "1rem 1.25rem",
               display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
@@ -269,9 +307,7 @@ export default function CompatibilityPage() {
                   background: "rgba(244,114,182,0.12)", border: "1px solid rgba(244,114,182,0.25)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "1rem", color: "var(--cosmic-rose)",
-                }}>
-                  ◌
-                </div>
+                }}>◌</div>
                 <div>
                   <p style={{ fontWeight: 600, margin: 0, fontSize: "0.9rem" }}>{person.name}</p>
                   <p style={{ fontSize: "0.72rem", color: "var(--muted-foreground)", margin: 0 }}>{person.birthDate}</p>
@@ -290,34 +326,51 @@ export default function CompatibilityPage() {
         </div>
       </div>
 
-      {/* ── Results ──────────────────────────────────────────────────────── */}
+      {/* ── Results ──────────────────────────────────────────────────────────── */}
       {result && (
         <div style={{
-          background: "rgba(15,20,40,0.7)", border: "1px solid rgba(139,92,246,0.3)",
-          borderRadius: "16px", padding: "2rem",
+          background: "rgba(15,20,40,0.7)", border: "1px solid rgba(139,92,246,0.25)",
+          borderRadius: "18px", padding: "2rem",
         }}>
-          <h2 className="gradient-text" style={{ textAlign: "center", marginBottom: "0.5rem", fontFamily: "var(--font-serif)", fontSize: "1.5rem" }}>
-            Compatibility Analysis
-          </h2>
-          {(result.profile1Name || result.profile2Name) && (
-            <p style={{ textAlign: "center", color: "var(--muted-foreground)", fontSize: "0.82rem", marginBottom: "2rem" }}>
-              {result.profile1Name} × {result.profile2Name}
-            </p>
-          )}
+
+          {/* Pair header */}
+          <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+            <h2 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "1.5rem", marginBottom: "0.35rem" }}>
+              Compatibility Analysis
+            </h2>
+            {(result.profile1Name || result.profile2Name) && (
+              <p style={{ color: "var(--muted-foreground)", fontSize: "0.82rem" }}>
+                {result.profile1Name} <span style={{ color: "rgba(139,92,246,0.6)", margin: "0 0.3rem" }}>×</span> {result.profile2Name}
+              </p>
+            )}
+          </div>
 
           {/* Score ring */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2.25rem" }}>
             <div style={{ position: "relative", width: 140, height: 140, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg style={{ width: "100%", height: "100%", transform: "rotate(-90deg)" }}>
-                <circle cx="70" cy="70" r="64" fill="none" stroke="rgba(139,92,246,0.12)" strokeWidth="10" />
-                <circle cx="70" cy="70" r="64" fill="none" stroke="var(--cosmic-purple)" strokeWidth="10"
-                  strokeDasharray="402" strokeDashoffset={402 - (402 * result.overallScore) / 100}
+                <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(139,92,246,0.1)" strokeWidth="10" />
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--cosmic-purple)" strokeWidth="10"
+                  strokeDasharray="377" strokeDashoffset={377 - (377 * result.overallScore) / 100}
                   strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s ease-out" }} />
               </svg>
               <div style={{ position: "absolute", textAlign: "center" }}>
-                <span style={{ fontSize: "2.4rem", fontWeight: 700, display: "block", color: "var(--foreground)" }}>{result.overallScore}%</span>
-                <span style={{ fontSize: "0.68rem", color: "var(--muted-foreground)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Match</span>
+                <span style={{ fontSize: "2.4rem", fontWeight: 700, display: "block", color: "var(--foreground)", lineHeight: 1 }}>{result.overallScore}%</span>
+                <span style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Match</span>
               </div>
+            </div>
+            {/* Verbal label below ring */}
+            <div style={{ marginTop: "0.85rem", textAlign: "center" }}>
+              <span style={{
+                display: "inline-block", padding: "0.25rem 0.9rem",
+                background: `${scoreLabel(result.overallScore).color}15`,
+                border: `1px solid ${scoreLabel(result.overallScore).color}35`,
+                borderRadius: "99px",
+                fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.04em",
+                color: scoreLabel(result.overallScore).color,
+              }}>
+                {scoreLabel(result.overallScore).text}
+              </span>
             </div>
           </div>
 
@@ -328,37 +381,58 @@ export default function CompatibilityPage() {
             ))}
           </div>
 
-          {/* Synergy */}
+          {/* Divider */}
+          <div style={{ height: 1, background: "rgba(139,92,246,0.12)", marginBottom: "1.5rem" }} />
+
+          {/* ── Where You Flow (Synergy) ── */}
           {result.synergy.length > 0 && (
             <div style={{
-              background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.18)",
-              borderLeft: "3px solid #22c55e", borderRadius: "10px",
-              padding: "1rem 1.25rem", marginBottom: "1rem",
+              background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.2)",
+              borderLeft: "3px solid #22c55e", borderRadius: "12px",
+              padding: "1.25rem 1.4rem", marginBottom: "1rem",
             }}>
               <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#22c55e", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
-                Synergy
+                ✦ Where You Flow
               </p>
               {result.synergy.map((s, i) => (
-                <p key={i} style={{ fontSize: "0.85rem", color: "rgba(230,255,230,0.85)", marginBottom: "0.25rem" }}>
-                  <span style={{ color: "#22c55e", marginRight: "0.4rem" }}>✦</span>{s}
+                <p key={i} style={{ fontSize: "0.86rem", color: "rgba(200,255,210,0.88)", marginBottom: "0.3rem", lineHeight: 1.65 }}>
+                  <span style={{ color: "#22c55e", marginRight: "0.45rem" }}>→</span>{s}
                 </p>
               ))}
             </div>
           )}
 
-          {/* Friction */}
+          {/* ── What This Dynamic Can Build (Growth) ── */}
+          {result.growthOpportunities.length > 0 && (
+            <div style={{
+              background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.2)",
+              borderLeft: "3px solid #8b5cf6", borderRadius: "12px",
+              padding: "1.25rem 1.4rem", marginBottom: "1rem",
+            }}>
+              <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#8b5cf6", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
+                ◈ What This Dynamic Can Build
+              </p>
+              {result.growthOpportunities.map((g, i) => (
+                <p key={i} style={{ fontSize: "0.86rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.3rem", lineHeight: 1.65 }}>
+                  <span style={{ color: "#8b5cf6", marginRight: "0.45rem" }}>◆</span>{g}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* ── Watch Points (Friction) ── */}
           {result.friction.length > 0 && (
             <div style={{
-              background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.18)",
-              borderLeft: "3px solid #f59e0b", borderRadius: "10px",
-              padding: "1rem 1.25rem",
+              background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)",
+              borderLeft: "3px solid #f59e0b", borderRadius: "12px",
+              padding: "1.25rem 1.4rem",
             }}>
               <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#f59e0b", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
-                Watch Points
+                ▪ Watch Points
               </p>
               {result.friction.map((f, i) => (
-                <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.25rem" }}>
-                  <span style={{ color: "#f59e0b", marginRight: "0.4rem" }}>▪</span>{f}
+                <p key={i} style={{ fontSize: "0.84rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.3rem", lineHeight: 1.65 }}>
+                  <span style={{ color: "#f59e0b", marginRight: "0.45rem" }}>⚠</span>{f}
                 </p>
               ))}
             </div>
@@ -369,7 +443,7 @@ export default function CompatibilityPage() {
   );
 }
 
-// ── Dimension bar ────────────────────────────────────────────────────────────
+// ── Dimension bar ─────────────────────────────────────────────────────────────
 
 function DimensionBar({ label, glyph, color, score }: {
   label: string; glyph: string; color: string; score: number;
@@ -384,8 +458,8 @@ function DimensionBar({ label, glyph, color, score }: {
         </div>
         <span style={{ color, fontWeight: 600, fontSize: "0.82rem" }}>{score}%</span>
       </div>
-      <div style={{ height: 7, background: "rgba(255,255,255,0.07)", borderRadius: 4, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 4, transition: "width 1s ease-out" }} />
+      <div style={{ height: 7, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 4, transition: "width 1s ease-out", opacity: 0.85 }} />
       </div>
     </div>
   );
