@@ -1,7 +1,6 @@
 import { generateText, isGeminiAvailable } from "./gemini";
-import { BANNED_PHRASES, stripBannedPhrases } from "./soulcodex/validators/blandnessFilter";
-import { buildResultsPrompt } from "./soulcodex/prompts/resultsEngine";
-import { validateAndClean } from "./src/ai/pipeline";
+import { BANNED_PHRASES, stripBannedPhrases, buildResultsPrompt } from "@soulcodex/core";
+import { validateAndClean } from "@soulcodex/ai/pipeline";
 
 interface BiographyRequest {
   name: string;

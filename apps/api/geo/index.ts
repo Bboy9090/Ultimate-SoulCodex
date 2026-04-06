@@ -1,4 +1,4 @@
-import { geocodeLocation } from "../../geocoding";
+import { geocodeLocation } from "../geocoding";
 import { geocodeNominatim } from "./nominatim";
 import { getGeoCached, setGeoCached, type GeoResult } from "./cache";
 

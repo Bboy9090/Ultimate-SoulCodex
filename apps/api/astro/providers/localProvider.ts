@@ -1,5 +1,5 @@
 import type { AstroProvider, AstroRequest, AstroResult } from "../types";
-import { calculateAstrology } from "../../../astrology";
+import { calculateAstrology } from "../../services/astrology";
 
 export const localAstroProvider: AstroProvider = {
   name: "local-astronomy-engine",
@@ -25,10 +25,8 @@ export const localAstroProvider: AstroProvider = {
 
     try {
       const data = calculateAstrology({
-        name: req.place,
         birthDate: req.dateISO,
         birthTime: req.time24!,
-        birthLocation: req.place,
         latitude: req.lat!,
         longitude: req.lon!,
         timezone: req.timezone!,
@@ -72,10 +70,8 @@ export const localAstroProvider: AstroProvider = {
 function computeBasic(req: AstroRequest): Pick<AstroResult, "sun" | "moon"> {
   try {
     const data = calculateAstrology({
-      name: req.place,
       birthDate: req.dateISO,
       birthTime: req.time24 ?? "12:00",
-      birthLocation: req.place,
       latitude: req.lat ?? 0,
       longitude: req.lon ?? 0,
       timezone: req.timezone ?? "UTC",

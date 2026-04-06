@@ -4,64 +4,76 @@ import { storage } from "./storage";
 import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "@soulcodex/db";
 import { sendTestNotificationSchema, broadcastNotificationSchema } from "../../shared/notification-schemas";
 import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
-import { getAstroProvider } from "../../server/astro/provider";
+import { getAstroProvider } from "./astro/provider";
 import { buildPosterSvg, type PosterData as PosterSvgData } from "../../server/posterSvg";
 import sharp from "sharp";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
-import { synthesizeArchetype, generateIntegrationAnalysis, generatePersonalizedInsights } from "./services/archetype";
+import { synthesizeArchetype } from "./services/archetype";
 import { generateBiography, generateDailyGuidance } from "./openai";
 import { calculateHumanDesign } from "../../services/human-design";
-import { generateDailyInsights } from "./services/daily-insights";
-import { calculateCompatibility } from "./services/compatibility";
-import { generateCompatibilityInsights } from "./services/compatibility-insights";
-import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
-import { calculateVedicAstrology } from "./services/vedic-astrology";
-import { calculateGeneKeys } from "./services/gene-keys";
-import { calculateIChing } from "./services/i-ching";
-import { calculateChineseAstrology } from "./services/chinese-astrology";
-import { calculateKabbalah } from "./services/kabbalah";
-import { calculateMayanAstrology } from "./services/mayan-astrology";
-import { calculateChakraSystem } from "./services/chakra-system";
-import { calculateSacredGeometry } from "./services/sacred-geometry";
-import { calculateRunes } from "./services/runes";
-import { calculateSabianSymbols } from "./services/sabian-symbols";
-import { calculateAyurveda } from "./services/ayurveda";
-import { calculateBiorhythms } from "./services/biorhythms";
-import { calculateAsteroids } from "./services/asteroids";
-import { calculateArabicParts } from "./services/arabic-parts";
-import { calculateFixedStars } from "./services/fixed-stars";
-import { generatePalmReading } from "./services/palmistry";
-import { calculateElementalProfile, generateSoulArchetype, getDailyElementalGuidance } from "./services/elemental-medicine";
-import { calculateMoralCompass, calculateMoralCompassFromBirthData } from "./services/moral-compass";
-import { calculateParentalInfluence } from "./services/parental-influence";
+import { generateDailyInsights } from "../../services/daily-insights";
+import { calculateCompatibility } from "../../services/compatibility";
+import { generateCompatibilityInsights } from "../../services/compatibility-insights";
+import {
+  getMoonPhase,
+  getMoonSign,
+  getCurrentHDGate,
+  calculateUniversalDayNumber,
+  calculatePersonalDayNumber,
+} from "../../services/daily-context";
+import { calculateVedicAstrology } from "../../services/vedic-astrology";
+import { calculateGeneKeys } from "../../services/gene-keys";
+import { calculateIChing } from "../../services/i-ching";
+import { calculateChineseAstrology } from "../../services/chinese-astrology";
+import { calculateKabbalah } from "../../services/kabbalah";
+import { calculateMayanAstrology } from "../../services/mayan-astrology";
+import { calculateChakraSystem } from "../../services/chakra-system";
+import { calculateSacredGeometry } from "../../services/sacred-geometry";
+import { calculateRunes } from "../../services/runes";
+import { calculateSabianSymbols } from "../../services/sabian-symbols";
+import { calculateAyurveda } from "../../services/ayurveda";
+import { calculateBiorhythms } from "../../services/biorhythms";
+import { calculateAsteroids } from "../../services/asteroids";
+import { calculateArabicParts } from "../../services/arabic-parts";
+import { calculateFixedStars } from "../../services/fixed-stars";
+import { generatePalmReading } from "../../services/palmistry";
+import { calculateElementalProfile, generateSoulArchetype, getDailyElementalGuidance } from "../../services/elemental-medicine";
+import { calculateMoralCompass, calculateMoralCompassFromBirthData } from "../../services/moral-compass";
+import { calculateParentalInfluence } from "../../services/parental-influence";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { hashPassword, verifyPassword } from "./auth/passwordUtils";
 import { randomUUID } from "crypto";
-import { calculateActiveTransits, extractNatalPositions } from "./services/transits";
-import { generateDailyHoroscope } from "./services/horoscope";
-import { getActiveTransmutationTechniques } from "./services/transmutation";
-import { calculateCongruenceScore } from "./services/congruence";
+import { calculateActiveTransits, extractNatalPositions } from "../../services/transits";
+import { generateDailyHoroscope } from "../../services/horoscope";
+import { getActiveTransmutationTechniques } from "../../services/transmutation";
+import { calculateCongruenceScore } from "../../services/congruence";
 import { registerChatRoutes } from "./routes/chat";
-import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, getMoodBasedPrompt } from "./services/journaling";
-import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
-import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
-import { generateProfilePDF, generateCompatibilityPDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
-import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks } from "./services/shareable-links";
-import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "./services/transit-notifications";
+import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, getMoodBasedPrompt } from "../../services/journaling";
+import { generateTransitsCalendar, getUpcomingSignificantTransits } from "../../services/transits-calendar";
+import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "../../services/progressions";
+import { generateProfilePDF, generateCompatibilityPDF, generateTransitsPDF, renderPDF } from "../../services/pdf-generator";
+import {
+  createShareableLink,
+  getShareableProfile,
+  updateShareableLink,
+  deactivateShareableLink,
+  getUserShareableLinks,
+} from "../../services/shareable-links";
+import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "../../services/transit-notifications";
 import Stripe from "stripe";
-import { SubscriptionService } from "./services/subscription-service";
-import { entitlementService } from "./services/entitlement-service";
+import { SubscriptionService } from "../../services/subscription-service";
+import { entitlementService } from "../../services/entitlement-service";
 import { runWithTimeoutAndTiming, TIMEOUT_VALUES } from "./utils/timeout";
 import { buildSoulProfile } from "./soulcodex/index";
 import type { UserInputs } from "./soulcodex/types";
 import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
-import { resolveGeo } from "../../server/geo/index";
+import { resolveGeo } from "./geo/index";
 import { buildCodexReadingBadges, computeConfidence } from "./soulcodex/compute/confidence";
-import { buildTodayCard, buildTodayCardSvg } from "../../server/todayRender";
+import { buildTodayCard, buildTodayCardSvg } from "./todayRender";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
@@ -70,6 +82,7 @@ import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
 import { generateText, isGeminiAvailable } from "./gemini";
 import { validateAndClean } from "./src/ai/pipeline";
+import { generateSoulCodexOutputV1 } from "@soulcodex/core";
 
 // Initialize SubscriptionService (if Stripe is configured)
 let subscriptionService: SubscriptionService | null = null;
@@ -1594,6 +1607,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ ...unified, synthesis });
     } catch (error) {
       return handleError(error, res, "UnifiedProfile");
+    }
+  });
+
+  // Soul Codex Output Schema v1 (canonical profile response contract)
+  app.get("/api/profiles/:id/soul-codex-v1", async (req, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.id);
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+      const tone_mode =
+        req.query.tone_mode === "clean" || req.query.tone_mode === "deep" || req.query.tone_mode === "raw"
+          ? (req.query.tone_mode as any)
+          : "clean";
+
+      const payload = generateSoulCodexOutputV1({
+        profile,
+        profileId: req.params.id,
+        toneMode: tone_mode,
+      });
+
+      return res.json(payload);
+    } catch (error) {
+      return handleError(error, res, "SoulCodexV1");
     }
   });
 

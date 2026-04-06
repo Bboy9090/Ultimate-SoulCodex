@@ -1,1 +1,55 @@
-{\n  " extends\: \../../tsconfig.json\,\n \compilerOptions\: {\n \composite\: true,\n \outDir\: \./dist\,\n \rootDir\: \.\,\n \baseUrl\: \.\,\n \paths\: {\n \@soulcodex/db\: [\../db\],\n \@soulcodex/db/*\: [\../db/*\],\n \./shared/schema\: [\../db/schema\],\n \../shared/schema\: [\../db/schema\],\n \../storage\: [\../../apps/api/storage\]\n }\n },\n \include\: [\**/*.ts\]\n}
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist",
+    "rootDir": "../..",
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "paths": {
+      "@soulcodex/db": ["../db"],
+      "@soulcodex/db/*": ["../db/*"]
+    }
+  },
+  "include": [
+    "index.ts",
+    "astrology.ts",
+    "human-design.ts",
+    "gene-keys.ts",
+    "i-ching.ts",
+    "vedic-astrology.ts",
+    "numerology.ts",
+    "kabbalah.ts",
+    "mayan-astrology.ts",
+    "interpretations.ts",
+    "../../shared/schema.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/template-bank.ts",
+    "affirmations.ts",
+    "ai-provider.ts",
+    "compatibility-insights.ts",
+    "compatibility.ts",
+    "daily-insights.ts",
+    "entitlement-service.ts",
+    "gemini.ts",
+    "horoscope.ts",
+    "pdf-generator.ts",
+    "progressions.ts",
+    "push-notifications.ts",
+    "runes.ts",
+    "sabian-symbols.ts",
+    "shareable-links.ts",
+    "soul-guide-fallback.ts",
+    "subscription-service.ts",
+    "transit-notifications.ts",
+    "transits-calendar.ts",
+    "transits.ts",
+    "transmutation.ts",
+    "parental-influence.ts",
+    "moral-compass.ts",
+    "personality.ts",
+    "timeline/**"
+  ]
+}
