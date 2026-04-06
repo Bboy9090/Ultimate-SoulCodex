@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useState, useMemo } from "react";
 import { z } from "zod";
 import BirthChartPosterSVG, { type PosterData } from "../components/BirthChartPosterSVG";
@@ -32,7 +33,7 @@ const DEMO: PosterData = {
   masterNumber: 11,
 };
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="form-group" style={{ marginBottom: "0.875rem" }}>
       <label className="label" style={{ fontSize: "0.8125rem" }}>{label}</label>
