@@ -1,1 +1,0 @@
-export { getActiveTransmutationTechniques } from "../transmutation";

@@ -1,1 +1,0 @@
-export { calculateAyurveda } from "../ayurveda";

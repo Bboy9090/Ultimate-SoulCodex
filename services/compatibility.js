@@ -1,1 +1,0 @@
-export { calculateCompatibility } from "../compatibility";
