@@ -34,20 +34,38 @@ export type DailyGuidanceRequest = Pick<BiographyRequest,
 >;
 
 function generateFallbackBiography(data: BiographyRequest): string {
-  const themes = data.archetype?.themes || ['adaptation', 'self-awareness', 'personal growth'];
-  const sunSign = data.astrologyData?.sunSign || data.vedicAstrologyData?.sunSign || 'my sign';
-  const moonSign = data.astrologyData?.moonSign || data.vedicAstrologyData?.moonSign || '';
-  const lifePath = data.numerologyData?.lifePath || '';
-  const hdType = data.humanDesignData?.type || '';
-  const geneKeyGift = data.geneKeysData?.lifeWork?.gift || '';
-  const ayurvedaDosha = data.ayurvedaData?.primaryDosha?.name || '';
+  const sunSign = data.astrologyData?.sunSign || data.vedicAstrologyData?.sunSign || "";
+  const moonSign = data.astrologyData?.moonSign || data.vedicAstrologyData?.moonSign || "";
+  const lifePath = data.numerologyData?.lifePath || "";
 
+  // Fallbacks should still match the product voice:
+  // - behavior-first
+  // - minimal system stacking
+  // - ends with a concrete next move
   const templates = [
-    `I am a ${data.archetypeTitle}${hdType ? `, a ${hdType} by design` : ''}. My strength is reading situations fast — I pick up on tension before anyone names it${sunSign !== 'my sign' ? `, and my ${sunSign} drive keeps me moving when others stall` : ''}${lifePath ? `. Life Path ${lifePath} means I default to building systems` : ''}. My shadow is that I push too hard and dismiss people who move slower than me. The tension I carry is between wanting deep connection and needing to stay in control${moonSign ? ` — my ${moonSign} side craves closeness while the rest of me resists vulnerability` : ''}. My growth edge is learning to sit with discomfort instead of fixing it.`,
+    `I move through life like a ${data.archetypeTitle}: I scan for what matters, I notice friction early, and I want the next step to be real — not performative.
 
-    `As a ${data.archetypeTitle}, I'm strong at cutting through noise and finding what matters${geneKeyGift ? ` — my gift of ${geneKeyGift} shows up as pattern recognition` : ''}${hdType ? `. As a ${hdType}, I operate best when I wait for the right opening` : ''}. My blind spot is ignoring my own needs while managing everyone else's. I feel the pull between wanting stability and craving change${ayurvedaDosha ? `, and my ${ayurvedaDosha} nature amplifies that restlessness` : ''}. The edge I need to work is ${themes[0]} — not as a concept, but as a daily practice of questioning my automatic reactions${lifePath ? `. Life Path ${lifePath} keeps reminding me that the structure I build matters more than the speed` : ''}.`,
+My strength is focus. When I decide, I can cut distractions fast and build momentum. My shadow is speed turning into pressure: I push for clarity so hard that other people feel rushed, and I stop listening once I think I already know the answer.
 
-    `I'm a ${data.archetypeTitle}${sunSign !== 'my sign' ? ` with ${sunSign} energy driving my decisions` : ''}. What I'm built for: seeing what others miss, holding complexity without panicking, and turning tension into forward motion${lifePath ? `. Life Path ${lifePath} gives me a natural instinct for ${themes[0]}` : ''}. Where I struggle: I default to independence when I should ask for help${moonSign ? `, and my ${moonSign} emotional patterns make me retreat under pressure instead of communicating` : ''}. The friction inside me is real — I want to be understood but I make it hard for people to get close. My growth edge is choosing to stay open even when my instincts say to shut down and handle it alone.`
+The tension I carry is between control and closeness. I want to be understood, but I also protect myself by staying “busy” instead of being direct.
+
+Today’s move: name one thing I’ve been avoiding (a conversation, a decision, or a finish). Put it on the calendar, send the message, or ship the first version — before I overthink it.`,
+
+    `I’m a ${data.archetypeTitle}. I’m built to read patterns and act with intention — not drift.
+
+Strength: I can see what’s not being said in a room and adjust quickly. Shadow: I take on too much, then resent the weight I agreed to carry. I’ll tell myself I’m “helping” when I’m actually controlling the outcome.
+
+If I have ${moonSign ? `${moonSign} Moon` : "a sensitive inner rhythm"}, it shows up as replaying conversations after they’re over — searching for the one line I should have said. If I have ${sunSign ? `${sunSign} Sun` : "a strong drive"}, it shows up as moving anyway, even when I’m not emotionally caught up.
+
+Action: pick one boundary I’ve been hinting at and state it cleanly. No speeches. One sentence. Then follow through.`,
+
+    `I’m not here for vague self-improvement. As a ${data.archetypeTitle}, I want precision: what I do, why I do it, and what it costs.
+
+My default pattern is: I spot the flaw → I try to fix it alone → I get tired → I go quiet. The growth edge is letting the right person in earlier, before I hit the “silent mode.”
+
+${lifePath ? `Life Path ${lifePath} points me toward building something that lasts, not chasing short-lived intensity.` : "I’m built for long arcs, not quick applause."}
+
+Do this today: finish one small unit of work (one page, one email, one decision). Completion is data.`,
   ];
   
   const randomIndex = Math.floor(Math.random() * templates.length);
@@ -99,12 +117,15 @@ export async function generateBiography(data: BiographyRequest): Promise<string>
 }
 
 function generateFallbackDailyGuidance(data: DailyGuidanceRequest): string {
+  const sun = data.astrologyData?.sunSign || "";
+  const lifePath = data.numerologyData?.lifePath || "";
+
   const guidanceTemplates = [
-    `Today as a ${data.archetypeTitle}, I notice my tendency to over-plan. My strength is in preparation, but my shadow shows up when I mistake planning for progress. The growth edge today: pick one thing and act on it before noon.`,
-    
-    `My ${data.astrologyData?.sunSign || ''} drive is loud today — I want to push forward. But my blind spot is bulldozing through situations that need patience. The tension between action and restraint is my real work today${data.numerologyData?.lifePath ? `. Life Path ${data.numerologyData.lifePath} says build deliberately` : ''}.`,
-    
-    `As a ${data.archetypeTitle}, today pulls me between what feels safe and what I actually need. My strength is reading the room — my shadow is avoiding the hard conversation. The edge: say the uncomfortable thing early instead of letting it build.`
+    `Observation: I’m tempted to “prepare” instead of act — research, organize, rewrite.\n\nMeaning: that’s how I avoid risk while still feeling productive.\n\nAction: choose one deliverable and make it real.\n\nDo this today: ship a first version before noon (even if it’s imperfect).`,
+
+    `Observation: I feel a push to move fast${sun ? ` (${sun} drive)` : ""}.\n\nMeaning: speed helps, but it also makes me skip the one conversation that would prevent rework.\n\nAction: slow down for one checkpoint.\n\nDo this today: ask one direct question you’ve been dancing around, then decide.`,
+
+    `Observation: I’m carrying more than I admitted.\n\nMeaning: when I say yes automatically, I trade my attention for short-term peace.\n\nAction: set one clean boundary.\n\nDo this today: send a one-sentence “no / not yet / here’s what I can do” message and stop negotiating with guilt.${lifePath ? ` (Life Path ${lifePath}: build deliberately.)` : ""}`,
   ];
   
   const randomIndex = Math.floor(Math.random() * guidanceTemplates.length);
@@ -120,7 +141,7 @@ export async function generateDailyGuidance(data: DailyGuidanceRequest): Promise
 
   try {
     const bannedList = BANNED_PHRASES.map((p) => `"${p}"`).join(", ");
-    const prompt = `Write a 2-3 sentence daily insight for ${data.name} in first person (I/my/me).
+    const prompt = `Write a daily guidance card for ${data.name} in first person (I/my/me).
 
 Profile:
 - Archetype: ${data.archetypeTitle}
@@ -128,12 +149,17 @@ Profile:
 - Life Path: ${data.numerologyData?.lifePath}
 
 RULES:
-- Use behavioral language: what I notice, what I tend to do, what to practice today
-- Include at least one of: strength, shadow, tension, or growth edge
+- Use behavioral language (what I do, avoid, choose, say)
+- Lead with the insight; use placements only if they explain why
+- Avoid system-stacking (reference 0–2 data points max)
 - BANNED PHRASES (never use): ${bannedList}
 - No fortune-cookie wisdom, no vague encouragement
 
-Return only the guidance text.`;
+Return exactly this structure (no extra headers):
+Observation: (1–2 sentences)
+Meaning: (1–2 sentences)
+Action: (1–2 sentences)
+Do this today: (1 sentence, concrete)`;
 
     const rawGuidance = await generateText({
       model: "gemini-2.5-flash",

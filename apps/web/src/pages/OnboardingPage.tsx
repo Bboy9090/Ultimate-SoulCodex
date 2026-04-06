@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "../lib/queryClient";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
+import { setJson, storageKeys } from "@/lib/storage";
 
 type StressElement = "fire" | "water" | "air" | "earth" | "metal";
 type DecisionStyle = "gut" | "analysis" | "consensus" | "impulse" | "avoidance";
@@ -88,11 +90,14 @@ export default function OnboardingPage() {
       return res.json();
     },
     onSuccess: (result) => {
-      localStorage.setItem("soulProfile", JSON.stringify(result));
-      localStorage.setItem("onboardingData", JSON.stringify(form));
+      setJson(storageKeys.profile, result);
+      setJson(storageKeys.onboardingData, form);
       if (result?.confidence) {
-        localStorage.setItem("soulConfidence", JSON.stringify(result.confidence));
+        setJson(storageKeys.confidence, result.confidence);
       }
+      try {
+        localStorage.setItem(storageKeys.justOnboarded, "1");
+      } catch {}
       navigate("/profile");
     },
   });
@@ -189,14 +194,63 @@ export default function OnboardingPage() {
 }
 
 function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof FormData, v: any) => void }) {
+  const hasTime = !!form.birthTime;
+  const hasLocation = !!form.birthLocation?.trim();
+  // Mirror backend computeConfidence:
+  // - Verified: time + geo/timezone lock (we proxy via "has location" here; API will compute real geo lock)
+  // - Partial: time unknown (even if location exists)
+  // - Unverified: time provided but location missing/unresolved
+  const badge = !hasLocation ? "unverified" : !hasTime ? "partial" : "verified";
+  const label = badge === "verified" ? "Verified" : badge === "partial" ? "Partial" : "Unverified";
+  const reason =
+    badge === "verified"
+      ? "Birth time and location are set — full chart layer (houses, rising) is included."
+      : badge === "partial"
+        ? "Birth time unknown — rising sign and houses are omitted; Sun and Moon stay grounded."
+        : "Location is missing — we can’t reliably lock timezone/houses. Add a city for a Verified chart.";
+
   return (
     <div>
       <h2 className="gradient-text" style={{ marginBottom: "0.5rem" }}>
         Let's start with the basics
       </h2>
       <p style={{ marginBottom: "1.5rem", color: "var(--muted-foreground)" }}>
-        Your name and birth details anchor the math. Add a city so we can lock timezone and rising sign when you have a birth time.
+        We’ll generate a grounded profile in under a minute. Your badge below shows how “locked in” the chart layer is.
       </p>
+
+      <div
+        className="glass-card-static"
+        style={{
+          padding: "1rem 1.1rem",
+          marginBottom: "1.25rem",
+          border: "1px solid rgba(139,92,246,0.18)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+          <div>
+            <div style={{ fontSize: "0.65rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--muted-foreground)", fontWeight: 700 }}>
+              Accuracy preview
+            </div>
+            <div style={{ marginTop: "0.5rem" }}>
+              <ConfidenceBadge badge={badge} label={label} reason={reason} size="sm" />
+            </div>
+            <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)", lineHeight: 1.55 }}>
+              {reason}
+            </div>
+          </div>
+          <div style={{ minWidth: 160, textAlign: "right" }}>
+            <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              What you get
+            </div>
+            <div style={{ marginTop: "0.45rem", fontSize: "0.78rem", color: "rgba(230,230,255,0.9)", lineHeight: 1.55 }}>
+              Birth date: core profile<br />
+              + time: houses/rising eligible<br />
+              + location: verified chart lock
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="form-group" style={{ marginBottom: "1rem" }}>
         <label className="label">Name</label>
         <input
@@ -218,9 +272,9 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
       </div>
       <div className="form-group" style={{ marginBottom: "1rem" }}>
         <label className="label">
-          Accuracy Mode{" "}
+          Birth time{" "}
           <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>
-            — enter your birth time for a Verified chart (rising sign, houses, full aspects)
+            — optional, but recommended for rising sign + houses
           </span>
         </label>
         <input
@@ -232,7 +286,7 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
         />
         {!form.birthTime && (
           <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.25rem", marginBottom: 0 }}>
-            No birth time → Partial accuracy. Sun + Moon calculated; rising sign and houses omitted.
+            If you don’t know your time, that’s fine — we’ll mark your chart as Partial and omit rising/houses.
           </p>
         )}
       </div>
@@ -240,7 +294,7 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
         <label className="label">
           Birth location{" "}
           <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>
-            (recommended — needed for Verified charts)
+            — optional, but needed to lock timezone and houses
           </span>
         </label>
         <input
@@ -250,6 +304,11 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           value={form.birthLocation}
           onChange={(e) => update("birthLocation", e.target.value)}
         />
+        {!hasLocation && hasTime && (
+          <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.25rem", marginBottom: 0 }}>
+            Tip: add a city to upgrade from Unverified → Verified when you have a birth time.
+          </p>
+        )}
       </div>
     </div>
   );

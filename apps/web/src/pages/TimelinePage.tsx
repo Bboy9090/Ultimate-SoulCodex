@@ -16,7 +16,13 @@ type TimelinePhase =
 
 interface TimelineData {
   phase: TimelinePhase;
-  confidence: "Full" | "Partial";
+  confidence: {
+    badge: "verified" | "partial" | "unverified";
+    label: string;
+    reason: string;
+    aiAssuranceNote?: string;
+  } | "Full" | "Partial";
+  confidenceLabel?: "Full" | "Partial";
   reasons: string[];
   focus: string;
   do: string[];
@@ -199,6 +205,21 @@ export default function TimelinePage() {
   const icon = PHASE_ICONS[timeline.phase];
   const currentIdx = PHASE_ORDER.indexOf(timeline.phase);
 
+  const timelineBadge =
+    typeof timeline.confidence === "string"
+      ? timeline.confidence.toLowerCase() === "full"
+        ? "verified"
+        : "partial"
+      : timeline.confidence.badge;
+
+  const timelineReason =
+    typeof timeline.confidence === "string"
+      ? undefined
+      : timeline.confidence.reason;
+
+  const timelineAssurance =
+    typeof timeline.confidence === "string" ? undefined : timeline.confidence.aiAssuranceNote;
+
   return (
     <div
       style={{
@@ -239,7 +260,14 @@ export default function TimelinePage() {
           >
             {icon} {timeline.phase}
           </h1>
-          <ConfidenceBadge badge={timeline.confidence.toLowerCase()} size="sm" />
+          <div style={{ textAlign: "right" }}>
+            <ConfidenceBadge badge={timelineBadge} reason={timelineReason} size="sm" />
+            {timelineAssurance && (
+              <div style={{ marginTop: "0.5rem", fontSize: "0.72rem", color: "var(--muted-foreground)", lineHeight: 1.55, maxWidth: 260 }}>
+                {timelineAssurance}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

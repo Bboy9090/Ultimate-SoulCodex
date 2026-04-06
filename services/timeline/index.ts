@@ -54,16 +54,28 @@ export function generateTimeline(input: TimelineInput): TimelineOutput {
   );
   const profileConfidence = (profile.confidenceLabel ?? "").toLowerCase();
   let confidence: TimelineConfidence = "Full";
-
   if (!hasBirthTime || profileConfidence === "partial" || profileConfidence === "unverified") {
     confidence = "Partial";
   }
+
+  // Normalize to the same confidence object used across the app.
+  const badge = confidence === "Full" ? "verified" : "partial";
+  const label = badge === "verified" ? "Verified" : "Partial";
+  const reason =
+    badge === "verified"
+      ? "Birth time and location are set — full chart layer (houses, rising) is included."
+      : "Birth time unknown or not trusted — rising sign and houses are omitted from timeline-sensitive claims.";
+  const aiAssuranceNote =
+    badge === "verified"
+      ? "Timeline timing is derived from your birth record and major cycles. Interpretive language is guidance, not a guarantee."
+      : "Timeline themes still apply, but time-specific timing is softened without a verified birth time.";
 
   const narrative = buildNarrative(phase, confidence, reasons);
 
   return {
     phase,
-    confidence,
+    confidenceLabel: confidence,
+    confidence: { badge, label, reason, aiAssuranceNote },
     reasons,
     focus: def.focus,
     do: def.do,
