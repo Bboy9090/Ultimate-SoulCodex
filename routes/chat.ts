@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../storage";
-import { streamChat, isGeminiAvailable } from "../services/gemini";
+import { streamChat, isGeminiAvailable } from "../gemini";
 
 export function registerChatRoutes(app: Express) {
   app.post("/api/chat/soul-guide", async (req, res) => {

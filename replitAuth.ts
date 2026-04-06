@@ -4,7 +4,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import MemoryStoreFactory from "memorystore";
 import { storage } from "./storage";
-import { verifyPassword } from "./passwordUtils";
+import { verifyPassword } from "./auth/passwordUtils";
 
 const MemoryStore = MemoryStoreFactory(session);
 
