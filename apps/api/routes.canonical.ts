@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { entitlementService } from "../../services/entitlement-service";
 import { buildTodayCard } from "./todayRender";
-import { generateTimeline, generateSoulCodexOutputV1 } from "@soulcodex/core";
+import { decodeLifeEvent, generateTimeline, generateSoulCodexOutputV1 } from "@soulcodex/core";
 
 function asToneMode(raw: unknown): "clean" | "deep" | "raw" {
   return raw === "deep" || raw === "raw" ? raw : "clean";
@@ -87,6 +87,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("[TimelineCurrent] Error:", error);
       return res.status(500).json({ message: "Failed to generate timeline" });
+    }
+  });
+
+  // Life Event Decoder (canonical)
+  // Back-compat: accepts legacy payload { event, phase, driver } and maps it to { text, phase, driver }.
+  app.post("/api/events/decode", async (req, res) => {
+    try {
+      const body = (req.body || {}) as any;
+      const text = typeof body.text === "string" ? body.text : typeof body.event === "string" ? body.event : "";
+      const phase = typeof body.phase === "string" ? body.phase : undefined;
+      const driver = typeof body.driver === "string" ? body.driver : undefined;
+      const category_hint = typeof body.category_hint === "string" ? body.category_hint : undefined;
+
+      if (!text || text.trim().length < 2) {
+        return res.status(400).json({ message: "text is required" });
+      }
+
+      const out = decodeLifeEvent({ text, phase, driver, category_hint } as any);
+
+      // Back-compat response: include old shape keys (whyNow, lesson, nextSteps) if older clients expect them.
+      return res.json({
+        ...out,
+        whyNow: out.meaning,
+        lesson: out.decision_rule,
+        nextSteps: out.next_steps,
+      });
+    } catch (error) {
+      console.error("[EventsDecode] Error:", error);
+      return res.status(500).json({ message: "Failed to decode life event" });
     }
   });
 

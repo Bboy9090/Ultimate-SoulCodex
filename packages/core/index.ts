@@ -8,5 +8,6 @@ export * from './compute/confidence';
 export * from './validators/blandnessFilter';
 export * from './prompts/resultsEngine';
 export * from './timeline';
+export * from "./events";
 export * from './soulcodex-v1/schema';
 export * from './soulcodex-v1/generate';
