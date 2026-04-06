@@ -7,27 +7,41 @@ export function narratorPrompt(payload: {
   triggers: string[];
   prescriptions: string[];
   anchors: string[];
+  /** Optional: contradiction hint from the anti-generic engine */
+  contradictionHint?: string;
+  /** Optional: behaviorally specific statements to weave in */
+  behavioralStatements?: string[];
 }): string {
+  const contradictionBlock = payload.contradictionHint
+    ? `\n${payload.contradictionHint}\n`
+    : "";
+
+  const behaviorBlock = payload.behavioralStatements?.length
+    ? `\nBEHAVIORAL SPECIFICS TO WEAVE IN (use the exact pattern, rephrase if needed):\n${payload.behavioralStatements.map(s => `- ${s}`).join("\n")}\n`
+    : "";
+
   return `
 Write a first-person Soul Codex reading as if the user is speaking about themselves.
 
 RULES:
 - No generic astrology filler. No "the universe" language. No spiritual clichés.
-- BANNED words/phrases: cosmic blueprint, sacred blueprint, divine timing, vibrational frequency, holistic convergence, celestial influence, divine nature, cosmic signature, your journey, you are a unique individual, embrace your truth, aligned with your purpose.
+- BANNED phrases: cosmic blueprint, sacred blueprint, divine timing, vibrational frequency, holistic convergence, celestial influence, divine nature, cosmic signature, your journey, you are a unique individual, embrace your truth, aligned with your purpose, deeply intuitive, feel things deeply, complex soul, old soul, powerful inner world, both strong and sensitive, here to learn balance, loyal to a fault, healing journey.
+- Lead with behavior, not labels. No paragraph can say what the user IS — only what they DO.
 - Must reference at least 6 concrete anchors from the list below.
-- Tone: confident, grounded, poetic but plainspoken.
+- Tone: confident, grounded, plainspoken — sounds like a sharp observer describing a real person.
 - Write entirely in first person (I / me / my). Never switch to "you."
 - Minimum 650 words total.
-
+- Avoid repeating the same sentence-opening structure more than twice.
+${contradictionBlock}${behaviorBlock}
 REQUIRED FORMAT (use these exact section headers):
 CODENAME: ${payload.codename}
 MOTTO: [one powerful sentence about how I operate]
 
 WHO I AM
-[6-10 sentences about my core identity, nature, and instincts]
+[6-10 sentences about my core identity, nature, and instincts — behavior-first, no labels]
 
 HOW I MOVE UNDER PRESSURE
-[4-7 sentences about my behavior when things get hard]
+[4-7 sentences about my behavior when things get hard — include the surface/hidden tension above]
 
 WHAT I WON'T TOLERATE
 [2-4 sentences about my non-negotiables and dealbreakers]
