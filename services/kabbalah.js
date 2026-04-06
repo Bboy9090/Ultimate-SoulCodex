@@ -1,1 +1,0 @@
-export { calculateKabbalah } from "../kabbalah";

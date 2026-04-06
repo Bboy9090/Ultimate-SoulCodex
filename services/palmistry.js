@@ -1,1 +1,0 @@
-export { generatePalmReading } from "../palmistry";
