@@ -155,10 +155,24 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div style={{ padding: "2rem 1rem 5rem", maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ padding: "2rem 1rem 5rem", maxWidth: 720, margin: "0 auto", position: "relative", overflow: "hidden" }}>
+
+      {/* ── Atmospheric background glow ──────────────────────────────────── */}
+      <img
+        src="/logo.png"
+        aria-hidden="true"
+        style={{
+          position: "absolute", top: "-60px", left: "50%",
+          transform: "translateX(-50%)",
+          width: 520, height: 520, objectFit: "contain",
+          opacity: 0.07, mixBlendMode: "screen",
+          filter: "blur(28px)",
+          pointerEvents: "none", userSelect: "none", zIndex: 0,
+        }}
+      />
 
       {/* ── Identity header ─────────────────────────────────────────────── */}
-      <section style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+      <section style={{ textAlign: "center", marginBottom: "2.5rem", position: "relative", zIndex: 1 }}>
 
         {/* Eyebrow label */}
         <div style={{
@@ -168,18 +182,14 @@ export default function ProfilePage() {
           Soul Snapshot
         </div>
 
-        {/* Logo mark */}
-        <div style={{ marginBottom: "0.75rem" }}>
-          <img
-            src="/logo.png"
-            alt=""
-            style={{
-              height: 88, width: 88, objectFit: "contain",
-              mixBlendMode: "lighten",
-              filter: "drop-shadow(0 0 18px rgba(139,92,246,0.55)) drop-shadow(0 0 36px rgba(212,175,55,0.25))",
-              display: "block", margin: "0 auto",
-            }}
-          />
+        {/* Glyph mark */}
+        <div style={{
+          fontSize: "2.25rem", marginBottom: "0.75rem",
+          background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          filter: "drop-shadow(0 0 12px rgba(139,92,246,0.5))",
+        }}>
+          ◉
         </div>
 
         {/* Archetype name */}
