@@ -20,8 +20,11 @@ interface FormData {
 }
 
 interface SuccessResult {
-  archetype?: { name?: string; tagline?: string };
-  [key: string]: any;
+  archetype?: { name?: string; tagline?: string; element?: string; role?: string };
+  confidence?: { badge?: string; label?: string; reason?: string };
+  synthesis?: Record<string, unknown>;
+  id?: string;
+  profileId?: string;
 }
 
 const TOTAL_STEPS = 5;
@@ -350,25 +353,30 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           onChange={(e) => update("birthTime", e.target.value)}
         />
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
+          {/* "Without time" — neutral baseline; dims when time is provided */}
           <span style={{
             display: "inline-flex", alignItems: "center", gap: "0.3rem",
             padding: "0.25rem 0.6rem", borderRadius: 99, fontSize: "0.7rem",
             fontWeight: 500, letterSpacing: "0.02em",
-            background: hasTime ? "rgba(34,197,94,0.12)" : "rgba(139,92,246,0.08)",
-            border: `1px solid ${hasTime ? "rgba(34,197,94,0.3)" : "rgba(139,92,246,0.2)"}`,
-            color: hasTime ? "#22c55e" : "var(--muted-foreground)",
+            background: "rgba(139,92,246,0.07)",
+            border: "1px solid rgba(139,92,246,0.18)",
+            color: "var(--muted-foreground)",
+            opacity: hasTime ? 0.4 : 0.9,
+            transition: "opacity 0.2s",
           }}>
-            <span>{hasTime ? "●" : "○"}</span>
+            <span>○</span>
             <span>Without time — Sun · Moon only</span>
           </span>
+          {/* "With time" — lights up green when time is entered */}
           <span style={{
             display: "inline-flex", alignItems: "center", gap: "0.3rem",
             padding: "0.25rem 0.6rem", borderRadius: 99, fontSize: "0.7rem",
             fontWeight: 500, letterSpacing: "0.02em",
-            background: hasTime ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
-            border: `1px solid ${hasTime ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.08)"}`,
+            background: hasTime ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.03)",
+            border: `1px solid ${hasTime ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.07)"}`,
             color: hasTime ? "#22c55e" : "var(--muted-foreground)",
-            opacity: hasTime ? 1 : 0.5,
+            opacity: hasTime ? 1 : 0.45,
+            transition: "all 0.2s",
           }}>
             <span>{hasTime ? "✦" : "◌"}</span>
             <span>With time — Rising · Houses · Full aspects</span>
