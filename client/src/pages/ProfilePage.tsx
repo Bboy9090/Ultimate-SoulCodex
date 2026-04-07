@@ -168,14 +168,18 @@ export default function ProfilePage() {
           Soul Snapshot
         </div>
 
-        {/* Glyph mark — larger, more weight */}
-        <div style={{
-          fontSize: "2.25rem", marginBottom: "0.75rem",
-          background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          filter: "drop-shadow(0 0 12px rgba(139,92,246,0.5))",
-        }}>
-          ◉
+        {/* Logo mark */}
+        <div style={{ marginBottom: "0.75rem" }}>
+          <img
+            src="/logo.png"
+            alt=""
+            style={{
+              height: 88, width: 88, objectFit: "contain",
+              mixBlendMode: "lighten",
+              filter: "drop-shadow(0 0 18px rgba(139,92,246,0.55)) drop-shadow(0 0 36px rgba(212,175,55,0.25))",
+              display: "block", margin: "0 auto",
+            }}
+          />
         </div>
 
         {/* Archetype name */}
