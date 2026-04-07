@@ -47,3 +47,8 @@ outputType = "webview"
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+GITHUB_TOKEN = "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"
