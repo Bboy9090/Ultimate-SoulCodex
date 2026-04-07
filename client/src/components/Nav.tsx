@@ -47,7 +47,6 @@ export default function Nav() {
         </Link>
 
         {isLanding ? (
-          /* Landing page nav — scroll anchors + CTA */
           <div className="navbar-nav" style={{ display: "flex", alignItems: "center", gap: 0 }}>
             {[
               { href: "#features", label: "Features" },
@@ -80,7 +79,6 @@ export default function Nav() {
             </Link>
           </div>
         ) : (
-          /* App nav — full link list + mode toggle */
           <div className="navbar-nav" style={{ display: "flex", alignItems: "center", gap: 0 }}>
             {appLinks.map((link) => (
               <Link
@@ -98,18 +96,28 @@ export default function Nav() {
                 {link.label}
               </Link>
             ))}
+
+            {/* Mode chip — Guided (default) vs Full (advanced) */}
             <button
               onClick={toggle}
-              title={mode === "beginner" ? "Switch to Advanced mode" : "Switch to Beginner mode"}
+              title={mode === "beginner" ? "Show advanced pages: Compat, Poster, Chart" : "Show standard pages only"}
               style={{
-                background: "none", border: "1px solid rgba(139,92,246,0.2)", borderRadius: "6px",
-                padding: "0.28rem 0.55rem", marginLeft: "0.5rem", cursor: "pointer",
-                color: mode === "advanced" ? "var(--cosmic-lavender)" : "var(--muted-foreground)",
-                fontSize: "0.65rem", letterSpacing: "0.06em", lineHeight: 1,
+                marginLeft: "0.6rem",
+                padding: "0.22rem 0.7rem",
+                borderRadius: "99px",
+                border: "1px solid",
+                borderColor: mode === "advanced" ? "rgba(139,92,246,0.55)" : "rgba(139,92,246,0.2)",
+                background: mode === "advanced" ? "rgba(139,92,246,0.18)" : "transparent",
+                color: mode === "advanced" ? "var(--cosmic-lavender)" : "rgba(148,163,184,0.6)",
+                fontSize: "0.62rem",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                lineHeight: 1,
+                cursor: "pointer",
                 transition: "all 0.2s",
               }}
             >
-              {mode === "advanced" ? "ADV" : "STD"}
+              {mode === "advanced" ? "Full" : "Guided"}
             </button>
           </div>
         )}

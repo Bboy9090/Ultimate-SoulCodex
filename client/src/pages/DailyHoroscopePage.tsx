@@ -68,14 +68,14 @@ function MoonPhaseIcon({ phase, size = 40 }: { phase: string; size?: number }) {
   let illuminatedSide: "right" | "left" = "right";
   let curveOffset = 0;
   const p = phase.toLowerCase();
-  if (p.includes("new"))              { curveOffset = r;       illuminatedSide = "right"; }
-  else if (p.includes("waxing cres")) { curveOffset = r * 0.6; illuminatedSide = "right"; }
-  else if (p.includes("first"))       { curveOffset = 0;       illuminatedSide = "right"; }
+  if (p.includes("new"))              { curveOffset = r;        illuminatedSide = "right"; }
+  else if (p.includes("waxing cres")) { curveOffset = r * 0.6;  illuminatedSide = "right"; }
+  else if (p.includes("first"))       { curveOffset = 0;        illuminatedSide = "right"; }
   else if (p.includes("waxing gib"))  { curveOffset = -r * 0.6; illuminatedSide = "right"; }
-  else if (p.includes("full"))        { curveOffset = -r;      illuminatedSide = "right"; }
-  else if (p.includes("waning gib"))  { curveOffset = -r * 0.6; illuminatedSide = "left"; }
+  else if (p.includes("full"))        { curveOffset = -r;       illuminatedSide = "right"; }
+  else if (p.includes("waning gib"))  { curveOffset = -r * 0.6; illuminatedSide = "left";  }
   else if (p.includes("last") || p.includes("third")) { curveOffset = 0; illuminatedSide = "left"; }
-  else if (p.includes("waning cres")) { curveOffset = r * 0.6; illuminatedSide = "left"; }
+  else if (p.includes("waning cres")) { curveOffset = r * 0.6;  illuminatedSide = "left";  }
   const dark = "#1a1a2e";
   const light = "#e2e8f0";
   return (
@@ -171,6 +171,8 @@ function aspectColor(aspect: string): string {
   return colors[aspect] || "#94a3b8";
 }
 
+const INTENSITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
 export default function DailyHoroscopePage() {
   const profileData = (() => {
     try { const s = localStorage.getItem("soulProfile"); if (s) return JSON.parse(s); } catch {}
@@ -219,11 +221,18 @@ export default function DailyHoroscopePage() {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 
+  // Sort transits by intensity for top-influences section
+  const sortedTransits = [...data.personalTransits].sort(
+    (a, b) => (INTENSITY_ORDER[a.intensity] ?? 2) - (INTENSITY_ORDER[b.intensity] ?? 2)
+  );
+  const topInfluences = sortedTransits.slice(0, 3);
+  const remainingTransits = sortedTransits.slice(3);
+
   return (
     <div style={{ padding: "2rem 1rem 4rem", maxWidth: "800px", margin: "0 auto" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
-        {/* ── Header ─────────────────────────────────────────────────────── */}
+        {/* ── 1. Header ────────────────────────────────────────────────────── */}
         <section style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
           <MoonPhaseIcon phase={data.moonPhase.phase} size={52} />
           <div>
@@ -237,44 +246,56 @@ export default function DailyHoroscopePage() {
           </div>
         </section>
 
-        {/* ── Personal Day ───────────────────────────────────────────────── */}
+        {/* ── 2. Main Reading — most prominent ────────────────────────────── */}
         <section style={{
-          background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.2)",
-          borderLeft: "3px solid #8b5cf6", borderRadius: "12px", padding: "1.25rem 1.5rem",
-          display: "flex", gap: "1rem", alignItems: "flex-start",
+          background: "rgba(15,20,40,0.6)", border: "1px solid rgba(139,92,246,0.2)",
+          borderTop: "2px solid var(--cosmic-purple)",
+          borderRadius: "14px", padding: "1.75rem 1.5rem",
         }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
-            background: "linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-pink))",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontWeight: 700, fontSize: "0.95rem", color: "#fff",
-          }}>
-            {data.personalDayNumber}
-          </div>
-          <div>
-            <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--cosmic-lavender)", marginBottom: "0.3rem" }}>
-              Personal Day {data.personalDayNumber}
-            </h3>
-            <p style={{ color: "rgba(230,228,255,0.85)", fontSize: "0.875rem", lineHeight: 1.65, margin: 0 }}>
-              {getDayMeaning(data.personalDayNumber)}
-            </p>
-          </div>
-        </section>
-
-        {/* ── Daily Horoscope ────────────────────────────────────────────── */}
-        <section style={{
-          background: "rgba(15,20,40,0.6)", border: "1px solid rgba(139,92,246,0.15)",
-          borderRadius: "14px", padding: "1.5rem",
-        }}>
-          <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cosmic-lavender)", marginBottom: "1rem", fontWeight: 700 }}>
-            ◈ My Daily Reading
+          <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cosmic-lavender)", marginBottom: "1.1rem", fontWeight: 700 }}>
+            ◈ My Reading
           </h3>
-          <p style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1rem, 2.5vw, 1.2rem)", lineHeight: 1.75, color: "#f1f5f9", margin: 0 }}>
+          <p style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1rem, 2.5vw, 1.2rem)", lineHeight: 1.8, color: "#f1f5f9", margin: 0 }}>
             {data.horoscope}
           </p>
         </section>
 
-        {/* ── Planet Wheel ───────────────────────────────────────────────── */}
+        {/* ── 3. Personal Day — compact context note ──────────────────────── */}
+        <div style={{
+          display: "flex", gap: "0.75rem", alignItems: "center",
+          padding: "0.75rem 1rem",
+          background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.14)",
+          borderRadius: "10px",
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+            background: "linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-pink))",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontWeight: 700, fontSize: "0.85rem", color: "#fff",
+          }}>
+            {data.personalDayNumber}
+          </div>
+          <p style={{ color: "rgba(230,228,255,0.75)", fontSize: "0.83rem", margin: 0, lineHeight: 1.5 }}>
+            <strong style={{ color: "var(--cosmic-lavender)", fontWeight: 600 }}>Personal Day {data.personalDayNumber} — </strong>
+            {getDayMeaning(data.personalDayNumber)}
+          </p>
+        </div>
+
+        {/* ── 4. Top Influences — top 3 transits by intensity ─────────────── */}
+        {topInfluences.length > 0 && (
+          <section>
+            <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.75rem", fontWeight: 700, opacity: 0.7 }}>
+              ◉ Top Influences Today
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+              {topInfluences.map((t, i) => (
+                <TransitCard key={i} transit={t} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── 5. Planet Wheel ──────────────────────────────────────────────── */}
         <section>
           <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ color: "var(--cosmic-lavender)" }}>⊕</span> Planetary Alignments Today
@@ -303,14 +324,21 @@ export default function DailyHoroscopePage() {
           )}
         </section>
 
-        {/* ── Personal Transits ──────────────────────────────────────────── */}
-        {data.personalTransits.length > 0 && (
+        {/* ── 6. Transit Detail — clearly secondary ────────────────────────── */}
+        {(remainingTransits.length > 0 || (topInfluences.length === 0 && data.personalTransits.length > 0)) && (
           <section>
-            <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ color: "var(--cosmic-lavender)" }}>◉</span> Active Transits for Me
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
-              {data.personalTransits.map((t, i) => (
+            <div style={{
+              display: "flex", alignItems: "center", gap: "0.75rem",
+              marginBottom: "0.75rem",
+            }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(139,92,246,0.15)" }} />
+              <span style={{ fontSize: "0.58rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted-foreground)", opacity: 0.5, whiteSpace: "nowrap" }}>
+                Transit Detail
+              </span>
+              <div style={{ flex: 1, height: 1, background: "rgba(139,92,246,0.15)" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+              {(remainingTransits.length > 0 ? remainingTransits : data.personalTransits).map((t, i) => (
                 <TransitCard key={i} transit={t} />
               ))}
             </div>

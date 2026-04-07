@@ -563,37 +563,18 @@ export default function TimelinePage() {
         </div>
       )}
 
-      {/* ── Life Map teaser ──────────────────────────────────────────────────── */}
+      {/* ── Life Map — compact future note ─────────────────────────────────── */}
       <div style={{
-        background: "rgba(15,20,40,0.4)",
-        border: "1px dashed rgba(139,92,246,0.22)",
-        borderRadius: "14px",
-        padding: "1.5rem 1.75rem",
+        display: "flex", alignItems: "center", gap: "0.6rem",
+        padding: "0.6rem 0.9rem",
+        border: "1px dashed rgba(139,92,246,0.15)",
+        borderRadius: "10px",
+        opacity: 0.45,
       }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.85rem" }}>
-          <div>
-            <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.3rem" }}>
-              In Development
-            </p>
-            <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--foreground)", margin: 0 }}>Life Map</p>
-          </div>
-          <span style={{
-            display: "inline-block", padding: "0.2rem 0.65rem",
-            background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.22)",
-            borderRadius: "99px", fontSize: "0.68rem", color: "var(--cosmic-lavender)",
-          }}>Soon ✦</span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
-          {[
-            ["◎", "My full 9-year arc — Years 1 through 9 laid out as a scrollable timeline"],
-            ["◆", "Past years dimmed, current year highlighted, upcoming years shown as markers"],
-            ["☽", "Major threshold points marked — the years when my cycle resets or peaks"],
-          ].map(([glyph, text]) => (
-            <p key={text} style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", margin: 0, lineHeight: 1.6 }}>
-              <span style={{ color: "rgba(139,92,246,0.55)", marginRight: "0.5rem" }}>{glyph}</span>{text}
-            </p>
-          ))}
-        </div>
+        <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.75rem", flexShrink: 0 }}>◎</span>
+        <span style={{ fontSize: "0.73rem", color: "var(--muted-foreground)", lineHeight: 1.4 }}>
+          Life Map — full 9-year arc view coming soon
+        </span>
       </div>
     </div>
   );
