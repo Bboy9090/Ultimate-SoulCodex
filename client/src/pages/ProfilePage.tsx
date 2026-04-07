@@ -201,8 +201,8 @@ export default function ProfilePage() {
   ];
 
   // Deep-section text: strip the first sentence already shown in snapshot
-  const whoIAmDeep    = cleanBehavioralText(afterFirstSentence(synthesis.coreEssence ?? "") || synthesis.coreEssence ?? "");
-  const stressDeep    = cleanBehavioralText(afterFirstSentence(synthesis.stressPattern ?? "") || synthesis.stressPattern ?? "");
+  const whoIAmDeep    = cleanBehavioralText(afterFirstSentence(synthesis.coreEssence ?? "") || (synthesis.coreEssence ?? ""));
+  const stressDeep    = cleanBehavioralText(afterFirstSentence(synthesis.stressPattern ?? "") || (synthesis.stressPattern ?? ""));
   const relateDeep    = cleanBehavioralText(synthesis.relationshipPattern ?? "");
   const buildDeep     = cleanBehavioralText(synthesis.powerMode ?? "");
   const compassNotes  = cleanBehavioralText(synthesis.moralCode?.notes ?? "");
