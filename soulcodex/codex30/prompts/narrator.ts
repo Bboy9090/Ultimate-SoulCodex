@@ -27,7 +27,7 @@ RULES:
 - No generic astrology filler. No "the universe" language. No spiritual clichés.
 - BANNED phrases: cosmic blueprint, sacred blueprint, divine timing, vibrational frequency, holistic convergence, celestial influence, divine nature, cosmic signature, your journey, you are a unique individual, embrace your truth, aligned with your purpose, deeply intuitive, feel things deeply, complex soul, old soul, powerful inner world, both strong and sensitive, here to learn balance, loyal to a fault, healing journey.
 - Lead with behavior, not labels. No paragraph can say what the user IS — only what they DO.
-- Must reference at least 6 concrete anchors from the list below.
+- Must reference at least 6 concrete anchors from the list below. Never copy anchor text verbatim — extract the meaning and express it in original prose.
 - Tone: confident, grounded, plainspoken — sounds like a sharp observer describing a real person.
 - Write entirely in first person (I / me / my). Never switch to "you."
 - Minimum 650 words total.
