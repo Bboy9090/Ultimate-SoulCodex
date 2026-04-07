@@ -160,11 +160,42 @@ export default function TodayPage() {
 
   // Error state
   if (error) {
+    const noProfile = error.toLowerCase().includes("no profile") || error.toLowerCase().includes("onboarding");
     return (
-      <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.25rem", padding: "2rem", textAlign: "center" }}>
-        <div style={{ fontSize: "2rem", opacity: 0.6 }}>⚠</div>
-        <p style={{ color: "#ef4444", fontSize: "0.9rem" }}>{error}</p>
-        <button className="btn btn-primary" onClick={() => navigate("/")}>Start Onboarding</button>
+      <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+        <div style={{ maxWidth: 420, width: "100%" }}>
+          <div style={{
+            background: "var(--glass-bg)",
+            border: "1px solid var(--glass-border)",
+            borderTop: `3px solid ${noProfile ? "var(--cosmic-purple)" : "#ef4444"}`,
+            borderRadius: "var(--radius)",
+            padding: "2rem 1.75rem",
+            textAlign: "center",
+          }}>
+            {noProfile ? (
+              <>
+                <div style={{ fontSize: "1.75rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.7 }}>☽</div>
+                <h3 style={{ marginBottom: "0.5rem", fontSize: "1.1rem", fontWeight: 600 }}>Today's Reading needs your profile</h3>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.6, marginBottom: "0.75rem" }}>
+                  Your daily card includes your moon phase, personal day number, and a tailored do/don't signal — all calculated from your birth data.
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+                  {["Moon phase", "Personal day", "Do · Don't signal"].map((f) => (
+                    <span key={f} style={{ padding: "0.2rem 0.6rem", borderRadius: 99, fontSize: "0.7rem", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "var(--cosmic-lavender)" }}>{f}</span>
+                  ))}
+                </div>
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/")}>Build My Profile</button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
+                <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Could not load today's card</h3>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>{error}</p>
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => { setError(null); loadCard(); }}>Try Again</button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     );
   }

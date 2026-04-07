@@ -156,14 +156,47 @@ export default function CodexReadingPage() {
 
   // Error
   if (error) {
+    const noProfile = error.toLowerCase().includes("no profile") || error.toLowerCase().includes("onboarding");
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.5rem", padding: "2rem", textAlign: "center" }}>
-        <div style={{ fontSize: "2.5rem", opacity: 0.5 }}>⚠</div>
-        <h2 style={{ color: "#ef4444" }}>Could not generate your reading</h2>
-        <p style={{ color: "var(--muted-foreground)", maxWidth: "380px", fontSize: "0.9rem" }}>{error}</p>
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
-          <button className="btn btn-primary" onClick={() => { setError(null); buildAndGenerate(); }}>Try Again</button>
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>Start Over</button>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+        <div style={{ maxWidth: 440, width: "100%" }}>
+          <div style={{
+            background: "var(--glass-bg)",
+            border: "1px solid var(--glass-border)",
+            borderTop: `3px solid ${noProfile ? "var(--cosmic-purple)" : "#ef4444"}`,
+            borderRadius: "var(--radius)",
+            padding: "2rem 1.75rem",
+            textAlign: "center",
+          }}>
+            {noProfile ? (
+              <>
+                <div style={{ fontSize: "1.75rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.7 }}>◈</div>
+                <h3 style={{ marginBottom: "0.5rem", fontSize: "1.1rem", fontWeight: 600 }}>Your Codex needs a profile first</h3>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.65, marginBottom: "0.75rem" }}>
+                  Your Codex Reading is a 30-point synthesis that assigns you a codename, a first-person narrative, and a ranked map of your core patterns across 15+ systems.
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+                  {["Codename", "30-pt synthesis", "Core narrative"].map((f) => (
+                    <span key={f} style={{ padding: "0.2rem 0.6rem", borderRadius: 99, fontSize: "0.7rem", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "var(--cosmic-lavender)" }}>{f}</span>
+                  ))}
+                </div>
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/")}>Start Onboarding</button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
+                <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600 }}>Could not generate your reading</h3>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.6, marginBottom: "0.35rem" }}>
+                  The synthesis engine hit an error. Your profile data is intact — retrying usually resolves this.
+                </p>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.75rem", opacity: 0.6, marginBottom: "1.5rem" }}>{error}</p>
+                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => { setError(null); buildAndGenerate(); }}>Try Again</button>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => navigate("/")}>Start Over</button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );

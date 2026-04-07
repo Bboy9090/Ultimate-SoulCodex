@@ -299,16 +299,43 @@ export default function TimelinePage() {
 
   if (noData) {
     return (
-      <div style={{ padding: "2rem 1rem 4rem", maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
-        <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.25rem)", marginBottom: "1rem" }}>
+      <div style={{ padding: "3rem 1rem 5rem", maxWidth: 500, margin: "0 auto" }}>
+        <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.5rem, 5vw, 2rem)", marginBottom: "1.75rem", textAlign: "center" }}>
           Your Timeline
         </h1>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem", marginBottom: "1.75rem" }}>
-          Complete your profile to unlock your personal phase analysis.
-        </p>
-        <button className="btn btn-primary" onClick={() => navigate("/")}>
-          Create Your Profile
-        </button>
+        <div style={{
+          background: "var(--glass-bg)",
+          border: "1px solid var(--glass-border)",
+          borderTop: "3px solid var(--cosmic-purple)",
+          borderRadius: "var(--radius)",
+          padding: "2rem 1.75rem",
+        }}>
+          <div style={{ fontSize: "1.75rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.7, textAlign: "center" }}>◎</div>
+          <h3 style={{ textAlign: "center", marginBottom: "0.5rem", fontSize: "1.05rem", fontWeight: 600 }}>
+            Timeline unlocks with your profile
+          </h3>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.65, marginBottom: "1.25rem", textAlign: "center" }}>
+            Your personal numerology cycle determines what phase you're in right now — and what's opening next.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.75rem" }}>
+            {[
+              { glyph: "▲", label: "Current Personal Year", desc: "The 9-year cycle archetype you're living this year" },
+              { glyph: "◉", label: "Active Personal Month", desc: "The specific frequency you're operating in right now" },
+              { glyph: "◈", label: "What Opens Next", desc: "The transition approaching in your numerology arc" },
+            ].map((item) => (
+              <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.65rem 0.75rem", background: "rgba(255,255,255,0.02)", border: "1px solid var(--glass-border)", borderRadius: 8 }}>
+                <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.9rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
+                <span>
+                  <span style={{ fontWeight: 600, fontSize: "0.83rem", display: "block" }}>{item.label}</span>
+                  <span style={{ color: "var(--muted-foreground)", fontSize: "0.75rem" }}>{item.desc}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/")}>
+            Create Your Profile
+          </button>
+        </div>
       </div>
     );
   }
