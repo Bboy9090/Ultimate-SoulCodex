@@ -18,9 +18,20 @@ interface Synthesis {
   growthEdges: string[];
 }
 
+interface HumanDesignData {
+  type?: string;
+  authority?: string;
+  profile?: string;
+}
+
 interface SoulProfile {
   archetype: Archetype;
   synthesis: Synthesis;
+  sunSign?: string;
+  moonSign?: string;
+  risingSign?: string;
+  lifePath?: number;
+  humanDesignData?: HumanDesignData;
 }
 
 interface ConfidenceData {
@@ -280,6 +291,9 @@ export default function ProfilePage() {
         }} />
       </section>
 
+      {/* ── Natal Blueprint row ─────────────────────────────────────────── */}
+      <NatalBlueprint profile={profile} />
+
       {/* ── Snapshot strip — 4 named signal cards ────────────────────────── */}
       <div style={{
         display: "grid",
@@ -432,6 +446,82 @@ export default function ProfilePage() {
 
       </div>
 
+    </div>
+  );
+}
+
+// ── Natal Blueprint component ────────────────────────────────────────────────
+
+const SIGN_GLYPHS: Record<string, string> = {
+  Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋", Leo: "♌", Virgo: "♍",
+  Libra: "♎", Scorpio: "♏", Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
+};
+
+function BlueprintChip({ label, value, accent }: { label: string; value: string; accent: string }) {
+  if (!value) return null;
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.2rem",
+      padding: "0.6rem 0.9rem",
+      background: "rgba(15,20,40,0.5)",
+      border: `1px solid ${accent}22`,
+      borderBottom: `2px solid ${accent}50`,
+      borderRadius: "10px",
+      minWidth: 80, flex: "1 1 80px",
+      textAlign: "center",
+    }}>
+      <span style={{ fontSize: "0.57rem", letterSpacing: "0.1em", textTransform: "uppercase", color: accent, fontWeight: 700, opacity: 0.85 }}>
+        {label}
+      </span>
+      <span style={{ fontSize: "0.88rem", color: "#f1f5f9", fontWeight: 600, lineHeight: 1.2 }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function NatalBlueprint({ profile }: { profile: SoulProfile }) {
+  const sun     = profile.sunSign;
+  const moon    = profile.moonSign;
+  const rising  = profile.risingSign;
+  const lp      = profile.lifePath;
+  const hdType  = profile.humanDesignData?.type;
+  const hdAuth  = profile.humanDesignData?.authority?.replace(" Authority", "");
+  const hdProf  = profile.humanDesignData?.profile;
+
+  const hasAny = sun || moon || rising || lp || hdType;
+  if (!hasAny) return null;
+
+  return (
+    <div style={{
+      marginBottom: "2rem",
+      padding: "1rem 1.1rem",
+      background: "rgba(139,92,246,0.04)",
+      border: "1px solid rgba(139,92,246,0.1)",
+      borderRadius: "12px",
+      position: "relative", zIndex: 1,
+    }}>
+      <div style={{ fontSize: "0.58rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--muted-foreground)", fontWeight: 600, marginBottom: "0.75rem", opacity: 0.6 }}>
+        ◈ My Chart
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        {sun   && <BlueprintChip label="Sun"      value={`${SIGN_GLYPHS[sun] ?? ""} ${sun}`}     accent="#f59e0b" />}
+        {moon  && <BlueprintChip label="Moon"     value={`${SIGN_GLYPHS[moon] ?? ""} ${moon}`}   accent="#8b5cf6" />}
+        {rising && <BlueprintChip label="Rising"  value={`${SIGN_GLYPHS[rising] ?? ""} ${rising}`} accent="#22d3ee" />}
+        {lp    && <BlueprintChip label="Life Path" value={String(lp)}                             accent="#ec4899" />}
+        {hdType && <BlueprintChip label="HD Type"  value={hdType}                                 accent="#22c55e" />}
+        {hdAuth && <BlueprintChip label="Authority" value={hdAuth}                                accent="#fbbf24" />}
+        {hdProf && <BlueprintChip label="Profile"   value={hdProf}                                accent="#a78bfa" />}
+      </div>
+      {(!rising || !hdType) && (
+        <p style={{ fontSize: "0.68rem", color: "var(--muted-foreground)", margin: "0.65rem 0 0", opacity: 0.5, lineHeight: 1.5 }}>
+          {!rising && !hdType
+            ? "Add birth time + location to unlock Rising sign, Human Design type & authority"
+            : !rising
+              ? "Add birth time to unlock Rising sign"
+              : "Add birth location to unlock full Human Design"}
+        </p>
+      )}
     </div>
   );
 }
