@@ -32,4 +32,4 @@ create_pr_and_files.sh
 # Environment variables
 .env
 .env.local
-.env.*.local.agents/
+.env.*.local
