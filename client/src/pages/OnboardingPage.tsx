@@ -161,8 +161,21 @@ export default function OnboardingPage() {
     const archetypeName = successResult?.archetype?.name ?? "Your Archetype";
     const archetypeTagline = successResult?.archetype?.tagline ?? "";
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem" }}>
-        <div style={{ maxWidth: 520, width: "100%" }}>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem", position: "relative", overflow: "hidden" }}>
+        {/* Atmospheric glow behind the success card */}
+        <img
+          src="/logo.png"
+          aria-hidden="true"
+          style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -55%)",
+            width: 600, height: 600, objectFit: "contain",
+            opacity: 0.08, mixBlendMode: "screen",
+            filter: "blur(32px)",
+            pointerEvents: "none", userSelect: "none", zIndex: 0,
+          }}
+        />
+        <div style={{ maxWidth: 520, width: "100%", position: "relative", zIndex: 1 }}>
           <div style={{
             background: "var(--glass-bg)",
             border: "1px solid var(--glass-border)",
@@ -172,16 +185,7 @@ export default function OnboardingPage() {
             textAlign: "center",
             marginBottom: "1.5rem",
           }}>
-            <img
-              src="/logo.png"
-              alt=""
-              style={{
-                height: 72, width: 72, objectFit: "contain",
-                mixBlendMode: "lighten",
-                filter: "drop-shadow(0 0 14px rgba(139,92,246,0.5)) drop-shadow(0 0 28px rgba(212,175,55,0.2))",
-                display: "block", margin: "0 auto 1rem",
-              }}
-            />
+            <div style={{ fontSize: "2rem", marginBottom: "1rem", opacity: 0.55 }}>✦</div>
             <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.2rem)", marginBottom: "0.5rem", lineHeight: 1.2 }}>
               {archetypeName}
             </h1>
@@ -243,7 +247,23 @@ export default function OnboardingPage() {
 
   // ── O1: Step form ─────────────────────────────────────────────────────────
   return (
-    <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600 }}>
+    <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600, position: "relative", overflow: "hidden" }}>
+      {/* Atmospheric glow behind the form */}
+      <img
+        src="/logo.png"
+        aria-hidden="true"
+        style={{
+          position: "absolute", top: "-80px", left: "50%",
+          transform: "translateX(-50%)",
+          width: 500, height: 500, objectFit: "contain",
+          opacity: 0.07, mixBlendMode: "screen",
+          filter: "blur(30px)",
+          pointerEvents: "none", userSelect: "none", zIndex: 0,
+        }}
+      />
+
+      {/* Form content — sits above the atmospheric bg image */}
+      <div style={{ position: "relative", zIndex: 1 }}>
 
       {/* Progress bar with named labels */}
       <div style={{ marginBottom: "2rem" }}>
@@ -311,6 +331,7 @@ export default function OnboardingPage() {
           {mutation.isPending ? "Building your profile…" : step === TOTAL_STEPS ? "Reveal My Profile" : "Continue"}
         </button>
       </div>
+      </div>{/* end content wrapper */}
     </div>
   );
 }
@@ -322,12 +343,11 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
   return (
     <div>
       {/* Branded welcome */}
-      <div style={{ marginBottom: "1.75rem", textAlign: "center" }}>
-        <img src="/logo.png" alt="Soul Codex" style={{ height: 80, width: 80, objectFit: "contain", display: "block", margin: "0 auto 1rem", mixBlendMode: "lighten", filter: "drop-shadow(0 0 14px rgba(139,92,246,0.45)) drop-shadow(0 0 28px rgba(212,175,55,0.2))" }} />
-        <h2 className="gradient-text" style={{ marginBottom: "0.4rem", textAlign: "left" }}>
+      <div style={{ marginBottom: "1.75rem" }}>
+        <h2 className="gradient-text" style={{ marginBottom: "0.4rem" }}>
           Map your soul
         </h2>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.6, textAlign: "left" }}>
+        <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.6 }}>
           Soul Codex synthesizes 31+ systems — astrology, numerology, Human Design, and more — into one unified profile built around how you actually move through the world.
         </p>
       </div>
