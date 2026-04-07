@@ -48,6 +48,3 @@ outputType = "webview"
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
 
-[userenv]
-
-[userenv.shared]
