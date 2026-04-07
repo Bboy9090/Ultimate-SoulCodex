@@ -172,7 +172,16 @@ export default function OnboardingPage() {
             textAlign: "center",
             marginBottom: "1.5rem",
           }}>
-            <div style={{ fontSize: "2rem", marginBottom: "1rem", opacity: 0.6 }}>✦</div>
+            <img
+              src="/logo.png"
+              alt=""
+              style={{
+                height: 72, width: 72, objectFit: "contain",
+                mixBlendMode: "lighten",
+                filter: "drop-shadow(0 0 14px rgba(139,92,246,0.5)) drop-shadow(0 0 28px rgba(212,175,55,0.2))",
+                display: "block", margin: "0 auto 1rem",
+              }}
+            />
             <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.2rem)", marginBottom: "0.5rem", lineHeight: 1.2 }}>
               {archetypeName}
             </h1>
@@ -314,7 +323,7 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
     <div>
       {/* Branded welcome */}
       <div style={{ marginBottom: "1.75rem", textAlign: "center" }}>
-        <img src="/logo.png" alt="Soul Codex" style={{ height: 80, width: 80, objectFit: "contain", marginBottom: "1rem", display: "block", margin: "0 auto 1rem" }} />
+        <img src="/logo.png" alt="Soul Codex" style={{ height: 80, width: 80, objectFit: "contain", display: "block", margin: "0 auto 1rem", mixBlendMode: "lighten", filter: "drop-shadow(0 0 14px rgba(139,92,246,0.45)) drop-shadow(0 0 28px rgba(212,175,55,0.2))" }} />
         <h2 className="gradient-text" style={{ marginBottom: "0.4rem", textAlign: "left" }}>
           Map your soul
         </h2>
