@@ -3400,7 +3400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const codename = pickCodename(themes);
       const { strengths, shadows, triggers, prescriptions } = compileBulletLists(signals, themes);
 
-      const anchors = signals.flatMap(s => s.evidence).filter(Boolean).slice(0, 14);
+      const anchors = signals.map(s => s.label).filter(Boolean).slice(0, 14);
 
       // Anti-generic enrichment (no output contract change)
       const agCtx: AntiGenericContext = {
@@ -3484,30 +3484,30 @@ function buildFallbackNarrative(
   triggers: string[]
 ): string {
   const topTheme = themes[0]?.tag ?? "precision";
-  const anchor1 = anchors[0] ?? "my chart";
-  const anchor2 = anchors[1] ?? "my patterns";
-  const anchor3 = anchors[2] ?? "my signals";
-  const s1 = strengths[0] ?? "Pattern recognition";
+  const secondTheme = themes[1]?.tag ?? "discipline";
+  const s1 = strengths[0] ?? "I protect my attention like a resource, because it is one.";
+  const s2 = strengths[1] ?? "";
   const t1 = triggers[0] ?? "Sloppy work and vague promises.";
+  const t2 = triggers[1] ?? "";
 
   return `CODENAME: ${codename}
 MOTTO: I build what others talk about.
 
 WHO I AM
-I operate from a core of ${topTheme}. Everything I do — how I decide, how I rest, how I protect my attention — runs through that filter. When I look at ${anchor1}, I see the same pattern show up across different contexts. I am not confused about what I value; I may not always know how to get there, but I know what I'm pointing at.
+I operate from a core of ${topTheme}. Everything I do — how I decide, how I rest, how I protect my attention — runs through that filter. The same pattern shows up across different contexts. I am not confused about what I value; I may not always know how to get there, but I know what I'm pointing at.
 
-I have learned not to explain myself to people who aren't willing to understand. ${anchor2} tells me something about the shape of my inner life that I've confirmed through lived experience — not theory. My strengths include: ${s1}.
+${s1}${s2 ? " " + s2 : ""} I have learned not to explain myself to people who aren't willing to understand. That came from lived experience, not theory.
 
 HOW I MOVE UNDER PRESSURE
 When things get hard, my system defaults to what it knows. I do not perform calm — I find it, or I go quiet until I do. Pressure is not inherently a problem. The problem is pressure combined with noise, with vague demands, with people who haven't done the work.
 
-I have a limited tolerance for inefficiency under stress. I move toward what I can control and cut what I cannot. That is not rigidity — it is resource management.
+I have a limited tolerance for inefficiency under stress. I move toward what I can control and cut what I cannot. ${secondTheme.charAt(0).toUpperCase() + secondTheme.slice(1)} is a load-bearing part of how I function — not an accessory.
 
 WHAT I WON'T TOLERATE
-${t1} I do not negotiate with people who have already decided they won't change. I know the cost of letting that slide.
+${t1}${t2 ? " " + t2 : ""} I do not negotiate with people who have already decided they won't change. I know the cost of letting that slide.
 
 WHAT I'M BUILDING
-${anchor3} suggests I am in a longer build cycle than most people realize. I am not optimizing for applause. I am building something that will outlast the moment I'm in.
+I am in a longer build cycle than most people realize. I am not optimizing for applause. I am building something that will outlast the moment I'm in. The work is the signal.
 
 THIS WEEK
 - Complete one thing you've been circling. Completion is data.
