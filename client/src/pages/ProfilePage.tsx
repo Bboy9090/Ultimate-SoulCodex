@@ -97,7 +97,7 @@ export default function ProfilePage() {
         </p>
         <button
           className="btn btn-primary btn-large"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/start")}
           type="button"
           style={{ minWidth: 200 }}
         >

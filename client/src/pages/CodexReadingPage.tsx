@@ -180,7 +180,7 @@ export default function CodexReadingPage() {
                     <span key={f} style={{ padding: "0.2rem 0.6rem", borderRadius: 99, fontSize: "0.7rem", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "var(--cosmic-lavender)" }}>{f}</span>
                   ))}
                 </div>
-                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/")}>Start Onboarding</button>
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>Build My Profile</button>
               </>
             ) : (
               <>
@@ -192,7 +192,7 @@ export default function CodexReadingPage() {
                 <p style={{ color: "var(--muted-foreground)", fontSize: "0.75rem", opacity: 0.6, marginBottom: "1.5rem" }}>{error}</p>
                 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                   <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => { setError(null); buildAndGenerate(); }}>Try Again</button>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => navigate("/")}>Start Over</button>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => navigate("/start")}>Start Over</button>
                 </div>
               </>
             )}
