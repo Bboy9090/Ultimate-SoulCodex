@@ -348,7 +348,7 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           Map your soul
         </h2>
         <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.6 }}>
-          Soul Codex synthesizes 31+ systems — astrology, numerology, Human Design, and more — into one unified profile built around how you actually move through the world.
+          Soul Codex turns astrology, numerology, Human Design, and behavioral pattern analysis into one clear reading about who you are, what season you're in, and what to do next.
         </p>
       </div>
 
