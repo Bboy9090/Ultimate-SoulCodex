@@ -313,11 +313,12 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
   return (
     <div>
       {/* Branded welcome */}
-      <div style={{ marginBottom: "1.75rem" }}>
-        <h2 className="gradient-text" style={{ marginBottom: "0.4rem" }}>
+      <div style={{ marginBottom: "1.75rem", textAlign: "center" }}>
+        <img src="/logo.png" alt="Soul Codex" style={{ height: 80, width: 80, objectFit: "contain", marginBottom: "1rem", display: "block", margin: "0 auto 1rem" }} />
+        <h2 className="gradient-text" style={{ marginBottom: "0.4rem", textAlign: "left" }}>
           Map your soul
         </h2>
-        <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.6 }}>
+        <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.6, textAlign: "left" }}>
           Soul Codex synthesizes 31+ systems — astrology, numerology, Human Design, and more — into one unified profile built around how you actually move through the world.
         </p>
       </div>
