@@ -2,7 +2,7 @@
 
 ## Overview
 
-Soul Codex is a comprehensive spiritual/personality profiling web application that maps users' psychological and metaphysical patterns using a wide array of systems — astrology, numerology, Human Design, Enneagram, MBTI, Gene Keys, Kabbalah, Mayan astrology, I Ching, Chinese astrology, chakra systems, and more. The app synthesizes these systems into unified "soul archetypes" and provides daily guidance, compatibility analysis, AI-powered chat, and journaling features.
+Soul Codex is a spiritual/personality profiling web application that synthesizes astrology, numerology, Human Design, and behavioral pattern analysis into a unified "soul archetype" and reading. It provides daily guidance, compatibility analysis, and journaling features — built around honest signal rather than marketing inflection.
 
 The app is a full-stack TypeScript monorepo with:
 - A React SPA frontend (in `client/`)
