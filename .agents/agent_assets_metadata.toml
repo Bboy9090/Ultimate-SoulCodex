@@ -1,8 +1,0 @@
-uploads = []
-outputs = []
-
-[[generated]]
-id = "-mCkTO-VysSafC2EV-gwT"
-uri = "file://client/public/logo.png"
-type = "image"
-title = "soul-codex-logo-purple-cyan"
