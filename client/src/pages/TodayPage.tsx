@@ -184,7 +184,7 @@ export default function TodayPage() {
                     <span key={f} style={{ padding: "0.2rem 0.6rem", borderRadius: 99, fontSize: "0.7rem", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "var(--cosmic-lavender)" }}>{f}</span>
                   ))}
                 </div>
-                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/")}>Build My Profile</button>
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>Build My Profile</button>
               </>
             ) : (
               <>

@@ -1,5 +1,6 @@
 import { Route, Switch } from "wouter";
 import Nav from "./components/Nav";
+import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ProfilePage from "./pages/ProfilePage";
 import DailyHoroscopePage from "./pages/DailyHoroscopePage";
@@ -17,7 +18,8 @@ export default function App() {
       <Nav />
       <main style={{ flex: 1 }}>
         <Switch>
-          <Route path="/" component={OnboardingPage} />
+          <Route path="/" component={LandingPage} />
+          <Route path="/start" component={OnboardingPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/today" component={TodayPage} />
           <Route path="/guide" component={SoulGuidePage} />

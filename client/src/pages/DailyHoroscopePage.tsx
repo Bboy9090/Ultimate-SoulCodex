@@ -196,7 +196,7 @@ export default function DailyHoroscopePage() {
         <p style={{ color: "var(--muted-foreground)", marginBottom: "2rem", lineHeight: 1.6, fontSize: "0.9rem" }}>
           Complete the onboarding first to receive a personal daily reading.
         </p>
-        <Link href="/"><button className="btn btn-primary btn-large">Start Onboarding</button></Link>
+        <Link href="/start"><button className="btn btn-primary btn-large">Build My Profile</button></Link>
       </div>
     );
   }

@@ -332,7 +332,7 @@ export default function TimelinePage() {
               </div>
             ))}
           </div>
-          <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/")}>
+          <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>
             Create Your Profile
           </button>
         </div>
