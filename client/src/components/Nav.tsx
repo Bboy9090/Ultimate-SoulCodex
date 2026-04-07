@@ -41,7 +41,7 @@ export default function Nav() {
     <nav className="navbar">
       <div className="container navbar-content">
         <Link href="/" className="navbar-brand">
-          <span style={{ fontSize: "1.5rem" }}>✦</span>
+          <img src="/logo.png" alt="Soul Codex" style={{ height: 28, width: 28, objectFit: "contain", flexShrink: 0 }} />
           Soul Codex
         </Link>
         <div className="navbar-nav" style={{ display: "flex", alignItems: "center", gap: 0 }}>
