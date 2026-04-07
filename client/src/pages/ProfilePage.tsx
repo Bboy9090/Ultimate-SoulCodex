@@ -70,7 +70,50 @@ function getSecondPrescription(): string | null {
   } catch { return null; }
 }
 
-// Section visual config
+// ── Text helpers ─────────────────────────────────────────────────────────────
+
+/** Returns the first complete sentence of a text block. */
+function firstSentence(text: string): string {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  const s = trimmed.split(/(?<=[.!?])\s/)[0];
+  return s.endsWith(".") || s.endsWith("!") || s.endsWith("?") ? s : s + ".";
+}
+
+/**
+ * Returns the text with the first sentence removed — so the deep section
+ * doesn't repeat what was already shown in the snapshot card above.
+ * Falls back to the full text when it's a single sentence.
+ */
+function afterFirstSentence(text: string): string {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  const parts = trimmed.split(/(?<=[.!?])\s+/);
+  if (parts.length <= 1) return trimmed;
+  return parts.slice(1).join(" ");
+}
+
+/**
+ * Strips zodiac-sign-first openers so behavioral observations lead.
+ * "As a Scorpio, I tend to…" → "I tend to…"
+ */
+const ZODIAC = "Aries|Taurus|Gemini|Cancer|Leo|Virgo|Libra|Scorpio|Sagittarius|Capricorn|Aquarius|Pisces";
+const SIGN_OPENER = new RegExp(
+  `^(?:As (?:a |an )?(?:Sun |Moon |Rising )?(${ZODIAC})|My (${ZODIAC}) (?:Sun|Moon|Rising|nature))[^,]*,\\s*`,
+  "i"
+);
+
+function cleanBehavioralText(text: string): string {
+  if (!text) return text;
+  const match = text.match(SIGN_OPENER);
+  if (match) {
+    const rest = text.slice(match[0].length);
+    return rest.charAt(0).toUpperCase() + rest.slice(1);
+  }
+  return text;
+}
+
+// ── Section visual config ────────────────────────────────────────────────────
 const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
   who:      { glyph: "◉", accent: "#8b5cf6", bg: "rgba(139,92,246,0.07)" },
   stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(245,158,11,0.06)" },
@@ -84,7 +127,7 @@ export default function ProfilePage() {
   const [, navigate] = useLocation();
   const profile      = getProfile();
   const confidence   = getConfidence();
-  const prescription = getCodexPrescription();
+  const prescription  = getCodexPrescription();
   const prescription2 = getSecondPrescription();
 
   if (!profile) {
@@ -108,14 +151,6 @@ export default function ProfilePage() {
   }
 
   const { archetype, synthesis } = profile;
-
-  // Build the four named snapshot cards
-  const firstSentence = (text: string) => {
-    const trimmed = (text ?? "").trim();
-    if (!trimmed) return "";
-    const s = trimmed.split(/(?<=[.!?])\s/)[0];
-    return s.endsWith(".") || s.endsWith("!") || s.endsWith("?") ? s : s + ".";
-  };
 
   const whyNowValue = prescription
     ? prescription
@@ -154,6 +189,13 @@ export default function ProfilePage() {
     },
   ];
 
+  // Deep-section text: strip the first sentence already shown in snapshot
+  const whoIAmDeep    = cleanBehavioralText(afterFirstSentence(synthesis.coreEssence ?? "") || synthesis.coreEssence ?? "");
+  const stressDeep    = cleanBehavioralText(afterFirstSentence(synthesis.stressPattern ?? "") || synthesis.stressPattern ?? "");
+  const relateDeep    = cleanBehavioralText(synthesis.relationshipPattern ?? "");
+  const buildDeep     = cleanBehavioralText(synthesis.powerMode ?? "");
+  const compassNotes  = cleanBehavioralText(synthesis.moralCode?.notes ?? "");
+
   return (
     <div style={{ padding: "2rem 1rem 5rem", maxWidth: 720, margin: "0 auto", position: "relative", overflow: "hidden" }}>
 
@@ -174,7 +216,6 @@ export default function ProfilePage() {
       {/* ── Identity header ─────────────────────────────────────────────── */}
       <section style={{ textAlign: "center", marginBottom: "2.5rem", position: "relative", zIndex: 1 }}>
 
-        {/* Eyebrow label */}
         <div style={{
           fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
           color: "var(--muted-foreground)", marginBottom: "1rem", fontWeight: 500,
@@ -182,7 +223,6 @@ export default function ProfilePage() {
           Soul Snapshot
         </div>
 
-        {/* Glyph mark */}
         <div style={{
           fontSize: "2.25rem", marginBottom: "0.75rem",
           background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
@@ -192,7 +232,6 @@ export default function ProfilePage() {
           ◉
         </div>
 
-        {/* Archetype name */}
         <h1
           className="gradient-text"
           style={{
@@ -204,7 +243,6 @@ export default function ProfilePage() {
           {archetype.name}
         </h1>
 
-        {/* Element · Role pill + Confidence badge — co-located, clearly secondary */}
         <div style={{
           display: "flex", gap: "0.5rem", justifyContent: "center",
           flexWrap: "wrap", marginBottom: "0.85rem",
@@ -235,7 +273,6 @@ export default function ProfilePage() {
           {archetype.tagline}
         </p>
 
-        {/* Hairline separator */}
         <div style={{
           marginTop: "2rem",
           height: 1,
@@ -248,6 +285,7 @@ export default function ProfilePage() {
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
         gap: "0.85rem", marginBottom: "2.5rem",
+        position: "relative", zIndex: 1,
       }}>
         {snapshotCards.map(card => (
           <div
@@ -281,7 +319,8 @@ export default function ProfilePage() {
       {/* ── Action buttons — Today first (primary), Codex second ──────────── */}
       <div style={{
         display: "flex", gap: "0.85rem", flexWrap: "wrap",
-        justifyContent: "center", marginBottom: "2.75rem",
+        justifyContent: "center", marginBottom: "3rem",
+        position: "relative", zIndex: 1,
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
           <button
@@ -311,24 +350,39 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* ── Full Reading divider ──────────────────────────────────────────── */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: "1rem",
+        marginBottom: "1.75rem", position: "relative", zIndex: 1,
+      }}>
+        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.18))" }} />
+        <span style={{
+          fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase",
+          color: "var(--muted-foreground)", opacity: 0.45, whiteSpace: "nowrap",
+        }}>
+          Full Reading
+        </span>
+        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(139,92,246,0.18), transparent)" }} />
+      </div>
+
       {/* ── Deep sections ────────────────────────────────────────────────── */}
-      <div className="stagger">
+      <div className="stagger" style={{ position: "relative", zIndex: 1 }}>
 
         <ProfileSection sectionKey="who" title="Who I Am">
           <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
-            {synthesis.coreEssence}
+            {whoIAmDeep}
           </p>
         </ProfileSection>
 
         <ProfileSection sectionKey="stress" title="How I React Under Stress">
           <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
-            {synthesis.stressPattern}
+            {stressDeep}
           </p>
         </ProfileSection>
 
         <ProfileSection sectionKey="relate" title="How I Connect and Relate">
           <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
-            {synthesis.relationshipPattern}
+            {relateDeep}
           </p>
         </ProfileSection>
 
@@ -344,13 +398,13 @@ export default function ProfilePage() {
             </span>
           </div>
           <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
-            {synthesis.moralCode.notes}
+            {compassNotes}
           </p>
         </ProfileSection>
 
         <ProfileSection sectionKey="build" title="What I'm Built to Build">
           <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
-            {synthesis.powerMode}
+            {buildDeep}
           </p>
         </ProfileSection>
 

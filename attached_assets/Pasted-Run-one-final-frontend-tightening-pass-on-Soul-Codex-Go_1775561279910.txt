@@ -1,0 +1,83 @@
+Run one final frontend tightening pass on Soul Codex.
+
+Goal:
+Make the app feel more premium, more disciplined, and less repetitive without adding new major features.
+
+Do NOT redesign the whole app.
+Do NOT add broad new surfaces.
+Do NOT touch backend/core unless required to support current rendering.
+Do NOT expand feature scope.
+
+Focus only on these five issues, in this order:
+
+1. Snapshot / Profile duplication
+Problem:
+The front door currently shows a Soul Snapshot and then immediately continues into a longer profile that repeats some of the same ideas.
+
+Tasks:
+- Make the top section a true Snapshot only:
+  - Who I Am
+  - Why Now
+  - One Pattern to Watch
+  - One Move Today
+- Add a cleaner transition into the deeper profile content
+- Reduce repetition between top summary and deeper sections
+- Make the page feel like “front door first, full house second”
+
+2. Behavior-led copy cleanup
+Problem:
+Some profile/snapshot copy still sounds too sign-led or broad.
+
+Tasks:
+- Tighten any generic lines such as:
+  - “I lead with my Virgo drive...”
+  - broad zodiac-first phrasing
+- Rewrite toward behavior-first, label-second language
+- Keep the existing meaning, but make it sound more specific, observational, and human
+- Avoid adding fluff or therapist-blog tone
+
+3. Daily Horoscope hierarchy
+Problem:
+The Daily Horoscope page has too much advanced transit/system output too close to the top, and some transit language is still too reusable.
+
+Tasks:
+- Make the top of the page more curated:
+  - main reading
+  - one timing/context note
+  - top influences
+- Push the full transit list lower or make it feel more clearly “advanced detail”
+- Tighten generic transit phrasing where possible
+- Make the page feel like guided reading first, data second
+
+4. Navigation cleanup
+Problem:
+STD / ADV and page naming feel slightly inconsistent or internal.
+
+Tasks:
+- Normalize the nav so mode/state labels feel intentional
+- If STD / ADV remain, style them as a clear mode control or chip
+- Make nav labels consistent across pages (Compat / Poster / Chart etc.)
+- Reduce any sense that internal state labels are leaking into user-facing UI
+
+5. Timeline teaser discipline
+Problem:
+The Life Map teaser is better than before, but it still creates product debt if it is too prominent.
+
+Tasks:
+- Either reduce its visual weight
+- or make it feel like a compact future feature preview instead of a full unfinished card
+- Keep the page strong even if the teaser were removed
+
+Rules:
+- No major redesign
+- No new giant components unless clearly needed
+- No noisy dashboard behavior
+- Keep the app calm, premium, and coherent
+- Prefer less duplication, stronger hierarchy, and more specific wording
+- Report exactly what changed and what still feels weak
+
+Output:
+1. what changed
+2. why it improves the premium feel
+3. files modified
+4. what still needs future work
