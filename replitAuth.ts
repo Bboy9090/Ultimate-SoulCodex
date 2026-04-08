@@ -4,17 +4,25 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import MemoryStoreFactory from "memorystore";
 import { storage } from "./storage";
-import { verifyPassword } from "./passwordUtils";
+import { verifyPassword } from "./auth/passwordUtils";
 
 const MemoryStore = MemoryStoreFactory(session);
 
 export async function setupAuth(app: Express) {
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    throw new Error(
+      "SESSION_SECRET environment variable is not set. " +
+      "Set it as a Replit Secret before starting the server."
+    );
+  }
+
   app.set("trust proxy", 1);
 
   app.use(
     session({
       store: new MemoryStore({ checkPeriod: 86400000 }),
-      secret: process.env.SESSION_SECRET || "dev-session-secret",
+      secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
       cookie: {

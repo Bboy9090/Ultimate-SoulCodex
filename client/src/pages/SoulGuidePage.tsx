@@ -644,6 +644,8 @@ export default function SoulGuidePage() {
                     el.style.background = "rgba(28,22,53,0.65)";
                     el.style.transform = "translateY(0)";
                   }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.15)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.08)"; }}
                 >
                   <span style={{ opacity: 0.5, marginRight: "0.5rem", fontSize: "0.75rem" }}>›</span>
                   {s}

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useLocation } from "wouter";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 
@@ -17,9 +18,26 @@ interface Synthesis {
   growthEdges: string[];
 }
 
+interface HumanDesignData {
+  type?: string;
+  authority?: string;
+  profile?: string;
+}
+
 interface SoulProfile {
   archetype: Archetype;
   synthesis: Synthesis;
+  sunSign?: string;
+  moonSign?: string;
+  risingSign?: string;
+  lifePath?: number;
+  humanDesignData?: HumanDesignData;
+}
+
+interface ConfidenceData {
+  badge: "verified" | "partial" | "unverified";
+  label: string;
+  reason: string;
 }
 
 function getProfile(): SoulProfile | null {
@@ -44,41 +62,159 @@ interface ConfidenceData {
 function getConfidence(): ConfidenceData | null {
   try {
     const raw = localStorage.getItem("soulConfidence");
-    if (!raw) {
-      const profile = localStorage.getItem("soulProfile");
-      if (profile) {
-        const p = JSON.parse(profile);
-        if (p.confidence) return p.confidence as ConfidenceData;
-      }
-      return null;
+    if (raw) return JSON.parse(raw) as ConfidenceData;
+    const profile = localStorage.getItem("soulProfile");
+    if (profile) {
+      const p = JSON.parse(profile);
+      if (p.confidence) return p.confidence as ConfidenceData;
     }
-    return JSON.parse(raw) as ConfidenceData;
-  } catch {
     return null;
-  }
+  } catch { return null; }
 }
 
+function getCodexPrescription(): string | null {
+  try {
+    const raw = localStorage.getItem("soulCodexReading");
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return d?.prescriptions?.[0] ?? null;
+  } catch { return null; }
+}
+
+function getSecondPrescription(): string | null {
+  try {
+    const raw = localStorage.getItem("soulCodexReading");
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return d?.prescriptions?.[1] ?? null;
+  } catch { return null; }
+}
+
+// ── Text helpers ─────────────────────────────────────────────────────────────
+
+/** Returns the first complete sentence of a text block. */
+function firstSentence(text: string): string {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  const s = trimmed.split(/(?<=[.!?])\s/)[0];
+  return s.endsWith(".") || s.endsWith("!") || s.endsWith("?") ? s : s + ".";
+}
+
+/**
+ * Returns the text with the first sentence removed — so the deep section
+ * doesn't repeat what was already shown in the snapshot card above.
+ * Falls back to the full text when it's a single sentence.
+ */
+function afterFirstSentence(text: string): string {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "";
+  const parts = trimmed.split(/(?<=[.!?])\s+/);
+  if (parts.length <= 1) return trimmed;
+  return parts.slice(1).join(" ");
+}
+
+/**
+ * Strips zodiac-sign-first openers so behavioral observations lead.
+ * "As a Scorpio, I tend to…" → "I tend to…"
+ */
+const ZODIAC = "Aries|Taurus|Gemini|Cancer|Leo|Virgo|Libra|Scorpio|Sagittarius|Capricorn|Aquarius|Pisces";
+const SIGN_OPENER = new RegExp(
+  `^(?:As (?:a |an )?(?:Sun |Moon |Rising )?(${ZODIAC})|My (${ZODIAC}) (?:Sun|Moon|Rising|nature))[^,]*,\\s*`,
+  "i"
+);
+
+function cleanBehavioralText(text: string): string {
+  if (!text) return text;
+  const match = text.match(SIGN_OPENER);
+  if (match) {
+    const rest = text.slice(match[0].length);
+    return rest.charAt(0).toUpperCase() + rest.slice(1);
+  }
+  return text;
+}
+
+// ── Section visual config ────────────────────────────────────────────────────
+const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
+  who:      { glyph: "◉", accent: "#8b5cf6", bg: "rgba(139,92,246,0.07)" },
+  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(245,158,11,0.06)" },
+  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(244,114,182,0.06)" },
+  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(34,211,238,0.06)" },
+  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(251,191,36,0.06)" },
+  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(34,197,94,0.06)" },
+};
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
-  const profile = getProfile();
-  const confidence = getConfidence();
+  const profile      = getProfile();
+  const confidence   = getConfidence();
+  const prescription  = getCodexPrescription();
+  const prescription2 = getSecondPrescription();
 
   if (!profile) {
     return (
-      <div className="container" style={{ padding: "4rem 1rem", textAlign: "center" }}>
-        <h2 className="gradient-text" style={{ marginBottom: "1rem" }}>No profile found</h2>
-        <p style={{ marginBottom: "2rem", color: "var(--muted-foreground)" }}>
-          Complete the onboarding to generate your profile.
+      <div style={{ padding: "4rem 1rem", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ fontSize: "3.5rem", marginBottom: "1.25rem", opacity: 0.25, color: "var(--cosmic-lavender)" }}>◉</div>
+        <h2 className="gradient-text" style={{ marginBottom: "0.75rem" }}>No profile found</h2>
+        <p style={{ marginBottom: "2rem", color: "var(--muted-foreground)", lineHeight: 1.65, fontSize: "0.9rem" }}>
+          Complete the onboarding to generate your soul profile.
         </p>
-        <button className="btn btn-primary" onClick={() => navigate("/")} type="button">
-          Start Onboarding
+        <button
+          className="btn btn-primary btn-large"
+          onClick={() => navigate("/start")}
+          type="button"
+          style={{ minWidth: 200 }}
+        >
+          ◉ Begin Your Reading
         </button>
       </div>
     );
   }
 
   const { archetype, synthesis } = profile;
+
+  const whyNowValue = prescription
+    ? prescription
+    : synthesis.growthEdges?.[0]
+      ? `Now is the time to ${synthesis.growthEdges[0].replace(/^you (should|need to|must)\s+/i, "").toLowerCase()}`
+      : "";
+
+  const oneMoveValue = prescription2
+    ? prescription2
+    : synthesis.growthEdges?.[1] ?? synthesis.growthEdges?.[0] ?? "";
+
+  const snapshotCards = [
+    {
+      label: "Who I Am",
+      value: firstSentence(synthesis.coreEssence ?? ""),
+      accent: "#8b5cf6",
+      bg: "rgba(139,92,246,0.08)",
+    },
+    {
+      label: "Why Now",
+      value: whyNowValue,
+      accent: "#22d3ee",
+      bg: "rgba(34,211,238,0.07)",
+    },
+    {
+      label: "One Pattern to Watch",
+      value: firstSentence(synthesis.stressPattern ?? ""),
+      accent: "#f59e0b",
+      bg: "rgba(245,158,11,0.07)",
+    },
+    {
+      label: "One Move Today",
+      value: oneMoveValue,
+      accent: "#22c55e",
+      bg: "rgba(34,197,94,0.07)",
+    },
+  ];
+
+  // Deep-section text: strip the first sentence already shown in snapshot
+  const whoIAmDeep    = cleanBehavioralText(afterFirstSentence(synthesis.coreEssence ?? "") || (synthesis.coreEssence ?? ""));
+  const stressDeep    = cleanBehavioralText(afterFirstSentence(synthesis.stressPattern ?? "") || (synthesis.stressPattern ?? ""));
+  const relateDeep    = cleanBehavioralText(synthesis.relationshipPattern ?? "");
+  const buildDeep     = cleanBehavioralText(synthesis.powerMode ?? "");
+  const compassNotes  = cleanBehavioralText(synthesis.moralCode?.notes ?? "");
 
   return (
     <div className="container" style={{ padding: "2rem 1rem 4rem", maxWidth: 720 }}>
@@ -163,26 +299,41 @@ export default function ProfilePage() {
           </p>
         </ProfileSection>
 
-        <ProfileSection icon="⚖️" title="My Moral Compass">
+      {/* ── Snapshot strip — 4 named signal cards ────────────────────────── */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: "0.85rem", marginBottom: "2.5rem",
+        position: "relative", zIndex: 1,
+      }}>
+        {snapshotCards.map(card => (
           <div
+            key={card.label}
             style={{
-              display: "inline-block",
-              padding: "0.25rem 0.75rem",
-              background: "rgba(236, 72, 153, 0.15)",
-              border: "1px solid rgba(236, 72, 153, 0.3)",
-              borderRadius: 9999,
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              color: "var(--cosmic-rose)",
-              marginBottom: "0.75rem",
+              background: card.bg,
+              borderRadius: "14px",
+              padding: "1.25rem 1.35rem",
+              border: `1px solid ${card.accent}28`,
+              borderLeft: `3px solid ${card.accent}`,
             }}
           >
-            {synthesis.moralCode.name}
+            <div style={{
+              fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase",
+              color: card.accent, fontWeight: 700, marginBottom: "0.55rem",
+            }}>
+              {card.label}
+            </div>
+            <p style={{
+              fontSize: "0.855rem", color: "rgba(230,228,255,0.88)",
+              lineHeight: 1.6, margin: 0,
+              display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}>
+              {card.value}
+            </p>
           </div>
-          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "1rem" }}>
-            {synthesis.moralCode.notes}
-          </p>
-        </ProfileSection>
+        ))}
+      </div>
 
         <ProfileSection icon="🏗️" title="What I'm Built to Build">
           <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "1rem", whiteSpace: "pre-wrap" }}>
@@ -201,21 +352,100 @@ export default function ProfilePage() {
               gap: "0.75rem",
             }}
           >
+            ☽ Today's Card
+          </button>
+          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+            Your daily signal, guidance &amp; focus
+          </span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/codex")}
+            type="button"
+            style={{ fontSize: "0.9rem", padding: "0.85rem 1.6rem", width: "100%" }}
+          >
+            ✦ Open Codex Reading
+          </button>
+          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+            Deep dive into your soul architecture
+          </span>
+        </div>
+      </div>
+
+      {/* ── Full Reading divider ──────────────────────────────────────────── */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: "1rem",
+        marginBottom: "1.75rem", position: "relative", zIndex: 1,
+      }}>
+        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.18))" }} />
+        <span style={{
+          fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase",
+          color: "var(--muted-foreground)", opacity: 0.45, whiteSpace: "nowrap",
+        }}>
+          Full Reading
+        </span>
+        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(139,92,246,0.18), transparent)" }} />
+      </div>
+
+      {/* ── Deep sections ────────────────────────────────────────────────── */}
+      <div className="stagger" style={{ position: "relative", zIndex: 1 }}>
+
+        <ProfileSection sectionKey="who" title="Who I Am">
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
+            {whoIAmDeep}
+          </p>
+        </ProfileSection>
+
+        <ProfileSection sectionKey="stress" title="How I React Under Stress">
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
+            {stressDeep}
+          </p>
+        </ProfileSection>
+
+        <ProfileSection sectionKey="relate" title="How I Connect and Relate">
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
+            {relateDeep}
+          </p>
+        </ProfileSection>
+
+        <ProfileSection sectionKey="compass" title="Moral Compass">
+          <div style={{ marginBottom: "0.75rem" }}>
+            <span style={{
+              display: "inline-block", padding: "0.2rem 0.7rem",
+              background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.3)",
+              borderRadius: 9999, fontSize: "0.78rem", fontWeight: 600,
+              color: "var(--cosmic-cyan)",
+            }}>
+              {synthesis.moralCode.name}
+            </span>
+          </div>
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
+            {compassNotes}
+          </p>
+        </ProfileSection>
+
+        <ProfileSection sectionKey="build" title="What I'm Built to Build">
+          <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
+            {buildDeep}
+          </p>
+        </ProfileSection>
+
+        <ProfileSection sectionKey="growth" title="Growth Edges">
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
             {synthesis.growthEdges.map((edge, i) => (
               <li
                 key={i}
                 style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  alignItems: "flex-start",
-                  padding: "0.75rem 1rem",
-                  background: "rgba(251, 191, 36, 0.08)",
-                  border: "1px solid rgba(251, 191, 36, 0.15)",
-                  borderRadius: "var(--radius-sm)",
+                  display: "flex", gap: "0.75rem", alignItems: "flex-start",
+                  padding: "0.7rem 0.9rem",
+                  background: "rgba(34,197,94,0.07)",
+                  border: "1px solid rgba(34,197,94,0.15)",
+                  borderRadius: "8px",
                 }}
               >
-                <span style={{ color: "var(--cosmic-gold)", flexShrink: 0, fontSize: "1rem" }}>→</span>
-                <span style={{ color: "var(--card-foreground)", lineHeight: 1.6, fontSize: "0.9375rem" }}>
+                <span style={{ color: "#22c55e", flexShrink: 0, fontSize: "0.85rem", marginTop: "0.1rem" }}>→</span>
+                <span style={{ color: "var(--card-foreground)", lineHeight: 1.6, fontSize: "0.875rem" }}>
                   {edge}
                 </span>
               </li>
@@ -223,51 +453,119 @@ export default function ProfilePage() {
           </ul>
         </ProfileSection>
 
-        <div style={{ textAlign: "center", marginTop: "2rem", display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate("/codex")}
-            type="button"
-            style={{ fontSize: "0.95rem", padding: "0.75rem 1.75rem" }}
-          >
-            ✦ Open Codex Reading
-          </button>
-          <button
-            className="btn btn-glow btn-large"
-            onClick={() => navigate("/horoscope")}
-            type="button"
-          >
-            See Today's Reading
-          </button>
-        </div>
       </div>
+
     </div>
   );
 }
 
+// ── Natal Blueprint component ────────────────────────────────────────────────
+
+const SIGN_GLYPHS: Record<string, string> = {
+  Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋", Leo: "♌", Virgo: "♍",
+  Libra: "♎", Scorpio: "♏", Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
+};
+
+function BlueprintChip({ label, value, accent }: { label: string; value: string; accent: string }) {
+  if (!value) return null;
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.2rem",
+      padding: "0.6rem 0.9rem",
+      background: "rgba(15,20,40,0.5)",
+      border: `1px solid ${accent}22`,
+      borderBottom: `2px solid ${accent}50`,
+      borderRadius: "10px",
+      minWidth: 80, flex: "1 1 80px",
+      textAlign: "center",
+    }}>
+      <span style={{ fontSize: "0.57rem", letterSpacing: "0.1em", textTransform: "uppercase", color: accent, fontWeight: 700, opacity: 0.85 }}>
+        {label}
+      </span>
+      <span style={{ fontSize: "0.88rem", color: "#f1f5f9", fontWeight: 600, lineHeight: 1.2 }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function NatalBlueprint({ profile }: { profile: SoulProfile }) {
+  const sun     = profile.sunSign;
+  const moon    = profile.moonSign;
+  const rising  = profile.risingSign;
+  const lp      = profile.lifePath;
+  const hdType  = profile.humanDesignData?.type;
+  const hdAuth  = profile.humanDesignData?.authority?.replace(" Authority", "");
+  const hdProf  = profile.humanDesignData?.profile;
+
+  const hasAny = sun || moon || rising || lp || hdType;
+  if (!hasAny) return null;
+
+  return (
+    <div style={{
+      marginBottom: "2rem",
+      padding: "1rem 1.1rem",
+      background: "rgba(139,92,246,0.04)",
+      border: "1px solid rgba(139,92,246,0.1)",
+      borderRadius: "12px",
+      position: "relative", zIndex: 1,
+    }}>
+      <div style={{ fontSize: "0.58rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--muted-foreground)", fontWeight: 600, marginBottom: "0.75rem", opacity: 0.6 }}>
+        ◈ My Chart
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        {sun   && <BlueprintChip label="Sun"      value={`${SIGN_GLYPHS[sun] ?? ""} ${sun}`}     accent="#f59e0b" />}
+        {moon  && <BlueprintChip label="Moon"     value={`${SIGN_GLYPHS[moon] ?? ""} ${moon}`}   accent="#8b5cf6" />}
+        {rising && <BlueprintChip label="Rising"  value={`${SIGN_GLYPHS[rising] ?? ""} ${rising}`} accent="#22d3ee" />}
+        {lp    && <BlueprintChip label="Life Path" value={String(lp)}                             accent="#ec4899" />}
+        {hdType && <BlueprintChip label="HD Type"  value={hdType}                                 accent="#22c55e" />}
+        {hdAuth && <BlueprintChip label="Authority" value={hdAuth}                                accent="#fbbf24" />}
+        {hdProf && <BlueprintChip label="Profile"   value={hdProf}                                accent="#a78bfa" />}
+      </div>
+      {(!rising || !hdType) && (
+        <p style={{ fontSize: "0.68rem", color: "var(--muted-foreground)", margin: "0.65rem 0 0", opacity: 0.5, lineHeight: 1.5 }}>
+          {!rising && !hdType
+            ? "Add birth time + location to unlock Rising sign, Human Design type & authority"
+            : !rising
+              ? "Add birth time to unlock Rising sign"
+              : "Add birth location to unlock full Human Design"}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Section component ────────────────────────────────────────────────────────
+
 function ProfileSection({
-  icon,
+  sectionKey,
   title,
   children,
 }: {
-  icon: string;
+  sectionKey: keyof typeof SECTION_STYLES;
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const s = SECTION_STYLES[sectionKey];
   return (
     <section
-      className="glass-card-static"
-      style={{ padding: "1.5rem", marginBottom: "1.25rem" }}
+      style={{
+        background: s.bg,
+        border: `1px solid ${s.accent}18`,
+        borderRadius: "12px",
+        padding: "1.4rem 1.5rem",
+        marginBottom: "1.25rem",
+      }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-        <span style={{ fontSize: "1.25rem" }}>{icon}</span>
-        <h3
-          style={{
-            fontSize: "1.125rem",
-            fontWeight: 600,
-            color: "var(--foreground)",
-          }}
-        >
+      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "0.9rem" }}>
+        <span style={{ color: s.accent, fontSize: "1rem", lineHeight: 1, flexShrink: 0 }}>
+          {s.glyph}
+        </span>
+        <h3 style={{
+          fontSize: "0.72rem", fontWeight: 700,
+          letterSpacing: "0.1em", textTransform: "uppercase",
+          color: "var(--foreground)", margin: 0,
+        }}>
           {title}
         </h3>
       </div>
