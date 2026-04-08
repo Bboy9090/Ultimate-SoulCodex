@@ -1,13 +1,16 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Standardizing for Render deployment
-const apiKey = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+const apiKey  = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
 
 if (!apiKey || apiKey === "_DUMMY_API_KEY_") {
   console.warn("GEMINI_API_KEY is missing or dummy. AI features will be disabled.");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey || "");
+const clientOptions = baseUrl ? { baseUrl } : {};
+const genAI = new GoogleGenerativeAI(apiKey || "", clientOptions);
+
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 export function isGeminiAvailable() {
   return !!apiKey && apiKey !== "_DUMMY_API_KEY_";
@@ -16,7 +19,7 @@ export function isGeminiAvailable() {
 export async function generateText({ model, prompt, temperature = 0.7 }: { model?: string; prompt: string; temperature?: number; }): Promise<string> {
   if (!isGeminiAvailable()) return "";
   try {
-    const geminiModel = genAI.getGenerativeModel({ model: model || "gemini-1.5-flash" });
+    const geminiModel = genAI.getGenerativeModel({ model: model || DEFAULT_MODEL });
     const result = await geminiModel.generateContent({
       contents: [
         { role: "user", parts: [{ text: prompt }] }
@@ -35,9 +38,9 @@ export async function generateText({ model, prompt, temperature = 0.7 }: { model
 }
 
 export async function* streamChat({ model, systemInstruction, history, message, temperature }: any) {
-  const geminiModel = genAI.getGenerativeModel({ 
-    model: model || "gemini-1.5-flash",
-    systemInstruction 
+  const geminiModel = genAI.getGenerativeModel({
+    model: model || DEFAULT_MODEL,
+    systemInstruction
   });
 
   const chat = geminiModel.startChat({
@@ -45,7 +48,7 @@ export async function* streamChat({ model, systemInstruction, history, message, 
       role: h.role === 'user' ? 'user' : 'model',
       parts: [{ text: h.content }]
     })),
-    generationConfig: { 
+    generationConfig: {
       temperature: temperature || 0.7,
       maxOutputTokens: 1000,
     }
