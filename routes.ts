@@ -3428,17 +3428,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           behavioralStatements,
         });
 
-        narrative = await generateText({ model: "gemini-2.0-flash", prompt, temperature: 0.82 });
+        narrative = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.82 });
 
         if (!narrative || isGeneric(narrative)) {
           const rPrompt = rewritePrompt(narrative || "No output generated.", anchors);
-          narrative = await generateText({ model: "gemini-2.0-flash", prompt: rPrompt, temperature: 0.88 });
+          narrative = await generateText({ model: "gemini-2.5-flash", prompt: rPrompt, temperature: 0.88 });
         }
       }
 
       if (!narrative) {
         narrative = buildFallbackNarrative(codename, anchors, themes, strengths, triggers);
       }
+
+      // Strip any raw signal-label artifacts the AI echoed back
+      narrative = scrubNarrative(narrative);
 
       // Log any banned phrases that slipped through for audit (non-blocking)
       const langCheck = checkNarrative(narrative);
@@ -3474,6 +3477,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+/**
+ * Strip raw signal-label artifacts that sometimes appear when the AI echoes
+ * evidence strings or label prefixes verbatim instead of rephrasing them.
+ *
+ * Patterns removed:
+ *   "Stress element: <word>"  →  removed inline
+ *   "Decision style: <word>"  →  removed inline
+ *   "Non-negotiable: <phrase>" → "non-negotiable:" prefix stripped
+ *   "My strengths include: "  → prefix stripped, content kept
+ *   "My default pressure response: " → prefix stripped
+ *   "Under stress: "          → prefix stripped
+ *   Whole sentences that contain only a label+colon with no clean prose
+ */
+/**
+ * Strips raw signal-label artifacts the AI sometimes echoes verbatim
+ * instead of rephrasing them into first-person behavioral prose.
+ */
+function scrubNarrative(text: string): string {
+  let out = text
+    // Remove whole sentences like "When I look at Stress element: air, I see..."
+    .replace(/[^.!?\n]*\b(?:Stress element|Decision style|Non-negotiable|My default pressure response|My strengths? (?:include|are)|Under stress|Evidence):[^.!?\n]*[.!?]?/gi, " ")
+    // Remove any bare label+colon fragments the sentence-level pass missed
+    .replace(/\bStress element:\s*\w+/gi, "")
+    .replace(/\bDecision style:\s*[\w _]+/gi, "")
+    .replace(/\bNon-negotiable:\s*/gi, "")
+    .replace(/\bMy strengths? (?:include|are):\s*/gi, "")
+    .replace(/\bMy default pressure response:\s*/gi, "")
+    .replace(/\bUnder stress:\s*/gi, "")
+    .replace(/\bEvidence:\s*/gi, "");
+
+  // Fix double-spaces or sentences that now begin with lowercase after prefix removal
+  out = out
+    .replace(/  +/g, " ")
+    // Trim leading space/comma at start of a sentence after removal
+    .replace(/(^|\n) +/gm, "$1")
+    .replace(/(^|\n)[,;] /gm, "$1");
+
+  // Collapse triple+ newlines
+  out = out.replace(/\n{3,}/g, "\n\n");
+  return out.trim();
 }
 
 function buildFallbackNarrative(
