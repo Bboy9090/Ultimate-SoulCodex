@@ -99,7 +99,16 @@ export default function CodexReadingPage() {
   useEffect(() => {
     const cached = localStorage.getItem("soulCodexReading");
     if (cached) {
-      try { setSynthesis(JSON.parse(cached)); return; } catch {}
+      try {
+        const parsed = JSON.parse(cached);
+        const raw = JSON.stringify(parsed);
+        const stale = /Stress element:|Decision style:|My strengths include:|Non-negotiable:|evidence/i.test(raw);
+        if (!stale) {
+          setSynthesis(parsed);
+          return;
+        }
+        localStorage.removeItem("soulCodexReading");
+      } catch {}
     }
     buildAndGenerate();
   }, []);
