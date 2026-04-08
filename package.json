@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
+    "build:vercel": "npm run build -w @soulcodex/db && npm run build -w @soulcodex/core && npm run build -w @soulcodex/web",
     "start": "node dist/server.js",
     "check": "npm run check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

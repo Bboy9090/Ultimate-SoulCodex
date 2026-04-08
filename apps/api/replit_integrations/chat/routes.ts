@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { GoogleGenAI } from "@google/genai";
+import { normalizeEnvSecret, normalizeEnvUrl } from "../../lib/normalizeEnvSecret";
 import { chatStorage } from "./storage";
 
 /*
@@ -9,10 +10,10 @@ Usage: Include httpOptions with baseUrl and empty apiVersion when using AI Integ
 
 // This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  apiKey: normalizeEnvSecret(process.env.AI_INTEGRATIONS_GEMINI_API_KEY),
   httpOptions: {
     apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+    baseUrl: normalizeEnvUrl(process.env.AI_INTEGRATIONS_GEMINI_BASE_URL),
   },
 });
 
