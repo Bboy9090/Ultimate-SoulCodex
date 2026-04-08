@@ -1,8 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
+import { normalizeEnvSecret, normalizeEnvUrl } from "./lib/normalizeEnvSecret";
 
-// Use Replit AI integration for Gemini
-const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+// Use Replit AI integration for Gemini, or a direct GEMINI_API_KEY (Google AI Studio).
+const rawIntegrationKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+const rawGeminiKey = process.env.GEMINI_API_KEY;
+const rawKeySource = rawIntegrationKey || rawGeminiKey;
+const baseUrl = normalizeEnvUrl(process.env.AI_INTEGRATIONS_GEMINI_BASE_URL);
+const apiKey = normalizeEnvSecret(rawKeySource);
+
+if (rawKeySource && apiKey && /\s/.test(rawKeySource)) {
+  console.warn(
+    "[Gemini] API key env contained whitespace/newlines; normalized automatically. Prefer a single-line secret in Railway/Vercel.",
+  );
+}
 
 // Check if configured
 const hasReplitIntegration = !!baseUrl && !!apiKey;
@@ -14,16 +24,18 @@ if (!hasReplitIntegration && !hasManualKey) {
   console.log("Gemini AI configured via", hasReplitIntegration ? "Replit AI integration" : "manual API key");
 }
 
-// Create Gemini client with Replit AI integration
-const ai = hasReplitIntegration 
+// Replit proxy needs custom baseUrl; direct key uses default Google endpoint.
+const ai = hasReplitIntegration
   ? new GoogleGenAI({
       apiKey: apiKey!,
       httpOptions: {
         apiVersion: "",
-        baseUrl: baseUrl,
+        baseUrl: baseUrl!,
       },
     })
-  : null;
+  : hasManualKey
+    ? new GoogleGenAI({ apiKey: apiKey! })
+    : null;
 
 export function isGeminiAvailable() {
   return hasReplitIntegration || hasManualKey;

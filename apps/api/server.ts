@@ -16,6 +16,22 @@ function log(message: string, source = "express") {
 
 const app: Express = express();
 
+// Split deploy (e.g. Vercel web + Railway API): set WEB_ORIGIN to your frontend origin, no trailing slash.
+const webOrigin = process.env.WEB_ORIGIN?.replace(/\/$/, "");
+if (webOrigin) {
+  app.use((req, res, next) => {
+    if (req.headers.origin === webOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", webOrigin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+      const requested = req.header("Access-Control-Request-Headers");
+      if (requested) res.setHeader("Access-Control-Allow-Headers", requested);
+    }
+    if (req.method === "OPTIONS") return res.sendStatus(204);
+    next();
+  });
+}
+
 // Parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

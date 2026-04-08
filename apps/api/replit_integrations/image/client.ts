@@ -1,11 +1,12 @@
 import { GoogleGenAI, Modality } from "@google/genai";
+import { normalizeEnvSecret, normalizeEnvUrl } from "../../lib/normalizeEnvSecret";
 
 // This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
 export const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  apiKey: normalizeEnvSecret(process.env.AI_INTEGRATIONS_GEMINI_API_KEY),
   httpOptions: {
     apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+    baseUrl: normalizeEnvUrl(process.env.AI_INTEGRATIONS_GEMINI_BASE_URL),
   },
 });
 
