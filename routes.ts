@@ -62,6 +62,7 @@ import * as geoTz from "geo-tz";
 import { resolveGeo } from "./server/geo/index";
 import { computeConfidence } from "./soulcodex/compute/confidence";
 import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
+import { buildNatalReportPdf } from "./server/natalReportPdf";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
@@ -3076,6 +3077,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(pdfBuffer);
     } catch (error) {
       return handleError(error, res, "GenerateProfilePDF");
+    }
+  });
+
+  // ── Natal Chart + Human Design PDF report ───────────────────────────────
+  app.post("/api/natal-report", async (req, res) => {
+    try {
+      const { profile, astrologyData, humanDesignData } = req.body;
+      if (!profile) return res.status(400).json({ error: "profile required" });
+
+      const name         = profile.name ?? "User";
+      const birthDate    = profile.birthDate ?? "";
+      const birthTime    = profile.birthTime ?? profile.birthTimeStr ?? "";
+      const birthLocation = profile.birthLocation ?? "";
+
+      const astro = astrologyData ?? profile.astrologyData ?? {};
+      const hd    = humanDesignData ?? profile.humanDesignData ?? {};
+
+      // Build a concise data snapshot for the AI prompt
+      const sunSign  = astro?.planets?.sun?.sign  ?? astro?.sunSign  ?? "Unknown";
+      const moonSign = astro?.planets?.moon?.sign ?? astro?.moonSign ?? "Unknown";
+      const rising   = astro?.risingSign ?? "Unknown";
+      const hdType   = hd?.type ?? "Unknown";
+      const hdAuth   = hd?.authority ?? "Unknown";
+      const hdProf   = hd?.profile ?? "Unknown";
+
+      const planetSnap = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
+        .map(k => {
+          const p = astro?.planets?.[k];
+          return p ? `${k.charAt(0).toUpperCase()+k.slice(1)}: ${p.sign} ${Math.floor(p.degree ?? 0)}° (${p.house}th house)` : null;
+        }).filter(Boolean).join(", ");
+
+      const aspectSnap = (astro?.aspects ?? []).slice(0, 10)
+        .map((a: any) => `${a.planet1} ${a.aspect} ${a.planet2}`).join(", ");
+
+      const prompt = `
+You are writing a natal chart and human design report for ${name}.
+
+Birth data:
+Date: ${birthDate} | Time: ${birthTime} | Location: ${birthLocation}
+Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${rising}
+Planets: ${planetSnap}
+Key aspects: ${aspectSnap}
+
+Human Design:
+Type: ${hdType} | Authority: ${hdAuth} | Profile: ${hdProf}
+Definition: ${hd?.definition ?? "Unknown"} | Channels: ${(hd?.channels ?? []).filter((c: any) => c.defined).map((c: any) => c.name).slice(0, 5).join(", ") || "None defined"}
+
+Write a full report in plain, behavioral, grounded language. No mystical filler, no "you are a unique soul", no "the universe". Just direct, accurate interpretation.
+
+Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
+
+{
+  "overview": "2-3 paragraph natal chart overview — what the chart emphasizes, dominant elements/signs/houses and what that means for this person behaviorally",
+  "bigThreeSun": "1-2 sentence behavioral meaning of Sun in ${sunSign}",
+  "bigThreeMoon": "1-2 sentence behavioral meaning of Moon in ${moonSign}",
+  "bigThreeRising": "1-2 sentence behavioral meaning of ${rising} Rising",
+  "whatStandsOut": ["4-6 bullet strings, each a specific chart feature worth noting (no bullet symbols, just the text)"],
+  "workingInterpretation": "3-4 paragraphs — comprehensive behavioral interpretation of the full chart, how the elements work together",
+  "elementEmphasis": "1-2 sentences on the dominant element and what it means practically",
+  "houseEmphasis": "1-2 sentences on the house concentration and what areas of life it emphasizes",
+  "bottomLine": "1 punchy sentence summarizing what this chart is built for",
+  "hdInterpretation": "2-3 paragraphs interpreting the Human Design result behaviorally — Type, Authority, Profile and what they mean in daily life"
+}
+`.trim();
+
+      let aiText;
+      if (isGeminiAvailable()) {
+        try {
+          const raw = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.72 });
+          const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/,"").trim();
+          aiText = JSON.parse(cleaned);
+        } catch (e) {
+          console.warn("[NatalReport] AI generation failed, using fallback:", e);
+        }
+      }
+
+      // Fallback if AI unavailable or parse fails
+      if (!aiText) {
+        aiText = {
+          overview: `This chart shows a ${sunSign} Sun with ${moonSign} Moon and ${rising} Rising. The dominant energies reflect the combination of these placements and their house positions.`,
+          bigThreeSun: `Identity shaped by ${sunSign} qualities — the core drive and life force.`,
+          bigThreeMoon: `Emotional needs and instincts colored by ${moonSign} energy.`,
+          bigThreeRising: `The outward presentation and initial approach filtered through ${rising}.`,
+          whatStandsOut: ["Planetary concentrations create focus in specific life areas.", "Dominant element shapes the overall temperament.", "Rising sign colors all first impressions."],
+          workingInterpretation: `The combination of ${sunSign} Sun, ${moonSign} Moon, and ${rising} Rising creates a particular signature in how this person operates, connects, and builds. The chart reflects patterns that show up consistently across different contexts.`,
+          elementEmphasis: "The element balance shapes the fundamental operating style.",
+          houseEmphasis: "House concentrations indicate where life energy is most directed.",
+          bottomLine: "A chart built for focused, purposeful engagement with the material world.",
+          hdInterpretation: `As a ${hdType}, the strategy and authority point toward a specific decision-making process. The ${hdProf} profile shapes the life theme and how others experience this person.`,
+        };
+      }
+
+      const pdfBuffer = await buildNatalReportPdf({
+        name,
+        birthDate,
+        birthTime,
+        birthLocation,
+        astrology: astro,
+        humanDesign: hd,
+        aiText,
+      });
+
+      const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${safeName}_Natal_Chart_and_Human_Design.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      return handleError(error, res, "NatalReport");
     }
   });
 

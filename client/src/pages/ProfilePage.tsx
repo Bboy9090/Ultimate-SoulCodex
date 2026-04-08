@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 
@@ -161,6 +162,46 @@ export default function ProfilePage() {
   const confidence   = getConfidence();
   const prescription  = getCodexPrescription();
   const prescription2 = getSecondPrescription();
+  const [downloadingReport, setDownloadingReport] = useState(false);
+
+  async function handleDownloadReport() {
+    if (!profile || downloadingReport) return;
+    setDownloadingReport(true);
+    try {
+      const rawProfile = profile as any;
+      const res = await fetch("/api/natal-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile: {
+            name: rawProfile.name ?? rawProfile.archetype?.name ?? "User",
+            birthDate: rawProfile.birthDate ?? rawProfile.rawInput?.birthDate ?? "",
+            birthTime: rawProfile.birthTime ?? rawProfile.rawInput?.birthTime ?? "",
+            birthLocation: rawProfile.birthLocation ?? rawProfile.rawInput?.birthLocation ?? "",
+          },
+          astrologyData: rawProfile.astrologyData,
+          humanDesignData: rawProfile.humanDesignData,
+        }),
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Report generation failed: ${msg}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeName = (rawProfile.name ?? "user").replace(/[^a-zA-Z0-9]/g, "_");
+      a.download = `${safeName}_Natal_Chart_and_Human_Design.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 2000);
+    } catch (e) {
+      console.error("[DownloadReport]", e);
+    } finally {
+      setDownloadingReport(false);
+    }
+  }
 
   if (!profile) {
     return (
@@ -385,6 +426,20 @@ export default function ProfilePage() {
           </button>
           <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
             Deep dive into your soul architecture
+          </span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
+          <button
+            className="btn btn-secondary"
+            onClick={handleDownloadReport}
+            type="button"
+            disabled={downloadingReport}
+            style={{ fontSize: "0.9rem", padding: "0.85rem 1.6rem", width: "100%", opacity: downloadingReport ? 0.65 : 1 }}
+          >
+            {downloadingReport ? "◌ Generating…" : "▾ Chart Report PDF"}
+          </button>
+          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+            Natal chart + Human Design report
           </span>
         </div>
       </div>
