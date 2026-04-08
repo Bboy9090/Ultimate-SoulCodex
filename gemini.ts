@@ -1,36 +1,40 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const apiKey  = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
 const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
 
-if (!apiKey || apiKey === "_DUMMY_API_KEY_") {
-  console.warn("GEMINI_API_KEY is missing or dummy. AI features will be disabled.");
+// When using Replit AI integrations the key may be "_DUMMY_API_KEY_" — that is correct.
+// The proxy handles real auth via the base URL; the dummy key is just a placeholder.
+const integrationMode = !!baseUrl && !!apiKey;
+const directKeyMode   = !!apiKey && apiKey !== "_DUMMY_API_KEY_";
+const available       = integrationMode || directKeyMode;
+
+if (!available) {
+  console.warn("GEMINI_API_KEY is missing. AI features will be disabled.");
+} else {
+  console.log(`[Gemini] Ready — ${integrationMode ? "Replit AI integration" : "direct key"}`);
 }
 
-const clientOptions = baseUrl ? { baseUrl } : {};
-const genAI = new GoogleGenerativeAI(apiKey || "", clientOptions);
+const ai = new GoogleGenAI({
+  apiKey: apiKey || "",
+  ...(baseUrl ? { httpOptions: { baseUrl, apiVersion: "" } } : {}),
+});
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
 
 export function isGeminiAvailable() {
-  return !!apiKey && apiKey !== "_DUMMY_API_KEY_";
+  return available;
 }
 
 export async function generateText({ model, prompt, temperature = 0.7 }: { model?: string; prompt: string; temperature?: number; }): Promise<string> {
   if (!isGeminiAvailable()) return "";
   try {
-    const geminiModel = genAI.getGenerativeModel({ model: model || DEFAULT_MODEL });
-    const result = await geminiModel.generateContent({
-      contents: [
-        { role: "user", parts: [{ text: prompt }] }
-      ],
-      generationConfig: {
-        temperature,
-        maxOutputTokens: 1024,
-      }
+    const response = await ai.models.generateContent({
+      model: model || DEFAULT_MODEL,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { temperature, maxOutputTokens: 1024 },
     });
-    const text = result.response.text();
-    return text || "";
+    return response.text ?? "";
   } catch (e) {
     console.error("Gemini generateText error:", e);
     return "";
@@ -38,26 +42,33 @@ export async function generateText({ model, prompt, temperature = 0.7 }: { model
 }
 
 export async function* streamChat({ model, systemInstruction, history, message, temperature }: any) {
-  const geminiModel = genAI.getGenerativeModel({
-    model: model || DEFAULT_MODEL,
-    systemInstruction
-  });
+  // Build contents array from history + new message
+  const contents: any[] = [];
 
-  const chat = geminiModel.startChat({
-    history: history.map((h: any) => ({
-      role: h.role === 'user' ? 'user' : 'model',
-      parts: [{ text: h.content }]
-    })),
-    generationConfig: {
-      temperature: temperature || 0.7,
-      maxOutputTokens: 1000,
+  if (history && Array.isArray(history)) {
+    for (const h of history) {
+      contents.push({
+        role: h.role === "user" ? "user" : "model",
+        parts: [{ text: h.content ?? h.parts?.[0]?.text ?? "" }],
+      });
     }
-  });
+  }
+
+  contents.push({ role: "user", parts: [{ text: message }] });
 
   try {
-    const result = await chat.sendMessageStream(message);
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
+    const stream = await ai.models.generateContentStream({
+      model: model || DEFAULT_MODEL,
+      contents,
+      config: {
+        temperature: temperature ?? 0.7,
+        maxOutputTokens: 1000,
+        systemInstruction: systemInstruction ?? undefined,
+      },
+    });
+
+    for await (const chunk of stream) {
+      const text = chunk.text;
       if (text) yield text;
     }
   } catch (error) {
