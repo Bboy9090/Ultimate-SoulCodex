@@ -110,7 +110,7 @@ function afterFirstSentence(text: string): string {
  */
 const ZODIAC = "Aries|Taurus|Gemini|Cancer|Leo|Virgo|Libra|Scorpio|Sagittarius|Capricorn|Aquarius|Pisces";
 const SIGN_OPENER = new RegExp(
-  `^(?:As (?:a |an )?(?:Sun |Moon |Rising )?(${ZODIAC})|My (${ZODIAC}) (?:Sun|Moon|Rising|nature))[^,]*,\\s*`,
+  `^(?:As (?:a |an )?(?:Sun |Moon |Rising )?(${ZODIAC})|My (${ZODIAC}) (?:Sun|Moon|Rising|nature)|I lead with my (${ZODIAC})(?:\\s+(?:Sun|Moon|Rising))?)[^,]*,\\s*`,
   "i"
 );
 
