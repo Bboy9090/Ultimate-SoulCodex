@@ -51,9 +51,16 @@ const SOCIAL_OPTIONS: { value: SocialEnergy; label: string; description: string 
   { value: "sensitive", label: "Sensitive", description: "I absorb other people's energy — I have to be selective" },
 ];
 
+const DEST_CARDS = [
+  { glyph: "◉", label: "My Profile", desc: "Your archetype, synthesis, and pattern map", path: "/profile" },
+  { glyph: "☽", label: "Today's Reading", desc: "Your daily card, moon phase, and active signals", path: "/today" },
+  { glyph: "◈", label: "My Codex", desc: "Your full 30-point soul reading and codename", path: "/codex" },
+];
+
 export default function OnboardingPage() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);
+  const [successResult, setSuccessResult] = useState<SuccessResult | null>(null);
   const [form, setForm] = useState<FormData>({
     name: "",
     birthDate: "",
@@ -93,7 +100,7 @@ export default function OnboardingPage() {
       if (result?.confidence) {
         localStorage.setItem("soulConfidence", JSON.stringify(result.confidence));
       }
-      navigate("/profile");
+      setSuccessResult(result as SuccessResult);
     },
   });
 
@@ -133,26 +140,149 @@ export default function OnboardingPage() {
     }
   };
 
+  // ── O2: Success / handoff screen ─────────────────────────────────────────
+  if (successResult) {
+    const archetypeName = successResult?.archetype?.name ?? "Your Archetype";
+    const archetypeTagline = successResult?.archetype?.tagline ?? "";
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem", position: "relative", overflow: "hidden" }}>
+        {/* Atmospheric glow behind the success card */}
+        <img
+          src="/logo.png"
+          aria-hidden="true"
+          style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -55%)",
+            width: 600, height: 600, objectFit: "contain",
+            opacity: 0.08, mixBlendMode: "screen",
+            filter: "blur(32px)",
+            pointerEvents: "none", userSelect: "none", zIndex: 0,
+          }}
+        />
+        <div style={{ maxWidth: 520, width: "100%", position: "relative", zIndex: 1 }}>
+          <div style={{
+            background: "var(--glass-bg)",
+            border: "1px solid var(--glass-border)",
+            borderTop: "3px solid var(--cosmic-purple)",
+            borderRadius: "var(--radius)",
+            padding: "2.5rem 2rem",
+            textAlign: "center",
+            marginBottom: "1.5rem",
+          }}>
+            <div style={{ fontSize: "2rem", marginBottom: "1rem", opacity: 0.55 }}>✦</div>
+            <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.2rem)", marginBottom: "0.5rem", lineHeight: 1.2 }}>
+              {archetypeName}
+            </h1>
+            {archetypeTagline && (
+              <p style={{ color: "var(--cosmic-lavender)", fontSize: "0.95rem", marginBottom: "0.75rem", fontStyle: "italic" }}>
+                {archetypeTagline}
+              </p>
+            )}
+            <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem" }}>
+              Your soul profile is ready.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.75rem" }}>
+            {DEST_CARDS.map((card) => (
+              <button
+                key={card.path}
+                type="button"
+                onClick={() => navigate(card.path)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1rem",
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "1rem 1.25rem",
+                  background: "var(--glass-bg)",
+                  border: "1px solid var(--glass-border)",
+                  borderRadius: "var(--radius)",
+                  cursor: "pointer",
+                  transition: "border-color 0.2s",
+                  color: "var(--foreground)",
+                  fontFamily: "var(--font-sans)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--cosmic-purple)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--glass-border)")}
+              >
+                <span style={{ fontSize: "1.25rem", color: "var(--cosmic-lavender)", flexShrink: 0 }}>{card.glyph}</span>
+                <span>
+                  <span style={{ fontWeight: 600, display: "block", fontSize: "0.9rem" }}>{card.label}</span>
+                  <span style={{ fontSize: "0.78rem", color: "var(--muted-foreground)" }}>{card.desc}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <button className="btn btn-primary" onClick={() => navigate("/profile")} type="button" style={{ width: "100%" }}>
+              View My Profile
+            </button>
+            <button className="btn btn-secondary" onClick={() => navigate("/today")} type="button" style={{ width: "100%" }}>
+              See Today's Reading
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── O1: Step form ─────────────────────────────────────────────────────────
   return (
-    <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600 }}>
+    <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600, position: "relative", overflow: "hidden" }}>
+      {/* Atmospheric glow behind the form */}
+      <img
+        src="/logo.png"
+        aria-hidden="true"
+        style={{
+          position: "absolute", top: "-80px", left: "50%",
+          transform: "translateX(-50%)",
+          width: 500, height: 500, objectFit: "contain",
+          opacity: 0.07, mixBlendMode: "screen",
+          filter: "blur(30px)",
+          pointerEvents: "none", userSelect: "none", zIndex: 0,
+        }}
+      />
+
+      {/* Form content — sits above the atmospheric bg image */}
+      <div style={{ position: "relative", zIndex: 1 }}>
+
+      {/* Progress bar with named labels */}
       <div style={{ marginBottom: "2rem" }}>
-        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+        <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                height: 4,
-                borderRadius: 2,
-                background: i < step ? "var(--cosmic-purple)" : "var(--muted)",
-                transition: "background 0.3s",
-              }}
-            />
+            <div key={i} style={{ flex: 1, position: "relative" }}>
+              <div
+                style={{
+                  height: 4,
+                  borderRadius: 2,
+                  background: i < step ? "var(--cosmic-purple)" : "var(--muted)",
+                  transition: "background 0.3s",
+                  boxShadow: i < step ? "0 0 6px rgba(124,58,237,0.5)" : "none",
+                }}
+              />
+            </div>
           ))}
         </div>
-        <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>
-          Step {step} of {TOTAL_STEPS}
-        </p>
+        <div style={{ display: "flex", gap: 5 }}>
+          {STEP_LABELS.map((label, i) => (
+            <div key={i} style={{ flex: 1, textAlign: "center" }}>
+              <span style={{
+                fontSize: "0.6rem",
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                color: i < step ? "var(--cosmic-lavender)" : "var(--muted-foreground)",
+                opacity: i < step ? 1 : 0.5,
+                transition: "color 0.3s",
+                whiteSpace: "nowrap",
+              }}>
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="animate-fade-in" key={step}>
@@ -181,14 +311,18 @@ export default function OnboardingPage() {
           onClick={handleNext}
           type="button"
         >
-          {mutation.isPending ? "Generating..." : step === TOTAL_STEPS ? "Reveal My Profile" : "Continue"}
+          {mutation.isPending ? "Building your profile…" : step === TOTAL_STEPS ? "Reveal My Profile" : "Continue"}
         </button>
       </div>
+      </div>{/* end content wrapper */}
     </div>
   );
 }
 
 function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof FormData, v: any) => void }) {
+  const hasTime = form.birthTime.length > 0;
+  const hasLocation = form.birthLocation.trim().length > 0;
+
   return (
     <div>
       <h2 className="gradient-text" style={{ marginBottom: "0.5rem" }}>
@@ -207,7 +341,8 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           onChange={(e) => update("name", e.target.value)}
         />
       </div>
-      <div className="form-group" style={{ marginBottom: "1rem" }}>
+
+      <div className="form-group" style={{ marginBottom: "1.1rem" }}>
         <label className="label">Birth Date</label>
         <input
           className="input"
@@ -216,26 +351,49 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           onChange={(e) => update("birthDate", e.target.value)}
         />
       </div>
-      <div className="form-group" style={{ marginBottom: "1rem" }}>
-        <label className="label">
-          Accuracy Mode{" "}
-          <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>
-            — enter your birth time for a Verified chart (rising sign, houses, full aspects)
-          </span>
-        </label>
+
+      {/* Birth time with tiered accuracy pills */}
+      <div className="form-group" style={{ marginBottom: "1.1rem" }}>
+        <label className="label">Birth Time <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional)</span></label>
         <input
           className="input"
           type="time"
           value={form.birthTime}
           onChange={(e) => update("birthTime", e.target.value)}
-          placeholder="HH:MM — leave blank if unknown"
         />
-        {!form.birthTime && (
-          <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.25rem", marginBottom: 0 }}>
-            No birth time → Partial accuracy. Sun + Moon calculated; rising sign and houses omitted.
-          </p>
-        )}
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
+          {/* "Without time" — neutral baseline; dims when time is provided */}
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: "0.3rem",
+            padding: "0.25rem 0.6rem", borderRadius: 99, fontSize: "0.7rem",
+            fontWeight: 500, letterSpacing: "0.02em",
+            background: "rgba(139,92,246,0.07)",
+            border: "1px solid rgba(139,92,246,0.18)",
+            color: "var(--muted-foreground)",
+            opacity: hasTime ? 0.4 : 0.9,
+            transition: "opacity 0.2s",
+          }}>
+            <span>○</span>
+            <span>Without time — Sun · Moon only</span>
+          </span>
+          {/* "With time" — lights up green when time is entered */}
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: "0.3rem",
+            padding: "0.25rem 0.6rem", borderRadius: 99, fontSize: "0.7rem",
+            fontWeight: 500, letterSpacing: "0.02em",
+            background: hasTime ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.03)",
+            border: `1px solid ${hasTime ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.07)"}`,
+            color: hasTime ? "#22c55e" : "var(--muted-foreground)",
+            opacity: hasTime ? 1 : 0.45,
+            transition: "all 0.2s",
+          }}>
+            <span>{hasTime ? "✦" : "◌"}</span>
+            <span>With time — Rising · Houses · Full aspects</span>
+          </span>
+        </div>
       </div>
+
+      {/* Birth location with note */}
       <div className="form-group">
         <label className="label">
           Birth location{" "}
@@ -250,6 +408,11 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           value={form.birthLocation}
           onChange={(e) => update("birthLocation", e.target.value)}
         />
+        <p style={{ fontSize: "0.72rem", color: hasLocation ? "var(--cosmic-lavender)" : "var(--muted-foreground)", marginTop: "0.4rem", marginBottom: 0, opacity: hasLocation ? 1 : 0.65, transition: "color 0.2s" }}>
+          {hasLocation
+            ? "✦ Enables personalized transit calculations and relocation accuracy"
+            : "◌ Unlocks personalized transits and relocation chart accuracy"}
+        </p>
       </div>
     </div>
   );
@@ -326,7 +489,10 @@ function StepGoals({ form, toggle, update }: { form: FormData; toggle: (f: "goal
         {form.goals.length}/2 selected (at least 1)
       </p>
 
-      <h3 style={{ marginBottom: "0.5rem", fontSize: "1.125rem" }}>My social energy</h3>
+      {/* Divider between Goals and Social Energy */}
+      <div style={{ borderTop: "1px solid var(--glass-border)", marginBottom: "1.5rem" }} />
+
+      <h3 style={{ marginBottom: "0.4rem", fontSize: "1.1rem", fontWeight: 600 }}>My social energy</h3>
       <p style={{ marginBottom: "1rem", color: "var(--muted-foreground)", fontSize: "0.875rem" }}>
         How do you handle being around people?
       </p>
@@ -355,12 +521,13 @@ function OptionCard({ selected, onClick, label, description }: { selected: boole
         width: "100%",
         textAlign: "left",
         padding: "1rem 1.25rem",
-        background: selected ? "rgba(124, 58, 237, 0.2)" : "var(--glass-bg)",
+        background: selected ? "rgba(124, 58, 237, 0.15)" : "var(--glass-bg)",
         border: selected ? "1px solid var(--cosmic-purple)" : "1px solid var(--glass-border)",
+        borderLeft: selected ? "3px solid var(--cosmic-purple)" : "3px solid transparent",
         borderRadius: "var(--radius)",
         cursor: "pointer",
         transition: "all 0.2s",
-        boxShadow: selected ? "0 0 20px rgba(124, 58, 237, 0.3)" : "none",
+        boxShadow: selected ? "0 0 18px rgba(124, 58, 237, 0.25)" : "none",
         color: "var(--foreground)",
         fontFamily: "var(--font-sans)",
       }}
@@ -378,7 +545,7 @@ function ChipButton({ selected, onClick, label }: { selected: boolean; onClick: 
       onClick={onClick}
       style={{
         padding: "0.75rem 1rem",
-        background: selected ? "rgba(124, 58, 237, 0.25)" : "var(--glass-bg)",
+        background: selected ? "rgba(124, 58, 237, 0.2)" : "var(--glass-bg)",
         border: selected ? "1px solid var(--cosmic-purple)" : "1px solid var(--glass-border)",
         borderRadius: "var(--radius)",
         cursor: "pointer",
@@ -387,7 +554,7 @@ function ChipButton({ selected, onClick, label }: { selected: boolean; onClick: 
         fontFamily: "var(--font-sans)",
         fontSize: "0.875rem",
         transition: "all 0.2s",
-        boxShadow: selected ? "0 0 15px rgba(124, 58, 237, 0.25)" : "none",
+        boxShadow: selected ? "0 0 12px rgba(124, 58, 237, 0.2)" : "none",
       }}
     >
       {label}

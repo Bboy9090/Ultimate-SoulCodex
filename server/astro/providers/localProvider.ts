@@ -1,5 +1,5 @@
 import type { AstroProvider, AstroRequest, AstroResult } from "../types";
-import { calculateAstrology } from "../../../astrology";
+import { calculateAstrology } from "../../../services/astrology";
 
 export const localAstroProvider: AstroProvider = {
   name: "local-astronomy-engine",

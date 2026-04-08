@@ -1,4 +1,7 @@
-const BANNED_PHRASES = [
+import { HARD_REJECT_PHRASES } from "../../packages/core/soulcodex-v1/content/banned-language";
+
+// Original hand-curated list
+const LEGACY_BANNED = [
   "cosmic signature",
   "sacred blueprint",
   "divine timing",
@@ -27,6 +30,10 @@ const BANNED_PHRASES = [
   "spiritual narrative",
   "alchemize",
 ];
+
+// Merged de-duplicated list (anti-generic engine + legacy)
+const _allBanned = Array.from(new Set([...LEGACY_BANNED, ...HARD_REJECT_PHRASES]));
+export const BANNED_PHRASES = _allBanned;
 
 const MUST_HAVE_PATTERNS = [
   { label: "strength", pattern: /strength|strong|gift|excel|built for|natural at|sharp at/i },
@@ -69,4 +76,4 @@ export function stripBannedPhrases(text: string): string {
   return cleaned;
 }
 
-export { BANNED_PHRASES, MUST_HAVE_PATTERNS };
+export { MUST_HAVE_PATTERNS };
