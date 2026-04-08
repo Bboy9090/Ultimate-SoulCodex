@@ -14,15 +14,15 @@ export interface TodayCardData {
 }
 
 const DAY_DO: Record<number, string[]> = {
-  1: ["Start the one thing you've been circling", "Initiate — don't wait for permission", "Trust your first instinct today"],
-  2: ["Listen before you speak", "Let a partnership carry some weight", "Resolve one tension with honesty"],
-  3: ["Say what's actually on your mind", "Make something — write, build, draw", "Connect with someone who challenges you"],
-  4: ["Organize one thing that's been messy", "Block time for uninterrupted work", "Finish what you started last week"],
-  5: ["Move — change your environment", "Say yes to something outside routine", "Clear one thing from the stale pile"],
-  6: ["Support someone without keeping score", "Repair something you've been avoiding", "Create a moment of order at home"],
-  7: ["Go quiet for an hour — no input", "Research or study something deep", "Trust the pattern you keep seeing"],
-  8: ["Make one bold financial or strategic call", "Take responsibility for something you've delayed", "Set a boundary that protects your build"],
-  9: ["Complete or close one chapter", "Give something away — time, knowledge, energy", "Reflect on what this cycle taught you"]
+  1: ["Start the one thing I've been circling", "Initiate — I don't wait for permission", "Trust my first instinct today"],
+  2: ["Listen before I speak", "Let a partnership carry some weight", "Resolve one tension with honesty"],
+  3: ["Say what's actually on my mind", "Make something — write, build, draw", "Connect with someone who challenges me"],
+  4: ["Organize one thing that's been messy", "Block time for uninterrupted work", "Finish what I started last week"],
+  5: ["Move — change my environment", "Say yes to something outside my routine", "Clear one thing from the stale pile"],
+  6: ["Support someone without keeping score", "Repair something I've been avoiding", "Create a moment of order at home"],
+  7: ["Go quiet for an hour — no input", "Research or study something deep", "Trust the pattern I keep seeing"],
+  8: ["Make one bold financial or strategic call", "Take responsibility for something I've delayed", "Set a boundary that protects my build"],
+  9: ["Complete or close one chapter", "Give something away — time, knowledge, energy", "Reflect on what this cycle taught me"]
 };
 
 const DAY_DONT: Record<number, string[]> = {
