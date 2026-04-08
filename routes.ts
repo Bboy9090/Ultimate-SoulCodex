@@ -3359,6 +3359,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const card = buildTodayCard(horoscopeData, profile ?? {}, codexSynthesis);
+
+      // AI personalisation — overwrite static fields if Gemini is available
+      if (isGeminiAvailable()) {
+        try {
+          const aiCard = await generateTodayCardAI(card, profile ?? {}, horoscopeData, codexSynthesis);
+          if (aiCard) Object.assign(card, aiCard);
+        } catch (e) {
+          console.warn("[TodayCard] AI personalisation failed, using static fallback:", e);
+        }
+      }
+
       return res.json({ ok: true, card });
     } catch (error) {
       return handleError(error, res, "TodayCard");
@@ -3477,6 +3488,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+const DAY_ARCHETYPE: Record<number, string> = {
+  1: "initiation — new cycle, first move, self-directed action",
+  2: "partnership — cooperation, listening, patience",
+  3: "expression — creativity, communication, visibility",
+  4: "foundation — structure, discipline, unsexy work",
+  5: "liberation — change, disruption, release of the old",
+  6: "responsibility — tending relationships, home, health",
+  7: "depth — introspection, research, inner refinement",
+  8: "leverage — material ambition, power moves, big asks",
+  9: "completion — closing loops, forgiveness, letting go",
+};
+
+/**
+ * Generates a personalized Today card using Gemini.
+ * Returns partial TodayCardData fields, or null if generation fails.
+ */
+async function generateTodayCardAI(
+  base: import("./server/todayRender").TodayCardData,
+  profile: any,
+  horoscopeData: any,
+  codexSynthesis?: any
+): Promise<Partial<import("./server/todayRender").TodayCardData> | null> {
+  const dayNum   = base.personalDayNumber;
+  const archDesc = DAY_ARCHETYPE[dayNum] ?? "focused work";
+  const moon     = base.moonPhase;
+  const codename = base.codename;
+  const themeList = (codexSynthesis?.topThemes ?? horoscopeData?.topThemes ?? [])
+    .slice(0, 4).map((t: any) => t.tag ?? t).filter(Boolean);
+  const themes   = themeList.length ? themeList.join(", ") : (base.topTheme ?? "precision");
+  const decide   = profile?.userInputs?.decisionStyle ?? profile?.signals?.decisionStyle ?? "";
+  const pressure = profile?.userInputs?.pressureStyle ?? profile?.signals?.pressureStyle ?? "";
+  const transit  = horoscopeData?.personalTransits?.[0]?.description ?? "";
+
+  const prompt = `
+Write a personalized daily guidance card in first-person for someone with this profile:
+
+IDENTITY: ${codename}
+TOP THEMES: ${themes}
+PERSONAL DAY: ${dayNum} — ${archDesc}
+MOON PHASE: ${moon}
+DECISION STYLE: ${decide || "instinct"}
+PRESSURE STYLE: ${pressure || "adapt"}
+${transit ? `ACTIVE TRANSIT: ${transit}` : ""}
+
+RULES:
+- Everything must be first-person (I / my / me). Never "you" or "your".
+- No banned phrases: no "cosmic", "universe", "spiritual journey", "divine", "soul journey", "vibrational", "sacred".
+- Behavioral and grounded — what I DO, not what I AM.
+- Each DO/DONT item is one tight sentence (max 12 words).
+- WATCHOUT items name a specific behavioral risk, not a vague mood.
+- DECISION is 1–2 tight sentences specific to my decision style and day energy.
+- FOCUS is one sentence (max 20 words) capturing today's energy for me specifically.
+
+OUTPUT FORMAT — use exactly these headers, nothing else:
+FOCUS: [sentence]
+DO:
+- [item]
+- [item]
+- [item]
+DONT:
+- [item]
+- [item]
+- [item]
+WATCHOUT:
+- [item]
+- [item]
+DECISION: [sentence or two]
+`.trim();
+
+  const raw = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.78 });
+  if (!raw) return null;
+
+  try {
+    const focusMatch   = raw.match(/^FOCUS:\s*(.+)/m);
+    const doMatch      = raw.match(/DO:\n((?:- .+\n?){1,5})/);
+    const dontMatch    = raw.match(/DONT:\n((?:- .+\n?){1,5})/);
+    const watchMatch   = raw.match(/WATCHOUT:\n((?:- .+\n?){1,4})/);
+    const decideMatch  = raw.match(/DECISION:\s*([\s\S]+?)(?:\n[A-Z]+:|$)/);
+
+    const parseList = (block: string | undefined) =>
+      (block ?? "").split("\n")
+        .map(l => l.replace(/^-\s*/, "").trim())
+        .filter(Boolean);
+
+    const doList      = parseList(doMatch?.[1]);
+    const dontList    = parseList(dontMatch?.[1]);
+    const watchouts   = parseList(watchMatch?.[1]);
+    const decisionAdv = decideMatch?.[1]?.trim() ?? "";
+    const focus       = focusMatch?.[1]?.trim() ?? "";
+
+    if (!focus || doList.length < 2 || dontList.length < 2) return null;
+
+    return {
+      focus,
+      doList:       doList.slice(0, 3),
+      dontList:     dontList.slice(0, 3),
+      watchouts:    watchouts.slice(0, 2),
+      decisionAdvice: decisionAdv || base.decisionAdvice,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
