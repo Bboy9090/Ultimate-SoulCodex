@@ -3480,19 +3480,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 }
 
 /**
- * Strip raw signal-label artifacts that sometimes appear when the AI echoes
- * evidence strings or label prefixes verbatim instead of rephrasing them.
- *
- * Patterns removed:
- *   "Stress element: <word>"  →  removed inline
- *   "Decision style: <word>"  →  removed inline
- *   "Non-negotiable: <phrase>" → "non-negotiable:" prefix stripped
- *   "My strengths include: "  → prefix stripped, content kept
- *   "My default pressure response: " → prefix stripped
- *   "Under stress: "          → prefix stripped
- *   Whole sentences that contain only a label+colon with no clean prose
- */
-/**
  * Strips raw signal-label artifacts the AI sometimes echoes verbatim
  * instead of rephrasing them into first-person behavioral prose.
  */
