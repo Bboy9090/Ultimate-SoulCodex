@@ -100,21 +100,24 @@ export default function Nav() {
             {/* Mode chip — Guided (default) vs Full (advanced) */}
             <button
               onClick={toggle}
-              title={mode === "beginner" ? "Show advanced pages: Compat, Poster, Chart" : "Show standard pages only"}
+              title={mode === "beginner" ? "Switch to Full mode: adds Compat, Poster, Chart pages" : "Switch to Guided mode: hides advanced pages"}
               style={{
-                marginLeft: "0.6rem",
-                padding: "0.22rem 0.7rem",
+                marginLeft: "0.75rem",
+                padding: "0.28rem 0.85rem",
                 borderRadius: "99px",
-                border: "1px solid",
-                borderColor: mode === "advanced" ? "rgba(139,92,246,0.55)" : "rgba(139,92,246,0.2)",
-                background: mode === "advanced" ? "rgba(139,92,246,0.18)" : "transparent",
-                color: mode === "advanced" ? "var(--cosmic-lavender)" : "rgba(148,163,184,0.6)",
+                border: "1.5px solid",
+                borderColor: mode === "advanced" ? "rgba(139,92,246,0.7)" : "rgba(139,92,246,0.25)",
+                background: mode === "advanced"
+                  ? "linear-gradient(135deg, rgba(124,58,237,0.55) 0%, rgba(139,92,246,0.45) 100%)"
+                  : "transparent",
+                color: mode === "advanced" ? "#f1f5f9" : "rgba(148,163,184,0.55)",
                 fontSize: "0.62rem",
-                fontWeight: 600,
-                letterSpacing: "0.06em",
+                fontWeight: 700,
+                letterSpacing: "0.07em",
                 lineHeight: 1,
                 cursor: "pointer",
                 transition: "all 0.2s",
+                boxShadow: mode === "advanced" ? "0 0 10px rgba(124,58,237,0.3)" : "none",
               }}
             >
               {mode === "advanced" ? "Full" : "Guided"}
