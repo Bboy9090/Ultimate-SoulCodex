@@ -21,7 +21,12 @@ export { scoreStatement, selectBest, REJECT_THRESHOLD } from "./engine/distincti
 export type { ScoreBreakdown } from "./engine/distinctiveness";
 
 // ── Content ───────────────────────────────────────────────────────────────────
-export { BANNED_PHRASES, HARD_REJECT_PHRASES, containsBannedPhrase, totalPenaltyScore } from "./content/banned-language";
+export {
+  ALL_BANNED_PHRASES as BANNED_PHRASES,
+  HARD_REJECT_PHRASES,
+  containsBannedPhrase,
+  totalPenaltyScore,
+} from "./content/banned-language";
 export type { BannedEntry } from "./content/banned-language";
 
 export { CONTRADICTION_PAIRS, pickContradiction, scoreContradiction, formatContradictionHint } from "./content/contradictions";
