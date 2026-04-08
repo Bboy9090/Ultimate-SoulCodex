@@ -3142,8 +3142,10 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
 }
 `.trim();
 
+      // Only call Gemini for authenticated users — prevents unauthenticated LLM cost abuse
+      const isAuthed = !!(req.user as any)?.id || !!(req.session as any)?.userId;
       let aiText;
-      if (isGeminiAvailable()) {
+      if (isAuthed && isGeminiAvailable()) {
         try {
           const raw = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.72 });
           const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/,"").trim();

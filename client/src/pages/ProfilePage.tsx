@@ -28,11 +28,22 @@ interface HumanDesignData {
 interface SoulProfile {
   archetype: Archetype;
   synthesis: Synthesis;
+  name?: string;
+  birthDate?: string;
+  birthTime?: string;
+  birthLocation?: string;
   sunSign?: string;
   moonSign?: string;
   risingSign?: string;
   lifePath?: number;
   humanDesignData?: HumanDesignData;
+  astrologyData?: Record<string, unknown>;
+  rawInput?: {
+    birthDate?: string;
+    birthTime?: string;
+    birthLocation?: string;
+    name?: string;
+  };
 }
 
 interface ConfidenceData {
@@ -168,19 +179,19 @@ export default function ProfilePage() {
     if (!profile || downloadingReport) return;
     setDownloadingReport(true);
     try {
-      const rawProfile = profile as any;
+      const displayName = profile.name ?? profile.rawInput?.name ?? profile.archetype?.name ?? "User";
       const res = await fetch("/api/natal-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           profile: {
-            name: rawProfile.name ?? rawProfile.archetype?.name ?? "User",
-            birthDate: rawProfile.birthDate ?? rawProfile.rawInput?.birthDate ?? "",
-            birthTime: rawProfile.birthTime ?? rawProfile.rawInput?.birthTime ?? "",
-            birthLocation: rawProfile.birthLocation ?? rawProfile.rawInput?.birthLocation ?? "",
+            name: displayName,
+            birthDate: profile.birthDate ?? profile.rawInput?.birthDate ?? "",
+            birthTime: profile.birthTime ?? profile.rawInput?.birthTime ?? "",
+            birthLocation: profile.birthLocation ?? profile.rawInput?.birthLocation ?? "",
           },
-          astrologyData: rawProfile.astrologyData,
-          humanDesignData: rawProfile.humanDesignData,
+          astrologyData: profile.astrologyData ?? null,
+          humanDesignData: profile.humanDesignData ?? null,
         }),
       });
       if (!res.ok) {
@@ -191,7 +202,7 @@ export default function ProfilePage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const safeName = (rawProfile.name ?? "user").replace(/[^a-zA-Z0-9]/g, "_");
+      const safeName = displayName.replace(/[^a-zA-Z0-9]/g, "_");
       a.download = `${safeName}_Natal_Chart_and_Human_Design.pdf`;
       document.body.appendChild(a);
       a.click();
