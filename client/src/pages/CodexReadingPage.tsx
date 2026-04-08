@@ -242,27 +242,68 @@ export default function CodexReadingPage() {
       </div>
 
       {/* ── Top Themes ───────────────────────────────────────────────────── */}
-      {synthesis.topThemes.length > 0 && (
-        <div style={{ marginBottom: "2rem" }}>
-          <h3 style={{ fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.6rem" }}>
-            Core Themes
-          </h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
-            {synthesis.topThemes.slice(0, 8).map(t => (
-              <span key={t.tag} style={{
-                display: "inline-flex", alignItems: "center", gap: "0.3rem",
-                background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.22)",
-                borderRadius: "8px", padding: "0.25rem 0.65rem",
-                fontSize: "0.75rem", color: "var(--cosmic-lavender)",
-              }}>
-                <span style={{ opacity: 0.7 }}>{THEME_ICONS[t.tag] ?? "◈"}</span>
-                {t.tag.replace(/_/g, " ")}
-                <span style={{ opacity: 0.45, fontSize: "0.65rem" }}>{t.score}</span>
-              </span>
-            ))}
+      {synthesis.topThemes.length > 0 && (() => {
+        const themes = synthesis.topThemes.slice(0, 8);
+        const maxScore = Math.max(...themes.map(t => t.score), 1);
+        return (
+          <div style={{ marginBottom: "2rem" }}>
+            <h3 style={{ fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.85rem" }}>
+              Core Themes
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+              {themes.map((t, i) => {
+                const pct = Math.round((t.score / maxScore) * 100);
+                const icon = THEME_ICONS[t.tag] ?? "◈";
+                const isTop = i === 0;
+                return (
+                  <div key={t.tag} style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                    {/* Rank + icon */}
+                    <span style={{
+                      fontSize: "0.7rem", color: "var(--cosmic-lavender)",
+                      opacity: isTop ? 1 : 0.6, width: "1.1rem", textAlign: "right", flexShrink: 0,
+                    }}>
+                      {icon}
+                    </span>
+                    {/* Label */}
+                    <span style={{
+                      fontSize: "0.72rem", color: "var(--foreground)",
+                      width: "5.5rem", flexShrink: 0, textTransform: "capitalize",
+                      fontWeight: isTop ? 600 : 400,
+                      letterSpacing: "0.02em",
+                    }}>
+                      {t.tag.replace(/_/g, " ")}
+                    </span>
+                    {/* Bar track */}
+                    <div style={{
+                      flex: 1, height: "6px", borderRadius: "99px",
+                      background: "rgba(139,92,246,0.12)",
+                      overflow: "hidden", position: "relative",
+                    }}>
+                      <div style={{
+                        position: "absolute", left: 0, top: 0, bottom: 0,
+                        width: `${pct}%`,
+                        borderRadius: "99px",
+                        background: isTop
+                          ? "linear-gradient(90deg, #8b5cf6, #ec4899)"
+                          : `rgba(139,92,246,${0.35 + (pct / 100) * 0.45})`,
+                        transition: "width 0.4s ease",
+                      }} />
+                    </div>
+                    {/* Score */}
+                    <span style={{
+                      fontSize: "0.62rem", color: "var(--muted-foreground)",
+                      width: "2rem", textAlign: "right", flexShrink: 0,
+                      opacity: 0.55,
+                    }}>
+                      {t.score}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Narrative Sections ───────────────────────────────────────────── */}
       <div style={{ marginBottom: "2.5rem" }}>
