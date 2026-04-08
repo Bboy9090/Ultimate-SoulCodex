@@ -44,9 +44,9 @@ const YEAR_DATA: Record<number, YearData> = {
       "My energy is naturally oriented toward self-direction and fresh starts.",
     ],
     leanInto: [
-      "Start the thing I've been delaying.",
-      "Make decisions from identity, not from habit.",
-      "Build new patterns before the old ones re-solidify.",
+      "I start the thing I've been delaying.",
+      "I make decisions from identity, not from habit.",
+      "I build new patterns before the old ones re-solidify.",
     ],
     release: [
       "Expecting to refine something that hasn't started yet.",
@@ -65,9 +65,9 @@ const YEAR_DATA: Record<number, YearData> = {
       "Forcing outcomes this year breaks what patience would preserve.",
     ],
     leanInto: [
-      "Invest in the relationship that has the most long-term signal.",
-      "Listen more than I speak in decisions that affect others.",
-      "Be reliable where I said I would show up.",
+      "I invest in the relationship that has the most long-term signal.",
+      "I listen more than I speak in decisions that affect others.",
+      "I'm reliable where I said I would show up.",
     ],
     release: [
       "Competing when the year is asking me to collaborate.",
@@ -86,9 +86,9 @@ const YEAR_DATA: Record<number, YearData> = {
       "Creative risks taken now compound across the next 6 years.",
     ],
     leanInto: [
-      "Publish the thing I've been sitting on.",
-      "Expand my creative surface area — more channels, more outputs.",
-      "Say yes to social energy and visibility.",
+      "I publish the thing I've been sitting on.",
+      "I expand my creative surface area — more channels, more outputs.",
+      "I say yes to social energy and visibility.",
     ],
     release: [
       "Perfecting output instead of shipping it.",
@@ -107,9 +107,9 @@ const YEAR_DATA: Record<number, YearData> = {
       "Shortcuts now become structural weaknesses later.",
     ],
     leanInto: [
-      "Do the slow, unsexy work that compounds.",
-      "Build systems, not just outputs.",
-      "Audit what is held together by habit versus actual design.",
+      "I do the slow, unsexy work that compounds.",
+      "I build systems, not just outputs.",
+      "I audit what is held together by habit versus actual design.",
     ],
     release: [
       "Chasing novelty when the work needs repetition.",
@@ -124,13 +124,13 @@ const YEAR_DATA: Record<number, YearData> = {
     essence: "I'm in a year of change. What no longer fits must go — not later, now.",
     why: [
       "Year 5 is the midpoint of the 9-year cycle — transformation is the mechanism.",
-      "The numerological field is restless and expansive. Resistance amplifies friction.",
+      "This is the most restless and expansive point in the 9-year cycle. Resistance amplifies friction.",
       "Freedom this year comes from releasing what belonged to the previous phase.",
     ],
     leanInto: [
-      "Make the change I've been deferring.",
-      "Follow what is pulling me, not just what's familiar.",
-      "Test assumptions I've been treating as fixed.",
+      "I make the change I've been deferring.",
+      "I follow what is pulling me, not just what's familiar.",
+      "I test assumptions I've been treating as fixed.",
     ],
     release: [
       "Holding onto structures built for a self I've outgrown.",
@@ -149,9 +149,9 @@ const YEAR_DATA: Record<number, YearData> = {
       "What I tend carefully now reaches maturity in Year 7 and 8.",
     ],
     leanInto: [
-      "Show up where I said I would.",
-      "Invest in the relationships that have been waiting.",
-      "Treat my health as a structural asset, not an afterthought.",
+      "I show up where I said I would.",
+      "I invest in the relationships that have been waiting.",
+      "I treat my health as a structural asset, not an afterthought.",
     ],
     release: [
       "Spreading myself thin across too many obligations.",
@@ -170,9 +170,9 @@ const YEAR_DATA: Record<number, YearData> = {
       "What I understand about myself this year informs the material output of Year 8.",
     ],
     leanInto: [
-      "Read, study, and deepen — not broadly, but precisely.",
-      "Spend time alone without an agenda.",
-      "Ask the questions I've been too busy to hold.",
+      "I read, study, and deepen — not broadly, but precisely.",
+      "I spend time alone without an agenda.",
+      "I ask the questions I've been too busy to hold.",
     ],
     release: [
       "Confusing busyness with progress.",
@@ -191,9 +191,9 @@ const YEAR_DATA: Record<number, YearData> = {
       "Authority, resources, and recognition are accessible this year.",
     ],
     leanInto: [
-      "Ask for what I've earned.",
-      "Think at the decade level, not the quarter.",
-      "Make the high-stakes decision I've been building toward.",
+      "I ask for what I've earned.",
+      "I think at the decade level, not the quarter.",
+      "I make the high-stakes decision I've been building toward.",
     ],
     release: [
       "Underselling what I've built.",
@@ -208,13 +208,13 @@ const YEAR_DATA: Record<number, YearData> = {
     essence: "I'm closing a 9-year chapter. What has served its purpose must be released now.",
     why: [
       "Year 9 numerological energy is about endings, integration, and letting go.",
-      "The field is clearing space for what's coming in Year 1.",
+      "This year is clearing space for what comes in Year 1.",
       "Holding onto the past this year delays the next chapter by exactly how long I hold on.",
     ],
     leanInto: [
-      "Complete what I started. Close the loop.",
-      "Forgive what I've been carrying from this cycle.",
-      "Let the chapter end with intention, not avoidance.",
+      "I complete what I started. I close the loop.",
+      "I forgive what I've been carrying from this cycle.",
+      "I let the chapter end with intention, not avoidance.",
     ],
     release: [
       "Starting new projects that belong in Year 1.",
@@ -234,15 +234,15 @@ interface MonthData {
 }
 
 const MONTH_DATA: Record<number, MonthData> = {
-  1: { label: "Initiation",   glyph: "◎", color: "#8b5cf6", note: "New beginnings, fresh energy — act on instinct." },
-  2: { label: "Patience",     glyph: "◌", color: "#22d3ee", note: "Wait, listen, and trust what is still germinating." },
-  3: { label: "Expression",   glyph: "✦", color: "#f472b6", note: "Share, connect, and move creative work forward." },
-  4: { label: "Discipline",   glyph: "◆", color: "#f59e0b", note: "Build methodically. Do the unsexy work." },
-  5: { label: "Change",       glyph: "⬡", color: "#22c55e", note: "Disrupt what no longer fits. Move quickly." },
-  6: { label: "Tending",      glyph: "◉", color: "#8b5cf6", note: "Invest in relationships and responsibilities." },
-  7: { label: "Depth",        glyph: "◈", color: "#22d3ee", note: "Go inward. Research, reflect, refine." },
-  8: { label: "Leverage",     glyph: "◆", color: "#f59e0b", note: "Push the material goal. Make the ask." },
-  9: { label: "Release",      glyph: "☽", color: "#f472b6", note: "Complete, forgive, and let go of what's done." },
+  1: { label: "Initiation",   glyph: "◎", color: "#8b5cf6", note: "Fresh start energy. I act on instinct, not analysis." },
+  2: { label: "Patience",     glyph: "◌", color: "#22d3ee", note: "I wait, listen, and trust what is still germinating." },
+  3: { label: "Expression",   glyph: "✦", color: "#f472b6", note: "I share, connect, and move creative work forward." },
+  4: { label: "Discipline",   glyph: "◆", color: "#f59e0b", note: "I build methodically. I do the unsexy work." },
+  5: { label: "Change",       glyph: "⬡", color: "#22c55e", note: "I disrupt what no longer fits. I move quickly." },
+  6: { label: "Tending",      glyph: "◉", color: "#8b5cf6", note: "I invest in relationships and responsibilities." },
+  7: { label: "Depth",        glyph: "◈", color: "#22d3ee", note: "I go inward. I research, reflect, refine." },
+  8: { label: "Leverage",     glyph: "◆", color: "#f59e0b", note: "I push the material goal. I make the ask." },
+  9: { label: "Release",      glyph: "☽", color: "#f472b6", note: "I complete, forgive, and let go of what's done." },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────

@@ -26,40 +26,40 @@ const DAY_DO: Record<number, string[]> = {
 };
 
 const DAY_DONT: Record<number, string[]> = {
-  1: ["Defer to others when you know the answer", "Overthink before acting", "Let perfectionism stall the first move"],
-  2: ["Force outcomes before they're ready", "Argue when you should be listening", "Let pride block collaboration"],
-  3: ["Stay silent when you have something real to say", "Suppress creativity to look 'professional'", "Spend the day in pure reaction mode"],
+  1: ["Defer to others when I know the answer", "Overthink before acting", "Let perfectionism stall my first move"],
+  2: ["Force outcomes before they're ready", "Argue when I should be listening", "Let pride block collaboration"],
+  3: ["Stay silent when I have something real to say", "Suppress creativity to look 'professional'", "Spend the day in pure reaction mode"],
   4: ["Start something new before the old is done", "Ignore structure because it feels boring", "Skip the plan and wing it today"],
-  5: ["Stay in the same loop hoping for different results", "Commit to anything you're not actually ready for", "Let fear of the unknown keep you static"],
-  6: ["Neglect your own needs to fix everyone else", "Avoid a difficult but necessary conversation", "Say yes when you mean no"],
-  7: ["Make a big decision based on noise", "Expose your process before it's ready", "Seek validation for a choice only you can make"],
-  8: ["Back down from something you've already committed to", "Let others define the terms", "Spend energy on the small when the big is waiting"],
-  9: ["Hold on to what's already finished", "Start a new project before closing the current one", "Ignore what this period is trying to teach you"]
+  5: ["Stay in the same loop expecting different results", "Commit to something I'm not actually ready for", "Let fear of the unknown keep me static"],
+  6: ["Neglect my own needs to fix everyone else", "Avoid a difficult but necessary conversation", "Say yes when I mean no"],
+  7: ["Make a big decision based on noise", "Expose my process before it's ready", "Seek validation for a choice only I can make"],
+  8: ["Back down from something I've already committed to", "Let others define the terms", "Spend energy on the small when the big is waiting"],
+  9: ["Hold on to what's already finished", "Start a new project before closing the current one", "Ignore what this period is trying to teach me"]
 };
 
 const DAY_WATCHOUTS: Record<number, string[]> = {
-  1: ["Impatience with people moving slower than you", "Starting strong, losing steam by afternoon"],
-  2: ["Over-accommodating — you may lose your own thread", "Emotional undercurrents in group dynamics"],
-  3: ["Scattered energy that spreads thin", "Saying more than you meant to"],
+  1: ["Impatience with people moving slower than me", "Starting strong, losing steam by afternoon"],
+  2: ["Over-accommodating — I may lose my own thread", "Emotional undercurrents in group dynamics"],
+  3: ["Scattered energy that spreads thin", "Saying more than I meant to"],
   4: ["Frustration when results don't match the effort", "Rigidity passing as discipline"],
-  5: ["Impulsive decisions that feel liberating but cost you later", "Restlessness masking avoidance"],
+  5: ["Impulsive decisions that feel liberating but cost me later", "Restlessness masking avoidance"],
   6: ["Over-responsibility for others' problems", "Resentment building from unspoken needs"],
   7: ["Overthinking replacing action", "Isolation deepening rather than refreshing"],
-  8: ["Pressure creating tunnel vision", "Ignoring feedback from people who see what you don't"],
-  9: ["Nostalgia slowing forward movement", "Completion anxiety — finishing feels like loss"]
+  8: ["Pressure creating tunnel vision", "Ignoring feedback from people who see what I don't"],
+  9: ["Nostalgia slowing my forward movement", "Completion anxiety — finishing feels like loss"]
 };
 
 const DECISION_ADVICE: Record<string, string> = {
-  calm_logic:     "Your clearest thinking lands between 10am and noon. Lock big decisions into that window.",
-  sleep_on_it:    "Don't finalize anything today that you haven't slept on. Your best answer will come tonight.",
-  quiet_instinct: "The first signal you got this morning is probably right. Trust it before the noise builds.",
-  willpower:      "Commit early and hold the line. Second-guessing costs you more energy than following through.",
-  gut_yes_no:     "If you can't feel a clear yes, it's a no. Trust the silence.",
-  analysis:       "Map the decision before noon, choose by 2pm. More data after that won't help you.",
-  gut:            "Your intuition is ahead of your logic today. Move on the feeling.",
-  consensus:      "Check your thinking with one trusted person before acting. One voice, not five.",
-  impulse:        "Notice which impulses have energy and which have anxiety. Act on energy. Pause on anxiety.",
-  avoidance:      "Pick the thing you've been avoiding longest. Address it first — the rest is easier after."
+  calm_logic:     "My clearest thinking lands between 10am and noon. I lock big decisions into that window.",
+  sleep_on_it:    "I don't finalize anything today that I haven't slept on. My best answer comes tonight.",
+  quiet_instinct: "The first signal I got this morning is probably right. I trust it before the noise builds.",
+  willpower:      "I commit early and hold the line. Second-guessing costs more energy than following through.",
+  gut_yes_no:     "If I can't feel a clear yes, it's a no. I trust the silence.",
+  analysis:       "I map the decision before noon, choose by 2pm. More data after that won't change the call.",
+  gut:            "My intuition is ahead of my logic today. I move on the feeling.",
+  consensus:      "I check my thinking with one trusted person before acting. One voice, not five.",
+  impulse:        "I notice which impulses have energy and which have anxiety. I act on energy. I pause on anxiety.",
+  avoidance:      "I pick the thing I've been avoiding longest. I address it first — the rest is easier after."
 };
 
 const MOON_TITLE_PREFIX: Record<string, string> = {
@@ -97,7 +97,7 @@ export function buildTodayCard(
   const topTransit = horoscopeData?.personalTransits?.[0];
   let focus = `Personal Day ${dayNum} — a ${moonPrefix.toLowerCase()} phase for ${
     topTheme.replace(/_/g, " ")
-  }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "Stay in your build lane today."}`;
+  }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I stay in my lane and build today."}`;
 
   if (focus.length > 120) focus = focus.slice(0, 117) + "…";
 
@@ -110,7 +110,7 @@ export function buildTodayCard(
     doList: (DAY_DO[dayIndex] ?? DAY_DO[4]).slice(0, 3),
     dontList: (DAY_DONT[dayIndex] ?? DAY_DONT[4]).slice(0, 3),
     watchouts: (DAY_WATCHOUTS[dayIndex] ?? DAY_WATCHOUTS[4]).slice(0, 2),
-    decisionAdvice: DECISION_ADVICE[decisionStyle] ?? "Give your decision time to breathe before committing. Clarity comes after the noise settles.",
+    decisionAdvice: DECISION_ADVICE[decisionStyle] ?? "I let my decision breathe before committing. Clarity comes after the noise settles.",
     moonPhase: horoscopeData?.moonPhase?.phase ?? "Full Moon",
     personalDayNumber: dayNum,
     confidenceLabel,
