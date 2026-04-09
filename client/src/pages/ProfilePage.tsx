@@ -217,7 +217,7 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div style={{ padding: "4rem 1rem", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
-        <div style={{ fontSize: "3.5rem", marginBottom: "1.25rem", opacity: 0.25, color: "var(--cosmic-lavender)" }}>◉</div>
+        <div style={{ fontSize: "3.5rem", marginBottom: "1.25rem", opacity: 0.22, color: "var(--sc-gold)" }}>◉</div>
         <h2 className="gradient-text" style={{ marginBottom: "0.75rem" }}>No profile found</h2>
         <p style={{ marginBottom: "2rem", color: "var(--muted-foreground)", lineHeight: 1.65, fontSize: "0.9rem" }}>
           Complete the onboarding to generate your soul profile.
@@ -287,16 +287,16 @@ export default function ProfilePage() {
   return (
     <div style={{ padding: "2rem 1rem 5rem", maxWidth: 720, margin: "0 auto", position: "relative", overflow: "hidden" }}>
 
-      {/* ── Atmospheric background glow ──────────────────────────────────── */}
+      {/* ── Atmospheric background watermark ─────────────────────────────── */}
       <img
-        src="/logo.png"
+        src="/soul-codex-logo.svg"
         aria-hidden="true"
         style={{
-          position: "absolute", top: "-60px", left: "50%",
+          position: "absolute", top: "-40px", left: "50%",
           transform: "translateX(-50%)",
-          width: 520, height: 520, objectFit: "contain",
-          opacity: 0.07, mixBlendMode: "screen",
-          filter: "blur(28px)",
+          width: 480, height: 480, objectFit: "contain",
+          opacity: 0.055, mixBlendMode: "screen",
+          filter: "blur(22px)",
           pointerEvents: "none", userSelect: "none", zIndex: 0,
         }}
       />
@@ -305,19 +305,23 @@ export default function ProfilePage() {
       <section style={{ textAlign: "center", marginBottom: "2.5rem", position: "relative", zIndex: 1 }}>
 
         <div style={{
-          fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase",
-          color: "var(--muted-foreground)", marginBottom: "1rem", fontWeight: 500,
+          fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase",
+          color: "var(--sc-text-muted)", marginBottom: "1rem", fontWeight: 500,
         }}>
           Soul Snapshot
         </div>
 
-        <div style={{
-          fontSize: "2.25rem", marginBottom: "0.75rem",
-          background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          filter: "drop-shadow(0 0 12px rgba(139,92,246,0.5))",
-        }}>
-          ◉
+        {/* New SVG logo mark above archetype name */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.85rem" }}>
+          <img
+            src="/soul-codex-logo.svg"
+            alt="Soul Codex"
+            style={{
+              width: 72, height: 72,
+              filter: "drop-shadow(0 0 14px rgba(212,168,95,0.45))",
+              opacity: 0.95,
+            }}
+          />
         </div>
 
         <h1
@@ -337,9 +341,9 @@ export default function ProfilePage() {
         }}>
           <span style={{
             display: "inline-block", padding: "0.3rem 0.9rem",
-            background: "rgba(124,58,237,0.13)", border: "1px solid rgba(124,58,237,0.28)",
+            background: "rgba(212,168,95,0.08)", border: "1px solid rgba(212,168,95,0.25)",
             borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600,
-            color: "var(--cosmic-lavender)", letterSpacing: "0.08em", textTransform: "uppercase",
+            color: "var(--sc-gold)", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
             {archetype.element} · {archetype.role}
           </span>
