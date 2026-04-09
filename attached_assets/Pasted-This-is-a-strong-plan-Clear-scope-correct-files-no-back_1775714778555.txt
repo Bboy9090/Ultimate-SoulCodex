@@ -1,0 +1,90 @@
+This is a strong plan. Clear scope, correct files, no backend thrashing, no mystical feature creep. Rare sight.
+
+My verdict
+
+Approve it, with a few tightening notes so it doesn’t get sloppy during implementation.
+
+What’s especially good
+	•	Front-end only scope is correct
+	•	“Done looks like” is specific enough to prevent wandering
+	•	logo integration is restrained instead of gaudy
+	•	desktop sidebar + mobile fallback is the right shell move
+	•	using shared tokens in index.css first is smart
+	•	keeping page-specific polish mostly out of scope is disciplined
+
+What I’d tighten before you run it
+
+1. Don’t overcommit to Profile and home hero areas
+
+Your current app seems to use Profile as the front door in practice. If there is no true separate “home hero,” say:
+
+“ProfilePage and any primary snapshot/home hero surface”
+
+That avoids the agent inventing a second hero just because the brief sounded poetic.
+
+2. Keep tailwind.config.ts optional
+
+If your styling is already mostly driven from index.css, don’t force Tailwind changes unless needed.
+
+Change:
+	•	tailwind.config.ts
+
+To:
+	•	tailwind.config.ts only if needed for token exposure
+
+That prevents unnecessary config churn.
+
+3. Be explicit about nav mode behavior
+
+Right now “mode-toggle remains functional” is good, but I’d add:
+	•	STD / ADV must remain readable and intentionally styled, not look like leaked internal labels
+
+Because that’s still one of the weaker bits in the UI.
+
+4. Protect readability on inner pages
+
+Add one rule:
+	•	Background watermark/logo motif must not appear behind dense reading sections like Codex body copy or transit lists
+
+Otherwise some agent will slap a glowing sigil behind five paragraphs and call it atmosphere.
+
+5. Don’t let the sidebar become too dominant
+
+Say this explicitly:
+	•	Sidebar should feel elegant and quiet, not heavier than the content area
+
+Because 260px is fine, but easy to make visually overbearing.
+
+⸻
+
+Best revised implementation order
+	1.	save SVG asset
+	2.	add token set in index.css
+	3.	restyle shared shell, cards, buttons, chips
+	4.	update Nav.tsx + desktop/mobile layout
+	5.	integrate logo in the main hero surface
+	6.	add subtle watermark only in hero-level areas
+	7.	regression sweep on all pages
+
+That’s the right order. Shell first, ornament later.
+
+⸻
+
+One line I’d add to the plan
+
+Paste this under “Out of scope” or “Tasks”:
+
+Do not introduce a second visual language. Existing page-specific accents should be harmonized into the new system, not replaced with unrelated one-off styling.
+
+That keeps the app from becoming “Sacred Minimal in the shell, leftover cyber-plum chaos inside the cards.”
+
+Final answer
+
+Yes, run this plan.
+It’s the right size, the right direction, and the right amount of ambition.
+
+If you want the cleanest version to paste back into Replit/Cursor, use this closing constraint:
+
+Preserve current routes, data flow, and page content structure. This is a shell/theme/logo integration pass, not a content rewrite or feature redesign.
+
+That should keep the machine from developing unnecessary artistic opinions.

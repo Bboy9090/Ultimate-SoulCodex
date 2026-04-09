@@ -7,42 +7,42 @@
    CSS Custom Properties - The Sacred Variables
    ───────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Cosmic Color Palette */
-  --cosmic-void: #0a0118;
-  --cosmic-deep: #0f0320;
-  --cosmic-dark: #150428;
-  --cosmic-medium: #1a0530;
-  --cosmic-purple: #7c3aed;
-  --cosmic-violet: #8b5cf6;
-  --cosmic-lavender: #a78bfa;
-  --cosmic-pink: #ec4899;
-  --cosmic-rose: #f472b6;
-  --cosmic-cyan: #22d3ee;
-  --cosmic-teal: #2dd4bf;
-  --cosmic-gold: #fbbf24;
-  --cosmic-amber: #f59e0b;
-  --cosmic-orange: #f97316;
+  /* Cosmic Color Palette — remapped to warm Sacred Minimal palette */
+  --cosmic-void: #16161D;
+  --cosmic-deep: #1C1628;
+  --cosmic-dark: #221C32;
+  --cosmic-medium: #2A2038;
+  --cosmic-purple: #3B2E52;
+  --cosmic-violet: #5A4580;
+  --cosmic-lavender: #D4A85F;
+  --cosmic-pink: #C49450;
+  --cosmic-rose: #E0C080;
+  --cosmic-cyan: #A89DAF;
+  --cosmic-teal: #8A7F9A;
+  --cosmic-gold: #D4A85F;
+  --cosmic-amber: #C49450;
+  --cosmic-orange: #B88040;
   
   /* Semantic Colors */
   --background: var(--cosmic-void);
   --foreground: #f8fafc;
-  --card: rgba(15, 3, 32, 0.8);
-  --card-foreground: #f1f5f9;
-  --popover: rgba(21, 4, 40, 0.95);
-  --popover-foreground: #f1f5f9;
+  --card: rgba(28, 22, 40, 0.82);
+  --card-foreground: var(--sc-ivory);
+  --popover: rgba(32, 24, 46, 0.96);
+  --popover-foreground: var(--sc-ivory);
   --primary: var(--cosmic-purple);
-  --primary-foreground: #ffffff;
-  --secondary: rgba(139, 92, 246, 0.15);
-  --secondary-foreground: var(--cosmic-lavender);
-  --muted: rgba(139, 92, 246, 0.1);
-  --muted-foreground: #94a3b8;
-  --accent: rgba(236, 72, 153, 0.2);
-  --accent-foreground: var(--cosmic-rose);
+  --primary-foreground: var(--sc-ivory);
+  --secondary: rgba(212, 168, 95, 0.08);
+  --secondary-foreground: var(--sc-gold);
+  --muted: rgba(212, 168, 95, 0.05);
+  --muted-foreground: #A89DAF;
+  --accent: rgba(212, 168, 95, 0.12);
+  --accent-foreground: var(--sc-gold);
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: rgba(139, 92, 246, 0.2);
-  --input: rgba(139, 92, 246, 0.15);
-  --ring: var(--cosmic-purple);
+  --border: rgba(212, 168, 95, 0.12);
+  --input: rgba(212, 168, 95, 0.08);
+  --ring: var(--sc-gold);
   
   /* Chart Colors */
   --chart-1: var(--cosmic-purple);
@@ -217,9 +217,9 @@ a:hover {
   color: var(--cosmic-purple);
 }
 
-/* Gradient Text */
+/* Gradient Text — warm gold/ivory register */
 .gradient-text {
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 50%, var(--cosmic-cyan) 100%);
+  background: linear-gradient(135deg, #D4A85F 0%, #F5E4B8 55%, #C49450 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1336,6 +1336,21 @@ button, a, [role="button"] {
   .footer {
     display: none;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Watermark protection — suppress atmospheric logo behind dense reading copy
+   ───────────────────────────────────────────────────────────────────────────── */
+.codex-body-section,
+.transit-list-section,
+.reading-dense {
+  position: relative;
+  isolation: isolate;
+}
+.codex-body-section::before,
+.transit-list-section::before,
+.reading-dense::before {
+  content: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

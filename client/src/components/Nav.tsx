@@ -136,11 +136,27 @@ export default function Nav() {
         onClick={toggle}
         className={`sc-mode-toggle${mode === "advanced" ? " sc-mode-full" : ""}`}
         title={mode === "beginner"
-          ? "Switch to Full mode: adds Compat, Poster, Chart"
-          : "Switch to Guided mode: hides advanced pages"}
+          ? "Switch to Full mode — unlocks Compat, Poster, Chart"
+          : "Switch to Guided mode — essentials only"}
       >
-        <span>{mode === "advanced" ? "Full mode" : "Guided mode"}</span>
-        <span style={{ opacity: 0.55, fontSize: "0.7rem" }}>{mode === "advanced" ? "▾" : "▸"}</span>
+        <span style={{ display: "flex", flexDirection: "column", gap: "0.05rem" }}>
+          <span style={{
+            fontSize: "0.58rem", letterSpacing: "0.14em", textTransform: "uppercase",
+            opacity: 0.45, lineHeight: 1, fontWeight: 700,
+          }}>
+            View
+          </span>
+          <span style={{ fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.03em" }}>
+            {mode === "advanced" ? "Full" : "Guided"}
+          </span>
+        </span>
+        <span style={{
+          fontSize: "0.65rem", opacity: 0.45,
+          transform: mode === "advanced" ? "rotate(90deg)" : "rotate(0deg)",
+          transition: "transform 0.2s ease",
+        }}>
+          ▸
+        </span>
       </button>
     </nav>
   );
