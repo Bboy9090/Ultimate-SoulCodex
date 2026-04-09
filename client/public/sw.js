@@ -3,7 +3,7 @@
 // Production-Ready PWA with Offline Support
 // ═══════════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `soul-codex-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `soul-codex-runtime-${CACHE_VERSION}`;
 const API_CACHE = `soul-codex-api-${CACHE_VERSION}`;
