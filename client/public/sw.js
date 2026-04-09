@@ -3,7 +3,7 @@
 // Production-Ready PWA with Offline Support
 // ═══════════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `soul-codex-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `soul-codex-runtime-${CACHE_VERSION}`;
 const API_CACHE = `soul-codex-api-${CACHE_VERSION}`;
@@ -70,32 +70,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first: always try network, fall back to cache only when offline
   event.respondWith(
-    caches.match(request).then(cachedResponse => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(request)
-        .then(response => {
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response;
-          }
-
-          const responseToCache = response.clone();
-          caches.open(RUNTIME_CACHE).then(cache => {
-            cache.put(request, responseToCache);
-          });
-
+    fetch(request)
+      .then(response => {
+        if (!response || response.status !== 200 || response.type === 'error') {
           return response;
-        })
-        .catch(() => {
-          if (request.destination === 'document') {
-            return caches.match('/');
-          }
+        }
+        // Cache a copy for offline fallback (but network always wins when online)
+        const responseToCache = response.clone();
+        caches.open(RUNTIME_CACHE).then(cache => {
+          cache.put(request, responseToCache);
+        });
+        return response;
+      })
+      .catch(() => {
+        // Only use cache when truly offline
+        return caches.match(request).then(cached => {
+          if (cached) return cached;
+          if (request.destination === 'document') return caches.match('/');
           return new Response('Offline', { status: 503 });
         });
-    })
+      })
   );
 });
 
