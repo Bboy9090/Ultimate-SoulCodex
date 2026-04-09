@@ -1,4 +1,4 @@
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation, Redirect } from "wouter";
 import Nav from "./components/Nav";
 import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -12,11 +12,21 @@ import TrackerPage from "./pages/TrackerPage";
 import CompatibilityPage from "./pages/CompatibilityPage";
 import TimelinePage from "./pages/TimelinePage";
 
+function hasProfile(): boolean {
+  try {
+    return !!localStorage.getItem("soulProfile");
+  } catch { return false; }
+}
+
+function SmartHome() {
+  if (hasProfile()) return <TodayPage />;
+  return <LandingPage />;
+}
+
 const routes = (
   <Switch>
-    <Route path="/" component={TodayPage} />
+    <Route path="/" component={SmartHome} />
     <Route path="/today" component={TodayPage} />
-    <Route path="/welcome" component={LandingPage} />
     <Route path="/start" component={OnboardingPage} />
     <Route path="/profile" component={ProfilePage} />
     <Route path="/guide" component={SoulGuidePage} />
@@ -36,6 +46,13 @@ const routes = (
 );
 
 export default function App() {
+  const [location] = useLocation();
+  const isMarketing = location === "/" && !hasProfile();
+
+  if (isMarketing) {
+    return <LandingPage />;
+  }
+
   return (
     <div className="sc-app-shell">
       <Nav />
