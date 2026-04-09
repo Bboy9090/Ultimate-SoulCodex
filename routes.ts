@@ -3446,7 +3446,7 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
         try {
           const storedProfile = await storage.getProfile(profileId);
           if (storedProfile) {
-            const { generateDailyHoroscope } = await import("./horoscope");
+            const { generateDailyHoroscope } = await import("./services/horoscope");
             horoscopeData = await generateDailyHoroscope(storedProfile);
           }
         } catch (e) {

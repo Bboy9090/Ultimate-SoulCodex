@@ -32,7 +32,7 @@ export async function generateText({ model, prompt, temperature = 0.7 }: { model
     const response = await ai.models.generateContent({
       model: model || DEFAULT_MODEL,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: { temperature, maxOutputTokens: 1024 },
+      config: { temperature, maxOutputTokens: 2048 },
     });
     return response.text ?? "";
   } catch (e) {
@@ -62,7 +62,7 @@ export async function* streamChat({ model, systemInstruction, history, message, 
       contents,
       config: {
         temperature: temperature ?? 0.7,
-        maxOutputTokens: 1000,
+        maxOutputTokens: 2048,
         systemInstruction: systemInstruction ?? undefined,
       },
     });
