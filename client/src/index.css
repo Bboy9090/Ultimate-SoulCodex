@@ -281,25 +281,28 @@ a:hover {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-violet) 100%);
-  color: white;
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+  background: linear-gradient(135deg, #3B2E52 0%, #2A2038 100%);
+  color: var(--sc-ivory);
+  border: 1px solid rgba(212, 168, 95, 0.35);
+  box-shadow: 0 4px 18px rgba(212, 168, 95, 0.2), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 30px rgba(124, 58, 237, 0.6);
+  background: linear-gradient(135deg, #47385f 0%, #322645 100%);
+  border-color: rgba(212, 168, 95, 0.5);
+  box-shadow: 0 6px 26px rgba(212, 168, 95, 0.32), 0 2px 10px rgba(0, 0, 0, 0.35);
   transform: translateY(-2px);
 }
 
 .btn-secondary {
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  border: 1px solid var(--glass-border);
+  background: rgba(212, 168, 95, 0.06);
+  color: var(--sc-ivory);
+  border: 1px solid var(--sc-card-border);
 }
 
 .btn-secondary:hover {
-  background: rgba(139, 92, 246, 0.25);
-  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(212, 168, 95, 0.12);
+  border-color: rgba(212, 168, 95, 0.3);
 }
 
 .btn-ghost {
@@ -443,12 +446,12 @@ a:hover {
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0.75rem;
-  background: var(--secondary);
-  border: 1px solid var(--glass-border);
+  background: rgba(212, 168, 95, 0.06);
+  border: 1px solid rgba(212, 168, 95, 0.18);
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--secondary-foreground);
+  color: var(--sc-ivory);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -1342,7 +1345,7 @@ button, a, [role="button"] {
 /* App shell: sidebar + main grid on desktop */
 .sc-app-shell {
   display: grid;
-  grid-template-columns: 252px 1fr;
+  grid-template-columns: 260px 1fr;
   min-height: 100vh;
   align-items: start;
 }
@@ -1468,7 +1471,7 @@ button, a, [role="button"] {
 }
 
 /* Mobile: collapse sidebar to top bar */
-@media (max-width: 800px) {
+@media (max-width: 768px) {
   .sc-app-shell {
     display: flex;
     flex-direction: column;

@@ -106,14 +106,14 @@ export default function LandingPage() {
 
         {/* Atmospheric logo glow */}
         <img
-          src="/logo.png"
+          src="/soul-codex-logo.svg"
           aria-hidden="true"
           style={{
             position: "absolute", top: "50%", left: "50%",
             transform: "translate(-50%, -50%)",
             width: 700, height: 700, objectFit: "contain",
-            opacity: 0.07, mixBlendMode: "screen",
-            filter: "blur(40px)",
+            opacity: 0.06, mixBlendMode: "screen",
+            filter: "blur(38px)",
             pointerEvents: "none", userSelect: "none", zIndex: 0,
           }}
         />
@@ -483,14 +483,14 @@ export default function LandingPage() {
       }}>
         <Orb style={{ width: 700, height: 700, top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "radial-gradient(circle at 50% 50%, rgba(124,58,237,0.18) 0%, transparent 55%)" }} />
         <img
-          src="/logo.png"
+          src="/soul-codex-logo.svg"
           aria-hidden="true"
           style={{
             position: "absolute", top: "50%", left: "50%",
             transform: "translate(-50%, -50%)",
             width: 620, height: 620, objectFit: "contain",
-            opacity: 0.07, mixBlendMode: "screen",
-            filter: "blur(38px)",
+            opacity: 0.06, mixBlendMode: "screen",
+            filter: "blur(36px)",
             pointerEvents: "none", userSelect: "none", zIndex: 0,
           }}
         />
