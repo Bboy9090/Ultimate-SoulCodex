@@ -8,7 +8,7 @@
     <meta name="description" content="Understand how you think, react, and relate. Soul Codex maps your personality patterns using astrology, numerology, and behavioral analysis — in plain language you can actually use." />
     
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#7c3aed" />
+    <meta name="theme-color" content="#16161D" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Soul Codex" />
@@ -26,6 +26,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     
+    <!-- Unregister any stale service workers that may serve cached content -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var r of registrations) { r.unregister(); }
+        });
+        caches.keys().then(function(keys) {
+          keys.forEach(function(k) { caches.delete(k); });
+        });
+      }
+    </script>
+
     <!-- Microsoft Clarity Analytics -->
     <script type="text/javascript">
       (function(c,l,a,r,i,t,y){
