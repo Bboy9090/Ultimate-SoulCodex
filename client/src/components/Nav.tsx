@@ -3,7 +3,10 @@ import { Link, useLocation } from "wouter";
 
 function useMode() {
   const [mode, setMode] = useState<"beginner" | "advanced">(() => {
-    try { return (localStorage.getItem("soulMode") as any) ?? "beginner"; } catch { return "beginner"; }
+    try {
+      const stored = localStorage.getItem("soulMode");
+      return (stored === "advanced" ? "advanced" : "beginner");
+    } catch { return "beginner"; }
   });
 
   function toggle() {
@@ -14,6 +17,19 @@ function useMode() {
 
   return { mode, toggle };
 }
+
+const NAV_ICONS: Record<string, string> = {
+  "/start":     "◉",
+  "/profile":   "◆",
+  "/today":     "☽",
+  "/guide":     "◎",
+  "/tracker":   "▲",
+  "/timeline":  "◈",
+  "/codex":     "✦",
+  "/compat":    "⧫",
+  "/poster":    "⬡",
+  "/horoscope": "◌",
+};
 
 export default function Nav() {
   const [location] = useLocation();
@@ -31,22 +47,26 @@ export default function Nav() {
   ];
 
   const advancedLinks = [
-    { href: "/compat",    label: "Compat" },
-    { href: "/poster",    label: "Poster" },
-    { href: "/horoscope", label: "Chart"  },
+    { href: "/compat",    label: "Compat"  },
+    { href: "/poster",    label: "Poster"  },
+    { href: "/horoscope", label: "Chart"   },
   ];
 
   const appLinks = mode === "advanced" ? [...baseLinks, ...advancedLinks] : baseLinks;
 
-  return (
-    <nav className="navbar">
-      <div className="container navbar-content">
-        <Link href="/" className="navbar-brand">
-          <span style={{ fontSize: "1.5rem" }}>✦</span>
-          Soul Codex
-        </Link>
-
-        {isLanding ? (
+  /* ── Landing page: horizontal top bar ─────────────────────────────────── */
+  if (isLanding) {
+    return (
+      <nav className="navbar">
+        <div className="container navbar-content">
+          <Link href="/" className="navbar-brand">
+            <img
+              src="/soul-codex-logo.svg"
+              alt="Soul Codex"
+              style={{ width: 28, height: 28, filter: "drop-shadow(0 0 5px rgba(212,168,95,0.5))" }}
+            />
+            Soul Codex
+          </Link>
           <div className="navbar-nav" style={{ display: "flex", alignItems: "center", gap: 0 }}>
             {[
               { href: "#features", label: "Features" },
@@ -59,12 +79,12 @@ export default function Nav() {
                 style={{
                   fontSize: "0.875rem",
                   padding: "0.5rem 0.85rem",
-                  color: "var(--muted-foreground)",
+                  color: "var(--sc-text-muted)",
                   textDecoration: "none",
                   transition: "color 0.15s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--foreground)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted-foreground)")}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--sc-ivory)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--sc-text-muted)")}
               >
                 {link.label}
               </a>
@@ -78,53 +98,50 @@ export default function Nav() {
               </button>
             </Link>
           </div>
-        ) : (
-          <div className="navbar-nav" style={{ display: "flex", alignItems: "center", gap: 0 }}>
-            {appLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`btn btn-ghost${location === link.href ? " active-nav" : ""}`}
-                style={{
-                  fontSize: "0.875rem",
-                  padding: "0.5rem 0.85rem",
-                  color: location === link.href ? "var(--cosmic-lavender)" : "var(--muted-foreground)",
-                  borderBottom: location === link.href ? "2px solid var(--cosmic-purple)" : "2px solid transparent",
-                  borderRadius: 0,
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
+        </div>
+      </nav>
+    );
+  }
 
-            {/* Mode chip — Guided (default) vs Full (advanced) */}
-            <button
-              onClick={toggle}
-              title={mode === "beginner" ? "Switch to Full mode: adds Compat, Poster, Chart pages" : "Switch to Guided mode: hides advanced pages"}
-              style={{
-                marginLeft: "0.75rem",
-                padding: "0.28rem 0.85rem",
-                borderRadius: "99px",
-                border: "1.5px solid",
-                borderColor: mode === "advanced" ? "rgba(139,92,246,0.7)" : "rgba(139,92,246,0.25)",
-                background: mode === "advanced"
-                  ? "linear-gradient(135deg, rgba(124,58,237,0.55) 0%, rgba(139,92,246,0.45) 100%)"
-                  : "transparent",
-                color: mode === "advanced" ? "#f1f5f9" : "rgba(148,163,184,0.55)",
-                fontSize: "0.62rem",
-                fontWeight: 700,
-                letterSpacing: "0.07em",
-                lineHeight: 1,
-                cursor: "pointer",
-                transition: "all 0.2s",
-                boxShadow: mode === "advanced" ? "0 0 10px rgba(124,58,237,0.3)" : "none",
-              }}
-            >
-              {mode === "advanced" ? "Full" : "Guided"}
-            </button>
-          </div>
-        )}
-      </div>
+  /* ── App pages: sidebar nav ────────────────────────────────────────────── */
+  return (
+    <nav className="sc-sidebar">
+      {/* Brand mark */}
+      <Link href="/" className="sc-sidebar-brand">
+        <img src="/soul-codex-logo.svg" alt="Soul Codex logo" />
+        <span>Soul Codex</span>
+      </Link>
+
+      {/* Primary nav links */}
+      {appLinks.map((link) => {
+        const isActive = location === link.href;
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`sc-nav-item${isActive ? " sc-nav-active" : ""}`}
+          >
+            <span style={{ fontSize: "0.85rem", width: "1rem", textAlign: "center", flexShrink: 0 }}>
+              {NAV_ICONS[link.href] ?? "◦"}
+            </span>
+            <span>{link.label}</span>
+          </Link>
+        );
+      })}
+
+      <div className="sc-sidebar-divider" />
+
+      {/* Mode toggle */}
+      <button
+        onClick={toggle}
+        className={`sc-mode-toggle${mode === "advanced" ? " sc-mode-full" : ""}`}
+        title={mode === "beginner"
+          ? "Switch to Full mode: adds Compat, Poster, Chart"
+          : "Switch to Guided mode: hides advanced pages"}
+      >
+        <span>{mode === "advanced" ? "Full mode" : "Guided mode"}</span>
+        <span style={{ opacity: 0.55, fontSize: "0.7rem" }}>{mode === "advanced" ? "▾" : "▸"}</span>
+      </button>
     </nav>
   );
 }
