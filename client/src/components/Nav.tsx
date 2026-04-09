@@ -19,9 +19,8 @@ function useMode() {
 }
 
 const NAV_ICONS: Record<string, string> = {
-  "/start":     "◉",
+  "/":          "◉",
   "/profile":   "◆",
-  "/today":     "☽",
   "/guide":     "◎",
   "/tracker":   "▲",
   "/timeline":  "◈",
@@ -34,12 +33,10 @@ const NAV_ICONS: Record<string, string> = {
 export default function Nav() {
   const [location] = useLocation();
   const { mode, toggle } = useMode();
-  const isLanding = location === "/";
 
   const baseLinks = [
-    { href: "/start",    label: "Start"    },
+    { href: "/",         label: "Start"    },
     { href: "/profile",  label: "Profile"  },
-    { href: "/today",    label: "Today"    },
     { href: "/guide",    label: "Guide"    },
     { href: "/tracker",  label: "Tracker"  },
     { href: "/timeline", label: "Timeline" },
@@ -54,65 +51,13 @@ export default function Nav() {
 
   const appLinks = mode === "advanced" ? [...baseLinks, ...advancedLinks] : baseLinks;
 
-  /* ── Landing page: horizontal top bar ─────────────────────────────────── */
-  if (isLanding) {
-    return (
-      <nav className="navbar">
-        <div className="container navbar-content">
-          <Link href="/" className="navbar-brand">
-            <img
-              src="/soul-codex-logo.svg"
-              alt="Soul Codex"
-              style={{ width: 28, height: 28, filter: "drop-shadow(0 0 5px rgba(212,168,95,0.5))" }}
-            />
-            Soul Codex
-          </Link>
-          <div className="navbar-nav" style={{ display: "flex", alignItems: "center", gap: 0 }}>
-            {[
-              { href: "#features", label: "Features" },
-              { href: "#systems",  label: "Systems"  },
-              { href: "#pricing",  label: "Pricing"  },
-            ].map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                style={{
-                  fontSize: "0.875rem",
-                  padding: "0.5rem 0.85rem",
-                  color: "var(--sc-text-muted)",
-                  textDecoration: "none",
-                  transition: "color 0.15s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--sc-ivory)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--sc-text-muted)")}
-              >
-                {link.label}
-              </a>
-            ))}
-            <Link href="/start">
-              <button
-                className="btn btn-primary"
-                style={{ fontSize: "0.82rem", padding: "0.4rem 1.1rem", marginLeft: "0.5rem" }}
-              >
-                Get Started
-              </button>
-            </Link>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-
-  /* ── App pages: sidebar nav ────────────────────────────────────────────── */
   return (
     <nav className="sc-sidebar">
-      {/* Brand mark */}
       <Link href="/" className="sc-sidebar-brand">
         <img src="/soul-codex-logo.svg" alt="Soul Codex logo" />
         <span>Soul Codex</span>
       </Link>
 
-      {/* Primary nav links */}
       {appLinks.map((link) => {
         const isActive = location === link.href;
         return (
@@ -131,7 +76,6 @@ export default function Nav() {
 
       <div className="sc-sidebar-divider" />
 
-      {/* Mode toggle */}
       <button
         onClick={toggle}
         className={`sc-mode-toggle${mode === "advanced" ? " sc-mode-full" : ""}`}

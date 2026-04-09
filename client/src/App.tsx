@@ -1,4 +1,4 @@
-import { Route, Switch, useLocation } from "wouter";
+import { Route, Switch } from "wouter";
 import Nav from "./components/Nav";
 import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -14,10 +14,11 @@ import TimelinePage from "./pages/TimelinePage";
 
 const routes = (
   <Switch>
-    <Route path="/" component={LandingPage} />
+    <Route path="/" component={TodayPage} />
+    <Route path="/today" component={TodayPage} />
+    <Route path="/welcome" component={LandingPage} />
     <Route path="/start" component={OnboardingPage} />
     <Route path="/profile" component={ProfilePage} />
-    <Route path="/today" component={TodayPage} />
     <Route path="/guide" component={SoulGuidePage} />
     <Route path="/tracker" component={TrackerPage} />
     <Route path="/compat" component={CompatibilityPage} />
@@ -35,20 +36,6 @@ const routes = (
 );
 
 export default function App() {
-  const [location] = useLocation();
-  const isLanding = location === "/";
-
-  if (isLanding) {
-    return (
-      <>
-        <Nav />
-        <main style={{ flex: 1 }}>
-          {routes}
-        </main>
-      </>
-    );
-  }
-
   return (
     <div className="sc-app-shell">
       <Nav />
