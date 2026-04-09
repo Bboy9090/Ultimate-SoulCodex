@@ -1,0 +1,511 @@
+Use this in Replit to build the Soul Codex style you just approved.
+
+I’m giving you:
+	1.	a copy-paste Replit prompt
+	2.	a color token block
+	3.	a CSS starter
+	4.	a React/Tailwind-style page scaffold
+
+That way you’re not just waving a screenshot at the machine and hoping it develops taste.
+
+⸻
+
+1) Replit prompt
+
+You are updating an existing Soul Codex app.
+
+Goal:
+Recreate the approved visual direction for Soul Codex:
+
+Style:
+- Sacred Minimal foundation
+- Celestial Premium accents
+- elegant, premium, mystical, calm
+- not noisy, not childish, not generic SaaS
+- dark celestial atmosphere with warm gold highlights and soft glass cards
+
+Do NOT rebuild the whole app.
+Do NOT change backend logic.
+Do NOT change routes or data contracts.
+Focus on front-end visual redesign only.
+
+Design requirements:
+1. Background
+- Full-screen celestial sky background
+- deep plum / midnight / warm cosmic cloud tones
+- subtle star texture
+- soft glow, not harsh neon
+- content must remain readable
+
+2. Brand / logo area
+- centered Soul Codex wordmark
+- large elegant serif title
+- minimal radiant star inside a ring with a subtle crescent/orbit feel above the title
+- premium, mystical, symbolic
+
+3. Left navigation
+- translucent dark glass sidebar
+- rounded corners
+- soft border and shadow
+- simple icon + label rows
+- active item highlighted with warm gold
+
+4. Main cards
+Use premium glass cards:
+- slightly transparent
+- warm dark overlay
+- subtle border
+- soft glow/shadow
+- rounded 2xl corners
+- clean hierarchy
+- elegant serif section headings when appropriate
+
+5. Home / snapshot layout
+Build a homepage similar to the approved design:
+- Hero logo/title at top center
+- Left navigation
+- Main row with:
+  - Soul Snapshot card
+  - Energy Update card
+  - Daily Focus side card
+- Bottom row with:
+  - Growth Focus
+  - Inner Compass
+  - Connection Insight
+
+6. Typography
+- Serif for Soul Codex title and major mystical headings
+- Clean sans-serif for body and nav
+- text should feel refined and readable
+
+7. Color system
+Use this palette:
+- background ink: #16161D
+- deep celestial plum: #2A2038
+- dusk violet: #3B2E52
+- moon gold: #D4A85F
+- warm ivory: #F6F1E8
+- muted stone: #D9D0C3
+- soft glow rose: #B7848C
+- slate support: #5D6C84
+
+8. UI mood
+- premium reading room
+- celestial, but restrained
+- mystical intelligence, not fantasy game HUD
+- warm and elegant
+
+Tasks:
+- create reusable theme tokens
+- update shell/layout styling
+- style nav, cards, buttons, chips, title area
+- make the homepage visually match the approved concept
+- keep everything responsive
+
+Output:
+- list of files changed
+- summary of theme tokens added
+- summary of components styled
+- anything still missing to fully match the concept
+
+
+⸻
+
+2) Theme tokens
+
+Use this in your CSS or theme file.
+
+:root {
+  --sc-bg-ink: #16161D;
+  --sc-bg-plum: #2A2038;
+  --sc-bg-violet: #3B2E52;
+  --sc-gold: #D4A85F;
+  --sc-ivory: #F6F1E8;
+  --sc-stone: #D9D0C3;
+  --sc-rose: #B7848C;
+  --sc-slate: #5D6C84;
+
+  --sc-card-bg: rgba(31, 24, 43, 0.58);
+  --sc-card-border: rgba(244, 231, 212, 0.14);
+  --sc-sidebar-bg: rgba(20, 16, 30, 0.58);
+
+  --sc-text-main: #F6F1E8;
+  --sc-text-soft: #D9D0C3;
+  --sc-text-muted: #A89DAF;
+
+  --sc-shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --sc-shadow-glow: 0 0 30px rgba(212, 168, 95, 0.12);
+
+  --sc-radius-xl: 24px;
+  --sc-radius-lg: 18px;
+}
+
+
+⸻
+
+3) CSS starter
+
+Use this in your global stylesheet.
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--sc-text-main);
+  background:
+    radial-gradient(circle at 65% 20%, rgba(212, 168, 95, 0.18), transparent 18%),
+    radial-gradient(circle at 25% 35%, rgba(183, 132, 140, 0.16), transparent 16%),
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.06), transparent 12%),
+    linear-gradient(180deg, #20182b 0%, #16161D 100%);
+  min-height: 100vh;
+}
+
+.sc-app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sc-app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.7) 1px, transparent 1.5px);
+  background-size: 120px 120px;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.sc-sidebar {
+  background: var(--sc-sidebar-bg);
+  border: 1px solid var(--sc-card-border);
+  border-radius: var(--sc-radius-xl);
+  box-shadow: var(--sc-shadow-soft);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 22px 18px;
+  height: fit-content;
+  position: sticky;
+  top: 24px;
+}
+
+.sc-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--sc-text-soft);
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  transition: 180ms ease;
+}
+
+.sc-nav-item:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--sc-text-main);
+}
+
+.sc-nav-item.active {
+  color: var(--sc-gold);
+  background: rgba(212, 168, 95, 0.08);
+  border: 1px solid rgba(212, 168, 95, 0.18);
+}
+
+.sc-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sc-hero {
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.sc-logo-mark {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 168, 95, 0.25);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sc-shadow-glow);
+  position: relative;
+}
+
+.sc-logo-mark::before {
+  content: "✦";
+  font-size: 64px;
+  color: var(--sc-gold);
+  text-shadow: 0 0 24px rgba(212, 168, 95, 0.35);
+}
+
+.sc-title {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(48px, 6vw, 78px);
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  color: var(--sc-ivory);
+  text-shadow: 0 2px 20px rgba(0,0,0,0.25);
+  margin: 0;
+}
+
+.sc-subtle {
+  color: var(--sc-text-muted);
+}
+
+.sc-grid-top {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr 0.75fr;
+  gap: 20px;
+}
+
+.sc-grid-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.sc-card {
+  background: var(--sc-card-bg);
+  border: 1px solid var(--sc-card-border);
+  border-radius: var(--sc-radius-xl);
+  box-shadow: var(--sc-shadow-soft);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 22px;
+}
+
+.sc-card-title {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sc-ivory);
+  margin: 0 0 14px;
+}
+
+.sc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(212, 168, 95, 0.1);
+  border: 1px solid rgba(212, 168, 95, 0.18);
+  color: var(--sc-gold);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 168, 95, 0.18);
+  background: rgba(212, 168, 95, 0.08);
+  color: var(--sc-ivory);
+  text-decoration: none;
+  font-weight: 600;
+  transition: 180ms ease;
+}
+
+.sc-btn:hover {
+  background: rgba(212, 168, 95, 0.15);
+  transform: translateY(-1px);
+}
+
+.sc-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.sc-mini-block {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.sc-label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sc-text-muted);
+  margin-bottom: 8px;
+}
+
+.sc-value {
+  color: var(--sc-ivory);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .sc-app {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-sidebar {
+    position: relative;
+    top: 0;
+  }
+
+  .sc-grid-top,
+  .sc-grid-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+⸻
+
+4) React page scaffold
+
+Use this as a starting page/component.
+
+import React from "react";
+import "./soulcodex-theme.css";
+
+const navItems = ["Start", "Profile", "Guide", "Tracker", "Timeline", "Codex"];
+
+export default function SoulCodexHome() {
+  return (
+    <div className="sc-app">
+      <aside className="sc-sidebar">
+        {navItems.map((item, i) => (
+          <a
+            key={item}
+            href="#"
+            className={`sc-nav-item ${i === 0 ? "active" : ""}`}
+          >
+            <span>{i === 0 ? "✦" : "◦"}</span>
+            <span>{item}</span>
+          </a>
+        ))}
+      </aside>
+
+      <main className="sc-main">
+        <section className="sc-hero">
+          <div className="sc-logo-mark" />
+          <h1 className="sc-title">SOUL CODEX</h1>
+        </section>
+
+        <section className="sc-grid-top">
+          <div className="sc-card">
+            <h2 className="sc-card-title">Soul Snapshot</h2>
+            <div className="sc-chip">☾ Solar Catalyst</div>
+
+            <p style={{ fontSize: 28, margin: "16px 0 8px", fontWeight: 700 }}>
+              I ignite what others are afraid to start.
+            </p>
+
+            <div className="sc-mini-grid">
+              <div className="sc-mini-block">
+                <div className="sc-label">Who I Am</div>
+                <div className="sc-value">Lead with clear instinct and precision.</div>
+              </div>
+              <div className="sc-mini-block">
+                <div className="sc-label">Why Now</div>
+                <div className="sc-value">Slow the mental loops before they run you.</div>
+              </div>
+              <div className="sc-mini-block">
+                <div className="sc-label">Pattern to Watch</div>
+                <div className="sc-value">Mind speeds up under stress.</div>
+              </div>
+              <div className="sc-mini-block">
+                <div className="sc-label">One Move Today</div>
+                <div className="sc-value">Own the decision instead of circling it.</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="sc-card">
+            <h2 className="sc-card-title">Energy Update</h2>
+            <div className="sc-chip">Personal Year 9</div>
+            <p style={{ marginTop: 18, fontSize: 22, fontWeight: 700 }}>
+              Completion Phase
+            </p>
+            <p className="sc-subtle">
+              Closing the chapter to make space for what comes next.
+            </p>
+            <div style={{ marginTop: 22 }}>
+              <a className="sc-btn" href="#">
+                Explore Your Soul Map
+              </a>
+            </div>
+          </div>
+
+          <div className="sc-card">
+            <h2 className="sc-card-title">Daily Focus</h2>
+            <p style={{ fontSize: 28, margin: "10px 0 6px", fontWeight: 700 }}>
+              Trust Your Instincts
+            </p>
+            <p className="sc-subtle">
+              Follow the first spark before overthinking.
+            </p>
+            <div style={{ marginTop: 22 }}>
+              <a className="sc-btn" href="#">
+                Open Codex Reading
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section className="sc-grid-bottom">
+          <div className="sc-card">
+            <h2 className="sc-card-title">Growth Focus</h2>
+            <p>• Quiet the mental loops</p>
+            <p>• Own your choices</p>
+          </div>
+          <div className="sc-card">
+            <h2 className="sc-card-title">Inner Compass</h2>
+            <p style={{ fontSize: 24, fontWeight: 700 }}>The Diplomat</p>
+            <p className="sc-subtle">“I bend without breaking.”</p>
+          </div>
+          <div className="sc-card">
+            <h2 className="sc-card-title">Connection Insight</h2>
+            <p>Choose who you let in carefully.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+
+⸻
+
+5) What to tell Replit after pasting code
+
+Paste this too:
+
+Apply this style system to the Soul Codex home screen first.
+Do not redesign every page yet.
+Use the same tokens for nav, cards, buttons, and hero area.
+Keep the app elegant, celestial, and premium.
+
+
+⸻
+
+6) Best next move after this
+
+Once Replit gets the home screen close, then tell it to carry the same system into:
+	•	Profile
+	•	Today
+	•	Codex
+	•	Timeline
+
+Not all at once. One surface at a time, like civilized people pretending not to be on deadline.
+
+If you want, I can also give you:
+	•	a matching logo SVG
+	•	or a full Replit prompt that tells it exactly how to blend the logo into the background
