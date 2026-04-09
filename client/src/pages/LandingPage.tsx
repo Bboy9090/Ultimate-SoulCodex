@@ -119,15 +119,29 @@ export default function LandingPage() {
         />
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: 700 }}>
+
+          {/* ── Hero logo centerpiece ─────────────────────────────────────── */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.75rem" }}>
+            <img
+              src="/soul-codex-logo.svg"
+              alt="Soul Codex"
+              style={{
+                width: 88,
+                height: 88,
+                filter: "drop-shadow(0 0 22px rgba(212,168,95,0.5)) drop-shadow(0 0 8px rgba(212,168,95,0.25))",
+              }}
+            />
+          </div>
+
           {/* Eyebrow */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: "0.5rem",
             padding: "0.3rem 1rem", borderRadius: 99,
-            background: "rgba(139,92,246,0.12)",
-            border: "1px solid rgba(139,92,246,0.3)",
+            background: "rgba(212,168,95,0.08)",
+            border: "1px solid rgba(212,168,95,0.25)",
             fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase",
-            color: "var(--cosmic-lavender)", marginBottom: "2rem",
-            boxShadow: "0 0 20px rgba(139,92,246,0.15)",
+            color: "var(--sc-gold)", marginBottom: "1.5rem",
+            boxShadow: "0 0 16px rgba(212,168,95,0.12)",
           }}>
             <span>✦</span>
             <span>Free to start · No account required</span>
