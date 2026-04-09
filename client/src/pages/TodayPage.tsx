@@ -63,6 +63,89 @@ function getProfile() {
   } catch { return null; }
 }
 
+function WelcomeScreen({ onStart }: { onStart: () => void }) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "3rem 2rem",
+      textAlign: "center",
+    }}>
+      {/* Star logo */}
+      <img
+        src="/soul-codex-logo.svg"
+        alt="Soul Codex"
+        style={{
+          width: 140,
+          height: 140,
+          filter: "drop-shadow(0 0 40px rgba(212,168,95,0.65)) drop-shadow(0 0 80px rgba(200,130,60,0.30))",
+          marginBottom: "1.75rem",
+        }}
+      />
+
+      {/* Title */}
+      <h1 style={{
+        fontFamily: "var(--font-serif)",
+        fontSize: "clamp(1.6rem, 4vw, 2.5rem)",
+        letterSpacing: "0.25em",
+        textTransform: "uppercase",
+        color: "var(--sc-ivory)",
+        fontWeight: 500,
+        margin: "0 0 0.75rem",
+        lineHeight: 1.1,
+      }}>
+        Soul Codex
+      </h1>
+
+      {/* Tagline */}
+      <p style={{
+        fontFamily: "var(--font-serif)",
+        fontStyle: "italic",
+        fontSize: "clamp(0.95rem, 2vw, 1.15rem)",
+        color: "rgba(246,241,232,0.6)",
+        maxWidth: 420,
+        lineHeight: 1.7,
+        marginBottom: "2.5rem",
+      }}>
+        Your living map of who you are — drawn from the moment you arrived.
+      </p>
+
+      {/* Feature pills */}
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center", marginBottom: "2.75rem" }}>
+        {["Astrology", "Numerology", "Human Design", "Daily Guidance"].map((f) => (
+          <span key={f} style={{
+            padding: "0.3rem 0.85rem",
+            borderRadius: 99,
+            fontSize: "0.72rem",
+            letterSpacing: "0.06em",
+            background: "rgba(212,168,95,0.08)",
+            border: "1px solid rgba(212,168,95,0.22)",
+            color: "rgba(246,241,232,0.65)",
+          }}>
+            {f}
+          </span>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <button
+        className="btn btn-primary"
+        style={{ fontSize: "0.95rem", padding: "0.75rem 2.5rem", letterSpacing: "0.05em" }}
+        onClick={onStart}
+      >
+        Build My Profile
+      </button>
+
+      <p style={{ marginTop: "1rem", fontSize: "0.72rem", color: "rgba(246,241,232,0.3)", letterSpacing: "0.05em" }}>
+        Takes about 2 minutes
+      </p>
+    </div>
+  );
+}
+
 export default function TodayPage() {
   const [, navigate] = useLocation();
   const [card, setCard] = useState<TodayCard | null>(null);
@@ -126,26 +209,16 @@ export default function TodayPage() {
 
   if (error) {
     const noProfile = error.toLowerCase().includes("no profile") || error.toLowerCase().includes("onboarding");
+    if (noProfile) {
+      return <WelcomeScreen onStart={() => navigate("/start")} />;
+    }
     return (
       <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-        <div style={{ maxWidth: 420, width: "100%", background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderTop: `3px solid ${noProfile ? "var(--sc-gold)" : "#ef4444"}`, borderRadius: "var(--radius)", padding: "2rem 1.75rem", textAlign: "center" }}>
-          {noProfile ? (
-            <>
-              <div style={{ fontSize: "2rem", marginBottom: "1rem", color: "var(--sc-gold)", opacity: 0.7 }}>☽</div>
-              <h3 style={{ marginBottom: "0.5rem", fontSize: "1.1rem", fontWeight: 600 }}>Today's Reading needs your profile</h3>
-              <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.6, marginBottom: "1.5rem" }}>
-                Your daily card uses your birth data for moon phase, personal day, and a tailored signal.
-              </p>
-              <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>Build My Profile</button>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
-              <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Could not load today's card</h3>
-              <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>{error}</p>
-              <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => { setError(null); loadCard(); }}>Try Again</button>
-            </>
-          )}
+        <div style={{ maxWidth: 420, width: "100%", background: "rgba(28,18,10,0.72)", border: "1px solid rgba(212,168,95,0.18)", borderTop: "3px solid #ef4444", borderRadius: 12, padding: "2rem 1.75rem", textAlign: "center" }}>
+          <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
+          <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Could not load today's card</h3>
+          <p style={{ color: "var(--sc-text-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>{error}</p>
+          <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => { setError(null); loadCard(); }}>Try Again</button>
         </div>
       </div>
     );
