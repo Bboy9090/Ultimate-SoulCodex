@@ -19,15 +19,16 @@ function useMode() {
 }
 
 const NAV_ICONS: Record<string, string> = {
-  "/":          "◉",
-  "/profile":   "◆",
-  "/guide":     "◎",
-  "/tracker":   "▲",
-  "/timeline":  "◈",
-  "/codex":     "✦",
-  "/compat":    "⧫",
-  "/poster":    "⬡",
-  "/horoscope": "◌",
+  "/":           "◉",
+  "/profile":    "◆",
+  "/guide":      "◎",
+  "/tracker":    "▲",
+  "/timeline":   "◈",
+  "/codex":      "✦",
+  "/compat":     "⧫",
+  "/poster":     "⬡",
+  "/horoscope":  "◌",
+  "/blueprint":  "◈",
 };
 
 export default function Nav() {
@@ -44,9 +45,10 @@ export default function Nav() {
   ];
 
   const advancedLinks = [
-    { href: "/compat",    label: "Compat"  },
-    { href: "/poster",    label: "Poster"  },
-    { href: "/horoscope", label: "Chart"   },
+    { href: "/compat",     label: "Compat"     },
+    { href: "/poster",     label: "Poster"     },
+    { href: "/horoscope",  label: "Chart"      },
+    { href: "/blueprint",  label: "Blueprint"  },
   ];
 
   const appLinks = mode === "advanced" ? [...baseLinks, ...advancedLinks] : baseLinks;

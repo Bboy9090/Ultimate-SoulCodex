@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "wouter";
 import BirthChartPosterSVG, { type PosterData } from "../components/BirthChartPosterSVG";
 
 const ZODIAC_SIGNS = [
@@ -323,6 +324,13 @@ export default function PosterPage() {
             <p style={{ fontSize: "0.68rem", color: "rgba(246,241,232,0.35)", textAlign: "center", marginTop: "0.4rem", marginBottom: 0 }}>
               Natal chart · Big Three · Aspects · Human Design — AI written
             </p>
+          </div>
+
+          {/* Blueprint link */}
+          <div style={{ textAlign: "center", paddingTop: "0.85rem" }}>
+            <Link href="/blueprint" style={{ fontSize: "0.78rem", color: "var(--sc-gold)", opacity: 0.7, textDecoration: "none", letterSpacing: "0.04em" }}>
+              View Full Reading →
+            </Link>
           </div>
         </div>
 
