@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 
-const CACHE_KEY = "soulBlueprintReading";
+const CACHE_PREFIX = "soulBlueprintReading";
 
 const cardBase = {
   background: "rgba(28,18,10,0.72)",
@@ -51,19 +51,24 @@ function getProfile() {
   try { return JSON.parse(localStorage.getItem("soulProfile") ?? "{}"); } catch { return {}; }
 }
 
-function getCached(): CachedReading | null {
+function cacheKey(profile: any): string {
+  const id = profile?.id ?? profile?.userId ?? profile?.name ?? "anon";
+  return `${CACHE_PREFIX}:${id}`;
+}
+
+function getCached(profile: any): CachedReading | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(cacheKey(profile));
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
-function setCached(data: CachedReading) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+function setCached(profile: any, data: CachedReading) {
+  try { localStorage.setItem(cacheKey(profile), JSON.stringify(data)); } catch {}
 }
 
-function clearCached() {
-  try { localStorage.removeItem(CACHE_KEY); } catch {}
+function clearCached(profile: any) {
+  try { localStorage.removeItem(cacheKey(profile)); } catch {}
 }
 
 const SECTION_META: { key: keyof BlueprintSections; label: string; glyph: string; subtitle: (meta: BlueprintMeta) => string }[] = [
@@ -95,29 +100,37 @@ const LOCKED_FEATURES = [
 export default function BlueprintPage() {
   const [isPremium, setIsPremium]          = useState(false);
   const [premiumChecked, setPremiumChecked] = useState(false);
+  const [entitlementError, setEntitlementError] = useState(false);
   const [cached, setCachedState]           = useState<CachedReading | null>(null);
   const [generating, setGenerating]        = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [error, setError]                  = useState<string | null>(null);
   const [profile, setProfile]              = useState<any>(null);
 
+  const checkEntitlements = (p: any) => {
+    setEntitlementError(false);
+    fetch("/api/entitlements")
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then((d) => { if (d?.isPremium) setIsPremium(true); })
+      .catch((err) => {
+        console.warn("[blueprint] entitlements fetch failed:", err);
+        setEntitlementError(true);
+      })
+      .finally(() => setPremiumChecked(true));
+  };
+
   useEffect(() => {
     const p = getProfile();
     setProfile(p);
-    setCachedState(getCached());
-
-    fetch("/api/entitlements")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.isPremium) setIsPremium(true); })
-      .catch((err) => { console.warn("[blueprint] entitlements fetch failed:", err); })
-      .finally(() => setPremiumChecked(true));
+    setCachedState(getCached(p));
+    checkEntitlements(p);
   }, []);
 
   const hasProfile = !!(profile?.birthDate || profile?.dob || profile?.sunSign);
 
   const handleGenerate = async (force = false) => {
     if (!hasProfile) return;
-    if (force) clearCached();
+    if (force) clearCached(profile);
     setGenerating(true);
     setError(null);
     try {
@@ -139,7 +152,7 @@ export default function BlueprintPage() {
       }
       const json = await res.json();
       const data: CachedReading = { sections: json.sections, meta: json.meta, generatedAt: new Date().toISOString() };
-      setCached(data);
+      setCached(profile, data);
       setCachedState(data);
     } catch (err) {
       console.error("[blueprint] generate failed:", err);
@@ -201,6 +214,30 @@ export default function BlueprintPage() {
               Begin Your Soul Profile
             </button>
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Entitlement check failed (network/server error) ── */
+  if (premiumChecked && entitlementError && !isPremium) {
+    return (
+      <div style={{ padding: "3rem 1.5rem", maxWidth: 720, margin: "0 auto" }}>
+        <div style={{ ...cardBase, padding: "2.5rem", textAlign: "center" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⚡</div>
+          <h2 style={{ fontFamily: "var(--font-serif)", color: "var(--sc-gold)", marginBottom: "0.75rem" }}>
+            Connection error
+          </h2>
+          <p style={{ color: "rgba(246,241,232,0.55)", fontSize: "0.9rem", lineHeight: 1.65, marginBottom: "1.5rem" }}>
+            We couldn't verify your access level. Check your connection and try again.
+          </p>
+          <button
+            className="btn btn-primary"
+            style={{ fontSize: "0.9rem", padding: "0.75rem 2rem" }}
+            onClick={() => { setPremiumChecked(false); checkEntitlements(profile); }}
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
