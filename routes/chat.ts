@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { storage } from "../storage";
 import { streamChat, isGeminiAvailable } from "../gemini";
+import { entitlementService } from "../services/entitlement-service";
+
+const FREE_QUESTION_LIMIT = 2;
 
 export function registerChatRoutes(app: Express) {
   app.post("/api/chat/soul-guide", async (req, res) => {
@@ -17,9 +20,49 @@ export function registerChatRoutes(app: Express) {
         });
       }
 
-      const userId = (req as any).user?.id;
+      const userId   = (req as any).user?.id;
       const sessionId = (req as any).sessionID;
+      const session  = (req as any).session;
 
+      // ── Premium check ────────────────────────────────────────────────────
+      let isPremium = false;
+
+      // Owner bypass
+      const ownerProfileId = process.env.OWNER_PROFILE_ID;
+      if (ownerProfileId && userId) {
+        try {
+          const dbProfile = await storage.getProfileByUserId(userId);
+          if (dbProfile?.id === ownerProfileId) isPremium = true;
+        } catch (err) {
+          console.warn("[soul-guide] Owner profile lookup failed:", err);
+        }
+        if (!isPremium && userId === ownerProfileId) isPremium = true;
+      }
+
+      if (!isPremium) {
+        try {
+          const status = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+          isPremium = status.isPremium;
+        } catch (err) {
+          console.warn("[soul-guide] Entitlement check failed:", err);
+        }
+      }
+
+      // ── Usage gate ───────────────────────────────────────────────────────
+      if (!isPremium) {
+        const chatCount: number = session?.chatCount ?? 0;
+        if (chatCount >= FREE_QUESTION_LIMIT) {
+          return res.status(403).json({
+            error: "limit_reached",
+            used: chatCount,
+            limit: FREE_QUESTION_LIMIT,
+          });
+        }
+        // Increment before streaming so failed streams still count
+        if (session) session.chatCount = chatCount + 1;
+      }
+
+      // ── Profile context ──────────────────────────────────────────────────
       let profile: any = null;
       if (userId) {
         profile = await storage.getProfileByUserId(userId);
@@ -28,11 +71,11 @@ export function registerChatRoutes(app: Express) {
         profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
       }
 
-      // Use DB profile if found, otherwise fallback to profileContext from request
-      const systemInstruction = profile 
-        ? buildProfileContextPrompt(profile) 
+      const systemInstruction = profile
+        ? buildProfileContextPrompt(profile)
         : (profileContext ? buildProfileContextPrompt(profileContext) : buildGeneralPrompt());
 
+      // ── Stream ───────────────────────────────────────────────────────────
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
@@ -58,6 +101,38 @@ export function registerChatRoutes(app: Express) {
       if (!res.headersSent) {
         return res.status(500).json({ message: "An error occurred while connecting to your Soul Guide" });
       }
+    }
+  });
+
+  // Return current question usage for the session
+  app.get("/api/chat/soul-guide/usage", async (req, res) => {
+    try {
+      const userId    = (req as any).user?.id;
+      const sessionId = (req as any).sessionID;
+      const session   = (req as any).session;
+
+      let isPremium = false;
+      const ownerProfileId = process.env.OWNER_PROFILE_ID;
+      if (ownerProfileId && userId) {
+        try {
+          const dbProfile = await storage.getProfileByUserId(userId);
+          if (dbProfile?.id === ownerProfileId) isPremium = true;
+        } catch {}
+        if (!isPremium && userId === ownerProfileId) isPremium = true;
+      }
+      if (!isPremium) {
+        try {
+          const status = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+          isPremium = status.isPremium;
+        } catch {}
+      }
+
+      const used  = isPremium ? 0 : (session?.chatCount ?? 0);
+      const limit = FREE_QUESTION_LIMIT;
+      res.json({ isPremium, used, limit, remaining: isPremium ? null : Math.max(0, limit - used) });
+    } catch (err) {
+      console.error("[soul-guide usage]", err);
+      res.status(500).json({ error: "usage_check_failed" });
     }
   });
 }
