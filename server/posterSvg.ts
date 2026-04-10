@@ -102,8 +102,8 @@ function buildFreePosterSvg(data: PosterData): string {
     const path = `M ${x1} ${y1} A ${wheelR} ${wheelR} 0 0 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 0 0 ${ix2} ${iy2} Z`;
     const [gx, gy] = polarToXY(cx, cy, glyphR, startDeg + 15);
     const highlight = sign === data.sunSign || sign === data.moonSign || sign === data.risingSign;
-    return `<path d="${path}" fill="${highlight ? "#dbeafe" : segFills[i % 2]}" stroke="#9ca3af" stroke-width="0.7"/>
-     <text x="${gx}" y="${gy}" font-family="serif" font-size="21" fill="${highlight ? "#1e40af" : "#374151"}" text-anchor="middle" dominant-baseline="central" opacity="${highlight ? 1 : 0.7}">${ZODIAC_GLYPHS[i]}</text>`;
+    return `<path d="${path}" fill="${highlight ? "#e5e7eb" : segFills[i % 2]}" stroke="#9ca3af" stroke-width="0.7"/>
+     <text x="${gx}" y="${gy}" font-family="serif" font-size="21" fill="${highlight ? "#111827" : "#374151"}" text-anchor="middle" dominant-baseline="central" opacity="${highlight ? 1 : 0.7}">${ZODIAC_GLYPHS[i]}</text>`;
   }).join("");
 
   const planetDotsSvg = (data.planets ?? []).map(p => {
