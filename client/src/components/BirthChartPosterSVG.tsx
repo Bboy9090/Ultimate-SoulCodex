@@ -151,8 +151,8 @@ export default function BirthChartPosterSVG({
           const highlight  = isSunSign || isMoonSign || isRising;
           return (
             <g key={sign}>
-              <path d={path} fill={highlight ? "#dbeafe" : segFills[i % 2]} stroke="#9ca3af" strokeWidth={0.7} />
-              <text x={gx} y={gy} fontFamily="serif" fontSize={21} fill={highlight ? "#1e40af" : "#374151"}
+              <path d={path} fill={highlight ? "#e5e7eb" : segFills[i % 2]} stroke="#9ca3af" strokeWidth={0.7} />
+              <text x={gx} y={gy} fontFamily="serif" fontSize={21} fill={highlight ? "#111827" : "#374151"}
                 textAnchor="middle" dominantBaseline="central" opacity={highlight ? 1 : 0.7}>
                 {ZODIAC_GLYPH_LIST[i]}
               </text>
