@@ -66,82 +66,55 @@ function getProfile() {
 function WelcomeScreen({ onStart }: { onStart: () => void }) {
   return (
     <div style={{
-      minHeight: "100vh",
+      minHeight: "80vh",
       display: "flex",
-      flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      padding: "3rem 2rem",
-      textAlign: "center",
+      padding: "3rem 1.5rem",
     }}>
-      {/* Star logo */}
-      <img
-        src="/soul-codex-logo.svg"
-        alt="Soul Codex"
-        style={{
-          width: 140,
-          height: 140,
-          filter: "drop-shadow(0 0 40px rgba(212,168,95,0.65)) drop-shadow(0 0 80px rgba(200,130,60,0.30))",
-          marginBottom: "1.75rem",
-        }}
-      />
-
-      {/* Title */}
-      <h1 style={{
-        fontFamily: "var(--font-serif)",
-        fontSize: "clamp(1.6rem, 4vw, 2.5rem)",
-        letterSpacing: "0.25em",
-        textTransform: "uppercase",
-        color: "var(--sc-ivory)",
-        fontWeight: 500,
-        margin: "0 0 0.75rem",
-        lineHeight: 1.1,
-      }}>
-        Soul Codex
-      </h1>
-
-      {/* Tagline */}
-      <p style={{
-        fontFamily: "var(--font-serif)",
-        fontStyle: "italic",
-        fontSize: "clamp(0.95rem, 2vw, 1.15rem)",
-        color: "rgba(246,241,232,0.6)",
-        maxWidth: 420,
-        lineHeight: 1.7,
-        marginBottom: "2.5rem",
-      }}>
-        Your living map of who you are — drawn from the moment you arrived.
-      </p>
-
-      {/* Feature pills */}
-      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center", marginBottom: "2.75rem" }}>
-        {["Astrology", "Numerology", "Human Design", "Daily Guidance"].map((f) => (
-          <span key={f} style={{
-            padding: "0.3rem 0.85rem",
-            borderRadius: 99,
-            fontSize: "0.72rem",
-            letterSpacing: "0.06em",
-            background: "rgba(212,168,95,0.08)",
-            border: "1px solid rgba(212,168,95,0.22)",
-            color: "rgba(246,241,232,0.65)",
-          }}>
-            {f}
-          </span>
-        ))}
+      <div style={{ maxWidth: 460, width: "100%" }}>
+        <div style={{
+          background: "rgba(28,18,10,0.72)",
+          border: "1px solid rgba(212,168,95,0.18)",
+          borderTop: "3px solid rgba(212,168,95,0.6)",
+          borderRadius: 14,
+          padding: "2.25rem 2rem",
+          textAlign: "center",
+        }}>
+          <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "rgba(212,168,95,0.75)" }}>☽</div>
+          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.65rem", color: "var(--sc-ivory)" }}>
+            Your daily reading isn't ready yet
+          </h2>
+          <p style={{ color: "rgba(246,241,232,0.55)", fontSize: "0.875rem", lineHeight: 1.7, marginBottom: "1.25rem" }}>
+            Today's page shows your daily card, the active moon phase, and signals drawn from your behavioral and birth patterns. To generate it, we need your profile first.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.75rem", textAlign: "left" }}>
+            {[
+              { glyph: "◉", label: "Daily archetype card", desc: "A focused signal for who you're operating as today" },
+              { glyph: "☽", label: "Moon phase + transit", desc: "The cosmic context overlaying your patterns right now" },
+              { glyph: "✦", label: "Active behavioral signals", desc: "What your pressure and decision patterns say about today" },
+            ].map((item) => (
+              <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(212,168,95,0.04)", border: "1px solid rgba(212,168,95,0.1)", borderRadius: 8 }}>
+                <span style={{ color: "rgba(212,168,95,0.7)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
+                <span>
+                  <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block", color: "var(--sc-ivory)" }}>{item.label}</span>
+                  <span style={{ color: "rgba(246,241,232,0.45)", fontSize: "0.73rem" }}>{item.desc}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          <button
+            className="btn btn-primary"
+            style={{ width: "100%", fontSize: "0.9rem" }}
+            onClick={onStart}
+          >
+            Finish My Profile
+          </button>
+          <p style={{ marginTop: "0.75rem", fontSize: "0.7rem", color: "rgba(246,241,232,0.25)", letterSpacing: "0.04em" }}>
+            Takes about 2 minutes
+          </p>
+        </div>
       </div>
-
-      {/* CTA */}
-      <button
-        className="btn btn-primary"
-        style={{ fontSize: "0.95rem", padding: "0.75rem 2.5rem", letterSpacing: "0.05em" }}
-        onClick={onStart}
-      >
-        Build My Profile
-      </button>
-
-      <p style={{ marginTop: "1rem", fontSize: "0.72rem", color: "rgba(246,241,232,0.3)", letterSpacing: "0.05em" }}>
-        Takes about 2 minutes
-      </p>
     </div>
   );
 }
