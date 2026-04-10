@@ -65,6 +65,20 @@ export default function CompatibilityPage() {
     if (savedConf) setMyConfidence(JSON.parse(savedConf));
   }, []);
 
+  // Auto-save profile to backend on mount when we have birth data but no server ID
+  useEffect(() => {
+    if (myProfile && !myProfileId && (myProfile.name) && (myProfile.birthDate || myProfile.dob)) {
+      saveMyProfileMutation.mutate();
+    }
+  }, [myProfile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-compare first saved connection once both IDs are available
+  useEffect(() => {
+    if (myProfileId && persons.length > 0 && persons[0]?.id && !result && !compareMutation.isPending) {
+      compareMutation.mutate(String(persons[0].id));
+    }
+  }, [myProfileId, persons.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const flash = (fn: (v: string | null) => void, msg: string) => {
     fn(msg);
     setTimeout(() => fn(null), 3500);
@@ -72,22 +86,33 @@ export default function CompatibilityPage() {
 
   const saveMyProfileMutation = useMutation({
     mutationFn: async () => {
+      // Try onboarding data first, then fall back to stored soul profile
       const rawInputs = localStorage.getItem("onboardingData") || localStorage.getItem("soulUserInputs");
-      if (!rawInputs) throw new Error("Complete onboarding first to save your profile.");
-      const inputs = JSON.parse(rawInputs);
-      if (!inputs.name || !inputs.birthDate) throw new Error("Onboarding data is incomplete.");
+      let name: string | undefined, birthDate: string | undefined, birthTime: string | undefined, birthLocation: string | undefined;
+      if (rawInputs) {
+        const inputs = JSON.parse(rawInputs);
+        name = inputs.name; birthDate = inputs.birthDate;
+        birthTime = inputs.birthTime; birthLocation = inputs.birthLocation;
+      }
+      // Fall back to soulProfile values
+      const p = myProfile;
+      if (!name) name = p?.name;
+      if (!birthDate) birthDate = p?.birthDate ?? p?.dob;
+      if (!birthTime) birthTime = p?.birthTime;
+      if (!birthLocation) birthLocation = p?.birthLocation ?? p?.location ?? p?.city;
+
+      if (!name || !birthDate) throw new Error("Complete onboarding first to save your profile.");
       return apiRequest("/api/profiles", {
         method: "POST",
-        body: JSON.stringify({ name: inputs.name, birthDate: inputs.birthDate, birthTime: inputs.birthTime || undefined, birthLocation: inputs.birthLocation || undefined }),
+        body: JSON.stringify({ name, birthDate, birthTime: birthTime || undefined, birthLocation: birthLocation || undefined }),
       });
     },
     onSuccess: (data: any) => {
       const id = data.id?.toString();
       localStorage.setItem("soulMyProfileId", id);
       setMyProfileId(id);
-      flash(setSuccess, "Profile saved — ready to compare.");
     },
-    onError: (err: any) => flash(setError, err.message || "Failed to save profile"),
+    onError: (err: any) => console.warn("[compatibility] Auto-save profile failed:", err.message),
   });
 
   const addPersonMutation = useMutation({
@@ -184,7 +209,7 @@ export default function CompatibilityPage() {
             }}>◉</div>
             <div>
               <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--foreground)" }}>
-                {myProfile?.birth_data?.name || myProfile?.archetype?.name || "My Profile"}
+                {myProfile?.name || myProfile?.birth_data?.name || "My Profile"}
               </h3>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.3rem", alignItems: "center" }}>
                 {myProfile?.archetype?.element && (
@@ -215,7 +240,7 @@ export default function CompatibilityPage() {
 
         {/* Sun / Moon / Rising mini-row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
-          {([ ["Sun", myProfile?.astrology?.sunSign], ["Moon", myProfile?.astrology?.moonSign], ["Rising", myProfile?.astrology?.risingSign] ] as [string, string][]).map(([label, val]) => (
+          {([ ["Sun", myProfile?.sunSign ?? myProfile?.astrology?.sun ?? myProfile?.astrology?.sunSign], ["Moon", myProfile?.moonSign ?? myProfile?.astrology?.moon ?? myProfile?.astrology?.moonSign], ["Rising", myProfile?.risingSign ?? myProfile?.astrology?.rising ?? myProfile?.astrology?.risingSign] ] as [string, string][]).map(([label, val]) => (
             <div key={label} style={{ textAlign: "center" }}>
               <div style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted-foreground)", marginBottom: "0.2rem" }}>{label}</div>
               <div style={{ fontWeight: 500, fontSize: "0.9rem", color: val ? "var(--foreground)" : "var(--muted-foreground)" }}>{val || "—"}</div>
