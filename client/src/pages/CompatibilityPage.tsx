@@ -229,7 +229,12 @@ export default function CompatibilityPage() {
     const savedId = localStorage.getItem("soulMyProfileId");
     if (savedId) setMyProfileId(savedId);
     const savedPersons = localStorage.getItem("soulPersons");
-    if (savedPersons) setPersons(JSON.parse(savedPersons));
+    if (savedPersons) {
+      const parsed = JSON.parse(savedPersons);
+      setPersons(parsed);
+      // Auto-open the compare section when people are already saved
+      if (parsed.length > 0) setCompareOpen(true);
+    }
     const savedConf = localStorage.getItem("soulConfidence");
     if (savedConf) setMyConfidence(JSON.parse(savedConf));
   }, []);
@@ -240,13 +245,6 @@ export default function CompatibilityPage() {
       saveMyProfileMutation.mutate();
     }
   }, [myProfile]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-compare first saved person when profile is linked
-  useEffect(() => {
-    if (myProfileId && persons.length > 0 && persons[0]?.id && !result && !compareMutation.isPending) {
-      compareMutation.mutate(String(persons[0].id));
-    }
-  }, [myProfileId, persons.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch archetype matches whenever profile or mode changes
   const fetchMatches = useCallback(() => {
