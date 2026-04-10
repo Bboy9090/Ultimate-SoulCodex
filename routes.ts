@@ -15,6 +15,7 @@ import { calculateHumanDesign } from "./services/human-design";
 import { generateDailyInsights } from "./services/daily-insights";
 import { calculateCompatibility } from "./services/compatibility";
 import { generateCompatibilityInsights } from "./services/compatibility-insights";
+import { getMatchesByMode, type RelationshipMode } from "./services/archetype-matches";
 import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
 import { calculateVedicAstrology } from "./services/vedic-astrology";
 import { calculateGeneKeys } from "./services/gene-keys";
@@ -2129,6 +2130,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(horoscope);
     } catch (error) {
       return handleError(error, res, "GetDailyHoroscope");
+    }
+  });
+
+  // Archetype match rankings — pre-computed from user's own soul blueprint
+  app.post("/api/compatibility/archetype-matches", async (req, res) => {
+    try {
+      const { sunSign, lifePathNumber, hdType, mode = "love" } = req.body;
+      if (!sunSign) return res.status(400).json({ message: "sunSign is required" });
+      const result = getMatchesByMode(sunSign, lifePathNumber ? Number(lifePathNumber) : undefined, hdType, mode as RelationshipMode);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
     }
   });
 
