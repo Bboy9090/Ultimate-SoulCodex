@@ -12,8 +12,8 @@
   --cosmic-deep: #1C1628;
   --cosmic-dark: #221C32;
   --cosmic-medium: #2A2038;
-  --cosmic-purple: #3B2E52;
-  --cosmic-violet: #5A4580;
+  --cosmic-purple: #5C3A10;
+  --cosmic-violet: #7A5020;
   --cosmic-lavender: #D4A85F;
   --cosmic-pink: #C49450;
   --cosmic-rose: #E0C080;
@@ -64,14 +64,14 @@
   --radius-xl: 2rem;
   
   /* Shadows */
-  --shadow-glow: 0 0 40px rgba(124, 58, 237, 0.3);
-  --shadow-glow-strong: 0 0 60px rgba(124, 58, 237, 0.5);
+  --shadow-glow: 0 0 40px rgba(212, 168, 95, 0.3);
+  --shadow-glow-strong: 0 0 60px rgba(212, 168, 95, 0.5);
   --shadow-glow-pink: 0 0 40px rgba(236, 72, 153, 0.3);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
   
   /* Glass Effects */
   --glass-bg: rgba(15, 3, 32, 0.6);
-  --glass-border: rgba(139, 92, 246, 0.2);
+  --glass-border: rgba(212, 168, 95, 0.15);
   --glass-blur: blur(20px);
   
   /* Transitions */
@@ -142,14 +142,15 @@ body::before {
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(ellipse at 55% 10%, rgba(210, 140, 70, 0.52) 0%, transparent 45%),
-    radial-gradient(ellipse at 78% 45%, rgba(185, 110, 55, 0.38) 0%, transparent 38%),
-    radial-gradient(ellipse at 25% 55%, rgba(155, 85, 50, 0.28) 0%, transparent 42%),
-    radial-gradient(ellipse at 60% 80%, rgba(130, 65, 35, 0.35) 0%, transparent 40%),
-    radial-gradient(ellipse at 10% 25%, rgba(170, 95, 55, 0.22) 0%, transparent 35%),
-    radial-gradient(ellipse at 88% 15%, rgba(200, 130, 60, 0.25) 0%, transparent 32%),
-    radial-gradient(ellipse at 40% 65%, rgba(100, 50, 30, 0.4) 0%, transparent 50%),
-    linear-gradient(160deg, #1A0E07 0%, #221108 35%, #1C0E06 65%, #180C05 100%);
+    radial-gradient(ellipse 70% 55% at 55% 10%,  rgba(255, 175, 70, 0.78) 0%, rgba(210,130,40,0.48) 25%, transparent 52%),
+    radial-gradient(ellipse 55% 48% at 80% 45%,  rgba(230, 140, 55, 0.65) 0%, rgba(185,100,35,0.38) 32%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 22% 58%,  rgba(200, 110, 48, 0.55) 0%, rgba(160,78,32,0.32) 36%, transparent 58%),
+    radial-gradient(ellipse 50% 42% at 60% 82%,  rgba(178, 90, 38, 0.62) 0%, rgba(140,65,28,0.38) 38%, transparent 58%),
+    radial-gradient(ellipse 45% 40% at 10% 28%,  rgba(215,125,52,0.50) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 35% at 88% 18%,  rgba(245,160,55,0.48) 0%, transparent 48%),
+    radial-gradient(ellipse 65% 55% at 40% 68%,  rgba(155, 72, 30, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 25% at 58% 35%,  rgba(255,190,80, 0.22) 0%, transparent 50%),
+    linear-gradient(160deg, #0E0804 0%, #18100A 30%, #140D07 65%, #0E0804 100%);
   pointer-events: none;
   z-index: -1;
 }
@@ -225,12 +226,12 @@ body::after {
     radial-gradient(1.2px 1.2px at 83% 24%,   rgba(255,240,200,0.70), transparent),
     radial-gradient(1px 1px at 97% 59%,       rgba(255,225,170,0.62), transparent),
     /* Nebula clouds */
-    radial-gradient(ellipse 88% 68% at 10% 15%, rgba(215,130,45,0.75) 0%, rgba(185,95,30,0.45) 30%, transparent 62%),
-    radial-gradient(ellipse 68% 58% at 85% 55%, rgba(195,105,38,0.62) 0%, rgba(160,72,25,0.36) 36%, transparent 62%),
-    radial-gradient(ellipse 92% 44% at 50% 92%, rgba(168,78,30,0.68) 0%, rgba(135,55,20,0.38) 42%, transparent 65%),
-    radial-gradient(ellipse 55% 62% at 76% 8%,  rgba(238,158,58,0.48) 0%, transparent 55%),
-    radial-gradient(ellipse 62% 52% at 6% 78%,  rgba(180,85,38,0.55) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 34% at 44% 42%, rgba(248,180,70,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 88% 68% at 10% 15%, rgba(255,175,70,0.82) 0%, rgba(215,128,40,0.55) 28%, transparent 60%),
+    radial-gradient(ellipse 68% 58% at 85% 55%, rgba(235,145,55,0.72) 0%, rgba(190,105,35,0.42) 34%, transparent 60%),
+    radial-gradient(ellipse 92% 44% at 50% 92%, rgba(205,100,38,0.75) 0%, rgba(162,72,28,0.45) 40%, transparent 64%),
+    radial-gradient(ellipse 55% 62% at 76% 8%,  rgba(255,168,58,0.60) 0%, rgba(220,140,45,0.32) 40%, transparent 58%),
+    radial-gradient(ellipse 62% 52% at 6% 78%,  rgba(215,108,42,0.65) 0%, transparent 58%),
+    radial-gradient(ellipse 40% 34% at 44% 42%, rgba(255,200,80,0.20) 0%, transparent 50%),
     /* Deep space base */
     linear-gradient(175deg, #0A0603 0%, #110804 30%, #0E0703 60%, #0C0602 100%);
 }
@@ -419,11 +420,11 @@ a:hover {
 
 .input:focus {
   border-color: var(--cosmic-purple);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 0 3px rgba(212, 168, 95, 0.2);
 }
 
 .input:hover:not(:focus) {
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(212, 168, 95, 0.4);
 }
 
 .label {
@@ -495,7 +496,7 @@ a:hover {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
   font-size: 1.5rem;
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 0 20px rgba(212, 168, 95, 0.4);
 }
 
 .system-badge {
@@ -577,8 +578,8 @@ a:hover {
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.4); }
-  50% { box-shadow: 0 0 40px rgba(124, 58, 237, 0.8); }
+  0%, 100% { box-shadow: 0 0 20px rgba(212, 168, 95, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(212, 168, 95, 0.8); }
 }
 
 @keyframes shimmer {
@@ -899,7 +900,7 @@ a:hover {
 .system-tab.active {
   color: var(--foreground);
   background: var(--secondary);
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 0 20px rgba(212, 168, 95, 0.25);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -1005,14 +1006,14 @@ a:hover {
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  box-shadow: 0 4px 30px rgba(124, 58, 237, 0.5);
+  box-shadow: 0 4px 30px rgba(212, 168, 95, 0.5);
   transition: all var(--transition-base);
   z-index: 100;
 }
 
 .chat-button:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 40px rgba(124, 58, 237, 0.7);
+  box-shadow: 0 6px 40px rgba(212, 168, 95, 0.7);
 }
 
 .chat-button::before {
@@ -1134,7 +1135,7 @@ a:hover {
    Loading States
    ───────────────────────────────────────────────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, var(--muted) 0%, rgba(139, 92, 246, 0.2) 50%, var(--muted) 100%);
+  background: linear-gradient(90deg, var(--muted) 0%, rgba(212, 168, 95, 0.2) 50%, var(--muted) 100%);
   background-size: 1000px 100%;
   animation: shimmer 2s linear infinite;
   border-radius: var(--radius);
@@ -1282,12 +1283,12 @@ a:hover {
    Selection Styling
    ───────────────────────────────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(124, 58, 237, 0.4);
+  background: rgba(212, 168, 95, 0.4);
   color: white;
 }
 
 ::-moz-selection {
-  background: rgba(124, 58, 237, 0.4);
+  background: rgba(212, 168, 95, 0.4);
   color: white;
 }
 

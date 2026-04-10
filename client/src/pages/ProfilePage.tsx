@@ -150,7 +150,7 @@ function cleanBehavioralText(text: string): string {
 
 // ── Section visual config ────────────────────────────────────────────────────
 const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
-  who:      { glyph: "◉", accent: "#8b5cf6", bg: "rgba(139,92,246,0.07)" },
+  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(212,168,95,0.07)" },
   stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(245,158,11,0.06)" },
   relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(244,114,182,0.06)" },
   compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(34,211,238,0.06)" },
@@ -245,8 +245,8 @@ export default function ProfilePage() {
     {
       label: "Who I Am",
       value: firstSentence(cleanEssence),
-      accent: "#8b5cf6",
-      bg: "rgba(139,92,246,0.08)",
+      accent: "#D4A85F",
+      bg: "rgba(212,168,95,0.08)",
     },
     {
       label: "Why Now",
@@ -359,7 +359,7 @@ export default function ProfilePage() {
         <div style={{
           marginTop: "2rem",
           height: 1,
-          background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent)",
+          background: "linear-gradient(90deg, transparent, rgba(212,168,95,0.3), transparent)",
         }} />
       </section>
 
@@ -455,14 +455,14 @@ export default function ProfilePage() {
         display: "flex", alignItems: "center", gap: "1rem",
         marginBottom: "1.75rem", position: "relative", zIndex: 1,
       }}>
-        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.18))" }} />
+        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, rgba(212,168,95,0.18))" }} />
         <span style={{
           fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase",
           color: "var(--muted-foreground)", opacity: 0.45, whiteSpace: "nowrap",
         }}>
           Full Reading
         </span>
-        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(139,92,246,0.18), transparent)" }} />
+        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(212,168,95,0.18), transparent)" }} />
       </div>
 
       {/* ── Deep sections ────────────────────────────────────────────────── */}
@@ -582,8 +582,8 @@ function NatalBlueprint({ profile }: { profile: SoulProfile }) {
     <div style={{
       marginBottom: "2rem",
       padding: "1rem 1.1rem",
-      background: "rgba(139,92,246,0.04)",
-      border: "1px solid rgba(139,92,246,0.1)",
+      background: "rgba(212,168,95,0.04)",
+      border: "1px solid rgba(212,168,95,0.1)",
       borderRadius: "12px",
       position: "relative", zIndex: 1,
     }}>
@@ -592,7 +592,7 @@ function NatalBlueprint({ profile }: { profile: SoulProfile }) {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         {sun   && <BlueprintChip label="Sun"      value={`${SIGN_GLYPHS[sun] ?? ""} ${sun}`}     accent="#f59e0b" />}
-        {moon  && <BlueprintChip label="Moon"     value={`${SIGN_GLYPHS[moon] ?? ""} ${moon}`}   accent="#8b5cf6" />}
+        {moon  && <BlueprintChip label="Moon"     value={`${SIGN_GLYPHS[moon] ?? ""} ${moon}`}   accent="#D4A85F" />}
         {rising && <BlueprintChip label="Rising"  value={`${SIGN_GLYPHS[rising] ?? ""} ${rising}`} accent="#22d3ee" />}
         {lp    && <BlueprintChip label="Life Path" value={String(lp)}                             accent="#ec4899" />}
         {hdType && <BlueprintChip label="HD Type"  value={hdType}                                 accent="#22c55e" />}

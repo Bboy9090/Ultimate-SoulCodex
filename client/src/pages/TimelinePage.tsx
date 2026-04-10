@@ -36,7 +36,7 @@ interface YearData {
 
 const YEAR_DATA: Record<number, YearData> = {
   1: {
-    label: "New Cycle", glyph: "◎", color: "#8b5cf6",
+    label: "New Cycle", glyph: "◎", color: "#D4A85F",
     essence: "I'm planting seeds for a new 9-year chapter. This is the year to initiate, not refine.",
     why: [
       "I'm at the numerological start of a new 9-year cycle.",
@@ -141,7 +141,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 6 calls me to tend what matters — relationships, health, and commitments. The freedom I claim now shapes what I'm accountable for then.",
   },
   6: {
-    label: "Responsibility", glyph: "◉", color: "#8b5cf6",
+    label: "Responsibility", glyph: "◉", color: "#D4A85F",
     essence: "I'm in a year of tending. Home, health, and commitments reward showing up.",
     why: [
       "Year 6 shifts focus toward service, home, and what I owe to people I care about.",
@@ -234,12 +234,12 @@ interface MonthData {
 }
 
 const MONTH_DATA: Record<number, MonthData> = {
-  1: { label: "Initiation",   glyph: "◎", color: "#8b5cf6", note: "Fresh start energy. I act on instinct, not analysis." },
+  1: { label: "Initiation",   glyph: "◎", color: "#D4A85F", note: "Fresh start energy. I act on instinct, not analysis." },
   2: { label: "Patience",     glyph: "◌", color: "#22d3ee", note: "I wait, listen, and trust what is still germinating." },
   3: { label: "Expression",   glyph: "✦", color: "#f472b6", note: "I share, connect, and move creative work forward." },
   4: { label: "Discipline",   glyph: "◆", color: "#f59e0b", note: "I build methodically. I do the unsexy work." },
   5: { label: "Change",       glyph: "⬡", color: "#22c55e", note: "I disrupt what no longer fits. I move quickly." },
-  6: { label: "Tending",      glyph: "◉", color: "#8b5cf6", note: "I invest in relationships and responsibilities." },
+  6: { label: "Tending",      glyph: "◉", color: "#D4A85F", note: "I invest in relationships and responsibilities." },
   7: { label: "Depth",        glyph: "◈", color: "#22d3ee", note: "I go inward. I research, reflect, refine." },
   8: { label: "Leverage",     glyph: "◆", color: "#f59e0b", note: "I push the material goal. I make the ask." },
   9: { label: "Release",      glyph: "☽", color: "#f472b6", note: "I complete, forgive, and let go of what's done." },
@@ -303,7 +303,7 @@ export default function TimelinePage() {
         <div style={{
           background: "var(--glass-bg)",
           border: "1px solid var(--glass-border)",
-          borderTop: "3px solid var(--cosmic-purple)",
+          borderTop: "3px solid var(--sc-gold)",
           borderRadius: "var(--radius)",
           padding: "2.25rem 2rem",
           textAlign: "center",
@@ -321,7 +321,7 @@ export default function TimelinePage() {
               { glyph: "◉", label: "Active Personal Month", desc: "The specific frequency you're operating in this month" },
               { glyph: "◈", label: "What Opens Next", desc: "The transition approaching in your numerology arc" },
             ].map((item) => (
-              <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.12)", borderRadius: 8 }}>
+              <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(212,168,95,0.05)", border: "1px solid rgba(212,168,95,0.14)", borderRadius: 8 }}>
                 <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
                 <span>
                   <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block" }}>{item.label}</span>
@@ -421,19 +421,19 @@ export default function TimelinePage() {
       {/* ── Why This Phase ───────────────────────────────────────────────────── */}
       {yearData && (
         <div style={{
-          background: "rgba(15,20,40,0.5)",
-          border: "1px solid rgba(139,92,246,0.15)",
-          borderLeft: "3px solid #8b5cf6",
+          background: "var(--sc-card-bg)",
+          border: "1px solid rgba(212,168,95,0.18)",
+          borderLeft: "3px solid #D4A85F",
           borderRadius: "12px",
           padding: "1.25rem 1.5rem",
           marginBottom: "1.1rem",
         }}>
-          <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8b5cf6", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
+          <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#D4A85F", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
             ◉ Why This Phase Is Active
           </p>
           {yearData.why.map((line, i) => (
-            <p key={i} style={{ fontSize: "0.87rem", color: "rgba(220,215,255,0.82)", margin: "0 0 0.45rem", lineHeight: 1.65 }}>
-              <span style={{ color: "#8b5cf6", marginRight: "0.5rem", fontSize: "0.7rem" }}>▶</span>{line}
+            <p key={i} style={{ fontSize: "0.87rem", color: "rgba(246,241,232,0.82)", margin: "0 0 0.45rem", lineHeight: 1.65 }}>
+              <span style={{ color: "#D4A85F", marginRight: "0.5rem", fontSize: "0.7rem" }}>▶</span>{line}
             </p>
           ))}
         </div>
@@ -482,14 +482,14 @@ export default function TimelinePage() {
       {/* ── What Opens Next ──────────────────────────────────────────────────── */}
       {(nextMonthDat || yearData) && (
         <div style={{
-          background: "rgba(34,211,238,0.04)",
-          border: "1px solid rgba(34,211,238,0.18)",
-          borderLeft: "3px solid #22d3ee",
+          background: "rgba(212,168,95,0.04)",
+          border: "1px solid rgba(212,168,95,0.18)",
+          borderLeft: "3px solid #D4A85F",
           borderRadius: "12px",
           padding: "1.25rem 1.5rem",
           marginBottom: "1.5rem",
         }}>
-          <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#22d3ee", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
+          <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#D4A85F", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
             ◌ What Opens Next
           </p>
 
@@ -499,10 +499,10 @@ export default function TimelinePage() {
               display: "flex", alignItems: "flex-start", gap: "0.6rem",
               marginBottom: yearTurnsUrgent || yearTurnsNear ? "0.85rem" : 0,
             }}>
-              <span style={{ color: "#22d3ee", fontSize: "0.9rem", marginTop: "0.1rem", flexShrink: 0 }}>{nextMonthDat.glyph}</span>
-              <p style={{ fontSize: "0.87rem", color: "rgba(200,240,255,0.9)", margin: 0, lineHeight: 1.65 }}>
+              <span style={{ color: "#D4A85F", fontSize: "0.9rem", marginTop: "0.1rem", flexShrink: 0 }}>{nextMonthDat.glyph}</span>
+              <p style={{ fontSize: "0.87rem", color: "rgba(246,241,232,0.9)", margin: 0, lineHeight: 1.65 }}>
                 <strong>Month {nextPm} — {nextMonthDat.label}</strong><br />
-                <span style={{ color: "rgba(180,230,255,0.75)" }}>{nextMonthDat.note}</span>
+                <span style={{ color: "rgba(212,168,95,0.75)" }}>{nextMonthDat.note}</span>
               </p>
             </div>
           )}
@@ -510,14 +510,14 @@ export default function TimelinePage() {
           {/* Year transition — only show when approaching the boundary */}
           {yearData && nextYearNum && yearTurnsNear && (
             <div style={{
-              borderTop: "1px solid rgba(34,211,238,0.15)", paddingTop: "0.85rem",
+              borderTop: "1px solid rgba(212,168,95,0.15)", paddingTop: "0.85rem",
               display: "flex", alignItems: "flex-start", gap: "0.6rem",
             }}>
-              <span style={{ color: yearTurnsUrgent ? "#22c55e" : "#22d3ee", fontSize: "0.8rem", marginTop: "0.15rem", flexShrink: 0 }}>
+              <span style={{ color: yearTurnsUrgent ? "#22c55e" : "#D4A85F", fontSize: "0.8rem", marginTop: "0.15rem", flexShrink: 0 }}>
                 {yearTurnsUrgent ? "◉" : "→"}
               </span>
-              <p style={{ fontSize: "0.85rem", color: yearTurnsUrgent ? "rgba(200,255,210,0.9)" : "rgba(180,230,255,0.78)", margin: 0, lineHeight: 1.65 }}>
-                <strong style={{ color: yearTurnsUrgent ? "#22c55e" : "#22d3ee" }}>
+              <p style={{ fontSize: "0.85rem", color: yearTurnsUrgent ? "rgba(200,255,210,0.9)" : "rgba(246,241,232,0.82)", margin: 0, lineHeight: 1.65 }}>
+                <strong style={{ color: yearTurnsUrgent ? "#22c55e" : "#D4A85F" }}>
                   {yearTurnsUrgent
                     ? `Year ${nextYearNum} — ${YEAR_DATA[nextYearNum].label} opens ${monthsRemaining === 0 ? "this month" : "next month"}`
                     : `Year ${nextYearNum} — ${YEAR_DATA[nextYearNum].label} arrives in ${monthsRemaining} months`}
@@ -542,7 +542,7 @@ export default function TimelinePage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem", marginBottom: "1.75rem" }}>
           {todayCard.moonPhase && (
             <div style={{
-              background: "rgba(15,20,40,0.5)", border: "1px solid rgba(139,92,246,0.15)",
+              background: "var(--sc-card-bg)", border: "1px solid var(--sc-card-border)",
               borderRadius: "12px", padding: "1rem", textAlign: "center",
             }}>
               <div style={{ fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.35rem" }}>Moon Phase</div>
@@ -551,7 +551,7 @@ export default function TimelinePage() {
           )}
           {todayCard.personalDayNumber && (
             <div style={{
-              background: "rgba(15,20,40,0.5)", border: "1px solid rgba(139,92,246,0.15)",
+              background: "var(--sc-card-bg)", border: "1px solid var(--sc-card-border)",
               borderRadius: "12px", padding: "1rem", textAlign: "center",
             }}>
               <div style={{ fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.35rem" }}>Personal Day</div>
@@ -565,7 +565,7 @@ export default function TimelinePage() {
       <div style={{
         display: "flex", alignItems: "center", gap: "0.6rem",
         padding: "0.6rem 0.9rem",
-        border: "1px dashed rgba(139,92,246,0.15)",
+        border: "1px dashed rgba(212,168,95,0.15)",
         borderRadius: "10px",
         opacity: 0.45,
       }}>

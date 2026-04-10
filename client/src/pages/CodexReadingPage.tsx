@@ -28,7 +28,7 @@ interface CodexSynthesis {
 const SECTION_ACCENTS: Record<string, { color: string; glyph: string }> = {
   "CODENAME":   { color: "#fbbf24", glyph: "⧫" },
   "MOTTO":      { color: "#a78bfa", glyph: "◈" },
-  "WHO I AM":   { color: "#8b5cf6", glyph: "◉" },
+  "WHO I AM":   { color: "#D4A85F", glyph: "◉" },
   "HOW I MOVE": { color: "#f59e0b", glyph: "⬡" },
   "WHAT I WON": { color: "#f472b6", glyph: "◌" },
   "WHAT I'M B": { color: "#fbbf24", glyph: "◆" },
@@ -40,7 +40,7 @@ function getSectionAccent(header: string) {
   for (const [key, val] of Object.entries(SECTION_ACCENTS)) {
     if (upper.startsWith(key)) return val;
   }
-  return { color: "#8b5cf6", glyph: "◈" };
+  return { color: "#D4A85F", glyph: "◈" };
 }
 
 const SECTION_HEADERS = [
@@ -184,7 +184,7 @@ export default function CodexReadingPage() {
           <div style={{
             background: "var(--glass-bg)",
             border: "1px solid var(--glass-border)",
-            borderTop: `3px solid ${noProfile ? "var(--cosmic-purple)" : "#ef4444"}`,
+            borderTop: `3px solid ${noProfile ? "var(--sc-gold)" : "#ef4444"}`,
             borderRadius: "var(--radius)",
             padding: "2.25rem 2rem",
             textAlign: "center",
@@ -202,7 +202,7 @@ export default function CodexReadingPage() {
                     { glyph: "◉", label: "30-point pattern map", desc: "Your ranked signals across astrology, numerology, and more" },
                     { glyph: "✦", label: "First-person narrative", desc: "Your full synthesis written from your own voice" },
                   ].map((item) => (
-                    <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.12)", borderRadius: 8 }}>
+                    <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(212,168,95,0.04)", border: "1px solid rgba(212,168,95,0.12)", borderRadius: 8 }}>
                       <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
                       <span>
                         <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block" }}>{item.label}</span>
@@ -298,7 +298,7 @@ export default function CodexReadingPage() {
                         </span>
                         <div style={{
                           flex: 1, height: "6px", borderRadius: "99px",
-                          background: "rgba(139,92,246,0.12)",
+                          background: "rgba(212,168,95,0.12)",
                           overflow: "hidden", position: "relative",
                         }}>
                           <div style={{
@@ -306,8 +306,8 @@ export default function CodexReadingPage() {
                             width: `${pct}%`,
                             borderRadius: "99px",
                             background: isTop
-                              ? "linear-gradient(90deg, #8b5cf6, #ec4899)"
-                              : `rgba(139,92,246,${0.35 + (pct / 100) * 0.45})`,
+                              ? "linear-gradient(90deg, #D4A85F, #C49450)"
+                              : `rgba(212,168,95,${0.35 + (pct / 100) * 0.45})`,
                             transition: "width 0.4s ease",
                           }} />
                         </div>
@@ -333,8 +333,8 @@ export default function CodexReadingPage() {
                   <span key={t.tag} style={{
                     display: "inline-flex", alignItems: "center", gap: "0.35rem",
                     padding: "0.3rem 0.75rem",
-                    background: "rgba(139,92,246,0.1)",
-                    border: "1px solid rgba(139,92,246,0.25)",
+                    background: "rgba(212,168,95,0.1)",
+                    border: "1px solid rgba(212,168,95,0.25)",
                     borderRadius: "99px",
                     fontSize: "0.75rem",
                     color: "var(--cosmic-lavender)",
@@ -356,12 +356,12 @@ export default function CodexReadingPage() {
         {isPremium ? (
           /* Premium: all sections */
           sections.map((sec, i) => {
-            const accent = sec.header ? getSectionAccent(sec.header) : { color: "#8b5cf6", glyph: "◈" };
+            const accent = sec.header ? getSectionAccent(sec.header) : { color: "#D4A85F", glyph: "◈" };
             const isIdentity = i < 2;
             return (
               <div key={i} style={{
                 background: `rgba(15,25,40,0.55)`,
-                border: "1px solid rgba(139,92,246,0.12)",
+                border: "1px solid rgba(212,168,95,0.12)",
                 borderLeft: `3px solid ${accent.color}`,
                 borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
               }}>
@@ -403,7 +403,7 @@ export default function CodexReadingPage() {
               return (
                 <div key={`motto-${i}`} style={{
                   background: `rgba(15,25,40,0.55)`,
-                  border: "1px solid rgba(139,92,246,0.12)",
+                  border: "1px solid rgba(212,168,95,0.12)",
                   borderLeft: `3px solid ${accent.color}`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
                 }}>
@@ -440,20 +440,20 @@ export default function CodexReadingPage() {
               <div key={`who-${i}`} style={{ position: "relative", marginBottom: "1.5rem" }}>
                 <div style={{
                   background: `rgba(15,25,40,0.55)`,
-                  border: "1px solid rgba(139,92,246,0.12)",
-                  borderLeft: `3px solid #8b5cf6`,
+                  border: "1px solid rgba(212,168,95,0.12)",
+                  borderLeft: `3px solid #D4A85F`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem",
                   WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
                   maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
                 }}>
                   {sec.header && (
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                      <span style={{ color: "#8b5cf6", fontSize: "0.85rem", flexShrink: 0 }}>◉</span>
+                      <span style={{ color: "#D4A85F", fontSize: "0.85rem", flexShrink: 0 }}>◉</span>
                       <h2 style={{
                         fontFamily: "var(--font-serif)",
                         fontSize: "0.75rem",
                         letterSpacing: "0.1em", textTransform: "uppercase",
-                        color: "#8b5cf6", margin: 0,
+                        color: "#D4A85F", margin: 0,
                       }}>
                         {sec.header}
                       </h2>
@@ -529,8 +529,8 @@ export default function CodexReadingPage() {
       {/* ── Prescriptions (premium only) ─────────────────────────────────── */}
       {isPremium && synthesis.prescriptions.length > 0 && (
         <div style={{
-          background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.2)",
-          borderLeft: "3px solid #8b5cf6", borderRadius: "12px",
+          background: "rgba(212,168,95,0.07)", border: "1px solid rgba(212,168,95,0.2)",
+          borderLeft: "3px solid #D4A85F", borderRadius: "12px",
           padding: "1.4rem 1.5rem", marginBottom: "2rem",
         }}>
           <h3 style={{ fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cosmic-lavender)", marginBottom: "0.75rem" }}>
