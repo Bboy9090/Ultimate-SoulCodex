@@ -245,23 +245,25 @@ export default function CompatibilityPage() {
         {(nearLimit || atLimit) && (
           <div style={{
             padding: "0.75rem 1.1rem", marginBottom: "1rem",
-            background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)",
+            background: "rgba(212,168,95,0.07)", border: "1px solid rgba(212,168,95,0.28)",
             borderRadius: "10px", fontSize: "0.82rem",
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
           }}>
-            <span style={{ color: "var(--muted-foreground)" }}>
+            <span style={{ color: "rgba(246,241,232,0.6)" }}>
               {atLimit
                 ? `Free tier limit reached (${FREE_LIMIT} connections).`
                 : `${FREE_LIMIT - persons.length} connection slot remaining on the free tier.`}
             </span>
-            <span style={{
-              display: "inline-block", padding: "0.2rem 0.7rem",
-              background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)",
-              borderRadius: "99px", fontSize: "0.72rem", color: "var(--cosmic-lavender)",
-              whiteSpace: "nowrap", cursor: "pointer",
-            }}>
-              Upgrade ✦
-            </span>
+            <a href="/profile" style={{ textDecoration: "none" }}>
+              <span style={{
+                display: "inline-block", padding: "0.2rem 0.7rem",
+                background: "rgba(212,168,95,0.15)", border: "1px solid rgba(212,168,95,0.4)",
+                borderRadius: "99px", fontSize: "0.72rem", color: "var(--sc-gold, #D4A85F)",
+                whiteSpace: "nowrap", cursor: "pointer",
+              }}>
+                Upgrade ✦
+              </span>
+            </a>
           </div>
         )}
 
