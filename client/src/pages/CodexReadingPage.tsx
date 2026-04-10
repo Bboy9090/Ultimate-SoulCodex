@@ -168,28 +168,38 @@ export default function CodexReadingPage() {
     const noProfile = error.toLowerCase().includes("no profile") || error.toLowerCase().includes("onboarding");
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-        <div style={{ maxWidth: 440, width: "100%" }}>
+        <div style={{ maxWidth: 460, width: "100%" }}>
           <div style={{
             background: "var(--glass-bg)",
             border: "1px solid var(--glass-border)",
             borderTop: `3px solid ${noProfile ? "var(--cosmic-purple)" : "#ef4444"}`,
             borderRadius: "var(--radius)",
-            padding: "2rem 1.75rem",
+            padding: "2.25rem 2rem",
             textAlign: "center",
           }}>
             {noProfile ? (
               <>
-                <div style={{ fontSize: "1.75rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.7 }}>◈</div>
-                <h3 style={{ marginBottom: "0.5rem", fontSize: "1.1rem", fontWeight: 600 }}>Your Codex needs a profile first</h3>
-                <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.65, marginBottom: "0.75rem" }}>
-                  Your Codex Reading is a 30-point synthesis that assigns you a codename, a first-person narrative, and a ranked map of your core patterns across 15+ systems.
+                <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.75 }}>◈</div>
+                <h3 style={{ marginBottom: "0.65rem", fontSize: "1.15rem", fontWeight: 600 }}>Your Codex isn't unlocked yet</h3>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.7, marginBottom: "1.25rem" }}>
+                  The Codex is a 30-point synthesis that gives you a codename, a first-person narrative, and a ranked map of your core patterns across 15+ systems — astrology, numerology, Human Design, and behavioral archetypes. It needs your profile to generate.
                 </p>
-                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-                  {["Codename", "30-pt synthesis", "Core narrative"].map((f) => (
-                    <span key={f} style={{ padding: "0.2rem 0.6rem", borderRadius: 99, fontSize: "0.7rem", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "var(--cosmic-lavender)" }}>{f}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.75rem", textAlign: "left" }}>
+                  {[
+                    { glyph: "◈", label: "Your codename", desc: "A single word that distills your core operating pattern" },
+                    { glyph: "◉", label: "30-point pattern map", desc: "Your ranked signals across astrology, numerology, and more" },
+                    { glyph: "✦", label: "First-person narrative", desc: "Your full synthesis written from your own voice" },
+                  ].map((item) => (
+                    <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.12)", borderRadius: 8 }}>
+                      <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
+                      <span>
+                        <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block" }}>{item.label}</span>
+                        <span style={{ color: "var(--muted-foreground)", fontSize: "0.73rem" }}>{item.desc}</span>
+                      </span>
+                    </div>
                   ))}
                 </div>
-                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>Build My Profile</button>
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>Finish My Profile</button>
               </>
             ) : (
               <>
