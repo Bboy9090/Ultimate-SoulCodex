@@ -26,11 +26,11 @@
   /* Semantic Colors */
   --background: var(--cosmic-void);
   --foreground: #f8fafc;
-  --card: rgba(28, 22, 40, 0.82);
+  --card: rgba(26, 16, 8, 0.82);
   --card-foreground: var(--sc-ivory);
-  --popover: rgba(32, 24, 46, 0.96);
+  --popover: rgba(28, 16, 8, 0.96);
   --popover-foreground: var(--sc-ivory);
-  --primary: var(--cosmic-purple);
+  --primary: var(--sc-gold);
   --primary-foreground: var(--sc-ivory);
   --secondary: rgba(212, 168, 95, 0.08);
   --secondary-foreground: var(--sc-gold);
@@ -45,7 +45,7 @@
   --ring: var(--sc-gold);
   
   /* Chart Colors */
-  --chart-1: var(--cosmic-purple);
+  --chart-1: var(--sc-gold);
   --chart-2: var(--cosmic-pink);
   --chart-3: var(--cosmic-cyan);
   --chart-4: var(--cosmic-gold);
@@ -70,7 +70,7 @@
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
   
   /* Glass Effects */
-  --glass-bg: rgba(15, 3, 32, 0.6);
+  --glass-bg: rgba(22, 12, 5, 0.68);
   --glass-border: rgba(212, 168, 95, 0.15);
   --glass-blur: blur(20px);
   
@@ -102,7 +102,7 @@
   --sc-radius-lg:   18px;
 
   /* Override glass variables with warm palette */
-  --glass-bg:     rgba(28, 20, 42, 0.65);
+  --glass-bg:     rgba(26, 14, 7, 0.72);
   --glass-border: rgba(212, 168, 95, 0.14);
   --shadow-glow:  0 0 40px rgba(212, 168, 95, 0.18);
   --shadow-glow-strong: 0 0 60px rgba(212, 168, 95, 0.28);
@@ -270,7 +270,7 @@ a {
 }
 
 a:hover {
-  color: var(--cosmic-purple);
+  color: #D4A85F;
 }
 
 /* Gradient Text — warm gold/ivory register */
@@ -419,7 +419,7 @@ a:hover {
 }
 
 .input:focus {
-  border-color: var(--cosmic-purple);
+  border-color: rgba(212, 168, 95, 0.6);
   box-shadow: 0 0 0 3px rgba(212, 168, 95, 0.2);
 }
 
@@ -494,7 +494,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   font-size: 1.5rem;
   box-shadow: 0 0 20px rgba(212, 168, 95, 0.4);
 }
@@ -705,7 +705,7 @@ a:hover {
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, var(--cosmic-purple) 0%, transparent 60%);
+  background: radial-gradient(circle at 30% 30%, rgba(212,168,95,0.35) 0%, transparent 60%);
   filter: blur(80px);
   opacity: 0.3;
   animation: float 8s ease-in-out infinite;
@@ -773,7 +773,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   font-size: 1.75rem;
   box-shadow: var(--shadow-glow);
 }
@@ -835,7 +835,7 @@ a:hover {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -926,7 +926,7 @@ a:hover {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-violet) 100%);
+  background: linear-gradient(135deg, rgba(212,168,95,0.22) 0%, rgba(212,168,95,0.1) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -969,7 +969,7 @@ a:hover {
   width: 3rem;
   height: 3rem;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -999,7 +999,7 @@ a:hover {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   border: none;
   cursor: pointer;
   display: flex;
@@ -1021,7 +1021,7 @@ a:hover {
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-pink), var(--cosmic-cyan));
+  background: linear-gradient(135deg, #C49450, #D4A85F, #22d3ee);
   z-index: -1;
   opacity: 0;
   transition: opacity var(--transition-base);
@@ -1085,7 +1085,7 @@ a:hover {
 
 .chat-message.user {
   align-self: flex-end;
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-violet) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   color: white;
 }
 
@@ -1114,12 +1114,12 @@ a:hover {
 }
 
 .chat-input:focus {
-  border-color: var(--cosmic-purple);
+  border-color: rgba(212, 168, 95, 0.6);
 }
 
 .chat-send {
   padding: 0.75rem;
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   border: none;
   border-radius: var(--radius);
   color: white;
@@ -1145,7 +1145,7 @@ a:hover {
   width: 40px;
   height: 40px;
   border: 3px solid var(--muted);
-  border-top-color: var(--cosmic-purple);
+  border-top-color: rgba(212, 168, 95, 0.6);
   border-radius: 50%;
   animation: spin-slow 0.8s linear infinite;
 }
@@ -1154,7 +1154,7 @@ a:hover {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-pink) 100%);
+  background: linear-gradient(135deg, #B8893E 0%, #D4A85F 100%);
   animation: pulse-glow 2s ease-in-out infinite, float 3s ease-in-out infinite;
 }
 
@@ -1265,7 +1265,7 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--cosmic-purple);
+  background: rgba(212, 168, 95, 0.4);
   border-radius: 4px;
 }
 
@@ -1276,7 +1276,7 @@ a:hover {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--cosmic-purple) var(--cosmic-void);
+  scrollbar-color: rgba(212, 168, 95, 0.4) var(--cosmic-void);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
