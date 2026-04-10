@@ -21,7 +21,9 @@ const goldHeading = {
 
 interface BlueprintSections {
   lifePath:    string;
-  bigThree:    string;
+  sun:         string;
+  moon:        string;
+  rising:      string;
   humanDesign: string;
   geneKeys:    string;
   enneagram:   string;
@@ -65,15 +67,17 @@ function clearCached() {
 }
 
 const SECTION_META: { key: keyof BlueprintSections; label: string; glyph: string; subtitle: (meta: BlueprintMeta) => string }[] = [
-  { key: "lifePath",    label: "Life Path",           glyph: "◈", subtitle: m => `${m.lpNum} · ${m.lpArchetype}` },
-  { key: "bigThree",    label: "Big Three",            glyph: "☽", subtitle: m => `Sun ${m.sun}  ·  Moon ${m.moon}  ·  Rising ${m.rising}` },
-  { key: "humanDesign", label: "Human Design",         glyph: "⬡", subtitle: m => `${m.hdType}  ·  ${m.hdAuth} Authority  ·  ${m.hdProf} Profile` },
-  { key: "geneKeys",    label: "Gene Keys",            glyph: "✦", subtitle: _ => "Contemplative activation layer" },
-  { key: "enneagram",   label: "Enneagram",            glyph: "◉", subtitle: m => `Type ${m.ennType}` },
-  { key: "planets",     label: "Planetary Placements", glyph: "☉", subtitle: _ => "Natal chart · planetary layers" },
-  { key: "chiron",      label: "Chiron",               glyph: "⚷", subtitle: m => `In ${m.chirPl}` },
-  { key: "nodes",       label: "North & South Nodes",  glyph: "☊", subtitle: m => `North ${m.northN}  ·  South ${m.southN}` },
-  { key: "lifeTheme",   label: "Life Theme",           glyph: "◌", subtitle: _ => "Synthesis · overarching pattern" },
+  { key: "lifePath",    label: "Life Path",                  glyph: "◈", subtitle: m => `${m.lpNum} · ${m.lpArchetype}` },
+  { key: "sun",         label: "Sun Sign",                   glyph: "☉", subtitle: m => `Sun in ${m.sun}` },
+  { key: "moon",        label: "Moon Sign",                  glyph: "☽", subtitle: m => `Moon in ${m.moon}` },
+  { key: "rising",      label: "Rising Sign",                glyph: "↑", subtitle: m => `Rising ${m.rising}` },
+  { key: "humanDesign", label: "Human Design",               glyph: "⬡", subtitle: m => `${m.hdType}  ·  ${m.hdAuth} Authority  ·  ${m.hdProf} Profile` },
+  { key: "geneKeys",    label: "Gene Keys",                  glyph: "✦", subtitle: _ => "Contemplative activation layer" },
+  { key: "enneagram",   label: "Enneagram",                  glyph: "◉", subtitle: m => `Type ${m.ennType}` },
+  { key: "planets",     label: "Planetary Placements + Houses", glyph: "☿", subtitle: _ => "Natal chart · planets + house positions" },
+  { key: "chiron",      label: "Chiron",                     glyph: "⚷", subtitle: m => `In ${m.chirPl}` },
+  { key: "nodes",       label: "North & South Nodes",        glyph: "☊", subtitle: m => `North ${m.northN}  ·  South ${m.southN}` },
+  { key: "lifeTheme",   label: "Life Theme",                 glyph: "◌", subtitle: _ => "Synthesis · overarching pattern" },
 ];
 
 const LOCKED_FEATURES = [
@@ -105,7 +109,7 @@ export default function BlueprintPage() {
     fetch("/api/entitlements")
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.isPremium) setIsPremium(true); })
-      .catch(() => {})
+      .catch((err) => { console.warn("[blueprint] entitlements fetch failed:", err); })
       .finally(() => setPremiumChecked(true));
   }, []);
 
@@ -137,7 +141,8 @@ export default function BlueprintPage() {
       const data: CachedReading = { sections: json.sections, meta: json.meta, generatedAt: new Date().toISOString() };
       setCached(data);
       setCachedState(data);
-    } catch {
+    } catch (err) {
+      console.error("[blueprint] generate failed:", err);
       setError("Network error. Check your connection and try again.");
     } finally {
       setGenerating(false);
@@ -174,8 +179,9 @@ export default function BlueprintPage() {
       a.download = `${(profile.name || "Soul_Codex").replace(/\s+/g, "_")}_Natal_Chart.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {}
-    finally { setDownloadingPdf(false); }
+    } catch (err) {
+      console.error("[blueprint] PDF download failed:", err);
+    } finally { setDownloadingPdf(false); }
   };
 
   /* ── No profile ── */
