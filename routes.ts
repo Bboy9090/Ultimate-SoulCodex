@@ -3080,6 +3080,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── Full Cosmic Blueprint — premium AI reading per modality ─────────────
+  app.post("/api/blueprint/generate", async (req: any, res) => {
+    try {
+      const { profile } = req.body;
+      if (!profile) return res.status(400).json({ error: "profile required" });
+
+      // Premium gate: OWNER_PROFILE_ID bypass first, then entitlement check
+      const ownerProfileId = process.env.OWNER_PROFILE_ID;
+      const userId    = req.user?.id;
+      const sessionId = req.sessionID;
+      let isPremium   = false;
+
+      if (ownerProfileId && (userId === ownerProfileId || profile?.id === ownerProfileId || profile?.profileId === ownerProfileId)) {
+        isPremium = true;
+      } else if (userId || sessionId) {
+        try {
+          const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+          isPremium = entStatus.isPremium;
+        } catch {}
+      }
+
+      if (!isPremium) {
+        return res.status(403).json({ error: "premium_required" });
+      }
+
+      const num  = profile.numerology ?? {};
+      const astro = profile.astrology ?? profile.natalChart ?? {};
+      const hd   = profile.humanDesign ?? profile.human_design ?? {};
+      const gk   = profile.geneKeys ?? profile.gene_keys ?? {};
+      const enn  = profile.enneagram ?? {};
+      const name = profile.name ?? "the seeker";
+
+      const lpNum      = num.lifePathNumber ?? profile.lifePathNumber ?? "unknown";
+      const lpArchetype = { 1:"Pioneer",2:"Diplomat",3:"Communicator",4:"Builder",5:"Explorer",6:"Nurturer",7:"Seeker",8:"Executive",9:"Humanitarian",11:"Intuitive",22:"Master Builder",33:"Teacher" }[lpNum as number] ?? "Pathfinder";
+      const sun     = astro.sun     ?? profile.sunSign    ?? "unknown";
+      const moon    = astro.moon    ?? profile.moonSign   ?? "unknown";
+      const rising  = astro.rising  ?? profile.risingSign ?? "unknown";
+      const hdType  = hd.type       ?? "unknown";
+      const hdAuth  = hd.authority  ?? "";
+      const hdProf  = hd.profile    ?? "";
+      const chirPl  = astro.planets?.chiron?.sign ?? astro.chiron ?? "unknown";
+      const northN  = astro.planets?.north_node?.sign ?? astro.northNode ?? "unknown";
+      const southN  = astro.planets?.south_node?.sign ?? astro.southNode ?? "unknown";
+      const ennType = enn.type ?? enn.enneagramType ?? profile.enneagramType ?? "unknown";
+      const gkArr: string[] = Array.isArray(gk) ? gk.slice(0,3).map((g:any) => `Gate ${g.gate ?? g}`).filter(Boolean) : gk.gates ? (gk.gates as any[]).slice(0,3).map((g:any) => `Gate ${g}`) : [];
+
+      const planetSummary = Object.entries(astro.planets ?? {}).slice(0,5).map(([planet, p]: [string,any]) => `${planet} in ${p.sign ?? "?"}`).join(", ");
+
+      const sectionPrompt = `You are the inner voice of a soul-profile system. Write behavioral, first-person, present-tense interpretations (2–3 sentences each) for each modality below about ${name}. Be specific, honest, and grounded — no vague affirmations, no spiritual clichés, no "you are powerful/special" filler. Write as if you already know how this person actually moves through the world.
+
+Profile data:
+- Life Path ${lpNum} — ${lpArchetype}
+- Sun: ${sun}, Moon: ${moon}, Rising: ${rising}
+- Human Design: ${hdType} / ${hdAuth} Authority / ${hdProf} Profile
+- Chiron: ${chirPl}
+- North Node: ${northN}, South Node: ${southN}
+- Enneagram: Type ${ennType}
+- Gene Keys highlighted: ${gkArr.join(", ") || "not specified"}
+- Key planetary placements: ${planetSummary || "not specified"}
+
+Return ONLY valid JSON (no markdown fences) with these exact keys:
+{
+  "lifePath": "...",
+  "bigThree": "...",
+  "humanDesign": "...",
+  "geneKeys": "...",
+  "enneagram": "...",
+  "planets": "...",
+  "chiron": "...",
+  "nodes": "...",
+  "lifeTheme": "..."
+}
+Each value: 2–3 sentences. First person. Behavioral. No banned phrases.`;
+
+      let sections: Record<string, string> = {};
+
+      if (isGeminiAvailable()) {
+        const raw = await generateText({ model: "gemini-2.5-flash", prompt: sectionPrompt, temperature: 0.78 });
+        try {
+          const cleaned = raw.replace(/^```[a-z]*\n?/,"").replace(/```$/,"").trim();
+          sections = JSON.parse(cleaned);
+        } catch {
+          sections = { lifeTheme: raw };
+        }
+      }
+
+      // Fallback stubs if AI is unavailable
+      const fallback = (key: string, label: string) => sections[key] || `My ${label} shapes how I move through the world in patterns I'm still learning to read.`;
+      sections = {
+        lifePath:    fallback("lifePath",    `Life Path ${lpNum}`),
+        bigThree:    fallback("bigThree",    `Sun in ${sun}, Moon in ${moon}, Rising ${rising}`),
+        humanDesign: fallback("humanDesign", `HD ${hdType}`),
+        geneKeys:    fallback("geneKeys",    "Gene Keys"),
+        enneagram:   fallback("enneagram",   `Enneagram Type ${ennType}`),
+        planets:     fallback("planets",     "Planetary Placements"),
+        chiron:      fallback("chiron",      `Chiron in ${chirPl}`),
+        nodes:       fallback("nodes",       `Nodes (${northN} / ${southN})`),
+        lifeTheme:   fallback("lifeTheme",   "Life Theme"),
+      };
+
+      return res.json({ ok: true, sections, meta: { sun, moon, rising, lpNum, lpArchetype, hdType, hdAuth, hdProf, chirPl, northN, southN, ennType } });
+    } catch (error) {
+      return handleError(error, res, "BlueprintGenerate");
+    }
+  });
+
   // ── Natal Chart + Human Design PDF report ───────────────────────────────
   app.post("/api/natal-report", async (req, res) => {
     try {
