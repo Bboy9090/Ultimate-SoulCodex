@@ -88,7 +88,7 @@ const cardStyle: CSSProperties = {
 
 export default function LandingPage() {
   return (
-    <div style={{ minHeight: "100vh", overflowX: "hidden", background: "transparent" }}>
+    <div className="landing-nebula" style={{ minHeight: "100vh", overflowX: "hidden", position: "relative" }}>
 
       {/* ── Top nav ─────────────────────────────────────────────────────────── */}
       <header style={{
