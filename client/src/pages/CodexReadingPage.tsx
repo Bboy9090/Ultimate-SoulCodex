@@ -171,7 +171,6 @@ export default function CodexReadingPage() {
         <p style={{ color: "var(--muted-foreground)", textAlign: "center", maxWidth: "380px", fontSize: "0.9rem" }}>
           Collecting signals from your chart, numerology, moral compass, and more.
         </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -242,10 +241,10 @@ export default function CodexReadingPage() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
         <div style={{
-          display: "inline-block", background: "rgba(139,92,246,0.12)",
-          border: "1px solid rgba(139,92,246,0.3)", borderRadius: "99px",
+          display: "inline-block", background: "rgba(212,168,95,0.1)",
+          border: "1px solid rgba(212,168,95,0.3)", borderRadius: "99px",
           padding: "0.3rem 1rem", fontSize: "0.7rem", letterSpacing: "0.12em",
-          color: "var(--cosmic-lavender)", marginBottom: "1rem", textTransform: "uppercase",
+          color: "var(--sc-gold)", marginBottom: "1rem", textTransform: "uppercase",
         }}>
           Soul Codex Reading
         </div>

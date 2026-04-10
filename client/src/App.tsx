@@ -27,7 +27,6 @@ function SmartHome() {
 const routes = (
   <Switch>
     <Route path="/" component={SmartHome} />
-    <Route path="/today" component={TodayPage} />
     <Route path="/start" component={OnboardingPage} />
     <Route path="/profile" component={ProfilePage} />
     <Route path="/guide" component={SoulGuidePage} />

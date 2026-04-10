@@ -349,8 +349,8 @@ export default function SoulGuidePage() {
               disabled={!input.trim() || isLoading}
               style={{
                 width: 40, height: 40, borderRadius: "50%",
-                background: input.trim() ? "var(--cosmic-purple)" : "rgba(255,255,255,0.08)",
-                border: "none", color: "white",
+                background: input.trim() ? "var(--sc-gold)" : "rgba(255,255,255,0.08)",
+                border: "none", color: input.trim() ? "#1A0E07" : "white",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: input.trim() ? "pointer" : "default", transition: "all 0.2s",
               }}
@@ -360,7 +360,6 @@ export default function SoulGuidePage() {
           </form>
         )}
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

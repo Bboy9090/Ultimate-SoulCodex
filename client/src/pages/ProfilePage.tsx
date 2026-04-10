@@ -75,21 +75,12 @@ function getConfidence(): ConfidenceData | null {
   } catch { return null; }
 }
 
-function getCodexPrescription(): string | null {
+function getCodexPrescription(index = 0): string | null {
   try {
     const raw = localStorage.getItem("soulCodexReading");
     if (!raw) return null;
     const d = JSON.parse(raw);
-    return d?.prescriptions?.[0] ?? null;
-  } catch { return null; }
-}
-
-function getSecondPrescription(): string | null {
-  try {
-    const raw = localStorage.getItem("soulCodexReading");
-    if (!raw) return null;
-    const d = JSON.parse(raw);
-    return d?.prescriptions?.[1] ?? null;
+    return d?.prescriptions?.[index] ?? null;
   } catch { return null; }
 }
 
@@ -171,8 +162,8 @@ export default function ProfilePage() {
   const [, navigate] = useLocation();
   const profile      = getProfile();
   const confidence   = getConfidence();
-  const prescription  = getCodexPrescription();
-  const prescription2 = getSecondPrescription();
+  const prescription  = getCodexPrescription(0);
+  const prescription2 = getCodexPrescription(1);
   const [downloadingReport, setDownloadingReport] = useState(false);
 
   async function handleDownloadReport() {
@@ -308,7 +299,7 @@ export default function ProfilePage() {
           fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase",
           color: "var(--sc-text-muted)", marginBottom: "1rem", fontWeight: 500,
         }}>
-          Soul Snapshot
+          My Identity
         </div>
 
         {/* New SVG logo mark above archetype name */}

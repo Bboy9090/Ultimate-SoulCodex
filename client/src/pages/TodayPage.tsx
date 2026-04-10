@@ -175,7 +175,6 @@ export default function TodayPage() {
         <p style={{ color: "var(--sc-gold)", fontFamily: "var(--font-serif)", fontSize: "1rem", letterSpacing: "0.04em" }}>
           Reading today's signals…
         </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -273,7 +272,7 @@ export default function TodayPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem 1rem" }}>
             {[
               { label: "Who I Am",        value: whoIAm },
-              { label: "Why Now",         value: card.topTheme ? card.topTheme.replace(/_/g, " ") : (card.moonPhase ?? "—") },
+              { label: "Why Now",         value: card.topTheme ? card.topTheme.replace(/_/g, " ") : (card.title ?? "—") },
               { label: "Pattern to Watch",value: patternWatch },
               { label: "One Move Today",  value: oneMove },
             ].map(({ label, value }) => (
@@ -329,7 +328,7 @@ export default function TodayPage() {
             </h3>
           </div>
           <p style={{ fontSize: "0.77rem", color: "rgba(246,241,232,0.7)", lineHeight: 1.6, marginBottom: "1.1rem" }}>
-            {card.focus}
+            {card.doList?.[0] ?? card.focus}
           </p>
           <button
             className="btn btn-secondary"
@@ -379,7 +378,7 @@ export default function TodayPage() {
             <span style={{ color: "var(--sc-gold)", fontSize: "0.7rem", opacity: 0.7 }}>☽</span>
           </div>
           <p style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.75)", lineHeight: 1.6, margin: 0 }}>
-            {card.dontList?.[0] ?? card.decisionAdvice ?? "—"}
+            {card.dontList?.[0] ?? card.watchouts?.[1] ?? card.watchouts?.[0] ?? "—"}
           </p>
         </div>
       </div>
