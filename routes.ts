@@ -3361,7 +3361,7 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
   });
 
   // Poster PNG render endpoint
-  app.post("/api/poster/render", async (req, res) => {
+  app.post("/api/poster/render", async (req: any, res) => {
     try {
       const width = Math.min(parseInt(req.query.width as string) || 2048, 4096);
       const height = Math.round(width * 1350 / 1080);
@@ -3371,7 +3371,22 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
         return res.status(400).json({ message: "birthDate, sunSign, moonSign, and lifePathNumber are required" });
       }
 
-      const svg = buildPosterSvg(data);
+      // Determine premium status (OWNER_PROFILE_ID bypass or entitlement check)
+      let isPremium = false;
+      const ownerProfileId = process.env.OWNER_PROFILE_ID;
+      const userId = req.user?.id;
+      const sessionId = req.sessionID;
+      if (ownerProfileId && (userId === ownerProfileId || req.user?.profileId === ownerProfileId)) {
+        isPremium = true;
+      } else if (userId || sessionId) {
+        try {
+          const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+          isPremium = entStatus.isPremium;
+        } catch {}
+      }
+
+      const variant = isPremium ? "premium" : "free";
+      const svg = buildPosterSvg(data, variant);
       const png = await sharp(Buffer.from(svg))
         .resize(width, height)
         .png()

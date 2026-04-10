@@ -90,6 +90,15 @@ export default function PosterPage() {
   const [profileHD, setProfileHD]       = useState<any>(null);
   const [rawProfile, setRawProfile]     = useState<any>(null);
   const [activeTab, setActiveTab]       = useState<"placements"|"aspects"|"hd">("placements");
+  const [isPremium, setIsPremium]       = useState(false);
+
+  /* Fetch entitlement status on mount */
+  useEffect(() => {
+    fetch("/api/entitlements")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.isPremium) setIsPremium(true); })
+      .catch(() => {});
+  }, []);
 
   /* Auto-populate from stored profile */
   useEffect(() => {
@@ -322,8 +331,42 @@ export default function PosterPage() {
           <p style={{ fontSize: "0.65rem", letterSpacing: "0.15em", color: "rgba(246,241,232,0.35)", textAlign: "center", marginBottom: "0.6rem", textTransform: "uppercase" }}>
             Live Preview
           </p>
+
+          {/* Upgrade notice for free users */}
+          {!isPremium && (
+            <div style={{
+              marginBottom: "0.75rem",
+              padding: "0.65rem 1rem",
+              borderRadius: 8,
+              border: "1px solid rgba(212,168,95,0.32)",
+              background: "rgba(212,168,95,0.07)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.6rem",
+            }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--sc-gold)", opacity: 0.9, lineHeight: 1.4 }}>
+                ✦ The full atmospheric chart — dark sky, constellations, and teal gradients — is available with a premium plan.
+              </span>
+            </div>
+          )}
+
+          {isPremium && (
+            <div style={{
+              marginBottom: "0.75rem",
+              padding: "0.5rem 1rem",
+              borderRadius: 8,
+              border: "1px solid rgba(90,200,216,0.25)",
+              background: "rgba(90,200,216,0.07)",
+              textAlign: "center",
+            }}>
+              <span style={{ fontSize: "0.75rem", color: "#5ac8d8", letterSpacing: "0.08em" }}>
+                ✦ PREMIUM  ·  Atmospheric Chart Unlocked
+              </span>
+            </div>
+          )}
+
           <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(212,168,95,0.18)", boxShadow: "0 8px 48px rgba(0,0,0,0.6)" }}>
-            <BirthChartPosterSVG data={data} />
+            <BirthChartPosterSVG data={data} variant={isPremium ? "premium" : "free"} />
           </div>
         </div>
       </div>
