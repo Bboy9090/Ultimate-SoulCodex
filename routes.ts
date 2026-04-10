@@ -465,6 +465,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized - no user or session found" });
       }
 
+      // Owner bypass: compare against server-side profile lookup only
+      const ownerProfileId = process.env.OWNER_PROFILE_ID;
+      if (ownerProfileId && userId) {
+        try {
+          const dbProfile = await storage.getProfileByUserId(userId);
+          if (dbProfile?.id === ownerProfileId) {
+            return res.json({ isPremium: true, source: "owner_bypass" });
+          }
+        } catch {}
+        // Also allow matching userId directly (if operator set OWNER_PROFILE_ID to their userId)
+        if (userId === ownerProfileId) {
+          return res.json({ isPremium: true, source: "owner_bypass" });
+        }
+      }
+
       const status = await entitlementService.getUserPremiumStatus({ userId, sessionId });
       res.json(status);
     } catch (error) {
@@ -3086,15 +3101,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { profile } = req.body;
       if (!profile) return res.status(400).json({ error: "profile required" });
 
-      // Premium gate: OWNER_PROFILE_ID bypass first, then entitlement check
+      // Premium gate: OWNER_PROFILE_ID bypass first (server-side only), then entitlement check
       const ownerProfileId = process.env.OWNER_PROFILE_ID;
       const userId    = req.user?.id;
       const sessionId = req.sessionID;
       let isPremium   = false;
 
-      if (ownerProfileId && (userId === ownerProfileId || profile?.id === ownerProfileId || profile?.profileId === ownerProfileId)) {
-        isPremium = true;
-      } else if (userId || sessionId) {
+      if (ownerProfileId && userId) {
+        // Server-side profile lookup — never trust client-provided profile IDs
+        try {
+          const dbProfile = await storage.getProfileByUserId(userId);
+          if (dbProfile?.id === ownerProfileId) isPremium = true;
+        } catch {}
+        if (!isPremium && userId === ownerProfileId) isPremium = true;
+      }
+      if (!isPremium && (userId || sessionId)) {
         try {
           const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
           isPremium = entStatus.isPremium;
