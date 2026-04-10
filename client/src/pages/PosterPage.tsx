@@ -130,6 +130,38 @@ export default function PosterPage() {
       setData(newData);
       setProfileAstro(astro);
       setProfileHD(hd);
+
+      // Auto-compute chart if we have birth data but no planet longitudes stored
+      if (newData.birthDate && newData.birthLocation && newData.planets.length === 0) {
+        setComputing(true);
+        fetch("/api/astro/fullchart", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            birthDate: newData.birthDate,
+            birthTime: newData.birthTime || undefined,
+            timeUnknown: !newData.birthTime,
+            birthLocation: newData.birthLocation,
+          }),
+        })
+          .then(r => r.json())
+          .then(json => {
+            if (!json.ok) return;
+            const planets = Object.entries(json.planets ?? {})
+              .filter(([, v]: any) => typeof v?.longitude === "number")
+              .map(([name, v]: any) => ({ name, longitude: v.longitude }));
+            setData(prev => ({
+              ...prev,
+              planets,
+              houseCusps: json.houses?.cusps ?? [],
+              ...(json.sun    ? { sunSign:    json.sun    } : {}),
+              ...(json.moon   ? { moonSign:   json.moon   } : {}),
+              ...(json.rising ? { risingSign: json.rising } : {}),
+            }));
+            setProfileAstro(json);
+          })
+          .catch(err => console.warn("[poster] Auto-compute chart failed:", err))
+          .finally(() => setComputing(false));
+      }
     }
   }, []);
 
