@@ -473,7 +473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (dbProfile?.id === ownerProfileId) {
             return res.json({ isPremium: true, source: "owner_bypass" });
           }
-        } catch {}
+        } catch (lookupErr) {
+          console.warn("[entitlements] Owner profile lookup failed:", lookupErr);
+        }
         // Also allow matching userId directly (if operator set OWNER_PROFILE_ID to their userId)
         if (userId === ownerProfileId) {
           return res.json({ isPremium: true, source: "owner_bypass" });
@@ -3112,14 +3114,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const dbProfile = await storage.getProfileByUserId(userId);
           if (dbProfile?.id === ownerProfileId) isPremium = true;
-        } catch {}
+        } catch (lookupErr) {
+          console.warn("[blueprint] Owner profile lookup failed:", lookupErr);
+        }
         if (!isPremium && userId === ownerProfileId) isPremium = true;
       }
       if (!isPremium && (userId || sessionId)) {
         try {
           const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
           isPremium = entStatus.isPremium;
-        } catch {}
+        } catch (entErr) {
+          console.warn("[blueprint] Entitlement check failed:", entErr);
+        }
       }
 
       if (!isPremium) {
@@ -3147,24 +3153,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ennType = enn.type ?? enn.enneagramType ?? profile.enneagramType ?? "unknown";
       const gkArr: string[] = Array.isArray(gk) ? gk.slice(0,3).map((g:any) => `Gate ${g.gate ?? g}`).filter(Boolean) : gk.gates ? (gk.gates as any[]).slice(0,3).map((g:any) => `Gate ${g}`) : [];
 
-      const planetSummary = Object.entries(astro.planets ?? {}).slice(0,5).map(([planet, p]: [string,any]) => `${planet} in ${p.sign ?? "?"}`).join(", ");
+      // Build planet+house summary for the planets section
+      const planetEntries = Object.entries(astro.planets ?? {}) as [string, Record<string,unknown>][];
+      const houseCusps: number[] = Array.isArray(astro.houses?.cusps) ? astro.houses.cusps : [];
+      const planetSummary = planetEntries.slice(0, 8).map(([planet, p]) => {
+        const sign  = typeof p.sign === "string" ? p.sign : "?";
+        const lon   = typeof p.longitude === "number" ? p.longitude : -1;
+        let houseNum = 0;
+        if (lon >= 0 && houseCusps.length === 12) {
+          for (let i = 0; i < 12; i++) {
+            const start = houseCusps[i];
+            const end   = houseCusps[(i + 1) % 12];
+            const l     = ((lon % 360) + 360) % 360;
+            if (start <= end ? (l >= start && l < end) : (l >= start || l < end)) { houseNum = i + 1; break; }
+          }
+        }
+        return houseNum > 0 ? `${planet} in ${sign} (House ${houseNum})` : `${planet} in ${sign}`;
+      }).join(", ");
 
       const sectionPrompt = `You are the inner voice of a soul-profile system. Write behavioral, first-person, present-tense interpretations (2–3 sentences each) for each modality below about ${name}. Be specific, honest, and grounded — no vague affirmations, no spiritual clichés, no "you are powerful/special" filler. Write as if you already know how this person actually moves through the world.
 
 Profile data:
 - Life Path ${lpNum} — ${lpArchetype}
-- Sun: ${sun}, Moon: ${moon}, Rising: ${rising}
+- Sun: ${sun}
+- Moon: ${moon}
+- Rising: ${rising}
 - Human Design: ${hdType} / ${hdAuth} Authority / ${hdProf} Profile
 - Chiron: ${chirPl}
 - North Node: ${northN}, South Node: ${southN}
 - Enneagram: Type ${ennType}
 - Gene Keys highlighted: ${gkArr.join(", ") || "not specified"}
-- Key planetary placements: ${planetSummary || "not specified"}
+- Planetary placements with houses: ${planetSummary || "not specified"}
 
 Return ONLY valid JSON (no markdown fences) with these exact keys:
 {
   "lifePath": "...",
-  "bigThree": "...",
+  "sun": "...",
+  "moon": "...",
+  "rising": "...",
   "humanDesign": "...",
   "geneKeys": "...",
   "enneagram": "...",
@@ -3182,20 +3208,27 @@ Each value: 2–3 sentences. First person. Behavioral. No banned phrases.`;
         try {
           const cleaned = raw.replace(/^```[a-z]*\n?/,"").replace(/```$/,"").trim();
           sections = JSON.parse(cleaned);
-        } catch {
+        } catch (parseErr) {
+          console.error("[blueprint] Failed to parse AI JSON:", parseErr);
           sections = { lifeTheme: raw };
         }
       }
 
-      // Fallback stubs if AI is unavailable
-      const fallback = (key: string, label: string) => sections[key] || `My ${label} shapes how I move through the world in patterns I'm still learning to read.`;
+      // Fallback stubs when AI is unavailable or parse failed
+      const fallback = (key: string, label: string) =>
+        (typeof sections[key] === "string" && sections[key].trim())
+          ? sections[key]
+          : `My ${label} shapes how I move through the world in patterns I'm still learning to read.`;
+
       sections = {
         lifePath:    fallback("lifePath",    `Life Path ${lpNum}`),
-        bigThree:    fallback("bigThree",    `Sun in ${sun}, Moon in ${moon}, Rising ${rising}`),
+        sun:         fallback("sun",         `Sun in ${sun}`),
+        moon:        fallback("moon",        `Moon in ${moon}`),
+        rising:      fallback("rising",      `Rising ${rising}`),
         humanDesign: fallback("humanDesign", `HD ${hdType}`),
         geneKeys:    fallback("geneKeys",    "Gene Keys"),
         enneagram:   fallback("enneagram",   `Enneagram Type ${ennType}`),
-        planets:     fallback("planets",     "Planetary Placements"),
+        planets:     fallback("planets",     "Planetary Placements + Houses"),
         chiron:      fallback("chiron",      `Chiron in ${chirPl}`),
         nodes:       fallback("nodes",       `Nodes (${northN} / ${southN})`),
         lifeTheme:   fallback("lifeTheme",   "Life Theme"),
