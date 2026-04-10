@@ -23,7 +23,7 @@ const NAV_ICONS: Record<string, string> = {
   "/profile":    "◆",
   "/guide":      "◎",
   "/tracker":    "▲",
-  "/timeline":   "◈",
+  "/timeline":   "◇",
   "/codex":      "✦",
   "/compat":     "⧫",
   "/poster":     "⬡",
