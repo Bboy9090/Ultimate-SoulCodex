@@ -3684,12 +3684,36 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
     }
   });
 
-  app.post("/api/codex30/generate", async (req, res) => {
+  app.post("/api/codex30/generate", async (req: any, res) => {
     try {
       const { profile, fullChart, userInputs } = req.body;
 
       if (!profile && !userInputs) {
         return res.status(400).json({ ok: false, error: "profile and userInputs are required" });
+      }
+
+      // Premium gate: OWNER_PROFILE_ID bypass first (server-side only), then entitlement check
+      const ownerProfileId = process.env.OWNER_PROFILE_ID;
+      const userId    = req.user?.id;
+      const sessionId = req.sessionID;
+      let isPremium   = false;
+
+      if (ownerProfileId && userId) {
+        try {
+          const dbProfile = await storage.getProfileByUserId(userId);
+          if (dbProfile?.id === ownerProfileId) isPremium = true;
+        } catch (lookupErr) {
+          console.warn("[codex30] Owner profile lookup failed:", lookupErr);
+        }
+        if (!isPremium && userId === ownerProfileId) isPremium = true;
+      }
+      if (!isPremium && (userId || sessionId)) {
+        try {
+          const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+          isPremium = entStatus.isPremium;
+        } catch (entErr) {
+          console.warn("[codex30] Entitlement check failed:", entErr);
+        }
       }
 
       const signals  = collectSignals({ profile: profile ?? {}, fullChart, userInputs: userInputs ?? {} });
@@ -3752,6 +3776,46 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
         reason: conf?.reason ?? ""
       };
 
+      if (!isPremium) {
+        // Strip response for free users: keep codename, motto, top 3 themes (name+score only), first 2 sentences of WHO I AM
+        const top3Themes = themes.slice(0, 3).map(t => ({ tag: t.tag, score: t.score }));
+
+        // Extract MOTTO section (keep for free users per spec)
+        const mottoMatch = narrative.match(/(MOTTO:[^\n]*(?:\n[^\n]+)*?)(?=\nWHO I AM|\nHOW I MOVE|\nWHAT I WON|\nWHAT I'M|\nTHIS WEEK|$)/i);
+        const mottoSection = mottoMatch ? mottoMatch[1].trim() : "";
+
+        // Extract first 2 sentences from the WHO I AM narrative section
+        const whoIAmMatch = narrative.match(/WHO I AM[\s\S]*?(?:\n|$)([\s\S]*?)(?=HOW I MOVE|WHAT I WON|WHAT I'M|THIS WEEK|$)/i);
+        let whoIAmTeaser = "";
+        if (whoIAmMatch) {
+          const whoIAmText = whoIAmMatch[1].trim();
+          const sentences = whoIAmText.match(/[^.!?]+[.!?]+/g) ?? [];
+          whoIAmTeaser = sentences.slice(0, 2).join(" ").trim();
+        }
+
+        // Rebuild a minimal narrative: MOTTO + WHO I AM teaser
+        const teaserParts: string[] = [];
+        if (mottoSection) teaserParts.push(mottoSection);
+        if (whoIAmTeaser) teaserParts.push(`WHO I AM\n${whoIAmTeaser}`);
+        const teaserNarrative = teaserParts.join("\n\n");
+
+        return res.json({
+          ok: true,
+          synthesis: {
+            codename,
+            archetype: codename,
+            badges,
+            topThemes: top3Themes,
+            strengths: [],
+            shadows: [],
+            triggers: [],
+            prescriptions: [],
+            narrative: teaserNarrative,
+            isPremium: false,
+          }
+        });
+      }
+
       return res.json({
         ok: true,
         synthesis: {
@@ -3764,10 +3828,12 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
           triggers,
           prescriptions,
           narrative,
+          isPremium: true,
           debug: { signals, themeScores: themes }
         }
       });
     } catch (error) {
+      console.error("[codex30] Generation error:", error);
       return handleError(error, res, "Codex30");
     }
   });
