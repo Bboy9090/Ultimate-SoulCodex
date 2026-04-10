@@ -1,7 +1,6 @@
 /**
- * Natal Chart + Human Design PDF Report
- * Matches the format of the Bobby reference PDF.
- * Uses pdfkit for layout.
+ * Natal Chart + Human Design PDF Report — Soul Codex edition
+ * Dark teal background · gold accents · ivory text
  */
 
 import PDFDocument from "pdfkit";
@@ -29,21 +28,27 @@ export interface NatalReportAIText {
   hdInterpretation: string;
 }
 
-// ── Layout constants ─────────────────────────────────────────────────────────
+// ── Design tokens ─────────────────────────────────────────────────────────────
 
-const PAGE_W   = 612;   // US Letter
-const PAGE_H   = 792;
-const MARGIN_L = 55;
-const MARGIN_R = 55;
-const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
-const LIGHT_ROW = "#f5f4ff";
-const DIVIDER   = "#9ca3af";
-const PURPLE    = "#6d28d9";
-const BLACK     = "#111111";
-const DARK_GRAY = "#374151";
-const MID_GRAY  = "#6b7280";
+const PAGE_W     = 612;
+const PAGE_H     = 792;
+const MARGIN_L   = 52;
+const MARGIN_R   = 52;
+const CONTENT_W  = PAGE_W - MARGIN_L - MARGIN_R;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// Palette
+const BG         = "#071318";   // deep teal-black
+const BG_CARD    = "#0d2030";   // card row even
+const BG_ALT     = "#0a1a28";   // card row odd
+const BG_HEADER  = "#0e2a1a";   // table header row — dark green-teal
+const GOLD       = "#D4A85F";
+const GOLD_DIM   = "#9a7840";
+const IVORY      = "#F2EDE3";
+const IVORY_DIM  = "#a89f94";
+const TEAL_LIGHT = "#5ac8d8";
+const DIVIDER    = "#1e3d4a";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function deg(d: number): string {
   const whole = Math.floor(d);
@@ -51,77 +56,99 @@ function deg(d: number): string {
   return `${whole}°${String(min).padStart(2, "0")}'`;
 }
 
-function planetLine(astro: any, key: string): { sign: string; degree: string; house: string } | null {
-  const p = astro?.planets?.[key];
-  if (!p) return null;
-  return {
-    sign:   p.sign ?? "–",
-    degree: deg(p.degree ?? 0),
-    house:  ordinal(p.house ?? 0),
-  };
-}
-
 function ordinal(n: number): string {
-  const s = ["th","st","nd","rd"];
-  const v = n % 100;
-  return n + (s[(v-20)%10] || s[v] || s[0]);
+  if (!n) return "—";
+  const s = ["th","st","nd","rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-function hRule(doc: PDFKit.PDFDocument) {
+function cap(s: string): string {
+  if (!s) return "";
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Fill entire page with background color */
+function fillBg(doc: PDFKit.PDFDocument) {
+  doc.rect(0, 0, PAGE_W, PAGE_H).fillColor(BG).fill();
+}
+
+/** Scatter star dots across the page */
+function drawStars(doc: PDFKit.PDFDocument) {
+  const stars: [number, number, number][] = [
+    [42,30,1],[130,18,0.7],[250,42,1.2],[390,12,0.8],[510,38,1],[590,20,0.7],
+    [70,85,0.8],[180,72,1.1],[315,90,0.7],[450,68,0.9],[560,82,1],[610,95,0.7],
+    [28,145,1],[140,130,0.8],[280,155,1.2],[420,140,0.7],[545,150,1],[598,138,0.8],
+    [55,210,0.7],[175,220,1],[310,200,0.8],[460,215,0.9],[575,205,0.7],[605,222,1],
+    [38,275,1],[155,260,0.8],[300,280,1.1],[440,268,0.7],[558,275,0.9],[602,260,0.7],
+    [20,340,0.7],[168,352,1],[315,335,0.8],[468,348,1.1],[577,340,0.8],[605,355,0.7],
+    [45,420,1],[170,408,0.7],[308,425,0.9],[452,415,0.8],[570,422,1],[608,410,0.7],
+    [30,490,0.8],[165,478,1],[312,492,0.7],[455,482,1.1],[572,490,0.8],[607,475,0.7],
+    [48,550,0.9],[180,565,0.7],[328,548,1],[462,558,0.8],[576,552,0.9],[610,567,0.7],
+    [35,620,0.7],[172,638,1],[322,622,0.8],[468,632,0.9],[580,625,0.7],[608,638,1],
+    [52,700,1],[185,715,0.7],[330,702,0.9],[472,712,0.8],[582,700,1],[606,718,0.7],
+    [40,762,0.8],[178,775,1],[332,760,0.7],[474,772,0.9],[584,762,0.8],[607,778,0.7],
+  ];
+  stars.forEach(([sx, sy, sr]) => {
+    const opacity = 0.18 + sr * 0.18;
+    doc.circle(sx, sy, sr).fillColor("#ffffff").fillOpacity(opacity).fill().fillOpacity(1);
+  });
+}
+
+/** Gold horizontal rule */
+function goldRule(doc: PDFKit.PDFDocument, x0 = MARGIN_L, x1 = PAGE_W - MARGIN_R) {
   const y = doc.y;
-  doc.moveTo(MARGIN_L, y).lineTo(PAGE_W - MARGIN_R, y).strokeColor(DIVIDER).lineWidth(0.5).stroke();
-  doc.moveDown(0.4);
+  doc.moveTo(x0, y).lineTo(x1, y).strokeColor(GOLD_DIM).strokeOpacity(0.4).lineWidth(0.5).stroke().strokeOpacity(1);
 }
 
+/** Section heading: gold label on dark bar */
 function sectionTitle(doc: PDFKit.PDFDocument, title: string) {
-  doc.moveDown(0.6)
-     .font("Helvetica-Bold").fontSize(11).fillColor(BLACK)
-     .text(title, MARGIN_L)
-     .moveDown(0.3);
-  hRule(doc);
+  doc.moveDown(0.65);
+  const y = doc.y;
+  doc.rect(MARGIN_L, y, CONTENT_W, 20).fillColor(BG_HEADER).fill();
+  doc.moveTo(MARGIN_L, y).lineTo(PAGE_W - MARGIN_R, y).strokeColor(GOLD_DIM).strokeOpacity(0.45).lineWidth(0.7).stroke().strokeOpacity(1);
+  doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+     .text(title.toUpperCase(), MARGIN_L + 8, y + 6, { width: CONTENT_W - 16, lineBreak: false });
+  doc.y = y + 24;
+  doc.moveDown(0.2);
 }
 
+/** Draw a single table row and return next y */
 function tableRow(
   doc: PDFKit.PDFDocument,
   cols: string[],
   widths: number[],
   x0: number,
   y0: number,
-  opts: { header?: boolean; shade?: boolean }
-) {
-  const ROW_H = 18;
-  const fill  = opts.header ? PURPLE : opts.shade ? LIGHT_ROW : "#ffffff";
-  const color = opts.header ? "#ffffff" : BLACK;
+  opts: { header?: boolean; shade?: boolean; rowH?: number }
+): number {
+  const ROW_H = opts.rowH ?? 18;
+  const fill  = opts.header ? BG_HEADER : opts.shade ? BG_ALT : BG_CARD;
+  const color = opts.header ? GOLD : IVORY;
 
-  // Draw row background
-  doc.rect(x0, y0, widths.reduce((a, b) => a + b, 0), ROW_H)
-     .fillColor(fill).fill();
+  doc.rect(x0, y0, widths.reduce((a, b) => a + b, 0), ROW_H).fillColor(fill).fill();
 
   let cx = x0;
   cols.forEach((text, i) => {
     doc.font(opts.header ? "Helvetica-Bold" : "Helvetica")
-       .fontSize(opts.header ? 9 : 9)
+       .fontSize(opts.header ? 8 : 9)
        .fillColor(color)
-       .text(text, cx + 5, y0 + 5, { width: widths[i] - 10, lineBreak: false });
+       .text(text, cx + 6, y0 + 5, { width: widths[i] - 12, lineBreak: false });
     cx += widths[i];
   });
-
   return y0 + ROW_H;
 }
 
+/** Page footer */
 function addFooter(doc: PDFKit.PDFDocument, name: string, page: number) {
-  doc.font("Helvetica").fontSize(8).fillColor(MID_GRAY)
-     .text(`${name} - Natal Chart + Human Design`, MARGIN_L, PAGE_H - 28, {
-       width: CONTENT_W - 60,
-       align: "left",
-     })
-     .text(`Page ${page}`, PAGE_W - MARGIN_R - 50, PAGE_H - 28, {
-       width: 50,
-       align: "right",
-     });
+  const y = PAGE_H - 26;
+  doc.moveTo(MARGIN_L, y - 6).lineTo(PAGE_W - MARGIN_R, y - 6)
+     .strokeColor(GOLD_DIM).strokeOpacity(0.25).lineWidth(0.4).stroke().strokeOpacity(1);
+  doc.font("Helvetica").fontSize(7.5).fillColor(IVORY_DIM)
+     .text(`Soul Codex  ·  ${name}  ·  Natal Chart + Human Design`, MARGIN_L, y, { width: CONTENT_W - 50, align: "left" })
+     .text(`${page}`, PAGE_W - MARGIN_R - 20, y, { width: 20, align: "right" });
 }
 
-// ── Main builder ─────────────────────────────────────────────────────────────
+// ── Main builder ──────────────────────────────────────────────────────────────
 
 export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -129,285 +156,394 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
       size: "LETTER",
       margin: 0,
       info: {
-        Title: `${input.name} - Natal Chart + Human Design`,
+        Title: `${input.name} — Natal Chart + Human Design`,
         Author: "Soul Codex",
+        Subject: "Natal chart and Human Design reading",
+        Keywords: "astrology, natal chart, human design, soul codex",
       },
     });
 
     const chunks: Buffer[] = [];
     doc.on("data", (c: Buffer) => chunks.push(c));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("end",  () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    const astro = input.astrology  ?? {};
-    const hd    = input.humanDesign ?? {};
-    const ai    = input.aiText;
-    let pageNum = 1;
+    const astro  = input.astrology  ?? {};
+    const hd     = input.humanDesign ?? {};
+    const ai     = input.aiText;
+    let pageNum  = 1;
 
-    // ── PAGE 1 ──────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    // COVER PAGE
+    // ══════════════════════════════════════════════════════════════════════════
 
-    // Title
-    doc.font("Helvetica-Bold").fontSize(16).fillColor(BLACK)
-       .text("Natal Chart + Human Design Summary", MARGIN_L, 55, {
-         width: CONTENT_W, align: "center",
-       })
-       .moveDown(0.5);
+    fillBg(doc);
+    drawStars(doc);
 
-    // Birth data subtitle
-    const birthStr = `Birth data used: ${input.birthDate} - ${input.birthTime} - ${input.birthLocation}`;
-    doc.font("Helvetica-Oblique").fontSize(10).fillColor(DARK_GRAY)
-       .text(birthStr, MARGIN_L, doc.y, { width: CONTENT_W, align: "center" })
-       .moveDown(0.3);
+    // Top gold rule
+    doc.moveTo(MARGIN_L, 52).lineTo(PAGE_W - MARGIN_R, 52)
+       .strokeColor(GOLD).strokeOpacity(0.55).lineWidth(0.8).stroke().strokeOpacity(1);
 
-    doc.font("Helvetica-Oblique").fontSize(9).fillColor(MID_GRAY)
-       .text(
-         "Astrology basis: Tropical zodiac, Placidus houses. Human Design basis: birth chart plus the design imprint approximately 88 degrees of solar arc before birth.",
-         MARGIN_L, doc.y, { width: CONTENT_W, align: "center" }
-       )
-       .moveDown(0.7);
+    // App name
+    doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+       .text("S O U L   C O D E X", 0, 60, { width: PAGE_W, align: "center", characterSpacing: 2 });
 
-    hRule(doc);
+    // Decorative diamonds
+    doc.font("Helvetica").fontSize(10).fillColor(GOLD_DIM)
+       .text("✦", 0, 76, { width: PAGE_W, align: "center" });
 
-    // Core snapshot box
-    const rising    = astro?.risingSign ?? "–";
-    const sunData   = astro?.planets?.sun;
-    const moonData  = astro?.planets?.moon;
-    const mc        = astro?.houses?.[9]; // 10th house cusp = Midheaven
-    const coreText  = [
-      `Sun: ${sunData?.sign ?? "–"} ${deg(sunData?.degree ?? 0)}`,
-      `Moon: ${moonData?.sign ?? "–"} ${deg(moonData?.degree ?? 0)}`,
-      `Rising: ${rising}`,
-      mc ? `Midheaven: ${mc.sign} ${deg(mc.degree ?? 0)}` : null,
-    ].filter(Boolean).join("  |  ");
+    // Large center block
+    const centerY = 260;
 
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(BLACK)
-       .text("Core snapshot", MARGIN_L, doc.y)
-       .moveDown(0.2);
+    // Name
+    doc.font("Helvetica-Bold").fontSize(36).fillColor(IVORY)
+       .text(input.name || "Your Name", 0, centerY, { width: PAGE_W, align: "center" });
 
-    const boxY = doc.y;
-    doc.rect(MARGIN_L, boxY, CONTENT_W, 24).fillColor(LIGHT_ROW).fill();
-    doc.font("Helvetica").fontSize(9.5).fillColor(BLACK)
-       .text(coreText, MARGIN_L + 8, boxY + 7, { width: CONTENT_W - 16, align: "center" });
-    doc.y = boxY + 30;
-    doc.moveDown(0.5);
+    doc.moveDown(0.45);
+    doc.font("Helvetica").fontSize(11).fillColor(GOLD)
+       .text("NATAL CHART + HUMAN DESIGN", 0, doc.y, { width: PAGE_W, align: "center", characterSpacing: 1.5 });
 
-    // Natal Chart Overview
-    sectionTitle(doc, "Natal Chart Overview");
-    doc.font("Helvetica").fontSize(10).fillColor(BLACK)
-       .text(ai.overview, MARGIN_L, doc.y, { width: CONTENT_W, align: "left", lineGap: 2 })
-       .moveDown(0.8);
+    // Thin gold divider
+    doc.moveDown(0.7);
+    const dY = doc.y;
+    doc.moveTo(PAGE_W / 2 - 80, dY).lineTo(PAGE_W / 2 + 80, dY)
+       .strokeColor(GOLD).strokeOpacity(0.4).lineWidth(0.6).stroke().strokeOpacity(1);
+
+    doc.moveDown(0.9);
+    doc.font("Helvetica").fontSize(10).fillColor(IVORY_DIM)
+       .text(formatBirthData(input), 0, doc.y, { width: PAGE_W, align: "center" });
+
+    // Big Three callout
+    const sunSign  = astro?.planets?.sun?.sign  ?? astro?.sun  ?? "–";
+    const moonSign = astro?.planets?.moon?.sign ?? astro?.moon ?? "–";
+    const rising   = astro?.rising ?? astro?.risingSign ?? "–";
+
+    const bigThreeY = 470;
+    doc.rect(MARGIN_L + 40, bigThreeY, CONTENT_W - 80, 72).fillColor(BG_CARD).fill();
+    doc.moveTo(MARGIN_L + 40, bigThreeY).lineTo(MARGIN_L + 40 + CONTENT_W - 80, bigThreeY)
+       .strokeColor(GOLD).strokeOpacity(0.35).lineWidth(0.6).stroke().strokeOpacity(1);
+    doc.moveTo(MARGIN_L + 40, bigThreeY + 72).lineTo(MARGIN_L + 40 + CONTENT_W - 80, bigThreeY + 72)
+       .strokeColor(GOLD).strokeOpacity(0.35).lineWidth(0.6).stroke().strokeOpacity(1);
+
+    const colW = (CONTENT_W - 80) / 3;
+    const colX = MARGIN_L + 40;
+    const bigThreeItems = [
+      { label: "SUN", value: sunSign },
+      { label: "MOON", value: moonSign },
+      { label: "RISING", value: rising },
+    ];
+    bigThreeItems.forEach((item, i) => {
+      const x = colX + i * colW;
+      doc.font("Helvetica").fontSize(7.5).fillColor(IVORY_DIM)
+         .text(item.label, x, bigThreeY + 14, { width: colW, align: "center", characterSpacing: 2 });
+      doc.font("Helvetica-Bold").fontSize(16).fillColor(IVORY)
+         .text(item.value, x, bigThreeY + 28, { width: colW, align: "center" });
+      if (i < 2) {
+        doc.moveTo(colX + (i + 1) * colW, bigThreeY + 10).lineTo(colX + (i + 1) * colW, bigThreeY + 62)
+           .strokeColor(GOLD_DIM).strokeOpacity(0.3).lineWidth(0.5).stroke().strokeOpacity(1);
+      }
+    });
+
+    // Life path
+    const lpNum = astro?.numerology?.lifePathNumber ?? (input as any).lifePathNumber;
+    if (lpNum) {
+      doc.font("Helvetica").fontSize(8).fillColor(IVORY_DIM)
+         .text("LIFE PATH", 0, 570, { width: PAGE_W, align: "center", characterSpacing: 2 });
+      doc.font("Helvetica-Bold").fontSize(52).fillColor(GOLD)
+         .text(String(lpNum), 0, 582, { width: PAGE_W, align: "center" });
+    }
+
+    // Bottom rule
+    doc.moveTo(MARGIN_L, PAGE_H - 48).lineTo(PAGE_W - MARGIN_R, PAGE_H - 48)
+       .strokeColor(GOLD).strokeOpacity(0.55).lineWidth(0.8).stroke().strokeOpacity(1);
+    doc.font("Helvetica").fontSize(7.5).fillColor(IVORY_DIM)
+       .text(`Generated by Soul Codex  ·  ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`,
+         0, PAGE_H - 38, { width: PAGE_W, align: "center", characterSpacing: 1 });
+
+    addFooter(doc, input.name, pageNum);
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 2 — Overview + Big Three
+    // ══════════════════════════════════════════════════════════════════════════
+    doc.addPage({ margin: 0 }); pageNum++;
+    fillBg(doc); drawStars(doc);
+    addPageHeader(doc, "Natal Chart Overview", pageNum);
+
+    // Overview text
+    sectionTitle(doc, "Overview");
+    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+       .text(ai.overview, MARGIN_L, doc.y, { width: CONTENT_W, align: "left", lineGap: 3 });
+
+    // Core snapshot
+    doc.moveDown(0.7);
+    const snapData = astro?.planets ?? {};
+    const snapshotText = [
+      snapData.sun  ? `☉ ${snapData.sun.sign} ${deg(snapData.sun.degree ?? 0)}`  : null,
+      snapData.moon ? `☽ ${snapData.moon.sign} ${deg(snapData.moon.degree ?? 0)}` : null,
+      rising !== "–" ? `ASC ${rising}` : null,
+    ].filter(Boolean).join("    ·    ");
+
+    const snapY = doc.y;
+    doc.rect(MARGIN_L, snapY, CONTENT_W, 26).fillColor(BG_CARD).fill();
+    doc.moveTo(MARGIN_L, snapY).lineTo(PAGE_W - MARGIN_R, snapY)
+       .strokeColor(GOLD).strokeOpacity(0.25).lineWidth(0.5).stroke().strokeOpacity(1);
+    doc.font("Helvetica").fontSize(9.5).fillColor(GOLD)
+       .text(snapshotText, MARGIN_L + 10, snapY + 9, { width: CONTENT_W - 20, align: "center", lineBreak: false });
+    doc.y = snapY + 32;
 
     // Big Three table
-    sectionTitle(doc, "Big Three");
-    const bigThreeCols = [200, CONTENT_W - 200];
+    sectionTitle(doc, "The Big Three");
+    const bigCols = [180, CONTENT_W - 180];
     let ty = doc.y;
-    ty = tableRow(doc, ["Planet / Placement", "Meaning"], bigThreeCols, MARGIN_L, ty, { header: true });
+    ty = tableRow(doc, ["Placement", "Interpretation"], bigCols, MARGIN_L, ty, { header: true });
 
-    const bigThree = [
-      [`Sun in ${sunData?.sign ?? "–"}\n${deg(sunData?.degree ?? 0)} - ${ordinal(sunData?.house ?? 0)} house`, ai.bigThreeSun],
-      [`Moon in ${moonData?.sign ?? "–"}\n${deg(moonData?.degree ?? 0)} - ${ordinal(moonData?.house ?? 0)} house`, ai.bigThreeMoon],
-      [`${rising} Rising`, ai.bigThreeRising],
+    const btRows = [
+      [`☉ Sun in ${sunSign}`, ai.bigThreeSun],
+      [`☽ Moon in ${moonSign}`, ai.bigThreeMoon],
+      [`↑ ${rising} Rising`, ai.bigThreeRising],
     ];
-
-    bigThree.forEach(([label, meaning], i) => {
-      const MULTI_H = 38;
-      const fill = i % 2 === 0 ? "#ffffff" : LIGHT_ROW;
+    btRows.forEach(([label, interp], i) => {
+      const MULTI_H = 42;
+      const fill = i % 2 === 0 ? BG_CARD : BG_ALT;
       doc.rect(MARGIN_L, ty, CONTENT_W, MULTI_H).fillColor(fill).fill();
-      doc.font("Helvetica-Bold").fontSize(9).fillColor(BLACK)
-         .text(label, MARGIN_L + 5, ty + 5, { width: bigThreeCols[0] - 10, lineBreak: true });
-      doc.font("Helvetica").fontSize(9).fillColor(BLACK)
-         .text(meaning, MARGIN_L + bigThreeCols[0] + 5, ty + 5, { width: bigThreeCols[1] - 10, lineBreak: true });
+      doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+         .text(label, MARGIN_L + 6, ty + 6, { width: bigCols[0] - 12, lineBreak: true });
+      doc.font("Helvetica").fontSize(9).fillColor(IVORY)
+         .text(interp, MARGIN_L + bigCols[0] + 6, ty + 6, { width: bigCols[1] - 12, lineBreak: true });
       ty += MULTI_H;
     });
 
     doc.y = ty + 4;
     addFooter(doc, input.name, pageNum);
 
-    // ── PAGE 2 ──────────────────────────────────────────────────────────────
-    doc.addPage({ margin: 0 });
-    pageNum++;
-    doc.y = 55;
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 3 — Planetary Placements
+    // ══════════════════════════════════════════════════════════════════════════
+    doc.addPage({ margin: 0 }); pageNum++;
+    fillBg(doc); drawStars(doc);
+    addPageHeader(doc, "Planetary Placements", pageNum);
 
-    // Main Placements table
-    sectionTitle(doc, "Main Placements");
-    const placeCols = [100, 180, 120];
+    sectionTitle(doc, "Natal Placements");
+    const placeCols = [130, 130, 80, CONTENT_W - 340];
     ty = doc.y;
-    ty = tableRow(doc, ["Planet", "Sign + Degree", "House"], placeCols, MARGIN_L, ty, { header: true });
+    ty = tableRow(doc, ["Planet", "Sign + Degree", "House", "Notes"], placeCols, MARGIN_L, ty, { header: true });
 
-    const planets = [
-      ["Sun",      "sun"],
-      ["Moon",     "moon"],
-      ["Mercury",  "mercury"],
-      ["Venus",    "venus"],
-      ["Mars",     "mars"],
-      ["Jupiter",  "jupiter"],
-      ["Saturn",   "saturn"],
-      ["Uranus",   "uranus"],
-      ["Neptune",  "neptune"],
-      ["Pluto",    "pluto"],
+    const PLANETS: [string, string, string][] = [
+      ["☉ Sun",     "sun",     "Core identity and vital force"],
+      ["☽ Moon",    "moon",    "Emotional body and inner world"],
+      ["☿ Mercury", "mercury", "Mind, communication, perception"],
+      ["♀ Venus",   "venus",   "Attraction, values, relationship style"],
+      ["♂ Mars",    "mars",    "Drive, assertion, will"],
+      ["♃ Jupiter", "jupiter", "Expansion, growth, philosophy"],
+      ["♄ Saturn",  "saturn",  "Structure, mastery, karma"],
+      ["♅ Uranus",  "uranus",  "Disruption, liberation, innovation"],
+      ["♆ Neptune", "neptune", "Dreams, dissolving, transcendence"],
+      ["♇ Pluto",   "pluto",   "Transformation, depth, power"],
     ];
 
-    planets.forEach(([label, key], i) => {
+    PLANETS.forEach(([label, key, note], i) => {
       const p = astro?.planets?.[key];
       if (!p) return;
-      ty = tableRow(
-        doc,
-        [label, `${p.sign} ${deg(p.degree ?? 0)}`, ordinal(p.house ?? 0)],
-        placeCols, MARGIN_L, ty,
-        { shade: i % 2 === 1 }
-      );
+      const houseStr = p.house ? ordinal(p.house) : "—";
+      ty = tableRow(doc, [label, `${p.sign ?? "—"} ${deg(p.degree ?? 0)}`, houseStr, note], placeCols, MARGIN_L, ty, { shade: i % 2 === 1 });
     });
 
     // North Node + Chiron
-    const nn = astro?.northNode;
-    if (nn) {
-      ty = tableRow(doc, ["North Node", `${nn.sign} ${deg(nn.degree ?? 0)}`, ordinal(nn.house ?? 0)], placeCols, MARGIN_L, ty, { shade: planets.length % 2 === 1 });
-    }
-    const ch = astro?.chiron;
-    if (ch) {
-      const shade = (planets.length + (nn ? 1 : 0)) % 2 === 1;
-      ty = tableRow(doc, ["Chiron", `${ch.sign} ${deg(ch.degree ?? 0)}`, ordinal(ch.house ?? 0)], placeCols, MARGIN_L, ty, { shade });
+    const extras: [string, any, string][] = [
+      ["☊ North Node", astro?.planets?.north_node ?? astro?.northNode, "Soul direction"],
+      ["⚷ Chiron",     astro?.planets?.chiron ?? astro?.chiron,        "Core wound + gift"],
+    ];
+    extras.forEach(([label, p, note], ii) => {
+      if (!p) return;
+      const houseStr = p.house ? ordinal(p.house) : "—";
+      ty = tableRow(doc, [label, `${p.sign ?? "—"} ${deg(p.degree ?? 0)}`, houseStr, note], placeCols, MARGIN_L, ty, { shade: (PLANETS.length + ii) % 2 === 1 });
+    });
+
+    // House cusps (if available)
+    const cusps = astro?.houses?.cusps ?? [];
+    if (cusps.length >= 12) {
+      doc.y = ty + 10;
+      sectionTitle(doc, "House Cusps");
+      const hcCols = [60, 100, 60, 100, 60, 100, CONTENT_W - 480];
+      ty = doc.y;
+
+      // Two-row display: 1-6 then 7-12
+      const houseHeaders = cusps.slice(0, 6).map((_: number, i: number) => `H${i + 1}`);
+      const houseValues  = cusps.slice(0, 6).map((c: number) => {
+        const sign = ZODIAC_AT(c);
+        const d = Math.floor(c % 30);
+        return `${sign} ${d}°`;
+      });
+      ty = tableRow(doc, houseHeaders, [84, 84, 84, 84, 84, 88], MARGIN_L, ty, { header: true });
+      ty = tableRow(doc, houseValues,  [84, 84, 84, 84, 84, 88], MARGIN_L, ty, {});
+
+      const houseHeaders2 = cusps.slice(6, 12).map((_: number, i: number) => `H${i + 7}`);
+      const houseValues2  = cusps.slice(6, 12).map((c: number) => {
+        const sign = ZODIAC_AT(c);
+        const d = Math.floor(c % 30);
+        return `${sign} ${d}°`;
+      });
+      ty = tableRow(doc, houseHeaders2, [84, 84, 84, 84, 84, 88], MARGIN_L, ty, { header: true });
+      ty = tableRow(doc, houseValues2,  [84, 84, 84, 84, 84, 88], MARGIN_L, ty, { shade: true });
     }
 
-    doc.y = ty + 6;
+    doc.y = ty + 4;
     addFooter(doc, input.name, pageNum);
 
-    // ── PAGE 3 ──────────────────────────────────────────────────────────────
-    doc.addPage({ margin: 0 });
-    pageNum++;
-    doc.y = 55;
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 4 — Aspects + Chart Themes
+    // ══════════════════════════════════════════════════════════════════════════
+    doc.addPage({ margin: 0 }); pageNum++;
+    fillBg(doc); drawStars(doc);
+    addPageHeader(doc, "Aspects + Chart Themes", pageNum);
 
-    // Natal Chart Themes
-    sectionTitle(doc, "Natal Chart Themes");
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(BLACK)
-       .text("What stands out", MARGIN_L, doc.y).moveDown(0.25);
-
-    ai.whatStandsOut.forEach((bullet) => {
-      doc.font("Helvetica").fontSize(9.5).fillColor(BLACK)
-         .text(`• ${bullet}`, MARGIN_L + 10, doc.y, { width: CONTENT_W - 10, lineGap: 2 });
-    });
-
-    doc.moveDown(0.7);
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(BLACK)
-       .text("Working interpretation", MARGIN_L, doc.y).moveDown(0.3);
-    doc.font("Helvetica").fontSize(10).fillColor(BLACK)
-       .text(ai.workingInterpretation, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2 });
-
-    doc.moveDown(0.8);
-
-    // Aspects table
-    sectionTitle(doc, "Aspects");
     const aspects: any[] = astro?.aspects ?? [];
-    const aspectCols = [160, CONTENT_W - 160];
-    ty = doc.y;
-    ty = tableRow(doc, ["Aspect", "Theme"], aspectCols, MARGIN_L, ty, { header: true });
+    if (aspects.length > 0) {
+      sectionTitle(doc, "Natal Aspects");
+      const aspCols = [90, 80, 90, 45, CONTENT_W - 305];
+      ty = doc.y;
+      ty = tableRow(doc, ["Planet", "Aspect", "Planet", "Orb", "Theme"], aspCols, MARGIN_L, ty, { header: true });
 
-    const ASPECT_THEMES: Record<string, string> = {
-      conjunction: "Fusion of energies — amplification or tension depending on planets.",
-      trine:       "Ease, flow, and natural ability between the two planetary energies.",
-      sextile:     "Opportunity and complementary strengths that reward effort.",
-      square:      "Friction, growth pressure, and recurring challenges to navigate.",
-      opposition:  "Polarity — awareness, projection, and integration work.",
-      quincunx:    "Adjustment tension — two energies that must adapt to coexist.",
-    };
+      const ASPECT_GLYPHS: Record<string, string> = {
+        conjunction: "☌ conjunction", opposition: "☍ opposition",
+        trine: "△ trine", square: "□ square", sextile: "⚹ sextile",
+        quincunx: "⚻ quincunx", semisquare: "∠ semisquare",
+      };
+      const ASPECT_THEMES: Record<string, string> = {
+        conjunction: "Fusion — amplification of energies",
+        trine:       "Flow — natural ability and ease",
+        sextile:     "Opportunity — effort unlocks synergy",
+        square:      "Tension — growth through friction",
+        opposition:  "Polarity — integration and projection",
+        quincunx:    "Adjustment — adaptation required",
+        semisquare:  "Subtle friction — minor irritants",
+      };
 
-    const topAspects = aspects.slice(0, 12);
-    topAspects.forEach((asp, i) => {
-      const label = `${cap(asp.planet1)} ${asp.aspect} ${cap(asp.planet2)}`;
-      const meaning = ASPECT_THEMES[asp.aspect?.toLowerCase()] ?? "Planetary relationship and interaction.";
-      ty = tableRow(doc, [label, meaning], aspectCols, MARGIN_L, ty, { shade: i % 2 === 1 });
-    });
-
-    doc.y = ty + 6;
-
-    if (doc.y > PAGE_H - 80) {
-      addFooter(doc, input.name, pageNum);
-      doc.addPage({ margin: 0 });
-      pageNum++;
-      doc.y = 55;
+      aspects.slice(0, 14).forEach((asp, i) => {
+        const glyph = ASPECT_GLYPHS[asp.aspect?.toLowerCase()] ?? asp.aspect;
+        const theme = ASPECT_THEMES[asp.aspect?.toLowerCase()] ?? "Planetary relationship";
+        const orbStr = asp.orb != null ? `${asp.orb.toFixed(1)}°` : "—";
+        ty = tableRow(doc, [cap(asp.planet1), glyph, cap(asp.planet2), orbStr, theme], aspCols, MARGIN_L, ty, { shade: i % 2 === 1 });
+      });
+      doc.y = ty + 8;
     }
 
-    // Element and house emphasis
-    sectionTitle(doc, "Element and house emphasis");
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(BLACK)
-       .text("Element emphasis", MARGIN_L, doc.y).moveDown(0.2);
-    doc.font("Helvetica").fontSize(10).fillColor(BLACK)
-       .text(ai.elementEmphasis, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2 });
+    // Themes section
+    sectionTitle(doc, "What Stands Out");
+    ai.whatStandsOut.forEach((bullet) => {
+      doc.font("Helvetica").fontSize(9.5).fillColor(IVORY)
+         .text(`◈  ${bullet}`, MARGIN_L + 8, doc.y, { width: CONTENT_W - 8, lineGap: 2.5 });
+    });
+
+    doc.moveDown(0.6);
+    sectionTitle(doc, "Working Interpretation");
+    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+       .text(ai.workingInterpretation, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2.5 });
+
+    addFooter(doc, input.name, pageNum);
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 5 — Elements + Human Design
+    // ══════════════════════════════════════════════════════════════════════════
+    doc.addPage({ margin: 0 }); pageNum++;
+    fillBg(doc); drawStars(doc);
+    addPageHeader(doc, "Elements + Human Design", pageNum);
+
+    sectionTitle(doc, "Element Emphasis");
+    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+       .text(ai.elementEmphasis, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2.5 });
 
     doc.moveDown(0.5);
-    doc.font("Helvetica-Bold").fontSize(10).fillColor(BLACK)
-       .text("House emphasis", MARGIN_L, doc.y).moveDown(0.2);
-    doc.font("Helvetica").fontSize(10).fillColor(BLACK)
-       .text(ai.houseEmphasis, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2 });
+    sectionTitle(doc, "House Emphasis");
+    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+       .text(ai.houseEmphasis, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2.5 });
 
-    doc.moveDown(0.8);
+    // Bottom line callout
+    doc.moveDown(0.7);
+    const blY = doc.y;
+    doc.rect(MARGIN_L, blY, CONTENT_W, 38).fillColor(BG_CARD).fill();
+    doc.moveTo(MARGIN_L, blY).lineTo(PAGE_W - MARGIN_R, blY)
+       .strokeColor(GOLD).strokeOpacity(0.45).lineWidth(0.7).stroke().strokeOpacity(1);
+    doc.moveTo(MARGIN_L, blY + 38).lineTo(PAGE_W - MARGIN_R, blY + 38)
+       .strokeColor(GOLD).strokeOpacity(0.45).lineWidth(0.7).stroke().strokeOpacity(1);
+    doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+       .text("Bottom line:", MARGIN_L + 10, blY + 8, { continued: true })
+       .font("Helvetica").fillColor(IVORY)
+       .text("  " + ai.bottomLine, { width: CONTENT_W - 20 });
+    doc.y = blY + 44;
 
-    // Bottom line callout box
-    const blBoxY = doc.y;
-    doc.rect(MARGIN_L, blBoxY, CONTENT_W, 36).fillColor(LIGHT_ROW).fill();
-    doc.font("Helvetica-Bold").fontSize(9).fillColor(PURPLE)
-       .text("Bottom line:", MARGIN_L + 8, blBoxY + 7, { continued: true })
-       .font("Helvetica").fillColor(BLACK)
-       .text(" " + ai.bottomLine, { width: CONTENT_W - 16 });
-    doc.y = blBoxY + 42;
-
-    addFooter(doc, input.name, pageNum);
-
-    // ── PAGE 4 — Human Design ────────────────────────────────────────────────
-    doc.addPage({ margin: 0 });
-    pageNum++;
-    doc.y = 55;
-
-    sectionTitle(doc, "Human Design Result");
-    doc.font("Helvetica").fontSize(9.5).fillColor(DARK_GRAY)
-       .text("Calculated result from the provided birth data:", MARGIN_L, doc.y)
-       .moveDown(0.4);
-
+    // Human Design
+    sectionTitle(doc, "Human Design");
     const hdRows: [string, string][] = [
-      ["Type",               hd.type           ?? "–"],
-      ["Strategy",           hd.strategy        ?? "–"],
-      ["Authority",          hd.authority       ?? "–"],
-      ["Profile",            hd.profile         ?? "–"],
-      ["Definition",         hd.definition      ?? "–"],
-      ["Incarnation Cross",  hd.incarnationCross ?? "–"],
-      ["Personality Sun",    hd.activations?.conscious?.sun
-                              ? `${hd.activations.conscious.sun.gate}.${hd.activations.conscious.sun.line}` : "–"],
-      ["Design Sun",         hd.activations?.unconscious?.sun
-                              ? `${hd.activations.unconscious.sun.gate}.${hd.activations.unconscious.sun.line}` : "–"],
-    ];
+      ["Type",              hd.type              ?? "—"],
+      ["Strategy",          hd.strategy          ?? "—"],
+      ["Inner Authority",   hd.authority         ?? "—"],
+      ["Profile",           hd.profile           ?? "—"],
+      ["Definition",        hd.definition        ?? "—"],
+      ["Incarnation Cross", hd.incarnationCross  ?? "—"],
+      ["Signature",         hd.signature         ?? "—"],
+      ["Not-Self Theme",    hd.notSelf ?? hd.not_self ?? "—"],
+    ].filter(([, v]) => v && v !== "—") as [string, string][];
 
-    const hdCols = [180, CONTENT_W - 180];
+    const hdCols = [160, CONTENT_W - 160];
     ty = doc.y;
     ty = tableRow(doc, ["Field", "Result"], hdCols, MARGIN_L, ty, { header: true });
     hdRows.forEach(([field, result], i) => {
       ty = tableRow(doc, [field, result], hdCols, MARGIN_L, ty, { shade: i % 2 === 1 });
     });
 
-    doc.y = ty + 10;
+    doc.y = ty + 8;
 
-    // HD Channels (if any)
+    // Defined centers
+    const centers = hd.definedCenters ?? hd.defined_centers ?? [];
+    if (centers.length > 0) {
+      doc.font("Helvetica-Bold").fontSize(8.5).fillColor(GOLD)
+         .text("Defined Centers", MARGIN_L, doc.y);
+      doc.moveDown(0.3);
+      doc.font("Helvetica").fontSize(9).fillColor(IVORY)
+         .text(centers.join("  ·  "), MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2 });
+      doc.moveDown(0.5);
+    }
+
+    // Channels
     const definedChannels = (hd.channels ?? []).filter((c: any) => c.defined);
     if (definedChannels.length > 0) {
-      doc.font("Helvetica-Bold").fontSize(10).fillColor(BLACK)
-         .text("Active Channels", MARGIN_L, doc.y).moveDown(0.3);
+      sectionTitle(doc, "Active Channels");
       ty = doc.y;
       ty = tableRow(doc, ["Channel", "Description"], hdCols, MARGIN_L, ty, { header: true });
       definedChannels.slice(0, 8).forEach((ch: any, i: number) => {
-        ty = tableRow(doc, [ch.name, ch.description ?? ""], hdCols, MARGIN_L, ty, { shade: i % 2 === 1 });
+        ty = tableRow(doc, [ch.name ?? "", ch.description ?? ""], hdCols, MARGIN_L, ty, { shade: i % 2 === 1 });
       });
-      doc.y = ty + 10;
+      doc.y = ty + 8;
     }
 
-    doc.moveDown(0.5);
-    sectionTitle(doc, "Interpretation");
-    doc.font("Helvetica").fontSize(10).fillColor(BLACK)
-       .text(ai.hdInterpretation, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2 });
+    addFooter(doc, input.name, pageNum);
 
-    doc.moveDown(1);
-    doc.font("Helvetica-Oblique").fontSize(9.5).fillColor(MID_GRAY)
-       .text(`Prepared for ${input.name} using the supplied birth data.`, MARGIN_L, doc.y, {
-         width: CONTENT_W, align: "center",
-       });
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 6 — Human Design interpretation + closing
+    // ══════════════════════════════════════════════════════════════════════════
+    doc.addPage({ margin: 0 }); pageNum++;
+    fillBg(doc); drawStars(doc);
+    addPageHeader(doc, "Human Design Interpretation", pageNum);
+
+    sectionTitle(doc, "Your Human Design Reading");
+    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+       .text(ai.hdInterpretation, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 3 });
+
+    // Closing flourish
+    doc.moveDown(2);
+    const closeY = doc.y;
+    doc.moveTo(MARGIN_L + 80, closeY).lineTo(PAGE_W - MARGIN_R - 80, closeY)
+       .strokeColor(GOLD).strokeOpacity(0.3).lineWidth(0.5).stroke().strokeOpacity(1);
+    doc.moveDown(0.7);
+    doc.font("Helvetica-Bold").fontSize(11).fillColor(GOLD)
+       .text("✦", 0, doc.y, { width: PAGE_W, align: "center" });
+    doc.moveDown(0.4);
+    doc.font("Helvetica").fontSize(9).fillColor(IVORY_DIM)
+       .text("This reading is prepared for your inner journey.", 0, doc.y, { width: PAGE_W, align: "center" });
+    doc.moveDown(0.3);
+    doc.font("Helvetica").fontSize(9).fillColor(IVORY_DIM)
+       .text(`Soul Codex  ·  ${input.name}`, 0, doc.y, { width: PAGE_W, align: "center" });
 
     addFooter(doc, input.name, pageNum);
 
@@ -415,7 +551,26 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
   });
 }
 
-function cap(s: string): string {
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
+// ── Page sub-helpers ──────────────────────────────────────────────────────────
+
+function addPageHeader(doc: PDFKit.PDFDocument, sectionName: string, pageNum: number) {
+  // Top bar
+  doc.rect(0, 0, PAGE_W, 44).fillColor("#040e14").fill();
+  doc.moveTo(0, 44).lineTo(PAGE_W, 44)
+     .strokeColor(GOLD).strokeOpacity(0.35).lineWidth(0.7).stroke().strokeOpacity(1);
+  doc.font("Helvetica-Bold").fontSize(8).fillColor(GOLD)
+     .text("SOUL CODEX", MARGIN_L, 16, { width: 100, lineBreak: false, characterSpacing: 1.5 });
+  doc.font("Helvetica").fontSize(8).fillColor(IVORY_DIM)
+     .text(sectionName.toUpperCase(), MARGIN_L + 100, 16, { width: CONTENT_W - 100, align: "right", lineBreak: false, characterSpacing: 1 });
+  doc.y = 60;
+}
+
+function formatBirthData(input: NatalReportInput): string {
+  const parts = [input.birthDate, input.birthTime, input.birthLocation].filter(Boolean);
+  return parts.join("  ·  ");
+}
+
+function ZODIAC_AT(lon: number): string {
+  const signs = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+  return signs[Math.floor(((lon % 360) + 360) % 360 / 30)] ?? "—";
 }

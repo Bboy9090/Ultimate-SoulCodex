@@ -82,12 +82,14 @@ const DEMO: PosterData = {
 
 export default function PosterPage() {
   const [data, setData]     = useState<PosterData>(DEMO);
-  const [downloading, setDownloading] = useState<number | null>(null);
-  const [computing, setComputing]     = useState(false);
+  const [downloading, setDownloading]   = useState<number | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [computing, setComputing]       = useState(false);
   const [computeError, setComputeError] = useState<string | null>(null);
   const [profileAstro, setProfileAstro] = useState<any>(null);
   const [profileHD, setProfileHD]       = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"placements"|"aspects"|"hd">("placements");
+  const [rawProfile, setRawProfile]     = useState<any>(null);
+  const [activeTab, setActiveTab]       = useState<"placements"|"aspects"|"hd">("placements");
 
   /* Auto-populate from stored profile */
   useEffect(() => {
@@ -97,6 +99,7 @@ export default function PosterPage() {
     const num   = p?.numerology ?? {};
 
     if (p?.birthDate || p?.dob) {
+      setRawProfile(p);
       const newData: PosterData = {
         name:            p.name ?? p.firstName ?? "",
         birthDate:       p.birthDate ?? p.dob ?? "",
@@ -147,6 +150,35 @@ export default function PosterPage() {
       setProfileAstro(json);
     } catch (err: any) { setComputeError(err?.message ?? "Network error."); }
     finally { setComputing(false); }
+  };
+
+  const handleDownloadPdfReport = async () => {
+    setDownloadingPdf(true);
+    try {
+      const profile = {
+        name:          data.name || rawProfile?.name || "Soul Codex",
+        birthDate:     data.birthDate,
+        birthTime:     data.birthTime ?? "",
+        birthLocation: data.birthLocation ?? "",
+      };
+      const astrologyData  = profileAstro ?? rawProfile?.astrology ?? {};
+      const humanDesignData = profileHD   ?? rawProfile?.humanDesign ?? {};
+
+      const res = await fetch("/api/natal-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile, astrologyData, humanDesignData }),
+      });
+      if (!res.ok) { setDownloadingPdf(false); return; }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url;
+      a.download = `${(profile.name || "Soul_Codex").replace(/\s+/g, "_")}_Natal_Chart.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    finally { setDownloadingPdf(false); }
   };
 
   const handleDownload = async (width: 2048 | 4096) => {
@@ -262,12 +294,27 @@ export default function PosterPage() {
             </Field>
           </div>
 
-          <button className="btn btn-primary" onClick={() => handleDownload(2048)} disabled={downloading !== null} style={{ width: "100%", fontSize: "0.82rem", marginBottom: "0.5rem" }}>
+          <button className="btn btn-primary" onClick={() => handleDownload(2048)} disabled={downloading !== null || downloadingPdf} style={{ width: "100%", fontSize: "0.82rem", marginBottom: "0.5rem" }}>
             {downloading === 2048 ? "Generating…" : "⬇ Download 2048px PNG"}
           </button>
-          <button className="btn btn-secondary" onClick={() => handleDownload(4096)} disabled={downloading !== null} style={{ width: "100%", fontSize: "0.82rem" }}>
+          <button className="btn btn-secondary" onClick={() => handleDownload(4096)} disabled={downloading !== null || downloadingPdf} style={{ width: "100%", fontSize: "0.82rem", marginBottom: "0.75rem" }}>
             {downloading === 4096 ? "Generating…" : "⬇ Download 4096px PNG"}
           </button>
+
+          {/* PDF Report */}
+          <div style={{ borderTop: "1px solid rgba(212,168,95,0.14)", paddingTop: "0.75rem" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleDownloadPdfReport}
+              disabled={downloadingPdf || downloading !== null || !data.birthDate}
+              style={{ width: "100%", fontSize: "0.82rem", background: "rgba(10,30,20,0.7)", border: "1px solid rgba(212,168,95,0.35)", color: "var(--sc-gold)" }}
+            >
+              {downloadingPdf ? "✦ Generating PDF…" : "✦ Download Full PDF Report"}
+            </button>
+            <p style={{ fontSize: "0.68rem", color: "rgba(246,241,232,0.35)", textAlign: "center", marginTop: "0.4rem", marginBottom: 0 }}>
+              Natal chart · Big Three · Aspects · Human Design — AI written
+            </p>
+          </div>
         </div>
 
         {/* Poster preview */}
