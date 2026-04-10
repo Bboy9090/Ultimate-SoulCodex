@@ -1,31 +1,48 @@
 import type { ReactNode } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "../lib/queryClient";
 import ConfidenceBadge from "../components/ConfidenceBadge";
 
-interface Person {
-  id: string;
-  name: string;
-  birthDate: string;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Mode = "love" | "attraction" | "friendship" | "growth";
+
+interface SignMeta {
+  name: string; element: string; modality: string;
+  glyph: string; keywords: string[]; rulingPlanet: string;
+}
+interface ArchetypeMatch {
+  sign: SignMeta; score: number;
+  scores: { love: number; attraction: number; friendship: number; growth: number };
+  headline: string; why: string; tension?: string;
+}
+interface MatchResult {
+  best: ArchetypeMatch[];
+  challenging: ArchetypeMatch[];
 }
 
+interface Person { id: string; name: string; birthDate: string; }
 interface CompatibilityResult {
   overallScore: number;
-  dimensions: {
-    identity: number;
-    stress: number;
-    values: number;
-    decisions: number;
-  };
-  friction: string[];
-  synergy: string[];
-  growthOpportunities: string[];
-  profile1Name?: string;
-  profile2Name?: string;
+  dimensions: { identity: number; stress: number; values: number; decisions: number };
+  friction: string[]; synergy: string[]; growthOpportunities: string[];
+  profile1Name?: string; profile2Name?: string;
 }
 
-// Dimension config — glyph + accent color
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const MODES: { key: Mode; label: string; glyph: string; desc: string }[] = [
+  { key: "love",       label: "Love",       glyph: "♥", desc: "Romantic depth & emotional resonance" },
+  { key: "attraction", label: "Attraction", glyph: "✦", desc: "Chemistry, desire & magnetic pull" },
+  { key: "friendship", label: "Friendship", glyph: "◌", desc: "Ease, trust & long-term bond" },
+  { key: "growth",     label: "Growth",     glyph: "◈", desc: "Complementary gifts & evolution" },
+];
+
+const ELEMENT_COLORS: Record<string, string> = {
+  Fire: "#f97316", Earth: "#84cc16", Air: "#38bdf8", Water: "#a78bfa",
+};
+
 const DIM_CONFIG = {
   identity:  { glyph: "◉", color: "#D4A85F", label: "Identity" },
   stress:    { glyph: "⬡", color: "#f59e0b", label: "Under Pressure" },
@@ -33,27 +50,179 @@ const DIM_CONFIG = {
   decisions: { glyph: "◆", color: "#22d3ee", label: "Decisions" },
 };
 
+const FREE_LIMIT = 5;
+
 function scoreLabel(score: number): { text: string; color: string } {
-  if (score >= 75) return { text: "Deep Resonance",    color: "#22c55e" };
-  if (score >= 55) return { text: "Strong Connection", color: "#22d3ee" };
-  if (score >= 40) return { text: "Complex Dynamic",   color: "#f59e0b" };
+  if (score >= 80) return { text: "Deep Resonance",    color: "#22c55e" };
+  if (score >= 65) return { text: "Strong Connection", color: "#22d3ee" };
+  if (score >= 50) return { text: "Complex Dynamic",   color: "#f59e0b" };
   return                  { text: "Friction-Heavy",    color: "#ef4444" };
 }
 
-const FREE_LIMIT = 5;
+// ─── Small components ─────────────────────────────────────────────────────────
+
+function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
+  const r = (size / 2) - 7;
+  const circ = 2 * Math.PI * r;
+  const { color } = scoreLabel(score);
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="6"
+          strokeDasharray={circ} strokeDashoffset={circ - (circ * score) / 100}
+          strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.8s ease-out" }} />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: size * 0.22, fontWeight: 700, color: "var(--foreground)", lineHeight: 1 }}>{score}</span>
+        <span style={{ fontSize: size * 0.11, color: "var(--muted-foreground)", letterSpacing: "0.05em" }}>%</span>
+      </div>
+    </div>
+  );
+}
+
+function DimensionBar({ label, glyph, color, score }: { label: string; glyph: string; color: string; score: number }) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.35rem" }}>
+        <span style={{ fontSize: "0.72rem", color: "var(--muted-foreground)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+          <span style={{ color }}>{glyph}</span>{label}
+        </span>
+        <span style={{ fontSize: "0.72rem", fontWeight: 600, color }}>{score}%</span>
+      </div>
+      <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 99, transition: "width 0.6s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; rank?: number }) {
+  const [open, setOpen] = useState(false);
+  const elColor = ELEMENT_COLORS[match.sign.element] || "#D4A85F";
+  const { color: scoreColor, text: scoreText } = scoreLabel(match.score);
+
+  return (
+    <div
+      onClick={() => setOpen(o => !o)}
+      style={{
+        background: "rgba(26,18,10,0.75)", border: `1px solid ${elColor}28`,
+        borderTop: `3px solid ${elColor}`,
+        borderRadius: "14px", padding: "1.25rem",
+        cursor: "pointer", transition: "border-color 0.2s",
+        position: "relative",
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = elColor + "60"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = elColor + "28"; }}
+    >
+      {rank !== undefined && (
+        <div style={{
+          position: "absolute", top: "0.75rem", right: "0.75rem",
+          fontSize: "0.6rem", color: "var(--muted-foreground)",
+          background: "rgba(255,255,255,0.06)", borderRadius: "99px",
+          padding: "0.15rem 0.5rem", letterSpacing: "0.08em",
+        }}>
+          #{rank + 1}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+        <ScoreRing score={match.score} size={72} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>{match.sign.glyph}</span>
+            <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--foreground)" }}>{match.sign.name}</span>
+            <span style={{
+              fontSize: "0.6rem", padding: "0.1rem 0.5rem",
+              background: `${elColor}18`, border: `1px solid ${elColor}40`,
+              borderRadius: "99px", color: elColor, letterSpacing: "0.07em",
+            }}>{match.sign.element}</span>
+          </div>
+          <div style={{ fontSize: "0.72rem", color: scoreColor, fontWeight: 600, marginBottom: "0.35rem" }}>{scoreText}</div>
+          <p style={{ fontSize: "0.8rem", color: "rgba(246,241,232,0.72)", margin: 0, lineHeight: 1.5 }}>{match.headline}</p>
+        </div>
+      </div>
+
+      {/* Keywords */}
+      <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.85rem", flexWrap: "wrap" }}>
+        {match.sign.keywords.map(k => (
+          <span key={k} style={{
+            fontSize: "0.62rem", padding: "0.15rem 0.55rem",
+            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "99px", color: "var(--muted-foreground)",
+          }}>{k}</span>
+        ))}
+      </div>
+
+      {/* Expanded detail */}
+      {open && (
+        <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <p style={{ fontSize: "0.82rem", color: "rgba(246,241,232,0.82)", lineHeight: 1.7, marginBottom: "0.75rem" }}>{match.why}</p>
+          {match.tension && (
+            <p style={{ fontSize: "0.76rem", color: "#f59e0b", lineHeight: 1.6 }}>
+              <span style={{ marginRight: "0.35rem" }}>⚠</span>{match.tension}
+            </p>
+          )}
+          {/* Mini score grid by mode */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem", marginTop: "1rem" }}>
+            {(Object.entries(match.scores) as [Mode, number][]).map(([m, s]) => (
+              <div key={m} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.2rem" }}>{m}</div>
+                <div style={{ fontWeight: 700, fontSize: "0.92rem", color: m === mode ? "#D4A85F" : "var(--foreground)" }}>{s}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChallengeCard({ match, mode }: { match: ArchetypeMatch; mode: Mode }) {
+  const elColor = ELEMENT_COLORS[match.sign.element] || "#ef4444";
+  return (
+    <div style={{
+      background: "rgba(26,14,8,0.7)", border: "1px solid rgba(239,68,68,0.18)",
+      borderLeft: "3px solid rgba(239,68,68,0.45)", borderRadius: "12px",
+      padding: "1rem 1.1rem", display: "flex", alignItems: "center", gap: "0.85rem",
+    }}>
+      <div style={{ textAlign: "center", flexShrink: 0 }}>
+        <div style={{ fontSize: "1.4rem" }}>{match.sign.glyph}</div>
+        <div style={{ fontSize: "0.58rem", color: elColor, marginTop: "0.1rem" }}>{match.sign.element}</div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: "0.88rem", marginBottom: "0.2rem" }}>{match.sign.name}</div>
+        <div style={{ fontSize: "0.72rem", color: "#ef4444", fontWeight: 600, marginBottom: "0.2rem" }}>{match.score}% — {scoreLabel(match.score).text}</div>
+        {match.tension && (
+          <div style={{ fontSize: "0.75rem", color: "rgba(255,200,150,0.7)", lineHeight: 1.5 }}>{match.tension}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function CompatibilityPage() {
   const [myProfile, setMyProfile]       = useState<any>(null);
   const [myProfileId, setMyProfileId]   = useState<string | null>(null);
   const [myConfidence, setMyConfidence] = useState<any>(null);
   const [persons, setPersons]           = useState<Person[]>([]);
-  const [isAddOpen, setIsAddOpen]       = useState(false);
-  const [result, setResult]             = useState<CompatibilityResult | null>(null);
-  const [error, setError]               = useState<string | null>(null);
-  const [success, setSuccess]           = useState<string | null>(null);
 
+  const [mode, setMode]             = useState<Mode>("love");
+  const [matches, setMatches]       = useState<MatchResult | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen]   = useState(false);
+  const [result, setResult]         = useState<CompatibilityResult | null>(null);
+  const [error, setError]           = useState<string | null>(null);
+  const [success, setSuccess]       = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", birthDate: "", birthTime: "", birthLocation: "" });
 
+  const flash = (fn: (v: string | null) => void, msg: string) => {
+    fn(msg); setTimeout(() => fn(null), 3500);
+  };
+
+  // Load profile from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("soulProfile");
     if (saved) setMyProfile(JSON.parse(saved));
@@ -65,28 +234,41 @@ export default function CompatibilityPage() {
     if (savedConf) setMyConfidence(JSON.parse(savedConf));
   }, []);
 
-  // Auto-save profile to backend on mount when we have birth data but no server ID
+  // Auto-save profile to backend when needed
   useEffect(() => {
-    if (myProfile && !myProfileId && (myProfile.name) && (myProfile.birthDate || myProfile.dob)) {
+    if (myProfile && !myProfileId && myProfile.name && (myProfile.birthDate || myProfile.dob)) {
       saveMyProfileMutation.mutate();
     }
   }, [myProfile]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-compare first saved connection once both IDs are available
+  // Auto-compare first saved person when profile is linked
   useEffect(() => {
     if (myProfileId && persons.length > 0 && persons[0]?.id && !result && !compareMutation.isPending) {
       compareMutation.mutate(String(persons[0].id));
     }
   }, [myProfileId, persons.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const flash = (fn: (v: string | null) => void, msg: string) => {
-    fn(msg);
-    setTimeout(() => fn(null), 3500);
-  };
+  // Fetch archetype matches whenever profile or mode changes
+  const fetchMatches = useCallback(() => {
+    if (!myProfile) return;
+    const sunSign = myProfile?.sunSign ?? myProfile?.astrology?.sun ?? myProfile?.astrology?.sunSign;
+    if (!sunSign) return;
+    const lifePathNumber = myProfile?.numerology?.lifePath ?? myProfile?.numerologyData?.lifePathNumber;
+    const hdType = myProfile?.humanDesign?.type ?? myProfile?.humanDesignData?.type;
+    archetypeMatchMutation.mutate({ sunSign, lifePathNumber, hdType, mode });
+  }, [myProfile, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { fetchMatches(); }, [fetchMatches]);
+
+  const archetypeMatchMutation = useMutation({
+    mutationFn: async (data: { sunSign: string; lifePathNumber?: number; hdType?: string; mode: Mode }) =>
+      apiRequest("/api/compatibility/archetype-matches", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: (data: any) => setMatches(data),
+    onError: (err: any) => console.warn("[archetype-matches]", err.message),
+  });
 
   const saveMyProfileMutation = useMutation({
     mutationFn: async () => {
-      // Try onboarding data first, then fall back to stored soul profile
       const rawInputs = localStorage.getItem("onboardingData") || localStorage.getItem("soulUserInputs");
       let name: string | undefined, birthDate: string | undefined, birthTime: string | undefined, birthLocation: string | undefined;
       if (rawInputs) {
@@ -94,14 +276,12 @@ export default function CompatibilityPage() {
         name = inputs.name; birthDate = inputs.birthDate;
         birthTime = inputs.birthTime; birthLocation = inputs.birthLocation;
       }
-      // Fall back to soulProfile values
       const p = myProfile;
       if (!name) name = p?.name;
       if (!birthDate) birthDate = p?.birthDate ?? p?.dob;
       if (!birthTime) birthTime = p?.birthTime;
       if (!birthLocation) birthLocation = p?.birthLocation ?? p?.location ?? p?.city;
-
-      if (!name || !birthDate) throw new Error("Complete onboarding first to save your profile.");
+      if (!name || !birthDate) throw new Error("Complete onboarding first.");
       return apiRequest("/api/profiles", {
         method: "POST",
         body: JSON.stringify({ name, birthDate, birthTime: birthTime || undefined, birthLocation: birthLocation || undefined }),
@@ -112,7 +292,7 @@ export default function CompatibilityPage() {
       localStorage.setItem("soulMyProfileId", id);
       setMyProfileId(id);
     },
-    onError: (err: any) => console.warn("[compatibility] Auto-save profile failed:", err.message),
+    onError: (err: any) => console.warn("[save-profile]", err.message),
   });
 
   const addPersonMutation = useMutation({
@@ -139,7 +319,7 @@ export default function CompatibilityPage() {
       });
     },
     onSuccess: (data: any) => {
-      const cd   = data.compatibilityData || {};
+      const cd = data.compatibilityData || {};
       const dims = cd.dimensions || {};
       setResult({
         overallScore: data.overallScore ?? cd.overall ?? 0,
@@ -149,345 +329,326 @@ export default function CompatibilityPage() {
           values:    dims.values?.score    ?? dims.values    ?? 0,
           decisions: dims.decisions?.score ?? dims.decisions ?? 0,
         },
-        friction:           cd.friction            || [],
-        synergy:            cd.synergy             || [],
+        friction:            cd.friction            || [],
+        synergy:             cd.synergy             || [],
         growthOpportunities: cd.growthOpportunities || [],
         profile1Name: data.profile1?.name,
         profile2Name: data.profile2?.name,
       });
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      setCompareOpen(true);
+      setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 100);
     },
     onError: (err: any) => flash(setError, err.message || "Comparison failed"),
   });
 
-  const handleCompare = (personId: string) => {
-    if (!myProfileId) { flash(setError, "Save your profile first."); return; }
-    compareMutation.mutate(personId);
-  };
+  const sunSign  = myProfile?.sunSign  ?? myProfile?.astrology?.sun  ?? myProfile?.astrology?.sunSign;
+  const moonSign = myProfile?.moonSign ?? myProfile?.astrology?.moon ?? myProfile?.astrology?.moonSign;
+  const rising   = myProfile?.risingSign ?? myProfile?.astrology?.rising ?? myProfile?.astrology?.risingSign;
+  const lifePath = myProfile?.numerology?.lifePath ?? myProfile?.numerologyData?.lifePathNumber;
+  const hdType   = myProfile?.humanDesign?.type ?? myProfile?.humanDesignData?.type;
 
   const nearLimit = persons.length >= FREE_LIMIT - 1 && persons.length < FREE_LIMIT;
   const atLimit   = persons.length >= FREE_LIMIT;
+  const modeInfo  = MODES.find(m => m.key === mode)!;
 
   return (
-    <div style={{ padding: "2rem 1rem 4rem", maxWidth: 780, margin: "0 auto" }}>
+    <div style={{ padding: "2rem 1rem 5rem", maxWidth: 800, margin: "0 auto" }}>
 
-      {/* ── Header ───────────────────────────────────────────────────────────── */}
+      {/* ── Header ── */}
       <section style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.25rem)" }}>
+        <h1 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem,5vw,2.25rem)" }}>
           Compatibility
         </h1>
         <p style={{ color: "var(--muted-foreground)", fontSize: "0.88rem", marginTop: "0.35rem" }}>
-          Compare your blueprint with someone else to see where your energies meet.
+          {sunSign
+            ? `Your ${sunSign} blueprint ranked against all 12 signs`
+            : "Complete your soul profile to see your matches"}
         </p>
       </section>
 
-      {/* ── Toasts ───────────────────────────────────────────────────────────── */}
+      {/* ── Toasts ── */}
       {error && (
-        <div style={{ padding: "0.7rem 1rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", color: "#ef4444", marginBottom: "1rem", fontSize: "0.85rem" }}>
-          {error}
-        </div>
+        <div style={{ padding: "0.7rem 1rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", color: "#ef4444", marginBottom: "1rem", fontSize: "0.85rem" }}>{error}</div>
       )}
       {success && (
-        <div style={{ padding: "0.7rem 1rem", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "10px", color: "#22c55e", marginBottom: "1rem", fontSize: "0.85rem" }}>
-          {success}
-        </div>
+        <div style={{ padding: "0.7rem 1rem", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "10px", color: "#22c55e", marginBottom: "1rem", fontSize: "0.85rem" }}>{success}</div>
       )}
 
-      {/* ── My Profile Card ──────────────────────────────────────────────────── */}
-      <div style={{
-        background: "rgba(15,20,40,0.65)", border: "1px solid rgba(212,168,95,0.2)",
-        borderLeft: "3px solid #D4A85F", borderRadius: "14px",
-        padding: "1.5rem", marginBottom: "1.75rem",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.9rem" }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: "50%",
-              background: "rgba(212,168,95,0.15)", border: "1px solid rgba(212,168,95,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "1.2rem", color: "var(--cosmic-lavender)",
-            }}>◉</div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--foreground)" }}>
-                {myProfile?.name || myProfile?.birth_data?.name || "My Profile"}
-              </h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.3rem", alignItems: "center" }}>
-                {myProfile?.archetype?.element && (
-                  <span style={{
-                    display: "inline-block", padding: "0.15rem 0.6rem",
-                    background: "rgba(212,168,95,0.12)", border: "1px solid rgba(212,168,95,0.25)",
-                    borderRadius: "99px", fontSize: "0.68rem", color: "var(--cosmic-lavender)", letterSpacing: "0.06em",
+      {/* ── My Blueprint Strip ── */}
+      {myProfile && (
+        <div style={{
+          background: "rgba(26,14,8,0.72)", border: "1px solid rgba(212,168,95,0.2)",
+          borderLeft: "3px solid #D4A85F", borderRadius: "14px",
+          padding: "1.1rem 1.4rem", marginBottom: "1.75rem",
+          display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap",
+        }}>
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.4rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ color: "#D4A85F" }}>◉</span>
+              {myProfile?.name || "My Blueprint"}
+              {myConfidence && <ConfidenceBadge badge={myConfidence.badge} reason={myConfidence.reason} size="sm" />}
+            </div>
+            <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+              {([["☀", "Sun", sunSign], ["☽", "Moon", moonSign], ["↑", "Rising", rising], ["#", "LP", lifePath], ["◈", "HD", hdType]] as [string, string, string][])
+                .filter(([,,v]) => v)
+                .map(([icon, label, val]) => (
+                  <span key={label} style={{
+                    display: "inline-flex", alignItems: "center", gap: "0.25rem",
+                    padding: "0.18rem 0.6rem",
+                    background: "rgba(212,168,95,0.1)", border: "1px solid rgba(212,168,95,0.22)",
+                    borderRadius: "99px", fontSize: "0.68rem", color: "rgba(246,241,232,0.8)",
                   }}>
-                    {myProfile.archetype.element} · {myProfile.archetype.role}
+                    <span style={{ color: "#D4A85F", fontSize: "0.7rem" }}>{icon}</span>
+                    <span style={{ color: "var(--muted-foreground)" }}>{label}</span>
+                    <span style={{ fontWeight: 600 }}>{val}</span>
                   </span>
-                )}
-                {myConfidence && (
-                  <ConfidenceBadge badge={myConfidence.badge} reason={myConfidence.reason} size="sm" />
-                )}
-              </div>
+                ))}
             </div>
           </div>
           {!myProfileId ? (
-            <button className="btn btn-primary" onClick={() => saveMyProfileMutation.mutate()} disabled={saveMyProfileMutation.isPending} style={{ fontSize: "0.82rem", padding: "0.5rem 1.1rem" }}>
-              {saveMyProfileMutation.isPending ? "Saving…" : "Save Profile"}
+            <button className="btn btn-primary" onClick={() => saveMyProfileMutation.mutate()} disabled={saveMyProfileMutation.isPending} style={{ fontSize: "0.8rem", padding: "0.45rem 1rem", flexShrink: 0 }}>
+              {saveMyProfileMutation.isPending ? "Saving…" : "Link Profile"}
             </button>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", color: "#22c55e" }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} /> Linked
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: "#22c55e", flexShrink: 0 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} /> Linked
             </div>
           )}
         </div>
+      )}
 
-        {/* Sun / Moon / Rising mini-row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
-          {([ ["Sun", myProfile?.sunSign ?? myProfile?.astrology?.sun ?? myProfile?.astrology?.sunSign], ["Moon", myProfile?.moonSign ?? myProfile?.astrology?.moon ?? myProfile?.astrology?.moonSign], ["Rising", myProfile?.risingSign ?? myProfile?.astrology?.rising ?? myProfile?.astrology?.risingSign] ] as [string, string][]).map(([label, val]) => (
-            <div key={label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted-foreground)", marginBottom: "0.2rem" }}>{label}</div>
-              <div style={{ fontWeight: 500, fontSize: "0.9rem", color: val ? "var(--foreground)" : "var(--muted-foreground)" }}>{val || "—"}</div>
+      {!sunSign ? (
+        <div style={{ textAlign: "center", padding: "3rem 1rem", border: "1px dashed rgba(212,168,95,0.2)", borderRadius: "14px" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>◉</div>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "0.88rem", marginBottom: "1rem" }}>
+            Complete your soul profile to unlock compatibility analysis.
+          </p>
+          <a href="/onboarding" style={{ textDecoration: "none" }}>
+            <button className="btn btn-primary">Complete Profile</button>
+          </a>
+        </div>
+      ) : (
+        <>
+          {/* ── Relationship Mode Selector ── */}
+          <div style={{ marginBottom: "1.75rem" }}>
+            <div style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--muted-foreground)", marginBottom: "0.75rem" }}>
+              Relationship context
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Connections ──────────────────────────────────────────────────────── */}
-      <div style={{ marginBottom: "2rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "1rem", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--foreground)" }}>
-            <span style={{ color: "var(--cosmic-pink)" }}>◌</span> Connections
-          </h2>
-          {!atLimit && (
-            <button
-              className="btn btn-secondary"
-              style={{ padding: "0.45rem 0.9rem", fontSize: "0.8rem" }}
-              onClick={() => setIsAddOpen(!isAddOpen)}
-            >
-              {isAddOpen ? "✕ Close" : "+ Add Person"}
-            </button>
-          )}
-        </div>
-
-        {/* Approaching / at limit banner */}
-        {(nearLimit || atLimit) && (
-          <div style={{
-            padding: "0.75rem 1.1rem", marginBottom: "1rem",
-            background: "rgba(212,168,95,0.07)", border: "1px solid rgba(212,168,95,0.28)",
-            borderRadius: "10px", fontSize: "0.82rem",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
-          }}>
-            <span style={{ color: "rgba(246,241,232,0.6)" }}>
-              {atLimit
-                ? `Free tier limit reached (${FREE_LIMIT} connections).`
-                : `${FREE_LIMIT - persons.length} connection slot remaining on the free tier.`}
-            </span>
-            <a href="/profile" style={{ textDecoration: "none" }}>
-              <span style={{
-                display: "inline-block", padding: "0.2rem 0.7rem",
-                background: "rgba(212,168,95,0.15)", border: "1px solid rgba(212,168,95,0.4)",
-                borderRadius: "99px", fontSize: "0.72rem", color: "var(--sc-gold, #D4A85F)",
-                whiteSpace: "nowrap", cursor: "pointer",
-              }}>
-                Upgrade ✦
-              </span>
-            </a>
-          </div>
-        )}
-
-        {isAddOpen && !atLimit && (
-          <div style={{
-            background: "rgba(15,20,40,0.65)", border: "1px dashed rgba(212,168,95,0.4)",
-            borderRadius: "12px", padding: "1.5rem", marginBottom: "1.25rem",
-          }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem", marginBottom: "1rem" }}>
-              {([ ["Name", "text", "name", "Name"], ["Birth Date", "date", "birthDate", ""], ["Birth Time (optional)", "time", "birthTime", ""], ["Birth Location", "text", "birthLocation", "City, Country"] ] as [string, string, keyof typeof form, string][]).map(([label, type, key, ph]) => (
-                <div key={key} className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="label" style={{ fontSize: "0.75rem" }}>{label}</label>
-                  <input className="input" type={type} placeholder={ph} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} />
-                </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
+              {MODES.map(m => (
+                <button
+                  key={m.key}
+                  onClick={() => setMode(m.key)}
+                  style={{
+                    padding: "0.7rem 0.5rem",
+                    background: mode === m.key ? "rgba(212,168,95,0.18)" : "rgba(26,14,8,0.65)",
+                    border: `1px solid ${mode === m.key ? "rgba(212,168,95,0.55)" : "rgba(212,168,95,0.14)"}`,
+                    borderRadius: "12px", cursor: "pointer",
+                    color: mode === m.key ? "#D4A85F" : "var(--muted-foreground)",
+                    fontSize: "0.72rem", fontWeight: mode === m.key ? 700 : 400,
+                    textAlign: "center", transition: "all 0.18s",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem",
+                  }}
+                >
+                  <span style={{ fontSize: "1rem" }}>{m.glyph}</span>
+                  {m.label}
+                </button>
               ))}
             </div>
-            <button
-              className="btn btn-primary"
-              style={{ width: "100%", justifyContent: "center" }}
-              onClick={() => addPersonMutation.mutate(form)}
-              disabled={!form.name || !form.birthDate || addPersonMutation.isPending}
-            >
-              {addPersonMutation.isPending ? "Adding…" : "Add Connection"}
-            </button>
-          </div>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
-          {persons.length === 0 && !isAddOpen && (
-            <div style={{ textAlign: "center", color: "var(--muted-foreground)", padding: "2.5rem 1rem", border: "1px dashed rgba(212,168,95,0.2)", borderRadius: "12px", fontSize: "0.85rem" }}>
-              No connections yet. Add someone to compare.
-            </div>
-          )}
-          {persons.map(person => (
-            <div key={person.id} style={{
-              background: "rgba(15,20,40,0.55)", border: "1px solid rgba(244,114,182,0.15)",
-              borderRadius: "12px", padding: "1rem 1.25rem",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.9rem" }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: "50%",
-                  background: "rgba(244,114,182,0.12)", border: "1px solid rgba(244,114,182,0.25)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "1rem", color: "var(--cosmic-rose)",
-                }}>◌</div>
-                <div>
-                  <p style={{ fontWeight: 600, margin: 0, fontSize: "0.9rem" }}>{person.name}</p>
-                  <p style={{ fontSize: "0.72rem", color: "var(--muted-foreground)", margin: 0 }}>{person.birthDate}</p>
-                </div>
-              </div>
-              <button
-                className="btn btn-secondary"
-                style={{ padding: "0.4rem 0.9rem", fontSize: "0.78rem" }}
-                onClick={() => handleCompare(person.id)}
-                disabled={compareMutation.isPending}
-              >
-                {compareMutation.isPending && compareMutation.variables === person.id ? "Analyzing…" : "Compare"}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Results ──────────────────────────────────────────────────────────── */}
-      {result && (
-        <div style={{
-          background: "rgba(15,20,40,0.7)", border: "1px solid rgba(212,168,95,0.25)",
-          borderRadius: "18px", padding: "2rem",
-        }}>
-
-          {/* Pair header */}
-          <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
-            <h2 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "1.5rem", marginBottom: "0.35rem" }}>
-              Compatibility Analysis
-            </h2>
-            {(result.profile1Name || result.profile2Name) && (
-              <p style={{ color: "var(--muted-foreground)", fontSize: "0.82rem" }}>
-                {result.profile1Name} <span style={{ color: "rgba(212,168,95,0.6)", margin: "0 0.3rem" }}>×</span> {result.profile2Name}
+            {modeInfo && (
+              <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.6rem", textAlign: "center" }}>
+                {modeInfo.desc}
               </p>
             )}
           </div>
 
-          {/* Score ring */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2.25rem" }}>
-            <div style={{ position: "relative", width: 140, height: 140, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg style={{ width: "100%", height: "100%", transform: "rotate(-90deg)" }}>
-                <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(212,168,95,0.1)" strokeWidth="10" />
-                <circle cx="70" cy="70" r="60" fill="none" stroke="#D4A85F" strokeWidth="10"
-                  strokeDasharray="377" strokeDashoffset={377 - (377 * result.overallScore) / 100}
-                  strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s ease-out" }} />
-              </svg>
-              <div style={{ position: "absolute", textAlign: "center" }}>
-                <span style={{ fontSize: "2.4rem", fontWeight: 700, display: "block", color: "var(--foreground)", lineHeight: 1 }}>{result.overallScore}%</span>
-                <span style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Match</span>
+          {/* ── Best Matches ── */}
+          <div style={{ marginBottom: "2rem" }}>
+            <h2 style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "#D4A85F", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span>{modeInfo?.glyph}</span> Your Best Matches for {modeInfo?.label}
+            </h2>
+
+            {archetypeMatchMutation.isPending ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+                {[0,1,2,3].map(i => (
+                  <div key={i} style={{ height: 160, borderRadius: "14px", background: "rgba(26,14,8,0.5)", border: "1px solid rgba(212,168,95,0.1)", animation: "pulse 1.5s ease-in-out infinite" }} />
+                ))}
               </div>
+            ) : matches?.best ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+                {matches.best.map((m, i) => (
+                  <MatchCard key={m.sign.name} match={m} mode={mode} rank={i} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {/* ── Most Challenging ── */}
+          {matches?.challenging && matches.challenging.length > 0 && (
+            <div style={{ marginBottom: "2.5rem" }}>
+              <h2 style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "#ef4444", marginBottom: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span>⚠</span> Most Challenging for {modeInfo?.label}
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {matches.challenging.map(m => (
+                  <ChallengeCard key={m.sign.name} match={m} mode={mode} />
+                ))}
+              </div>
+              <p style={{ fontSize: "0.72rem", color: "var(--muted-foreground)", marginTop: "0.75rem", lineHeight: 1.6 }}>
+                Challenging doesn't mean impossible — it means more conscious effort is required on both sides.
+              </p>
             </div>
-            {/* Verbal label below ring */}
-            <div style={{ marginTop: "0.85rem", textAlign: "center" }}>
-              <span style={{
-                display: "inline-block", padding: "0.25rem 0.9rem",
-                background: `${scoreLabel(result.overallScore).color}15`,
-                border: `1px solid ${scoreLabel(result.overallScore).color}35`,
-                borderRadius: "99px",
-                fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.04em",
-                color: scoreLabel(result.overallScore).color,
-              }}>
-                {scoreLabel(result.overallScore).text}
+          )}
+
+          {/* ── Compare a Specific Person ── */}
+          <div style={{
+            background: "rgba(18,11,5,0.72)", border: "1px solid rgba(212,168,95,0.18)",
+            borderRadius: "16px", overflow: "hidden", marginBottom: "1.5rem",
+          }}>
+            <button
+              onClick={() => setCompareOpen(o => !o)}
+              style={{
+                width: "100%", padding: "1.1rem 1.4rem",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "none", border: "none", cursor: "pointer", color: "var(--foreground)",
+                fontSize: "0.9rem", fontWeight: 600,
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ color: "var(--cosmic-pink)" }}>◌</span>
+                Compare a Specific Person
               </span>
-            </div>
+              <span style={{ color: "var(--muted-foreground)", fontSize: "0.75rem" }}>
+                {compareOpen ? "▲ Collapse" : "▼ Expand"}
+              </span>
+            </button>
+
+            {compareOpen && (
+              <div style={{ padding: "0 1.4rem 1.4rem" }}>
+                <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "1.25rem", lineHeight: 1.6 }}>
+                  Enter someone's birth details to get a personalised synastry reading between your two blueprints.
+                </p>
+
+                {/* Limit banner */}
+                {(nearLimit || atLimit) && (
+                  <div style={{ padding: "0.75rem 1.1rem", marginBottom: "1rem", background: "rgba(212,168,95,0.07)", border: "1px solid rgba(212,168,95,0.28)", borderRadius: "10px", fontSize: "0.82rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+                    <span style={{ color: "rgba(246,241,232,0.6)" }}>
+                      {atLimit ? `Free limit reached (${FREE_LIMIT} people).` : `${FREE_LIMIT - persons.length} slot remaining.`}
+                    </span>
+                    <a href="/profile" style={{ textDecoration: "none" }}>
+                      <span style={{ display: "inline-block", padding: "0.2rem 0.7rem", background: "rgba(212,168,95,0.15)", border: "1px solid rgba(212,168,95,0.4)", borderRadius: "99px", fontSize: "0.72rem", color: "#D4A85F", cursor: "pointer" }}>
+                        Upgrade ✦
+                      </span>
+                    </a>
+                  </div>
+                )}
+
+                {/* Add person form */}
+                {!atLimit && (
+                  <div style={{ marginBottom: "1.25rem" }}>
+                    <button className="btn btn-secondary" style={{ padding: "0.45rem 0.9rem", fontSize: "0.8rem", marginBottom: "1rem" }} onClick={() => setIsAddOpen(!isAddOpen)}>
+                      {isAddOpen ? "✕ Cancel" : "+ Add Person"}
+                    </button>
+                    {isAddOpen && (
+                      <div style={{ background: "rgba(15,20,40,0.65)", border: "1px dashed rgba(212,168,95,0.35)", borderRadius: "12px", padding: "1.25rem" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem", marginBottom: "1rem" }}>
+                          {([["Name", "text", "name", "Name"], ["Birth Date", "date", "birthDate", ""], ["Birth Time (opt.)", "time", "birthTime", ""], ["Location (opt.)", "text", "birthLocation", "City"]] as [string, string, keyof typeof form, string][]).map(([label, type, key, ph]) => (
+                            <div key={key} className="form-group" style={{ marginBottom: 0 }}>
+                              <label className="label" style={{ fontSize: "0.72rem" }}>{label}</label>
+                              <input className="input" type={type} placeholder={ph} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} />
+                            </div>
+                          ))}
+                        </div>
+                        <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => addPersonMutation.mutate(form)} disabled={!form.name || !form.birthDate || addPersonMutation.isPending}>
+                          {addPersonMutation.isPending ? "Saving…" : "Add & Analyse"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Saved persons */}
+                {persons.length === 0 ? (
+                  <div style={{ textAlign: "center", color: "var(--muted-foreground)", padding: "1.5rem", border: "1px dashed rgba(212,168,95,0.18)", borderRadius: "10px", fontSize: "0.82rem" }}>
+                    No people added yet.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                    {persons.map(person => (
+                      <div key={person.id} style={{ background: "rgba(15,20,40,0.55)", border: "1px solid rgba(244,114,182,0.15)", borderRadius: "12px", padding: "0.9rem 1.1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(244,114,182,0.12)", border: "1px solid rgba(244,114,182,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", color: "var(--cosmic-rose)" }}>◌</div>
+                          <div>
+                            <p style={{ fontWeight: 600, margin: 0, fontSize: "0.88rem" }}>{person.name}</p>
+                            <p style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", margin: 0 }}>{person.birthDate}</p>
+                          </div>
+                        </div>
+                        <button className="btn btn-secondary" style={{ padding: "0.35rem 0.8rem", fontSize: "0.76rem" }} onClick={() => compareMutation.mutate(person.id)} disabled={compareMutation.isPending}>
+                          {compareMutation.isPending && compareMutation.variables === person.id ? "Reading…" : "Compare"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Synastry Result */}
+                {result && (
+                  <div style={{ marginTop: "2rem", background: "rgba(15,20,40,0.7)", border: "1px solid rgba(212,168,95,0.22)", borderRadius: "16px", padding: "1.75rem" }}>
+                    <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+                      <h3 className="gradient-text" style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", marginBottom: "0.3rem" }}>Synastry Reading</h3>
+                      {(result.profile1Name || result.profile2Name) && (
+                        <p style={{ color: "var(--muted-foreground)", fontSize: "0.8rem" }}>
+                          {result.profile1Name} <span style={{ color: "rgba(212,168,95,0.6)" }}>×</span> {result.profile2Name}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Score ring */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "1.75rem" }}>
+                      <ScoreRing score={result.overallScore} size={120} />
+                      <div style={{ marginTop: "0.75rem" }}>
+                        <span style={{ display: "inline-block", padding: "0.22rem 0.85rem", background: `${scoreLabel(result.overallScore).color}15`, border: `1px solid ${scoreLabel(result.overallScore).color}35`, borderRadius: "99px", fontSize: "0.76rem", fontWeight: 600, color: scoreLabel(result.overallScore).color }}>
+                          {scoreLabel(result.overallScore).text}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Dimension bars */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.1rem", marginBottom: "1.5rem" }}>
+                      {(Object.entries(DIM_CONFIG) as [keyof typeof DIM_CONFIG, typeof DIM_CONFIG[keyof typeof DIM_CONFIG]][]).map(([key, cfg]) => (
+                        <DimensionBar key={key} label={cfg.label} glyph={cfg.glyph} color={cfg.color} score={result.dimensions[key]} />
+                      ))}
+                    </div>
+
+                    <div style={{ height: 1, background: "rgba(212,168,95,0.1)", marginBottom: "1.25rem" }} />
+
+                    {result.synergy.length > 0 && (
+                      <div style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.2)", borderLeft: "3px solid #22c55e", borderRadius: "12px", padding: "1.1rem 1.25rem", marginBottom: "0.85rem" }}>
+                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#22c55e", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700 }}>✦ Where You Flow</p>
+                        {result.synergy.map((s, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(200,255,210,0.88)", marginBottom: "0.28rem", lineHeight: 1.65 }}><span style={{ color: "#22c55e", marginRight: "0.4rem" }}>→</span>{s}</p>)}
+                      </div>
+                    )}
+
+                    {result.growthOpportunities.length > 0 && (
+                      <div style={{ background: "rgba(212,168,95,0.05)", border: "1px solid rgba(212,168,95,0.2)", borderLeft: "3px solid #D4A85F", borderRadius: "12px", padding: "1.1rem 1.25rem", marginBottom: "0.85rem" }}>
+                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#D4A85F", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700 }}>◈ What This Can Build</p>
+                        {result.growthOpportunities.map((g, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.28rem", lineHeight: 1.65 }}><span style={{ color: "#D4A85F", marginRight: "0.4rem" }}>◆</span>{g}</p>)}
+                      </div>
+                    )}
+
+                    {result.friction.length > 0 && (
+                      <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)", borderLeft: "3px solid #f59e0b", borderRadius: "12px", padding: "1.1rem 1.25rem" }}>
+                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#f59e0b", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700 }}>▪ Watch Points</p>
+                        {result.friction.map((f, i) => <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.28rem", lineHeight: 1.65 }}><span style={{ color: "#f59e0b", marginRight: "0.4rem" }}>⚠</span>{f}</p>)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-
-          {/* Dimension bars */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginBottom: "2rem" }}>
-            {(Object.entries(DIM_CONFIG) as [keyof typeof DIM_CONFIG, typeof DIM_CONFIG[keyof typeof DIM_CONFIG]][]).map(([key, cfg]) => (
-              <DimensionBar key={key} label={cfg.label} glyph={cfg.glyph} color={cfg.color} score={result.dimensions[key]} />
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: 1, background: "rgba(212,168,95,0.12)", marginBottom: "1.5rem" }} />
-
-          {/* ── Where You Flow (Synergy) ── */}
-          {result.synergy.length > 0 && (
-            <div style={{
-              background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.2)",
-              borderLeft: "3px solid #22c55e", borderRadius: "12px",
-              padding: "1.25rem 1.4rem", marginBottom: "1rem",
-            }}>
-              <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#22c55e", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
-                ✦ Where You Flow
-              </p>
-              {result.synergy.map((s, i) => (
-                <p key={i} style={{ fontSize: "0.86rem", color: "rgba(200,255,210,0.88)", marginBottom: "0.3rem", lineHeight: 1.65 }}>
-                  <span style={{ color: "#22c55e", marginRight: "0.45rem" }}>→</span>{s}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {/* ── What This Dynamic Can Build (Growth) ── */}
-          {result.growthOpportunities.length > 0 && (
-            <div style={{
-              background: "rgba(212,168,95,0.05)", border: "1px solid rgba(212,168,95,0.2)",
-              borderLeft: "3px solid #D4A85F", borderRadius: "12px",
-              padding: "1.25rem 1.4rem", marginBottom: "1rem",
-            }}>
-              <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#D4A85F", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
-                ◈ What This Dynamic Can Build
-              </p>
-              {result.growthOpportunities.map((g, i) => (
-                <p key={i} style={{ fontSize: "0.86rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.3rem", lineHeight: 1.65 }}>
-                  <span style={{ color: "#D4A85F", marginRight: "0.45rem" }}>◆</span>{g}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {/* ── Watch Points (Friction) ── */}
-          {result.friction.length > 0 && (
-            <div style={{
-              background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)",
-              borderLeft: "3px solid #f59e0b", borderRadius: "12px",
-              padding: "1.25rem 1.4rem",
-            }}>
-              <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#f59e0b", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
-                ▪ Watch Points
-              </p>
-              {result.friction.map((f, i) => (
-                <p key={i} style={{ fontSize: "0.84rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.3rem", lineHeight: 1.65 }}>
-                  <span style={{ color: "#f59e0b", marginRight: "0.45rem" }}>⚠</span>{f}
-                </p>
-              ))}
-            </div>
-          )}
-        </div>
+        </>
       )}
-    </div>
-  );
-}
-
-// ── Dimension bar ─────────────────────────────────────────────────────────────
-
-function DimensionBar({ label, glyph, color, score }: {
-  label: string; glyph: string; color: string; score: number;
-  children?: ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-          <span style={{ color, fontSize: "0.85rem" }}>{glyph}</span>
-          <span style={{ fontWeight: 500, color: "var(--foreground)" }}>{label}</span>
-        </div>
-        <span style={{ color, fontWeight: 600, fontSize: "0.82rem" }}>{score}%</span>
-      </div>
-      <div style={{ height: 7, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 4, transition: "width 1s ease-out", opacity: 0.85 }} />
-      </div>
     </div>
   );
 }
