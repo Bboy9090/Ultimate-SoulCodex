@@ -150,7 +150,7 @@ export default function SoulGuidePage() {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div style={{
         padding: "0.9rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem",
-        borderBottom: "1px solid rgba(139,92,246,0.2)",
+        borderBottom: "1px solid rgba(212,168,95,0.2)",
         background: "rgba(10,1,24,0.5)", backdropFilter: "blur(12px)",
         justifyContent: "space-between",
       }}>
@@ -178,8 +178,8 @@ export default function SoulGuidePage() {
             borderRadius: "99px",
             background: remaining === 1
               ? "rgba(245,158,11,0.15)"
-              : "rgba(139,92,246,0.12)",
-            border: `1px solid ${remaining === 1 ? "rgba(245,158,11,0.35)" : "rgba(139,92,246,0.25)"}`,
+              : "rgba(212,168,95,0.12)",
+            border: `1px solid ${remaining === 1 ? "rgba(245,158,11,0.35)" : "rgba(212,168,95,0.25)"}`,
             color: remaining === 1 ? "#f59e0b" : "rgba(200,190,255,0.7)",
             whiteSpace: "nowrap",
           }}>
@@ -197,7 +197,7 @@ export default function SoulGuidePage() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: "2rem" }}>
             <div style={{
               width: 60, height: 60, borderRadius: "50%",
-              background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)",
+              background: "rgba(212,168,95,0.1)", border: "1px solid rgba(212,168,95,0.25)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "1.75rem", color: "var(--cosmic-lavender)", marginBottom: "1.25rem",
             }}>
@@ -215,13 +215,13 @@ export default function SoulGuidePage() {
                   key={i}
                   onClick={() => handleSend(s)}
                   style={{
-                    background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)",
+                    background: "rgba(212,168,95,0.08)", border: "1px solid rgba(212,168,95,0.2)",
                     borderRadius: "10px", padding: "0.7rem 1rem",
                     fontSize: "0.85rem", color: "rgba(232,230,255,0.88)",
                     cursor: "pointer", textAlign: "left", transition: "all 0.15s",
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.15)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.08)"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(212,168,95,0.15)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(212,168,95,0.08)"; }}
                 >
                   {s}
                 </button>
@@ -240,7 +240,7 @@ export default function SoulGuidePage() {
                 background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
                 color: "var(--foreground)", borderBottomRightRadius: "0.25rem",
               } : {
-                background: "rgba(139,92,246,0.14)", border: "1px solid rgba(139,92,246,0.28)",
+                background: "rgba(212,168,95,0.14)", border: "1px solid rgba(212,168,95,0.28)",
                 color: "rgba(232,230,255,0.95)", borderBottomLeftRadius: "0.25rem",
                 boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
               }),
@@ -319,7 +319,7 @@ export default function SoulGuidePage() {
       </div>
 
       {/* ── Input ────────────────────────────────────────────────────────── */}
-      <div style={{ padding: "0.9rem 1rem", background: "rgba(10,1,24,0.65)", backdropFilter: "blur(15px)", borderTop: "1px solid rgba(139,92,246,0.2)" }}>
+      <div style={{ padding: "0.9rem 1rem", background: "rgba(10,1,24,0.65)", backdropFilter: "blur(15px)", borderTop: "1px solid rgba(212,168,95,0.2)" }}>
         {isLimitReached ? (
           <div style={{
             textAlign: "center", fontSize: "0.8rem",
@@ -332,7 +332,7 @@ export default function SoulGuidePage() {
             onSubmit={e => { e.preventDefault(); handleSend(input); }}
             style={{
               display: "flex", gap: "0.6rem",
-              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(139,92,246,0.2)",
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(212,168,95,0.2)",
               borderRadius: "1.5rem", padding: "0.25rem 0.25rem 0.25rem 1rem",
               alignItems: "center",
             }}

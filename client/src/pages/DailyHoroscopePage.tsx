@@ -80,7 +80,7 @@ function MoonPhaseIcon({ phase, size = 40 }: { phase: string; size?: number }) {
   const light = "#e2e8f0";
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={cx} cy={cy} r={r} fill={dark} stroke="rgba(139,92,246,0.3)" strokeWidth="1" />
+      <circle cx={cx} cy={cy} r={r} fill={dark} stroke="rgba(212,168,95,0.3)" strokeWidth="1" />
       {illuminatedSide === "right" ? (
         <path d={`M ${cx} ${cy - r} A ${r} ${r} 0 0 1 ${cx} ${cy + r} A ${Math.abs(curveOffset)} ${r} 0 0 ${curveOffset >= 0 ? 1 : 0} ${cx} ${cy - r}`} fill={light} opacity="0.9" />
       ) : (
@@ -94,7 +94,7 @@ function SkeletonBlock({ width = "100%", height = "1rem", style }: { width?: str
   return (
     <div style={{
       width, height, borderRadius: "8px",
-      background: "linear-gradient(90deg, rgba(139,92,246,0.1) 25%, rgba(139,92,246,0.2) 50%, rgba(139,92,246,0.1) 75%)",
+      background: "linear-gradient(90deg, rgba(212,168,95,0.1) 25%, rgba(212,168,95,0.2) 50%, rgba(212,168,95,0.1) 75%)",
       backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite", ...style,
     }} />
   );
@@ -129,7 +129,7 @@ function TransitCard({ transit }: { transit: PersonalTransit }) {
   return (
     <div
       style={{
-        background: "rgba(15,20,40,0.6)", border: "1px solid rgba(139,92,246,0.15)",
+        background: "rgba(15,20,40,0.6)", border: "1px solid rgba(212,168,95,0.15)",
         borderRadius: "12px", padding: "1rem 1.25rem",
         cursor: "pointer", transition: "all 250ms ease",
       }}
@@ -150,7 +150,7 @@ function TransitCard({ transit }: { transit: PersonalTransit }) {
         {transit.transitingPlanet} in {transit.transitingSign} ({transit.transitingDegree.toFixed(1)}°) → natal {transit.natalPlanet} in {transit.natalSign} ({transit.natalDegree.toFixed(1)}°)
       </div>
       {expanded && (
-        <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(139,92,246,0.15)", fontSize: "0.875rem", color: "#cbd5e1", lineHeight: 1.65 }}>
+        <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(212,168,95,0.15)", fontSize: "0.875rem", color: "#cbd5e1", lineHeight: 1.65 }}>
           {transit.interpretation}
           <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <IntensityDot intensity={transit.intensity} />
@@ -248,7 +248,7 @@ export default function DailyHoroscopePage() {
 
         {/* ── 2. Main Reading — most prominent ────────────────────────────── */}
         <section style={{
-          background: "rgba(15,20,40,0.6)", border: "1px solid rgba(139,92,246,0.2)",
+          background: "rgba(15,20,40,0.6)", border: "1px solid rgba(212,168,95,0.2)",
           borderTop: "2px solid var(--cosmic-purple)",
           borderRadius: "14px", padding: "1.75rem 1.5rem",
         }}>
@@ -264,7 +264,7 @@ export default function DailyHoroscopePage() {
         <div style={{
           display: "flex", gap: "0.75rem", alignItems: "center",
           padding: "0.75rem 1rem",
-          background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.14)",
+          background: "rgba(212,168,95,0.05)", border: "1px solid rgba(212,168,95,0.14)",
           borderRadius: "10px",
         }}>
           <div style={{
@@ -309,8 +309,8 @@ export default function DailyHoroscopePage() {
                 <div key={i} style={{
                   display: "flex", alignItems: "flex-start", gap: "0.75rem",
                   padding: "0.7rem 1rem",
-                  background: "rgba(139,92,246,0.05)", borderRadius: "10px",
-                  border: "1px solid rgba(139,92,246,0.1)",
+                  background: "rgba(212,168,95,0.05)", borderRadius: "10px",
+                  border: "1px solid rgba(212,168,95,0.1)",
                 }}>
                   <span style={{ fontSize: "0.75rem", fontWeight: 700, color: aspectColor(al.aspect), whiteSpace: "nowrap", minWidth: "fit-content" }}>
                     {al.planet1} {al.aspect} {al.planet2}
@@ -331,11 +331,11 @@ export default function DailyHoroscopePage() {
               display: "flex", alignItems: "center", gap: "0.75rem",
               marginBottom: "0.75rem",
             }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(139,92,246,0.15)" }} />
+              <div style={{ flex: 1, height: 1, background: "rgba(212,168,95,0.15)" }} />
               <span style={{ fontSize: "0.58rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted-foreground)", opacity: 0.5, whiteSpace: "nowrap" }}>
                 Transit Detail
               </span>
-              <div style={{ flex: 1, height: 1, background: "rgba(139,92,246,0.15)" }} />
+              <div style={{ flex: 1, height: 1, background: "rgba(212,168,95,0.15)" }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
               {(remainingTransits.length > 0 ? remainingTransits : data.personalTransits).map((t, i) => (

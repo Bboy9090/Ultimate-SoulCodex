@@ -27,7 +27,7 @@ interface CompatibilityResult {
 
 // Dimension config — glyph + accent color
 const DIM_CONFIG = {
-  identity:  { glyph: "◉", color: "#8b5cf6", label: "Identity" },
+  identity:  { glyph: "◉", color: "#D4A85F", label: "Identity" },
   stress:    { glyph: "⬡", color: "#f59e0b", label: "Under Pressure" },
   values:    { glyph: "◌", color: "#f472b6", label: "Values" },
   decisions: { glyph: "◆", color: "#22d3ee", label: "Decisions" },
@@ -195,15 +195,15 @@ export default function CompatibilityPage() {
 
       {/* ── My Profile Card ──────────────────────────────────────────────────── */}
       <div style={{
-        background: "rgba(15,20,40,0.65)", border: "1px solid rgba(139,92,246,0.2)",
-        borderLeft: "3px solid #8b5cf6", borderRadius: "14px",
+        background: "rgba(15,20,40,0.65)", border: "1px solid rgba(212,168,95,0.2)",
+        borderLeft: "3px solid #D4A85F", borderRadius: "14px",
         padding: "1.5rem", marginBottom: "1.75rem",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.9rem" }}>
             <div style={{
               width: 44, height: 44, borderRadius: "50%",
-              background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)",
+              background: "rgba(212,168,95,0.15)", border: "1px solid rgba(212,168,95,0.3)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "1.2rem", color: "var(--cosmic-lavender)",
             }}>◉</div>
@@ -215,7 +215,7 @@ export default function CompatibilityPage() {
                 {myProfile?.archetype?.element && (
                   <span style={{
                     display: "inline-block", padding: "0.15rem 0.6rem",
-                    background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.25)",
+                    background: "rgba(212,168,95,0.12)", border: "1px solid rgba(212,168,95,0.25)",
                     borderRadius: "99px", fontSize: "0.68rem", color: "var(--cosmic-lavender)", letterSpacing: "0.06em",
                   }}>
                     {myProfile.archetype.element} · {myProfile.archetype.role}
@@ -294,7 +294,7 @@ export default function CompatibilityPage() {
 
         {isAddOpen && !atLimit && (
           <div style={{
-            background: "rgba(15,20,40,0.65)", border: "1px dashed rgba(139,92,246,0.4)",
+            background: "rgba(15,20,40,0.65)", border: "1px dashed rgba(212,168,95,0.4)",
             borderRadius: "12px", padding: "1.5rem", marginBottom: "1.25rem",
           }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem", marginBottom: "1rem" }}>
@@ -318,7 +318,7 @@ export default function CompatibilityPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
           {persons.length === 0 && !isAddOpen && (
-            <div style={{ textAlign: "center", color: "var(--muted-foreground)", padding: "2.5rem 1rem", border: "1px dashed rgba(139,92,246,0.2)", borderRadius: "12px", fontSize: "0.85rem" }}>
+            <div style={{ textAlign: "center", color: "var(--muted-foreground)", padding: "2.5rem 1rem", border: "1px dashed rgba(212,168,95,0.2)", borderRadius: "12px", fontSize: "0.85rem" }}>
               No connections yet. Add someone to compare.
             </div>
           )}
@@ -356,7 +356,7 @@ export default function CompatibilityPage() {
       {/* ── Results ──────────────────────────────────────────────────────────── */}
       {result && (
         <div style={{
-          background: "rgba(15,20,40,0.7)", border: "1px solid rgba(139,92,246,0.25)",
+          background: "rgba(15,20,40,0.7)", border: "1px solid rgba(212,168,95,0.25)",
           borderRadius: "18px", padding: "2rem",
         }}>
 
@@ -367,7 +367,7 @@ export default function CompatibilityPage() {
             </h2>
             {(result.profile1Name || result.profile2Name) && (
               <p style={{ color: "var(--muted-foreground)", fontSize: "0.82rem" }}>
-                {result.profile1Name} <span style={{ color: "rgba(139,92,246,0.6)", margin: "0 0.3rem" }}>×</span> {result.profile2Name}
+                {result.profile1Name} <span style={{ color: "rgba(212,168,95,0.6)", margin: "0 0.3rem" }}>×</span> {result.profile2Name}
               </p>
             )}
           </div>
@@ -376,8 +376,8 @@ export default function CompatibilityPage() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2.25rem" }}>
             <div style={{ position: "relative", width: 140, height: 140, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg style={{ width: "100%", height: "100%", transform: "rotate(-90deg)" }}>
-                <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(139,92,246,0.1)" strokeWidth="10" />
-                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--cosmic-purple)" strokeWidth="10"
+                <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(212,168,95,0.1)" strokeWidth="10" />
+                <circle cx="70" cy="70" r="60" fill="none" stroke="#D4A85F" strokeWidth="10"
                   strokeDasharray="377" strokeDashoffset={377 - (377 * result.overallScore) / 100}
                   strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s ease-out" }} />
               </svg>
@@ -409,7 +409,7 @@ export default function CompatibilityPage() {
           </div>
 
           {/* Divider */}
-          <div style={{ height: 1, background: "rgba(139,92,246,0.12)", marginBottom: "1.5rem" }} />
+          <div style={{ height: 1, background: "rgba(212,168,95,0.12)", marginBottom: "1.5rem" }} />
 
           {/* ── Where You Flow (Synergy) ── */}
           {result.synergy.length > 0 && (
@@ -432,16 +432,16 @@ export default function CompatibilityPage() {
           {/* ── What This Dynamic Can Build (Growth) ── */}
           {result.growthOpportunities.length > 0 && (
             <div style={{
-              background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.2)",
-              borderLeft: "3px solid #8b5cf6", borderRadius: "12px",
+              background: "rgba(212,168,95,0.05)", border: "1px solid rgba(212,168,95,0.2)",
+              borderLeft: "3px solid #D4A85F", borderRadius: "12px",
               padding: "1.25rem 1.4rem", marginBottom: "1rem",
             }}>
-              <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#8b5cf6", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
+              <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", color: "#D4A85F", textTransform: "uppercase", marginBottom: "0.6rem", fontWeight: 700 }}>
                 ◈ What This Dynamic Can Build
               </p>
               {result.growthOpportunities.map((g, i) => (
                 <p key={i} style={{ fontSize: "0.86rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.3rem", lineHeight: 1.65 }}>
-                  <span style={{ color: "#8b5cf6", marginRight: "0.45rem" }}>◆</span>{g}
+                  <span style={{ color: "#D4A85F", marginRight: "0.45rem" }}>◆</span>{g}
                 </p>
               ))}
             </div>
