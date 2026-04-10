@@ -89,12 +89,13 @@ const LOCKED_FEATURES = [
 ];
 
 export default function BlueprintPage() {
-  const [isPremium, setIsPremium]     = useState(false);
+  const [isPremium, setIsPremium]          = useState(false);
   const [premiumChecked, setPremiumChecked] = useState(false);
-  const [cached, setCachedState]      = useState<CachedReading | null>(null);
-  const [generating, setGenerating]   = useState(false);
-  const [error, setError]             = useState<string | null>(null);
-  const [profile, setProfile]         = useState<any>(null);
+  const [cached, setCachedState]           = useState<CachedReading | null>(null);
+  const [generating, setGenerating]        = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [error, setError]                  = useState<string | null>(null);
+  const [profile, setProfile]              = useState<any>(null);
 
   useEffect(() => {
     const p = getProfile();
@@ -144,6 +145,38 @@ export default function BlueprintPage() {
   };
 
   const handleRegenerate = () => handleGenerate(true);
+
+  const handleDownloadPdfReport = async () => {
+    if (!profile) return;
+    setDownloadingPdf(true);
+    try {
+      const astro = profile.astrology ?? profile.natalChart ?? {};
+      const hd    = profile.humanDesign ?? profile.human_design ?? {};
+      const res = await fetch("/api/natal-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile: {
+            name:          profile.name ?? "Soul Codex",
+            birthDate:     profile.birthDate ?? profile.dob ?? "",
+            birthTime:     profile.birthTime ?? profile.time ?? "",
+            birthLocation: profile.birthLocation ?? profile.location ?? profile.city ?? "",
+          },
+          astrologyData:  astro,
+          humanDesignData: hd,
+        }),
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url;
+      a.download = `${(profile.name || "Soul_Codex").replace(/\s+/g, "_")}_Natal_Chart.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    finally { setDownloadingPdf(false); }
+  };
 
   /* ── No profile ── */
   if (!hasProfile) {
@@ -341,13 +374,16 @@ export default function BlueprintPage() {
 
           {/* PDF report CTA */}
           <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(212,168,95,0.12)", textAlign: "center" }}>
-            <Link href="/poster">
-              <button className="btn btn-secondary" style={{ fontSize: "0.85rem", border: "1px solid rgba(212,168,95,0.3)", color: "var(--sc-gold)", background: "rgba(10,30,20,0.6)" }}>
-                ✦ Download Full PDF Report
-              </button>
-            </Link>
+            <button
+              className="btn btn-secondary"
+              onClick={handleDownloadPdfReport}
+              disabled={downloadingPdf}
+              style={{ fontSize: "0.85rem", border: "1px solid rgba(212,168,95,0.3)", color: "var(--sc-gold)", background: "rgba(10,30,20,0.6)" }}
+            >
+              {downloadingPdf ? "✦ Generating PDF…" : "✦ Download Full PDF Report"}
+            </button>
             <p style={{ fontSize: "0.68rem", color: "rgba(246,241,232,0.25)", marginTop: "0.4rem" }}>
-              Opens the Poster page where you can download the full natal chart PDF
+              Natal chart · Big Three · Aspects · Human Design — AI written
             </p>
           </div>
         </>
