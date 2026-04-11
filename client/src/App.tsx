@@ -52,7 +52,8 @@ export default function App() {
   const isMarketing = location === "/" && !hasProfile();
 
   useEffect(() => {
-    document.body.style.backgroundImage = "url('/nebula-bg.png')";
+    document.body.style.backgroundImage =
+      "linear-gradient(rgba(8,4,18,0.52), rgba(8,4,18,0.52)), url('/nebula-bg.png')";
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center top";
     document.body.style.backgroundAttachment = "fixed";

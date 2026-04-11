@@ -361,7 +361,7 @@ export default function CodexReadingPage() {
             const isIdentity = i < 2;
             return (
               <div key={i} style={{
-                background: `rgba(15,25,40,0.55)`,
+                background: `rgba(12,6,24,0.92)`,
                 border: "1px solid rgba(212,168,95,0.12)",
                 borderLeft: `3px solid ${accent.color}`,
                 borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
@@ -403,7 +403,7 @@ export default function CodexReadingPage() {
               const accent = getSectionAccent(sec.header);
               return (
                 <div key={`motto-${i}`} style={{
-                  background: `rgba(15,25,40,0.55)`,
+                  background: `rgba(12,6,24,0.92)`,
                   border: "1px solid rgba(212,168,95,0.12)",
                   borderLeft: `3px solid ${accent.color}`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
@@ -440,7 +440,7 @@ export default function CodexReadingPage() {
             {sections.filter(s => s.header.toUpperCase().startsWith("WHO I AM")).map((sec, i) => (
               <div key={`who-${i}`} style={{ position: "relative", marginBottom: "1.5rem" }}>
                 <div style={{
-                  background: `rgba(15,25,40,0.55)`,
+                  background: `rgba(12,6,24,0.92)`,
                   border: "1px solid rgba(212,168,95,0.12)",
                   borderLeft: `3px solid #D4A85F`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem",
