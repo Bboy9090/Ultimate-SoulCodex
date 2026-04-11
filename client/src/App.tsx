@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route, Switch, useLocation, Redirect } from "wouter";
 import Nav from "./components/Nav";
 import LandingPage from "./pages/LandingPage";
@@ -49,6 +50,13 @@ const routes = (
 export default function App() {
   const [location] = useLocation();
   const isMarketing = location === "/" && !hasProfile();
+
+  useEffect(() => {
+    document.body.style.backgroundImage = "url('/nebula-bg.png')";
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center top";
+    document.body.style.backgroundAttachment = "fixed";
+  }, []);
 
   if (isMarketing) {
     return <LandingPage />;
