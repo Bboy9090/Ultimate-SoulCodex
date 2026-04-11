@@ -185,12 +185,12 @@ function cleanBehavioralText(text: string): string {
 
 // ── Section visual config ────────────────────────────────────────────────────
 const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
-  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(12,6,24,0.78)" },
-  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(12,6,24,0.78)" },
-  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(12,6,24,0.78)" },
-  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(12,6,24,0.78)" },
-  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(12,6,24,0.78)" },
-  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(12,6,24,0.78)" },
+  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(12,6,24,0.92)" },
+  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(12,6,24,0.92)" },
+  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(12,6,24,0.92)" },
+  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(12,6,24,0.92)" },
+  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(12,6,24,0.92)" },
+  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(12,6,24,0.92)" },
 };
 
 export default function ProfilePage() {
@@ -313,25 +313,25 @@ export default function ProfilePage() {
       label: "Who I Am",
       value: firstSentence(cleanEssence),
       accent: "#D4A85F",
-      bg: "rgba(12,6,24,0.78)",
+      bg: "rgba(12,6,24,0.92)",
     },
     {
       label: "Why Now",
       value: whyNowValue,
       accent: "#22d3ee",
-      bg: "rgba(12,6,24,0.78)",
+      bg: "rgba(12,6,24,0.92)",
     },
     {
       label: "One Pattern to Watch",
       value: firstSentence(cleanStress),
       accent: "#f59e0b",
-      bg: "rgba(12,6,24,0.78)",
+      bg: "rgba(12,6,24,0.92)",
     },
     {
       label: "One Move Today",
       value: oneMoveValue,
       accent: "#22c55e",
-      bg: "rgba(12,6,24,0.78)",
+      bg: "rgba(12,6,24,0.92)",
     },
   ];
 
@@ -399,10 +399,9 @@ export default function ProfilePage() {
         }}>
           <span style={{
             display: "inline-block", padding: "0.3rem 0.9rem",
-            background: "rgba(12,6,24,0.72)", border: "1px solid rgba(212,168,95,0.45)",
+            background: "rgba(12,6,24,0.92)", border: "1px solid rgba(212,168,95,0.55)",
             borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600,
             color: "var(--sc-gold)", letterSpacing: "0.08em", textTransform: "uppercase",
-            backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           }}>
             {archetype.element} · {archetype.role}
           </span>
@@ -450,8 +449,6 @@ export default function ProfilePage() {
               padding: "1.25rem 1.35rem",
               border: `1px solid ${card.accent}55`,
               borderLeft: `3px solid ${card.accent}`,
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
             }}
           >
             <div style={{
@@ -461,7 +458,7 @@ export default function ProfilePage() {
               {card.label}
             </div>
             <p style={{
-              fontSize: "0.855rem", color: "rgba(230,228,255,0.88)",
+              fontSize: "0.855rem", color: "#ffffff",
               lineHeight: 1.6, margin: 0,
               display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
               overflow: "hidden",
@@ -528,7 +525,7 @@ export default function ProfilePage() {
           disabled={comparablesLoading}
           style={{
             width: "100%",
-            background: "rgba(12,6,24,0.78)",
+            background: "rgba(12,6,24,0.92)",
             border: "1px solid rgba(212,168,95,0.45)",
             borderRadius: 12,
             padding: "1rem 1.5rem",
@@ -536,8 +533,6 @@ export default function ProfilePage() {
             display: "flex", alignItems: "center", justifyContent: "space-between",
             color: "var(--sc-gold)",
             transition: "all 0.2s ease",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -572,13 +567,11 @@ export default function ProfilePage() {
                 <div
                   key={cfg.key}
                   style={{
-                    background: "rgba(12,6,24,0.78)",
+                    background: "rgba(12,6,24,0.92)",
                     border: `1px solid ${cfg.accent}45`,
                     borderLeft: `3px solid ${cfg.accent}`,
                     borderRadius: 10,
                     padding: "1.1rem 1.25rem",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.55rem" }}>
@@ -813,8 +806,6 @@ function ProfileSection({
         borderRadius: "12px",
         padding: "1.4rem 1.5rem",
         marginBottom: "1.25rem",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "0.9rem" }}>
