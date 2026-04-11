@@ -3350,6 +3350,32 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
         };
       }
 
+      // Generate soul comparables for the bonus PDF page
+      let comparables = null;
+      if (isAuthed && isGeminiAvailable()) {
+        try {
+          const compPrompt = `
+You are generating 4 soul archetype comparables for a natal chart profile.
+Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${rising}
+Human Design: ${hdType}${hdAuth ? `, ${hdAuth} Authority` : ""}${hdProf ? `, ${hdProf} Profile` : ""}
+
+Return ONLY valid JSON (no markdown):
+{
+  "animal": { "name": "specific animal", "why": "1-2 sentences — behavioral pattern" },
+  "deity": { "name": "Deity · Pantheon", "why": "1-2 sentences — behavioral alignment" },
+  "historical": { "name": "Full name · identifier", "why": "1-2 sentences — shared behavioral pattern" },
+  "icon": { "name": "Name · source", "why": "1-2 sentences — shared archetypal signature" }
+}
+Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pick specific, well-matched comparables.`.trim();
+
+          const raw2 = await generateText({ model: "gemini-2.5-flash", prompt: compPrompt, temperature: 0.82 });
+          const cleaned2 = (raw2 ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+          comparables = JSON.parse(cleaned2);
+        } catch (ce) {
+          console.warn("[NatalReport] Comparables generation failed:", ce);
+        }
+      }
+
       const pdfBuffer = await buildNatalReportPdf({
         name,
         birthDate,
@@ -3358,6 +3384,7 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
         astrology: astro,
         humanDesign: hd,
         aiText,
+        comparables: comparables ?? undefined,
       });
 
       const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
@@ -3854,6 +3881,90 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
     } catch (error) {
       console.error("[codex30] Generation error:", error);
       return handleError(error, res, "Codex30");
+    }
+  });
+
+  // ── Soul Comparables — 2K-style archetypal matches ─────────────────────────
+  app.post("/api/soul-comparables", async (req, res) => {
+    try {
+      const { profile } = req.body;
+      if (!profile) return res.status(400).json({ error: "profile required" });
+
+      const archetype   = profile.archetype?.name ?? "Unknown Archetype";
+      const element     = profile.archetype?.element ?? "";
+      const role        = profile.archetype?.role ?? "";
+      const sunSign     = profile.sunSign ?? profile.astrologyData?.sunSign ?? "Unknown";
+      const moonSign    = profile.moonSign ?? profile.astrologyData?.moonSign ?? "Unknown";
+      const risingSign  = profile.risingSign ?? profile.astrologyData?.risingSign ?? "Unknown";
+      const lifePath    = profile.lifePath ?? "";
+      const hdType      = profile.humanDesignData?.type ?? "Unknown";
+      const hdAuth      = profile.humanDesignData?.authority ?? "";
+      const hdProf      = profile.humanDesignData?.profile ?? "";
+      const coreEssence = profile.synthesis?.coreEssence ?? "";
+
+      const prompt = `
+You are generating 4 soul archetype comparables for this person's natal chart + Human Design profile. Think of it like NBA 2K telling you which players your build is most similar to — but instead of players, you're matching to archetypes.
+
+PROFILE:
+- Archetype: ${archetype}${element ? ` (${element}${role ? ` · ${role}` : ""})` : ""}
+- Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${risingSign}
+${lifePath ? `- Life Path: ${lifePath}` : ""}
+- Human Design: ${hdType}${hdAuth ? `, ${hdAuth} Authority` : ""}${hdProf ? `, ${hdProf} Profile` : ""}
+${coreEssence ? `- Core essence: ${coreEssence}` : ""}
+
+Return ONLY valid JSON (no markdown, no code fences, no explanation):
+
+{
+  "animal": {
+    "name": "specific animal name (e.g. 'Peregrine Falcon', 'Octopus', 'Mantis Shrimp')",
+    "why": "1-2 sentences on shared behavioral pattern — concrete, not generic"
+  },
+  "deity": {
+    "name": "Deity · Pantheon (e.g. 'Athena · Greek', 'Shiva · Hindu', 'Odin · Norse')",
+    "why": "1-2 sentences on why this deity's domain and function mirrors this profile behaviorally"
+  },
+  "historical": {
+    "name": "Full name · brief identifier (e.g. 'Nikola Tesla · inventor', 'Cleopatra · strategist-queen')",
+    "why": "1-2 sentences on the shared behavioral or archetypal pattern — what they both DO"
+  },
+  "icon": {
+    "name": "Name · source (e.g. 'Atticus Finch · To Kill a Mockingbird', 'David Bowie · Ziggy era')",
+    "why": "1-2 sentences on the shared archetypal signature in behavior and approach"
+  }
+}
+
+Rules:
+- Behavioral and direct language only. No 'cosmic', 'spiritual', 'divine', 'universe', 'soul journey', 'vibrational'.
+- Each 'why' must reference concrete behavioral traits — what they DO, how they move, how they decide.
+- Pick comparables with genuine archetypal alignment. Avoid the most obvious/cliché choices unless truly fitting.
+- Animal: pick something specific and interesting — not generic wolf/eagle/lion unless the fit is exact.
+- Icon: can be fictional character OR real living/historical cultural figure.
+      `.trim();
+
+      let comparables = null;
+
+      if (isGeminiAvailable()) {
+        try {
+          const raw = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.82 });
+          const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+          comparables = JSON.parse(cleaned);
+        } catch (e) {
+          console.warn("[SoulComparables] AI parse failed:", e);
+        }
+      }
+
+      if (!comparables) {
+        comparables = {
+          animal:     { name: "Raven", why: "Operates through observation and pattern recognition before acting. Adapts strategy in real time rather than committing to a fixed plan." },
+          deity:      { name: "Hermes · Greek", why: "The connector and translator — moves between worlds, bridges information gaps, and operates at the edges where others don't venture." },
+          historical: { name: "Leonardo da Vinci · polymath", why: "Driven by systematic curiosity and the compulsion to understand mechanisms beneath the surface before moving on." },
+          icon:       { name: "Atticus Finch · To Kill a Mockingbird", why: "Steady moral architecture that holds under social pressure. The kind of clarity that costs something and is chosen anyway." },
+        };
+      }
+
+      res.json({ comparables });
+    } catch (error) {
+      return handleError(error, res, "SoulComparables");
     }
   });
 

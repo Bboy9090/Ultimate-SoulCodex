@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 
@@ -23,6 +23,41 @@ interface HumanDesignData {
   type?: string;
   authority?: string;
   profile?: string;
+}
+
+interface SoulComparable {
+  name: string;
+  why: string;
+}
+
+interface SoulComparables {
+  animal: SoulComparable;
+  deity: SoulComparable;
+  historical: SoulComparable;
+  icon: SoulComparable;
+}
+
+const COMPARABLES_CONFIG = [
+  { key: "animal" as const,     label: "Spirit Animal",      glyph: "🐾", accent: "#22c55e" },
+  { key: "deity" as const,      label: "Mythic Deity",       glyph: "⚡", accent: "#f59e0b" },
+  { key: "historical" as const, label: "Historical Figure",  glyph: "📜", accent: "#22d3ee" },
+  { key: "icon" as const,       label: "Cultural Icon",      glyph: "✦",  accent: "#f472b6" },
+];
+
+function comparablesCacheKey(profile: SoulProfile): string {
+  const sig = `${profile.archetype?.name ?? ""}:${profile.sunSign ?? ""}:${profile.lifePath ?? ""}`;
+  return `soulComparables:${sig}`;
+}
+
+function loadCachedComparables(profile: SoulProfile): SoulComparables | null {
+  try {
+    const raw = localStorage.getItem(comparablesCacheKey(profile));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveComparablesCache(profile: SoulProfile, data: SoulComparables) {
+  try { localStorage.setItem(comparablesCacheKey(profile), JSON.stringify(data)); } catch {}
 }
 
 interface SoulProfile {
@@ -165,6 +200,38 @@ export default function ProfilePage() {
   const prescription  = getCodexPrescription(0);
   const prescription2 = getCodexPrescription(1);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const [comparables, setComparables]             = useState<SoulComparables | null>(null);
+  const [comparablesLoading, setComparablesLoading] = useState(false);
+  const [comparablesRevealed, setComparablesRevealed] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    const cached = loadCachedComparables(profile);
+    if (cached) { setComparables(cached); setComparablesRevealed(true); }
+  }, []);
+
+  async function handleRevealComparables() {
+    if (!profile || comparablesLoading) return;
+    if (comparables) { setComparablesRevealed(r => !r); return; }
+    setComparablesLoading(true);
+    try {
+      const res = await fetch("/api/soul-comparables", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile }),
+      });
+      if (res.ok) {
+        const { comparables: data } = await res.json();
+        setComparables(data);
+        setComparablesRevealed(true);
+        saveComparablesCache(profile, data);
+      }
+    } catch (e) {
+      console.error("[SoulComparables]", e);
+    } finally {
+      setComparablesLoading(false);
+    }
+  }
 
   async function handleDownloadReport() {
     if (!profile || downloadingReport) return;
@@ -448,6 +515,114 @@ export default function ProfilePage() {
             Natal chart + Human Design report
           </span>
         </div>
+      </div>
+
+      {/* ── Soul Comparables ─────────────────────────────────────────────── */}
+      <div style={{ position: "relative", zIndex: 1, marginBottom: "2rem" }}>
+        {/* Trigger button */}
+        <button
+          onClick={handleRevealComparables}
+          disabled={comparablesLoading}
+          style={{
+            width: "100%",
+            background: comparablesRevealed
+              ? "rgba(212,168,95,0.06)"
+              : "linear-gradient(135deg, rgba(212,168,95,0.12), rgba(212,168,95,0.06))",
+            border: "1px solid rgba(212,168,95,0.3)",
+            borderRadius: 12,
+            padding: "1rem 1.5rem",
+            cursor: comparablesLoading ? "wait" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            color: "var(--sc-gold)",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ fontSize: "1.2rem" }}>🎮</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                Soul Comparables
+              </div>
+              <div style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.45)", marginTop: "0.15rem" }}>
+                Your archetype's closest matches across animal, deity, history &amp; culture
+              </div>
+            </div>
+          </div>
+          <span style={{ fontSize: "0.85rem", opacity: 0.6, transform: comparablesRevealed ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+            {comparablesLoading ? "◌" : "▾"}
+          </span>
+        </button>
+
+        {/* Comparables grid */}
+        {comparablesRevealed && comparables && (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "0.75rem",
+            marginTop: "0.75rem",
+            animation: "fadeIn 0.35s ease",
+          }}>
+            {COMPARABLES_CONFIG.map(cfg => {
+              const item = comparables[cfg.key];
+              if (!item) return null;
+              return (
+                <div
+                  key={cfg.key}
+                  style={{
+                    background: `${cfg.accent}09`,
+                    border: `1px solid ${cfg.accent}25`,
+                    borderLeft: `3px solid ${cfg.accent}`,
+                    borderRadius: 10,
+                    padding: "1.1rem 1.25rem",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.55rem" }}>
+                    <span style={{ fontSize: "0.95rem" }}>{cfg.glyph}</span>
+                    <span style={{
+                      fontSize: "0.58rem", letterSpacing: "0.14em", textTransform: "uppercase",
+                      color: cfg.accent, fontWeight: 700, opacity: 0.85,
+                    }}>
+                      {cfg.label}
+                    </span>
+                  </div>
+                  <div style={{
+                    fontSize: "0.95rem", fontWeight: 700, color: "var(--sc-ivory)",
+                    marginBottom: "0.4rem", fontFamily: "var(--font-serif)",
+                  }}>
+                    {item.name}
+                  </div>
+                  <p style={{
+                    fontSize: "0.8rem", color: "rgba(246,241,232,0.6)",
+                    lineHeight: 1.55, margin: 0,
+                  }}>
+                    {item.why}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Regenerate link */}
+        {comparablesRevealed && comparables && (
+          <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
+            <button
+              onClick={() => {
+                if (!profile) return;
+                try { localStorage.removeItem(comparablesCacheKey(profile)); } catch {}
+                setComparables(null);
+                setComparablesRevealed(false);
+              }}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: "0.68rem", color: "rgba(246,241,232,0.3)",
+                textDecoration: "underline", textUnderlineOffset: "2px", padding: 0,
+              }}
+            >
+              Re-roll comparables
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Full Reading divider ──────────────────────────────────────────── */}
