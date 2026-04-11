@@ -168,20 +168,39 @@ export default function BlueprintPage() {
     if (!profile) return;
     setDownloadingPdf(true);
     try {
-      const astro = profile.astrology ?? profile.natalChart ?? {};
-      const hd    = profile.humanDesign ?? profile.human_design ?? {};
+      // Pull data from localStorage profile; if missing, fetch full profile from server
+      let astro = profile.astrologyData ?? profile.astrology ?? profile.natalChart ?? null;
+      let hd    = profile.humanDesignData ?? profile.humanDesign ?? profile.human_design ?? null;
+      let name  = profile.name ?? "Soul Codex";
+      let birthDate     = profile.birthDate ?? profile.dob ?? "";
+      let birthTime     = profile.birthTime ?? profile.time ?? "";
+      let birthLocation = profile.birthLocation ?? profile.location ?? profile.city ?? "";
+
+      if (!astro || !birthDate) {
+        try {
+          const serverRes = await fetch("/api/profiles");
+          if (serverRes.ok) {
+            const profiles = await serverRes.json();
+            const sp = Array.isArray(profiles) ? profiles[0] : profiles;
+            if (sp) {
+              astro         = sp.astrologyData  ?? astro ?? {};
+              hd            = sp.humanDesignData ?? hd   ?? {};
+              name          = sp.name          ?? name;
+              birthDate     = sp.birthDate     ?? birthDate;
+              birthTime     = sp.birthTime     ?? birthTime;
+              birthLocation = sp.birthLocation ?? birthLocation;
+            }
+          }
+        } catch { /* use whatever we have */ }
+      }
+
       const res = await fetch("/api/natal-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profile: {
-            name:          profile.name ?? "Soul Codex",
-            birthDate:     profile.birthDate ?? profile.dob ?? "",
-            birthTime:     profile.birthTime ?? profile.time ?? "",
-            birthLocation: profile.birthLocation ?? profile.location ?? profile.city ?? "",
-          },
-          astrologyData:  astro,
-          humanDesignData: hd,
+          profile: { name, birthDate, birthTime, birthLocation },
+          astrologyData:   astro ?? {},
+          humanDesignData: hd    ?? {},
         }),
       });
       if (!res.ok) return;
@@ -189,7 +208,7 @@ export default function BlueprintPage() {
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");
       a.href = url;
-      a.download = `${(profile.name || "Soul_Codex").replace(/\s+/g, "_")}_Natal_Chart.pdf`;
+      a.download = `${name.replace(/\s+/g, "_")}_Natal_Chart.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {

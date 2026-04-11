@@ -746,6 +746,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = {
         id: savedProfile?.id ?? null,
         profileId: savedProfile?.id ?? null,
+        name: validatedBirthData.name,
+        birthDate: validatedBirthData.birthDate,
+        birthTime: validatedBirthData.birthTime || "",
+        birthLocation: validatedBirthData.birthLocation || "",
+        astrologyData: astrologyData ?? null,
+        humanDesignData: humanDesignData ?? null,
         soul_frequency: soulArchetypeData?.soulFrequency || {
           frequency: "432 Hz",
           resonance: "Harmonic",
