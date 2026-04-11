@@ -79,11 +79,11 @@ function Orb({ style }: { style: CSSProperties }) {
 }
 
 const cardStyle: CSSProperties = {
-  background: "rgba(28,18,10,0.72)",
-  border: "1px solid rgba(212,168,95,0.18)",
-  borderRadius: 12,
+  background: "rgba(18,8,30,0.45)",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
+  border: "1px solid rgba(212,168,95,0.18)",
+  borderRadius: 12,
 };
 
 export default function LandingPage() {
