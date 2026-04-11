@@ -361,7 +361,7 @@ export default function CodexReadingPage() {
             const isIdentity = i < 2;
             return (
               <div key={i} style={{
-                background: `rgba(12,6,24,0.92)`,
+                background: `rgba(242,234,218,0.96)`,
                 border: "1px solid rgba(212,168,95,0.12)",
                 borderLeft: `3px solid ${accent.color}`,
                 borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
@@ -383,7 +383,7 @@ export default function CodexReadingPage() {
                 )}
                 {sec.lines.map((line, j) => (
                   <p key={j} style={{
-                    color: line.startsWith("-") ? "var(--cosmic-lavender)" : "rgba(230,230,255,0.87)",
+                    color: line.startsWith("-") ? "#8a5f20" : "#1A0E07",
                     lineHeight: 1.75, marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
                     fontFamily: i < 2 ? "var(--font-serif)" : undefined,
                     fontSize: i === 0 ? "1.1rem" : "0.9375rem",
@@ -403,7 +403,7 @@ export default function CodexReadingPage() {
               const accent = getSectionAccent(sec.header);
               return (
                 <div key={`motto-${i}`} style={{
-                  background: `rgba(12,6,24,0.92)`,
+                  background: `rgba(242,234,218,0.96)`,
                   border: "1px solid rgba(212,168,95,0.12)",
                   borderLeft: `3px solid ${accent.color}`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
@@ -423,7 +423,7 @@ export default function CodexReadingPage() {
                   )}
                   {sec.lines.map((line, j) => (
                     <p key={j} style={{
-                      color: "rgba(230,230,255,0.87)",
+                      color: "#1A0E07",
                       lineHeight: 1.75,
                       marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
                       fontFamily: "var(--font-serif)",
@@ -440,7 +440,7 @@ export default function CodexReadingPage() {
             {sections.filter(s => s.header.toUpperCase().startsWith("WHO I AM")).map((sec, i) => (
               <div key={`who-${i}`} style={{ position: "relative", marginBottom: "1.5rem" }}>
                 <div style={{
-                  background: `rgba(12,6,24,0.92)`,
+                  background: `rgba(242,234,218,0.96)`,
                   border: "1px solid rgba(212,168,95,0.12)",
                   borderLeft: `3px solid #D4A85F`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem",
@@ -462,7 +462,7 @@ export default function CodexReadingPage() {
                   )}
                   {sec.lines.map((line, j) => (
                     <p key={j} style={{
-                      color: "rgba(230,230,255,0.87)",
+                      color: "#1A0E07",
                       lineHeight: 1.75,
                       marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
                       fontFamily: "var(--font-serif)",
@@ -489,7 +489,7 @@ export default function CodexReadingPage() {
                   <div style={{ fontFamily: "var(--font-serif)", color: "var(--cosmic-gold)", fontWeight: 600, fontSize: "1.05rem", marginBottom: "0.2rem" }}>
                     Unlock Your Full Codex Reading
                   </div>
-                  <div style={{ color: "rgba(246,241,232,0.55)", fontSize: "0.83rem" }}>
+                  <div style={{ color: "#3a2010", fontSize: "0.83rem" }}>
                     Your synthesis is ready — unlock it to see the full picture
                   </div>
                 </div>
@@ -503,7 +503,7 @@ export default function CodexReadingPage() {
                     borderBottom: i < PREMIUM_FEATURES.length - 1 ? "1px solid rgba(212,168,95,0.08)" : "none",
                   }}>
                     <span style={{ color: "var(--cosmic-gold)", fontSize: "0.7rem", opacity: 0.65 }}>✦</span>
-                    <span style={{ color: "rgba(246,241,232,0.65)", fontSize: "0.875rem" }}>{f}</span>
+                    <span style={{ color: "#3a2010", fontSize: "0.875rem" }}>{f}</span>
                   </div>
                 ))}
               </div>
@@ -518,7 +518,7 @@ export default function CodexReadingPage() {
                 </button>
               </Link>
               <div style={{ textAlign: "center" }}>
-                <Link href="/profile" style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.35)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
+                <Link href="/profile" style={{ fontSize: "0.78rem", color: "#8a6030", textDecoration: "underline", textUnderlineOffset: "2px" }}>
                   Have an access code? Enter it on your profile page
                 </Link>
               </div>
@@ -540,7 +540,7 @@ export default function CodexReadingPage() {
           <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             {synthesis.prescriptions.map((p, i) => (
               <li key={i} style={{
-                fontSize: "0.9rem", color: "rgba(230,228,255,0.88)",
+                fontSize: "0.9rem", color: "#1A0E07",
                 lineHeight: 1.65, paddingBottom: "0.5rem",
                 display: "flex", gap: "0.6rem",
               }}>

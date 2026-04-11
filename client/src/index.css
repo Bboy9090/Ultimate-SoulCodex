@@ -26,8 +26,8 @@
   /* Semantic Colors */
   --background: var(--cosmic-void);
   --foreground: #f8fafc;
-  --card: rgba(20, 10, 35, 0.45);
-  --card-foreground: var(--sc-ivory);
+  --card: rgba(242, 234, 218, 0.96);
+  --card-foreground: #1A0E07;
   --popover: rgba(20, 10, 35, 0.82);
   --popover-foreground: var(--sc-ivory);
   --primary: var(--sc-gold);
@@ -35,7 +35,7 @@
   --secondary: rgba(212, 168, 95, 0.08);
   --secondary-foreground: var(--sc-gold);
   --muted: rgba(212, 168, 95, 0.05);
-  --muted-foreground: rgba(246,241,232,0.70);
+  --muted-foreground: #5a3d1a;
   --accent: rgba(212, 168, 95, 0.12);
   --accent-foreground: var(--sc-gold);
   --destructive: #ef4444;
@@ -310,14 +310,14 @@ a:hover {
 }
 
 .btn-secondary {
-  background: rgba(12, 6, 24, 0.92);
-  color: #ffffff;
-  border: 1px solid rgba(212, 168, 95, 0.50);
+  background: rgba(242, 234, 218, 0.96);
+  color: #1A0E07;
+  border: 1px solid rgba(212, 168, 95, 0.55);
 }
 
 .btn-secondary:hover {
-  background: rgba(20, 10, 40, 0.96);
-  border-color: rgba(212, 168, 95, 0.65);
+  background: rgba(236, 228, 210, 0.99);
+  border-color: rgba(212, 168, 95, 0.70);
 }
 
 .btn-ghost {
