@@ -185,12 +185,12 @@ function cleanBehavioralText(text: string): string {
 
 // ── Section visual config ────────────────────────────────────────────────────
 const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
-  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(212,168,95,0.07)" },
-  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(245,158,11,0.06)" },
-  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(244,114,182,0.06)" },
-  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(34,211,238,0.06)" },
-  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(251,191,36,0.06)" },
-  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(34,197,94,0.06)" },
+  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(12,6,24,0.78)" },
+  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(12,6,24,0.78)" },
+  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(12,6,24,0.78)" },
+  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(12,6,24,0.78)" },
+  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(12,6,24,0.78)" },
+  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(12,6,24,0.78)" },
 };
 
 export default function ProfilePage() {
@@ -313,25 +313,25 @@ export default function ProfilePage() {
       label: "Who I Am",
       value: firstSentence(cleanEssence),
       accent: "#D4A85F",
-      bg: "rgba(212,168,95,0.08)",
+      bg: "rgba(12,6,24,0.78)",
     },
     {
       label: "Why Now",
       value: whyNowValue,
       accent: "#22d3ee",
-      bg: "rgba(34,211,238,0.07)",
+      bg: "rgba(12,6,24,0.78)",
     },
     {
       label: "One Pattern to Watch",
       value: firstSentence(cleanStress),
       accent: "#f59e0b",
-      bg: "rgba(245,158,11,0.07)",
+      bg: "rgba(12,6,24,0.78)",
     },
     {
       label: "One Move Today",
       value: oneMoveValue,
       accent: "#22c55e",
-      bg: "rgba(34,197,94,0.07)",
+      bg: "rgba(12,6,24,0.78)",
     },
   ];
 
@@ -399,9 +399,10 @@ export default function ProfilePage() {
         }}>
           <span style={{
             display: "inline-block", padding: "0.3rem 0.9rem",
-            background: "rgba(212,168,95,0.08)", border: "1px solid rgba(212,168,95,0.25)",
+            background: "rgba(12,6,24,0.72)", border: "1px solid rgba(212,168,95,0.45)",
             borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600,
             color: "var(--sc-gold)", letterSpacing: "0.08em", textTransform: "uppercase",
+            backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           }}>
             {archetype.element} · {archetype.role}
           </span>
@@ -447,8 +448,10 @@ export default function ProfilePage() {
               background: card.bg,
               borderRadius: "14px",
               padding: "1.25rem 1.35rem",
-              border: `1px solid ${card.accent}28`,
+              border: `1px solid ${card.accent}55`,
               borderLeft: `3px solid ${card.accent}`,
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
             }}
           >
             <div style={{
@@ -525,16 +528,16 @@ export default function ProfilePage() {
           disabled={comparablesLoading}
           style={{
             width: "100%",
-            background: comparablesRevealed
-              ? "rgba(212,168,95,0.06)"
-              : "linear-gradient(135deg, rgba(212,168,95,0.12), rgba(212,168,95,0.06))",
-            border: "1px solid rgba(212,168,95,0.3)",
+            background: "rgba(12,6,24,0.78)",
+            border: "1px solid rgba(212,168,95,0.45)",
             borderRadius: 12,
             padding: "1rem 1.5rem",
             cursor: comparablesLoading ? "wait" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             color: "var(--sc-gold)",
             transition: "all 0.2s ease",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -543,7 +546,7 @@ export default function ProfilePage() {
               <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 Soul Comparables
               </div>
-              <div style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.45)", marginTop: "0.15rem" }}>
+              <div style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.72)", marginTop: "0.15rem" }}>
                 Your archetype's closest matches across animal, deity, history &amp; culture
               </div>
             </div>
@@ -569,11 +572,13 @@ export default function ProfilePage() {
                 <div
                   key={cfg.key}
                   style={{
-                    background: `${cfg.accent}09`,
-                    border: `1px solid ${cfg.accent}25`,
+                    background: "rgba(12,6,24,0.78)",
+                    border: `1px solid ${cfg.accent}45`,
                     borderLeft: `3px solid ${cfg.accent}`,
                     borderRadius: 10,
                     padding: "1.1rem 1.25rem",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.55rem" }}>
@@ -803,10 +808,13 @@ function ProfileSection({
     <section
       style={{
         background: s.bg,
-        border: `1px solid ${s.accent}18`,
+        border: `1px solid ${s.accent}45`,
+        borderLeft: `3px solid ${s.accent}`,
         borderRadius: "12px",
         padding: "1.4rem 1.5rem",
         marginBottom: "1.25rem",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "0.9rem" }}>

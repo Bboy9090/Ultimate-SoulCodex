@@ -245,10 +245,11 @@ export default function TodayPage() {
           marginTop: "0.65rem",
           fontWeight: 500,
           opacity: 0.92,
+          textShadow: "0 2px 16px rgba(0,0,0,0.65), 0 1px 4px rgba(0,0,0,0.5)",
         }}>
           Soul Codex
         </div>
-        <div style={{ fontSize: "0.68rem", color: "var(--sc-gold)", letterSpacing: "0.1em", marginTop: "0.3rem", opacity: 0.65 }}>
+        <div style={{ fontSize: "0.68rem", color: "var(--sc-gold)", letterSpacing: "0.1em", marginTop: "0.3rem", opacity: 0.85, textShadow: "0 1px 8px rgba(0,0,0,0.55)" }}>
           {formatDate(card.date)}
           {streak > 0 && <span style={{ marginLeft: "0.75rem", opacity: 0.8 }}>◆ Day {streak}</span>}
         </div>
