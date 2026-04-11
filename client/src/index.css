@@ -129,7 +129,7 @@ body {
   background-color: #120830;
   background-image: url('/nebula-bg.png');
   background-size: cover;
-  background-position: center center;
+  background-position: center top;
   background-attachment: fixed;
   color: var(--sc-ivory);
   min-height: 100vh;
@@ -192,9 +192,12 @@ body::after {
 }
 
 /* ── Landing page nebula background ──────────────────────────────────────── */
-/* Landing page shows the same body::before nebula image (no override needed) */
+/* Landing page — uses same cosmic nebula as rest of app */
 .landing-nebula {
-  background: transparent;
+  background-image: url('/nebula-bg.png');
+  background-size: cover;
+  background-position: center top;
+  background-color: transparent;
 }
 
 #root {
