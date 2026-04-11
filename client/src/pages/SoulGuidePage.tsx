@@ -203,7 +203,7 @@ export default function SoulGuidePage() {
             }}>
               ◈
             </div>
-            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.4rem", marginBottom: "0.75rem", color: "var(--cosmic-gold)" }}>
+            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.4rem", marginBottom: "0.75rem", color: "var(--cosmic-gold)", textShadow: "0 2px 12px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)" }}>
               Ask your Soul Guide
             </h2>
             <p style={{ color: "var(--muted-foreground)", maxWidth: "280px", marginBottom: "1.75rem", fontSize: "0.85rem", lineHeight: 1.6 }}>
@@ -215,13 +215,14 @@ export default function SoulGuidePage() {
                   key={i}
                   onClick={() => handleSend(s)}
                   style={{
-                    background: "rgba(212,168,95,0.08)", border: "1px solid rgba(212,168,95,0.2)",
+                    background: "rgba(12,6,24,0.78)", border: "1px solid rgba(212,168,95,0.38)",
                     borderRadius: "10px", padding: "0.7rem 1rem",
-                    fontSize: "0.85rem", color: "rgba(232,230,255,0.88)",
+                    fontSize: "0.85rem", color: "#f6f1e8",
                     cursor: "pointer", textAlign: "left", transition: "all 0.15s",
+                    backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(212,168,95,0.15)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(212,168,95,0.08)"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(20,10,40,0.90)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(12,6,24,0.78)"; }}
                 >
                   {s}
                 </button>

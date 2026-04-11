@@ -251,6 +251,7 @@ export default function CodexReadingPage() {
         <h1 style={{
           fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.4rem)",
           color: "var(--cosmic-gold)", marginBottom: "0.5rem", lineHeight: 1.2,
+          textShadow: "0 2px 14px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.45)",
         }}>
           {synthesis.codename}
         </h1>
