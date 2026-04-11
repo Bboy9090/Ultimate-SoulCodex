@@ -13,6 +13,7 @@ export interface NatalReportInput {
   astrology: any;
   humanDesign: any;
   aiText: NatalReportAIText;
+  comparables?: SoulComparables;
 }
 
 export interface NatalReportAIText {
@@ -26,6 +27,18 @@ export interface NatalReportAIText {
   houseEmphasis: string;
   bottomLine: string;
   hdInterpretation: string;
+}
+
+export interface SoulComparable {
+  name: string;
+  why: string;
+}
+
+export interface SoulComparables {
+  animal: SoulComparable;
+  deity: SoulComparable;
+  historical: SoulComparable;
+  icon: SoulComparable;
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -546,6 +559,70 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
        .text(`Soul Codex  ·  ${input.name}`, 0, doc.y, { width: PAGE_W, align: "center" });
 
     addFooter(doc, input.name, pageNum);
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 7 — Soul Comparables (optional, only if data provided)
+    // ══════════════════════════════════════════════════════════════════════════
+    if (input.comparables) {
+      doc.addPage({ margin: 0 }); pageNum++;
+      fillBg(doc); drawStars(doc);
+      addPageHeader(doc, "Soul Comparables", pageNum);
+
+      // Intro blurb
+      doc.font("Helvetica").fontSize(9.5).fillColor(IVORY_DIM)
+         .text(
+           "Based on the full chart signature — Sun, Moon, Rising, Human Design, and Life Path — " +
+           "these four comparables share the closest archetypal alignment with this profile.",
+           MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2.5 }
+         );
+      doc.moveDown(0.8);
+
+      const COMP_ITEMS: Array<{ key: keyof SoulComparables; label: string; glyph: string }> = [
+        { key: "animal",     label: "Spirit Animal",     glyph: "●" },
+        { key: "deity",      label: "Mythic Deity",      glyph: "◆" },
+        { key: "historical", label: "Historical Figure", glyph: "◉" },
+        { key: "icon",       label: "Cultural Icon",     glyph: "✦" },
+      ];
+
+      COMP_ITEMS.forEach((item, i) => {
+        const comp = input.comparables![item.key];
+        if (!comp) return;
+
+        const cardY = doc.y;
+        const CARD_H = 72;
+        const shade = i % 2 === 0 ? BG_CARD : BG_ALT;
+
+        doc.rect(MARGIN_L, cardY, CONTENT_W, CARD_H).fillColor(shade).fill();
+        doc.moveTo(MARGIN_L, cardY).lineTo(MARGIN_L, cardY + CARD_H)
+           .strokeColor(GOLD).strokeOpacity(0.5).lineWidth(2.5).stroke().strokeOpacity(1);
+
+        // Category label
+        doc.font("Helvetica-Bold").fontSize(7.5).fillColor(GOLD)
+           .text(`${item.glyph}  ${item.label.toUpperCase()}`, MARGIN_L + 14, cardY + 10,
+             { width: CONTENT_W - 28, lineBreak: false, characterSpacing: 1 });
+
+        // Name
+        doc.font("Helvetica-Bold").fontSize(13).fillColor(IVORY)
+           .text(comp.name, MARGIN_L + 14, cardY + 24, { width: CONTENT_W - 28, lineBreak: false });
+
+        // Why
+        doc.font("Helvetica").fontSize(9).fillColor(IVORY_DIM)
+           .text(comp.why, MARGIN_L + 14, cardY + 43, { width: CONTENT_W - 28, lineBreak: true });
+
+        doc.y = cardY + CARD_H + 8;
+      });
+
+      // Closing line
+      doc.moveDown(1.2);
+      doc.moveTo(MARGIN_L + 40, doc.y).lineTo(PAGE_W - MARGIN_R - 40, doc.y)
+         .strokeColor(GOLD).strokeOpacity(0.25).lineWidth(0.5).stroke().strokeOpacity(1);
+      doc.moveDown(0.6);
+      doc.font("Helvetica").fontSize(8).fillColor(IVORY_DIM)
+         .text("These comparables reflect behavioral and archetypal alignment, not prediction.",
+           0, doc.y, { width: PAGE_W, align: "center" });
+
+      addFooter(doc, input.name, pageNum);
+    }
 
     doc.end();
   });
