@@ -227,9 +227,9 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
        .text(formatBirthData(input), 0, doc.y, { width: PAGE_W, align: "center" });
 
     // Big Three callout
-    const sunSign  = astro?.planets?.sun?.sign  ?? astro?.sun  ?? "–";
-    const moonSign = astro?.planets?.moon?.sign ?? astro?.moon ?? "–";
-    const rising   = astro?.rising ?? astro?.risingSign ?? "–";
+    const sunSign  = astro?.planets?.sun?.sign  ?? astro?.sunSign  ?? "–";
+    const moonSign = astro?.planets?.moon?.sign ?? astro?.moonSign ?? "–";
+    const rising   = astro?.risingSign ?? astro?.rising ?? "–";
 
     const bigThreeY = 470;
     doc.rect(MARGIN_L + 40, bigThreeY, CONTENT_W - 80, 72).fillColor(BG_CARD).fill();
@@ -372,8 +372,11 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
       ty = tableRow(doc, [label, `${p.sign ?? "—"} ${deg(p.degree ?? 0)}`, houseStr, note], placeCols, MARGIN_L, ty, { shade: (PLANETS.length + ii) % 2 === 1 });
     });
 
-    // House cusps (if available)
-    const cusps = astro?.houses?.cusps ?? [];
+    // House cusps (if available) — handle both {cusps:[]} and [{degree},...] shapes
+    const rawHouses = astro?.houses;
+    const cusps: number[] = Array.isArray(rawHouses)
+      ? rawHouses.map((h: any) => h.degree)
+      : (rawHouses?.cusps ?? []);
     if (cusps.length >= 12) {
       doc.y = ty + 10;
       sectionTitle(doc, "House Cusps");
