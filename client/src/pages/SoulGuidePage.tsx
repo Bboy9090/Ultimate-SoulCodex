@@ -215,13 +215,13 @@ export default function SoulGuidePage() {
                   key={i}
                   onClick={() => handleSend(s)}
                   style={{
-                    background: "rgba(12,6,24,0.92)", border: "1px solid rgba(212,168,95,0.45)",
+                    background: "rgba(242,234,218,0.96)", border: "1px solid rgba(212,168,95,0.45)",
                     borderRadius: "10px", padding: "0.7rem 1rem",
-                    fontSize: "0.85rem", color: "#ffffff",
+                    fontSize: "0.85rem", color: "#1A0E07",
                     cursor: "pointer", textAlign: "left", transition: "all 0.15s",
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(20,10,40,0.96)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(12,6,24,0.92)"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(236,228,210,0.99)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(242,234,218,0.96)"; }}
                 >
                   {s}
                 </button>

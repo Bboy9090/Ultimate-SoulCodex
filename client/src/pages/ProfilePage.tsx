@@ -185,12 +185,12 @@ function cleanBehavioralText(text: string): string {
 
 // ── Section visual config ────────────────────────────────────────────────────
 const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
-  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(12,6,24,0.92)" },
-  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(12,6,24,0.92)" },
-  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(12,6,24,0.92)" },
-  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(12,6,24,0.92)" },
-  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(12,6,24,0.92)" },
-  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(12,6,24,0.92)" },
+  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(242,234,218,0.96)" },
+  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(242,234,218,0.96)" },
+  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(242,234,218,0.96)" },
+  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(242,234,218,0.96)" },
+  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(242,234,218,0.96)" },
+  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(242,234,218,0.96)" },
 };
 
 export default function ProfilePage() {
@@ -313,25 +313,25 @@ export default function ProfilePage() {
       label: "Who I Am",
       value: firstSentence(cleanEssence),
       accent: "#D4A85F",
-      bg: "rgba(12,6,24,0.92)",
+      bg: "rgba(242,234,218,0.96)",
     },
     {
       label: "Why Now",
       value: whyNowValue,
       accent: "#22d3ee",
-      bg: "rgba(12,6,24,0.92)",
+      bg: "rgba(242,234,218,0.96)",
     },
     {
       label: "One Pattern to Watch",
       value: firstSentence(cleanStress),
       accent: "#f59e0b",
-      bg: "rgba(12,6,24,0.92)",
+      bg: "rgba(242,234,218,0.96)",
     },
     {
       label: "One Move Today",
       value: oneMoveValue,
       accent: "#22c55e",
-      bg: "rgba(12,6,24,0.92)",
+      bg: "rgba(242,234,218,0.96)",
     },
   ];
 
@@ -399,7 +399,7 @@ export default function ProfilePage() {
         }}>
           <span style={{
             display: "inline-block", padding: "0.3rem 0.9rem",
-            background: "rgba(12,6,24,0.92)", border: "1px solid rgba(212,168,95,0.55)",
+            background: "rgba(242,234,218,0.96)", border: "1px solid rgba(212,168,95,0.55)",
             borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600,
             color: "var(--sc-gold)", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
@@ -458,7 +458,7 @@ export default function ProfilePage() {
               {card.label}
             </div>
             <p style={{
-              fontSize: "0.855rem", color: "#ffffff",
+              fontSize: "0.855rem", color: "#1A0E07",
               lineHeight: 1.6, margin: 0,
               display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
               overflow: "hidden",
@@ -525,7 +525,7 @@ export default function ProfilePage() {
           disabled={comparablesLoading}
           style={{
             width: "100%",
-            background: "rgba(12,6,24,0.92)",
+            background: "rgba(242,234,218,0.96)",
             border: "1px solid rgba(212,168,95,0.45)",
             borderRadius: 12,
             padding: "1rem 1.5rem",
@@ -541,7 +541,7 @@ export default function ProfilePage() {
               <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 Soul Comparables
               </div>
-              <div style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.72)", marginTop: "0.15rem" }}>
+              <div style={{ fontSize: "0.72rem", color: "#5a3d1a", marginTop: "0.15rem" }}>
                 Your archetype's closest matches across animal, deity, history &amp; culture
               </div>
             </div>
@@ -567,7 +567,7 @@ export default function ProfilePage() {
                 <div
                   key={cfg.key}
                   style={{
-                    background: "rgba(12,6,24,0.92)",
+                    background: "rgba(242,234,218,0.96)",
                     border: `1px solid ${cfg.accent}45`,
                     borderLeft: `3px solid ${cfg.accent}`,
                     borderRadius: 10,
@@ -584,13 +584,13 @@ export default function ProfilePage() {
                     </span>
                   </div>
                   <div style={{
-                    fontSize: "0.95rem", fontWeight: 700, color: "var(--sc-ivory)",
+                    fontSize: "0.95rem", fontWeight: 700, color: "#1A0E07",
                     marginBottom: "0.4rem", fontFamily: "var(--font-serif)",
                   }}>
                     {item.name}
                   </div>
                   <p style={{
-                    fontSize: "0.8rem", color: "rgba(246,241,232,0.6)",
+                    fontSize: "0.8rem", color: "#4a2f12",
                     lineHeight: 1.55, margin: 0,
                   }}>
                     {item.why}
@@ -613,7 +613,7 @@ export default function ProfilePage() {
               }}
               style={{
                 background: "none", border: "none", cursor: "pointer",
-                fontSize: "0.68rem", color: "rgba(246,241,232,0.3)",
+                fontSize: "0.68rem", color: "#8a6030",
                 textDecoration: "underline", textUnderlineOffset: "2px", padding: 0,
               }}
             >
