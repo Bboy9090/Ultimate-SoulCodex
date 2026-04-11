@@ -706,7 +706,7 @@ function OptionCard({ selected, disabled, onClick, label, description }: {
         width: "100%",
         textAlign: "left",
         padding: "1rem 1.25rem",
-        background: selected ? "rgba(212,168,95,0.12)" : "var(--glass-bg)",
+        background: selected ? "rgba(212,168,95,0.18)" : "var(--glass-bg)",
         border: selected ? "1px solid rgba(212,168,95,0.55)" : "1px solid var(--glass-border)",
         borderLeft: selected ? "3px solid var(--sc-gold)" : "3px solid transparent",
         borderRadius: "var(--radius)",
@@ -716,6 +716,8 @@ function OptionCard({ selected, disabled, onClick, label, description }: {
         boxShadow: selected ? "0 0 18px rgba(212,168,95,0.22)" : "none",
         color: "var(--foreground)",
         fontFamily: "var(--font-sans)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
       }}
     >
       <span style={{ fontWeight: 600, display: "block", marginBottom: 4 }}>{label}</span>
