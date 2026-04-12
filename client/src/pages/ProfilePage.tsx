@@ -316,7 +316,7 @@ export default function ProfilePage() {
       bg: "rgba(242,234,218,0.96)",
     },
     {
-      label: "Why Now",
+      label: "What's Alive Now",
       value: whyNowValue,
       accent: "#22d3ee",
       bg: "rgba(242,234,218,0.96)",
