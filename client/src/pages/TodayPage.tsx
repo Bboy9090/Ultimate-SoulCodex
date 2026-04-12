@@ -25,6 +25,21 @@ const MOON_GLYPHS: Record<string, string> = {
   "third quarter": "◐", "waning crescent": "◐", "balsamic": "◐",
 };
 
+const THEME_DISPLAY: Record<string, string> = {
+  precision: "Precision", service: "Service", privacy: "Discretion",
+  intensity: "Intensity", freedom: "Freedom", leadership: "Leadership",
+  healing: "Healing", order: "Order", innovation: "Innovation",
+  intuition: "Intuition", discipline: "Discipline", rebellion: "Independence",
+  craft: "Craft", legacy: "Legacy", emotion_depth: "Emotional Depth",
+  social_sensitivity: "Social Attunement", truth: "Truth",
+  boundaries: "Sovereignty", courage: "Courage", focus: "Focus",
+};
+
+function displayTheme(tag?: string): string {
+  if (!tag) return "";
+  return THEME_DISPLAY[tag] ?? tag.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function formatDate(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso + "T12:00:00");
@@ -273,7 +288,7 @@ export default function TodayPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem 1rem" }}>
             {[
               { label: "Who I Am",        value: whoIAm },
-              { label: "Why Now",         value: card.topTheme ? card.topTheme.replace(/_/g, " ") : (card.title ?? "—") },
+              { label: "Today's Theme",   value: card.topTheme ? displayTheme(card.topTheme) : (card.title ?? "—") },
               { label: "Pattern to Watch",value: patternWatch },
               { label: "One Move Today",  value: oneMove },
             ].map(({ label, value }) => (
@@ -294,7 +309,7 @@ export default function TodayPage() {
                 Personal {personalYear !== card.personalDayNumber ? "Year" : "Day"}
               </div>
               <div style={{ fontSize: "0.65rem", color: "rgba(246,241,232,0.5)", letterSpacing: "0.06em" }}>
-                {card.topTheme ? card.topTheme.replace(/_/g, " ") : card.moonPhase}
+                {card.topTheme ? displayTheme(card.topTheme) : card.moonPhase}
               </div>
             </div>
             <div style={{
@@ -358,28 +373,25 @@ export default function TodayPage() {
           ))}
         </div>
 
-        {/* Inner Compass */}
+        {/* Decision Guide */}
         <div style={{ ...cardStyle, padding: "1.2rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--sc-ivory)" }}>Inner Compass</span>
+            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--sc-ivory)" }}>Decision Guide</span>
             <span style={{ color: "var(--sc-gold)", fontSize: "0.7rem", opacity: 0.7 }}>✦</span>
           </div>
-          <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--sc-ivory)", marginBottom: "0.3rem", fontFamily: "var(--font-serif)" }}>
-            {archetypeName}
-          </div>
-          <div style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.65)", fontStyle: "italic", fontFamily: "var(--font-serif)", lineHeight: 1.5 }}>
-            "{archetypeTagline}"
-          </div>
+          <p style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.75)", fontFamily: "var(--font-serif)", lineHeight: 1.6, margin: 0 }}>
+            {card.decisionAdvice ?? card.doList?.[0] ?? "—"}
+          </p>
         </div>
 
-        {/* Connection Insight */}
+        {/* One to Watch */}
         <div style={{ ...cardStyle, padding: "1.2rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--sc-ivory)" }}>Connection Insight</span>
+            <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--sc-ivory)" }}>One to Watch</span>
             <span style={{ color: "var(--sc-gold)", fontSize: "0.7rem", opacity: 0.7 }}>☽</span>
           </div>
           <p style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.75)", lineHeight: 1.6, margin: 0 }}>
-            {card.dontList?.[0] ?? card.watchouts?.[1] ?? card.watchouts?.[0] ?? "—"}
+            {card.watchouts?.[1] ?? card.dontList?.[0] ?? card.watchouts?.[0] ?? "—"}
           </p>
         </div>
       </div>

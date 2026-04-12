@@ -77,6 +77,20 @@ const THEME_ICONS: Record<string, string> = {
   social_sensitivity: "◌", truth: "◆", boundaries: "▪", courage: "▶", focus: "⊕",
 };
 
+const THEME_DISPLAY: Record<string, string> = {
+  precision: "Precision", service: "Service", privacy: "Discretion",
+  intensity: "Intensity", freedom: "Freedom", leadership: "Leadership",
+  healing: "Healing", order: "Order", innovation: "Innovation",
+  intuition: "Intuition", discipline: "Discipline", rebellion: "Independence",
+  craft: "Craft", legacy: "Legacy", emotion_depth: "Emotional Depth",
+  social_sensitivity: "Social Attunement", truth: "Truth",
+  boundaries: "Sovereignty", courage: "Courage", focus: "Focus",
+};
+
+function displayTheme(tag: string): string {
+  return THEME_DISPLAY[tag] ?? tag.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 const PREMIUM_FEATURES = [
   "Full narrative (all 4 sections)",
   "Signal Strengths",
@@ -291,11 +305,11 @@ export default function CodexReadingPage() {
                         </span>
                         <span style={{
                           fontSize: "0.72rem", color: "var(--foreground)",
-                          width: "5.5rem", flexShrink: 0, textTransform: "capitalize",
+                          width: "5.5rem", flexShrink: 0,
                           fontWeight: isTop ? 600 : 400,
                           letterSpacing: "0.02em",
                         }}>
-                          {t.tag.replace(/_/g, " ")}
+                          {displayTheme(t.tag)}
                         </span>
                         <div style={{
                           flex: 1, height: "6px", borderRadius: "99px",
@@ -339,11 +353,10 @@ export default function CodexReadingPage() {
                     borderRadius: "99px",
                     fontSize: "0.75rem",
                     color: "var(--cosmic-lavender)",
-                    textTransform: "capitalize",
                     letterSpacing: "0.02em",
                   }}>
                     <span style={{ fontSize: "0.65rem", opacity: 0.7 }}>{icon}</span>
-                    {t.tag.replace(/_/g, " ")}
+                    {displayTheme(t.tag)}
                   </span>
                 );
               })}
