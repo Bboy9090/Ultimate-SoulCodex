@@ -484,7 +484,7 @@ export default function ProfilePage() {
           >
             ☽ Today's Card
           </button>
-          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+          <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
             Your daily signal, guidance &amp; focus
           </span>
         </div>
@@ -497,7 +497,7 @@ export default function ProfilePage() {
           >
             ✦ Open Codex Reading
           </button>
-          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+          <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
             Deep dive into your soul architecture
           </span>
         </div>
@@ -511,7 +511,7 @@ export default function ProfilePage() {
           >
             {downloadingReport ? "◌ Generating…" : "▾ Chart Report PDF"}
           </button>
-          <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", textAlign: "center" }}>
+          <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
             Natal chart + Human Design report
           </span>
         </div>
@@ -760,7 +760,7 @@ function NatalBlueprint({ profile }: { profile: SoulProfile }) {
       borderRadius: "12px",
       position: "relative", zIndex: 1,
     }}>
-      <div style={{ fontSize: "0.58rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--muted-foreground)", fontWeight: 600, marginBottom: "0.75rem", opacity: 0.6 }}>
+      <div style={{ fontSize: "0.58rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(246,241,232,0.5)", fontWeight: 600, marginBottom: "0.75rem" }}>
         ◈ My Chart
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -773,7 +773,7 @@ function NatalBlueprint({ profile }: { profile: SoulProfile }) {
         {hdProf && <BlueprintChip label="Profile"   value={hdProf}                                accent="#a78bfa" />}
       </div>
       {(!rising || !hdType) && (
-        <p style={{ fontSize: "0.68rem", color: "var(--muted-foreground)", margin: "0.65rem 0 0", opacity: 0.5, lineHeight: 1.5 }}>
+        <p style={{ fontSize: "0.68rem", color: "rgba(246,241,232,0.45)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
           {!rising && !hdType
             ? "Add birth time + location to unlock Rising sign, Human Design type & authority"
             : !rising
