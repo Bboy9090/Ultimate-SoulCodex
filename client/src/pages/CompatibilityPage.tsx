@@ -222,21 +222,39 @@ export default function CompatibilityPage() {
     fn(msg); setTimeout(() => fn(null), 3500);
   };
 
-  // Load profile from localStorage
+  // Load profile from localStorage, then hydrate from server if signs missing
   useEffect(() => {
     const saved = localStorage.getItem("soulProfile");
-    if (saved) setMyProfile(JSON.parse(saved));
+    let parsed: any = null;
+    if (saved) { try { parsed = JSON.parse(saved); } catch {} }
+    if (parsed) setMyProfile(parsed);
     const savedId = localStorage.getItem("soulMyProfileId");
     if (savedId) setMyProfileId(savedId);
     const savedPersons = localStorage.getItem("soulPersons");
     if (savedPersons) {
-      const parsed = JSON.parse(savedPersons);
-      setPersons(parsed);
-      // Auto-open the compare section when people are already saved
-      if (parsed.length > 0) setCompareOpen(true);
+      try {
+        const p = JSON.parse(savedPersons);
+        setPersons(p);
+        if (p.length > 0) setCompareOpen(true);
+      } catch {}
     }
     const savedConf = localStorage.getItem("soulConfidence");
-    if (savedConf) setMyConfidence(JSON.parse(savedConf));
+    if (savedConf) { try { setMyConfidence(JSON.parse(savedConf)); } catch {} }
+
+    // If localStorage profile is missing or lacks astrology signs, fetch from server
+    const hasSigns = parsed?.sunSign || parsed?.astrologyData?.sunSign;
+    if (!hasSigns) {
+      fetch("/api/profiles")
+        .then(r => r.ok ? r.json() : null)
+        .then((profiles: any[]) => {
+          if (!profiles || profiles.length === 0) return;
+          const p = profiles[0];
+          setMyProfile(p);
+          if (p.id) setMyProfileId(String(p.id));
+          try { localStorage.setItem("soulProfile", JSON.stringify(p)); } catch {}
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // Auto-save profile to backend when needed
@@ -249,9 +267,10 @@ export default function CompatibilityPage() {
   // Fetch archetype matches whenever profile or mode changes
   const fetchMatches = useCallback(() => {
     if (!myProfile) return;
-    const sunSign = myProfile?.sunSign ?? myProfile?.astrology?.sun ?? myProfile?.astrology?.sunSign;
+    const sunSign = myProfile?.sunSign ?? myProfile?.astrologyData?.sunSign ?? myProfile?.astrology?.sun ?? myProfile?.astrology?.sunSign;
     if (!sunSign) return;
-    const lifePathNumber = myProfile?.numerology?.lifePath ?? myProfile?.numerologyData?.lifePathNumber;
+    const rawLp = myProfile?.numerology?.lifePath ?? myProfile?.numerologyData?.lifePathNumber ?? Number(myProfile?.soul_architecture?.expression);
+    const lifePathNumber = rawLp || undefined;
     const hdType = myProfile?.humanDesign?.type ?? myProfile?.humanDesignData?.type;
     archetypeMatchMutation.mutate({ sunSign, lifePathNumber, hdType, mode });
   }, [myProfile, mode]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -339,10 +358,11 @@ export default function CompatibilityPage() {
     onError: (err: any) => flash(setError, err.message || "Comparison failed"),
   });
 
-  const sunSign  = myProfile?.sunSign  ?? myProfile?.astrology?.sun  ?? myProfile?.astrology?.sunSign;
-  const moonSign = myProfile?.moonSign ?? myProfile?.astrology?.moon ?? myProfile?.astrology?.moonSign;
-  const rising   = myProfile?.risingSign ?? myProfile?.astrology?.rising ?? myProfile?.astrology?.risingSign;
-  const lifePath = myProfile?.numerology?.lifePath ?? myProfile?.numerologyData?.lifePathNumber;
+  const sunSign  = myProfile?.sunSign  ?? myProfile?.astrologyData?.sunSign  ?? myProfile?.astrology?.sun  ?? myProfile?.astrology?.sunSign;
+  const moonSign = myProfile?.moonSign ?? myProfile?.astrologyData?.moonSign ?? myProfile?.astrology?.moon ?? myProfile?.astrology?.moonSign;
+  const rising   = myProfile?.risingSign ?? myProfile?.astrologyData?.risingSign ?? myProfile?.astrology?.rising ?? myProfile?.astrology?.risingSign;
+  const rawLifePath = myProfile?.numerology?.lifePath ?? myProfile?.numerologyData?.lifePathNumber ?? Number(myProfile?.soul_architecture?.expression);
+  const lifePath = rawLifePath || undefined;
   const hdType   = myProfile?.humanDesign?.type ?? myProfile?.humanDesignData?.type;
 
   const nearLimit = persons.length >= FREE_LIMIT - 1 && persons.length < FREE_LIMIT;
