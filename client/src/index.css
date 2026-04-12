@@ -35,7 +35,7 @@
   --secondary: rgba(212, 168, 95, 0.08);
   --secondary-foreground: var(--sc-gold);
   --muted: rgba(212, 168, 95, 0.05);
-  --muted-foreground: #5a3d1a;
+  --muted-foreground: #B0A080;
   --accent: rgba(212, 168, 95, 0.12);
   --accent-foreground: var(--sc-gold);
   --destructive: #ef4444;
