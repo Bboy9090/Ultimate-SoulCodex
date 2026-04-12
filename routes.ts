@@ -1797,10 +1797,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Access code has reached maximum uses" });
       }
       
-      // Verify profile exists BEFORE incrementing usage
+      // Verify profile exists AND belongs to the current session/user
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
+      }
+      const ownsProfile =
+        (req.user?.id && profile.userId === req.user.id) ||
+        (req.sessionID && profile.sessionId === req.sessionID);
+      if (!ownsProfile) {
+        console.warn(`[ValidateAccessCode] Ownership mismatch for profile: ${profileId}`);
+        return res.status(403).json({ message: "You can only redeem codes for your own profile" });
       }
       
       // Upgrade profile to premium

@@ -35,8 +35,12 @@ export default function Nav() {
   const [location] = useLocation();
   const { mode, toggle } = useMode();
 
+  const hasProfileData = (() => {
+    try { return !!localStorage.getItem("soulProfile"); } catch { return false; }
+  })();
+
   const baseLinks = [
-    { href: "/",         label: "Start"    },
+    { href: "/",         label: hasProfileData ? "Today" : "Start" },
     { href: "/profile",  label: "Profile"  },
     { href: "/guide",    label: "Guide"    },
     { href: "/tracker",  label: "Tracker"  },
