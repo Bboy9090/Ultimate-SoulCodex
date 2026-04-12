@@ -441,7 +441,7 @@ export default function CompatibilityPage() {
           <p style={{ color: "#5a3d1a", fontSize: "0.88rem", marginBottom: "1rem" }}>
             Complete your soul profile to unlock compatibility analysis.
           </p>
-          <a href="/onboarding" style={{ textDecoration: "none" }}>
+          <a href="/start" style={{ textDecoration: "none" }}>
             <button className="btn btn-primary">Complete Profile</button>
           </a>
         </div>
@@ -544,7 +544,7 @@ export default function CompatibilityPage() {
             {compareOpen && (
               <div style={{ padding: "0 1.4rem 1.4rem" }}>
                 <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "1.25rem", lineHeight: 1.6 }}>
-                  Enter someone's birth details to get a personalised synastry reading between your two blueprints.
+                  Enter someone's birth details to get a personalized synastry reading between your two blueprints.
                 </p>
 
                 {/* Limit banner */}
