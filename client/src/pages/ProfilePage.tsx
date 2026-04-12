@@ -61,6 +61,8 @@ function saveComparablesCache(profile: SoulProfile, data: SoulComparables) {
 }
 
 interface SoulProfile {
+  id?: string;
+  profileId?: string;
   archetype: Archetype;
   synthesis: Synthesis;
   name?: string;
@@ -203,11 +205,21 @@ export default function ProfilePage() {
   const [comparables, setComparables]             = useState<SoulComparables | null>(null);
   const [comparablesLoading, setComparablesLoading] = useState(false);
   const [comparablesRevealed, setComparablesRevealed] = useState(false);
+  const [isPremium, setIsPremium]                 = useState(false);
+  const [premiumChecked, setPremiumChecked]        = useState(false);
+  const [accessCode, setAccessCode]               = useState("");
+  const [codeSubmitting, setCodeSubmitting]        = useState(false);
+  const [codeMessage, setCodeMessage]             = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     if (!profile) return;
     const cached = loadCachedComparables(profile);
     if (cached) { setComparables(cached); setComparablesRevealed(true); }
+    fetch("/api/entitlements")
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => { if (d?.isPremium) setIsPremium(true); })
+      .catch(() => {})
+      .finally(() => setPremiumChecked(true));
   }, []);
 
   async function handleRevealComparables() {
@@ -269,6 +281,46 @@ export default function ProfilePage() {
       console.error("[DownloadReport]", e);
     } finally {
       setDownloadingReport(false);
+    }
+  }
+
+  async function handleAccessCode() {
+    if (!profile || codeSubmitting || !accessCode.trim()) return;
+    let pid = profile.id ?? profile.profileId;
+    if (!pid) {
+      try {
+        const profileRes = await fetch("/api/profiles");
+        if (profileRes.ok) {
+          const serverProfile = await profileRes.json();
+          const fetched = Array.isArray(serverProfile) ? serverProfile[0] : serverProfile;
+          pid = fetched?.id ?? fetched?.profileId;
+        }
+      } catch {}
+    }
+    if (!pid) {
+      setCodeMessage({ type: "error", text: "Profile ID not found. Try rebuilding your profile." });
+      return;
+    }
+    setCodeSubmitting(true);
+    setCodeMessage(null);
+    try {
+      const res = await fetch("/api/access-codes/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: accessCode.trim(), profileId: pid }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsPremium(true);
+        setCodeMessage({ type: "success", text: "Premium access activated. All features are now unlocked." });
+        setAccessCode("");
+      } else {
+        setCodeMessage({ type: "error", text: data.message || "Invalid code. Check the code and try again." });
+      }
+    } catch {
+      setCodeMessage({ type: "error", text: "Connection error. Check your internet and try again." });
+    } finally {
+      setCodeSubmitting(false);
     }
   }
 
@@ -622,6 +674,94 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* ── Access & Premium ──────────────────────────────────────────── */}
+      {premiumChecked && (
+        <div style={{
+          background: isPremium ? "rgba(34,197,94,0.06)" : "rgba(242,234,218,0.96)",
+          border: `1px solid ${isPremium ? "rgba(34,197,94,0.25)" : "rgba(212,168,95,0.35)"}`,
+          borderRadius: "12px",
+          padding: "1.5rem",
+          marginBottom: "1.75rem",
+          position: "relative", zIndex: 1,
+        }}>
+          {isPremium ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: "50%",
+                background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "1.1rem", flexShrink: 0,
+              }}>✦</div>
+              <div>
+                <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#22c55e", marginBottom: "0.15rem" }}>
+                  Premium Active
+                </div>
+                <div style={{ fontSize: "0.78rem", color: "#3a7a3a" }}>
+                  All features unlocked — Blueprint, full Codex, unlimited Soul Guide, premium chart.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
+                <span style={{ fontSize: "1.1rem", color: "var(--sc-gold, #D4A85F)", opacity: 0.7 }}>✦</span>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#5a3d1a" }}>
+                  Unlock Full Access
+                </span>
+              </div>
+              <p style={{ fontSize: "0.82rem", color: "#5a3d1a", lineHeight: 1.6, margin: "0 0 1rem" }}>
+                Enter an access code to unlock your Full Cosmic Blueprint, unlimited Soul Guide, premium birth chart, and the complete Codex reading.
+              </p>
+              <form
+                onSubmit={e => { e.preventDefault(); handleAccessCode(); }}
+                style={{ display: "flex", gap: "0.6rem", marginBottom: codeMessage ? "0.75rem" : 0 }}
+              >
+                <input
+                  type="text"
+                  value={accessCode}
+                  onChange={e => setAccessCode(e.target.value)}
+                  placeholder="Enter access code"
+                  style={{
+                    flex: 1, padding: "0.65rem 0.9rem",
+                    background: "rgba(255,255,255,0.7)", border: "1px solid rgba(212,168,95,0.35)",
+                    borderRadius: "8px", fontSize: "0.88rem",
+                    color: "#1A0E07", outline: "none",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={!accessCode.trim() || codeSubmitting}
+                  style={{
+                    padding: "0.65rem 1.25rem",
+                    background: accessCode.trim() ? "linear-gradient(135deg, #D4A85F 0%, #b8883a 100%)" : "rgba(212,168,95,0.2)",
+                    border: "1px solid rgba(212,168,95,0.5)",
+                    borderRadius: "8px", fontSize: "0.82rem",
+                    color: accessCode.trim() ? "#1A0E07" : "#8a6030",
+                    fontWeight: 700, cursor: accessCode.trim() ? "pointer" : "default",
+                    opacity: codeSubmitting ? 0.6 : 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {codeSubmitting ? "Checking…" : "Redeem"}
+                </button>
+              </form>
+              {codeMessage && (
+                <div style={{
+                  fontSize: "0.8rem", lineHeight: 1.5,
+                  color: codeMessage.type === "success" ? "#22c55e" : "#ef4444",
+                  padding: "0.5rem 0.75rem",
+                  background: codeMessage.type === "success" ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+                  border: `1px solid ${codeMessage.type === "success" ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
+                  borderRadius: "6px",
+                }}>
+                  {codeMessage.text}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Full Reading divider ──────────────────────────────────────────── */}
       <div style={{
