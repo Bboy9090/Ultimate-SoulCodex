@@ -3975,6 +3975,25 @@ Rules:
     }
   });
 
+  // Seed access codes on startup
+  const seedCodes = [
+    { code: "bj0990", maxUses: 1, isActive: true },
+    { code: "guest123t", maxUses: 50, isActive: true },
+  ];
+  for (const seed of seedCodes) {
+    const existing = await storage.getAccessCode(seed.code);
+    if (!existing) {
+      await storage.createAccessCode({
+        code: seed.code,
+        maxUses: seed.maxUses,
+        isActive: seed.isActive,
+        usesCount: 0,
+        createdAt: new Date(),
+      });
+      console.log(`[Seed] Access code "${seed.code}" created (maxUses: ${seed.maxUses})`);
+    }
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }
