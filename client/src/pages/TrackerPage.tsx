@@ -155,7 +155,9 @@ export default function TrackerPage() {
             <p className="text-sm text-muted-foreground max-w-[200px]">
               Sign in to unlock your Congruence Score analysis.
             </p>
-            <button className="btn btn-secondary text-xs">Sign In / Create Account</button>
+            <a href="/start" style={{ textDecoration: "none" }}>
+              <button className="btn btn-secondary text-xs">Sign In / Create Account</button>
+            </a>
           </div>
         ) : congruence ? (
           <div className="space-y-6 w-full">
