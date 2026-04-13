@@ -89,12 +89,21 @@ interface ConfidenceData {
   reason: string;
 }
 
-function getProfile(): SoulProfile | null {
+async function getProfile(): Promise<SoulProfile | null> {
   try {
     const raw = localStorage.getItem("soulProfile");
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (data.archetype && data.synthesis) return data as SoulProfile;
+    if (data.archetype && data.synthesis && (data.id || data.profileId)) return data as SoulProfile;
+    const res = await fetch("/api/profiles");
+    if (res.ok) {
+      const serverProfile = await res.json();
+      const fetched = Array.isArray(serverProfile) ? serverProfile[0] : serverProfile;
+      if (fetched?.archetype && fetched?.synthesis && (fetched.id || fetched.profileId)) {
+        localStorage.setItem("soulProfile", JSON.stringify(fetched));
+        return fetched as SoulProfile;
+      }
+    }
     return null;
   } catch { return null; }
 }
@@ -197,7 +206,7 @@ const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
-  const profile      = getProfile();
+  const [profile, setProfile] = useState<SoulProfile | null>(null);
   const confidence   = getConfidence();
   const prescription  = getCodexPrescription(0);
   const prescription2 = getCodexPrescription(1);
@@ -212,14 +221,19 @@ export default function ProfilePage() {
   const [codeMessage, setCodeMessage]             = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    if (!profile) return;
-    const cached = loadCachedComparables(profile);
-    if (cached) { setComparables(cached); setComparablesRevealed(true); }
-    fetch("/api/entitlements")
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => { if (d?.isPremium) setIsPremium(true); })
-      .catch(() => {})
-      .finally(() => setPremiumChecked(true));
+    (async () => {
+      const nextProfile = await getProfile();
+      setProfile(nextProfile);
+      if (nextProfile) {
+        const cached = loadCachedComparables(nextProfile);
+        if (cached) { setComparables(cached); setComparablesRevealed(true); }
+      }
+      fetch("/api/entitlements")
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => { if (d?.isPremium) setIsPremium(true); })
+        .catch(() => {})
+        .finally(() => setPremiumChecked(true));
+    })();
   }, []);
 
   async function handleRevealComparables() {
