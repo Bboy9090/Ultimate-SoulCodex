@@ -109,6 +109,8 @@ export default function BlueprintPage() {
 
   const checkEntitlements = (p: any) => {
     setEntitlementError(false);
+    const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
+    if (cachedPremium) setIsPremium(true);
     fetch("/api/entitlements")
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then((d) => { if (d?.isPremium) setIsPremium(true); })

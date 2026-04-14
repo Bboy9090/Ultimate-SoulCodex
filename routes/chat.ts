@@ -27,16 +27,21 @@ export function registerChatRoutes(app: Express) {
       // ── Premium check ────────────────────────────────────────────────────
       let isPremium = false;
 
-      // Owner bypass
-      const ownerProfileId = process.env.OWNER_PROFILE_ID;
-      if (ownerProfileId && userId) {
-        try {
-          const dbProfile = await storage.getProfileByUserId(userId);
-          if (dbProfile?.id === ownerProfileId) isPremium = true;
-        } catch (err) {
-          console.warn("[soul-guide] Owner profile lookup failed:", err);
+      if ((req as any).session?.isPremium) {
+        isPremium = true;
+      }
+
+      if (!isPremium) {
+        const ownerProfileId = process.env.OWNER_PROFILE_ID;
+        if (ownerProfileId && userId) {
+          try {
+            const dbProfile = await storage.getProfileByUserId(userId);
+            if (dbProfile?.id === ownerProfileId) isPremium = true;
+          } catch (err) {
+            console.warn("[soul-guide] Owner profile lookup failed:", err);
+          }
+          if (!isPremium && userId === ownerProfileId) isPremium = true;
         }
-        if (!isPremium && userId === ownerProfileId) isPremium = true;
       }
 
       if (!isPremium) {
@@ -112,13 +117,18 @@ export function registerChatRoutes(app: Express) {
       const session   = (req as any).session;
 
       let isPremium = false;
-      const ownerProfileId = process.env.OWNER_PROFILE_ID;
-      if (ownerProfileId && userId) {
-        try {
-          const dbProfile = await storage.getProfileByUserId(userId);
-          if (dbProfile?.id === ownerProfileId) isPremium = true;
-        } catch {}
-        if (!isPremium && userId === ownerProfileId) isPremium = true;
+      if ((req as any).session?.isPremium) {
+        isPremium = true;
+      }
+      if (!isPremium) {
+        const ownerProfileId = process.env.OWNER_PROFILE_ID;
+        if (ownerProfileId && userId) {
+          try {
+            const dbProfile = await storage.getProfileByUserId(userId);
+            if (dbProfile?.id === ownerProfileId) isPremium = true;
+          } catch {}
+          if (!isPremium && userId === ownerProfileId) isPremium = true;
+        }
       }
       if (!isPremium) {
         try {

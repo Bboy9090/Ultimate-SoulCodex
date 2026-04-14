@@ -401,24 +401,55 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getAccessCodeRedemptions(_params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+  private accessCodeRedemptions = new Map<string, AccessCodeRedemption>();
+
+  async getAccessCodeRedemptions(params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
+    return Array.from(this.accessCodeRedemptions.values()).filter(r =>
+      (params.userId && r.userId === params.userId) ||
+      (params.sessionId && r.sessionId === params.sessionId)
+    );
   }
 
-  async createAccessCodeRedemptionWithIncrement(_params: {
+  async createAccessCodeRedemptionWithIncrement(params: {
     accessCodeId: string;
     userId?: string;
     sessionId?: string;
   }): Promise<AccessCodeRedemption> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+    const accessCode = Array.from(this.accessCodes.values()).find(c => c.id === params.accessCodeId);
+    if (!accessCode) throw new Error("Access code not found");
+    const id = randomUUID();
+    const redemption: AccessCodeRedemption = {
+      id,
+      accessCodeId: params.accessCodeId,
+      userId: params.userId || null,
+      sessionId: params.sessionId || null,
+      redeemedAt: new Date(),
+    } as AccessCodeRedemption;
+    this.accessCodeRedemptions.set(id, redemption);
+    await this.incrementAccessCodeUse(accessCode.code);
+    return redemption;
   }
 
-  async getActiveAccessCodesForUser(_params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+  async getActiveAccessCodesForUser(params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
+    const redemptions = await this.getAccessCodeRedemptions(params);
+    const codes: AccessCode[] = [];
+    for (const r of redemptions) {
+      const code = Array.from(this.accessCodes.values()).find(c => c.id === r.accessCodeId);
+      if (code && code.isActive) {
+        if (!code.expiresAt || new Date() <= code.expiresAt) {
+          codes.push(code);
+        }
+      }
+    }
+    return codes;
   }
 
-  async migrateAccessCodeRedemptions(_sessionId: string, _userId: string): Promise<void> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+  async migrateAccessCodeRedemptions(sessionId: string, userId: string): Promise<void> {
+    for (const [id, r] of this.accessCodeRedemptions) {
+      if (r.sessionId === sessionId && !r.userId) {
+        this.accessCodeRedemptions.set(id, { ...r, userId });
+      }
+    }
   }
   
   async getDailyInsight(profileId: string, date: string): Promise<DailyInsight | undefined> {
