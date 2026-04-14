@@ -34,13 +34,16 @@ export default function SoulGuidePage() {
 
   // Fetch usage on mount so returning users see the right state
   useEffect(() => {
+    const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
+    if (cachedPremium) setIsPremium(true);
     fetch("/api/chat/soul-guide/usage")
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d) return;
-        setIsPremium(d.isPremium);
+        const premium = d.isPremium || cachedPremium;
+        setIsPremium(premium);
         setQuestionsUsed(d.used ?? 0);
-        if (!d.isPremium && (d.used ?? 0) >= FREE_LIMIT) {
+        if (!premium && (d.used ?? 0) >= FREE_LIMIT) {
           setIsLimitReached(true);
         }
       })

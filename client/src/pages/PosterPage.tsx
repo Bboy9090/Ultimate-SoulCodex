@@ -95,6 +95,8 @@ export default function PosterPage() {
 
   /* Fetch entitlement status on mount */
   useEffect(() => {
+    const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
+    if (cachedPremium) setIsPremium(true);
     fetch("/api/entitlements")
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.isPremium) setIsPremium(true); })

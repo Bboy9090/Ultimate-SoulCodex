@@ -483,6 +483,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Check session-level premium flag first (survives MemStorage resets)
+      if ((req.session as any)?.isPremium) {
+        return res.json({
+          isPremium: true,
+          source: (req.session as any).premiumSource || 'access_code',
+        });
+      }
+
       const status = await entitlementService.getUserPremiumStatus({ userId, sessionId });
       res.json(status);
     } catch (error) {
@@ -1770,11 +1778,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Valid code is required" });
       }
       
-      if (!profileId || typeof profileId !== 'string') {
-        return res.status(400).json({ message: "Valid profileId is required" });
+      const userId = req.user?.id;
+      const sessionId = req.sessionID;
+
+      if (!userId && !sessionId) {
+        return res.status(400).json({ message: "No active session. Please refresh the page and try again." });
       }
-      
-      console.log(`[ValidateAccessCode] Validating code for profile: ${profileId}`);
+
+      console.log(`[ValidateAccessCode] Validating code for user=${userId || 'anon'}, session=${sessionId}`);
       
       // Get the access code (case-insensitive)
       const normalizedCode = code.trim().toLowerCase();
@@ -1784,7 +1795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Invalid access code" });
       }
       
-      // Validate code constraints WITHOUT incrementing yet
+      // Validate code constraints
       if (!accessCode.isActive) {
         return res.status(400).json({ message: "Access code is inactive" });
       }
@@ -1797,32 +1808,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Access code has reached maximum uses" });
       }
       
-      // Verify profile exists AND belongs to the current session/user
-      const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
+      // Check if already redeemed by this user/session
+      const existing = await storage.getActiveAccessCodesForUser({ userId, sessionId });
+      if (existing.some(c => c.id === accessCode.id)) {
+        return res.json({ success: true, message: "Premium access is already active!" });
       }
-      const ownsProfile =
-        (req.user?.id && profile.userId === req.user.id) ||
-        (req.sessionID && profile.sessionId === req.sessionID);
-      if (!ownsProfile) {
-        console.warn(`[ValidateAccessCode] Ownership mismatch for profile: ${profileId}`);
-        return res.status(403).json({ message: "You can only redeem codes for your own profile" });
-      }
-      
-      // Upgrade profile to premium
-      const updatedProfile = await storage.updateProfile(profileId, {
-        isPremium: true
+
+      // Create redemption record (also increments usage count)
+      await storage.createAccessCodeRedemptionWithIncrement({
+        accessCodeId: accessCode.id,
+        userId: userId || undefined,
+        sessionId: sessionId || undefined,
       });
+
+      // Mark the session as premium so it persists across requests even if MemStorage resets
+      if (req.session) {
+        (req.session as any).isPremium = true;
+        (req.session as any).premiumSource = 'access_code';
+        (req.session as any).premiumCode = normalizedCode;
+      }
+
+      // Also try to upgrade the profile if it exists in storage
+      if (profileId) {
+        try {
+          const profile = await storage.getProfile(profileId);
+          if (profile) {
+            await storage.updateProfile(profileId, { isPremium: true });
+          }
+        } catch (e) {
+          // Non-blocking — premium is tracked via session + redemption
+        }
+      }
+
+      // Clear the entire entitlement cache so the new status takes effect immediately
+      entitlementService.clearCache();
       
-      // Only increment usage after successful upgrade
-      await storage.incrementAccessCodeUse(normalizedCode);
-      
-      console.log(`[ValidateAccessCode] Code validated and profile upgraded: ${profileId}`);
+      console.log(`[ValidateAccessCode] Code redeemed: ${normalizedCode} by user=${userId || 'anon'}, session=${sessionId}`);
       res.json({ 
         success: true, 
         message: "Premium access activated!",
-        profile: updatedProfile 
       });
     } catch (error) {
       return handleError(error, res, "ValidateAccessCode");
@@ -2302,7 +2326,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check premium status to determine what data to return
       const userId = (req.user as any)?.id;
       const sessionId = req.session?.id;
-      const { isPremium } = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+      let isPremium = false;
+      if ((req.session as any)?.isPremium) {
+        isPremium = true;
+      } else {
+        const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+        isPremium = entStatus.isPremium;
+      }
       
       // Build base response with profile info
       let response: any = {
@@ -3584,12 +3614,14 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         return res.status(400).json({ message: "birthDate, sunSign, moonSign, and lifePathNumber are required" });
       }
 
-      // Determine premium status (OWNER_PROFILE_ID bypass or entitlement check)
+      // Determine premium status (session flag, OWNER_PROFILE_ID bypass, or entitlement check)
       let isPremium = false;
       const ownerProfileId = process.env.OWNER_PROFILE_ID;
       const userId = req.user?.id;
       const sessionId = req.sessionID;
-      if (ownerProfileId && (userId === ownerProfileId || req.user?.profileId === ownerProfileId)) {
+      if ((req.session as any)?.isPremium) {
+        isPremium = true;
+      } else if (ownerProfileId && (userId === ownerProfileId || req.user?.profileId === ownerProfileId)) {
         isPremium = true;
       } else if (userId || sessionId) {
         try {
@@ -3745,13 +3777,18 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         return res.status(400).json({ ok: false, error: "profile and userInputs are required" });
       }
 
-      // Premium gate: OWNER_PROFILE_ID bypass first (server-side only), then entitlement check
+      // Premium gate: session flag, OWNER_PROFILE_ID bypass, then entitlement check
       const ownerProfileId = process.env.OWNER_PROFILE_ID;
       const userId    = req.user?.id;
       const sessionId = req.sessionID;
       let isPremium   = false;
 
-      if (ownerProfileId && userId) {
+      // Session-level premium (set by access code redemption)
+      if ((req.session as any)?.isPremium) {
+        isPremium = true;
+      }
+
+      if (!isPremium && ownerProfileId && userId) {
         try {
           const dbProfile = await storage.getProfileByUserId(userId);
           if (dbProfile?.id === ownerProfileId) isPremium = true;

@@ -228,9 +228,16 @@ export default function ProfilePage() {
         const cached = loadCachedComparables(nextProfile);
         if (cached) { setComparables(cached); setComparablesRevealed(true); }
       }
+      const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
+      if (cachedPremium) setIsPremium(true);
       fetch("/api/entitlements")
         .then(r => r.ok ? r.json() : Promise.reject())
-        .then(d => { if (d?.isPremium) setIsPremium(true); })
+        .then(d => {
+          if (d?.isPremium) {
+            setIsPremium(true);
+            try { localStorage.setItem("soulPremium", "true"); } catch {}
+          }
+        })
         .catch(() => {})
         .finally(() => setPremiumChecked(true));
     })();
@@ -326,6 +333,7 @@ export default function ProfilePage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setIsPremium(true);
+        try { localStorage.setItem("soulPremium", "true"); } catch {}
         setCodeMessage({ type: "success", text: "Premium access activated. All features are now unlocked." });
         setAccessCode("");
       } else {
