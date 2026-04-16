@@ -13,6 +13,7 @@ import TrackerPage from "./pages/TrackerPage";
 import CompatibilityPage from "./pages/CompatibilityPage";
 import TimelinePage from "./pages/TimelinePage";
 import BlueprintPage from "./pages/BlueprintPage";
+import PrivacyPage from "./pages/PrivacyPage";
 
 function hasProfile(): boolean {
   try {
@@ -38,6 +39,8 @@ const routes = (
     <Route path="/poster" component={PosterPage} />
     <Route path="/codex" component={CodexReadingPage} />
     <Route path="/blueprint" component={BlueprintPage} />
+    <Route path="/today" component={TodayPage} />
+    <Route path="/privacy" component={PrivacyPage} />
     <Route>
       <div className="container" style={{ padding: "3rem 1rem", textAlign: "center" }}>
         <h1>404</h1>
