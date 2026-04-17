@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   backgroundColor: "#1A0E07",
 
   server: {
-    url: "https://soulcodex.app",
+    url: "https://soul-codex-engine-of-eternal-now.replit.app",
     cleartext: false,
   },
 
