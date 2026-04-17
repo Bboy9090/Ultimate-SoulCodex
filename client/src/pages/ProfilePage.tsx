@@ -865,9 +865,187 @@ export default function ProfilePage() {
           </ul>
         </ProfileSection>
 
+        <AccountSettings />
+
       </div>
 
     </div>
+  );
+}
+
+// ── Account settings (logout + delete) ───────────────────────────────────────
+
+function AccountSettings() {
+  const [, navigate] = useLocation();
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {}
+    try { localStorage.removeItem("soulPremium"); } catch {}
+    navigate("/");
+  };
+
+  const handleDelete = async () => {
+    if (confirmText !== "DELETE") {
+      setError('Type DELETE to confirm.');
+      return;
+    }
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/account", { method: "DELETE", credentials: "include" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Failed to delete account");
+      }
+      try {
+        localStorage.removeItem("soulPremium");
+        localStorage.removeItem("soulProfile");
+      } catch {}
+      navigate("/");
+      setTimeout(() => window.location.reload(), 100);
+    } catch (e: any) {
+      setError(e?.message || "Failed to delete account");
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <section
+      data-testid="account-settings"
+      style={{
+        marginTop: "2rem",
+        padding: "1.4rem 1.5rem",
+        background: "rgba(242,234,218,0.96)",
+        border: "1px solid rgba(212,168,95,0.45)",
+        borderLeft: "3px solid #D4A85F",
+        borderRadius: "12px",
+      }}
+    >
+      <h3 style={{
+        fontSize: "0.72rem", fontWeight: 700,
+        letterSpacing: "0.1em", textTransform: "uppercase",
+        color: "#1A0E07", margin: "0 0 1rem",
+      }}>
+        ⚙ Account
+      </h3>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <button
+          type="button"
+          onClick={handleLogout}
+          data-testid="button-logout"
+          style={{
+            padding: "0.6rem 1rem",
+            background: "transparent",
+            border: "1px solid rgba(26,14,7,0.35)",
+            borderRadius: 8,
+            color: "#1A0E07",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Sign out
+        </button>
+
+        {!showConfirm ? (
+          <button
+            type="button"
+            onClick={() => setShowConfirm(true)}
+            data-testid="button-delete-account"
+            style={{
+              padding: "0.6rem 1rem",
+              background: "transparent",
+              border: "1px solid rgba(180,30,30,0.5)",
+              borderRadius: 8,
+              color: "#8B1A1A",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Delete my account
+          </button>
+        ) : (
+          <div style={{
+            padding: "0.9rem",
+            background: "rgba(180,30,30,0.05)",
+            border: "1px solid rgba(180,30,30,0.3)",
+            borderRadius: 8,
+          }}>
+            <p style={{ fontSize: "0.8rem", color: "#1A0E07", margin: "0 0 0.65rem", lineHeight: 1.5 }}>
+              This will permanently delete your account, soul profile, and all journal entries.
+              This cannot be undone. Type <strong>DELETE</strong> to confirm.
+            </p>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="Type DELETE"
+              data-testid="input-delete-confirm"
+              style={{
+                width: "100%",
+                padding: "0.5rem 0.7rem",
+                marginBottom: "0.6rem",
+                background: "white",
+                border: "1px solid rgba(26,14,7,0.3)",
+                borderRadius: 6,
+                fontSize: "0.85rem",
+                color: "#1A0E07",
+              }}
+            />
+            {error && (
+              <p style={{ fontSize: "0.75rem", color: "#8B1A1A", margin: "0 0 0.6rem" }}>{error}</p>
+            )}
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting || confirmText !== "DELETE"}
+                data-testid="button-confirm-delete"
+                style={{
+                  flex: 1,
+                  padding: "0.55rem 0.9rem",
+                  background: confirmText === "DELETE" ? "#8B1A1A" : "rgba(139,26,26,0.3)",
+                  border: "none",
+                  borderRadius: 6,
+                  color: "white",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  cursor: deleting || confirmText !== "DELETE" ? "not-allowed" : "pointer",
+                }}
+              >
+                {deleting ? "Deleting…" : "Permanently delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowConfirm(false); setConfirmText(""); setError(null); }}
+                disabled={deleting}
+                style={{
+                  flex: 1,
+                  padding: "0.55rem 0.9rem",
+                  background: "transparent",
+                  border: "1px solid rgba(26,14,7,0.3)",
+                  borderRadius: 6,
+                  color: "#1A0E07",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
