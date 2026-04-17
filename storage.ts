@@ -78,6 +78,10 @@ export interface IStorage {
   // Webhook event operations (for idempotency)
   getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined>;
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
+
+  // Account deletion (App Store compliance)
+  deleteUserAccount(userId: string): Promise<void>;
+  deleteProfileById(profileId: string): Promise<void>;
   
   // Journal operations
   createJournalEntry(entry: any): Promise<any>;
@@ -783,6 +787,33 @@ export class MemStorage implements IStorage {
     return event;
   }
 
+  async deleteProfileById(profileId: string): Promise<void> {
+    this.profiles.delete(profileId);
+  }
+
+  // ── Account deletion (App Store compliance) ─────────────────────────────
+  async deleteUserAccount(userId: string): Promise<void> {
+    // Remove user record
+    this.users.delete(userId);
+    // Remove local credentials (LocalUser map is keyed by userId; v.id === userId)
+    this.localUsers.delete(userId);
+    for (const [k, v] of this.localUsers) if (v.id === userId) this.localUsers.delete(k);
+    // Remove profiles owned by user
+    for (const [k, v] of this.profiles) if (v.userId === userId) this.profiles.delete(k);
+    // Remove persons (compatibility contacts)
+    for (const [k, v] of this.persons) if (v.userId === userId) this.persons.delete(k);
+    // Remove frequency logs
+    for (const [k, v] of this.frequencyLogs) if (v.userId === userId) this.frequencyLogs.delete(k);
+    // Remove push subscriptions
+    for (const [k, v] of this.pushSubscriptions) if (v.userId === userId) this.pushSubscriptions.delete(k);
+    // Remove journal entries
+    for (const [k, v] of this.journalEntries) if (v.userId === userId) this.journalEntries.delete(k);
+    // Remove shareable links
+    for (const [k, v] of this.shareableLinks) if (v.userId === userId) this.shareableLinks.delete(k);
+    // Remove password reset tokens
+    for (const [k, v] of this.passwordResetTokens) if (v.userId === userId) this.passwordResetTokens.delete(k);
+  }
+
   // Journal operations
   async createJournalEntry(entryData: any): Promise<any> {
     const id = randomUUID();
@@ -1396,6 +1427,28 @@ class HybridStorage extends MemStorage {
     } catch (err) {
       console.warn("[HybridStorage] getActiveAccessCodesForUser DB failure:", err);
       return super.getActiveAccessCodesForUser(params);
+    }
+  }
+
+  // ── Account deletion (App Store compliance) ─────────────────────────────
+  async deleteProfileById(profileId: string): Promise<void> {
+    try {
+      await db.delete(profilesTable).where(eq(profilesTable.id, profileId));
+    } catch (err) {
+      console.error("[HybridStorage] deleteProfileById DB failure:", err);
+    }
+    await super.deleteProfileById(profileId);
+  }
+
+  async deleteUserAccount(userId: string): Promise<void> {
+    // First delete in-memory associated state, then the persistent rows.
+    await super.deleteUserAccount(userId);
+    try {
+      await db.delete(redemptionsTable).where(eq(redemptionsTable.userId, userId));
+      await db.delete(profilesTable).where(eq(profilesTable.userId, userId));
+    } catch (err) {
+      console.error("[HybridStorage] deleteUserAccount DB failure:", err);
+      throw err;
     }
   }
 

@@ -3,10 +3,12 @@ import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import MemoryStoreFactory from "memorystore";
+import connectPgSimple from "connect-pg-simple";
 import { storage } from "./storage";
 import { verifyPassword } from "./auth/passwordUtils";
 
 const MemoryStore = MemoryStoreFactory(session);
+const PgSession = connectPgSimple(session);
 
 export async function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET;
@@ -19,9 +21,25 @@ export async function setupAuth(app: Express) {
 
   app.set("trust proxy", 1);
 
+  // Persistent session store (Postgres) when DATABASE_URL is set.
+  // Falls back to in-memory only for local dev without a DB.
+  const sessionStore = process.env.DATABASE_URL
+    ? new PgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: "user_sessions",
+        createTableIfMissing: false,
+      })
+    : new MemoryStore({ checkPeriod: 86400000 });
+
+  if (process.env.DATABASE_URL) {
+    console.log("[Sessions] Using Postgres-backed session store");
+  } else {
+    console.warn("[Sessions] Using in-memory session store (DATABASE_URL not set) — sessions will be lost on restart");
+  }
+
   app.use(
     session({
-      store: new MemoryStore({ checkPeriod: 86400000 }),
+      store: sessionStore,
       secret: sessionSecret,
       resave: false,
       saveUninitialized: false,

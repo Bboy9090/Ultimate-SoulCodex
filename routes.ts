@@ -456,6 +456,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Delete account / personal data — App Store + Google Play required.
+  // Works for both authenticated users (full account delete) and anonymous
+  // sessions (session profile + logs delete). Always destroys the session.
+  app.delete('/api/auth/account', async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub || null;
+      const sessionId = req.sessionID || null;
+
+      if (!userId && !sessionId) {
+        return res.status(400).json({ message: "No account or session to delete." });
+      }
+
+      if (userId) {
+        await storage.deleteUserAccount(userId);
+        console.log(`[DeleteAccount] Removed user ${userId} and all associated data`);
+      } else if (sessionId) {
+        // Anonymous: delete the session's profile (if any). Other session-scoped
+        // data (frequency logs, etc.) will be orphaned by the session destroy below.
+        const sessionProfile = await storage.getProfileBySessionId(sessionId);
+        if (sessionProfile) {
+          try {
+            await storage.deleteProfileById(sessionProfile.id);
+          } catch (e) {
+            console.warn("[DeleteAccount] Anonymous profile delete failed:", e);
+          }
+        }
+        console.log(`[DeleteAccount] Cleared anonymous session ${sessionId} data`);
+      }
+
+      // End the session and clear premium flag for both cases
+      req.session.isPremium = false;
+      const finish = () => {
+        req.session.destroy((destroyErr: any) => {
+          if (destroyErr) {
+            console.error("[DeleteAccount] Session destroy failed:", destroyErr);
+          }
+          res.clearCookie("connect.sid");
+          res.json({ message: "All your data has been permanently deleted." });
+        });
+      };
+      if (req.logout) {
+        req.logout((logoutErr: any) => {
+          if (logoutErr) console.error("[DeleteAccount] Logout failed:", logoutErr);
+          finish();
+        });
+      } else {
+        finish();
+      }
+    } catch (error) {
+      console.error("[DeleteAccount] Failed:", error);
+      return res.status(500).json({ message: "Failed to delete account. Please try again or contact support." });
+    }
+  });
+
   // Get user entitlement status (premium access)
   app.get('/api/entitlements', async (req: any, res) => {
     try {
@@ -2832,23 +2886,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get congruence score for logged-in user
   app.get("/api/congruence", async (req, res) => {
     try {
-      const userId = (req.user as any)?.id;
-      
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
+      const userId = (req.user as any)?.id || null;
+      const sessionId = req.sessionID || null;
+
+      // Anonymous users get a graceful empty state (no 401 — page must render)
+      if (!userId && !sessionId) {
+        return res.json({ score: 0, interpretation: "Start tracking to see your score.", purposeStatement: null });
       }
-      
-      // Get user's profile for purpose statement
-      const profile = await storage.getProfileByUserId(userId);
+
+      // Get user's profile for purpose statement (only available for logged-in users)
+      const profile = userId ? await storage.getProfileByUserId(userId) : null;
       const purposeStatement = profile?.purposeStatement || null;
-      
-      // Get all frequency logs for user (last 30 days is the default in calculateCongruenceScore)
-      const allLogs = await storage.getFrequencyLogsByUser(userId);
+
+      // Pull logs by user OR session — session-scoped logs work pre-signup
+      const allLogs = userId
+        ? await storage.getFrequencyLogsByUser(userId)
+        : await storage.getFrequencyLogsBySession(sessionId!);
       
       // Calculate congruence score
       const congruenceScore = calculateCongruenceScore(allLogs, purposeStatement);
-      
-      console.log(`[CongruenceScore] User ${userId} score: ${congruenceScore.score}`);
+
+      console.log(`[CongruenceScore] ${userId ? `User ${userId}` : `Session ${sessionId}`} score: ${congruenceScore.score}`);
       
       res.json({
         ...congruenceScore,
@@ -2862,21 +2920,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user's purpose statement
   app.patch("/api/profile/purpose", async (req, res) => {
     try {
-      const userId = (req.user as any)?.id;
-      
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
+      const userId = (req.user as any)?.id || null;
+      const sessionId = req.sessionID || null;
+
       const { purposeStatement } = req.body;
-      
+
       if (typeof purposeStatement !== 'string') {
         return res.status(400).json({ message: "purposeStatement must be a string" });
       }
-      
-      // Get user's profile
-      const profile = await storage.getProfileByUserId(userId);
-      
+
+      // Find profile by user OR by anonymous session
+      const profile = userId
+        ? await storage.getProfileByUserId(userId)
+        : sessionId ? await storage.getProfileBySessionId(sessionId) : null;
+
       if (!profile) {
         return res.status(404).json({ message: "Profile not found. Please create a profile first." });
       }
@@ -2886,7 +2943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         purposeStatement: purposeStatement.trim() || null
       });
       
-      console.log(`[UpdatePurpose] User ${userId} updated purpose statement`);
+      console.log(`[UpdatePurpose] ${userId ? `User ${userId}` : `Session ${sessionId}`} updated purpose statement`);
       
       res.json({ 
         message: "Purpose statement updated successfully", 
