@@ -202,6 +202,7 @@ const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string
   compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(242,234,218,0.96)" },
   build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(242,234,218,0.96)" },
   growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(242,234,218,0.96)" },
+  account:  { glyph: "⚙", accent: "#8a7553", bg: "rgba(242,234,218,0.96)" },
 };
 
 export default function ProfilePage() {
@@ -915,137 +916,156 @@ function AccountSettings() {
     }
   };
 
+  const ink = "#1A0E07";
+  const danger = "#8B1A1A";
+  const canConfirm = confirmText === "DELETE" && !deleting;
+
   return (
-    <section
-      data-testid="account-settings"
-      style={{
-        marginTop: "2rem",
-        padding: "1.4rem 1.5rem",
-        background: "rgba(242,234,218,0.96)",
-        border: "1px solid rgba(212,168,95,0.45)",
-        borderLeft: "3px solid #D4A85F",
-        borderRadius: "12px",
-      }}
-    >
-      <h3 style={{
-        fontSize: "0.72rem", fontWeight: 700,
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: "#1A0E07", margin: "0 0 1rem",
-      }}>
-        ⚙ Account
-      </h3>
+    <div data-testid="account-settings">
+      <ProfileSection sectionKey="account" title="Account">
+        <p style={{
+          fontSize: "0.8rem", color: "rgba(26,14,7,0.7)",
+          margin: "0 0 1rem", lineHeight: 1.55,
+        }}>
+          Sign out to switch accounts, or permanently remove everything we hold about you.
+        </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <button
-          type="button"
-          onClick={handleLogout}
-          data-testid="button-logout"
-          style={{
-            padding: "0.6rem 1rem",
-            background: "transparent",
-            border: "1px solid rgba(26,14,7,0.35)",
-            borderRadius: 8,
-            color: "#1A0E07",
-            fontSize: "0.85rem",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Sign out
-        </button>
-
-        {!showConfirm ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
           <button
             type="button"
-            onClick={() => setShowConfirm(true)}
-            data-testid="button-delete-account"
+            onClick={handleLogout}
+            data-testid="button-logout"
             style={{
-              padding: "0.6rem 1rem",
-              background: "transparent",
-              border: "1px solid rgba(180,30,30,0.5)",
+              padding: "0.65rem 1rem",
+              background: "rgba(26,14,7,0.04)",
+              border: "1px solid rgba(26,14,7,0.25)",
               borderRadius: 8,
-              color: "#8B1A1A",
+              color: ink,
               fontSize: "0.85rem",
               fontWeight: 600,
+              letterSpacing: "0.01em",
               cursor: "pointer",
+              transition: "background 120ms ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(26,14,7,0.08)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(26,14,7,0.04)")}
           >
-            Delete my account
+            Sign out
           </button>
-        ) : (
-          <div style={{
-            padding: "0.9rem",
-            background: "rgba(180,30,30,0.05)",
-            border: "1px solid rgba(180,30,30,0.3)",
-            borderRadius: 8,
-          }}>
-            <p style={{ fontSize: "0.8rem", color: "#1A0E07", margin: "0 0 0.65rem", lineHeight: 1.5 }}>
-              This will permanently delete your account, soul profile, and all journal entries.
-              This cannot be undone. Type <strong>DELETE</strong> to confirm.
-            </p>
-            <input
-              type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="Type DELETE"
-              data-testid="input-delete-confirm"
+
+          {!showConfirm ? (
+            <button
+              type="button"
+              onClick={() => setShowConfirm(true)}
+              data-testid="button-delete-account"
               style={{
-                width: "100%",
-                padding: "0.5rem 0.7rem",
-                marginBottom: "0.6rem",
-                background: "white",
-                border: "1px solid rgba(26,14,7,0.3)",
-                borderRadius: 6,
+                padding: "0.65rem 1rem",
+                background: "transparent",
+                border: `1px solid ${danger}55`,
+                borderRadius: 8,
+                color: danger,
                 fontSize: "0.85rem",
-                color: "#1A0E07",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "background 120ms ease",
               }}
-            />
-            {error && (
-              <p style={{ fontSize: "0.75rem", color: "#8B1A1A", margin: "0 0 0.6rem" }}>{error}</p>
-            )}
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting || confirmText !== "DELETE"}
-                data-testid="button-confirm-delete"
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(139,26,26,0.06)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              Delete my account
+            </button>
+          ) : (
+            <div style={{
+              marginTop: "0.25rem",
+              padding: "1rem",
+              background: "rgba(139,26,26,0.04)",
+              border: `1px solid ${danger}3a`,
+              borderLeft: `3px solid ${danger}`,
+              borderRadius: 10,
+            }}>
+              <p style={{
+                fontSize: "0.8rem", color: ink,
+                margin: "0 0 0.75rem", lineHeight: 1.55,
+              }}>
+                This permanently deletes your account, soul profile, journal entries,
+                and any saved relationships. It cannot be undone. Type{" "}
+                <strong style={{ letterSpacing: "0.05em" }}>DELETE</strong> to confirm.
+              </p>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+                placeholder="DELETE"
+                autoFocus
+                data-testid="input-delete-confirm"
                 style={{
-                  flex: 1,
-                  padding: "0.55rem 0.9rem",
-                  background: confirmText === "DELETE" ? "#8B1A1A" : "rgba(139,26,26,0.3)",
-                  border: "none",
+                  width: "100%",
+                  padding: "0.55rem 0.75rem",
+                  marginBottom: "0.7rem",
+                  background: "white",
+                  border: `1px solid ${canConfirm ? danger : "rgba(26,14,7,0.25)"}`,
                   borderRadius: 6,
-                  color: "white",
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  cursor: deleting || confirmText !== "DELETE" ? "not-allowed" : "pointer",
+                  fontSize: "0.85rem",
+                  letterSpacing: "0.08em",
+                  color: ink,
+                  outline: "none",
+                  fontFamily: "inherit",
                 }}
-              >
-                {deleting ? "Deleting…" : "Permanently delete"}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setShowConfirm(false); setConfirmText(""); setError(null); }}
-                disabled={deleting}
-                style={{
-                  flex: 1,
-                  padding: "0.55rem 0.9rem",
-                  background: "transparent",
-                  border: "1px solid rgba(26,14,7,0.3)",
-                  borderRadius: 6,
-                  color: "#1A0E07",
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
+              />
+              {error && (
+                <p style={{
+                  fontSize: "0.75rem", color: danger,
+                  margin: "0 0 0.65rem", fontWeight: 500,
+                }}>
+                  {error}
+                </p>
+              )}
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={!canConfirm}
+                  data-testid="button-confirm-delete"
+                  style={{
+                    flex: 1,
+                    padding: "0.6rem 0.9rem",
+                    background: canConfirm ? danger : "rgba(139,26,26,0.25)",
+                    border: "none",
+                    borderRadius: 6,
+                    color: "white",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.02em",
+                    cursor: canConfirm ? "pointer" : "not-allowed",
+                    transition: "background 120ms ease",
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Permanently delete"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowConfirm(false); setConfirmText(""); setError(null); }}
+                  disabled={deleting}
+                  style={{
+                    flex: 1,
+                    padding: "0.6rem 0.9rem",
+                    background: "transparent",
+                    border: "1px solid rgba(26,14,7,0.25)",
+                    borderRadius: 6,
+                    color: ink,
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    cursor: deleting ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-    </section>
+          )}
+        </div>
+      </ProfileSection>
+    </div>
   );
 }
 
