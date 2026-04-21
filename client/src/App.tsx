@@ -64,6 +64,11 @@ export default function App() {
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center top";
     document.body.style.backgroundAttachment = "fixed";
+
+    // Dismiss the native splash screen now that React has hydrated
+    import("@capacitor/splash-screen").then(({ SplashScreen }) => {
+      SplashScreen.hide().catch(console.warn);
+    });
   }, []);
 
   if (isMarketing) {
