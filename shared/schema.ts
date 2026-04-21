@@ -6,7 +6,7 @@ import { sql as drizzleSql } from "drizzle-orm";
 
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id"),
+  userId: uuid("user_id").references(() => users.id),
   sessionId: text("session_id"),
   name: text("name").notNull(),
   birthDate: text("birth_date").notNull(),
@@ -49,8 +49,39 @@ export const accessCodeRedemptions = pgTable("access_code_redemptions", {
   codeIdx: index("redemptions_code_idx").on(t.accessCodeId),
 }));
 
-// ── Zod runtime schemas (used by routes) ──────────────────────────────────────
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  appleId: text("apple_id").unique(),
+  email: text("email"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
+  // Billing tracking
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status"),
+  subscriptionPlan: text("subscription_plan"),
+  subscriptionEndsAt: timestamp("subscription_ends_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  appleIdx: uniqueIndex("users_apple_idx").on(t.appleId),
+  emailIdx: index("users_email_idx").on(t.email),
+}));
 
+export const localUsers = pgTable("local_users", {
+  id: uuid("id").primaryKey().references(() => users.id), // Links to users.id
+  email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  passwordVersion: integer("password_version").notNull().default(1),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  emailIdx: uniqueIndex("local_users_email_idx").on(t.email),
+}));
+
+// ── Zod runtime schemas (used by routes) ──────────────────────────────────────
 
 // Zod schemas used at runtime in routes
 export const birthDataSchema = z.object({
@@ -99,23 +130,28 @@ export const mbtiAssessmentSchema = z.object({
   responses: z.array(z.number()).min(1),
 });
 
-// Type placeholders to satisfy type-only imports
-export type User = any;
-export type UpsertUser = any;
-export type Profile = any;
-export type InsertProfile = any;
+// ── Type definitions ──────────────────────────────────────────────────────────
+
+export type User = typeof users.$inferSelect;
+export type UpsertUser = Partial<User> & { id: string };
+export type Profile = typeof profiles.$inferSelect;
+export type InsertProfile = typeof profiles.$inferInsert;
+export type LocalUser = typeof localUsers.$inferSelect;
+export type InsertLocalUser = typeof localUsers.$inferInsert;
+
+export type AccessCode = typeof accessCodes.$inferSelect;
+export type InsertAccessCode = typeof accessCodes.$inferInsert;
+export type AccessCodeRedemption = typeof accessCodeRedemptions.$inferSelect;
+
+// Other placeholders can remain 'any' if not used in drizzle tables
 export type Person = any;
 export type InsertPerson = any;
 export type Assessment = any;
 export type InsertAssessment = any;
-export type AccessCode = any;
-export type AccessCodeRedemption = any;
-export type InsertAccessCode = any;
 export type DailyInsight = any;
 export type InsertDailyInsight = any;
 export type CompatibilityAnalysis = any;
 export type InsertCompatibility = any;
-export type LocalUser = any;
 export type PushSubscription = any;
 export type InsertPushSubscription = any;
 export type FrequencyLog = any;

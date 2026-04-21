@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "../lib/queryClient";
+import { motion, AnimatePresence } from "framer-motion";
+import { apiRequest, apiFetch } from "../lib/queryClient";
 import ConfidenceBadge from "../components/ConfidenceBadge";
+import CosmicLoader from "../components/CosmicLoader";
+import ScButton from "../components/ScButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,7 +105,10 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
   const { color: scoreColor, text: scoreText } = scoreLabel(match.score);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, borderColor: elColor + "60", boxShadow: `0 12px 32px -12px ${elColor}33` }}
       onClick={() => setOpen(o => !o)}
       style={{
         background: "rgba(26,18,10,0.75)", border: `1px solid ${elColor}28`,
@@ -112,8 +117,6 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
         cursor: "pointer", transition: "border-color 0.2s",
         position: "relative",
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = elColor + "60"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = elColor + "28"; }}
     >
       {rank !== undefined && (
         <div style={{
@@ -174,7 +177,7 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -244,7 +247,7 @@ export default function CompatibilityPage() {
     // If localStorage profile is missing or lacks astrology signs, fetch from server
     const hasSigns = parsed?.sunSign || parsed?.astrologyData?.sunSign;
     if (!hasSigns) {
-      fetch("/api/profiles")
+      apiFetch("/api/profiles")
         .then(r => r.ok ? r.json() : null)
         .then((profiles: any[]) => {
           if (!profiles || profiles.length === 0) return;
@@ -424,9 +427,14 @@ export default function CompatibilityPage() {
             </div>
           </div>
           {!myProfileId ? (
-            <button className="btn btn-primary" onClick={() => saveMyProfileMutation.mutate()} disabled={saveMyProfileMutation.isPending} style={{ fontSize: "0.8rem", padding: "0.45rem 1rem", flexShrink: 0 }}>
-              {saveMyProfileMutation.isPending ? "Saving…" : "Link Profile"}
-            </button>
+            <ScButton 
+              onClick={() => saveMyProfileMutation.mutate()} 
+              loading={saveMyProfileMutation.isPending} 
+              size="sm"
+              className="flex-shrink-0"
+            >
+              Link Profile
+            </ScButton>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.72rem", color: "#22c55e", flexShrink: 0 }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} /> Linked
@@ -487,16 +495,16 @@ export default function CompatibilityPage() {
             </h2>
 
             {archetypeMatchMutation.isPending ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-                {[0,1,2,3].map(i => (
-                  <div key={i} style={{ height: 160, borderRadius: "14px", background: "rgba(26,14,8,0.5)", border: "1px solid rgba(212,168,95,0.1)", animation: "pulse 1.5s ease-in-out infinite" }} />
-                ))}
+              <div className="py-12">
+                <CosmicLoader label={`Seeking ${modeInfo?.label} Resonances…`} />
               </div>
             ) : matches?.best ? (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-                {matches.best.map((m, i) => (
-                  <MatchCard key={m.sign.name} match={m} mode={mode} rank={i} />
-                ))}
+                <AnimatePresence>
+                  {matches.best.map((m, i) => (
+                    <MatchCard key={m.sign.name} match={m} mode={mode} rank={i} />
+                  ))}
+                </AnimatePresence>
               </div>
             ) : null}
           </div>
@@ -564,11 +572,20 @@ export default function CompatibilityPage() {
                 {/* Add person form */}
                 {!atLimit && (
                   <div style={{ marginBottom: "1.25rem" }}>
-                    <button className="btn btn-secondary" style={{ padding: "0.45rem 0.9rem", fontSize: "0.8rem", marginBottom: "1rem" }} onClick={() => setIsAddOpen(!isAddOpen)}>
+                    <ScButton 
+                      variant="secondary" 
+                      size="sm" 
+                      className="mb-4"
+                      onClick={() => setIsAddOpen(!isAddOpen)}
+                    >
                       {isAddOpen ? "✕ Cancel" : "+ Add Person"}
-                    </button>
+                    </ScButton>
                     {isAddOpen && (
-                      <div style={{ background: "rgba(15,20,40,0.65)", border: "1px dashed rgba(212,168,95,0.35)", borderRadius: "12px", padding: "1.25rem" }}>
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        style={{ background: "rgba(15,20,40,0.65)", border: "1px dashed rgba(212,168,95,0.35)", borderRadius: "12px", padding: "1.25rem" }}
+                      >
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem", marginBottom: "1rem" }}>
                           {([["Name", "text", "name", "Name"], ["Birth Date", "date", "birthDate", ""], ["Birth Time (opt.)", "time", "birthTime", ""], ["Location (opt.)", "text", "birthLocation", "City"]] as [string, string, keyof typeof form, string][]).map(([label, type, key, ph]) => (
                             <div key={key} className="form-group" style={{ marginBottom: 0 }}>
@@ -577,10 +594,15 @@ export default function CompatibilityPage() {
                             </div>
                           ))}
                         </div>
-                        <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => addPersonMutation.mutate(form)} disabled={!form.name || !form.birthDate || addPersonMutation.isPending}>
-                          {addPersonMutation.isPending ? "Saving…" : "Add & Analyse"}
-                        </button>
-                      </div>
+                        <ScButton 
+                          className="w-full"
+                          onClick={() => addPersonMutation.mutate(form)} 
+                          disabled={!form.name || !form.birthDate}
+                          loading={addPersonMutation.isPending}
+                        >
+                          Add & Analyse
+                        </ScButton>
+                      </motion.div>
                     )}
                   </div>
                 )}
@@ -601,9 +623,14 @@ export default function CompatibilityPage() {
                             <p style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", margin: 0 }}>{person.birthDate}</p>
                           </div>
                         </div>
-                        <button className="btn btn-secondary" style={{ padding: "0.35rem 0.8rem", fontSize: "0.76rem" }} onClick={() => compareMutation.mutate(person.id)} disabled={compareMutation.isPending}>
-                          {compareMutation.isPending && compareMutation.variables === person.id ? "Reading…" : "Compare"}
-                        </button>
+                        <ScButton 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={() => compareMutation.mutate(person.id)} 
+                          loading={compareMutation.isPending && compareMutation.variables === person.id}
+                        >
+                          Compare
+                        </ScButton>
                       </div>
                     ))}
                   </div>

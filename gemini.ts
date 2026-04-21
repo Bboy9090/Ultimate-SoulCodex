@@ -1,23 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey  = process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-
-// When using Replit AI integrations the key may be "_DUMMY_API_KEY_" — that is correct.
-// The proxy handles real auth via the base URL; the dummy key is just a placeholder.
-const integrationMode = !!baseUrl && !!apiKey;
-const directKeyMode   = !!apiKey && apiKey !== "_DUMMY_API_KEY_";
-const available       = integrationMode || directKeyMode;
+const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+const available = !!apiKey;
 
 if (!available) {
-  console.warn("GEMINI_API_KEY is missing. AI features will be disabled.");
+  console.warn("GOOGLE_API_KEY is missing. AI features will be disabled.");
 } else {
-  console.log(`[Gemini] Ready — ${integrationMode ? "Replit AI integration" : "direct key"}`);
+  console.log("[Gemini] Ready — manual API key mode");
 }
 
 const ai = new GoogleGenAI({
   apiKey: apiKey || "",
-  ...(baseUrl ? { httpOptions: { baseUrl, apiVersion: "" } } : {}),
 });
 
 const DEFAULT_MODEL = "gemini-2.5-flash";

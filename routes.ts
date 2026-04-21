@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import appleSignin from "apple-signin-auth";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
@@ -38,7 +39,7 @@ import { calculateMoralCompass, calculateMoralCompassFromBirthData } from "./ser
 import { calculateParentalInfluence } from "./services/parental-influence";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { hashPassword, verifyPassword } from "./auth/passwordUtils";
 import { randomUUID } from "crypto";
 import { calculateActiveTransits, extractNatalPositions } from "./services/transits";
@@ -64,6 +65,7 @@ import { resolveGeo } from "./server/geo/index";
 import { computeConfidence } from "./soulcodex/compute/confidence";
 import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
 import { buildNatalReportPdf } from "./server/natalReportPdf";
+import { buildCompatibilityReportPdf } from "./server/compatibilityReportPdf";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
@@ -139,7 +141,7 @@ import { getVapidPublicKey } from "./services/push-notifications";
 import { insertPushSubscriptionSchema } from "./shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup Replit Auth
+  // Setup authentication middleware
   await setupAuth(app);
   
   // Stripe webhook endpoint (MUST be registered before express.json() middleware)
@@ -360,6 +362,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Log in with email/password
+  // ── Authentication endpoints ──────────────────────────────────────────
+
+  app.post('/api/auth/apple', async (req, res) => {
+    const { identityToken, user: appleUser } = req.body;
+    
+    if (!identityToken) {
+      return res.status(400).json({ message: "identityToken is required" });
+    }
+
+    try {
+      // Verify the Apple Identity Token
+      // audience is usually the App Bundle ID (e.g. com.soulcodex.app)
+      const data = await appleSignin.verifyIdToken(identityToken, {
+        audience: process.env.APPLE_CLIENT_ID, 
+        ignoreExpiration: false,
+      });
+
+      const { sub: appleId, email } = data;
+
+      // 1. Get or Create user
+      let user = await storage.getUserByAppleId(appleId);
+      
+      if (!user) {
+        console.log(`[AppleAuth] Creating new user for appleId: ${appleId}`);
+        user = await storage.upsertUser({
+          id: randomUUID(),
+          appleId,
+          email: email || appleUser?.email || null,
+          firstName: appleUser?.name?.firstName || null,
+          lastName: appleUser?.name?.lastName || null,
+          subscriptionStatus: "free",
+        });
+      } else {
+        console.log(`[AppleAuth] Found existing user: ${user.id}`);
+      }
+
+      // 2. Establish session
+      req.login(user, (err) => {
+        if (err) return handleError(err, res, "AppleAuthLogin");
+        res.json({ user, message: "Successfully authenticated with Apple" });
+      });
+
+    } catch (err) {
+      handleError(err, res, "AppleAuthVerify");
+    }
+  });
+
   app.post('/api/auth/login', async (req, res) => {
     try {
       const data = loginSchema.parse(req.body);
@@ -417,7 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get current user (works for both Replit Auth and local auth)
+  // Get current user (standard local auth)
   app.get('/api/auth/user', async (req: any, res) => {
     try {
       // Allow anonymous users - return null instead of 401
@@ -425,26 +474,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(null);
       }
       
-      // For Replit Auth users
-      if (req.user.claims) {
-        const userId = req.user.claims.sub;
-        const user = await storage.getUser(userId);
-        return res.json(user);
-      }
-      
-      // For local auth users
-      if (req.user.id) {
-        const user = await storage.getUser(req.user.id);
-        return res.json({ ...user, authProvider: req.user.authProvider });
-      }
-      
-      // Fallback for edge cases
-      res.json(null);
+      // Standard auth user retrieval
+      const user = await storage.getUser(req.user.id);
+      return res.json({ ...user, authProvider: req.user.authProvider });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
+
 
   // Logout (works for both auth methods)
   app.post('/api/auth/logout', (req, res) => {
@@ -3198,9 +3236,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      const options = req.body.options || { template: 'full-profile', theme: 'mystical' };
-      const template = generateProfilePDF(profile, options);
-      const pdfBuffer = await renderPDF(template);
+      // Re-use the high-quality natal report builder
+      const astro = profile.data?.astrologyData || {};
+      const hd    = profile.data?.humanDesignData || {};
+      
+      // Fallback AI text (or we could trigger a generation if premium)
+      const aiText = profile.data?.aiReportText || {
+        overview: "A comprehensive behavioral analysis of your soul architecture.",
+        bigThreeSun: "Interpretation of your core identity drive.",
+        bigThreeMoon: "Interpretation of your emotional needs.",
+        bigThreeRising: "Interpretation of your outward persona.",
+        whatStandsOut: ["Key planetary alignments", "Elemental balance", "Human Design signatures"],
+        workingInterpretation: "A synthesis of your combined esoteric systems.",
+        elementEmphasis: "Guidance based on your dominant elements.",
+        houseEmphasis: "Analysis of your life focus areas.",
+        bottomLine: "A life built for specific growth and mastery.",
+        hdInterpretation: "Behavioral guidance based on your Human Design type and authority."
+      };
+
+      const pdfBuffer = await buildNatalReportPdf({
+        name: profile.name,
+        birthDate: profile.birthDate,
+        birthTime: profile.birthTime || "",
+        birthLocation: profile.birthLocation || "",
+        astrology: astro,
+        humanDesign: hd,
+        aiText: aiText as any
+      });
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${profile.name}-soul-codex.pdf"`);
@@ -3516,8 +3578,18 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       }
 
       const options = req.body.options || { template: 'compatibility', theme: 'mystical' };
-      const template = generateCompatibilityPDF(profile1, profile2, compatibility.compatibilityData, options);
-      const pdfBuffer = await renderPDF(template);
+      
+      const pdfBuffer = await buildCompatibilityReportPdf({
+        profile1,
+        profile2,
+        compatibilityData: compatibility.compatibilityData,
+        aiText: compatibility.compatibilityData.aiText || {
+          overview: "A deep behavioral synthesis of your combined natal charts.",
+          strengths: compatibility.compatibilityData.strengths || [],
+          challenges: compatibility.compatibilityData.challenges || [],
+          bottomLine: "A partnership with unique growth opportunities."
+        }
+      });
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="compatibility-${profile1.name}-${profile2.name}.pdf"`);

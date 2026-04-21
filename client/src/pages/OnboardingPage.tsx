@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "../lib/queryClient";
+import CosmicLoader from "@/components/CosmicLoader";
+import ScButton from "@/components/ScButton";
+import AppleSignInButton from "@/components/AppleSignInButton";
 
 type PressurePattern =
   | "spiral_inward"
@@ -294,13 +298,21 @@ export default function OnboardingPage() {
     }
   };
 
+  if (mutation.isPending) {
+    return <CosmicLoader fullPage label="Charging Soul Blueprint" />;
+  }
+
   if (successResult) {
     const archetypeName = successResult?.archetype?.name ?? "Your Archetype";
     const archetypeTagline = successResult?.archetype?.tagline ?? "";
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem", position: "relative", overflow: "hidden" }}>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem", position: "relative", overflow: "hidden" }}
+      >
         <img
-          src="/logo.png"
+          src="/soul-codex-logo.svg"
           aria-hidden="true"
           style={{
             position: "absolute", top: "50%", left: "50%",
@@ -341,10 +353,14 @@ export default function OnboardingPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginBottom: "1.5rem" }}>
-            {DEST_CARDS.map((card) => (
-              <button
+            {DEST_CARDS.map((card, idx) => (
+              <motion.button
                 key={card.path}
                 type="button"
+                whileHover={{ x: 5, borderColor: "var(--sc-gold)" }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + idx * 0.1 }}
                 onClick={() => navigate(card.path)}
                 style={{
                   display: "flex",
@@ -357,12 +373,9 @@ export default function OnboardingPage() {
                   border: "1px solid var(--glass-border)",
                   borderRadius: "var(--radius)",
                   cursor: "pointer",
-                  transition: "border-color 0.2s",
                   color: "var(--foreground)",
                   fontFamily: "var(--font-sans)",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#d4a85f")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--glass-border)")}
               >
                 <span style={{ fontSize: "1.2rem", color: "#d4a85f", flexShrink: 0 }}>{card.glyph}</span>
                 <span>
@@ -370,25 +383,46 @@ export default function OnboardingPage() {
                   <span style={{ fontSize: "0.77rem", color: "var(--muted-foreground)" }}>{card.desc}</span>
                 </span>
                 <span style={{ marginLeft: "auto", color: "var(--muted-foreground)", fontSize: "0.75rem" }}>→</span>
-              </button>
+              </motion.button>
             ))}
           </div>
 
-          <button className="btn btn-primary" onClick={() => navigate("/profile")} type="button" style={{ width: "100%", marginBottom: "0.75rem" }}>
+          <button className="btn btn-primary" onClick={() => navigate("/profile")} type="button" style={{ width: "100%", marginBottom: "1.25rem" }}>
             View My Profile
           </button>
-          <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)", opacity: 0.65 }}>
+
+          {/* ── Apple Identity Protection ───────────────────────────────────── */}
+          <div style={{
+            background: "rgba(212,168,95,0.04)",
+            border: "1px dashed rgba(212,168,95,0.25)",
+            borderRadius: "var(--radius)",
+            padding: "1.5rem",
+            textAlign: "center",
+          }}>
+            <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--sc-gold)", marginBottom: "0.4rem", letterSpacing: "0.02em" }}>
+              Secure Your Soul Blueprint
+            </h3>
+            <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginBottom: "1.1rem", lineHeight: 1.5 }}>
+              Apple Sign-In protects your reading and allows you to access it across all your devices.
+            </p>
+            <AppleSignInButton 
+              onSuccess={() => navigate("/profile")}
+              text="Save with Apple"
+            />
+          </div>
+
+          <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)", opacity: 0.65, marginTop: "1.25rem" }}>
             You can refine this later — your answers are saved
           </p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
     <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600, position: "relative", overflow: "hidden" }}>
       <img
-        src="/logo.png"
+        src="/soul-codex-logo.svg"
         aria-hidden="true"
         style={{
           position: "absolute", top: "-80px", left: "50%",
@@ -437,7 +471,7 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="animate-fade-in" key={step}>
+        <div className="animate-fade-in" key={step} style={{ minHeight: "360px" }}>
           {step === 1 && <StepBasicInfo form={form} update={update} />}
           {step === 2 && <StepPressure form={form} toggle={togglePressure} count={pressureCount} />}
           {step === 3 && <StepEscalation form={form} update={update} />}
@@ -451,22 +485,44 @@ export default function OnboardingPage() {
           </p>
         )}
 
-        <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
-          {step > 1 && (
-            <button className="btn btn-secondary" onClick={() => setStep(step - 1)} type="button">
-              Back
-            </button>
-          )}
-          <button
-            className="btn btn-primary"
-            style={{ marginLeft: "auto" }}
-            disabled={!canNext() || mutation.isPending}
-            onClick={handleNext}
-            type="button"
+        <div style={{ marginTop: "3rem", display: "flex", gap: "1rem" }}>
+          <ScButton
+            variant="ghost"
+            onClick={() => setStep(Math.max(1, step - 1))}
+            disabled={step === 1 || mutation.isPending}
+            className={step === 1 ? "invisible" : ""}
           >
-            {mutation.isPending ? "Building your profile…" : step === TOTAL_STEPS ? "Reveal My Profile" : "Continue"}
-          </button>
+            ← Back
+          </ScButton>
+          
+          <ScButton
+            onClick={handleNext}
+            disabled={!canNext()}
+            loading={mutation.isPending}
+            className="flex-1 text-glow"
+          >
+            {step === TOTAL_STEPS ? "Reveal My Profile" : "Continue"}
+          </ScButton>
         </div>
+
+        {/* ── Legal Compliance Footer ─────────────────────────────────── */}
+        {step === 1 && (
+          <div style={{ marginTop: "2rem", textAlign: "center" }}>
+            <p style={{
+              fontSize: "0.72rem",
+              color: "var(--muted-foreground)",
+              lineHeight: 1.5,
+              opacity: 0.7,
+              maxWidth: "320px",
+              margin: "0 auto"
+            }}>
+              By continuing, you acknowledge that you have read our{" "}
+              <a href="/privacy" target="_blank" style={{ color: "var(--sc-gold)", textDecoration: "underline" }}>Privacy Policy</a>
+              {" "}and agree to our{" "}
+              <a href="/terms" target="_blank" style={{ color: "var(--sc-gold)", textDecoration: "underline" }}>Terms of Service</a>.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -516,29 +572,19 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           value={form.birthTime}
           onChange={(e) => update("birthTime", e.target.value)}
         />
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: "0.3rem",
-            padding: "0.25rem 0.6rem", borderRadius: 99, fontSize: "0.7rem",
-            fontWeight: 500, letterSpacing: "0.02em",
-            background: "rgba(212,168,95,0.08)",
-            border: "1px solid rgba(212,168,95,0.28)",
-            color: "var(--muted-foreground)",
-            opacity: hasTime ? 0.4 : 0.9,
-            transition: "opacity 0.2s",
+        <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+          <span className="system-badge" style={{
+            opacity: hasTime ? 0.35 : 1,
+            borderColor: hasTime ? "rgba(212,168,95,0.1)" : "rgba(212,168,95,0.3)",
           }}>
             <span>○</span>
             <span>Without time — Sun · Moon only</span>
           </span>
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: "0.3rem",
-            padding: "0.25rem 0.6rem", borderRadius: 99, fontSize: "0.7rem",
-            fontWeight: 500, letterSpacing: "0.02em",
-            background: hasTime ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.03)",
-            border: `1px solid ${hasTime ? "rgba(34,197,94,0.4)" : "rgba(255,255,255,0.07)"}`,
-            color: hasTime ? "#22c55e" : "var(--muted-foreground)",
-            opacity: hasTime ? 1 : 0.45,
-            transition: "all 0.2s",
+          <span className="system-badge" style={{
+            background: hasTime ? "rgba(34,197,94,0.08)" : "rgba(212,168,95,0.06)",
+            border: `1px solid ${hasTime ? "rgba(34,197,94,0.3)" : "rgba(212,168,95,0.18)"}`,
+            color: hasTime ? "#22c55e" : "inherit",
+            opacity: hasTime ? 1 : 0.4,
           }}>
             <span>{hasTime ? "✦" : "◌"}</span>
             <span>With time — Rising · Houses · Full aspects</span>

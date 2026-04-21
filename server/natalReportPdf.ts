@@ -119,7 +119,7 @@ function sectionTitle(doc: PDFKit.PDFDocument, title: string) {
   const y = doc.y;
   doc.rect(MARGIN_L, y, CONTENT_W, 20).fillColor(BG_HEADER).fill();
   doc.moveTo(MARGIN_L, y).lineTo(PAGE_W - MARGIN_R, y).strokeColor(GOLD_DIM).strokeOpacity(0.45).lineWidth(0.7).stroke().strokeOpacity(1);
-  doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+  doc.font("Times-Bold").fontSize(9).fillColor(GOLD)
      .text(title.toUpperCase(), MARGIN_L + 8, y + 6, { width: CONTENT_W - 16, lineBreak: false });
   doc.y = y + 24;
   doc.moveDown(0.2);
@@ -142,7 +142,7 @@ function tableRow(
 
   let cx = x0;
   cols.forEach((text, i) => {
-    doc.font(opts.header ? "Helvetica-Bold" : "Helvetica")
+    doc.font(opts.header ? "Times-Bold" : "Times-Roman")
        .fontSize(opts.header ? 8 : 9)
        .fillColor(color)
        .text(text, cx + 6, y0 + 5, { width: widths[i] - 12, lineBreak: false });
@@ -156,8 +156,8 @@ function addFooter(doc: PDFKit.PDFDocument, name: string, page: number) {
   const y = PAGE_H - 26;
   doc.moveTo(MARGIN_L, y - 6).lineTo(PAGE_W - MARGIN_R, y - 6)
      .strokeColor(GOLD_DIM).strokeOpacity(0.25).lineWidth(0.4).stroke().strokeOpacity(1);
-  doc.font("Helvetica").fontSize(7.5).fillColor(IVORY_DIM)
-     .text(`Soul Codex  ·  ${name}  ·  Natal Chart + Human Design`, MARGIN_L, y, { width: CONTENT_W - 50, align: "left" })
+  doc.font("Times-Roman").fontSize(7.5).fillColor(IVORY_DIM)
+     .text(`Soul Codex  ·  ${name}  ·  Natal Chart + Human Design Reading`, MARGIN_L, y, { width: CONTENT_W - 50, align: "left" })
      .text(`${page}`, PAGE_W - MARGIN_R - 20, y, { width: 20, align: "right" });
 }
 
@@ -198,22 +198,22 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
        .strokeColor(GOLD).strokeOpacity(0.55).lineWidth(0.8).stroke().strokeOpacity(1);
 
     // App name
-    doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+    doc.font("Times-Bold").fontSize(9).fillColor(GOLD)
        .text("S O U L   C O D E X", 0, 60, { width: PAGE_W, align: "center", characterSpacing: 2 });
 
     // Decorative diamonds
-    doc.font("Helvetica").fontSize(10).fillColor(GOLD_DIM)
+    doc.font("Times-Roman").fontSize(10).fillColor(GOLD_DIM)
        .text("✦", 0, 76, { width: PAGE_W, align: "center" });
 
     // Large center block
     const centerY = 260;
 
     // Name
-    doc.font("Helvetica-Bold").fontSize(36).fillColor(IVORY)
+    doc.font("Times-Bold").fontSize(36).fillColor(IVORY)
        .text(input.name || "Your Name", 0, centerY, { width: PAGE_W, align: "center" });
 
     doc.moveDown(0.45);
-    doc.font("Helvetica").fontSize(11).fillColor(GOLD)
+    doc.font("Times-Roman").fontSize(11).fillColor(GOLD)
        .text("NATAL CHART + HUMAN DESIGN", 0, doc.y, { width: PAGE_W, align: "center", characterSpacing: 1.5 });
 
     // Thin gold divider
@@ -223,7 +223,7 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
        .strokeColor(GOLD).strokeOpacity(0.4).lineWidth(0.6).stroke().strokeOpacity(1);
 
     doc.moveDown(0.9);
-    doc.font("Helvetica").fontSize(10).fillColor(IVORY_DIM)
+    doc.font("Times-Roman").fontSize(10).fillColor(IVORY_DIM)
        .text(formatBirthData(input), 0, doc.y, { width: PAGE_W, align: "center" });
 
     // Big Three callout
@@ -247,9 +247,9 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     ];
     bigThreeItems.forEach((item, i) => {
       const x = colX + i * colW;
-      doc.font("Helvetica").fontSize(7.5).fillColor(IVORY_DIM)
+      doc.font("Times-Roman").fontSize(7.5).fillColor(IVORY_DIM)
          .text(item.label, x, bigThreeY + 14, { width: colW, align: "center", characterSpacing: 2 });
-      doc.font("Helvetica-Bold").fontSize(16).fillColor(IVORY)
+      doc.font("Times-Bold").fontSize(16).fillColor(IVORY)
          .text(item.value, x, bigThreeY + 28, { width: colW, align: "center" });
       if (i < 2) {
         doc.moveTo(colX + (i + 1) * colW, bigThreeY + 10).lineTo(colX + (i + 1) * colW, bigThreeY + 62)
@@ -260,16 +260,16 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     // Life path
     const lpNum = astro?.numerology?.lifePathNumber ?? (input as any).lifePathNumber;
     if (lpNum) {
-      doc.font("Helvetica").fontSize(8).fillColor(IVORY_DIM)
+      doc.font("Times-Roman").fontSize(8).fillColor(IVORY_DIM)
          .text("LIFE PATH", 0, 570, { width: PAGE_W, align: "center", characterSpacing: 2 });
-      doc.font("Helvetica-Bold").fontSize(52).fillColor(GOLD)
+      doc.font("Times-Bold").fontSize(52).fillColor(GOLD)
          .text(String(lpNum), 0, 582, { width: PAGE_W, align: "center" });
     }
 
     // Bottom rule
     doc.moveTo(MARGIN_L, PAGE_H - 48).lineTo(PAGE_W - MARGIN_R, PAGE_H - 48)
        .strokeColor(GOLD).strokeOpacity(0.55).lineWidth(0.8).stroke().strokeOpacity(1);
-    doc.font("Helvetica").fontSize(7.5).fillColor(IVORY_DIM)
+    doc.font("Times-Roman").fontSize(7.5).fillColor(IVORY_DIM)
        .text(`Generated by Soul Codex  ·  ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`,
          0, PAGE_H - 38, { width: PAGE_W, align: "center", characterSpacing: 1 });
 
@@ -284,7 +284,7 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
 
     // Overview text
     sectionTitle(doc, "Overview");
-    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+    doc.font("Times-Roman").fontSize(10).fillColor(IVORY)
        .text(ai.overview, MARGIN_L, doc.y, { width: CONTENT_W, align: "left", lineGap: 3 });
 
     // Core snapshot
@@ -300,7 +300,7 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     doc.rect(MARGIN_L, snapY, CONTENT_W, 26).fillColor(BG_CARD).fill();
     doc.moveTo(MARGIN_L, snapY).lineTo(PAGE_W - MARGIN_R, snapY)
        .strokeColor(GOLD).strokeOpacity(0.25).lineWidth(0.5).stroke().strokeOpacity(1);
-    doc.font("Helvetica").fontSize(9.5).fillColor(GOLD)
+    doc.font("Times-Roman").fontSize(9.5).fillColor(GOLD)
        .text(snapshotText, MARGIN_L + 10, snapY + 9, { width: CONTENT_W - 20, align: "center", lineBreak: false });
     doc.y = snapY + 32;
 
@@ -319,9 +319,9 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
       const MULTI_H = 42;
       const fill = i % 2 === 0 ? BG_CARD : BG_ALT;
       doc.rect(MARGIN_L, ty, CONTENT_W, MULTI_H).fillColor(fill).fill();
-      doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+      doc.font("Times-Bold").fontSize(9).fillColor(GOLD)
          .text(label, MARGIN_L + 6, ty + 6, { width: bigCols[0] - 12, lineBreak: true });
-      doc.font("Helvetica").fontSize(9).fillColor(IVORY)
+      doc.font("Times-Roman").fontSize(9).fillColor(IVORY)
          .text(interp, MARGIN_L + bigCols[0] + 6, ty + 6, { width: bigCols[1] - 12, lineBreak: true });
       ty += MULTI_H;
     });
@@ -447,13 +447,13 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     // Themes section
     sectionTitle(doc, "What Stands Out");
     ai.whatStandsOut.forEach((bullet) => {
-      doc.font("Helvetica").fontSize(9.5).fillColor(IVORY)
+      doc.font("Times-Roman").fontSize(9.5).fillColor(IVORY)
          .text(`◈  ${bullet}`, MARGIN_L + 8, doc.y, { width: CONTENT_W - 8, lineGap: 2.5 });
     });
 
     doc.moveDown(0.6);
     sectionTitle(doc, "Working Interpretation");
-    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+    doc.font("Times-Roman").fontSize(10).fillColor(IVORY)
        .text(ai.workingInterpretation, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2.5 });
 
     addFooter(doc, input.name, pageNum);
@@ -466,12 +466,12 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     addPageHeader(doc, "Elements + Human Design", pageNum);
 
     sectionTitle(doc, "Element Emphasis");
-    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+    doc.font("Times-Roman").fontSize(10).fillColor(IVORY)
        .text(ai.elementEmphasis, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2.5 });
 
     doc.moveDown(0.5);
     sectionTitle(doc, "House Emphasis");
-    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+    doc.font("Times-Roman").fontSize(10).fillColor(IVORY)
        .text(ai.houseEmphasis, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2.5 });
 
     // Bottom line callout
@@ -482,9 +482,9 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
        .strokeColor(GOLD).strokeOpacity(0.45).lineWidth(0.7).stroke().strokeOpacity(1);
     doc.moveTo(MARGIN_L, blY + 38).lineTo(PAGE_W - MARGIN_R, blY + 38)
        .strokeColor(GOLD).strokeOpacity(0.45).lineWidth(0.7).stroke().strokeOpacity(1);
-    doc.font("Helvetica-Bold").fontSize(9).fillColor(GOLD)
+    doc.font("Times-Bold").fontSize(9).fillColor(GOLD)
        .text("Bottom line:", MARGIN_L + 10, blY + 8, { continued: true })
-       .font("Helvetica").fillColor(IVORY)
+       .font("Times-Roman").fillColor(IVORY)
        .text("  " + ai.bottomLine, { width: CONTENT_W - 20 });
     doc.y = blY + 44;
 
@@ -513,10 +513,10 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     // Defined centers
     const centers = hd.definedCenters ?? hd.defined_centers ?? [];
     if (centers.length > 0) {
-      doc.font("Helvetica-Bold").fontSize(8.5).fillColor(GOLD)
+      doc.font("Times-Bold").fontSize(8.5).fillColor(GOLD)
          .text("Defined Centers", MARGIN_L, doc.y);
       doc.moveDown(0.3);
-      doc.font("Helvetica").fontSize(9).fillColor(IVORY)
+      doc.font("Times-Roman").fontSize(9).fillColor(IVORY)
          .text(centers.join("  ·  "), MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 2 });
       doc.moveDown(0.5);
     }
@@ -543,7 +543,7 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     addPageHeader(doc, "Human Design Interpretation", pageNum);
 
     sectionTitle(doc, "Your Human Design Reading");
-    doc.font("Helvetica").fontSize(10).fillColor(IVORY)
+    doc.font("Times-Roman").fontSize(10).fillColor(IVORY)
        .text(ai.hdInterpretation, MARGIN_L, doc.y, { width: CONTENT_W, lineGap: 3 });
 
     // Closing flourish
@@ -552,13 +552,13 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
     doc.moveTo(MARGIN_L + 80, closeY).lineTo(PAGE_W - MARGIN_R - 80, closeY)
        .strokeColor(GOLD).strokeOpacity(0.3).lineWidth(0.5).stroke().strokeOpacity(1);
     doc.moveDown(0.7);
-    doc.font("Helvetica-Bold").fontSize(11).fillColor(GOLD)
+    doc.font("Times-Bold").fontSize(11).fillColor(GOLD)
        .text("✦", 0, doc.y, { width: PAGE_W, align: "center" });
     doc.moveDown(0.4);
-    doc.font("Helvetica").fontSize(9).fillColor(IVORY_DIM)
+    doc.font("Times-Roman").fontSize(9).fillColor(IVORY_DIM)
        .text("This reading is prepared for your inner journey.", 0, doc.y, { width: PAGE_W, align: "center" });
     doc.moveDown(0.3);
-    doc.font("Helvetica").fontSize(9).fillColor(IVORY_DIM)
+    doc.font("Times-Roman").fontSize(9).fillColor(IVORY_DIM)
        .text(`Soul Codex  ·  ${input.name}`, 0, doc.y, { width: PAGE_W, align: "center" });
 
     addFooter(doc, input.name, pageNum);
@@ -572,7 +572,7 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
       addPageHeader(doc, "Soul Comparables", pageNum);
 
       // Intro blurb
-      doc.font("Helvetica").fontSize(9.5).fillColor(IVORY_DIM)
+      doc.font("Times-Roman").fontSize(9.5).fillColor(IVORY_DIM)
          .text(
            "Based on the full chart signature — Sun, Moon, Rising, Human Design, and Life Path — " +
            "these four comparables share the closest archetypal alignment with this profile.",
@@ -600,16 +600,16 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
            .strokeColor(GOLD).strokeOpacity(0.5).lineWidth(2.5).stroke().strokeOpacity(1);
 
         // Category label
-        doc.font("Helvetica-Bold").fontSize(7.5).fillColor(GOLD)
+        doc.font("Times-Bold").fontSize(7.5).fillColor(GOLD)
            .text(`${item.glyph}  ${item.label.toUpperCase()}`, MARGIN_L + 14, cardY + 10,
              { width: CONTENT_W - 28, lineBreak: false, characterSpacing: 1 });
 
         // Name
-        doc.font("Helvetica-Bold").fontSize(13).fillColor(IVORY)
+        doc.font("Times-Bold").fontSize(13).fillColor(IVORY)
            .text(comp.name, MARGIN_L + 14, cardY + 24, { width: CONTENT_W - 28, lineBreak: false });
 
         // Why
-        doc.font("Helvetica").fontSize(9).fillColor(IVORY_DIM)
+        doc.font("Times-Roman").fontSize(9).fillColor(IVORY_DIM)
            .text(comp.why, MARGIN_L + 14, cardY + 43, { width: CONTENT_W - 28, lineBreak: true });
 
         doc.y = cardY + CARD_H + 8;
@@ -620,7 +620,7 @@ export function buildNatalReportPdf(input: NatalReportInput): Promise<Buffer> {
       doc.moveTo(MARGIN_L + 40, doc.y).lineTo(PAGE_W - MARGIN_R - 40, doc.y)
          .strokeColor(GOLD).strokeOpacity(0.25).lineWidth(0.5).stroke().strokeOpacity(1);
       doc.moveDown(0.6);
-      doc.font("Helvetica").fontSize(8).fillColor(IVORY_DIM)
+      doc.font("Times-Roman").fontSize(8).fillColor(IVORY_DIM)
          .text("These comparables reflect behavioral and archetypal alignment, not prediction.",
            0, doc.y, { width: PAGE_W, align: "center" });
 
@@ -638,9 +638,9 @@ function addPageHeader(doc: PDFKit.PDFDocument, sectionName: string, pageNum: nu
   doc.rect(0, 0, PAGE_W, 44).fillColor("#040e14").fill();
   doc.moveTo(0, 44).lineTo(PAGE_W, 44)
      .strokeColor(GOLD).strokeOpacity(0.35).lineWidth(0.7).stroke().strokeOpacity(1);
-  doc.font("Helvetica-Bold").fontSize(8).fillColor(GOLD)
+  doc.font("Times-Bold").fontSize(8).fillColor(GOLD)
      .text("SOUL CODEX", MARGIN_L, 16, { width: 100, lineBreak: false, characterSpacing: 1.5 });
-  doc.font("Helvetica").fontSize(8).fillColor(IVORY_DIM)
+  doc.font("Times-Roman").fontSize(8).fillColor(IVORY_DIM)
      .text(sectionName.toUpperCase(), MARGIN_L + 100, 16, { width: CONTENT_W - 100, align: "right", lineBreak: false, characterSpacing: 1 });
   doc.y = 60;
 }

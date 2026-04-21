@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/queryClient";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 
@@ -111,7 +112,7 @@ export default function BlueprintPage() {
     setEntitlementError(false);
     const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
     if (cachedPremium) setIsPremium(true);
-    fetch("/api/entitlements")
+    apiFetch("/api/entitlements")
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then((d) => { if (d?.isPremium) setIsPremium(true); })
       .catch((err) => {
@@ -136,7 +137,7 @@ export default function BlueprintPage() {
     setGenerating(true);
     setError(null);
     try {
-      const res = await fetch("/api/blueprint/generate", {
+      const res = await apiFetch("/api/blueprint/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile }),
@@ -180,7 +181,7 @@ export default function BlueprintPage() {
 
       if (!astro || !birthDate) {
         try {
-          const serverRes = await fetch("/api/profiles");
+          const serverRes = await apiFetch("/api/profiles");
           if (serverRes.ok) {
             const profiles = await serverRes.json();
             const sp = Array.isArray(profiles) ? profiles[0] : profiles;
@@ -196,7 +197,7 @@ export default function BlueprintPage() {
         } catch { /* use whatever we have */ }
       }
 
-      const res = await fetch("/api/natal-report", {
+      const res = await apiFetch("/api/natal-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

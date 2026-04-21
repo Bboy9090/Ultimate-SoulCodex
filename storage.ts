@@ -5,8 +5,9 @@ import { randomUUID } from "crypto";
 // Removed drizzle imports to avoid schema resolution in bundle
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserByAppleId(appleId: string): Promise<User | undefined>;
   getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
@@ -136,6 +137,15 @@ export class MemStorage implements IStorage {
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.appleId === appleId) {
+        return user;
+      }
+    }
+    return undefined;
   }
 
   async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
@@ -1141,11 +1151,11 @@ class DbStorage implements IStorage {
 }
 
 
-// ── HybridStorage: PostgreSQL for profiles + access codes, in-memory for the rest ──
-
-import { db } from "./db";
-import { profiles as profilesTable, accessCodes as accessCodesTable, accessCodeRedemptions as redemptionsTable } from "./shared/schema";
-import { eq, and, sql as drizzleSql } from "drizzle-orm";
+const profilesTable = schema.profiles;
+const accessCodesTable = schema.accessCodes;
+const redemptionsTable = schema.accessCodeRedemptions;
+const usersTable = schema.users;
+const localUsersTable = schema.localUsers;
 
 const STRUCTURED_PROFILE_FIELDS = new Set([
   "id", "userId", "sessionId", "name",
@@ -1174,6 +1184,50 @@ function splitProfileForStorage(input: any): { structured: any; data: Record<str
 }
 
 class HybridStorage extends MemStorage {
+  // ── User operations ────────────────────────────────────────────────────
+  async getUser(id: string): Promise<User | undefined> {
+    try {
+      const rows = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getUser DB failure:", err);
+      return super.getUser(id);
+    }
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    try {
+      const rows = await db.select().from(usersTable).where(eq(usersTable.appleId, appleId)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getUserByAppleId DB failure:", err);
+      return super.getUserByAppleId(appleId);
+    }
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    try {
+      const existing = await this.getUser(userData.id);
+      if (existing) {
+        const [row] = await db.update(usersTable)
+          .set({ ...userData, updatedAt: new Date() })
+          .where(eq(usersTable.id, userData.id))
+          .returning();
+        return row;
+      } else {
+        const [row] = await db.insert(usersTable).values({
+          ...userData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }).returning();
+        return row;
+      }
+    } catch (err) {
+      console.error("[HybridStorage] upsertUser DB failure:", err);
+      return super.upsertUser(userData);
+    }
+  }
+
   // ── Profile operations ─────────────────────────────────────────────────
   async getProfile(id: string): Promise<Profile | undefined> {
     try {
@@ -1441,11 +1495,18 @@ class HybridStorage extends MemStorage {
   }
 
   async deleteUserAccount(userId: string): Promise<void> {
-    // First delete in-memory associated state, then the persistent rows.
+    // 1. Remove in-memory associated state if using hybrid mode
     await super.deleteUserAccount(userId);
+
     try {
-      await db.delete(redemptionsTable).where(eq(redemptionsTable.userId, userId));
-      await db.delete(profilesTable).where(eq(profilesTable.userId, userId));
+      // 2. Cascade delete from persistent storage
+      // Note: order is important if foreign keys are enforced at DB level
+      await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
+      await db.delete(profiles).where(eq(profiles.userId, userId));
+      await db.delete(localUsers).where(eq(localUsers.id, userId));
+      await db.delete(users).where(eq(users.id, userId));
+      
+      console.log(`[Storage] Permanently purged all records for User: ${userId}`);
     } catch (err) {
       console.error("[HybridStorage] deleteUserAccount DB failure:", err);
       throw err;

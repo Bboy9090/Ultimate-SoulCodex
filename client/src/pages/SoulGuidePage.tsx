@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/queryClient";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { Send, RefreshCw } from "lucide-react";
@@ -36,7 +37,7 @@ export default function SoulGuidePage() {
   useEffect(() => {
     const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
     if (cachedPremium) setIsPremium(true);
-    fetch("/api/chat/soul-guide/usage")
+    apiFetch("/api/chat/soul-guide/usage")
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d) return;
@@ -80,7 +81,7 @@ export default function SoulGuidePage() {
     const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
 
     try {
-      const res = await fetch("/api/chat/soul-guide", {
+      const res = await apiFetch("/api/chat/soul-guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, history, profileContext: getProfileContext() }),
