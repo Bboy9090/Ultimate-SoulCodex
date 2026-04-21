@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/queryClient";
 import type { CSSProperties } from "react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -183,7 +184,7 @@ export default function DailyHoroscopePage() {
   const { data, isLoading, isError, error } = useQuery<DailyHoroscopeData>({
     queryKey: ["/api/profiles", profileId, "daily-horoscope"],
     queryFn: async () => {
-      const res = await fetch(`/api/profiles/${profileId}/daily-horoscope`);
+      const res = await apiFetch(`/api/profiles/${profileId}/daily-horoscope`);
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },

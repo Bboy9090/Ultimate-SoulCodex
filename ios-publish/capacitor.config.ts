@@ -6,10 +6,7 @@ const config: CapacitorConfig = {
   webDir: "../dist/public",
   backgroundColor: "#1A0E07",
 
-  server: {
-    url: "https://soul-codex-engine-of-eternal-now.replit.app",
-    cleartext: false,
-  },
+
 
   ios: {
     scheme: "Soul Codex",

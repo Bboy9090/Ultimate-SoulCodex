@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/queryClient";
 import type { ReactNode } from "react";
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
@@ -97,7 +98,7 @@ export default function PosterPage() {
   useEffect(() => {
     const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
     if (cachedPremium) setIsPremium(true);
-    fetch("/api/entitlements")
+    apiFetch("/api/entitlements")
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.isPremium) setIsPremium(true); })
       .catch(() => {});
@@ -136,7 +137,7 @@ export default function PosterPage() {
       // Auto-compute chart if we have birth data but no planet longitudes stored
       if (newData.birthDate && newData.birthLocation && newData.planets.length === 0) {
         setComputing(true);
-        fetch("/api/astro/fullchart", {
+        apiFetch("/api/astro/fullchart", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             birthDate: newData.birthDate,
@@ -177,7 +178,7 @@ export default function PosterPage() {
     }
     setComputing(true); setComputeError(null);
     try {
-      const res  = await fetch("/api/astro/fullchart", {
+      const res  = await apiFetch("/api/astro/fullchart", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ birthDate: data.birthDate, birthTime: data.birthTime || undefined, timeUnknown: !data.birthTime, birthLocation: data.birthLocation }),
       });
@@ -208,7 +209,7 @@ export default function PosterPage() {
       const astrologyData  = profileAstro ?? rawProfile?.astrology ?? {};
       const humanDesignData = profileHD   ?? rawProfile?.humanDesign ?? {};
 
-      const res = await fetch("/api/natal-report", {
+      const res = await apiFetch("/api/natal-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile, astrologyData, humanDesignData }),
@@ -228,7 +229,7 @@ export default function PosterPage() {
   const handleDownload = async (width: 2048 | 4096) => {
     setDownloading(width);
     try {
-      const res = await fetch(`/api/poster/render?width=${width}`, {
+      const res = await apiFetch(`/api/poster/render?width=${width}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });

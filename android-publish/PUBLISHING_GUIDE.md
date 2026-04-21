@@ -8,8 +8,7 @@ Google Play Store. Mirror file of `ios-publish/PUBLISHING_GUIDE.md`.
 ## 0. Prerequisites
 
 - Soul Codex web app deployed and reachable at a stable HTTPS URL
-  (the Capacitor wrapper points at it). A Replit Reserved-VM or
-  Autoscale deployment works fine.
+  (the Capacitor wrapper points at it). Any stable Node.js hosting works.
 - Node.js 20+ on your local machine (for the Android build).
 - Android Studio (Hedgehog or newer) — required to build the AAB.
 - A real Android device or emulator running API 26+ for testing.

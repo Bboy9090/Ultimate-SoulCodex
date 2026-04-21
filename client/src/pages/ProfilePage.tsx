@@ -1,7 +1,12 @@
-import type { ReactNode } from "react";
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { motion, AnimatePresence } from "framer-motion";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import CosmicLoader from "@/components/CosmicLoader";
+import ScButton from "@/components/ScButton";
+import AppleSignInButton from "@/components/AppleSignInButton";
 
 interface Archetype {
   name: string;
@@ -95,7 +100,7 @@ async function getProfile(): Promise<SoulProfile | null> {
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (data.archetype && data.synthesis && (data.id || data.profileId)) return data as SoulProfile;
-    const res = await fetch("/api/profiles");
+    const res = await apiFetch("/api/profiles");
     if (res.ok) {
       const serverProfile = await res.json();
       const fetched = Array.isArray(serverProfile) ? serverProfile[0] : serverProfile;
@@ -203,10 +208,12 @@ const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string
   build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(242,234,218,0.96)" },
   growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(242,234,218,0.96)" },
   account:  { glyph: "⚙", accent: "#8a7553", bg: "rgba(242,234,218,0.96)" },
+  legal:    { glyph: "◈", accent: "#D4A85F", bg: "rgba(212,168,95,0.03)" },
 };
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
+  const { data: user } = useQuery<any>({ queryKey: ["/api/user"] });
   const [profile, setProfile] = useState<SoulProfile | null>(null);
   const confidence   = getConfidence();
   const prescription  = getCodexPrescription(0);
@@ -231,7 +238,7 @@ export default function ProfilePage() {
       }
       const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
       if (cachedPremium) setIsPremium(true);
-      fetch("/api/entitlements")
+      apiFetch("/api/entitlements")
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(d => {
           if (d?.isPremium) {
@@ -249,7 +256,7 @@ export default function ProfilePage() {
     if (comparables) { setComparablesRevealed(r => !r); return; }
     setComparablesLoading(true);
     try {
-      const res = await fetch("/api/soul-comparables", {
+      const res = await apiFetch("/api/soul-comparables", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile }),
@@ -272,7 +279,7 @@ export default function ProfilePage() {
     setDownloadingReport(true);
     try {
       const displayName = profile.name ?? profile.rawInput?.name ?? profile.archetype?.name ?? "User";
-      const res = await fetch("/api/natal-report", {
+      const res = await apiFetch("/api/natal-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -311,7 +318,7 @@ export default function ProfilePage() {
     let pid = profile.id ?? profile.profileId;
     if (!pid) {
       try {
-        const profileRes = await fetch("/api/profiles");
+        const profileRes = await apiFetch("/api/profiles");
         if (profileRes.ok) {
           const serverProfile = await profileRes.json();
           const fetched = Array.isArray(serverProfile) ? serverProfile[0] : serverProfile;
@@ -326,7 +333,7 @@ export default function ProfilePage() {
     setCodeSubmitting(true);
     setCodeMessage(null);
     try {
-      const res = await fetch("/api/access-codes/validate", {
+      const res = await apiFetch("/api/access-codes/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: accessCode.trim(), profileId: pid }),
@@ -347,22 +354,31 @@ export default function ProfilePage() {
     }
   }
 
+  if (!premiumChecked) {
+    return <CosmicLoader fullPage label="Validating Entitlements" />;
+  }
+
   if (!profile) {
     return (
       <div style={{ padding: "4rem 1rem", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
-        <div style={{ fontSize: "3.5rem", marginBottom: "1.25rem", opacity: 0.22, color: "var(--sc-gold)" }}>◉</div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.22, scale: 1 }}
+          style={{ fontSize: "3.5rem", marginBottom: "1.25rem", color: "var(--sc-gold)" }}
+        >
+          ◉
+        </motion.div>
         <h2 className="gradient-text" style={{ marginBottom: "0.75rem" }}>No profile found</h2>
         <p style={{ marginBottom: "2rem", color: "var(--muted-foreground)", lineHeight: 1.65, fontSize: "0.9rem" }}>
           Complete the onboarding to generate your soul profile.
         </p>
-        <button
-          className="btn btn-primary btn-large"
+        <ScButton
           onClick={() => navigate("/start")}
-          type="button"
-          style={{ minWidth: 200 }}
+          size="lg"
+          className="min-w-[200px]"
         >
           ◉ Begin Your Reading
-        </button>
+        </ScButton>
       </div>
     );
   }
@@ -418,24 +434,37 @@ export default function ProfilePage() {
   const compassNotes  = cleanBehavioralText(synthesis.moralCode?.notes ?? "");
 
   return (
-    <div style={{ padding: "2rem 1rem 5rem", maxWidth: 720, margin: "0 auto", position: "relative", overflow: "hidden" }}>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+      style={{ padding: "2rem 1rem 5rem", maxWidth: 720, margin: "0 auto", position: "relative", overflow: "hidden" }}
+    >
 
       {/* ── Atmospheric background watermark ─────────────────────────────── */}
-      <img
+      <motion.img
+        initial={{ opacity: 0, scale: 1.2 }}
+        animate={{ opacity: 0.055, scale: 1 }}
+        transition={{ duration: 2 }}
         src="/soul-codex-logo.svg"
         aria-hidden="true"
         style={{
           position: "absolute", top: "-40px", left: "50%",
           transform: "translateX(-50%)",
           width: 480, height: 480, objectFit: "contain",
-          opacity: 0.055, mixBlendMode: "screen",
+          mixBlendMode: "screen",
           filter: "blur(22px)",
           pointerEvents: "none", userSelect: "none", zIndex: 0,
         }}
       />
 
       {/* ── Identity header ─────────────────────────────────────────────── */}
-      <section style={{ textAlign: "center", marginBottom: "2.5rem", position: "relative", zIndex: 1 }}>
+      <motion.section 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        style={{ textAlign: "center", marginBottom: "2.5rem", position: "relative", zIndex: 1 }}
+      >
 
         <div style={{
           fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase",
@@ -445,7 +474,10 @@ export default function ProfilePage() {
         </div>
 
         {/* New SVG logo mark above archetype name */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.85rem" }}>
+        <motion.div 
+          whileHover={{ rotate: 10, scale: 1.1 }}
+          style={{ display: "flex", justifyContent: "center", marginBottom: "0.85rem", cursor: "pointer" }}
+        >
           <img
             src="/soul-codex-logo.svg"
             alt="Soul Codex"
@@ -455,10 +487,10 @@ export default function ProfilePage() {
               opacity: 0.95,
             }}
           />
-        </div>
+        </motion.div>
 
         <h1
-          className="gradient-text"
+          className="gradient-text text-glow"
           style={{
             fontFamily: "var(--font-serif)",
             fontSize: "clamp(2.2rem, 7vw, 3.75rem)",
@@ -503,7 +535,7 @@ export default function ProfilePage() {
           height: 1,
           background: "linear-gradient(90deg, transparent, rgba(212,168,95,0.3), transparent)",
         }} />
-      </section>
+      </motion.section>
 
       {/* ── Natal Blueprint row ─────────────────────────────────────────── */}
       <NatalBlueprint profile={profile} />
@@ -544,53 +576,56 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* ── Action buttons — Today first (primary), Codex second ──────────── */}
-      <div style={{
-        display: "flex", gap: "0.85rem", flexWrap: "wrap",
-        justifyContent: "center", marginBottom: "3rem",
-        position: "relative", zIndex: 1,
-      }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
-          <button
-            className="btn btn-glow btn-large"
+      {/* ── Action buttons ───────────────────────────── */}
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        style={{
+          display: "flex", gap: "1rem", flexWrap: "wrap",
+          justifyContent: "center", marginBottom: "3rem",
+          position: "relative", zIndex: 1,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem", flex: "1 1 200px" }}>
+          <ScButton
             onClick={() => navigate("/today")}
-            type="button"
-            style={{ fontSize: "0.9rem", width: "100%" }}
+            className="w-full text-glow"
           >
             ☽ Today's Card
-          </button>
+          </ScButton>
           <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
-            Your daily signal, guidance &amp; focus
+            Daily guidance & focus
           </span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
-          <button
-            className="btn btn-secondary"
+        
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem", flex: "1 1 200px" }}>
+          <ScButton
+            variant="secondary"
             onClick={() => navigate("/codex")}
-            type="button"
-            style={{ fontSize: "0.9rem", padding: "0.85rem 1.6rem", width: "100%" }}
+            className="w-full"
           >
             ✦ Open Codex Reading
-          </button>
+          </ScButton>
           <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
-            Deep dive into your soul architecture
+            Deep soul architecture
           </span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", flex: "1 1 200px" }}>
-          <button
-            className="btn btn-secondary"
+        
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem", flex: "1 1 200px" }}>
+          <ScButton
+            variant="secondary"
             onClick={handleDownloadReport}
-            type="button"
-            disabled={downloadingReport}
-            style={{ fontSize: "0.9rem", padding: "0.85rem 1.6rem", width: "100%", opacity: downloadingReport ? 0.65 : 1 }}
+            loading={downloadingReport}
+            className="w-full"
           >
-            {downloadingReport ? "◌ Generating…" : "▾ Chart Report PDF"}
-          </button>
+            ▾ Chart Report PDF
+          </ScButton>
           <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
-            Natal chart + Human Design report
+            Natal + Human Design
           </span>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Soul Comparables ─────────────────────────────────────────────── */}
       <div style={{ position: "relative", zIndex: 1, marginBottom: "2rem" }}>
@@ -870,7 +905,7 @@ export default function ProfilePage() {
 
       </div>
 
-    </div>
+    </motion.div>
   );
 }
 
@@ -885,9 +920,12 @@ function AccountSettings() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      await apiFetch("/api/auth/logout", { method: "POST", credentials: "include" });
     } catch {}
-    try { localStorage.removeItem("soulPremium"); } catch {}
+    try { 
+      localStorage.removeItem("soulPremium"); 
+      localStorage.removeItem("soulAdminToken");
+    } catch {}
     navigate("/");
   };
 
@@ -899,7 +937,7 @@ function AccountSettings() {
     setDeleting(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/account", { method: "DELETE", credentials: "include" });
+      const res = await apiFetch("/api/auth/account", { method: "DELETE", credentials: "include" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.message || "Failed to delete account");
@@ -916,155 +954,220 @@ function AccountSettings() {
     }
   };
 
-  const ink = "#1A0E07";
-  const danger = "#8B1A1A";
+  const ink = "var(--foreground)";
+  const danger = "#ef4444";
   const canConfirm = confirmText === "DELETE" && !deleting;
 
   return (
     <div data-testid="account-settings">
-      <ProfileSection sectionKey="account" title="Account">
-        <p style={{
-          fontSize: "0.8rem", color: "rgba(26,14,7,0.7)",
-          margin: "0 0 1rem", lineHeight: 1.55,
-        }}>
-          Sign out to switch accounts, or permanently remove everything we hold about you.
-        </p>
+      <ProfileSection sectionKey="account" title="Account Settings">
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          
+          {/* ── Apple Account Linking ────────────────────────────────────────── */}
+          {!user ? (
+            <div style={{ 
+              background: "rgba(212,168,95,0.04)", 
+              border: "1px dashed rgba(212,168,95,0.25)", 
+              borderRadius: "var(--radius)",
+              padding: "1.25rem",
+              textAlign: "center",
+              marginBottom: "0.5rem"
+            }}>
+              <h3 style={{ fontSize: "0.85rem", color: "var(--sc-gold)", marginBottom: "0.3rem", fontWeight: 600 }}>
+                Secure This Reading
+              </h3>
+              <p style={{ fontSize: "0.72rem", color: "rgba(26,14,7,0.6)", marginBottom: "1rem", lineHeight: 1.5 }}>
+                Link to Apple to preserve your Soul Codex and access it on your iOS device.
+              </p>
+              <AppleSignInButton 
+                onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/user"] })}
+                text="Protect with Apple" 
+              />
+            </div>
+          ) : (
+            <div style={{ 
+              background: "rgba(163,230,53,0.06)", 
+              border: "1px solid rgba(163,230,53,0.2)", 
+              borderRadius: "var(--radius)",
+              padding: "1rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              marginBottom: "0.5rem"
+            }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#a3e635", boxShadow: "0 0 8px rgba(163,230,53,0.5)" }} />
+              <div>
+                <p style={{ fontSize: "0.85rem", color: "var(--foreground)", margin: 0, fontWeight: 600 }}>Account Protected</p>
+                <p style={{ fontSize: "0.72rem", color: "rgba(26,14,7,0.6)", margin: 0 }}>Connected via Apple Identity</p>
+              </div>
+            </div>
+          )}
+
+          <p style={{
+            fontSize: "0.8rem", color: "rgba(26,14,7,0.7)",
+            margin: "0 0 0.5rem", lineHeight: 1.55,
+          }}>
+            Manage your session or permanently remove your spiritual records.
+          </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-          <button
-            type="button"
+          <ScButton
+            variant="ghost"
             onClick={handleLogout}
-            data-testid="button-logout"
-            style={{
-              padding: "0.65rem 1rem",
-              background: "rgba(26,14,7,0.04)",
-              border: "1px solid rgba(26,14,7,0.25)",
-              borderRadius: 8,
-              color: ink,
-              fontSize: "0.85rem",
-              fontWeight: 600,
-              letterSpacing: "0.01em",
-              cursor: "pointer",
-              transition: "background 120ms ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(26,14,7,0.08)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(26,14,7,0.04)")}
+            className="w-full text-center"
           >
             Sign out
-          </button>
+          </ScButton>
 
           {!showConfirm ? (
             <button
               type="button"
               onClick={() => setShowConfirm(true)}
-              data-testid="button-delete-account"
               style={{
                 padding: "0.65rem 1rem",
                 background: "transparent",
-                border: `1px solid ${danger}55`,
-                borderRadius: 8,
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                borderRadius: "var(--radius)",
                 color: danger,
                 fontSize: "0.85rem",
                 fontWeight: 600,
                 cursor: "pointer",
-                transition: "background 120ms ease",
+                transition: "all 0.2s",
+                marginTop: "0.25rem",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(139,26,26,0.06)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239, 68, 68, 0.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
-              Delete my account
+              Delete account
             </button>
           ) : (
-            <div style={{
-              marginTop: "0.25rem",
-              padding: "1rem",
-              background: "rgba(139,26,26,0.04)",
-              border: `1px solid ${danger}3a`,
-              borderLeft: `3px solid ${danger}`,
-              borderRadius: 10,
-            }}>
-              <p style={{
-                fontSize: "0.8rem", color: ink,
-                margin: "0 0 0.75rem", lineHeight: 1.55,
-              }}>
-                This permanently deletes your account, soul profile, journal entries,
-                and any saved relationships. It cannot be undone. Type{" "}
-                <strong style={{ letterSpacing: "0.05em" }}>DELETE</strong> to confirm.
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              style={{ 
+                marginTop: "0.5rem", padding: "1rem", 
+                background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)", 
+                borderRadius: "var(--radius)" 
+              }}
+            >
+              <p style={{ fontSize: "0.75rem", color: danger, marginBottom: "0.75rem", fontWeight: 600 }}>
+                This is permanent. Type DELETE to confirm.
               </p>
               <input
                 type="text"
                 value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+                onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="DELETE"
-                autoFocus
-                data-testid="input-delete-confirm"
                 style={{
                   width: "100%",
-                  padding: "0.55rem 0.75rem",
-                  marginBottom: "0.7rem",
-                  background: "white",
-                  border: `1px solid ${canConfirm ? danger : "rgba(26,14,7,0.25)"}`,
+                  padding: "0.6rem 0.75rem",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(239,68,68,0.3)",
                   borderRadius: 6,
+                  color: "var(--foreground)",
                   fontSize: "0.85rem",
-                  letterSpacing: "0.08em",
-                  color: ink,
+                  marginBottom: "0.75rem",
                   outline: "none",
-                  fontFamily: "inherit",
                 }}
               />
-              {error && (
-                <p style={{
-                  fontSize: "0.75rem", color: danger,
-                  margin: "0 0 0.65rem", fontWeight: 500,
-                }}>
-                  {error}
-                </p>
-              )}
               <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={!canConfirm}
-                  data-testid="button-confirm-delete"
-                  style={{
-                    flex: 1,
-                    padding: "0.6rem 0.9rem",
-                    background: canConfirm ? danger : "rgba(139,26,26,0.25)",
-                    border: "none",
-                    borderRadius: 6,
-                    color: "white",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    letterSpacing: "0.02em",
-                    cursor: canConfirm ? "pointer" : "not-allowed",
-                    transition: "background 120ms ease",
-                  }}
-                >
-                  {deleting ? "Deleting…" : "Permanently delete"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowConfirm(false); setConfirmText(""); setError(null); }}
-                  disabled={deleting}
-                  style={{
-                    flex: 1,
-                    padding: "0.6rem 0.9rem",
-                    background: "transparent",
-                    border: "1px solid rgba(26,14,7,0.25)",
-                    borderRadius: 6,
-                    color: ink,
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    cursor: deleting ? "not-allowed" : "pointer",
-                  }}
+                <ScButton
+                  variant="ghost"
+                  onClick={() => setShowConfirm(false)}
+                  className="flex-1"
                 >
                   Cancel
+                </ScButton>
+                <button
+                  onClick={handleDelete}
+                  disabled={!canConfirm}
+                  style={{
+                    flex: 1,
+                    background: canConfirm ? danger : "rgba(239,68,68,0.2)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "var(--radius)",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    cursor: canConfirm ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {deleting ? "Purging..." : "Confirm Delete"}
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
+
+          {error && (
+            <p style={{ color: danger, fontSize: "0.75rem", marginTop: "0.5rem", textAlign: "center" }}>
+              {error}
+            </p>
+          )}
+
+          <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid var(--glass-border)", textAlign: "center" }}>
+            <button
+              onClick={() => navigate("/admin")}
+              style={{
+                fontSize: "0.65rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.15em",
+                color: "var(--sc-gold)",
+                opacity: 0.4,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.4")}
+            >
+              System Access
+            </button>
+          </div>
+        </div>
+      </div>
+    </ProfileSection>
+
+      {/* ── Legal & Support ─────────────────────────────────────────── */}
+      <ProfileSection sectionKey="legal" title="Legal & Support">
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <Link href="/privacy">
+            <a style={{ 
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "0.85rem 1rem", background: "rgba(255,255,255,0.03)", 
+              border: "1px solid var(--glass-border)", borderRadius: "var(--radius)",
+              fontSize: "0.85rem", color: "var(--foreground)", textDecoration: "none"
+            }}>
+              <span>Privacy Policy</span>
+              <span style={{ opacity: 0.4 }}>→</span>
+            </a>
+          </Link>
+          <Link href="/terms">
+            <a style={{ 
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "0.85rem 1rem", background: "rgba(255,255,255,0.03)", 
+              border: "1px solid var(--glass-border)", borderRadius: "var(--radius)",
+              fontSize: "0.85rem", color: "var(--foreground)", textDecoration: "none"
+            }}>
+              <span>Terms of Service</span>
+              <span style={{ opacity: 0.4 }}>→</span>
+            </a>
+          </Link>
+          <a href="mailto:support@soulcodex.app" style={{ 
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "0.85rem 1rem", background: "rgba(212,168,95,0.05)", 
+            border: "1px solid rgba(212,168,95,0.15)", borderRadius: "var(--radius)",
+            fontSize: "0.85rem", color: "var(--sc-gold)", textDecoration: "none"
+          }}>
+            <span>Contact Oracle Support</span>
+            <span style={{ opacity: 0.6 }}>✉</span>
+          </a>
+          <p style={{ textAlign: "center", fontSize: "0.68rem", opacity: 0.3, marginTop: "0.5rem", letterSpacing: "0.05em" }}>
+            ◈ SOUL CODEX v1.0.0 — 2026 ◈
+          </p>
         </div>
       </ProfileSection>
+
+      <div style={{ height: "4rem" }} />
     </div>
   );
 }

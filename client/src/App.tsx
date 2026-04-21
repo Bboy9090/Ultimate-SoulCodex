@@ -14,6 +14,8 @@ import CompatibilityPage from "./pages/CompatibilityPage";
 import TimelinePage from "./pages/TimelinePage";
 import BlueprintPage from "./pages/BlueprintPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import AdminPage from "./pages/AdminPage";
 
 function hasProfile(): boolean {
   try {
@@ -41,6 +43,8 @@ const routes = (
     <Route path="/blueprint" component={BlueprintPage} />
     <Route path="/today" component={TodayPage} />
     <Route path="/privacy" component={PrivacyPage} />
+    <Route path="/terms" component={TermsPage} />
+    <Route path="/admin" component={AdminPage} />
     <Route>
       <div className="container" style={{ padding: "3rem 1rem", textAlign: "center" }}>
         <h1>404</h1>

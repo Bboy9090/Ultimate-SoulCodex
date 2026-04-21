@@ -105,7 +105,7 @@ The `capacitor.config.ts` points to your production URL. If your app is deployed
 
 ```typescript
 server: {
-  url: "https://your-actual-domain.replit.app",
+  url: "https://your-production-url.com",
   cleartext: false,
 },
 ```

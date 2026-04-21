@@ -8,20 +8,20 @@
    ───────────────────────────────────────────────────────────────────────────── */
 :root {
   /* Cosmic Color Palette — remapped to warm Sacred Minimal palette */
-  --cosmic-void: #16161D;
-  --cosmic-deep: #1C1628;
-  --cosmic-dark: #221C32;
-  --cosmic-medium: #2A2038;
-  --cosmic-purple: #5C3A10;
-  --cosmic-violet: #7A5020;
-  --cosmic-lavender: #D4A85F;
-  --cosmic-pink: #C49450;
-  --cosmic-rose: #E0C080;
-  --cosmic-cyan: #A89DAF;
-  --cosmic-teal: #8A7F9A;
-  --cosmic-gold: #D4A85F;
-  --cosmic-amber: #C49450;
-  --cosmic-orange: #B88040;
+  --cosmic-void:     var(--sc-bg-ink);
+  --cosmic-deep:     var(--sc-bg-plum);
+  --cosmic-dark:     var(--sc-bg-violet);
+  --cosmic-medium:   #2A2038;
+  --cosmic-purple:   #5C3A10;
+  --cosmic-violet:   #7A5020;
+  --cosmic-lavender: var(--sc-gold);
+  --cosmic-pink:     #C49450;
+  --cosmic-rose:     #E0C080;
+  --cosmic-cyan:     #A89DAF;
+  --cosmic-teal:     #8A7F9A;
+  --cosmic-gold:     var(--sc-gold);
+  --cosmic-amber:    var(--sc-rose);
+  --cosmic-orange:   #B88040;
   
   /* Semantic Colors */
   --background: var(--cosmic-void);
@@ -1564,4 +1564,95 @@ button, a, [role="button"] {
   .today-grid-bottom {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Premium Polish Utilities & Animations
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes cosmic-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cosmic-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.glass-premium {
+  background: var(--sc-card-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--sc-card-border);
+  box-shadow: var(--sc-shadow-soft);
+  transition: var(--transition-base);
+}
+
+.glass-premium:hover {
+  border-color: rgba(212, 168, 95, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 168, 95, 0.1);
+}
+
+.text-glow {
+  text-shadow: 0 0 12px rgba(212, 168, 95, 0.4);
+}
+
+.loader-orb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  position: relative;
+  border: 2px solid transparent;
+  border-top-color: var(--sc-gold);
+  animation: cosmic-spin 1.2s linear infinite;
+}
+
+.loader-orb::before {
+  content: '';
+  position: absolute;
+  top: 5px; left: 5px; right: 5px; bottom: 5px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--sc-rose);
+  opacity: 0.7;
+  animation: cosmic-spin 2s linear infinite reverse;
+}
+
+.loader-orb::after {
+  content: '';
+  position: absolute;
+  top: 12px; left: 12px; right: 12px; bottom: 12px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--sc-ivory);
+  opacity: 0.5;
+  animation: cosmic-spin 3s linear infinite;
+}
+
+/* Charging Ritual Progress */
+.ritual-progress-container {
+  height: 6px;
+  background: rgba(212, 168, 95, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ritual-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--sc-gold), transparent);
+  background-size: 200% 100%;
+  animation: cosmic-shimmer 2s infinite linear;
+  box-shadow: 0 0 15px var(--sc-gold);
+}
+
+@keyframes cosmic-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
