@@ -101,6 +101,8 @@ const ZODIAC_SIGNS = [
   'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
 ];
 
+const TIME_24H_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 function eclipticToZodiacSign(longitude: number): string {
   longitude = longitude % 360;
   if (longitude < 0) longitude += 360;
@@ -114,16 +116,57 @@ function getDegreesInSign(longitude: number): number {
   return longitude % 30;
 }
 
+function normalizeTime24(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const match = TIME_24H_RE.exec(trimmed);
+  if (!match) return undefined;
+  return `${match[1]}:${match[2]}`;
+}
+
+function normalizeCoordinate(value: unknown, fallback: number): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return fallback;
+    const parsed = parseFloat(trimmed);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  return fallback;
+}
+
+function normalizeTimezoneInput(value: unknown): string {
+  if (typeof value !== "string") return "UTC";
+  const trimmed = value.trim();
+  return trimmed || "UTC";
+}
+
+function parseBirthDateParts(value: string): { year: number; month: number; day: number } {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    throw new Error("Invalid birthDate format; expected YYYY-MM-DD");
+  }
+  return { year, month, day };
+}
+
 function createBirthTime(birthData: BirthData): Date {
   try {
-    const [year, month, day] = birthData.birthDate.split('-').map(Number);
-    const [hours, minutes] = birthData.birthTime.split(':').map(Number);
+    const { year, month, day } = parseBirthDateParts(birthData.birthDate);
+    const normalizedTime = normalizeTime24((birthData as any).birthTime) ?? "12:00";
+    const [hours, minutes] = normalizedTime.split(":").map(Number);
     
     const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    const latitude = normalizeCoordinate((birthData as any).latitude, 0);
+    const longitude = normalizeCoordinate((birthData as any).longitude, 0);
+    const timezone = normalizeTimezoneInput((birthData as any).timezone);
     
-    const resolvedTimezone = resolveTimezone(birthData.timezone, 
-      parseFloat(birthData.latitude.toString()), 
-      parseFloat(birthData.longitude.toString()));
+    const resolvedTimezone = resolveTimezone(timezone, latitude, longitude);
     
     return fromZonedTime(new Date(localTimeString), resolvedTimezone);
   } catch (error) {
@@ -132,9 +175,11 @@ function createBirthTime(birthData: BirthData): Date {
   }
 }
 
-function resolveTimezone(inputTimezone: string, latitude: number, longitude: number): string {
-  if (inputTimezone.includes('/')) {
-    return inputTimezone;
+function resolveTimezone(inputTimezone: string | undefined, latitude: number, longitude: number): string {
+  const normalizedInput = normalizeTimezoneInput(inputTimezone);
+
+  if (normalizedInput.includes('/')) {
+    return normalizedInput;
   }
   
   try {
@@ -161,7 +206,7 @@ function resolveTimezone(inputTimezone: string, latitude: number, longitude: num
     'CEST': 'Europe/Paris'
   };
   
-  const mapped = timezoneMap[inputTimezone.toUpperCase()];
+  const mapped = timezoneMap[normalizedInput.toUpperCase()];
   if (mapped) {
     return mapped;
   }
@@ -344,8 +389,8 @@ function calculateChironPosition(birthTime: Date): { longitude: number; sign: st
 
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const birthTime = createBirthTime(birthData);
-  const latitude = parseFloat(birthData.latitude.toString());
-  const longitude = parseFloat(birthData.longitude.toString());
+  const latitude = normalizeCoordinate((birthData as any).latitude, 0);
+  const longitude = normalizeCoordinate((birthData as any).longitude, 0);
   
   const observer = new Astronomy.Observer(latitude, longitude, 0);
   

@@ -1,12 +1,31 @@
 import { type User, type UpsertUser, type Profile, type InsertProfile, type Person, type InsertPerson, type Assessment, type InsertAssessment, type AccessCode, type AccessCodeRedemption, type InsertAccessCode, type DailyInsight, type InsertDailyInsight, type CompatibilityAnalysis, type InsertCompatibility, type LocalUser, type PushSubscription, type InsertPushSubscription, type FrequencyLog, type InsertFrequencyLog, type WebhookEvent, type InsertWebhookEvent } from "./shared/schema";
 import { randomUUID } from "crypto";
-import * as schema from "./shared/schema";
-import { accessCodeRedemptions, localUsers, profiles, users } from "./shared/schema";
-import { db } from "./db";
-import { and, eq, sql as drizzleSql } from "drizzle-orm";
-// NOTE: For Render bootstrap we use in-memory storage by default.
-// Avoid importing DB modules and table schemas to prevent build-time resolution.
-// Removed drizzle imports to avoid schema resolution in bundle
+
+// ── DB + Schema (only resolved when DATABASE_URL is present) ─────────────────
+import {
+  profiles, users, localUsers,
+  accessCodes, accessCodeRedemptions,
+} from "./shared/schema";
+import { eq, and, sql as drizzleSql } from "drizzle-orm";
+
+// Lazily resolve the drizzle db client so MemStorage boots without DATABASE_URL
+let _db: any;
+function getDb() {
+  if (!_db) {
+    // Dynamic require avoids top-level throw when DATABASE_URL is absent
+    _db = require("./server/db").db;
+  }
+  return _db;
+}
+// Alias used throughout HybridStorage
+const db = new Proxy({} as any, {
+  get(_t, prop) {
+    return getDb()[prop];
+  },
+});
+
+// schema object for table alias constants
+const schema = { profiles, users, localUsers, accessCodes, accessCodeRedemptions };
 
 export interface IStorage {
   // User operations
@@ -174,6 +193,9 @@ export class MemStorage implements IStorage {
     } else {
       const newUser: User = {
         id: userData.id!,
+        username: userData.username || `user_${Date.now()}`,
+        password: userData.password || '',
+        isPremium: userData.isPremium ?? false,
         email: userData.email || null,
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
@@ -1148,9 +1170,41 @@ class DbStorage implements IStorage {
   async getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined> {
     return undefined;
   }
-
   async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {
     throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+
+  // Journal operations
+  async createJournalEntry(entryData: any): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getJournalEntries(params: any): Promise<any[]> {
+    return [];
+  }
+
+  // Shareable links operations
+  async createShareableLink(linkData: any): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getShareableLink(id: string): Promise<any | undefined> {
+    return undefined;
+  }
+  async getShareableLinkByToken(token: string): Promise<any | undefined> {
+    return undefined;
+  }
+  async updateShareableLink(id: string, updates: Partial<any>): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getShareableLinksByUser(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  // Transit notification operations
+  async createTransitNotification(notificationData: any): Promise<any> {
+    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
+  }
+  async getTransitNotification(notificationId: string): Promise<any | undefined> {
+    return undefined;
   }
 }
 
