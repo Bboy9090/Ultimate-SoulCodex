@@ -1,0 +1,281 @@
+Use this in Replit.
+
+You are working on an existing app called:
+
+Soul Codex
+
+Your job is NOT to rebuild the app.
+Your job is to replace the current onboarding flow with a better one that:
+- gets stronger signal
+- feels less annoying
+- avoids repetitive personality-test language
+- reduces cloned profiles
+- gives users value faster
+
+==================================================
+PRIMARY GOAL
+==================================================
+
+Redesign onboarding so it collects:
+1. core birth data
+2. a few high-signal behavioral refinement answers
+3. then immediately guides the user into value:
+   - Profile
+   - Today
+   - Codex
+
+Do NOT turn onboarding into a long quiz.
+Do NOT ask broad identity questions that force people into fake fixed labels.
+
+==================================================
+NON-NEGOTIABLE RULES
+==================================================
+
+1. Do NOT rebuild the whole app.
+2. Do NOT change public output contracts unless absolutely necessary.
+3. Do NOT redesign backend/core architecture in this pass.
+4. Do NOT add lots of extra questions.
+5. Do NOT repeat questions the user already answered.
+6. Do NOT use vague personality-test wording like:
+   - "How do you perform under pressure?"
+   - "What is your decision style?"
+   - "Are you adaptable?"
+7. Keep the flow premium, short, and behavior-based.
+8. Preserve the current polished visual language where possible.
+
+==================================================
+NEW ONBOARDING STRUCTURE
+==================================================
+
+Replace or adapt the current onboarding into these steps:
+
+--------------------------------------------------
+STEP 1 — CORE BLUEPRINT
+--------------------------------------------------
+
+Title:
+Let’s build your core blueprint
+
+Fields:
+- First name
+- Birth date
+- Birth time
+- Birth place
+
+Helper copy:
+Birth date gives your core structure.
+Birth time sharpens accuracy.
+Birth place helps place the chart correctly.
+
+Additional note:
+Don’t know your exact time? Start anyway. Some parts will be less precise.
+
+Goal:
+Make this feel premium, calm, and trustworthy.
+
+--------------------------------------------------
+STEP 2 — PRESSURE: FIRST REACTION
+--------------------------------------------------
+
+Title:
+When pressure hits, what happens first?
+
+Instruction:
+Pick up to 2.
+
+Options:
+- My mind speeds up and I overanalyze
+- I go quiet and pull inward
+- I handle the problem first and feel it later
+- I get sharp or impatient fast
+- I change strategy and look for another angle
+- It depends who’s involved and whether I feel safe
+
+Rules:
+- allow up to 2 selections
+- store as primary + secondary pressure pattern
+- do not phrase this as permanent identity
+
+--------------------------------------------------
+STEP 3 — PRESSURE: WHAT HAPPENS NEXT
+--------------------------------------------------
+
+Title:
+If the pressure keeps building, what usually happens next?
+
+Instruction:
+Pick 1.
+
+Options:
+- I get colder and harder to reach
+- I detach and stop showing much
+- I get exhausted and shut down
+- I try to control more than I should
+- I get emotionally sharper than I mean to
+- I stop trusting myself and hesitate
+
+Goal:
+Capture escalation pattern, not just surface reaction.
+
+--------------------------------------------------
+STEP 4 — DECISION FRICTION
+--------------------------------------------------
+
+Title:
+When a big decision matters, what usually gets in the way first?
+
+Instruction:
+Pick up to 2.
+
+Options:
+- I keep gathering information and delay the move
+- I wait for certainty that never fully comes
+- I know what I feel, but struggle to trust it
+- I decide quickly and rethink it later
+- I adapt too much to the pressure around me
+- I delay because the stakes feel too permanent
+
+Rules:
+- allow up to 2
+- store as primary + secondary decision friction
+
+--------------------------------------------------
+STEP 5 — WHAT DRAINS YOU FASTEST
+--------------------------------------------------
+
+Title:
+What drains you faster than it should?
+
+Instruction:
+Pick up to 2.
+
+Options:
+- Too much noise or stimulation
+- People who expect instant access to me
+- Vague promises and sloppy follow-through
+- Making decisions before I feel ready
+- Feeling responsible for everyone’s mood
+- Being pushed into someone else’s pace
+
+Rules:
+- allow up to 2
+- store as primary + secondary drain pattern
+
+==================================================
+POST-ONBOARDING HANDOFF
+==================================================
+
+After onboarding completes, do NOT dump the user into a random page and hope they guess what to do.
+
+Show a clear handoff screen:
+
+Title:
+Your core profile is ready
+
+Supporting line:
+The strongest signal is already here. You can refine this over time.
+
+Primary actions:
+- View My Profile
+- See Today’s Reading
+- Open My Codex
+
+Optional small note:
+You can refine this later — you do not need to answer everything now.
+
+==================================================
+EMPTY STATE IMPROVEMENTS
+==================================================
+
+For pages like:
+- /today
+- /codex
+- /timeline
+
+If the required profile data is missing:
+- explain what is missing
+- explain what the user gets after finishing
+- show one clear action button
+- avoid thin placeholder messaging
+
+Example tone:
+Your Today card needs your core profile first.
+[Finish My Profile]
+Takes about 2 minutes.
+
+==================================================
+DATA / STORAGE RULES
+==================================================
+
+Store onboarding results in structured keys like:
+- primary_pressure_pattern
+- secondary_pressure_pattern
+- escalation_pattern
+- decision_friction_primary
+- decision_friction_secondary
+- drain_pattern_primary
+- drain_pattern_secondary
+
+Do NOT store vague identity labels like:
+- user_is_adaptable
+- user_is_logical
+- user_is_sensitive
+
+==================================================
+UX RULES
+==================================================
+
+- Keep the number of behavioral questions low
+- Make step progress clear
+- Make cards/inputs feel premium
+- Use multi-select where appropriate
+- Make selection feedback clear
+- Avoid cognitive overload
+- Keep copy direct and human
+- No therapist-blog tone
+- No mystical filler
+- No stiff personality-test language
+
+==================================================
+DO NOT
+==================================================
+
+- do not ask 10+ new questions
+- do not repeat the same old questions in new wording
+- do not force one fixed answer for complex behavior
+- do not make the onboarding longer than necessary
+- do not break current polished pages
+- do not redesign auth in this pass
+
+==================================================
+IMPLEMENTATION TASKS
+==================================================
+
+1. Audit current onboarding components/pages
+2. Replace current question wording and structure with the new flow above
+3. Support multi-select where specified
+4. Update progress / step indicator if needed
+5. Build the post-onboarding guided handoff screen
+6. Improve empty states for Today / Codex / Timeline
+7. Preserve existing styling language or improve it gently
+8. Report exactly:
+   - files changed
+   - storage/data changes
+   - UX improvements made
+   - anything still weak
+
+==================================================
+OUTPUT FORMAT
+==================================================
+
+At the end, report:
+1. what changed
+2. why it improves signal quality
+3. why it reduces user fatigue
+4. files modified
+5. any unresolved risks
+6. what should be tackled next
+
+Paste this right under it too, so Replit doesn’t wander off and become a life coach with a router:
+
+Keep this pass focused on onboarding, handoff, and empty states only. Do not touch unrelated pages unless required for navigation or rendering.

@@ -1,653 +1,232 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "wouter";
-
-const API_BASE = "";
+import { apiFetch } from "../lib/queryClient";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, Link } from "wouter";
+import { Send, RefreshCw } from "lucide-react";
 
 interface Message {
   role: "user" | "model";
   text: string;
-  isDeeper?: boolean;
 }
 
-interface FallbackCard {
-  title: string;
-  body: string;
-}
-
-interface FallbackData {
-  status: "fallback";
-  message: string;
-  cards: FallbackCard[];
-  prompts: string[];
-}
-
-type Tone = "oracle" | "mirror" | "strategy" | "direct";
-
-const TONE_CONFIG: Record<Tone, { label: string; description: string; color: string; glow: string }> = {
-  oracle: {
-    label: "Oracle",
-    description: "Grounded, authoritative, specific",
-    color: "#F2C94C",
-    glow: "rgba(242,201,76,0.25)",
-  },
-  mirror: {
-    label: "Mirror",
-    description: "Behavioral reflection, no judgment",
-    color: "#7B61FF",
-    glow: "rgba(123,97,255,0.25)",
-  },
-  strategy: {
-    label: "Strategy",
-    description: "Tactical, practical, actionable",
-    color: "#6BA7FF",
-    glow: "rgba(107,167,255,0.25)",
-  },
-  direct: {
-    label: "Direct",
-    description: "Blunt, short, no softening",
-    color: "#ef4444",
-    glow: "rgba(239,68,68,0.25)",
-  },
-};
+const FREE_LIMIT = 2;
 
 const SUGGESTIONS = [
-  "What pattern am I repeating right now?",
-  "What do I need to stop tolerating?",
-  "What is this phase trying to teach me?",
-  "Why does this keep happening to me?",
-  "What's my blind spot in relationships?",
+  "What pattern do I keep repeating?",
+  "Where am I holding myself back?",
   "What should I focus on this week?",
 ];
 
-function getProfileContext() {
-  try {
-    const raw = localStorage.getItem("soulProfile");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-/* ─── Typing cursor component ─── */
-function TypingCursor() {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 2,
-        height: "1em",
-        background: "#7B61FF",
-        marginLeft: 2,
-        verticalAlign: "text-bottom",
-        animation: "blink 1s step-end infinite",
-        borderRadius: 1,
-      }}
-    />
-  );
-}
-
-/* ─── Animated dots loader ─── */
-function ThinkingDots() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "flex-start",
-        paddingLeft: "0.25rem",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "0.85rem 1.1rem",
-          borderRadius: "18px 18px 18px 4px",
-          background: "rgba(28,22,53,0.8)",
-          border: "1px solid rgba(123,97,255,0.2)",
-          backdropFilter: "blur(12px)",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3), 0 0 12px rgba(123,97,255,0.08)",
-        }}
-      >
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "#7B61FF",
-              display: "inline-block",
-              animation: `dotBounce 1.4s ease-in-out infinite`,
-              animationDelay: `${i * 0.16}s`,
-              opacity: 0.7,
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Fallback card ─── */
-function FallbackCardItem({ card, index }: { card: FallbackCard; index: number }) {
-  const colors = ["#F2C94C", "#ef4444", "#6BA7FF"];
-  const color = colors[index] || "#8B87A8";
-  return (
-    <div
-      className="animate-fadeIn"
-      style={{
-        background: `rgba(28,22,53,0.7)`,
-        border: `1px solid ${color}22`,
-        borderRadius: 16,
-        padding: "1.1rem 1.25rem",
-        backdropFilter: "blur(12px)",
-        boxShadow: `0 4px 20px rgba(0,0,0,0.3), 0 0 16px ${color}08`,
-        animationDelay: `${index * 80}ms`,
-      }}
-    >
-      <p
-        style={{
-          fontSize: "0.68rem",
-          fontWeight: 700,
-          color,
-          textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          marginBottom: "0.5rem",
-        }}
-      >
-        {card.title}
-      </p>
-      <p style={{ fontSize: "0.875rem", lineHeight: 1.7, color: "rgba(234,234,245,0.88)" }}>
-        {card.body}
-      </p>
-    </div>
-  );
-}
-
 export default function SoulGuidePage() {
   const [, navigate] = useLocation();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [tone, setTone] = useState<Tone>("oracle");
-  const [statusLine, setStatusLine] = useState("");
-  const [fallback, setFallback] = useState<FallbackData | null>(null);
-  const [streamingIndex, setStreamingIndex] = useState<number | null>(null);
+  const [messages, setMessages]       = useState<Message[]>([]);
+  const [input, setInput]             = useState("");
+  const [isLoading, setIsLoading]     = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [isLimitReached, setIsLimitReached] = useState(false);
+  const [questionsUsed, setQuestionsUsed]   = useState(0);
+  const [isPremium, setIsPremium]           = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
-  /* Auto-scroll on new messages */
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, fallback]);
+  }, [messages, isLimitReached]);
 
-  /* Load fallback on first mount */
+  // Fetch usage on mount so returning users see the right state
   useEffect(() => {
-    loadFallback();
+    const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
+    if (cachedPremium) setIsPremium(true);
+    apiFetch("/api/chat/soul-guide/usage")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return;
+        const premium = d.isPremium || cachedPremium;
+        setIsPremium(premium);
+        setQuestionsUsed(d.used ?? 0);
+        if (!premium && (d.used ?? 0) >= FREE_LIMIT) {
+          setIsLimitReached(true);
+        }
+      })
+      .catch(err => console.warn("[soul-guide] usage fetch failed:", err));
   }, []);
 
-  const loadFallback = async () => {
+  const getProfileContext = () => {
     try {
-      const profileContext = getProfileContext();
-      const res = await fetch(`${API_BASE}/api/chat/soul-guide/fallback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileContext }),
-      });
-      const data = await res.json();
-      if (data.status === "fallback") {
-        setFallback(data);
-        setStatusLine(data.message || "");
-      }
-    } catch {
-      setFallback({
-        status: "fallback",
-        message: "Using backup guidance from your Codex.",
-        cards: [
-          { title: "Your strongest edge right now", body: "Complete your profile to unlock personalized guidance from your full chart." },
-          { title: "What may be throwing you off", body: "Without profile data, general guidance applies: slow down and pick one focus." },
-          { title: "What to focus on today", body: "Narrow your attention. One finished action beats ten half-started ones." },
-        ],
-        prompts: SUGGESTIONS.slice(0, 3),
-      });
-      setStatusLine("Using backup guidance from your Codex.");
-    }
+      const raw = localStorage.getItem("soulProfile");
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      return {
+        name:        p.name,
+        archetype:   p.archetype?.name,
+        element:     p.archetype?.element,
+        role:        p.archetype?.role,
+        sunSign:     p.sunSign,
+        moonSign:    p.moonSign,
+        risingSign:  p.risingSign,
+        lifePath:    p.lifePath,
+        coreEssence: p.synthesis?.coreEssence,
+      };
+    } catch { return null; }
   };
 
-  const handleFallbackQuestion = useCallback(async (question: string) => {
-    setLoading(true);
+  const handleSend = async (text: string) => {
+    if (!text.trim() || isLoading || isLimitReached) return;
+    const userMessage: Message = { role: "user", text };
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+    setError(null);
+
+    const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+
     try {
-      const profileContext = getProfileContext();
-      const res = await fetch(`${API_BASE}/api/chat/soul-guide/fallback`, {
+      const res = await apiFetch("/api/chat/soul-guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileContext, question }),
+        body: JSON.stringify({ message: text, history, profileContext: getProfileContext() }),
       });
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "model",
-          text: data.answer || "Complete your profile for personalized guidance.",
-        },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "model", text: "Could not generate a response. Try again in a moment." },
-      ]);
-    } finally {
-      setLoading(false);
-      setFallback(null);
-    }
-  }, []);
 
-  /* ─── Core SSE streaming handler ─── */
-  const streamResponse = useCallback(
-    async (
-      text: string,
-      history: { role: string; parts: { text: string }[] }[],
-      deeper = false
-    ) => {
-      const profileContext = getProfileContext();
-      abortRef.current = new AbortController();
-
-      try {
-        const res = await fetch(`${API_BASE}/api/chat/soul-guide`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, history, profileContext, tone, deeper }),
-          signal: abortRef.current.signal,
-        });
-
-        if (!res.ok) {
-          setStatusLine("Using backup guidance from your Codex");
-          await handleFallbackQuestion(text);
+      if (res.status === 403) {
+        const body = await res.json().catch(() => ({}));
+        if (body.error === "limit_reached") {
+          setQuestionsUsed(body.used ?? FREE_LIMIT);
+          setIsLimitReached(true);
+          setIsLoading(false);
           return;
         }
+      }
 
-        const reader = res.body?.getReader();
-        const decoder = new TextDecoder();
-        let assistantText = "";
-        let buffer = "";
-        let streamStatus = "live";
+      if (res.status === 503) {
+        setError("Your Soul Guide is resting — AI features are temporarily offline.");
+        setIsLoading(false);
+        return;
+      }
+      if (!res.ok) throw new Error("Failed to connect to Soul Guide");
 
-        setMessages((prev) => {
-          const next = [...prev, { role: "model" as const, text: "", isDeeper: deeper }];
-          setStreamingIndex(next.length - 1);
-          return next;
-        });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = "";
+      setMessages(prev => [...prev, { role: "model", text: "" }]);
 
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-
-            for (const line of lines) {
-              if (!line.startsWith("data: ")) continue;
-              const dataStr = line.slice(6).trim();
-              if (dataStr === "[DONE]") continue;
-
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const lines = decoder.decode(value).split("\n");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const ds = line.slice(6).trim();
+              if (ds === "[DONE]") continue;
               try {
-                const parsed = JSON.parse(dataStr);
-                if (parsed.status) streamStatus = parsed.status;
-                if (parsed.content) {
-                  assistantText += parsed.content;
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    updated[updated.length - 1] = {
-                      role: "model",
-                      text: assistantText,
-                      isDeeper: deeper,
-                    };
-                    return updated;
+                const { content } = JSON.parse(ds);
+                if (content) {
+                  assistantText += content;
+                  setMessages(prev => {
+                    const next = [...prev];
+                    next[next.length - 1] = { role: "model", text: assistantText };
+                    return next;
                   });
                 }
-              } catch {
-                /* partial chunk */
-              }
+              } catch {}
             }
           }
         }
-
-        if (streamStatus === "backup") {
-          setStatusLine("Using backup model");
-        } else if (streamStatus === "fallback") {
-          setStatusLine("Using backup guidance from your Codex");
-        } else {
-          setStatusLine("");
-        }
-
-        if (!assistantText) {
-          setStatusLine("Using backup guidance from your Codex");
-          setMessages((prev) => prev.slice(0, -1));
-          await handleFallbackQuestion(text);
-        }
-      } catch (err: any) {
-        if (err?.name === "AbortError") return;
-        setStatusLine("Using backup guidance from your Codex");
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "model" && !last.text) return prev.slice(0, -1);
-          return prev;
-        });
-        await handleFallbackQuestion(text);
-      } finally {
-        setStreamingIndex(null);
       }
-    },
-    [tone, handleFallbackQuestion]
-  );
 
-  const handleSend = useCallback(
-    async (text: string) => {
-      if (!text.trim() || loading) return;
-
-      setMessages((prev) => [...prev, { role: "user", text }]);
-      setInput("");
-      setLoading(true);
-      setStatusLine("");
-      if (fallback) setFallback(null);
-
-      const history = messages.map((m) => ({
-        role: m.role,
-        parts: [{ text: m.text }],
-      }));
-
-      await streamResponse(text, history);
-      setLoading(false);
-    },
-    [loading, fallback, messages, streamResponse]
-  );
-
-  const handleAskDeeper = useCallback(async () => {
-    if (loading) return;
-    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
-    if (!lastUserMsg) return;
-
-    setLoading(true);
-    setStatusLine("");
-
-    const history = messages.map((m) => ({
-      role: m.role,
-      parts: [{ text: m.text }],
-    }));
-
-    await streamResponse(lastUserMsg.text, history, true);
-    setLoading(false);
-  }, [loading, messages, streamResponse]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend(input);
+      // Update local count
+      setQuestionsUsed(prev => prev + 1);
+    } catch {
+      setError("An error occurred while connecting to your Soul Guide.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const isEmpty = messages.length === 0;
-  const activeSuggestions = fallback?.prompts || SUGGESTIONS;
-  const activeTone = TONE_CONFIG[tone];
-  const hasConversation = messages.length >= 2;
+  const remaining = isPremium ? null : Math.max(0, FREE_LIMIT - questionsUsed);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100dvh",
-        maxWidth: 640,
-        margin: "0 auto",
-        padding: "0 0 5rem",
-        position: "relative",
-      }}
-    >
-      {/* ─── Ambient glow behind header ─── */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          top: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "70%",
-          height: 120,
-          background: `radial-gradient(ellipse at center, ${activeTone.glow} 0%, transparent 70%)`,
-          pointerEvents: "none",
-          zIndex: 0,
-          transition: "background 0.5s ease",
-        }}
-      />
+    <div style={{
+      height: "100vh", display: "flex", flexDirection: "column",
+      maxWidth: "780px", margin: "0 auto", width: "100%",
+    }}>
 
-      {/* ─── Header ─── */}
-      <div
-        style={{
-          padding: "1.1rem 1rem 0.8rem",
-          borderBottom: "1px solid rgba(45,37,84,0.5)",
-          background: "rgba(11,14,35,0.72)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <div style={{
+        padding: "0.9rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem",
+        borderBottom: "1px solid rgba(212,168,95,0.2)",
+        background: "rgba(10,1,24,0.5)", backdropFilter: "blur(12px)",
+        justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <button
             onClick={() => navigate("/today")}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#8B87A8",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              marginRight: "0.5rem",
-            }}
+            style={{ background: "none", border: "none", color: "var(--cosmic-lavender)", cursor: "pointer", padding: "0.4rem", fontSize: "1.1rem" }}
+            aria-label="Back"
           >
-            ‹
+            ←
           </button>
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <p
-              className="section-label"
-              style={{ color: activeTone.color, transition: "color 0.3s ease", marginBottom: 0 }}
-            >
-              Soul Guide
-            </p>
-            <h1
-              style={{
-                fontSize: "1rem",
-                fontWeight: 600,
-                color: "#EAEAF5",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Ask your Codex anything
+          <div>
+            <h1 style={{ fontSize: "1.1rem", color: "var(--foreground)", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0 }}>
+              <span style={{ color: "var(--cosmic-lavender)" }}>✦</span> Soul Guide
             </h1>
+            <p style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", margin: 0 }}>
+              Ask anything about your path, patterns, or next move.
+            </p>
           </div>
-          <div style={{ width: 24 }} /> {/* Spacer for centering */}
         </div>
-
-        {/* Tone pills */}
-        <div
-          style={{
-            display: "flex",
-            gap: "0.4rem",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          {(Object.entries(TONE_CONFIG) as [Tone, typeof TONE_CONFIG[Tone]][]).map(([key, cfg]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTone(key)}
-              style={{
-                padding: "0.28rem 0.9rem",
-                borderRadius: 9999,
-                border: `1px solid ${tone === key ? cfg.color : "rgba(45,37,84,0.7)"}`,
-                background: tone === key ? `${cfg.color}18` : "transparent",
-                color: tone === key ? cfg.color : "#8B87A8",
-                fontSize: "0.72rem",
-                fontWeight: tone === key ? 700 : 400,
-                cursor: "pointer",
-                transition: "all 0.25s ease",
-                boxShadow: tone === key ? `0 0 12px ${cfg.color}28` : "none",
-                minHeight: "unset",
-                minWidth: "unset",
-                letterSpacing: "0.03em",
-              }}
-            >
-              {cfg.label}
-            </button>
-          ))}
-        </div>
-
-        {statusLine && (
-          <p
-            style={{
-              textAlign: "center",
-              fontSize: "0.68rem",
-              color: "#8B87A8",
-              marginTop: "0.45rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.3rem",
-            }}
-          >
-            <span style={{ opacity: 0.6 }}>◈</span> {statusLine}
-          </p>
+        {/* Usage pill — only show for free users who haven't hit limit */}
+        {!isPremium && !isLimitReached && remaining !== null && (
+          <div style={{
+            fontSize: "0.72rem", padding: "0.25rem 0.7rem",
+            borderRadius: "99px",
+            background: remaining === 1
+              ? "rgba(245,158,11,0.15)"
+              : "rgba(212,168,95,0.12)",
+            border: `1px solid ${remaining === 1 ? "rgba(245,158,11,0.35)" : "rgba(212,168,95,0.25)"}`,
+            color: remaining === 1 ? "#f59e0b" : "rgba(200,190,255,0.7)",
+            whiteSpace: "nowrap",
+          }}>
+            {remaining === 1 ? "1 question left" : `${remaining} free questions`}
+          </div>
         )}
       </div>
 
-      {/* ─── Message area ─── */}
+      {/* ── Chat area ────────────────────────────────────────────────────── */}
       <div
         ref={scrollRef}
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "1.25rem 1rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.85rem",
-          scrollBehavior: "smooth",
-        }}
+        style={{ flex: 1, overflowY: "auto", padding: "1.5rem 1rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}
       >
-        {/* Empty state */}
-        {isEmpty && (
-          <div
-            className="animate-fadeIn"
-            style={{ textAlign: "center", paddingTop: "1.5rem" }}
-          >
-            {/* Oracle sigil */}
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "rgba(123,97,255,0.1)",
-                border: "1px solid rgba(123,97,255,0.22)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 1.1rem",
-                fontSize: "1.6rem",
-                boxShadow: "0 0 28px rgba(123,97,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
-                animation: "pulseGlow 4s ease-in-out infinite",
-              }}
-            >
-              ◎
+        {messages.length === 0 && !error && !isLimitReached && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: "2rem" }}>
+            <div style={{
+              width: 60, height: 60, borderRadius: "50%",
+              background: "rgba(212,168,95,0.1)", border: "1px solid rgba(212,168,95,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.75rem", color: "var(--cosmic-lavender)", marginBottom: "1.25rem",
+            }}>
+              ◈
             </div>
-            <h2
-              className="heading-display"
-              style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}
-            >
-              Your Oracle is listening
+            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.4rem", marginBottom: "0.75rem", color: "var(--cosmic-gold)", textShadow: "0 2px 12px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)" }}>
+              Ask your Soul Guide
             </h2>
-            <p
-              style={{
-                color: "#8B87A8",
-                fontSize: "0.85rem",
-                maxWidth: 300,
-                margin: "0 auto 1.75rem",
-                lineHeight: 1.65,
-              }}
-            >
-              Ask about patterns, decisions, relationships, or what this phase means for you.
+            <p style={{ color: "var(--muted-foreground)", maxWidth: "280px", marginBottom: "1.75rem", fontSize: "0.85rem", lineHeight: 1.6 }}>
+              No fluff, no generic advice — answers drawn from your actual blueprint.
             </p>
-
-            {/* Fallback cards */}
-            {fallback && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                  maxWidth: 480,
-                  margin: "0 auto 1.5rem",
-                  textAlign: "left",
-                }}
-              >
-                {fallback.cards.map((card, i) => (
-                  <FallbackCardItem key={i} card={card} index={i} />
-                ))}
-            </div>
-            )}
-
-            {/* Suggestion chips */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.45rem",
-                maxWidth: 440,
-                margin: "0 auto",
-              }}
-            >
-              {(fallback ? activeSuggestions : SUGGESTIONS).map((s, i) => (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", width: "100%", maxWidth: "300px" }}>
+              {SUGGESTIONS.map((s, i) => (
                 <button
-                  key={s}
-                  type="button"
+                  key={i}
                   onClick={() => handleSend(s)}
-                  className="animate-fadeIn"
                   style={{
-                    padding: "0.7rem 1rem",
-                    background: "rgba(28,22,53,0.65)",
-                    border: "1px solid rgba(123,97,255,0.14)",
-                    borderRadius: 12,
-                    color: "#EAEAF5",
-                    fontSize: "0.82rem",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    transition: "all 0.2s ease",
-                    minHeight: "unset",
-                    backdropFilter: "blur(8px)",
-                    animationDelay: `${i * 60}ms`,
-                    lineHeight: 1.5,
+                    background: "rgba(242,234,218,0.96)", border: "1px solid rgba(212,168,95,0.45)",
+                    borderRadius: "10px", padding: "0.7rem 1rem",
+                    fontSize: "0.85rem", color: "#1A0E07",
+                    cursor: "pointer", textAlign: "left", transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.borderColor = "rgba(123,97,255,0.32)";
-                    el.style.background = "rgba(123,97,255,0.07)";
-                    el.style.transform = "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.borderColor = "rgba(123,97,255,0.14)";
-                    el.style.background = "rgba(28,22,53,0.65)";
-                    el.style.transform = "translateY(0)";
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.15)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.08)"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(236,228,210,0.99)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(242,234,218,0.96)"; }}
                 >
-                  <span style={{ opacity: 0.5, marginRight: "0.5rem", fontSize: "0.75rem" }}>›</span>
                   {s}
                 </button>
               ))}
@@ -655,244 +234,136 @@ export default function SoulGuidePage() {
           </div>
         )}
 
-        {/* Message bubbles */}
-        {messages.map((msg, i) => {
-          const isStreaming = streamingIndex === i;
-          const isUser = msg.role === "user";
-          return (
-            <div
-              key={i}
-              className="animate-fadeIn"
-              style={{
-                display: "flex",
-                justifyContent: isUser ? "flex-end" : "flex-start",
-                alignItems: "flex-end",
-                gap: "0.5rem",
-              }}
-            >
-              {/* Oracle avatar dot */}
-              {!isUser && (
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: msg.isDeeper
-                      ? "linear-gradient(135deg, #F2C94C, #E6C27A)"
-                      : "linear-gradient(135deg, #7B61FF, #9B8AFF)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.75rem",
-                    color: "#fff",
-                    flexShrink: 0,
-                    boxShadow: msg.isDeeper
-                      ? "0 0 12px rgba(242,201,76,0.35)"
-                      : "0 0 12px rgba(123,97,255,0.35)",
-                    marginBottom: 2,
-                  }}
-                >
-                  {msg.isDeeper ? "◈" : "✦"}
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", width: "100%" }}>
+            <div style={{
+              maxWidth: "85%", padding: "0.9rem 1rem",
+              borderRadius: "1.25rem", fontSize: "0.9375rem", lineHeight: 1.65,
+              position: "relative",
+              ...(m.role === "user" ? {
+                background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
+                color: "var(--foreground)", borderBottomRightRadius: "0.25rem",
+              } : {
+                background: "rgba(212,168,95,0.14)", border: "1px solid rgba(212,168,95,0.28)",
+                color: "rgba(232,230,255,0.95)", borderBottomLeftRadius: "0.25rem",
+                boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+              }),
+            }}>
+              {m.role === "model" && (
+                <div style={{
+                  position: "absolute", top: -10, left: -10,
+                  width: 24, height: 24, background: "var(--cosmic-purple)", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "11px", color: "white", boxShadow: "0 0 10px var(--cosmic-purple)",
+                }}>
+                  ✦
                 </div>
               )}
-
-              <div
-                style={{
-                  maxWidth: "80%",
-                  padding: "0.8rem 1rem",
-                  borderRadius: isUser
-                    ? "18px 18px 4px 18px"
-                    : "18px 18px 18px 4px",
-                  background: isUser
-                    ? "linear-gradient(135deg, rgba(123,97,255,0.22), rgba(123,97,255,0.14))"
-                    : msg.isDeeper
-                    ? "rgba(40,30,60,0.85)"
-                    : "rgba(28,22,53,0.78)",
-                  border: isUser
-                    ? "1px solid rgba(123,97,255,0.28)"
-                    : msg.isDeeper
-                    ? "1px solid rgba(242,201,76,0.18)"
-                    : "1px solid rgba(45,37,84,0.55)",
-                  fontSize: "0.875rem",
-                  lineHeight: 1.7,
-                  color: "#EAEAF5",
-                  backdropFilter: "blur(12px)",
-                  boxShadow: isUser
-                    ? "0 2px 12px rgba(123,97,255,0.12)"
-                    : "0 4px 16px rgba(0,0,0,0.25)",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}
-              >
-                {msg.text}
-                {isStreaming && msg.text && <TypingCursor />}
-                {isStreaming && !msg.text && <TypingCursor />}
-              </div>
+              {m.text || (isLoading && i === messages.length - 1 ? "…" : "")}
             </div>
-          );
-        })}
+          </div>
+        ))}
 
-        {/* Loading dots (before first model reply) */}
-        {loading && messages[messages.length - 1]?.role !== "model" && (
-          <ThinkingDots />
+        {error && (
+          <div style={{
+            padding: "0.9rem 1rem", borderRadius: "10px",
+            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
+            color: "#ef4444", fontSize: "0.85rem",
+            display: "flex", alignItems: "center", gap: "0.65rem",
+          }}>
+            <span>⚠</span> <span>{error}</span>
+          </div>
         )}
 
-        {/* Ask Deeper button */}
-        {hasConversation && !loading && (
-          <div
-            className="animate-fadeIn"
-            style={{ display: "flex", justifyContent: "flex-start", paddingLeft: "2.25rem" }}
-          >
-            <button
-              type="button"
-              onClick={handleAskDeeper}
-              style={{
-                padding: "0.3rem 0.85rem",
-                borderRadius: 9999,
-                border: "1px solid rgba(242,201,76,0.2)",
-                background: "transparent",
-                color: "#F2C94C",
-                fontSize: "0.7rem",
-                fontWeight: 500,
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                minHeight: "unset",
-                minWidth: "unset",
-                letterSpacing: "0.04em",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLButtonElement;
-                el.style.background = "rgba(242,201,76,0.08)";
-                el.style.borderColor = "rgba(242,201,76,0.4)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLButtonElement;
-                el.style.background = "transparent";
-                el.style.borderColor = "rgba(242,201,76,0.2)";
-              }}
-            >
-              ◈ Ask deeper
-            </button>
+        {/* ── Upgrade wall ─────────────────────────────────────────────── */}
+        {isLimitReached && (
+          <div style={{
+            margin: "auto 0 0",
+            padding: "2rem 1.5rem",
+            borderRadius: "1.25rem",
+            background: "rgba(28,18,10,0.72)",
+            border: "1px solid rgba(212,168,95,0.35)",
+            textAlign: "center",
+          }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: "50%",
+              background: "rgba(212,168,95,0.12)", border: "1px solid rgba(212,168,95,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.5rem", margin: "0 auto 1.1rem",
+            }}>
+              ✦
+            </div>
+            <h3 style={{ fontFamily: "var(--font-serif)", color: "var(--sc-gold, #D4A85F)", fontSize: "1.15rem", margin: "0 0 0.5rem" }}>
+              You've used your {FREE_LIMIT} free questions
+            </h3>
+            <p style={{ color: "rgba(246,241,232,0.55)", fontSize: "0.85rem", lineHeight: 1.65, margin: "0 0 1.5rem", maxWidth: 320, marginLeft: "auto", marginRight: "auto" }}>
+              Unlock unlimited access to the Soul Guide, your Full Cosmic Blueprint, and the premium birth chart.
+            </p>
+            <Link href="/profile">
+              <button style={{
+                background: "linear-gradient(135deg, #D4A85F 0%, #b8883a 100%)",
+                border: "none", borderRadius: "10px",
+                padding: "0.75rem 2rem", fontSize: "0.9rem",
+                color: "#1A0E07", fontWeight: 700, cursor: "pointer",
+                marginBottom: "0.75rem", display: "block", width: "100%", maxWidth: 280, margin: "0 auto 0.75rem",
+              }}>
+                Unlock Full Access
+              </button>
+            </Link>
+            <p style={{ color: "rgba(246,241,232,0.3)", fontSize: "0.75rem", margin: 0 }}>
+              Have an access code?{" "}
+              <Link href="/profile">
+                <span style={{ color: "rgba(212,168,95,0.7)", cursor: "pointer", textDecoration: "underline" }}>
+                  Enter it on your profile page
+                </span>
+              </Link>
+            </p>
           </div>
         )}
       </div>
 
-      {/* ─── Input bar ─── */}
-      <div
-        style={{
-          padding: "0.7rem 1rem",
-          borderTop: "1px solid rgba(45,37,84,0.45)",
-          background: "rgba(11,14,35,0.85)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          position: "sticky",
-          bottom: "4rem", /* Accommodate bottom nav */
-          zIndex: 10,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            alignItems: "center",
-            background: "rgba(20,16,40,0.7)",
-            border: "1px solid rgba(45,37,84,0.7)",
-            borderRadius: 16,
-            padding: "0.2rem 0.2rem 0.2rem 1rem",
-            transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-          }}
-          onFocusCapture={(e) => {
-            const el = e.currentTarget as HTMLDivElement;
-            el.style.borderColor = "rgba(123,97,255,0.4)";
-            el.style.boxShadow = "0 0 16px rgba(123,97,255,0.1)";
-          }}
-          onBlurCapture={(e) => {
-            const el = e.currentTarget as HTMLDivElement;
-            el.style.borderColor = "rgba(45,37,84,0.7)";
-            el.style.boxShadow = "none";
-          }}
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Ask your Codex..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading}
+      {/* ── Input ────────────────────────────────────────────────────────── */}
+      <div style={{ padding: "0.9rem 1rem", background: "rgba(10,1,24,0.65)", backdropFilter: "blur(15px)", borderTop: "1px solid rgba(212,168,95,0.2)" }}>
+        {isLimitReached ? (
+          <div style={{
+            textAlign: "center", fontSize: "0.8rem",
+            color: "rgba(246,241,232,0.3)", padding: "0.5rem 0",
+          }}>
+            Upgrade to keep the conversation going
+          </div>
+        ) : (
+          <form
+            onSubmit={e => { e.preventDefault(); handleSend(input); }}
             style={{
-              flex: 1,
-              background: "none",
-              border: "none",
-              outline: "none",
-              color: "#EAEAF5",
-              fontSize: "0.875rem",
-              padding: "0.6rem 0",
-              fontFamily: "inherit",
-              width: "auto",
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => handleSend(input)}
-            disabled={!input.trim() || loading}
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 12,
-              background:
-                input.trim() && !loading
-                  ? `linear-gradient(135deg, ${activeTone.color}CC, ${activeTone.color}88)`
-                  : "rgba(45,37,84,0.4)",
-              border: "none",
-              cursor: input.trim() && !loading ? "pointer" : "default",
-              display: "flex",
+              display: "flex", gap: "0.6rem",
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(212,168,95,0.2)",
+              borderRadius: "1.5rem", padding: "0.25rem 0.25rem 0.25rem 1rem",
               alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.1rem",
-              color: "#fff",
-              transition: "all 0.25s ease",
-              boxShadow:
-                input.trim() && !loading
-                  ? `0 4px 14px ${activeTone.glow}`
-                  : "none",
-              flexShrink: 0,
-              minHeight: "unset",
-              minWidth: "unset",
             }}
           >
-            ›
-          </button>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginTop: "0.35rem" }}>
-          <p
-            style={{
-              fontSize: "0.62rem",
-              color: "#8B87A8",
-              textAlign: "center",
-              letterSpacing: "0.04em",
-            }}
-          >
-            <span style={{ color: activeTone.color, transition: "color 0.3s ease" }}>
-              {activeTone.label}
-            </span>{" "}
-            — {activeTone.description}
-          </p>
-          <span style={{ fontSize: "0.58rem", color: "#F2C94C", letterSpacing: "0.06em" }}>✦ Premium</span>
-        </div>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Ask anything…"
+              disabled={isLoading}
+              style={{ flex: 1, background: "none", border: "none", outline: "none", color: "white", padding: "0.5rem 0", fontSize: "0.9rem" }}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              style={{
+                width: 40, height: 40, borderRadius: "50%",
+                background: input.trim() ? "var(--sc-gold)" : "rgba(255,255,255,0.08)",
+                border: "none", color: input.trim() ? "#1A0E07" : "white",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: input.trim() ? "pointer" : "default", transition: "all 0.2s",
+              }}
+            >
+              {isLoading ? <RefreshCw size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={16} />}
+            </button>
+          </form>
+        )}
       </div>
-
-      {/* ─── Keyframe injections ─── */}
-      <style>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-        @keyframes dotBounce {
-          0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-          40% { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }

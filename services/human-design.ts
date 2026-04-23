@@ -477,9 +477,39 @@ function calculateDefinition(centers: any, channels: any[]): string {
   }
 }
 
-function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): string {
-  if (inputTimezone.includes('/')) {
-    return inputTimezone;
+const TIME_24H_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+function normalizeHDTimezoneInput(value: string | undefined): string {
+  const trimmed = value?.trim();
+  return trimmed || "UTC";
+}
+
+function parseHDCoordinate(value: string, field: string): number {
+  const parsed = parseFloat(value.trim());
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Invalid ${field} value for Human Design calculation`);
+  }
+  return parsed;
+}
+
+function parseRequiredTime24(value: string): { hours: number; minutes: number } {
+  const trimmed = value.trim();
+  const match = TIME_24H_RE.exec(trimmed);
+  if (!match) {
+    throw new Error("Human Design requires birthTime in HH:MM format");
+  }
+
+  return {
+    hours: parseInt(match[1], 10),
+    minutes: parseInt(match[2], 10),
+  };
+}
+
+function resolveHDTimezone(inputTimezone: string | undefined, latitude: number, longitude: number): string {
+  const normalizedInput = normalizeHDTimezoneInput(inputTimezone);
+
+  if (normalizedInput.includes('/')) {
+    return normalizedInput;
   }
   
   try {
@@ -506,7 +536,7 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
     'CEST': 'Europe/Paris'
   };
   
-  const mapped = timezoneMap[inputTimezone.toUpperCase()];
+  const mapped = timezoneMap[normalizedInput.toUpperCase()];
   if (mapped) {
     return mapped;
   }
@@ -537,17 +567,20 @@ export function calculateHumanDesign(birthData: {
   // Calculate target longitude (88° before birth)
   let targetLongitude = birthSunLongitude - DESIGN_SOLAR_ARC;
   if (targetLongitude < 0) targetLongitude += 360;
+
+  const latitude = parseHDCoordinate(birthData.latitude, "latitude");
+  const longitude = parseHDCoordinate(birthData.longitude, "longitude");
   
   // Resolve timezone properly
   const resolvedTimezone = resolveHDTimezone(
     birthData.timezone,
-    parseFloat(birthData.latitude),
-    parseFloat(birthData.longitude)
+    latitude,
+    longitude
   );
   
   // Create birth time in the correct timezone
   const [year, month, day] = birthData.birthDate.split('-').map(Number);
-  const [hours, minutes] = birthData.birthTime.split(':').map(Number);
+  const { hours, minutes } = parseRequiredTime24(birthData.birthTime);
   const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
   
   const birthTimeUTC = fromZonedTime(new Date(localTimeString), resolvedTimezone);

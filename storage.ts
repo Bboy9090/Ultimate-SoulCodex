@@ -1,12 +1,17 @@
 import { type User, type UpsertUser, type Profile, type InsertProfile, type Person, type InsertPerson, type Assessment, type InsertAssessment, type AccessCode, type AccessCodeRedemption, type InsertAccessCode, type DailyInsight, type InsertDailyInsight, type CompatibilityAnalysis, type InsertCompatibility, type LocalUser, type PushSubscription, type InsertPushSubscription, type FrequencyLog, type InsertFrequencyLog, type WebhookEvent, type InsertWebhookEvent } from "./shared/schema";
 import { randomUUID } from "crypto";
+import * as schema from "./shared/schema";
+import { accessCodeRedemptions, localUsers, profiles, users } from "./shared/schema";
+import { db } from "./db";
+import { and, eq, sql as drizzleSql } from "drizzle-orm";
 // NOTE: For Render bootstrap we use in-memory storage by default.
 // Avoid importing DB modules and table schemas to prevent build-time resolution.
 // Removed drizzle imports to avoid schema resolution in bundle
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUserByAppleId(appleId: string): Promise<User | undefined>;
   getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
@@ -78,6 +83,10 @@ export interface IStorage {
   // Webhook event operations (for idempotency)
   getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined>;
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
+
+  // Account deletion (App Store compliance)
+  deleteUserAccount(userId: string): Promise<void>;
+  deleteProfileById(profileId: string): Promise<void>;
   
   // Journal operations
   createJournalEntry(entry: any): Promise<any>;
@@ -132,6 +141,15 @@ export class MemStorage implements IStorage {
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.appleId === appleId) {
+        return user;
+      }
+    }
+    return undefined;
   }
 
   async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
@@ -404,24 +422,55 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async getAccessCodeRedemptions(_params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+  private accessCodeRedemptions = new Map<string, AccessCodeRedemption>();
+
+  async getAccessCodeRedemptions(params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
+    return Array.from(this.accessCodeRedemptions.values()).filter(r =>
+      (params.userId && r.userId === params.userId) ||
+      (params.sessionId && r.sessionId === params.sessionId)
+    );
   }
 
-  async createAccessCodeRedemptionWithIncrement(_params: {
+  async createAccessCodeRedemptionWithIncrement(params: {
     accessCodeId: string;
     userId?: string;
     sessionId?: string;
   }): Promise<AccessCodeRedemption> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+    const accessCode = Array.from(this.accessCodes.values()).find(c => c.id === params.accessCodeId);
+    if (!accessCode) throw new Error("Access code not found");
+    const id = randomUUID();
+    const redemption: AccessCodeRedemption = {
+      id,
+      accessCodeId: params.accessCodeId,
+      userId: params.userId || null,
+      sessionId: params.sessionId || null,
+      redeemedAt: new Date(),
+    } as AccessCodeRedemption;
+    this.accessCodeRedemptions.set(id, redemption);
+    await this.incrementAccessCodeUse(accessCode.code);
+    return redemption;
   }
 
-  async getActiveAccessCodesForUser(_params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+  async getActiveAccessCodesForUser(params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
+    const redemptions = await this.getAccessCodeRedemptions(params);
+    const codes: AccessCode[] = [];
+    for (const r of redemptions) {
+      const code = Array.from(this.accessCodes.values()).find(c => c.id === r.accessCodeId);
+      if (code && code.isActive) {
+        if (!code.expiresAt || new Date() <= code.expiresAt) {
+          codes.push(code);
+        }
+      }
+    }
+    return codes;
   }
 
-  async migrateAccessCodeRedemptions(_sessionId: string, _userId: string): Promise<void> {
-    throw new Error("MemStorage deprecated - use DbStorage for access code redemptions");
+  async migrateAccessCodeRedemptions(sessionId: string, userId: string): Promise<void> {
+    for (const [id, r] of this.accessCodeRedemptions) {
+      if (r.sessionId === sessionId && !r.userId) {
+        this.accessCodeRedemptions.set(id, { ...r, userId });
+      }
+    }
   }
   
   async getDailyInsight(profileId: string, date: string): Promise<DailyInsight | undefined> {
@@ -753,6 +802,33 @@ export class MemStorage implements IStorage {
     };
     this.webhookEvents.set(event.stripeEventId, event);
     return event;
+  }
+
+  async deleteProfileById(profileId: string): Promise<void> {
+    this.profiles.delete(profileId);
+  }
+
+  // ── Account deletion (App Store compliance) ─────────────────────────────
+  async deleteUserAccount(userId: string): Promise<void> {
+    // Remove user record
+    this.users.delete(userId);
+    // Remove local credentials (LocalUser map is keyed by userId; v.id === userId)
+    this.localUsers.delete(userId);
+    for (const [k, v] of this.localUsers) if (v.id === userId) this.localUsers.delete(k);
+    // Remove profiles owned by user
+    for (const [k, v] of this.profiles) if (v.userId === userId) this.profiles.delete(k);
+    // Remove persons (compatibility contacts)
+    for (const [k, v] of this.persons) if (v.userId === userId) this.persons.delete(k);
+    // Remove frequency logs
+    for (const [k, v] of this.frequencyLogs) if (v.userId === userId) this.frequencyLogs.delete(k);
+    // Remove push subscriptions
+    for (const [k, v] of this.pushSubscriptions) if (v.userId === userId) this.pushSubscriptions.delete(k);
+    // Remove journal entries
+    for (const [k, v] of this.journalEntries) if (v.userId === userId) this.journalEntries.delete(k);
+    // Remove shareable links
+    for (const [k, v] of this.shareableLinks) if (v.userId === userId) this.shareableLinks.delete(k);
+    // Remove password reset tokens
+    for (const [k, v] of this.passwordResetTokens) if (v.userId === userId) this.passwordResetTokens.delete(k);
   }
 
   // Journal operations
@@ -1114,7 +1190,383 @@ class DbStorage implements IStorage {
 }
 
 
-// Switch to DbStorage for production-ready persistence
-// Switch to MemStorage for initial deployment; swap to DbStorage when schema is in place
-// export const storage = new DbStorage();
-export const storage = new MemStorage();
+const profilesTable = schema.profiles;
+const accessCodesTable = schema.accessCodes;
+const redemptionsTable = schema.accessCodeRedemptions;
+const usersTable = schema.users;
+const localUsersTable = schema.localUsers;
+
+const STRUCTURED_PROFILE_FIELDS = new Set([
+  "id", "userId", "sessionId", "name",
+  "birthDate", "birthTime", "birthLocation",
+  "timezone", "latitude", "longitude",
+  "createdAt", "updatedAt",
+]);
+
+function profileRowToObject(row: any): any {
+  if (!row) return undefined;
+  const { data, ...rest } = row;
+  return { ...(data || {}), ...rest };
+}
+
+function splitProfileForStorage(input: any): { structured: any; data: Record<string, any> } {
+  const structured: any = {};
+  const data: Record<string, any> = {};
+  for (const [k, v] of Object.entries(input || {})) {
+    if (STRUCTURED_PROFILE_FIELDS.has(k)) {
+      structured[k] = v;
+    } else {
+      data[k] = v;
+    }
+  }
+  return { structured, data };
+}
+
+class HybridStorage extends MemStorage {
+  // ── User operations ────────────────────────────────────────────────────
+  async getUser(id: string): Promise<User | undefined> {
+    try {
+      const rows = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getUser DB failure:", err);
+      return super.getUser(id);
+    }
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    try {
+      const rows = await db.select().from(usersTable).where(eq(usersTable.appleId, appleId)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getUserByAppleId DB failure:", err);
+      return super.getUserByAppleId(appleId);
+    }
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    try {
+      const existing = await this.getUser(userData.id);
+      if (existing) {
+        const [row] = await db.update(usersTable)
+          .set({ ...userData, updatedAt: new Date() })
+          .where(eq(usersTable.id, userData.id))
+          .returning();
+        return row;
+      } else {
+        const [row] = await db.insert(usersTable).values({
+          ...userData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }).returning();
+        return row;
+      }
+    } catch (err) {
+      console.error("[HybridStorage] upsertUser DB failure:", err);
+      return super.upsertUser(userData);
+    }
+  }
+
+  // ── Profile operations ─────────────────────────────────────────────────
+  async getProfile(id: string): Promise<Profile | undefined> {
+    try {
+      const rows = await db.select().from(profilesTable).where(eq(profilesTable.id, id)).limit(1);
+      return profileRowToObject(rows[0]);
+    } catch (err) {
+      console.warn("[HybridStorage] getProfile DB failure, falling back to mem:", err);
+      return super.getProfile(id);
+    }
+  }
+
+  async getProfileByUserId(userId: string): Promise<Profile | undefined> {
+    try {
+      const rows = await db.select().from(profilesTable).where(eq(profilesTable.userId, userId)).limit(1);
+      return profileRowToObject(rows[0]);
+    } catch (err) {
+      console.warn("[HybridStorage] getProfileByUserId DB failure:", err);
+      return super.getProfileByUserId(userId);
+    }
+  }
+
+  async getProfileBySessionId(sessionId: string): Promise<Profile | undefined> {
+    try {
+      const rows = await db.select().from(profilesTable).where(eq(profilesTable.sessionId, sessionId)).limit(1);
+      return profileRowToObject(rows[0]);
+    } catch (err) {
+      console.warn("[HybridStorage] getProfileBySessionId DB failure:", err);
+      return super.getProfileBySessionId(sessionId);
+    }
+  }
+
+  async getAllProfiles(): Promise<Profile[]> {
+    try {
+      const rows = await db.select().from(profilesTable);
+      return rows.map(profileRowToObject);
+    } catch (err) {
+      console.warn("[HybridStorage] getAllProfiles DB failure:", err);
+      return super.getAllProfiles();
+    }
+  }
+
+  async createProfile(insertProfile: InsertProfile): Promise<Profile> {
+    try {
+      const { structured, data } = splitProfileForStorage(insertProfile);
+      const insertRow: any = {
+        userId: structured.userId || null,
+        sessionId: structured.sessionId || null,
+        name: structured.name,
+        birthDate: structured.birthDate,
+        birthTime: structured.birthTime || null,
+        birthLocation: structured.birthLocation || null,
+        timezone: structured.timezone || null,
+        latitude: structured.latitude != null ? String(structured.latitude) : null,
+        longitude: structured.longitude != null ? String(structured.longitude) : null,
+        data,
+      };
+      const [row] = await db.insert(profilesTable).values(insertRow).returning();
+      return profileRowToObject(row);
+    } catch (err) {
+      console.error("[HybridStorage] createProfile DB failure, falling back to mem:", err);
+      return super.createProfile(insertProfile);
+    }
+  }
+
+  async updateProfile(id: string, updates: Partial<Profile>): Promise<Profile> {
+    try {
+      const existingRows = await db.select().from(profilesTable).where(eq(profilesTable.id, id)).limit(1);
+      if (existingRows.length === 0) throw new Error("Profile not found");
+      const existing = existingRows[0];
+      const { structured, data: newData } = splitProfileForStorage(updates);
+      const mergedData = { ...((existing.data as any) || {}), ...newData };
+      const updateRow: any = { data: mergedData, updatedAt: new Date() };
+      for (const k of ["userId", "sessionId", "name", "birthDate", "birthTime", "birthLocation", "timezone"]) {
+        if (k in structured) updateRow[k] = (structured as any)[k];
+      }
+      if ("latitude" in structured) updateRow.latitude = structured.latitude != null ? String(structured.latitude) : null;
+      if ("longitude" in structured) updateRow.longitude = structured.longitude != null ? String(structured.longitude) : null;
+      const [row] = await db.update(profilesTable).set(updateRow).where(eq(profilesTable.id, id)).returning();
+      return profileRowToObject(row);
+    } catch (err) {
+      console.error("[HybridStorage] updateProfile DB failure:", err);
+      return super.updateProfile(id, updates);
+    }
+  }
+
+  async migrateSoulProfileFromSessionToUser(sessionId: string, userId: string): Promise<boolean> {
+    try {
+      const result = await db.update(profilesTable)
+        .set({ userId, updatedAt: new Date() })
+        .where(and(eq(profilesTable.sessionId, sessionId), drizzleSql`${profilesTable.userId} IS NULL`))
+        .returning();
+      return result.length > 0;
+    } catch (err) {
+      console.warn("[HybridStorage] migrateSoulProfile DB failure:", err);
+      return super.migrateSoulProfileFromSessionToUser(sessionId, userId);
+    }
+  }
+
+  // ── Access code operations ────────────────────────────────────────────
+  async getAccessCode(code: string): Promise<AccessCode | undefined> {
+    try {
+      const rows = await db.select().from(accessCodesTable)
+        .where(drizzleSql`LOWER(${accessCodesTable.code}) = LOWER(${code})`)
+        .limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getAccessCode DB failure:", err);
+      return super.getAccessCode(code);
+    }
+  }
+
+  async createAccessCode(insertAccessCode: InsertAccessCode): Promise<AccessCode> {
+    try {
+      const maxUses = insertAccessCode.maxUses ?? 1;
+      if (maxUses < 1) throw new Error("maxUses must be at least 1");
+      // Idempotent seeding: if code already exists, return it
+      const existing = await this.getAccessCode(insertAccessCode.code);
+      if (existing) return existing;
+      const [row] = await db.insert(accessCodesTable).values({
+        code: insertAccessCode.code,
+        maxUses,
+        usesCount: 0,
+        isActive: insertAccessCode.isActive ?? true,
+        expiresAt: insertAccessCode.expiresAt || null,
+      }).returning();
+      return row;
+    } catch (err) {
+      console.error("[HybridStorage] createAccessCode DB failure:", err);
+      return super.createAccessCode(insertAccessCode);
+    }
+  }
+
+  async updateAccessCode(id: string, updates: Partial<AccessCode>): Promise<AccessCode> {
+    try {
+      const [row] = await db.update(accessCodesTable)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(accessCodesTable.id, id))
+        .returning();
+      if (!row) throw new Error("Access code not found");
+      return row;
+    } catch (err) {
+      console.error("[HybridStorage] updateAccessCode DB failure:", err);
+      return super.updateAccessCode(id, updates);
+    }
+  }
+
+  async getAllAccessCodes(): Promise<AccessCode[]> {
+    try {
+      return await db.select().from(accessCodesTable);
+    } catch (err) {
+      console.warn("[HybridStorage] getAllAccessCodes DB failure:", err);
+      return super.getAllAccessCodes();
+    }
+  }
+
+  async incrementAccessCodeUse(code: string): Promise<AccessCode> {
+    try {
+      const accessCode = await this.getAccessCode(code);
+      if (!accessCode) throw new Error("Access code not found");
+      if (!accessCode.isActive) throw new Error("Access code is inactive");
+      if (accessCode.expiresAt && new Date() > new Date(accessCode.expiresAt)) {
+        throw new Error("Access code has expired");
+      }
+      // Atomic conditional update: only increment if uses_count < max_uses AND active AND not expired
+      const rows = await db.execute(drizzleSql`
+        UPDATE access_codes
+        SET uses_count = uses_count + 1, updated_at = NOW()
+        WHERE id = ${accessCode.id}
+          AND is_active = true
+          AND uses_count < max_uses
+          AND (expires_at IS NULL OR expires_at > NOW())
+        RETURNING *
+      `);
+      const updated = (rows as any).rows?.[0] ?? (rows as any)[0];
+      if (!updated) throw new Error("Access code has reached maximum uses");
+      return {
+        id: updated.id,
+        code: updated.code,
+        maxUses: updated.max_uses,
+        usesCount: updated.uses_count,
+        expiresAt: updated.expires_at,
+        isActive: updated.is_active,
+        createdAt: updated.created_at,
+        updatedAt: updated.updated_at,
+      } as AccessCode;
+    } catch (err) {
+      if (err instanceof Error && /(not found|inactive|expired|maximum uses)/.test(err.message)) {
+        throw err;
+      }
+      console.error("[HybridStorage] incrementAccessCodeUse DB failure:", err);
+      return super.incrementAccessCodeUse(code);
+    }
+  }
+
+  async getAccessCodeRedemptions(params: { userId?: string; sessionId?: string }): Promise<AccessCodeRedemption[]> {
+    try {
+      if (!params.userId && !params.sessionId) return [];
+      const conditions = [];
+      if (params.userId) conditions.push(eq(redemptionsTable.userId, params.userId));
+      if (params.sessionId) conditions.push(eq(redemptionsTable.sessionId, params.sessionId));
+      const rows = await db.select().from(redemptionsTable)
+        .where(conditions.length > 1 ? drizzleSql`${conditions[0]} OR ${conditions[1]}` : conditions[0]);
+      return rows;
+    } catch (err) {
+      console.warn("[HybridStorage] getAccessCodeRedemptions DB failure:", err);
+      return super.getAccessCodeRedemptions(params);
+    }
+  }
+
+  async createAccessCodeRedemptionWithIncrement(params: {
+    accessCodeId: string;
+    userId?: string;
+    sessionId?: string;
+  }): Promise<AccessCodeRedemption> {
+    try {
+      const codeRows = await db.select().from(accessCodesTable).where(eq(accessCodesTable.id, params.accessCodeId)).limit(1);
+      if (codeRows.length === 0) throw new Error("Access code not found");
+      const code = codeRows[0];
+      // Atomic increment first (fails closed if exhausted/inactive/expired)
+      await this.incrementAccessCodeUse(code.code);
+      // Only insert redemption record after capacity is reserved
+      const [redemption] = await db.insert(redemptionsTable).values({
+        accessCodeId: params.accessCodeId,
+        userId: params.userId || null,
+        sessionId: params.sessionId || null,
+      }).returning();
+      return redemption;
+    } catch (err) {
+      if (err instanceof Error && /(not found|inactive|expired|maximum uses)/.test(err.message)) {
+        throw err;
+      }
+      console.error("[HybridStorage] createAccessCodeRedemption DB failure:", err);
+      return super.createAccessCodeRedemptionWithIncrement(params);
+    }
+  }
+
+  async getActiveAccessCodesForUser(params: { userId?: string; sessionId?: string }): Promise<AccessCode[]> {
+    try {
+      const redemptions = await this.getAccessCodeRedemptions(params);
+      if (redemptions.length === 0) return [];
+      const codeIds = Array.from(new Set(redemptions.map((r: any) => r.accessCodeId)));
+      const codes: AccessCode[] = [];
+      for (const codeId of codeIds) {
+        const rows = await db.select().from(accessCodesTable).where(eq(accessCodesTable.id, codeId)).limit(1);
+        const code = rows[0];
+        if (code && code.isActive && (!code.expiresAt || new Date() <= new Date(code.expiresAt))) {
+          codes.push(code);
+        }
+      }
+      return codes;
+    } catch (err) {
+      console.warn("[HybridStorage] getActiveAccessCodesForUser DB failure:", err);
+      return super.getActiveAccessCodesForUser(params);
+    }
+  }
+
+  // ── Account deletion (App Store compliance) ─────────────────────────────
+  async deleteProfileById(profileId: string): Promise<void> {
+    try {
+      await db.delete(profilesTable).where(eq(profilesTable.id, profileId));
+    } catch (err) {
+      console.error("[HybridStorage] deleteProfileById DB failure:", err);
+    }
+    await super.deleteProfileById(profileId);
+  }
+
+  async deleteUserAccount(userId: string): Promise<void> {
+    // 1. Remove in-memory associated state if using hybrid mode
+    await super.deleteUserAccount(userId);
+
+    try {
+      // 2. Cascade delete from persistent storage
+      // Note: order is important if foreign keys are enforced at DB level
+      await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
+      await db.delete(profiles).where(eq(profiles.userId, userId));
+      await db.delete(localUsers).where(eq(localUsers.id, userId));
+      await db.delete(users).where(eq(users.id, userId));
+      
+      console.log(`[Storage] Permanently purged all records for User: ${userId}`);
+    } catch (err) {
+      console.error("[HybridStorage] deleteUserAccount DB failure:", err);
+      throw err;
+    }
+  }
+
+  async migrateAccessCodeRedemptions(sessionId: string, userId: string): Promise<void> {
+    try {
+      await db.update(redemptionsTable)
+        .set({ userId })
+        .where(and(eq(redemptionsTable.sessionId, sessionId), drizzleSql`${redemptionsTable.userId} IS NULL`));
+    } catch (err) {
+      console.warn("[HybridStorage] migrateAccessCodeRedemptions DB failure:", err);
+      return super.migrateAccessCodeRedemptions(sessionId, userId);
+    }
+  }
+}
+
+// Use HybridStorage when DATABASE_URL is set so profiles + access codes persist across restarts.
+// Falls back to MemStorage for everything else (sessions, frequency logs, push subs, etc.)
+export const storage: IStorage = process.env.DATABASE_URL
+  ? new HybridStorage()
+  : new MemStorage();
+console.log(`[Storage] Using ${process.env.DATABASE_URL ? "HybridStorage (DB-backed profiles + access codes)" : "MemStorage (in-memory only)"}`);

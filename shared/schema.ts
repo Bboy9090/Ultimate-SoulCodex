@@ -1,117 +1,95 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, boolean, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { pgTable, uuid, text, varchar, integer, boolean, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql as drizzleSql } from "drizzle-orm";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email"),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
-  profileImageUrl: text("profile_image_url"),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
-  subscriptionStatus: text("subscription_status"),
-  subscriptionPlan: text("subscription_plan"),
-  subscriptionEndsAt: timestamp("subscription_ends_at"),
-  isPremium: boolean("is_premium").default(false),
-  createdAt: timestamp("created_at").default(sql`now()`),
-  updatedAt: timestamp("updated_at").default(sql`now()`),
-});
+// ── Drizzle tables (persistence-critical only) ────────────────────────────────
 
-export const profiles = pgTable("soul_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id"),
-  sessionId: varchar("session_id"),
+export const profiles = pgTable("profiles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id),
+  sessionId: text("session_id"),
   name: text("name").notNull(),
-  birthDate: timestamp("birth_date").notNull(),
+  birthDate: text("birth_date").notNull(),
   birthTime: text("birth_time"),
   birthLocation: text("birth_location"),
   timezone: text("timezone"),
   latitude: text("latitude"),
   longitude: text("longitude"),
-  isPremium: boolean("is_premium").default(false),
-  
-  // Astrology data
-  astrologyData: jsonb("astrology_data"),
-  
-  // Numerology data
-  numerologyData: jsonb("numerology_data"),
-  
-  // Personality data
-  personalityData: jsonb("personality_data"),
-  
-  // Archetype synthesis
-  archetypeData: jsonb("archetype_data"),
-  
-  // Additional synthesis data
-  humanDesignData: jsonb("human_design_data"),
-  vedicAstrologyData: jsonb("vedic_astrology_data"),
-  geneKeysData: jsonb("gene_keys_data"),
-  iChingData: jsonb("i_ching_data"),
-  chineseAstrologyData: jsonb("chinese_astrology_data"),
-  kabbalahData: jsonb("kabbalah_data"),
-  mayanAstrologyData: jsonb("mayan_astrology_data"),
-  chakraData: jsonb("chakra_data"),
-  sacredGeometryData: jsonb("sacred_geometry_data"),
-  runesData: jsonb("runes_data"),
-  sabianSymbolsData: jsonb("sabian_symbols_data"),
-  ayurvedaData: jsonb("ayurveda_data"),
-  biorhythmsData: jsonb("biorhythms_data"),
-  asteroidsData: jsonb("asteroids_data"),
-  arabicPartsData: jsonb("arabic_parts_data"),
-  fixedStarsData: jsonb("fixed_stars_data"),
-  purposeStatement: text("purpose_statement"),
-  
-  // Generated content
-  biography: text("biography"),
-  dailyGuidance: text("daily_guidance"),
-  
-  createdAt: timestamp("created_at").default(sql`now()`),
-  updatedAt: timestamp("updated_at").default(sql`now()`),
-});
+  // Flexible bag for all esoteric system data (astrology, numerology, HD, etc.)
+  data: jsonb("data").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index("profiles_user_idx").on(t.userId),
+  sessionIdx: index("profiles_session_idx").on(t.sessionId),
+}));
 
-export const assessmentResponses = pgTable("assessment_responses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  profileId: varchar("profile_id").notNull(),
-  assessmentType: text("assessment_type").notNull(), // 'enneagram', 'mbti'
-  responses: jsonb("responses").notNull(),
-  calculatedType: text("calculated_type"),
-  createdAt: timestamp("created_at").default(sql`now()`),
-});
+export const accessCodes = pgTable("access_codes", {
+  id: varchar("id").primaryKey().default(drizzleSql`gen_random_uuid()`),
+  code: text("code").notNull(),
+  maxUses: integer("max_uses").notNull().default(1),
+  usesCount: integer("uses_count").notNull().default(0),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  codeIdx: uniqueIndex("access_codes_code_idx").on(t.code),
+}));
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
+export const accessCodeRedemptions = pgTable("access_code_redemptions", {
+  id: varchar("id").primaryKey().default(drizzleSql`gen_random_uuid()`),
+  accessCodeId: varchar("access_code_id").notNull(),
+  userId: varchar("user_id"),
+  sessionId: varchar("session_id"),
+  redeemedAt: timestamp("redeemed_at").notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index("redemptions_user_idx").on(t.userId),
+  sessionIdx: index("redemptions_session_idx").on(t.sessionId),
+  codeIdx: index("redemptions_code_idx").on(t.accessCodeId),
+}));
 
-export const insertProfileSchema = createInsertSchema(profiles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  appleId: text("apple_id").unique(),
+  email: text("email"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
+  // Billing tracking
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status"),
+  subscriptionPlan: text("subscription_plan"),
+  subscriptionEndsAt: timestamp("subscription_ends_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  appleIdx: uniqueIndex("users_apple_idx").on(t.appleId),
+  emailIdx: index("users_email_idx").on(t.email),
+}));
 
-export const insertAssessmentSchema = createInsertSchema(assessmentResponses).omit({
-  id: true,
-  createdAt: true,
-});
+export const localUsers = pgTable("local_users", {
+  id: uuid("id").primaryKey().references(() => users.id), // Links to users.id
+  email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  passwordVersion: integer("password_version").notNull().default(1),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  emailIdx: uniqueIndex("local_users_email_idx").on(t.email),
+}));
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type InsertProfile = z.infer<typeof insertProfileSchema>;
-export type Profile = typeof profiles.$inferSelect;
-export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
-export type Assessment = typeof assessmentResponses.$inferSelect;
+// ── Zod runtime schemas (used by routes) ──────────────────────────────────────
 
-// Additional schemas for API requests
+// Zod schemas used at runtime in routes
 export const birthDataSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  birthDate: z.string().min(1, "Birth date is required"),
-  birthTime: z.string().min(1, "Birth time is required"),
-  birthLocation: z.string().min(1, "Birth location is required"),
-  timezone: z.string().min(1, "Timezone is required"),
+  name: z.string().min(1),
+  birthDate: z.string().min(1),
+  birthTime: z.string().optional(),
+  birthLocation: z.string().optional(),
+  timezone: z.string().optional(),
   latitude: z.union([z.string(), z.number()]).optional(),
   longitude: z.union([z.string(), z.number()]).optional(),
   // Optional: Parent signs for parental influence calculation
@@ -142,55 +120,41 @@ export const insertPushSubscriptionSchema = z.object({
     p256dh: z.string(),
     auth: z.string(),
   }),
-  userId: z.string().optional().nullable(),
-  sessionId: z.string().optional().nullable(),
-  isActive: z.boolean().optional(),
 });
 
 export const enneagramAssessmentSchema = z.object({
-  responses: z.array(z.number().min(1).max(5)).length(36),
+  responses: z.array(z.number()).min(1),
 });
 
 export const mbtiAssessmentSchema = z.object({
-  responses: z.array(z.string()).length(20),
+  responses: z.array(z.number()).min(1),
 });
 
-export const dailyCardSchema = z.object({
-  phase: z.string(),
-  decisionStyle: z.string(),
-  astrologyData: z.unknown().optional(),
-});
+// ── Type definitions ──────────────────────────────────────────────────────────
 
-export type BirthData = z.infer<typeof birthDataSchema>;
-export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
-export type MBTIAssessment = z.infer<typeof mbtiAssessmentSchema>;
-export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type User = typeof users.$inferSelect;
+export type UpsertUser = Partial<User> & { id: string };
+export type Profile = typeof profiles.$inferSelect;
+export type InsertProfile = typeof profiles.$inferInsert;
+export type LocalUser = typeof localUsers.$inferSelect;
+export type InsertLocalUser = typeof localUsers.$inferInsert;
 
-export interface PushSubscription extends InsertPushSubscription {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  userId: string | null;
-  sessionId: string | null;
-  isActive: boolean;
-}
+export type AccessCode = typeof accessCodes.$inferSelect;
+export type InsertAccessCode = typeof accessCodes.$inferInsert;
+export type AccessCodeRedemption = typeof accessCodeRedemptions.$inferSelect;
 
-// Missing STUB types
-export type UpsertUser = any;
+// Other placeholders can remain 'any' if not used in drizzle tables
 export type Person = any;
 export type InsertPerson = any;
-export type AccessCode = any;
-export type AccessCodeRedemption = any;
-export type InsertAccessCode = any;
+export type Assessment = any;
+export type InsertAssessment = any;
 export type DailyInsight = any;
 export type InsertDailyInsight = any;
 export type CompatibilityAnalysis = any;
 export type InsertCompatibility = any;
-export type LocalUser = any;
+export type PushSubscription = any;
+export type InsertPushSubscription = any;
 export type FrequencyLog = any;
 export type InsertFrequencyLog = any;
 export type WebhookEvent = any;
 export type InsertWebhookEvent = any;
-
-export type DailyCard = z.infer<typeof dailyCardSchema>;
-

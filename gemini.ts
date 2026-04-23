@@ -1,43 +1,36 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Use Replit AI integration for Gemini
-const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-const apiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+// Use direct API key to avoid Replit dependency
+const apiKey = process.env.GEMINI_API_KEY;
 
-// Check if configured
-const hasReplitIntegration = !!baseUrl && !!apiKey;
-const hasManualKey = !baseUrl && !!apiKey && apiKey !== "_DUMMY_API_KEY_";
-
-if (!hasReplitIntegration && !hasManualKey) {
-  console.warn("Gemini AI not configured. AI features will use fallback templates.");
+if (!apiKey || apiKey === "_DUMMY_API_KEY_") {
+  console.warn("[Gemini] API key is missing. AI features will use fallback templates.");
 } else {
-  console.log("Gemini AI configured via", hasReplitIntegration ? "Replit AI integration" : "manual API key");
+  console.log("[Gemini] Configured with direct API key");
 }
 
-// Create Gemini client with Replit AI integration
-const ai = hasReplitIntegration 
+// Create Gemini client
+const ai = apiKey && apiKey !== "_DUMMY_API_KEY_"
   ? new GoogleGenAI({
-      apiKey: apiKey!,
-      httpOptions: {
-        apiVersion: "",
-        baseUrl: baseUrl,
-      },
+      apiKey: apiKey,
     })
   : null;
 
 export function isGeminiAvailable() {
-  return hasReplitIntegration || hasManualKey;
+  return !!ai;
 }
 
+const DEFAULT_MODEL = "gemini-2.5-flash";
+
 export async function generateText({ model, prompt, temperature = 0.7 }: { model?: string; prompt: string; temperature?: number; }): Promise<string> {
-  if (!isGeminiAvailable() || !ai) return "";
+  if (!ai) return "";
   try {
     const response = await ai.models.generateContent({
-      model: model || "gemini-2.5-flash",
-      contents: prompt,
+      model: model || DEFAULT_MODEL,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         temperature,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       },
     });
     return response.text || "";
@@ -51,21 +44,21 @@ export async function* streamChat({ model, systemInstruction, history, message, 
   if (!ai) throw new Error("Gemini not configured");
   
   const contents = [
-    ...history.map((h: any) => ({
+    ...(history || []).map((h: any) => ({
       role: h.role === 'user' ? 'user' : 'model',
-      parts: [{ text: h.content }]
+      parts: [{ text: h.content ?? h.parts?.[0]?.text ?? "" }]
     })),
     { role: 'user', parts: [{ text: message }] }
   ];
 
   try {
     const stream = await ai.models.generateContentStream({
-      model: model || "gemini-2.5-flash",
+      model: model || DEFAULT_MODEL,
       contents,
       config: {
-        systemInstruction,
+        systemInstruction: systemInstruction ?? undefined,
         temperature: temperature || 0.7,
-        maxOutputTokens: 1000,
+        maxOutputTokens: 2048,
       },
     });
 

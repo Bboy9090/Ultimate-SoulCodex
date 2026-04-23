@@ -1,0 +1,185 @@
+Core Themes
+▪
+boundaries
+170
+◎
+freedom
+162
+◆
+truth
+90
+◉
+privacy
+80
+⬛
+discipline
+80
+⚙
+innovation
+72
+◈
+precision
+72
+⧫
+CODENAME: core meanings shouldnt be just a number not explained itshould atleast be a meter with the numbe ror something better'Use this as the **Replit prompt** for **Dads Million Miles**.
+
+```text id="u0kl3z"
+You are working on an existing app called:
+
+Dads Million Miles
+
+Your job is NOT to rebuild the app.
+Your job is to upgrade the visual design so it feels warm, premium, trustworthy, memory-driven, and emotionally strong.
+
+==================================================
+GOAL
+==================================================
+
+Make the app look and feel like:
+- strong
+- steady
+- sentimental
+- premium
+- family-centered
+- memory-driven
+
+Do NOT make it look:
+- childish
+- loud
+- overly playful
+- like a generic SaaS dashboard
+- like a finance app
+- like a baby-product template
+
+==================================================
+DESIGN DIRECTION
+==================================================
+
+Use a restrained palette with these colors:
+
+Primary / Midnight Navy:
+#1F2A44
+
+Secondary / Denim Blue:
+#4E6E81
+
+Background / Warm Cream:
+#F5EFE6
+
+Accent / Amber Gold:
+#D9A441
+
+Support / Forest Green:
+#5C6B5F
+
+Emotional Highlight / Soft Brick:
+#B86A4F
+
+Neutral text:
+#1E1E1E
+
+Muted text:
+#6B7280
+
+Card background:
+#FFFDFC
+
+Card border:
+#E7DED2
+
+==================================================
+COLOR USAGE RULES
+==================================================
+
+- Use navy + cream as the main foundation
+- Use gold sparingly for milestones, highlights, stars, key stats
+- Use denim and forest for supporting UI and secondary actions
+- Use soft brick only for emotionally important moments or story emphasis
+- Do NOT use all colors equally
+- Keep the interface calm and intentional
+
+==================================================
+WHAT TO POLISH FIRST
+==================================================
+
+Start with these only:
+1. top navigation / header
+2. main page shell / background
+3. cards
+4. primary and secondary buttons
+5. milestone badges / highlight chips
+
+Do NOT redesign every page in one pass.
+
+==================================================
+VISUAL RULES
+==================================================
+
+- cards should feel like memory containers, not admin panels
+- borders should be soft and warm
+- shadows should be subtle
+- corners should feel premium, not toy-like
+- typography should be readable and emotionally grounded
+- use stronger spacing rhythm
+- reduce visual clutter
+- make the app feel calm and trustworthy
+
+==================================================
+BUTTON RULES
+==================================================
+
+Primary button:
+- navy background
+- white text
+- strong, dependable feel
+
+Secondary button:
+- denim or forest tone
+- lighter background or outline
+- never louder than primary
+
+Highlight chip / badge:
+- amber gold used sparingly
+
+Emotional story callout:
+- soft brick used sparingly
+
+==================================================
+DO NOT
+==================================================
+
+- do not add random features
+- do not redesign the app from scratch
+- do not add rainbow gradients everywhere
+- do not make it look like a toy
+- do not make it look cold or corporate
+- do not overuse gold or brick
+- do not create a second design system
+
+==================================================
+TASK
+==================================================
+
+1. Create or update the shared design tokens/theme variables
+2. Apply them consistently to the app shell
+3. Improve visual consistency of:
+   - nav
+   - cards
+   - buttons
+   - chips / badges
+4. Keep everything responsive
+5. Report exactly:
+   - what files were changed
+   - what components were polished
+   - how the new palette is used
+   - what still needs future polish
+
+Start with the header/nav, cards, buttons, and milestone badges only.
+Do not touch every page yet.
+```
+
+If you want a shorter line to paste after it, use:
+
+```text id="69qy4q"
+Keep the app warm, premium, and emotionally grounded. Do not make it look like a startup dashboard.
+```

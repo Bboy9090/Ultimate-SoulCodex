@@ -52,6 +52,8 @@ class EntitlementService {
       sessionId: params.sessionId,
     });
 
+    console.log(`[Entitlements] Access code check for user=${params.userId || 'anon'}, session=${params.sessionId}: found ${activeCodes.length} active codes`);
+
     if (activeCodes.length > 0) {
       const code = activeCodes[0];
       return {
