@@ -26,7 +26,7 @@ export async function setupAuth(app: Express) {
   const sessionStore = process.env.DATABASE_URL
     ? new PgSession({
         conString: process.env.DATABASE_URL,
-        tableName: "user_sessions",
+        tableName: "sessions",
         createTableIfMissing: false,
       })
     : new MemoryStore({ checkPeriod: 86400000 });

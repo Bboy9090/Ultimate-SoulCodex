@@ -312,7 +312,7 @@ export default function OnboardingPage() {
         style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem", position: "relative", overflow: "hidden" }}
       >
         <img
-          src="/soul-codex-logo.svg"
+          src="/soul-codex-logo-star.png"
           aria-hidden="true"
           style={{
             position: "absolute", top: "50%", left: "50%",
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
   return (
     <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600, position: "relative", overflow: "hidden" }}>
       <img
-        src="/soul-codex-logo.svg"
+        src="/soul-codex-logo-star.png"
         aria-hidden="true"
         style={{
           position: "absolute", top: "-80px", left: "50%",

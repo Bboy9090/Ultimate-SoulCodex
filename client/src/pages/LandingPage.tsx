@@ -91,37 +91,24 @@ export default function LandingPage() {
     <div className="landing-nebula" style={{ minHeight: "100vh", overflowX: "hidden", position: "relative" }}>
 
       {/* ── Top nav ─────────────────────────────────────────────────────────── */}
-      <header style={{
-        position: "sticky", top: 0, zIndex: 50,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0.9rem 2rem",
-        background: "rgba(26,14,7,0.82)",
-        borderBottom: "1px solid rgba(212,168,95,0.12)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-      }}>
+      <header className="sc-marketing-header">
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.6rem", textDecoration: "none" }}>
-          <img src="/soul-codex-logo.svg" alt="Soul Codex" style={{ width: 30, height: 30, filter: "drop-shadow(0 0 6px rgba(212,168,95,0.5))" }} />
+          <img src="/soul-codex-logo-star.png" alt="Soul Codex" style={{ width: 30, height: 30, filter: "drop-shadow(0 0 6px rgba(212,168,95,0.5))" }} />
           <span style={{ fontFamily: "var(--font-serif)", fontSize: "1rem", letterSpacing: "0.08em", color: "var(--sc-ivory)" }}>Soul Codex</span>
         </Link>
-        <nav style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <nav className="sc-marketing-nav">
           {[
             { label: "How It Works", href: "#how-it-works" },
             { label: "Systems",      href: "#systems" },
             { label: "Pricing",      href: "#pricing" },
           ].map((l) => (
-            <a key={l.href} href={l.href} style={{
-              fontSize: "0.82rem", padding: "0.4rem 0.75rem",
-              color: "rgba(246,241,232,0.55)", textDecoration: "none",
-              transition: "color 0.15s",
-              borderRadius: 6,
-            }}
+            <a key={l.href} href={l.href} className="sc-marketing-link"
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--sc-ivory)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(246,241,232,0.55)")}
             >{l.label}</a>
           ))}
           <Link href="/start">
-            <button className="btn btn-primary" style={{ fontSize: "0.82rem", padding: "0.4rem 1.1rem", marginLeft: "0.5rem" }}>
+            <button className="btn btn-primary sc-marketing-cta">
               Get Started
             </button>
           </Link>
@@ -131,7 +118,7 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════
           HERO
       ═══════════════════════════════════════════ */}
-      <section style={{
+      <section className="sc-landing-hero" style={{
         position: "relative", overflow: "hidden",
         minHeight: "88vh",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -142,7 +129,7 @@ export default function LandingPage() {
         <Orb style={{ width: 350, height: 350, top: "40%", right: "10%", background: `radial-gradient(circle at 50% 50%, ${GOLD},0.10) 0%, transparent 60%)` }} />
 
         {/* Background logo glow */}
-        <img src="/soul-codex-logo.svg" aria-hidden="true" style={{
+        <img src="/soul-codex-logo-star.png" aria-hidden="true" style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%,-50%)",
           width: 700, height: 700, objectFit: "contain",
@@ -150,11 +137,11 @@ export default function LandingPage() {
           filter: "blur(38px)", pointerEvents: "none", userSelect: "none", zIndex: 0,
         }} />
 
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 700 }}>
+        <div className="sc-hero-panel animate-fadeInScale" style={{ position: "relative", zIndex: 1, maxWidth: 700 }}>
           {/* Logo */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.75rem" }}>
+          <div className="sc-hero-logo-wrap animate-floatUp" style={{ display: "flex", justifyContent: "center", marginBottom: "1.75rem" }}>
             <img
-              src="/soul-codex-logo.svg" alt="Soul Codex"
+              src="/soul-codex-logo-star.png" alt="Soul Codex"
               style={{
                 width: 110, height: 110,
                 filter: "drop-shadow(0 0 30px rgba(212,168,95,0.6)) drop-shadow(0 0 70px rgba(200,130,60,0.28))",
@@ -163,7 +150,7 @@ export default function LandingPage() {
           </div>
 
           {/* Eyebrow badge */}
-          <div style={{
+          <div className="sc-kicker" style={{
             display: "inline-flex", alignItems: "center", gap: "0.5rem",
             padding: "0.3rem 1rem", borderRadius: 99,
             background: "rgba(212,168,95,0.08)", border: "1px solid rgba(212,168,95,0.25)",
@@ -174,7 +161,7 @@ export default function LandingPage() {
             <span>Free to start · No account required</span>
           </div>
 
-          <h1 style={{
+          <h1 className="sc-hero-title" style={{
             fontFamily: "var(--font-serif)",
             fontSize: "clamp(2.8rem, 8vw, 5rem)",
             lineHeight: 1.1, marginBottom: "1.5rem",
@@ -184,7 +171,7 @@ export default function LandingPage() {
             <br />Soul Codex
           </h1>
 
-          <p style={{
+          <p className="sc-hero-copy" style={{
             fontSize: "clamp(1rem, 2.5vw, 1.2rem)",
             color: "rgba(246,241,232,0.62)",
             lineHeight: 1.75, marginBottom: "2.5rem",
@@ -193,7 +180,7 @@ export default function LandingPage() {
             One sharp reading built from astrology, numerology, Human Design, timing systems, and behavioral pattern analysis.
           </p>
 
-          <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+          <div className="sc-hero-actions" style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/start">
               <button className="btn btn-primary" style={{ fontSize: "1rem", padding: "0.85rem 2.25rem" }}>
                 Build My Profile
@@ -207,9 +194,9 @@ export default function LandingPage() {
           </div>
 
           {/* Trust strip */}
-          <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "3rem", opacity: 0.5 }}>
+          <div className="sc-trust-strip" style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "3rem", opacity: 0.5 }}>
             {["Free to start", "Private", "~15 min"].map((t) => (
-              <span key={t} style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.7)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <span className="sc-trust-pill" key={t} style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.7)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
                 <span style={{ color: "var(--sc-gold)", fontSize: "0.55rem" }}>✦</span>{t}
               </span>
             ))}
@@ -225,6 +212,7 @@ export default function LandingPage() {
       <section style={{ position: "relative", padding: "6rem 1.5rem", overflow: "hidden" }}>
         <Orb style={{ width: 400, height: 400, top: 0, right: "-5%", background: `radial-gradient(circle, ${AMBER},0.14) 0%, transparent 60%)` }} />
         <div style={{ maxWidth: 500, margin: "0 auto", textAlign: "center" }}>
+          <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Preview</div>
           <p style={{ fontSize: "0.68rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "0.75rem", opacity: 0.7 }}>
             Example output
           </p>
@@ -232,7 +220,7 @@ export default function LandingPage() {
             This is what you get
           </h2>
 
-          <div style={{ ...cardStyle, borderTop: "2px solid rgba(212,168,95,0.4)", padding: "2.25rem 2rem", textAlign: "left" }}>
+          <div className="sc-polish-card" style={{ ...cardStyle, borderTop: "2px solid rgba(212,168,95,0.4)", padding: "2.25rem 2rem", textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1.5rem" }}>
               <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.6 }}>✦</span>
               <span style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(246,241,232,0.45)" }}>Soul Archetype</span>
@@ -276,6 +264,7 @@ export default function LandingPage() {
         <Orb style={{ width: 500, height: 500, bottom: "-10%", left: "-5%", background: `radial-gradient(circle, ${BROWN},0.18) 0%, transparent 60%)` }} />
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+            <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Flow</div>
             <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 4vw, 2.4rem)", marginBottom: "0.6rem", color: "var(--sc-gold)" }}>
               How It Works
             </h2>
@@ -283,7 +272,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.25rem" }}>
             {STEPS.map((step) => (
-              <div key={step.num} style={{ ...cardStyle, padding: "1.75rem", borderTop: "1px solid rgba(212,168,95,0.2)" }}>
+              <div className="sc-polish-card" key={step.num} style={{ ...cardStyle, padding: "1.75rem", borderTop: "1px solid rgba(212,168,95,0.2)" }}>
                 <div style={{
                   fontSize: "clamp(1.8rem, 4vw, 2.4rem)", fontWeight: 700,
                   color: "rgba(212,168,95,0.35)",
@@ -309,6 +298,7 @@ export default function LandingPage() {
         <Orb style={{ width: 450, height: 450, top: "10%", right: "-5%", background: `radial-gradient(circle, ${GOLD},0.09) 0%, transparent 60%)` }} />
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+            <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Daily Use</div>
             <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 4vw, 2.4rem)", marginBottom: "0.6rem", color: "var(--sc-gold)" }}>
               Everything in One Place
             </h2>
@@ -318,7 +308,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.25rem" }}>
             {FEATURES.map((f) => (
-              <div key={f.title} style={{
+              <div className="sc-polish-card" key={f.title} style={{
                 ...cardStyle, padding: "1.75rem 1.5rem",
                 display: "flex", flexDirection: "column",
                 borderTop: "2px solid rgba(212,168,95,0.22)",
@@ -346,6 +336,7 @@ export default function LandingPage() {
         <Orb style={{ width: 400, height: 400, top: "-5%", left: "-5%", background: `radial-gradient(circle, ${AMBER},0.16) 0%, transparent 60%)` }} />
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+            <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Built From</div>
             <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 4vw, 2.4rem)", marginBottom: "0.6rem", color: "var(--sc-gold)" }}>
               What Goes Into Your Reading
             </h2>
@@ -355,7 +346,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
             {SYSTEMS.map((sys) => (
-              <div key={sys.category} style={{ ...cardStyle, padding: "1.25rem", borderTop: "1px solid rgba(212,168,95,0.18)" }}>
+              <div className="sc-polish-card" key={sys.category} style={{ ...cardStyle, padding: "1.25rem", borderTop: "1px solid rgba(212,168,95,0.18)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
                   <span style={{ fontSize: "1rem", color: "var(--sc-gold)", opacity: 0.7 }}>{sys.glyph}</span>
                   <span style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 600, opacity: 0.8 }}>
@@ -388,6 +379,7 @@ export default function LandingPage() {
         <Orb style={{ width: 500, height: 500, bottom: "-15%", right: "-10%", background: `radial-gradient(circle, ${AMBER},0.18) 0%, transparent 60%)` }} />
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+            <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Membership</div>
             <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 4vw, 2.4rem)", marginBottom: "0.6rem", color: "var(--sc-gold)" }}>
               Start Free
             </h2>
@@ -398,7 +390,7 @@ export default function LandingPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: "1.25rem" }}>
             {/* Free tier */}
-            <div style={{ ...cardStyle, padding: "2.25rem 2rem" }}>
+            <div className="sc-polish-card" style={{ ...cardStyle, padding: "2.25rem 2rem" }}>
               <div style={{ fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(246,241,232,0.45)", marginBottom: "0.5rem" }}>Free</div>
               <div style={{ fontSize: "2.5rem", fontWeight: 700, color: "var(--sc-ivory)", lineHeight: 1, marginBottom: "0.3rem" }}>$0</div>
               <div style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.45)", marginBottom: "2rem" }}>No credit card needed</div>
@@ -422,7 +414,7 @@ export default function LandingPage() {
             </div>
 
             {/* Premium tier */}
-            <div style={{
+            <div className="sc-polish-card sc-premium-card" style={{
               ...cardStyle, padding: "2.25rem 2rem",
               position: "relative",
               borderTop: "2px solid rgba(212,168,95,0.55)",
@@ -474,14 +466,15 @@ export default function LandingPage() {
       ═══════════════════════════════════════════ */}
       <section style={{ padding: "7rem 1.5rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <Orb style={{ width: 700, height: 700, top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: `radial-gradient(circle at 50% 50%, ${AMBER},0.16) 0%, transparent 55%)` }} />
-        <img src="/soul-codex-logo.svg" aria-hidden="true" style={{
+        <img src="/soul-codex-logo-star.png" aria-hidden="true" style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%,-50%)",
           width: 620, height: 620,
           opacity: 0.055, mixBlendMode: "screen",
           filter: "blur(36px)", pointerEvents: "none", userSelect: "none", zIndex: 0,
         }} />
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 520, margin: "0 auto" }}>
+        <div className="sc-closing-panel" style={{ position: "relative", zIndex: 1, maxWidth: 520, margin: "0 auto" }}>
+          <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Begin</div>
           <div style={{ fontSize: "2.5rem", marginBottom: "1.25rem", color: "var(--sc-gold)", opacity: 0.4 }}>✦</div>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.8rem, 5vw, 2.8rem)", marginBottom: "0.85rem", lineHeight: 1.15, color: "var(--sc-gold)" }}>
             Ready to See Yours?
@@ -508,7 +501,7 @@ export default function LandingPage() {
         display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <img src="/soul-codex-logo.svg" alt="" style={{ width: 20, height: 20, opacity: 0.6 }} />
+          <img src="/soul-codex-logo-star.png" alt="" style={{ width: 20, height: 20, opacity: 0.6 }} />
           <span style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.35)" }}>Soul Codex</span>
         </div>
         <p style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.28)", margin: 0 }}>

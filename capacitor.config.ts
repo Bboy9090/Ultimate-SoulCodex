@@ -1,10 +1,20 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
+const serverUrl = process.env.CAPACITOR_SERVER_URL?.trim();
+
 const config: CapacitorConfig = {
   appId: "app.soulcodex.ios",
   appName: "Soul Codex",
   webDir: "dist/public",
   backgroundColor: "#1A0E07",
+  ...(serverUrl
+    ? {
+        server: {
+          url: serverUrl,
+          cleartext: false,
+        },
+      }
+    : {}),
 
   ios: {
     scheme: "Soul Codex",

@@ -60,7 +60,7 @@ export default function Nav() {
   return (
     <nav className="sc-sidebar">
       <Link href="/" className="sc-sidebar-brand">
-        <img src="/soul-codex-logo.svg" alt="Soul Codex logo" />
+        <img src="/soul-codex-logo-star.png" alt="Soul Codex logo" />
         <span>Soul Codex</span>
       </Link>
 

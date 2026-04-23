@@ -601,10 +601,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate birth data
       const validatedBirthData = birthDataSchema.parse(birth_data);
+
+      const normalizeOptionalText = (value: unknown): string | undefined => {
+        if (typeof value !== "string") return undefined;
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : undefined;
+      };
+
+      const normalizeCoordinateValue = (value: unknown): string | number | undefined => {
+        if (typeof value === "number") {
+          return Number.isFinite(value) ? value : undefined;
+        }
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (!trimmed) return undefined;
+          const parsed = parseFloat(trimmed);
+          return Number.isFinite(parsed) ? trimmed : undefined;
+        }
+        return undefined;
+      };
+
+      const isValidTime24 = (value: string | undefined): value is string =>
+        !!value && /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
+
+      validatedBirthData.birthTime = normalizeOptionalText(validatedBirthData.birthTime);
+      validatedBirthData.birthLocation = normalizeOptionalText(validatedBirthData.birthLocation);
+      validatedBirthData.timezone = normalizeOptionalText(validatedBirthData.timezone);
+      validatedBirthData.latitude = normalizeCoordinateValue(validatedBirthData.latitude);
+      validatedBirthData.longitude = normalizeCoordinateValue(validatedBirthData.longitude);
+      if (!isValidTime24(validatedBirthData.birthTime)) {
+        validatedBirthData.birthTime = undefined;
+      }
       
       // Geocode if lat/lng/timezone are missing but birthLocation is provided
       let resolvedGeo: Awaited<ReturnType<typeof resolveGeo>> = null;
-      if (validatedBirthData.birthLocation && (!validatedBirthData.latitude || !validatedBirthData.longitude)) {
+      if (validatedBirthData.birthLocation &&
+          (validatedBirthData.latitude === undefined || validatedBirthData.longitude === undefined)) {
         try {
           resolvedGeo = await resolveGeo(validatedBirthData.birthLocation);
           if (resolvedGeo) {
@@ -622,11 +654,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (e) {
           console.error("[SoulArchetype] Geocoding failed:", e);
         }
-      } else if (validatedBirthData.latitude && validatedBirthData.longitude) {
+      } else if (validatedBirthData.latitude !== undefined && validatedBirthData.longitude !== undefined) {
         resolvedGeo = {
           normalizedPlace: validatedBirthData.birthLocation ?? "",
-          lat: parseFloat(validatedBirthData.latitude.toString()),
-          lon: parseFloat(validatedBirthData.longitude.toString()),
+          lat: parseFloat(String(validatedBirthData.latitude)),
+          lon: parseFloat(String(validatedBirthData.longitude)),
           provider: "static",
         };
       }
@@ -636,14 +668,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedBirthData.birthTime && 
         validatedBirthData.birthLocation && 
         validatedBirthData.timezone && 
-        validatedBirthData.latitude && 
-        validatedBirthData.longitude
+        validatedBirthData.latitude !== undefined && 
+        validatedBirthData.longitude !== undefined
       );
 
       // Compute confidence badge
       const confidence = computeConfidence({
         timeUnknown: !validatedBirthData.birthTime,
-        hasGeo: !!(resolvedGeo?.lat && resolvedGeo?.lon),
+        hasGeo: resolvedGeo?.lat !== undefined && resolvedGeo?.lon !== undefined,
         hasTimezone: !!validatedBirthData.timezone,
       });
       
@@ -657,8 +689,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timeUnknown: !validatedBirthData.birthTime,
           place: validatedBirthData.birthLocation ?? "Unknown",
           timezone: validatedBirthData.timezone,
-          lat: validatedBirthData.latitude ? parseFloat(validatedBirthData.latitude.toString()) : undefined,
-          lon: validatedBirthData.longitude ? parseFloat(validatedBirthData.longitude.toString()) : undefined,
+          lat: validatedBirthData.latitude !== undefined ? parseFloat(String(validatedBirthData.latitude)) : undefined,
+          lon: validatedBirthData.longitude !== undefined ? parseFloat(String(validatedBirthData.longitude)) : undefined,
           houseSystem: "equal",
         });
         if (hasCompleteData) {

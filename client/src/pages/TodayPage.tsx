@@ -186,7 +186,7 @@ export default function TodayPage() {
   if (cardMutation.isPending && !card) {
     return (
       <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.5rem" }}>
-        <img src="/soul-codex-logo.svg" alt="" style={{ width: 72, height: 72, opacity: 0.7, animation: "spin 6s linear infinite", filter: "drop-shadow(0 0 14px rgba(212,168,95,0.4))" }} />
+        <img src="/soul-codex-logo-star.png" alt="" style={{ width: 72, height: 72, opacity: 0.7, animation: "spin 6s linear infinite", filter: "drop-shadow(0 0 14px rgba(212,168,95,0.4))" }} />
         <p style={{ color: "var(--sc-gold)", fontFamily: "var(--font-serif)", fontSize: "1rem", letterSpacing: "0.04em" }}>
           Reading today's signals…
         </p>
@@ -247,7 +247,7 @@ export default function TodayPage() {
       {/* ── Hero: logo + title ──────────────────────────────────────────── */}
       <div style={{ textAlign: "center", paddingBottom: "1.75rem", paddingTop: "0.5rem" }}>
         <img
-          src="/soul-codex-logo.svg"
+          src="/soul-codex-logo-star.png"
           alt="Soul Codex"
           style={{ width: 110, height: 110, filter: "drop-shadow(0 0 28px rgba(212,168,95,0.55)) drop-shadow(0 0 60px rgba(200,130,60,0.25))" }}
         />

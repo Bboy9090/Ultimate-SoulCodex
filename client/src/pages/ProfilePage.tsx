@@ -446,7 +446,7 @@ export default function ProfilePage() {
         initial={{ opacity: 0, scale: 1.2 }}
         animate={{ opacity: 0.055, scale: 1 }}
         transition={{ duration: 2 }}
-        src="/soul-codex-logo.svg"
+        src="/soul-codex-logo-star.png"
         aria-hidden="true"
         style={{
           position: "absolute", top: "-40px", left: "50%",
@@ -479,7 +479,7 @@ export default function ProfilePage() {
           style={{ display: "flex", justifyContent: "center", marginBottom: "0.85rem", cursor: "pointer" }}
         >
           <img
-            src="/soul-codex-logo.svg"
+            src="/soul-codex-logo-star.png"
             alt="Soul Codex"
             style={{
               width: 72, height: 72,
