@@ -1,39 +1,34 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "../lib/queryClient";
-import ConfidenceBadge from "../components/ConfidenceBadge";
+import { apiRequest } from "@/lib/queryClient";
+import ConfidenceBadge from "@/components/ConfidenceBadge";
+import { Link } from "wouter";
 
 interface ThemeScore {
   tag: string;
   score: number;
-  sources: string[];
+  sources?: string[];
 }
 
 interface CodexSynthesis {
   codename: string;
   archetype: string;
-  badges: {
-    badge: "verified" | "partial" | "unverified";
-    label: string;
-    reason: string;
-    aiAssuranceNote: string;
-    /** Legacy API shape */
-    confidenceLabel?: string;
-  };
+  badges: { confidenceLabel: string; reason: string };
   topThemes: ThemeScore[];
   strengths: string[];
   shadows: string[];
   triggers: string[];
   prescriptions: string[];
   narrative: string;
+  isPremium: boolean;
 }
 
 // Map section header prefixes to accent colors + glyphs
 const SECTION_ACCENTS: Record<string, { color: string; glyph: string }> = {
   "CODENAME":   { color: "#fbbf24", glyph: "⧫" },
   "MOTTO":      { color: "#a78bfa", glyph: "◈" },
-  "WHO I AM":   { color: "#8b5cf6", glyph: "◉" },
+  "WHO I AM":   { color: "#D4A85F", glyph: "◉" },
   "HOW I MOVE": { color: "#f59e0b", glyph: "⬡" },
   "WHAT I WON": { color: "#f472b6", glyph: "◌" },
   "WHAT I'M B": { color: "#fbbf24", glyph: "◆" },
@@ -45,7 +40,7 @@ function getSectionAccent(header: string) {
   for (const [key, val] of Object.entries(SECTION_ACCENTS)) {
     if (upper.startsWith(key)) return val;
   }
-  return { color: "#8b5cf6", glyph: "◈" };
+  return { color: "#D4A85F", glyph: "◈" };
 }
 
 const SECTION_HEADERS = [
@@ -82,118 +77,39 @@ const THEME_ICONS: Record<string, string> = {
   social_sensitivity: "◌", truth: "◆", boundaries: "▪", courage: "▶", focus: "⊕",
 };
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      fontSize: "0.65rem", letterSpacing: "0.15em", textTransform: "uppercase",
-      color: "var(--muted-foreground)", marginBottom: "0.85rem", fontWeight: 700
-    }}>
-      {children}
-    </div>
-  );
+const THEME_DISPLAY: Record<string, string> = {
+  precision: "Precision", service: "Service", privacy: "Discretion",
+  intensity: "Intensity", freedom: "Freedom", leadership: "Leadership",
+  healing: "Healing", order: "Order", innovation: "Innovation",
+  intuition: "Intuition", discipline: "Discipline", rebellion: "Independence",
+  craft: "Craft", legacy: "Legacy", emotion_depth: "Emotional Depth",
+  social_sensitivity: "Social Attunement", truth: "Truth",
+  boundaries: "Sovereignty", courage: "Courage", focus: "Focus",
+};
+
+function displayTheme(tag: string): string {
+  return THEME_DISPLAY[tag] ?? tag.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div style={{
-      background: "rgba(15,25,40,0.6)",
-      border: "1px solid rgba(139,92,246,0.15)",
-      borderRadius: "14px",
-      padding: "1.25rem 1.5rem",
-      marginBottom: "1rem",
-      ...style
-    }}>
-      {children}
-    </div>
-  );
-}
-
-function AccordionSection({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{
-      border: "1px solid rgba(139,92,246,0.15)",
-      borderRadius: "10px",
-      marginBottom: "0.5rem",
-      overflow: "hidden"
-    }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={{
-          width: "100%", textAlign: "left", background: "rgba(15,25,40,0.55)",
-          border: "none", padding: "0.85rem 1.25rem", cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          color: "var(--foreground)"
-        }}
-      >
-        <span style={{ display: "flex", alignItems: "center", gap: "0.55rem", fontSize: "0.88rem", fontWeight: 600 }}>
-          <span style={{ opacity: 0.75 }}>{icon}</span>
-          {title}
-        </span>
-        <span style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", transition: "transform 0.2s", display: "inline-block", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
-      </button>
-      {open && (
-        <div style={{ padding: "1rem 1.25rem 1.25rem", background: "rgba(10,15,30,0.5)" }}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SystemRow({ label, value }: { label: string; value?: string | number | null }) {
-  if (!value) return null;
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "0.3rem 0", borderBottom: "1px solid rgba(139,92,246,0.08)" }}>
-      <span style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", flexShrink: 0, marginRight: "1rem" }}>{label}</span>
-      <span style={{ fontSize: "0.8rem", color: "rgba(230,230,255,0.88)", textAlign: "right" }}>{String(value)}</span>
-    </div>
-  );
-}
-
-interface NormalizedProfile {
-  astro: any; num: any; hd: any; elemMed: any; chakra: any; ayurveda: any;
-  moral: any; archData: any; palmistry: any; personality: any; numerology: any;
-  sunSign: string | null; moonSign: string | null; risingSign: string | null;
-  lifePathNum: number | null; hdType: string | null;
-}
-
-function normalizeProfileData(p: any): NormalizedProfile {
-  const astro      = p?.astrology      ?? p?.astrologyData      ?? {};
-  const num        = p?.numerologyData ?? p?.numerology         ?? {};
-  const hd         = p?.humanDesignData ?? p?.humanDesign       ?? {};
-  const numerology = num?.calculateNumerology ?? num;
-  return {
-    astro, num, hd, numerology,
-    elemMed:     p?.elementalMedicineData ?? {},
-    chakra:      p?.chakraData            ?? {},
-    ayurveda:    p?.ayurvedaData          ?? {},
-    moral:       p?.moralCompassData      ?? p?.moralCompass ?? {},
-    archData:    p?.archetypeData         ?? p?.archetype   ?? {},
-    palmistry:   p?.palmistryData         ?? {},
-    personality: p?.personalityData       ?? {},
-    sunSign:     astro?.sunSign     ?? p?.sun_sign    ?? null,
-    moonSign:    astro?.moonSign    ?? p?.moon_sign   ?? null,
-    risingSign:  astro?.risingSign  ?? p?.rising_sign ?? null,
-    lifePathNum: numerology?.lifePath ?? numerology?.lifePathNumber ?? null,
-    hdType:      hd?.type ?? null,
-  };
-}
+const PREMIUM_FEATURES = [
+  "Full narrative (all 4 sections)",
+  "Signal Strengths",
+  "Growth Edges",
+  "What Drains Me",
+  "Prescriptions",
+];
 
 export default function CodexReadingPage() {
   const [, navigate] = useLocation();
   const [synthesis, setSynthesis] = useState<CodexSynthesis | null>(null);
-  const [fullProfile, setFullProfile] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const generateMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const res = await apiRequest("/api/codex30/generate", {
+      const data = await apiRequest("/api/codex30/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Generation failed");
       return data.synthesis as CodexSynthesis;
     },
@@ -205,14 +121,20 @@ export default function CodexReadingPage() {
   });
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("soulProfile");
-      if (raw) setFullProfile(JSON.parse(raw));
-    } catch {}
-
     const cached = localStorage.getItem("soulCodexReading");
     if (cached) {
-      try { setSynthesis(JSON.parse(cached)); return; } catch {}
+      try {
+        const parsed = JSON.parse(cached);
+        const raw = JSON.stringify(parsed);
+        const stale = /Stress element:|Decision style:|My strengths include:|Non-negotiable:|evidence/i.test(raw);
+        // Also invalidate if isPremium field is missing (pre-gate cached readings may contain ungated data)
+        const missingGate = typeof parsed.isPremium === "undefined";
+        if (!stale && !missingGate) {
+          setSynthesis(parsed);
+          return;
+        }
+        localStorage.removeItem("soulCodexReading");
+      } catch {}
     }
     buildAndGenerate();
   }, []);
@@ -250,14 +172,9 @@ export default function CodexReadingPage() {
   }
 
   const sections = parseNarrative(synthesis?.narrative ?? "");
+  const isPremium = synthesis?.isPremium ?? false;
 
-  // ── Derived profile fields ──────────────────────────────────────────
-  const {
-    astro, hd, elemMed, chakra, ayurveda, moral, archData, palmistry, personality, numerology,
-    sunSign, moonSign, risingSign, lifePathNum, hdType
-  } = normalizeProfileData(fullProfile);
-
-  // ── Loading state ───────────────────────────────────────────────────
+  // Loading
   if (generateMutation.isPending && !synthesis) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.5rem", padding: "2rem" }}>
@@ -268,7 +185,6 @@ export default function CodexReadingPage() {
         <p style={{ color: "var(--muted-foreground)", textAlign: "center", maxWidth: "380px", fontSize: "0.9rem" }}>
           Collecting signals from your chart, numerology, moral compass, and more.
         </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -278,28 +194,38 @@ export default function CodexReadingPage() {
     const noProfile = error.toLowerCase().includes("no profile") || error.toLowerCase().includes("onboarding");
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-        <div style={{ maxWidth: 440, width: "100%" }}>
+        <div style={{ maxWidth: 460, width: "100%" }}>
           <div style={{
             background: "var(--glass-bg)",
             border: "1px solid var(--glass-border)",
-            borderTop: `3px solid ${noProfile ? "var(--cosmic-purple)" : "#ef4444"}`,
+            borderTop: `3px solid ${noProfile ? "var(--sc-gold)" : "#ef4444"}`,
             borderRadius: "var(--radius)",
-            padding: "2rem 1.75rem",
+            padding: "2.25rem 2rem",
             textAlign: "center",
           }}>
             {noProfile ? (
               <>
-                <div style={{ fontSize: "1.75rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.7 }}>◈</div>
-                <h3 style={{ marginBottom: "0.5rem", fontSize: "1.1rem", fontWeight: 600 }}>Your Codex needs a profile first</h3>
-                <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.65, marginBottom: "0.75rem" }}>
-                  Your Codex Reading is a 30-point synthesis that assigns you a codename, a first-person narrative, and a ranked map of your core patterns across 15+ systems.
+                <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.75 }}>◈</div>
+                <h3 style={{ marginBottom: "0.65rem", fontSize: "1.15rem", fontWeight: 600 }}>Your Codex isn't unlocked yet</h3>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.7, marginBottom: "1.25rem" }}>
+                  The Codex is a 30-point synthesis that gives you a codename, a first-person narrative, and a ranked map of your core patterns across 15+ systems — astrology, numerology, Human Design, and behavioral archetypes. It needs your profile to generate.
                 </p>
-                <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-                  {["Codename", "30-pt synthesis", "Core narrative"].map((f) => (
-                    <span key={f} style={{ padding: "0.2rem 0.6rem", borderRadius: 99, fontSize: "0.7rem", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "var(--cosmic-lavender)" }}>{f}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.75rem", textAlign: "left" }}>
+                  {[
+                    { glyph: "◈", label: "Your codename", desc: "A single word that distills your core operating pattern" },
+                    { glyph: "◉", label: "30-point pattern map", desc: "Your ranked signals across astrology, numerology, and more" },
+                    { glyph: "✦", label: "First-person narrative", desc: "Your full synthesis written from your own voice" },
+                  ].map((item) => (
+                    <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(212,168,95,0.04)", border: "1px solid rgba(212,168,95,0.12)", borderRadius: 8 }}>
+                      <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
+                      <span>
+                        <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block" }}>{item.label}</span>
+                        <span style={{ color: "var(--muted-foreground)", fontSize: "0.73rem" }}>{item.desc}</span>
+                      </span>
+                    </div>
                   ))}
                 </div>
-                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>Build My Profile</button>
+                <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => navigate("/start")}>Finish My Profile</button>
               </>
             ) : (
               <>
@@ -326,302 +252,365 @@ export default function CodexReadingPage() {
   return (
     <div style={{ minHeight: "100vh", padding: "2rem 1rem 4rem", maxWidth: "740px", margin: "0 auto" }}>
 
-      {/* ── A. HEADER / IDENTITY ────────────────────────────────────── */}
-      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
         <div style={{
-          display: "inline-block", background: "rgba(139,92,246,0.12)",
-          border: "1px solid rgba(139,92,246,0.3)", borderRadius: "99px",
+          display: "inline-block", background: "rgba(212,168,95,0.1)",
+          border: "1px solid rgba(212,168,95,0.3)", borderRadius: "99px",
           padding: "0.3rem 1rem", fontSize: "0.7rem", letterSpacing: "0.12em",
-          color: "var(--cosmic-lavender)", marginBottom: "1rem", textTransform: "uppercase",
+          color: "var(--sc-gold)", marginBottom: "1rem", textTransform: "uppercase",
         }}>
           Soul Codex Reading
         </div>
         <h1 style={{
           fontFamily: "var(--font-serif)", fontSize: "clamp(1.6rem, 5vw, 2.4rem)",
           color: "var(--cosmic-gold)", marginBottom: "0.5rem", lineHeight: 1.2,
+          textShadow: "0 2px 14px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.45)",
         }}>
           {synthesis.codename}
         </h1>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.75rem" }}>
           <ConfidenceBadge
-            badge={synthesis.badges.badge ?? (synthesis.badges.confidenceLabel as any) ?? "unverified"}
-            label={synthesis.badges.label ?? synthesis.badges.confidenceLabel}
+            badge={synthesis.badges.confidenceLabel}
             reason={synthesis.badges.reason}
             size="sm"
           />
         </div>
-        {synthesis.badges.aiAssuranceNote && (
-          <p style={{
-            fontSize: "0.72rem",
-            color: "var(--muted-foreground)",
-            maxWidth: "34rem",
-            margin: "0.75rem auto 0",
-            lineHeight: 1.55,
-            fontStyle: "normal",
-          }}>
-            {synthesis.badges.aiAssuranceNote}
-          </p>
-        )}
       </div>
 
-      {/* Identity Grid */}
-      {(sunSign || moonSign || risingSign || lifePathNum || hdType) && (
-        <Card style={{ marginBottom: "1.5rem" }}>
-          <SectionLabel>Identity</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: "0.75rem" }}>
-            {sunSign && (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "1.3rem", marginBottom: "0.2rem" }}>☀</div>
-                <div style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Sun</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{sunSign}</div>
-              </div>
-            )}
-            {moonSign && (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "1.3rem", marginBottom: "0.2rem" }}>☽</div>
-                <div style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Moon</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{moonSign}</div>
-              </div>
-            )}
-            {risingSign && (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "1.3rem", marginBottom: "0.2rem" }}>↑</div>
-                <div style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Rising</div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{risingSign}</div>
-              </div>
-            )}
-            {lifePathNum != null && (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "1.3rem", marginBottom: "0.2rem", fontWeight: 700, color: "var(--cosmic-gold)" }}>{lifePathNum}</div>
-                <div style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Life Path</div>
-              </div>
-            )}
-            {hdType && (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "1.1rem", marginBottom: "0.2rem" }}>⬡</div>
-                <div style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Energy Type</div>
-                <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{hdType}</div>
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {/* ── B. CORE THEMES ──────────────────────────────────────────── */}
+      {/* ── Top Themes ───────────────────────────────────────────────────── */}
       {synthesis.topThemes.length > 0 && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <SectionLabel>Core Themes</SectionLabel>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            {synthesis.topThemes.slice(0, 6).map(t => (
-              <span key={t.tag} style={{
-                display: "inline-flex", alignItems: "center", gap: "0.35rem",
-                background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)",
-                borderRadius: "10px", padding: "0.4rem 0.85rem",
-                fontSize: "0.82rem", color: "var(--cosmic-lavender)"
-              }}>
-                <span style={{ opacity: 0.8, fontSize: "0.95rem" }}>{THEME_ICONS[t.tag] ?? "◈"}</span>
-                {t.tag.replace(/_/g, " ")}
-                <span style={{ opacity: 0.45, fontSize: "0.68rem" }}>{t.score}</span>
-              </span>
-            ))}
-          </div>
+        <div style={{ marginBottom: "2rem" }}>
+          <h3 style={{ fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.85rem" }}>
+            Core Themes
+          </h3>
+          {isPremium ? (
+            /* Premium: full bar chart with scores */
+            (() => {
+              const themes = synthesis.topThemes.slice(0, 8);
+              const maxScore = Math.max(...themes.map(t => t.score), 1);
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+                  {themes.map((t, i) => {
+                    const pct = Math.round((t.score / maxScore) * 100);
+                    const icon = THEME_ICONS[t.tag] ?? "◈";
+                    const isTop = i === 0;
+                    return (
+                      <div key={t.tag} style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                        <span style={{
+                          fontSize: "0.7rem", color: "var(--cosmic-lavender)",
+                          opacity: isTop ? 1 : 0.6, width: "1.1rem", textAlign: "right", flexShrink: 0,
+                        }}>
+                          {icon}
+                        </span>
+                        <span style={{
+                          fontSize: "0.72rem", color: "var(--foreground)",
+                          width: "5.5rem", flexShrink: 0,
+                          fontWeight: isTop ? 600 : 400,
+                          letterSpacing: "0.02em",
+                        }}>
+                          {displayTheme(t.tag)}
+                        </span>
+                        <div style={{
+                          flex: 1, height: "6px", borderRadius: "99px",
+                          background: "rgba(212,168,95,0.12)",
+                          overflow: "hidden", position: "relative",
+                        }}>
+                          <div style={{
+                            position: "absolute", left: 0, top: 0, bottom: 0,
+                            width: `${pct}%`,
+                            borderRadius: "99px",
+                            background: isTop
+                              ? "linear-gradient(90deg, #D4A85F, #C49450)"
+                              : `rgba(212,168,95,${0.35 + (pct / 100) * 0.45})`,
+                            transition: "width 0.4s ease",
+                          }} />
+                        </div>
+                        <span style={{
+                          fontSize: "0.62rem", color: "var(--muted-foreground)",
+                          width: "2rem", textAlign: "right", flexShrink: 0,
+                          opacity: 0.55,
+                        }}>
+                          {t.score}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
+          ) : (
+            /* Free: compact chips for top 3 themes only */
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              {synthesis.topThemes.map((t) => {
+                const icon = THEME_ICONS[t.tag] ?? "◈";
+                return (
+                  <span key={t.tag} style={{
+                    display: "inline-flex", alignItems: "center", gap: "0.35rem",
+                    padding: "0.3rem 0.75rem",
+                    background: "rgba(212,168,95,0.1)",
+                    border: "1px solid rgba(212,168,95,0.25)",
+                    borderRadius: "99px",
+                    fontSize: "0.75rem",
+                    color: "var(--cosmic-lavender)",
+                    letterSpacing: "0.02em",
+                  }}>
+                    <span style={{ fontSize: "0.65rem", opacity: 0.7 }}>{icon}</span>
+                    {displayTheme(t.tag)}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── C. ARCHETYPE ─────────────────────────────────────────────── */}
-      {(synthesis.codename || archData?.title || archData?.description) && (
-        <Card style={{ marginBottom: "1.5rem", borderColor: "rgba(212,175,55,0.2)" }}>
-          <SectionLabel>Archetype</SectionLabel>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-            <span style={{ fontSize: "2rem", flexShrink: 0 }}>⚔</span>
-            <div>
-              <div style={{
-                fontFamily: "var(--font-serif)", fontSize: "1.15rem",
-                color: "var(--cosmic-gold)", marginBottom: "0.4rem", fontWeight: 600
+      {/* ── Narrative Sections ───────────────────────────────────────────── */}
+      <div style={{ marginBottom: isPremium ? "2.5rem" : "0" }}>
+        {isPremium ? (
+          /* Premium: all sections */
+          sections.map((sec, i) => {
+            const accent = sec.header ? getSectionAccent(sec.header) : { color: "#D4A85F", glyph: "◈" };
+            const isIdentity = i < 2;
+            return (
+              <div key={i} style={{
+                background: `rgba(242,234,218,0.96)`,
+                border: "1px solid rgba(212,168,95,0.12)",
+                borderLeft: `3px solid ${accent.color}`,
+                borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
               }}>
-                {archData?.title ?? synthesis.codename}
-              </div>
-              {(archData?.description ?? archData?.tagline ?? archData?.role) && (
-                <p style={{ fontSize: "0.85rem", color: "rgba(230,230,255,0.8)", lineHeight: 1.65, margin: 0 }}>
-                  {archData.description ?? archData.tagline ?? archData.role}
-                </p>
-              )}
-              {archData?.element && (
-                <span style={{
-                  display: "inline-block", marginTop: "0.6rem",
-                  fontSize: "0.72rem", color: "var(--muted-foreground)",
-                  background: "rgba(255,255,255,0.05)", borderRadius: "6px", padding: "0.15rem 0.5rem"
-                }}>
-                  {archData.element} {archData.role ? `· ${archData.role}` : ""}
-                </span>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* ── D. BODY & ENERGY ─────────────────────────────────────────── */}
-      {(elemMed?.primaryElement || elemMed?.stressElement || elemMed?.recommendation || chakra?.primaryChakra || ayurveda?.primaryDosha) && (
-        <Card style={{ marginBottom: "1.5rem" }}>
-          <SectionLabel>Body &amp; Energy</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            {elemMed?.primaryElement && (
-              <div>
-                <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Primary Element</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{elemMed.primaryElement}</div>
-              </div>
-            )}
-            {elemMed?.stressElement && (
-              <div>
-                <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Stress Element</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "#f59e0b" }}>{elemMed.stressElement}</div>
-              </div>
-            )}
-            {chakra?.primaryChakra && (
-              <div>
-                <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Primary Chakra</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{chakra.primaryChakra}</div>
-              </div>
-            )}
-            {ayurveda?.primaryDosha && (
-              <div>
-                <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Dosha</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{ayurveda.primaryDosha}</div>
-              </div>
-            )}
-          </div>
-          {elemMed?.recommendation && (
-            <p style={{ fontSize: "0.82rem", color: "rgba(230,230,255,0.75)", lineHeight: 1.65, margin: "0.85rem 0 0", borderTop: "1px solid rgba(139,92,246,0.1)", paddingTop: "0.75rem" }}>
-              {elemMed.recommendation}
-            </p>
-          )}
-        </Card>
-      )}
-
-      {/* ── E. MORAL COMPASS ─────────────────────────────────────────── */}
-      {(moral?.decisionStyle || moral?.name || (moral?.nonNegotiables ?? []).length > 0 || moral?.socialEnergy) && (
-        <Card style={{ marginBottom: "1.5rem" }}>
-          <SectionLabel>Moral Compass</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem", marginBottom: moral?.nonNegotiables?.length ? "0.85rem" : 0 }}>
-            {(moral?.decisionStyle || moral?.name) && (
-              <div>
-                <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Decision Style</div>
-                <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{moral.decisionStyle ?? moral.name}</div>
-              </div>
-            )}
-            {moral?.socialEnergy && (
-              <div>
-                <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.2rem" }}>Social Energy</div>
-                <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "rgba(230,230,255,0.9)" }}>{moral.socialEnergy}</div>
-              </div>
-            )}
-          </div>
-          {Array.isArray(moral?.nonNegotiables) && moral.nonNegotiables.length > 0 && (
-            <div>
-              <div style={{ fontSize: "0.65rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.4rem" }}>Non-Negotiables</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                {moral.nonNegotiables.map((n: string, i: number) => (
-                  <span key={i} style={{
-                    fontSize: "0.78rem", padding: "0.2rem 0.6rem",
-                    background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)",
-                    borderRadius: "6px", color: "var(--cosmic-gold)"
+                {sec.header && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                    <span style={{ color: accent.color, fontSize: "0.85rem", flexShrink: 0 }}>
+                      {accent.glyph}
+                    </span>
+                    <h2 style={{
+                      fontFamily: isIdentity ? "var(--font-serif)" : undefined,
+                      fontSize: isIdentity ? "0.75rem" : "0.8rem",
+                      letterSpacing: "0.1em", textTransform: "uppercase",
+                      color: accent.color, margin: 0,
+                    }}>
+                      {sec.header}
+                    </h2>
+                  </div>
+                )}
+                {sec.lines.map((line, j) => (
+                  <p key={j} style={{
+                    color: line.startsWith("-") ? "#8a5f20" : "#1A0E07",
+                    lineHeight: 1.75, marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
+                    fontFamily: i < 2 ? "var(--font-serif)" : undefined,
+                    fontSize: i === 0 ? "1.1rem" : "0.9375rem",
+                    paddingLeft: line.startsWith("-") ? "0.25rem" : 0,
                   }}>
-                    {n}
-                  </span>
+                    {line}
+                  </p>
                 ))}
               </div>
-            </div>
-          )}
-          {moral?.notes && (
-            <p style={{ fontSize: "0.82rem", color: "rgba(230,230,255,0.75)", lineHeight: 1.65, margin: "0.75rem 0 0" }}>{moral.notes}</p>
-          )}
-        </Card>
-      )}
+            );
+          })
+        ) : (
+          /* Free: MOTTO (plain) + WHO I AM teaser with gradient fade, then upgrade card */
+          <>
+            {/* MOTTO section — shown without fade */}
+            {sections.filter(s => s.header.toUpperCase().startsWith("MOTTO")).map((sec, i) => {
+              const accent = getSectionAccent(sec.header);
+              return (
+                <div key={`motto-${i}`} style={{
+                  background: `rgba(242,234,218,0.96)`,
+                  border: "1px solid rgba(212,168,95,0.12)",
+                  borderLeft: `3px solid ${accent.color}`,
+                  borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
+                }}>
+                  {sec.header && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                      <span style={{ color: accent.color, fontSize: "0.85rem", flexShrink: 0 }}>{accent.glyph}</span>
+                      <h2 style={{
+                        fontFamily: "var(--font-serif)",
+                        fontSize: "0.75rem",
+                        letterSpacing: "0.1em", textTransform: "uppercase",
+                        color: accent.color, margin: 0,
+                      }}>
+                        {sec.header}
+                      </h2>
+                    </div>
+                  )}
+                  {sec.lines.map((line, j) => (
+                    <p key={j} style={{
+                      color: "#1A0E07",
+                      lineHeight: 1.75,
+                      marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
+                      fontFamily: "var(--font-serif)",
+                      fontSize: "0.9375rem",
+                    }}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              );
+            })}
 
-      {/* ── F. NARRATIVE ─────────────────────────────────────────────── */}
-      {sections.length > 0 && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <SectionLabel>Narrative</SectionLabel>
-          {sections.map((sec, i) => (
-            <div key={i} style={{
-              background: "rgba(15,25,40,0.6)",
-              border: "1px solid rgba(139,92,246,0.15)",
+            {/* WHO I AM teaser — faded out */}
+            {sections.filter(s => s.header.toUpperCase().startsWith("WHO I AM")).map((sec, i) => (
+              <div key={`who-${i}`} style={{ position: "relative", marginBottom: "1.5rem" }}>
+                <div style={{
+                  background: `rgba(242,234,218,0.96)`,
+                  border: "1px solid rgba(212,168,95,0.12)",
+                  borderLeft: `3px solid #D4A85F`,
+                  borderRadius: "12px", padding: "1.4rem 1.5rem",
+                  WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+                  maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+                }}>
+                  {sec.header && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                      <span style={{ color: "#D4A85F", fontSize: "0.85rem", flexShrink: 0 }}>◉</span>
+                      <h2 style={{
+                        fontFamily: "var(--font-serif)",
+                        fontSize: "0.75rem",
+                        letterSpacing: "0.1em", textTransform: "uppercase",
+                        color: "#D4A85F", margin: 0,
+                      }}>
+                        {sec.header}
+                      </h2>
+                    </div>
+                  )}
+                  {sec.lines.map((line, j) => (
+                    <p key={j} style={{
+                      color: "#1A0E07",
+                      lineHeight: 1.75,
+                      marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
+                      fontFamily: "var(--font-serif)",
+                      fontSize: "0.9375rem",
+                    }}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Upgrade card */}
+            <div style={{
+              background: "linear-gradient(135deg, rgba(212,168,95,0.12), rgba(212,168,95,0.05))",
+              border: "1px solid rgba(212,168,95,0.35)",
               borderRadius: "12px",
-              padding: "1.25rem 1.5rem",
-              marginBottom: "0.75rem"
+              padding: "2rem 1.75rem",
+              marginBottom: "2rem",
             }}>
-              {sec.header && (
-                <h2 style={{
-                  fontFamily: sec.header.startsWith("CODENAME") || sec.header.startsWith("WHO") ? "var(--font-serif)" : undefined,
-                  fontSize: sec.header.startsWith("CODENAME") ? "0.7rem" : "0.85rem",
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "var(--cosmic-gold)",
-                  marginBottom: "0.75rem"
-                }}>
-                  {sec.header}
-                </h2>
-              )}
-              {sec.lines.map((line, j) => (
-                <p key={j} style={{
-                  color: line.startsWith("-") ? "var(--cosmic-lavender)" : "rgba(230,230,255,0.87)",
-                  lineHeight: 1.75,
-                  marginBottom: j < sec.lines.length - 1 ? "0.6rem" : 0,
-                  fontFamily: i < 2 ? "var(--font-serif)" : undefined,
-                  fontSize: i === 0 ? "1.15rem" : "0.95rem",
-                  paddingLeft: line.startsWith("-") ? "0.25rem" : 0
-                }}>
-                  {line}
-                </p>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+                <span style={{ fontSize: "1.4rem", color: "var(--cosmic-gold)" }}>🔒</span>
+                <div>
+                  <div style={{ fontFamily: "var(--font-serif)", color: "var(--cosmic-gold)", fontWeight: 600, fontSize: "1.05rem", marginBottom: "0.2rem" }}>
+                    Unlock Your Full Codex Reading
+                  </div>
+                  <div style={{ color: "#3a2010", fontSize: "0.83rem" }}>
+                    Your synthesis is ready — unlock it to see the full picture
+                  </div>
+                </div>
+              </div>
 
-      {/* Strengths / Shadows */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
-        {synthesis.strengths.length > 0 && (
-          <div style={{
-            background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)",
-            borderLeft: "3px solid #22c55e", borderRadius: "12px", padding: "1.2rem",
-          }}>
-            <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#22c55e", marginBottom: "0.65rem" }}>
-              Signal Strengths
-            </h3>
-            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-              {synthesis.strengths.slice(0, 5).map((s, i) => (
-                <li key={i} style={{ fontSize: "0.82rem", color: "rgba(230,255,230,0.82)", lineHeight: 1.6, paddingBottom: "0.3rem" }}>
-                  <span style={{ color: "#22c55e", marginRight: "0.4rem" }}>✓</span>{s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {synthesis.shadows.length > 0 && (
-          <div style={{
-            background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
-            borderLeft: "3px solid #f87171", borderRadius: "12px", padding: "1.2rem",
-          }}>
-            <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#f87171", marginBottom: "0.65rem" }}>
-              Growth Edges
-            </h3>
-            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-              {synthesis.shadows.slice(0, 5).map((s, i) => (
-                <li key={i} style={{ fontSize: "0.82rem", color: "rgba(255,220,220,0.82)", lineHeight: 1.6, paddingBottom: "0.3rem" }}>
-                  <span style={{ color: "#f87171", marginRight: "0.4rem" }}>◈</span>{s}
-                </li>
-              ))}
-            </ul>
-          </div>
+              <div style={{ marginBottom: "1.5rem" }}>
+                {PREMIUM_FEATURES.map((f, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: "0.6rem",
+                    padding: "0.5rem 0",
+                    borderBottom: i < PREMIUM_FEATURES.length - 1 ? "1px solid rgba(212,168,95,0.08)" : "none",
+                  }}>
+                    <span style={{ color: "var(--cosmic-gold)", fontSize: "0.7rem", opacity: 0.65 }}>✦</span>
+                    <span style={{ color: "#3a2010", fontSize: "0.875rem" }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/profile">
+                <button className="btn btn-primary" style={{
+                  width: "100%", fontSize: "0.9rem", padding: "0.85rem",
+                  background: "linear-gradient(135deg, rgba(212,168,95,0.25), rgba(212,168,95,0.12))",
+                  border: "1px solid rgba(212,168,95,0.5)", color: "var(--cosmic-gold)", marginBottom: "0.75rem",
+                }}>
+                  Unlock Full Access
+                </button>
+              </Link>
+              <div style={{ textAlign: "center" }}>
+                <Link href="/profile" style={{ fontSize: "0.78rem", color: "#8a6030", textDecoration: "underline", textUnderlineOffset: "2px" }}>
+                  Have an access code? Enter it on your profile page
+                </Link>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
-      {/* ── Triggers ─────────────────────────────────────────────────────── */}
-      {synthesis.triggers.length > 0 && (
+      {/* ── Prescriptions (premium only) ─────────────────────────────────── */}
+      {isPremium && synthesis.prescriptions.length > 0 && (
         <div style={{
-          background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)",
-          borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem"
+          background: "rgba(212,168,95,0.07)", border: "1px solid rgba(212,168,95,0.2)",
+          borderLeft: "3px solid #D4A85F", borderRadius: "12px",
+          padding: "1.4rem 1.5rem", marginBottom: "2rem",
+        }}>
+          <h3 style={{ fontSize: "0.65rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cosmic-lavender)", marginBottom: "0.75rem" }}>
+            ◆ Prescriptions
+          </h3>
+          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+            {synthesis.prescriptions.map((p, i) => (
+              <li key={i} style={{
+                fontSize: "0.9rem", color: "#1A0E07",
+                lineHeight: 1.65, paddingBottom: "0.5rem",
+                display: "flex", gap: "0.6rem",
+              }}>
+                <span style={{ color: "var(--cosmic-lavender)", flexShrink: 0 }}>→</span>
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Strengths / Shadows (premium only) ───────────────────────────── */}
+      {isPremium && (synthesis.strengths.length > 0 || synthesis.shadows.length > 0) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem", marginBottom: "1.5rem" }}>
+          {synthesis.strengths.length > 0 && (
+            <div style={{
+              background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)",
+              borderLeft: "3px solid #22c55e", borderRadius: "12px", padding: "1.2rem",
+            }}>
+              <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#22c55e", marginBottom: "0.65rem" }}>
+                Signal Strengths
+              </h3>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {synthesis.strengths.slice(0, 5).map((s, i) => (
+                  <li key={i} style={{ fontSize: "0.82rem", color: "rgba(230,255,230,0.82)", lineHeight: 1.6, paddingBottom: "0.3rem" }}>
+                    <span style={{ color: "#22c55e", marginRight: "0.4rem" }}>✓</span>{s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {synthesis.shadows.length > 0 && (
+            <div style={{
+              background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
+              borderLeft: "3px solid #f87171", borderRadius: "12px", padding: "1.2rem",
+            }}>
+              <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#f87171", marginBottom: "0.65rem" }}>
+                Growth Edges
+              </h3>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {synthesis.shadows.slice(0, 5).map((s, i) => (
+                  <li key={i} style={{ fontSize: "0.82rem", color: "rgba(255,220,220,0.82)", lineHeight: 1.6, paddingBottom: "0.3rem" }}>
+                    <span style={{ color: "#f87171", marginRight: "0.4rem" }}>◈</span>{s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── What Drains Me / Triggers (premium only) ─────────────────────── */}
+      {isPremium && synthesis.triggers.length > 0 && (
+        <div style={{
+          background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
+          borderLeft: "3px solid #f59e0b", borderRadius: "12px",
+          padding: "1.2rem", marginBottom: "2rem",
         }}>
           <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#f59e0b", marginBottom: "0.65rem" }}>
             What Drains Me
@@ -636,92 +625,21 @@ export default function CodexReadingPage() {
         </div>
       )}
 
-      {/* ── G. SYSTEMS BREAKDOWN (accordion) ────────────────────────── */}
-      <div style={{ marginBottom: "2rem" }}>
-        <SectionLabel>Systems Breakdown</SectionLabel>
-
-        <AccordionSection title="Astrology" icon="☀">
-          <SystemRow label="Sun Sign"    value={sunSign} />
-          <SystemRow label="Moon Sign"   value={moonSign} />
-          <SystemRow label="Rising Sign" value={risingSign} />
-          <SystemRow label="Mercury"     value={astro?.mercurySign} />
-          <SystemRow label="Venus"       value={astro?.venusSign} />
-          <SystemRow label="Mars"        value={astro?.marsSign} />
-          <SystemRow label="Jupiter"     value={astro?.jupiterSign} />
-          <SystemRow label="Saturn"      value={astro?.saturnSign} />
-        </AccordionSection>
-
-        <AccordionSection title="Numerology" icon="◈">
-          <SystemRow label="Life Path"   value={lifePathNum} />
-          <SystemRow label="Expression"  value={numerology?.expression ?? numerology?.expressionNumber} />
-          <SystemRow label="Soul Urge"   value={numerology?.soulUrge   ?? numerology?.soulUrgeNumber} />
-          <SystemRow label="Personality" value={numerology?.personality ?? numerology?.personalityNumber} />
-          <SystemRow label="Birthday"    value={numerology?.birthday   ?? numerology?.birthdayNumber} />
-        </AccordionSection>
-
-        <AccordionSection title="Human Design" icon="⬡">
-          <SystemRow label="Type"        value={hd?.type} />
-          <SystemRow label="Profile"     value={hd?.profile} />
-          <SystemRow label="Authority"   value={hd?.authority} />
-          <SystemRow label="Strategy"    value={hd?.strategy} />
-          <SystemRow label="Definition"  value={hd?.definition} />
-          <SystemRow label="Incarnation Cross" value={hd?.incarnationCross ?? hd?.cross} />
-        </AccordionSection>
-
-        <AccordionSection title="Elements" icon="🜁">
-          <SystemRow label="Primary Element" value={elemMed?.primaryElement} />
-          <SystemRow label="Stress Element"  value={elemMed?.stressElement} />
-          <SystemRow label="Balance"         value={elemMed?.balance} />
-          <SystemRow label="Recommendation"  value={elemMed?.recommendation} />
-        </AccordionSection>
-
-        <AccordionSection title="Personality" icon="◇">
-          <SystemRow label="MBTI"            value={personality?.mbti?.type ?? personality?.mbtiType} />
-          <SystemRow label="Enneagram"       value={personality?.enneagram?.type != null ? `Type ${personality.enneagram.type}` : undefined} />
-          <SystemRow label="Big 5 Openness"  value={personality?.bigFive?.openness} />
-          <SystemRow label="Big 5 Conscientiousness" value={personality?.bigFive?.conscientiousness} />
-          <SystemRow label="Disc"            value={personality?.disc?.type} />
-        </AccordionSection>
-
-        <AccordionSection title="Archetype" icon="⚔">
-          <SystemRow label="Title"       value={archData?.title    ?? archData?.name} />
-          <SystemRow label="Element"     value={archData?.element} />
-          <SystemRow label="Role"        value={archData?.role} />
-          <SystemRow label="Tagline"     value={archData?.tagline} />
-          <SystemRow label="Frequency"   value={archData?.soulFrequency?.frequency ?? fullProfile?.soul_frequency?.frequency} />
-        </AccordionSection>
-
-        {(palmistry?.dominantHand || palmistry?.lifeLineSummary || palmistry?.heartLineSummary || palmistry?.headLineSummary) && (
-          <AccordionSection title="Palm Signals" icon="✋">
-            <SystemRow label="Dominant Hand"  value={palmistry?.dominantHand} />
-            <SystemRow label="Life Line"      value={palmistry?.lifeLineSummary  ?? palmistry?.lifeLine} />
-            <SystemRow label="Heart Line"     value={palmistry?.heartLineSummary ?? palmistry?.heartLine} />
-            <SystemRow label="Head Line"      value={palmistry?.headLineSummary  ?? palmistry?.headLine} />
-            <SystemRow label="Fate Line"      value={palmistry?.fateLineSummary  ?? palmistry?.fateLine} />
-          </AccordionSection>
+      {/* ── Actions ──────────────────────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center", paddingTop: "0.5rem" }}>
+        {isPremium && (
+          <button className="btn btn-secondary" onClick={handleRegenerate} disabled={generateMutation.isPending} style={{ fontSize: "0.85rem" }}>
+            {generateMutation.isPending ? "Regenerating…" : "↺ Regenerate"}
+          </button>
         )}
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "center", paddingTop: "1rem" }}>
-        <button
-          className="btn btn-secondary"
-          onClick={handleRegenerate}
-          disabled={generateMutation.isPending}
-          style={{ fontSize: "0.85rem" }}
-        >
-          {generateMutation.isPending ? "Regenerating…" : "↺ Regenerate Reading"}
-        </button>
-        <button
-          className="btn btn-ghost"
-          onClick={() => navigate("/profile")}
-          style={{ fontSize: "0.85rem" }}
-        >
+        <button className="btn btn-ghost" onClick={() => navigate("/profile")} style={{ fontSize: "0.85rem" }}>
           ← Profile
         </button>
-        <button className="btn btn-ghost" onClick={() => navigate("/poster")} style={{ fontSize: "0.85rem" }}>
-          Poster →
-        </button>
+        {isPremium && (
+          <button className="btn btn-ghost" onClick={() => navigate("/poster")} style={{ fontSize: "0.85rem" }}>
+            Poster →
+          </button>
+        )}
       </div>
     </div>
   );

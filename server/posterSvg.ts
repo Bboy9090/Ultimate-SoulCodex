@@ -11,6 +11,8 @@ export interface PosterData {
   planets?: { name: string; longitude: number }[];
 }
 
+export type PosterVariant = "free" | "premium";
+
 const ZODIAC_SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 const ZODIAC_GLYPHS = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
 
@@ -37,7 +39,7 @@ const STARS: [number, number, number][] = [
 const PLANET_LABELS: Record<string, string> = {
   sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
   jupiter: "♃", saturn: "♄", uranus: "♅", neptune: "♆", pluto: "♇",
-  north_node: "☊",
+  north_node: "☊", chiron: "⚷",
 };
 
 function formatDate(iso: string): string {
@@ -60,14 +62,135 @@ function polarToXY(cx: number, cy: number, r: number, angleDeg: number): [number
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
 }
 
-function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number): string {
-  const [x1, y1] = polarToXY(cx, cy, r, startDeg);
-  const [x2, y2] = polarToXY(cx, cy, r, endDeg);
-  const large = endDeg - startDeg > 180 ? 1 : 0;
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+function escapeXml(s: string): string {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
 }
 
-export function buildPosterSvg(data: PosterData): string {
+export function buildPosterSvg(data: PosterData, variant: PosterVariant = "free"): string {
+  if (variant === "premium") {
+    return buildPremiumPosterSvg(data);
+  }
+  return buildFreePosterSvg(data);
+}
+
+function buildFreePosterSvg(data: PosterData): string {
+  const cx = 540, cy = 620;
+  const outerR = 440, ringTextR = 420, wheelR = 370, glyphR = 344, planetR = 305, innerR = 232;
+
+  const ringText = [
+    `SUN IN ${data.sunSign.toUpperCase()}`,
+    data.moonSign ? `MOON IN ${data.moonSign.toUpperCase()}` : null,
+    data.risingSign ? `RISING ${data.risingSign.toUpperCase()}` : null,
+  ].filter(Boolean).join("  ·  ") + "  ·  ";
+
+  const lpNum = data.lifePathNumber;
+  const lpArchetype = LIFE_PATH_ARCHETYPES[lpNum] ?? "THE PATHFINDER";
+  const nameText = escapeXml(data.name || "Soul Codex");
+  const birthDateStr = escapeXml(formatDate(data.birthDate));
+  const birthTimeStr = formatTime(data.birthTime);
+  const locationStr = escapeXml(data.birthLocation ?? "");
+
+  const segFills = ["#f4f6f8", "#eaecf0"];
+
+  const segments = ZODIAC_SIGNS.map((sign, i) => {
+    const startDeg = i * 30;
+    const endDeg   = (i + 1) * 30;
+    const [x1, y1] = polarToXY(cx, cy, wheelR, startDeg);
+    const [x2, y2] = polarToXY(cx, cy, wheelR, endDeg);
+    const [ix1, iy1] = polarToXY(cx, cy, innerR, endDeg);
+    const [ix2, iy2] = polarToXY(cx, cy, innerR, startDeg);
+    const path = `M ${x1} ${y1} A ${wheelR} ${wheelR} 0 0 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 0 0 ${ix2} ${iy2} Z`;
+    const [gx, gy] = polarToXY(cx, cy, glyphR, startDeg + 15);
+    const highlight = sign === data.sunSign || sign === data.moonSign || sign === data.risingSign;
+    return `<path d="${path}" fill="${highlight ? "#e5e7eb" : segFills[i % 2]}" stroke="#9ca3af" stroke-width="0.7"/>
+     <text x="${gx}" y="${gy}" font-family="serif" font-size="21" fill="${highlight ? "#111827" : "#374151"}" text-anchor="middle" dominant-baseline="central" opacity="${highlight ? 1 : 0.7}">${ZODIAC_GLYPHS[i]}</text>`;
+  }).join("");
+
+  const planetDotsSvg = (data.planets ?? []).map(p => {
+    const label = PLANET_LABELS[p.name.toLowerCase()] ?? p.name.slice(0,2);
+    const deg = ((p.longitude % 360) + 360) % 360;
+    const [px, py] = polarToXY(cx, cy, planetR, deg);
+    return `<circle cx="${px}" cy="${py}" r="15" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+     <text x="${px}" y="${py + 1}" font-family="serif" font-size="14" fill="#111827" text-anchor="middle" dominant-baseline="central">${escapeXml(label)}</text>`;
+  }).join("");
+
+  const ribbonY = 1105, ribbonW = 700, ribbonH = 50;
+  const ribbonX = cx - ribbonW / 2;
+  const notch = 26;
+  const ribbonPath = `${ribbonX},${ribbonY} ${ribbonX+ribbonW},${ribbonY} ${ribbonX+ribbonW+notch},${ribbonY+ribbonH/2} ${ribbonX+ribbonW},${ribbonY+ribbonH} ${ribbonX},${ribbonY+ribbonH} ${ribbonX-notch},${ribbonY+ribbonH/2}`;
+
+  const masterLine = data.masterNumber
+    ? `<text x="${cx}" y="1214" font-family="Georgia, serif" font-size="42" fill="#374151" text-anchor="middle" letter-spacing="4">${data.masterNumber}:${String(data.masterNumber).padStart(2,"0")}</text>
+       <text x="${cx}" y="1255" font-family="sans-serif" font-size="14" fill="#6b7280" text-anchor="middle" letter-spacing="2" font-style="italic">Master Number ${data.masterNumber} · ${escapeXml(MASTER_NUMBER_MEANINGS[data.masterNumber] ?? "Vision")}</text>`
+    : `<text x="${cx}" y="1230" font-family="sans-serif" font-size="12" fill="#9ca3af" text-anchor="middle" letter-spacing="1">Soul Codex  ·  ${new Date().getFullYear()}</text>`;
+
+  const ringPathId = "ringTextPath";
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350" width="1080" height="1350">
+  <defs>
+    <path id="${ringPathId}" d="M ${cx - ringTextR} ${cy} a ${ringTextR} ${ringTextR} 0 1 1 0.01 0"/>
+  </defs>
+
+  <!-- White background -->
+  <rect width="1080" height="1350" fill="#ffffff"/>
+
+  <!-- Header label -->
+  <text x="${cx}" y="50" font-family="sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" letter-spacing="5">SOUL CODEX  ·  BIRTH CHART</text>
+  <line x1="${cx-220}" y1="62" x2="${cx+220}" y2="62" stroke="#d1d5db" stroke-width="0.8"/>
+
+  <!-- Outer decorative rings -->
+  <circle cx="${cx}" cy="${cy}" r="${outerR}" fill="none" stroke="#374151" stroke-width="1.2" opacity="0.4"/>
+  <circle cx="${cx}" cy="${cy}" r="${outerR - 8}" fill="none" stroke="#374151" stroke-width="0.4" opacity="0.2"/>
+
+  <!-- Ring text -->
+  <text font-family="sans-serif" font-size="13" fill="#374151" letter-spacing="2.2" opacity="0.6">
+    <textPath href="#${ringPathId}" startOffset="0%">${escapeXml(ringText.repeat(3))}</textPath>
+  </text>
+
+  <!-- Zodiac wheel segments -->
+  ${segments}
+
+  <!-- Wheel rings -->
+  <circle cx="${cx}" cy="${cy}" r="${wheelR}" fill="none" stroke="#6b7280" stroke-width="0.8" opacity="0.5"/>
+  <circle cx="${cx}" cy="${cy}" r="${innerR + 2}" fill="none" stroke="#6b7280" stroke-width="0.6" opacity="0.35"/>
+
+  <!-- Planet ring guide -->
+  <circle cx="${cx}" cy="${cy}" r="${planetR}" fill="none" stroke="#9ca3af" stroke-width="0.4" stroke-dasharray="3 8" opacity="0.4"/>
+
+  <!-- Planet markers -->
+  ${planetDotsSvg}
+
+  <!-- Inner circle -->
+  <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="#f9fafb"/>
+  <circle cx="${cx}" cy="${cy}" r="${innerR - 2}" fill="none" stroke="#9ca3af" stroke-width="0.5" opacity="0.4"/>
+
+  <!-- Center text -->
+  ${data.name ? `<text x="${cx}" y="${cy - 70}" font-family="sans-serif" font-size="13" fill="#6b7280" text-anchor="middle" letter-spacing="3">${nameText.toUpperCase()}</text>` : ""}
+  <text x="${cx}" y="${cy - 28}" font-family="Georgia, serif" font-size="36" font-weight="bold" fill="#111827" text-anchor="middle">${birthDateStr}</text>
+  <circle cx="${cx}" cy="${cy + 2}" r="3" fill="#9ca3af" opacity="0.6"/>
+  ${birthTimeStr ? `<text x="${cx}" y="${cy + 28}" font-family="Georgia, serif" font-size="22" fill="#374151" text-anchor="middle">${escapeXml(birthTimeStr)}</text>` : ""}
+  ${locationStr ? `<text x="${cx}" y="${cy + (birthTimeStr ? 58 : 34)}" font-family="sans-serif" font-size="15" fill="#6b7280" text-anchor="middle">${locationStr}</text>` : ""}
+
+  <!-- Divider -->
+  <line x1="${cx - 320}" y1="1016" x2="${cx + 320}" y2="1016" stroke="#d1d5db" stroke-width="0.8"/>
+
+  <!-- Life path number -->
+  <text x="${cx}" y="1098" font-family="Georgia, serif" font-size="120" font-weight="bold" fill="#1f2937" text-anchor="middle" opacity="0.9">${lpNum}</text>
+
+  <!-- Ribbon banner -->
+  <polygon points="${ribbonPath}" fill="#1f2937"/>
+  <text x="${cx}" y="${ribbonY + ribbonH / 2 + 6}" font-family="sans-serif" font-size="16" fill="#ffffff" text-anchor="middle" letter-spacing="2.5" font-weight="600">LIFE PATH NUMBER ${lpNum}  ·  ${escapeXml(lpArchetype)}</text>
+
+  <!-- Master number / footer -->
+  ${masterLine}
+
+  <!-- Bottom star -->
+  <text x="${cx}" y="1320" font-family="sans-serif" font-size="16" fill="#9ca3af" text-anchor="middle" opacity="0.4">✦</text>
+</svg>`;
+}
+
+function buildPremiumPosterSvg(data: PosterData): string {
   const cx = 540, cy = 620;
   const outerR = 450, ringTextR = 430, wheelR = 380, glyphR = 355, planetR = 310, innerR = 240;
 
@@ -75,62 +198,43 @@ export function buildPosterSvg(data: PosterData): string {
     `SUN IN ${data.sunSign.toUpperCase()}`,
     data.moonSign ? `MOON IN ${data.moonSign.toUpperCase()}` : null,
     data.risingSign ? `RISING ${data.risingSign.toUpperCase()}` : null,
-  ].filter(Boolean).join("  •  ") + "  •  ";
+  ].filter(Boolean).join("  ·  ") + "  ·  ";
 
   const lpNum = data.lifePathNumber;
   const lpArchetype = LIFE_PATH_ARCHETYPES[lpNum] ?? "THE PATHFINDER";
   const todayStr = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const nameText = escapeXml(data.name || "Soul Codex");
+  const birthDateStr = escapeXml(formatDate(data.birthDate));
+  const birthTimeStr = formatTime(data.birthTime);
+  const locationStr = escapeXml(data.birthLocation ?? "");
 
   const segmentFills = ["rgba(13,37,53,0.85)","rgba(7,16,19,0.92)"];
 
   const segments = ZODIAC_SIGNS.map((sign, i) => {
     const startDeg = i * 30;
     const endDeg = (i + 1) * 30;
-    const midDeg = startDeg + 15;
     const [gx, gy] = polarToXY(cx, cy, glyphR, startDeg + 15);
     const [x1, y1] = polarToXY(cx, cy, wheelR, startDeg);
     const [x2, y2] = polarToXY(cx, cy, wheelR, endDeg);
     const [ix1, iy1] = polarToXY(cx, cy, innerR, endDeg);
     const [ix2, iy2] = polarToXY(cx, cy, innerR, startDeg);
     const path = `M ${x1} ${y1} A ${wheelR} ${wheelR} 0 0 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 0 0 ${ix2} ${iy2} Z`;
-    return { sign, glyph: ZODIAC_GLYPHS[i], path, gx, gy, fill: segmentFills[i % 2], midDeg };
-  });
+    const highlight = sign === data.sunSign || sign === data.moonSign || sign === data.risingSign;
+    return `<path d="${path}" fill="${highlight ? "rgba(30,70,60,0.6)" : segmentFills[i % 2]}" stroke="#d6b25e" stroke-width="0.8"/>
+     <text x="${gx}" y="${gy}" font-family="serif" font-size="18" fill="${highlight ? "#e8d28a" : "#d6b25e"}" text-anchor="middle" dominant-baseline="central" opacity="${highlight ? 1 : 0.85}">${ZODIAC_GLYPHS[i]}</text>`;
+  }).join("");
 
-  const planetDots = (data.planets ?? []).map(p => {
+  const planetDotsSvg = (data.planets ?? []).map(p => {
     const label = PLANET_LABELS[p.name.toLowerCase()] ?? p.name.slice(0,2);
-    const deg = p.longitude % 360;
+    const deg = ((p.longitude % 360) + 360) % 360;
     const [px, py] = polarToXY(cx, cy, planetR, deg);
-    return { label, px, py };
-  });
-
-  const ringPathId = "ringTextPath";
+    return `<circle cx="${px}" cy="${py}" r="14" fill="rgba(15,25,40,0.85)" stroke="#d6b25e" stroke-width="1.5" opacity="0.95"/>
+     <text x="${px}" y="${py + 1}" font-family="serif" font-size="14" fill="#d6b25e" text-anchor="middle" dominant-baseline="central">${escapeXml(label)}</text>`;
+  }).join("");
 
   const stars = STARS.map(([sx, sy, sr]) =>
-    `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="white" opacity="${(0.3 + sr * 0.3).toFixed(2)}"/>`
+    `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="white" opacity="${Math.min(0.85, 0.3 + sr * 0.3).toFixed(2)}"/>`
   ).join("");
-
-  const segmentPaths = segments.map(s =>
-    `<path d="${s.path}" fill="${s.fill}" stroke="#d6b25e" stroke-width="0.8"/>
-     <text x="${s.gx}" y="${s.gy}" font-family="serif" font-size="18" fill="#d6b25e" text-anchor="middle" dominant-baseline="central" opacity="0.85">${s.glyph}</text>`
-  ).join("");
-
-  const planetDotsSvg = planetDots.map(d =>
-    `<circle cx="${d.px}" cy="${d.py}" r="14" fill="rgba(15,25,40,0.85)" stroke="#d6b25e" stroke-width="1.5" opacity="0.95"/>
-     <text x="${d.px}" y="${d.py + 1}" font-family="serif" font-size="14" fill="#d6b25e" text-anchor="middle" dominant-baseline="central">${d.label}</text>`
-  ).join("");
-
-  const nameText = data.name || "Soul Codex";
-  const birthDateStr = formatDate(data.birthDate);
-  const birthTimeStr = formatTime(data.birthTime);
-  const locationStr = data.birthLocation ?? "";
-
-  const centerY = cy;
-  const centerLines: string[] = [
-    `<text x="${cx}" y="${centerY - 30}" font-family="Georgia, serif" font-size="34" font-weight="bold" fill="#f8fafc" text-anchor="middle">${escapeXml(nameText)}</text>`,
-    `<text x="${cx}" y="${centerY + 10}" font-family="Georgia, serif" font-size="20" fill="#d6b25e" text-anchor="middle">${escapeXml(birthDateStr)}</text>`,
-    birthTimeStr ? `<text x="${cx}" y="${centerY + 38}" font-family="sans-serif" font-size="16" fill="#94a3b8" text-anchor="middle">${escapeXml(birthTimeStr)}</text>` : "",
-    locationStr ? `<text x="${cx}" y="${centerY + (birthTimeStr ? 62 : 40)}" font-family="sans-serif" font-size="14" fill="#64748b" text-anchor="middle">${escapeXml(locationStr)}</text>` : "",
-  ].filter(Boolean);
 
   const ribbonY = 1090;
   const ribbonW = 680, ribbonH = 48;
@@ -139,20 +243,28 @@ export function buildPosterSvg(data: PosterData): string {
   const ribbonPath = `M ${ribbonX} ${ribbonY} L ${ribbonX + ribbonW} ${ribbonY} L ${ribbonX + ribbonW + notchSize} ${ribbonY + ribbonH / 2} L ${ribbonX + ribbonW} ${ribbonY + ribbonH} L ${ribbonX} ${ribbonY + ribbonH} L ${ribbonX - notchSize} ${ribbonY + ribbonH / 2} Z`;
 
   const masterLine = data.masterNumber
-    ? `<text x="${cx}" y="1318" font-family="sans-serif" font-size="15" fill="#b0986e" text-anchor="middle" letter-spacing="2">${data.masterNumber}:${data.masterNumber}  •  Master Number ${data.masterNumber} · ${MASTER_NUMBER_MEANINGS[data.masterNumber] ?? "Vision"}</text>`
-    : `<text x="${cx}" y="1318" font-family="sans-serif" font-size="13" fill="#64748b" text-anchor="middle" letter-spacing="1">Soul Codex  •  ${escapeXml(todayStr)}</text>`;
+    ? `<text x="${cx}" y="1218" font-family="Georgia, serif" font-size="42" fill="#5ac8d8" text-anchor="middle" letter-spacing="4">${data.masterNumber}:${String(data.masterNumber).padStart(2,"0")}</text>
+       <text x="${cx}" y="1258" font-family="sans-serif" font-size="14" fill="#b0c8d8" text-anchor="middle" letter-spacing="2" font-style="italic">Master Number ${data.masterNumber} · ${escapeXml(MASTER_NUMBER_MEANINGS[data.masterNumber] ?? "Vision")}</text>`
+    : `<text x="${cx}" y="1318" font-family="sans-serif" font-size="13" fill="#64748b" text-anchor="middle" letter-spacing="1">Soul Codex  ·  ${escapeXml(todayStr)}</text>`;
+
+  const ringPathId = "ringTextPath";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1350" width="1080" height="1350">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="#0a1a24"/>
-      <stop offset="55%" stop-color="#071013"/>
-      <stop offset="100%" stop-color="#0d2535"/>
+      <stop offset="0%" stop-color="#0c3038"/>
+      <stop offset="40%" stop-color="#071e25"/>
+      <stop offset="75%" stop-color="#041318"/>
+      <stop offset="100%" stop-color="#02080c"/>
     </linearGradient>
     <path id="${ringPathId}" d="M ${cx - ringTextR} ${cy} a ${ringTextR} ${ringTextR} 0 1 1 0.01 0"/>
     <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
@@ -164,8 +276,8 @@ export function buildPosterSvg(data: PosterData): string {
   ${stars}
 
   <!-- Outer decorative ring -->
-  <circle cx="${cx}" cy="${cy}" r="${outerR}" fill="none" stroke="#d6b25e" stroke-width="1.5" opacity="0.4"/>
-  <circle cx="${cx}" cy="${cy}" r="${outerR - 8}" fill="none" stroke="#d6b25e" stroke-width="0.5" opacity="0.2"/>
+  <circle cx="${cx}" cy="${cy}" r="${outerR}" fill="none" stroke="#d6b25e" stroke-width="1.5" opacity="0.45"/>
+  <circle cx="${cx}" cy="${cy}" r="${outerR - 8}" fill="none" stroke="#d6b25e" stroke-width="0.5" opacity="0.15"/>
 
   <!-- Ring text -->
   <text font-family="sans-serif" font-size="15" fill="#d6b25e" letter-spacing="2.5" opacity="0.85">
@@ -173,36 +285,46 @@ export function buildPosterSvg(data: PosterData): string {
   </text>
 
   <!-- Zodiac wheel segments -->
-  ${segmentPaths}
+  ${segments}
 
-  <!-- Inner circle (center area) -->
-  <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="#071013" stroke="#d6b25e" stroke-width="1" opacity="0.95"/>
+  <!-- Wheel rings -->
+  <circle cx="${cx}" cy="${cy}" r="${wheelR}" fill="none" stroke="#d6b25e" stroke-width="1" opacity="0.5"/>
+  <circle cx="${cx}" cy="${cy}" r="${innerR + 2}" fill="none" stroke="#d6b25e" stroke-width="0.8" opacity="0.35"/>
 
-  <!-- Planet dots on planet ring -->
+  <!-- Planet ring guide -->
+  <circle cx="${cx}" cy="${cy}" r="${planetR}" fill="none" stroke="#d6b25e" stroke-width="0.5" stroke-dasharray="3 8" opacity="0.12"/>
+
+  <!-- Planet markers -->
   ${planetDotsSvg}
 
+  <!-- Inner circle -->
+  <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="#071013" stroke="#d6b25e" stroke-width="1" opacity="0.95"/>
+
   <!-- Center text -->
-  ${centerLines.join("\n  ")}
+  ${data.name ? `<text x="${cx}" y="${cy - 70}" font-family="sans-serif" font-size="13" fill="#d6b25e" text-anchor="middle" letter-spacing="3" opacity="0.65">${nameText.toUpperCase()}</text>` : ""}
+  <text x="${cx}" y="${cy - 28}" font-family="Georgia, serif" font-size="36" font-weight="bold" fill="#f8fafc" text-anchor="middle">${birthDateStr}</text>
+  <circle cx="${cx}" cy="${cy + 2}" r="3" fill="#d6b25e" opacity="0.6"/>
+  ${birthTimeStr ? `<text x="${cx}" y="${cy + 28}" font-family="Georgia, serif" font-size="22" fill="#d6b25e" text-anchor="middle">${escapeXml(birthTimeStr)}</text>` : ""}
+  ${locationStr ? `<text x="${cx}" y="${cy + (birthTimeStr ? 62 : 40)}" font-family="sans-serif" font-size="15" fill="#94a3b8" text-anchor="middle">${locationStr}</text>` : ""}
 
   <!-- Thin divider line below wheel -->
   <line x1="${cx - 300}" y1="1000" x2="${cx + 300}" y2="1000" stroke="#d6b25e" stroke-width="0.8" opacity="0.35"/>
 
   <!-- Life Path number -->
-  <text x="${cx}" y="1080" font-family="Georgia, serif" font-size="130" font-weight="bold" fill="#d6b25e" text-anchor="middle" filter="url(#glow)" opacity="0.95">${lpNum}</text>
+  <text x="${cx}" y="1080" font-family="Georgia, serif" font-size="130" font-weight="bold" fill="#d6b25e" text-anchor="middle" filter="url(#softGlow)" opacity="0.95">${lpNum}</text>
 
   <!-- Banner ribbon -->
-  <path d="${ribbonPath}" fill="#0d2535" stroke="#d6b25e" stroke-width="1.5" opacity="0.95"/>
+  <path d="${ribbonPath}" fill="#071e25" stroke="#d6b25e" stroke-width="1.5" opacity="0.97"/>
   <text x="${cx}" y="${ribbonY + ribbonH / 2 + 6}" font-family="sans-serif" font-size="17" fill="#d6b25e" text-anchor="middle" letter-spacing="2.5" font-weight="600">LIFE PATH NUMBER ${lpNum}  ·  ${escapeXml(lpArchetype)}</text>
 
   <!-- Bottom master number / date line -->
   ${masterLine}
 
-  <!-- Top header -->
-  <text x="${cx}" y="55" font-family="sans-serif" font-size="13" fill="#64748b" text-anchor="middle" letter-spacing="4">SOUL CODEX  •  BIRTH CHART</text>
-  <line x1="${cx - 200}" y1="68" x2="${cx + 200}" y2="68" stroke="#d6b25e" stroke-width="0.5" opacity="0.25"/>
-</svg>`;
-}
+  <!-- Bottom glow star -->
+  <text x="${cx}" y="1340" font-family="sans-serif" font-size="16" fill="#d6b25e" text-anchor="middle" opacity="0.3">✦</text>
 
-function escapeXml(s: string): string {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
+  <!-- Top header -->
+  <text x="${cx}" y="55" font-family="sans-serif" font-size="13" fill="#d6b25e" text-anchor="middle" letter-spacing="4" opacity="0.6">SOUL CODEX  ·  BIRTH CHART</text>
+  <line x1="${cx - 220}" y1="68" x2="${cx + 220}" y2="68" stroke="#d6b25e" stroke-width="0.5" opacity="0.2"/>
+</svg>`;
 }

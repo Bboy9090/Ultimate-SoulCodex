@@ -4,7 +4,7 @@ import path from "path";
 
 export default defineConfig({
   plugins: [
-    react()
+    react(),
   ],
   resolve: {
     alias: {
@@ -17,11 +17,5 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-  },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
-    },
   },
 });

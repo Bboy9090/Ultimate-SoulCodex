@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldGradient" x1="128" y1="96" x2="384" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F6F1E8"/>
+      <stop offset="45%" stop-color="#D4A85F"/>
+      <stop offset="100%" stop-color="#B7848C"/>
+    </linearGradient>
+    <radialGradient id="glowGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(256 256) rotate(90) scale(180)">
+      <stop offset="0%" stop-color="#D4A85F" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#D4A85F" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feBlend in="SourceGraphic" in2="blur" mode="screen"/>
+    </filter>
+  </defs>
+  <circle cx="256" cy="256" r="180" fill="url(#glowGradient)"/>
+  <circle cx="256" cy="256" r="146" stroke="url(#goldGradient)" stroke-width="8" opacity="0.9"/>
+  <path d="M357 135C321 115 278 106 233 111C277 124 314 151 336 190C359 231 365 279 353 322C381 301 401 270 407 234C415 190 399 152 357 135Z" fill="#16161D" opacity="0.9"/>
+  <g filter="url(#softGlow)">
+    <path d="M256 114L279 219L398 256L279 293L256 398L233 293L114 256L233 219L256 114Z" fill="url(#goldGradient)"/>
+    <path d="M256 156L268 228L356 256L268 284L256 356L244 284L156 256L244 228L256 156Z" fill="#F6F1E8" opacity="0.9"/>
+  </g>
+  <circle cx="256" cy="256" r="10" fill="#F6F1E8"/>
+</svg>

@@ -1,45 +1,86 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "./pages/not-found";
-import Home from "./pages/home";
+import { useEffect } from "react";
+import { Route, Switch, useLocation, Redirect } from "wouter";
+import Nav from "./components/Nav";
+import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ProfilePage from "./pages/ProfilePage";
-import CodexReadingPage from "./pages/CodexReadingPage";
 import DailyHoroscopePage from "./pages/DailyHoroscopePage";
-import TimelinePage from "./pages/TimelinePage";
+import PosterPage from "./pages/PosterPage";
+import CodexReadingPage from "./pages/CodexReadingPage";
+import TodayPage from "./pages/TodayPage";
+import SoulGuidePage from "./pages/SoulGuidePage";
 import TrackerPage from "./pages/TrackerPage";
 import CompatibilityPage from "./pages/CompatibilityPage";
-import SoulGuidePage from "./pages/SoulGuidePage";
+import TimelinePage from "./pages/TimelinePage";
+import BlueprintPage from "./pages/BlueprintPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import AdminPage from "./pages/AdminPage";
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/create" component={OnboardingPage} />
-      <Route path="/profile" component={ProfilePage} />
-      <Route path="/codex" component={CodexReadingPage} />
-      <Route path="/horoscope" component={DailyHoroscopePage} />
-      <Route path="/timeline" component={TimelinePage} />
-      <Route path="/tracker" component={TrackerPage} />
-      <Route path="/compatibility" component={CompatibilityPage} />
-      <Route path="/soul-guide" component={SoulGuidePage} />
-      <Route component={NotFound} />
-    </Switch>
-  );
+function hasProfile(): boolean {
+  try {
+    return !!localStorage.getItem("soulProfile");
+  } catch { return false; }
 }
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
+function SmartHome() {
+  if (hasProfile()) return <TodayPage />;
+  return <LandingPage />;
 }
 
-export default App;
+const routes = (
+  <Switch>
+    <Route path="/" component={SmartHome} />
+    <Route path="/start" component={OnboardingPage} />
+    <Route path="/profile" component={ProfilePage} />
+    <Route path="/guide" component={SoulGuidePage} />
+    <Route path="/tracker" component={TrackerPage} />
+    <Route path="/compat" component={CompatibilityPage} />
+    <Route path="/timeline" component={TimelinePage} />
+    <Route path="/horoscope" component={DailyHoroscopePage} />
+    <Route path="/poster" component={PosterPage} />
+    <Route path="/codex" component={CodexReadingPage} />
+    <Route path="/blueprint" component={BlueprintPage} />
+    <Route path="/today" component={TodayPage} />
+    <Route path="/privacy" component={PrivacyPage} />
+    <Route path="/terms" component={TermsPage} />
+    <Route path="/admin" component={AdminPage} />
+    <Route>
+      <div className="container" style={{ padding: "3rem 1rem", textAlign: "center" }}>
+        <h1>404</h1>
+        <p>Page not found</p>
+      </div>
+    </Route>
+  </Switch>
+);
+
+export default function App() {
+  const [location] = useLocation();
+  const isMarketing = location === "/" && !hasProfile();
+
+  useEffect(() => {
+    document.body.style.backgroundImage =
+      "linear-gradient(rgba(8,4,18,0.52), rgba(8,4,18,0.52)), url('/nebula-bg.png')";
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center top";
+    document.body.style.backgroundAttachment = "fixed";
+
+    // Dismiss the native splash screen now that React has hydrated
+    import("@capacitor/splash-screen").then(({ SplashScreen }) => {
+      SplashScreen.hide().catch(console.warn);
+    });
+  }, []);
+
+  if (isMarketing) {
+    return <LandingPage />;
+  }
+
+  return (
+    <div className="sc-app-shell">
+      <Nav />
+      <main className="sc-main-content">
+        {routes}
+      </main>
+    </div>
+  );
+}

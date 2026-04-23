@@ -17,22 +17,22 @@ export const BADGE_CONFIG: Record<string, {
 }> = {
   verified: {
     color: "#22c55e",
-    bg: "rgba(34,197,94,0.12)",
-    border: "rgba(34,197,94,0.35)",
+    bg: "rgba(34,197,94,0.08)",
+    border: "rgba(34,197,94,0.3)",
     label: "Verified",
     tooltip: "Birth time and location confirmed. Rising sign and houses are included. Highest signal accuracy.",
   },
   partial: {
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.12)",
-    border: "rgba(245,158,11,0.35)",
+    color: "var(--sc-gold)",
+    bg: "rgba(212,168,95,0.08)",
+    border: "rgba(212,168,95,0.3)",
     label: "Partial",
     tooltip: "Birth time not provided. Sun and Moon are accurate. Houses and rising sign are not included.",
   },
   unverified: {
-    color: "#6b7280",
-    bg: "rgba(107,114,128,0.12)",
-    border: "rgba(107,114,128,0.35)",
+    color: "var(--sc-text-muted)",
+    bg: "rgba(176,160,128,0.08)",
+    border: "rgba(176,160,128,0.3)",
     label: "Unverified",
     tooltip: "Location data missing. Chart positions may vary by up to a degree.",
   },
@@ -91,12 +91,12 @@ export default function ConfidenceBadge({
           <span style={{
             position: "absolute", bottom: "calc(100% + 10px)", left: "50%",
             transform: "translateX(-50%)", zIndex: 999,
-            background: "#1a1a2e", border: `1px solid ${cfg.border}`,
+            background: "var(--sc-bg-ink)", border: `1px solid ${cfg.border}`,
             borderRadius: "10px", padding: "0.65rem 0.9rem",
-            fontSize: "0.73rem", color: "#e2e8f0", lineHeight: 1.55,
+            fontSize: "0.73rem", color: "var(--sc-ivory)", lineHeight: 1.55,
             maxWidth: "260px", whiteSpace: "normal",
             pointerEvents: "none",
-            boxShadow: "0 6px 24px rgba(0,0,0,0.55)",
+            boxShadow: "0 6px 24px rgba(0,0,0,0.8)",
           }}>
             <strong style={{ color: cfg.color, display: "block", marginBottom: "0.2rem" }}>
               {cfg.label}
