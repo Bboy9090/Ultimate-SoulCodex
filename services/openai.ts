@@ -1,8 +1,8 @@
-import { generateText, isGeminiAvailable } from "./gemini";
-import { BANNED_PHRASES, stripBannedPhrases } from "./soulcodex/validators/blandnessFilter";
-import { buildResultsPrompt } from "./soulcodex/prompts/resultsEngine";
-import { validateAndClean } from "./src/ai/pipeline";
-import { SOUL_CODEX_ENGINE_RULES } from "./src/ai/soulCodexEngine";
+import { generateText, isGeminiAvailable } from "../gemini";
+import { BANNED_PHRASES, stripBannedPhrases } from "../soulcodex/validators/blandnessFilter";
+import { buildResultsPrompt } from "../soulcodex/prompts/resultsEngine";
+import { validateAndClean } from "../src/ai/pipeline";
+import { SOUL_CODEX_ENGINE_RULES } from "../src/ai/soulCodexEngine";
 
 interface BiographyRequest {
   name: string;

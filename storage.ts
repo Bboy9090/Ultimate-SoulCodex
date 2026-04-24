@@ -174,9 +174,6 @@ export class MemStorage implements IStorage {
     } else {
       const newUser: User = {
         id: userData.id!,
-        username: userData.username || `user_${Date.now()}`,
-        password: userData.password || '',
-        isPremium: userData.isPremium ?? false,
         email: userData.email || null,
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
@@ -189,6 +186,7 @@ export class MemStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+
       this.users.set(newUser.id, newUser);
       return newUser;
     }
@@ -252,42 +250,17 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const profile: Profile = { 
       ...insertProfile,
-      // Optional birth fields (inclusivity for adoptees, incomplete records)
       birthTime: insertProfile.birthTime || null,
       birthLocation: insertProfile.birthLocation || null,
       timezone: insertProfile.timezone || null,
       latitude: insertProfile.latitude || null,
       longitude: insertProfile.longitude || null,
-      // System data
       id, 
       createdAt: now,
       updatedAt: now,
       userId: insertProfile.userId || null,
       sessionId: insertProfile.sessionId || null,
-      astrologyData: insertProfile.astrologyData || null,
-      numerologyData: insertProfile.numerologyData || null,
-      personalityData: insertProfile.personalityData || null,
-      archetypeData: insertProfile.archetypeData || null,
-      humanDesignData: insertProfile.humanDesignData || null,
-      vedicAstrologyData: insertProfile.vedicAstrologyData || null,
-      geneKeysData: insertProfile.geneKeysData || null,
-      iChingData: insertProfile.iChingData || null,
-      chineseAstrologyData: insertProfile.chineseAstrologyData || null,
-      kabbalahData: insertProfile.kabbalahData || null,
-      mayanAstrologyData: insertProfile.mayanAstrologyData || null,
-      chakraData: insertProfile.chakraData || null,
-      sacredGeometryData: insertProfile.sacredGeometryData || null,
-      runesData: insertProfile.runesData || null,
-      sabianSymbolsData: insertProfile.sabianSymbolsData || null,
-      ayurvedaData: insertProfile.ayurvedaData || null,
-      biorhythmsData: insertProfile.biorhythmsData || null,
-      asteroidsData: insertProfile.asteroidsData || null,
-      arabicPartsData: insertProfile.arabicPartsData || null,
-      fixedStarsData: insertProfile.fixedStarsData || null,
-      biography: insertProfile.biography || null,
-      dailyGuidance: insertProfile.dailyGuidance || null,
-      purposeStatement: insertProfile.purposeStatement || null,
-      isPremium: insertProfile.isPremium ?? null
+      data: insertProfile.data || {},
     };
     this.profiles.set(id, profile);
     return profile;

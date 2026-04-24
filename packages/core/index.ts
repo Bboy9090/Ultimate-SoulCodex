@@ -11,3 +11,4 @@ export * from './timeline';
 export * from "./events";
 export * from './soulcodex-v1/schema';
 export * from './soulcodex-v1/generate';
+export * from './soulcodex-v1/engine';

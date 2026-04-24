@@ -54,17 +54,15 @@ const routes = (
   </Switch>
 );
 
+import { CosmicBackground } from "./components/CosmicBackground";
+
+// ... (existing imports)
+
 export default function App() {
   const [location] = useLocation();
   const isMarketing = location === "/" && !hasProfile();
 
   useEffect(() => {
-    document.body.style.backgroundImage =
-      "linear-gradient(rgba(8,4,18,0.52), rgba(8,4,18,0.52)), url('/nebula-bg.png')";
-    document.body.style.backgroundSize = "cover";
-    document.body.style.backgroundPosition = "center top";
-    document.body.style.backgroundAttachment = "fixed";
-
     // Dismiss the native splash screen now that React has hydrated
     import("@capacitor/splash-screen").then(({ SplashScreen }) => {
       SplashScreen.hide().catch(console.warn);
@@ -76,11 +74,13 @@ export default function App() {
   }
 
   return (
-    <div className="sc-app-shell">
+    <div className="sc-app-shell min-h-screen relative overflow-x-hidden">
+      <CosmicBackground />
       <Nav />
-      <main className="sc-main-content">
+      <main className="sc-main-content relative z-10">
         {routes}
       </main>
     </div>
   );
 }
+

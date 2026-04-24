@@ -2,8 +2,11 @@
  * Soul Codex Engine — master system prompt and output structure.
  *
  * Every AI output follows: Observation → Meaning → Action.
- * No vague language. No poetic filler. Grounded, specific, usable.
+ * Grounded in deterministic behavioral seeds from the SoulCodex-V1 Engine.
  */
+
+import { runSoulCodexEngine } from "@soulcodex/core";
+
 
 export const CORE_DATA_RULE = `PROFILE DATA AWARENESS:
 The user's core profile data is available to you. Use it when it genuinely adds meaning to your response — not as a checklist.
@@ -115,23 +118,47 @@ export const DAILY_CARD_RULES = `DAILY GUIDANCE CARD RULES:
 
 /**
  * Builds the full Soul Codex Engine system prompt for any context.
- * @param directMode - If true, applies blunt/short Direct Mode style
- * @param includePatternDetection - If true, adds pattern detection layer
+ * @param options - Configuration options for the engine
+ * @param engineData - (Optional) Deterministic data from the v1 engine to ground the AI
  */
-export function buildSoulCodexSystemPrompt(options?: {
-  directMode?: boolean;
-  includePatternDetection?: boolean;
-}): string {
+export function buildSoulCodexSystemPrompt(
+  options?: {
+    directMode?: boolean;
+    includePatternDetection?: boolean;
+    toneMode?: "challenging" | "supportive" | "clinical";
+  },
+  engineData?: ReturnType<typeof runSoulCodexEngine>
+): string {
   const parts = [
     "You are the Soul Codex Engine.",
     "Your role is to deliver clear, grounded, psychologically sharp insight based on user data.",
     "",
     CORE_DATA_RULE,
+  ];
+
+  if (engineData) {
+    parts.push(
+      "",
+      "DETERMINISTIC GROUNDING DATA:",
+      "Use these verified behavioral observations as the foundation for your response.",
+      "Expand on them by connecting them to the user's specific placements (Signs, HD, Elements).",
+      "",
+      "Verified Observations:",
+      ...Object.entries(engineData.statements_by_section).flatMap(([section, statements]: [string, any]) => 
+        statements.map((s: any) => `- [${section.toUpperCase()}] ${s.text}`)
+      ),
+      "",
+      "Detected Contradiction/Tension:",
+      `- ${engineData.daily_guidance.focus || "No specific tension detected."}`
+    );
+  }
+
+  parts.push(
     "",
     SOUL_CODEX_ENGINE_RULES,
     "",
-    OUTPUT_FORMAT_INSTRUCTIONS,
-  ];
+    OUTPUT_FORMAT_INSTRUCTIONS
+  );
 
   if (options?.includePatternDetection) {
     parts.push("", PATTERN_DETECTION_ADDON);
@@ -145,6 +172,7 @@ export function buildSoulCodexSystemPrompt(options?: {
 
   return parts.join("\n");
 }
+
 
 /**
  * Rewrite layer prompt — runs after initial generation to strip vague language.
