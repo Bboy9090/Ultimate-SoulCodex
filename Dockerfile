@@ -3,13 +3,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build dependencies
+# Install build dependencies for all workspaces
 COPY package*.json ./
+COPY packages ./packages
+COPY apps ./apps
 RUN npm install
 
-# Copy source and build
+# Copy source
 COPY . .
-RUN npm run build
+
+# Build monorepo packages first, then the app
+RUN npm run build:server
 
 # ── Runtime Stage ───────────────────────────────────────────────────────────
 FROM node:20-alpine-slim
@@ -17,17 +21,17 @@ FROM node:20-alpine-slim
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=5000
+ENV PORT=3000
 
-# Install production dependencies only
+# Copy root package.json and built assets
 COPY package*.json ./
-RUN npm install --omit=dev
-
-# Copy built assets from builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 
 # Expose production port
-EXPOSE 5000
+EXPOSE 3000
 
 # Start the Soul Oracle
+# Use the compiled index.js in the dist folder
 CMD ["node", "dist/index.js"]
+

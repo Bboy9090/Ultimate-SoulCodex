@@ -134,6 +134,15 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.appleId === appleId) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
   async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
     for (const user of this.users.values()) {
       if (user.stripeCustomerId === stripeCustomerId) {
@@ -839,6 +848,19 @@ export class MemStorage implements IStorage {
   async getTransitNotification(notificationId: string): Promise<any | undefined> {
     return this.transitNotifications.get(notificationId);
   }
+
+  // Account deletion (App Store compliance)
+  async deleteUserAccount(userId: string): Promise<void> {
+    this.users.delete(userId);
+    this.localUsers.delete(userId);
+    for (const [id, profile] of this.profiles.entries()) {
+      if (profile.userId === userId) this.profiles.delete(id);
+    }
+  }
+
+  async deleteProfileById(profileId: string): Promise<void> {
+    this.profiles.delete(profileId);
+  }
 }
 
 class DbStorage implements IStorage {
@@ -1109,6 +1131,19 @@ class DbStorage implements IStorage {
     throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
   async getTransitNotification(notificationId: string): Promise<any | undefined> {
+    return undefined;
+  }
+
+  // Account deletion (App Store compliance)
+  async deleteUserAccount(userId: string): Promise<void> {
+    // Stub
+  }
+
+  async deleteProfileById(profileId: string): Promise<void> {
+    // Stub
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
     return undefined;
   }
 }

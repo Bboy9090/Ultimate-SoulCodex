@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { storage } from "../storage";
 import { streamChat, isGeminiAvailable } from "../gemini";
 import { entitlementService } from "../services/entitlement-service";
+import { buildSoulCodexSystemPrompt } from "../src/ai/soulCodexEngine";
+import { runSoulCodexEngine } from "@soulcodex/core";
 
 const FREE_QUESTION_LIMIT = 2;
 
@@ -76,9 +78,34 @@ export function registerChatRoutes(app: Express) {
         profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
       }
 
-      const systemInstruction = profile
-        ? buildProfileContextPrompt(profile)
-        : (profileContext ? buildProfileContextPrompt(profileContext) : buildGeneralPrompt());
+      // ── Engine Data ─────────────────────────────────────────────────────
+      let systemInstruction = "";
+      
+      if (profile) {
+        const engineData = runSoulCodexEngine({
+          toneMode: "challenging",
+          astrology: {
+            sun: profile.sunSign,
+            moon: profile.moonSign,
+            rising: profile.risingSign,
+          },
+          human_design: {
+            type: profile.hdType,
+          },
+          numerology: {
+            life_path: profile.lifePath,
+          },
+          mirror: profile.mirrorProfile,
+        });
+
+        systemInstruction = buildSoulCodexSystemPrompt({
+          directMode: true,
+          includePatternDetection: true,
+        }, engineData);
+      } else {
+        systemInstruction = buildGeneralPrompt();
+      }
+
 
       // ── Stream ───────────────────────────────────────────────────────────
       res.setHeader("Content-Type", "text/event-stream");
