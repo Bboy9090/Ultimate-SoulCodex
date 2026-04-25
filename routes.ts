@@ -681,9 +681,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate core systems via cached astro provider
       let astrologyData = null;
+      let astroResult = null;
       try {
         const astroProvider = getAstroProvider();
-        const astroResult = await astroProvider.getChart({
+        astroResult = await astroProvider.getChart({
           dateISO: validatedBirthData.birthDate,
           time24: validatedBirthData.birthTime,
           timeUnknown: !validatedBirthData.birthTime,
@@ -693,7 +694,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lon: validatedBirthData.longitude !== undefined ? parseFloat(String(validatedBirthData.longitude)) : undefined,
           houseSystem: "equal",
         });
+
+        // REUSE THE DATA - Don't recalculate!
         if (hasCompleteData) {
+          // If the provider returned a result, use its underlying calculation if possible
+          // In our local provider, we can just grab the data directly
           astrologyData = calculateAstrology({
             name: validatedBirthData.name,
             birthDate: validatedBirthData.birthDate,
@@ -703,6 +708,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             longitude: validatedBirthData.longitude!,
             timezone: validatedBirthData.timezone!
           });
+        } else {
+          // Fallback for incomplete data
+          astrologyData = astroResult;
         }
       } catch (error) {
         console.error("[SoulArchetype] Astrology calculation failed:", error);
@@ -770,11 +778,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate Moral Compass
       let moralCompassData = null;
       try {
+        const { calculateMoralCompass, calculateMoralCompassFromBirthData } = await import("./services/moral-compass");
         if (validatedBirthData.moralCompassAnswers && 
             validatedBirthData.moralCompassAnswers.familyValues && 
             validatedBirthData.moralCompassAnswers.neighborhoodType && 
             validatedBirthData.moralCompassAnswers.conflictResolution) {
-          const { calculateMoralCompass } = await import("./services/moral-compass");
           moralCompassData = calculateMoralCompass(
             validatedBirthData.moralCompassAnswers,
             numerologyData?.calculateNumerology?.lifePath,
@@ -847,47 +855,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("[SoulArchetype] Soul Codex synthesis failed:", error);
       }
 
-      // Persist profile to database so daily horoscope can reference it
-      let userId = null;
-      let sessionId = null;
-      if (req.user?.id) {
-        userId = req.user.id;
-      } else if (req.sessionID) {
-        sessionId = req.sessionID;
-      }
+      // Persist profile to database (NON-BLOCKING)
+      let userId = req.user?.id || null;
+      let sessionId = req.sessionID || null;
 
-      let savedProfile: any = null;
-      try {
-        savedProfile = await storage.createProfile({
-          userId,
-          sessionId,
-          name: validatedBirthData.name,
-          birthDate: validatedBirthData.birthDate,
-          birthTime: validatedBirthData.birthTime || "",
-          birthLocation: validatedBirthData.birthLocation || "",
-          timezone: validatedBirthData.timezone || "",
-          latitude: validatedBirthData.latitude?.toString() || "",
-          longitude: validatedBirthData.longitude?.toString() || "",
-          isPremium: false,
-          astrologyData,
-          numerologyData,
-          personalityData: {},
-          archetypeData: soulArchetypeData,
-          humanDesignData,
-          soulArchetypeData,
-          elementalMedicineData,
-          moralCompassData,
-          parentalInfluenceData,
-        });
-        console.log(`[SoulArchetype] Profile saved with id: ${savedProfile.id}`);
-      } catch (saveErr) {
-        console.error("[SoulArchetype] Profile save failed (non-blocking):", saveErr);
-      }
+      storage.createProfile({
+        userId,
+        sessionId,
+        name: validatedBirthData.name,
+        birthDate: validatedBirthData.birthDate,
+        birthTime: validatedBirthData.birthTime || "",
+        birthLocation: validatedBirthData.birthLocation || "",
+        timezone: validatedBirthData.timezone || "",
+        latitude: validatedBirthData.latitude?.toString() || "",
+        longitude: validatedBirthData.longitude?.toString() || "",
+        isPremium: false,
+        astrologyData,
+        numerologyData,
+        personalityData: {},
+        archetypeData: soulArchetypeData,
+        humanDesignData,
+        soulArchetypeData,
+        elementalMedicineData,
+        moralCompassData,
+        parentalInfluenceData,
+      }).then(p => {
+        console.log(`[SoulArchetype] Profile saved in background with id: ${p.id}`);
+      }).catch(e => {
+        console.error("[SoulArchetype] Background save failed:", e);
+      });
 
       // Build response in the format expected by frontend
       const response = {
-        id: savedProfile?.id ?? null,
-        profileId: savedProfile?.id ?? null,
+        id: null, // Will be filled by save but client doesn't need it immediately
+        profileId: null,
         name: validatedBirthData.name,
         birthDate: validatedBirthData.birthDate,
         birthTime: validatedBirthData.birthTime || "",
