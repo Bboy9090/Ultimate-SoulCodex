@@ -769,7 +769,7 @@ export default function ProfilePage() {
                 </span>
               </div>
               <p style={{ fontSize: "0.82rem", color: "#5a3d1a", lineHeight: 1.6, margin: "0 0 1rem" }}>
-                Enter an access code to unlock your Full Cosmic Blueprint, unlimited Soul Guide, premium birth chart, and the complete Codex reading.
+                <Link href="/pricing" style={{ color: "var(--sc-gold)", fontWeight: 700, textDecoration: "underline" }}>Upgrade here</Link> or enter an access code to unlock your Full Cosmic Blueprint, unlimited Soul Guide, premium birth chart, and the complete Codex reading.
               </p>
               <form
                 onSubmit={e => { e.preventDefault(); handleAccessCode(); }}

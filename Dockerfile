@@ -6,10 +6,9 @@ WORKDIR /app
 # Install build tools for native modules (argon2, sharp)
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies for all workspaces
+# Install dependencies
 COPY package*.json ./
 COPY packages ./packages
-COPY apps ./apps
 RUN npm install
 
 # Copy source
