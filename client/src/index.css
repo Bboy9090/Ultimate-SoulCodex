@@ -1416,3 +1416,36 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     justify-content: center;
   }
 }
+/* Onboarding Option Button */
+.onboarding-option-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.onboarding-option-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.onboarding-option-btn.selected {
+  background: rgba(212, 168, 95, 0.18);
+  border: 1px solid rgba(212, 168, 95, 0.55);
+  border-left: 3px solid var(--sc-gold);
+  box-shadow: 0 0 18px rgba(212, 168, 95, 0.22);
+}
+
+.onboarding-option-btn span {
+  display: block;
+}
