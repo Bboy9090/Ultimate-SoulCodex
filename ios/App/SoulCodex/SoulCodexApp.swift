@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 
 @main
-struct SoulCodexApp: App {
+struct SoulCodexApp: SwiftUI.App {
     let persistenceController = PersistenceController.shared
 
     var body: some Scene {

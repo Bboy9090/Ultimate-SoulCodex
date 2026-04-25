@@ -451,8 +451,8 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/start" style={{ textDecoration: "none" }}>
-                <button className="btn btn-primary" style={{ width: "100%" }}>Start Free</button>
+              <Link href="/pricing" style={{ textDecoration: "none" }}>
+                <button className="btn btn-primary" style={{ width: "100%" }}>Upgrade Now</button>
               </Link>
             </div>
           </div>

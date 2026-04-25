@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "description": "Enterprise monorepo for SoulCodex: Engine of the Eternal Now",
   "workspaces": [
-    "apps/*",
     "packages/*"
   ],
   "scripts": {
