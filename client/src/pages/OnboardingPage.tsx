@@ -303,7 +303,7 @@ export default function OnboardingPage() {
   }
 
   if (successResult) {
-    const archetypeName = successResult?.archetype?.name ?? "Your Archetype";
+    const archetypeName = successResult?.archetype?.name ?? successResult?.archetype?.name ?? "Your Archetype";
     const archetypeTagline = successResult?.archetype?.tagline ?? "";
     return (
       <motion.div 

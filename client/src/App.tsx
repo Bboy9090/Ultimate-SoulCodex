@@ -64,13 +64,6 @@ export default function App() {
   const [location] = useLocation();
   const isMarketing = location === "/" && !hasProfile();
 
-  useEffect(() => {
-    // Dismiss the native splash screen now that React has hydrated
-    import("@capacitor/splash-screen").then(({ SplashScreen }) => {
-      SplashScreen.hide().catch(console.warn);
-    });
-  }, []);
-
   if (isMarketing) {
     return <LandingPage />;
   }

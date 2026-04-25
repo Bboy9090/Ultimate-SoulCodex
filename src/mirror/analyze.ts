@@ -30,37 +30,37 @@ const energyMap: Record<string, string> = {
   misunderstood: "Precise Expression",
 };
 
-export function analyzeMirror(a: MirrorAnswers): MirrorProfile {
-  const driver = a.freedomBuild.map(k => driverMap[k]).join(" × ");
-  const shadowTrigger = a.betrayal.map(k => shadowMap[k]).join(" + ");
-  const decisionStyle = a.reaction.map(k => decisionMap[k]).join(" & ");
-  const energyStyle = a.drain.map(k => energyMap[k]).join(" | ");
+export function analyzeMirror(a: Partial<MirrorAnswers>): MirrorProfile {
+  const driver = a?.freedomBuild?.map(k => driverMap[k]).filter(Boolean).join(" × ") || "Undefined";
+  const shadowTrigger = a?.betrayal?.map(k => shadowMap[k]).filter(Boolean).join(" + ") || "Undefined";
+  const decisionStyle = a?.reaction?.map(k => decisionMap[k]).filter(Boolean).join(" & ") || "Undefined";
+  const energyStyle = a?.drain?.map(k => energyMap[k]).filter(Boolean).join(" | ") || "Undefined";
   
   // Calculate specific nuance based on overlapping signals
   const nuance: string[] = [];
   
-  if (a.reaction.includes("fix") && a.reaction.includes("analyze")) {
+  if (a?.reaction?.includes("fix") && a?.reaction?.includes("analyze")) {
     nuance.push("The Tactical Architect: You solve problems with high-speed precision.");
   }
-  if (a.reaction.includes("talk") && a.reaction.includes("withdraw")) {
+  if (a?.reaction?.includes("talk") && a?.reaction?.includes("withdraw")) {
     nuance.push("The Selective Communicator: You process externally only once you feel safe.");
   }
-  if (a.drain.includes("chaos") && a.drain.includes("lies")) {
+  if (a?.drain?.includes("chaos") && a?.drain?.includes("lies")) {
     nuance.push("The Truth Anchor: You require stable, honest environments to maintain energy.");
   }
-  if (a.freedomBuild.includes("system") && a.freedomBuild.includes("sanctuary")) {
+  if (a?.freedomBuild?.includes("system") && a?.freedomBuild?.includes("sanctuary")) {
     nuance.push("The Fortress Builder: You create structures specifically to protect your peace.");
   }
-  if (a.freedomBuild.includes("masterpiece") && a.freedomBuild.includes("movement")) {
+  if (a?.freedomBuild?.includes("masterpiece") && a?.freedomBuild?.includes("movement")) {
     nuance.push("The Cultural Catalyst: Your work is designed to move and inspire the collective.");
   }
 
   return {
-    driver: driver || "Undefined",
-    shadowTrigger: shadowTrigger || "Undefined",
-    decisionStyle: decisionStyle || "Undefined",
-    energyStyle: energyStyle || "Undefined",
-    conflictStyle: a.betrayal.includes("dishonesty") ? "Direct" : "Measured",
+    driver,
+    shadowTrigger,
+    decisionStyle,
+    energyStyle,
+    conflictStyle: a?.betrayal?.includes("dishonesty") ? "Direct" : "Measured",
     nuance: nuance.length > 0 ? nuance : ["Pure Archetype: Your behavioral signals are highly concentrated."],
   };
 }
