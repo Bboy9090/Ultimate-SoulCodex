@@ -5,73 +5,63 @@
 
 :root {
   --radius: 0.75rem;
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --primary: hsl(267, 84%, 64%);
-  --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(240, 4%, 16%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 4%, 16%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --accent: hsl(45, 96%, 68%);
-  --accent-foreground: hsl(240, 6%, 10%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 4%, 16%);
-  --input: hsl(240, 4%, 16%);
-  --ring: hsl(267, 84%, 64%);
-  --chart-1: hsl(267, 84%, 64%);
-  --chart-2: hsl(159, 100%, 36%);
-  --chart-3: hsl(42, 92%, 56%);
-  --chart-4: hsl(147, 78%, 42%);
-  --chart-5: hsl(341, 75%, 51%);
-  --sidebar: hsl(240, 4%, 16%);
-  --sidebar-foreground: hsl(0, 0%, 85%);
-  --sidebar-primary: hsl(267, 84%, 64%);
+  --background: hsl(255, 60%, 12%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(255, 50%, 15%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(255, 50%, 15%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(285, 100%, 70%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(255, 40%, 20%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(255, 40%, 20%);
+  --muted-foreground: hsl(255, 20%, 80%);
+  --accent: hsl(190, 100%, 65%);
+  --accent-foreground: hsl(255, 60%, 10%);
+  --destructive: hsl(0, 100%, 65%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(255, 40%, 25%);
+  --input: hsl(255, 40%, 25%);
+  --ring: hsl(285, 100%, 70%);
+  --chart-1: hsl(285, 100%, 70%);
+  --chart-2: hsl(190, 100%, 65%);
+  --chart-3: hsl(320, 100%, 75%);
+  --chart-4: hsl(150, 100%, 70%);
+  --chart-5: hsl(45, 100%, 75%);
+  --sidebar: hsl(255, 50%, 12%);
+  --sidebar-foreground: hsl(255, 20%, 90%);
+  --sidebar-primary: hsl(285, 100%, 70%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
-  --sidebar-accent: hsl(240, 4%, 16%);
-  --sidebar-accent-foreground: hsl(267, 84%, 64%);
-  --sidebar-border: hsl(240, 4%, 25%);
-  --sidebar-ring: hsl(267, 84%, 64%);
+  --sidebar-accent: hsl(255, 40%, 20%);
+  --sidebar-accent-foreground: hsl(285, 100%, 70%);
+  --sidebar-border: hsl(255, 40%, 25%);
+  --sidebar-ring: hsl(285, 100%, 70%);
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-serif: 'Crimson Text', serif;
   --font-mono: Menlo, monospace;
-  --shadow-2xs: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00), 0px 1px 2px -1px hsl(267, 84%, 64% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00), 0px 1px 2px -1px hsl(267, 84%, 64% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00), 0px 2px 4px -1px hsl(267, 84%, 64% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00), 0px 4px 6px -1px hsl(267, 84%, 64% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00), 0px 8px 10px -1px hsl(267, 84%, 64% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(267, 84%, 64% / 0.00);
-  --tracking-normal: 0em;
-  --spacing: 0.25rem;
 }
 
 .dark {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --primary: hsl(267, 84%, 64%);
-  --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(240, 4%, 16%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 4%, 16%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --accent: hsl(45, 96%, 68%);
-  --accent-foreground: hsl(240, 6%, 10%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 4%, 16%);
-  --input: hsl(240, 4%, 16%);
-  --ring: hsl(267, 84%, 64%);
+  --background: hsl(255, 60%, 8%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(255, 50%, 12%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(255, 50%, 12%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(285, 100%, 70%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(255, 40%, 18%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(255, 40%, 18%);
+  --muted-foreground: hsl(255, 20%, 80%);
+  --accent: hsl(190, 100%, 65%);
+  --accent-foreground: hsl(255, 60%, 8%);
+  --destructive: hsl(0, 100%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(255, 40%, 22%);
+  --input: hsl(255, 40%, 22%);
+  --ring: hsl(285, 100%, 70%);
 }
 
 @layer base {
@@ -81,41 +71,45 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background: radial-gradient(circle at 50% 0%, hsl(265, 80%, 25%) 0%, hsl(255, 60%, 10%) 100%);
   }
 }
 
 @layer components {
   .cosmic-gradient {
-    background: linear-gradient(135deg, hsl(240, 10%, 3.9%) 0%, hsl(267, 30%, 15%) 50%, hsl(240, 10%, 3.9%) 100%);
+    background: linear-gradient(135deg, hsl(255, 60%, 12%) 0%, hsl(285, 50%, 25%) 50%, hsl(255, 60%, 12%) 100%);
   }
 
   .mystical-glow {
-    box-shadow: 0 0 30px hsla(267, 84%, 64%, 0.3);
+    box-shadow: 0 0 40px hsla(285, 100%, 70%, 0.4), 0 0 80px hsla(190, 100%, 65%, 0.2);
   }
 
   .glassmorphism {
-    background: hsla(240, 4%, 16%, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid hsla(240, 4%, 25%, 0.3);
+    background: hsla(255, 40%, 20%, 0.6);
+    backdrop-filter: blur(15px);
+    border: 1px solid hsla(255, 100%, 100%, 0.15);
   }
 
   .feature-card {
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: linear-gradient(145deg, hsla(255, 50%, 20%, 0.8), hsla(255, 60%, 15%, 0.9));
   }
 
   .feature-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px hsla(285, 100%, 70%, 0.2);
+    border-color: hsla(190, 100%, 65%, 0.5);
   }
 
   .cosmic-border {
-    background: linear-gradient(45deg, hsl(267, 84%, 64%), hsl(45, 96%, 68%), hsl(267, 84%, 64%));
-    padding: 1px;
+    background: linear-gradient(45deg, hsl(285, 100%, 70%), hsl(190, 100%, 65%), hsl(320, 100%, 75%));
+    padding: 2px;
     border-radius: 0.75rem;
   }
 
   .cosmic-border-inner {
-    background: hsl(240, 10%, 3.9%);
-    border-radius: calc(0.75rem - 1px);
+    background: hsl(255, 60%, 12%);
+    border-radius: calc(0.75rem - 2px);
   }
 
   .scroll-down {
@@ -172,32 +166,32 @@
   --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ── Sacred Minimal / Celestial Premium Palette ── */
-  --sc-bg-ink:      #08040F;
-  --sc-bg-plum:     #12081E;
-  --sc-bg-violet:   #1A0A2D;
-  --sc-gold:        #D4AF37; /* More traditional legendary gold */
-  --sc-gold-glow:   rgba(212, 175, 55, 0.4);
-  --sc-gold-soft:   rgba(212, 175, 55, 0.12);
-  --sc-ivory:       #FAF5FF;
-  --sc-stone:       #D6BCFA;
-  --sc-rose:        #ED64A6;
-  --sc-slate:       #805AD5;
-  --sc-text-muted:  #B794F4;
+  --sc-bg-ink:      #0D0B21; /* Deep Indigo instead of black */
+  --sc-bg-plum:     #1A0B2E;
+  --sc-bg-violet:   #251145;
+  --sc-gold:        #FFD700; /* Electric Gold */
+  --sc-gold-glow:   rgba(255, 215, 0, 0.5);
+  --sc-gold-soft:   rgba(255, 215, 0, 0.18);
+  --sc-ivory:       #FFFFFF;
+  --sc-stone:       #E0CCFF;
+  --sc-rose:        #FF007F; /* Neon Rose */
+  --sc-slate:       #9F7AEA;
+  --sc-text-muted:  #D6BCFA;
 
-  --sc-card-bg:     rgba(15, 6, 28, 0.65);
-  --sc-card-border: rgba(212, 175, 55, 0.22);
-  --sc-sidebar-bg:  rgba(8, 4, 15, 0.85);
+  --sc-card-bg:     rgba(20, 11, 41, 0.75);
+  --sc-card-border: rgba(255, 215, 0, 0.35);
+  --sc-sidebar-bg:  rgba(13, 11, 33, 0.9);
 
-  --sc-shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.4);
-  --sc-shadow-glow: 0 0 32px rgba(212, 175, 55, 0.14);
+  --sc-shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --sc-shadow-glow: 0 0 40px rgba(255, 215, 0, 0.2);
   --sc-radius-xl:   24px;
   --sc-radius-lg:   18px;
 
   /* Override glass variables — frosted glass over nebula */
-  --glass-bg:     rgba(12, 6, 20, 0.55);
-  --glass-border: rgba(212, 175, 55, 0.25);
-  --shadow-glow:  0 0 40px rgba(212, 175, 55, 0.15);
-  --shadow-glow-strong: 0 0 60px rgba(212, 175, 55, 0.25);
+  --glass-bg:     rgba(26, 11, 46, 0.65);
+  --glass-border: rgba(255, 215, 0, 0.4);
+  --shadow-glow:  0 0 50px rgba(255, 215, 0, 0.2);
+  --shadow-glow-strong: 0 0 80px rgba(255, 215, 0, 0.35);
 }
 
 * {

@@ -43,7 +43,7 @@ export default function PrivacyPage() {
           <li>Provide compatibility analysis between profiles.</li>
           <li>Power the AI Soul Guide chat feature.</li>
           <li>Send push notifications (only if you opt in).</li>
-          <li>Process payments for premium features via Stripe.</li>
+          <li>Process payments for premium features via secure payment partners.</li>
           <li>Improve the app experience through anonymized analytics.</li>
         </ul>
       </Section>
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
       <Section title="4. Third-Party Services">
         <ul>
           <li><strong>Google Gemini AI:</strong> Processes your profile data to generate personalized text content. Google's AI privacy policy applies.</li>
-          <li><strong>Stripe:</strong> Handles payment processing. We do not store your credit card information. Stripe's privacy policy applies.</li>
+          <li><strong>Secure Payment Processors:</strong> Handle payment processing. We do not store your credit card information.</li>
           <li><strong>Microsoft Clarity:</strong> Collects anonymized usage analytics. No personally identifiable information is shared.</li>
         </ul>
       </Section>

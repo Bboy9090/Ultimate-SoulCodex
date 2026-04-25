@@ -78,7 +78,7 @@ export default function PricingPage() {
           </Link>
           <div className="flex items-center space-x-2 text-accent">
             <ShieldCheck className="h-5 w-5" />
-            <span className="text-sm font-medium">Secure Payment via Stripe</span>
+            <span className="text-sm font-medium">Secure End-to-End Encryption</span>
           </div>
         </div>
 

@@ -23,7 +23,18 @@
     
     <script>
       window.global = window;
-      window.process = { env: {} };
+      window.process = { 
+        env: { NODE_ENV: 'production' },
+        nextTick: function(fn) { setTimeout(fn, 0); },
+        cwd: function() { return '/'; }
+      };
+      // Catch early JS errors and log them to the native console
+      window.onerror = function(msg, url, line, col, error) {
+        var log = "CRITICAL_JS_ERROR: " + msg + " at " + line + ":" + col;
+        if (error && error.stack) log += "\nStack: " + error.stack;
+        console.error(log);
+        return false;
+      };
     </script>
 
     <!-- Google Fonts -->

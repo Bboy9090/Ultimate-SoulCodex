@@ -2,6 +2,7 @@
   "name": "ultimate-soulcodex",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "description": "Enterprise monorepo for SoulCodex: Engine of the Eternal Now",
   "workspaces": [
     "packages/*"
