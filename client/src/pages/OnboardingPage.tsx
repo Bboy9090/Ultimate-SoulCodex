@@ -544,8 +544,9 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
       </div>
 
       <div className="form-group" style={{ marginBottom: "1.1rem" }}>
-        <label className="label">Name</label>
+        <label className="label" htmlFor="name">Name</label>
         <input
+          id="name"
           className="input"
           type="text"
           placeholder="Your first name"
@@ -555,8 +556,9 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
       </div>
 
       <div className="form-group" style={{ marginBottom: "1.1rem" }}>
-        <label className="label">Birth Date</label>
+        <label className="label" htmlFor="birthDate">Birth Date</label>
         <input
+          id="birthDate"
           className="input"
           type="date"
           value={form.birthDate}
@@ -565,8 +567,9 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
       </div>
 
       <div className="form-group" style={{ marginBottom: "1.1rem" }}>
-        <label className="label">Birth Time <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional)</span></label>
+        <label className="label" htmlFor="birthTime">Birth Time <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional)</span></label>
         <input
+          id="birthTime"
           className="input"
           type="time"
           value={form.birthTime}
@@ -593,8 +596,9 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
       </div>
 
       <div className="form-group">
-        <label className="label">Birth Location <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional)</span></label>
+        <label className="label" htmlFor="birthLocation">Birth Location <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>(optional)</span></label>
         <input
+          id="birthLocation"
           className="input"
           type="text"
           placeholder="City, State/Country"
@@ -745,28 +749,11 @@ function OptionCard({ selected, disabled, onClick, label, description }: {
   return (
     <button
       type="button"
+      className={`onboarding-option-btn ${selected ? "selected" : ""}`}
       onClick={onClick}
       disabled={disabled}
-      style={{
-        display: "block",
-        width: "100%",
-        textAlign: "left",
-        padding: "1rem 1.25rem",
-        background: selected ? "rgba(212,168,95,0.18)" : "var(--glass-bg)",
-        border: selected ? "1px solid rgba(212,168,95,0.55)" : "1px solid var(--glass-border)",
-        borderLeft: selected ? "3px solid var(--sc-gold)" : "3px solid transparent",
-        borderRadius: "var(--radius)",
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.4 : 1,
-        transition: "all 0.2s",
-        boxShadow: selected ? "0 0 18px rgba(212,168,95,0.22)" : "none",
-        color: "var(--foreground)",
-        fontFamily: "var(--font-sans)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-      }}
     >
-      <span style={{ fontWeight: 600, display: "block", marginBottom: 4 }}>{label}</span>
+      <span style={{ fontWeight: 600, marginBottom: 4 }}>{label}</span>
       <span style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>{description}</span>
     </button>
   );
