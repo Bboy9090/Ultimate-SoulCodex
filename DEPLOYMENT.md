@@ -98,8 +98,7 @@ Set these in your host (Railway → Variables, Render → Environment, etc.):
 | `OPENAI_API_KEY` | If using OpenAI (e.g. `sk-...`) |
 | `OPENAI_MODEL` | e.g. `gpt-4.1-mini` |
 | `VITE_APP_NAME` or `APP_NAME` | e.g. `Soul Codex` |
-| `STRIPE_SECRET_KEY` | Payment processing |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signing |
+| `GEMINI_API_KEY` | Google Gemini AI key (recommended) |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Push notifications |
 
 ### Step 3) Push Repo to GitHub

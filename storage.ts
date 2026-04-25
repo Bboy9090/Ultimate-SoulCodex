@@ -12,7 +12,7 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByAppleId(appleId: string): Promise<User | undefined>;
-  getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
+  getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Local authentication operations
@@ -81,7 +81,7 @@ export interface IStorage {
   updateLocalUserPassword(userId: string, newPasswordHash: string): Promise<void>;
   
   // Webhook event operations (for idempotency)
-  getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined>;
+  getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined>;
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
 
   // Account deletion (App Store compliance)
@@ -152,9 +152,9 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
-  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
+  async getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined> {
     for (const user of this.users.values()) {
-      if (user.stripeCustomerId === stripeCustomerId) {
+      if (user.billingCustomerId === billingCustomerId) {
         return user;
       }
     }
@@ -178,8 +178,8 @@ export class MemStorage implements IStorage {
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
-        stripeCustomerId: userData.stripeCustomerId || null,
-        stripeSubscriptionId: userData.stripeSubscriptionId || null,
+        billingCustomerId: userData.billingCustomerId || null,
+        billingSubscriptionId: userData.billingSubscriptionId || null,
         subscriptionStatus: userData.subscriptionStatus || null,
         subscriptionPlan: userData.subscriptionPlan || null,
         subscriptionEndsAt: userData.subscriptionEndsAt || null,
@@ -757,9 +757,9 @@ export class MemStorage implements IStorage {
   }
 
   // Webhook event operations (for idempotency)
-  async getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined> {
+  async getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined> {
     return Array.from(this.webhookEvents.values()).find(
-      (event) => event.stripeEventId === stripeEventId
+      (event) => event.billingEventId === billingEventId
     );
   }
 
@@ -767,13 +767,13 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const event: WebhookEvent = {
       id,
-      stripeEventId: eventData.stripeEventId,
+      billingEventId: eventData.billingEventId,
       type: eventData.type,
       processedAt: new Date(),
       result: eventData.result || null,
       metadata: eventData.metadata || null,
     };
-    this.webhookEvents.set(event.stripeEventId, event);
+    this.webhookEvents.set(event.billingEventId, event);
     return event;
   }
 
@@ -897,7 +897,7 @@ class DbStorage implements IStorage {
     return undefined;
   }
 
-  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
+  async getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined> {
     return undefined;
   }
 
@@ -1121,7 +1121,7 @@ class DbStorage implements IStorage {
   }
 
   // Webhook event operations (for idempotency)
-  async getWebhookEventByStripeId(stripeEventId: string): Promise<WebhookEvent | undefined> {
+  async getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined> {
     return undefined;
   }
   async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {

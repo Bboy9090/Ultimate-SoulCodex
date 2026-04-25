@@ -217,7 +217,7 @@ See `ios-publish/metadata/screenshots-spec.md` for exact sizes and recommended s
 ### 5.4 Set pricing
 
 1. In App Store Connect → **Pricing and Availability**
-2. Set price to **Free** (premium features gated by access codes / Stripe)
+2. Set price to **Free** (premium features gated by Apple In-App Purchases / Access Codes)
 3. Select availability for all territories you want
 
 ### 5.5 App review information

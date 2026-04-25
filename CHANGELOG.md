@@ -64,7 +64,7 @@ This is the first shippable release of Soul Codex. The core engine is complete: 
 - In-memory storage fallback (no DB required for development)
 - Demo mode (`DEMO_MODE=true`) seeds a complete demo profile
 - Passport.js local auth (email + password, Argon2id hashing)
-- Stripe subscription integration (weekly/monthly/yearly tiers)
+- Apple In-App Purchase integration (Tiered access)
 - Push notification support (VAPID)
 - Admin dashboard with access codes and analytics
 - Health check endpoint (`GET /health`)
@@ -75,7 +75,7 @@ This is the first shippable release of Soul Codex. The core engine is complete: 
 - Birth time precision: House cusps require accurate birth time. If time is unknown, noon is used as default; Ascendant and house placements will be approximate.
 - Human Design authority and profile require exact birth time; without it, results fall back to a simpler calculation.
 - AI synthesis requires `GEMINI_API_KEY` or `OPENAI_API_KEY`; without either, AI features return a structured fallback (non-AI) reading.
-- Stripe webhooks must be configured in your Stripe dashboard for subscription events to work.
+- Apple App Store configuration required for native in-app purchases.
 - Session store uses in-memory by default; configure `DATABASE_URL` for persistent sessions in production.
 
 ---

@@ -24,8 +24,14 @@ if (rootEl) {
   }, 1000);
 }
 
-// Global crash protection
+// Global crash protection for native debugging
 window.onerror = function(msg, url, line, col, error) {
-  console.log("CRITICAL_ERROR: " + msg + " at " + line + ":" + col);
+  console.error("CRITICAL_JS_ERROR: " + msg + " at " + line + ":" + col);
+  if (error && error.stack) console.error("STACK: " + error.stack);
   return false;
+};
+
+window.onunhandledrejection = function(event) {
+  console.error("UNHANDLED_PROMISE: " + event.reason);
+  if (event.reason && event.reason.stack) console.error("STACK: " + event.reason.stack);
 };

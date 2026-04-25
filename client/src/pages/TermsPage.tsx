@@ -62,9 +62,9 @@ export default function TermsPage() {
 
       <Section title="5. Subscriptions & Payments">
         <p>
-          Premium features are processed via Apple In-App Purchases or our secure payment partners. 
+          Premium features are processed exclusively via Apple In-App Purchases. 
           Subscriptions automatically renew unless cancelled at least 24 hours before the end of the 
-          current period. Refunds are handled according to the policies of the respective payment provider.
+          current period. Refunds are handled according to Apple's App Store policies.
         </p>
       </Section>
 

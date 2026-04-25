@@ -56,9 +56,9 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   profileImageUrl: text("profile_image_url"),
-  // Billing tracking
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
+  // Billing tracking (Generic names for App Store compliance)
+  billingCustomerId: text("billing_customer_id"),
+  billingSubscriptionId: text("billing_subscription_id"),
   subscriptionStatus: text("subscription_status"),
   subscriptionPlan: text("subscription_plan"),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
