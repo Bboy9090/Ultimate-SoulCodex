@@ -53,7 +53,7 @@ import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressi
 import { generateProfilePDF, generateCompatibilityPDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
 import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks } from "./services/shareable-links";
 import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "./services/transit-notifications";
-import Stripe from "stripe";
+
 import { SubscriptionService } from "./services/subscription-service";
 import { entitlementService } from "./services/entitlement-service";
 import { runWithTimeoutAndTiming, TIMEOUT_VALUES } from "./utils/timeout";
