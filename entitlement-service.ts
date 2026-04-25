@@ -3,7 +3,7 @@ import { storage } from './storage';
 
 export interface PremiumStatus {
   isPremium: boolean;
-  source: 'manual_override' | 'stripe_subscription' | 'access_code' | 'legacy_flag' | 'none';
+  source: 'manual_override' | 'active_billing' | 'access_code' | 'legacy_flag' | 'none';
   details?: {
     accessCode?: string;
     expiresAt?: Date;
@@ -31,15 +31,15 @@ class EntitlementService {
       };
     }
 
-    if (user?.stripeSubscriptionId && user?.subscriptionStatus) {
+    if (user?.billingSubscriptionId && user?.subscriptionStatus) {
       const status = user.subscriptionStatus;
       
       if (status === 'active' || status === 'trialing') {
         return {
           isPremium: true,
-          source: 'stripe_subscription',
+          source: 'active_billing',
           details: {
-            subscriptionId: user.stripeSubscriptionId,
+            subscriptionId: user.billingSubscriptionId,
             subscriptionStatus: status,
             subscriptionPlan: user.subscriptionPlan || undefined,
           },

@@ -75,25 +75,9 @@ import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
 import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext } from "./packages/core/soulcodex-v1/engine/generate";
 import { generateText, isGeminiAvailable } from "./gemini";
 
-// Initialize SubscriptionService (if Stripe is configured)
-let subscriptionService: SubscriptionService | null = null;
-if (process.env.STRIPE_SECRET_KEY && 
-    process.env.STRIPE_PRICE_WEEKLY && 
-    process.env.STRIPE_PRICE_MONTHLY && 
-    process.env.STRIPE_PRICE_YEARLY) {
-  subscriptionService = new SubscriptionService({
-    storage,
-    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-    priceIds: {
-      weekly: process.env.STRIPE_PRICE_WEEKLY,
-      monthly: process.env.STRIPE_PRICE_MONTHLY,
-      yearly: process.env.STRIPE_PRICE_YEARLY,
-    },
-  });
-  console.log("[SubscriptionService] Initialized successfully");
-} else {
-  console.warn("[SubscriptionService] Not initialized - missing Stripe configuration");
-}
+// Initialize SubscriptionService (Stripe Removed Mode)
+const subscriptionService = new SubscriptionService({ storage });
+console.log("[SubscriptionService] Initialized in Mock Mode (No Stripe)");
 
 // Utility function for consistent error responses
 function handleError(error: unknown, res: any, context: string) {
@@ -143,152 +127,6 @@ import { insertPushSubscriptionSchema } from "./shared/schema";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   await setupAuth(app);
-  
-  // Stripe webhook endpoint (MUST be registered before express.json() middleware)
-  // Uses raw body for signature verification
-  app.post('/api/stripe/webhook', 
-    (req: any, res: any, next: any) => {
-      // Parse raw body for Stripe signature verification
-      const rawMiddleware = require('express').raw({ type: 'application/json' });
-      rawMiddleware(req, res, next);
-    },
-    async (req: any, res: any) => {
-      try {
-        // Check if Stripe is configured
-        if (!subscriptionService) {
-          console.error('[StripeWebhook] SubscriptionService not initialized');
-          return res.status(503).json({ error: 'Webhook handler not configured' });
-        }
-
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-        if (!webhookSecret) {
-          console.error('[StripeWebhook] STRIPE_WEBHOOK_SECRET not configured');
-          return res.status(503).json({ error: 'Webhook secret not configured' });
-        }
-
-        // Get signature from headers
-        const signature = req.headers['stripe-signature'];
-        if (!signature) {
-          console.warn('[StripeWebhook] Missing stripe-signature header');
-          return res.status(400).json({ error: 'Missing signature' });
-        }
-
-        // Verify webhook signature and construct event
-        let event: Stripe.Event;
-        try {
-          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-          event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
-        } catch (err: any) {
-          console.warn('[StripeWebhook] Signature verification failed:', {
-            error: err.message,
-            ip: req.ip,
-            timestamp: new Date().toISOString(),
-          });
-          return res.status(400).json({ error: 'Invalid signature' });
-        }
-
-        console.log(`[StripeWebhook] Received event: ${event.type} (${event.id})`);
-
-        // Idempotency check: Has this event already been processed?
-        const existingEvent = await storage.getWebhookEventByStripeId(event.id);
-        if (existingEvent) {
-          console.log(`[StripeWebhook] Event ${event.id} already processed, skipping`);
-          return res.status(200).json({ result: 'skipped', message: 'Event already processed' });
-        }
-
-        // Route event to appropriate handler
-        let result: 'success' | 'error' | 'skipped' = 'success';
-        let metadata: any = { eventType: event.type, receivedAt: new Date().toISOString() };
-
-        try {
-          switch (event.type) {
-            case 'checkout.session.completed': {
-              const session = event.data.object as Stripe.Checkout.Session;
-              await subscriptionService.handleCheckoutCompleted(session);
-              metadata.customerId = session.customer;
-              metadata.subscriptionId = session.subscription;
-              break;
-            }
-
-            case 'customer.subscription.updated': {
-              const subscription = event.data.object as Stripe.Subscription;
-              await subscriptionService.handleSubscriptionUpdated(subscription);
-              metadata.customerId = subscription.customer;
-              metadata.subscriptionId = subscription.id;
-              break;
-            }
-
-            case 'customer.subscription.deleted': {
-              const subscription = event.data.object as Stripe.Subscription;
-              await subscriptionService.handleSubscriptionDeleted(subscription);
-              metadata.customerId = subscription.customer;
-              metadata.subscriptionId = subscription.id;
-              break;
-            }
-
-            case 'invoice.payment_failed': {
-              const invoice = event.data.object as Stripe.Invoice;
-              await subscriptionService.handlePaymentFailed(invoice);
-              metadata.customerId = invoice.customer;
-              metadata.invoiceId = invoice.id;
-              break;
-            }
-
-            default:
-              console.log(`[StripeWebhook] Unknown event type: ${event.type}, skipping`);
-              result = 'skipped';
-              break;
-          }
-
-          // Store webhook event for idempotency (after successful processing)
-          try {
-            await storage.createWebhookEvent({
-              stripeEventId: event.id,
-              type: event.type,
-              result,
-              metadata,
-            });
-          } catch (createErr: any) {
-            // Catch unique constraint violations (race condition - event processed by another instance)
-            if (createErr.code === '23505' || createErr.message?.includes('unique')) {
-              console.log(`[StripeWebhook] Unique constraint violation for ${event.id}, treating as already processed`);
-              return res.status(200).json({ result: 'skipped', message: 'Event already processed' });
-            }
-            throw createErr; // Re-throw other errors
-          }
-
-          return res.status(200).json({ result, message: 'Webhook processed successfully' });
-
-        } catch (handlerErr: any) {
-          console.error('[StripeWebhook] Handler error:', {
-            eventId: event.id,
-            eventType: event.type,
-            error: handlerErr.message,
-            stack: handlerErr.stack,
-          });
-
-          // Store error event
-          try {
-            await storage.createWebhookEvent({
-              stripeEventId: event.id,
-              type: event.type,
-              result: 'error',
-              metadata: { ...metadata, error: handlerErr.message },
-            });
-          } catch (err) {
-            console.error('[StripeWebhook] Failed to store error event:', err);
-          }
-
-          // Return 500 to trigger Stripe retry
-          return res.status(500).json({ error: 'Webhook processing failed' });
-        }
-
-      } catch (err: any) {
-        console.error('[StripeWebhook] Fatal error:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-      }
-    }
-  );
   
   // Mount chat routes
   registerChatRoutes(app);
@@ -869,16 +707,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timezone: validatedBirthData.timezone || "",
         latitude: validatedBirthData.latitude?.toString() || "",
         longitude: validatedBirthData.longitude?.toString() || "",
-        isPremium: false,
-        astrologyData,
-        numerologyData,
-        personalityData: {},
-        archetypeData: soulArchetypeData,
-        humanDesignData,
-        soulArchetypeData,
-        elementalMedicineData,
-        moralCompassData,
-        parentalInfluenceData,
+        data: {
+          astrologyData,
+          numerologyData,
+          humanDesignData,
+          soulArchetypeData,
+          elementalMedicineData,
+          moralCompassData,
+          parentalInfluenceData,
+          soulCodexResult,
+        },
       }).then(p => {
         console.log(`[SoulArchetype] Profile saved in background with id: ${p.id}`);
       }).catch(e => {
@@ -1988,48 +1826,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create Stripe subscription checkout session
-  app.post("/api/create-subscription", async (req, res) => {
-    try {
-      if (!subscriptionService) {
-        console.error("[CreateSubscription] SubscriptionService not initialized");
-        return res.status(503).json({ error: "Payment system temporarily unavailable. Please try again later or contact support." });
-      }
-
-      const { plan } = req.body;
-      
-      if (!plan || !['weekly', 'monthly', 'yearly'].includes(plan)) {
-        return res.status(400).json({ error: "Invalid plan selected" });
-      }
-      
-      // Get user ID and email from session (authenticated or anonymous)
-      const userId = (req.session as any).userId;
-      const sessionId = req.sessionID;
-      const email = (req.user as any)?.email || (req.session as any).email;
-      
-      // Create checkout session using the subscription service
-      const result = await subscriptionService.createCheckoutSession({
-        plan: plan as 'weekly' | 'monthly' | 'yearly',
-        userId,
-        sessionId: !userId ? sessionId : undefined,
-        email,
-        successUrl: `${req.headers.origin || 'http://localhost:5000'}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${req.headers.origin || 'http://localhost:5000'}/pricing`,
-      });
-      
-      console.log(`[CreateSubscription] Session created for ${userId || sessionId}, plan: ${plan}`);
-      res.json({ url: result.url, sessionId: result.sessionId });
-    } catch (error: any) {
-      return handleError(error, res, "CreateSubscription");
-    }
-  });
-
-  // Verify and confirm subscription after Stripe checkout
-  app.post("/api/confirm-subscription", async (req, res) => {
-    try {
-      if (!subscriptionService) {
-        console.error("[ConfirmSubscription] SubscriptionService not initialized");
-        return res.status(500).json({ error: "Payment system not configured" });
       }
 
       const { sessionId } = req.body;

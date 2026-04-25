@@ -29,7 +29,7 @@ The app uses Google Gemini AI to generate personalized text content (biographies
 
 Premium features are gated behind:
 - Access codes (promotional)
-- Stripe subscription payments (when configured)
+- Apple In-App Purchases (Tiered access)
 
 ### No User-Generated Public Content
 
