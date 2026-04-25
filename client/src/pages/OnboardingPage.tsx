@@ -182,7 +182,7 @@ export default function OnboardingPage() {
         if (!legacyGoals.includes(goal)) legacyGoals.push(goal);
       }
 
-      return apiRequest("/api/soul-archetype", {
+      return apiRequest("https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app/api/soul-archetype", {
         method: "POST",
         body: JSON.stringify({
           birth_data: {

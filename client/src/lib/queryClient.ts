@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { CapacitorHttp } from "@capacitor/core";
 
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
@@ -10,11 +11,17 @@ export function resolveApiUrl(url: string): string {
 
 async function defaultQueryFn({ queryKey }: { queryKey: readonly unknown[] }) {
   const url = resolveApiUrl(queryKey[0] as string);
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`${res.status}: ${await res.text()}`);
+  const response = await CapacitorHttp.get({
+    url,
+    headers: { "Content-Type": "application/json" },
+    connectTimeout: 30000,
+    readTimeout: 30000
+  });
+  
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`${response.status}: ${JSON.stringify(response.data)}`);
   }
-  return res.json();
+  return response.data;
 }
 
 export const queryClient = new QueryClient({
@@ -23,24 +30,38 @@ export const queryClient = new QueryClient({
       queryFn: defaultQueryFn,
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5,
-      retry: 1,
+      retry: 2,
     },
   },
 });
 
-export async function apiRequest(url: string, options?: RequestInit) {
+export async function apiRequest(url: string, options?: any) {
   const resolvedUrl = resolveApiUrl(url);
-  const res = await fetch(resolvedUrl, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!res.ok) {
-    throw new Error(`${res.status}: ${await res.text()}`);
+  const httpOptions = {
+    url: resolvedUrl,
+    method: options?.method || "GET",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    data: options?.body ? JSON.parse(options.body) : undefined,
+    connectTimeout: 30000,
+    readTimeout: 30000
+  };
+
+  const response = await CapacitorHttp.request(httpOptions);
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`${response.status}: ${JSON.stringify(response.data)}`);
   }
-  return res.json();
+  return response.data;
 }
 
 /** Drop-in replacement for fetch that supports absolute URLs in native apps */
-export async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
-  return fetch(resolveApiUrl(url), options);
+export async function apiFetch(url: string, options?: any): Promise<any> {
+  const resolvedUrl = resolveApiUrl(url);
+  return CapacitorHttp.request({
+    url: resolvedUrl,
+    method: options?.method || "GET",
+    headers: options?.headers,
+    data: options?.body ? JSON.parse(options.body) : undefined,
+    connectTimeout: 30000,
+    readTimeout: 30000
+  });
 }
