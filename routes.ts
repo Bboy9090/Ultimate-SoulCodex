@@ -1826,29 +1826,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-      }
-
-      const { sessionId } = req.body;
-      
-      if (!sessionId) {
-        return res.status(400).json({ error: "Session ID is required" });
-      }
-      
-      // Confirm subscription using the service (handles profile fallback and proper user/session lookup)
-      const result = await subscriptionService.confirmSubscription(sessionId);
-      
-      console.log(`[ConfirmSubscription] Subscription confirmed for profile ${result.profileId}, plan: ${result.plan}`);
-      
-      res.json({ 
-        success: result.success, 
-        message: "Subscription confirmed and activated",
-        plan: result.plan,
-        profileId: result.profileId
-      });
-    } catch (error: any) {
-      return handleError(error, res, "ConfirmSubscription");
-    }
-  });
 
   // Admin: Create access code
   app.post("/api/admin/access-codes", async (req, res) => {
