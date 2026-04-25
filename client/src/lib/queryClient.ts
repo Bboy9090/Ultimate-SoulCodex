@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
-    const baseUrl = process.env.VITE_API_URL || "";
+    const baseUrl = import.meta.env.VITE_API_URL || "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app";
     return `${baseUrl.replace(/\/$/, "")}${url}`;
   }
   return url;

@@ -7,6 +7,7 @@
 
 import { generateText, isGeminiAvailable, streamChat as geminiStreamChat } from "../gemini";
 import { generateTextGroq, isGroqAvailable, streamChatGroq } from "./groq";
+import { generateTextOpenAI, isOpenAIAvailable, streamChatOpenAI } from "./openai-provider";
 import { getCached, setCached } from "./ai-cache";
 import { deterministicFallback } from "./deterministic-fallback";
 import type { AIResponse, AIRequest, AIStreamRequest, AIStatus, AIProvider } from "../src/types/ai";
@@ -27,6 +28,7 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
 
   const temperature = input.temperature ?? 0.7;
 
+  // 1. Try Gemini (Primary)
   if (isGeminiAvailable()) {
     try {
       const fullPrompt = input.systemPrompt
@@ -47,6 +49,7 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
     }
   }
 
+  // 2. Try Groq (Backup)
   if (isGroqAvailable()) {
     try {
       const text = await generateTextGroq({
@@ -67,7 +70,32 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
         };
       }
     } catch (e) {
-      console.warn("[AI Router] Groq also failed:", (e as Error).message);
+      console.warn("[AI Router] Groq failed, trying OpenAI:", (e as Error).message);
+    }
+  }
+
+  // 3. Try OpenAI (Solid Backstop)
+  if (isOpenAIAvailable()) {
+    try {
+      const text = await generateTextOpenAI({
+        prompt: input.prompt,
+        systemPrompt: input.systemPrompt,
+        temperature,
+      });
+      if (text && text.trim().length > 20) {
+        setCached(cacheKey, text);
+        return {
+          status: "backup",
+          provider: "openai",
+          content: text,
+          meta: {
+            promptType: input.promptType,
+            reason: "Multiple providers failed",
+          },
+        };
+      }
+    } catch (e) {
+      console.warn("[AI Router] OpenAI also failed:", (e as Error).message);
     }
   }
 
@@ -141,7 +169,35 @@ export async function* routeAIStream(
       }
       if (yielded) return;
     } catch (e) {
-      console.warn("[AI Router] Groq stream also failed:", (e as Error).message);
+      console.warn("[AI Router] Groq stream failed, trying OpenAI:", (e as Error).message);
+    }
+  }
+
+  if (isOpenAIAvailable()) {
+    try {
+      const stream = streamChatOpenAI({
+        systemInstruction: input.systemInstruction,
+        history: input.history.map((h) => ({
+          role: h.role,
+          content:
+            typeof h.content === "string"
+              ? h.content
+              : (h as any).parts?.[0]?.text || "",
+        })),
+        message: input.message,
+        temperature: input.temperature ?? 0.8,
+      });
+
+      let yielded = false;
+      for await (const chunk of stream) {
+        if (chunk) {
+          yielded = true;
+          yield { chunk, status: "backup", provider: "openai" };
+        }
+      }
+      if (yielded) return;
+    } catch (e) {
+      console.warn("[AI Router] OpenAI stream also failed:", (e as Error).message);
     }
   }
 

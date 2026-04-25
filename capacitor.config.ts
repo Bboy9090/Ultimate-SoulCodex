@@ -16,8 +16,12 @@ const config: CapacitorConfig = {
       }
     : {}),
 
+  server: {
+    iosScheme: "soulcodex",
+    hostname: "localhost"
+  },
   ios: {
-    scheme: "Soul Codex",
+    scheme: "soulcodex",
     backgroundColor: "#08040F",
     contentInset: "automatic",
     preferredContentMode: "mobile",
@@ -29,8 +33,12 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchAutoHide: false,
       launchShowDuration: 2000,
-      backgroundColor: "#08040F",
+      backgroundColor: "#050208",
       showSpinner: false,
+      androidScaleType: "CENTER_CROP",
+      ios: {
+        contentMode: "fit",
+      },
       splashFullScreen: true,
       splashImmersive: true,
     },

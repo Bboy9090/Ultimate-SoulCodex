@@ -809,6 +809,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Run Soul Codex synthesis engine
       let soulCodexResult = null;
       try {
+        // Map onboarding patterns to MirrorAnswers
+        const mirror: Partial<MirrorAnswers> = {
+          reaction: [req.body.decisionStyle].filter(Boolean) as any,
+          betrayal: [req.body.escalation_pattern].filter(Boolean) as any,
+          drain: [req.body.drain_pattern_primary].filter(Boolean) as any,
+          freedomBuild: [req.body.pressureStyle].filter(Boolean) as any,
+        };
+
         const soulInputs: UserInputs = {
           birthData: {
             name: validatedBirthData.name,
@@ -819,18 +827,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             latitude: validatedBirthData.latitude,
             longitude: validatedBirthData.longitude,
           },
-          stressElement: req.body.stressElement ?? "air",
-          decisionStyle: req.body.decisionStyle ?? "gut",
-          pressureStyle: req.body.pressureStyle ?? "adapt",
+          mirror: mirror as MirrorAnswers,
           nonNegotiables: req.body.nonNegotiables ?? [],
           goals: req.body.goals ?? [],
-          socialEnergy: req.body.socialEnergy ?? "steady",
         };
 
+        // Use astroResult (full chart) as fallback if simplified calculation failed
+        const sunSign = astrologyData?.sunSign || (astroResult as any)?.sun?.sign;
+        const moonSign = astrologyData?.moonSign || (astroResult as any)?.moon?.sign;
+        const risingSign = astrologyData?.risingSign || (astroResult as any)?.rising?.sign;
+
         soulCodexResult = buildSoulProfile(soulInputs, {
-          sunSign: astrologyData?.sunSign,
-          moonSign: astrologyData?.moonSign,
-          risingSign: astrologyData?.risingSign,
+          sunSign,
+          moonSign,
+          risingSign,
           lifePath: numerologyData?.calculateNumerology?.lifePath,
         });
       } catch (error) {

@@ -2,6 +2,7 @@
 import "dotenv/config";
 
 import express, { type Express } from "express";
+import cors from "cors";
 import { registerRoutes } from "../routes";
 import { setupVite } from "../vite-server";
 
@@ -17,6 +18,20 @@ function log(message: string, source = "express") {
 }
 
 const app: Express = express();
+
+// Enable CORS for mobile app connectivity
+app.use(cors({
+  origin: [
+    "soulcodex://localhost", 
+    "capacitor://localhost", 
+    "http://localhost:3000", 
+    "http://localhost:5000",
+    "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 
 // Parse JSON bodies
 app.use(express.json());
