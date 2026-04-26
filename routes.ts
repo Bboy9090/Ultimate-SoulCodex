@@ -428,14 +428,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate soul archetype (standalone endpoint for frontend)
   app.post("/api/soul-archetype", async (req, res) => {
     try {
-      const { birth_data, user_id, all_systems } = req.body;
+      const { birth_data, user_id, all_systems, ...signals } = req.body;
       
       if (!birth_data) {
         return res.status(400).json({ message: "birth_data is required" });
       }
+
+      // Merge signals into birth_data for validation
+      const fullBirthData = {
+        ...birth_data,
+        ...signals
+      };
       
       // Validate birth data
-      const validatedBirthData = birthDataSchema.parse(birth_data);
+      const validatedBirthData = birthDataSchema.parse(fullBirthData);
 
       const normalizeOptionalText = (value: unknown): string | undefined => {
         if (typeof value !== "string") return undefined;
@@ -580,14 +586,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate Elemental Medicine Profile
       let elementalMedicineData = null;
       try {
+        console.log("[SoulArchetype] Calculating Elemental Medicine Profile...");
         if (astrologyData && numerologyData) {
           elementalMedicineData = calculateElementalProfile(
             validatedBirthData.birthDate,
-            numerologyData.calculateNumerology?.lifePath,
+            numerologyData.lifePath,
             astrologyData.sunSign,
             astrologyData.moonSign,
             humanDesignData?.type
           );
+          console.log("[SoulArchetype] Elemental Medicine Profile calculated successfully");
         }
       } catch (error) {
         console.error("[SoulArchetype] Elemental Medicine calculation failed:", error);
@@ -596,15 +604,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate soul archetype using elemental medicine system
       let soulArchetypeData = null;
       try {
+        console.log("[SoulArchetype] Generating soul archetype...");
         if (numerologyData && astrologyData) {
           soulArchetypeData = generateSoulArchetype(
             validatedBirthData.name,
-            numerologyData.calculateNumerology?.lifePath || 1,
+            numerologyData.lifePath || 1,
             astrologyData.sunSign,
             astrologyData.moonSign,
             humanDesignData?.type,
             undefined // enneagramType
           );
+          console.log("[SoulArchetype] Soul archetype generated successfully");
         }
       } catch (error) {
         console.error("[SoulArchetype] Soul archetype generation failed:", error);
@@ -613,23 +623,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate Moral Compass
       let moralCompassData = null;
       try {
-        const { calculateMoralCompass, calculateMoralCompassFromBirthData } = await import("./services/moral-compass");
+        console.log("[SoulArchetype] Calculating Moral Compass...");
         if (validatedBirthData.moralCompassAnswers && 
             validatedBirthData.moralCompassAnswers.familyValues && 
             validatedBirthData.moralCompassAnswers.neighborhoodType && 
             validatedBirthData.moralCompassAnswers.conflictResolution) {
           moralCompassData = calculateMoralCompass(
             validatedBirthData.moralCompassAnswers,
-            numerologyData?.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData?.sunSign
           );
         } else {
           moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.calculateNumerology?.lifePath,
+            numerologyData?.lifePath,
             astrologyData?.sunSign,
             astrologyData?.moonSign
           );
         }
+        console.log("[SoulArchetype] Moral Compass calculated successfully");
       } catch (error) {
         console.error("[SoulArchetype] Moral Compass calculation failed:", error);
       }
@@ -652,13 +663,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Run Soul Codex synthesis engine
       let soulCodexResult = null;
       try {
-        // Map onboarding patterns to MirrorAnswers
-        const mirror: Partial<MirrorAnswers> = {
-          reaction: [req.body.decisionStyle].filter(Boolean) as any,
-          betrayal: [req.body.escalation_pattern].filter(Boolean) as any,
-          drain: [req.body.drain_pattern_primary].filter(Boolean) as any,
-          freedomBuild: [req.body.pressureStyle].filter(Boolean) as any,
+        // 1. Map Onboarding Patterns to Mirror Signals
+        const mapDriver = (p: string | undefined): string | null => {
+          if (!p) return null;
+          const map: Record<string, string> = {
+            spiral_inward: "sanctuary",
+            explode_outward: "movement",
+            shut_down: "sanctuary",
+            lock_up: "system",
+            hyper_control: "masterpiece",
+            flee_distract: "movement",
+          };
+          return map[p] || null;
         };
+
+        const mapShadow = (e: string | undefined): string | null => {
+          if (!e) return null;
+          const map: Record<string, string> = {
+            suppress_until_snap: "emotional",
+            escalate_fast: "disrespect",
+            go_cold: "dishonesty",
+            people_please: "dishonesty",
+            intellectualize: "stupidity",
+            withdraw_disappear: "emotional",
+          };
+          return map[e] || null;
+        };
+
+        const mapDecision = (d: string | undefined): string | null => {
+          if (!d) return null;
+          const map: Record<string, string> = {
+            analysis_paralysis: "analyze",
+            fear_of_wrong: "withdraw",
+            need_consensus: "talk",
+            impulse_regret: "fix",
+            avoidance_freeze: "withdraw",
+            overthink_intuition: "analyze",
+          };
+          return map[d] || null;
+        };
+
+        const mapDrain = (dr: string | undefined): string | null => {
+          if (!dr) return null;
+          const map: Record<string, string> = {
+            unstructured_time: "chaos",
+            conflict_tension: "chaos",
+            performing_energy: "misunderstood",
+            unclear_expectations: "chaos",
+            being_needed: "repetition",
+            sensory_overload: "chaos",
+          };
+          return map[dr] || null;
+        };
+
+        // Build robust MirrorAnswers object from questionnaire signals
+        const mirror: Partial<MirrorAnswers> = {
+          freedomBuild: [
+            mapDriver(req.body.primary_pressure_pattern),
+            mapDriver(req.body.secondary_pressure_pattern)
+          ].filter(Boolean) as any[],
+          betrayal: [
+            mapShadow(req.body.escalation_pattern)
+          ].filter(Boolean) as any[],
+          reaction: [
+            mapDecision(req.body.decision_friction_primary),
+            mapDecision(req.body.decision_friction_secondary)
+          ].filter(Boolean) as any[],
+          drain: [
+            mapDrain(req.body.drain_pattern_primary),
+            mapDrain(req.body.drain_pattern_secondary)
+          ].filter(Boolean) as any[],
+        };
+
+        console.log("[SoulArchetype] Mapped onboarding signals to mirror:", mirror);
 
         const soulInputs: UserInputs = {
           birthData: {
@@ -684,46 +761,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign,
           moonSign,
           risingSign,
-          lifePath: numerologyData?.calculateNumerology?.lifePath,
+          lifePath: numerologyData?.lifePath,
         });
+        console.log("[SoulArchetype] Soul Codex synthesis completed");
       } catch (error) {
         console.error("[SoulArchetype] Soul Codex synthesis failed:", error);
       }
 
-      // Persist profile to database (NON-BLOCKING)
+      // Persist profile to database
       let userId = req.user?.id || null;
       let sessionId = req.sessionID || null;
 
-      storage.createProfile({
-        userId,
-        sessionId,
-        name: validatedBirthData.name,
-        birthDate: validatedBirthData.birthDate,
-        birthTime: validatedBirthData.birthTime || "",
-        birthLocation: validatedBirthData.birthLocation || "",
-        timezone: validatedBirthData.timezone || "",
-        latitude: validatedBirthData.latitude?.toString() || "",
-        longitude: validatedBirthData.longitude?.toString() || "",
-        data: {
-          astrologyData,
-          numerologyData,
-          humanDesignData,
-          soulArchetypeData,
-          elementalMedicineData,
-          moralCompassData,
-          parentalInfluenceData,
-          soulCodexResult,
-        },
-      }).then(p => {
-        console.log(`[SoulArchetype] Profile saved in background with id: ${p.id}`);
-      }).catch(e => {
-        console.error("[SoulArchetype] Background save failed:", e);
-      });
+      // Persist profile to database with timeout
+      let savedProfile;
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Database save timeout")), 8000)
+        );
+
+        savedProfile = await Promise.race([
+          storage.createProfile({
+            userId,
+            sessionId,
+            name: validatedBirthData.name,
+            birthDate: validatedBirthData.birthDate,
+            birthTime: validatedBirthData.birthTime || "",
+            birthLocation: validatedBirthData.birthLocation || "",
+            timezone: validatedBirthData.timezone || "",
+            latitude: validatedBirthData.latitude?.toString() || "",
+            longitude: validatedBirthData.longitude?.toString() || "",
+            data: {
+              astrologyData,
+              numerologyData,
+              humanDesignData,
+              soulArchetypeData,
+              elementalMedicineData,
+              moralCompassData,
+              parentalInfluenceData,
+              soulCodexResult,
+            },
+          }),
+          timeoutPromise
+        ]);
+        console.log(`[SoulArchetype] Profile saved with id: ${(savedProfile as any).id}`);
+      } catch (e) {
+        console.error("[SoulArchetype] Profile save failed or timed out:", (e as Error).message);
+        // We still continue to return the response even if save fails, 
+        // but we'll generate a temporary ID so the frontend doesn't crash
+        savedProfile = { id: `temp_${Date.now()}` };
+      }
 
       // Build response in the format expected by frontend
       const response = {
-        id: null, // Will be filled by save but client doesn't need it immediately
-        profileId: null,
+        id: savedProfile.id,
+        profileId: savedProfile.id,
         name: validatedBirthData.name,
         birthDate: validatedBirthData.birthDate,
         birthTime: validatedBirthData.birthTime || "",
@@ -742,7 +833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         soul_architecture: {
           foundation: astrologyData?.sunSign || "Astrological Big 3",
           structure: humanDesignData?.type || "Human Design Type",
-          expression: numerologyData?.calculateNumerology?.lifePath?.toString() || "Life Path Number",
+          expression: numerologyData?.lifePath?.toString() || "Life Path Number",
           integration: "All 35+ Systems Unified"
         },
         elementalMedicineData,
@@ -3926,10 +4017,10 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       const coreEssence = profile.synthesis?.coreEssence ?? "";
 
       const prompt = `
-You are generating 4 soul archetype comparables for this person's natal chart + Human Design profile. Think of it like NBA 2K telling you which players your build is most similar to — but instead of players, you're matching to archetypes.
+You are generating 4 soul archetype comparables for this person's natal chart + Human Design profile. Think of it like NBA 2K telling you which players your build is most similar to, but instead of players, you're matching to archetypes.
 
 PROFILE:
-- Archetype: ${archetype}${element ? ` (${element}${role ? ` · ${role}` : ""})` : ""}
+- Archetype: ${archetype}${element ? ` (${element}${role ? ` - ${role}` : ""})` : ""}
 - Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${risingSign}
 ${lifePath ? `- Life Path: ${lifePath}` : ""}
 - Human Design: ${hdType}${hdAuth ? `, ${hdAuth} Authority` : ""}${hdProf ? `, ${hdProf} Profile` : ""}
@@ -3939,29 +4030,29 @@ Return ONLY valid JSON (no markdown, no code fences, no explanation):
 
 {
   "animal": {
-    "name": "specific animal name (e.g. 'Peregrine Falcon', 'Octopus', 'Mantis Shrimp')",
-    "why": "1-2 sentences on shared behavioral pattern — concrete, not generic"
+    "name": "specific animal name (e.g. Peregrine Falcon, Octopus, Mantis Shrimp)",
+    "why": "1-2 sentences on shared behavioral pattern, concrete and not generic"
   },
   "deity": {
-    "name": "Deity · Pantheon (e.g. 'Athena · Greek', 'Shiva · Hindu', 'Odin · Norse')",
+    "name": "Deity - Pantheon (e.g. Athena - Greek, Shiva - Hindu, Odin - Norse)",
     "why": "1-2 sentences on why this deity's domain and function mirrors this profile behaviorally"
   },
   "historical": {
-    "name": "Full name · brief identifier (e.g. 'Nikola Tesla · inventor', 'Cleopatra · strategist-queen')",
-    "why": "1-2 sentences on the shared behavioral or archetypal pattern — what they both DO"
+    "name": "Full name - brief identifier (e.g. Nikola Tesla - inventor, Cleopatra - strategist-queen)",
+    "why": "1-2 sentences on the shared behavioral or archetypal pattern and what they both do"
   },
   "icon": {
-    "name": "Name · source (e.g. 'Atticus Finch · To Kill a Mockingbird', 'David Bowie · Ziggy era')",
+    "name": "Name - source (e.g. Atticus Finch - To Kill a Mockingbird, David Bowie - Ziggy era)",
     "why": "1-2 sentences on the shared archetypal signature in behavior and approach"
   }
 }
 
 Rules:
-- Behavioral and direct language only. No 'cosmic', 'spiritual', 'divine', 'universe', 'soul journey', 'vibrational'.
-- Each 'why' must reference concrete behavioral traits — what they DO, how they move, how they decide.
-- Pick comparables with genuine archetypal alignment. Avoid the most obvious/cliché choices unless truly fitting.
-- Animal: pick something specific and interesting — not generic wolf/eagle/lion unless the fit is exact.
-- Icon: can be fictional character OR real living/historical cultural figure.
+- Behavioral and direct language only. No cosmic/spiritual/divine/universe/soul journey/vibrational wording.
+- Each "why" must reference concrete behavioral traits, what they do and how they decide.
+- Pick comparables with genuine archetypal alignment. Avoid cliches unless truly fitting.
+- Animal should be specific and interesting, not generic wolf/eagle/lion unless exact fit.
+- Icon can be fictional character OR real living/historical cultural figure.
       `.trim();
 
       let comparables = null;
@@ -3970,27 +4061,28 @@ Rules:
         const aiResponse = await routeAIRequest({
           prompt,
           promptType: "biography",
-          temperature: 0.82
+          temperature: 0.82,
         });
         const raw = aiResponse.content || "";
-        const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+        const cleaned = raw.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
         comparables = JSON.parse(cleaned);
-      } catch (e) {
-        console.warn("[SoulComparables] AI parse failed:", e);
+      } catch (aiErr) {
+        console.warn("[SoulComparables] AI parse failed:", aiErr);
       }
 
       if (!comparables) {
         comparables = {
           animal:     { name: "Raven", why: "Operates through observation and pattern recognition before acting. Adapts strategy in real time rather than committing to a fixed plan." },
-          deity:      { name: "Hermes · Greek", why: "The connector and translator — moves between worlds, bridges information gaps, and operates at the edges where others don't venture." },
-          historical: { name: "Leonardo da Vinci · polymath", why: "Driven by systematic curiosity and the compulsion to understand mechanisms beneath the surface before moving on." },
-          icon:       { name: "Atticus Finch · To Kill a Mockingbird", why: "Steady moral architecture that holds under social pressure. The kind of clarity that costs something and is chosen anyway." },
+          deity:      { name: "Hermes - Greek", why: "The connector and translator - moves between worlds, bridges information gaps, and operates at the edges where others don't venture." },
+          historical: { name: "Leonardo da Vinci - polymath", why: "Driven by systematic curiosity and the compulsion to understand mechanisms beneath the surface before moving on." },
+          icon:       { name: "Atticus Finch - To Kill a Mockingbird", why: "Steady moral architecture that holds under social pressure. The kind of clarity that costs something and is chosen anyway." },
         };
       }
 
       res.json({ comparables });
     } catch (error) {
-      return handleError(error, res, "SoulComparables");
+      console.error("[SoulComparables] Route error:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

@@ -106,18 +106,28 @@ export default function CodexReadingPage() {
 
   const generateMutation = useMutation({
     mutationFn: async (payload: any) => {
+      console.log("[CodexReading] Sending generation request with payload:", payload);
       const data = await apiRequest("/api/codex30/generate", {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      if (!data.ok) throw new Error(data.error ?? "Generation failed");
+      console.log("[CodexReading] Received response:", data);
+      
+      if (!data || !data.synthesis) {
+        throw new Error("The synthesis engine returned an empty result. This usually happens if the AI generation timed out or hit a filter. Please try again.");
+      }
+      
       return data.synthesis as CodexSynthesis;
     },
     onSuccess: (data) => {
+      console.log("[CodexReading] Generation success, setting synthesis");
       setSynthesis(data);
       try { localStorage.setItem("soulCodexReading", JSON.stringify(data)); } catch {}
     },
-    onError: (err: any) => setError(err.message ?? "Unknown error"),
+    onError: (err: any) => {
+      console.error("[CodexReading] Generation error:", err);
+      setError(err.message ?? "Unknown error");
+    },
   });
 
   useEffect(() => {
@@ -125,6 +135,7 @@ export default function CodexReadingPage() {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
+        console.log("[CodexReading] Found cached reading:", parsed);
         const raw = JSON.stringify(parsed);
         const stale = /Stress element:|Decision style:|My strengths include:|Non-negotiable:|evidence/i.test(raw);
         // Also invalidate if isPremium field is missing (pre-gate cached readings may contain ungated data)
@@ -133,6 +144,7 @@ export default function CodexReadingPage() {
           setSynthesis(parsed);
           return;
         }
+        console.log("[CodexReading] Cached reading is stale or missing gate, removing");
         localStorage.removeItem("soulCodexReading");
       } catch {}
     }
@@ -146,6 +158,7 @@ export default function CodexReadingPage() {
     const rawOnboarding = localStorage.getItem("onboardingData");
     const rawConf       = localStorage.getItem("soulConfidence");
 
+    console.log("[CodexReading] Building payload from localStorage...");
     let profile: any    = {};
     let fullChart: any  = undefined;
     let userInputs: any = {};
@@ -157,7 +170,10 @@ export default function CodexReadingPage() {
     else if (profile?.signals) { userInputs = profile.signals; }
     if (rawConf) { try { const c = JSON.parse(rawConf); profile.confidence = c; } catch {} }
 
+    console.log("[CodexReading] Final payload structure:", { profile, fullChart, userInputs });
+
     if (!rawProfile && !rawOnboarding) {
+      console.warn("[CodexReading] No profile found in localStorage");
       setError("No profile found. Complete the onboarding first.");
       return;
     }
