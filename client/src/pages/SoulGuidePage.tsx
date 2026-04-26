@@ -8,7 +8,7 @@ interface Message {
   text: string;
 }
 
-const FREE_LIMIT = 2;
+
 
 const SUGGESTIONS = [
   "What pattern do I keep repeating?",
@@ -25,6 +25,7 @@ export default function SoulGuidePage() {
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [questionsUsed, setQuestionsUsed]   = useState(0);
   const [isPremium, setIsPremium]           = useState(false);
+  const [freeLimit, setFreeLimit]           = useState(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,14 +38,18 @@ export default function SoulGuidePage() {
   useEffect(() => {
     const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
     if (cachedPremium) setIsPremium(true);
-    apiFetch("/api/chat/soul-guide/usage")
+    
+    const hasLocalProfile = !!getProfileContext();
+    apiFetch(`/api/chat/soul-guide/usage?hasProfile=${hasLocalProfile}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d) return;
         const premium = d.isPremium || cachedPremium;
+        const limit = d.limit ?? (hasLocalProfile ? 2 : 1);
         setIsPremium(premium);
+        setFreeLimit(limit);
         setQuestionsUsed(d.used ?? 0);
-        if (!premium && (d.used ?? 0) >= FREE_LIMIT) {
+        if (!premium && (d.used ?? 0) >= limit) {
           setIsLimitReached(true);
         }
       })
@@ -90,7 +95,7 @@ export default function SoulGuidePage() {
       if (res.status === 403) {
         const body = await res.json().catch(() => ({}));
         if (body.error === "limit_reached") {
-          setQuestionsUsed(body.used ?? FREE_LIMIT);
+          setQuestionsUsed(body.used ?? freeLimit);
           setIsLimitReached(true);
           setIsLoading(false);
           return;
@@ -143,7 +148,7 @@ export default function SoulGuidePage() {
     }
   };
 
-  const remaining = isPremium ? null : Math.max(0, FREE_LIMIT - questionsUsed);
+  const remaining = isPremium ? null : Math.max(0, freeLimit - questionsUsed);
 
   return (
     <div style={{
@@ -294,7 +299,7 @@ export default function SoulGuidePage() {
               ✦
             </div>
             <h3 style={{ fontFamily: "var(--font-serif)", color: "var(--sc-gold, #D4A85F)", fontSize: "1.15rem", margin: "0 0 0.5rem" }}>
-              You've used your {FREE_LIMIT} free questions
+              You've used your {freeLimit} free questions
             </h3>
             <p style={{ color: "rgba(246,241,232,0.55)", fontSize: "0.85rem", lineHeight: 1.65, margin: "0 0 1.5rem", maxWidth: 320, marginLeft: "auto", marginRight: "auto" }}>
               Unlock unlimited access to the Soul Guide, your Full Cosmic Blueprint, and the premium birth chart.
