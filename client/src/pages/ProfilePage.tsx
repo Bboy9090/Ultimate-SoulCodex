@@ -99,7 +99,7 @@ async function getProfile(): Promise<SoulProfile | null> {
     const raw = localStorage.getItem("soulProfile");
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (data.archetype && data.synthesis) return data as SoulProfile;
+    if (data?.archetype && data?.synthesis) return data as SoulProfile;
     const res = await apiFetch("/api/profiles");
     if (res.ok) {
       const serverProfile = await res.json();
