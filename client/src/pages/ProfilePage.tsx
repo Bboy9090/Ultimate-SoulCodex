@@ -228,6 +228,13 @@ export default function ProfilePage() {
   const [codeSubmitting, setCodeSubmitting]        = useState(false);
   const [codeMessage, setCodeMessage]             = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [email, setEmail]                         = useState("");
+  const [emailSubmitting, setEmailSubmitting]     = useState(false);
+  const [emailMessage, setEmailMessage]           = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [emailSaved, setEmailSaved]               = useState(() => {
+    try { return !!localStorage.getItem("soulEmailSaved"); } catch { return false; }
+  });
+
   useEffect(() => {
     (async () => {
       const nextProfile = await getProfile();
@@ -271,6 +278,27 @@ export default function ProfilePage() {
       console.error("[SoulComparables]", e);
     } finally {
       setComparablesLoading(false);
+    }
+  }
+
+  async function handleSaveEmail() {
+    if (!email.trim() || !email.includes("@")) return;
+    setEmailSubmitting(true);
+    setEmailMessage(null);
+    try {
+      const res = await apiFetch("/api/capture-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), profileId: profile?.id || profile?.profileId })
+      });
+      if (!res.ok) throw new Error("Failed to save email");
+      localStorage.setItem("soulEmailSaved", "true");
+      setEmailSaved(true);
+      setEmailMessage({ type: "success", text: "Blueprint saved. We'll alert you of major transits." });
+    } catch (err) {
+      setEmailMessage({ type: "error", text: "Failed to save. Try again." });
+    } finally {
+      setEmailSubmitting(false);
     }
   }
 
@@ -732,6 +760,56 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* ── Email Capture ──────────────────────────────────────────────── */}
+      {!isPremium && !emailSaved && premiumChecked && (
+        <div style={{
+          background: "rgba(242,234,218,0.96)",
+          border: "1px solid rgba(212,168,95,0.35)",
+          borderRadius: "12px", padding: "1.5rem", marginBottom: "1.75rem",
+          position: "relative", zIndex: 1,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.75rem" }}>
+            <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.7 }}>◉</span>
+            <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#5a3d1a" }}>
+              Save Your Blueprint
+            </span>
+          </div>
+          <p style={{ fontSize: "0.82rem", color: "#5a3d1a", lineHeight: 1.6, margin: "0 0 1rem" }}>
+            Your free profile is currently stored locally. Enter your email to back up your archetype and get notified when major cosmic transits hit your pattern.
+          </p>
+          <form
+            onSubmit={e => { e.preventDefault(); handleSaveEmail(); }}
+            style={{ display: "flex", gap: "0.6rem", marginBottom: emailMessage ? "0.75rem" : 0 }}
+          >
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email"
+              style={{
+                flex: 1, padding: "0.65rem 0.9rem",
+                background: "rgba(255,255,255,0.7)", border: "1px solid rgba(212,168,95,0.35)",
+                borderRadius: "8px", fontSize: "0.88rem", color: "#1A0E07", outline: "none",
+              }}
+            />
+            <button
+              type="submit" disabled={!email.trim() || emailSubmitting}
+              style={{
+                padding: "0.65rem 1.25rem", fontSize: "0.82rem", fontWeight: 700,
+                background: email.trim() ? "linear-gradient(135deg, #D4A85F 0%, #b8883a 100%)" : "rgba(212,168,95,0.2)",
+                color: email.trim() ? "#1A0E07" : "#8a6030",
+                border: "1px solid rgba(212,168,95,0.5)", borderRadius: "8px",
+                cursor: email.trim() ? "pointer" : "default", opacity: emailSubmitting ? 0.6 : 1
+              }}
+            >
+              {emailSubmitting ? "..." : "Save"}
+            </button>
+          </form>
+          {emailMessage && (
+            <div style={{ fontSize: "0.75rem", color: emailMessage.type === "success" ? "#22c55e" : "#ef4444" }}>
+              {emailMessage.text}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Access & Premium ──────────────────────────────────────────── */}
       {premiumChecked && (

@@ -504,6 +504,68 @@ export default function CodexReadingPage() {
               </div>
             ))}
 
+            {/* ── BLURRED CLIFFHANGER ── */}
+            <div style={{ position: "relative" }}>
+              <div style={{ opacity: 0.4, pointerEvents: "none", filter: "blur(6px)", userSelect: "none" }}>
+                {[
+                  { header: "HOW I MOVE", glyph: "▶", lines: ["When the pressure hits, I don't hesitate. I leverage my natural momentum to bypass friction. My decision-making process relies entirely on...", "There is a specific way I need to structure my day to avoid immediate burnout, which involves protecting my energy from..."] },
+                  { header: "MY GROWTH EDGE", glyph: "◈", lines: ["The biggest trap I fall into is assuming everyone else processes reality at my speed. I often sabotage my own foundations by...", "To break this cycle, I must intentionally adopt a strategy of..."] },
+                  { header: "PRESCRIPTIONS", glyph: "✦", lines: ["- Establish a rigid boundary around unstructured time.", "- Decline requests that require high emotional performing energy.", "- Implement a 24-hour delay before committing to new projects."] }
+                ].map((fakeSec, idx) => (
+                  <div key={idx} style={{
+                    background: `rgba(242,234,218,0.96)`,
+                    border: "1px solid rgba(212,168,95,0.12)",
+                    borderLeft: `3px solid #D4A85F`,
+                    borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                      <span style={{ color: "#D4A85F", fontSize: "0.85rem", flexShrink: 0 }}>{fakeSec.glyph}</span>
+                      <h2 style={{
+                        fontFamily: "var(--font-serif)", fontSize: "0.75rem",
+                        letterSpacing: "0.1em", textTransform: "uppercase", color: "#D4A85F", margin: 0,
+                      }}>
+                        {fakeSec.header}
+                      </h2>
+                    </div>
+                    {fakeSec.lines.map((line, j) => (
+                      <p key={j} style={{
+                        color: "#1A0E07", lineHeight: 1.75,
+                        marginBottom: j < fakeSec.lines.length - 1 ? "0.55rem" : 0,
+                        fontFamily: "var(--font-serif)", fontSize: "0.9375rem",
+                      }}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Overlay Lock Icon */}
+              <div style={{
+                position: "absolute", top: "40%", left: "50%", transform: "translate(-50%, -50%)",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", zIndex: 10
+              }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: "50%",
+                  background: "rgba(10,1,24,0.8)", border: "1px solid rgba(212,168,95,0.4)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "1.8rem", color: "var(--cosmic-gold)",
+                  boxShadow: "0 4px 30px rgba(212,168,95,0.25)",
+                  backdropFilter: "blur(4px)"
+                }}>
+                  🔒
+                </div>
+                <div style={{
+                  background: "rgba(10,1,24,0.8)", border: "1px solid rgba(212,168,95,0.3)",
+                  padding: "0.5rem 1.25rem", borderRadius: "99px", color: "var(--sc-ivory)",
+                  fontSize: "0.85rem", fontWeight: 600, letterSpacing: "0.05em",
+                  backdropFilter: "blur(4px)", textTransform: "uppercase"
+                }}>
+                  Top Secret Signals
+                </div>
+              </div>
+            </div>
+
             {/* Upgrade card */}
             <div style={{
               background: "linear-gradient(135deg, rgba(212,168,95,0.12), rgba(212,168,95,0.05))",
