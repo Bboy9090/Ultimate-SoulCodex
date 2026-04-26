@@ -3966,18 +3966,17 @@ Rules:
 
       let comparables = null;
 
-        try {
-          const aiResponse = await routeAIRequest({
-            prompt,
-            promptType: "biography",
-            temperature: 0.82
-          });
-          const raw = aiResponse.content || "";
-          const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-          comparables = JSON.parse(cleaned);
-        } catch (e) {
-          console.warn("[SoulComparables] AI parse failed:", e);
-        }
+      try {
+        const aiResponse = await routeAIRequest({
+          prompt,
+          promptType: "biography",
+          temperature: 0.82
+        });
+        const raw = aiResponse.content || "";
+        const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+        comparables = JSON.parse(cleaned);
+      } catch (e) {
+        console.warn("[SoulComparables] AI parse failed:", e);
       }
 
       if (!comparables) {
