@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../storage";
-import { streamChat, isGeminiAvailable } from "../gemini";
+import { routeAIStream } from "../services/ai-router";
 import { entitlementService } from "../services/entitlement-service";
 import { buildSoulCodexSystemPrompt } from "../src/ai/soulCodexEngine";
 import { runSoulCodexEngine } from "@soulcodex/core";
@@ -16,11 +16,7 @@ export function registerChatRoutes(app: Express) {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      if (!isGeminiAvailable()) {
-        return res.status(503).json({
-          message: "AI Soul Guide is temporarily unavailable. Please try again later.",
-        });
-      }
+
 
       const userId   = (req as any).user?.id;
       const sessionId = (req as any).sessionID;
@@ -112,17 +108,17 @@ export function registerChatRoutes(app: Express) {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const stream = streamChat({
-        model: "gemini-2.5-flash",
-        temperature: 0.8,
+      const stream = routeAIStream({
+        promptType: "chat",
         systemInstruction,
         history,
         message,
+        temperature: 0.8,
       });
 
-      for await (const content of stream) {
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      for await (const { chunk } of stream) {
+        if (chunk) {
+          res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
         }
       }
 

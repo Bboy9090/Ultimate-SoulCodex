@@ -122,7 +122,6 @@ export async function* routeAIStream(
   if (isGeminiAvailable()) {
     try {
       const stream = geminiStreamChat({
-        model: "gemini-1.5-flash",
         systemInstruction: input.systemInstruction,
         history: input.history.map((h) => ({
           role: h.role,
