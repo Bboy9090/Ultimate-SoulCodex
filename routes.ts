@@ -690,40 +690,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("[SoulArchetype] Soul Codex synthesis failed:", error);
       }
 
-      // Persist profile to database (NON-BLOCKING)
+      // Persist profile to database before responding so the client receives a real ID.
       let userId = req.user?.id || null;
       let sessionId = req.sessionID || null;
-
-      storage.createProfile({
-        userId,
-        sessionId,
-        name: validatedBirthData.name,
-        birthDate: validatedBirthData.birthDate,
-        birthTime: validatedBirthData.birthTime || "",
-        birthLocation: validatedBirthData.birthLocation || "",
-        timezone: validatedBirthData.timezone || "",
-        latitude: validatedBirthData.latitude?.toString() || "",
-        longitude: validatedBirthData.longitude?.toString() || "",
-        data: {
-          astrologyData,
-          numerologyData,
-          humanDesignData,
-          soulArchetypeData,
-          elementalMedicineData,
-          moralCompassData,
-          parentalInfluenceData,
-          soulCodexResult,
-        },
-      }).then(p => {
-        console.log(`[SoulArchetype] Profile saved in background with id: ${p.id}`);
-      }).catch(e => {
-        console.error("[SoulArchetype] Background save failed:", e);
-      });
+      let savedProfile: any = null;
+      try {
+        savedProfile = await storage.createProfile({
+          userId,
+          sessionId,
+          name: validatedBirthData.name,
+          birthDate: validatedBirthData.birthDate,
+          birthTime: validatedBirthData.birthTime || "",
+          birthLocation: validatedBirthData.birthLocation || "",
+          timezone: validatedBirthData.timezone || "",
+          latitude: validatedBirthData.latitude?.toString() || "",
+          longitude: validatedBirthData.longitude?.toString() || "",
+          data: {
+            astrologyData,
+            numerologyData,
+            humanDesignData,
+            soulArchetypeData,
+            elementalMedicineData,
+            moralCompassData,
+            parentalInfluenceData,
+            soulCodexResult,
+          },
+        });
+        console.log(`[SoulArchetype] Profile saved with id: ${savedProfile.id}`);
+      } catch (e) {
+        console.error("[SoulArchetype] Profile save failed:", e);
+      }
 
       // Build response in the format expected by frontend
       const response = {
-        id: null, // Will be filled by save but client doesn't need it immediately
-        profileId: null,
+        id: savedProfile?.id ?? null,
+        profileId: savedProfile?.id ?? null,
         name: validatedBirthData.name,
         birthDate: validatedBirthData.birthDate,
         birthTime: validatedBirthData.birthTime || "",
