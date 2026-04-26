@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { apiRequest, queryClient, apiFetch } from "../lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import CosmicLoader from "@/components/CosmicLoader";
