@@ -17,7 +17,7 @@ export async function setupVite(app: express.Express, server: Server) {
     const vite = await createViteServer({
       server: { middlewareMode: true, hmr: { server }, allowedHosts: true },
       appType: "spa",
-      configFile: path.resolve("apps/web/vite.config.ts"),
+      configFile: path.resolve("vite.config.ts"),
     });
     app.use(vite.middlewares);
   }
