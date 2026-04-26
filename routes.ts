@@ -773,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let sessionId = req.sessionID || null;
 
       // Persist profile to database with timeout
-      let savedProfile;
+      let savedProfile: any = null;
       try {
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error("Database save timeout")), 8000)
@@ -803,7 +803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }),
           timeoutPromise
         ]);
-        console.log(`[SoulArchetype] Profile saved with id: ${(savedProfile as any).id}`);
+        console.log(`[SoulArchetype] Profile saved with id: ${savedProfile?.id}`);
       } catch (e) {
         console.error("[SoulArchetype] Profile save failed or timed out:", (e as Error).message);
         // We still continue to return the response even if save fails, 
@@ -813,8 +813,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Build response in the format expected by frontend
       const response = {
-        id: savedProfile.id,
-        profileId: savedProfile.id,
+        id: savedProfile?.id ?? null,
+        profileId: savedProfile?.id ?? null,
         name: validatedBirthData.name,
         birthDate: validatedBirthData.birthDate,
         birthTime: validatedBirthData.birthTime || "",

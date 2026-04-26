@@ -77,12 +77,25 @@ export async function apiRequest(url: string, options?: any) {
 /** Drop-in replacement for fetch that supports absolute URLs in native apps */
 export async function apiFetch(url: string, options?: any): Promise<any> {
   const resolvedUrl = resolveApiUrl(url);
-  return CapacitorHttp.request({
+  const response = await CapacitorHttp.request({
     url: resolvedUrl,
     method: options?.method || "GET",
-    headers: options?.headers,
+    headers: options?.headers || { "Content-Type": "application/json" },
     data: options?.body ? JSON.parse(options.body) : undefined,
     connectTimeout: 60000,
     readTimeout: 60000
   });
+  return {
+    ok: response.status >= 200 && response.status < 300,
+    status: response.status,
+    data: response.data,
+    json: async () => response.data,
+    text: async () =>
+      typeof response.data === "string"
+        ? response.data
+        : JSON.stringify(response.data),
+    blob: async () => {
+      throw new Error("Blob downloads are not supported through CapacitorHttp yet.");
+    },
+  };
 }
