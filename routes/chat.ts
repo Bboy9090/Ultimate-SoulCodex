@@ -98,6 +98,8 @@ export function registerChatRoutes(app: Express) {
           directMode: true,
           includePatternDetection: true,
         }, engineData);
+      } else if (profileContext) {
+        systemInstruction = buildProfileContextPrompt(profileContext);
       } else {
         systemInstruction = buildGeneralPrompt();
       }
