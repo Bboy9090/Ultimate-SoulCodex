@@ -5,7 +5,7 @@ import { entitlementService } from "../services/entitlement-service";
 import { buildSoulCodexSystemPrompt } from "../src/ai/soulCodexEngine";
 import { runSoulCodexEngine } from "@soulcodex/core";
 
-const FREE_QUESTION_LIMIT = 2;
+
 
 export function registerChatRoutes(app: Express) {
   app.post("/api/chat/soul-guide", async (req, res) => {
@@ -51,20 +51,6 @@ export function registerChatRoutes(app: Express) {
         }
       }
 
-      // ── Usage gate ───────────────────────────────────────────────────────
-      if (!isPremium) {
-        const chatCount: number = session?.chatCount ?? 0;
-        if (chatCount >= FREE_QUESTION_LIMIT) {
-          return res.status(403).json({
-            error: "limit_reached",
-            used: chatCount,
-            limit: FREE_QUESTION_LIMIT,
-          });
-        }
-        // Increment before streaming so failed streams still count
-        if (session) session.chatCount = chatCount + 1;
-      }
-
       // ── Profile context ──────────────────────────────────────────────────
       let profile: any = null;
       if (userId) {
@@ -72,6 +58,23 @@ export function registerChatRoutes(app: Express) {
       } else if (sessionId) {
         const profiles = await storage.getAllProfiles();
         profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
+      }
+
+      const hasProfileData = !!profile || !!profileContext;
+      const dynamicLimit = hasProfileData ? 2 : 1;
+
+      // ── Usage gate ───────────────────────────────────────────────────────
+      if (!isPremium) {
+        const chatCount: number = session?.chatCount ?? 0;
+        if (chatCount >= dynamicLimit) {
+          return res.status(403).json({
+            error: "limit_reached",
+            used: chatCount,
+            limit: dynamicLimit,
+          });
+        }
+        // Increment before streaming so failed streams still count
+        if (session) session.chatCount = chatCount + 1;
       }
 
       // ── Engine Data ─────────────────────────────────────────────────────
@@ -162,8 +165,21 @@ export function registerChatRoutes(app: Express) {
         } catch {}
       }
 
+      const hasLocalProfile = req.query.hasProfile === 'true';
+      let profile: any = null;
+      if (userId) {
+        try { profile = await storage.getProfileByUserId(userId); } catch {}
+      } else if (sessionId) {
+        try {
+          const profiles = await storage.getAllProfiles();
+          profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
+        } catch {}
+      }
+      
+      const hasProfileData = !!profile || hasLocalProfile;
+      const limit = hasProfileData ? 2 : 1;
+
       const used  = isPremium ? 0 : (session?.chatCount ?? 0);
-      const limit = FREE_QUESTION_LIMIT;
       res.json({ isPremium, used, limit, remaining: isPremium ? null : Math.max(0, limit - used) });
     } catch (err) {
       console.error("[soul-guide usage]", err);
