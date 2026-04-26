@@ -73,11 +73,8 @@ import { isGeneric } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
 import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext } from "./packages/core/soulcodex-v1/engine/generate";
-import { generateText, isGeminiAvailable } from "./gemini";
+import { routeAIRequest } from "./services/ai-router";
 
-// Initialize SubscriptionService (Stripe Removed Mode)
-const subscriptionService = new SubscriptionService({ storage });
-console.log("[SubscriptionService] Initialized in Mock Mode (No Stripe)");
 
 // Utility function for consistent error responses
 function handleError(error: unknown, res: any, context: string) {
@@ -3194,15 +3191,24 @@ Each value: 2–3 sentences. First person. Behavioral. No banned phrases.`;
 
       let sections: Record<string, string> = {};
 
-      if (isGeminiAvailable()) {
-        const raw = await generateText({ model: "gemini-2.5-flash", prompt: sectionPrompt, temperature: 0.78 });
-        try {
-          const cleaned = raw.replace(/^```[a-z]*\n?/,"").replace(/```$/,"").trim();
-          sections = JSON.parse(cleaned);
-        } catch (parseErr) {
-          console.error("[blueprint] Failed to parse AI JSON:", parseErr);
-          sections = { lifeTheme: raw };
+      try {
+        const aiResponse = await routeAIRequest({
+          prompt: sectionPrompt,
+          promptType: "biography",
+          temperature: 0.78
+        });
+        const raw = aiResponse.content || "";
+        if (raw) {
+          try {
+            const cleaned = raw.replace(/^```[a-z]*\n?/,"").replace(/```$/,"").trim();
+            sections = JSON.parse(cleaned);
+          } catch (parseErr) {
+            console.error("[blueprint] Failed to parse AI JSON:", parseErr);
+            sections = { lifeTheme: raw };
+          }
         }
+      } catch (err) {
+        console.error("[blueprint] AI request failed:", err);
       }
 
       // Fallback stubs when AI is unavailable or parse failed
@@ -3293,14 +3299,21 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
 }
 `.trim();
 
-      // Only call Gemini for authenticated users — prevents unauthenticated LLM cost abuse
+      // Only call AI for authenticated users — prevents unauthenticated LLM cost abuse
       const isAuthed = !!(req.user as any)?.id || !!(req.session as any)?.userId;
       let aiText;
-      if (isAuthed && isGeminiAvailable()) {
+      if (isAuthed) {
         try {
-          const raw = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.72 });
-          const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/,"").trim();
-          aiText = JSON.parse(cleaned);
+          const aiResponse = await routeAIRequest({
+            prompt,
+            promptType: "biography",
+            temperature: 0.72
+          });
+          const raw = aiResponse.content || "";
+          if (raw) {
+            const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/,"").trim();
+            aiText = JSON.parse(cleaned);
+          }
         } catch (e) {
           console.warn("[NatalReport] AI generation failed, using fallback:", e);
         }
@@ -3324,7 +3337,7 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
 
       // Generate soul comparables for the bonus PDF page
       let comparables = null;
-      if (isAuthed && isGeminiAvailable()) {
+      if (isAuthed) {
         try {
           const compPrompt = `
 You are generating 4 soul archetype comparables for a natal chart profile.
@@ -3340,9 +3353,16 @@ Return ONLY valid JSON (no markdown):
 }
 Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pick specific, well-matched comparables.`.trim();
 
-          const raw2 = await generateText({ model: "gemini-2.5-flash", prompt: compPrompt, temperature: 0.82 });
-          const cleaned2 = (raw2 ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-          comparables = JSON.parse(cleaned2);
+          const aiResponse2 = await routeAIRequest({
+            prompt: compPrompt,
+            promptType: "biography",
+            temperature: 0.82
+          });
+          const raw2 = aiResponse2.content || "";
+          if (raw2) {
+            const cleaned2 = (raw2 ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+            comparables = JSON.parse(cleaned2);
+          }
         } catch (ce) {
           console.warn("[NatalReport] Comparables generation failed:", ce);
         }
@@ -3676,14 +3696,12 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
 
       const card = buildTodayCard(horoscopeData, profile ?? {}, codexSynthesis);
 
-      // AI personalisation — overwrite static fields if Gemini is available
-      if (isGeminiAvailable()) {
-        try {
-          const aiCard = await generateTodayCardAI(card, profile ?? {}, horoscopeData, codexSynthesis);
-          if (aiCard) Object.assign(card, aiCard);
-        } catch (e) {
-          console.warn("[TodayCard] AI personalisation failed, using static fallback:", e);
-        }
+      // AI personalisation — overwrite static fields if successful
+      try {
+        const aiCard = await generateTodayCardAI(card, profile ?? {}, horoscopeData, codexSynthesis);
+        if (aiCard) Object.assign(card, aiCard);
+      } catch (e) {
+        console.warn("[TodayCard] AI personalisation failed, using static fallback:", e);
       }
 
       return res.json({ ok: true, card });
@@ -3770,25 +3788,41 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
 
       let narrative = "";
 
-      if (isGeminiAvailable()) {
-        const prompt = narratorPrompt({
-          codename,
-          archetype: codename,
-          themes: themes.slice(0, 6).map(t => ({ tag: t.tag, score: t.score })),
-          strengths,
-          shadows,
-          triggers,
-          prescriptions,
-          anchors,
-          contradictionHint,
-          behavioralStatements,
+      const prompt = narratorPrompt({
+        codename,
+        archetype: codename,
+        themes: themes.slice(0, 6).map(t => ({ tag: t.tag, score: t.score })),
+        strengths,
+        shadows,
+        triggers,
+        prescriptions,
+        anchors,
+        contradictionHint,
+        behavioralStatements,
+      });
+
+      try {
+        const aiResponse = await routeAIRequest({
+          prompt,
+          promptType: "biography",
+          temperature: 0.82
         });
+        narrative = aiResponse.content || "";
+      } catch (e) {
+        console.warn("[codex30] AI generation error:", e);
+      }
 
-        narrative = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.82 });
-
-        if (!narrative || isGeneric(narrative)) {
+      if (!narrative || isGeneric(narrative)) {
+        try {
           const rPrompt = rewritePrompt(narrative || "No output generated.", anchors);
-          narrative = await generateText({ model: "gemini-2.5-flash", prompt: rPrompt, temperature: 0.88 });
+          const aiResponseRewrite = await routeAIRequest({
+            prompt: rPrompt,
+            promptType: "biography",
+            temperature: 0.88
+          });
+          narrative = aiResponseRewrite.content || "";
+        } catch (e) {
+          console.warn("[codex30] AI rewrite error:", e);
         }
       }
 
@@ -3932,9 +3966,13 @@ Rules:
 
       let comparables = null;
 
-      if (isGeminiAvailable()) {
         try {
-          const raw = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.82 });
+          const aiResponse = await routeAIRequest({
+            prompt,
+            promptType: "biography",
+            temperature: 0.82
+          });
+          const raw = aiResponse.content || "";
           const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
           comparables = JSON.parse(cleaned);
         } catch (e) {
@@ -4049,7 +4087,12 @@ WATCHOUT:
 DECISION: [sentence or two]
 `.trim();
 
-  const raw = await generateText({ model: "gemini-2.5-flash", prompt, temperature: 0.78 });
+  const aiResponse = await routeAIRequest({
+    prompt,
+    promptType: "biography",
+    temperature: 0.78
+  });
+  const raw = aiResponse.content || "";
   if (!raw) return null;
 
   try {
