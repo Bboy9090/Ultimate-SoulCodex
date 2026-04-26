@@ -481,7 +481,9 @@ export default function OnboardingPage() {
 
         {mutation.isError && (
           <p style={{ color: "var(--destructive)", marginTop: "1rem", fontSize: "0.875rem" }}>
-            Something went wrong. Please try again.
+            {mutation.error instanceof Error
+              ? mutation.error.message
+              : String(mutation.error)}
           </p>
         )}
 
