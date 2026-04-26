@@ -1217,6 +1217,27 @@ class HybridStorage extends MemStorage {
     }
   }
 
+  async getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined> {
+    try {
+      const rows = await db.select().from(usersTable).where(eq(usersTable.billingCustomerId, billingCustomerId)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getUserByBillingCustomerId DB failure:", err);
+      return super.getUserByBillingCustomerId(billingCustomerId);
+    }
+  }
+
+  async getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined> {
+    try {
+      // @ts-ignore - handled by fallback
+      const rows = await db.select().from(schema.webhookEvents).where(eq(schema.webhookEvents.billingEventId, billingEventId)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getWebhookEventByBillingId DB failure:", err);
+      return super.getWebhookEventByBillingId(billingEventId);
+    }
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     try {
       const existing = await this.getUser(userData.id);
@@ -1237,6 +1258,20 @@ class HybridStorage extends MemStorage {
     } catch (err) {
       console.error("[HybridStorage] upsertUser DB failure:", err);
       return super.upsertUser(userData);
+    }
+  }
+
+  async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {
+    try {
+      // @ts-ignore - handled by fallback
+      const [row] = await db.insert(schema.webhookEvents).values({
+        ...eventData,
+        processedAt: new Date(),
+      }).returning();
+      return row;
+    } catch (err) {
+      console.error("[HybridStorage] createWebhookEvent DB failure:", err);
+      return super.createWebhookEvent(eventData);
     }
   }
 
