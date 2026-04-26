@@ -19,17 +19,46 @@ function log(message: string, source = "express") {
 
 const app: Express = express();
 
-// Enable CORS for mobile app connectivity
+// Manually inject CORS headers for maximum reliability across Railway/Mobile
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    "soulcodex://localhost", 
+    "capacitor://localhost", 
+    "http://localhost:3000", 
+    "http://localhost:5000",
+    "https://ultimate-soulcodex.up.railway.app",
+    "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app"
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  } else if (!origin) {
+    // For non-browser requests (like some mobile calls), allow all or a default
+    res.header("Access-Control-Allow-Origin", "*");
+  }
+  
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.header("Access-Control-Allow-Credentials", "true");
+  
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(cors({
   origin: [
     "soulcodex://localhost", 
     "capacitor://localhost", 
     "http://localhost:3000", 
     "http://localhost:5000",
+    "https://ultimate-soulcodex.up.railway.app",
     "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   credentials: true
 }));
 
@@ -91,8 +120,8 @@ let serverInstance: any = null;
 
   // Use PORT from environment (Render and other platforms set this)
   const PORT = parseInt(process.env.PORT || "5000", 10);
-  // On Windows, use 127.0.0.1 explicitly to avoid IPv6 issues. On Linux, use 0.0.0.0 for all interfaces
-  const HOST = process.platform === "win32" ? "127.0.0.1" : "0.0.0.0";
+  // Use HOST from environment if set, otherwise default based on platform
+  const HOST = process.env.HOST || (process.platform === "win32" ? "127.0.0.1" : "0.0.0.0");
 
   // Setup Vite (dev middleware or static serving)
   await setupVite(app, server);

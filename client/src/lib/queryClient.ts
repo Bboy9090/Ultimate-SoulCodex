@@ -3,7 +3,17 @@ import { CapacitorHttp } from "@capacitor/core";
 
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
-    const baseUrl = import.meta.env.VITE_API_URL || "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app";
+    const defaultProdUrl = "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app";
+    let baseUrl = import.meta.env.VITE_API_URL;
+    
+    if (!baseUrl) {
+      if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+        baseUrl = window.location.origin;
+      } else {
+        baseUrl = defaultProdUrl;
+      }
+    }
+    
     return `${baseUrl.replace(/\/$/, "")}${url}`;
   }
   return url;
@@ -37,20 +47,31 @@ export const queryClient = new QueryClient({
 
 export async function apiRequest(url: string, options?: any) {
   const resolvedUrl = resolveApiUrl(url);
+  const method = options?.method || "GET";
+  
+  console.log(`[API] ${method} ${resolvedUrl}`);
+  
   const httpOptions = {
     url: resolvedUrl,
-    method: options?.method || "GET",
+    method,
     headers: { "Content-Type": "application/json", ...options?.headers },
-    data: options?.body ? JSON.parse(options.body) : undefined,
-    connectTimeout: 30000,
-    readTimeout: 30000
+    data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
+    connectTimeout: 60000,
+    readTimeout: 60000
   };
 
-  const response = await CapacitorHttp.request(httpOptions);
-  if (response.status < 200 || response.status >= 300) {
-    throw new Error(`${response.status}: ${JSON.stringify(response.data)}`);
+  try {
+    const response = await CapacitorHttp.request(httpOptions);
+    console.log(`[API] ${response.status} ${resolvedUrl}`);
+    
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`${response.status}: ${JSON.stringify(response.data)}`);
+    }
+    return response.data;
+  } catch (error) {
+    console.error(`[API] FAILED ${method} ${resolvedUrl}:`, error);
+    throw error;
   }
-  return response.data;
 }
 
 /** Drop-in replacement for fetch that supports absolute URLs in native apps */
@@ -61,7 +82,7 @@ export async function apiFetch(url: string, options?: any): Promise<any> {
     method: options?.method || "GET",
     headers: options?.headers,
     data: options?.body ? JSON.parse(options.body) : undefined,
-    connectTimeout: 30000,
-    readTimeout: 30000
+    connectTimeout: 60000,
+    readTimeout: 60000
   });
 }

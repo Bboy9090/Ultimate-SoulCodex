@@ -21,9 +21,12 @@ export async function setupAuth(app: Express) {
 
   app.set("trust proxy", 1);
 
-  // Persistent session store (Postgres) when DATABASE_URL is set.
+  // Persistent session store (Postgres) when DATABASE_URL is set (and not in DEMO_MODE).
   // Falls back to in-memory only for local dev without a DB.
-  const sessionStore = process.env.DATABASE_URL
+  const isDemoMode = process.env.DEMO_MODE === "true";
+  const usePostgresStore = !!process.env.DATABASE_URL && !isDemoMode;
+
+  const sessionStore = usePostgresStore
     ? new PgSession({
         conString: process.env.DATABASE_URL,
         tableName: "sessions",
@@ -31,10 +34,15 @@ export async function setupAuth(app: Express) {
       })
     : new MemoryStore({ checkPeriod: 86400000 });
 
-  if (process.env.DATABASE_URL) {
+  // Prevent session store errors from hanging the app
+  (sessionStore as any).on?.('error', (err: any) => {
+    console.error("[Sessions] Store Error:", err.message || err);
+  });
+
+  if (usePostgresStore) {
     console.log("[Sessions] Using Postgres-backed session store");
   } else {
-    console.warn("[Sessions] Using in-memory session store (DATABASE_URL not set) — sessions will be lost on restart");
+    console.warn(`[Sessions] Using in-memory session store (${isDemoMode ? "DEMO_MODE" : "DATABASE_URL not set"}) — sessions will be lost on restart`);
   }
 
   app.use(

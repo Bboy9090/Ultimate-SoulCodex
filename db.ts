@@ -13,7 +13,11 @@ function ensureDb() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL must be set for database storage");
   }
-  _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  _pool = new Pool({ 
+    connectionString: process.env.DATABASE_URL,
+    connectionTimeoutMillis: 5000, // 5 second timeout for new connections
+    query_timeout: 10000,          // 10 second timeout for queries
+  });
   _db = drizzle(_pool, { schema });
   return _db;
 }

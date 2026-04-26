@@ -182,7 +182,7 @@ export default function OnboardingPage() {
         if (!legacyGoals.includes(goal)) legacyGoals.push(goal);
       }
 
-      return apiRequest("https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app/api/soul-archetype", {
+      return apiRequest("/api/soul-archetype", {
         method: "POST",
         body: JSON.stringify({
           birth_data: {
@@ -480,9 +480,20 @@ export default function OnboardingPage() {
         </div>
 
         {mutation.isError && (
-          <p style={{ color: "var(--destructive)", marginTop: "1rem", fontSize: "0.875rem" }}>
-            Something went wrong. Please try again.
-          </p>
+          <div style={{ 
+            color: "#ff4444", 
+            marginTop: "1.5rem", 
+            fontSize: "0.875rem", 
+            lineHeight: 1.5,
+            background: "rgba(255, 68, 68, 0.1)",
+            padding: "1rem",
+            borderRadius: "8px",
+            border: "1px solid rgba(255, 68, 68, 0.2)",
+            textAlign: "left"
+          }}>
+            <strong style={{ display: "block", marginBottom: "0.25rem" }}>Profile generation failed</strong>
+            {(mutation.error as Error)?.message || "The server did not return a readable error. Check your connection and try again."}
+          </div>
         )}
 
         <div style={{ marginTop: "3rem", display: "flex", gap: "1rem" }}>

@@ -34,7 +34,16 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
       const fullPrompt = input.systemPrompt
         ? `${input.systemPrompt}\n\n${input.prompt}`
         : input.prompt;
-      const text = await generateText({ prompt: fullPrompt, temperature });
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Gemini timeout")), 8000)
+      );
+
+      const text = await Promise.race([
+        generateText({ prompt: fullPrompt, temperature }),
+        timeoutPromise
+      ]) as string;
+
       if (text && text.trim().length > 20) {
         setCached(cacheKey, text);
         return {
@@ -45,18 +54,26 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
         };
       }
     } catch (e) {
-      console.warn("[AI Router] Gemini failed, trying Groq:", (e as Error).message);
+      console.warn("[AI Router] Gemini failed or timed out:", (e as Error).message);
     }
   }
 
   // 2. Try Groq (Backup)
   if (isGroqAvailable()) {
     try {
-      const text = await generateTextGroq({
-        prompt: input.prompt,
-        systemPrompt: input.systemPrompt,
-        temperature,
-      });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Groq timeout")), 8000)
+      );
+
+      const text = await Promise.race([
+        generateTextGroq({
+          prompt: input.prompt,
+          systemPrompt: input.systemPrompt,
+          temperature,
+        }),
+        timeoutPromise
+      ]) as string;
+
       if (text && text.trim().length > 20) {
         setCached(cacheKey, text);
         return {
@@ -70,18 +87,26 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
         };
       }
     } catch (e) {
-      console.warn("[AI Router] Groq failed, trying OpenAI:", (e as Error).message);
+      console.warn("[AI Router] Groq failed or timed out:", (e as Error).message);
     }
   }
 
   // 3. Try OpenAI (Solid Backstop)
   if (isOpenAIAvailable()) {
     try {
-      const text = await generateTextOpenAI({
-        prompt: input.prompt,
-        systemPrompt: input.systemPrompt,
-        temperature,
-      });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("OpenAI timeout")), 8000)
+      );
+
+      const text = await Promise.race([
+        generateTextOpenAI({
+          prompt: input.prompt,
+          systemPrompt: input.systemPrompt,
+          temperature,
+        }),
+        timeoutPromise
+      ]) as string;
+
       if (text && text.trim().length > 20) {
         setCached(cacheKey, text);
         return {
@@ -95,7 +120,7 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
         };
       }
     } catch (e) {
-      console.warn("[AI Router] OpenAI also failed:", (e as Error).message);
+      console.warn("[AI Router] OpenAI also failed or timed out:", (e as Error).message);
     }
   }
 

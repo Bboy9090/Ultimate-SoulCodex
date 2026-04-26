@@ -56,12 +56,6 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   profileImageUrl: text("profile_image_url"),
-  // Billing tracking (Generic names for App Store compliance)
-  billingCustomerId: text("billing_customer_id"),
-  billingSubscriptionId: text("billing_subscription_id"),
-  subscriptionStatus: text("subscription_status"),
-  subscriptionPlan: text("subscription_plan"),
-  subscriptionEndsAt: timestamp("subscription_ends_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({
@@ -101,6 +95,20 @@ export const birthDataSchema = z.object({
     neighborhoodType: z.enum(["close-knit", "diverse", "individualistic", "supportive"]).optional(),
     conflictResolution: z.enum(["direct", "diplomatic", "avoidant", "collaborative"]).optional(),
   }).optional(),
+  // Questionnaire signals
+  primary_pressure_pattern: z.string().optional(),
+  secondary_pressure_pattern: z.string().optional(),
+  escalation_pattern: z.string().optional(),
+  decision_friction_primary: z.string().optional(),
+  decision_friction_secondary: z.string().optional(),
+  drain_pattern_primary: z.string().optional(),
+  drain_pattern_secondary: z.string().optional(),
+  stressElement: z.string().optional(),
+  decisionStyle: z.string().optional(),
+  pressureStyle: z.string().optional(),
+  socialEnergy: z.string().optional(),
+  nonNegotiables: z.array(z.string()).optional(),
+  goals: z.array(z.string()).optional(),
 });
 
 export const signupSchema = z.object({

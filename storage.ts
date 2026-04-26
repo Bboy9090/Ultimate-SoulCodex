@@ -12,7 +12,6 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByAppleId(appleId: string): Promise<User | undefined>;
-  getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Local authentication operations
@@ -80,10 +79,6 @@ export interface IStorage {
   markPasswordResetTokenUsed(token: string): Promise<void>;
   updateLocalUserPassword(userId: string, newPasswordHash: string): Promise<void>;
   
-  // Webhook event operations (for idempotency)
-  getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined>;
-  createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
-
   // Account deletion (App Store compliance)
   deleteUserAccount(userId: string): Promise<void>;
   deleteProfileById(profileId: string): Promise<void>;
@@ -115,7 +110,6 @@ export class MemStorage implements IStorage {
   private compatibilities: Map<string, CompatibilityAnalysis>;
   private pushSubscriptions: Map<string, PushSubscription>;
   private frequencyLogs: Map<string, FrequencyLog>;
-  private webhookEvents: Map<string, WebhookEvent>;
   private passwordResetTokens: Map<string, {id: string, userId: string, expiresAt: Date, usedAt: Date | null}>;
   private journalEntries: Map<string, any>;
   private shareableLinks: Map<string, any>;
@@ -132,7 +126,6 @@ export class MemStorage implements IStorage {
     this.compatibilities = new Map();
     this.pushSubscriptions = new Map();
     this.frequencyLogs = new Map();
-    this.webhookEvents = new Map();
     this.passwordResetTokens = new Map();
     this.journalEntries = new Map();
     this.shareableLinks = new Map();
@@ -146,15 +139,6 @@ export class MemStorage implements IStorage {
   async getUserByAppleId(appleId: string): Promise<User | undefined> {
     for (const user of this.users.values()) {
       if (user.appleId === appleId) {
-        return user;
-      }
-    }
-    return undefined;
-  }
-
-  async getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined> {
-    for (const user of this.users.values()) {
-      if (user.billingCustomerId === billingCustomerId) {
         return user;
       }
     }
@@ -178,11 +162,6 @@ export class MemStorage implements IStorage {
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
-        billingCustomerId: userData.billingCustomerId || null,
-        billingSubscriptionId: userData.billingSubscriptionId || null,
-        subscriptionStatus: userData.subscriptionStatus || null,
-        subscriptionPlan: userData.subscriptionPlan || null,
-        subscriptionEndsAt: userData.subscriptionEndsAt || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -756,27 +735,6 @@ export class MemStorage implements IStorage {
     }
   }
 
-  // Webhook event operations (for idempotency)
-  async getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined> {
-    return Array.from(this.webhookEvents.values()).find(
-      (event) => event.billingEventId === billingEventId
-    );
-  }
-
-  async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {
-    const id = randomUUID();
-    const event: WebhookEvent = {
-      id,
-      billingEventId: eventData.billingEventId,
-      type: eventData.type,
-      processedAt: new Date(),
-      result: eventData.result || null,
-      metadata: eventData.metadata || null,
-    };
-    this.webhookEvents.set(event.billingEventId, event);
-    return event;
-  }
-
   async deleteProfileById(profileId: string): Promise<void> {
     this.profiles.delete(profileId);
   }
@@ -894,10 +852,6 @@ class DbStorage implements IStorage {
   // User operations
   // STUB - DbStorage is disabled for bootstrap; all methods are no-ops
   async getUser(id: string): Promise<User | undefined> {
-    return undefined;
-  }
-
-  async getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined> {
     return undefined;
   }
 
@@ -1120,14 +1074,6 @@ class DbStorage implements IStorage {
     // Stub
   }
 
-  // Webhook event operations (for idempotency)
-  async getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined> {
-    return undefined;
-  }
-  async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {
-    throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
-  }
-
   // Journal operations
   async createJournalEntry(entryData: any): Promise<any> {
     throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
@@ -1217,27 +1163,6 @@ class HybridStorage extends MemStorage {
     }
   }
 
-  async getUserByBillingCustomerId(billingCustomerId: string): Promise<User | undefined> {
-    try {
-      const rows = await db.select().from(usersTable).where(eq(usersTable.billingCustomerId, billingCustomerId)).limit(1);
-      return rows[0];
-    } catch (err) {
-      console.warn("[HybridStorage] getUserByBillingCustomerId DB failure:", err);
-      return super.getUserByBillingCustomerId(billingCustomerId);
-    }
-  }
-
-  async getWebhookEventByBillingId(billingEventId: string): Promise<WebhookEvent | undefined> {
-    try {
-      // @ts-ignore - handled by fallback
-      const rows = await db.select().from(schema.webhookEvents).where(eq(schema.webhookEvents.billingEventId, billingEventId)).limit(1);
-      return rows[0];
-    } catch (err) {
-      console.warn("[HybridStorage] getWebhookEventByBillingId DB failure:", err);
-      return super.getWebhookEventByBillingId(billingEventId);
-    }
-  }
-
   async upsertUser(userData: UpsertUser): Promise<User> {
     try {
       const existing = await this.getUser(userData.id);
@@ -1258,20 +1183,6 @@ class HybridStorage extends MemStorage {
     } catch (err) {
       console.error("[HybridStorage] upsertUser DB failure:", err);
       return super.upsertUser(userData);
-    }
-  }
-
-  async createWebhookEvent(eventData: InsertWebhookEvent): Promise<WebhookEvent> {
-    try {
-      // @ts-ignore - handled by fallback
-      const [row] = await db.insert(schema.webhookEvents).values({
-        ...eventData,
-        processedAt: new Date(),
-      }).returning();
-      return row;
-    } catch (err) {
-      console.error("[HybridStorage] createWebhookEvent DB failure:", err);
-      return super.createWebhookEvent(eventData);
     }
   }
 
@@ -1572,9 +1483,10 @@ class HybridStorage extends MemStorage {
   }
 }
 
-// Use HybridStorage when DATABASE_URL is set so profiles + access codes persist across restarts.
-// Falls back to MemStorage for everything else (sessions, frequency logs, push subs, etc.)
-export const storage: IStorage = process.env.DATABASE_URL
+// Use HybridStorage when DATABASE_URL is set (and not in DEMO_MODE)
+// so profiles + access codes persist across restarts.
+// Falls back to MemStorage for everything else.
+export const storage: IStorage = (process.env.DATABASE_URL && process.env.DEMO_MODE !== "true")
   ? new HybridStorage()
   : new MemStorage();
-console.log(`[Storage] Using ${process.env.DATABASE_URL ? "HybridStorage (DB-backed profiles + access codes)" : "MemStorage (in-memory only)"}`);
+console.log(`[Storage] Using ${storage instanceof HybridStorage ? "HybridStorage (DB-backed profiles + access codes)" : "MemStorage (in-memory only)"}`);
