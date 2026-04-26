@@ -3862,7 +3862,15 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
 
       const signals  = collectSignals({ profile: profile ?? {}, fullChart, userInputs: userInputs ?? {} });
       const themes   = scoreThemes(signals);
-      const codename = pickCodename(themes);
+      const deepThemeCodename = pickCodename(themes);
+      const coreArchetype = profile?.archetype?.name;
+      
+      // Hybrid Double Naming (Option C built in code so it never fails)
+      let codename = deepThemeCodename;
+      if (coreArchetype && coreArchetype !== deepThemeCodename) {
+        const strippedTheme = deepThemeCodename.replace(/^[Tt]he\s+/i, "");
+        codename = `${coreArchetype}: The ${strippedTheme} Phase`;
+      }
       const { strengths, shadows, triggers, prescriptions } = compileBulletLists(signals, themes);
 
       const anchors = signals.map(s => s.label).filter(Boolean).slice(0, 14);
