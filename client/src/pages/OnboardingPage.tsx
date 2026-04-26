@@ -100,6 +100,14 @@ const DRAIN_OPTIONS: { value: DrainPattern; label: string; description: string }
   { value: "sensory_overload", label: "Sensory or social overload", description: "Too much stimulation — noise, people, input — hits a wall fast" },
 ];
 
+const LOADING_LINES = [
+  "Reading your birth pattern...",
+  "Mapping symbolic systems...",
+  "Calculating numerology and astrology...",
+  "Synthesizing your archetype...",
+  "Preparing your profile results..."
+];
+
 const DEST_CARDS = [
   { glyph: "◉", label: "My Profile", desc: "Your archetype, synthesis, and pattern map", path: "/profile" },
   { glyph: "☽", label: "Today's Reading", desc: "Your daily card, moon phase, and active signals", path: "/today" },
@@ -109,6 +117,7 @@ const DEST_CARDS = [
 export default function OnboardingPage() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);
+  const [loadingLineIndex, setLoadingLineIndex] = useState(0);
   const [successResult, setSuccessResult] = useState<SuccessResult | null>(null);
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -298,8 +307,39 @@ export default function OnboardingPage() {
     }
   };
 
+  useEffect(() => {
+    if (!mutation.isPending) return;
+
+    const interval = window.setInterval(() => {
+      setLoadingLineIndex((i) => (i + 1) % LOADING_LINES.length);
+    }, 2500);
+
+    return () => window.clearInterval(interval);
+  }, [mutation.isPending]);
+
   if (mutation.isPending) {
-    return <CosmicLoader fullPage label="Charging Soul Blueprint" />;
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2rem",
+        textAlign: "center"
+      }}>
+        <CosmicLoader label={LOADING_LINES[loadingLineIndex]} />
+        <p style={{
+          marginTop: "1rem",
+          maxWidth: 360,
+          color: "var(--muted-foreground)",
+          fontSize: "0.9rem",
+          lineHeight: 1.6
+        }}>
+          Your profile is being generated. Please keep this screen open.
+        </p>
+      </div>
+    );
   }
 
   if (successResult) {
