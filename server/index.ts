@@ -26,7 +26,7 @@ app.use(cors({
     "capacitor://localhost", 
     "http://localhost:3000", 
     "http://localhost:5000",
-    "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app"
+    "https://ultimate-soulcodex.up.railway.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

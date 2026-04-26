@@ -3,7 +3,7 @@ import { CapacitorHttp } from "@capacitor/core";
 
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
-    const baseUrl = import.meta.env.VITE_API_URL || "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app";
+    const baseUrl = import.meta.env.VITE_API_URL || "https://ultimate-soulcodex.up.railway.app";
     return `${baseUrl.replace(/\/$/, "")}${url}`;
   }
   return url;
