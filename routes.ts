@@ -885,6 +885,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Capture email for leads
+  app.post("/api/capture-email", async (req, res) => {
+    try {
+      const { email, profileId } = req.body;
+      if (!email || !email.includes("@")) {
+        return res.status(400).json({ error: "Valid email required" });
+      }
+      
+      console.log(`[EmailCapture] Captured email: ${email} for profile: ${profileId || 'unknown'}`);
+      // Future integration: Save to Mailchimp/Resend or Leads table in Neon
+      
+      return res.json({ ok: true, success: true });
+    } catch (error) {
+      console.error("[EmailCapture] Error:", error);
+      return res.status(500).json({ error: "Failed to save email" });
+    }
+  });
+
   // Create a soul profile
   app.post("/api/profiles", async (req, res) => {
     try {
