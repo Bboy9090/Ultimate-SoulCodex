@@ -1,4 +1,4 @@
-import { BANNED_PHRASES } from "../soulcodex-v1";
+hmport { BANNED_PHRASES } from "../soulcodex-v1";
 import type { DepthMode } from "../types";
 
 interface ProfileData {
