@@ -15,7 +15,7 @@ export interface TimelineScoreInput {
   confidence: ConfidenceLabel;
 }
 
-export interface ScoreBreakdown {
+export interface TimelineScoreBreakdown {
   scores: Record<Phase, number>;
   reasons: string[];
   strongestAstrologyPhase: Phase | null;
@@ -34,7 +34,7 @@ function addDeltas(scores: Record<Phase, number>, deltas: PhaseDeltas, multiplie
   }
 }
 
-export function scoreTimeline(input: TimelineScoreInput): ScoreBreakdown {
+export function scoreTimeline(input: TimelineScoreInput): TimelineScoreBreakdown {
   const scores = emptyScores();
   const numerologyScores = emptyScores();
   const astrologyScores = emptyScores();

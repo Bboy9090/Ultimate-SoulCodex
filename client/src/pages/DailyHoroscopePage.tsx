@@ -181,14 +181,27 @@ export default function DailyHoroscopePage() {
   })();
   const profileId = profileData?.id || profileData?.profileId;
 
-  const { data, isLoading, isError, error } = useQuery<DailyHoroscopeData>({
+  const { data, isLoading, isError, error, refetch } = useQuery<DailyHoroscopeData>({
     queryKey: ["/api/profiles", profileId, "daily-horoscope"],
     queryFn: async () => {
       const res = await apiFetch(`/api/profiles/${profileId}/daily-horoscope`);
+      if (res.status === 404 && profileData) {
+        // ID mismatch between local and server (e.g. server restart). Re-sync.
+        console.log("[DailyHoroscope] ID mismatch. Re-syncing profile...");
+        await apiRequest("/api/soul-archetype", {
+          method: "POST",
+          body: JSON.stringify(profileData)
+        });
+        // Try again after sync
+        const retryRes = await apiFetch(`/api/profiles/${profileId}/daily-horoscope`);
+        if (!retryRes.ok) throw new Error(await retryRes.text());
+        return retryRes.json();
+      }
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
     enabled: !!profileId,
+    retry: 1,
   });
 
   if (!profileId) {

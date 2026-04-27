@@ -1,4 +1,4 @@
-import { BANNED_PHRASES } from "../validators/blandnessFilter";
+import { BANNED_PHRASES } from "../soulcodex-v1";
 
 interface PersonProfile {
   name: string;

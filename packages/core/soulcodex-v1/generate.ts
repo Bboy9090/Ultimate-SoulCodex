@@ -10,6 +10,7 @@ import {
 } from "./schema";
 import { buildCodexReadingBadges, type ConfidenceResult } from "../compute/confidence";
 import { runSoulCodexEngine } from "./engine";
+export { runSoulCodexEngine };
 
 type AnyProfile = Record<string, any>;
 

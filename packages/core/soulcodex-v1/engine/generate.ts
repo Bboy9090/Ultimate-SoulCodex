@@ -13,9 +13,10 @@ import { selectBest } from "./distinctiveness";
 import { pickContradiction, formatContradictionHint } from "../content/contradictions";
 import { containsBannedPhrase, HARD_REJECT_PHRASES } from "../content/banned-language";
 import type { AntiGenericContext } from "../types";
+export { runSoulCodexEngine } from "./index";
 
 export type { StatementSection } from "../content/statements/index";
-export type { ScoreBreakdown } from "./distinctiveness";
+export type { AntiGenericScoreBreakdown as ScoreBreakdown } from "./distinctiveness";
 export type { ContradictionPair } from "../content/contradictions";
 export type { AntiGenericContext } from "../types";
 

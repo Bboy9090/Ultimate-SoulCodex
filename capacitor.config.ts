@@ -1,28 +1,14 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const serverUrl = process.env.CAPACITOR_SERVER_URL?.trim();
-
 const config: CapacitorConfig = {
   appId: "app.soulcodex.ios",
   appName: "Soul Codex",
   webDir: "dist/public",
-  backgroundColor: "#08040F",
-  ...(serverUrl
-    ? {
-        server: {
-          url: serverUrl,
-          cleartext: false,
-        },
-      }
-    : {}),
+  backgroundColor: "#1A0E07",
 
-  server: {
-    iosScheme: "soulcodex",
-    hostname: "localhost"
-  },
   ios: {
-    scheme: "soulcodex",
-    backgroundColor: "#08040F",
+    scheme: "Soul Codex",
+    backgroundColor: "#1A0E07",
     contentInset: "automatic",
     preferredContentMode: "mobile",
     allowsLinkPreview: false,
@@ -33,18 +19,14 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchAutoHide: false,
       launchShowDuration: 2000,
-      backgroundColor: "#050208",
+      backgroundColor: "#1A0E07",
       showSpinner: false,
-      androidScaleType: "CENTER_CROP",
-      ios: {
-        contentMode: "fit",
-      },
       splashFullScreen: true,
       splashImmersive: true,
     },
     StatusBar: {
       style: "DARK",
-      backgroundColor: "#08040F",
+      backgroundColor: "#1A0E07",
     },
     Keyboard: {
       resize: "body",
@@ -54,4 +36,3 @@ const config: CapacitorConfig = {
 };
 
 export default config;
-

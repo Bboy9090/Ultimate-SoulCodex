@@ -6,15 +6,19 @@ WORKDIR /app
 # Install build tools for native modules (argon2, sharp)
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Install dependencies for all workspaces
 COPY package*.json ./
 COPY packages ./packages
 RUN npm install
 
-# Copy source
+# Build workspace packages first (required for root build)
+RUN npm run build -w packages/db || true
+RUN npm run build -w packages/core || true
+
+# Copy remaining source
 COPY . .
 
-# Build everything (Client + Server)
+# Build main app (Client + Server)
 RUN npm run build
 
 # ── Runtime Stage ───────────────────────────────────────────────────────────
@@ -25,10 +29,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy built assets to runtime
+# Copy built assets and necessary files to runtime
 COPY package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
+# Include built packages for runtime imports if they use dist/
+COPY --from=builder /app/packages ./packages
 
 # Expose production port
 EXPOSE 3000

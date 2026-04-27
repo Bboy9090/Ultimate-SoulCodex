@@ -241,14 +241,31 @@ export default function ProfilePage() {
 
   useEffect(() => {
     (async () => {
+      // Safety Timeout: If server takes too long, just show what we have locally
+      const safetyTimer = setTimeout(() => {
+        setPremiumChecked(true);
+        // If profile is still null after 10s, try one last local check
+        if (!profile) {
+          try {
+            const raw = localStorage.getItem("soulProfile");
+            if (raw) {
+              const data = JSON.parse(raw);
+              if (data?.archetype) setProfile(data);
+            }
+          } catch {}
+        }
+      }, 10000);
+
       const nextProfile = await getProfile();
       setProfile(nextProfile);
       if (nextProfile) {
         const cached = loadCachedComparables(nextProfile);
         if (cached) { setComparables(cached); setComparablesRevealed(true); }
       }
+
       const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
       if (cachedPremium) setIsPremium(true);
+
       apiFetch("/api/entitlements")
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(d => {
@@ -258,7 +275,10 @@ export default function ProfilePage() {
           }
         })
         .catch(() => {})
-        .finally(() => setPremiumChecked(true));
+        .finally(() => {
+          clearTimeout(safetyTimer);
+          setPremiumChecked(true);
+        });
     })();
   }, []);
 
@@ -991,7 +1011,7 @@ export default function ProfilePage() {
           </ul>
         </ProfileSection>
 
-        <AccountSettings />
+        <AccountSettings user={user} />
 
       </div>
 
@@ -1001,7 +1021,7 @@ export default function ProfilePage() {
 
 // ── Account settings (logout + delete) ───────────────────────────────────────
 
-function AccountSettings() {
+function AccountSettings({ user }: { user: any }) {
   const [, navigate] = useLocation();
   const [deleting, setDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState("");
