@@ -25,27 +25,40 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         </div>
       </div>
 
-      {/* Text Isolation Layer: Subtle dark glow behind the content */}
+      {/* Text Isolation Layer: Stronger dark glow behind the content for contrast */}
       <div className="absolute inset-0 z-[5] pointer-events-none" style={{
-        background: "radial-gradient(circle at 50% 50%, rgba(13,11,26,0.8) 0%, rgba(13,11,26,0) 60%)"
+        background: "radial-gradient(circle at 50% 50%, rgba(13,11,26,0.95) 0%, rgba(13,11,26,0.6) 35%, rgba(13,11,26,0) 70%)"
       }} />
 
       <AnimatePresence mode="wait">
         {stage === 0 && (
           <motion.div
             key="master-brand"
-            initial={{ opacity: 0, filter: "blur(4px)", letterSpacing: "0.2em" }}
-            animate={{ opacity: 1, filter: "blur(0px)", letterSpacing: "0.4em" }}
-            exit={{ opacity: 0, filter: "blur(8px)", y: -10 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, filter: "blur(8px)" }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
-            className="z-10 text-center"
+            className="z-10 flex flex-col items-center justify-center w-full px-4"
           >
-            <span 
-              className="font-serif text-[#F2F2F2] text-xs md:text-sm uppercase tracking-[0.4em] font-light"
-              style={{ textShadow: "0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.4)" }}
+            {/* The people and vehicle - spanning in zoom */}
+            <motion.img 
+              src="/images/bobbys-world-master.png"
+              alt="Bobby's World"
+              className="w-48 h-48 md:w-64 md:h-64 object-contain mb-4 drop-shadow-[0_0_30px_rgba(255,215,0,0.2)]"
+              initial={{ scale: 0.3 }}
+              animate={{ scale: 1.1 }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+            />
+            
+            <motion.span 
+              initial={{ filter: "blur(4px)", letterSpacing: "0.1em" }}
+              animate={{ filter: "blur(0px)", letterSpacing: "0.2em" }} // smaller tracking for mobile
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+              className="font-serif text-[#F2F2F2] text-[10px] md:text-sm uppercase md:tracking-[0.4em] font-light text-center"
+              style={{ textShadow: "0 2px 10px rgba(0,0,0,1), 0 0 30px rgba(0,0,0,0.8)" }}
             >
               Bobby’s World Presents
-            </span>
+            </motion.span>
           </motion.div>
         )}
  
@@ -56,26 +69,26 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
             exit={{ opacity: 0, filter: "blur(4px)", scale: 1.02 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="z-10 flex flex-col items-center gap-4"
+            className="z-10 flex flex-col items-center gap-4 w-full px-4"
           >
             {/* Central Signal Mark */}
             <div className="relative mb-2">
-              <div className="w-12 h-12 border border-[#FFD700]/30 rounded-full flex items-center justify-center">
-                <div className="w-1.5 h-1.5 bg-[#FFD700] rounded-full shadow-[0_0_10px_#FFD700]" />
+              <div className="w-12 h-12 border border-[#FFD700]/30 rounded-full flex items-center justify-center bg-[#0D0B1A]/80 backdrop-blur-sm">
+                <div className="w-1.5 h-1.5 bg-[#FFD700] rounded-full shadow-[0_0_15px_#FFD700]" />
               </div>
               <div className="absolute inset-0 border border-[#FFD700]/10 rounded-full animate-ping" />
             </div>
             
-            <div className="text-center">
+            <div className="text-center w-full">
               <h1 
-                className="font-serif text-3xl md:text-4xl text-[#FFD700] tracking-[0.25em] uppercase font-medium mb-2"
-                style={{ textShadow: "0 0 25px rgba(0,0,0,0.9), 0 0 50px rgba(0,0,0,0.5)" }}
+                className="font-serif text-2xl sm:text-3xl md:text-4xl text-[#FFD700] tracking-[0.15em] sm:tracking-[0.25em] uppercase font-medium mb-2 whitespace-nowrap"
+                style={{ textShadow: "0 4px 20px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.8), 0 0 60px rgba(255,215,0,0.2)" }}
               >
                 Soul Codex
               </h1>
               <p 
-                className="text-[#F2F2F2]/40 font-serif italic text-[10px] md:text-xs tracking-[0.3em] uppercase"
-                style={{ textShadow: "0 0 10px rgba(0,0,0,0.5)" }}
+                className="text-[#F2F2F2]/60 font-serif italic text-[9px] sm:text-[10px] md:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase"
+                style={{ textShadow: "0 2px 10px rgba(0,0,0,1)" }}
               >
                 Decode the patterns
               </p>
