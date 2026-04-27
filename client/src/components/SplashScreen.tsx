@@ -5,10 +5,10 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    // Restrained timing: 1.5s total for a more deliberate studio-card feel
+    // Extended timing to ensure readability
     const timers = [
-      setTimeout(() => setStage(1), 700), // Master brand shows for 700ms
-      setTimeout(() => onComplete(), 1800), // Total splash duration 1.8s
+      setTimeout(() => setStage(1), 2500), // Master brand shows for 2.5s
+      setTimeout(() => onComplete(), 5500), // Total splash duration 5.5s
     ];
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
