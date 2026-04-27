@@ -5,10 +5,10 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    // Restrained timing: 1 second max for the main sequence
+    // Restrained timing: 1.5s total for a more deliberate studio-card feel
     const timers = [
-      setTimeout(() => setStage(1), 300),
-      setTimeout(() => onComplete(), 1200), // Slightly over 1s for a smooth transition
+      setTimeout(() => setStage(1), 700), // Master brand shows for 700ms
+      setTimeout(() => onComplete(), 1800), // Total splash duration 1.8s
     ];
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
@@ -29,10 +29,10 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         {stage === 0 && (
           <motion.div
             key="master-brand"
-            initial={{ opacity: 0, letterSpacing: "0.2em" }}
-            animate={{ opacity: 1, letterSpacing: "0.4em" }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            initial={{ opacity: 0, filter: "blur(4px)", letterSpacing: "0.2em" }}
+            animate={{ opacity: 1, filter: "blur(0px)", letterSpacing: "0.4em" }}
+            exit={{ opacity: 0, filter: "blur(8px)", y: -10 }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
             className="z-10 text-center"
           >
             <span className="font-serif text-[#F2F2F2] text-xs md:text-sm uppercase tracking-[0.4em] font-light">
@@ -40,14 +40,14 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             </span>
           </motion.div>
         )}
-
+ 
         {stage === 1 && (
           <motion.div
             key="app-title"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.4 }}
+            initial={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }}
+            animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
+            exit={{ opacity: 0, filter: "blur(4px)", scale: 1.02 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="z-10 flex flex-col items-center gap-4"
           >
             {/* Central Signal Mark */}
