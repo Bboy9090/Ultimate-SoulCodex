@@ -7,7 +7,7 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   // schema.User operations (required for Replit Auth)
   getUser(id: string): Promise<schema.User | undefined>;
-  getUserByBillingCustomerId(billingCustomerId: string): Promise<schema.User | undefined>;
+  getUserByStripeCustomerId(stripeCustomerId: string): Promise<schema.User | undefined>;
   upsertUser(user: schema.UpsertUser): Promise<schema.User>;
   
   // Local authentication operations
@@ -134,9 +134,9 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByBillingCustomerId(billingCustomerId: string): Promise<schema.User | undefined> {
+  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<schema.User | undefined> {
     for (const user of this.users.values()) {
-      if (user.billingCustomerId === billingCustomerId) {
+      if (user.stripeCustomerId === stripeCustomerId) {
         return user;
       }
     }
@@ -163,8 +163,8 @@ export class MemStorage implements IStorage {
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
-        billingCustomerId: userData.billingCustomerId || null,
-        billingSubscriptionId: userData.billingSubscriptionId || null,
+        stripeCustomerId: userData.stripeCustomerId || null,
+        stripeSubscriptionId: userData.stripeSubscriptionId || null,
         subscriptionStatus: userData.subscriptionStatus || null,
         subscriptionPlan: userData.subscriptionPlan || null,
         subscriptionEndsAt: userData.subscriptionEndsAt || null,
@@ -848,7 +848,7 @@ class DbStorage implements IStorage {
     return undefined;
   }
 
-  async getUserByBillingCustomerId(billingCustomerId: string): Promise<schema.User | undefined> {
+  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<schema.User | undefined> {
     return undefined;
   }
 
