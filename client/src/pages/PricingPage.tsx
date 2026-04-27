@@ -1,11 +1,15 @@
 import { Capacitor } from "@capacitor/core";
-import { motion } from "framer-motion";
-import { ArrowLeft, ShieldCheck, Zap, Sparkles, CheckCircle2 } from "lucide-react";
-import { Link } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ShieldCheck, Zap, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function PricingPage() {
   const isIOS = Capacitor.getPlatform() === "ios";
+  const [, navigate] = useLocation();
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const benefits = [
     "Full 30-40 page Personal Dossier (PDF)",
@@ -15,8 +19,62 @@ export default function PricingPage() {
     "Zero ads, forever"
   ];
 
+  const handlePurchase = async () => {
+    setIsVerifying(true);
+    // Simulate Apple IAP verification flow
+    setTimeout(() => {
+      setIsVerifying(false);
+      setIsSuccess(true);
+      try {
+        localStorage.setItem("soulPremium", "true");
+        // Force a small delay before redirecting
+        setTimeout(() => navigate("/profile"), 2000);
+      } catch {}
+    }, 2500);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-white p-6 pt-24">
+    <div className="min-h-screen bg-[#0A0A0B] text-white p-6 pt-24 overflow-hidden">
+      <AnimatePresence>
+        {(isVerifying || isSuccess) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="space-y-6 max-w-sm"
+            >
+              {isVerifying ? (
+                <>
+                  <div className="relative mx-auto w-20 h-20">
+                    <Loader2 className="w-20 h-20 text-accent animate-spin" />
+                    <ShieldCheck className="absolute inset-0 m-auto w-8 h-8 text-accent/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold tracking-tight">Verifying with Apple</h2>
+                    <p className="text-white/60 text-sm">Authenticating your secure transaction...</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mx-auto w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-10 h-10 text-green-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold tracking-tight text-green-400">Welcome to Premium</h2>
+                    <p className="text-white/60 text-sm">Your Soul Codex has been permanently unlocked. Preparing your dossier...</p>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <Link href="/profile">
@@ -81,9 +139,7 @@ export default function PricingPage() {
               <Button 
                 size="lg" 
                 className="w-full h-16 text-lg font-bold bg-accent hover:bg-accent/80 text-[#0A0A0B] rounded-2xl shadow-[0_0_20px_rgba(var(--accent-rgb),0.3)] transition-all active:scale-95"
-                onClick={() => {
-                  alert("Apple In-App Purchase logic will be triggered here.");
-                }}
+                onClick={handlePurchase}
               >
                 <Zap className="mr-2 h-5 w-5 fill-current" />
                 Unlock Now

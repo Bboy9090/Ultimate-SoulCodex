@@ -57,24 +57,57 @@ const routes = (
 );
 
 import { CosmicBackground } from "./components/CosmicBackground";
-
-// ... (existing imports)
+import { Button } from "./components/ui/button";
 
 export default function App() {
   const [location] = useLocation();
-  const isMarketing = location === "/" && !hasProfile();
-
-  if (isMarketing) {
-    return <LandingPage />;
-  }
+  const hasProfile = !!localStorage.getItem("soulProfile");
 
   return (
-    <div className="sc-app-shell min-h-screen relative overflow-x-hidden">
-      <CosmicBackground />
+    <div className="min-h-screen">
       <Nav />
-      <main className="sc-main-content relative z-10">
-        {routes}
+      <main className="relative">
+        <Switch>
+          <Route path="/">
+            {hasProfile ? <TodayPage /> : <LandingPage />}
+          </Route>
+          <Route path="/start" component={OnboardingPage} />
+          <Route path="/profile" component={ProfilePage} />
+          <Route path="/guide" component={SoulGuidePage} />
+          <Route path="/tracker" component={TrackerPage} />
+          <Route path="/compat" component={CompatibilityPage} />
+          <Route path="/timeline" component={TimelinePage} />
+          <Route path="/horoscope" component={DailyHoroscopePage} />
+          <Route path="/poster" component={PosterPage} />
+          <Route path="/codex" component={CodexReadingPage} />
+          <Route path="/blueprint" component={BlueprintPage} />
+          <Route path="/today" component={TodayPage} />
+          <Route path="/privacy" component={PrivacyPage} />
+          <Route path="/terms" component={TermsPage} />
+          <Route path="/admin" component={AdminPage} />
+          <Route path="/pricing" component={PricingPage} />
+        </Switch>
       </main>
+      
+      {/* Recovery Section */}
+      <div style={{ marginTop: "4rem", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.05)", textAlign: "center" }}>
+        <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginBottom: "1rem" }}>
+          Testing or want to use a different birthday?
+        </p>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-white/30 hover:text-white/60"
+          onClick={() => {
+            if (confirm("Reset everything and start over with a new birthday?")) {
+              localStorage.clear();
+              window.location.href = "/";
+            }
+          }}
+        >
+          Reset All Local Data
+        </Button>
+      </div>
     </div>
   );
 }

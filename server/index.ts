@@ -19,48 +19,21 @@ function log(message: string, source = "express") {
 
 const app: Express = express();
 
-// Manually inject CORS headers for maximum reliability across Railway/Mobile
+// Standard permissive CORS for Railway/Capacitor reliability
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
+// Manual headers for extra safety on non-browser environments
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    "soulcodex://localhost", 
-    "capacitor://localhost", 
-    "http://localhost:3000", 
-    "http://localhost:5000",
-    "https://ultimate-soulcodex.up.railway.app",
-    "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app"
-  ];
-  
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  } else if (!origin) {
-    // For non-browser requests (like some mobile calls), allow all or a default
-    res.header("Access-Control-Allow-Origin", "*");
-  }
-  
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
   res.header("Access-Control-Allow-Credentials", "true");
-  
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
+  if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
-app.use(cors({
-  origin: [
-    "soulcodex://localhost", 
-    "capacitor://localhost", 
-    "http://localhost:3000", 
-    "http://localhost:5000",
-    "https://ultimate-soulcodex.up.railway.app",
-    "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  credentials: true
-}));
 
 // Parse JSON bodies
 app.use(express.json());
@@ -75,27 +48,10 @@ app.get("/health", (_req, res) => {
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  } as any;
-
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+      log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
     }
   });
 

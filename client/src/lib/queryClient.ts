@@ -81,7 +81,7 @@ export async function apiFetch(url: string, options?: any): Promise<any> {
     url: resolvedUrl,
     method: options?.method || "GET",
     headers: options?.headers || { "Content-Type": "application/json" },
-    data: options?.body ? JSON.parse(options.body) : undefined,
+    data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
     connectTimeout: 60000,
     readTimeout: 60000
   });
