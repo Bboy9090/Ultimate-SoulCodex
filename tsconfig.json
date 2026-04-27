@@ -22,5 +22,7 @@
       "@soulcodex/ai": ["packages/ai"],
       "@soulcodex/ai/*": ["packages/ai/*"]
     }
-  }
+  },
+  "include": ["client/src/**/*", "server/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "dist", "packages/**/dist"]
 }
