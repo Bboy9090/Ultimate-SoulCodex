@@ -34,26 +34,20 @@ RULES:
 - Minimum 650 words total.
 - Avoid repeating the same sentence-opening structure more than twice.
 ${contradictionBlock}${behaviorBlock}
-REQUIRED FORMAT (use these exact section headers):
-CODENAME: ${payload.codename}
-MOTTO: [one powerful sentence about how I operate]
-
-WHO I AM
-[6-10 sentences about my core identity, nature, and instincts — behavior-first, no labels]
-
-HOW I MOVE UNDER PRESSURE
-[4-7 sentences about my behavior when things get hard — include the surface/hidden tension above]
-
-WHAT I WON'T TOLERATE
-[2-4 sentences about my non-negotiables and dealbreakers]
-
-WHAT I'M BUILDING
-[2-5 sentences about my long-game and what I'm constructing]
-
-THIS WEEK
-- [prescription 1]
-- [prescription 2]
-- [prescription 3]
+REQUIRED FORMAT: You MUST return a valid JSON object matching exactly this structure. Return ONLY the JSON, without any markdown backticks or wrappers:
+{
+  "codename": "${payload.codename}",
+  "motto": "[one powerful sentence about how I operate]",
+  "who_i_am": "[6-10 sentences about my core identity, nature, and instincts — behavior-first, no labels]",
+  "how_i_move": "[4-7 sentences about my behavior when things get hard — include the surface/hidden tension above]",
+  "what_i_wont_tolerate": "[2-4 sentences about my non-negotiables and dealbreakers]",
+  "what_im_building": "[2-5 sentences about my long-game and what I'm constructing]",
+  "this_week": [
+    "[prescription 1]",
+    "[prescription 2]",
+    "[prescription 3]"
+  ]
+}
 
 DATA:
 Top Themes: ${payload.themes.map(t => `${t.tag}(${t.score})`).join(", ")}

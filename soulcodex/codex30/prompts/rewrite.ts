@@ -15,9 +15,24 @@ Must:
 BAD: "I feel a deep calling toward transformation."
 GOOD: "I notice I'm bored with my current routine and I've been researching new directions every night instead of sleeping."
 
+REQUIRED FORMAT: You MUST return a valid JSON object matching exactly this structure. Return ONLY the JSON, without any markdown backticks or wrappers:
+{
+  "codename": "[original or rewritten codename]",
+  "motto": "[one powerful sentence about how I operate]",
+  "who_i_am": "[6-10 sentences about my core identity, nature, and instincts...]",
+  "how_i_move": "[4-7 sentences about my behavior when things get hard...]",
+  "what_i_wont_tolerate": "[2-4 sentences about my non-negotiables...]",
+  "what_im_building": "[2-5 sentences about my long-game...]",
+  "this_week": [
+    "[prescription 1]",
+    "[prescription 2]",
+    "[prescription 3]"
+  ]
+}
+
 Anchors: ${anchors.join(" ; ")}
 
-TEXT TO REWRITE:
+TEXT TO REWRITE (Convert this into the JSON format above, applying the rewriting rules):
 ${badText}
 `.trim();
 }
