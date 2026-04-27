@@ -3924,9 +3924,37 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
           promptType: "biography",
           temperature: 0.82
         });
-        narrative = aiResponse.content || "";
+        
+        let rawJson = (aiResponse.content || "").replace(/```json/gi, "").replace(/```/g, "").trim();
+        let parsed = JSON.parse(rawJson);
+        
+        // Ensure minimum length or generic checks trigger rewrite by generating a placeholder if something failed
+        if (!parsed.who_i_am || parsed.who_i_am.length < 100) {
+          throw new Error("Parsed JSON lacked who_i_am content");
+        }
+        
+        const buildNarrativeString = (p: any) => `CODENAME: ${p.codename || codename}
+MOTTO: ${p.motto}
+
+WHO I AM
+${p.who_i_am}
+
+HOW I MOVE UNDER PRESSURE
+${p.how_i_move}
+
+WHAT I WON'T TOLERATE
+${p.what_i_wont_tolerate}
+
+WHAT I'M BUILDING
+${p.what_im_building}
+
+THIS WEEK
+${(p.this_week || []).map((t: string) => t.startsWith("-") ? t : `- ${t}`).join("\n")}`;
+
+        narrative = buildNarrativeString(parsed);
+
       } catch (e) {
-        console.warn("[codex30] AI generation error:", e);
+        console.warn("[codex30] AI JSON generation error, triggering rewrite fallback:", e);
       }
 
       if (!narrative || isGeneric(narrative)) {
@@ -3937,9 +3965,29 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
             promptType: "biography",
             temperature: 0.88
           });
-          narrative = aiResponseRewrite.content || "";
+          let rawJsonRw = (aiResponseRewrite.content || "").replace(/```json/gi, "").replace(/```/g, "").trim();
+          let parsedRw = JSON.parse(rawJsonRw);
+          
+          narrative = `CODENAME: ${parsedRw.codename || codename}
+MOTTO: ${parsedRw.motto}
+
+WHO I AM
+${parsedRw.who_i_am}
+
+HOW I MOVE UNDER PRESSURE
+${parsedRw.how_i_move}
+
+WHAT I WON'T TOLERATE
+${parsedRw.what_i_wont_tolerate}
+
+WHAT I'M BUILDING
+${parsedRw.what_im_building}
+
+THIS WEEK
+${(parsedRw.this_week || []).map((t: string) => t.startsWith("-") ? t : `- ${t}`).join("\n")}`;
+
         } catch (e) {
-          console.warn("[codex30] AI rewrite error:", e);
+          console.warn("[codex30] AI rewrite JSON error:", e);
         }
       }
 
