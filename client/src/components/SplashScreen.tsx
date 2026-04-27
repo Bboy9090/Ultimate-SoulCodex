@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CosmicBackground } from "./CosmicBackground";
 
 const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [stage, setStage] = useState(0);
@@ -15,8 +16,12 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#0D0B1A] overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <CosmicBackground />
+      </div>
+
       {/* Sacred Geometry: Circular Orbit Seal */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-[0.015] pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center opacity-[0.015] pointer-events-none z-10">
         <div className="relative w-[80vh] h-[80vh] border border-[#FFD700] rounded-full">
           <div className="absolute inset-[10%] border border-[#FFD700] rounded-full" />
           <div className="absolute inset-[25%] border border-[#FFD700] rounded-full" />
@@ -30,12 +35,12 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         background: "radial-gradient(circle at 50% 50%, rgba(13,11,26,0.95) 0%, rgba(13,11,26,0.6) 35%, rgba(13,11,26,0) 70%)"
       }} />
 
-      {/* Background Depth: Plum-Black with dynamic flash */}
+      {/* Background Depth: Purple Nebula Flash */}
       <motion.div 
-        className="absolute inset-0 z-0"
-        initial={{ background: "radial-gradient(circle at 50% 50%, #FFD700 0%, #0D0B1A 100%)" }}
-        animate={{ background: "radial-gradient(circle at 50% 50%, #1A0B2E 0%, #0D0B1A 100%)" }}
-        transition={{ duration: 1, ease: "easeOut" }}
+        className="absolute inset-0 z-[1] mix-blend-screen pointer-events-none"
+        initial={{ background: "radial-gradient(circle at 50% 50%, rgba(157,78,221,0.8) 0%, rgba(13,11,26,0) 80%)" }}
+        animate={{ background: "radial-gradient(circle at 50% 50%, rgba(26,11,46,0) 0%, rgba(13,11,26,0) 100%)" }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
       />
 
       <AnimatePresence mode="wait">
@@ -47,10 +52,10 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           >
             {/* Extreme Flare Behind Emblem */}
             <motion.div 
-              className="absolute inset-0 bg-[#FFD700] rounded-full pointer-events-none z-0"
+              className="absolute inset-0 bg-[#9D4EDD] rounded-full pointer-events-none z-0 mix-blend-screen"
               style={{ filter: "blur(80px)" }}
               initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: [0, 0.6, 0], scale: [0, 2, 4] }}
+              animate={{ opacity: [0, 0.7, 0], scale: [0, 2.5, 5] }}
               transition={{ duration: 1.5, ease: "easeOut" }}
             />
 
@@ -117,11 +122,11 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           >
             {/* Massive Starburst Background Flare */}
             <motion.div 
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] md:w-[40vw] md:h-[40vw] bg-[#FFD700] rounded-full pointer-events-none mix-blend-screen z-0"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] md:w-[40vw] md:h-[40vw] bg-[#9D4EDD] rounded-full pointer-events-none mix-blend-screen z-0"
               style={{ filter: "blur(100px)" }}
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [0, 1.5, 1], opacity: [0, 0.4, 0.15] }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
+              animate={{ scale: [0, 1.5, 1], opacity: [0, 0.6, 0.2] }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
             />
 
             {/* Central Signal Mark */}
