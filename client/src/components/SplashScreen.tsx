@@ -16,7 +16,7 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   return (
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#0D0B1A] overflow-hidden">
       {/* Sacred Geometry: Circular Orbit Seal */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center opacity-[0.015] pointer-events-none">
         <div className="relative w-[80vh] h-[80vh] border border-[#FFD700] rounded-full">
           <div className="absolute inset-[10%] border border-[#FFD700] rounded-full" />
           <div className="absolute inset-[25%] border border-[#FFD700] rounded-full" />
@@ -24,6 +24,11 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
           <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[#FFD700]" />
         </div>
       </div>
+
+      {/* Text Isolation Layer: Subtle dark glow behind the content */}
+      <div className="absolute inset-0 z-[5] pointer-events-none" style={{
+        background: "radial-gradient(circle at 50% 50%, rgba(13,11,26,0.8) 0%, rgba(13,11,26,0) 60%)"
+      }} />
 
       <AnimatePresence mode="wait">
         {stage === 0 && (
@@ -35,7 +40,10 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             transition={{ duration: 0.6, ease: "easeInOut" }}
             className="z-10 text-center"
           >
-            <span className="font-serif text-[#F2F2F2] text-xs md:text-sm uppercase tracking-[0.4em] font-light">
+            <span 
+              className="font-serif text-[#F2F2F2] text-xs md:text-sm uppercase tracking-[0.4em] font-light"
+              style={{ textShadow: "0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.4)" }}
+            >
               Bobby’s World Presents
             </span>
           </motion.div>
@@ -59,10 +67,16 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             </div>
             
             <div className="text-center">
-              <h1 className="font-serif text-3xl md:text-4xl text-[#FFD700] tracking-[0.25em] uppercase font-medium mb-2">
+              <h1 
+                className="font-serif text-3xl md:text-4xl text-[#FFD700] tracking-[0.25em] uppercase font-medium mb-2"
+                style={{ textShadow: "0 0 25px rgba(0,0,0,0.9), 0 0 50px rgba(0,0,0,0.5)" }}
+              >
                 Soul Codex
               </h1>
-              <p className="text-[#F2F2F2]/40 font-serif italic text-[10px] md:text-xs tracking-[0.3em] uppercase">
+              <p 
+                className="text-[#F2F2F2]/40 font-serif italic text-[10px] md:text-xs tracking-[0.3em] uppercase"
+                style={{ textShadow: "0 0 10px rgba(0,0,0,0.5)" }}
+              >
                 Decode the patterns
               </p>
             </div>
