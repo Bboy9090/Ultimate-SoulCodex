@@ -1,4 +1,4 @@
-import type { Phase, ConfidenceLabel, PhaseDeltas } from "./rules";
+import type { Phase, ConfidenceLabel, PhaseDeltas } from "./rules.js";
 import {
   PHASES,
   PERSONAL_YEAR_RULES,
@@ -6,7 +6,7 @@ import {
   THEME_TAG_RULES,
   CONFIDENCE_MULTIPLIERS,
   UNVERIFIED_IGNORE_THRESHOLD,
-} from "./rules";
+} from "./rules.js";
 
 export interface TimelineScoreInput {
   personalYear: number;

@@ -1,4 +1,4 @@
-import type { StressElement } from "../types";
+import type { StressElement } from "../types.js";
 
 const ELEMENT_NOTES: Record<StressElement, string> = {
   air: "Mind speeds up — loops, overthinking, scattered attention.",

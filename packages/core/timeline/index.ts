@@ -1,7 +1,7 @@
-export * from "./rules";
-export * from "./score";
-export * from "./resolve";
-import { resolveTimelinePhase } from "./resolve";
+export * from "./rules.js";
+export * from "./score.js";
+export * from "./resolve.js";
+import { resolveTimelinePhase } from "./resolve.js";
 
 export type TimelineOutput = {
   phase: import("./rules").Phase;

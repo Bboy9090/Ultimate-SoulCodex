@@ -1,5 +1,5 @@
-import { BANNED_PHRASES } from "../soulcodex-v1";
-import type { DepthMode } from "../types";
+import { BANNED_PHRASES } from "../soulcodex-v1/index.js";
+import type { DepthMode } from "../types.js";
 
 interface ProfileData {
   name: string;
