@@ -40,22 +40,52 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             transition={{ duration: 0.6, ease: "easeInOut" }}
             className="z-10 flex flex-col items-center justify-center w-full px-4"
           >
-            {/* The people and vehicle - spanning in zoom */}
-            <motion.img 
-              src="/images/bobbys-world-master.png"
-              alt="Bobby's World"
-              className="w-48 h-48 md:w-64 md:h-64 object-contain mb-4 drop-shadow-[0_0_30px_rgba(255,215,0,0.2)]"
-              initial={{ scale: 0.3 }}
-              animate={{ scale: 1.1 }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
-            />
+            {/* Geometric Studio Emblem - spanning in zoom */}
+            <motion.div
+              className="relative w-20 h-20 md:w-24 md:h-24 mb-8"
+              initial={{ scale: 0.2, opacity: 0, rotate: -45 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }} // smooth cinematic easing
+            >
+              <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]">
+                {/* Outer Diamond Path */}
+                <motion.path 
+                  d="M50 2 L98 50 L50 98 L2 50 Z" 
+                  fill="none" 
+                  stroke="#FFD700" 
+                  strokeWidth="0.5"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.4, ease: "easeInOut" }}
+                />
+                {/* Inner Rotating Dashed Circle */}
+                <motion.circle 
+                  cx="50" cy="50" r="28" 
+                  fill="none" 
+                  stroke="#FFD700" 
+                  strokeWidth="0.5"
+                  strokeDasharray="4 4"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  style={{ transformOrigin: "center" }}
+                />
+                {/* Central Glowing Core */}
+                <motion.circle 
+                  cx="50" cy="50" r="4" 
+                  fill="#FFD700" 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </svg>
+            </motion.div>
             
             <motion.span 
-              initial={{ filter: "blur(4px)", letterSpacing: "0.1em" }}
-              animate={{ filter: "blur(0px)", letterSpacing: "0.2em" }} // smaller tracking for mobile
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-              className="font-serif text-[#F2F2F2] text-[10px] md:text-sm uppercase md:tracking-[0.4em] font-light text-center"
-              style={{ textShadow: "0 2px 10px rgba(0,0,0,1), 0 0 30px rgba(0,0,0,0.8)" }}
+              initial={{ filter: "blur(8px)", letterSpacing: "0.1em", opacity: 0 }}
+              animate={{ filter: "blur(0px)", letterSpacing: "0.3em", opacity: 1 }}
+              transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
+              className="font-serif text-[#FFD700] text-[10px] md:text-sm uppercase font-light text-center"
+              style={{ textShadow: "0 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255,215,0,0.4)" }}
             >
               Bobby’s World Presents
             </motion.span>
