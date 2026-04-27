@@ -1,4 +1,4 @@
-import type { ToneMode } from "./schema";
+import type { ToneMode } from "./schema.js";
 import {
   soulCodexOutputV1Schema,
   type ConfidenceMatrix,
@@ -7,9 +7,9 @@ import {
   type IdentitySummary,
   type Sections,
   type SoulCodexOutputV1,
-} from "./schema";
-import { buildCodexReadingBadges, type ConfidenceResult } from "../compute/confidence";
-import { runSoulCodexEngine } from "./engine";
+} from "./schema.js";
+import { buildCodexReadingBadges, type ConfidenceResult } from "../compute/confidence.js";
+import { runSoulCodexEngine } from "./engine/index.js";
 export { runSoulCodexEngine };
 
 type AnyProfile = Record<string, any>;

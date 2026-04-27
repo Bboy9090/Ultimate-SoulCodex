@@ -7,17 +7,17 @@
  * These supersede soulcodex/anti-generic/tests/anti-generic.test.ts.
  */
 
-import { totalPenaltyScore, containsBannedPhrase } from "../content/banned-language";
-import { scoreStatement, REJECT_THRESHOLD } from "../engine/distinctiveness";
-import { pickContradiction } from "../content/contradictions";
+import { totalPenaltyScore, containsBannedPhrase } from "../content/banned-language.js";
+import { scoreStatement, REJECT_THRESHOLD } from "../engine/distinctiveness.js";
+import { pickContradiction } from "../content/contradictions.js";
 import {
   getBehavioralStatements,
   checkNarrative,
   assertDistinctOutputs,
   runAntiGenericPass,
-} from "../engine/generate";
-import type { Statement } from "../content/statements/index";
-import type { AntiGenericContext } from "../types";
+} from "../engine/generate.js";
+import type { Statement } from "../content/statements/index.js";
+import type { AntiGenericContext } from "../types.js";
 
 let passed = 0;
 let failed = 0;

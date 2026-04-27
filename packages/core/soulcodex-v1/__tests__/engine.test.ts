@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { loadEngineLibraries } from "../engine/loaders";
-import { applyContradictionRules } from "../engine/contradictions";
-import { selectStatements } from "../engine/statementSelector";
-import { runSoulCodexEngine } from "../engine";
-import { generateSoulCodexOutputV1 } from "../generate";
-import { soulCodexOutputV1Schema } from "../schema";
+import { loadEngineLibraries } from "../engine/loaders.js";
+import { applyContradictionRules } from "../engine/contradictions.js";
+import { selectStatements } from "../engine/statementSelector.js";
+import { runSoulCodexEngine } from "../engine/index.js";
+import { generateSoulCodexOutputV1 } from "../generate.js";
+import { soulCodexOutputV1Schema } from "../schema.js";
 
 import fixture from "./fixture.bobby.json";
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { toneModeSchema, type ToneMode } from "../schema";
+import { toneModeSchema, type ToneMode } from "../schema.js";
 
 /**
  * Internal engine types (Matrix v1).

@@ -1,4 +1,4 @@
-import { BANNED_PHRASES } from "../soulcodex-v1";
+import { BANNED_PHRASES } from "../soulcodex-v1/index.js";
 
 interface PersonProfile {
   name: string;
