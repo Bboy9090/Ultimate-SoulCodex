@@ -9,11 +9,13 @@ RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt
 # Install dependencies for all workspaces
 COPY package*.json ./
 COPY packages ./packages
+COPY tsconfig.json ./
+COPY shared ./shared
 RUN npm install
 
 # Build workspace packages first (required for root build)
-RUN npm run build -w packages/db || true
-RUN npm run build -w packages/core || true
+RUN npm run build -w packages/db
+RUN npm run build -w packages/core
 
 # Copy remaining source
 COPY . .
