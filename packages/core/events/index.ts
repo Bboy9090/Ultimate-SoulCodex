@@ -1,3 +1,3 @@
-export * from "./types";
-export * from "./decode";
+export * from "./types.js";
+export * from "./decode.js";
 

@@ -1,4 +1,4 @@
-import type { LifeEventCategory, LifeEventDecode, LifeEventInput, LifeEventIntensity } from "./types";
+import type { LifeEventCategory, LifeEventDecode, LifeEventInput, LifeEventIntensity } from "./types.js";
 
 type Classification = {
   category: LifeEventCategory;
