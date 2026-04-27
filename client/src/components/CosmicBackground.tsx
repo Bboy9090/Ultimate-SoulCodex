@@ -11,33 +11,19 @@ export const CosmicBackground: React.FC = () => {
     window.addEventListener('resize', handleResize);
 
     const handleMouseMove = (e: MouseEvent) => {
+      if (isMobile) return;
+      // Use requestAnimationFrame style logic implicitly by keeping state updates simple
       setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 20,
-        y: (e.clientY / window.innerHeight - 0.5) * 20,
+        x: (e.clientX / window.innerWidth - 0.5) * 15,
+        y: (e.clientY / window.innerHeight - 0.5) * 15,
       });
     };
 
-    if (!isMobile) {
-      window.addEventListener('mousemove', handleMouseMove);
-    }
-
-    const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta !== null && e.gamma !== null) {
-        setMousePosition({
-          x: (e.gamma / 45) * 20,
-          y: (e.beta / 90) * 20,
-        });
-      }
-    };
-
-    if (isMobile && typeof DeviceOrientationEvent !== 'undefined') {
-      window.addEventListener('deviceorientation', handleDeviceOrientation);
-    }
+    window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('deviceorientation', handleDeviceOrientation);
     };
   }, [isMobile]);
 

@@ -864,13 +864,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[GetProfiles] Fetching by userId: ${req.user.id}`);
         profile = await storage.getProfileByUserId(req.user.id);
       } 
-      // For anonymous users (session-based)
+        // For anonymous users (session-based)
       else if (req.sessionID) {
         // Query all profiles and filter by sessionId
         console.log(`[GetProfiles] Fetching by sessionId: ${req.sessionID}`);
-        const allProfiles = await storage.getAllProfiles();
+        const allProfiles = await storage.getAllProfiles() || [];
         console.log(`[GetProfiles] Total profiles in DB: ${allProfiles.length}`);
-        console.log(`[GetProfiles] Profile sessionIds: ${allProfiles.map(p => p.sessionId).join(', ')}`);
+        console.log(`[GetProfiles] Profile sessionIds: ${allProfiles.map(p => p.sessionId || 'none').join(', ')}`);
         profile = allProfiles.find(p => p.sessionId === req.sessionID);
         console.log(`[GetProfiles] Found profile: ${profile ? 'YES' : 'NO'}`);
       } 
@@ -3804,6 +3804,14 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       }
 
       const card = buildTodayCard(horoscopeData, profile ?? {}, codexSynthesis);
+      
+      const cardStrengths = Array.isArray(card.strengths) ? card.strengths : [];
+      const cardTriggers  = Array.isArray(card.triggers)  ? card.triggers  : [];
+      const cardFocus     = Array.isArray(card.thisWeekFocus) ? card.thisWeekFocus : [];
+
+      if (!card.narrative) {
+        card.narrative = "Your cycle is calibrating. Focus on steady progress and internal alignment today.";
+      }
 
       // AI personalisation — overwrite static fields if successful
       try {
@@ -3933,23 +3941,26 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
           throw new Error("Parsed JSON lacked who_i_am content");
         }
         
-        const buildNarrativeString = (p: any) => `CODENAME: ${p.codename || codename}
-MOTTO: ${p.motto}
+        const buildNarrativeString = (p: any) => {
+          const thisWeekArr = Array.isArray(p.this_week) ? p.this_week : [];
+          return `CODENAME: ${p.codename || codename}
+MOTTO: ${p.motto || "I build my truth in the silence of action."}
 
 WHO I AM
-${p.who_i_am}
+${p.who_i_am || "Your blueprint is calibrating. Focus on steady progress today."}
 
 HOW I MOVE UNDER PRESSURE
-${p.how_i_move}
+${p.how_i_move || "Under stress, I return to my core principles."}
 
 WHAT I WON'T TOLERATE
-${p.what_i_wont_tolerate}
+${p.what_i_wont_tolerate || "I refuse to be defined by noise or external distractions."}
 
 WHAT I'M BUILDING
-${p.what_im_building}
+${p.what_im_building || "I am constructing a life of alignment and purpose."}
 
 THIS WEEK
-${(p.this_week || []).map((t: string) => t.startsWith("-") ? t : `- ${t}`).join("\n")}`;
+${thisWeekArr.map((t: string) => (typeof t === 'string' && t.startsWith("-")) ? t : `- ${t}`).join("\n")}`;
+        };
 
         narrative = buildNarrativeString(parsed);
 
@@ -3968,23 +3979,24 @@ ${(p.this_week || []).map((t: string) => t.startsWith("-") ? t : `- ${t}`).join(
           let rawJsonRw = (aiResponseRewrite.content || "").replace(/```json/gi, "").replace(/```/g, "").trim();
           let parsedRw = JSON.parse(rawJsonRw);
           
+          const thisWeekArrRw = Array.isArray(parsedRw.this_week) ? parsedRw.this_week : [];
           narrative = `CODENAME: ${parsedRw.codename || codename}
-MOTTO: ${parsedRw.motto}
+MOTTO: ${parsedRw.motto || "My path is carved by intention."}
 
 WHO I AM
-${parsedRw.who_i_am}
+${parsedRw.who_i_am || "Aligning with the cosmic cycle."}
 
 HOW I MOVE UNDER PRESSURE
-${parsedRw.how_i_move}
+${parsedRw.how_i_move || "Returning to the center."}
 
 WHAT I WON'T TOLERATE
-${parsedRw.what_i_wont_tolerate}
+${parsedRw.what_i_wont_tolerate || "Static energy and noise."}
 
 WHAT I'M BUILDING
-${parsedRw.what_im_building}
+${parsedRw.what_im_building || "A foundation for the eternal now."}
 
 THIS WEEK
-${(parsedRw.this_week || []).map((t: string) => t.startsWith("-") ? t : `- ${t}`).join("\n")}`;
+${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) ? t : `- ${t}`).join("\n")}`;
 
         } catch (e) {
           console.warn("[codex30] AI rewrite JSON error:", e);

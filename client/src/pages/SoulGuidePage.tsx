@@ -115,27 +115,39 @@ export default function SoulGuidePage() {
       setMessages(prev => [...prev, { role: "model", text: "" }]);
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const lines = decoder.decode(value).split("\n");
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const ds = line.slice(6).trim();
-              if (ds === "[DONE]") continue;
-              try {
-                const { content } = JSON.parse(ds);
-                if (content) {
-                  assistantText += content;
-                  setMessages(prev => {
-                    const next = [...prev];
-                    next[next.length - 1] = { role: "model", text: assistantText };
-                    return next;
-                  });
-                }
-              } catch {}
+        const timeout = setTimeout(() => {
+          if (isLoading) {
+            try { reader.cancel(); } catch {}
+            setError("The connection timed out. Please try your question again.");
+            setIsLoading(false);
+          }
+        }, 45000); // 45s safety timeout for streams
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const lines = decoder.decode(value).split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const ds = line.slice(6).trim();
+                if (ds === "[DONE]") continue;
+                try {
+                  const { content } = JSON.parse(ds);
+                  if (content) {
+                    assistantText += content;
+                    setMessages(prev => {
+                      const next = [...prev];
+                      next[next.length - 1] = { role: "model", text: assistantText };
+                      return next;
+                    });
+                  }
+                } catch {}
+              }
             }
           }
+        } finally {
+          clearTimeout(timeout);
         }
       }
 

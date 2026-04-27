@@ -43,74 +43,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="root">
-      <style>
-        body, html {
-          margin: 0; padding: 0; width: 100%; height: 100%;
-          background-color: #0A0118;
-        }
-        #sc-splash {
-          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-          background: radial-gradient(circle at 50% 45%, rgba(212, 168, 95, 0.08) 0%, #0A0118 60%);
-          z-index: 99999;
-          font-family: 'Space Grotesk', sans-serif;
-        }
-        .sc-glyph {
-          font-size: 3rem;
-          color: rgba(212, 168, 95, 0.85);
-          animation: sc-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-          margin-bottom: 2rem;
-        }
-        .sc-text {
-          letter-spacing: 0.25em;
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: rgba(212, 168, 95, 0.7);
-          text-transform: uppercase;
-        }
-        .sc-sub {
-          font-size: 0.6rem;
-          letter-spacing: 0.15em;
-          color: rgba(255, 255, 255, 0.3);
-          margin-top: 1rem;
-          font-family: 'Fira Code', monospace;
-          text-transform: uppercase;
-        }
-        .sc-bar-container {
-          width: 140px;
-          height: 1px;
-          background: rgba(212, 168, 95, 0.15);
-          margin-top: 1.5rem;
-          border-radius: 2px;
-          overflow: hidden;
-          position: relative;
-        }
-        .sc-bar {
-          position: absolute;
-          top: 0; left: 0; height: 100%;
-          width: 30%;
-          background: rgba(212, 168, 95, 0.9);
-          box-shadow: 0 0 10px rgba(212, 168, 95, 0.5);
-          animation: sc-load 1.5s infinite ease-in-out;
-        }
-        @keyframes sc-pulse {
-          0%, 100% { opacity: 0.5; transform: scale(0.95); }
-          50% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(212, 168, 95, 0.4)); }
-        }
-        @keyframes sc-load {
-          0% { left: -30%; width: 30%; }
-          50% { width: 40%; }
-          100% { left: 100%; width: 30%; }
-        }
-      </style>
-      <div id="sc-splash">
-        <div class="sc-glyph">◈</div>
-        <div class="sc-text">SOUL CODEX</div>
-        <div class="sc-bar-container"><div class="sc-bar"></div></div>
-        <div class="sc-sub">SYNTHESIZING</div>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

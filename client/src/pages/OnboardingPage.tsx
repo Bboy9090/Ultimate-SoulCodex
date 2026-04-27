@@ -290,7 +290,16 @@ export default function OnboardingPage() {
 
   const canNext = (): boolean => {
     switch (step) {
-      case 1: return form.name.trim().length > 0 && form.birthDate.length > 0;
+      case 1: {
+        const hasName = form.name.trim().length > 0;
+        const hasDate = form.birthDate.length > 0;
+        if (!hasDate) return false;
+        
+        // Prevent future dates
+        const date = new Date(form.birthDate);
+        const isFuture = date > new Date();
+        return hasName && hasDate && !isFuture;
+      }
       case 2: return pressureCount >= 1;
       case 3: return form.escalation_pattern !== "";
       case 4: return decisionCount >= 1;

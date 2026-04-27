@@ -203,9 +203,25 @@ export default function TodayPage() {
       <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
         <div style={{ maxWidth: 420, width: "100%", background: "rgba(28,18,10,0.72)", border: "1px solid rgba(212,168,95,0.18)", borderTop: "3px solid #ef4444", borderRadius: 12, padding: "2rem 1.75rem", textAlign: "center" }}>
           <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
-          <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Could not load today's card</h3>
-          <p style={{ color: "var(--sc-text-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>{error}</p>
-          <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => { setError(null); loadCard(); }}>Try Again</button>
+          <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Profile Calibration Required</h3>
+          <p style={{ color: "var(--sc-text-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+            {error || "We couldn't load your daily reading. This usually happens if the birth data is invalid or if there's a temporary connection issue."}
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <button className="btn btn-primary" style={{ width: "100%" }} onClick={() => { setError(null); loadCard(); }}>Try Again</button>
+            <button 
+              className="btn btn-ghost" 
+              style={{ width: "100%", fontSize: "0.75rem", opacity: 0.6 }} 
+              onClick={() => {
+                if (confirm("Reset everything and use a different birthday?")) {
+                  localStorage.clear();
+                  window.location.href = "/";
+                }
+              }}
+            >
+              Reset & Use New Birthday
+            </button>
+          </div>
         </div>
       </div>
     );
