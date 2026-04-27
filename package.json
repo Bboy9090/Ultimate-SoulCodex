@@ -6,7 +6,7 @@
   "description": "Enterprise monorepo for SoulCodex: Engine of the Eternal Now",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ultimate-soulcodex/Ultimate-SoulCodex-Engine-of-the-Eternal-Now.git"
+    "url": "https://github.com/Bboy9090/Ultimate-SoulCodex.git"
   },
   "workspaces": [
     "packages/*"
