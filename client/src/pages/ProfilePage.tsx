@@ -258,6 +258,42 @@ export default function ProfilePage() {
     })();
   }, []);
 
+  // Background Pre-compute for Codex
+  useEffect(() => {
+    if (!profile) return;
+    try {
+      const cached = localStorage.getItem("soulCodexReading");
+      if (cached) return; // Already generated
+      
+      console.log("[ProfilePage] Triggering background pre-compute for Codex...");
+      
+      const fullChartRaw = localStorage.getItem("soulFullChart");
+      const userInputsRaw = localStorage.getItem("soulUserInputs") || localStorage.getItem("onboardingData");
+      
+      let fullChart = {};
+      let userInputs = {};
+      try { if (fullChartRaw) fullChart = JSON.parse(fullChartRaw); } catch {}
+      try { if (userInputsRaw) userInputs = JSON.parse(userInputsRaw); } catch {}
+      if (!userInputsRaw && profile.signals) userInputs = profile.signals;
+
+      apiFetch("/api/codex30/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile, fullChart, userInputs })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d?.synthesis) {
+          console.log("[ProfilePage] Background pre-compute successful!");
+          localStorage.setItem("soulCodexReading", JSON.stringify(d.synthesis));
+        }
+      })
+      .catch(e => console.warn("[ProfilePage] Background pre-compute failed:", e));
+    } catch (err) {
+      console.warn("[ProfilePage] Pre-compute error:", err);
+    }
+  }, [profile]);
+
   async function handleRevealComparables() {
     if (!profile || comparablesLoading) return;
     if (comparables) { setComparablesRevealed(r => !r); return; }
