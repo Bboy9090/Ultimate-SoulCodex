@@ -30,62 +30,76 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         background: "radial-gradient(circle at 50% 50%, rgba(13,11,26,0.95) 0%, rgba(13,11,26,0.6) 35%, rgba(13,11,26,0) 70%)"
       }} />
 
+      {/* Background Depth: Plum-Black with dynamic flash */}
+      <motion.div 
+        className="absolute inset-0 z-0"
+        initial={{ background: "radial-gradient(circle at 50% 50%, #FFD700 0%, #0D0B1A 100%)" }}
+        animate={{ background: "radial-gradient(circle at 50% 50%, #1A0B2E 0%, #0D0B1A 100%)" }}
+        transition={{ duration: 1, ease: "easeOut" }}
+      />
+
       <AnimatePresence mode="wait">
         {stage === 0 && (
           <motion.div
             key="master-brand"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, filter: "blur(8px)" }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-            className="z-10 flex flex-col items-center justify-center w-full px-4"
+            exit={{ opacity: 0, filter: "blur(20px)", scale: 2 }}
+            className="z-10 flex flex-col items-center justify-center w-full px-4 relative"
           >
-            {/* Geometric Studio Emblem - spanning in zoom */}
+            {/* Extreme Flare Behind Emblem */}
+            <motion.div 
+              className="absolute inset-0 bg-[#FFD700] rounded-full pointer-events-none z-0"
+              style={{ filter: "blur(80px)" }}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: [0, 0.6, 0], scale: [0, 2, 4] }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+            />
+
+            {/* Geometric Studio Emblem - explosive slam entry */}
             <motion.div
-              className="relative w-20 h-20 md:w-24 md:h-24 mb-8"
-              initial={{ scale: 0.2, opacity: 0, rotate: -45 }}
+              className="relative w-28 h-28 md:w-36 md:h-36 mb-8 z-10"
+              initial={{ scale: 5, opacity: 0, rotate: 180 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }} // smooth cinematic easing
+              transition={{ type: "spring", stiffness: 150, damping: 12, mass: 0.8 }}
             >
-              <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]">
+              <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_30px_rgba(255,215,0,0.9)]">
                 {/* Outer Diamond Path */}
                 <motion.path 
                   d="M50 2 L98 50 L50 98 L2 50 Z" 
                   fill="none" 
                   stroke="#FFD700" 
-                  strokeWidth="0.5"
+                  strokeWidth="1.5"
                   initial={{ pathLength: 0 }}
                   animate={{ pathLength: 1 }}
-                  transition={{ duration: 1.4, ease: "easeInOut" }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
                 />
                 {/* Inner Rotating Dashed Circle */}
                 <motion.circle 
                   cx="50" cy="50" r="28" 
                   fill="none" 
                   stroke="#FFD700" 
-                  strokeWidth="0.5"
-                  strokeDasharray="4 4"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  strokeWidth="1"
+                  strokeDasharray="4 6"
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                   style={{ transformOrigin: "center" }}
                 />
                 {/* Central Glowing Core */}
                 <motion.circle 
-                  cx="50" cy="50" r="4" 
+                  cx="50" cy="50" r="6" 
                   fill="#FFD700" 
                   initial={{ scale: 0 }}
-                  animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  animate={{ scale: [1, 2.5, 1], opacity: [0.8, 1, 0.8] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 />
               </svg>
             </motion.div>
             
             <motion.span 
-              initial={{ filter: "blur(8px)", letterSpacing: "0.1em", opacity: 0 }}
-              animate={{ filter: "blur(0px)", letterSpacing: "0.3em", opacity: 1 }}
-              transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-              className="font-serif text-[#FFD700] text-[10px] md:text-sm uppercase font-light text-center"
-              style={{ textShadow: "0 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255,215,0,0.4)" }}
+              initial={{ filter: "blur(20px)", letterSpacing: "1em", opacity: 0, y: 50 }}
+              animate={{ filter: "blur(0px)", letterSpacing: "0.4em", opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 100, damping: 10, delay: 0.1 }}
+              className="font-serif text-[#FFD700] text-sm md:text-lg uppercase font-bold text-center z-10"
+              style={{ textShadow: "0 4px 20px rgba(0,0,0,1), 0 0 40px rgba(255,215,0,0.8)" }}
             >
               Bobby’s World Presents
             </motion.span>
@@ -95,45 +109,57 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         {stage === 1 && (
           <motion.div
             key="app-title"
-            initial={{ opacity: 0, filter: "blur(10px)", scale: 0.98 }}
-            animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-            exit={{ opacity: 0, filter: "blur(4px)", scale: 1.02 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="z-10 flex flex-col items-center gap-4 w-full px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, filter: "blur(10px)", scale: 1.5 }}
+            transition={{ duration: 0.2 }}
+            className="z-10 flex flex-col items-center gap-6 w-full px-4 relative"
           >
+            {/* Massive Starburst Background Flare */}
+            <motion.div 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] md:w-[40vw] md:h-[40vw] bg-[#FFD700] rounded-full pointer-events-none mix-blend-screen z-0"
+              style={{ filter: "blur(100px)" }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: [0, 1.5, 1], opacity: [0, 0.4, 0.15] }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+            />
+
             {/* Central Signal Mark */}
-            <div className="relative mb-2">
-              <div className="w-12 h-12 border border-[#FFD700]/30 rounded-full flex items-center justify-center bg-[#0D0B1A]/80 backdrop-blur-sm">
-                <div className="w-1.5 h-1.5 bg-[#FFD700] rounded-full shadow-[0_0_15px_#FFD700]" />
+            <motion.div 
+              className="relative mb-4 z-10"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            >
+              <div className="w-16 h-16 border-2 border-[#FFD700] rounded-full flex items-center justify-center bg-[#0D0B1A]/80 shadow-[0_0_30px_rgba(255,215,0,0.4)]">
+                <div className="w-3 h-3 bg-[#FFD700] rounded-full shadow-[0_0_25px_#FFD700]" />
               </div>
-              <div className="absolute inset-0 border border-[#FFD700]/10 rounded-full animate-ping" />
-            </div>
+              <div className="absolute inset-0 border-2 border-[#FFD700] rounded-full animate-ping" />
+            </motion.div>
             
-            <div className="text-center w-full">
-              <h1 
-                className="font-serif text-2xl sm:text-3xl md:text-4xl text-[#FFD700] tracking-[0.15em] sm:tracking-[0.25em] uppercase font-medium mb-2 whitespace-nowrap"
-                style={{ textShadow: "0 4px 20px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.8), 0 0 60px rgba(255,215,0,0.2)" }}
+            <div className="text-center w-full z-10">
+              <motion.h1 
+                className="font-serif text-4xl sm:text-6xl md:text-8xl text-[#FFD700] uppercase font-black mb-2 whitespace-nowrap"
+                style={{ textShadow: "0 0 30px rgba(255,215,0,0.8), 0 0 60px rgba(255,215,0,0.5), 0 0 100px rgba(255,215,0,0.3)" }}
+                initial={{ letterSpacing: "0.8em", opacity: 0, scale: 0.5, filter: "blur(20px)" }}
+                animate={{ letterSpacing: "0.15em", opacity: 1, scale: 1, filter: "blur(0px)" }}
+                transition={{ type: "spring", stiffness: 120, damping: 12 }}
               >
                 Soul Codex
-              </h1>
-              <p 
-                className="text-[#F2F2F2]/60 font-serif italic text-[9px] sm:text-[10px] md:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase"
-                style={{ textShadow: "0 2px 10px rgba(0,0,0,1)" }}
+              </motion.h1>
+              <motion.p 
+                className="text-[#F2F2F2] font-serif italic text-[11px] sm:text-sm md:text-base uppercase font-bold"
+                style={{ textShadow: "0 4px 15px rgba(0,0,0,1), 0 0 20px rgba(255,215,0,0.6)" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 0.9, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
               >
                 Decode the patterns
-              </p>
+              </motion.p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Background Depth: Plum-Black */}
-      <div 
-        className="absolute inset-0 z-0"
-        style={{
-          background: "radial-gradient(circle at 50% 50%, #1A0B2E 0%, #0D0B1A 100%)",
-        }}
-      />
     </div>
   );
 };
