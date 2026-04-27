@@ -266,7 +266,8 @@ export default function CodexReadingPage() {
   if (!synthesis) return null;
 
   return (
-    <div style={{ minHeight: "100vh", padding: "2rem 1rem 4rem", maxWidth: "740px", margin: "0 auto" }}>
+    <div className="nebula-bg" style={{ minHeight: "100vh", padding: "2rem 1rem 4rem" }}>
+      <div style={{ maxWidth: "740px", margin: "0 auto", position: "relative", zIndex: 1 }}>
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
@@ -718,6 +719,7 @@ export default function CodexReadingPage() {
             Poster →
           </button>
         )}
+      </div>
       </div>
     </div>
   );

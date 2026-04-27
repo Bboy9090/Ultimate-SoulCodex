@@ -3933,12 +3933,23 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
           temperature: 0.82
         });
         
-        let rawJson = (aiResponse.content || "").replace(/```json/gi, "").replace(/```/g, "").trim();
-        let parsed = JSON.parse(rawJson);
-        
-        // Ensure minimum length or generic checks trigger rewrite by generating a placeholder if something failed
-        if (!parsed.who_i_am || parsed.who_i_am.length < 100) {
-          throw new Error("Parsed JSON lacked who_i_am content");
+        let parsed: any;
+        try {
+          let rawJson = (aiResponse.content || "").replace(/```json/gi, "").replace(/```/g, "").trim();
+          parsed = JSON.parse(rawJson);
+          if (!parsed.who_i_am || parsed.who_i_am.length < 10) {
+            throw new Error("Parsed JSON lacked content");
+          }
+        } catch (parseErr) {
+          console.error("[codex30] Narrative parse failed, using secondary fallback:", parseErr);
+          parsed = {
+            codename: codename,
+            motto: "In alignment, I find my power.",
+            who_i_am: `I am a ${coreArchetype || "Soul"}. I process reality through a lens of ${themes[0]?.tag || "clarity"}.`,
+            how_i_move: "I move best when I follow my internal signal and protect my focus.",
+            what_i_wont_tolerate: "I refuse to be defined by external noise or misaligned expectations.",
+            what_im_building: "I am constructing a life of purpose and alignment."
+          };
         }
         
         const buildNarrativeString = (p: any) => {

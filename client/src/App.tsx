@@ -17,6 +17,9 @@ import TermsPage from "./pages/TermsPage";
 import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
 
+import { useState, useEffect } from "react";
+import SplashScreen from "./components/SplashScreen";
+
 function hasProfileData(): boolean {
   try {
     const p = localStorage.getItem("soulProfile");
@@ -27,8 +30,20 @@ function hasProfileData(): boolean {
 }
 
 export default function App() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [showSplash, setShowSplash] = useState(true);
   const hasProfile = hasProfileData();
+
+  useEffect(() => {
+    // If we're at root and have no profile, we'll want to go to /start after splash
+    if (!hasProfile && location === "/") {
+      // Handled by the Switch below, but good to know
+    }
+  }, [hasProfile, location]);
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--sc-bg-ink)" }}>
@@ -38,7 +53,7 @@ export default function App() {
       <main style={{ flex: 1, position: "relative", minWidth: 0 }}>
         <Switch>
           <Route path="/">
-            {hasProfile ? <TodayPage /> : <LandingPage />}
+            {hasProfile ? <TodayPage /> : <OnboardingPage />}
           </Route>
           <Route path="/start" component={OnboardingPage} />
           <Route path="/profile" component={ProfilePage} />

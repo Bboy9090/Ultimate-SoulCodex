@@ -243,28 +243,19 @@ function codexReadingFallback(profile: any): FallbackResult {
 
 function biographyFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
-
-  const lines: string[] = [];
-  lines.push(
-    `I am a ${d.archetype}${d.sunSign ? `. My ${d.sunSign} Sun drives me to act fast — I pick up on tension before anyone names it` : ""}.`
-  );
-  if (d.moonSign) {
-    lines.push(
-      `My ${d.moonSign} Moon shapes my private world — I process deeply, slowly, and often alone.`
-    );
-  }
-  if (d.lifePath) {
-    lines.push(`Life Path ${d.lifePath} means I default to building systems and finding patterns.`);
-  }
-  if (d.hdType) {
-    lines.push(
-      `As a ${d.hdType} in Human Design, I ${d.hdType === "Generator" || d.hdType === "Manifesting Generator" ? "have deep sustained energy but only for what genuinely excites me" : d.hdType === "Projector" ? "see what others miss but burn out when I try to match their pace" : d.hdType === "Manifestor" ? "initiate boldly but leave people behind when I don't inform them first" : "reflect back what's around me — I amplify the best and worst of my environment"}.`
-    );
-  }
+  
+  const bio = {
+    codename: d.archetype,
+    motto: "In alignment, I find my power.",
+    who_i_am: `I am a ${d.archetype}${d.sunSign ? ` with a ${d.sunSign} Sun` : ""}. I process reality through a lens of ${d.themes[0] || "clarity"}.`,
+    how_i_move: `As a ${d.hdType || d.archetype}, I move best when I follow my internal signal${d.hdStrategy ? ` (${d.hdStrategy})` : ""}.`,
+    what_i_wont_tolerate: "I refuse to be defined by external noise or misaligned expectations.",
+    what_im_building: `I am constructing a life of ${d.themes[1] || "purpose"} and ${d.themes[2] || "alignment"}.`
+  };
 
   return {
     title: "Profile from your Codex",
-    content: lines.join(" "),
+    content: JSON.stringify(bio),
   };
 }
 

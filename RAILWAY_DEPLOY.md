@@ -37,7 +37,7 @@ With $5 free credit/month, you can run:
 2. **Deploy from GitHub Repo**
    - Click "Deploy from GitHub repo"
    - Authorize Railway to access your repos
-   - Select: `Bboy9090/Ultimate-SoulCodex-Engine-of-the-Eternal-Now`
+   - Select: `ultimate-soulcodex/Ultimate-SoulCodex-Engine-of-the-Eternal-Now`
 
 3. **Railway Uses Dockerfile**
    - Railway builds with the `Dockerfile` (builder: DOCKERFILE in railway.json)
