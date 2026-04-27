@@ -391,7 +391,7 @@ export default function CodexReadingPage() {
             const isIdentity = i < 2;
             return (
               <div key={i} style={{
-                background: `rgba(242,234,218,0.96)`,
+                background: `rgba(28, 22, 53, 0.72)`,
                 border: "1px solid rgba(212,168,95,0.12)",
                 borderLeft: `3px solid ${accent.color}`,
                 borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
@@ -413,7 +413,7 @@ export default function CodexReadingPage() {
                 )}
                 {sec.lines.map((line, j) => (
                   <p key={j} style={{
-                    color: line.startsWith("-") ? "#8a5f20" : "#1A0E07",
+                    color: line.startsWith("-") ? "#8a5f20" : "#EAEAF5",
                     lineHeight: 1.75, marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
                     fontFamily: i < 2 ? "var(--font-serif)" : undefined,
                     fontSize: i === 0 ? "1.1rem" : "0.9375rem",
@@ -433,7 +433,7 @@ export default function CodexReadingPage() {
               const accent = getSectionAccent(sec.header);
               return (
                 <div key={`motto-${i}`} style={{
-                  background: `rgba(242,234,218,0.96)`,
+                  background: `rgba(28, 22, 53, 0.72)`,
                   border: "1px solid rgba(212,168,95,0.12)",
                   borderLeft: `3px solid ${accent.color}`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
@@ -453,7 +453,7 @@ export default function CodexReadingPage() {
                   )}
                   {sec.lines.map((line, j) => (
                     <p key={j} style={{
-                      color: "#1A0E07",
+                      color: "#EAEAF5",
                       lineHeight: 1.75,
                       marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
                       fontFamily: "var(--font-serif)",
@@ -470,7 +470,7 @@ export default function CodexReadingPage() {
             {sections.filter(s => s.header.toUpperCase().startsWith("WHO I AM")).map((sec, i) => (
               <div key={`who-${i}`} style={{ position: "relative", marginBottom: "1.5rem" }}>
                 <div style={{
-                  background: `rgba(242,234,218,0.96)`,
+                  background: `rgba(28, 22, 53, 0.72)`,
                   border: "1px solid rgba(212,168,95,0.12)",
                   borderLeft: `3px solid #D4A85F`,
                   borderRadius: "12px", padding: "1.4rem 1.5rem",
@@ -492,7 +492,7 @@ export default function CodexReadingPage() {
                   )}
                   {sec.lines.map((line, j) => (
                     <p key={j} style={{
-                      color: "#1A0E07",
+                      color: "#EAEAF5",
                       lineHeight: 1.75,
                       marginBottom: j < sec.lines.length - 1 ? "0.55rem" : 0,
                       fontFamily: "var(--font-serif)",
@@ -514,7 +514,7 @@ export default function CodexReadingPage() {
                   { header: "PRESCRIPTIONS", glyph: "✦", lines: ["- Establish a rigid boundary around unstructured time.", "- Decline requests that require high emotional performing energy.", "- Implement a 24-hour delay before committing to new projects."] }
                 ].map((fakeSec, idx) => (
                   <div key={idx} style={{
-                    background: `rgba(242,234,218,0.96)`,
+                    background: `rgba(28, 22, 53, 0.72)`,
                     border: "1px solid rgba(212,168,95,0.12)",
                     borderLeft: `3px solid #D4A85F`,
                     borderRadius: "12px", padding: "1.4rem 1.5rem", marginBottom: "0.9rem",
@@ -530,7 +530,7 @@ export default function CodexReadingPage() {
                     </div>
                     {fakeSec.lines.map((line, j) => (
                       <p key={j} style={{
-                        color: "#1A0E07", lineHeight: 1.75,
+                        color: "#EAEAF5", lineHeight: 1.75,
                         marginBottom: j < fakeSec.lines.length - 1 ? "0.55rem" : 0,
                         fontFamily: "var(--font-serif)", fontSize: "0.9375rem",
                       }}>
@@ -610,7 +610,7 @@ export default function CodexReadingPage() {
                 </button>
               </Link>
               <div style={{ textAlign: "center" }}>
-                <Link href="/profile" style={{ fontSize: "0.78rem", color: "#8a6030", textDecoration: "underline", textUnderlineOffset: "2px" }}>
+                <Link href="/profile" style={{ fontSize: "0.78rem", color: "var(--sc-gold)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
                   Have an access code? Enter it on your profile page
                 </Link>
               </div>
@@ -632,7 +632,7 @@ export default function CodexReadingPage() {
           <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             {synthesis.prescriptions.map((p, i) => (
               <li key={i} style={{
-                fontSize: "0.9rem", color: "#1A0E07",
+                fontSize: "0.9rem", color: "#EAEAF5",
                 lineHeight: 1.65, paddingBottom: "0.5rem",
                 display: "flex", gap: "0.6rem",
               }}>

@@ -5,9 +5,9 @@ export default function PrivacyPage() {
         maxWidth: 720,
         margin: "2rem auto",
         padding: "2rem 1.5rem",
-        background: "rgba(242,234,218,0.96)",
+        background: "rgba(28, 22, 53, 0.72)",
         borderRadius: 16,
-        color: "#1A0E07",
+        color: "#EAEAF5",
         lineHeight: 1.7,
         fontSize: "0.95rem",
       }}
