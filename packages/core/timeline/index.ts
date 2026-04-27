@@ -4,7 +4,7 @@ export * from "./resolve.js";
 import { resolveTimelinePhase } from "./resolve.js";
 
 export type TimelineOutput = {
-  phase: import("./rules").Phase;
+  phase: import("./rules.js").Phase;
   confidence: {
     badge: "verified" | "partial" | "unverified";
     label: "Verified" | "Partial" | "Unverified";
@@ -16,7 +16,7 @@ export type TimelineOutput = {
   focus: string;
   do: string[];
   dont: string[];
-  nextPhase: import("./rules").Phase;
+  nextPhase: import("./rules.js").Phase;
   narrative: string;
 };
 
@@ -43,7 +43,7 @@ export function generateTimeline(input: {
       "") as string;
 
   const hasBirthTime = Boolean(input.profile?.birthTime && input.profile.birthTime.trim().length > 0);
-  const astroConfidence: import("./rules").ConfidenceLabel =
+  const astroConfidence: import("./rules.js").ConfidenceLabel =
     !hasBirthTime
       ? "Partial"
       : confidenceBadge === "verified" || confidenceLabelRaw === "Verified"
