@@ -1,4 +1,4 @@
-import type { Signal } from "../types";
+import type { Signal } from "../types.js";
 
 const DECISION_MAP: Record<string, { label: string; tags: string[] }> = {
   calm_logic:     { label: "Best decisions happen when my mind is calm. Pressure makes me slower, not dumber.", tags: ["precision", "discipline", "truth"] },

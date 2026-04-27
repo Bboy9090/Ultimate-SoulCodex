@@ -1,4 +1,4 @@
-import type { Signal, ThemeScore } from "../types";
+import type { Signal, ThemeScore } from "../types.js";
 
 export function scoreThemes(signals: Signal[]): ThemeScore[] {
   const map = new Map<string, { score: number; sources: string[] }>();

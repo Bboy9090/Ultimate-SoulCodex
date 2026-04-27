@@ -1,4 +1,4 @@
-import type { Signal, ThemeScore } from "../types";
+import type { Signal, ThemeScore } from "../types.js";
 
 export function compileBulletLists(signals: Signal[], themes: ThemeScore[]) {
   const strengths: string[] = [];

@@ -1,4 +1,4 @@
-import type { Signal } from "../types";
+import type { Signal } from "../types.js";
 
 const ASPECT_POLARITY: Record<string, "strength" | "shadow" | "neutral"> = {
   trine:       "strength",
