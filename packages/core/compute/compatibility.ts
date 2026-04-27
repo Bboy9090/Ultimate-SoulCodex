@@ -1,4 +1,4 @@
-import type { SoulSignals, CompatibilityScore, CompatibilityDimension } from "../types";
+import type { SoulSignals, CompatibilityScore, CompatibilityDimension } from "../types.js";
 
 function scoreMatch(a: string | undefined, b: string | undefined): number {
   if (!a || !b) return 50;

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { generateTimeline, resolveTimelinePhase } from "../index";
+import { generateTimeline, resolveTimelinePhase } from "../index.js";
 
 test("timeline: Partial confidence softens astrology but still resolves a phase", () => {
   const out = generateTimeline({

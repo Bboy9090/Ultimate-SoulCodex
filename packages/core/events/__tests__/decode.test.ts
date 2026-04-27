@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { decodeLifeEvent } from "../decode";
+import { decodeLifeEvent } from "../decode.js";
 
 test("decodeLifeEvent classifies betrayal and returns stable structure", () => {
   const out = decodeLifeEvent({
