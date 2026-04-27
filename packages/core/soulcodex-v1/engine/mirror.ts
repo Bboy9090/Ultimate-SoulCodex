@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { EngineConfidence, SourceSystem, TraitSignal } from "./types";
+import type { EngineConfidence, SourceSystem, TraitSignal } from "./types.js";
 
 export const mirrorReactionSchema = z.enum(["fix", "analyze", "talk", "withdraw"]);
 export const mirrorBetrayalSchema = z.enum(["disrespect", "dishonesty", "stupidity", "emotional"]);

@@ -1,4 +1,4 @@
-import type { EngineToneMode, EngineConfidence, SourceSystem, Statement, TraitSignal } from "./types";
+import type { EngineToneMode, EngineConfidence, SourceSystem, Statement, TraitSignal } from "./types.js";
 
 export type SelectStatementsInput = {
   toneMode: EngineToneMode;

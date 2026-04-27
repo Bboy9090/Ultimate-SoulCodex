@@ -1,5 +1,5 @@
-import type { EngineConfidence, MirrorAnswers, SourceSystem, TraitMappingMatrix, TraitSignal } from "./types";
-import { analyzeMirror, mirrorAnswersSchema, mirrorToTraitSignals } from "./mirror";
+import type { EngineConfidence, MirrorAnswers, SourceSystem, TraitMappingMatrix, TraitSignal } from "./types.js";
+import { analyzeMirror, mirrorAnswersSchema, mirrorToTraitSignals } from "./mirror.js";
 
 type SoulCodexEngineInput = {
   astrology?: Record<string, unknown> | null;
