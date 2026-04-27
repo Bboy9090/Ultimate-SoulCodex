@@ -444,9 +444,9 @@ export default function CompatibilityPage() {
       )}
 
       {!sunSign ? (
-        <div style={{ textAlign: "center", padding: "3rem 1rem", background: "rgba(242,234,218,0.96)", border: "1px solid rgba(212,168,95,0.25)", borderRadius: "14px" }}>
+        <div style={{ textAlign: "center", padding: "3rem 1rem", background: "rgba(28, 22, 53, 0.72)", border: "1px solid rgba(212,168,95,0.25)", borderRadius: "14px" }}>
           <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>◉</div>
-          <p style={{ color: "#5a3d1a", fontSize: "0.88rem", marginBottom: "1rem" }}>
+          <p style={{ color: "rgba(234,234,245,0.7)", fontSize: "0.88rem", marginBottom: "1rem" }}>
             Complete your soul profile to unlock compatibility analysis.
           </p>
           <a href="/start" style={{ textDecoration: "none" }}>

@@ -202,13 +202,13 @@ function cleanBehavioralText(text: string): string {
 
 // ── Section visual config ────────────────────────────────────────────────────
 const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
-  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(242,234,218,0.96)" },
-  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(242,234,218,0.96)" },
-  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(242,234,218,0.96)" },
-  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(242,234,218,0.96)" },
-  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(242,234,218,0.96)" },
-  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(242,234,218,0.96)" },
-  account:  { glyph: "⚙", accent: "#8a7553", bg: "rgba(242,234,218,0.96)" },
+  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(28, 22, 53, 0.72)" },
+  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(28, 22, 53, 0.72)" },
+  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(28, 22, 53, 0.72)" },
+  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(28, 22, 53, 0.72)" },
+  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(28, 22, 53, 0.72)" },
+  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(28, 22, 53, 0.72)" },
+  account:  { glyph: "⚙", accent: "#8a7553", bg: "rgba(28, 22, 53, 0.72)" },
   legal:    { glyph: "◈", accent: "#D4A85F", bg: "rgba(212,168,95,0.03)" },
 };
 
@@ -464,25 +464,25 @@ export default function ProfilePage() {
       label: "Who I Am",
       value: firstSentence(cleanEssence),
       accent: "#D4A85F",
-      bg: "rgba(242,234,218,0.96)",
+      bg: "rgba(28, 22, 53, 0.72)",
     },
     {
       label: "What's Alive Now",
       value: whyNowValue,
       accent: "#22d3ee",
-      bg: "rgba(242,234,218,0.96)",
+      bg: "rgba(28, 22, 53, 0.72)",
     },
     {
       label: "One Pattern to Watch",
       value: firstSentence(cleanStress),
       accent: "#f59e0b",
-      bg: "rgba(242,234,218,0.96)",
+      bg: "rgba(28, 22, 53, 0.72)",
     },
     {
       label: "One Move Today",
       value: oneMoveValue,
       accent: "#22c55e",
-      bg: "rgba(242,234,218,0.96)",
+      bg: "rgba(28, 22, 53, 0.72)",
     },
   ];
 
@@ -566,7 +566,7 @@ export default function ProfilePage() {
         }}>
           <span style={{
             display: "inline-block", padding: "0.3rem 0.9rem",
-            background: "rgba(242,234,218,0.96)", border: "1px solid rgba(212,168,95,0.55)",
+            background: "rgba(28, 22, 53, 0.72)", border: "1px solid rgba(212,168,95,0.55)",
             borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600,
             color: "var(--sc-gold)", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
@@ -625,7 +625,7 @@ export default function ProfilePage() {
               {card.label}
             </div>
             <p style={{
-              fontSize: "0.855rem", color: "#1A0E07",
+              fontSize: "0.855rem", color: "#EAEAF5",
               lineHeight: 1.6, margin: 0,
               display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
               overflow: "hidden",
@@ -695,7 +695,7 @@ export default function ProfilePage() {
           disabled={comparablesLoading}
           style={{
             width: "100%",
-            background: "rgba(242,234,218,0.96)",
+            background: "rgba(28, 22, 53, 0.72)",
             border: "1px solid rgba(212,168,95,0.45)",
             borderRadius: 12,
             padding: "1rem 1.5rem",
@@ -711,7 +711,7 @@ export default function ProfilePage() {
               <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 Soul Comparables
               </div>
-              <div style={{ fontSize: "0.72rem", color: "#5a3d1a", marginTop: "0.15rem" }}>
+              <div style={{ fontSize: "0.72rem", color: "rgba(234,234,245,0.7)", marginTop: "0.15rem" }}>
                 Your archetype's closest matches across animal, deity, history &amp; culture
               </div>
             </div>
@@ -737,7 +737,7 @@ export default function ProfilePage() {
                 <div
                   key={cfg.key}
                   style={{
-                    background: "rgba(242,234,218,0.96)",
+                    background: "rgba(28, 22, 53, 0.72)",
                     border: `1px solid ${cfg.accent}45`,
                     borderLeft: `3px solid ${cfg.accent}`,
                     borderRadius: 10,
@@ -754,13 +754,13 @@ export default function ProfilePage() {
                     </span>
                   </div>
                   <div style={{
-                    fontSize: "0.95rem", fontWeight: 700, color: "#1A0E07",
+                    fontSize: "0.95rem", fontWeight: 700, color: "#EAEAF5",
                     marginBottom: "0.4rem", fontFamily: "var(--font-serif)",
                   }}>
                     {item.name}
                   </div>
                   <p style={{
-                    fontSize: "0.8rem", color: "#4a2f12",
+                    fontSize: "0.8rem", color: "rgba(234,234,245,0.85)",
                     lineHeight: 1.55, margin: 0,
                   }}>
                     {item.why}
@@ -783,7 +783,7 @@ export default function ProfilePage() {
               }}
               style={{
                 background: "none", border: "none", cursor: "pointer",
-                fontSize: "0.68rem", color: "#8a6030",
+                fontSize: "0.68rem", color: "var(--sc-gold)",
                 textDecoration: "underline", textUnderlineOffset: "2px", padding: 0,
               }}
             >
@@ -796,18 +796,18 @@ export default function ProfilePage() {
       {/* ── Email Capture ──────────────────────────────────────────────── */}
       {!isPremium && !emailSaved && premiumChecked && (
         <div style={{
-          background: "rgba(242,234,218,0.96)",
+          background: "rgba(28, 22, 53, 0.72)",
           border: "1px solid rgba(212,168,95,0.35)",
           borderRadius: "12px", padding: "1.5rem", marginBottom: "1.75rem",
           position: "relative", zIndex: 1,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.75rem" }}>
             <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.7 }}>◉</span>
-            <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#5a3d1a" }}>
+            <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(234,234,245,0.7)" }}>
               Save Your Blueprint
             </span>
           </div>
-          <p style={{ fontSize: "0.82rem", color: "#5a3d1a", lineHeight: 1.6, margin: "0 0 1rem" }}>
+          <p style={{ fontSize: "0.82rem", color: "rgba(234,234,245,0.7)", lineHeight: 1.6, margin: "0 0 1rem" }}>
             Your free profile is currently stored locally. Enter your email to back up your archetype and get notified when major cosmic transits hit your pattern.
           </p>
           <form
@@ -818,8 +818,8 @@ export default function ProfilePage() {
               type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email"
               style={{
                 flex: 1, padding: "0.65rem 0.9rem",
-                background: "rgba(255,255,255,0.7)", border: "1px solid rgba(212,168,95,0.35)",
-                borderRadius: "8px", fontSize: "0.88rem", color: "#1A0E07", outline: "none",
+                background: "rgba(13,11,26,0.6)", border: "1px solid rgba(212,168,95,0.35)",
+                borderRadius: "8px", fontSize: "0.88rem", color: "#EAEAF5", outline: "none",
               }}
             />
             <button
@@ -827,7 +827,7 @@ export default function ProfilePage() {
               style={{
                 padding: "0.65rem 1.25rem", fontSize: "0.82rem", fontWeight: 700,
                 background: email.trim() ? "linear-gradient(135deg, #D4A85F 0%, #b8883a 100%)" : "rgba(212,168,95,0.2)",
-                color: email.trim() ? "#1A0E07" : "#8a6030",
+                color: email.trim() ? "#EAEAF5" : "var(--sc-gold)",
                 border: "1px solid rgba(212,168,95,0.5)", borderRadius: "8px",
                 cursor: email.trim() ? "pointer" : "default", opacity: emailSubmitting ? 0.6 : 1
               }}
@@ -846,7 +846,7 @@ export default function ProfilePage() {
       {/* ── Access & Premium ──────────────────────────────────────────── */}
       {premiumChecked && (
         <div style={{
-          background: isPremium ? "rgba(34,197,94,0.06)" : "rgba(242,234,218,0.96)",
+          background: isPremium ? "rgba(34,197,94,0.06)" : "rgba(28, 22, 53, 0.72)",
           border: `1px solid ${isPremium ? "rgba(34,197,94,0.25)" : "rgba(212,168,95,0.35)"}`,
           borderRadius: "12px",
           padding: "1.5rem",
@@ -874,11 +874,11 @@ export default function ProfilePage() {
             <>
               <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
                 <span style={{ fontSize: "1.1rem", color: "var(--sc-gold, #D4A85F)", opacity: 0.7 }}>✦</span>
-                <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#5a3d1a" }}>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(234,234,245,0.7)" }}>
                   Unlock Full Access
                 </span>
               </div>
-              <p style={{ fontSize: "0.82rem", color: "#5a3d1a", lineHeight: 1.6, margin: "0 0 1rem" }}>
+              <p style={{ fontSize: "0.82rem", color: "rgba(234,234,245,0.7)", lineHeight: 1.6, margin: "0 0 1rem" }}>
                 <Link href="/pricing" style={{ color: "var(--sc-gold)", fontWeight: 700, textDecoration: "underline" }}>Upgrade here</Link> or enter an access code to unlock your Full Cosmic Blueprint, unlimited Soul Guide, premium birth chart, and the complete Codex reading.
               </p>
               <form
@@ -892,9 +892,9 @@ export default function ProfilePage() {
                   placeholder="Enter access code"
                   style={{
                     flex: 1, padding: "0.65rem 0.9rem",
-                    background: "rgba(255,255,255,0.7)", border: "1px solid rgba(212,168,95,0.35)",
+                    background: "rgba(13,11,26,0.6)", border: "1px solid rgba(212,168,95,0.35)",
                     borderRadius: "8px", fontSize: "0.88rem",
-                    color: "#1A0E07", outline: "none",
+                    color: "#EAEAF5", outline: "none",
                   }}
                 />
                 <button
@@ -905,7 +905,7 @@ export default function ProfilePage() {
                     background: accessCode.trim() ? "linear-gradient(135deg, #D4A85F 0%, #b8883a 100%)" : "rgba(212,168,95,0.2)",
                     border: "1px solid rgba(212,168,95,0.5)",
                     borderRadius: "8px", fontSize: "0.82rem",
-                    color: accessCode.trim() ? "#1A0E07" : "#8a6030",
+                    color: accessCode.trim() ? "#EAEAF5" : "var(--sc-gold)",
                     fontWeight: 700, cursor: accessCode.trim() ? "pointer" : "default",
                     opacity: codeSubmitting ? 0.6 : 1,
                     whiteSpace: "nowrap",

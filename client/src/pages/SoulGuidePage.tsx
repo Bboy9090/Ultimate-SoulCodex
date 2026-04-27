@@ -236,13 +236,13 @@ export default function SoulGuidePage() {
                   key={i}
                   onClick={() => handleSend(s)}
                   style={{
-                    background: "rgba(242,234,218,0.96)", border: "1px solid rgba(212,168,95,0.45)",
+                    background: "rgba(28, 22, 53, 0.72)", border: "1px solid rgba(212,168,95,0.45)",
                     borderRadius: "10px", padding: "0.7rem 1rem",
-                    fontSize: "0.85rem", color: "#1A0E07",
+                    fontSize: "0.85rem", color: "#EAEAF5",
                     cursor: "pointer", textAlign: "left", transition: "all 0.15s",
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(236,228,210,0.99)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(242,234,218,0.96)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(28, 22, 53, 0.72)"; }}
                 >
                   {s}
                 </button>
@@ -321,7 +321,7 @@ export default function SoulGuidePage() {
                 background: "linear-gradient(135deg, #D4A85F 0%, #b8883a 100%)",
                 border: "none", borderRadius: "10px",
                 padding: "0.75rem 2rem", fontSize: "0.9rem",
-                color: "#1A0E07", fontWeight: 700, cursor: "pointer",
+                color: "#EAEAF5", fontWeight: 700, cursor: "pointer",
                 marginBottom: "0.75rem", display: "block", width: "100%", maxWidth: 280, margin: "0 auto 0.75rem",
               }}>
                 Unlock Full Access
@@ -371,7 +371,7 @@ export default function SoulGuidePage() {
               style={{
                 width: 40, height: 40, borderRadius: "50%",
                 background: input.trim() ? "var(--sc-gold)" : "rgba(255,255,255,0.08)",
-                border: "none", color: input.trim() ? "#1A0E07" : "white",
+                border: "none", color: input.trim() ? "#EAEAF5" : "white",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: input.trim() ? "pointer" : "default", transition: "all 0.2s",
               }}
