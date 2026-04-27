@@ -86,6 +86,7 @@
 
   .glassmorphism {
     background: hsla(255, 40%, 20%, 0.6);
+    -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
     border: 1px solid hsla(255, 100%, 100%, 0.15);
   }
@@ -444,8 +445,8 @@ body::after {
   transition: all 0.25s var(--ease-out-expo);
   color: #EAEAF5;
   font-family: inherit;
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .option-card:hover {
@@ -558,8 +559,8 @@ body::after {
 /* ─── Glassmorphism card ─── */
 .card {
   background: var(--card-bg);
-  backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
   border-radius: 20px;
   padding: 22px 24px;
   border: 1px solid var(--card-border);
@@ -1110,8 +1111,8 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   padding: 1rem 0.9rem 0.9rem;
   background: var(--sc-sidebar-bg);
   border-right: 1px solid rgba(183, 148, 244, 0.16);
-  backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
   box-shadow: 18px 0 60px rgba(0, 0, 0, 0.35);
 }
 
@@ -1220,8 +1221,8 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     0 30px 80px rgba(0, 0, 0, 0.34),
     0 0 50px rgba(183, 148, 244, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 .sc-hero-logo-wrap {
@@ -1267,8 +1268,8 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   border-radius: 999px;
   border: 1px solid rgba(212, 168, 95, 0.12);
   background: rgba(18, 8, 30, 0.28);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .sc-polish-card {
@@ -1327,8 +1328,8 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     0 24px 60px rgba(0, 0, 0, 0.34),
     0 0 40px rgba(183, 148, 244, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 .sc-marketing-header {
@@ -1448,8 +1449,8 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   transition: all 0.2s;
   color: var(--foreground);
   font-family: var(--font-sans);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 .onboarding-option-btn:disabled {
