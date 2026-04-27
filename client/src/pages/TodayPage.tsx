@@ -258,7 +258,8 @@ export default function TodayPage() {
   };
 
   return (
-    <div style={{ padding: "1.5rem 1.5rem 4rem", minHeight: "100vh" }}>
+    <div className="nebula-bg" style={{ minHeight: "100vh", padding: "1.5rem 1.5rem 4rem" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", position: "relative", zIndex: 1 }}>
 
       {/* ── Hero: logo + title ──────────────────────────────────────────── */}
       <div style={{ textAlign: "center", paddingBottom: "1.75rem", paddingTop: "0.5rem" }}>
@@ -419,5 +420,6 @@ export default function TodayPage() {
         <button className="btn btn-ghost" onClick={refresh} style={{ fontSize: "0.75rem", opacity: 0.5 }}>↺ Refresh</button>
       </div>
     </div>
+  </div>
   );
 }

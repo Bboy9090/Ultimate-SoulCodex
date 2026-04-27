@@ -6,14 +6,16 @@ WORKDIR /app
 # Install build tools for native modules (argon2, sharp)
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies for all workspaces
-COPY package*.json ./
-COPY packages ./packages
-COPY tsconfig.json ./
+# Group config files for better caching
+COPY package*.json tsconfig.json ./
 COPY shared ./shared
+COPY packages ./packages
+
+# Install dependencies for all workspaces
 RUN npm install
 
 # Build workspace packages first (required for root build)
+# Explicitly build in order of dependency if needed, but db and core are independent
 RUN npm run build -w packages/db
 RUN npm run build -w packages/core
 
@@ -27,6 +29,9 @@ RUN npm run build
 FROM node:20-slim
 
 WORKDIR /app
+
+# Install runtime dependencies for native modules if needed (usually slim is fine)
+RUN apt-get update && apt-get install -y python3 && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3000

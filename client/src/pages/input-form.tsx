@@ -37,6 +37,12 @@ export default function InputForm() {
       return response.json();
     },
     onSuccess: (profile) => {
+      // Hydrate local storage for immediate app usage (Dual-Path architecture)
+      localStorage.setItem("soulProfile", JSON.stringify(profile));
+      if (profile.rawInput) {
+        localStorage.setItem("onboardingData", JSON.stringify(profile.rawInput));
+      }
+      
       toast({
         title: "Soul Profile Created!",
         description: "Your cosmic blueprint has been generated successfully.",

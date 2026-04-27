@@ -4,6 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Enterprise monorepo for SoulCodex: Engine of the Eternal Now",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ultimate-soulcodex/Ultimate-SoulCodex-Engine-of-the-Eternal-Now.git"
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -11,7 +15,7 @@
     "dev": "tsx server/index.ts",
     "build": "npm run build:server && npm run build:client",
     "build:client": "vite build",
-    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js",
+    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js --external:@soulcodex/core --external:@soulcodex/db",
     "build:vercel": "npm run build -w @soulcodex/db && npm run build -w @soulcodex/core && npm run build -w @soulcodex/web",
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
@@ -22,6 +26,8 @@
     "clean": "npm run clean --workspaces --if-present"
   },
   "dependencies": {
+    "@soulcodex/core": "*",
+    "@soulcodex/db": "*",
     "@capacitor/cli": "^8.3.1",
     "@capacitor/core": "^8.3.1",
     "@capacitor/ios": "^8.3.1",

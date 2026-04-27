@@ -342,7 +342,8 @@ export default function TimelinePage() {
   }
 
   return (
-    <div style={{ padding: "2rem 1rem 5rem", maxWidth: 780, margin: "0 auto" }}>
+    <div className="nebula-bg" style={{ minHeight: "100vh", padding: "2rem 1rem 5rem" }}>
+      <div style={{ maxWidth: 780, margin: "0 auto", position: "relative", zIndex: 1 }}>
 
       {/* ── Header ───────────────────────────────────────────────────────────── */}
       <section style={{ textAlign: "center", marginBottom: "2.25rem" }}>
@@ -576,6 +577,7 @@ export default function TimelinePage() {
         <span style={{ fontSize: "0.73rem", color: "var(--muted-foreground)", lineHeight: 1.4 }}>
           Life Map — full 9-year arc view coming soon
         </span>
+      </div>
       </div>
     </div>
   );
