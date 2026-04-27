@@ -1,12 +1,18 @@
-[
+export default [
   {
     "id": "optimal.clean.1",
     "category": "optimal_conditions",
     "tone": "clean",
     "confidence": "medium",
     "text": "Your output rises when inputs are stable: clear expectations, clean timelines, and a bounded scope.",
-    "source_support": ["astrology", "human_design"],
-    "tags": ["environment", "stability"]
+    "source_support": [
+      "astrology",
+      "human_design"
+    ],
+    "tags": [
+      "environment",
+      "stability"
+    ]
   },
   {
     "id": "optimal.clean.2",
@@ -14,7 +20,13 @@
     "tone": "clean",
     "confidence": "medium",
     "text": "You do your best work in environments that reward precision over performance.",
-    "source_support": ["numerology", "astrology"],
-    "tags": ["craft", "precision"]
+    "source_support": [
+      "numerology",
+      "astrology"
+    ],
+    "tags": [
+      "craft",
+      "precision"
+    ]
   }
-]
+] as const;

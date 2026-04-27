@@ -1,11 +1,11 @@
-{
+export default {
   "birthDate": "1990-09-09",
   "birthTime": "09:09",
   "birthLocation": "New York, NY",
   "confidence": {
     "badge": "verified",
     "label": "Verified",
-    "reason": "Birth time and location are set — full chart layer (houses, rising) is included.",
+    "reason": "Birth time and location are set \u2014 full chart layer (houses, rising) is included.",
     "aiAssuranceNote": "Your wheel data is computed from the birth record you gave. AI phrasing is tuned for clarity; if something feels off, re-check time and place."
   },
   "astrologyData": {
@@ -13,10 +13,16 @@
     "moonSign": "Scorpio",
     "risingSign": "Capricorn",
     "planets": {
-      "sun": { "longitude": 166.5 },
-      "moon": { "longitude": 215.25 }
+      "sun": {
+        "longitude": 166.5
+      },
+      "moon": {
+        "longitude": 215.25
+      }
     },
-    "ascendant": { "longitude": 291.1 },
+    "ascendant": {
+      "longitude": 291.1
+    },
     "signal_precision": 1
   },
   "humanDesignData": {
@@ -36,4 +42,4 @@
   "synthesis": {
     "codename": "The Pattern-Builder"
   }
-}
+} as const;

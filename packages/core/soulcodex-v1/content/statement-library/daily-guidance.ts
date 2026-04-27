@@ -1,21 +1,32 @@
-[
+export default [
   {
     "id": "dg-clean-attention",
     "category": "daily_guidance",
     "tone": "clean",
     "confidence": "high",
     "text": "Protect your attention first. One clean constraint beats ten scattered intentions.",
-    "source_support": ["human_design", "astrology"],
-    "tags": ["attention", "boundaries"]
+    "source_support": [
+      "human_design",
+      "astrology"
+    ],
+    "tags": [
+      "attention",
+      "boundaries"
+    ]
   },
   {
     "id": "dg-deep-noise",
     "category": "daily_guidance",
     "tone": "deep",
     "confidence": "medium",
-    "text": "Notice where you’re mistaking noise for urgency. Slow your system down until the signal returns.",
-    "source_support": ["human_design"],
-    "tags": ["urgency", "signal"]
+    "text": "Notice where you\u2019re mistaking noise for urgency. Slow your system down until the signal returns.",
+    "source_support": [
+      "human_design"
+    ],
+    "tags": [
+      "urgency",
+      "signal"
+    ]
   },
   {
     "id": "dg-raw-finish",
@@ -23,7 +34,12 @@
     "tone": "raw",
     "confidence": "medium",
     "text": "Stop collecting inputs. Finish one thing that restores self-respect.",
-    "source_support": ["numerology"],
-    "tags": ["finish", "integrity"]
+    "source_support": [
+      "numerology"
+    ],
+    "tags": [
+      "finish",
+      "integrity"
+    ]
   }
-]
+] as const;

@@ -8,13 +8,7 @@ import { runSoulCodexEngine } from "../engine/index.js";
 import { generateSoulCodexOutputV1 } from "../generate.js";
 import { soulCodexOutputV1Schema } from "../schema.js";
 
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const fixture = JSON.parse(readFileSync(join(__dirname, "./fixture.bobby.json"), "utf-8"));
+import fixture from "./fixture.bobby.js";
 
 test("fixture generates valid SoulCodexOutputV1", () => {
   const out = generateSoulCodexOutputV1({

@@ -1,12 +1,18 @@
-[
+export default [
   {
     "id": "distortion_mode_v1_clean_1",
     "category": "distortion_mode",
     "tone": "clean",
     "confidence": "medium",
     "text": "Under pressure, you over-optimize and start treating every variable as a threat. Your signal is tight control, not clarity.",
-    "source_support": ["astrology", "human_design"],
-    "tags": ["pressure", "control", "overthinking"]
+    "source_support": [
+      "astrology",
+      "human_design"
+    ],
+    "tags": [
+      "pressure",
+      "control",
+      "overthinking"
+    ]
   }
-]
-
+] as const;

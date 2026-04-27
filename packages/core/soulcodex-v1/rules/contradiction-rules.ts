@@ -1,0 +1,22 @@
+export default {
+  "rules": [
+    {
+      "if_all_present": [
+        "decision_fast",
+        "decision_wait"
+      ],
+      "block": [
+        "decision_fast"
+      ]
+    },
+    {
+      "if_all_present": [
+        "rel_independence",
+        "rel_community"
+      ],
+      "block": [
+        "rel_community"
+      ]
+    }
+  ]
+} as const;

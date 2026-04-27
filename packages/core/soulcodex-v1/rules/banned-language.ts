@@ -1,4 +1,4 @@
-{
+export default {
   "phrases": [
     "the universe is telling you",
     "you are being called to",
@@ -10,4 +10,4 @@
     "quantum leap",
     "everything happens for a reason"
   ]
-}
+} as const;
