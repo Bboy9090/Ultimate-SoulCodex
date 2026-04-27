@@ -3,7 +3,7 @@ import { CapacitorHttp } from "@capacitor/core";
 
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
-    const defaultProdUrl = "https://ultimate-soulcodex-engine-of-the-eternal-now-production.up.railway.app";
+    const defaultProdUrl = "https://ultimate-soulcodex.up.railway.app";
     let baseUrl = import.meta.env.VITE_API_URL;
     
     if (!baseUrl) {
@@ -24,8 +24,8 @@ async function defaultQueryFn({ queryKey }: { queryKey: readonly unknown[] }) {
   const response = await CapacitorHttp.get({
     url,
     headers: { "Content-Type": "application/json" },
-    connectTimeout: 30000,
-    readTimeout: 30000
+    connectTimeout: 20000,
+    readTimeout: 20000
   });
   
   if (response.status < 200 || response.status >= 300) {
@@ -56,8 +56,8 @@ export async function apiRequest(url: string, options?: any) {
     method,
     headers: { "Content-Type": "application/json", ...options?.headers },
     data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
-    connectTimeout: 60000,
-    readTimeout: 60000
+    connectTimeout: 20000,
+    readTimeout: 20000
   };
 
   try {
@@ -82,8 +82,8 @@ export async function apiFetch(url: string, options?: any): Promise<any> {
     method: options?.method || "GET",
     headers: options?.headers || { "Content-Type": "application/json" },
     data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
-    connectTimeout: 60000,
-    readTimeout: 60000
+    connectTimeout: 20000,
+    readTimeout: 20000
   });
   return {
     ok: response.status >= 200 && response.status < 300,

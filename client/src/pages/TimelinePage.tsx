@@ -1,24 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
-// ── Numerology helpers ────────────────────────────────────────────────────────
-
-function reduceToSingle(n: number): number {
-  let s = n;
-  while (s > 9) {
-    const digits = String(s).split("");
-    s = digits.reduce((acc, d) => acc + parseInt(d, 10), 0);
-  }
-  return s;
-}
-
-function calcPersonalYear(birthMonth: number, birthDay: number, year: number): number {
-  return reduceToSingle(reduceToSingle(birthMonth) + reduceToSingle(birthDay) + reduceToSingle(year));
-}
-
-function calcPersonalMonth(py: number, month: number): number {
-  return reduceToSingle(py + month);
-}
+import { 
+  calcPersonalYear, 
+  calcPersonalMonth, 
+  getCycleTransitionState, 
+  getNextYearNum, 
+  getNextMonthNum 
+} from "@soulcodex/core";
 
 // ── Phase content ─────────────────────────────────────────────────────────────
 
@@ -260,6 +249,18 @@ export default function TimelinePage() {
     const savedToday = localStorage.getItem("soulTodayCard");
     if (savedToday) setTodayCard(JSON.parse(savedToday));
 
+    const rawProfile = localStorage.getItem("soulProfile");
+    if (rawProfile) {
+      try {
+        const p = JSON.parse(rawProfile);
+        if (p.birthDate) {
+          const parts = p.birthDate.split("-");
+          setBirthData({ month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) });
+          return; // Birth date found in profile, we're good
+        }
+      } catch {}
+    }
+
     const rawInputs = localStorage.getItem("onboardingData") || localStorage.getItem("soulUserInputs");
     if (rawInputs) {
       try {
@@ -280,14 +281,16 @@ export default function TimelinePage() {
   const py = birthData ? calcPersonalYear(birthData.month, birthData.day, currentYear) : null;
   const pm = py        ? calcPersonalMonth(py, currentMonth) : null;
 
-  const nextPm           = pm ? (pm === 9 ? 1 : pm + 1) : null;
+  const nextPm           = pm ? getNextMonthNum(pm) : null;
   const yearData         = py     ? YEAR_DATA[py]      : null;
   const monthData        = pm     ? MONTH_DATA[pm]     : null;
   const nextMonthDat     = nextPm ? MONTH_DATA[nextPm] : null;
-  const monthsRemaining  = 12 - currentMonth;          // 0 = December, 8 = April
-  const yearTurnsUrgent  = monthsRemaining <= 1;       // this month or next month
-  const yearTurnsNear    = monthsRemaining <= 3;       // within 3 months
-  const nextYearNum      = py ? (py === 9 ? 1 : py + 1) : null;
+
+  const transition       = getCycleTransitionState(currentMonth);
+  const monthsRemaining  = transition.monthsRemaining;
+  const yearTurnsUrgent  = transition.isUrgent;
+  const yearTurnsNear    = transition.isNear;
+  const nextYearNum      = py ? getNextYearNum(py) : null;
 
   // Phase guidance always comes from the year archetype — never day-level to-do lists
   const leanIntoItems: string[] = yearData?.leanInto ?? [];

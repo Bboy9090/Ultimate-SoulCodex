@@ -14,11 +14,12 @@ export {
   checkNarrative,
   runAntiGenericPass,
   assertDistinctOutputs,
+  runSoulCodexEngine,
 } from "./engine/generate";
 
 // ── Scoring primitives ────────────────────────────────────────────────────────
 export { scoreStatement, selectBest, REJECT_THRESHOLD } from "./engine/distinctiveness";
-export type { ScoreBreakdown } from "./engine/distinctiveness";
+export type { AntiGenericScoreBreakdown as ScoreBreakdown } from "./engine/distinctiveness";
 
 // ── Content ───────────────────────────────────────────────────────────────────
 export {

@@ -47,7 +47,7 @@ function hasGenericOpener(text: string): boolean {
   return GENERIC_OPENERS.some(o => lower.startsWith(o));
 }
 
-export interface ScoreBreakdown {
+export interface AntiGenericScoreBreakdown {
   behavioral_specificity: number;
   distinguishing_power:   number;
   contradiction_depth:    number;
@@ -66,7 +66,7 @@ export function scoreStatement(
   decisionStyle?: string,
   socialEnergy?: string,
   usedFrames: string[] = [],
-): ScoreBreakdown {
+): AntiGenericScoreBreakdown {
   const banPenalty = totalPenaltyScore(s.text);
   if (banPenalty >= 1) {
     return { behavioral_specificity: 0, distinguishing_power: 0, contradiction_depth: 0,

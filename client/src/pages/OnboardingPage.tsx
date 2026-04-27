@@ -117,7 +117,6 @@ const DEST_CARDS = [
 export default function OnboardingPage() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);
-  const [loadingLineIndex, setLoadingLineIndex] = useState(0);
   const [successResult, setSuccessResult] = useState<SuccessResult | null>(null);
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -316,39 +315,10 @@ export default function OnboardingPage() {
     }
   };
 
-  useEffect(() => {
-    if (!mutation.isPending) return;
 
-    const interval = window.setInterval(() => {
-      setLoadingLineIndex((i) => (i + 1) % LOADING_LINES.length);
-    }, 2500);
-
-    return () => window.clearInterval(interval);
-  }, [mutation.isPending]);
 
   if (mutation.isPending) {
-    return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem",
-        textAlign: "center"
-      }}>
-        <CosmicLoader label={LOADING_LINES[loadingLineIndex]} />
-        <p style={{
-          marginTop: "1rem",
-          maxWidth: 360,
-          color: "var(--muted-foreground)",
-          fontSize: "0.9rem",
-          lineHeight: 1.6
-        }}>
-          Your profile is being generated. Please keep this screen open.
-        </p>
-      </div>
-    );
+    return <CosmicLoader fullPage label="Building Your Soul Profile" />;
   }
 
   if (successResult) {

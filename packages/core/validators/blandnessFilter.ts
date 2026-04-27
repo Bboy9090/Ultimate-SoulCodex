@@ -1,4 +1,4 @@
-const BANNED_PHRASES = [
+const BLAND_BANNED_PHRASES = [
   "cosmic signature",
   "sacred blueprint",
   "divine timing",
@@ -44,7 +44,7 @@ export interface FilterResult {
 export function runBlandnessFilter(text: string): FilterResult {
   const lower = text.toLowerCase();
 
-  const bannedFound = BANNED_PHRASES.filter((phrase) =>
+  const bannedFound = BLAND_BANNED_PHRASES.filter((phrase) =>
     lower.includes(phrase.toLowerCase())
   );
 
@@ -61,7 +61,7 @@ export function runBlandnessFilter(text: string): FilterResult {
 
 export function stripBannedPhrases(text: string): string {
   let cleaned = text;
-  for (const phrase of BANNED_PHRASES) {
+  for (const phrase of BLAND_BANNED_PHRASES) {
     const regex = new RegExp(phrase, "gi");
     cleaned = cleaned.replace(regex, "");
   }
@@ -69,4 +69,4 @@ export function stripBannedPhrases(text: string): string {
   return cleaned;
 }
 
-export { BANNED_PHRASES, MUST_HAVE_PATTERNS };
+export { BLAND_BANNED_PHRASES, MUST_HAVE_PATTERNS };
