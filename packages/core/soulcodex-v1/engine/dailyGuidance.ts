@@ -1,4 +1,4 @@
-import type { EngineToneMode, Statement, TraitSignal } from "./types";
+import type { EngineToneMode, Statement, TraitSignal } from "./types.js";
 
 function topTrait(traits: TraitSignal[], prefix?: string): TraitSignal | null {
   const filtered = prefix ? traits.filter((t) => t.trait_key.startsWith(prefix)) : traits;

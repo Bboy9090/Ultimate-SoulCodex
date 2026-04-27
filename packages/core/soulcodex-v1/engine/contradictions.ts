@@ -1,4 +1,4 @@
-import type { ContradictionRules, TraitSignal } from "./types";
+import type { ContradictionRules, TraitSignal } from "./types.js";
 
 export function applyContradictionRules(input: TraitSignal[], rules: ContradictionRules): TraitSignal[] {
   if (!rules?.rules?.length) return input;

@@ -10,7 +10,7 @@ import {
   type Statement,
   type TraitMappingMatrix,
   type WeightingRules,
-} from "./types";
+} from "./types.js";
 
 import traitMatrixJson from "../matrix/trait-mapping-matrix.json";
 import contradictionRulesJson from "../rules/contradiction-rules.json";
