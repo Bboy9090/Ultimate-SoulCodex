@@ -1,12 +1,19 @@
-[
+export default [
   {
     "id": "failure_conditions.clean.001",
     "category": "failure_conditions",
     "tone": "clean",
     "confidence": "medium",
     "text": "Your clarity drops when you accept ambiguous roles, constant interruptions, or environments where priorities change daily.",
-    "source_support": ["astrology", "human_design"],
-    "tags": ["boundaries", "attention", "stability"]
+    "source_support": [
+      "astrology",
+      "human_design"
+    ],
+    "tags": [
+      "boundaries",
+      "attention",
+      "stability"
+    ]
   },
   {
     "id": "failure_conditions.clean.002",
@@ -14,7 +21,13 @@
     "tone": "clean",
     "confidence": "medium",
     "text": "Pressure makes you either over-control or disengage; both are signals your system is asking for a cleaner container.",
-    "source_support": ["human_design"],
-    "tags": ["pressure", "control", "container"]
+    "source_support": [
+      "human_design"
+    ],
+    "tags": [
+      "pressure",
+      "control",
+      "container"
+    ]
   }
-]
+] as const;

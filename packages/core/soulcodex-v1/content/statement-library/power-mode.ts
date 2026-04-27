@@ -1,12 +1,19 @@
-[
+export default [
   {
     "id": "power-clarity-architect",
     "category": "power_mode",
     "tone": "clean",
     "confidence": "medium",
     "text": "At your best, you simplify complexity into a workable plan and execute without drama.",
-    "source_support": ["astrology", "human_design"],
-    "tags": ["clarity", "execution", "stability"]
+    "source_support": [
+      "astrology",
+      "human_design"
+    ],
+    "tags": [
+      "clarity",
+      "execution",
+      "stability"
+    ]
   },
   {
     "id": "power-rhythm-authority",
@@ -14,16 +21,27 @@
     "tone": "deep",
     "confidence": "medium",
     "text": "Power for you is rhythm: you wait for the correct signal, then move cleanly and decisively.",
-    "source_support": ["human_design"],
-    "tags": ["timing", "authority", "signal"]
+    "source_support": [
+      "human_design"
+    ],
+    "tags": [
+      "timing",
+      "authority",
+      "signal"
+    ]
   },
   {
     "id": "power-quiet-confidence",
     "category": "power_mode",
     "tone": "raw",
     "confidence": "high",
-    "text": "You don’t win by being loud. You win by being right, consistent, and unshakeable.",
-    "source_support": ["astrology"],
-    "tags": ["consistency", "precision"]
+    "text": "You don\u2019t win by being loud. You win by being right, consistent, and unshakeable.",
+    "source_support": [
+      "astrology"
+    ],
+    "tags": [
+      "consistency",
+      "precision"
+    ]
   }
-]
+] as const;

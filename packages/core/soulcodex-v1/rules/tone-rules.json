@@ -1,4 +1,0 @@
-{
-  "preferred_order": ["clean", "deep", "raw"],
-  "fallback": "clean"
-}
