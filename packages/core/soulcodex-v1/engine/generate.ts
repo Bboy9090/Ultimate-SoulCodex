@@ -8,17 +8,17 @@
  * Does NOT modify SoulCodexOutputV1 shape.
  */
 
-import { getCandidates, type StatementSection } from "../content/statements/index";
-import { selectBest } from "./distinctiveness";
-import { pickContradiction, formatContradictionHint } from "../content/contradictions";
-import { containsBannedPhrase, HARD_REJECT_PHRASES } from "../content/banned-language";
-import type { AntiGenericContext } from "../types";
-export { runSoulCodexEngine } from "./index";
+import { getCandidates, type StatementSection } from "../content/statements/index.js";
+import { selectBest } from "./distinctiveness.js";
+import { pickContradiction, formatContradictionHint } from "../content/contradictions.js";
+import { containsBannedPhrase, HARD_REJECT_PHRASES } from "../content/banned-language.js";
+import type { AntiGenericContext } from "../types.js";
+export { runSoulCodexEngine } from "./index.js";
 
-export type { StatementSection } from "../content/statements/index";
-export type { AntiGenericScoreBreakdown as ScoreBreakdown } from "./distinctiveness";
-export type { ContradictionPair } from "../content/contradictions";
-export type { AntiGenericContext } from "../types";
+export type { StatementSection } from "../content/statements/index.js";
+export type { AntiGenericScoreBreakdown as ScoreBreakdown } from "./distinctiveness.js";
+export type { ContradictionPair } from "../content/contradictions.js";
+export type { AntiGenericContext } from "../types.js";
 
 /**
  * Return top-scored behavioral statements for a given section.

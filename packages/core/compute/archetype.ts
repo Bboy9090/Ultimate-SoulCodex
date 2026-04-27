@@ -1,4 +1,4 @@
-import type { SoulSignals, Archetype } from "../types";
+import type { SoulSignals, Archetype } from "../types.js";
 
 const ELEMENTS = [
   "Iron",

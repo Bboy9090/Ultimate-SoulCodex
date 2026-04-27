@@ -1,2 +1,2 @@
-export * from './schema';
-export * from './storage';
+export * from './schema.js';
+export * from './storage.js';

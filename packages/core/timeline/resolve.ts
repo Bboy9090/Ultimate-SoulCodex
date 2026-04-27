@@ -1,6 +1,6 @@
-import type { ConfidenceLabel, Phase } from "./rules";
-import { HYBRID_PAIRS } from "./rules";
-import { scoreTimeline, type TimelineScoreBreakdown as ScoreBreakdown, type TimelineScoreInput } from "./score";
+import type { ConfidenceLabel, Phase } from "./rules.js";
+import { HYBRID_PAIRS } from "./rules.js";
+import { scoreTimeline, type TimelineScoreBreakdown as ScoreBreakdown, type TimelineScoreInput } from "./score.js";
 
 export interface TimelinePhaseOutput {
   phase: Phase;

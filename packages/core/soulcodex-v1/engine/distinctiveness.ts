@@ -10,8 +10,8 @@
  *   language_originality    0.10
  */
 
-import type { Statement } from "../content/statements/index";
-import { totalPenaltyScore } from "../content/banned-language";
+import type { Statement } from "../content/statements/index.js";
+import { totalPenaltyScore } from "../content/banned-language.js";
 
 export const REJECT_THRESHOLD = 0.35;
 

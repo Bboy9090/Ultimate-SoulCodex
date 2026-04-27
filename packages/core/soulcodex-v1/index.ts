@@ -5,7 +5,7 @@
  */
 
 // ── Public output contract ────────────────────────────────────────────────────
-export type { SoulCodexOutputV1, AntiGenericContext } from "./types";
+export type { SoulCodexOutputV1, AntiGenericContext } from "./types.js";
 
 // ── Anti-generic engine ───────────────────────────────────────────────────────
 export {
@@ -15,11 +15,11 @@ export {
   runAntiGenericPass,
   assertDistinctOutputs,
   runSoulCodexEngine,
-} from "./engine/generate";
+} from "./engine/generate.js";
 
 // ── Scoring primitives ────────────────────────────────────────────────────────
-export { scoreStatement, selectBest, REJECT_THRESHOLD } from "./engine/distinctiveness";
-export type { AntiGenericScoreBreakdown as ScoreBreakdown } from "./engine/distinctiveness";
+export { scoreStatement, selectBest, REJECT_THRESHOLD } from "./engine/distinctiveness.js";
+export type { AntiGenericScoreBreakdown as ScoreBreakdown } from "./engine/distinctiveness.js";
 
 // ── Content ───────────────────────────────────────────────────────────────────
 export {
@@ -27,11 +27,11 @@ export {
   HARD_REJECT_PHRASES,
   containsBannedPhrase,
   totalPenaltyScore,
-} from "./content/banned-language";
-export type { BannedEntry } from "./content/banned-language";
+} from "./content/banned-language.js";
+export type { BannedEntry } from "./content/banned-language.js";
 
-export { CONTRADICTION_PAIRS, pickContradiction, scoreContradiction, formatContradictionHint } from "./content/contradictions";
-export type { ContradictionPair } from "./content/contradictions";
+export { CONTRADICTION_PAIRS, pickContradiction, scoreContradiction, formatContradictionHint } from "./content/contradictions.js";
+export type { ContradictionPair } from "./content/contradictions.js";
 
-export { STATEMENTS, getCandidates } from "./content/statements/index";
-export type { Statement, StatementSection } from "./content/statements/index";
+export { STATEMENTS, getCandidates } from "./content/statements/index.js";
+export type { Statement, StatementSection } from "./content/statements/index.js";

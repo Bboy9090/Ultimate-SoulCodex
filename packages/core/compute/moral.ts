@@ -1,4 +1,4 @@
-import type { PressureStyle } from "../types";
+import type { PressureStyle } from "../types.js";
 
 interface MoralCode {
   name: string;

@@ -1,6 +1,6 @@
-import type { SoulSignals, Synthesis } from "../types";
-import { stressNotes } from "./elements";
-import { deriveMoralCode } from "./moral";
+import type { SoulSignals, Synthesis } from "../types.js";
+import { stressNotes } from "./elements.js";
+import { deriveMoralCode } from "./moral.js";
 
 function buildCoreEssence(s: SoulSignals): string {
   const parts: string[] = [];

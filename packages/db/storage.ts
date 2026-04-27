@@ -1,4 +1,4 @@
-import * as schema from "./schema";
+import * as schema from "./schema.js";
 import { randomUUID } from "crypto";
 // NOTE: For Render bootstrap we use in-memory storage by default.
 // Avoid importing DB modules and table schemas to prevent build-time resolution.

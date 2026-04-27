@@ -1,10 +1,10 @@
-import type { EngineToneMode, SoulCodexEngineOutput } from "./types";
-import { loadEngineLibraries } from "./loaders";
-import { applyContradictionRules } from "./contradictions";
-import { buildDailyGuidance } from "./dailyGuidance";
-import { selectStatements } from "./statementSelector";
-import { extractActiveSources, mapTraitSignals } from "./traitMapper";
-import { ENGINE_SECTION_KEYS, type EngineSectionKey } from "./sectionMap";
+import type { EngineToneMode, SoulCodexEngineOutput } from "./types.js";
+import { loadEngineLibraries } from "./loaders.js";
+import { applyContradictionRules } from "./contradictions.js";
+import { buildDailyGuidance } from "./dailyGuidance.js";
+import { selectStatements } from "./statementSelector.js";
+import { extractActiveSources, mapTraitSignals } from "./traitMapper.js";
+import { ENGINE_SECTION_KEYS, type EngineSectionKey } from "./sectionMap.js";
 
 export function runSoulCodexEngine(input: {
   toneMode: EngineToneMode;
