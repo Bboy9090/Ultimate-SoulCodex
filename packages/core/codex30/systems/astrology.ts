@@ -1,4 +1,4 @@
-import type { Signal } from "../types";
+import type { Signal } from "../types.js";
 
 const SUN_MOON_TAGS: Record<string, string[]> = {
   Aries:       ["courage", "leadership", "intensity", "rebellion"],

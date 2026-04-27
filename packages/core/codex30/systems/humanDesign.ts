@@ -1,4 +1,4 @@
-import type { Signal } from "../types";
+import type { Signal } from "../types.js";
 
 const TYPE_TAGS: Record<string, string[]> = {
   reflector:  ["social_sensitivity", "intuition", "privacy"],

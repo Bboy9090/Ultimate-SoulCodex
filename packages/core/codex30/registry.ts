@@ -1,10 +1,10 @@
-import type { Codex30Input, Signal } from "./types";
-import { astrologySignals }   from "./systems/astrology";
-import { aspectSignals }      from "./systems/aspects";
-import { numerologySignals }  from "./systems/numerology";
-import { humanDesignSignals } from "./systems/humanDesign";
-import { elementSignals }     from "./systems/elements";
-import { moralCompassSignals } from "./systems/moralCompass";
+import type { Codex30Input, Signal } from "./types.js";
+import { astrologySignals }   from "./systems/astrology.js";
+import { aspectSignals }      from "./systems/aspects.js";
+import { numerologySignals }  from "./systems/numerology.js";
+import { humanDesignSignals } from "./systems/humanDesign.js";
+import { elementSignals }     from "./systems/elements.js";
+import { moralCompassSignals } from "./systems/moralCompass.js";
 
 export function collectSignals(input: Codex30Input): Signal[] {
   const verified =

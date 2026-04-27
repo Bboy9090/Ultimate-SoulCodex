@@ -1,4 +1,4 @@
-import type { Signal } from "../types";
+import type { Signal } from "../types.js";
 
 const ELEMENT_TAGS: Record<string, string[]> = {
   earth: ["order", "discipline", "craft"],

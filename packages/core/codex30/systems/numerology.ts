@@ -1,4 +1,4 @@
-import type { Signal } from "../types";
+import type { Signal } from "../types.js";
 
 const LP_TAGS: Record<number, string[]> = {
   1: ["leadership", "courage", "innovation"],
