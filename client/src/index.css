@@ -85,10 +85,17 @@
   }
 
   .glassmorphism {
+<<<<<<< Updated upstream
     background: hsla(255, 40%, 20%, 0.6);
     -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
     border: 1px solid hsla(255, 100%, 100%, 0.15);
+=======
+    background: hsla(240, 4%, 16%, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsla(240, 4%, 25%, 0.3);
+>>>>>>> Stashed changes
   }
 
   .feature-card {
@@ -1252,7 +1259,7 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
 }
 
 .sc-hero-copy {
-  text-wrap: pretty;
+  overflow-wrap: break-word;
 }
 
 .sc-hero-actions {
@@ -1435,7 +1442,11 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     justify-content: center;
   }
 }
+<<<<<<< Updated upstream
 /* Onboarding Option Button */
+=======
+
+>>>>>>> Stashed changes
 .onboarding-option-btn {
   display: block;
   width: 100%;
@@ -1445,16 +1456,27 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   border: 1px solid var(--glass-border);
   border-left: 3px solid transparent;
   border-radius: var(--radius);
+<<<<<<< Updated upstream
   cursor: pointer;
+=======
+>>>>>>> Stashed changes
   transition: all 0.2s;
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
+<<<<<<< Updated upstream
 }
 
 .onboarding-option-btn:disabled {
   cursor: not-allowed;
+=======
+  cursor: pointer;
+}
+
+.onboarding-option-btn:disabled {
+  cursor: not-allowed !important;
+>>>>>>> Stashed changes
   opacity: 0.4;
 }
 

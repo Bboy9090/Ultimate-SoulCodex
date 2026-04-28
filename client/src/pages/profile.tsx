@@ -1,5 +1,6 @@
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { Capacitor } from "@capacitor/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -576,7 +577,7 @@ export default function ProfilePage() {
               )}
 
               {/* Upgrade to Premium */}
-              {!profile.isPremium && (
+              {!profile.isPremium && Capacitor.getPlatform() !== "ios" && (
                 <Card className="cosmic-border mystical-glow bg-transparent border-0">
                   <div className="cosmic-border-inner">
                     <CardContent className="p-8 text-center">
@@ -606,7 +607,7 @@ export default function ProfilePage() {
               <Download className="mr-2 h-4 w-4" />
               Download PDF
             </Button>
-            {!profile.isPremium && (
+            {!profile.isPremium && Capacitor.getPlatform() !== "ios" && (
               <Button className="bg-primary text-primary-foreground" data-testid="button-upgrade-main">
                 <Crown className="mr-2 h-4 w-4" />
                 Upgrade to Premium

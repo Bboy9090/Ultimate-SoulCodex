@@ -33,8 +33,7 @@ export default function InputForm() {
 
   const createProfileMutation = useMutation({
     mutationFn: async (data: BirthData) => {
-      const response = await apiRequest("POST", "/api/profiles", data);
-      return response.json();
+      return await apiRequest("/api/profiles", { method: "POST", body: data });
     },
     onSuccess: (profile) => {
       // Hydrate local storage for immediate app usage (Dual-Path architecture)
