@@ -3,6 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -13,6 +14,10 @@
     "paths": {
       "@/*": ["client/src/*"],
       "@shared/*": ["shared/*"],
+<<<<<<< Updated upstream
+=======
+      "@assets/*": ["attached_assets/*"],
+>>>>>>> Stashed changes
       "@soulcodex/db": ["packages/db"],
       "@soulcodex/db/*": ["packages/db/*"],
       "@soulcodex/core": ["packages/core"],

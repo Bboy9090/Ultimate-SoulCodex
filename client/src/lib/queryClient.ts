@@ -21,6 +21,7 @@ export function resolveApiUrl(url: string): string {
 
 async function defaultQueryFn({ queryKey }: { queryKey: readonly unknown[] }) {
   const url = resolveApiUrl(queryKey[0] as string);
+<<<<<<< Updated upstream
   const response = await CapacitorHttp.get({
     url,
     headers: { "Content-Type": "application/json" },
@@ -30,6 +31,11 @@ async function defaultQueryFn({ queryKey }: { queryKey: readonly unknown[] }) {
   
   if (response.status < 200 || response.status >= 300) {
     throw new Error(`${response.status}: ${JSON.stringify(response.data)}`);
+=======
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+>>>>>>> Stashed changes
   }
   return response.data;
 }
@@ -47,6 +53,7 @@ export const queryClient = new QueryClient({
 
 export async function apiRequest(url: string, options?: any) {
   const resolvedUrl = resolveApiUrl(url);
+<<<<<<< Updated upstream
   const method = options?.method || "GET";
   
   console.log(`[API] ${method} ${resolvedUrl}`);
@@ -72,6 +79,35 @@ export async function apiRequest(url: string, options?: any) {
     console.error(`[API] FAILED ${method} ${resolvedUrl}:`, error);
     throw error;
   }
+=======
+  
+  // Robustness: Include credentials for Capacitor/iOS session support
+  const fetchOptions: RequestInit = {
+    ...options,
+    credentials: options?.credentials ?? "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  };
+
+  // Robustness: Automatically stringify body if it's an object
+  if (fetchOptions.body && typeof fetchOptions.body === "object") {
+    fetchOptions.body = JSON.stringify(fetchOptions.body);
+  }
+
+  const res = await fetch(resolvedUrl, fetchOptions);
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`${res.status}: ${errorText}`);
+  }
+  
+  // Return null if 204 No Content
+  if (res.status === 204) return null;
+  
+  return res.json();
+>>>>>>> Stashed changes
 }
 
 /** Drop-in replacement for fetch that supports absolute URLs in native apps */
