@@ -5,6 +5,10 @@ const config: CapacitorConfig = {
   appName: "Soul Codex",
   webDir: "dist/public",
   backgroundColor: "#1A0E07",
+  server: {
+    url: "https://ultimate-soulcodex.up.railway.app/",
+    cleartext: false,
+  },
 
   ios: {
     scheme: "Soul Codex",
@@ -25,9 +29,10 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     StatusBar: {
-      style: "DARK",
+      style: "LIGHT",
       backgroundColor: "#1A0E07",
     },
+
     Keyboard: {
       resize: "body",
       resizeOnFullScreen: true,
