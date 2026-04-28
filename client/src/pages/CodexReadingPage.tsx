@@ -580,23 +580,6 @@ export default function CodexReadingPage() {
             </div>
 
             {/* Upgrade card */}
-<<<<<<< Updated upstream
-            <div style={{
-              background: "linear-gradient(135deg, rgba(212,168,95,0.12), rgba(212,168,95,0.05))",
-              border: "1px solid rgba(212,168,95,0.35)",
-              borderRadius: "12px",
-              padding: "2rem 1.75rem",
-              marginBottom: "2rem",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
-                <span style={{ fontSize: "1.8rem", color: "#F2C94C" }}>🔒</span>
-                <div>
-                  <div style={{ fontFamily: "var(--font-display)", color: "#F2C94C", fontWeight: 800, fontSize: "1.15rem", marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Unlock Your Full Codex Reading
-                  </div>
-                  <div style={{ color: "rgba(234, 234, 245, 0.8)", fontSize: "0.9rem" }}>
-                    Your synthesis is ready — unlock it to see the full picture
-=======
             {Capacitor.getPlatform() !== "ios" && (
               <div style={{
                 background: "linear-gradient(135deg, rgba(212,168,95,0.12), rgba(212,168,95,0.05))",
@@ -605,55 +588,27 @@ export default function CodexReadingPage() {
                 padding: "2rem 1.75rem",
                 marginBottom: "2rem",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-                  <span style={{ fontSize: "1.4rem", color: "var(--cosmic-gold)" }}>🔒</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+                  <span style={{ fontSize: "1.8rem", color: "#F2C94C" }}>🔒</span>
                   <div>
-                    <div style={{ fontFamily: "var(--font-serif)", color: "var(--cosmic-gold)", fontWeight: 600, fontSize: "1.05rem", marginBottom: "0.2rem" }}>
+                    <div style={{ fontFamily: "var(--font-display)", color: "#F2C94C", fontWeight: 800, fontSize: "1.15rem", marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       Unlock Your Full Codex Reading
                     </div>
-                    <div style={{ color: "#3a2010", fontSize: "0.83rem" }}>
+                    <div style={{ color: "rgba(234, 234, 245, 0.8)", fontSize: "0.9rem" }}>
                       Your synthesis is ready — unlock it to see the full picture
                     </div>
->>>>>>> Stashed changes
                   </div>
                 </div>
 
-<<<<<<< Updated upstream
-              <div style={{ marginBottom: "1.75rem" }}>
-                {PREMIUM_FEATURES.map((f, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: "0.75rem",
-                    padding: "0.6rem 0",
-                    borderBottom: i < PREMIUM_FEATURES.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                  }}>
-                    <span style={{ color: "#F2C94C", fontSize: "0.8rem", opacity: 0.8 }}>✦</span>
-                    <span style={{ color: "rgba(234, 234, 245, 0.9)", fontSize: "0.9rem", fontWeight: 500 }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Link href="/profile">
-                <button className="btn btn-primary" style={{
-                  width: "100%", fontSize: "0.9rem", padding: "0.85rem",
-                  background: "linear-gradient(135deg, rgba(212,168,95,0.25), rgba(212,168,95,0.12))",
-                  border: "1px solid rgba(212,168,95,0.5)", color: "var(--cosmic-gold)", marginBottom: "0.75rem",
-                }}>
-                  Unlock Full Access
-                </button>
-              </Link>
-              <div style={{ textAlign: "center" }}>
-                <Link href="/profile" style={{ fontSize: "0.78rem", color: "var(--sc-gold)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
-                  Have an access code? Enter it on your profile page
-=======
-                <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ marginBottom: "1.75rem" }}>
                   {PREMIUM_FEATURES.map((f, i) => (
                     <div key={i} style={{
-                      display: "flex", alignItems: "center", gap: "0.6rem",
-                      padding: "0.5rem 0",
-                      borderBottom: i < PREMIUM_FEATURES.length - 1 ? "1px solid rgba(212,168,95,0.08)" : "none",
+                      display: "flex", alignItems: "center", gap: "0.75rem",
+                      padding: "0.6rem 0",
+                      borderBottom: i < PREMIUM_FEATURES.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                     }}>
-                      <span style={{ color: "var(--cosmic-gold)", fontSize: "0.7rem", opacity: 0.65 }}>✦</span>
-                      <span style={{ color: "#3a2010", fontSize: "0.875rem" }}>{f}</span>
+                      <span style={{ color: "#F2C94C", fontSize: "0.8rem", opacity: 0.8 }}>✦</span>
+                      <span style={{ color: "rgba(234, 234, 245, 0.9)", fontSize: "0.9rem", fontWeight: 500 }}>{f}</span>
                     </div>
                   ))}
                 </div>
@@ -666,15 +621,15 @@ export default function CodexReadingPage() {
                   }}>
                     Unlock Full Access
                   </button>
->>>>>>> Stashed changes
                 </Link>
                 <div style={{ textAlign: "center" }}>
-                  <Link href="/profile" style={{ fontSize: "0.78rem", color: "#8a6030", textDecoration: "underline", textUnderlineOffset: "2px" }}>
+                  <Link href="/profile" style={{ fontSize: "0.78rem", color: "var(--sc-gold)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
                     Have an access code? Enter it on your profile page
                   </Link>
                 </div>
               </div>
             )}
+
           </>
         )}
       </div>

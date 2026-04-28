@@ -14,11 +14,9 @@
     "paths": {
       "@/*": ["client/src/*"],
       "@shared/*": ["shared/*"],
-<<<<<<< Updated upstream
-=======
       "@assets/*": ["attached_assets/*"],
->>>>>>> Stashed changes
       "@soulcodex/db": ["packages/db"],
+
       "@soulcodex/db/*": ["packages/db/*"],
       "@soulcodex/core": ["packages/core"],
       "@soulcodex/core/*": ["packages/core/*"],
