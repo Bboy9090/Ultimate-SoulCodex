@@ -3886,7 +3886,19 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         }
       }
 
-      const signals  = collectSignals({ profile: profile ?? {}, fullChart, userInputs: userInputs ?? {} });
+      const signals  = collectSignals({ 
+        profile: profile ?? {}, 
+        fullChart, 
+        userInputs: {
+          ...(userInputs ?? {}),
+          seed: [
+            profile?.birth?.name || userInputs?.birthData?.name,
+            profile?.birth?.birthDate || userInputs?.birthData?.birthDate,
+            userInputs?.reaction?.join(""),
+            userInputs?.drain?.join(""),
+          ].join("|")
+        } 
+      });
       const themes   = scoreThemes(signals);
       const deepThemeCodename = pickCodename(themes);
       const coreArchetype = profile?.archetype?.name;
@@ -3924,6 +3936,9 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         anchors,
         contradictionHint,
         behavioralStatements,
+        lifeConsequence: profile?.synthesis?.lifeConsequence,
+        patternInterruption: profile?.synthesis?.patternInterruption,
+        loopSentence: profile?.synthesis?.loopSentence,
       });
 
       try {
@@ -3954,7 +3969,14 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         
         const buildNarrativeString = (p: any) => {
           const thisWeekArr = Array.isArray(p.this_week) ? p.this_week : [];
-          return `CODENAME: ${p.codename || codename}
+          
+          // Enforce codename integrity: if AI tries to downgrade or change it, we ignore it.
+          const finalCodename = codename; // Use the one we calculated, ignore AI's suggestion
+          if (p.codename && p.codename !== codename) {
+            console.warn(`[codex30] AI tried to change codename: ${codename} -> ${p.codename}. Ignoring.`);
+          }
+
+          return `CODENAME: ${finalCodename}
 MOTTO: ${p.motto || "I build my truth in the silence of action."}
 
 WHO I AM

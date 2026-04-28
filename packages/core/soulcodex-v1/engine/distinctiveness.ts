@@ -22,6 +22,11 @@ const BEHAVIORAL_VERBS = [
   "process ", "deliver ", "avoid ", "hide ", "repeat ", "stop ", "need ",
 ];
 
+const BANNED_CORPORATE_VERBS = [
+  "set goals", "allocate ", "attend ", "maintain ", "research ", "planner ",
+  "measurable ", "professional ", "career ", "workshop ",
+];
+
 const ACTION_VERBS = [
   "lock ", "tell ", "write ", "ship ", "name ", "identify ", "describe ",
   "define ", "delay ", "do ", "say ", "choose ", "decide ", "pick ",
@@ -78,6 +83,13 @@ export function scoreStatement(
     return { behavioral_specificity: 0, distinguishing_power: 0, contradiction_depth: 0,
              phase_relevance: 0, action_usefulness: 0, language_originality: 0,
              final: 0, rejected: true, rejectedReason: "no_behavioral_verb" };
+  }
+
+  const lower = s.text.toLowerCase();
+  if (BANNED_CORPORATE_VERBS.some(v => lower.includes(v))) {
+    return { behavioral_specificity: 0, distinguishing_power: 0, contradiction_depth: 0,
+             phase_relevance: 0, action_usefulness: 0, language_originality: 0,
+             final: 0, rejected: true, rejectedReason: "corporate_language" };
   }
 
   let behavSpec = s.distinctiveness_base;

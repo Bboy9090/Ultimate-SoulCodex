@@ -1,32 +1,35 @@
 export function rewritePrompt(badText: string, anchors: string[]): string {
   return `
-Rewrite this reading to remove ALL vague, abstract, or generic language.
+Rewrite this reading to remove ALL vague, generic, or corporate self-help language.
+
+MISSION: Convert this from a "to-do list" into a "blueprint of nature."
 
 Must:
+- IDENTITY OVER INSTRUCTION: Every sentence must answer "What kind of person is this?" NOT "What should this person do?". 
+- KILL CORPORATE PROSE: If it sounds like a LinkedIn post, delete it.
+- BANNED: "set goals", "measurable", "allocate time", "attend workshops", "detailed planner", "I will", "researching".
 - Add concrete details tied to these anchors (cite at least 6 of them).
-- Remove any vague spiritual filler (no "universe," no "cosmic blueprint," no "your journey," no "a shift is happening," no "energy is present").
-- Every sentence must describe something observable — a behavior, decision, habit, or reaction.
-- Replace abstract phrases with concrete interpretations of what the person actually does.
+- Remove any vague spiritual filler (no "universe", "journey", "divine", "cosmic").
+- Every sentence must describe something observable — a behavior, habit, or reaction.
 - Keep first-person voice throughout (I / me / my — never "you").
-- Keep roughly the same length and section structure.
 - Minimum 650 words.
 - No poetic padding. No metaphors. No fluff.
 
 BAD: "I feel a deep calling toward transformation."
 GOOD: "I notice I'm bored with my current routine and I've been researching new directions every night instead of sleeping."
 
-REQUIRED FORMAT: You MUST return a valid JSON object matching exactly this structure. Return ONLY the JSON, without any markdown backticks or wrappers:
+REQUIRED FORMAT: Return ONLY a valid JSON object. No markdown backticks.
 {
-  "codename": "[original or rewritten codename]",
-  "motto": "[one powerful sentence about how I operate]",
-  "who_i_am": "[6-10 sentences about my core identity, nature, and instincts...]",
-  "how_i_move": "[4-7 sentences about my behavior when things get hard...]",
-  "what_i_wont_tolerate": "[2-4 sentences about my non-negotiables...]",
-  "what_im_building": "[2-5 sentences about my long-game...]",
+  "codename": "[MUST USE EXACT ORIGINAL CODENAME]",
+  "motto": "[one powerful sentence about how I operate — must have friction]",
+  "who_i_am": "[6-10 sentences of identity architecture]",
+  "how_i_move": "[4-7 sentences about behavior under pressure]",
+  "what_i_wont_tolerate": "[2-4 sentences about dealbreakers]",
+  "what_im_building": "[2-5 sentences about the long-game architecture]",
   "this_week": [
-    "[prescription 1]",
-    "[prescription 2]",
-    "[prescription 3]"
+    "[identity-based focus 1]",
+    "[identity-based focus 2]",
+    "[identity-based focus 3]"
   ]
 }
 

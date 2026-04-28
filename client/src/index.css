@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,8 +37,8 @@
   --sidebar-accent-foreground: hsl(285, 100%, 70%);
   --sidebar-border: hsl(255, 40%, 25%);
   --sidebar-ring: hsl(285, 100%, 70%);
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Crimson Text', serif;
+  --font-sans: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-serif: 'Crimson Pro', serif;
   --font-mono: Menlo, monospace;
 }
 
@@ -178,9 +178,9 @@
   --shadow-elevated:   0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.03);
 
   /* Typography */
-  --font-display:      'Space Grotesk', 'Inter', sans-serif;
-  --font-oracle:       'Crimson Pro', Georgia, 'Times New Roman', serif;
-  --font-sans:         'Inter', sans-serif;
+  --font-display:      'Space Grotesk', 'Outfit', sans-serif;
+  --font-oracle:       'Crimson Pro', Georgia, serif;
+  --font-sans:         'Outfit', 'Inter', sans-serif;
 
   /* Easing */
   --ease-out-expo:     cubic-bezier(0.16, 1, 0.3, 1);

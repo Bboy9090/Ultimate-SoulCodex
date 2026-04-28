@@ -57,5 +57,6 @@ export interface Codex30Input {
     nonNegotiables?: string[];
     socialEnergy?: string;
     goals?: string[];
+    seed?: string;
   };
 }
