@@ -22,9 +22,13 @@ npx cap sync ios
 # 4. Generate Native Assets (Icons/Splash)
 echo "🎨 Generating native assets from assets/..."
 # Change to root explicitly to ensure correct asset mapping
-(cd "$(dirname "$0")/.." && npx @capacitor/assets generate --ios)
+(cd "$(dirname "$0")/.." && npx @capacitor/assets generate --ios || echo "⚠️ Asset generation had issues, proceeding with manual restoration...")
 
-# 5. Open Xcode
+# 5. Failsafe Restoration
+echo "🩹 Running failsafe restoration of critical Xcode files..."
+cp -R ./ios-publish/xcode-assets/AppIcon.appiconset ./ios/App/App/Assets.xcassets/ || true
+
+# 6. Open Xcode
 echo "🏗️ Opening Xcode project..."
 npx cap open ios
 
