@@ -175,6 +175,38 @@ export const CONTRADICTION_PAIRS: ContradictionPair[] = [
     cost:     "I mistake containment for resolution and skip the part where the feeling needs to actually move",
     signalTags:    ["order", "emotion_depth"],
   },
+  {
+    id: "adaptable-identity-loss",
+    surface: "I am highly adaptable and easy to be around",
+    hidden: "I am constantly mirroring my environment to feel safe",
+    cost: "I lose my own internal signal; I sometimes forget who I was before the environment changed",
+    signalTags: ["social_sensitivity", "truth"],
+    decisionStyles: ["consensus"],
+  },
+  {
+    id: "consistent-resistance",
+    surface: "I am extremely reliable and consistent",
+    hidden: "I am terrified of what happens if I stop following the routine",
+    cost: "I resist necessary change even when it's clearly beneficial because 'different' feels like failure",
+    signalTags: ["order", "discipline"],
+    stressElements: ["earth"],
+  },
+  {
+    id: "fast-burnout",
+    surface: "I move at a pace others find impressive",
+    hidden: "I am running on high-alert fumes and can't find the off-switch",
+    cost: "I crash spectacularly once the lights go out, leaving me unable to function in the quiet between crises",
+    signalTags: ["intensity", "courage"],
+    stressElements: ["fire"],
+  },
+  {
+    id: "precise-missed-opportunity",
+    surface: "I am known for my accuracy and high standards",
+    hidden: "I am afraid to ship anything that isn't perfect",
+    cost: "I miss critical windows of opportunity because I'm still auditing the details while the world has moved on",
+    signalTags: ["precision", "craft"],
+    decisionStyles: ["analysis"],
+  },
 ];
 
 /**

@@ -12,7 +12,14 @@ const BANNED_GENERIC = [
   "holistic convergence",
   "celestial influence",
   "divine nature",
-  "cosmic signature"
+  "cosmic signature",
+  "measurable goals",
+  "specific goals",
+  "detailed planner",
+  "allocate time",
+  "attend workshops",
+  "industry trends",
+  "hold myself accountable"
 ];
 
 const ZODIAC_PATTERN = /(virgo|scorpio|libra|aries|capricorn|aquarius|leo|taurus|gemini|cancer|pisces|sagittarius)/i;

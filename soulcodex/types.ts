@@ -35,6 +35,11 @@ export interface SoulSignals {
   mirrorProfile: MirrorProfile;
   nonNegotiables: string[];
   goals: string[];
+  seed: string;
+  pressureStyle: PressureStyle;
+  stressElement: StressElement;
+  decisionStyle: DecisionStyle;
+  socialEnergy: SocialEnergy;
 }
 
 export interface Archetype {
@@ -51,6 +56,11 @@ export interface Synthesis {
   moralCode: { name: string; notes: string };
   powerMode: string;
   growthEdges: string[];
+  contradiction: string;
+  lifeConsequence: string;
+  patternInterruption: string;
+  loopSentence: string;
+  codename: string;
 }
 
 export interface SoulProfile {

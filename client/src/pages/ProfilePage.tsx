@@ -463,26 +463,26 @@ export default function ProfilePage() {
     {
       label: "Who I Am",
       value: firstSentence(cleanEssence),
-      accent: "#D4A85F",
-      bg: "rgba(28, 22, 53, 0.72)",
+      accent: "#9D4EDD", // Cosmic Purple
+      bg: "rgba(26, 11, 46, 0.8)",
     },
     {
       label: "What's Alive Now",
       value: whyNowValue,
-      accent: "#22d3ee",
-      bg: "rgba(28, 22, 53, 0.72)",
+      accent: "#FF007F", // Neon Rose
+      bg: "rgba(26, 11, 46, 0.8)",
     },
     {
       label: "One Pattern to Watch",
       value: firstSentence(cleanStress),
-      accent: "#f59e0b",
-      bg: "rgba(28, 22, 53, 0.72)",
+      accent: "#F2C94C", // Cosmic Gold
+      bg: "rgba(26, 11, 46, 0.8)",
     },
     {
       label: "One Move Today",
       value: oneMoveValue,
-      accent: "#22c55e",
-      bg: "rgba(28, 22, 53, 0.72)",
+      accent: "#22d3ee", // Cosmic Cyan
+      bg: "rgba(26, 11, 46, 0.8)",
     },
   ];
 
@@ -527,8 +527,9 @@ export default function ProfilePage() {
       >
 
         <div style={{
-          fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase",
-          color: "var(--sc-text-muted)", marginBottom: "1rem", fontWeight: 500,
+          fontSize: "0.75rem", letterSpacing: "0.25em", textTransform: "uppercase",
+          color: "var(--sc-stone)", marginBottom: "1.25rem", fontWeight: 700,
+          fontFamily: "var(--font-display)"
         }}>
           My Identity
         </div>
@@ -552,9 +553,11 @@ export default function ProfilePage() {
         <h1
           className="gradient-text text-glow"
           style={{
-            fontFamily: "var(--font-serif)",
-            fontSize: "clamp(2.2rem, 7vw, 3.75rem)",
-            fontWeight: 700, lineHeight: 1.1, marginBottom: "0.75rem",
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(2.8rem, 9vw, 4.5rem)",
+            letterSpacing: "-0.03em",
+            fontWeight: 800, lineHeight: 1.1, marginBottom: "1rem",
+            textShadow: "0 0 60px rgba(157,78,221,0.6)"
           }}
         >
           {archetype.name}
@@ -565,10 +568,11 @@ export default function ProfilePage() {
           flexWrap: "wrap", marginBottom: "0.85rem",
         }}>
           <span style={{
-            display: "inline-block", padding: "0.3rem 0.9rem",
-            background: "rgba(28, 22, 53, 0.72)", border: "1px solid rgba(212,168,95,0.55)",
-            borderRadius: 9999, fontSize: "0.68rem", fontWeight: 600,
-            color: "var(--sc-gold)", letterSpacing: "0.08em", textTransform: "uppercase",
+            display: "inline-block", padding: "0.4rem 1.2rem",
+            background: "rgba(26, 11, 46, 0.8)", border: "1px solid rgba(157,78,221,0.5)",
+            borderRadius: 9999, fontSize: "0.75rem", fontWeight: 700,
+            color: "#E0CCFF", letterSpacing: "0.15em", textTransform: "uppercase",
+            boxShadow: "0 0 20px rgba(157,78,221,0.2)"
           }}>
             {archetype.element} · {archetype.role}
           </span>
@@ -583,9 +587,11 @@ export default function ProfilePage() {
         </div>
 
         <p style={{
-          fontSize: "clamp(0.9rem, 2.5vw, 1.05rem)",
-          color: "var(--muted-foreground)", fontStyle: "italic",
-          maxWidth: 460, margin: "0 auto",
+          fontSize: "clamp(1rem, 3vw, 1.25rem)",
+          color: "rgba(234, 234, 245, 0.9)", fontStyle: "italic",
+          fontFamily: "var(--font-oracle)",
+          maxWidth: 520, margin: "0 auto",
+          lineHeight: 1.6
         }}>
           {archetype.tagline}
         </p>
@@ -612,23 +618,26 @@ export default function ProfilePage() {
             key={card.label}
             style={{
               background: card.bg,
-              borderRadius: "14px",
-              padding: "1.25rem 1.35rem",
-              border: `1px solid ${card.accent}55`,
-              borderLeft: `3px solid ${card.accent}`,
+              borderRadius: "16px",
+              padding: "1.5rem 1.5rem",
+              border: `1px solid ${card.accent}30`,
+              borderTop: `3px solid ${card.accent}`,
+              boxShadow: `0 8px 30px rgba(0,0,0,0.5), inset 0 0 20px ${card.accent}08`,
+              display: "flex", flexDirection: "column",
+              backdropFilter: "blur(12px)"
             }}
           >
             <div style={{
-              fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase",
-              color: card.accent, fontWeight: 700, marginBottom: "0.55rem",
+              fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase",
+              color: card.accent, fontWeight: 800, marginBottom: "0.75rem",
+              fontFamily: "var(--font-display)"
             }}>
               {card.label}
             </div>
             <p style={{
-              fontSize: "0.855rem", color: "#EAEAF5",
-              lineHeight: 1.6, margin: 0,
-              display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical",
-              overflow: "hidden",
+              fontSize: "0.95rem", color: "#EAEAF5",
+              lineHeight: 1.65, margin: 0, fontWeight: 400,
+              fontFamily: "var(--font-sans)",
             }}>
               {card.value}
             </p>

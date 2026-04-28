@@ -11,7 +11,7 @@
 
 export interface BannedEntry {
   phrase: string;
-  category: "generic_adjective" | "zodiac_cliche" | "spiritual_filler" | "therapy_wallpaper" | "template_opener";
+  category: "generic_adjective" | "zodiac_cliche" | "spiritual_filler" | "therapy_wallpaper" | "template_opener" | "corporate_productivity";
   penalty: number; // 0-1, 1 = hard reject
 }
 
@@ -89,6 +89,22 @@ export const EXTENDED_BANNED: BannedEntry[] = [
   { phrase: "toxic patterns",           category: "therapy_wallpaper",   penalty: 0.7 },
   { phrase: "inner child",              category: "therapy_wallpaper",   penalty: 0.7 },
   { phrase: "shadow work",              category: "therapy_wallpaper",   penalty: 0.6 },
+
+  // ── Corporate productivity ─────────────────────────────────────────────────
+  { phrase: "measurable goals",         category: "corporate_productivity", penalty: 1 },
+  { phrase: "specific goals",           category: "corporate_productivity", penalty: 1 },
+  { phrase: "detailed planner",         category: "corporate_productivity", penalty: 1 },
+  { phrase: "allocate time",            category: "corporate_productivity", penalty: 1 },
+  { phrase: "attend workshops",         category: "corporate_productivity", penalty: 1 },
+  { phrase: "industry trends",          category: "corporate_productivity", penalty: 1 },
+  { phrase: "effective communication",  category: "corporate_productivity", penalty: 1 },
+  { phrase: "teamwork skills",          category: "corporate_productivity", penalty: 1 },
+  { phrase: "hold myself accountable",  category: "corporate_productivity", penalty: 1 },
+  { phrase: "productivity blog",        category: "corporate_productivity", penalty: 1 },
+  { phrase: "set targets",              category: "corporate_productivity", penalty: 0.8 },
+  { phrase: "work-life balance",        category: "corporate_productivity", penalty: 1 },
+  { phrase: "career path",              category: "corporate_productivity", penalty: 1 },
+  { phrase: "professional growth",      category: "corporate_productivity", penalty: 1 },
 
   // ── Template openers (sentence-frame starters) ──────────────────────────────
   { phrase: "you are a",                category: "template_opener",     penalty: 0.8 },
