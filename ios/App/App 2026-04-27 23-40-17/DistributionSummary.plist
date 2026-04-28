@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>App.ipa</key>
+	<array>
+		<dict>
+			<key>architectures</key>
+			<array>
+				<string>arm64</string>
+			</array>
+			<key>buildNumber</key>
+			<string>1</string>
+			<key>certificate</key>
+			<dict>
+				<key>SHA1</key>
+				<string>FA325B234C630926A0BD0AC602DCE6FAF453F1B9</string>
+				<key>dateExpires</key>
+				<string>4/18/27</string>
+				<key>type</key>
+				<string>Apple Distribution</string>
+			</dict>
+			<key>embeddedBinaries</key>
+			<array>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>FA325B234C630926A0BD0AC602DCE6FAF453F1B9</string>
+						<key>dateExpires</key>
+						<string>4/18/27</string>
+						<key>type</key>
+						<string>Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>Capacitor.framework</string>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>86NUJ8M3B8</string>
+						<key>name</key>
+						<string>robert gonzalez</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0</string>
+				</dict>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>FA325B234C630926A0BD0AC602DCE6FAF453F1B9</string>
+						<key>dateExpires</key>
+						<string>4/18/27</string>
+						<key>type</key>
+						<string>Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>Cordova.framework</string>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>86NUJ8M3B8</string>
+						<key>name</key>
+						<string>robert gonzalez</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0</string>
+				</dict>
+			</array>
+			<key>entitlements</key>
+			<dict>
+				<key>application-identifier</key>
+				<string>86NUJ8M3B8.app.soulcodex.ios</string>
+				<key>com.apple.developer.team-identifier</key>
+				<string>86NUJ8M3B8</string>
+				<key>get-task-allow</key>
+				<false/>
+			</dict>
+			<key>name</key>
+			<string>App.app</string>
+			<key>profile</key>
+			<dict>
+				<key>UUID</key>
+				<string>a1243a23-822a-467b-901f-774df9480c04</string>
+				<key>dateExpires</key>
+				<string>4/22/27</string>
+				<key>name</key>
+				<string>iOS Team Ad Hoc Provisioning Profile: app.soulcodex.ios</string>
+			</dict>
+			<key>team</key>
+			<dict>
+				<key>id</key>
+				<string>86NUJ8M3B8</string>
+				<key>name</key>
+				<string>robert gonzalez</string>
+			</dict>
+			<key>versionNumber</key>
+			<string>1.0</string>
+		</dict>
+	</array>
+</dict>
+</plist>
