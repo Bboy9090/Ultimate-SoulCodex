@@ -62,7 +62,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div style={{ display: "flex", minHeight: "100vh", background: "var(--sc-bg-ink)" }}>
+      <div style={{ display: "flex", minHeight: "100vh" }}>
       {/* Dynamic Cosmic Background - Always present behind the UI */}
       <CosmicBackground />
       
