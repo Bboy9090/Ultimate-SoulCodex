@@ -21,14 +21,22 @@ export const CosmicBackground: React.FC = () => {
       });
     };
 
+    let rafId: number;
+    let lastUpdate = 0;
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (!e.beta || !e.gamma) return;
-      // beta: -180 to 180 (tilt front/back)
-      // gamma: -90 to 90 (tilt left/right)
-      // Normalize to around 45 degree holding position for beta
-      const x = (e.gamma / 45) * 20; 
-      const y = ((e.beta - 45) / 45) * 20; 
-      setTilt({ x, y });
+      
+      const now = Date.now();
+      if (now - lastUpdate < 32) return; // Cap at ~30fps for background tilt to save battery/CPU
+      lastUpdate = now;
+
+      rafId = requestAnimationFrame(() => {
+        // beta: -180 to 180, gamma: -90 to 90
+        // We normalize for a natural holding position (~45 deg)
+        const x = (e.gamma / 45) * 15; 
+        const y = ((e.beta - 45) / 45) * 15; 
+        setTilt({ x, y });
+      });
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -40,6 +48,7 @@ export const CosmicBackground: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('deviceorientation', handleOrientation);
+      cancelAnimationFrame(rafId);
     };
   }, []);
 
