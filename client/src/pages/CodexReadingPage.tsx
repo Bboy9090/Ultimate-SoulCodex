@@ -105,7 +105,7 @@ export default function CodexReadingPage() {
   const [, navigate] = useLocation();
   const [synthesis, setSynthesis] = useState<CodexSynthesis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const isPremium = localStorage.getItem("soulPremium") === "true";
+  const isPremium = localStorage.getItem("soulPremium") === "true" || !!synthesis?.isPremium;
 
   // 1. Initial load from persistence (Zero Lag)
   useEffect(() => {
@@ -191,7 +191,6 @@ export default function CodexReadingPage() {
   }
 
   const sections = parseNarrative(synthesis?.narrative ?? "");
-  const isPremium = synthesis?.isPremium ?? false;
 
   // Loading
   if (generateMutation.isPending && !synthesis) {
