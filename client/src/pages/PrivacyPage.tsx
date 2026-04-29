@@ -13,7 +13,8 @@ export default function PrivacyPage() {
       }}
     >
       <h1 style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>Privacy Policy</h1>
-      <p style={{ color: "#6b5a3a", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+      <p style={{ color: "var(--sc-gold)", fontSize: "0.85rem", marginBottom: "1.5rem", opacity: 0.7 }}>
+
         Last updated: April 13, 2026
       </p>
 
@@ -114,8 +115,9 @@ function Section({ title, children }: { title: string; children: any }) {
         style={{
           fontSize: "1.15rem",
           marginTop: "2rem",
-          borderBottom: "1px solid #d9cfb8",
+          borderBottom: "1px solid var(--sc-gold-soft)",
           paddingBottom: "0.3rem",
+          color: "var(--sc-gold)",
         }}
       >
         {title}

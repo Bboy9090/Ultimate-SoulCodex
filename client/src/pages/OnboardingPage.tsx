@@ -116,7 +116,7 @@ const DEST_CARDS = [
 
 export default function OnboardingPage() {
   const [, navigate] = useLocation();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [successResult, setSuccessResult] = useState<SuccessResult | null>(null);
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -131,6 +131,13 @@ export default function OnboardingPage() {
     drain_pattern_primary: "",
     drain_pattern_secondary: "",
   });
+
+  const startGuestMode = () => {
+    // Clear any previous guest session but leave owner session intact
+    localStorage.removeItem("soulGuestProfile");
+    localStorage.setItem("soulIsGuest", "true");
+    setStep(1); // Start the process
+  };
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -216,10 +223,16 @@ export default function OnboardingPage() {
       });
     },
     onSuccess: (result) => {
-      localStorage.setItem("soulProfile", JSON.stringify(result));
-      localStorage.setItem("onboardingData", JSON.stringify(form));
+      const isGuest = localStorage.getItem("soulIsGuest") === "true";
+      const storageKey = isGuest ? "soulGuestProfile" : "soulProfile";
+      
+      localStorage.setItem(storageKey, JSON.stringify(result));
+      if (!isGuest) {
+        localStorage.setItem("onboardingData", JSON.stringify(form));
+      }
+      
       if (result?.confidence) {
-        localStorage.setItem("soulConfidence", JSON.stringify(result.confidence));
+        localStorage.setItem(isGuest ? "soulGuestConfidence" : "soulConfidence", JSON.stringify(result.confidence));
       }
       setSuccessResult(result as SuccessResult);
     },
@@ -435,6 +448,67 @@ export default function OnboardingPage() {
           </p>
         </div>
       </motion.div>
+    );
+  }
+
+  if (step === 0) {
+    return (
+      <div className="container" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem" }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          style={{ marginBottom: "3rem" }}
+        >
+          <img src="/soul-codex-logo-star.png" alt="Soul Codex" style={{ width: "220px", height: "220px", objectFit: "contain", filter: "drop-shadow(0 0 30px rgba(212,168,95,0.4))" }} />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          style={{ maxWidth: "450px" }}
+        >
+          <h1 className="heading-display" style={{ fontSize: "2.8rem", marginBottom: "1rem", lineHeight: 1.1 }}>Begin Your Journey</h1>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "1rem", lineHeight: 1.6, marginBottom: "3rem" }}>
+            Step into the Eternal Now. Map your soul blueprint and decode the patterns of your destiny.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
+            <ScButton 
+              size="lg" 
+              onClick={() => {
+                localStorage.setItem("soulIsGuest", "false");
+                setStep(1);
+              }}
+              className="text-glow"
+            >
+              Create Your Soul Codex
+            </ScButton>
+            
+            <button 
+              onClick={startGuestMode}
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(212,168,95,0.3)",
+                color: "var(--sc-gold)",
+                padding: "0.85rem",
+                borderRadius: "var(--radius)",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                transition: "all 0.3s",
+                cursor: "pointer"
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(212,168,95,0.05)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              Let a Guest Use Your System
+            </button>
+          </div>
+        </motion.div>
+      </div>
     );
   }
 

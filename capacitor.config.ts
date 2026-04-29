@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "app.soulcodex.ios",
-  appName: "Soul Codex",
+  appName: "Ultimate Soul Codex",
   webDir: "dist/public",
 
   backgroundColor: "#0B0720",

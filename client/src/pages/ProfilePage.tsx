@@ -1044,9 +1044,26 @@ function AccountSettings({ user }: { user: any }) {
     try { 
       localStorage.removeItem("soulPremium"); 
       localStorage.removeItem("soulAdminToken");
+      localStorage.removeItem("soulIsGuest"); // Clear guest state on logout
     } catch {}
     navigate("/");
   };
+
+  const startGuestSession = () => {
+    localStorage.setItem("soulIsGuest", "true");
+    localStorage.removeItem("soulGuestProfile");
+    navigate("/start");
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  const endGuestSession = () => {
+    localStorage.removeItem("soulIsGuest");
+    localStorage.removeItem("soulGuestProfile");
+    navigate("/");
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  const isGuest = localStorage.getItem("soulIsGuest") === "true";
 
   const handleDelete = async () => {
     if (confirmText !== "DELETE") {
@@ -1082,6 +1099,34 @@ function AccountSettings({ user }: { user: any }) {
       <ProfileSection sectionKey="account" title="Account Settings">
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           
+          {/* ── Guest Mode Toggle ────────────────────────────────────────────── */}
+          {isGuest ? (
+            <ScButton 
+              variant="outline" 
+              onClick={endGuestSession}
+              style={{ borderColor: "var(--sc-gold)", color: "var(--sc-gold)" }}
+            >
+              End Guest Session & Return to Owner
+            </ScButton>
+          ) : (
+            <button 
+              onClick={startGuestSession}
+              style={{
+                background: "rgba(212,168,95,0.05)",
+                border: "1px solid rgba(212,168,95,0.2)",
+                padding: "0.85rem",
+                borderRadius: "var(--radius)",
+                color: "var(--sc-gold)",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                cursor: "pointer"
+              }}
+            >
+              Let a Guest Use Your System
+            </button>
+          )}
           {/* ── Apple Account Linking ────────────────────────────────────────── */}
           {!user ? (
             <div style={{ 

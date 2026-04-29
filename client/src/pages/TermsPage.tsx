@@ -19,7 +19,8 @@ export default function TermsPage() {
     >
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
         <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.8rem", marginBottom: "0.5rem" }}>Terms of Service</h1>
-        <p style={{ color: "#6b5a3a", fontSize: "0.85rem" }}>
+        <p style={{ color: "var(--sc-gold)", fontSize: "0.85rem", opacity: 0.7 }}>
+
           Effective: April 21, 2026
         </p>
       </div>
@@ -36,7 +37,8 @@ export default function TermsPage() {
           Soul Codex provides metaphysical, astronomical, and psychological interpretations for personal 
           growth and self-reflection. 
         </p>
-        <p style={{ fontWeight: 600, color: "#8b4513" }}>
+        <p style={{ fontWeight: 600, color: "var(--sc-gold)" }}>
+
           CRITICAL DISCLAIMER: The App does not provide medical, legal, financial, or professional advice. 
           All guidance, including AI-generated responses from the "Soul Oracle," is for entertainment and 
           spiritual inquiry only.
@@ -107,7 +109,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
           marginTop: "1.5rem",
           borderBottom: "1px solid rgba(217,207,184,0.5)",
           paddingBottom: "0.3rem",
-          color: "#8b4513",
+          color: "var(--sc-gold)",
           fontFamily: "var(--font-serif)",
         }}
       >
