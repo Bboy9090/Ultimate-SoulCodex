@@ -334,9 +334,31 @@ export default function TodayPage() {
           <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "rgba(246,241,232,0.72)", fontSize: "0.82rem", marginBottom: "1.1rem", lineHeight: 1.55 }}>
             {archetypeTagline}
           </p>
+          {/* My Pattern - Hero Element */}
+          <div style={{ 
+            marginTop: "1.2rem", 
+            marginBottom: "1.5rem", 
+            padding: "1.2rem", 
+            background: "rgba(212,168,95,0.05)", 
+            border: "1px solid rgba(212,168,95,0.15)", 
+            borderRadius: 12,
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: "0.6rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 700, opacity: 0.8, marginBottom: "0.6rem" }}>My Pattern</div>
+            <div style={{ 
+              fontFamily: "var(--font-serif)", 
+              fontSize: "1.1rem", 
+              color: "var(--sc-ivory)", 
+              lineHeight: 1.45,
+              fontWeight: 500,
+              fontStyle: "italic"
+            }}>
+              "{profile?.synthesis?.myPattern ?? (card.doList?.[0] ?? "—")}"
+            </div>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem 1rem" }}>
             {[
-              { label: "Who I Am",        value: whoIAm },
               { label: "Today's Theme",   value: card.topTheme ? displayTheme(card.topTheme) : (card.title ?? "—") },
               { label: "Pattern to Watch",value: patternWatch },
               { label: "One Move Today",  value: oneMove },

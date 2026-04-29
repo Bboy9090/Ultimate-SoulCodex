@@ -50,7 +50,7 @@ export interface Archetype {
 }
 
 export interface Synthesis {
-  coreEssence: string;
+  myPattern: string;
   stressPattern: string;
   relationshipPattern: string;
   moralCode: { name: string; notes: string };

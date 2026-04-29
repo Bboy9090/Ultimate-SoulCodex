@@ -19,7 +19,12 @@ const BANNED_GENERIC = [
   "allocate time",
   "attend workshops",
   "industry trends",
-  "hold myself accountable"
+  "hold myself accountable",
+  "i need",
+  "i value",
+  "i seek",
+  "i like",
+  "i want"
 ];
 
 const ZODIAC_PATTERN = /(virgo|scorpio|libra|aries|capricorn|aquarius|leo|taurus|gemini|cancer|pisces|sagittarius)/i;
