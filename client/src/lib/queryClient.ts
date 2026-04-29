@@ -40,11 +40,29 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: defaultQueryFn,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5,
+      staleTime: 1000 * 60 * 60 * 24, // 24 hours stale time (rely on background refresh)
+      gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days cache time
       retry: 2,
     },
   },
 });
+
+/** 
+ * Persistent Query Helper: 
+ * Returns cached data from localStorage immediately, then fetches in background.
+ */
+export function getPersistedData<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(`cache:${key}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+export function setPersistedData(key: string, data: any) {
+  try {
+    localStorage.setItem(`cache:${key}`, JSON.stringify(data));
+  } catch {}
+}
 
 export async function apiRequest(url: string, options?: any) {
   const resolvedUrl = resolveApiUrl(url);
