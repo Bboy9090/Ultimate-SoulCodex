@@ -1,6 +1,9 @@
 import { QueryClient } from "@tanstack/react-query";
 import { CapacitorHttp } from "@capacitor/core";
 
+// --- Timeouts & Fallbacks ---
+const NETWORK_TIMEOUT = 10000; // 10s max for any request
+
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
     const defaultProdUrl = "https://ultimate-soulcodex.up.railway.app";
@@ -21,18 +24,24 @@ export function resolveApiUrl(url: string): string {
 
 async function defaultQueryFn({ queryKey }: { queryKey: readonly unknown[] }) {
   const url = resolveApiUrl(queryKey[0] as string);
-  const response = await CapacitorHttp.get({
-    url,
-    headers: { "Content-Type": "application/json" },
-    connectTimeout: 20000,
-    readTimeout: 20000
-  });
-  
-  if (response.status < 200 || response.status >= 300) {
-    throw new Error(`${response.status}: ${JSON.stringify(response.data)}`);
+  try {
+    const response = await CapacitorHttp.get({
+      url,
+      headers: { "Content-Type": "application/json" },
+      connectTimeout: NETWORK_TIMEOUT,
+      readTimeout: NETWORK_TIMEOUT
+    });
+    
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`API ${response.status}`);
+    }
+    return response.data;
+  } catch (err) {
+    // If we fail, try to return cached data from localStorage as a last resort
+    const cached = localStorage.getItem(`cache:${queryKey[0]}`);
+    if (cached) return JSON.parse(cached);
+    throw err;
   }
-  return response.data;
-
 }
 
 export const queryClient = new QueryClient({
@@ -40,16 +49,15 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: defaultQueryFn,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 60 * 24, // 24 hours stale time (rely on background refresh)
-      gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days cache time
-      retry: 2,
+      staleTime: 1000 * 60 * 60, // 1 hour stale time
+      gcTime: 1000 * 60 * 60 * 24, // 24 hour cache
+      retry: 1,
     },
   },
 });
 
 /** 
- * Persistent Query Helper: 
- * Returns cached data from localStorage immediately, then fetches in background.
+ * Persistent Storage Helpers 
  */
 export function getPersistedData<T>(key: string): T | null {
   try {
@@ -68,54 +76,58 @@ export async function apiRequest(url: string, options?: any) {
   const resolvedUrl = resolveApiUrl(url);
   const method = options?.method || "GET";
   
-  console.log(`[API] ${method} ${resolvedUrl}`);
-  
   const httpOptions = {
     url: resolvedUrl,
     method,
     headers: { "Content-Type": "application/json", ...options?.headers },
     data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
-    connectTimeout: 20000,
-    readTimeout: 20000
+    connectTimeout: NETWORK_TIMEOUT,
+    readTimeout: NETWORK_TIMEOUT
   };
 
   try {
     const response = await CapacitorHttp.request(httpOptions);
-    console.log(`[API] ${response.status} ${resolvedUrl}`);
-    
     if (response.status < 200 || response.status >= 300) {
-      throw new Error(`${response.status}: ${JSON.stringify(response.data)}`);
+      throw new Error(`API Error: ${response.status}`);
     }
+    
+    // Auto-cache successful GET requests
+    if (method === "GET") {
+      setPersistedData(url, response.data);
+    }
+    
     return response.data;
   } catch (error) {
-    console.error(`[API] FAILED ${method} ${resolvedUrl}:`, error);
+    if (import.meta.env.DEV) console.warn(`[API] FAILED ${method} ${resolvedUrl}:`, error);
+    // If offline or timeout, try cache
+    if (method === "GET") {
+      const cached = getPersistedData(url);
+      if (cached) return cached;
+    }
     throw error;
   }
-
 }
 
 /** Drop-in replacement for fetch that supports absolute URLs in native apps */
 export async function apiFetch(url: string, options?: any): Promise<any> {
   const resolvedUrl = resolveApiUrl(url);
-  const response = await CapacitorHttp.request({
-    url: resolvedUrl,
-    method: options?.method || "GET",
-    headers: options?.headers || { "Content-Type": "application/json" },
-    data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
-    connectTimeout: 20000,
-    readTimeout: 20000
-  });
-  return {
-    ok: response.status >= 200 && response.status < 300,
-    status: response.status,
-    data: response.data,
-    json: async () => response.data,
-    text: async () =>
-      typeof response.data === "string"
-        ? response.data
-        : JSON.stringify(response.data),
-    blob: async () => {
-      throw new Error("Blob downloads are not supported through CapacitorHttp yet.");
-    },
-  };
+  try {
+    const response = await CapacitorHttp.request({
+      url: resolvedUrl,
+      method: options?.method || "GET",
+      headers: options?.headers || { "Content-Type": "application/json" },
+      data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
+      connectTimeout: NETWORK_TIMEOUT,
+      readTimeout: NETWORK_TIMEOUT
+    });
+    return {
+      ok: response.status >= 200 && response.status < 300,
+      status: response.status,
+      data: response.data,
+      json: async () => response.data,
+      text: async () => typeof response.data === "string" ? response.data : JSON.stringify(response.data),
+    };
+  } catch (err) {
+    return { ok: false, status: 500, data: null, json: async () => null };
+  }
 }

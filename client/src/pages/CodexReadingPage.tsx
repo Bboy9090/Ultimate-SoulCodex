@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Capacitor } from "@capacitor/core";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { Link } from "wouter";
+import CodexSkeleton from "@/components/CodexSkeleton";
 
 interface ThemeScore {
   tag: string;
@@ -104,53 +105,54 @@ export default function CodexReadingPage() {
   const [, navigate] = useLocation();
   const [synthesis, setSynthesis] = useState<CodexSynthesis | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isPremium = localStorage.getItem("soulPremium") === "true";
 
-  const generateMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      console.log("[CodexReading] Sending generation request with payload:", payload);
-      const data = await apiRequest("/api/codex30/generate", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      console.log("[CodexReading] Received response:", data);
-      
-      if (!data || !data.synthesis) {
-        throw new Error("The synthesis engine returned an empty result. This usually happens if the AI generation timed out or hit a filter. Please try again.");
-      }
-      
-      return data.synthesis as CodexSynthesis;
-    },
-    onSuccess: (data) => {
-      console.log("[CodexReading] Generation success, setting synthesis");
-      setSynthesis(data);
-      try { localStorage.setItem("soulCodexReading", JSON.stringify(data)); } catch {}
-    },
-    onError: (err: any) => {
-      console.error("[CodexReading] Generation error:", err);
-      setError(err.message ?? "Unknown error");
-    },
-  });
-
+  // 1. Initial load from persistence (Zero Lag)
   useEffect(() => {
     const cached = localStorage.getItem("soulCodexReading");
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        console.log("[CodexReading] Found cached reading:", parsed);
-        const raw = JSON.stringify(parsed);
-        const stale = /Stress element:|Decision style:|My strengths include:|Non-negotiable:|evidence/i.test(raw);
-        // Also invalidate if isPremium field is missing (pre-gate cached readings may contain ungated data)
-        const missingGate = typeof parsed.isPremium === "undefined";
-        if (!stale && !missingGate) {
-          setSynthesis(parsed);
-          return;
-        }
-        console.log("[CodexReading] Cached reading is stale or missing gate, removing");
-        localStorage.removeItem("soulCodexReading");
-      } catch {}
+        if (parsed) setSynthesis(parsed);
+      } catch (e) {}
     }
-    buildAndGenerate();
   }, []);
+
+  const generateMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      try {
+        const data = await apiRequest("/api/codex30/generate", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        if (!data || !data.synthesis) throw new Error("Empty synthesis");
+        return data.synthesis as CodexSynthesis;
+      } catch (err) {
+        if (import.meta.env.DEV) console.warn("[Codex] AI synthesis failed, using fallback:", err);
+        return CODEX_FALLBACK_TEMPLATE;
+      }
+    },
+    onSuccess: (data) => {
+      setSynthesis(data);
+      localStorage.setItem("soulCodexReading", JSON.stringify(data));
+      setError(null);
+    },
+    onError: () => {
+      // Fallback is handled in mutationFn, but just in case
+      if (!synthesis) setSynthesis(CODEX_FALLBACK_TEMPLATE);
+    },
+  });
+
+  useEffect(() => {
+    if (!synthesis && !generateMutation.isPending) {
+      buildAndGenerate();
+    }
+  }, [synthesis]);
+
+  // If no synthesis and loading, show skeleton (not blocking loader)
+  if (generateMutation.isPending && !synthesis) {
+    return <CodexSkeleton />;
+  }
 
   function buildAndGenerate() {
     const rawProfile    = localStorage.getItem("soulProfile");

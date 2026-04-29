@@ -1,37 +1,63 @@
 import React from "react";
+import { motion } from "framer-motion";
 
-interface LoaderProps {
+interface Props {
   label?: string;
   fullPage?: boolean;
 }
 
-const CosmicLoader: React.FC<LoaderProps> = ({ label, fullPage = false }) => {
+const CosmicLoader: React.FC<Props> = ({ label = "Loading...", fullPage = false }) => {
   const content = (
-    <div className="flex flex-col items-center justify-center gap-6 p-8 text-center">
-      <div className="relative">
-        <div className="loader-orb" />
-        <div 
-          className="absolute inset-0 rounded-full blur-xl opacity-30 animate-pulse"
-          style={{ background: "var(--sc-gold)" }}
-        />
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "2rem",
+      textAlign: "center"
+    }}>
+      <motion.div
+        animate={{
+          rotate: 360,
+          scale: [1, 1.1, 1]
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        style={{
+          fontSize: "2.5rem",
+          color: "var(--sc-gold)",
+          marginBottom: "1rem",
+          textShadow: "0 0 20px var(--sc-gold-glow)"
+        }}
+      >
+        ◈
+      </motion.div>
+      <div style={{
+        fontSize: "0.75rem",
+        letterSpacing: "0.15em",
+        textTransform: "uppercase",
+        color: "var(--sc-gold)",
+        opacity: 0.8
+      }}>
+        {label}
       </div>
-      
-      {label && (
-        <div className="space-y-2">
-          <p className="text-sc-gold font-serif text-lg tracking-widest uppercase animate-pulse">
-            {label}
-          </p>
-          <div className="ritual-progress-container w-48 mx-auto">
-            <div className="ritual-progress-bar" />
-          </div>
-        </div>
-      )}
     </div>
   );
 
   if (fullPage) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-sc-bg-ink/90 backdrop-blur-md">
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        background: "var(--sc-bg-ink)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
         {content}
       </div>
     );

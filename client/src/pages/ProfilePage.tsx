@@ -1343,29 +1343,6 @@ const SIGN_GLYPHS: Record<string, string> = {
   Libra: "♎", Scorpio: "♏", Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
 };
 
-function BlueprintChip({ label, value, accent }: { label: string; value: string; accent: string }) {
-  if (!value) return null;
-  return (
-    <div style={{
-      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.2rem",
-      padding: "0.6rem 0.9rem",
-      background: "rgba(15,20,40,0.5)",
-      border: `1px solid ${accent}22`,
-      borderBottom: `2px solid ${accent}50`,
-      borderRadius: "10px",
-      minWidth: 80, flex: "1 1 80px",
-      textAlign: "center",
-    }}>
-      <span style={{ fontSize: "0.57rem", letterSpacing: "0.1em", textTransform: "uppercase", color: accent, fontWeight: 700, opacity: 0.85 }}>
-        {label}
-      </span>
-      <span style={{ fontSize: "0.88rem", color: "#f1f5f9", fontWeight: 600, lineHeight: 1.2 }}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
 function NatalBlueprint({ profile }: { profile: SoulProfile }) {
   const sun     = profile.sunSign;
   const moon    = profile.moonSign;
@@ -1414,7 +1391,7 @@ function NatalBlueprint({ profile }: { profile: SoulProfile }) {
 
 // ── Section component ────────────────────────────────────────────────────────
 
-function ProfileSection({
+const ProfileSection = React.memo(({
   sectionKey,
   title,
   children,
@@ -1422,7 +1399,7 @@ function ProfileSection({
   sectionKey: keyof typeof SECTION_STYLES;
   title: string;
   children: ReactNode;
-}) {
+}) => {
   const s = SECTION_STYLES[sectionKey];
   return (
     <section
@@ -1450,4 +1427,19 @@ function ProfileSection({
       {children}
     </section>
   );
-}
+});
+
+const BlueprintChip = React.memo(({ label, value, accent }: { label: string; value: string; accent: string }) => (
+  <div style={{
+    background: "rgba(255,255,255,0.03)",
+    border: `1px solid ${accent}25`,
+    borderRadius: "8px",
+    padding: "0.6rem 0.85rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.2rem"
+  }}>
+    <span style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)" }}>{label}</span>
+    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--foreground)" }}>{value}</span>
+  </div>
+));

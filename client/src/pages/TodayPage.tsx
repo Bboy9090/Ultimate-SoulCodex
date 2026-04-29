@@ -138,6 +138,7 @@ export default function TodayPage() {
   const [, navigate] = useLocation();
   const [card, setCard] = useState<TodayCard | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const streak = useStreak();
   const profile = getProfile();
 
@@ -154,8 +155,9 @@ export default function TodayPage() {
 
   const cardMutation = useMutation({
     mutationFn: async (payload: any) => {
+      setIsRefreshing(true);
       const res = await apiRequest("/api/today/card", { method: "POST", body: JSON.stringify(payload) });
-      const data = res.card; // apiRequest now returns data directly
+      const data = res.card;
       if (!data) throw new Error("Failed to build card");
       return data as TodayCard;
     },
@@ -163,9 +165,11 @@ export default function TodayPage() {
       setCard(data);
       localStorage.setItem("soulTodayCard", JSON.stringify({ card: data, ts: Date.now() }));
       setError(null);
+      setIsRefreshing(false);
     },
     onError: (err: any) => {
       if (!card) setError(err.message ?? "Unknown error");
+      setIsRefreshing(false);
     },
   });
 
@@ -175,15 +179,24 @@ export default function TodayPage() {
     if (profile && !cardMutation.isPending) {
       const cachedRaw = localStorage.getItem("soulTodayCard");
       if (cachedRaw) {
-        const { card: cached, ts } = JSON.parse(cachedRaw);
-        if (cached?.date === todayStr && Date.now() - ts < 3600_000 * 4) {
-          // Already have today's card and it's fresh enough
-          return;
-        }
+        try {
+          const { card: cached, ts } = JSON.parse(cachedRaw);
+          if (cached?.date === todayStr && Date.now() - ts < 3600_000 * 2) {
+            // Already have fresh today's card
+            return;
+          }
+        } catch(e) {}
       }
       cardMutation.mutate({ profile });
     }
   }, [profile]);
+
+  if (!profile) return <WelcomeScreen onStart={() => navigate("/start")} />;
+
+  // Show skeleton ONLY if we have absolutely NO card data yet
+  if (cardMutation.isPending && !card) {
+    return <TodaySkeleton />;
+  }
 
   function loadCard() {
     const rawProfile = localStorage.getItem("soulProfile");
