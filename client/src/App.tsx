@@ -25,16 +25,15 @@ const TermsPage = lazy(() => import("./pages/TermsPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 
+import ErrorBoundary from "./components/ErrorBoundary";
+
 function hasProfileData(): boolean {
   try {
     const p = localStorage.getItem("soulProfile");
     const g = localStorage.getItem("soulGuestProfile");
     const isGuest = localStorage.getItem("soulIsGuest") === "true";
     
-    // If in Guest Mode, check for guest profile
     if (isGuest) return !!g && g !== "undefined" && g !== "null";
-    
-    // Otherwise check for owner profile
     return !!p && p !== "undefined" && p !== "null";
   } catch {
     return false;
@@ -44,21 +43,26 @@ function hasProfileData(): boolean {
 export default function App() {
   const [location, setLocation] = useLocation();
   const [showSplash, setShowSplash] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
   const hasProfile = hasProfileData();
 
   useEffect(() => {
-    // If we're at root and have no profile, we'll want to go to /start after splash
-    if (!hasProfile && location === "/") {
-      // Handled by the Switch below, but good to know
-    }
-  }, [hasProfile, location]);
+    // Basic hydration check to ensure localStorage is accessible
+    const timer = setTimeout(() => setHydrated(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
 
+  if (!hydrated) {
+    return <div style={{ background: "var(--sc-bg-ink)", minHeight: "100vh" }} />;
+  }
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--sc-bg-ink)" }}>
+    <ErrorBoundary>
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--sc-bg-ink)" }}>
       {/* Dynamic Cosmic Background - Always present behind the UI */}
       <CosmicBackground />
       
@@ -107,6 +111,6 @@ export default function App() {
           </Switch>
         </Suspense>
       </main>
-    </div>
+    </ErrorBoundary>
   );
 }
