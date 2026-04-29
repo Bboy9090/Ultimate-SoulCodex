@@ -24,10 +24,10 @@ const ASPECT_SYMBOLS: Record<string, string> = {
 const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
 
 const cardBase = {
-  background: "rgba(28,18,10,0.72)",
-  border: "1px solid rgba(212,168,95,0.18)",
+  background: "rgba(26, 11, 46, 0.65)",
+  border: "1px solid rgba(255, 215, 0, 0.25)",
   borderRadius: 12,
-  backdropFilter: "blur(16px)",
+  backdropFilter: "blur(20px)",
 } as const;
 
 function Field({ label, children }: { label: string; children: ReactNode }) {

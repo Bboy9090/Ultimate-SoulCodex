@@ -241,8 +241,8 @@ export default function SoulGuidePage() {
                     fontSize: "0.85rem", color: "#EAEAF5",
                     cursor: "pointer", textAlign: "left", transition: "all 0.15s",
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(236,228,210,0.99)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(28, 22, 53, 0.72)"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255, 215, 0, 0.1)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(26, 11, 46, 0.65)"; }}
                 >
                   {s}
                 </button>
@@ -298,8 +298,8 @@ export default function SoulGuidePage() {
             margin: "auto 0 0",
             padding: "2rem 1.5rem",
             borderRadius: "1.25rem",
-            background: "rgba(28,18,10,0.72)",
-            border: "1px solid rgba(212,168,95,0.35)",
+            background: "rgba(26, 11, 46, 0.65)",
+            border: "1px solid rgba(255, 215, 0, 0.25)",
             textAlign: "center",
           }}>
             <div style={{

@@ -5,10 +5,10 @@ import { Link } from "wouter";
 const CACHE_PREFIX = "soulBlueprintReading";
 
 const cardBase = {
-  background: "rgba(28,18,10,0.72)",
-  border: "1px solid rgba(212,168,95,0.18)",
+  background: "rgba(26, 11, 46, 0.65)",
+  border: "1px solid rgba(255, 215, 0, 0.25)",
   borderRadius: 12,
-  backdropFilter: "blur(16px)",
+  backdropFilter: "blur(20px)",
 } as const;
 
 const goldHeading = {
@@ -335,7 +335,7 @@ export default function BlueprintPage() {
           </div>
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(to bottom, transparent 0%, rgba(26,14,7,0.85) 100%)",
+            background: "linear-gradient(to bottom, transparent 0%, #030208 100%)",
             display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: "1.5rem",
           }}>
             <span style={{ color: "rgba(212,168,95,0.5)", fontSize: "0.78rem", letterSpacing: "0.12em" }}>

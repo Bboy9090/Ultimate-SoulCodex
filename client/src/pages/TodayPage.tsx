@@ -89,14 +89,14 @@ function WelcomeScreen({ onStart }: { onStart: () => void }) {
     }}>
       <div style={{ maxWidth: 460, width: "100%" }}>
         <div style={{
-          background: "rgba(28,18,10,0.72)",
-          border: "1px solid rgba(212,168,95,0.18)",
-          borderTop: "3px solid rgba(212,168,95,0.6)",
+          background: "rgba(26, 11, 46, 0.65)",
+          border: "1px solid rgba(255, 215, 0, 0.25)",
+          borderTop: "3px solid var(--sc-gold)",
           borderRadius: 14,
           padding: "2.25rem 2rem",
           textAlign: "center",
         }}>
-          <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "rgba(212,168,95,0.75)" }}>☽</div>
+          <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--sc-gold)" }}>☽</div>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.65rem", color: "var(--sc-ivory)" }}>
             Your daily reading isn't ready yet
           </h2>
@@ -233,7 +233,7 @@ export default function TodayPage() {
     }
     return (
       <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-        <div style={{ maxWidth: 420, width: "100%", background: "rgba(28,18,10,0.72)", border: "1px solid rgba(212,168,95,0.18)", borderTop: "3px solid #ef4444", borderRadius: 12, padding: "2rem 1.75rem", textAlign: "center" }}>
+        <div style={{ maxWidth: 420, width: "100%", background: "rgba(26, 11, 46, 0.65)", border: "1px solid rgba(255, 215, 0, 0.25)", borderTop: "3px solid #ef4444", borderRadius: 12, padding: "2rem 1.75rem", textAlign: "center" }}>
           <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
           <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Profile Calibration Required</h3>
           <p style={{ color: "var(--sc-text-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
@@ -272,11 +272,11 @@ export default function TodayPage() {
   const oneMove = card.decisionAdvice ?? "—";
 
   const cardStyle: CSSProperties = {
-    background: "rgba(28, 18, 10, 0.72)",
-    border: "1px solid rgba(212, 168, 95, 0.18)",
+    background: "rgba(26, 11, 46, 0.65)",
+    border: "1px solid rgba(255, 215, 0, 0.25)",
     borderRadius: 12,
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
   };
 
   const labelStyle: CSSProperties = {

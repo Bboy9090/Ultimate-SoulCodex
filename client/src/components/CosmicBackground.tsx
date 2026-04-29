@@ -56,85 +56,110 @@ export const CosmicBackground: React.FC = () => {
   const springY = useSpring(tilt.y, { stiffness: 40, damping: 25 });
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1] bg-[#0C0614]">
-      {/* Deep Space Foundation */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#1A0B2E_0%,_#0D0B21_100%)]" />
-
-      {/* Nebula Drift Layer 1 - Deep Purple/Blue */}
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1] bg-[#030208]">
+      {/* ── Deep Foundation ── */}
+      <div className="absolute inset-0 bg-[#030208]" />
+      
+      {/* ── Main Nebula Core: Deep Violet ── */}
       <motion.div
         style={{
-          x: useTransform(springX, (val) => val * 0.4),
-          y: useTransform(springY, (val) => val * 0.4),
-          rotate: useTransform(springX, (val) => val * 0.05),
+          x: useTransform(springX, (val) => val * 0.2),
+          y: useTransform(springY, (val) => val * 0.2),
+          scale: 1.2
         }}
-        className="absolute inset-[-20%] opacity-40 mix-blend-screen"
+        className="absolute inset-[-20%] opacity-60 mix-blend-screen"
       >
-        <div className="absolute top-[10%] left-[10%] w-[80%] h-[80%] rounded-full bg-[radial-gradient(circle,_rgba(124,58,237,0.2)_0%,_transparent_70%)] blur-[120px] animate-nebula-pulse" />
-        <div className="absolute bottom-[0%] right-[0%] w-[90%] h-[90%] rounded-full bg-[radial-gradient(circle,_rgba(76,29,149,0.15)_0%,_transparent_70%)] blur-[140px]" />
+        <div className="absolute top-[10%] left-[-10%] w-[120%] h-[120%] bg-[radial-gradient(ellipse_at_center,_#2D1155_0%,_transparent_70%)] blur-[100px]" />
       </motion.div>
 
-      {/* Nebula Drift Layer 2 - Gold/Electric Violet */}
+      {/* ── Dynamic Nebula Clouds: Electric Purple ── */}
       <motion.div
         style={{
-          x: useTransform(springX, (val) => val * -0.6),
-          y: useTransform(springY, (val) => val * -0.6),
+          x: useTransform(springX, (val) => val * -0.5),
+          y: useTransform(springY, (val) => val * -0.5),
         }}
-        className="absolute inset-[-15%] opacity-30 mix-blend-overlay"
+        className="absolute inset-[-30%] opacity-50 mix-blend-screen"
       >
-        <div className="absolute top-[30%] right-[20%] w-[60%] h-[60%] rounded-full bg-[radial-gradient(circle,_rgba(212,168,95,0.08)_0%,_transparent_60%)] blur-[90px]" />
-        <div className="absolute bottom-[20%] left-[10%] w-[50%] h-[50%] rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.12)_0%,_transparent_60%)] blur-[100px]" />
+        <div className="absolute top-[20%] right-[10%] w-[80%] h-[80%] bg-[radial-gradient(circle,_#7C3AED_0%,_transparent_60%)] blur-[140px] animate-cloud-drift" />
+        <div className="absolute bottom-[10%] left-[5%] w-[70%] h-[70%] bg-[radial-gradient(circle,_#5B21B6_0%,_transparent_60%)] blur-[120px] animate-cloud-drift-slow" />
       </motion.div>
 
-      {/* Starfield Layer 1 - Close Stars (Fast Parallax) */}
-      <motion.div
-        style={{
-          x: useTransform(springX, (val) => val * 1.5),
-          y: useTransform(springY, (val) => val * 1.5),
-        }}
-        className="absolute inset-[-10%] opacity-70"
-      >
-        <div className="starfield-dynamic stars-large" />
-      </motion.div>
-
-      {/* Starfield Layer 2 - Mid Stars */}
+      {/* ── Accent Nebula: Magenta/Indigo ── */}
       <motion.div
         style={{
           x: useTransform(springX, (val) => val * 0.8),
           y: useTransform(springY, (val) => val * 0.8),
         }}
-        className="absolute inset-[-5%] opacity-50"
+        className="absolute inset-[-10%] opacity-40 mix-blend-color-dodge"
       >
-        <div className="starfield-dynamic stars-medium" />
+        <div className="absolute top-[40%] left-[30%] w-[50%] h-[50%] bg-[radial-gradient(circle,_#DB2777_0%,_transparent_50%)] blur-[100px] animate-nebula-pulse" />
+        <div className="absolute bottom-[30%] right-[20%] w-[60%] h-[60%] bg-[radial-gradient(circle,_#4338CA_0%,_transparent_55%)] blur-[110px]" />
       </motion.div>
 
-      {/* Starfield Layer 3 - Distant Dust (Slow Parallax) */}
+      {/* ── Gold Stardust Veil ── */}
       <motion.div
         style={{
-          x: useTransform(springX, (val) => val * 0.3),
-          y: useTransform(springY, (val) => val * 0.3),
+          x: useTransform(springX, (val) => val * -1.2),
+          y: useTransform(springY, (val) => val * -1.2),
         }}
-        className="absolute inset-[-2%] opacity-30"
+        className="absolute inset-[-5%] opacity-20"
       >
-        <div className="starfield-dynamic stars-small" />
+        <div className="absolute top-[15%] left-[60%] w-full h-full bg-[radial-gradient(circle,_rgba(212,168,95,0.15)_0%,_transparent_40%)] blur-[80px]" />
       </motion.div>
 
-      {/* Interactive Flare Overlay */}
-      <motion.div 
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(212,168,95,0.03)_0%,transparent_50%)]"
+      {/* ── High-Fidelity Starfield (3 Layers) ── */}
+      <motion.div
         style={{
-          x: useTransform(springX, (val) => val * 2),
-          y: useTransform(springY, (val) => val * 2),
+          x: useTransform(springX, (val) => val * 2.5),
+          y: useTransform(springY, (val) => val * 2.5),
         }}
-      />
+        className="absolute inset-[-15%] z-10"
+      >
+        <div className="starfield-dynamic stars-large animate-star-twinkle" />
+      </motion.div>
+
+      <motion.div
+        style={{
+          x: useTransform(springX, (val) => val * 1.5),
+          y: useTransform(springY, (val) => val * 1.5),
+        }}
+        className="absolute inset-[-10%] z-[9]"
+      >
+        <div className="starfield-dynamic stars-medium opacity-60" />
+      </motion.div>
+
+      <motion.div
+        style={{
+          x: useTransform(springX, (val) => val * 0.6),
+          y: useTransform(springY, (val) => val * 0.6),
+        }}
+        className="absolute inset-[-5%] z-[8]"
+      >
+        <div className="starfield-dynamic stars-small opacity-40" />
+      </motion.div>
 
       <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes cloud-drift {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+          50% { transform: translate(5%, 3%) scale(1.1); opacity: 0.7; }
+        }
+        @keyframes cloud-drift-slow {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          50% { transform: translate(-3%, -2%) rotate(2deg); }
+        }
         @keyframes nebula-pulse {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.05); }
+          0%, 100% { opacity: 0.3; filter: blur(100px); }
+          50% { opacity: 0.6; filter: blur(80px); }
         }
-        .animate-nebula-pulse {
-          animation: nebula-pulse 20s infinite ease-in-out;
+        @keyframes star-twinkle {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
         }
+        .animate-cloud-drift { animation: cloud-drift 25s infinite ease-in-out; }
+        .animate-cloud-drift-slow { animation: cloud-drift-slow 35s infinite ease-in-out; }
+        .animate-nebula-pulse { animation: nebula-pulse 12s infinite ease-in-out; }
+        .animate-star-twinkle { animation: star-twinkle 4s infinite ease-in-out; }
+
         .starfield-dynamic {
           position: absolute;
           inset: 0;
@@ -145,9 +170,10 @@ export const CosmicBackground: React.FC = () => {
           background-image: 
             radial-gradient(2px 2px at 15% 15%, #fff, transparent),
             radial-gradient(2px 2px at 85% 85%, #fff, transparent),
-            radial-gradient(2px 2px at 50% 10%, #fff, transparent),
+            radial-gradient(2.5px 2.5px at 50% 10%, #fff, transparent),
             radial-gradient(2px 2px at 10% 90%, #fff, transparent),
-            radial-gradient(2.5px 2.5px at 75% 25%, #FFD700, transparent);
+            radial-gradient(3px 3px at 75% 25%, #FFD700, transparent);
+          filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
         }
         .stars-medium {
           background-image: 
