@@ -16,13 +16,21 @@ import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import AdminPage from "./pages/AdminPage";
 import PricingPage from "./pages/PricingPage";
-
+import { motion } from "framer-motion";
+import ScButton from "./components/ScButton";
 import { useState, useEffect } from "react";
 import SplashScreen from "./components/SplashScreen";
 
 function hasProfileData(): boolean {
   try {
     const p = localStorage.getItem("soulProfile");
+    const g = localStorage.getItem("soulGuestProfile");
+    const isGuest = localStorage.getItem("soulIsGuest") === "true";
+    
+    // If in Guest Mode, check for guest profile
+    if (isGuest) return !!g && g !== "undefined" && g !== "null";
+    
+    // Otherwise check for owner profile
     return !!p && p !== "undefined" && p !== "null";
   } catch {
     return false;
@@ -47,6 +55,9 @@ export default function App() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--sc-bg-ink)" }}>
+      {/* Dynamic Cosmic Background - Always present behind the UI */}
+      <CosmicBackground />
+      
       {/* Sidebar - Only visible if profile exists */}
       {hasProfile && <Nav />}
       
@@ -71,10 +82,21 @@ export default function App() {
           <Route path="/admin" component={AdminPage} />
           <Route path="/pricing" component={PricingPage} />
           <Route>
-            <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
-              <h1 style={{ color: "var(--sc-gold)", fontSize: "2rem" }}>404</h1>
-              <p style={{ opacity: 0.5 }}>The stars do not align here.</p>
-              <a href="/" style={{ color: "var(--sc-gold)", marginTop: "1rem", display: "inline-block" }}>Return Home</a>
+            <div className="nebula-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", textAlign: "center" }}>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                style={{ fontSize: "4rem", color: "var(--sc-gold)", marginBottom: "1rem", textShadow: "0 0 30px var(--sc-gold-glow)" }}
+              >
+                ◈
+              </motion.div>
+              <h1 className="heading-display" style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>Lost in the Cosmos</h1>
+              <p style={{ color: "var(--sc-text-muted)", maxWidth: "320px", marginBottom: "2rem" }}>
+                The celestial coordinates you are looking for do not exist in this dimension.
+              </p>
+              <Link href="/">
+                <ScButton size="lg">Return to Your Path</ScButton>
+              </Link>
             </div>
           </Route>
         </Switch>

@@ -15,7 +15,8 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#0D0B1A] overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[var(--sc-bg-ink)] overflow-hidden">
+
       <div className="absolute inset-0 z-0">
         <CosmicBackground />
       </div>

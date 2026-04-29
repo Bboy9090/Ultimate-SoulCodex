@@ -108,6 +108,15 @@ export default function Nav() {
           ▸
         </span>
       </button>
+
+      <div style={{ marginTop: "auto", padding: "1rem 0", display: "flex", flexDirection: "column", gap: "0.4rem", opacity: 0.4 }}>
+        <Link href="/privacy" className="sc-nav-item" style={{ padding: "0.25rem 0.75rem", fontSize: "0.65rem" }}>
+          Privacy
+        </Link>
+        <Link href="/terms" className="sc-nav-item" style={{ padding: "0.25rem 0.75rem", fontSize: "0.65rem" }}>
+          Terms
+        </Link>
+      </div>
     </nav>
   );
 }
