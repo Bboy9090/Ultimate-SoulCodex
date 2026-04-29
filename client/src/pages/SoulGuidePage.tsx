@@ -70,7 +70,7 @@ export default function SoulGuidePage() {
         moonSign:    p.moonSign,
         risingSign:  p.risingSign,
         lifePath:    p.lifePath,
-        coreEssence: p.synthesis?.coreEssence,
+        myPattern:   p.synthesis?.myPattern,
       };
     } catch { return null; }
   };

@@ -8,23 +8,23 @@ interface MoralCode {
 const PRESSURE_CODES: Record<PressureStyle, { name: string; base: string }> = {
   fight: {
     name: "The Enforcer",
-    base: "I confront what's wrong head-on and won't let injustice slide.",
+    base: "I escalate when I detect a violation of fairness, regardless of the tension it creates.",
   },
   freeze: {
     name: "The Sentinel",
-    base: "I hold my ground quietly until I'm sure of the right move.",
+    base: "I prioritize observation over action when the environment is hostile, waiting for a clear signal.",
   },
   adapt: {
     name: "The Diplomat",
-    base: "I bend without breaking and find a workable middle ground.",
+    base: "I mirror the needs of the environment to maintain momentum when a direct path is blocked.",
   },
   withdraw: {
     name: "The Watcher",
-    base: "I step back, observe, and protect my energy before acting.",
+    base: "I pull my signal from the room the moment it becomes noisy, preserving my internal alignment.",
   },
   perform: {
     name: "The Standard-Bearer",
-    base: "I raise my performance and refuse to let pressure lower my standards.",
+    base: "I increase my output when stakes are high, trading my health for the structural victory.",
   },
 };
 

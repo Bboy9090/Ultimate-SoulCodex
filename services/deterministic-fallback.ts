@@ -59,7 +59,7 @@ function extractCoreData(profile: any) {
     strengths: archData?.strengths || [],
     shadows: archData?.shadows || [],
     stressPattern: profile?.synthesis?.stressPattern || "",
-    coreEssence: profile?.synthesis?.coreEssence || "",
+    myPattern: profile?.synthesis?.myPattern || "",
   };
 }
 
@@ -247,7 +247,7 @@ function biographyFallback(profile: any): FallbackResult {
   const bio = {
     codename: d.archetype,
     motto: "In alignment, I find my power.",
-    who_i_am: `I am a ${d.archetype}${d.sunSign ? ` with a ${d.sunSign} Sun` : ""}. I process reality through a lens of ${d.themes[0] || "clarity"}.`,
+    my_pattern: `I act through my ${d.archetype} signature, using my ${d.sunSign || "core"} drive to cut through noise and find what matters.`,
     how_i_move: `As a ${d.hdType || d.archetype}, I move best when I follow my internal signal${d.hdStrategy ? ` (${d.hdStrategy})` : ""}.`,
     what_i_wont_tolerate: "I refuse to be defined by external noise or misaligned expectations.",
     what_im_building: `I am constructing a life of ${d.themes[1] || "purpose"} and ${d.themes[2] || "alignment"}.`

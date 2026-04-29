@@ -446,14 +446,12 @@ export default function ProfilePage() {
   const { archetype, synthesis } = profile;
 
   // Strip legacy interpolation patterns from cached synthesis data
-  const cleanEssence = stripLegacyPatterns(synthesis.coreEssence ?? "");
+  const cleanPattern = stripLegacyPatterns(synthesis.myPattern ?? "");
   const cleanStress  = stripLegacyPatterns(synthesis.stressPattern ?? "");
 
   const whyNowValue = prescription
     ? prescription
-    : synthesis.growthEdges?.[0]
-      ? `Now is the time to ${synthesis.growthEdges[0].replace(/^you (should|need to|must)\s+/i, "").toLowerCase()}`
-      : "";
+    : synthesis.growthEdges?.[0] ?? "";
 
   const oneMoveValue = prescription2
     ? prescription2
@@ -461,10 +459,11 @@ export default function ProfilePage() {
 
   const snapshotCards = [
     {
-      label: "Who I Am",
-      value: firstSentence(cleanEssence),
-      accent: "#9D4EDD", // Cosmic Purple
-      bg: "rgba(26, 11, 46, 0.8)",
+      label: "My Pattern",
+      value: cleanPattern,
+      accent: "var(--sc-gold)", // Cosmic Gold
+      bg: "rgba(212, 168, 95, 0.08)",
+      featured: true,
     },
     {
       label: "What's Alive Now",
@@ -487,7 +486,7 @@ export default function ProfilePage() {
   ];
 
   // Deep-section text: strip the first sentence already shown in snapshot
-  const whoIAmDeep    = cleanBehavioralText(afterFirstSentence(cleanEssence) || cleanEssence);
+  const myPatternDeep = cleanBehavioralText(afterFirstSentence(cleanPattern) || cleanPattern);
   const stressDeep    = cleanBehavioralText(afterFirstSentence(cleanStress) || cleanStress);
   const relateDeep    = cleanBehavioralText(synthesis.relationshipPattern ?? "");
   const buildDeep     = cleanBehavioralText(synthesis.powerMode ?? "");
@@ -619,25 +618,32 @@ export default function ProfilePage() {
             style={{
               background: card.bg,
               borderRadius: "16px",
-              padding: "1.5rem 1.5rem",
+              padding: card.featured ? "2.5rem" : "1.5rem",
               border: `1px solid ${card.accent}30`,
               borderTop: `3px solid ${card.accent}`,
-              boxShadow: `0 8px 30px rgba(0,0,0,0.5), inset 0 0 20px ${card.accent}08`,
+              boxShadow: `0 8px 40px rgba(0,0,0,0.6), inset 0 0 30px ${card.accent}08`,
               display: "flex", flexDirection: "column",
-              backdropFilter: "blur(12px)"
+              backdropFilter: "blur(16px)",
+              gridColumn: card.featured ? "1 / -1" : "auto",
+              textAlign: card.featured ? "center" : "left",
             }}
           >
             <div style={{
-              fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase",
-              color: card.accent, fontWeight: 800, marginBottom: "0.75rem",
-              fontFamily: "var(--font-display)"
+              fontSize: card.featured ? "0.8rem" : "0.7rem", 
+              letterSpacing: "0.22em", textTransform: "uppercase",
+              color: card.accent, fontWeight: 800, marginBottom: card.featured ? "1.1rem" : "0.75rem",
+              fontFamily: "var(--font-display)",
+              opacity: 0.9
             }}>
               {card.label}
             </div>
             <p style={{
-              fontSize: "0.95rem", color: "#EAEAF5",
-              lineHeight: 1.65, margin: 0, fontWeight: 400,
-              fontFamily: "var(--font-sans)",
+              fontSize: card.featured ? "1.4rem" : "0.95rem", 
+              color: "var(--sc-ivory)",
+              lineHeight: 1.5, margin: 0, 
+              fontWeight: card.featured ? 500 : 400,
+              fontFamily: "var(--font-serif)",
+              fontStyle: card.featured ? "italic" : "normal",
             }}>
               {card.value}
             </p>
@@ -958,9 +964,9 @@ export default function ProfilePage() {
       {/* ── Deep sections ────────────────────────────────────────────────── */}
       <div className="stagger" style={{ position: "relative", zIndex: 1 }}>
 
-        <ProfileSection sectionKey="who" title="Who I Am">
+        <ProfileSection sectionKey="who" title="My Pattern">
           <p style={{ color: "var(--card-foreground)", lineHeight: 1.8, fontSize: "0.875rem" }}>
-            {whoIAmDeep}
+            {myPatternDeep}
           </p>
         </ProfileSection>
 

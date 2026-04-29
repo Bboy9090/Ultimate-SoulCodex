@@ -3,102 +3,92 @@ import { stressNotes } from "./elements";
 import { deriveMoralCode } from "./moral";
 
 const LIFE_PATH_DESC: Record<number, string> = {
-  1:  "I initiate. I move first and figure out the rest in motion.",
-  2:  "I hold things together — I see what others miss and fill the gaps.",
-  3:  "Expression is my engine. I think best by articulating.",
-  4:  "I build systems. Structure isn't a cage — it's how I create.",
-  5:  "I need movement and room to change direction. Stagnation is the real risk.",
-  6:  "I carry responsibility naturally, often more than I should.",
-  7:  "I need depth. Surface-level anything drains me fast.",
-  8:  "I'm built for impact at scale. Small games bore me.",
-  9:  "I contribute at the end of cycles — wrapping up what others started.",
-  11: "My sensitivity is precision. I pick up what others miss.",
-  22: "I think at a scale most people don't attempt.",
-  33: "I carry others' weight as if it were my own — that's both my gift and my cost.",
+  1:  "I clear paths by initiating immediately, even when the direction is unknown, often leaving unfinished logic behind.",
+  2:  "I fill the gaps in others' work before I'm asked, which keeps the group moving but drains my own energy reserves.",
+  3:  "I think through articulation and expression, sometimes committing to ideas before I've fully vetted them.",
+  4:  "I build systems when chaos arises, creating order that protects me but can feel rigid to those around me.",
+  5:  "I shift direction the moment stagnation sets in, preserving my autonomy at the cost of long-term stability.",
+  6:  "I carry responsibility for others' moods when things feel off, protecting the peace while ignoring my own capacity.",
+  7:  "I check out quietly when conversations stay surface-level, preserving my depth but creating distance from the room.",
+  8:  "I scale every project I touch, seeking impact so large it sometimes misses the human detail in the foundation.",
+  9:  "I extract wisdom at the end of cycles, wrapping up others' work while struggling to start anything of my own.",
+  11: "I pick up on micro-signals that others miss, reacting to tensions before they are even named by the room.",
+  22: "I build at a scale most won't attempt, sacrificing the small comforts of today for a structure that outlives me.",
+  33: "I absorb the weight of those around me, healing the collective while my own system is near a breaking point.",
 };
 
 const SOCIAL_ENERGY_DESC: Record<string, string> = {
-  steady:    "I show up consistently — people know what they get from me.",
-  bursts:    "I work in intense cycles and need recovery built in.",
-  sensitive: "I absorb my environment, which means I'm deliberate about where I put myself.",
+  steady:    "I show up with consistent predictability, stabilizing my circle even when my own internal signal is fluctuating.",
+  bursts:    "I operate in high-intensity cycles, giving everything until I hit a wall and vanish without warning.",
+  sensitive: "I monitor my environment for micro-shifts in energy, deciding where I stand based on the room's unspoken tension.",
 };
 
-function buildCoreEssence(s: SoulSignals, arc: Archetype, v: number): string {
-  const parts: string[] = [];
+function buildMyPattern(s: SoulSignals, arc: Archetype, v: number): string {
+  const name = s.seed || "I";
+  const nameRef = name !== "I" ? `${name}, I` : "I";
+  const variants: string[] = [];
 
   const sunVariants: Record<string, string[]> = {
     Aries: [
-      `My ${s.sunSign} sun drives me to move first and figure it out in motion.`,
-      `I operate on a short-fuse trigger. I don't wait for permission to start.`,
-      `The impulse to act is my primary signal. If I'm not moving, I'm not thinking.`
+      `${nameRef} move first when I feel a delay, figuring out the direction only after I'm already in motion.`,
+      `${nameRef} operate on a short-fuse trigger, initiating action the moment I detect hesitation in others.`,
+      `${nameRef} ignore the permission of others when an impulse hits, clearing a path that sometimes leaves the team behind.`
     ],
     Taurus: [
-      `My ${s.sunSign} nature is about the long-game. I build things that don't move.`,
-      `I prioritize stability over speed. I don't change direction unless the reason is physical.`,
-      `I move at the speed of stone. Once I've committed, the trajectory is locked.`
+      `${nameRef} anchor to the long-game when things get chaotic, refusing to move until the stability is guaranteed.`,
+      `${nameRef} prioritize the physical foundation over speed, holding my position even when the world demands change.`,
+      `${nameRef} move at the speed of stone, committing so deeply to a path that I struggle to pivot even when it's necessary.`
     ],
     Leo: [
-      `My ${s.sunSign} sun drives me to lead and be seen, but the cost is a constant need for external validation that I hide behind confidence.`,
-      `I operate with massive heart and intensity, but I crash spectacularly when I feel unappreciated or unseen.`,
-      `I am a natural sun, but I struggle to function in the shadows — I over-perform until I burn out.`
+      `${nameRef} lead with massive heart when I feel seen, but I crash and withdraw if my contribution goes unacknowledged.`,
+      `${nameRef} over-perform when the stakes are high, trading my internal peace for the external validation of the room.`,
+      `${nameRef} operate with intensity when I have an audience, but my function drops to zero when I'm forced to work in the shadows.`
     ],
     Virgo: [
-      `My ${s.sunSign} nature is about the details, but my cost is a loop of over-analysis that prevents me from ever feeling finished.`,
-      `I see the error in everything. My precision is my asset, but it makes the world feel noisy and broken when I can't fix it.`,
-      `I audit every move. I am accurate, but I miss the flow because I'm too busy mapping the structure.`
+      `${nameRef} audit every detail when I detect an error, falling into an analysis loop that prevents the project from ever feeling finished.`,
+      `${nameRef} see the gaps in everything I touch, fixing the structure but often missing the flow of the moment.`,
+      `${nameRef} map every move before I take it, choosing precision over momentum even when speed is the actual requirement.`
     ],
+    Scorpio: [
+      `${nameRef} monitor the hidden layers of the room, choosing my words so carefully that I sometimes miss the window to speak.`,
+      `${nameRef} go dark the moment I feel my privacy is invaded, protecting my signal at the cost of total isolation.`,
+      `${nameRef} wait for the real truth to surface, ignoring the surface-level noise until the actual signal reveals itself.`
+    ]
   };
 
   const lpVariants: Record<number, string[]> = {
     1: [
-      "I initiate. I move first and figure out the rest in motion.",
-      "I am the starting point. I don't look for a path; I clear one.",
-      "Independence is my primary driver. I don't wait for a consensus."
+      "I clear paths by initiating immediately, clearing a way that didn't exist two minutes ago.",
+      "I am the starting point, moving before the consensus is reached to avoid being trapped by others' fear.",
+      "I act the moment I see a target, ignoring the map to trust my internal navigation."
     ],
     4: [
-      "I build systems. Structure isn't a cage — it's how I create.",
-      "I need a foundation before I can see the roof. I don't trust hollow ideas.",
-      "I organize chaos until it has a logic I can scale."
+      "I build systems when chaos arises, creating a logic that I can scale even when the environment is hostile.",
+      "I demand a foundation before I can see the roof, refusing to move on hollow ideas that lack structural truth.",
+      "I organize the disorder around me until it follows a pattern I can control."
+    ],
+    7: [
+      "I check out quietly when things don’t go deeper — most people don’t even notice when I’m gone.",
+      "I disappear mid-conversation once I feel the energy drop, preserving my signal for something real.",
+      "I monitor the frequency of the room and vanish the moment it becomes predictable."
     ],
     9: [
-      "I contribute at the end of cycles — wrapping up what others started.",
-      "I see the exit before I see the entrance. I am built for completions.",
-      "I extract the wisdom from what's already finished."
+      "I extract wisdom at the end of cycles, wrapping up what others started so it doesn't stay broken.",
+      "I see the exit before I see the entrance, positioning myself to close what is no longer serving.",
+      "I finish the stories that others leave open, even when it costs me my own beginning."
     ]
   };
 
-  if (s.sunSign && s.moonSign && s.sunSign !== s.moonSign) {
-    parts.push(`My ${s.sunSign} sun shapes how I act. My ${s.moonSign} moon shapes what I feel and need.`);
-  } else if (s.sunSign) {
-    const sVar = sunVariants[s.sunSign] || [`My ${s.sunSign} nature runs through everything — how I work and what I protect.`];
-    parts.push(sVar[v % sVar.length]);
-  }
+  const sunPool = sunVariants[s.sunSign] || [`${nameRef} operate with my ${s.sunSign} signature, acting when my core trigger is hit.`];
+  const lpPool  = lpVariants[s.lifePath] || [LIFE_PATH_DESC[s.lifePath]];
 
-  const lpText = lpVariants[s.lifePath] || [LIFE_PATH_DESC[s.lifePath]];
-  if (lpText) {
-    parts.push(lpText[v % lpText.length] || lpText[0]);
-  }
+  // Pick ONE hit line (1-2 sentences max)
+  const sunLine = sunPool[v % sunPool.length];
+  const lpLine  = lpPool[v % lpPool.length];
 
-  const eText = SOCIAL_ENERGY_DESC[s.socialEnergy];
-  if (eText) parts.push(eText);
-
-  // Inject Archetype role for divergence
-  const roleHooks: Record<string, string[]> = {
-    Architect: [
-      "As an Architect, I prioritize the structural truth over the immediate feeling.",
-      "I am an Architect; I don't build until the logic is flawless.",
-      "My role as an Architect means I see the gaps in the foundation before I see the view."
-    ],
-    Explorer: [
-      "As an Explorer, I value the data of the unknown over the safety of the map.",
-      "I move as an Explorer—territory matters more to me than stability.",
-      "My nature is to keep the horizon moving; once a place is known, it becomes a cage."
-    ],
-  };
-  const rh = roleHooks[arc.role] || [`As a ${arc.role}, I naturally gravitate toward my core functions.`];
-  parts.push(rh[v % rh.length]);
-
-  return parts.join(" ");
+  // Logic: Return the sunLine if it's punchy, otherwise the lpLine. 
+  // We want ONE line that hits hard.
+  return sunLine.length > 50 ? sunLine : lpLine;
 }
 
 function buildStressPattern(s: SoulSignals, arc: Archetype, v: number): string {
@@ -106,29 +96,29 @@ function buildStressPattern(s: SoulSignals, arc: Archetype, v: number): string {
   
   const pressureVariants: Record<string, string[]> = {
     fight: [
-      "I push harder and confront whatever is in my way.",
-      "Pressure triggers my combat mode. I escalate until the obstacle breaks.",
-      "I don't retreat; I accelerate into the friction to end it faster."
+      "I push harder and confront the obstacle directly, escalating the tension until the blockage breaks.",
+      "I trigger combat mode the moment I feel restricted, accelerating into the friction to end the delay.",
+      "I don't retreat when cornered; I increase my intensity until the environment yields to my momentum."
     ],
     freeze: [
-      "I lock up and wait until I can think clearly.",
-      "My system pauses to prevent a catastrophic error. I go dark until I have a map.",
-      "I prioritize data over action when the environment is hostile. I wait."
+      "I lock my system when I can't see the exit, waiting in the silence until I have a map of the room.",
+      "I go dark when the signal gets too noisy, pausing all action to prevent a catastrophic error.",
+      "I prioritize observation over action when the environment is hostile, waiting for a clear vector before I move."
     ],
     adapt: [
-      "I shift strategy and find another angle fast.",
-      "I stop answering messages when things feel off. I tell myself I'm protecting my peace, but I'm actually just avoiding the confrontation.",
-      "I am highly adaptable, but I struggle to maintain a core identity—I sometimes forget who I was before the change."
+      "I shift my angle the moment a path is blocked, finding a new way around without stopping.",
+      "I stop answering messages when things feel misaligned, avoiding the confrontation while telling myself I'm protecting my peace.",
+      "I mirror the needs of the room when I'm under pressure, sometimes losing my own signal in the process."
     ],
     withdraw: [
-      "I pull back, protect my space, and recharge alone.",
-      "I vanish when the signal gets too noisy. My cost is isolation; I protect my peace until it becomes a cage.",
-      "I go dark. I read every message, but I don't respond until I've processed the energy, which can take days."
+      "I vanish when the signal gets too noisy, protecting my space at the cost of isolation.",
+      "I go dark when I'm overwhelmed, reading every message but refusing to respond until I've processed the energy.",
+      "I pull back into my inner chamber when I detect a threat, preferring the safety of silence over the risk of being seen."
     ],
     perform: [
-      "I raise my game and refuse to let the pressure win.",
-      "Chaos is my stage. I become sharper, but the cost is a massive crash once the lights go out.",
-      "I over-perform when stressed, but I stop taking care of my physical needs entirely during the crisis."
+      "I raise my game and act sharper when the lights are on, but I crash spectacularly once the crisis ends.",
+      "I treat chaos as a stage, over-performing until I've completely ignored my own physical requirements.",
+      "I become the hero when things go wrong, but I trade my long-term health for the immediate victory."
     ],
   };
 
@@ -141,32 +131,32 @@ function buildStressPattern(s: SoulSignals, arc: Archetype, v: number): string {
 function buildRelationshipPattern(s: SoulSignals, arc: Archetype, v: number): string {
   const social: Record<string, string[]> = {
     steady: [
-      "I show up consistently — people know what they get from me.",
-      "I value endurance over intensity. I am the through-line in my circle.",
-      "Reliability is my primary social currency. I don't vanish."
+      "I show up consistently, stabilizing my circle even when the environment is fluctuating.",
+      "I prioritize endurance over intensity, acting as the through-line in every group I join.",
+      "I build reliability over time, refusing to vanish even when the friction is high."
     ],
     bursts: [
-      "I connect intensely, then need space to recharge.",
-      "My social energy is a limited battery. I give everything, then go dark.",
-      "I am high-impact and low-frequency. I don't do 'medium' presence."
+      "I connect intensely and give everything, then I hit a wall and vanish to recharge in total isolation.",
+      "I operate in high-frequency pulses, bringing massive energy that I can't sustain for long.",
+      "I move in and out of people's lives, delivering my impact then withdrawing before I burn out."
     ],
     sensitive: [
-      "I absorb other people's energy, so I choose who I let in carefully.",
-      "I read the room before I speak. My filter is always on high-alert.",
-      "Environment is everything. If the energy is wrong, I can't function."
+      "I monitor other people's energy styles, choosing my circle based on who doesn't drain my battery.",
+      "I read the room before I speak, filtering my presence to match the unspoken tension.",
+      "I absorb the moods around me, so I protect my borders with extreme deliberation."
     ],
   };
 
   const decision: Record<string, string[]> = {
     gut: [
-      "I trust my gut in relationships and commit fast when it feels right.",
-      "I don't need a list of reasons. If the resonance is there, I'm in.",
-      "Logic is secondary to the immediate internal signal."
+      "I trust my internal signal and commit fast when the resonance is there, ignoring the logic to follow the heat.",
+      "I don't need a list of reasons to move; I act the moment the gut-feel hits.",
+      "I prioritize the immediate internal signal over the long-term data audit."
     ],
     analysis: [
-      "I weigh everything carefully before letting someone close.",
-      "I audit the history and the potential before I invest my heart.",
-      "I don't trust the first impression. I need to see the data over time."
+      "I audit the history of a person before I let them close, weighing the data against my long-term goals.",
+      "I monitor the potential and the risk before I invest my heart, choosing precision over impulse.",
+      "I don't trust the first impression; I wait until I have enough data to prove the logic holds up."
     ],
   };
 
@@ -188,22 +178,22 @@ function buildContradiction(s: SoulSignals, v: number): string {
   const st = s.mirrorProfile.shadowTrigger;
 
   if (ds.includes("Action") && es.includes("Solitude")) {
-    contradictions.push("I move with high-speed precision, but I need total isolation to decide where to point that momentum.");
+    contradictions.push("I move with high-speed precision when I'm active, but I check out completely to decide where that speed is even going.");
   }
   
   if (dr.includes("Peace") && st.includes("Authority")) {
-    contradictions.push("I crave sanctuary and quiet, yet I am the first to initiate a confrontation when my autonomy is threatened.");
+    contradictions.push("I crave sanctuary and quiet, yet I am the first to trigger a confrontation when my autonomy is threatened.");
   }
   
   if (dr.includes("Legacy") && es.includes("Integrity")) {
-    contradictions.push("I am built to create something massive, but I'll burn the whole project down if it lacks structural truth.");
+    contradictions.push("I build massive structures, but I'll burn the whole project down the moment it lacks structural truth.");
   }
 
   const general = [
-    "I want total freedom, yet I build rigid systems to protect my time.",
-    "I crave deep connection, but I cut people off the second they become predictable.",
-    "I prioritize the long-game, but I'm restless in the day-to-day execution.",
-    "I trust my intuition completely, yet I over-analyze the data until I'm paralyzed."
+    "I build rigid systems to protect my time, yet I claim I want total freedom from all restrictions.",
+    "I cut people off the second they become predictable, even as I claim I'm looking for deep connection.",
+    "I am restless in the day-to-day execution, even though I claim to be focused on the long-game.",
+    "I over-analyze the data until I'm paralyzed, even though I claim I trust my intuition completely."
   ];
   
   return contradictions.length > 0 ? contradictions[v % contradictions.length] : general[v % general.length];
@@ -213,18 +203,18 @@ function buildLifeConsequence(s: SoulSignals, v: number): string {
   const consequences: string[] = [];
   
   if (s.pressureStyle === "fight" && s.socialEnergy === "bursts") {
-    consequences.push("This is why people trust you quickly—but don't always stay once the intensity peaks.");
+    consequences.push("I gain trust quickly through intensity, but I lose it when I vanish to recover from the heat.");
   }
   
   if (s.pressureStyle === "withdraw" && s.decisionStyle === "analysis") {
-    consequences.push("This is why you outgrow environments faster than you expect; you've already mentally exited before you say goodbye.");
+    consequences.push("I mentally exit environments months before I actually leave, making my eventual departure feel sudden to everyone else.");
   }
 
   const general = [
-    "This is why you have fewer projects than everyone else—but the ones you finish define you.",
-    "This is why you get opportunities, but don't always hold onto them once the novelty fades.",
-    "This is why you feel like an outsider even in rooms you built yourself.",
-    "This is why you are the first person people call in a crisis, and the first they forget when things are calm."
+    "I finish fewer projects than others, but the ones I complete define the entire industry around me.",
+    "I attract opportunities through my signal, but I sabotage them once the novelty fades and the routine sets in.",
+    "I feel like an outsider even in the rooms I built myself, because I'm always looking for the next exit.",
+    "I am the first person people call in a crisis, but I am the first they forget when things become stable."
   ];
   
   return consequences.length > 0 ? consequences[v % consequences.length] : general[v % general.length];
@@ -234,20 +224,20 @@ function buildPatternInterruption(s: SoulSignals, v: number): string {
   const breaks: string[] = [];
   
   if (s.pressureStyle === "fight") {
-    breaks.push("The few times I choose precision over volume, it feels like I'm losing momentum—but the resistance vanishes instantly.");
-    breaks.push("I've tried to 'calm down' mid-conflict, but I usually just fall back into escalation once the stakes rise.");
+    breaks.push("The few times I choose precision over volume, the resistance vanishes—but it feels like I'm losing speed.");
+    breaks.push("I've tried to 'calm down' mid-conflict, but I fall back into escalation the moment I feel my power is ignored.");
   }
   
   if (s.pressureStyle === "withdraw") {
-    breaks.push("When I name the friction before I vanish, it feels exposed and dangerous—but the environment stabilizes faster than my silence ever could.");
-    breaks.push("The door only opens when I'm already exhausted from holding the silence.");
+    breaks.push("When I name the tension before I vanish, the environment stabilizes—but I feel exposed and dangerous.");
+    breaks.push("The door only opens for me when I'm already exhausted from holding the silence for so long.");
   }
 
   const general = [
-    "The loop only breaks when I act before the analysis feels 'safe'—which is never.",
-    "I've tried to respond faster, but the silence pulls me back in whenever I feel misaligned.",
-    "Everything stabilizes when I prioritize the immediate task over the long-term anxiety—but I only do this when I'm forced.",
-    "The friction dissolves when I choose direct clarity over the safety of silence, even if it feels like I'm breaking a rule."
+    "The loop only breaks when I act before the logic feels 'safe', which is a rule I rarely allow myself to break.",
+    "I've tried to respond faster, but the silence pulls me back in whenever I feel misaligned with the room.",
+    "I prioritize the immediate task over the long-term anxiety only when I'm forced, and then everything stabilizes.",
+    "I find clarity when I choose direct honesty over the safety of silence, even when it feels like a violation of my nature."
   ];
   
   return breaks.length > 0 ? breaks[v % breaks.length] : general[v % general.length];
@@ -258,7 +248,7 @@ function buildLoopSentence(s: SoulSignals, v: number): string {
   
   const loops: Record<string, string[]> = {
     fight: [
-      "I push early, hit resistance, and only win when I stop trying to out-volume the obstacle.",
+      "I push early, hit resistance, and only find the win when I stop trying to out-volume the obstacle.",
       "I escalate quickly, trigger pushback, and only find the exit when I choose precision over force."
     ],
     withdraw: [
@@ -277,47 +267,45 @@ function buildLoopSentence(s: SoulSignals, v: number): string {
 
 function buildPowerMode(s: SoulSignals): string {
   const goalMap: Record<string, string> = {
-    "build something":  "I'm driven to create something tangible that lasts.",
-    "build_something":  "I'm driven to create something tangible that lasts.",
-    "understand life":  "I need to figure out how things work at a deep level.",
-    "understand_life":  "I need to figure out how things work at a deep level.",
-    "help others":      "I feel most alive when I'm making someone else's life better.",
-    "help_others":      "I feel most alive when I'm making someone else's life better.",
-    "freedom":          "I need room to move — restrictions drain me.",
-    "influence":        "I want to shape how things go, not just participate.",
-    "stability":        "I build a foundation first, then expand from safety.",
+    "build something":  "I create tangible structures that outlast my presence.",
+    "build_something":  "I create tangible structures that outlast my presence.",
+    "understand life":  "I audit the deep logic of how things work to find the hidden patterns.",
+    "understand_life":  "I audit the deep logic of how things work to find the hidden patterns.",
+    "help others":      "I act as the medicine for those who have forgotten their own light.",
+    "help_others":      "I act as the medicine for those who have forgotten their own light.",
+    "freedom":          "I clear my schedule of all restrictions, preserving my autonomy at any cost.",
+    "influence":        "I shape the trajectory of projects so they follow my specific vision.",
+    "stability":        "I build a heavy foundation first, expanding only when the safety is absolute.",
   };
   const parts = s.goals.map((g) => goalMap[g.toLowerCase()] ?? g);
-  return parts.join(" ") || "I'm still discovering what I'm built to build.";
+  return parts.join(" ") || "I am currently discovering the specific architecture I was built to build.";
 }
 
 function buildGrowthEdges(s: SoulSignals): string[] {
   const edges: string[] = [];
   if (s.stressElement === "air")
-    edges.push("Slow down the mental loops — not every thought needs action.");
+    edges.push("My mental loops accelerate under pressure, often creating a noise floor that hides the actual solution.");
   if (s.stressElement === "fire")
-    edges.push("Channel the anger before it burns a bridge you need.");
+    edges.push("My intensity triggers a heat response that can burn through bridges before I've even decided I want to cross them.");
   if (s.stressElement === "water")
-    edges.push("Let the wave pass before you make a decision from the flood.");
+    edges.push("I absorb the emotional frequency of the room, which can flood my system and drown out my own logical signal.");
   if (s.stressElement === "earth")
-    edges.push("Stubbornness is not the same as strength — learn when to bend.");
+    edges.push("I anchor so deeply to my current position that I can mistake rigidity for strength, even when the environment has shifted.");
   if (s.stressElement === "metal")
-    edges.push("Cutting people off feels safe, but it costs more than it saves.");
+    edges.push("I cut ties the moment I feel a misalignment, protecting my border but often leaving me in a vacuum of my own making.");
 
   if (s.decisionStyle === "avoidance")
-    edges.push("Delaying a decision is still a decision — own it.");
+    edges.push("I treat the delay of a decision as a safety mechanism, even when the inaction is creating more risk than the choice.");
   if (s.decisionStyle === "impulse")
-    edges.push("Speed is your asset, but a two-minute pause won't kill momentum.");
+    edges.push("I prioritize momentum over accuracy, moving fast to outrun the anxiety of the unknown.");
 
   if (s.socialEnergy === "sensitive")
-    edges.push("Other people's moods are data, not your responsibility.");
+    edges.push("I carry the unspoken weight of others' moods, acting as a mirror for the room until my own battery is depleted.");
   if (s.socialEnergy === "bursts")
-    edges.push("Warn people when you need space instead of vanishing.");
+    edges.push("I vanish without a signal when my energy drops, leaving others to interpret my silence as a statement.");
 
-  if (edges.length === 0)
-    edges.push("Keep testing the edges of what you think you can handle.");
-
-  return edges;
+  // Deduplicate and filter
+  return Array.from(new Set(edges)).slice(0, 3);
 }
 
 export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesis {
@@ -330,9 +318,9 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
   }
   const vIdx = Math.abs(hash) % 3; // 0, 1, or 2
 
-  return {
+  const syn: Synthesis = {
     codename:            `${archetype.name.split(' ')[0]} ${archetype.role}`,
-    coreEssence:         buildCoreEssence(signals, archetype, vIdx),
+    myPattern:           buildMyPattern(signals, archetype, vIdx),
     stressPattern:       buildStressPattern(signals, archetype, vIdx),
     relationshipPattern: buildRelationshipPattern(signals, archetype, vIdx),
     moralCode:           deriveMoralCode(signals.pressureStyle, signals.nonNegotiables),
@@ -343,4 +331,14 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
     patternInterruption: buildPatternInterruption(signals, vIdx),
     loopSentence:        buildLoopSentence(signals, vIdx),
   };
+
+  // Final deduplication check across semantic groups
+  const lines = [syn.myPattern, syn.stressPattern, syn.relationshipPattern, syn.contradiction];
+  const unique = Array.from(new Set(lines));
+  if (unique.length < lines.length) {
+    // If we have a direct duplicate, adjust the seed slightly and retry once
+    return synthesize({ ...signals, seed: signals.seed + "1" }, archetype);
+  }
+
+  return syn;
 }
