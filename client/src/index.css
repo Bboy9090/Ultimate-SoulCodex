@@ -1436,11 +1436,8 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     justify-content: center;
   }
 }
-<<<<<<< Updated upstream
 /* Onboarding Option Button */
-=======
 
->>>>>>> Stashed changes
 .onboarding-option-btn {
   display: block;
   width: 100%;
@@ -1450,27 +1447,18 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   border: 1px solid var(--glass-border);
   border-left: 3px solid transparent;
   border-radius: var(--radius);
-<<<<<<< Updated upstream
   cursor: pointer;
-=======
->>>>>>> Stashed changes
+
   transition: all 0.2s;
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-<<<<<<< Updated upstream
-}
-
-.onboarding-option-btn:disabled {
-  cursor: not-allowed;
-=======
-  cursor: pointer;
 }
 
 .onboarding-option-btn:disabled {
   cursor: not-allowed !important;
->>>>>>> Stashed changes
+
   opacity: 0.4;
 }
 
