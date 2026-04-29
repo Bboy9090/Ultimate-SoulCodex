@@ -141,30 +141,49 @@ export default function TodayPage() {
   const streak = useStreak();
   const profile = getProfile();
 
+  // 1. Initial load from persistence (Zero Lag)
+  useEffect(() => {
+    const cached = localStorage.getItem("soulTodayCard");
+    if (cached) {
+      try {
+        const { card: parsed } = JSON.parse(cached);
+        if (parsed) setCard(parsed);
+      } catch (e) {}
+    }
+  }, []);
+
   const cardMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const data = await apiRequest("/api/today/card", { method: "POST", body: JSON.stringify(payload) });
-      if (!data.ok) throw new Error(data.error ?? "Failed to build card");
-      return data.card as TodayCard;
+      const res = await apiRequest("/api/today/card", { method: "POST", body: JSON.stringify(payload) });
+      const data = res.card; // apiRequest now returns data directly
+      if (!data) throw new Error("Failed to build card");
+      return data as TodayCard;
     },
     onSuccess: (data) => {
       setCard(data);
-      try { localStorage.setItem("soulTodayCard", JSON.stringify({ card: data, ts: Date.now() })); } catch {}
+      localStorage.setItem("soulTodayCard", JSON.stringify({ card: data, ts: Date.now() }));
+      setError(null);
     },
-    onError: (err: any) => setError(err.message ?? "Unknown error"),
+    onError: (err: any) => {
+      if (!card) setError(err.message ?? "Unknown error");
+    },
   });
 
   useEffect(() => {
     const todayStr = new Date().toISOString().slice(0, 10);
-    try {
-      const raw = localStorage.getItem("soulTodayCard");
-      if (raw) {
-        const { card: cached, ts } = JSON.parse(raw);
-        if (cached?.date === todayStr && Date.now() - ts < 3600_000 * 4) { setCard(cached); return; }
+    // 2. Background Refresh if stale or missing
+    if (profile && !cardMutation.isPending) {
+      const cachedRaw = localStorage.getItem("soulTodayCard");
+      if (cachedRaw) {
+        const { card: cached, ts } = JSON.parse(cachedRaw);
+        if (cached?.date === todayStr && Date.now() - ts < 3600_000 * 4) {
+          // Already have today's card and it's fresh enough
+          return;
+        }
       }
-    } catch {}
-    loadCard();
-  }, []);
+      cardMutation.mutate({ profile });
+    }
+  }, [profile]);
 
   function loadCard() {
     const rawProfile = localStorage.getItem("soulProfile");
