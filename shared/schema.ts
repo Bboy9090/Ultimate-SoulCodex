@@ -5,8 +5,8 @@ import { sql as drizzleSql } from "drizzle-orm";
 // ── Drizzle tables (persistence-critical only) ────────────────────────────────
 
 export const profiles = pgTable("profiles", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").references(() => users.id),
+  id: text("id").primaryKey().default(drizzleSql`gen_random_uuid()`),
+  userId: text("user_id").references(() => users.id),
   sessionId: text("session_id"),
   name: text("name").notNull(),
   birthDate: text("birth_date").notNull(),
@@ -59,7 +59,7 @@ export const accessCodeRedemptions = pgTable("access_code_redemptions", {
 }));
 
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: text("id").primaryKey().default(drizzleSql`gen_random_uuid()`),
   appleId: text("apple_id").unique(),
   email: text("email"),
   firstName: text("first_name"),
@@ -76,7 +76,7 @@ export const users = pgTable("users", {
 }));
 
 export const localUsers = pgTable("local_users", {
-  id: uuid("id").primaryKey().references(() => users.id), // Links to users.id
+  id: text("id").primaryKey().references(() => users.id), // Links to users.id
   email: text("email").notNull(),
   passwordHash: text("password_hash").notNull(),
   passwordVersion: integer("password_version").notNull().default(1),
