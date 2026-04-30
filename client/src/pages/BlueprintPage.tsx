@@ -1,3 +1,6 @@
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
+import { apiFetch } from "../lib/queryClient";
 import { 
   IconReading, IconSun, IconMoon, IconRising, IconHexagon,
   IconSparkles, IconIdentity, IconMercury, IconChiron,

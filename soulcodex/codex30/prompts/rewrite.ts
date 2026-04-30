@@ -1,12 +1,19 @@
+import { VOICE_LAWS } from "./voice_laws";
+
 export function rewritePrompt(badText: string, anchors: string[]): string {
   return `
 Rewrite this reading to remove ALL vague, generic, or corporate self-help language.
+
+${VOICE_LAWS}
 
 MISSION: Convert this from a "to-do list" into a "blueprint of nature."
 
 Must:
 - IDENTITY OVER INSTRUCTION: Every sentence must answer "What kind of person is this?" NOT "What should this person do?". 
 - KILL CORPORATE PROSE: If it sounds like a LinkedIn post, delete it.
+- NO SOFTENERS: Remove "I tend to", "I feel", "sometimes". Use blunt declarations.
+- 12-WORD LIMIT: No sentence may exceed 12 words. Period.
+- NO COMMAS STACKING: One idea per sentence.
 - BANNED: "set goals", "measurable", "allocate time", "attend workshops", "detailed planner", "I will", "researching".
 - Add concrete details tied to these anchors (cite at least 6 of them).
 - Remove any vague spiritual filler (no "universe", "journey", "divine", "cosmic").

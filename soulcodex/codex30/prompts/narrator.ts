@@ -1,3 +1,5 @@
+import { VOICE_LAWS } from "./voice_laws";
+
 function sanitize(text: string | undefined): string {
   if (!text) return "";
   return text
@@ -19,7 +21,7 @@ export function narratorPrompt(payload: {
   anchors: string[];
   /** Optional: contradiction hint from the anti-generic engine */
   contradictionHint?: string;
-  /** Optional: behaviorally specific statements to weave in */
+  /** Optional: behavioral specific statements to weave in */
   behavioralStatements?: string[];
   /** Optional: life outcome consequence for memory layer */
   lifeConsequence?: string;
@@ -41,11 +43,7 @@ export function narratorPrompt(payload: {
 You are the final synthesis layer of Soul Codex.
 Your job is to expose a user's behavioral pattern with surgical accuracy, grounded realism, and zero system leakage.
 
-Every output must feel:
-- Specific
-- Clean
-- Internally consistent
-- Immediately recognizable as true
+${VOICE_LAWS}
 
 ---
 ## 🧬 IDENTITY RULES
@@ -58,6 +56,7 @@ NOT:
 - preferences ("I like", "I value")
 - vague traits ("I am thoughtful")
 - poetic filler
+- metaphors or spiritual jargon
 
 ---
 ## structure (Return ONLY valid JSON)
@@ -80,6 +79,8 @@ NOT:
 - NO system artifacts, raw variables, or symbols like "|".
 - NO duplicated sentences.
 - NO advice or "growth mindset" language.
+- NO interpretive narrators ("I think," "I feel," "I try").
+- NO "assistant" helpfulness. Be a mirror, not a guide.
 
 DATA for ${codename}:
 ${contradictionBlock}${behaviorBlock}${payload.lifeConsequence ? `\nLIFE CONSEQUENCE: ${sanitize(payload.lifeConsequence)}` : ""}${payload.patternInterruption ? `\nPATTERN INTERRUPTION: ${sanitize(payload.patternInterruption)}` : ""}${payload.loopSentence ? `\nLOOP SENTENCE: ${sanitize(payload.loopSentence)}` : ""}

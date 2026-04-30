@@ -9,7 +9,7 @@ import {
   IconStar, IconProfile, IconGuide, IconTracker, 
   IconTimeline, IconCodex, IconCompat, IconBlueprint, 
   IconMoon, IconSparkles, IconChevronRight, IconCircle,
-  IconArrowRight
+  IconArrowRight, IconSquare
 } from "../components/Icons";
 
 const FEATURES = [

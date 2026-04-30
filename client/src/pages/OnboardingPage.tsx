@@ -475,9 +475,9 @@ export default function OnboardingPage() {
           transition={{ delay: 0.5, duration: 0.8 }}
           style={{ maxWidth: "450px" }}
         >
-          <h1 className="heading-display" style={{ fontSize: "2.8rem", marginBottom: "1rem", lineHeight: 1.1 }}>Begin Your Journey</h1>
+          <h1 className="heading-display" style={{ fontSize: "2.8rem", marginBottom: "1rem", lineHeight: 1.1 }}>Audit Your Patterns</h1>
           <p style={{ color: "var(--muted-foreground)", fontSize: "1rem", lineHeight: 1.6, marginBottom: "3rem" }}>
-            Step into the Eternal Now. Map your soul blueprint and decode the patterns of your destiny.
+            Expose the loop. Map your behavioral blueprint and decode the costs of your instinctive reactions.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
@@ -646,10 +646,10 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
     <div>
       <div style={{ marginBottom: "1.75rem" }}>
         <h2 className="gradient-text" style={{ marginBottom: "0.4rem" }}>
-          Map your soul
+          Audit your architecture
         </h2>
         <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.6 }}>
-          Soul Codex turns astrology, numerology, Human Design, and behavioral pattern analysis into one clear reading about who you are, what season you're in, and what to do next.
+          Soul Codex synthesizes birth patterns and behavioral friction into one surgical analysis of your current loop and the immediate costs of your instinctive responses.
         </p>
       </div>
 
@@ -718,8 +718,8 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
         <p style={{ fontSize: "0.72rem", color: hasLocation ? "var(--cosmic-lavender)" : "var(--muted-foreground)", marginTop: "0.4rem", marginBottom: 0, opacity: hasLocation ? 1 : 0.65, transition: "color 0.2s" }}>
           {hasLocation ? <IconSparkles size={10} style={{ display: "inline", marginRight: 4 }} /> : <IconCircle size={10} style={{ display: "inline", marginRight: 4 }} />}
           {hasLocation
-            ? "Enables personalized transit calculations and relocation accuracy"
-            : "Unlocks personalized transits and relocation chart accuracy"}
+            ? "Enables personalized transit calculations and behavioral accuracy"
+            : "Required for transit calculations and specific behavioral mapping"}
         </p>
       </div>
     </div>

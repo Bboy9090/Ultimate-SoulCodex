@@ -270,8 +270,9 @@ export default function AdminPage() {
                     createMutation.mutate();
                   }} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-widest font-bold text-[#D4A85F] opacity-70">Custom Code (Optional)</label>
+                      <label htmlFor="custom-code" className="text-[10px] uppercase tracking-widest font-bold text-[#D4A85F] opacity-70">Custom Code (Optional)</label>
                       <input 
+                        id="custom-code"
                         type="text" 
                         value={newCode.code}
                         onChange={(e) => setNewCode({...newCode, code: e.target.value.toUpperCase()})}
@@ -280,8 +281,9 @@ export default function AdminPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-widest font-bold text-[#D4A85F] opacity-70">Max Uses</label>
+                      <label htmlFor="max-uses" className="text-[10px] uppercase tracking-widest font-bold text-[#D4A85F] opacity-70">Max Uses</label>
                       <input 
+                        id="max-uses"
                         type="number" 
                         value={newCode.maxUses}
                         onChange={(e) => setNewCode({...newCode, maxUses: parseInt(e.target.value)})}
@@ -348,8 +350,8 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
-                             <button className="p-2 hover:bg-white/10 rounded-lg transition-colors"><IconRefresh className="w-4 h-4 text-white/40" /></button>
-                            <button className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"><IconTrash className="w-4 h-4 text-white/40 group-hover:text-red-400" /></button>
+                             <button className="p-2 hover:bg-white/10 rounded-lg transition-colors" title="Refresh" aria-label="Refresh code"><IconRefresh className="w-4 h-4 text-white/40" /></button>
+                            <button className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group" title="Delete" aria-label="Delete code"><IconTrash className="w-4 h-4 text-white/40 group-hover:text-red-400" /></button>
                           </div>
                         </td>
                       </tr>
@@ -381,8 +383,9 @@ function AdminLogin({ onLogin, password, setPassword }: any) {
         
         <form onSubmit={onLogin} className="space-y-4 text-left">
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-widest font-bold text-[#D4A85F] opacity-70">Master Token</label>
+            <label htmlFor="master-token" className="text-[10px] uppercase tracking-widest font-bold text-[#D4A85F] opacity-70">Master Token</label>
             <input 
+              id="master-token"
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}

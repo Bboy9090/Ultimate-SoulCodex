@@ -12,7 +12,7 @@ import {
   IconStar, IconProfile, IconGuide, IconTracker, 
   IconTimeline, IconCodex, IconCompat, IconBlueprint, 
   IconMoon, IconIdentity, IconSparkles, IconChevronDown,
-  IconReading, IconMail, IconArrowRight,
+  IconReading, IconMail, IconArrowRight, IconChevronRight,
   IconZodiacAries, IconZodiacTaurus, IconZodiacGemini, 
   IconZodiacCancer, IconZodiacLeo, IconZodiacVirgo, 
   IconZodiacLibra, IconZodiacScorpio, IconZodiacSagittarius, 
@@ -1238,6 +1238,7 @@ function AccountSettings({ user }: { user: any }) {
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="DELETE"
+                aria-label="Type DELETE to confirm account removal"
                 style={{
                   width: "100%",
                   padding: "0.6rem 0.75rem",
@@ -1287,6 +1288,7 @@ function AccountSettings({ user }: { user: any }) {
           <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid var(--glass-border)", textAlign: "center" }}>
             <button
               onClick={() => navigate("/admin")}
+              aria-label="Administrative System Access"
               style={{
                 fontSize: "0.65rem",
                 textTransform: "uppercase",
@@ -1318,7 +1320,7 @@ function AccountSettings({ user }: { user: any }) {
               fontSize: "0.85rem", color: "var(--foreground)", textDecoration: "none"
             }}>
               <span>Privacy Policy</span>
-              <IconChevronRight size={14} style={{ opacity: 0.4 }} />
+              <IconChevronRight size={14} style={{ opacity: 0.4 }} aria-hidden="true" />
             </a>
           </Link>
           <Link href="/terms">
@@ -1329,7 +1331,7 @@ function AccountSettings({ user }: { user: any }) {
               fontSize: "0.85rem", color: "var(--foreground)", textDecoration: "none"
             }}>
               <span>Terms of Service</span>
-              <IconChevronRight size={14} style={{ opacity: 0.4 }} />
+              <IconChevronRight size={14} style={{ opacity: 0.4 }} aria-hidden="true" />
             </a>
           </Link>
           <a href="mailto:support@soulcodex.app" style={{ 

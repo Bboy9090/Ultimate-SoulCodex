@@ -12,13 +12,23 @@ import { getCached, setCached } from "./ai-cache";
 import { deterministicFallback } from "./deterministic-fallback";
 import type { AIResponse, AIRequest, AIStreamRequest, AIStatus, AIProvider } from "../src/types/ai";
 
+import { scoreOutput } from "../soulcodex/codex30/synth/quality";
+
 /**
- * FINAL OUTPUT FIREWALL — Zero tolerance for system leakage.
- * If the output contains ANY raw signals, placeholders, or leakage tokens, it is REJECTED.
+ * FINAL OUTPUT FIREWALL — Zero tolerance for mid-tier content or system leakage.
+ * If the output score is below 7.5, it is REJECTED.
  */
 export function finalOutputGuard(text: string): string {
   if (!text) return "";
 
+  // 1. Scoring Firewall (Architecture over Patterns)
+  const score = scoreOutput(text);
+  if (!score.passed) {
+    console.warn(`[AI Firewall] Rejected output: Score ${score.total.toFixed(1)} < 7.5 threshold.`);
+    return "";
+  }
+
+  // 2. Leakage Patterns (Cleanup)
   const invalidPatterns = [
     /\|/g,                        // Raw signal pipes: |1221-12-12|
     /unknown/i,                   // System placeholders
@@ -28,12 +38,6 @@ export function finalOutputGuard(text: string): string {
     /[a-z]{1,3}\|/i,              // Specific leakage: hj|
     /raw variables/i,
     /placeholder text/i,
-    /I am someone who/i,
-    /I tend to/i,
-    /I try to/i,
-    /I aim to/i,
-    /I enjoy/i,
-    /I value/i,
   ];
 
   for (const pattern of invalidPatterns) {
@@ -42,21 +46,6 @@ export function finalOutputGuard(text: string): string {
       return "";
     }
   }
-
-  // Global Specificity Test: Reject generic descriptions
-  if (text.length > 50 && (
-    text.includes("I am thoughtful") || 
-    text.includes("I value harmony") || 
-    text.includes("I like to") ||
-    text.includes("I prefer") ||
-    text.includes("I am a person who")
-  )) {
-    console.warn("[AI Firewall] Generic identity detected. Blocking.");
-    return "";
-  }
-
-  // Length sanity: too short is usually a failure; too long might be a hallucination in synthesis
-  if (text.length < 10) return "";
 
   return text.trim();
 }

@@ -71,11 +71,12 @@ import { buildCompatibilityReportPdf } from "./server/compatibilityReportPdf";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
-import { isGeneric } from "./soulcodex/codex30/synth/quality";
+import { isGeneric, scoreOutput } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
 import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext } from "@soulcodex/core";
-import { routeAIRequest } from "./services/ai-router";
+import { VOICE_LAWS } from "./soulcodex/codex30/prompts/voice_laws";
+import { finalOutputGuard } from "./services/ai-router";
 
 
 // Utility function for consistent error responses
@@ -4021,7 +4022,7 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
             who_i_am: `I am a ${coreArchetype || "Soul"}. I process reality through a lens of ${themes[0]?.tag || "clarity"}.`,
             how_i_move: "I move best when I follow my internal signal and protect my focus.",
             what_i_wont_tolerate: "I refuse to be defined by external noise or misaligned expectations.",
-            what_im_building: "I am constructing a life of purpose and alignment."
+            what_im_building: "I am constructing a life of alignment and purpose."
           };
         }
         
@@ -4367,28 +4368,30 @@ ${historyPrompt}
 ${transit ? `- ACTIVE TRANSIT: ${transit}` : ""}
 
 ---
+${VOICE_LAWS}
+
+---
 ## 🧪 CORE DIRECTIVE
 - Write in FIRST PERSON (I/my/me).
 - Expose the behavioral loop today. Focus on what I DO, what others notice, and the observable loop.
 - CHECK FOR RECURRING LOOPS. If the same pattern is repeating from history, confront me directly. 
 - Tone: Escalation. Day 1 is observation. Day 3 is confrontation. Day 7 is declaration of choice.
-- No banned phrases (cosmic, divine, etc.).
-- No placeholders or unknown data.
+- No "I think," "I feel," "I try." Use direct verbs.
 
 ---
 ## OUTPUT FORMAT
-RECOGNITION: [One blunt, uncomfortable behavioral confession. 12 words max. No fluff.]
+RECOGNITION: [One blunt, uncomfortable behavioral confession. 12 words max.]
 MEMORY: [If repeating a pattern from history, call it out. Otherwise omit.]
 FOCUS: [One sentence exposing the core loop today.]
-TOMORROW: [Expose the tension for tomorrow. Example: "This pattern repeats tomorrow if I don't interrupt it today."]
+TOMORROW: [Expose the tension for tomorrow.]
 DO:
-- [behavioral build action 1]
-- [behavioral build action 2]
-- [behavioral build action 3]
+- [behavioral action 1]
+- [behavioral action 2]
+- [behavioral action 3]
 DONT:
-- [behavioral trap to avoid 1]
-- [behavioral trap to avoid 2]
-- [behavioral trap to avoid 3]
+- [trap to avoid 1]
+- [trap to avoid 2]
+- [trap to avoid 3]
 WATCHOUT:
 - [escalation trigger 1]
 - [escalation trigger 2]
@@ -4402,6 +4405,13 @@ DECISION: [behavioral decision rule for today]
   });
   const raw = aiResponse.content || "";
   if (!raw) return null;
+
+  // Final Quality Firewall
+  const score = scoreOutput(raw);
+  if (!score.passed) {
+    console.warn(`[TodayCardAI] Output score ${score.total.toFixed(1)} failed threshold. Rejecting AI card.`);
+    return null;
+  }
 
   try {
     const recognitionMatch = raw.match(/^RECOGNITION:\s*(.+)/m);
