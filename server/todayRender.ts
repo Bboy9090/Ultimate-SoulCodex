@@ -11,6 +11,8 @@ export interface TodayCardData {
   confidenceLabel: string;
   topTheme?: string;
   date: string;
+  tomorrowTension?: string;
+  memoryCallout?: string;
 }
 
 const DAY_DO: Record<number, string[]> = {

@@ -12,6 +12,49 @@ import { getCached, setCached } from "./ai-cache";
 import { deterministicFallback } from "./deterministic-fallback";
 import type { AIResponse, AIRequest, AIStreamRequest, AIStatus, AIProvider } from "../src/types/ai";
 
+/**
+ * FINAL OUTPUT FIREWALL — Zero tolerance for system leakage.
+ * If the output contains ANY raw signals, placeholders, or leakage tokens, it is REJECTED.
+ */
+export function finalOutputGuard(text: string): string {
+  if (!text) return "";
+
+  const invalidPatterns = [
+    /\|/g,                        // Raw signal pipes: |1221-12-12|
+    /unknown/i,                   // System placeholders
+    /chaos/i,                     // Leakage tokens
+    /fix/i,                       // Leakage tokens
+    /[0-9]{4}-[0-9]{2}-[0-9]{2}/, // Raw dates: 1221-12-12
+    /[a-z]{1,3}\|/i,              // Specific leakage: hj|
+    /raw variables/i,
+    /placeholder text/i,
+  ];
+
+  for (const pattern of invalidPatterns) {
+    if (pattern.test(text)) {
+      console.warn(`[AI Firewall] Rejected output due to pattern: ${pattern}`);
+      return "";
+    }
+  }
+
+  // Length sanity: too short is usually a failure; too long might be a hallucination in synthesis
+  if (text.length < 10) return "";
+
+  return text.trim();
+}
+
+/**
+ * Sanitizes input before it even reaches the AI.
+ */
+export function sanitizeInput(input: string): string {
+  if (!input) return "";
+  return input
+    .replace(/\|.*?\|/g, "")
+    .replace(/chaos+/gi, "")
+    .replace(/fix/gi, "")
+    .trim();
+}
+
 export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
   // Full prompt in cache key — truncated keys caused wrong cached answers for different users.
   const cacheKey = `${input.promptType}::${input.systemPrompt || ""}::${input.prompt}`;
@@ -28,12 +71,15 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
 
   const temperature = input.temperature ?? 0.7;
 
+  const sanitizedPrompt = sanitizeInput(input.prompt);
+  const sanitizedSystemPrompt = input.systemPrompt ? sanitizeInput(input.systemPrompt) : undefined;
+
   // 1. Try Gemini (Primary)
   if (isGeminiAvailable()) {
     try {
-      const fullPrompt = input.systemPrompt
-        ? `${input.systemPrompt}\n\n${input.prompt}`
-        : input.prompt;
+      const fullPrompt = sanitizedSystemPrompt
+        ? `${sanitizedSystemPrompt}\n\n${sanitizedPrompt}`
+        : sanitizedPrompt;
       
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Gemini timeout")), 8000)
@@ -45,13 +91,16 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
       ]) as string;
 
       if (text && text.trim().length > 20) {
-        setCached(cacheKey, text);
-        return {
-          status: "live",
-          provider: "gemini",
-          content: text,
-          meta: { promptType: input.promptType },
-        };
+        const guardedText = finalOutputGuard(text);
+        if (guardedText) {
+          setCached(cacheKey, guardedText);
+          return {
+            status: "live",
+            provider: "gemini",
+            content: guardedText,
+            meta: { promptType: input.promptType },
+          };
+        }
       }
     } catch (e) {
       console.warn("[AI Router] Gemini failed or timed out:", (e as Error).message);
@@ -67,24 +116,27 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
 
       const text = await Promise.race([
         generateTextGroq({
-          prompt: input.prompt,
-          systemPrompt: input.systemPrompt,
+          prompt: sanitizedPrompt,
+          systemPrompt: sanitizedSystemPrompt,
           temperature,
         }),
         timeoutPromise
       ]) as string;
 
       if (text && text.trim().length > 20) {
-        setCached(cacheKey, text);
-        return {
-          status: "backup",
-          provider: "groq",
-          content: text,
-          meta: {
-            promptType: input.promptType,
-            reason: "Primary provider unavailable",
-          },
-        };
+        const guardedText = finalOutputGuard(text);
+        if (guardedText) {
+          setCached(cacheKey, guardedText);
+          return {
+            status: "backup",
+            provider: "groq",
+            content: guardedText,
+            meta: {
+              promptType: input.promptType,
+              reason: "Primary provider unavailable",
+            },
+          };
+        }
       }
     } catch (e) {
       console.warn("[AI Router] Groq failed or timed out:", (e as Error).message);
@@ -100,24 +152,27 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
 
       const text = await Promise.race([
         generateTextOpenAI({
-          prompt: input.prompt,
-          systemPrompt: input.systemPrompt,
+          prompt: sanitizedPrompt,
+          systemPrompt: sanitizedSystemPrompt,
           temperature,
         }),
         timeoutPromise
       ]) as string;
 
       if (text && text.trim().length > 20) {
-        setCached(cacheKey, text);
-        return {
-          status: "backup",
-          provider: "openai",
-          content: text,
-          meta: {
-            promptType: input.promptType,
-            reason: "Multiple providers failed",
-          },
-        };
+        const guardedText = finalOutputGuard(text);
+        if (guardedText) {
+          setCached(cacheKey, guardedText);
+          return {
+            status: "backup",
+            provider: "openai",
+            content: guardedText,
+            meta: {
+              promptType: input.promptType,
+              reason: "Multiple providers failed",
+            },
+          };
+        }
       }
     } catch (e) {
       console.warn("[AI Router] OpenAI also failed or timed out:", (e as Error).message);
@@ -144,15 +199,18 @@ export async function routeAIRequest(input: AIRequest): Promise<AIResponse> {
 export async function* routeAIStream(
   input: AIStreamRequest
 ): AsyncGenerator<{ chunk: string; status: AIStatus; provider: AIProvider }> {
+  const sanitizedMessage = sanitizeInput(input.message);
+  const sanitizedSystemInstruction = input.systemInstruction ? sanitizeInput(input.systemInstruction) : undefined;
+
   if (isGeminiAvailable()) {
     try {
       const stream = geminiStreamChat({
-        systemInstruction: input.systemInstruction,
+        systemInstruction: sanitizedSystemInstruction,
         history: input.history.map((h) => ({
           role: h.role,
           parts: [{ text: h.content }],
         })),
-        message: input.message,
+        message: sanitizedMessage,
         temperature: input.temperature ?? 0.8,
       });
 

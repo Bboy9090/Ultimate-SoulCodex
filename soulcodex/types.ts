@@ -53,6 +53,7 @@ export interface Synthesis {
   myPattern: string;
   stressPattern: string;
   relationshipPattern: string;
+  recognitionMoment: string;
   moralCode: { name: string; notes: string };
   powerMode: string;
   growthEdges: string[];

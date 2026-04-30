@@ -214,21 +214,30 @@ async function generateAIHoroscope(
   const topAlignments = alignments.slice(0, 3).map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`).join(', ');
   const topTransits = personalTransits.slice(0, 3).map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`).join(', ');
 
-  const prompt = `Write a daily horoscope for ${name} (Sun in ${sunSign}, Moon in ${moonSign}).
+  const prompt = `
+You are the final synthesis layer of Soul Codex.
+Your job is to expose ${name}'s behavioral pattern today with surgical accuracy, grounded realism, and zero system leakage.
 
-Today's sky: ${topAlignments || 'no major alignments'}.
-Personal transits: ${topTransits || 'none exact today'}.
-Moon phase: ${moonPhase.phase} (${moonPhase.percentage}% illuminated).
-Personal day number: ${personalDayNumber}.
+Identity Data:
+- Sun in ${sunSign}, Moon in ${moonSign}
+- Today's sky: ${topAlignments || 'no major alignments'}
+- Personal transits: ${topTransits || 'none exact today'}
+- Moon phase: ${moonPhase.phase}
+- Personal day number: ${personalDayNumber}
 
-RULES:
+CORE DIRECTIVE:
 - Write in FIRST PERSON (I/my/me) as if ${name} is reading their own inner voice.
-- Use behavioral, concrete language. Describe what I might feel, do, or notice today.
-- BANNED PHRASES (do NOT use): "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency", "holistic convergence", "incarnation", "celestial", "universe is telling you", "spiritual journey", "cosmic dance", "soul's evolution".
-- Include: one strength to lean into, one tension to watch, one practical action.
-- Keep it to 2-3 sentences. Direct and useful, not flowery.
+- Expose the behavioral loop today. Focus on what I DO, what others notice, and the observable loop.
+- One sentence for the loop, one for the pressure/stress response, one for a practical build pattern.
 
-Return only the horoscope text.`;
+🚫 HARD BLOCKS:
+- No "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency".
+- No advice or suggestions.
+- No placeholders or "unknown".
+- No poetic filler.
+
+Return ONLY the behavioral synthesis text (2-3 sentences).
+`;
 
   if (!isGeminiAvailable()) {
     return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);

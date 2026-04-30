@@ -393,6 +393,31 @@ export default function CodexReadingPage() {
           sections.map((sec, i) => {
             const accent = sec.header ? getSectionAccent(sec.header) : { color: "#D4A85F", glyph: "◈" };
             const isIdentity = i < 2;
+
+            // FRONTEND FIREWALL: Reject dirty narrative sections
+            const isValid = (text: string) => {
+              if (!text || text.length < 10) return false;
+              if (text.includes("|")) return false;
+              if (text.toLowerCase().includes("unknown")) return false;
+              if (text.toLowerCase().includes("chaos")) return false;
+              if (text.toLowerCase().includes("fix")) return false;
+              return true;
+            };
+
+            if (!isValid(sec.header) && !isValid(sec.lines.join(" "))) {
+              return (
+                <div key={i} style={{
+                  background: `rgba(26, 11, 46, 0.4)`,
+                  border: "1px solid rgba(157, 78, 221, 0.1)",
+                  borderRadius: "16px", padding: "1.6rem 1.75rem", marginBottom: "1.25rem",
+                }}>
+                  <div style={{ fontSize: "0.82rem", color: "rgba(234, 234, 245, 0.4)", fontStyle: "italic" }}>
+                    {sec.header || "Segment"} calibrating...
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={i} style={{
                 background: `rgba(26, 11, 46, 0.8)`,
@@ -439,6 +464,28 @@ export default function CodexReadingPage() {
             {/* MOTTO section — shown without fade */}
             {sections.filter(s => s.header.toUpperCase().startsWith("MOTTO")).map((sec, i) => {
               const accent = getSectionAccent(sec.header);
+
+              // FRONTEND FIREWALL: Reject dirty motto
+              const isValid = (text: string) => {
+                if (!text || text.length < 5) return false;
+                if (text.includes("|")) return false;
+                if (text.toLowerCase().includes("unknown")) return false;
+                return true;
+              };
+              if (!isValid(sec.header) && !isValid(sec.lines.join(" "))) {
+                return (
+                  <div key={`motto-${i}`} style={{
+                    background: `rgba(26, 11, 46, 0.4)`,
+                    border: "1px solid rgba(157, 78, 221, 0.1)",
+                    borderRadius: "16px", padding: "1.2rem 1.5rem", marginBottom: "1rem",
+                  }}>
+                    <div style={{ fontSize: "0.75rem", color: "rgba(234, 234, 245, 0.4)", fontStyle: "italic" }}>
+                      Signal stabilizing...
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={`motto-${i}`} style={{
                   background: `rgba(26, 11, 46, 0.8)`,
