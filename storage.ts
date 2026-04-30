@@ -41,6 +41,7 @@ export interface IStorage {
   migrateAccessCodeRedemptions(sessionId: string, userId: string): Promise<void>;
   
   getDailyInsight(profileId: string, date: string): Promise<DailyInsight | undefined>;
+  getDailyInsightsHistory(profileId: string, limit: number): Promise<DailyInsight[]>;
   createDailyInsight(insight: InsertDailyInsight): Promise<DailyInsight>;
   getRecentTemplateIds(profileId: string, days: number): Promise<string[]>;
   
@@ -429,6 +430,13 @@ export class MemStorage implements IStorage {
     return Array.from(this.dailyInsights.values()).find(
       (insight) => insight.profileId === profileId && insight.date === date,
     );
+  }
+
+  async getDailyInsightsHistory(profileId: string, limit: number): Promise<DailyInsight[]> {
+    return Array.from(this.dailyInsights.values())
+      .filter(insight => insight.profileId === profileId)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, limit);
   }
   
   async createDailyInsight(insertInsight: InsertDailyInsight): Promise<DailyInsight> {

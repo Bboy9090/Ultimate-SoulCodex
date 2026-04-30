@@ -1,7 +1,7 @@
 #!/bin/bash
 
-ICON_SRC="/Users/bj90-m1/.gemini/antigravity/brain/78da2679-a7a3-48c5-ba5d-f8403bf9dd81/soul_codex_app_icon_1777504248439.png"
-SPLASH_SRC="/Users/bj90-m1/.gemini/antigravity/brain/78da2679-a7a3-48c5-ba5d-f8403bf9dd81/soul_codex_splash_screen_1777504268781.png"
+ICON_SRC="icon.png"
+SPLASH_SRC="splash.png"
 
 ASSETS_DIR="ios/App/App/Assets.xcassets"
 ICON_SET="$ASSETS_DIR/AppIcon.appiconset"

@@ -419,7 +419,32 @@ export default function BlueprintPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
             {SECTION_META.map(s => {
               const text = cached.sections[s.key];
-              if (!text) return null;
+              
+              // FRONTEND FIREWALL: Zero tolerance for system leaks or placeholders
+              const isValid = (val: any) => {
+                if (!val || typeof val !== "string") return false;
+                if (val.includes("|")) return false;
+                if (val.toLowerCase().includes("unknown")) return false;
+                if (val.toLowerCase().includes("chaos")) return false;
+                if (val.toLowerCase().includes("fix")) return false;
+                if (val.length < 10) return false;
+                return true;
+              };
+
+              if (!isValid(text)) {
+                return (
+                  <div key={s.key} style={{ ...cardBase, padding: "1.4rem 1.6rem", opacity: 0.4 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.65rem", marginBottom: "0.85rem", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.8, lineHeight: 1 }}>{s.glyph}</span>
+                      <span style={{ ...goldHeading }}>{s.label}</span>
+                    </div>
+                    <div style={{ fontSize: "0.82rem", color: "rgba(234, 234, 245, 0.5)", fontStyle: "italic" }}>
+                      Pending Calibration: Signal stabilizing...
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={s.key} style={{ ...cardBase, padding: "1.4rem 1.6rem" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "0.65rem", marginBottom: "0.85rem", flexWrap: "wrap" }}>

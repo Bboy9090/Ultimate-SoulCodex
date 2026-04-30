@@ -9,6 +9,7 @@ interface TodayCard {
   codename: string;
   title: string;
   focus: string;
+  recognitionMoment: string;
   doList: string[];
   dontList: string[];
   watchouts: string[];
@@ -18,6 +19,8 @@ interface TodayCard {
   confidenceLabel: string;
   topTheme?: string;
   date: string;
+  tomorrowTension?: string;
+  memoryCallout?: string;
 }
 
 const MOON_GLYPHS: Record<string, string> = {
@@ -335,27 +338,70 @@ export default function TodayPage() {
           <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", color: "rgba(246,241,232,0.72)", fontSize: "0.82rem", marginBottom: "1.1rem", lineHeight: 1.55 }}>
             {archetypeTagline}
           </p>
-          {/* My Pattern - Hero Element */}
+          {/* Memory Callout - If repeating a pattern */}
+          {card.memoryCallout && (
+            <div style={{
+              marginBottom: "1.2rem",
+              padding: "1rem",
+              background: "rgba(239, 68, 68, 0.08)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              borderRadius: 12,
+              textAlign: "center"
+            }}>
+              <div style={{ fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "#ef4444", fontWeight: 700, marginBottom: "0.4rem" }}>Loop Detected ⚠</div>
+              <div style={{ fontSize: "0.85rem", color: "var(--sc-ivory)", fontWeight: 500, fontStyle: "italic" }}>
+                "{card.memoryCallout}"
+              </div>
+            </div>
+          )}
+
+          {/* Recognition Moment - Hero Element */}
           <div style={{ 
             marginTop: "1.2rem", 
             marginBottom: "1.5rem", 
-            padding: "1.2rem", 
-            background: "rgba(212,168,95,0.05)", 
-            border: "1px solid rgba(212,168,95,0.15)", 
-            borderRadius: 12,
-            textAlign: "center"
+            padding: "1.4rem", 
+            background: "linear-gradient(135deg, rgba(212,168,95,0.1), rgba(212,168,95,0.02))", 
+            border: "1px solid rgba(212,168,95,0.3)", 
+            borderRadius: 16,
+            textAlign: "center",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+            position: "relative"
           }}>
-            <div style={{ fontSize: "0.6rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 700, opacity: 0.8, marginBottom: "0.6rem" }}>My Pattern</div>
+            <div style={{ fontSize: "0.6rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 700, opacity: 0.8, marginBottom: "0.8rem" }}>Today's Recognition</div>
             <div style={{ 
               fontFamily: "var(--font-serif)", 
-              fontSize: "1.1rem", 
+              fontSize: "1.15rem", 
               color: "var(--sc-ivory)", 
-              lineHeight: 1.45,
+              lineHeight: 1.5,
               fontWeight: 500,
-              fontStyle: "italic"
+              fontStyle: "italic",
+              textShadow: "0 2px 10px rgba(0,0,0,0.5)"
             }}>
-              "{profile?.synthesis?.myPattern ?? (card.doList?.[0] ?? "—")}"
+              "{card.recognitionMoment || profile?.synthesis?.myPattern || (card.doList?.[0] ?? "—")}"
             </div>
+            
+            {/* Share Hook */}
+            <button 
+              className="btn btn-ghost" 
+              style={{ 
+                marginTop: "1rem", 
+                fontSize: "0.65rem", 
+                padding: "0.3rem 0.6rem", 
+                opacity: 0.6,
+                border: "1px solid rgba(212,168,95,0.2)"
+              }}
+              onClick={() => {
+                const text = `Soul Codex: "${card.recognitionMoment}"`;
+                if (navigator.share) {
+                  navigator.share({ title: "My Soul Codex Recognition", text }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(text);
+                  alert("Copied realization to clipboard");
+                }
+              }}
+            >
+              ✦ Share Realization
+            </button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem 1rem" }}>
@@ -397,6 +443,23 @@ export default function TodayPage() {
           <p style={{ fontSize: "0.8rem", color: "rgba(246,241,232,0.75)", lineHeight: 1.6, marginBottom: "1.1rem" }}>
             {card.focus}
           </p>
+
+          {/* Tomorrow Tension Hook */}
+          {card.tomorrowTension && (
+            <div style={{
+              marginTop: "1rem",
+              marginBottom: "1.1rem",
+              padding: "0.8rem",
+              background: "rgba(255, 215, 0, 0.04)",
+              border: "1px solid rgba(255, 215, 0, 0.15)",
+              borderRadius: 10,
+            }}>
+              <div style={{ fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 700, opacity: 0.8, marginBottom: "0.3rem" }}>Tomorrow Depends On Today</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--sc-ivory)", opacity: 0.8, fontStyle: "italic", lineHeight: 1.45 }}>
+                {card.tomorrowTension}
+              </div>
+            </div>
+          )}
           <button
             className="btn btn-secondary"
             style={{ width: "100%", fontSize: "0.75rem", padding: "0.5rem" }}

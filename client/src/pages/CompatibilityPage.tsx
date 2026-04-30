@@ -682,11 +682,57 @@ export default function CompatibilityPage() {
                     )}
 
                     {result.friction.length > 0 && (
-                      <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)", borderLeft: "3px solid #f59e0b", borderRadius: "12px", padding: "1.1rem 1.25rem" }}>
+                      <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)", borderLeft: "3px solid #f59e0b", borderRadius: "12px", padding: "1.1rem 1.25rem", marginBottom: "1.5rem" }}>
                         <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#f59e0b", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700 }}>▪ Watch Points</p>
                         {result.friction.map((f, i) => <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.28rem", lineHeight: 1.65 }}><span style={{ color: "#f59e0b", marginRight: "0.4rem" }}>⚠</span>{f}</p>)}
                       </div>
                     )}
+
+                    {/* ── RELATIONSHIP AUTOPSY (PREMIUM) ── */}
+                    <div style={{
+                      background: "rgba(20, 10, 35, 0.6)",
+                      border: "1px solid rgba(157, 78, 221, 0.25)",
+                      borderRadius: "16px",
+                      padding: "1.5rem",
+                      textAlign: "center",
+                      position: "relative",
+                      overflow: "hidden"
+                    }}>
+                      <div style={{
+                        position: "absolute", top: 0, left: 0, right: 0, height: "4px",
+                        background: "linear-gradient(90deg, #9D4EDD, #C77DFF)"
+                      }} />
+                      
+                      <h4 style={{
+                        fontFamily: "var(--font-serif)", color: "#C77DFF",
+                        fontSize: "1rem", letterSpacing: "0.05em", marginBottom: "0.75rem",
+                        textTransform: "uppercase"
+                      }}>
+                        Relationship Autopsy
+                      </h4>
+                      
+                      <div style={{ opacity: 0.3, filter: "blur(4px)", pointerEvents: "none", userSelect: "none", marginBottom: "1.25rem" }}>
+                        <p style={{ fontSize: "0.85rem", fontStyle: "italic", color: "#EAEAF5", marginBottom: "0.5rem" }}>
+                          "You move fast emotionally. They don't. That's where it breaks."
+                        </p>
+                        <p style={{ fontSize: "0.8rem", color: "rgba(234, 234, 245, 0.6)" }}>
+                          This connection eventually stalls because you prioritize the target while they prioritize the safety of the map...
+                        </p>
+                      </div>
+
+                      <ScButton
+                        className="w-full"
+                        variant="secondary"
+                        style={{ borderColor: "#9D4EDD", color: "#C77DFF" }}
+                        onClick={() => window.location.href = "/profile"}
+                      >
+                        Unlock Surgical Autopsy ✦
+                      </ScButton>
+                      
+                      <p style={{ fontSize: "0.65rem", color: "rgba(157, 78, 221, 0.6)", marginTop: "0.75rem" }}>
+                        Expose the specific behavioral friction points that define your dynamic.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

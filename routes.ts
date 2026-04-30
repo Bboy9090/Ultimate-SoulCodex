@@ -48,6 +48,8 @@ import { getActiveTransmutationTechniques } from "./services/transmutation";
 import { calculateCongruenceScore } from "./services/congruence";
 import { registerChatRoutes } from "./routes/chat";
 import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, getMoodBasedPrompt } from "./services/journaling";
+import { finalOutputGuard, routeAIRequest } from "./services/ai-router";
+import { generateRelationshipAutopsy } from "./services/relationship-autopsy";
 import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
 import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
 import { generateProfilePDF, generateCompatibilityPDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
@@ -2285,6 +2287,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all compatibilities for a specific profile
+  app.post("/api/compatibility/autopsy", async (req, res) => {
+    try {
+      const { profile1Id, profile2Id } = req.body;
+      if (!profile1Id || !profile2Id) return res.status(400).json({ error: "IDs required" });
+
+      const [p1, p2] = await Promise.all([
+        storage.getProfile(profile1Id),
+        storage.getProfile(profile2Id)
+      ]);
+
+      if (!p1 || !p2) return res.status(404).json({ error: "Profile not found" });
+
+      const autopsy = await generateRelationshipAutopsy(p1, p2);
+      res.json({ ok: true, autopsy });
+    } catch (error) {
+      return handleError(error, res, "RelationshipAutopsy");
+    }
+  });
+
   app.get("/api/compatibility/:profileId", async (req, res) => {
     try {
       const { profileId } = req.params;
@@ -3268,35 +3289,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return houseNum > 0 ? `${planet} in ${sign} (House ${houseNum})` : `${planet} in ${sign}`;
       }).join(", ");
 
-      const sectionPrompt = `You are the inner voice of a soul-profile system. Write behavioral, first-person, present-tense interpretations (2–3 sentences each) for each modality below about ${name}. Be specific, honest, and grounded — no vague affirmations, no spiritual clichés, no "you are powerful/special" filler. Write as if you already know how this person actually moves through the world.
+      const contextData = `
+User Profile:
+- Life Path: ${lpNum !== "unknown" ? `${lpNum} (${lpArchetype})` : "Omit"}
+- Sun: ${sun !== "unknown" ? sun : "Omit"}
+- Moon: ${moon !== "unknown" ? moon : "Omit"}
+- Rising: ${rising !== "unknown" ? rising : "Omit"}
+- Human Design: ${hdType !== "unknown" ? `${hdType} / ${hdAuth} / ${hdProf}` : "Omit"}
+- Enneagram: ${ennType !== "unknown" ? ennType : "Omit"}
+- Chiron: ${chirPl !== "unknown" ? chirPl : "Omit"}
+- Nodes: ${northN !== "unknown" ? `${northN} / ${southN}` : "Omit"}
+- Gene Keys: ${gkArr.length > 0 ? gkArr.join(", ") : "Omit"}
+- Planetary Summary: ${planetSummary || "Omit"}
+`;
 
-Profile data:
-- Life Path ${lpNum} — ${lpArchetype}
-- Sun: ${sun}
-- Moon: ${moon}
-- Rising: ${rising}
-- Human Design: ${hdType} / ${hdAuth} Authority / ${hdProf} Profile
-- Chiron: ${chirPl}
-- North Node: ${northN}, South Node: ${southN}
-- Enneagram: Type ${ennType}
-- Gene Keys highlighted: ${gkArr.join(", ") || "not specified"}
-- Planetary placements with houses: ${planetSummary || "not specified"}
+      const sectionPrompt = `
+You are the final synthesis layer of Soul Codex.
+Your job is to expose a user's behavioral pattern with surgical accuracy, grounded realism, and zero system leakage.
 
-Return ONLY valid JSON (no markdown fences) with these exact keys:
+Every output must feel:
+- Specific
+- Clean
+- Internally consistent
+- Immediately recognizable as true
+
+---
+## 🧬 IDENTITY RULES
+Identity must be:
+- Behavioral (what I DO)
+- Observable (what others could notice)
+- Pattern-based (repeated loop)
+
+NOT:
+- preferences ("I like", "I value")
+- vague traits ("I am thoughtful")
+- poetic filler
+
+---
+## structure (Return ONLY valid JSON)
 {
-  "lifePath": "...",
-  "sun": "...",
-  "moon": "...",
-  "rising": "...",
-  "humanDesign": "...",
-  "geneKeys": "...",
-  "enneagram": "...",
-  "planets": "...",
-  "chiron": "...",
-  "nodes": "...",
-  "lifeTheme": "..."
+  "lifePath": "I [behavior], then [reaction], and only stabilize when [pattern break].",
+  "sun": "behavioral description of solar drive",
+  "moon": "behavioral description of stress response (physical or fast)",
+  "rising": "behavioral description of social loop",
+  "humanDesign": "behavioral description of strategy/authority loop",
+  "geneKeys": "behavioral description of contemplative pattern",
+  "enneagram": "behavioral description of ego defense loop",
+  "planets": "behavioral description of environmental interaction",
+  "chiron": "behavioral description of escalation trigger",
+  "nodes": "behavioral description of trust/distance loop",
+  "lifeTheme": "ONE undeniable line that synthesizes the overarching pattern"
 }
-Each value: 2–3 sentences. First person. Behavioral. No banned phrases.`;
+
+---
+## 🧪 SANITIZATION & COMPLETENESS
+- No placeholders ("unknown", "N/A").
+- If data for a section is "Omit" → return an empty string "" for that key.
+- NO system artifacts, raw variables, or symbols like "|".
+- NO duplicated sentences.
+- NO advice or "growth mindset" language.
+
+Profile context for ${name}:
+${contextData}
+`;
 
       let sections: Record<string, string> = {};
 
@@ -3320,24 +3375,27 @@ Each value: 2–3 sentences. First person. Behavioral. No banned phrases.`;
         console.error("[blueprint] AI request failed:", err);
       }
 
-      // Fallback stubs when AI is unavailable or parse failed
-      const fallback = (key: string, label: string) =>
-        (typeof sections[key] === "string" && sections[key].trim())
-          ? sections[key]
-          : `My ${label} shapes how I move through the world in patterns I'm still learning to read.`;
+      // Fallback logic adhering to the COMPLETENESS RULE: Omit if data is missing or AI returned placeholder
+      const fallback = (key: string, val: any) => {
+        const text = sections[key];
+        if (typeof text === "string" && text.trim()) {
+          return finalOutputGuard(text); // Hard Guard: Return "" if invalid
+        }
+        return ""; // Omit entirely if missing
+      };
 
       sections = {
-        lifePath:    fallback("lifePath",    `Life Path ${lpNum}`),
-        sun:         fallback("sun",         `Sun in ${sun}`),
-        moon:        fallback("moon",        `Moon in ${moon}`),
-        rising:      fallback("rising",      `Rising ${rising}`),
-        humanDesign: fallback("humanDesign", `HD ${hdType}`),
-        geneKeys:    fallback("geneKeys",    "Gene Keys"),
-        enneagram:   fallback("enneagram",   `Enneagram Type ${ennType}`),
-        planets:     fallback("planets",     "Planetary Placements + Houses"),
-        chiron:      fallback("chiron",      `Chiron in ${chirPl}`),
-        nodes:       fallback("nodes",       `Nodes (${northN} / ${southN})`),
-        lifeTheme:   fallback("lifeTheme",   "Life Theme"),
+        lifePath:    fallback("lifePath", lpNum),
+        sun:         fallback("sun", sun),
+        moon:        fallback("moon", moon),
+        rising:      fallback("rising", rising),
+        humanDesign: fallback("humanDesign", hdType),
+        geneKeys:    fallback("geneKeys", "geneKeys"),
+        enneagram:   fallback("enneagram", ennType),
+        planets:     fallback("planets", "planets"),
+        chiron:      fallback("chiron", chirPl),
+        nodes:       fallback("nodes", "nodes"),
+        lifeTheme:   fallback("lifeTheme", "lifeTheme"),
       };
 
       return res.json({ ok: true, sections, meta: { sun, moon, rising, lpNum, lpArchetype, hdType, hdAuth, hdProf, chirPl, northN, southN, ennType } });
@@ -4250,6 +4308,24 @@ async function generateTodayCardAI(
   horoscopeData: any,
   codexSynthesis?: any
 ): Promise<Partial<import("./server/todayRender").TodayCardData> | null> {
+  const profileId = profile?.id ?? profile?.profileId;
+  let historyPrompt = "";
+  
+  if (profileId) {
+    try {
+      const history = await storage.getDailyInsightsHistory(profileId, 7);
+      if (history.length > 0) {
+        historyPrompt = "## RECENT BEHAVIORAL HISTORY\n" + 
+          history.map(h => {
+            const data = h.insightsData as any;
+            return `- ${h.date}: ${data.recognitionMoment || data.focus || ""}`;
+          }).join("\n") + "\n\n";
+      }
+    } catch (e) {
+      console.warn("[TodayCardAI] History fetch failed:", e);
+    }
+  }
+
   const dayNum   = base.personalDayNumber;
   const archDesc = DAY_ARCHETYPE[dayNum] ?? "focused work";
   const moon     = base.moonPhase;
@@ -4261,40 +4337,48 @@ async function generateTodayCardAI(
   const pressure = profile?.userInputs?.pressureStyle ?? profile?.signals?.pressureStyle ?? "";
   const transit  = horoscopeData?.personalTransits?.[0]?.description ?? "";
 
-  const prompt = `
-Write a personalized daily guidance card in first-person for someone with this profile:
+    const prompt = `
+You are the final synthesis layer of Soul Codex.
+Your job is to expose ${codename}'s behavioral pattern today with surgical accuracy, grounded realism, and zero system leakage.
 
-IDENTITY: ${codename}
-TOP THEMES: ${themes}
-PERSONAL DAY: ${dayNum} — ${archDesc}
-MOON PHASE: ${moon}
-DECISION STYLE: ${decide || "instinct"}
-PRESSURE STYLE: ${pressure || "adapt"}
-${transit ? `ACTIVE TRANSIT: ${transit}` : ""}
+---
+${historyPrompt}
+## 🧬 IDENTITY DATA
+- IDENTITY: ${codename}
+- TOP THEMES: ${themes}
+- PERSONAL DAY: ${dayNum} — ${archDesc}
+- MOON PHASE: ${moon}
+- DECISION STYLE: ${decide || "Omit"}
+- PRESSURE STYLE: ${pressure || "Omit"}
+${transit ? `- ACTIVE TRANSIT: ${transit}` : ""}
 
-RULES:
-- Everything must be first-person (I / my / me). Never "you" or "your".
-- No banned phrases: no "cosmic", "universe", "spiritual journey", "divine", "soul journey", "vibrational", "sacred".
-- Behavioral and grounded — what I DO, not what I AM.
-- Each DO/DONT item is one tight sentence (max 12 words).
-- WATCHOUT items name a specific behavioral risk, not a vague mood.
-- DECISION is 1–2 tight sentences specific to my decision style and day energy.
-- FOCUS is one sentence (max 20 words) capturing today's energy for me specifically.
+---
+## 🧪 CORE DIRECTIVE
+- Write in FIRST PERSON (I/my/me).
+- Expose the behavioral loop today. Focus on what I DO, what others notice, and the observable loop.
+- CHECK FOR RECURRING LOOPS. If the same pattern is repeating from history, confront me directly. 
+- Tone: Escalation. Day 1 is observation. Day 3 is confrontation. Day 7 is declaration of choice.
+- No banned phrases (cosmic, divine, etc.).
+- No placeholders or unknown data.
 
-OUTPUT FORMAT — use exactly these headers, nothing else:
-FOCUS: [sentence]
+---
+## OUTPUT FORMAT
+RECOGNITION: [One blunt, uncomfortable behavioral confession.]
+MEMORY: [If repeating a pattern from history, call it out. Otherwise omit.]
+FOCUS: [One sentence exposing the core loop today.]
+TOMORROW: [Expose the tension for tomorrow. Example: "This pattern repeats tomorrow if I don't interrupt it today."]
 DO:
-- [item]
-- [item]
-- [item]
+- [behavioral build action 1]
+- [behavioral build action 2]
+- [behavioral build action 3]
 DONT:
-- [item]
-- [item]
-- [item]
+- [behavioral trap to avoid 1]
+- [behavioral trap to avoid 2]
+- [behavioral trap to avoid 3]
 WATCHOUT:
-- [item]
-- [item]
-DECISION: [sentence or two]
+- [escalation trigger 1]
+- [escalation trigger 2]
+DECISION: [behavioral decision rule for today]
 `.trim();
 
   const aiResponse = await routeAIRequest({
@@ -4306,27 +4390,36 @@ DECISION: [sentence or two]
   if (!raw) return null;
 
   try {
-    const focusMatch   = raw.match(/^FOCUS:\s*(.+)/m);
-    const doMatch      = raw.match(/DO:\n((?:- .+\n?){1,5})/);
-    const dontMatch    = raw.match(/DONT:\n((?:- .+\n?){1,5})/);
-    const watchMatch   = raw.match(/WATCHOUT:\n((?:- .+\n?){1,4})/);
-    const decideMatch  = raw.match(/DECISION:\s*([\s\S]+?)(?:\n[A-Z]+:|$)/);
+    const recognitionMatch = raw.match(/^RECOGNITION:\s*(.+)/m);
+    const memoryMatch    = raw.match(/^MEMORY:\s*(.+)/m);
+    const focusMatch     = raw.match(/^FOCUS:\s*(.+)/m);
+    const tomorrowMatch  = raw.match(/^TOMORROW:\s*(.+)/m);
+    const doMatch        = raw.match(/DO:\n((?:- .+\n?){1,5})/);
+    const dontMatch      = raw.match(/DONT:\n((?:- .+\n?){1,5})/);
+    const watchMatch     = raw.match(/WATCHOUT:\n((?:- .+\n?){1,4})/);
+    const decideMatch    = raw.match(/DECISION:\s*([\s\S]+?)(?:\n[A-Z]+:|$)/);
 
     const parseList = (block: string | undefined) =>
       (block ?? "").split("\n")
         .map(l => l.replace(/^-\s*/, "").trim())
         .filter(Boolean);
 
+    const recognition = recognitionMatch?.[1]?.trim() ?? "";
+    const memory      = memoryMatch?.[1]?.trim() ?? "";
+    const focus       = focusMatch?.[1]?.trim() ?? "";
+    const tomorrow    = tomorrowMatch?.[1]?.trim() ?? "";
     const doList      = parseList(doMatch?.[1]);
     const dontList    = parseList(dontMatch?.[1]);
     const watchouts   = parseList(watchMatch?.[1]);
     const decisionAdv = decideMatch?.[1]?.trim() ?? "";
-    const focus       = focusMatch?.[1]?.trim() ?? "";
 
     if (!focus || doList.length < 2 || dontList.length < 2) return null;
 
     return {
+      recognitionMoment: recognition,
+      memoryCallout: memory,
       focus,
+      tomorrowTension: tomorrow,
       doList:       doList.slice(0, 3),
       dontList:     dontList.slice(0, 3),
       watchouts:    watchouts.slice(0, 2),

@@ -59,7 +59,7 @@ function buildMyPattern(s: SoulSignals, arc: Archetype, v: number): string {
   const lpVariants: Record<number, string[]> = {
     1: [
       "I clear paths by initiating immediately, clearing a way that didn't exist two minutes ago.",
-      "I am the starting point, moving before the consensus is reached to avoid being trapped by others' fear.",
+      "I act as the starting point, moving before the consensus is reached to avoid being trapped by others' fear.",
       "I act the moment I see a target, ignoring the map to trust my internal navigation."
     ],
     4: [
@@ -192,7 +192,7 @@ function buildContradiction(s: SoulSignals, v: number): string {
   const general = [
     "I build rigid systems to protect my time, yet I claim I want total freedom from all restrictions.",
     "I cut people off the second they become predictable, even as I claim I'm looking for deep connection.",
-    "I am restless in the day-to-day execution, even though I claim to be focused on the long-game.",
+    "I default to restlessness in the day-to-day execution, even though I claim to be focused on the long-game.",
     "I over-analyze the data until I'm paralyzed, even though I claim I trust my intuition completely."
   ];
   
@@ -214,7 +214,7 @@ function buildLifeConsequence(s: SoulSignals, v: number): string {
     "I finish fewer projects than others, but the ones I complete define the entire industry around me.",
     "I attract opportunities through my signal, but I sabotage them once the novelty fades and the routine sets in.",
     "I feel like an outsider even in the rooms I built myself, because I'm always looking for the next exit.",
-    "I am the first person people call in a crisis, but I am the first they forget when things become stable."
+    "People call me first in a crisis, but they forget me first when things become stable."
   ];
   
   return consequences.length > 0 ? consequences[v % consequences.length] : general[v % general.length];
@@ -278,7 +278,7 @@ function buildPowerMode(s: SoulSignals): string {
     "stability":        "I build a heavy foundation first, expanding only when the safety is absolute.",
   };
   const parts = s.goals.map((g) => goalMap[g.toLowerCase()] ?? g);
-  return parts.join(" ") || "I am currently discovering the specific architecture I was built to build.";
+  return parts.join(" ") || "I discover the specific architecture I was built to build.";
 }
 
 function buildGrowthEdges(s: SoulSignals): string[] {
@@ -308,6 +308,39 @@ function buildGrowthEdges(s: SoulSignals): string[] {
   return Array.from(new Set(edges)).slice(0, 3);
 }
 
+function buildRecognitionMoment(s: SoulSignals, v: number): string {
+  const recognitionPool: Record<string, string[]> = {
+    fight: [
+      "I prioritize winning the argument over resolving the tension, even when I know I'm wrong.",
+      "I escalate my intensity when I feel ignored, forcing others to react to my volume rather than my logic.",
+      "I treat every delay as a personal restriction and react with immediate, sometimes unnecessary, force."
+    ],
+    withdraw: [
+      "I read every message but refuse to respond when I don't have the energy to perform the expected personality.",
+      "I go dark the moment I feel my autonomy is threatened, leaving others to deal with the silence I leave behind.",
+      "I mentally exit a room the moment it becomes predictable, checking out long before I actually leave."
+    ],
+    adapt: [
+      "I stop answering messages when things feel slightly misaligned, avoiding the confrontation while telling myself I'm protecting my peace.",
+      "I mirror the needs of the room so well that I lose my own signal, then I feel resentful that nobody knows the real me.",
+      "I delay direct honesty to keep the peace, then I'm surprised when the tension I've been hiding eventually explodes."
+    ],
+    freeze: [
+      "I lock my system when I can't see the perfect move, choosing the safety of paralysis over the risk of being seen as wrong.",
+      "I wait for the environment to shift for me instead of taking the initiative to clear my own path.",
+      "I hide in the details of a problem to avoid the actual decision that needs to be made."
+    ],
+    perform: [
+      "I over-perform my enthusiasm to hide how depleted I actually feel, trading my long-term energy for a temporary social win.",
+      "I become the 'hero' in a crisis so I don't have to address the quiet instability in my own foundation.",
+      "I trade my internal peace for external validation, choosing to look successful over actually being stable."
+    ]
+  };
+
+  const pool = recognitionPool[s.pressureStyle] || recognitionPool.adapt;
+  return pool[v % pool.length];
+}
+
 export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesis {
   // Deterministic variety key based on the unique seed (name)
   const seedStr = signals.seed + (signals.sunSign || "") + (signals.lifePath || 0);
@@ -323,6 +356,7 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
     myPattern:           buildMyPattern(signals, archetype, vIdx),
     stressPattern:       buildStressPattern(signals, archetype, vIdx),
     relationshipPattern: buildRelationshipPattern(signals, archetype, vIdx),
+    recognitionMoment:   buildRecognitionMoment(signals, vIdx),
     moralCode:           deriveMoralCode(signals.pressureStyle, signals.nonNegotiables),
     powerMode:           buildPowerMode(signals),
     growthEdges:         buildGrowthEdges(signals),
