@@ -566,15 +566,26 @@ export default function ProfilePage() {
           display: "flex", gap: "0.5rem", justifyContent: "center",
           flexWrap: "wrap", marginBottom: "0.85rem",
         }}>
-          <span style={{
-            display: "inline-block", padding: "0.4rem 1.2rem",
-            background: "rgba(26, 11, 46, 0.8)", border: "1px solid rgba(157,78,221,0.5)",
-            borderRadius: 9999, fontSize: "0.75rem", fontWeight: 700,
-            color: "#E0CCFF", letterSpacing: "0.15em", textTransform: "uppercase",
-            boxShadow: "0 0 20px rgba(157,78,221,0.2)"
-          }}>
-            {archetype.element} · {archetype.role}
-          </span>
+          {(archetype.element?.toLowerCase().includes("unknown") || archetype.role?.toLowerCase().includes("unknown")) ? (
+            <span style={{
+              display: "inline-block", padding: "0.4rem 1.2rem",
+              background: "rgba(26, 11, 46, 0.4)", border: "1px solid rgba(157,78,221,0.2)",
+              borderRadius: 9999, fontSize: "0.75rem", fontWeight: 700,
+              color: "rgba(224, 204, 255, 0.4)", letterSpacing: "0.15em", textTransform: "uppercase",
+            }}>
+              Calibrating Modalities...
+            </span>
+          ) : (
+            <span style={{
+              display: "inline-block", padding: "0.4rem 1.2rem",
+              background: "rgba(26, 11, 46, 0.8)", border: "1px solid rgba(157,78,221,0.5)",
+              borderRadius: 9999, fontSize: "0.75rem", fontWeight: 700,
+              color: "#E0CCFF", letterSpacing: "0.15em", textTransform: "uppercase",
+              boxShadow: "0 0 20px rgba(157,78,221,0.2)"
+            }}>
+              {archetype.element} · {archetype.role}
+            </span>
+          )}
           {confidence && (
             <ConfidenceBadge
               badge={confidence.badge}
@@ -612,43 +623,67 @@ export default function ProfilePage() {
         gap: "0.85rem", marginBottom: "2.5rem",
         position: "relative", zIndex: 1,
       }}>
-        {snapshotCards.map(card => (
-          <div
-            key={card.label}
-            style={{
-              background: card.bg,
-              borderRadius: "16px",
-              padding: card.featured ? "2.5rem" : "1.5rem",
-              border: `1px solid ${card.accent}30`,
-              borderTop: `3px solid ${card.accent}`,
-              boxShadow: `0 8px 40px rgba(0,0,0,0.6), inset 0 0 30px ${card.accent}08`,
-              display: "flex", flexDirection: "column",
-              backdropFilter: "blur(16px)",
-              gridColumn: card.featured ? "1 / -1" : "auto",
-              textAlign: card.featured ? "center" : "left",
-            }}
-          >
-            <div style={{
-              fontSize: card.featured ? "0.8rem" : "0.7rem", 
-              letterSpacing: "0.22em", textTransform: "uppercase",
-              color: card.accent, fontWeight: 800, marginBottom: card.featured ? "1.1rem" : "0.75rem",
-              fontFamily: "var(--font-display)",
-              opacity: 0.9
-            }}>
-              {card.label}
+        {snapshotCards.map(card => {
+          if (!card.value || card.value.toLowerCase().includes("unknown")) {
+            return (
+              <div
+                key={card.label}
+                style={{
+                  background: "rgba(26, 11, 46, 0.4)",
+                  borderRadius: "16px",
+                  padding: "1.5rem",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                  display: "flex", flexDirection: "column",
+                  opacity: 0.5,
+                }}
+              >
+                <div style={{ fontSize: "0.7rem", letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--sc-stone)", fontWeight: 800, marginBottom: "0.75rem" }}>
+                  {card.label}
+                </div>
+                <p style={{ fontSize: "0.85rem", color: "var(--sc-stone)", fontStyle: "italic", margin: 0 }}>
+                  Pending Calibration...
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div
+              key={card.label}
+              style={{
+                background: card.bg,
+                borderRadius: "16px",
+                padding: card.featured ? "2.5rem" : "1.5rem",
+                border: `1px solid ${card.accent}30`,
+                borderTop: `3px solid ${card.accent}`,
+                boxShadow: `0 8px 40px rgba(0,0,0,0.6), inset 0 0 30px ${card.accent}08`,
+                display: "flex", flexDirection: "column",
+                backdropFilter: "blur(16px)",
+                gridColumn: card.featured ? "1 / -1" : "auto",
+                textAlign: card.featured ? "center" : "left",
+              }}
+            >
+              <div style={{
+                fontSize: card.featured ? "0.8rem" : "0.7rem", 
+                letterSpacing: "0.22em", textTransform: "uppercase",
+                color: card.accent, fontWeight: 800, marginBottom: card.featured ? "1.1rem" : "0.75rem",
+                fontFamily: "var(--font-display)",
+                opacity: 0.9
+              }}>
+                {card.label}
+              </div>
+              <p style={{
+                fontSize: card.featured ? "1.4rem" : "0.95rem", 
+                color: "var(--sc-ivory)",
+                lineHeight: 1.5, margin: 0, 
+                fontWeight: card.featured ? 500 : 400,
+                fontFamily: "var(--font-serif)",
+                fontStyle: card.featured ? "italic" : "normal",
+              }}>
+                {card.value}
+              </p>
             </div>
-            <p style={{
-              fontSize: card.featured ? "1.4rem" : "0.95rem", 
-              color: "var(--sc-ivory)",
-              lineHeight: 1.5, margin: 0, 
-              fontWeight: card.featured ? 500 : 400,
-              fontFamily: "var(--font-serif)",
-              fontStyle: card.featured ? "italic" : "normal",
-            }}>
-              {card.value}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── Action buttons ───────────────────────────── */}
