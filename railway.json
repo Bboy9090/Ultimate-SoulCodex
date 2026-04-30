@@ -6,6 +6,7 @@
   },
   "deploy": {
     "startCommand": null,
-    "healthcheckPath": "/health"
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 60
   }
 }

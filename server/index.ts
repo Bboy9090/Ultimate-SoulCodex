@@ -35,15 +35,14 @@ app.use((req, res, next) => {
 });
 
 
-// Parse JSON bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// Add /health endpoint for health checks (useful for Render and other platforms)
+// Add /health endpoint early for health checks
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Parse JSON bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 // Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
