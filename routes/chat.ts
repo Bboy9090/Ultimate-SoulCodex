@@ -56,8 +56,7 @@ export function registerChatRoutes(app: Express) {
       if (userId) {
         profile = await storage.getProfileByUserId(userId);
       } else if (sessionId) {
-        const profiles = await storage.getAllProfiles();
-        profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
+        profile = await storage.getProfileBySessionId(sessionId);
       }
 
       const hasProfileData = !!profile || !!profileContext;
@@ -171,8 +170,7 @@ export function registerChatRoutes(app: Express) {
         try { profile = await storage.getProfileByUserId(userId); } catch {}
       } else if (sessionId) {
         try {
-          const profiles = await storage.getAllProfiles();
-          profile = profiles.find((p: any) => (p as any).sessionId === sessionId);
+          profile = await storage.getProfileBySessionId(sessionId);
         } catch {}
       }
       

@@ -152,6 +152,8 @@ function calculateSignCompatibility(sign1: string, sign2: string): number {
     'Gemini': 'Mutable', 'Virgo': 'Mutable', 'Sagittarius': 'Mutable', 'Pisces': 'Mutable'
   };
 
+  if (!sign1 || !sign2 || sign1 === 'Unknown' || sign2 === 'Unknown') return 50;
+
   if (sign1 === sign2) return 100; // Same sign - deep understanding
 
   const element1 = elements[sign1];
@@ -416,7 +418,7 @@ function calculateCenterDynamics(centers1: any, centers2: any): number {
   const centerNames = ['head', 'ajna', 'throat', 'gCenter', 'heart', 'spleen', 'sacral', 'solarPlexus', 'root'];
 
   for (const center of centerNames) {
-    if (centers1[center] !== undefined && centers2[center] !== undefined) {
+    if (centers1[center] && centers2[center]) {
       totalCenters++;
       // Complementary: one defined, one undefined
       if (centers1[center].defined !== centers2[center].defined) {

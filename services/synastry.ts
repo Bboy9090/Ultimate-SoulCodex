@@ -125,7 +125,8 @@ function calculateOrbScore(baseScore: number, orb: number, maxOrb: number): numb
     return Math.round(baseScore * (1 - orb * 0.0125));
   } else {
     // Loose orb: 70-95% of base score
-    const orbRatio = (orb - 4) / (maxOrb - 4);
+    const orbDiff = maxOrb - 4;
+    const orbRatio = orbDiff > 0 ? (orb - 4) / orbDiff : 0;
     return Math.round(baseScore * (0.95 - orbRatio * 0.25));
   }
 }
