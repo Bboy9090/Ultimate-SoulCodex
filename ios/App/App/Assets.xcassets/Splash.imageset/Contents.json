@@ -1,31 +1,20 @@
 {
   "images" : [
     {
-      "filename" : "Default@2x~universal~anyany.png",
+      "filename" : "splash.png",
       "idiom" : "universal",
-      "scale" : "2x"
+      "scale" : "1x"
     },
     {
       "appearances" : [
         {
           "appearance" : "luminosity",
-          "value" : "dark"
+          "value" : "light"
         }
       ],
-      "filename" : "Default@3x~universal~anyany-dark.png",
+      "filename" : "splash1 2.png",
       "idiom" : "universal",
-      "scale" : "3x"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "Default@2x~universal~anyany-dark.png",
-      "idiom" : "universal",
-      "scale" : "2x"
+      "scale" : "1x"
     },
     {
       "appearances" : [
@@ -39,6 +28,38 @@
       "scale" : "1x"
     },
     {
+      "filename" : "Default@2x~universal~anyany.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "light"
+        }
+      ],
+      "filename" : "splash1 3.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Default@2x~universal~anyany-dark.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "splash1 1.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    },
+    {
       "appearances" : [
         {
           "appearance" : "luminosity",
@@ -46,6 +67,17 @@
         }
       ],
       "filename" : "Default@3x~universal~anyany.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Default@3x~universal~anyany-dark.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
