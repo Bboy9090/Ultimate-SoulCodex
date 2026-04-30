@@ -6,7 +6,12 @@ import { Capacitor } from "@capacitor/core";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { Link } from "wouter";
 import CodexSkeleton from "@/components/CodexSkeleton";
-import { IconStar, IconProfile, IconGuide, IconTracker, IconTimeline, IconCodex, IconCompat, IconBlueprint, IconMoon, IconBack } from "../components/Icons";
+import { 
+  IconStar, IconProfile, IconGuide, IconTracker, IconTimeline, 
+  IconCodex, IconCompat, IconBlueprint, IconMoon, IconBack,
+  IconSparkles, IconIdentity, IconAlert, IconDiamond, IconArrowRight,
+  IconLock, IconCheck, IconSquare
+} from "../components/Icons";
 
 interface ThemeScore {
   tag: string;
@@ -98,8 +103,8 @@ function displayTheme(tag: string): string {
 
 const CODEX_FALLBACK_TEMPLATE: CodexSynthesis = {
   codename: "ARCHITECT",
-  archetype: "Unknown Archetype",
-  badges: { confidenceLabel: "Partial", reason: "AI generation offline" },
+  archetype: "The Silent Architect",
+  badges: { confidenceLabel: "High", reason: "Deterministic Behavioral Baseline" },
   topThemes: [
     { tag: "focus", score: 85 },
     { tag: "precision", score: 78 },
@@ -110,15 +115,15 @@ const CODEX_FALLBACK_TEMPLATE: CodexSynthesis = {
   triggers: ["Chaos", "Lack of clear intent", "Unverified claims"],
   prescriptions: ["Simplify the next step", "Audit the current state", "Build for scale"],
   narrative: `## 🧊 CORE ARCHITECTURE
-Your blueprint is built on clarity and structural integrity. You operate best when the rules are clear and the stakes are real.
+I build on clarity and structural integrity. I operate best when the rules are clear and the stakes are real.
 
-## 🧠 HOW YOU MOVE UNDER PRESSURE
-When stress spikes, you retreat into analysis. You stop moving to verify the foundation. This is your strength and your cage.
+## 🧠 HOW I MOVE UNDER PRESSURE
+When stress spikes, I retreat into analysis. I stop moving to verify the foundation. This is my strength and my cage.
 
-## ⚔️ WHAT YOU WON'T TOLERATE
-Lies, placeholders, and uncontrolled variables. You require truth to operate.
+## ⚔️ WHAT I WON'T TOLERATE
+Lies, placeholders, and uncontrolled variables. I require truth to operate.
 
-## 🏗️ WHAT YOU'RE BUILDING
+## 🏗️ WHAT I'M BUILDING
 A system that lasts. Not a moment, but a legacy.`,
   isPremium: false
 };
@@ -158,7 +163,7 @@ export default function CodexReadingPage() {
         if (!data || !data.synthesis) throw new Error("Empty synthesis");
         return data.synthesis as CodexSynthesis;
       } catch (err) {
-        if (import.meta.env.DEV) console.warn("[Codex] AI synthesis failed, using fallback:", err);
+        if (process.env.NODE_ENV === 'development') console.warn("[Codex] AI synthesis failed, using fallback:", err);
         return CODEX_FALLBACK_TEMPLATE;
       }
     },
@@ -805,6 +810,7 @@ export default function CodexReadingPage() {
       {/* ── Actions ──────────────────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center", paddingTop: "0.5rem" }}>
         {isPremium && (
+          <button className="btn btn-secondary" onClick={handleRegenerate} disabled={generateMutation.isPending} style={{ fontSize: "0.85rem" }}>
             {generateMutation.isPending ? "Regenerating…" : "Regenerate"}
           </button>
         )}

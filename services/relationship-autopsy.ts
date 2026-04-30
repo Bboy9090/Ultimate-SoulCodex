@@ -1,5 +1,7 @@
 import { Profile } from "../shared/schema";
 import { routeAIRequest, finalOutputGuard } from "./ai-router";
+import { scoreOutput } from "../soulcodex/codex30/synth/quality";
+import { VOICE_LAWS } from "../soulcodex/codex30/prompts/voice_laws";
 
 export async function generateRelationshipAutopsy(profile1: Profile, profile2: Profile) {
   const p1Signals = (profile1 as any).signals || {};
@@ -10,7 +12,7 @@ export async function generateRelationshipAutopsy(profile1: Profile, profile2: P
   
   const p1Data = `
 NAME: ${p1Name}
-IDENTITY: ${profile1.archetype?.name}
+IDENTITY: ${(profile1 as any).archetype?.name}
 PRESSURE: ${p1Signals.pressureStyle}
 ENERGY: ${p1Signals.socialEnergy}
 DECISION: ${p1Signals.decisionStyle}
@@ -18,7 +20,7 @@ DECISION: ${p1Signals.decisionStyle}
 
   const p2Data = `
 NAME: ${p2Name}
-IDENTITY: ${profile2.archetype?.name}
+IDENTITY: ${(profile2 as any).archetype?.name}
 PRESSURE: ${p2Signals.pressureStyle}
 ENERGY: ${p2Signals.socialEnergy}
 DECISION: ${p2Signals.decisionStyle}
@@ -27,6 +29,8 @@ DECISION: ${p2Signals.decisionStyle}
   const prompt = `
 You are the surgical relationship analyst for Soul Codex.
 Your job is to perform a RELATIONSHIP AUTOPSY between two people.
+
+${VOICE_LAWS}
 
 DO NOT give advice.
 DO NOT use cosmic/zodiac language.
@@ -45,8 +49,6 @@ ${p2Data}
 ---
 ## CORE DIRECTIVE
 Expose the specific behavioral friction. 
-Example: "You move fast emotionally. They don't. That's where it breaks."
-Example: "You expect consistency. They respond in bursts. That's the tension."
 
 Write in a direct, blunt, almost uncomfortable tone.
 
@@ -63,15 +65,27 @@ AUTOPSY: [Short paragraph exposing why this connection eventually breaks or stal
     temperature: 0.85
   });
 
+  // Tier B: Deterministic Behavioral Shot
+  const fallbackAutopsy = {
+    tension: `${(profile1 as any).archetype?.name || "One"} moves, ${(profile2 as any).archetype?.name || "the other"} watches.`,
+    frictionPoints: [
+      `${p1Name} pushes for immediate result. ${p2Name} stalls to verify state.`,
+      `Communication breaks when urgency hits. One retreats while the other escalates.`
+    ],
+    autopsy: `The connection is a loop of missed timing. ${p1Name} assumes momentum is progress. ${p2Name} assumes stillness is safety. Neither is correct. The friction is inevitable and constant.`
+  };
+
+  if (response.content) {
+    const score = scoreOutput(response.content);
+    if (!score.passed) {
+      console.warn(`[RelationshipAutopsy] Output score ${score.total.toFixed(1)} failed threshold. Using Tier B fallback.`);
+      return fallbackAutopsy;
+    }
+  }
+
   const raw = finalOutputGuard(response.content || "");
   
-  if (!raw) {
-    return {
-      tension: "Signal stabilizing...",
-      frictionPoints: ["Behavioral calibration in progress."],
-      autopsy: "The relationship autopsy is currently stabilizing as the behavioral signals align."
-    };
-  }
+  if (!raw) return fallbackAutopsy;
   
   const tensionMatch = raw.match(/^TENSION:\s*(.+)/m);
   const f1Match = raw.match(/^FRICTION_1:\s*(.+)/m);

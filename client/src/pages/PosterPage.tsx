@@ -30,10 +30,10 @@ const cardBase = {
   backdropFilter: "blur(20px)",
 } as const;
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, id, children }: { label: string; id: string; children: ReactNode }) {
   return (
     <div style={{ marginBottom: "0.75rem" }}>
-      <label style={{ display: "block", fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(246,241,232,0.5)", marginBottom: "0.3rem" }}>
+      <label htmlFor={id} style={{ display: "block", fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(246,241,232,0.5)", marginBottom: "0.3rem" }}>
         {label}
       </label>
       {children}
@@ -41,9 +41,9 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function SignSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SignSelect({ value, onChange, id }: { value: string; onChange: (v: string) => void; id?: string }) {
   return (
-    <select className="input" value={value} onChange={(e) => onChange(e.target.value)} style={{ padding: "0.55rem 0.75rem" }}>
+    <select id={id} className="input" value={value} onChange={(e) => onChange(e.target.value)} style={{ padding: "0.55rem 0.75rem" }}>
       <option value="">— none —</option>
       {ZODIAC_SIGNS.map((s) => <option key={s} value={s}>{s}</option>)}
     </select>
@@ -296,17 +296,17 @@ export default function PosterPage() {
         <div style={{ ...cardBase, padding: "1.25rem" }}>
           <SectionHeader>Chart Details</SectionHeader>
 
-          <Field label="Name">
-            <input className="input" value={data.name ?? ""} onChange={(e) => update("name", e.target.value)} placeholder="Your name" />
+          <Field label="Name" id="poster-name">
+            <input id="poster-name" className="input" value={data.name ?? ""} onChange={(e) => update("name", e.target.value)} placeholder="Your name" />
           </Field>
-          <Field label="Birth Date">
-            <input className="input" type="date" value={data.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
+          <Field label="Birth Date" id="poster-dob">
+            <input id="poster-dob" className="input" type="date" value={data.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
           </Field>
-          <Field label="Birth Time">
-            <input className="input" type="time" value={data.birthTime ?? ""} onChange={(e) => update("birthTime", e.target.value || undefined)} />
+          <Field label="Birth Time" id="poster-time">
+            <input id="poster-time" className="input" type="time" value={data.birthTime ?? ""} onChange={(e) => update("birthTime", e.target.value || undefined)} />
           </Field>
-          <Field label="Birth Location">
-            <input className="input" value={data.birthLocation ?? ""} onChange={(e) => update("birthLocation", e.target.value)} placeholder="City, Country" />
+          <Field label="Birth Location" id="poster-loc">
+            <input id="poster-loc" className="input" value={data.birthLocation ?? ""} onChange={(e) => update("birthLocation", e.target.value)} placeholder="City, Country" />
           </Field>
 
           <button
@@ -320,17 +320,17 @@ export default function PosterPage() {
           {computeError && <p style={{ color: "#ef4444", fontSize: "0.78rem", marginBottom: "0.5rem" }}>{computeError}</p>}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <Field label="Sun Sign"><SignSelect value={data.sunSign} onChange={(v) => update("sunSign", v)} /></Field>
-            <Field label="Moon Sign"><SignSelect value={data.moonSign} onChange={(v) => update("moonSign", v)} /></Field>
+            <Field label="Sun Sign" id="poster-sun"><SignSelect id="poster-sun" value={data.sunSign} onChange={(v) => update("sunSign", v)} /></Field>
+            <Field label="Moon Sign" id="poster-moon"><SignSelect id="poster-moon" value={data.moonSign} onChange={(v) => update("moonSign", v)} /></Field>
           </div>
-          <Field label="Rising Sign"><SignSelect value={data.risingSign ?? ""} onChange={(v) => update("risingSign", v || undefined)} /></Field>
+          <Field label="Rising Sign" id="poster-rising"><SignSelect id="poster-rising" value={data.risingSign ?? ""} onChange={(v) => update("risingSign", v || undefined)} /></Field>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "1rem" }}>
-            <Field label="Life Path">
-              <input className="input" type="number" min={1} max={33} value={data.lifePathNumber} onChange={(e) => update("lifePathNumber", parseInt(e.target.value) || 1)} />
+            <Field label="Life Path" id="poster-lp">
+              <input id="poster-lp" className="input" type="number" min={1} max={33} value={data.lifePathNumber} onChange={(e) => update("lifePathNumber", parseInt(e.target.value) || 1)} />
             </Field>
-            <Field label="Master #">
-              <select className="input" value={data.masterNumber ?? ""} onChange={(e) => update("masterNumber", e.target.value ? parseInt(e.target.value) : undefined)} style={{ padding: "0.55rem 0.75rem" }}>
+            <Field label="Master #" id="poster-master">
+              <select id="poster-master" className="input" value={data.masterNumber ?? ""} onChange={(e) => update("masterNumber", e.target.value ? parseInt(e.target.value) : undefined)} style={{ padding: "0.55rem 0.75rem" }}>
                 <option value="">None</option>
                 <option value="11">11</option>
                 <option value="22">22</option>
@@ -419,10 +419,14 @@ export default function PosterPage() {
         <div style={{ ...cardBase, padding: "1.5rem" }}>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "1px solid rgba(212,168,95,0.14)", paddingBottom: "0.75rem" }}>
+          <div role="tablist" style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "1px solid rgba(212,168,95,0.14)", paddingBottom: "0.75rem" }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`tabpanel-${tab.id}`}
+                id={`tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
                   padding: "0.4rem 1rem", borderRadius: 6, border: "none", cursor: "pointer",
@@ -439,7 +443,7 @@ export default function PosterPage() {
 
           {/* Planet Placements Tab */}
           {activeTab === "placements" && (
-            <div>
+            <div role="tabpanel" id="tabpanel-placements" aria-labelledby="tab-placements">
               <SectionHeader>Natal Placements</SectionHeader>
               {placementRows.length > 0 ? (
                 <div style={{ overflowX: "auto" }}>
@@ -475,7 +479,7 @@ export default function PosterPage() {
 
           {/* Aspects Tab */}
           {activeTab === "aspects" && (
-            <div>
+            <div role="tabpanel" id="tabpanel-aspects" aria-labelledby="tab-aspects">
               <SectionHeader>Natal Aspects</SectionHeader>
               {aspectRows.length > 0 ? (
                 <div style={{ overflowX: "auto" }}>
@@ -516,7 +520,7 @@ export default function PosterPage() {
 
           {/* Human Design Tab */}
           {activeTab === "hd" && (
-            <div>
+            <div role="tabpanel" id="tabpanel-hd" aria-labelledby="tab-hd">
               <SectionHeader>Human Design</SectionHeader>
               {profileHD?.type ? (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>

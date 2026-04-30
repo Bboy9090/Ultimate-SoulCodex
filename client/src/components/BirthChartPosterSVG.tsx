@@ -113,7 +113,8 @@ export default function BirthChartPosterSVG({
     /* ── FREE: clean white/light-gray chart ── */
     const segFills = ["#f4f6f8", "#eaecf0"];
     return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth:"100%", display:"block" }}>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth:"100%", display:"block" }} aria-labelledby="chart-title">
+        <title id="chart-title">Birth Chart for {nameText}</title>
         <defs>
           <path id="ringPath" d={ringCirclePath} />
         </defs>
@@ -249,7 +250,8 @@ export default function BirthChartPosterSVG({
   const segFills = ["rgba(5,35,40,0.88)", "rgba(3,22,28,0.92)"];
 
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth:"100%", display:"block" }}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxWidth:"100%", display:"block" }} aria-labelledby="chart-title-premium">
+      <title id="chart-title-premium">Premium Birth Chart for {nameText}</title>
       <defs>
         <radialGradient id="bg" cx="50%" cy="42%" r="65%">
           <stop offset="0%"   stopColor="#0c3038" />

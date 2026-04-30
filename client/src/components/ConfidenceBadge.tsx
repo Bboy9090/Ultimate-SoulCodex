@@ -66,6 +66,9 @@ export default function ConfidenceBadge({
     <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: "0.3rem" }}>
       <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
         <span
+          role="status"
+          tabIndex={0}
+          aria-label={`Confidence level: ${label ?? cfg.label}. ${reason || cfg.tooltip}`}
           style={{
             display: "inline-flex", alignItems: "center", gap: "0.32rem",
             background: cfg.bg, border: `1px solid ${cfg.border}`,
@@ -76,6 +79,12 @@ export default function ConfidenceBadge({
           onMouseEnter={() => showTooltip && setTooltipOpen(true)}
           onMouseLeave={() => setTooltipOpen(false)}
           onClick={() => showTooltip && setTooltipOpen(v => !v)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              showTooltip && setTooltipOpen(v => !v);
+            }
+          }}
         >
           <span style={{
             width: dotSize, height: dotSize, borderRadius: "50%",

@@ -13,7 +13,8 @@ export type AIPromptType =
   | "daily_horoscope"
   | "codex_reading"
   | "biography"
-  | "compatibility";
+  | "compatibility"
+  | "validation";
 
 export interface AIResponse {
   status: AIStatus;
