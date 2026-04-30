@@ -5,30 +5,37 @@ const GOLD   = "rgba(212,168,95";
 const AMBER  = "rgba(185,110,55";
 const BROWN  = "rgba(130,65,35";
 
+import { 
+  IconStar, IconProfile, IconGuide, IconTracker, 
+  IconTimeline, IconCodex, IconCompat, IconBlueprint, 
+  IconMoon, IconSparkles, IconChevronRight, IconCircle,
+  IconArrowRight
+} from "../components/Icons";
+
 const FEATURES = [
   {
-    glyph: "☽",
+    glyph: IconMoon,
     title: "Today's Reading",
     desc: "Moon phase, personal day number, and a tailored signal — calculated fresh each morning from your birth data.",
     href: "/today",
     cta: "See Today",
   },
   {
-    glyph: "◈",
+    glyph: IconCodex,
     title: "Soul Codex",
     desc: "A deep synthesis naming your archetype, mapping your patterns, and giving you a codename that actually means something.",
     href: "/codex",
     cta: "Open Codex",
   },
   {
-    glyph: "⊕",
+    glyph: IconCompat,
     title: "Compatibility",
     desc: "Synastry across identity, stress, values, and decision style. Works with a name and birthdate — no account needed.",
     href: "/compat",
     cta: "Check Compatibility",
   },
   {
-    glyph: "◉",
+    glyph: IconProfile,
     title: "Soul Guide Chat",
     desc: "Ask anything about your profile, your current season, or what a specific pattern means for you right now.",
     href: "/guide",
@@ -44,12 +51,12 @@ const STEPS = [
 ];
 
 const SYSTEMS = [
-  { category: "Astrology",   glyph: "◎", items: ["Sun sign", "Moon sign", "Rising sign", "Natal houses", "Planetary aspects"] },
-  { category: "Numerology",  glyph: "⬡", items: ["Life Path number", "Personal Year cycle", "Expression number"] },
-  { category: "Human Design",glyph: "◈", items: ["Type", "Authority", "Profile", "Defined centers"] },
-  { category: "Elemental",   glyph: "▲", items: ["Stress element", "Pressure response", "Recovery pattern"] },
-  { category: "Behavioral",  glyph: "◆", items: ["Decision style", "Social energy", "Non-negotiables", "Core goals"] },
-  { category: "Synthesis",   glyph: "✦", items: ["Soul archetype", "Core essence", "Moral compass", "Growth edges"] },
+  { category: "Astrology",   glyph: IconMoon, items: ["Sun sign", "Moon sign", "Rising sign", "Natal houses", "Planetary aspects"] },
+  { category: "Numerology",  glyph: IconTracker, items: ["Life Path number", "Personal Year cycle", "Expression number"] },
+  { category: "Human Design",glyph: IconCodex, items: ["Type", "Authority", "Profile", "Defined centers"] },
+  { category: "Elemental",   glyph: IconGuide, items: ["Stress element", "Pressure response", "Recovery pattern"] },
+  { category: "Behavioral",  glyph: IconBlueprint, items: ["Decision style", "Social energy", "Non-negotiables", "Core goals"] },
+  { category: "Synthesis",   glyph: IconStar, items: ["Soul archetype", "Core essence", "Moral compass", "Growth edges"] },
 ];
 
 function GlowDivider() {
@@ -157,7 +164,7 @@ export default function LandingPage() {
             fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase",
             color: "var(--sc-gold)", marginBottom: "1.5rem",
           }}>
-            <span>✦</span>
+            <IconStar size={12} />
             <span>Free to start · No account required</span>
           </div>
 
@@ -187,8 +194,8 @@ export default function LandingPage() {
               </button>
             </Link>
             <a href="#how-it-works" style={{ textDecoration: "none" }}>
-              <button className="btn btn-secondary" style={{ fontSize: "1rem", padding: "0.85rem 2.25rem" }}>
-                How It Works ▶
+              <button className="btn btn-secondary" style={{ fontSize: "1rem", padding: "0.85rem 2.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                How It Works <IconChevronRight size={16} />
               </button>
             </a>
           </div>
@@ -197,7 +204,7 @@ export default function LandingPage() {
           <div className="sc-trust-strip" style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "3rem", opacity: 0.5 }}>
             {["Free to start", "Private", "~15 min"].map((t) => (
               <span className="sc-trust-pill" key={t} style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.7)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                <span style={{ color: "var(--sc-gold)", fontSize: "0.55rem" }}>✦</span>{t}
+                <IconStar size={10} style={{ color: "var(--sc-gold)", opacity: 0.7 }} />{t}
               </span>
             ))}
           </div>
@@ -222,7 +229,7 @@ export default function LandingPage() {
 
           <div className="sc-polish-card" style={{ ...cardStyle, borderTop: "2px solid rgba(212,168,95,0.4)", padding: "2.25rem 2rem", textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1.5rem" }}>
-              <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.6 }}>✦</span>
+              <IconSparkles size={14} style={{ color: "var(--sc-gold)", opacity: 0.6 }} />
               <span style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(246,241,232,0.45)" }}>Soul Archetype</span>
             </div>
             <h3 style={{ fontFamily: "var(--font-serif)", fontSize: "2rem", marginBottom: "0.35rem", lineHeight: 1.15, color: "var(--sc-gold)" }}>
@@ -313,8 +320,8 @@ export default function LandingPage() {
                 display: "flex", flexDirection: "column",
                 borderTop: "2px solid rgba(212,168,95,0.22)",
               }}>
-                <div style={{ fontSize: "1.75rem", color: "var(--sc-gold)", marginBottom: "1rem", opacity: 0.85 }}>
-                  {f.glyph}
+                <div style={{ fontSize: "1.75rem", color: "var(--sc-gold)", marginBottom: "1rem", opacity: 0.85, display: "flex", alignItems: "center" }}>
+                  <f.glyph size={28} />
                 </div>
                 <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.6rem", color: "var(--sc-ivory)" }}>{f.title}</h3>
                 <p style={{ fontSize: "0.82rem", color: "rgba(246,241,232,0.55)", lineHeight: 1.65, marginBottom: "1.5rem", flex: 1 }}>{f.desc}</p>
@@ -348,7 +355,9 @@ export default function LandingPage() {
             {SYSTEMS.map((sys) => (
               <div className="sc-polish-card" key={sys.category} style={{ ...cardStyle, padding: "1.25rem", borderTop: "1px solid rgba(212,168,95,0.18)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-                  <span style={{ fontSize: "1rem", color: "var(--sc-gold)", opacity: 0.7 }}>{sys.glyph}</span>
+                  <span style={{ fontSize: "1rem", color: "var(--sc-gold)", opacity: 0.7, display: "flex", alignItems: "center" }}>
+                    <sys.glyph size={16} />
+                  </span>
                   <span style={{ fontSize: "0.62rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 600, opacity: 0.8 }}>
                     {sys.category}
                   </span>
@@ -356,7 +365,7 @@ export default function LandingPage() {
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                   {sys.items.map((item) => (
                     <li key={item} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "rgba(246,241,232,0.55)" }}>
-                      <span style={{ color: "var(--sc-gold)", fontSize: "0.45rem", flexShrink: 0, opacity: 0.7 }}>▪</span>
+                      <IconSquare size={6} style={{ color: "var(--sc-gold)", flexShrink: 0, opacity: 0.7 }} />
                       {item}
                     </li>
                   ))}
@@ -403,7 +412,7 @@ export default function LandingPage() {
                   "Quick Compatibility check",
                 ].map((item) => (
                   <li key={item} style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", fontSize: "0.84rem", color: "rgba(246,241,232,0.6)" }}>
-                    <span style={{ color: "var(--sc-gold)", marginTop: "0.1em", flexShrink: 0, opacity: 0.7 }}>◌</span>
+                    <IconCircle size={10} style={{ color: "var(--sc-gold)", marginTop: "0.3em", flexShrink: 0, opacity: 0.7 }} />
                     {item}
                   </li>
                 ))}
@@ -446,7 +455,7 @@ export default function LandingPage() {
                   "Timeline & life current tracker",
                 ].map((item) => (
                   <li key={item} style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", fontSize: "0.84rem", color: "rgba(246,241,232,0.7)" }}>
-                    <span style={{ color: "#a3e635", marginTop: "0.1em", flexShrink: 0 }}>✦</span>
+                    <IconSparkles size={12} style={{ color: "#a3e635", marginTop: "0.2em", flexShrink: 0 }} />
                     {item}
                   </li>
                 ))}
@@ -475,7 +484,9 @@ export default function LandingPage() {
         }} />
         <div className="sc-closing-panel" style={{ position: "relative", zIndex: 1, maxWidth: 520, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Begin</div>
-          <div style={{ fontSize: "2.5rem", marginBottom: "1.25rem", color: "var(--sc-gold)", opacity: 0.4 }}>✦</div>
+          <div style={{ fontSize: "2.5rem", marginBottom: "1.25rem", color: "var(--sc-gold)", opacity: 0.4 }}>
+            <IconStar size={32} style={{ margin: "0 auto" }} />
+          </div>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.8rem, 5vw, 2.8rem)", marginBottom: "0.85rem", lineHeight: 1.15, color: "var(--sc-gold)" }}>
             Ready to See Yours?
           </h2>
@@ -489,7 +500,7 @@ export default function LandingPage() {
           </Link>
           <p style={{ marginTop: "1rem", fontSize: "0.72rem", color: "rgba(246,241,232,0.3)" }}>
             Already have a profile?{" "}
-            <Link href="/today" style={{ color: "var(--sc-gold)", opacity: 0.7, textDecoration: "none" }}>Open your reading →</Link>
+            <Link href="/today" style={{ color: "var(--sc-gold)", opacity: 0.7, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>Open your reading <IconArrowRight size={12} /></Link>
           </p>
         </div>
       </section>

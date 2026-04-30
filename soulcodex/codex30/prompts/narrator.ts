@@ -1,3 +1,13 @@
+function sanitize(text: string | undefined): string {
+  if (!text) return "";
+  return text
+    .replace(/\|/g, "")
+    .replace(/unknown/gi, "")
+    .replace(/chaos/gi, "")
+    .replace(/fix/gi, "")
+    .trim();
+}
+
 export function narratorPrompt(payload: {
   codename: string;
   archetype: string;
@@ -18,12 +28,13 @@ export function narratorPrompt(payload: {
   /** Optional: compressed behavioral summary */
   loopSentence?: string;
 }): string {
+  const codename = sanitize(payload.codename);
   const contradictionBlock = payload.contradictionHint
-    ? `\nIDENTITY FRICTION (weave this tension into the narrative):\n${payload.contradictionHint}\n`
+    ? `\nIDENTITY FRICTION (weave this tension into the narrative):\n${sanitize(payload.contradictionHint)}\n`
     : "";
 
   const behaviorBlock = payload.behavioralStatements?.length
-    ? `\nBEHAVIORAL SPECIFICS TO WEAVE IN (use the exact pattern, rephrase if needed):\n${payload.behavioralStatements.map(s => `- ${s}`).join("\n")}\n`
+    ? `\nBEHAVIORAL SPECIFICS TO WEAVE IN (use the exact pattern, rephrase if needed):\n${payload.behavioralStatements.map(s => `- ${sanitize(s)}`).join("\n")}\n`
     : "";
 
   return `
@@ -51,15 +62,15 @@ NOT:
 ---
 ## structure (Return ONLY valid JSON)
 {
-  "codename": "${payload.codename}",
-  "motto": "[one sharp sentence with friction]",
-  "loop_sentence": "[pattern -> consequence -> interruption]",
-  "my_pattern": "I [behavior], then [reaction], and only stabilize when [pattern break].",
-  "how_i_move": "[3-5 sentences about pressure behaviors]",
-  "life_consequence": "[1 sentence about repeated outcomes]",
-  "pattern_interruption": "[1 sentence about how the pattern breaks messily]",
-  "what_i_wont_tolerate": "[2 sentences about dealbreakers]",
-  "what_im_building": "[2 sentences about long-game architecture]"
+  "loop_sentence": "[behavioral pattern -> consequence -> interruption]",
+  "my_pattern": "I [specific behavior], then [observable reaction], and only stabilize when [pattern break].",
+  "how_i_move": "[3-5 sentences about specific pressure behaviors and their costs]",
+  "life_consequence": "[1 blunt sentence about the repeated outcome of this loop]",
+  "pattern_interruption": "[1 sharp sentence about how the pattern breaks messily]",
+  "motto": "[one sharp behavioral declaration with internal friction]",
+  "codename": "${codename}",
+  "what_i_wont_tolerate": "[2 sentences about behavioral dealbreakers]",
+  "what_im_building": "[2 sentences about long-game behavioral architecture]"
 }
 
 ---
@@ -70,10 +81,10 @@ NOT:
 - NO duplicated sentences.
 - NO advice or "growth mindset" language.
 
-DATA for ${payload.codename}:
-${contradictionBlock}${behaviorBlock}${payload.lifeConsequence ? `\nLIFE CONSEQUENCE: ${payload.lifeConsequence}` : ""}${payload.patternInterruption ? `\nPATTERN INTERRUPTION: ${payload.patternInterruption}` : ""}${payload.loopSentence ? `\nLOOP SENTENCE: ${payload.loopSentence}` : ""}
-Themes: ${payload.themes.map(t => `${t.tag}(${t.score})`).join(", ")}
-Strengths: ${payload.strengths.slice(0, 3).join(" | ")}
-Shadows: ${payload.shadows.slice(0, 3).join(" | ")}
+DATA for ${codename}:
+${contradictionBlock}${behaviorBlock}${payload.lifeConsequence ? `\nLIFE CONSEQUENCE: ${sanitize(payload.lifeConsequence)}` : ""}${payload.patternInterruption ? `\nPATTERN INTERRUPTION: ${sanitize(payload.patternInterruption)}` : ""}${payload.loopSentence ? `\nLOOP SENTENCE: ${sanitize(payload.loopSentence)}` : ""}
+Themes: ${payload.themes.map(t => `${sanitize(t.tag)}(${t.score})`).join(", ")}
+Strengths: ${payload.strengths.slice(0, 3).map(s => sanitize(s)).join(" · ")}
+Shadows: ${payload.shadows.slice(0, 3).map(s => sanitize(s)).join(" · ")}
 `.trim();
 }

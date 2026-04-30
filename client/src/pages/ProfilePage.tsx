@@ -8,6 +8,16 @@ import ConfidenceBadge from "@/components/ConfidenceBadge";
 import CosmicLoader from "@/components/CosmicLoader";
 import ScButton from "@/components/ScButton";
 import AppleSignInButton from "@/components/AppleSignInButton";
+import { 
+  IconStar, IconProfile, IconGuide, IconTracker, 
+  IconTimeline, IconCodex, IconCompat, IconBlueprint, 
+  IconMoon, IconIdentity, IconSparkles, IconChevronDown,
+  IconReading, IconMail, IconArrowRight,
+  IconZodiacAries, IconZodiacTaurus, IconZodiacGemini, 
+  IconZodiacCancer, IconZodiacLeo, IconZodiacVirgo, 
+  IconZodiacLibra, IconZodiacScorpio, IconZodiacSagittarius, 
+  IconZodiacCapricorn, IconZodiacAquarius, IconZodiacPisces
+} from "../components/Icons";
 
 interface Archetype {
   name: string;
@@ -44,10 +54,10 @@ interface SoulComparables {
 }
 
 const COMPARABLES_CONFIG = [
-  { key: "animal" as const,     label: "Spirit Animal",      glyph: "🐾", accent: "#22c55e" },
-  { key: "deity" as const,      label: "Mythic Deity",       glyph: "⚡", accent: "#f59e0b" },
-  { key: "historical" as const, label: "Historical Figure",  glyph: "📜", accent: "#22d3ee" },
-  { key: "icon" as const,       label: "Cultural Icon",      glyph: "✦",  accent: "#f472b6" },
+  { key: "animal" as const,     label: "Spirit Animal",      glyph: IconGuide as React.ComponentType<any>, accent: "#22c55e" },
+  { key: "deity" as const,      label: "Mythic Deity",       glyph: IconStar as React.ComponentType<any>, accent: "#f59e0b" },
+  { key: "historical" as const, label: "Historical Figure",  glyph: IconCodex as React.ComponentType<any>, accent: "#22d3ee" },
+  { key: "icon" as const,       label: "Cultural Icon",      glyph: IconStar as React.ComponentType<any>,  accent: "#f472b6" },
 ];
 
 function comparablesCacheKey(profile: SoulProfile): string {
@@ -201,15 +211,15 @@ function cleanBehavioralText(text: string): string {
 }
 
 // ── Section visual config ────────────────────────────────────────────────────
-const SECTION_STYLES: Record<string, { glyph: string; accent: string; bg: string }> = {
-  who:      { glyph: "◉", accent: "#D4A85F", bg: "rgba(28, 22, 53, 0.72)" },
-  stress:   { glyph: "⬡", accent: "#f59e0b", bg: "rgba(28, 22, 53, 0.72)" },
-  relate:   { glyph: "◌", accent: "#f472b6", bg: "rgba(28, 22, 53, 0.72)" },
-  compass:  { glyph: "◆", accent: "#22d3ee", bg: "rgba(28, 22, 53, 0.72)" },
-  build:    { glyph: "⧫", accent: "#fbbf24", bg: "rgba(28, 22, 53, 0.72)" },
-  growth:   { glyph: "◎", accent: "#22c55e", bg: "rgba(28, 22, 53, 0.72)" },
-  account:  { glyph: "⚙", accent: "#8a7553", bg: "rgba(28, 22, 53, 0.72)" },
-  legal:    { glyph: "◈", accent: "#D4A85F", bg: "rgba(212,168,95,0.03)" },
+const SECTION_STYLES: Record<string, { glyph: any; accent: string; bg: string }> = {
+  who:      { glyph: IconProfile, accent: "#D4A85F", bg: "rgba(28, 22, 53, 0.72)" },
+  stress:   { glyph: IconGuide, accent: "#f59e0b", bg: "rgba(28, 22, 53, 0.72)" },
+  relate:   { glyph: IconCompat, accent: "#f472b6", bg: "rgba(28, 22, 53, 0.72)" },
+  compass:  { glyph: IconBlueprint, accent: "#22d3ee", bg: "rgba(28, 22, 53, 0.72)" },
+  build:    { glyph: IconCodex, accent: "#fbbf24", bg: "rgba(28, 22, 53, 0.72)" },
+  growth:   { glyph: IconTracker, accent: "#22c55e", bg: "rgba(28, 22, 53, 0.72)" },
+  account:  { glyph: IconBlueprint, accent: "#8a7553", bg: "rgba(28, 22, 53, 0.72)" },
+  legal:    { glyph: IconBlueprint, accent: "#D4A85F", bg: "rgba(212,168,95,0.03)" },
 };
 
 export default function ProfilePage() {
@@ -421,13 +431,7 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div style={{ padding: "4rem 1rem", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.22, scale: 1 }}
-          style={{ fontSize: "3.5rem", marginBottom: "1.25rem", color: "var(--sc-gold)" }}
-        >
-          ◉
-        </motion.div>
+          <IconIdentity size={72} style={{ marginBottom: "1.25rem", color: "var(--sc-gold)" }} />
         <h2 className="gradient-text" style={{ marginBottom: "0.75rem" }}>No profile found</h2>
         <p style={{ marginBottom: "2rem", color: "var(--muted-foreground)", lineHeight: 1.65, fontSize: "0.9rem" }}>
           Complete the onboarding to generate your soul profile.
@@ -437,7 +441,7 @@ export default function ProfilePage() {
           size="lg"
           className="min-w-[200px]"
         >
-          ◉ Begin Your Reading
+          <IconIdentity size={18} /> Begin Your Reading
         </ScButton>
       </div>
     );
@@ -446,7 +450,7 @@ export default function ProfilePage() {
   const { archetype, synthesis } = profile;
 
   // Strip legacy interpolation patterns from cached synthesis data
-  const cleanPattern = stripLegacyPatterns(synthesis.myPattern ?? "");
+  const cleanPattern = stripLegacyPatterns((synthesis as any).myPattern ?? (synthesis as any).coreEssence ?? "");
   const cleanStress  = stripLegacyPatterns(synthesis.stressPattern ?? "");
 
   const whyNowValue = prescription
@@ -566,16 +570,7 @@ export default function ProfilePage() {
           display: "flex", gap: "0.5rem", justifyContent: "center",
           flexWrap: "wrap", marginBottom: "0.85rem",
         }}>
-          {(archetype.element?.toLowerCase().includes("unknown") || archetype.role?.toLowerCase().includes("unknown")) ? (
-            <span style={{
-              display: "inline-block", padding: "0.4rem 1.2rem",
-              background: "rgba(26, 11, 46, 0.4)", border: "1px solid rgba(157,78,221,0.2)",
-              borderRadius: 9999, fontSize: "0.75rem", fontWeight: 700,
-              color: "rgba(224, 204, 255, 0.4)", letterSpacing: "0.15em", textTransform: "uppercase",
-            }}>
-              Calibrating Modalities...
-            </span>
-          ) : (
+          {(archetype.element?.toLowerCase().includes("unknown") || archetype.role?.toLowerCase().includes("unknown")) ? null : (
             <span style={{
               display: "inline-block", padding: "0.4rem 1.2rem",
               background: "rgba(26, 11, 46, 0.8)", border: "1px solid rgba(157,78,221,0.5)",
@@ -625,26 +620,7 @@ export default function ProfilePage() {
       }}>
         {snapshotCards.map(card => {
           if (!card.value || card.value.toLowerCase().includes("unknown")) {
-            return (
-              <div
-                key={card.label}
-                style={{
-                  background: "rgba(26, 11, 46, 0.4)",
-                  borderRadius: "16px",
-                  padding: "1.5rem",
-                  border: "1px solid rgba(255,255,255,0.05)",
-                  display: "flex", flexDirection: "column",
-                  opacity: 0.5,
-                }}
-              >
-                <div style={{ fontSize: "0.7rem", letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--sc-stone)", fontWeight: 800, marginBottom: "0.75rem" }}>
-                  {card.label}
-                </div>
-                <p style={{ fontSize: "0.85rem", color: "var(--sc-stone)", fontStyle: "italic", margin: 0 }}>
-                  Pending Calibration...
-                </p>
-              </div>
-            );
+            return null; // Suppression Mode: Hide incomplete cards
           }
           return (
             <div
@@ -702,7 +678,7 @@ export default function ProfilePage() {
             onClick={() => navigate("/today")}
             className="w-full text-glow"
           >
-            ☽ Today's Card
+            <IconMoon size={18} /> Today's Card
           </ScButton>
           <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
             Daily guidance & focus
@@ -715,7 +691,7 @@ export default function ProfilePage() {
             onClick={() => navigate("/codex")}
             className="w-full"
           >
-            ✦ Open Codex Reading
+            <IconSparkles size={18} /> Open Codex Reading
           </ScButton>
           <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
             Deep soul architecture
@@ -729,7 +705,7 @@ export default function ProfilePage() {
             loading={downloadingReport}
             className="w-full"
           >
-            ▾ Chart Report PDF
+            <IconChevronDown size={18} /> Chart Report PDF
           </ScButton>
           <span style={{ fontSize: "0.7rem", color: "rgba(246,241,232,0.55)", textAlign: "center" }}>
             Natal + Human Design
@@ -756,7 +732,7 @@ export default function ProfilePage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <span style={{ fontSize: "1.2rem" }}>🎮</span>
+            <IconCodex size={24} />
             <div style={{ textAlign: "left" }}>
               <div style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 Soul Comparables
@@ -766,9 +742,7 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-          <span style={{ fontSize: "0.85rem", opacity: 0.6, transform: comparablesRevealed ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-            {comparablesLoading ? "◌" : "▾"}
-          </span>
+            <IconChevronDown size={16} style={{ opacity: 0.6, transform: comparablesRevealed ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
         </button>
 
         {/* Comparables grid */}
@@ -783,6 +757,7 @@ export default function ProfilePage() {
             {COMPARABLES_CONFIG.map(cfg => {
               const item = comparables[cfg.key];
               if (!item) return null;
+              const Glyph = cfg.glyph;
               return (
                 <div
                   key={cfg.key}
@@ -795,7 +770,7 @@ export default function ProfilePage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.55rem" }}>
-                    <span style={{ fontSize: "0.95rem" }}>{cfg.glyph}</span>
+                    <span style={{ fontSize: "0.95rem", color: cfg.accent }}><Glyph size={14} /></span>
                     <span style={{
                       fontSize: "0.58rem", letterSpacing: "0.14em", textTransform: "uppercase",
                       color: cfg.accent, fontWeight: 700, opacity: 0.85,
@@ -852,7 +827,7 @@ export default function ProfilePage() {
           position: "relative", zIndex: 1,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.75rem" }}>
-            <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.7 }}>◉</span>
+            <IconIdentity size={18} style={{ color: "var(--sc-gold)", opacity: 0.7 }} />
             <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(234,234,245,0.7)" }}>
               Save Your Blueprint
             </span>
@@ -910,7 +885,7 @@ export default function ProfilePage() {
                 background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "1.1rem", flexShrink: 0,
-              }}>✦</div>
+              }}><IconSparkles size={20} style={{ color: "#22c55e" }} /></div>
               <div>
                 <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#22c55e", marginBottom: "0.15rem" }}>
                   Premium Active
@@ -923,7 +898,7 @@ export default function ProfilePage() {
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
-                <span style={{ fontSize: "1.1rem", color: "var(--sc-gold, #D4A85F)", opacity: 0.7 }}>✦</span>
+                <IconSparkles size={18} style={{ color: "var(--sc-gold, #D4A85F)", opacity: 0.7 }} />
                 <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(234,234,245,0.7)" }}>
                   Unlock Full Access
                 </span>
@@ -1052,7 +1027,7 @@ export default function ProfilePage() {
                   borderRadius: "8px",
                 }}
               >
-                <span style={{ color: "#22c55e", flexShrink: 0, fontSize: "0.85rem", marginTop: "0.1rem" }}>→</span>
+                <IconArrowRight size={14} style={{ color: "#22c55e", flexShrink: 0, marginTop: "0.1rem" }} />
                 <span style={{ color: "var(--card-foreground)", lineHeight: 1.6, fontSize: "0.875rem" }}>
                   {edge}
                 </span>
@@ -1343,7 +1318,7 @@ function AccountSettings({ user }: { user: any }) {
               fontSize: "0.85rem", color: "var(--foreground)", textDecoration: "none"
             }}>
               <span>Privacy Policy</span>
-              <span style={{ opacity: 0.4 }}>→</span>
+              <IconChevronRight size={14} style={{ opacity: 0.4 }} />
             </a>
           </Link>
           <Link href="/terms">
@@ -1354,7 +1329,7 @@ function AccountSettings({ user }: { user: any }) {
               fontSize: "0.85rem", color: "var(--foreground)", textDecoration: "none"
             }}>
               <span>Terms of Service</span>
-              <span style={{ opacity: 0.4 }}>→</span>
+              <IconChevronRight size={14} style={{ opacity: 0.4 }} />
             </a>
           </Link>
           <a href="mailto:support@soulcodex.app" style={{ 
@@ -1364,10 +1339,10 @@ function AccountSettings({ user }: { user: any }) {
             fontSize: "0.85rem", color: "var(--sc-gold)", textDecoration: "none"
           }}>
             <span>Contact Oracle Support</span>
-            <span style={{ opacity: 0.6 }}>✉</span>
+            <IconMail size={16} style={{ opacity: 0.6 }} />
           </a>
-          <p style={{ textAlign: "center", fontSize: "0.68rem", opacity: 0.3, marginTop: "0.5rem", letterSpacing: "0.05em" }}>
-            ◈ SOUL CODEX v1.0.0 — 2026 ◈
+          <p style={{ textAlign: "center", fontSize: "0.68rem", opacity: 0.3, marginTop: "0.5rem", letterSpacing: "0.05em", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
+            <IconReading size={12} /> SOUL CODEX v1.0.0 — 2026 <IconReading size={12} />
           </p>
         </div>
       </ProfileSection>
@@ -1379,9 +1354,10 @@ function AccountSettings({ user }: { user: any }) {
 
 // ── Natal Blueprint component ────────────────────────────────────────────────
 
-const SIGN_GLYPHS: Record<string, string> = {
-  Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋", Leo: "♌", Virgo: "♍",
-  Libra: "♎", Scorpio: "♏", Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
+const SIGN_GLYPHS: Record<string, React.ComponentType<any>> = {
+  Aries: IconZodiacAries, Taurus: IconZodiacTaurus, Gemini: IconZodiacGemini, Cancer: IconZodiacCancer, 
+  Leo: IconZodiacLeo, Virgo: IconZodiacVirgo, Libra: IconZodiacLibra, Scorpio: IconZodiacScorpio, 
+  Sagittarius: IconZodiacSagittarius, Capricorn: IconZodiacCapricorn, Aquarius: IconZodiacAquarius, Pisces: IconZodiacPisces,
 };
 
 function NatalBlueprint({ profile }: { profile: SoulProfile }) {
@@ -1406,12 +1382,12 @@ function NatalBlueprint({ profile }: { profile: SoulProfile }) {
       position: "relative", zIndex: 1,
     }}>
       <div style={{ fontSize: "0.58rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(246,241,232,0.5)", fontWeight: 600, marginBottom: "0.75rem" }}>
-        ◈ My Chart
+        <IconReading size={12} /> My Chart
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        {sun   && <BlueprintChip label="Sun"      value={`${SIGN_GLYPHS[sun] ?? ""} ${sun}`}     accent="#f59e0b" />}
-        {moon  && <BlueprintChip label="Moon"     value={`${SIGN_GLYPHS[moon] ?? ""} ${moon}`}   accent="#D4A85F" />}
-        {rising && <BlueprintChip label="Rising"  value={`${SIGN_GLYPHS[rising] ?? ""} ${rising}`} accent="#22d3ee" />}
+        {sun   && <BlueprintChip label="Sun"      value={sun}      glyph={SIGN_GLYPHS[sun]}   accent="#f59e0b" />}
+        {moon  && <BlueprintChip label="Moon"     value={moon}     glyph={SIGN_GLYPHS[moon]}  accent="#D4A85F" />}
+        {rising && <BlueprintChip label="Rising"  value={rising}   glyph={SIGN_GLYPHS[rising]} accent="#22d3ee" />}
         {lp    && <BlueprintChip label="Life Path" value={String(lp)}                             accent="#ec4899" />}
         {hdType && <BlueprintChip label="HD Type"  value={hdType}                                 accent="#22c55e" />}
         {hdAuth && <BlueprintChip label="Authority" value={hdAuth}                                accent="#fbbf24" />}
@@ -1442,6 +1418,7 @@ const ProfileSection = React.memo(({
   children: ReactNode;
 }) => {
   const s = SECTION_STYLES[sectionKey];
+  const Glyph = s.glyph;
   return (
     <section
       style={{
@@ -1454,8 +1431,8 @@ const ProfileSection = React.memo(({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "0.9rem" }}>
-        <span style={{ color: s.accent, fontSize: "1rem", lineHeight: 1, flexShrink: 0 }}>
-          {s.glyph}
+        <span style={{ color: s.accent, fontSize: "1rem", lineHeight: 1, flexShrink: 0, display: "flex", alignItems: "center" }}>
+          <Glyph size={18} />
         </span>
         <h3 style={{
           fontSize: "0.72rem", fontWeight: 700,
@@ -1470,7 +1447,7 @@ const ProfileSection = React.memo(({
   );
 });
 
-const BlueprintChip = React.memo(({ label, value, accent }: { label: string; value: string; accent: string }) => (
+const BlueprintChip = React.memo(({ label, value, accent, glyph: Glyph }: { label: string; value: string; accent: string; glyph?: React.ComponentType<any> }) => (
   <div style={{
     background: "rgba(255,255,255,0.03)",
     border: `1px solid ${accent}25`,
@@ -1481,6 +1458,8 @@ const BlueprintChip = React.memo(({ label, value, accent }: { label: string; val
     gap: "0.2rem"
   }}>
     <span style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)" }}>{label}</span>
-    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--foreground)" }}>{value}</span>
+    <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--foreground)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+      {Glyph && <Glyph size={12} style={{ color: accent }} />} {value}
+    </span>
   </div>
 ));

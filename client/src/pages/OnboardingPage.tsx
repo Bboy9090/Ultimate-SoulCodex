@@ -6,6 +6,10 @@ import { apiRequest } from "../lib/queryClient";
 import CosmicLoader from "@/components/CosmicLoader";
 import ScButton from "@/components/ScButton";
 import AppleSignInButton from "@/components/AppleSignInButton";
+import { 
+  IconIdentity, IconMoon, IconCodex, IconSparkles, 
+  IconArrowRight, IconCircle 
+} from "@/components/Icons";
 
 type PressurePattern =
   | "spiral_inward"
@@ -109,9 +113,9 @@ const LOADING_LINES = [
 ];
 
 const DEST_CARDS = [
-  { glyph: "◉", label: "My Profile", desc: "Your archetype, synthesis, and pattern map", path: "/profile" },
-  { glyph: "☽", label: "Today's Reading", desc: "Your daily card, moon phase, and active signals", path: "/today" },
-  { glyph: "◈", label: "My Codex", desc: "Your full 30-point soul reading and codename", path: "/codex" },
+  { glyph: IconIdentity, label: "My Profile", desc: "Your archetype, synthesis, and pattern map", path: "/profile" },
+  { glyph: IconMoon, label: "Today's Reading", desc: "Your daily card, moon phase, and active signals", path: "/today" },
+  { glyph: IconCodex, label: "My Codex", desc: "Your full 30-point soul reading and codename", path: "/codex" },
 ];
 
 export default function OnboardingPage() {
@@ -335,8 +339,10 @@ export default function OnboardingPage() {
   }
 
   if (successResult) {
-    const archetypeName = successResult?.archetype?.name ?? successResult?.archetype?.name ?? "Your Archetype";
-    const archetypeTagline = successResult?.archetype?.tagline ?? "";
+    const rawArchetype = successResult?.archetype?.name;
+    const archetypeName = (rawArchetype && !rawArchetype.toLowerCase().includes("unknown")) ? rawArchetype : "Your Archetype";
+    const rawTagline = successResult?.archetype?.tagline;
+    const archetypeTagline = (rawTagline && !rawTagline.toLowerCase().includes("unknown")) ? rawTagline : "";
     return (
       <motion.div 
         initial={{ opacity: 0 }}
@@ -365,7 +371,7 @@ export default function OnboardingPage() {
             textAlign: "center",
             marginBottom: "1.25rem",
           }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#d4a85f", opacity: 0.8 }}>✦</div>
+            <div style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#d4a85f", opacity: 0.8 }}><IconSparkles size={24} /></div>
             <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.5rem, 5vw, 2rem)", marginBottom: "0.5rem", lineHeight: 1.2, color: "var(--foreground)" }}>
               Your core profile is ready
             </h1>
@@ -409,12 +415,12 @@ export default function OnboardingPage() {
                   fontFamily: "var(--font-sans)",
                 }}
               >
-                <span style={{ fontSize: "1.2rem", color: "#d4a85f", flexShrink: 0 }}>{card.glyph}</span>
+                <card.glyph size={20} style={{ color: "#d4a85f", flexShrink: 0 }} />
                 <span>
                   <span style={{ fontWeight: 600, display: "block", fontSize: "0.88rem" }}>{card.label}</span>
                   <span style={{ fontSize: "0.77rem", color: "var(--muted-foreground)" }}>{card.desc}</span>
                 </span>
-                <span style={{ marginLeft: "auto", color: "var(--muted-foreground)", fontSize: "0.75rem" }}>→</span>
+                <IconArrowRight size={16} style={{ marginLeft: "auto", color: "var(--muted-foreground)" }} />
               </motion.button>
             ))}
           </div>
@@ -684,7 +690,7 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
             opacity: hasTime ? 0.35 : 1,
             borderColor: hasTime ? "rgba(212,168,95,0.1)" : "rgba(212,168,95,0.3)",
           }}>
-            <span>○</span>
+            <IconCircle size={10} />
             <span>Without time — Sun · Moon only</span>
           </span>
           <span className="system-badge" style={{
@@ -693,7 +699,7 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
             color: hasTime ? "#22c55e" : "inherit",
             opacity: hasTime ? 1 : 0.4,
           }}>
-            <span>{hasTime ? "✦" : "◌"}</span>
+            {hasTime ? <IconSparkles size={10} /> : <IconCircle size={10} />}
             <span>With time — Rising · Houses · Full aspects</span>
           </span>
         </div>
@@ -710,9 +716,10 @@ function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof For
           onChange={(e) => update("birthLocation", e.target.value)}
         />
         <p style={{ fontSize: "0.72rem", color: hasLocation ? "var(--cosmic-lavender)" : "var(--muted-foreground)", marginTop: "0.4rem", marginBottom: 0, opacity: hasLocation ? 1 : 0.65, transition: "color 0.2s" }}>
+          {hasLocation ? <IconSparkles size={10} style={{ display: "inline", marginRight: 4 }} /> : <IconCircle size={10} style={{ display: "inline", marginRight: 4 }} />}
           {hasLocation
-            ? "✦ Enables personalized transit calculations and relocation accuracy"
-            : "◌ Unlocks personalized transits and relocation chart accuracy"}
+            ? "Enables personalized transit calculations and relocation accuracy"
+            : "Unlocks personalized transits and relocation chart accuracy"}
         </p>
       </div>
     </div>

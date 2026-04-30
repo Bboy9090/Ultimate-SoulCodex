@@ -23,31 +23,31 @@ interface PlanetWheelProps {
 }
 
 const SIGNS = [
-  { name: "Aries", symbol: "♈" },
-  { name: "Taurus", symbol: "♉" },
-  { name: "Gemini", symbol: "♊" },
-  { name: "Cancer", symbol: "♋" },
-  { name: "Leo", symbol: "♌" },
-  { name: "Virgo", symbol: "♍" },
-  { name: "Libra", symbol: "♎" },
-  { name: "Scorpio", symbol: "♏" },
-  { name: "Sagittarius", symbol: "♐" },
-  { name: "Capricorn", symbol: "♑" },
-  { name: "Aquarius", symbol: "♒" },
-  { name: "Pisces", symbol: "♓" },
+  { name: "Aries", symbol: "ARI" },
+  { name: "Taurus", symbol: "TAU" },
+  { name: "Gemini", symbol: "GEM" },
+  { name: "Cancer", symbol: "CAN" },
+  { name: "Leo", symbol: "LEO" },
+  { name: "Virgo", symbol: "VIR" },
+  { name: "Libra", symbol: "LIB" },
+  { name: "Scorpio", symbol: "SCO" },
+  { name: "Sagittarius", symbol: "SAG" },
+  { name: "Capricorn", symbol: "CAP" },
+  { name: "Aquarius", symbol: "AQU" },
+  { name: "Pisces", symbol: "PIS" },
 ];
 
 const PLANET_SYMBOLS: Record<string, string> = {
-  Sun: "☉",
-  Moon: "☽",
-  Mercury: "☿",
-  Venus: "♀",
-  Mars: "♂",
-  Jupiter: "♃",
-  Saturn: "♄",
-  Uranus: "♅",
-  Neptune: "♆",
-  Pluto: "♇",
+  Sun: "SUN",
+  Moon: "MON",
+  Mercury: "MER",
+  Venus: "VEN",
+  Mars: "MAR",
+  Jupiter: "JUP",
+  Saturn: "SAT",
+  Uranus: "URA",
+  Neptune: "NEP",
+  Pluto: "PLU",
 };
 
 const PLANET_COLORS: Record<string, string> = {
@@ -139,8 +139,9 @@ export default function PlanetWheel({ planets, alignments, size = 400, natalOver
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill="rgba(167,139,250,0.7)"
-                fontSize="12"
-                fontFamily="serif"
+                fontSize="9"
+                fontWeight="bold"
+                fontFamily="sans-serif"
               >
                 {sign.symbol}
               </text>
@@ -242,8 +243,8 @@ export default function PlanetWheel({ planets, alignments, size = 400, natalOver
           onClick={() => setActivePlanet(null)}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <span style={{ fontSize: "20px", color: PLANET_COLORS[activePlanet.name] || "#94a3b8" }}>
-              {PLANET_SYMBOLS[activePlanet.name] || activePlanet.name[0]}
+            <span style={{ fontSize: "14px", fontWeight: "bold", color: PLANET_COLORS[activePlanet.name] || "#94a3b8" }}>
+              {PLANET_SYMBOLS[activePlanet.name] || activePlanet.name.slice(0, 3).toUpperCase()}
             </span>
             <span style={{ fontWeight: 600, color: "#f8fafc", fontSize: "14px" }}>{activePlanet.name}</span>
           </div>

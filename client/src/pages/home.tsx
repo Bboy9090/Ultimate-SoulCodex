@@ -3,31 +3,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
 import { 
-  Sun, 
-  Infinity, 
-  Shapes, 
-  Crown, 
-  ScrollText, 
-  Sparkles,
-  ChartPie,
-  UserCog,
-  Calculator,
-  Globe,
-  MapPin,
-  HandMetal,
-  FileText,
-  UserCheck,
-  CalendarDays,
-  Star,
-  Users,
-  Shield,
-  Play,
-  CircleHelp,
-  Eye,
-  Smartphone,
-  Download,
-  Check
-} from "lucide-react";
+  IconSun as Sun, 
+  IconInfinity as Infinity, 
+  IconHexagon as Shapes, 
+  IconCrown as Crown, 
+  IconCodex as ScrollText, 
+  IconSparkles as Sparkles,
+  IconChart as ChartPie,
+  IconUser as UserCog,
+  IconCalculator as Calculator,
+  IconGlobe as Globe,
+  IconMapPin as MapPin,
+  IconHandMetal as HandMetal,
+  IconFileText as FileText,
+  IconUser as UserCheck,
+  IconTimeline as CalendarDays,
+  IconStar as Star,
+  IconUsers as Users,
+  IconShield as Shield,
+  IconPlay as Play,
+  IconCircleHelp as CircleHelp,
+  IconEye as Eye,
+  IconSmartphone as Smartphone,
+  IconDownload as Download,
+  IconCheck as Check
+} from "../components/Icons";
 
 export default function Home() {
   const scrollToSection = (id: string) => {
@@ -106,7 +106,7 @@ export default function Home() {
                       </div>
                       <div>
                         <h4 className="font-medium">Mirror Alchemist</h4>
-                        <p className="text-sm text-muted-foreground">Leo ☉ • Scorpio ☽ • Virgo ↑</p>
+                        <p className="text-sm text-muted-foreground">Leo Sun • Scorpio Moon • Virgo Rising</p>
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">

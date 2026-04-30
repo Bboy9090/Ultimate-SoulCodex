@@ -10,15 +10,15 @@ const ZODIAC_SIGNS = [
 ];
 
 const PLANET_LABELS: Record<string, string> = {
-  sun:"☉ Sun", moon:"☽ Moon", mercury:"☿ Mercury", venus:"♀ Venus",
-  mars:"♂ Mars", jupiter:"♃ Jupiter", saturn:"♄ Saturn",
-  uranus:"♅ Uranus", neptune:"♆ Neptune", pluto:"♇ Pluto",
-  north_node:"☊ North Node", chiron:"⚷ Chiron",
+  sun:"SUN Sun", moon:"MON Moon", mercury:"MER Mercury", venus:"VEN Venus",
+  mars:"MAR Mars", jupiter:"JUP Jupiter", saturn:"SAT Saturn",
+  uranus:"URA Uranus", neptune:"NEP Neptune", pluto:"PLU Pluto",
+  north_node:"NN North Node", chiron:"CHI Chiron",
 };
 
 const ASPECT_SYMBOLS: Record<string, string> = {
-  conjunction:"☌", opposition:"☍", trine:"△", square:"□",
-  sextile:"⚹", quincunx:"⚻", semisquare:"∠", sesquisquare:"⚼",
+  conjunction:"CON", opposition:"OPP", trine:"TRI", square:"SQU",
+  sextile:"SEX", quincunx:"QUI", semisquare:"SSQ", sesquisquare:"SES",
 };
 
 const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
@@ -340,10 +340,10 @@ export default function PosterPage() {
           </div>
 
           <button className="btn btn-primary" onClick={() => handleDownload(2048)} disabled={downloading !== null || downloadingPdf} style={{ width: "100%", fontSize: "0.82rem", marginBottom: "0.5rem" }}>
-            {downloading === 2048 ? "Generating…" : "⬇ Download 2048px PNG"}
+            {downloading === 2048 ? "Generating…" : "Download 2048px PNG"}
           </button>
           <button className="btn btn-secondary" onClick={() => handleDownload(4096)} disabled={downloading !== null || downloadingPdf} style={{ width: "100%", fontSize: "0.82rem", marginBottom: "0.75rem" }}>
-            {downloading === 4096 ? "Generating…" : "⬇ Download 4096px PNG"}
+            {downloading === 4096 ? "Generating…" : "Download 4096px PNG"}
           </button>
 
           {/* PDF Report */}
@@ -354,7 +354,7 @@ export default function PosterPage() {
               disabled={downloadingPdf || downloading !== null || !data.birthDate}
               style={{ width: "100%", fontSize: "0.82rem", background: "rgba(10,30,20,0.7)", border: "1px solid rgba(212,168,95,0.35)", color: "var(--sc-gold)" }}
             >
-              {downloadingPdf ? "✦ Generating PDF…" : "✦ Download Full PDF Report"}
+              {downloadingPdf ? "Generating PDF…" : "Download Full PDF Report"}
             </button>
             <p style={{ fontSize: "0.68rem", color: "rgba(246,241,232,0.35)", textAlign: "center", marginTop: "0.4rem", marginBottom: 0 }}>
               Natal chart · Big Three · Aspects · Human Design — AI written
@@ -385,7 +385,7 @@ export default function PosterPage() {
               background: "rgba(212,168,95,0.07)",
             }}>
               <span style={{ fontSize: "0.82rem", color: "var(--sc-gold)", opacity: 0.9, lineHeight: 1.5 }}>
-                ✦ The full atmospheric chart — dark sky, constellations, and teal gradients — is available with a{" "}
+                The full atmospheric chart — dark sky, constellations, and teal gradients — is available with a{" "}
                 <a href="/profile" style={{ color: "var(--sc-gold)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
                   premium plan
                 </a>.
@@ -403,7 +403,7 @@ export default function PosterPage() {
               textAlign: "center",
             }}>
               <span style={{ fontSize: "0.75rem", color: "#5ac8d8", letterSpacing: "0.08em" }}>
-                ✦ PREMIUM  ·  Atmospheric Chart Unlocked
+                PREMIUM  ·  Atmospheric Chart Unlocked
               </span>
             </div>
           )}

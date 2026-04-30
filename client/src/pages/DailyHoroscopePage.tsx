@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import PlanetWheel from "../components/PlanetWheel";
+import { 
+  IconMoon, IconReading, IconIdentity, IconEarth, 
+  IconChevronDown, IconArrowLeft 
+} from "../components/Icons";
 
 interface PlanetPosition {
   name: string;
@@ -143,9 +147,7 @@ function TransitCard({ transit }: { transit: PersonalTransit }) {
             {transit.transitingPlanet} {transit.aspect} {transit.natalPlanet}
           </span>
         </div>
-        <span style={{ color: "var(--muted-foreground)", fontSize: "1.1rem", transition: "transform 200ms ease", transform: expanded ? "rotate(180deg)" : "none" }}>
-          ▾
-        </span>
+        <IconChevronDown size={14} style={{ color: "var(--muted-foreground)", transition: "transform 200ms ease", transform: expanded ? "rotate(180deg)" : "none" }} />
       </div>
       <div style={{ fontSize: "0.78rem", color: "var(--muted-foreground)", marginTop: "0.2rem" }}>
         {transit.transitingPlanet} in {transit.transitingSign} ({transit.transitingDegree.toFixed(1)}°) → natal {transit.natalPlanet} in {transit.natalSign} ({transit.natalDegree.toFixed(1)}°)
@@ -207,7 +209,7 @@ export default function DailyHoroscopePage() {
   if (!profileId) {
     return (
       <div style={{ padding: "4rem 1rem", textAlign: "center", maxWidth: "560px", margin: "0 auto" }}>
-        <div style={{ fontSize: "3rem", marginBottom: "1rem", opacity: 0.4 }}>☽</div>
+        <IconMoon size={72} style={{ marginBottom: "1rem", opacity: 0.4 }} />
         <h2 className="gradient-text" style={{ marginBottom: "1rem" }}>No Profile Found</h2>
         <p style={{ color: "var(--muted-foreground)", marginBottom: "2rem", lineHeight: 1.6, fontSize: "0.9rem" }}>
           Complete the onboarding first to receive a personal daily reading.
@@ -266,8 +268,8 @@ export default function DailyHoroscopePage() {
           borderTop: "2px solid var(--cosmic-purple)",
           borderRadius: "14px", padding: "1.75rem 1.5rem",
         }}>
-          <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cosmic-lavender)", marginBottom: "1.1rem", fontWeight: 700 }}>
-            ◈ My Reading
+          <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#D4A85F", marginBottom: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <IconReading size={12} /> My Reading
           </h3>
           <p style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1rem, 2.5vw, 1.2rem)", lineHeight: 1.8, color: "#f1f5f9", margin: 0 }}>
             {data.horoscope}
@@ -298,8 +300,8 @@ export default function DailyHoroscopePage() {
         {/* ── 4. Top Influences — top 3 transits by intensity ─────────────── */}
         {topInfluences.length > 0 && (
           <section>
-            <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.75rem", fontWeight: 700, opacity: 0.7 }}>
-              ◉ Top Influences Today
+            <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#D4A85F", marginBottom: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <IconIdentity size={12} /> Top Influences Today
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
               {topInfluences.map((t, i) => (
@@ -311,8 +313,8 @@ export default function DailyHoroscopePage() {
 
         {/* ── 5. Planet Wheel ──────────────────────────────────────────────── */}
         <section>
-          <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--foreground)", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ color: "var(--cosmic-lavender)" }}>⊕</span> Planetary Alignments Today
+          <h3 style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#D4A85F", marginBottom: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <IconEarth size={16} style={{ color: "var(--cosmic-lavender)" }} /> Planetary Alignments Today
           </h3>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <PlanetWheel planets={data.planets} alignments={data.alignments} size={400} />
@@ -361,7 +363,9 @@ export default function DailyHoroscopePage() {
 
         <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
           <Link href="/profile">
-            <button className="btn btn-ghost" style={{ fontSize: "0.85rem" }}>← Back to Profile</button>
+            <button className="btn btn-ghost" style={{ fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+              <IconArrowLeft size={14} /> Back to Profile
+            </button>
           </Link>
         </div>
       </div>

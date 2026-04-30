@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { IconStar } from "./Icons";
 
 interface Props {
   label?: string;
@@ -27,13 +28,14 @@ const CosmicLoader: React.FC<Props> = ({ label = "Loading...", fullPage = false 
           ease: "easeInOut"
         }}
         style={{
-          fontSize: "2.5rem",
+          width: "2.5rem",
+          height: "2.5rem",
           color: "var(--sc-gold)",
           marginBottom: "1rem",
-          textShadow: "0 0 20px var(--sc-gold-glow)"
+          filter: "drop-shadow(0 0 10px var(--sc-gold-glow))"
         }}
       >
-        ◈
+        <IconStar style={{ width: "100%", height: "100%" }} />
       </motion.div>
       <div style={{
         fontSize: "0.75rem",

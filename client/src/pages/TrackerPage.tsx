@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Lock, CheckCircle2, Activity } from "lucide-react";
+import { IconLock, IconCheckCircle, IconActivity } from "../components/Icons";
 
 interface FrequencyLog {
   id: number;
@@ -93,12 +93,12 @@ export default function TrackerPage() {
       <div className="glass-card p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Activity className="w-5 h-5 text-cosmic-purple" />
+            <IconActivity size={20} className="text-cosmic-purple" />
             Daily Frequency
           </h2>
           {showLogged && (
             <span className="flex items-center gap-1 text-cosmic-teal text-sm font-medium animate-pulse">
-              <CheckCircle2 className="w-4 h-4" /> Logged
+              <IconCheckCircle size={16} /> Logged
             </span>
           )}
         </div>
@@ -150,7 +150,7 @@ export default function TrackerPage() {
         {isAuthError ? (
           <div className="py-8 flex flex-col items-center gap-4">
             <div className="w-24 h-24 rounded-full border-4 border-dashed border-muted flex items-center justify-center opacity-50">
-              <Lock className="w-8 h-8" />
+              <IconLock size={32} />
             </div>
             <p className="text-sm text-muted-foreground max-w-[200px]">
               Sign in to unlock your Congruence Score analysis.

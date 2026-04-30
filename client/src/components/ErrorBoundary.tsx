@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
+import { IconCodex } from "./Icons";
 import ScButton from "./ScButton";
 
 interface Props {
@@ -37,7 +38,7 @@ class ErrorBoundary extends Component<Props, State> {
           background: "var(--sc-bg-ink)",
           color: "var(--foreground)"
         }}>
-          <div style={{ fontSize: "4rem", marginBottom: "1rem", color: "var(--sc-gold)" }}>◈</div>
+          <IconCodex size={64} style={{ marginBottom: "1rem", color: "var(--sc-gold)" }} />
           <h1 style={{ fontSize: "1.5rem", marginBottom: "1rem", fontFamily: "var(--font-display)" }}>
             Something shifted in the cosmos
           </h1>

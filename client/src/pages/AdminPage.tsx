@@ -7,9 +7,10 @@ import {
   PieChart, Pie, Cell, Legend 
 } from "recharts";
 import { 
-  LayoutDashboard, Key, BarChart3, Settings, ShieldCheck, 
-  Users, Calendar, Activity, ChevronRight, Plus, RefreshCcw, Trash2
-} from "lucide-react";
+  IconShield, IconKey, IconChart, IconUsers, 
+  IconCalendar, IconActivity, IconChevronRight, 
+  IconPlus, IconRefresh, IconTrash 
+} from "../components/Icons";
 import ScButton from "../components/ScButton";
 import CosmicLoader from "../components/CosmicLoader";
 
@@ -127,7 +128,7 @@ export default function AdminPage() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <ShieldCheck className="text-[#D4A85F] w-5 h-5" />
+              <IconShield className="text-[#D4A85F] w-5 h-5" />
               <span className="text-xs uppercase tracking-widest text-[#D4A85F] font-bold">Admin Command Center</span>
             </div>
             <h1 className="text-4xl font-serif text-glow">The Soul Oracle</h1>
@@ -137,13 +138,13 @@ export default function AdminPage() {
             <TabButton 
               active={activeTab === "analytics"} 
               onClick={() => setActiveTab("analytics")}
-              icon={<BarChart3 className="w-4 h-4" />}
+              icon={<IconChart className="w-4 h-4" />}
               label="Analytics"
             />
             <TabButton 
               active={activeTab === "codes"} 
               onClick={() => setActiveTab("codes")}
-              icon={<Key className="w-4 h-4" />}
+              icon={<IconKey className="w-4 h-4" />}
               label="Access Codes"
             />
             <button 
@@ -172,19 +173,19 @@ export default function AdminPage() {
                 <StatCard 
                   label="Total Souls" 
                   value={analytics?.totalProfiles || 0} 
-                  icon={<Users className="w-5 h-5" />} 
+                  icon={<IconUsers className="w-5 h-5" />} 
                   sub="Active profiles"
                 />
                 <StatCard 
                   label="Authenticated" 
                   value={analytics?.totalUsers || 0} 
-                  icon={<Calendar className="w-5 h-5" />} 
+                  icon={<IconCalendar className="w-5 h-5" />} 
                   sub="Registered users"
                 />
                 <StatCard 
                   label="Conversion" 
                   value={`${((analytics?.totalUsers || 0) / (analytics?.totalProfiles || 1) * 100).toFixed(1)}%`} 
-                  icon={<Activity className="w-5 h-5" />} 
+                  icon={<IconActivity className="w-5 h-5" />} 
                   sub="Profile to Login"
                 />
               </div>
@@ -250,7 +251,7 @@ export default function AdminPage() {
               className="gap-2"
               onClick={() => setShowCreateModal(true)}
             >
-              <Plus className="w-4 h-4" /> Generate Code
+              <IconPlus className="w-4 h-4" /> Generate Code
             </ScButton>
           </div>
 
@@ -347,8 +348,8 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
-                            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors"><RefreshCcw className="w-4 h-4 text-white/40" /></button>
-                            <button className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"><Trash2 className="w-4 h-4 text-white/40 group-hover:text-red-400" /></button>
+                             <button className="p-2 hover:bg-white/10 rounded-lg transition-colors"><IconRefresh className="w-4 h-4 text-white/40" /></button>
+                            <button className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"><IconTrash className="w-4 h-4 text-white/40 group-hover:text-red-400" /></button>
                           </div>
                         </td>
                       </tr>
@@ -373,7 +374,7 @@ function AdminLogin({ onLogin, password, setPassword }: any) {
         className="max-w-md w-full glass-premium p-8 rounded-3xl border border-white/10 text-center"
       >
         <div className="w-16 h-16 bg-[#D4A85F]/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[#D4A85F]/30">
-          <ShieldCheck className="text-[#D4A85F] w-8 h-8" />
+          <IconShield className="text-[#D4A85F] w-8 h-8" />
         </div>
         <h1 className="text-2xl font-serif mb-2">Identify yourself</h1>
         <p className="text-white/50 text-sm mb-8">Accessing the Soul Oracle requires the Master Credential.</p>

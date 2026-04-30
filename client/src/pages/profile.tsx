@@ -10,25 +10,25 @@ import Navigation from "@/components/navigation";
 import CosmicChart from "../components/cosmic-chart";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Crown, 
-  Sun, 
-  Moon, 
-  Star, 
-  Infinity, 
-  Brain, 
-  Heart,
-  ChartPie,
-  ScrollText,
-  Sparkles,
-  ArrowLeft,
-  Download,
-  Zap,
-  Target,
-  Shield,
-  Compass,
-  BookOpen,
-  Calendar
-} from "lucide-react";
+  IconCrown as Crown, 
+  IconSun as Sun, 
+  IconMoon as Moon, 
+  IconStar as Star, 
+  IconInfinity as Infinity, 
+  IconBrain as Brain, 
+  IconHeart as Heart,
+  IconChart as ChartPie,
+  IconCodex as ScrollText,
+  IconSparkles as Sparkles,
+  IconBack as ArrowLeft,
+  IconDownload as Download,
+  IconZap as Zap,
+  IconTarget as Target,
+  IconShield as Shield,
+  IconCompass as Compass,
+  IconBookOpen as BookOpen,
+  IconTimeline as Calendar
+} from "../components/Icons";
 import type { Profile } from "@shared/schema";
 
 export default function ProfilePage() {
@@ -125,16 +125,16 @@ export default function ProfilePage() {
                   {/* Astrology Big 3 */}
                   <div className="flex items-center justify-center space-x-6 text-sm">
                     <div className="flex items-center space-x-2">
-                      <Sun className="h-4 w-4 text-accent" />
-                      <span data-testid="text-sun-sign">{astrologyData?.sunSign || "Unknown"} ☉</span>
+                      <Sun size={16} className="text-accent" />
+                      <span data-testid="text-sun-sign">{astrologyData?.sunSign || "Unknown"}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Moon className="h-4 w-4 text-accent" />
-                      <span data-testid="text-moon-sign">{astrologyData?.moonSign || "Unknown"} ☽</span>
+                      <Moon size={16} className="text-accent" />
+                      <span data-testid="text-moon-sign">{astrologyData?.moonSign || "Unknown"}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Star className="h-4 w-4 text-accent" />
-                      <span data-testid="text-rising-sign">{astrologyData?.risingSign || "Unknown"} ↑</span>
+                      <Star size={16} className="text-accent" />
+                      <span data-testid="text-rising-sign">{astrologyData?.risingSign || "Unknown"}</span>
                     </div>
                   </div>
                 </div>
