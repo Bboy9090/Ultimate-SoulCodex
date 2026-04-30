@@ -1,7 +1,10 @@
 import { apiFetch } from "../lib/queryClient";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
-import { Send, RefreshCw } from "lucide-react";
+import { 
+  IconSend, IconLoader, IconArrowLeft, IconSparkles, 
+  IconReading, IconAlert 
+} from "../components/Icons";
 
 interface Message {
   role: "user" | "model";
@@ -181,11 +184,11 @@ export default function SoulGuidePage() {
             style={{ background: "none", border: "none", color: "var(--cosmic-lavender)", cursor: "pointer", padding: "0.4rem", fontSize: "1.1rem" }}
             aria-label="Back"
           >
-            ←
+            <IconArrowLeft size={18} />
           </button>
           <div>
             <h1 style={{ fontSize: "1.1rem", color: "var(--foreground)", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0 }}>
-              <span style={{ color: "var(--cosmic-lavender)" }}>✦</span> Soul Guide
+              <IconSparkles size={16} style={{ color: "var(--cosmic-lavender)" }} /> Soul Guide
             </h1>
             <p style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", margin: 0 }}>
               Ask anything about your path, patterns, or next move.
@@ -222,7 +225,7 @@ export default function SoulGuidePage() {
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "1.75rem", color: "var(--cosmic-lavender)", marginBottom: "1.25rem",
             }}>
-              ◈
+              <IconReading size={32} />
             </div>
             <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.4rem", marginBottom: "0.75rem", color: "var(--cosmic-gold)", textShadow: "0 2px 12px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)" }}>
               Ask your Soul Guide
@@ -273,7 +276,7 @@ export default function SoulGuidePage() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "11px", color: "white", boxShadow: "0 0 10px var(--cosmic-purple)",
                 }}>
-                  ✦
+                  <IconSparkles size={12} />
                 </div>
               )}
               {m.text || (isLoading && i === messages.length - 1 ? "…" : "")}
@@ -288,7 +291,7 @@ export default function SoulGuidePage() {
             color: "#ef4444", fontSize: "0.85rem",
             display: "flex", alignItems: "center", gap: "0.65rem",
           }}>
-            <span>⚠</span> <span>{error}</span>
+            <IconAlert size={14} /> <span>{error}</span>
           </div>
         )}
 
@@ -308,7 +311,7 @@ export default function SoulGuidePage() {
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "1.5rem", margin: "0 auto 1.1rem",
             }}>
-              ✦
+              <IconSparkles size={24} />
             </div>
             <h3 style={{ fontFamily: "var(--font-serif)", color: "var(--sc-gold, #D4A85F)", fontSize: "1.15rem", margin: "0 0 0.5rem" }}>
               You've used your {freeLimit} free questions
@@ -376,7 +379,7 @@ export default function SoulGuidePage() {
                 cursor: input.trim() ? "pointer" : "default", transition: "all 0.2s",
               }}
             >
-              {isLoading ? <RefreshCw size={16} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={16} />}
+              {isLoading ? <IconLoader size={16} className="animate-spin" /> : <IconSend size={16} />}
             </button>
           </form>
         )}

@@ -6,6 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { Link } from "wouter";
 import CodexSkeleton from "@/components/CodexSkeleton";
+import { IconStar, IconProfile, IconGuide, IconTracker, IconTimeline, IconCodex, IconCompat, IconBlueprint, IconMoon, IconBack } from "../components/Icons";
 
 interface ThemeScore {
   tag: string;
@@ -26,15 +27,14 @@ interface CodexSynthesis {
   isPremium: boolean;
 }
 
-// Map section header prefixes to accent colors + glyphs
-const SECTION_ACCENTS: Record<string, { color: string; glyph: string }> = {
-  "CODENAME":   { color: "#9D4EDD", glyph: "⧫" },
-  "MOTTO":      { color: "#a78bfa", glyph: "◈" },
-  "WHO I AM":   { color: "#E0CCFF", glyph: "◉" },
-  "HOW I MOVE": { color: "#FF007F", glyph: "⬡" },
-  "WHAT I WON": { color: "#f472b6", glyph: "◌" },
-  "WHAT I'M B": { color: "#F2C94C", glyph: "◆" },
-  "THIS WEEK":  { color: "#22d3ee", glyph: "◎" },
+const SECTION_ACCENTS: Record<string, { color: string; glyph: any }> = {
+  "CODENAME":   { color: "#9D4EDD", glyph: IconCodex },
+  "MOTTO":      { color: "#a78bfa", glyph: IconStar },
+  "WHO I AM":   { color: "#E0CCFF", glyph: IconProfile },
+  "HOW I MOVE": { color: "#FF007F", glyph: IconGuide },
+  "WHAT I WON": { color: "#f472b6", glyph: IconCompat },
+  "WHAT I'M B": { color: "#F2C94C", glyph: IconBlueprint },
+  "THIS WEEK":  { color: "#22d3ee", glyph: IconTimeline },
 };
 
 function getSectionAccent(header: string) {
@@ -42,7 +42,7 @@ function getSectionAccent(header: string) {
   for (const [key, val] of Object.entries(SECTION_ACCENTS)) {
     if (upper.startsWith(key)) return val;
   }
-  return { color: "#D4A85F", glyph: "◈" };
+  return { color: "#D4A85F", glyph: IconStar };
 }
 
 const SECTION_HEADERS = [
@@ -72,11 +72,14 @@ function parseNarrative(text: string) {
   return sections;
 }
 
-const THEME_ICONS: Record<string, string> = {
-  precision: "◈", service: "✦", privacy: "◉", intensity: "⬡", freedom: "◎",
-  leadership: "▲", healing: "✿", order: "⊞", innovation: "⚙", intuition: "☽",
-  discipline: "⬛", rebellion: "⚡", craft: "⬟", legacy: "⧫", emotion_depth: "◇",
-  social_sensitivity: "◌", truth: "◆", boundaries: "▪", courage: "▶", focus: "⊕",
+const THEME_ICONS: Record<string, any> = {
+  precision: IconBlueprint, service: IconStar, privacy: IconProfile,
+  intensity: IconGuide, freedom: IconTimeline, leadership: IconStar,
+  healing: IconStar, order: IconBlueprint, innovation: IconStar,
+  intuition: IconMoon, discipline: IconBlueprint, rebellion: IconGuide,
+  craft: IconBlueprint, legacy: IconCodex, emotion_depth: IconMoon,
+  social_sensitivity: IconProfile, truth: IconStar, boundaries: IconBlueprint,
+  courage: IconGuide, focus: IconBlueprint,
 };
 
 const THEME_DISPLAY: Record<string, string> = {
@@ -92,6 +95,33 @@ const THEME_DISPLAY: Record<string, string> = {
 function displayTheme(tag: string): string {
   return THEME_DISPLAY[tag] ?? tag.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
+
+const CODEX_FALLBACK_TEMPLATE: CodexSynthesis = {
+  codename: "ARCHITECT",
+  archetype: "Unknown Archetype",
+  badges: { confidenceLabel: "Partial", reason: "AI generation offline" },
+  topThemes: [
+    { tag: "focus", score: 85 },
+    { tag: "precision", score: 78 },
+    { tag: "discipline", score: 72 }
+  ],
+  strengths: ["Strategic observation", "Structural integrity", "Long-range vision"],
+  shadows: ["Rigidity", "Emotional suppression", "Analysis paralysis"],
+  triggers: ["Chaos", "Lack of clear intent", "Unverified claims"],
+  prescriptions: ["Simplify the next step", "Audit the current state", "Build for scale"],
+  narrative: `## 🧊 CORE ARCHITECTURE
+Your blueprint is built on clarity and structural integrity. You operate best when the rules are clear and the stakes are real.
+
+## 🧠 HOW YOU MOVE UNDER PRESSURE
+When stress spikes, you retreat into analysis. You stop moving to verify the foundation. This is your strength and your cage.
+
+## ⚔️ WHAT YOU WON'T TOLERATE
+Lies, placeholders, and uncontrolled variables. You require truth to operate.
+
+## 🏗️ WHAT YOU'RE BUILDING
+A system that lasts. Not a moment, but a legacy.`,
+  isPremium: false
+};
 
 const PREMIUM_FEATURES = [
   "Full narrative (all 4 sections)",
@@ -196,7 +226,7 @@ export default function CodexReadingPage() {
   if (generateMutation.isPending && !synthesis) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.5rem", padding: "2rem" }}>
-        <div style={{ fontSize: "3rem", animation: "spin 3s linear infinite" }}>✦</div>
+        <IconSparkles size={48} className="animate-spin" style={{ color: "var(--sc-gold)" }} />
         <h2 style={{ color: "var(--cosmic-lavender)", fontFamily: "var(--font-serif)", fontSize: "1.4rem" }}>
           Building your Codex Reading…
         </h2>
@@ -223,19 +253,19 @@ export default function CodexReadingPage() {
           }}>
             {noProfile ? (
               <>
-                <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.75 }}>◈</div>
+                <IconCodex size={32} style={{ marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.75 }} />
                 <h3 style={{ marginBottom: "0.65rem", fontSize: "1.15rem", fontWeight: 600 }}>Your Codex isn't unlocked yet</h3>
                 <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.7, marginBottom: "1.25rem" }}>
                   The Codex is a 30-point synthesis that gives you a codename, a first-person narrative, and a ranked map of your core patterns across 15+ systems — astrology, numerology, Human Design, and behavioral archetypes. It needs your profile to generate.
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.75rem", textAlign: "left" }}>
                   {[
-                    { glyph: "◈", label: "Your codename", desc: "A single word that distills your core operating pattern" },
-                    { glyph: "◉", label: "30-point pattern map", desc: "Your ranked signals across astrology, numerology, and more" },
-                    { glyph: "✦", label: "First-person narrative", desc: "Your full synthesis written from your own voice" },
+                    { glyph: IconCodex, label: "Your codename", desc: "A single word that distills your core operating pattern" },
+                    { glyph: IconIdentity, label: "30-point pattern map", desc: "Your ranked signals across astrology, numerology, and more" },
+                    { glyph: IconSparkles, label: "First-person narrative", desc: "Your full synthesis written from your own voice" },
                   ].map((item) => (
                     <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(212,168,95,0.04)", border: "1px solid rgba(212,168,95,0.12)", borderRadius: 8 }}>
-                      <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
+                      <item.glyph size={14} style={{ color: "var(--cosmic-lavender)", marginTop: "0.15rem", flexShrink: 0 }} />
                       <span>
                         <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block" }}>{item.label}</span>
                         <span style={{ color: "var(--muted-foreground)", fontSize: "0.73rem" }}>{item.desc}</span>
@@ -247,7 +277,7 @@ export default function CodexReadingPage() {
               </>
             ) : (
               <>
-                <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
+                <IconAlert size={24} style={{ marginBottom: "1rem", opacity: 0.5 }} />
                 <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600 }}>Could not generate your reading</h3>
                 <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem", lineHeight: 1.6, marginBottom: "0.35rem" }}>
                   The synthesis engine hit an error. Your profile data is intact — retrying usually resolves this.
@@ -314,15 +344,19 @@ export default function CodexReadingPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem" }}>
                   {themes.map((t, i) => {
                     const pct = Math.round((t.score / maxScore) * 100);
-                    const icon = THEME_ICONS[t.tag] ?? "◈";
+                    const IconComp = THEME_ICONS[t.tag] ?? IconDiamond;
                     const isTop = i === 0;
                     return (
                       <div key={t.tag} style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                         <span style={{
                           fontSize: "0.7rem", color: "var(--cosmic-lavender)",
                           opacity: isTop ? 1 : 0.6, width: "1.1rem", textAlign: "right", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center"
                         }}>
-                          {icon}
+                          {(() => {
+                            const IconComp = THEME_ICONS[t.tag] ?? IconStar;
+                            return <IconComp size={12} />;
+                          })()}
                         </span>
                         <span style={{
                           fontSize: "0.72rem", color: "var(--foreground)",
@@ -364,7 +398,7 @@ export default function CodexReadingPage() {
             /* Free: compact chips for top 3 themes only */
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               {synthesis.topThemes.map((t) => {
-                const icon = THEME_ICONS[t.tag] ?? "◈";
+                const IconComp = THEME_ICONS[t.tag] ?? IconStar;
                 return (
                   <span key={t.tag} style={{
                     display: "inline-flex", alignItems: "center", gap: "0.35rem",
@@ -376,7 +410,7 @@ export default function CodexReadingPage() {
                     color: "var(--cosmic-lavender)",
                     letterSpacing: "0.02em",
                   }}>
-                    <span style={{ fontSize: "0.65rem", opacity: 0.7 }}>{icon}</span>
+                    <IconComp size={10} style={{ opacity: 0.7 }} />
                     {displayTheme(t.tag)}
                   </span>
                 );
@@ -391,31 +425,26 @@ export default function CodexReadingPage() {
         {isPremium ? (
           /* Premium: all sections */
           sections.map((sec, i) => {
-            const accent = sec.header ? getSectionAccent(sec.header) : { color: "#D4A85F", glyph: "◈" };
+            const accent = sec.header ? getSectionAccent(sec.header) : { color: "#D4A85F", glyph: IconDiamond };
             const isIdentity = i < 2;
 
             // FRONTEND FIREWALL: Reject dirty narrative sections
             const isValid = (text: string) => {
               if (!text || text.length < 10) return false;
               if (text.includes("|")) return false;
-              if (text.toLowerCase().includes("unknown")) return false;
-              if (text.toLowerCase().includes("chaos")) return false;
-              if (text.toLowerCase().includes("fix")) return false;
+              const lower = text.toLowerCase();
+              if (lower.includes("unknown")) return false;
+              if (lower.includes("chaos")) return false;
+              if (lower.includes("fix")) return false;
+              
+              const rejects = [/I am someone who/i, /I tend to/i, /I try to/i, /I aim to/i, /I enjoy/i];
+              if (rejects.some(r => r.test(text))) return false;
+              
               return true;
             };
 
             if (!isValid(sec.header) && !isValid(sec.lines.join(" "))) {
-              return (
-                <div key={i} style={{
-                  background: `rgba(26, 11, 46, 0.4)`,
-                  border: "1px solid rgba(157, 78, 221, 0.1)",
-                  borderRadius: "16px", padding: "1.6rem 1.75rem", marginBottom: "1.25rem",
-                }}>
-                  <div style={{ fontSize: "0.82rem", color: "rgba(234, 234, 245, 0.4)", fontStyle: "italic" }}>
-                    {sec.header || "Segment"} calibrating...
-                  </div>
-                </div>
-              );
+              return null; // Suppression Mode: Hide sections with bad data
             }
 
             return (
@@ -430,7 +459,7 @@ export default function CodexReadingPage() {
                 {sec.header && (
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
                     <span style={{ color: accent.color, fontSize: "0.9rem", flexShrink: 0 }}>
-                      {accent.glyph}
+                      <accent.glyph size={16} />
                     </span>
                     <h2 style={{
                       fontFamily: "var(--font-display)",
@@ -497,7 +526,7 @@ export default function CodexReadingPage() {
                 }}>
                   {sec.header && (
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                      <span style={{ color: accent.color, fontSize: "0.85rem", flexShrink: 0 }}>{accent.glyph}</span>
+                    <accent.glyph size={14} style={{ color: accent.color, flexShrink: 0 }} />
                       <h2 style={{
                         fontFamily: "var(--font-serif)",
                         fontSize: "0.75rem",
@@ -538,7 +567,7 @@ export default function CodexReadingPage() {
                 }}>
                   {sec.header && (
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                      <span style={{ color: "#D4A85F", fontSize: "0.85rem", flexShrink: 0 }}>◉</span>
+                      <IconIdentity size={14} style={{ color: "#D4A85F", flexShrink: 0 }} />
                       <h2 style={{
                         fontFamily: "var(--font-serif)",
                         fontSize: "0.75rem",
@@ -568,9 +597,9 @@ export default function CodexReadingPage() {
             <div style={{ position: "relative" }}>
               <div style={{ opacity: 0.4, pointerEvents: "none", filter: "blur(6px)", userSelect: "none" }}>
                 {[
-                  { header: "HOW I MOVE", glyph: "▶", lines: ["When the pressure hits, I don't hesitate. I leverage my natural momentum to bypass friction. My decision-making process relies entirely on...", "There is a specific way I need to structure my day to avoid immediate burnout, which involves protecting my energy from..."] },
-                  { header: "MY GROWTH EDGE", glyph: "◈", lines: ["The biggest trap I fall into is assuming everyone else processes reality at my speed. I often sabotage my own foundations by...", "To break this cycle, I must intentionally adopt a strategy of..."] },
-                  { header: "PRESCRIPTIONS", glyph: "✦", lines: ["- Establish a rigid boundary around unstructured time.", "- Decline requests that require high emotional performing energy.", "- Implement a 24-hour delay before committing to new projects."] }
+                  { header: "HOW I MOVE", glyph: IconArrowRight, lines: ["When the pressure hits, I don't hesitate. I leverage my natural momentum to bypass friction. My decision-making process relies entirely on...", "There is a specific way I need to structure my day to avoid immediate burnout, which involves protecting my energy from..."] },
+                  { header: "MY GROWTH EDGE", glyph: IconDiamond, lines: ["The biggest trap I fall into is assuming everyone else processes reality at my speed. I often sabotage my own foundations by...", "To break this cycle, I must intentionally adopt a strategy of..."] },
+                  { header: "PRESCRIPTIONS", glyph: IconSparkles, lines: ["- Establish a rigid boundary around unstructured time.", "- Decline requests that require high emotional performing energy.", "- Implement a 24-hour delay before committing to new projects."] }
                 ].map((fakeSec, idx) => (
                   <div key={idx} style={{
                     background: `rgba(26, 11, 46, 0.8)`,
@@ -580,7 +609,7 @@ export default function CodexReadingPage() {
                     boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                      <span style={{ color: "#D4A85F", fontSize: "0.85rem", flexShrink: 0 }}>{fakeSec.glyph}</span>
+                      <fakeSec.glyph size={14} style={{ color: "#D4A85F", flexShrink: 0 }} />
                       <h2 style={{
                         fontFamily: "var(--font-serif)", fontSize: "0.75rem",
                         letterSpacing: "0.1em", textTransform: "uppercase", color: "#D4A85F", margin: 0,
@@ -614,7 +643,7 @@ export default function CodexReadingPage() {
                   boxShadow: "0 4px 30px rgba(212,168,95,0.25)",
                   backdropFilter: "blur(4px)"
                 }}>
-                  🔒
+                  <IconLock size={28} />
                 </div>
                 <div style={{
                   background: "rgba(10,1,24,0.8)", border: "1px solid rgba(212,168,95,0.3)",
@@ -637,7 +666,7 @@ export default function CodexReadingPage() {
                 marginBottom: "2rem",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
-                  <span style={{ fontSize: "1.8rem", color: "#F2C94C" }}>🔒</span>
+                  <IconLock size={32} style={{ color: "#F2C94C" }} />
                   <div>
                     <div style={{ fontFamily: "var(--font-display)", color: "#F2C94C", fontWeight: 800, fontSize: "1.15rem", marginBottom: "0.25rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       Unlock Your Full Codex Reading
@@ -655,7 +684,7 @@ export default function CodexReadingPage() {
                       padding: "0.6rem 0",
                       borderBottom: i < PREMIUM_FEATURES.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                     }}>
-                      <span style={{ color: "#F2C94C", fontSize: "0.8rem", opacity: 0.8 }}>✦</span>
+                      <IconSparkles size={12} style={{ color: "#F2C94C", opacity: 0.8 }} />
                       <span style={{ color: "rgba(234, 234, 245, 0.9)", fontSize: "0.9rem", fontWeight: 500 }}>{f}</span>
                     </div>
                   ))}
@@ -696,7 +725,7 @@ export default function CodexReadingPage() {
             color: "#E0CCFF", marginBottom: "1rem", fontWeight: 800,
             fontFamily: "var(--font-display)"
           }}>
-            ◆ Prescriptions
+            <IconDiamond size={12} /> Prescriptions
           </h3>
           <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             {synthesis.prescriptions.map((p, i) => (
@@ -705,7 +734,7 @@ export default function CodexReadingPage() {
                 lineHeight: 1.7, paddingBottom: "0.75rem",
                 display: "flex", gap: "0.75rem",
               }}>
-                <span style={{ color: "#9D4EDD", flexShrink: 0, fontWeight: 900 }}>→</span>
+                <IconArrowRight size={14} style={{ color: "#9D4EDD", flexShrink: 0 }} />
                 <span>{p}</span>
               </li>
             ))}
@@ -727,7 +756,7 @@ export default function CodexReadingPage() {
               <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
                 {synthesis.strengths.slice(0, 5).map((s, i) => (
                   <li key={i} style={{ fontSize: "0.82rem", color: "rgba(230,255,230,0.82)", lineHeight: 1.6, paddingBottom: "0.3rem" }}>
-                    <span style={{ color: "#22c55e", marginRight: "0.4rem" }}>✓</span>{s}
+                  <IconCheck size={12} style={{ color: "#22c55e", marginRight: "0.4rem" }} />{s}
                   </li>
                 ))}
               </ul>
@@ -744,7 +773,7 @@ export default function CodexReadingPage() {
               <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
                 {synthesis.shadows.slice(0, 5).map((s, i) => (
                   <li key={i} style={{ fontSize: "0.82rem", color: "rgba(255,220,220,0.82)", lineHeight: 1.6, paddingBottom: "0.3rem" }}>
-                    <span style={{ color: "#f87171", marginRight: "0.4rem" }}>◈</span>{s}
+                  <IconDiamond size={12} style={{ color: "#f87171", marginRight: "0.4rem" }} />{s}
                   </li>
                 ))}
               </ul>
@@ -766,7 +795,7 @@ export default function CodexReadingPage() {
           <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             {synthesis.triggers.map((t, i) => (
               <li key={i} style={{ fontSize: "0.83rem", color: "rgba(255,240,200,0.85)", lineHeight: 1.7, paddingBottom: "0.25rem" }}>
-                <span style={{ color: "#f59e0b", marginRight: "0.4rem" }}>▪</span>{t}
+                <IconSquare size={8} style={{ color: "#f59e0b", marginRight: "0.4rem", marginTop: "0.3rem" }} />{t}
               </li>
             ))}
           </ul>
@@ -776,16 +805,15 @@ export default function CodexReadingPage() {
       {/* ── Actions ──────────────────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center", paddingTop: "0.5rem" }}>
         {isPremium && (
-          <button className="btn btn-secondary" onClick={handleRegenerate} disabled={generateMutation.isPending} style={{ fontSize: "0.85rem" }}>
-            {generateMutation.isPending ? "Regenerating…" : "↺ Regenerate"}
+            {generateMutation.isPending ? "Regenerating…" : "Regenerate"}
           </button>
         )}
-        <button className="btn btn-ghost" onClick={() => navigate("/profile")} style={{ fontSize: "0.85rem" }}>
-          ← Profile
+        <button className="btn btn-ghost" onClick={() => navigate("/profile")} style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <IconBack size={14} /> Profile
         </button>
         {isPremium && (
-          <button className="btn btn-ghost" onClick={() => navigate("/poster")} style={{ fontSize: "0.85rem" }}>
-            Poster →
+          <button className="btn btn-ghost" onClick={() => navigate("/poster")} style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            Poster <IconArrowRight size={14} />
           </button>
         )}
       </div>

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
+import {
+  IconToday, IconProfile, IconGuide, IconTracker, IconTimeline,
+  IconCodex, IconCompat, IconPoster, IconChart, IconBlueprint
+} from "./Icons";
+
 function useMode() {
   const [mode, setMode] = useState<"beginner" | "advanced">(() => {
     try {
@@ -18,17 +23,17 @@ function useMode() {
   return { mode, toggle };
 }
 
-const NAV_ICONS: Record<string, string> = {
-  "/":           "◉",
-  "/profile":    "◆",
-  "/guide":      "◎",
-  "/tracker":    "▲",
-  "/timeline":   "◇",
-  "/codex":      "✦",
-  "/compat":     "⧫",
-  "/poster":     "⬡",
-  "/horoscope":  "◌",
-  "/blueprint":  "◈",
+const NAV_ICONS: Record<string, any> = {
+  "/":           IconToday,
+  "/profile":    IconProfile,
+  "/guide":      IconGuide,
+  "/tracker":    IconTracker,
+  "/timeline":   IconTimeline,
+  "/codex":      IconCodex,
+  "/compat":     IconCompat,
+  "/poster":     IconPoster,
+  "/horoscope":  IconChart,
+  "/blueprint":  IconBlueprint,
 };
 
 export default function Nav() {
@@ -72,8 +77,12 @@ export default function Nav() {
             href={link.href}
             className={`sc-nav-item${isActive ? " sc-nav-active" : ""}`}
           >
-            <span style={{ fontSize: "0.85rem", width: "1rem", textAlign: "center", flexShrink: 0 }}>
-              {NAV_ICONS[link.href] ?? "◦"}
+            <span style={{ fontSize: "0.85rem", width: "1.1rem", textAlign: "center", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {(() => {
+                const IconComp = NAV_ICONS[link.href];
+                if (IconComp) return <IconComp style={{ width: "1rem", height: "1rem" }} />;
+                return <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>◦</span>;
+              })()}
             </span>
             <span>{link.label}</span>
           </Link>

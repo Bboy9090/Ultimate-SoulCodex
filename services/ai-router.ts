@@ -28,6 +28,12 @@ export function finalOutputGuard(text: string): string {
     /[a-z]{1,3}\|/i,              // Specific leakage: hj|
     /raw variables/i,
     /placeholder text/i,
+    /I am someone who/i,
+    /I tend to/i,
+    /I try to/i,
+    /I aim to/i,
+    /I enjoy/i,
+    /I value/i,
   ];
 
   for (const pattern of invalidPatterns) {
@@ -35,6 +41,18 @@ export function finalOutputGuard(text: string): string {
       console.warn(`[AI Firewall] Rejected output due to pattern: ${pattern}`);
       return "";
     }
+  }
+
+  // Global Specificity Test: Reject generic descriptions
+  if (text.length > 50 && (
+    text.includes("I am thoughtful") || 
+    text.includes("I value harmony") || 
+    text.includes("I like to") ||
+    text.includes("I prefer") ||
+    text.includes("I am a person who")
+  )) {
+    console.warn("[AI Firewall] Generic identity detected. Blocking.");
+    return "";
   }
 
   // Length sanity: too short is usually a failure; too long might be a hallucination in synthesis
@@ -52,6 +70,12 @@ export function sanitizeInput(input: string): string {
     .replace(/\|.*?\|/g, "")
     .replace(/chaos+/gi, "")
     .replace(/fix/gi, "")
+    .replace(/unknown/gi, "")
+    .replace(/I am someone who/gi, "I")
+    .replace(/I tend to/gi, "I default to")
+    .replace(/I try to/gi, "I")
+    .replace(/I aim to/gi, "I")
+    .replace(/I enjoy/gi, "I")
     .trim();
 }
 

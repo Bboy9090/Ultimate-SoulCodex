@@ -44,9 +44,9 @@ export default function CosmicChart({ astrologyData, size = 400 }: CosmicChartPr
     ctx.stroke();
 
     // Draw zodiac signs around the wheel
-    const zodiacSigns = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+    const zodiacSigns = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
     ctx.fillStyle = 'hsl(45, 96%, 68%)';
-    ctx.font = '16px serif';
+    ctx.font = 'bold 10px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -75,23 +75,23 @@ export default function CosmicChart({ astrologyData, size = 400 }: CosmicChartPr
 
     // Draw planetary symbols
     const planetSymbols: { [key: string]: string } = {
-      sun: '☉',
-      moon: '☽',
-      mercury: '☿',
-      venus: '♀',
-      mars: '♂',
-      jupiter: '♃',
-      saturn: '♄',
-      uranus: '♅',
-      neptune: '♆',
-      pluto: '♇'
+      sun: 'SUN',
+      moon: 'MON',
+      mercury: 'MER',
+      venus: 'VEN',
+      mars: 'MAR',
+      jupiter: 'JUP',
+      saturn: 'SAT',
+      uranus: 'URA',
+      neptune: 'NEP',
+      pluto: 'PLU'
     };
 
     const zodiacOrder = ['aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 
                         'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'];
 
     if (astrologyData.planets) {
-      ctx.font = '14px serif';
+      ctx.font = 'bold 9px sans-serif';
       ctx.fillStyle = 'hsl(0, 0%, 98%)';
       
       Object.entries(astrologyData.planets).forEach(([planet, data]: [string, any]) => {

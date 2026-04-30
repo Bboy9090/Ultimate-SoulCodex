@@ -4299,6 +4299,20 @@ const DAY_ARCHETYPE: Record<number, string> = {
 };
 
 /**
+ * Global prompt data sanitizer.
+ * Strips pipes, placeholders, and system artifacts before they reach the AI.
+ */
+function sanitizeForAI(text: string | undefined | null): string {
+  if (!text) return "";
+  return text
+    .replace(/\|/g, "")
+    .replace(/unknown/gi, "")
+    .replace(/chaos/gi, "")
+    .replace(/fix/gi, "")
+    .trim();
+}
+
+/**
  * Generates a personalized Today card using Gemini.
  * Returns partial TodayCardData fields, or null if generation fails.
  */
@@ -4329,13 +4343,13 @@ async function generateTodayCardAI(
   const dayNum   = base.personalDayNumber;
   const archDesc = DAY_ARCHETYPE[dayNum] ?? "focused work";
   const moon     = base.moonPhase;
-  const codename = base.codename;
+  const codename = sanitizeForAI(base.codename);
   const themeList = (codexSynthesis?.topThemes ?? horoscopeData?.topThemes ?? [])
     .slice(0, 4).map((t: any) => t.tag ?? t).filter(Boolean);
-  const themes   = themeList.length ? themeList.join(", ") : (base.topTheme ?? "precision");
-  const decide   = profile?.userInputs?.decisionStyle ?? profile?.signals?.decisionStyle ?? "";
-  const pressure = profile?.userInputs?.pressureStyle ?? profile?.signals?.pressureStyle ?? "";
-  const transit  = horoscopeData?.personalTransits?.[0]?.description ?? "";
+  const themes   = sanitizeForAI(themeList.length ? themeList.join(", ") : (base.topTheme ?? "precision"));
+  const decide   = sanitizeForAI(profile?.userInputs?.decisionStyle ?? profile?.signals?.decisionStyle ?? "");
+  const pressure = sanitizeForAI(profile?.userInputs?.pressureStyle ?? profile?.signals?.pressureStyle ?? "");
+  const transit  = sanitizeForAI(horoscopeData?.personalTransits?.[0]?.description ?? "");
 
     const prompt = `
 You are the final synthesis layer of Soul Codex.
@@ -4363,7 +4377,7 @@ ${transit ? `- ACTIVE TRANSIT: ${transit}` : ""}
 
 ---
 ## OUTPUT FORMAT
-RECOGNITION: [One blunt, uncomfortable behavioral confession.]
+RECOGNITION: [One blunt, uncomfortable behavioral confession. 12 words max. No fluff.]
 MEMORY: [If repeating a pattern from history, call it out. Otherwise omit.]
 FOCUS: [One sentence exposing the core loop today.]
 TOMORROW: [Expose the tension for tomorrow. Example: "This pattern repeats tomorrow if I don't interrupt it today."]

@@ -1,4 +1,5 @@
 import React from "react";
+import { IconDiamond } from "../components/Icons";
 import { motion } from "framer-motion";
 
 export default function TermsPage() {
@@ -95,7 +96,7 @@ export default function TermsPage() {
       </Section>
 
       <div style={{ marginTop: "3rem", textAlign: "center", opacity: 0.5, fontSize: "0.8rem" }}>
-        ◈ © 2026 Soul Codex ◈
+        <IconDiamond size={12} style={{ verticalAlign: "middle" }} /> © 2026 Soul Codex <IconDiamond size={12} style={{ verticalAlign: "middle" }} />
       </div>
     </motion.div>
   );

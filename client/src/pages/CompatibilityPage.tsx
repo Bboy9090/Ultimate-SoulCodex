@@ -5,6 +5,22 @@ import { apiRequest, apiFetch } from "../lib/queryClient";
 import ConfidenceBadge from "../components/ConfidenceBadge";
 import CosmicLoader from "../components/CosmicLoader";
 import ScButton from "../components/ScButton";
+import { 
+  IconHeart, IconSparkles, IconCircle, IconGrowth, 
+  IconIdentity, IconStress, IconDecisions, IconSun, 
+  IconMoon, IconRising, IconHashtag, IconAlert,
+  IconArrowRight, IconSquare, IconChevronDown, IconChevronUp,
+  IconZodiacAries, IconZodiacTaurus, IconZodiacGemini, 
+  IconZodiacCancer, IconZodiacLeo, IconZodiacVirgo, 
+  IconZodiacLibra, IconZodiacScorpio, IconZodiacSagittarius, 
+  IconZodiacCapricorn, IconZodiacAquarius, IconZodiacPisces
+} from "../components/Icons";
+
+const SIGN_GLYPHS: Record<string, React.ComponentType<any>> = {
+  Aries: IconZodiacAries, Taurus: IconZodiacTaurus, Gemini: IconZodiacGemini, Cancer: IconZodiacCancer, 
+  Leo: IconZodiacLeo, Virgo: IconZodiacVirgo, Libra: IconZodiacLibra, Scorpio: IconZodiacScorpio, 
+  Sagittarius: IconZodiacSagittarius, Capricorn: IconZodiacCapricorn, Aquarius: IconZodiacAquarius, Pisces: IconZodiacPisces,
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,11 +50,11 @@ interface CompatibilityResult {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MODES: { key: Mode; label: string; glyph: string; desc: string }[] = [
-  { key: "love",       label: "Love",       glyph: "♥", desc: "Romantic depth & emotional resonance" },
-  { key: "attraction", label: "Attraction", glyph: "✦", desc: "Chemistry, desire & magnetic pull" },
-  { key: "friendship", label: "Friendship", glyph: "◌", desc: "Ease, trust & long-term bond" },
-  { key: "growth",     label: "Growth",     glyph: "◈", desc: "Complementary gifts & evolution" },
+const MODES: { key: Mode; label: string; glyph: React.ComponentType<any>; desc: string }[] = [
+  { key: "love",       label: "Love",       glyph: IconHeart, desc: "Romantic depth & emotional resonance" },
+  { key: "attraction", label: "Attraction", glyph: IconSparkles, desc: "Chemistry, desire & magnetic pull" },
+  { key: "friendship", label: "Friendship", glyph: IconCircle, desc: "Ease, trust & long-term bond" },
+  { key: "growth",     label: "Growth",     glyph: IconGrowth, desc: "Complementary gifts & evolution" },
 ];
 
 const ELEMENT_COLORS: Record<string, string> = {
@@ -46,10 +62,10 @@ const ELEMENT_COLORS: Record<string, string> = {
 };
 
 const DIM_CONFIG = {
-  identity:  { glyph: "◉", color: "#D4A85F", label: "Identity" },
-  stress:    { glyph: "⬡", color: "#f59e0b", label: "Under Pressure" },
-  values:    { glyph: "◌", color: "#f472b6", label: "Values" },
-  decisions: { glyph: "◆", color: "#22d3ee", label: "Decisions" },
+  identity:  { glyph: IconIdentity, color: "#D4A85F", label: "Identity" },
+  stress:    { glyph: IconStress,   color: "#f59e0b", label: "Under Pressure" },
+  values:    { glyph: IconCircle,   color: "#f472b6", label: "Values" },
+  decisions: { glyph: IconDecisions,color: "#22d3ee", label: "Decisions" },
 };
 
 const FREE_LIMIT = 5;
@@ -83,12 +99,12 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   );
 }
 
-function DimensionBar({ label, glyph, color, score }: { label: string; glyph: string; color: string; score: number }) {
+function DimensionBar({ label, glyph: Glyph, color, score }: { label: string; glyph: React.ComponentType<any>; color: string; score: number }) {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.35rem" }}>
         <span style={{ fontSize: "0.72rem", color: "var(--muted-foreground)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
-          <span style={{ color }}>{glyph}</span>{label}
+          <Glyph size={12} style={{ color }} />{label}
         </span>
         <span style={{ fontSize: "0.72rem", fontWeight: 600, color }}>{score}%</span>
       </div>
@@ -132,8 +148,10 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
       <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
         <ScoreRing score={match.score} size={72} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>{match.sign.glyph}</span>
+            {(() => {
+              const Glyph = SIGN_GLYPHS[match.sign.name];
+              return Glyph ? <Glyph size={24} style={{ color: elColor }} /> : null;
+            })()}
             <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--foreground)" }}>{match.sign.name}</span>
             <span style={{
               fontSize: "0.6rem", padding: "0.1rem 0.5rem",
@@ -190,7 +208,10 @@ function ChallengeCard({ match, mode }: { match: ArchetypeMatch; mode: Mode }) {
       padding: "1rem 1.1rem", display: "flex", alignItems: "center", gap: "0.85rem",
     }}>
       <div style={{ textAlign: "center", flexShrink: 0 }}>
-        <div style={{ fontSize: "1.4rem" }}>{match.sign.glyph}</div>
+        {(() => {
+          const Glyph = SIGN_GLYPHS[match.sign.name];
+          return Glyph ? <Glyph size={24} style={{ color: elColor }} /> : null;
+        })()}
         <div style={{ fontSize: "0.58rem", color: elColor, marginTop: "0.1rem" }}>{match.sign.element}</div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -405,12 +426,18 @@ export default function CompatibilityPage() {
         }}>
           <div style={{ flex: 1, minWidth: 160 }}>
             <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.4rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ color: "#D4A85F" }}>◉</span>
+              <IconIdentity size={14} style={{ color: "#D4A85F" }} />
               {myProfile?.name || "My Blueprint"}
               {myConfidence && <ConfidenceBadge badge={myConfidence.badge} reason={myConfidence.reason} size="sm" />}
             </div>
             <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
-              {([["☀", "Sun", sunSign], ["☽", "Moon", moonSign], ["↑", "Rising", rising], ["#", "LP", lifePath], ["◈", "HD", hdType]] as [string, string, string][])
+              {([
+                [IconSun, "Sun", sunSign], 
+                [IconMoon, "Moon", moonSign], 
+                [IconRising, "Rising", rising], 
+                [IconHashtag, "LP", lifePath], 
+                [IconGrowth, "HD", hdType]
+              ] as [React.ComponentType<any>, string, string][])
                 .filter(([,,v]) => v)
                 .map(([icon, label, val]) => (
                   <span key={label} style={{
@@ -419,7 +446,7 @@ export default function CompatibilityPage() {
                     background: "rgba(212,168,95,0.1)", border: "1px solid rgba(212,168,95,0.22)",
                     borderRadius: "99px", fontSize: "0.68rem", color: "rgba(246,241,232,0.8)",
                   }}>
-                    <span style={{ color: "#D4A85F", fontSize: "0.7rem" }}>{icon}</span>
+                  <icon.glyph size={12} style={{ color: "#D4A85F" }} />
                     <span style={{ color: "var(--muted-foreground)" }}>{label}</span>
                     <span style={{ fontWeight: 600 }}>{val}</span>
                   </span>
@@ -445,7 +472,7 @@ export default function CompatibilityPage() {
 
       {!sunSign ? (
         <div style={{ textAlign: "center", padding: "3rem 1rem", background: "rgba(28, 22, 53, 0.72)", border: "1px solid rgba(212,168,95,0.25)", borderRadius: "14px" }}>
-          <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>◉</div>
+          <IconIdentity size={48} style={{ margin: "0 auto 0.75rem", color: "#D4A85F", opacity: 0.6 }} />
           <p style={{ color: "rgba(234,234,245,0.7)", fontSize: "0.88rem", marginBottom: "1rem" }}>
             Complete your soul profile to unlock compatibility analysis.
           </p>
@@ -491,7 +518,7 @@ export default function CompatibilityPage() {
           {/* ── Best Matches ── */}
           <div style={{ marginBottom: "2rem" }}>
             <h2 style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "#D4A85F", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span>{modeInfo?.glyph}</span> Your Best Matches for {modeInfo?.label}
+              <modeInfo.glyph size={14} /> Your Best Matches for {modeInfo?.label}
             </h2>
 
             {archetypeMatchMutation.isPending ? (
@@ -513,7 +540,7 @@ export default function CompatibilityPage() {
           {matches?.challenging && matches.challenging.length > 0 && (
             <div style={{ marginBottom: "2.5rem" }}>
               <h2 style={{ fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "#ef4444", marginBottom: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span>⚠</span> Most Challenging for {modeInfo?.label}
+                <IconAlert size={14} /> Most Challenging for {modeInfo?.label}
               </h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                 {matches.challenging.map(m => (
@@ -541,11 +568,11 @@ export default function CompatibilityPage() {
               }}
             >
               <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ color: "var(--cosmic-pink)" }}>◌</span>
+                <IconCircle size={14} style={{ color: "var(--cosmic-pink)" }} />
                 Compare a Specific Person
               </span>
-              <span style={{ color: "var(--muted-foreground)", fontSize: "0.75rem" }}>
-                {compareOpen ? "▲ Collapse" : "▼ Expand"}
+              <span style={{ color: "var(--muted-foreground)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                {compareOpen ? <><IconChevronUp size={12} /> Collapse</> : <><IconChevronDown size={12} /> Expand</>}
               </span>
             </button>
 
@@ -563,7 +590,7 @@ export default function CompatibilityPage() {
                     </span>
                     <a href="/profile" style={{ textDecoration: "none" }}>
                       <span style={{ display: "inline-block", padding: "0.2rem 0.7rem", background: "rgba(212,168,95,0.15)", border: "1px solid rgba(212,168,95,0.4)", borderRadius: "99px", fontSize: "0.72rem", color: "#D4A85F", cursor: "pointer" }}>
-                        Upgrade ✦
+                        Upgrade <IconSparkles size={10} style={{ display: "inline-block", marginLeft: "0.2rem" }} />
                       </span>
                     </a>
                   </div>
@@ -617,7 +644,9 @@ export default function CompatibilityPage() {
                     {persons.map(person => (
                       <div key={person.id} style={{ background: "rgba(15,20,40,0.55)", border: "1px solid rgba(244,114,182,0.15)", borderRadius: "12px", padding: "0.9rem 1.1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(244,114,182,0.12)", border: "1px solid rgba(244,114,182,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", color: "var(--cosmic-rose)" }}>◌</div>
+                          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(244,114,182,0.12)", border: "1px solid rgba(244,114,182,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--cosmic-rose)" }}>
+                            <IconCircle size={18} />
+                          </div>
                           <div>
                             <p style={{ fontWeight: 600, margin: 0, fontSize: "0.88rem" }}>{person.name}</p>
                             <p style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", margin: 0 }}>{person.birthDate}</p>
@@ -669,22 +698,28 @@ export default function CompatibilityPage() {
 
                     {result.synergy.length > 0 && (
                       <div style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.2)", borderLeft: "3px solid #22c55e", borderRadius: "12px", padding: "1.1rem 1.25rem", marginBottom: "0.85rem" }}>
-                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#22c55e", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700 }}>✦ Where You Flow</p>
-                        {result.synergy.map((s, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(200,255,210,0.88)", marginBottom: "0.28rem", lineHeight: 1.65 }}><span style={{ color: "#22c55e", marginRight: "0.4rem" }}>→</span>{s}</p>)}
+                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#22c55e", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <IconSparkles size={12} /> Where You Flow
+                        </p>
+                        {result.synergy.map((s, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(200,255,210,0.88)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconArrowRight size={12} style={{ color: "#22c55e", flexShrink: 0 }} />{s}</p>)}
                       </div>
                     )}
 
                     {result.growthOpportunities.length > 0 && (
                       <div style={{ background: "rgba(212,168,95,0.05)", border: "1px solid rgba(212,168,95,0.2)", borderLeft: "3px solid #D4A85F", borderRadius: "12px", padding: "1.1rem 1.25rem", marginBottom: "0.85rem" }}>
-                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#D4A85F", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700 }}>◈ What This Can Build</p>
-                        {result.growthOpportunities.map((g, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.28rem", lineHeight: 1.65 }}><span style={{ color: "#D4A85F", marginRight: "0.4rem" }}>◆</span>{g}</p>)}
+                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#D4A85F", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <IconGrowth size={12} /> What This Can Build
+                        </p>
+                        {result.growthOpportunities.map((g, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconDecisions size={12} style={{ color: "#D4A85F", flexShrink: 0 }} />{g}</p>)}
                       </div>
                     )}
 
                     {result.friction.length > 0 && (
                       <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.2)", borderLeft: "3px solid #f59e0b", borderRadius: "12px", padding: "1.1rem 1.25rem", marginBottom: "1.5rem" }}>
-                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#f59e0b", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700 }}>▪ Watch Points</p>
-                        {result.friction.map((f, i) => <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.28rem", lineHeight: 1.65 }}><span style={{ color: "#f59e0b", marginRight: "0.4rem" }}>⚠</span>{f}</p>)}
+                        <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#f59e0b", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          <IconSquare size={10} /> Watch Points
+                        </p>
+                        {result.friction.map((f, i) => <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconAlert size={12} style={{ color: "#f59e0b", flexShrink: 0 }} />{f}</p>)}
                       </div>
                     )}
 
@@ -726,7 +761,7 @@ export default function CompatibilityPage() {
                         style={{ borderColor: "#9D4EDD", color: "#C77DFF" }}
                         onClick={() => window.location.href = "/profile"}
                       >
-                        Unlock Surgical Autopsy ✦
+                        Unlock Surgical Autopsy <IconSparkles size={14} style={{ display: "inline-block", marginLeft: "0.4rem" }} />
                       </ScButton>
                       
                       <p style={{ fontSize: "0.65rem", color: "rgba(157, 78, 221, 0.6)", marginTop: "0.75rem" }}>

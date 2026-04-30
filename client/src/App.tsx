@@ -6,6 +6,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import SplashScreen from "./components/SplashScreen";
 import { CosmicBackground } from "./components/CosmicBackground";
 import CosmicLoader from "./components/CosmicLoader";
+import { IconCodex } from "./components/Icons";
 
 // Lazy load pages to kill freezing/heavy initial bundle
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -92,13 +93,7 @@ export default function App() {
             <Route path="/pricing" component={PricingPage} />
             <Route>
               <div className="nebula-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", textAlign: "center" }}>
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  style={{ fontSize: "4rem", color: "var(--sc-gold)", marginBottom: "1rem", textShadow: "0 0 30px var(--sc-gold-glow)" }}
-                >
-                  ◈
-                </motion.div>
+                <IconCodex size={64} style={{ color: "var(--sc-gold)", marginBottom: "1rem", filter: "drop-shadow(0 0 30px var(--sc-gold-glow))" }} />
                 <h1 className="heading-display" style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>Lost in the Cosmos</h1>
                 <p style={{ color: "var(--sc-text-muted)", maxWidth: "320px", marginBottom: "2rem" }}>
                   The celestial coordinates you are looking for do not exist in this dimension.

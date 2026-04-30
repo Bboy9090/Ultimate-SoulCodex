@@ -1,6 +1,9 @@
 import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ShieldCheck, Zap, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
+import { 
+  IconArrowLeft, IconShield, IconZap, IconSparkles, 
+  IconCheckCircle, IconLoader 
+} from "../components/Icons";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -56,9 +59,9 @@ export default function PricingPage() {
             >
               {isVerifying ? (
                 <>
-                  <div className="relative mx-auto w-20 h-20">
-                    <Loader2 className="w-20 h-20 text-[var(--sc-gold)] animate-spin" />
-                    <ShieldCheck className="absolute inset-0 m-auto w-8 h-8 text-[var(--sc-gold)]/50" />
+                  <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
+                    <IconLoader size={80} className="text-[var(--sc-gold)] animate-spin" />
+                    <IconShield size={32} className="absolute m-auto text-[var(--sc-gold)]/50" />
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-2xl font-serif tracking-tight text-[var(--sc-gold)]">Syncing with Cosmos</h2>
@@ -68,7 +71,7 @@ export default function PricingPage() {
               ) : (
                 <>
                   <div className="mx-auto w-24 h-24 bg-[var(--sc-gold)]/10 rounded-full flex items-center justify-center border border-[var(--sc-gold)]/30">
-                    <CheckCircle2 className="w-12 h-12 text-[var(--sc-gold)]" />
+                    <IconCheckCircle size={48} className="text-[var(--sc-gold)]" />
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-2xl font-serif tracking-tight text-[var(--sc-gold)]">Access Granted</h2>
@@ -84,13 +87,13 @@ export default function PricingPage() {
       <div className="max-w-4xl mx-auto relative z-10">
         <div className="mb-8 flex items-center justify-between">
           <Link href="/profile">
-            <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/5 border border-white/5">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+            <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/5 border border-white/5 flex items-center gap-2">
+              <IconArrowLeft size={16} />
               Back to Profile
             </Button>
           </Link>
           <div className="flex items-center space-x-2 text-[var(--sc-gold)]">
-            <ShieldCheck className="h-5 w-5" />
+            <IconShield size={20} />
             <span className="text-xs font-bold uppercase tracking-widest">Beta Access Mode</span>
           </div>
         </div>
@@ -101,7 +104,7 @@ export default function PricingPage() {
             animate={{ scale: 1, opacity: 1 }}
             className="inline-block p-4 rounded-2xl bg-[var(--sc-gold)]/10 mb-2 border border-[var(--sc-gold)]/20"
           >
-            <Sparkles className="h-10 w-10 text-[var(--sc-gold)]" />
+            <IconSparkles size={40} className="text-[var(--sc-gold)]" />
           </motion.div>
           <h1 className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-b from-[var(--sc-gold)] to-[var(--sc-gold-soft)] font-serif">
             The Eternal Now
@@ -126,7 +129,7 @@ export default function PricingPage() {
                   className="flex items-start gap-4"
                 >
                   <div className="mt-1 w-5 h-5 rounded-full bg-[var(--sc-gold)]/20 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="h-3 w-3 text-[var(--sc-gold)]" />
+                    <IconCheckCircle size={12} className="text-[var(--sc-gold)]" />
                   </div>
                   <span className="text-white/90 text-sm font-medium">{benefit}</span>
                 </motion.div>
@@ -149,10 +152,10 @@ export default function PricingPage() {
             <div className="w-full space-y-4 relative z-10">
               <Button 
                 size="lg" 
-                className="w-full h-18 text-xl font-black bg-[var(--sc-gold)] hover:bg-[var(--sc-gold-soft)] text-[var(--sc-bg-ink)] rounded-2xl shadow-[0_10px_40px_rgba(212,168,95,0.4)] transition-all active:scale-95 transform"
+                className="w-full h-18 text-xl font-black bg-[var(--sc-gold)] hover:bg-[var(--sc-gold-soft)] text-[var(--sc-bg-ink)] rounded-2xl shadow-[0_10px_40px_rgba(212,168,95,0.4)] transition-all active:scale-95 transform flex items-center justify-center"
                 onClick={handlePurchase}
               >
-                <Zap className="mr-3 h-6 w-6 fill-current" />
+                <IconZap size={24} className="mr-3 fill-current" />
                 GET ACCESS
               </Button>
               <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest">

@@ -13,10 +13,10 @@ export interface PosterData {
 }
 
 const ZODIAC_GLYPHS: Record<string, string> = {
-  Aries:"♈", Taurus:"♉", Gemini:"♊", Cancer:"♋", Leo:"♌", Virgo:"♍",
-  Libra:"♎", Scorpio:"♏", Sagittarius:"♐", Capricorn:"♑", Aquarius:"♒", Pisces:"♓",
+  Aries:"ARI", Taurus:"TAU", Gemini:"GEM", Cancer:"CAN", Leo:"LEO", Virgo:"VIR",
+  Libra:"LIB", Scorpio:"SCO", Sagittarius:"SAG", Capricorn:"CAP", Aquarius:"AQU", Pisces:"PIS",
 };
-const ZODIAC_GLYPH_LIST = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
+const ZODIAC_GLYPH_LIST = ["ARI","TAU","GEM","CAN","LEO","VIR","LIB","SCO","SAG","CAP","AQU","PIS"];
 const ZODIAC_SIGNS      = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 
 const LIFE_PATH_ARCHETYPES: Record<number, string> = {
@@ -31,9 +31,9 @@ const MASTER_NUMBER_MEANINGS: Record<number, string> = {
 };
 
 const PLANET_GLYPHS: Record<string, string> = {
-  sun:"☉", moon:"☽", mercury:"☿", venus:"♀", mars:"♂",
-  jupiter:"♃", saturn:"♄", uranus:"♅", neptune:"♆", pluto:"♇",
-  north_node:"☊", chiron:"⚷",
+  sun:"SUN", moon:"MON", mercury:"MER", venus:"VEN", mars:"MAR",
+  jupiter:"JUP", saturn:"SAT", uranus:"URA", neptune:"NEP", pluto:"PLU",
+  north_node:"NN", chiron:"CHI",
 };
 
 /* Star positions [x, y, radius] across 1080-wide canvas */
@@ -91,7 +91,7 @@ export default function BirthChartPosterSVG({
   const birthDateStr = formatDate(data.birthDate);
   const birthTimeStr = formatTime(data.birthTime);
   const nameText    = data.name || "Soul Codex";
-  const risingGlyph = data.risingSign ? (ZODIAC_GLYPHS[data.risingSign] ?? "♏") : null;
+  const risingGlyph = data.risingSign ? (ZODIAC_GLYPHS[data.risingSign] ?? "SCO") : null;
 
   /* Circular ring text */
   const ringParts = [
@@ -152,7 +152,7 @@ export default function BirthChartPosterSVG({
           return (
             <g key={sign}>
               <path d={path} fill={highlight ? "#e5e7eb" : segFills[i % 2]} stroke="#9ca3af" strokeWidth={0.7} />
-              <text x={gx} y={gy} fontFamily="serif" fontSize={21} fill={highlight ? "#111827" : "#374151"}
+              <text x={gx} y={gy} fontFamily="sans-serif" fontSize={11} fontWeight="bold" fill={highlight ? "#111827" : "#374151"}
                 textAnchor="middle" dominantBaseline="central" opacity={highlight ? 1 : 0.7}>
                 {ZODIAC_GLYPH_LIST[i]}
               </text>
@@ -171,7 +171,7 @@ export default function BirthChartPosterSVG({
           return (
             <g key={i}>
               <circle cx={px} cy={py} r={15} fill="#ffffff" stroke="#374151" strokeWidth={1.2} />
-              <text x={px} y={py+1} fontFamily="serif" fontSize={14} fill="#111827"
+              <text x={px} y={py+1} fontFamily="sans-serif" fontSize={10} fontWeight="bold" fill="#111827"
                 textAnchor="middle" dominantBaseline="central">
                 {label}
               </text>
@@ -240,7 +240,7 @@ export default function BirthChartPosterSVG({
           </text>
         )}
 
-        <text x={cx} y={1320} fontFamily="sans-serif" fontSize={16} fill="#9ca3af" textAnchor="middle" opacity={0.4}>✦</text>
+        <text x={cx} y={1320} fontFamily="sans-serif" fontSize={16} fill="#9ca3af" textAnchor="middle" opacity={0.4}>+</text>
       </svg>
     );
   }
@@ -343,7 +343,7 @@ export default function BirthChartPosterSVG({
         return (
           <g key={sign}>
             <path d={path} fill={highlight ? "rgba(30,70,60,0.6)" : segFills[i % 2]} stroke="#d6b25e" strokeWidth={0.8} />
-            <text x={gx} y={gy} fontFamily="serif" fontSize={21} fill={highlight ? "#e8d28a" : "#d6b25e"}
+            <text x={gx} y={gy} fontFamily="sans-serif" fontSize={11} fontWeight="bold" fill={highlight ? "#e8d28a" : "#d6b25e"}
               textAnchor="middle" dominantBaseline="central" opacity={highlight ? 1 : 0.75}
               filter={highlight ? "url(#glow)" : undefined}>
               {ZODIAC_GLYPH_LIST[i]}
@@ -393,7 +393,7 @@ export default function BirthChartPosterSVG({
         return (
           <g key={i}>
             <circle cx={px} cy={py} r={15} fill="rgba(8,30,36,0.88)" stroke="#d6b25e" strokeWidth={1.5} opacity={0.95} />
-            <text x={px} y={py+1} fontFamily="serif" fontSize={14} fill="#e8d28a"
+            <text x={px} y={py+1} fontFamily="sans-serif" fontSize={10} fontWeight="bold" fill="#e8d28a"
               textAnchor="middle" dominantBaseline="central" filter="url(#glow)">
               {label}
             </text>
@@ -459,7 +459,7 @@ export default function BirthChartPosterSVG({
       )}
 
       {/* Bottom glow star */}
-      <text x={cx} y={1320} fontFamily="sans-serif" fontSize={16} fill="#d6b25e" textAnchor="middle" opacity={0.3}>✦</text>
+      <text x={cx} y={1320} fontFamily="sans-serif" fontSize={16} fill="#d6b25e" textAnchor="middle" opacity={0.3}>+</text>
     </svg>
   );
 }

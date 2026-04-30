@@ -8,12 +8,17 @@ import {
   getNextYearNum, 
   getNextMonthNum 
 } from "@soulcodex/core";
+import { 
+  IconCircle, IconSparkles, IconDiamond, IconHexagon, 
+  IconIdentity, IconMoon, IconChevronRight, IconArrowRight,
+  IconX, IconSquare
+} from "../components/Icons";
 
 // ── Phase content ─────────────────────────────────────────────────────────────
 
 interface YearData {
   label: string;
-  glyph: string;
+  glyph: React.ComponentType<any>;
   color: string;
   essence: string;
   why: string[];
@@ -25,7 +30,7 @@ interface YearData {
 
 const YEAR_DATA: Record<number, YearData> = {
   1: {
-    label: "New Cycle", glyph: "◎", color: "#D4A85F",
+    label: "New Cycle", glyph: IconCircle, color: "#D4A85F",
     essence: "I'm planting seeds for a new 9-year chapter. This is the year to initiate, not refine.",
     why: [
       "I'm at the numerological start of a new 9-year cycle.",
@@ -46,7 +51,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 2 invites patience, cooperation, and the long game. What I'm planting now finds its first allies.",
   },
   2: {
-    label: "Partnership", glyph: "◌", color: "#22d3ee",
+    label: "Partnership", glyph: IconCircle, color: "#22d3ee",
     essence: "I'm in a year of quiet cultivation. Relationships and timing are the leverage points, not solo force.",
     why: [
       "I'm in the middle of building what Year 1 initiated.",
@@ -67,7 +72,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 3 expands outward — social energy, creative output, and visibility return. What I've built quietly finds its audience.",
   },
   3: {
-    label: "Creative Expression", glyph: "✦", color: "#f472b6",
+    label: "Creative Expression", glyph: IconSparkles, color: "#f472b6",
     essence: "I'm in a year of outward expansion. What I create and share now has unusual reach.",
     why: [
       "The cycle is at its most socially expansive numerological point.",
@@ -88,7 +93,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 4 calls me back to structure and discipline. The visibility I build now will need roots to sustain it.",
   },
   4: {
-    label: "Foundation", glyph: "◆", color: "#f59e0b",
+    label: "Foundation", glyph: IconDiamond, color: "#f59e0b",
     essence: "I'm in a year of laying groundwork. Speed is the enemy of durability right now.",
     why: [
       "Year 4 numerological energy demands structure, not momentum.",
@@ -109,7 +114,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 5 breaks open — change, freedom, and disruption arrive after this year of consolidation. The stronger my foundation now, the freer I can move then.",
   },
   5: {
-    label: "Liberation", glyph: "⬡", color: "#22c55e",
+    label: "Liberation", glyph: IconHexagon, color: "#22c55e",
     essence: "I'm in a year of change. What no longer fits must go — not later, now.",
     why: [
       "Year 5 is the midpoint of the 9-year cycle — transformation is the mechanism.",
@@ -130,7 +135,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 6 calls me to tend what matters — relationships, health, and commitments. The freedom I claim now shapes what I'm accountable for then.",
   },
   6: {
-    label: "Responsibility", glyph: "◉", color: "#D4A85F",
+    label: "Responsibility", glyph: IconIdentity, color: "#D4A85F",
     essence: "I'm in a year of tending. Home, health, and commitments reward showing up.",
     why: [
       "Year 6 shifts focus toward service, home, and what I owe to people I care about.",
@@ -151,7 +156,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 7 invites depth and solitude. The inner work I do now becomes the wisdom I act from in Year 8.",
   },
   7: {
-    label: "Depth", glyph: "◈", color: "#22d3ee",
+    label: "Depth", glyph: IconDiamond, color: "#22d3ee",
     essence: "I'm in a year of introspection. Solitude is productive, not avoidant.",
     why: [
       "Year 7 is the inner year — research, reflection, and refinement.",
@@ -172,7 +177,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 8 is material and ambitious — it rewards everything I've built internally. The deeper I go now, the more I have to leverage then.",
   },
   8: {
-    label: "Power", glyph: "◆", color: "#f59e0b",
+    label: "Power", glyph: IconDiamond, color: "#f59e0b",
     essence: "I'm in a year of harvest. What I've built is ready to be leveraged.",
     why: [
       "Year 8 is the apex of the 9-year cycle — material, ambitious, and results-oriented.",
@@ -193,7 +198,7 @@ const YEAR_DATA: Record<number, YearData> = {
     nextYearEssence: "Year 9 closes the cycle — release, forgive, and let go. The lighter I move into it, the more fully I can receive Year 1.",
   },
   9: {
-    label: "Completion", glyph: "☽", color: "#f472b6",
+    label: "Completion", glyph: IconMoon, color: "#f472b6",
     essence: "I'm closing a 9-year chapter. What has served its purpose must be released now.",
     why: [
       "Year 9 numerological energy is about endings, integration, and letting go.",
@@ -217,21 +222,21 @@ const YEAR_DATA: Record<number, YearData> = {
 
 interface MonthData {
   label: string;
-  glyph: string;
+  glyph: React.ComponentType<any>;
   color: string;
   note: string;
 }
 
 const MONTH_DATA: Record<number, MonthData> = {
-  1: { label: "Initiation",   glyph: "◎", color: "#D4A85F", note: "Fresh start energy. I act on instinct, not analysis." },
-  2: { label: "Patience",     glyph: "◌", color: "#22d3ee", note: "I wait, listen, and trust what is still germinating." },
-  3: { label: "Expression",   glyph: "✦", color: "#f472b6", note: "I share, connect, and move creative work forward." },
-  4: { label: "Discipline",   glyph: "◆", color: "#f59e0b", note: "I build methodically. I do the unsexy work." },
-  5: { label: "Change",       glyph: "⬡", color: "#22c55e", note: "I disrupt what no longer fits. I move quickly." },
-  6: { label: "Tending",      glyph: "◉", color: "#D4A85F", note: "I invest in relationships and responsibilities." },
-  7: { label: "Depth",        glyph: "◈", color: "#22d3ee", note: "I go inward. I research, reflect, refine." },
-  8: { label: "Leverage",     glyph: "◆", color: "#f59e0b", note: "I push the material goal. I make the ask." },
-  9: { label: "Release",      glyph: "☽", color: "#f472b6", note: "I complete, forgive, and let go of what's done." },
+  1: { label: "Initiation",   glyph: IconCircle, color: "#D4A85F", note: "Fresh start energy. I act on instinct, not analysis." },
+  2: { label: "Patience",     glyph: IconCircle, color: "#22d3ee", note: "I wait, listen, and trust what is still germinating." },
+  3: { label: "Expression",   glyph: IconSparkles, color: "#f472b6", note: "I share, connect, and move creative work forward." },
+  4: { label: "Discipline",   glyph: IconDiamond, color: "#f59e0b", note: "I build methodically. I do the unsexy work." },
+  5: { label: "Change",       glyph: IconHexagon, color: "#22c55e", note: "I disrupt what no longer fits. I move quickly." },
+  6: { label: "Tending",      glyph: IconIdentity, color: "#D4A85F", note: "I invest in relationships and responsibilities." },
+  7: { label: "Depth",        glyph: IconDiamond, color: "#22d3ee", note: "I go inward. I research, reflect, refine." },
+  8: { label: "Leverage",     glyph: IconDiamond, color: "#f59e0b", note: "I push the material goal. I make the ask." },
+  9: { label: "Release",      glyph: IconMoon, color: "#f472b6", note: "I complete, forgive, and let go of what's done." },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -311,7 +316,7 @@ export default function TimelinePage() {
           padding: "2.25rem 2rem",
           textAlign: "center",
         }}>
-          <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.75 }}>◎</div>
+          <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--cosmic-lavender)", opacity: 0.75 }}><IconCircle size={28} /></div>
           <h3 style={{ marginBottom: "0.65rem", fontSize: "1.15rem", fontWeight: 600 }}>
             Your Timeline isn't active yet
           </h3>
@@ -320,12 +325,12 @@ export default function TimelinePage() {
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.75rem", textAlign: "left" }}>
             {[
-              { glyph: "◎", label: "Current Personal Year", desc: "The 9-year cycle archetype you're living through right now" },
-              { glyph: "◉", label: "Active Personal Month", desc: "The specific frequency you're operating in this month" },
-              { glyph: "◈", label: "What Opens Next", desc: "The transition approaching in your numerology arc" },
+              { glyph: IconCircle, label: "Current Personal Year", desc: "The 9-year cycle archetype you're living through right now" },
+              { glyph: IconIdentity, label: "Active Personal Month", desc: "The specific frequency you're operating in this month" },
+              { glyph: IconDiamond, label: "What Opens Next", desc: "The transition approaching in your numerology arc" },
             ].map((item) => (
               <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(212,168,95,0.05)", border: "1px solid rgba(212,168,95,0.14)", borderRadius: 8 }}>
-                <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
+                <item.glyph size={16} style={{ color: "var(--cosmic-lavender)", marginTop: "0.05rem", flexShrink: 0 }} />
                 <span>
                   <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block" }}>{item.label}</span>
                   <span style={{ color: "var(--muted-foreground)", fontSize: "0.73rem" }}>{item.desc}</span>
@@ -398,7 +403,7 @@ export default function TimelinePage() {
                   background: `${monthData.color}18`, border: `1px solid ${monthData.color}30`,
                   borderRadius: "99px", fontSize: "0.72rem", fontWeight: 600, color: monthData.color,
                 }}>
-                  {monthData.glyph} {monthData.label}
+                  <monthData.glyph size={12} /> {monthData.label}
                 </span>
               </div>
             )}
@@ -433,11 +438,11 @@ export default function TimelinePage() {
           marginBottom: "1.1rem",
         }}>
           <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#D4A85F", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
-            ◉ Why This Phase Is Active
+            <IconIdentity size={10} /> Why This Phase Is Active
           </p>
           {yearData.why.map((line, i) => (
             <p key={i} style={{ fontSize: "0.87rem", color: "rgba(246,241,232,0.82)", margin: "0 0 0.45rem", lineHeight: 1.65 }}>
-              <span style={{ color: "#D4A85F", marginRight: "0.5rem", fontSize: "0.7rem" }}>▶</span>{line}
+              <IconArrowRight size={10} style={{ color: "#D4A85F", marginRight: "0.5rem" }} />{line}
             </p>
           ))}
         </div>
@@ -455,11 +460,11 @@ export default function TimelinePage() {
           padding: "1.25rem",
         }}>
           <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#22c55e", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
-            ✦ Lean Into
+            <IconSparkles size={10} /> Lean Into
           </p>
           {leanIntoItems.slice(0, 3).map((item: string, i: number) => (
             <p key={i} style={{ fontSize: "0.82rem", color: "rgba(200,255,210,0.85)", margin: "0 0 0.45rem", lineHeight: 1.65 }}>
-              <span style={{ color: "#22c55e", marginRight: "0.4rem" }}>→</span>{item}
+              <IconChevronRight size={10} style={{ color: "#22c55e", marginRight: "0.4rem" }} />{item}
             </p>
           ))}
         </div>
@@ -473,11 +478,11 @@ export default function TimelinePage() {
           padding: "1.25rem",
         }}>
           <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#f59e0b", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
-            ▪ Release
+            <IconSquare size={10} /> Release
           </p>
           {releaseItems.slice(0, 3).map((item: string, i: number) => (
             <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", margin: "0 0 0.45rem", lineHeight: 1.65 }}>
-              <span style={{ color: "#f59e0b", marginRight: "0.4rem" }}>✕</span>{item}
+              <IconX size={10} style={{ color: "#f59e0b", marginRight: "0.4rem" }} />{item}
             </p>
           ))}
         </div>
@@ -494,7 +499,7 @@ export default function TimelinePage() {
           marginBottom: "1.5rem",
         }}>
           <p style={{ fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#D4A85F", marginBottom: "0.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
-            ◌ What Opens Next
+            <IconCircle size={10} /> What Opens Next
           </p>
 
           {/* Next Personal Month — always show */}
@@ -503,7 +508,7 @@ export default function TimelinePage() {
               display: "flex", alignItems: "flex-start", gap: "0.6rem",
               marginBottom: yearTurnsUrgent || yearTurnsNear ? "0.85rem" : 0,
             }}>
-              <span style={{ color: "#D4A85F", fontSize: "0.9rem", marginTop: "0.1rem", flexShrink: 0 }}>{nextMonthDat.glyph}</span>
+              <nextMonthDat.glyph size={14} style={{ color: "#D4A85F", marginTop: "0.1rem", flexShrink: 0 }} />
               <p style={{ fontSize: "0.87rem", color: "rgba(246,241,232,0.9)", margin: 0, lineHeight: 1.65 }}>
                 <strong>Month {nextPm} — {nextMonthDat.label}</strong><br />
                 <span style={{ color: "rgba(212,168,95,0.75)" }}>{nextMonthDat.note}</span>
@@ -517,9 +522,7 @@ export default function TimelinePage() {
               borderTop: "1px solid rgba(212,168,95,0.15)", paddingTop: "0.85rem",
               display: "flex", alignItems: "flex-start", gap: "0.6rem",
             }}>
-              <span style={{ color: yearTurnsUrgent ? "#22c55e" : "#D4A85F", fontSize: "0.8rem", marginTop: "0.15rem", flexShrink: 0 }}>
-                {yearTurnsUrgent ? "◉" : "→"}
-              </span>
+              {yearTurnsUrgent ? <IconIdentity size={12} style={{ color: "#22c55e", marginTop: "0.15rem", flexShrink: 0 }} /> : <IconArrowRight size={12} style={{ color: "#D4A85F", marginTop: "0.15rem", flexShrink: 0 }} />}
               <p style={{ fontSize: "0.85rem", color: yearTurnsUrgent ? "rgba(200,255,210,0.9)" : "rgba(246,241,232,0.82)", margin: 0, lineHeight: 1.65 }}>
                 <strong style={{ color: yearTurnsUrgent ? "#22c55e" : "#D4A85F" }}>
                   {yearTurnsUrgent
@@ -534,7 +537,7 @@ export default function TimelinePage() {
           {/* Mid-year (months 1-9): show the year arc note quietly */}
           {yearData && !yearTurnsNear && (
             <p style={{ fontSize: "0.82rem", color: "rgba(180,230,255,0.62)", margin: 0, lineHeight: 1.65, marginTop: nextMonthDat ? "0.7rem" : 0 }}>
-              <span style={{ color: "#22d3ee", marginRight: "0.4rem", fontSize: "0.75rem" }}>→</span>
+              <IconArrowRight size={10} style={{ color: "#22d3ee", marginRight: "0.4rem" }} />
               {yearData.nextYearEssence}
             </p>
           )}
@@ -573,7 +576,7 @@ export default function TimelinePage() {
         borderRadius: "10px",
         opacity: 0.45,
       }}>
-        <span style={{ color: "var(--cosmic-lavender)", fontSize: "0.75rem", flexShrink: 0 }}>◎</span>
+        <IconCircle size={12} style={{ color: "var(--cosmic-lavender)", flexShrink: 0 }} />
         <span style={{ fontSize: "0.73rem", color: "var(--muted-foreground)", lineHeight: 1.4 }}>
           Life Map — full 9-year arc view coming soon
         </span>

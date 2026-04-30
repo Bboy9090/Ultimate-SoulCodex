@@ -4,6 +4,14 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import TodaySkeleton from "@/components/TodaySkeleton";
+import { 
+  IconToday, IconMoon, IconStar, IconGuide, IconTracker, 
+  IconBlueprint, IconCodex, IconTimeline, IconIdentity,
+  IconSparkles, IconAlert, IconRefresh, IconDiamond,
+  IconCircle, IconMoonNew, IconMoonWaxingCrescent,
+  IconMoonFirstQuarter, IconMoonWaxingGibbous, IconMoonFull,
+  IconMoonWaningGibbous, IconMoonThirdQuarter, IconMoonWaningCrescent
+} from "../components/Icons";
 
 interface TodayCard {
   codename: string;
@@ -23,10 +31,26 @@ interface TodayCard {
   memoryCallout?: string;
 }
 
-const MOON_GLYPHS: Record<string, string> = {
-  "new moon": "◌", "waxing crescent": "◑", "first quarter": "◑",
-  "waxing gibbous": "●", "full moon": "●", "waning gibbous": "◕",
-  "third quarter": "◐", "waning crescent": "◐", "balsamic": "◐",
+const SECTION_ACCENTS: Record<string, { glyph: React.ComponentType<any>; color: string }> = {
+  codename:  { glyph: IconToday,   color: "#D4A85F" },
+  focus:     { glyph: IconGuide,   color: "#f59e0b" },
+  actions:   { glyph: IconTracker, color: "#22c55e" },
+  watchouts: { glyph: IconBlueprint, color: "#ef4444" },
+  advice:    { glyph: IconBlueprint, color: "#22d3ee" },
+  memory:    { glyph: IconCodex,   color: "#a78bfa" },
+  tension:   { glyph: IconTimeline,color: "#f472b6" },
+};
+
+const MOON_GLYPHS: Record<string, React.ComponentType<any>> = {
+  "new moon": IconMoonNew, 
+  "waxing crescent": IconMoonWaxingCrescent, 
+  "first quarter": IconMoonFirstQuarter,
+  "waxing gibbous": IconMoonWaxingGibbous, 
+  "full moon": IconMoonFull, 
+  "waning gibbous": IconMoonWaningGibbous,
+  "third quarter": IconMoonThirdQuarter, 
+  "waning crescent": IconMoonWaningCrescent, 
+  "balsamic": IconMoonThirdQuarter,
 };
 
 const THEME_DISPLAY: Record<string, string> = {
@@ -100,7 +124,7 @@ function WelcomeScreen({ onStart }: { onStart: () => void }) {
           padding: "2.25rem 2rem",
           textAlign: "center",
         }}>
-          <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--sc-gold)" }}>☽</div>
+          <div style={{ fontSize: "1.6rem", marginBottom: "1rem", color: "var(--sc-gold)" }}><IconMoon size={24} /></div>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.65rem", color: "var(--sc-ivory)" }}>
             Your daily reading isn't ready yet
           </h2>
@@ -109,12 +133,12 @@ function WelcomeScreen({ onStart }: { onStart: () => void }) {
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.75rem", textAlign: "left" }}>
             {[
-              { glyph: "◉", label: "Daily archetype card", desc: "A focused signal for who you're operating as today" },
-              { glyph: "☽", label: "Moon phase + transit", desc: "The cosmic context overlaying your patterns right now" },
-              { glyph: "✦", label: "Active behavioral signals", desc: "What your pressure and decision patterns say about today" },
+              { glyph: IconIdentity, label: "Daily archetype card", desc: "A focused signal for who you're operating as today" },
+              { glyph: IconMoon, label: "Moon phase + transit", desc: "The cosmic context overlaying your patterns right now" },
+              { glyph: IconSparkles, label: "Active behavioral signals", desc: "What your pressure and decision patterns say about today" },
             ].map((item) => (
               <div key={item.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.6rem 0.75rem", background: "rgba(212,168,95,0.04)", border: "1px solid rgba(212,168,95,0.1)", borderRadius: 8 }}>
-                <span style={{ color: "rgba(212,168,95,0.7)", fontSize: "0.85rem", marginTop: "0.05rem", flexShrink: 0 }}>{item.glyph}</span>
+                <item.glyph size={14} style={{ color: "rgba(212,168,95,0.7)", flexShrink: 0, marginTop: "0.15rem" }} />
                 <span>
                   <span style={{ fontWeight: 600, fontSize: "0.8rem", display: "block", color: "var(--sc-ivory)" }}>{item.label}</span>
                   <span style={{ color: "rgba(246,241,232,0.45)", fontSize: "0.73rem" }}>{item.desc}</span>
@@ -222,7 +246,7 @@ export default function TodayPage() {
   if (cardMutation.isPending && !card) {
     return (
       <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.5rem" }}>
-        <img src="/soul-codex-logo-star.png" alt="" style={{ width: 72, height: 72, opacity: 0.7, animation: "spin 6s linear infinite", filter: "drop-shadow(0 0 14px rgba(212,168,95,0.4))" }} />
+        <IconStar size={72} style={{ opacity: 0.7, animation: "spin 6s linear infinite", filter: "drop-shadow(0 0 14px rgba(212,168,95,0.4))" }} />
         <p style={{ color: "var(--sc-gold)", fontFamily: "var(--font-serif)", fontSize: "1rem", letterSpacing: "0.04em" }}>
           Reading today's signals…
         </p>
@@ -238,7 +262,7 @@ export default function TodayPage() {
     return (
       <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
         <div style={{ maxWidth: 420, width: "100%", background: "rgba(26, 11, 46, 0.65)", border: "1px solid rgba(255, 215, 0, 0.25)", borderTop: "3px solid #ef4444", borderRadius: 12, padding: "2rem 1.75rem", textAlign: "center" }}>
-          <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}>⚠</div>
+          <div style={{ fontSize: "1.5rem", marginBottom: "1rem", opacity: 0.5 }}><IconAlert size={24} /></div>
           <h3 style={{ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Profile Calibration Required</h3>
           <p style={{ color: "var(--sc-text-muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
             {error || "We couldn't load your daily reading. This usually happens if the birth data is invalid or if there's a temporary connection issue."}
@@ -265,7 +289,7 @@ export default function TodayPage() {
 
   if (!card) return null;
 
-  const moonGlyph = MOON_GLYPHS[(card.moonPhase ?? "").toLowerCase()] ?? "☽";
+  const MoonIcon = MOON_GLYPHS[(card.moonPhase ?? "").toLowerCase()] ?? IconMoon;
   const archetypeName = profile?.archetype?.name ?? card.codename ?? "—";
   const archetypeTagline = profile?.archetype?.tagline ?? card.focus ?? "";
   const whoIAm = profile?.archetype?.element && profile?.archetype?.role
@@ -319,7 +343,7 @@ export default function TodayPage() {
         </div>
         <div style={{ fontSize: "0.68rem", color: "var(--sc-gold)", letterSpacing: "0.1em", marginTop: "0.3rem", opacity: 0.85, textShadow: "0 1px 8px rgba(0,0,0,0.55)" }}>
           {formatDate(card.date)}
-          {streak > 0 && <span style={{ marginLeft: "0.75rem", opacity: 0.8 }}>◆ Day {streak}</span>}
+          {streak > 0 && <span style={{ marginLeft: "0.75rem", opacity: 0.8, display: "inline-flex", alignItems: "center", gap: "0.2rem" }}><IconDiamond size={10} /> Day {streak}</span>}
         </div>
       </div>
 
@@ -328,9 +352,11 @@ export default function TodayPage() {
 
         {/* Soul Snapshot */}
         <div style={{ ...cardStyle, padding: "1.4rem" }}>
-          <div style={labelStyle}>Soul Snapshot ✦</div>
+          <div style={labelStyle}>Soul Snapshot <IconSparkles size={10} style={{ verticalAlign: "middle" }} /></div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.5rem" }}>
-            <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.85 }}>{moonGlyph}</span>
+            <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.85 }}>
+              <MoonIcon size={20} />
+            </span>
             <span style={{ fontFamily: "var(--font-serif)", fontSize: "1.35rem", fontWeight: 600, color: "var(--sc-ivory)", lineHeight: 1.1 }}>
               {archetypeName}
             </span>
@@ -348,7 +374,7 @@ export default function TodayPage() {
               borderRadius: 12,
               textAlign: "center"
             }}>
-              <div style={{ fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "#ef4444", fontWeight: 700, marginBottom: "0.4rem" }}>Loop Detected ⚠</div>
+              <div style={{ fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "#ef4444", fontWeight: 700, marginBottom: "0.4rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.3rem" }}>Loop Detected <IconAlert size={10} /></div>
               <div style={{ fontSize: "0.85rem", color: "var(--sc-ivory)", fontWeight: 500, fontStyle: "italic" }}>
                 "{card.memoryCallout}"
               </div>
@@ -356,71 +382,52 @@ export default function TodayPage() {
           )}
 
           {/* Recognition Moment - Hero Element */}
-          <div style={{ 
-            marginTop: "1.2rem", 
-            marginBottom: "1.5rem", 
-            padding: "1.4rem", 
-            background: "linear-gradient(135deg, rgba(212,168,95,0.1), rgba(212,168,95,0.02))", 
-            border: "1px solid rgba(212,168,95,0.3)", 
-            borderRadius: 16,
-            textAlign: "center",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-            position: "relative"
-          }}>
-            <div style={{ fontSize: "0.6rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 700, opacity: 0.8, marginBottom: "0.8rem" }}>Today's Recognition</div>
+          {card.recognitionMoment && (
             <div style={{ 
-              fontFamily: "var(--font-serif)", 
-              fontSize: "1.15rem", 
-              color: "var(--sc-ivory)", 
-              lineHeight: 1.5,
-              fontWeight: 500,
-              fontStyle: "italic",
-              textShadow: "0 2px 10px rgba(0,0,0,0.5)"
+              marginTop: "1.2rem", 
+              marginBottom: "1.5rem", 
+              padding: "1.8rem 1.4rem", 
+              background: "linear-gradient(135deg, rgba(212,168,95,0.1), rgba(212,168,95,0.02))", 
+              border: "1px solid rgba(212,168,95,0.3)", 
+              borderRadius: 16,
+              textAlign: "center",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+              position: "relative"
             }}>
-              "{card.recognitionMoment || profile?.synthesis?.myPattern || (card.doList?.[0] ?? "—")}"
+              <div style={{ 
+                fontFamily: "var(--font-serif)", 
+                fontSize: "1.25rem", 
+                color: "var(--sc-ivory)", 
+                lineHeight: 1.4,
+                fontWeight: 500,
+                fontStyle: "italic",
+                textShadow: "0 2px 10px rgba(0,0,0,0.5)"
+              }}>
+                "{card.recognitionMoment}"
+              </div>
             </div>
-            
-            {/* Share Hook */}
-            <button 
-              className="btn btn-ghost" 
-              style={{ 
-                marginTop: "1rem", 
-                fontSize: "0.65rem", 
-                padding: "0.3rem 0.6rem", 
-                opacity: 0.6,
-                border: "1px solid rgba(212,168,95,0.2)"
-              }}
-              onClick={() => {
-                const text = `Soul Codex: "${card.recognitionMoment}"`;
-                if (navigator.share) {
-                  navigator.share({ title: "My Soul Codex Recognition", text }).catch(() => {});
-                } else {
-                  navigator.clipboard.writeText(text);
-                  alert("Copied realization to clipboard");
-                }
-              }}
-            >
-              ✦ Share Realization
-            </button>
-          </div>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem 1rem" }}>
             {[
               { label: "Today's Theme",   value: card.topTheme ? displayTheme(card.topTheme) : (card.title ?? "—") },
               { label: "Pattern to Watch",value: patternWatch },
               { label: "One Move Today",  value: oneMove },
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <div style={{ fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 700, opacity: 0.7, marginBottom: "0.2rem" }}>{label}</div>
-                <div style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.85)", lineHeight: 1.45 }}>{value}</div>
-              </div>
-            ))}
+            ].map(({ label, value }) => {
+              if (!value || value === "—" || value.toLowerCase().includes("unknown")) return null;
+              return (
+                <div key={label}>
+                  <div style={{ fontSize: "0.55rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--sc-gold)", fontWeight: 700, opacity: 0.7, marginBottom: "0.2rem" }}>{label}</div>
+                  <div style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.85)", lineHeight: 1.45 }}>{value}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Energy Update */}
         <div style={{ ...cardStyle, padding: "1.4rem" }}>
-          <div style={labelStyle}>Energy Update ✦</div>
+          <div style={labelStyle}>Energy Update <IconSparkles size={10} style={{ verticalAlign: "middle" }} /></div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", marginBottom: "0.9rem" }}>
             <div>
               <div style={{ fontSize: "0.72rem", color: "var(--sc-ivory)", opacity: 0.7, marginBottom: "0.1rem" }}>
@@ -473,7 +480,7 @@ export default function TodayPage() {
         <div style={{ ...cardStyle, padding: "1.4rem" }}>
           <div style={labelStyle}>Daily Focus</div>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.6rem" }}>
-            <span style={{ color: "var(--sc-gold)", fontSize: "0.9rem", marginTop: "0.1rem", flexShrink: 0 }}>☽</span>
+            <IconMoon size={14} style={{ color: "var(--sc-gold)", marginTop: "0.1rem", flexShrink: 0 }} />
             <h3 style={{ fontFamily: "var(--font-serif)", fontSize: "1rem", fontWeight: 600, color: "var(--sc-ivory)", lineHeight: 1.25, margin: 0 }}>
               {card.title}
             </h3>
@@ -486,7 +493,7 @@ export default function TodayPage() {
             style={{ width: "100%", fontSize: "0.73rem", padding: "0.5rem" }}
             onClick={() => navigate("/codex")}
           >
-            ☽ Open Codex Reading
+            <IconMoon size={12} /> Open Codex Reading
           </button>
         </div>
       </div>
@@ -498,11 +505,11 @@ export default function TodayPage() {
         <div style={{ ...cardStyle, padding: "1.2rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
             <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--sc-ivory)" }}>Growth Focus</span>
-            <span style={{ color: "var(--sc-gold)", fontSize: "0.7rem", opacity: 0.7 }}>✦</span>
+            <IconSparkles size={12} style={{ color: "var(--sc-gold)", opacity: 0.7 }} />
           </div>
           {(card.doList ?? []).slice(0, 3).map((item, i) => (
             <div key={i} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.4rem", fontSize: "0.78rem", color: "rgba(246,241,232,0.78)", lineHeight: 1.4 }}>
-              <span style={{ color: "var(--sc-gold)", opacity: 0.7, flexShrink: 0 }}>◆</span>
+              <IconDiamond size={8} style={{ color: "var(--sc-gold)", opacity: 0.7, flexShrink: 0, marginTop: "0.2rem" }} />
               <span>{item}</span>
             </div>
           ))}
@@ -512,7 +519,7 @@ export default function TodayPage() {
         <div style={{ ...cardStyle, padding: "1.2rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
             <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--sc-ivory)" }}>Decision Guide</span>
-            <span style={{ color: "var(--sc-gold)", fontSize: "0.7rem", opacity: 0.7 }}>✦</span>
+            <IconSparkles size={12} style={{ color: "var(--sc-gold)", opacity: 0.7 }} />
           </div>
           <p style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.75)", fontFamily: "var(--font-serif)", lineHeight: 1.6, margin: 0 }}>
             {card.decisionAdvice ?? card.doList?.[0] ?? "—"}
@@ -523,7 +530,7 @@ export default function TodayPage() {
         <div style={{ ...cardStyle, padding: "1.2rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
             <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--sc-ivory)" }}>One to Watch</span>
-            <span style={{ color: "var(--sc-gold)", fontSize: "0.7rem", opacity: 0.7 }}>☽</span>
+            <IconMoon size={12} style={{ color: "var(--sc-gold)", opacity: 0.7 }} />
           </div>
           <p style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.75)", lineHeight: 1.6, margin: 0 }}>
             {card.watchouts?.[1] ?? card.dontList?.[0] ?? card.watchouts?.[0] ?? "—"}
@@ -533,9 +540,9 @@ export default function TodayPage() {
 
       {/* ── Footer actions ───────────────────────────────────────────────── */}
       <div style={{ marginTop: "1.25rem", display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap" }}>
-        <button className="btn btn-ghost" onClick={() => navigate("/horoscope")} style={{ fontSize: "0.75rem" }}>◌ Chart</button>
-        <button className="btn btn-ghost" onClick={() => navigate("/profile")} style={{ fontSize: "0.75rem" }}>◆ Profile</button>
-        <button className="btn btn-ghost" onClick={refresh} style={{ fontSize: "0.75rem", opacity: 0.5 }}>↺ Refresh</button>
+        <button className="btn btn-ghost" onClick={() => navigate("/horoscope")} style={{ fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}><IconCircle size={10} /> Chart</button>
+        <button className="btn btn-ghost" onClick={() => navigate("/profile")} style={{ fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}><IconDiamond size={10} /> Profile</button>
+        <button className="btn btn-ghost" onClick={refresh} style={{ fontSize: "0.75rem", opacity: 0.5, display: "inline-flex", alignItems: "center", gap: "0.3rem" }}><IconRefresh size={10} /> Refresh</button>
       </div>
     </div>
   </div>
