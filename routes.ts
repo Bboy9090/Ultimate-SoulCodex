@@ -4399,7 +4399,7 @@ DECISION: [behavioral decision rule for today]
 
   const aiResponse = await routeAIRequest({
     prompt,
-    promptType: "biography",
+    promptType: "today_card",
     temperature: 0.78
   });
   const raw = aiResponse.content || "";

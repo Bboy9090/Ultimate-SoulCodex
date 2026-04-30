@@ -1,4 +1,5 @@
 const apiKey = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-70b-versatile";
 const GROQ_BASE = "https://api.groq.com/openai/v1";
 
 export function isGroqAvailable(): boolean {
@@ -8,7 +9,7 @@ export function isGroqAvailable(): boolean {
 export async function generateTextGroq({
   prompt,
   systemPrompt,
-  model = "llama-3.1-70b-versatile",
+  model = GROQ_MODEL,
   temperature = 0.7,
 }: {
   prompt: string;
@@ -44,7 +45,7 @@ export async function* streamChatGroq({
   systemInstruction,
   history,
   message,
-  model = "llama-3.1-70b-versatile",
+  model = GROQ_MODEL,
   temperature = 0.7,
 }: {
   systemInstruction: string;

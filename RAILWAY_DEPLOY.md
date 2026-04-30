@@ -91,22 +91,24 @@ VAPID_SUBJECT=mailto:support@yourdomain.com
 
 1. **Deploy** - Railway automatically builds and deploys
 2. **Run Migrations:**
-   - Click on your service
-   - Go to "Settings" → "Deploy"
-   - Or use Railway CLI:
-     ```bash
-     # Install Railway CLI
-     npm install -g @railway/cli
-     
-     # Login
-     railway login
-     
-     # Link to project
-     railway link
-     
-     # Run migrations
-     railway run npm run db:push
-     ```
+   - **Automated (Recommended):** The Dockerfile is configured to run `npm run db:push` automatically on startup if `DATABASE_URL` is set.
+   - **Manual (Fallback):**
+     - Click on your service
+     - Go to "Settings" → "Deploy"
+     - Or use Railway CLI:
+       ```bash
+       # Install Railway CLI
+       npm install -g @railway/cli
+       
+       # Login
+       railway login
+       
+       # Link to project
+       railway link
+       
+       # Run migrations manually
+       railway run npm run db:push
+       ```
 
 ### 5. Get Your URL
 
