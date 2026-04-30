@@ -24,6 +24,8 @@ export function deterministicFallback(input: AIRequest): FallbackResult {
       return codexReadingFallback(input.profile);
     case "biography":
       return biographyFallback(input.profile);
+    case "today_card":
+      return todayCardFallback(input.profile);
     case "compatibility":
       return compatibilityFallback(input.profile);
     default:
@@ -238,6 +240,33 @@ function codexReadingFallback(profile: any): FallbackResult {
   return {
     title: "Codex reading from your profile",
     content: sections.join("\n\n"),
+  };
+}
+
+function todayCardFallback(profile: any): FallbackResult {
+  const d = extractCoreData(profile);
+  
+  const lines: string[] = [
+    `RECOGNITION: I choose to move with intention today, even when the noise builds.`,
+    `FOCUS: My focus is on ${d.themes[0] || "alignment"} and protecting my core energy.`,
+    `TOMORROW: The tension between progress and rest remains a load-bearing signal.`,
+    `DO:`,
+    `- Complete one task that has been lingering for too long.`,
+    `- Set a clear boundary around my time this afternoon.`,
+    `- Trust my internal rhythm over external demands.`,
+    `DONT:`,
+    `- Let small interruptions derail my primary build.`,
+    `- Say yes to requests that don't align with my values.`,
+    `- Overthink a decision that my gut already knows.`,
+    `WATCHOUT:`,
+    `- Impatience when others don't see the pattern yet.`,
+    `- Rushing the final steps just to be finished.`,
+    `DECISION: I let my internal signal settle before I commit to a path today.`
+  ];
+
+  return {
+    title: "Today's guidance from your Codex",
+    content: lines.join("\n"),
   };
 }
 

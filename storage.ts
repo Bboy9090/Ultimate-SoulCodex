@@ -1147,7 +1147,9 @@ const STRUCTURED_PROFILE_FIELDS = new Set([
   "id", "userId", "sessionId", "name",
   "birthDate", "birthTime", "birthLocation",
   "timezone", "latitude", "longitude",
-  "createdAt", "updatedAt",
+  "astrologyData", "numerologyData", "humanDesignData",
+  "elementalProfile", "soulArchetype", "personalityData", "archetypeData", "soulCodexData",
+  "isPublic", "createdAt", "updatedAt",
 ]);
 
 function profileRowToObject(row: any): any {
@@ -1268,6 +1270,15 @@ class HybridStorage extends MemStorage {
         timezone: structured.timezone || null,
         latitude: structured.latitude != null ? String(structured.latitude) : null,
         longitude: structured.longitude != null ? String(structured.longitude) : null,
+        astrologyData: structured.astrologyData || null,
+        numerologyData: structured.numerologyData || null,
+        humanDesignData: structured.humanDesignData || null,
+        elementalProfile: structured.elementalProfile || null,
+        soulArchetype: structured.soulArchetype || null,
+        personalityData: structured.personalityData || null,
+        archetypeData: structured.archetypeData || null,
+        soulCodexData: structured.soulCodexData || null,
+        isPublic: structured.isPublic ?? false,
         data,
       };
       const [row] = await db.insert(profilesTable).values(insertRow).returning();
@@ -1286,7 +1297,12 @@ class HybridStorage extends MemStorage {
       const { structured, data: newData } = splitProfileForStorage(updates);
       const mergedData = { ...((existing.data as any) || {}), ...newData };
       const updateRow: any = { data: mergedData, updatedAt: new Date() };
-      for (const k of ["userId", "sessionId", "name", "birthDate", "birthTime", "birthLocation", "timezone"]) {
+      for (const k of [
+        "userId", "sessionId", "name", "birthDate", "birthTime", 
+        "birthLocation", "timezone", "astrologyData", "numerologyData", 
+        "humanDesignData", "elementalProfile", "soulArchetype", 
+        "personalityData", "archetypeData", "soulCodexData", "isPublic"
+      ]) {
         if (k in structured) updateRow[k] = (structured as any)[k];
       }
       if ("latitude" in structured) updateRow.latitude = structured.latitude != null ? String(structured.latitude) : null;

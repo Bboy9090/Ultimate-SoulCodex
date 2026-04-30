@@ -47,4 +47,4 @@ COPY --from=builder /app/packages ./packages
 EXPOSE 3000
 
 # Start the Soul Oracle
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then npm run db:init; fi && node dist/index.js"]

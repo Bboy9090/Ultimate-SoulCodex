@@ -22,6 +22,7 @@ export const profiles = pgTable("profiles", {
   soulArchetype: jsonb("soul_archetype").$type<any>(),
   personalityData: jsonb("personality_data").$type<any>(),
   archetypeData: jsonb("archetype_data").$type<any>(),
+  soulCodexData: jsonb("soul_codex_data").$type<any>(),
   isPublic: boolean("is_public").default(false),
   // Flexible bag for any other esoteric system data
   data: jsonb("data").$type<Record<string, any>>().default({}),
