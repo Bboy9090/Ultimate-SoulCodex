@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import TodaySkeleton from "@/components/TodaySkeleton";
 
 interface TodayCard {
   codename: string;
