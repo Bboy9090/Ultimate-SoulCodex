@@ -25,6 +25,7 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
+const SharePage = lazy(() => import("./pages/SharePage"));
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="/terms" component={TermsPage} />
             <Route path="/admin" component={AdminPage} />
             <Route path="/pricing" component={PricingPage} />
+            <Route path="/share/:token" component={SharePage} />
             <Route>
               <div className="nebula-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", textAlign: "center" }}>
                 <IconCodex size={64} style={{ color: "var(--sc-gold)", marginBottom: "1rem", filter: "drop-shadow(0 0 30px var(--sc-gold-glow))" }} />

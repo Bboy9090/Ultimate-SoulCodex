@@ -85,7 +85,7 @@ export async function createShareableLink(
     profileId,
     userId,
     token,
-    url: `${process.env.APP_URL || 'https://soulcodex.app'}/share/${token}`,
+    url: `${(process.env.APP_URL || process.env.VITE_API_URL || 'https://ultimate-soulcodex.up.railway.app').replace(/\/+$/, '')}/share/${token}`,
     settings: finalSettings,
     createdAt: new Date(),
     expiresAt,
@@ -189,10 +189,14 @@ function filterProfileForSharing(profile: Profile, settings: ShareSettings): Par
 
   if (settings.includeSections.includes('archetype')) {
     filtered.archetypeData = profile.archetypeData;
+    (filtered as any).soulArchetype = (profile as any).soulArchetype;
+    (filtered as any).archetype = (profile as any).archetype;
+    (filtered as any).synthesis = (profile as any).synthesis;
   }
 
   if (settings.includeSections.includes('elemental')) {
     (filtered as any).elementalMedicineData = (profile as any).elementalMedicineData;
+    (filtered as any).elementalProfile = (profile as any).elementalProfile;
   }
 
   if (settings.includeSections.includes('moral-compass')) {
@@ -207,6 +211,7 @@ function filterProfileForSharing(profile: Profile, settings: ShareSettings): Par
     filtered.humanDesignData = profile.humanDesignData;
     filtered.biography = profile.biography;
     filtered.dailyGuidance = profile.dailyGuidance;
+    (filtered as any).soulCodexData = (profile as any).soulCodexData;
   }
 
   // Never include sensitive data

@@ -1525,6 +1525,93 @@ class HybridStorage extends MemStorage {
       return super.migrateAccessCodeRedemptions(sessionId, userId);
     }
   }
+
+  // ── Shareable links operations ──────────────────────────────────────────
+  async createShareableLink(linkData: any): Promise<any> {
+    try {
+      const [row] = await db.insert(schema.shareableLinks).values({
+        ...linkData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return row;
+    } catch (err) {
+      console.error("[HybridStorage] createShareableLink DB failure:", err);
+      return super.createShareableLink(linkData);
+    }
+  }
+
+  async getShareableLink(id: string): Promise<any | undefined> {
+    try {
+      const rows = await db.select().from(schema.shareableLinks).where(eq(schema.shareableLinks.id, id)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getShareableLink DB failure:", err);
+      return super.getShareableLink(id);
+    }
+  }
+
+  async getShareableLinkByToken(token: string): Promise<any | undefined> {
+    try {
+      const rows = await db.select().from(schema.shareableLinks).where(eq(schema.shareableLinks.token, token)).limit(1);
+      return rows[0];
+    } catch (err) {
+      console.warn("[HybridStorage] getShareableLinkByToken DB failure:", err);
+      return super.getShareableLinkByToken(token);
+    }
+  }
+
+  async updateShareableLink(id: string, updates: Partial<any>): Promise<any> {
+    try {
+      const [row] = await db.update(schema.shareableLinks)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(schema.shareableLinks.id, id))
+        .returning();
+      return row;
+    } catch (err) {
+      console.error("[HybridStorage] updateShareableLink DB failure:", err);
+      return super.updateShareableLink(id, updates);
+    }
+  }
+
+  async getShareableLinksByUser(userId: string): Promise<any[]> {
+    try {
+      return await db.select().from(schema.shareableLinks).where(eq(schema.shareableLinks.userId, userId));
+    } catch (err) {
+      console.warn("[HybridStorage] getShareableLinksByUser DB failure:", err);
+      return super.getShareableLinksByUser(userId);
+    }
+  }
+
+  // ── Journal operations ──────────────────────────────────────────────────
+  async createJournalEntry(entryData: any): Promise<any> {
+    try {
+      const [row] = await db.insert(schema.journalEntries).values({
+        ...entryData,
+        date: entryData.date || new Date()
+      }).returning();
+      return row;
+    } catch (err) {
+      console.error("[HybridStorage] createJournalEntry DB failure:", err);
+      return super.createJournalEntry(entryData);
+    }
+  }
+
+  async getJournalEntries(params: any): Promise<any[]> {
+    try {
+      let query = db.select().from(schema.journalEntries).where(eq(schema.journalEntries.userId, params.userId));
+      // Filtering in JS for simplicity as this is a hybrid fallback
+      const rows = await query;
+      let filtered = rows;
+      if (params.profileId) filtered = filtered.filter(r => r.profileId === params.profileId);
+      if (params.startDate) filtered = filtered.filter(r => new Date(r.date) >= params.startDate);
+      if (params.endDate) filtered = filtered.filter(r => new Date(r.date) <= params.endDate);
+      return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } catch (err) {
+      console.warn("[HybridStorage] getJournalEntries DB failure:", err);
+      return super.getJournalEntries(params);
+    }
+  }
 }
 
 // Use HybridStorage when DATABASE_URL is set (and not in DEMO_MODE)

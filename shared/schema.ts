@@ -87,6 +87,41 @@ export const localUsers = pgTable("local_users", {
   emailIdx: uniqueIndex("local_users_email_idx").on(t.email),
 }));
 
+export const shareableLinks = pgTable("shareable_links", {
+  id: text("id").primaryKey().default(drizzleSql`gen_random_uuid()`),
+  profileId: text("profile_id").notNull().references(() => profiles.id),
+  userId: text("user_id").notNull().references(() => users.id),
+  token: text("token").notNull().unique(),
+  url: text("url").notNull(),
+  settings: jsonb("settings").$type<any>().notNull(),
+  accessCount: integer("access_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at"),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  tokenIdx: uniqueIndex("shareable_links_token_idx").on(t.token),
+  userIdx: index("shareable_links_user_idx").on(t.userId),
+  profileIdx: index("shareable_links_profile_idx").on(t.profileId),
+}));
+
+export const journalEntries = pgTable("journal_entries", {
+  id: text("id").primaryKey().default(drizzleSql`gen_random_uuid()`),
+  userId: text("user_id").notNull().references(() => users.id),
+  profileId: text("profile_id").references(() => profiles.id),
+  content: text("content").notNull(),
+  category: text("category"),
+  mood: text("mood"),
+  date: timestamp("date").notNull().defaultNow(),
+  meta: jsonb("meta").$type<any>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index("journal_user_idx").on(t.userId),
+  profileIdx: index("journal_profile_idx").on(t.profileId),
+}));
+
 // ── Zod runtime schemas (used by routes) ──────────────────────────────────────
 
 // Zod schemas used at runtime in routes

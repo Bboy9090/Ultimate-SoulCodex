@@ -228,11 +228,21 @@ export async function* routeAIStream(
       });
 
       let yielded = false;
-      for await (const chunk of stream) {
-        if (chunk) {
-          yielded = true;
-          yield { chunk, status: "live", provider: "gemini" };
+      const controller = new AbortController();
+      const watchdog = setTimeout(() => {
+        console.warn("[AI Router] Gemini stream watchdog triggered (15s)");
+        controller.abort();
+      }, 15000);
+
+      try {
+        for await (const chunk of stream) {
+          if (chunk) {
+            yielded = true;
+            yield { chunk, status: "live", provider: "gemini" };
+          }
         }
+      } finally {
+        clearTimeout(watchdog);
       }
       if (yielded) return;
     } catch (e) {
