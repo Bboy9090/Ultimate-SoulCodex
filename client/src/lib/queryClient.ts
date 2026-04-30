@@ -24,7 +24,6 @@ export function resolveApiUrl(url: string): string {
 
 async function defaultQueryFn({ queryKey }: { queryKey: readonly unknown[] }) {
   const url = resolveApiUrl(queryKey[0] as string);
-<<<<<<< Updated upstream
   try {
     const response = await CapacitorHttp.get({
       url,
@@ -42,11 +41,6 @@ async function defaultQueryFn({ queryKey }: { queryKey: readonly unknown[] }) {
     const cached = localStorage.getItem(`cache:${queryKey[0]}`);
     if (cached) return JSON.parse(cached);
     throw err;
-=======
-  const res = await fetch(url, { credentials: "include" });
-  if (!res.ok) {
-    throw new Error(`${res.status}: ${await res.text()}`);
->>>>>>> Stashed changes
   }
 }
 
@@ -80,7 +74,6 @@ export function setPersistedData(key: string, data: any) {
 
 export async function apiRequest(url: string, options?: any) {
   const resolvedUrl = resolveApiUrl(url);
-<<<<<<< Updated upstream
   const method = options?.method || "GET";
   
   const httpOptions = {
@@ -113,35 +106,6 @@ export async function apiRequest(url: string, options?: any) {
     }
     throw error;
   }
-=======
-  
-  // Robustness: Include credentials for Capacitor/iOS session support
-  const fetchOptions: RequestInit = {
-    ...options,
-    credentials: options?.credentials ?? "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-  };
-
-  // Robustness: Automatically stringify body if it's an object
-  if (fetchOptions.body && typeof fetchOptions.body === "object") {
-    fetchOptions.body = JSON.stringify(fetchOptions.body);
-  }
-
-  const res = await fetch(resolvedUrl, fetchOptions);
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`${res.status}: ${errorText}`);
-  }
-  
-  // Return null if 204 No Content
-  if (res.status === 204) return null;
-  
-  return res.json();
->>>>>>> Stashed changes
 }
 
 /** Drop-in replacement for fetch that supports absolute URLs in native apps */
