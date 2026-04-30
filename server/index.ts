@@ -92,6 +92,7 @@ NODE_ENV: ${process.env.NODE_ENV || "development"}
 PORT: ${PORT}
 HOST: ${HOST}
 DATABASE_URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Not set (MemStorage bootstrap mode)"}
+SCHEMA: ${process.env.DATABASE_URL ? "✓ Verified/Synchronized (db:init)" : "✗ Skipped (No DB)"}
 ========================================
 Server listening on http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}
 Health check: http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}/health
