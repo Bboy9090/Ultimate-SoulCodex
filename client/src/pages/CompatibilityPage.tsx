@@ -148,9 +148,10 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
       <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
         <ScoreRing score={match.score} size={72} />
         <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.3rem" }}>
             {(() => {
               const Glyph = SIGN_GLYPHS[match.sign.name];
-              return Glyph ? <Glyph size={24} style={{ color: elColor }} /> : null;
+              return Glyph ? <Glyph size={20} style={{ color: elColor }} /> : null;
             })()}
             <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--foreground)" }}>{match.sign.name}</span>
             <span style={{

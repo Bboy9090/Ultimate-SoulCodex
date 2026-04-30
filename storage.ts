@@ -159,10 +159,14 @@ export class MemStorage implements IStorage {
     } else {
       const newUser: User = {
         id: userData.id!,
+        appleId: userData.appleId || null,
         email: userData.email || null,
         firstName: userData.firstName || null,
         lastName: userData.lastName || null,
         profileImageUrl: userData.profileImageUrl || null,
+        subscriptionStatus: userData.subscriptionStatus || "free",
+        personalityData: userData.personalityData || null,
+        lastLoginAt: userData.lastLoginAt || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -863,6 +867,10 @@ class DbStorage implements IStorage {
     return undefined;
   }
 
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    return undefined;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     throw new Error("DbStorage is disabled for bootstrap. Use MemStorage.");
   }
@@ -965,6 +973,10 @@ class DbStorage implements IStorage {
   }
 
   async getRecentTemplateIds(profileId: string, days: number): Promise<string[]> {
+    return [];
+  }
+
+  async getDailyInsightsHistory(profileId: string, limit: number): Promise<DailyInsight[]> {
     return [];
   }
 
@@ -1079,6 +1091,14 @@ class DbStorage implements IStorage {
   }
 
   async updateLocalUserPassword(userId: string, newPasswordHash: string): Promise<void> {
+    // Stub
+  }
+
+  async deleteUserAccount(userId: string): Promise<void> {
+    // Stub
+  }
+
+  async deleteProfileById(profileId: string): Promise<void> {
     // Stub
   }
 

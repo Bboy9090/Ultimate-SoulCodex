@@ -2,7 +2,7 @@ import type { Express } from "express";
 import appleSignin from "apple-signin-auth";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, signupSchema, loginSchema } from "./shared/schema";
+import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, type User, signupSchema, loginSchema } from "./shared/schema";
 import { sendTestNotificationSchema, broadcastNotificationSchema } from "./shared/notification-schemas";
 import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
 import { getAstroProvider } from "./server/astro/provider";
@@ -74,10 +74,8 @@ import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/comp
 import { isGeneric, scoreOutput } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
-import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext } from "@soulcodex/core";
+import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
 import { VOICE_LAWS } from "./soulcodex/codex30/prompts/voice_laws";
-import { finalOutputGuard } from "./services/ai-router";
-
 
 // Utility function for consistent error responses
 function handleError(error: unknown, res: any, context: string) {
@@ -85,7 +83,7 @@ function handleError(error: unknown, res: any, context: string) {
   
   // Handle Zod validation errors
   if (error instanceof ZodError) {
-    const validationError = fromZodError(error);
+    const validationError = fromZodError(error as any);
     return res.status(400).json({ 
       message: "Validation failed", 
       errors: validationError.details,
@@ -577,8 +575,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             birthDate: validatedBirthData.birthDate,
             birthTime: validatedBirthData.birthTime!,
             birthLocation: validatedBirthData.birthLocation!,
-            latitude: validatedBirthData.latitude!,
-            longitude: validatedBirthData.longitude!,
+            latitude: String(validatedBirthData.latitude!),
+            longitude: String(validatedBirthData.longitude!),
             timezone: validatedBirthData.timezone!
           });
         } catch (error) {
@@ -594,8 +592,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           elementalMedicineData = calculateElementalProfile(
             validatedBirthData.birthDate,
             numerologyData.lifePath,
-            astrologyData.sunSign,
-            astrologyData.moonSign,
+            (astrologyData as any).sunSign || (astrologyData as any).sun,
+            (astrologyData as any).moonSign || (astrologyData as any).moon,
             humanDesignData?.type
           );
           console.log("[SoulArchetype] Elemental Medicine Profile calculated successfully");
@@ -612,8 +610,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           soulArchetypeData = generateSoulArchetype(
             validatedBirthData.name,
             numerologyData.lifePath || 1,
-            astrologyData.sunSign,
-            astrologyData.moonSign,
+            (astrologyData as any).sunSign,
+            (astrologyData as any).moonSign,
             humanDesignData?.type,
             undefined // enneagramType
           );
@@ -764,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign,
           moonSign,
           risingSign,
-          lifePath: numerologyData?.lifePath,
+          lifePath: numerologyData?.lifePath || 0,
         });
         console.log("[SoulArchetype] Soul Codex synthesis completed");
       } catch (error) {
@@ -772,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Persist profile to database
-      let userId = req.user?.id || null;
+      let userId = (req.user as any)?.id || null;
       let sessionId = req.sessionID || null;
 
       // Persist profile to database with timeout
@@ -793,15 +791,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timezone: validatedBirthData.timezone || "",
             latitude: validatedBirthData.latitude?.toString() || "",
             longitude: validatedBirthData.longitude?.toString() || "",
+            astrologyData,
+            numerologyData,
+            humanDesignData,
+            soulArchetype: soulArchetypeData,
+            elementalProfile: elementalMedicineData,
+            personalityData: moralCompassData, // Using as personality data
+            archetypeData: soulCodexResult,
             data: {
-              astrologyData,
-              numerologyData,
-              humanDesignData,
-              soulArchetypeData,
-              elementalMedicineData,
-              moralCompassData,
               parentalInfluenceData,
-              soulCodexResult,
             },
           }),
           timeoutPromise
@@ -863,9 +861,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[GetProfiles] Request sessionID: ${req.sessionID}, userId: ${req.user?.id || 'none'}`);
       
       // For authenticated users
-      if (req.user?.id) {
-        console.log(`[GetProfiles] Fetching by userId: ${req.user.id}`);
-        profile = await storage.getProfileByUserId(req.user.id);
+      if ((req.user as any)?.id) {
+        console.log(`[GetProfiles] Fetching by userId: ${(req.user as any).id}`);
+        profile = await storage.getProfileByUserId((req.user as any).id);
       } 
         // For anonymous users (session-based)
       else if (req.sessionID) {
@@ -964,8 +962,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             birthDate: birthData.birthDate,
             birthTime: birthData.birthTime!,
             birthLocation: birthData.birthLocation!,
-            latitude: birthData.latitude!,
-            longitude: birthData.longitude!,
+            latitude: String(birthData.latitude!),
+            longitude: String(birthData.longitude!),
             timezone: birthData.timezone!
           });
         } catch (error) {
@@ -998,8 +996,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           vedicAstrologyData = calculateVedicAstrology({
             birthDate: birthData.birthDate,
             birthTime: birthData.birthTime!,
-            latitude: parseFloat(birthData.latitude!),
-            longitude: parseFloat(birthData.longitude!),
+            latitude: parseFloat(String(birthData.latitude || "0")),
+            longitude: parseFloat(String(birthData.longitude || "0")),
             timezone: birthData.timezone!
           });
         } catch (error) {
@@ -1043,7 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Kabbalah (works with name + birth date + numerology)
       try {
-        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData.calculateNumerology);
+        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData.lifePath || 1);
       } catch (error) {
         console.error("[CreateProfile] Kabbalah calculation failed:", error);
         kabbalahData = null;
@@ -1059,7 +1057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Chakra System (works with birth date + numerology)
       try {
-        chakraData = calculateChakraSystem(birthData.birthDate, numerologyData.calculateNumerology, astrologyData);
+        chakraData = calculateChakraSystem(astrologyData, numerologyData, {});
       } catch (error) {
         console.error("[CreateProfile] Chakra System calculation failed:", error);
         chakraData = null;
@@ -1067,7 +1065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Sacred Geometry (works with birth date + numerology)
       try {
-        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData.calculateNumerology, birthData.name);
+        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData.lifePath || 1, birthData.name);
       } catch (error) {
         console.error("[CreateProfile] Sacred Geometry calculation failed:", error);
         sacredGeometryData = null;
@@ -1075,7 +1073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Runes (works with name + birth date + numerology)
       try {
-        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData.calculateNumerology);
+        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData.lifePath || 1);
       } catch (error) {
         console.error("[CreateProfile] Runes calculation failed:", error);
         runesData = null;
@@ -1098,7 +1096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Ayurveda (works with birth date, enhanced with astrology)
       try {
-        ayurvedaData = calculateAyurveda(birthData.birthDate, astrologyData, undefined);
+        ayurvedaData = calculateAyurveda(birthData.birthDate, numerologyData.lifePath || 1);
       } catch (error) {
         console.error("[CreateProfile] Ayurveda calculation failed:", error);
         ayurvedaData = null;
@@ -1115,7 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Palmistry (works with birth date + numerology life path)
       let palmistryData;
       try {
-        palmistryData = generatePalmReading(birthData.birthDate, numerologyData.calculateNumerology);
+        palmistryData = generatePalmReading(birthData.birthDate, numerologyData.lifePath || 1);
         console.log("[CreateProfile] Palm reading generated successfully");
       } catch (error) {
         console.error("[CreateProfile] Palmistry calculation failed:", error);
@@ -1125,7 +1123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Asteroids (requires complete data for planetary positions)
       if (hasCompleteData && astrologyData) {
         try {
-          const ascendantLongitude = astrologyData.houses[0].degree;
+          const ascendantLongitude = (astrologyData as any).houses?.[0]?.degree || 0;
           asteroidsData = calculateAsteroids(
             birthData.birthDate,
             birthData.birthTime!,
@@ -1244,15 +1242,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { calculateMoralCompass } = await import("./services/moral-compass");
           moralCompassData = calculateMoralCompass(
             birthData.moralCompassAnswers,
-            numerologyData?.calculateNumerology?.lifePath,
-            astrologyData?.sunSign
+            numerologyData?.lifePath || 1,
+            (astrologyData as any)?.sunSign
           );
         } else {
           // Fallback to birth data calculation
           moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.calculateNumerology?.lifePath,
-            astrologyData?.sunSign,
-            astrologyData?.moonSign
+            numerologyData?.lifePath || 1,
+            (astrologyData as any)?.sunSign,
+            (astrologyData as any)?.moonSign
           );
         }
       } catch (error) {
@@ -1337,7 +1335,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           astrologyData,
           numerologyData,
           personalityData: {},
-          archetype: baseArchetypeData
+          archetype: baseArchetypeData,
+          humanDesignData: humanDesignData || null,
+          elementalMedicineData: elementalMedicineData || null
         }),
         "Trust your inner wisdom today."
       );
@@ -1355,10 +1355,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`[CreateProfile] Assigning profile to ${userId ? `userId: ${userId}` : `sessionId: ${sessionId}`}`);
-      console.log(`[CreateProfile] req.sessionID: ${req.sessionID}, req.user: ${JSON.stringify(req.user)}`);
       
-      // Create profile with all 30+ systems
-      const profile = await storage.createProfile({
+      const insertProfile = {
         userId,
         sessionId,
         name: birthData.name,
@@ -1396,7 +1394,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parentalInfluenceData,
         biography,
         dailyGuidance
-      });
+      };
+      const profile = await storage.createProfile(insertProfile as any);
       
       console.log(`[CreateProfile] Profile created successfully: ${profile.id}`);
       console.log(`[CreateProfile] Profile sessionId: ${profile.sessionId}, userId: ${profile.userId}`);
