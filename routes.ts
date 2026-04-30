@@ -4405,11 +4405,13 @@ DECISION: [behavioral decision rule for today]
   const raw = aiResponse.content || "";
   if (!raw) return null;
 
-  // Final Quality Firewall
-  const score = scoreOutput(raw);
-  if (!score.passed) {
-    console.warn(`[TodayCardAI] Output score ${score.total.toFixed(1)} failed threshold. Rejecting AI card.`);
-    return null;
+  // Final Quality Firewall - Skip for deterministic fallback as it's pre-validated
+  if (aiResponse.status !== 'fallback') {
+    const score = scoreOutput(raw);
+    if (!score.passed) {
+      console.warn(`[TodayCardAI] Output score ${score.total.toFixed(1)} failed threshold. Rejecting AI card.`);
+      return null;
+    }
   }
 
   try {
