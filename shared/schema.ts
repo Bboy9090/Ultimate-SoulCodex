@@ -15,7 +15,15 @@ export const profiles = pgTable("profiles", {
   timezone: text("timezone"),
   latitude: text("latitude"),
   longitude: text("longitude"),
-  // Flexible bag for all esoteric system data (astrology, numerology, HD, etc.)
+  astrologyData: jsonb("astrology_data").$type<any>(),
+  numerologyData: jsonb("numerology_data").$type<any>(),
+  humanDesignData: jsonb("human_design_data").$type<any>(),
+  elementalProfile: jsonb("elemental_profile").$type<any>(),
+  soulArchetype: jsonb("soul_archetype").$type<any>(),
+  personalityData: jsonb("personality_data").$type<any>(),
+  archetypeData: jsonb("archetype_data").$type<any>(),
+  isPublic: boolean("is_public").default(false),
+  // Flexible bag for any other esoteric system data
   data: jsonb("data").$type<Record<string, any>>().default({}),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -56,6 +64,9 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   profileImageUrl: text("profile_image_url"),
+  subscriptionStatus: text("subscription_status").default("free"),
+  personalityData: jsonb("personality_data").$type<any>(),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (t) => ({
