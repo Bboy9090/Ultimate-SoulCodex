@@ -122,6 +122,14 @@ export const journalEntries = pgTable("journal_entries", {
   profileIdx: index("journal_profile_idx").on(t.profileId),
 }));
 
+export const sessions = pgTable("sessions", {
+  sid: text("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+}, (t) => ({
+  expireIdx: index("sessions_expire_idx").on(t.expire),
+}));
+
 // ── Zod runtime schemas (used by routes) ──────────────────────────────────────
 
 // Zod schemas used at runtime in routes

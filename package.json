@@ -20,7 +20,7 @@
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:init": "drizzle-kit push --config=drizzle.config.ts --force",
+    "db:init": "node scripts/fix-db.cjs && drizzle-kit push --config=drizzle.config.ts --force",
     "db:studio": "drizzle-kit studio",
     "check": "npm run check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

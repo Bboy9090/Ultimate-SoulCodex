@@ -43,6 +43,7 @@ COPY --from=builder /app/node_modules ./node_modules
 # Include built packages for runtime imports if they use dist/
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
 # Expose production port
