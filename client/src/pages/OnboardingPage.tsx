@@ -8,7 +8,7 @@ import ScButton from "@/components/ScButton";
 import AppleSignInButton from "@/components/AppleSignInButton";
 import { 
   IconIdentity, IconMoon, IconCodex, IconSparkles, 
-  IconArrowRight, IconCircle 
+  IconArrowRight, IconCircle, IconLogo
 } from "@/components/Icons";
 
 type PressurePattern =
@@ -349,18 +349,16 @@ export default function OnboardingPage() {
         animate={{ opacity: 1 }}
         style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem", position: "relative", overflow: "hidden" }}
       >
-        <img
-          src="/soul-codex-logo-star.png"
-          aria-hidden="true"
-          style={{
-            position: "absolute", top: "50%", left: "50%",
-            transform: "translate(-50%, -55%)",
-            width: 600, height: 600, objectFit: "contain",
-            opacity: 0.08, mixBlendMode: "screen",
-            filter: "blur(32px)",
-            pointerEvents: "none", userSelect: "none", zIndex: 0,
-          }}
-        />
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -55%)",
+          width: 600, height: 600,
+          opacity: 0.08, mixBlendMode: "screen",
+          filter: "blur(32px)",
+          pointerEvents: "none", userSelect: "none", zIndex: 0,
+        }}>
+          <IconLogo size={600} />
+        </div>
         <div style={{ maxWidth: 520, width: "100%", position: "relative", zIndex: 1 }}>
           <div style={{
             background: "var(--glass-bg)",
@@ -466,7 +464,7 @@ export default function OnboardingPage() {
           transition={{ duration: 1, ease: "easeOut" }}
           style={{ marginBottom: "3rem" }}
         >
-          <img src="/soul-codex-logo-star.png" alt="Soul Codex" style={{ width: "220px", height: "220px", objectFit: "contain", filter: "drop-shadow(0 0 30px rgba(212,168,95,0.4))" }} />
+          <IconLogo size={220} style={{ filter: "drop-shadow(0 0 30px rgba(212,168,95,0.4))" }} />
         </motion.div>
 
         <motion.div
@@ -520,18 +518,16 @@ export default function OnboardingPage() {
 
   return (
     <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600, position: "relative", overflow: "hidden" }}>
-      <img
-        src="/soul-codex-logo-star.png"
-        aria-hidden="true"
-        style={{
-          position: "absolute", top: "-80px", left: "50%",
-          transform: "translateX(-50%)",
-          width: 500, height: 500, objectFit: "contain",
-          opacity: 0.07, mixBlendMode: "screen",
-          filter: "blur(30px)",
-          pointerEvents: "none", userSelect: "none", zIndex: 0,
-        }}
-      />
+      <div style={{
+        position: "absolute", top: "-80px", left: "50%",
+        transform: "translateX(-50%)",
+        width: 500, height: 500,
+        opacity: 0.07, mixBlendMode: "screen",
+        filter: "blur(30px)",
+        pointerEvents: "none", userSelect: "none", zIndex: 0,
+      }}>
+        <IconLogo size={500} />
+      </div>
 
       <div style={{ position: "relative", zIndex: 1 }}>
 

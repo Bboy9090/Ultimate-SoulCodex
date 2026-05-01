@@ -67,6 +67,7 @@ export default function App() {
       <div style={{ display: "flex", minHeight: "100vh" }}>
       {/* Dynamic Cosmic Background - Always present behind the UI */}
       <CosmicBackground />
+      <div className="sacred-geometry" />
       
       {/* Sidebar - Only visible if profile exists */}
       {hasProfile && <Nav />}

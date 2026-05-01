@@ -47,12 +47,14 @@ export async function* streamChatOpenAI({
   message,
   model = "gpt-4o-mini",
   temperature = 0.7,
+  signal,
 }: {
   systemInstruction: string;
   history: { role: string; content: string }[];
   message: string;
   model?: string;
   temperature?: number;
+  signal?: AbortSignal;
 }): AsyncGenerator<string> {
   if (!openai) {
     yield "Soul Guide is adjusting the cosmic frequency. Please try again.";
@@ -78,7 +80,7 @@ export async function* streamChatOpenAI({
       temperature,
       max_tokens: 1000,
       stream: true,
-    });
+    }, { signal });
 
     for await (const chunk of stream) {
       const text = chunk.choices[0]?.delta?.content;

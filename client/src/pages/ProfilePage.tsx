@@ -16,7 +16,8 @@ import {
   IconZodiacAries, IconZodiacTaurus, IconZodiacGemini, 
   IconZodiacCancer, IconZodiacLeo, IconZodiacVirgo, 
   IconZodiacLibra, IconZodiacScorpio, IconZodiacSagittarius, 
-  IconZodiacCapricorn, IconZodiacAquarius, IconZodiacPisces
+  IconZodiacCapricorn, IconZodiacAquarius, IconZodiacPisces,
+  IconLogo
 } from "../components/Icons";
 
 interface Archetype {
@@ -505,21 +506,19 @@ export default function ProfilePage() {
     >
 
       {/* ── Atmospheric background watermark ─────────────────────────────── */}
-      <motion.img
-        initial={{ opacity: 0, scale: 1.2 }}
-        animate={{ opacity: 0.055, scale: 1 }}
-        transition={{ duration: 2 }}
-        src="/soul-codex-logo-star.png"
-        aria-hidden="true"
+      <div
         style={{
           position: "absolute", top: "-40px", left: "50%",
           transform: "translateX(-50%)",
-          width: 480, height: 480, objectFit: "contain",
+          width: 480, height: 480,
+          opacity: 0.055,
           mixBlendMode: "screen",
           filter: "blur(22px)",
           pointerEvents: "none", userSelect: "none", zIndex: 0,
         }}
-      />
+      >
+        <IconLogo size={480} />
+      </div>
 
       {/* ── Identity header ─────────────────────────────────────────────── */}
       <motion.section 
@@ -542,16 +541,24 @@ export default function ProfilePage() {
           whileHover={{ rotate: 10, scale: 1.1 }}
           style={{ display: "flex", justifyContent: "center", marginBottom: "0.85rem", cursor: "pointer" }}
         >
-          <img
-            src="/soul-codex-logo-star.png"
-            alt="Soul Codex"
+          <IconLogo
+            size={72}
             style={{
-              width: 72, height: 72,
               filter: "drop-shadow(0 0 14px rgba(212,168,95,0.45))",
               opacity: 0.95,
             }}
           />
         </motion.div>
+        
+        <div style={{
+          fontSize: "0.75rem", 
+          letterSpacing: "0.22em", textTransform: "uppercase",
+          color: "var(--sc-gold)", fontWeight: 800, marginBottom: "0.5rem",
+          fontFamily: "var(--font-display)",
+          opacity: 0.9
+        }}>
+          1. My Identity
+        </div>
 
         <h1
           className="gradient-text text-glow"
@@ -611,53 +618,54 @@ export default function ProfilePage() {
       {/* ── Natal Blueprint row ─────────────────────────────────────────── */}
       <NatalBlueprint profile={profile} />
 
-      {/* ── Snapshot strip — 4 named signal cards ────────────────────────── */}
+      {/* ── Section Flow ────────────────────────────────────────────────── */}
       <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: "0.85rem", marginBottom: "2.5rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "1.25rem", marginBottom: "2.5rem",
         position: "relative", zIndex: 1,
       }}>
-        {snapshotCards.map(card => {
+        {snapshotCards.map((card, idx) => {
           if (!card.value || card.value.toLowerCase().includes("unknown")) {
             return null; // Suppression Mode: Hide incomplete cards
           }
           return (
-            <div
+            <motion.div
               key={card.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + (idx * 0.1) }}
               style={{
                 background: card.bg,
                 borderRadius: "16px",
-                padding: card.featured ? "2.5rem" : "1.5rem",
+                padding: "2rem",
                 border: `1px solid ${card.accent}30`,
                 borderTop: `3px solid ${card.accent}`,
                 boxShadow: `0 8px 40px rgba(0,0,0,0.6), inset 0 0 30px ${card.accent}08`,
                 display: "flex", flexDirection: "column",
                 backdropFilter: "blur(16px)",
-                gridColumn: card.featured ? "1 / -1" : "auto",
-                textAlign: card.featured ? "center" : "left",
+                textAlign: "left",
               }}
             >
               <div style={{
-                fontSize: card.featured ? "0.8rem" : "0.7rem", 
+                fontSize: "0.75rem", 
                 letterSpacing: "0.22em", textTransform: "uppercase",
-                color: card.accent, fontWeight: 800, marginBottom: card.featured ? "1.1rem" : "0.75rem",
+                color: card.accent, fontWeight: 800, marginBottom: "1rem",
                 fontFamily: "var(--font-display)",
                 opacity: 0.9
               }}>
-                {card.label}
+                {idx + 2}. {card.label}
               </div>
               <p style={{
-                fontSize: card.featured ? "1.4rem" : "0.95rem", 
+                fontSize: "1.1rem", 
                 color: "var(--sc-ivory)",
-                lineHeight: 1.5, margin: 0, 
-                fontWeight: card.featured ? 500 : 400,
+                lineHeight: 1.6, margin: 0, 
+                fontWeight: 400,
                 fontFamily: "var(--font-serif)",
-                fontStyle: card.featured ? "italic" : "normal",
               }}>
                 {card.value}
               </p>
-            </div>
+            </motion.div>
           );
         })}
       </div>

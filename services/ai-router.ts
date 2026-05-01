@@ -217,92 +217,121 @@ export async function* routeAIStream(
 
   if (isGeminiAvailable()) {
     try {
-      const stream = geminiStreamChat({
-        systemInstruction: sanitizedSystemInstruction,
-        history: input.history.map((h) => ({
-          role: h.role,
-          parts: [{ text: h.content }],
-        })),
-        message: sanitizedMessage,
-        temperature: input.temperature ?? 0.8,
-      });
-
-      let yielded = false;
       const controller = new AbortController();
       const watchdog = setTimeout(() => {
-        console.warn("[AI Router] Gemini stream watchdog triggered (15s)");
+        console.warn("[AI Router] Gemini stream watchdog triggered (12s) — switching to backup.");
         controller.abort();
-      }, 15000);
+      }, 12000);
 
       try {
+        const stream = geminiStreamChat({
+          systemInstruction: sanitizedSystemInstruction,
+          history: input.history.map((h) => ({
+            role: h.role,
+            parts: [{ text: h.content }],
+          })),
+          message: sanitizedMessage,
+          temperature: input.temperature ?? 0.8,
+          signal: controller.signal,
+        });
+
+        let yielded = false;
         for await (const chunk of stream) {
           if (chunk) {
             yielded = true;
             yield { chunk, status: "live", provider: "gemini" };
           }
         }
+        if (yielded) return;
       } finally {
         clearTimeout(watchdog);
       }
-      if (yielded) return;
-    } catch (e) {
-      console.warn("[AI Router] Gemini stream failed, trying Groq:", (e as Error).message);
+    } catch (e: any) {
+      if (e.name !== 'AbortError' && !e.message?.includes('abort')) {
+        console.warn("[AI Router] Gemini stream failed:", e.message);
+      }
     }
   }
 
   if (isGroqAvailable()) {
     try {
-      const stream = streamChatGroq({
-        systemInstruction: input.systemInstruction,
-        history: input.history.map((h) => ({
-          role: h.role,
-          content:
-            typeof h.content === "string"
-              ? h.content
-              : (h as any).parts?.[0]?.text || "",
-        })),
-        message: input.message,
-        temperature: input.temperature ?? 0.8,
-      });
+      const controller = new AbortController();
+      const watchdog = setTimeout(() => {
+        console.warn("[AI Router] Groq stream watchdog triggered (12s) — switching to backup.");
+        controller.abort();
+      }, 12000);
 
-      let yielded = false;
-      for await (const chunk of stream) {
-        if (chunk) {
-          yielded = true;
-          yield { chunk, status: "backup", provider: "groq" };
+      try {
+        const stream = streamChatGroq({
+          systemInstruction: input.systemInstruction,
+          history: input.history.map((h) => ({
+            role: h.role,
+            content:
+              typeof h.content === "string"
+                ? h.content
+                : (h as any).parts?.[0]?.text || "",
+          })),
+          message: input.message,
+          temperature: input.temperature ?? 0.8,
+          signal: controller.signal,
+        });
+
+        let yielded = false;
+        for await (const chunk of stream) {
+          if (chunk) {
+            yielded = true;
+            yield { chunk, status: "backup", provider: "groq" };
+          }
         }
+        if (yielded) return;
+      } finally {
+        clearTimeout(watchdog);
       }
-      if (yielded) return;
-    } catch (e) {
-      console.warn("[AI Router] Groq stream failed, trying OpenAI:", (e as Error).message);
+    } catch (e: any) {
+      if (e.name !== 'AbortError' && !e.message?.includes('abort')) {
+        console.warn("[AI Router] Groq stream failed:", e.message);
+      }
     }
   }
 
   if (isOpenAIAvailable()) {
     try {
-      const stream = streamChatOpenAI({
-        systemInstruction: input.systemInstruction,
-        history: input.history.map((h) => ({
-          role: h.role,
-          content:
-            typeof h.content === "string"
-              ? h.content
-              : (h as any).parts?.[0]?.text || "",
-        })),
-        message: input.message,
-        temperature: input.temperature ?? 0.8,
-      });
+      const controller = new AbortController();
+      const watchdog = setTimeout(() => {
+        console.warn("[AI Router] OpenAI stream watchdog triggered (12s) — falling back to deterministic.");
+        controller.abort();
+      }, 12000);
 
-      let yielded = false;
-      for await (const chunk of stream) {
-        if (chunk) {
-          yielded = true;
-          yield { chunk, status: "backup", provider: "openai" };
+      try {
+        const stream = streamChatOpenAI({
+          systemInstruction: input.systemInstruction,
+          history: input.history.map((h) => ({
+            role: h.role,
+            content:
+              typeof h.content === "string"
+                ? h.content
+                : (h as any).parts?.[0]?.text || "",
+          })),
+          message: input.message,
+          temperature: input.temperature ?? 0.8,
+          signal: controller.signal,
+        });
+
+        let yielded = false;
+        for await (const chunk of stream) {
+          if (chunk) {
+            yielded = true;
+            yield { chunk, status: "backup", provider: "openai" };
+          }
         }
+        if (yielded) return;
+      } finally {
+        clearTimeout(watchdog);
       }
-      if (yielded) return;
-    } catch (e) {
-      console.warn("[AI Router] OpenAI stream also failed:", (e as Error).message);
+    } catch (e: any) {
+      if (e.name !== 'AbortError' && !e.message?.includes('abort')) {
+        console.warn("[AI Router] OpenAI stream failed:", e.message);
+      }
     }
   }
 

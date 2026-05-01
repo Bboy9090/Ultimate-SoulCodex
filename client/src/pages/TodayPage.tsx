@@ -10,7 +10,8 @@ import {
   IconSparkles, IconAlert, IconRefresh, IconDiamond,
   IconCircle, IconMoonNew, IconMoonWaxingCrescent,
   IconMoonFirstQuarter, IconMoonWaxingGibbous, IconMoonFull,
-  IconMoonWaningGibbous, IconMoonThirdQuarter, IconMoonWaningCrescent
+  IconMoonWaningGibbous, IconMoonThirdQuarter, IconMoonWaningCrescent,
+  IconLogo
 } from "../components/Icons";
 
 interface TodayCard {
@@ -246,7 +247,7 @@ export default function TodayPage() {
   if (cardMutation.isPending && !card) {
     return (
       <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.5rem" }}>
-        <IconStar size={72} style={{ opacity: 0.7, animation: "spin 6s linear infinite", filter: "drop-shadow(0 0 14px rgba(212,168,95,0.4))" }} />
+        <IconLogo size={72} style={{ opacity: 0.7, animation: "spin 6s linear infinite", filter: "drop-shadow(0 0 14px rgba(212,168,95,0.4))" }} />
         <p style={{ color: "var(--sc-gold)", fontFamily: "var(--font-serif)", fontSize: "1rem", letterSpacing: "0.04em" }}>
           Reading today's signals…
         </p>
@@ -319,14 +320,12 @@ export default function TodayPage() {
 
   return (
     <div className="nebula-bg" style={{ minHeight: "100vh", padding: "1.5rem 1.5rem 4rem" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", position: "relative", zIndex: 1 }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", position: "relative", zIndex: 10 }}>
 
-      {/* ── Hero: logo + title ──────────────────────────────────────────── */}
       <div style={{ textAlign: "center", paddingBottom: "1.75rem", paddingTop: "0.5rem" }}>
-        <img
-          src="/soul-codex-logo-star.png"
-          alt="Soul Codex"
-          style={{ width: 110, height: 110, filter: "drop-shadow(0 0 28px rgba(212,168,95,0.55)) drop-shadow(0 0 60px rgba(200,130,60,0.25))" }}
+        <IconLogo
+          size={110}
+          className="sc-luminous-logo"
         />
         <div style={{
           fontFamily: "var(--font-serif)",
@@ -348,11 +347,11 @@ export default function TodayPage() {
       </div>
 
       {/* ── Main content grid ───────────────────────────────────────────── */}
-      <div className="today-grid-main" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 0.75fr", gap: "0.9rem", marginBottom: "0.9rem" }}>
+      <div className="today-grid-main" style={{ marginBottom: "0.9rem" }}>
 
         {/* Soul Snapshot */}
         <div style={{ ...cardStyle, padding: "1.4rem" }}>
-          <div style={labelStyle}>Soul Snapshot <IconSparkles size={10} style={{ verticalAlign: "middle" }} /></div>
+          <div style={labelStyle}>My Identity <IconSparkles size={10} style={{ verticalAlign: "middle" }} /></div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.5rem" }}>
             <span style={{ fontSize: "1.1rem", color: "var(--sc-gold)", opacity: 0.85 }}>
               <MoonIcon size={20} />
@@ -410,8 +409,8 @@ export default function TodayPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.7rem 1rem" }}>
             {[
-              { label: "Today's Theme",   value: card.topTheme ? displayTheme(card.topTheme) : (card.title ?? "—") },
-              { label: "Pattern to Watch",value: patternWatch },
+              { label: "My Identity",   value: card.topTheme ? displayTheme(card.topTheme) : (card.title ?? "—") },
+              { label: "One Pattern to Watch",value: patternWatch },
               { label: "One Move Today",  value: oneMove },
             ].map(({ label, value }) => {
               if (!value || value === "—" || value.toLowerCase().includes("unknown")) return null;
@@ -427,7 +426,7 @@ export default function TodayPage() {
 
         {/* Energy Update */}
         <div style={{ ...cardStyle, padding: "1.4rem" }}>
-          <div style={labelStyle}>Energy Update <IconSparkles size={10} style={{ verticalAlign: "middle" }} /></div>
+          <div style={labelStyle}>My Pattern <IconSparkles size={10} style={{ verticalAlign: "middle" }} /></div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", marginBottom: "0.9rem" }}>
             <div>
               <div style={{ fontSize: "0.72rem", color: "var(--sc-ivory)", opacity: 0.7, marginBottom: "0.1rem" }}>
@@ -478,7 +477,7 @@ export default function TodayPage() {
 
         {/* Daily Focus */}
         <div style={{ ...cardStyle, padding: "1.4rem" }}>
-          <div style={labelStyle}>Daily Focus</div>
+          <div style={labelStyle}>What’s Alive Now</div>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", marginBottom: "0.6rem" }}>
             <IconMoon size={14} style={{ color: "var(--sc-gold)", marginTop: "0.1rem", flexShrink: 0 }} />
             <h3 style={{ fontFamily: "var(--font-serif)", fontSize: "1rem", fontWeight: 600, color: "var(--sc-ivory)", lineHeight: 1.25, margin: 0 }}>
@@ -499,7 +498,7 @@ export default function TodayPage() {
       </div>
 
       {/* ── Bottom row ──────────────────────────────────────────────────── */}
-      <div className="today-grid-bottom" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.9rem" }}>
+      <div className="today-grid-bottom">
 
         {/* Growth Focus */}
         <div style={{ ...cardStyle, padding: "1.2rem" }}>

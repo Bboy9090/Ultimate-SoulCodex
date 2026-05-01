@@ -9,7 +9,7 @@ import {
   IconStar, IconProfile, IconGuide, IconTracker, 
   IconTimeline, IconCodex, IconCompat, IconBlueprint, 
   IconMoon, IconSparkles, IconChevronRight, IconCircle,
-  IconArrowRight, IconSquare
+  IconArrowRight, IconSquare, IconLogo
 } from "../components/Icons";
 
 const FEATURES = [
@@ -100,7 +100,7 @@ export default function LandingPage() {
       {/* ── Top nav ─────────────────────────────────────────────────────────── */}
       <header className="sc-marketing-header">
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.6rem", textDecoration: "none" }}>
-          <img src="/soul-codex-logo-star.png" alt="Soul Codex" style={{ width: 30, height: 30, filter: "drop-shadow(0 0 6px rgba(212,168,95,0.5))" }} />
+          <IconLogo size={32} style={{ filter: "drop-shadow(0 0 10px rgba(212,168,95,0.6))" }} />
           <span style={{ fontFamily: "var(--font-serif)", fontSize: "1rem", letterSpacing: "0.08em", color: "var(--sc-ivory)" }}>Soul Codex</span>
         </Link>
         <nav className="sc-marketing-nav">
@@ -136,21 +136,22 @@ export default function LandingPage() {
         <Orb style={{ width: 350, height: 350, top: "40%", right: "10%", background: `radial-gradient(circle at 50% 50%, ${GOLD},0.10) 0%, transparent 60%)` }} />
 
         {/* Background logo glow */}
-        <img src="/soul-codex-logo-star.png" aria-hidden="true" style={{
+        <div style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%,-50%)",
-          width: 700, height: 700, objectFit: "contain",
+          width: 700, height: 700,
           opacity: 0.055, mixBlendMode: "screen",
           filter: "blur(38px)", pointerEvents: "none", userSelect: "none", zIndex: 0,
-        }} />
+        }}>
+          <IconLogo size={700} />
+        </div>
 
         <div className="sc-hero-panel animate-fadeInScale" style={{ position: "relative", zIndex: 1, maxWidth: 700 }}>
           {/* Logo */}
           <div className="sc-hero-logo-wrap animate-floatUp" style={{ display: "flex", justifyContent: "center", marginBottom: "1.75rem" }}>
-            <img
-              src="/soul-codex-logo-star.png" alt="Soul Codex"
+            <IconLogo
+              size={120}
               style={{
-                width: 110, height: 110,
                 filter: "drop-shadow(0 0 30px rgba(212,168,95,0.6)) drop-shadow(0 0 70px rgba(200,130,60,0.28))",
               }}
             />
@@ -164,7 +165,7 @@ export default function LandingPage() {
             fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase",
             color: "var(--sc-gold)", marginBottom: "1.5rem",
           }}>
-            <IconStar size={12} />
+            <IconLogo size={14} />
             <span>Free to start · No account required</span>
           </div>
 
@@ -475,17 +476,19 @@ export default function LandingPage() {
       ═══════════════════════════════════════════ */}
       <section style={{ padding: "7rem 1.5rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <Orb style={{ width: 700, height: 700, top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: `radial-gradient(circle at 50% 50%, ${AMBER},0.16) 0%, transparent 55%)` }} />
-        <img src="/soul-codex-logo-star.png" aria-hidden="true" style={{
+        <div style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%,-50%)",
           width: 620, height: 620,
           opacity: 0.055, mixBlendMode: "screen",
           filter: "blur(36px)", pointerEvents: "none", userSelect: "none", zIndex: 0,
-        }} />
+        }}>
+          <IconLogo size={620} />
+        </div>
         <div className="sc-closing-panel" style={{ position: "relative", zIndex: 1, maxWidth: 520, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: "0.8rem", color: "rgba(246,241,232,0.42)" }}>Begin</div>
           <div style={{ fontSize: "2.5rem", marginBottom: "1.25rem", color: "var(--sc-gold)", opacity: 0.4 }}>
-            <IconStar size={32} style={{ margin: "0 auto" }} />
+            <IconLogo size={48} style={{ margin: "0 auto" }} />
           </div>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.8rem, 5vw, 2.8rem)", marginBottom: "0.85rem", lineHeight: 1.15, color: "var(--sc-gold)" }}>
             Ready to See Yours?
@@ -512,7 +515,7 @@ export default function LandingPage() {
         display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <img src="/soul-codex-logo-star.png" alt="" style={{ width: 20, height: 20, opacity: 0.6 }} />
+          <IconLogo size={20} style={{ opacity: 0.6 }} />
           <span style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.35)" }}>Soul Codex</span>
         </div>
         <p style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.28)", margin: 0 }}>

@@ -113,7 +113,7 @@ export function registerChatRoutes(app: Express) {
       res.setHeader("Connection", "keep-alive");
 
       const stream = routeAIStream({
-        promptType: "chat",
+        promptType: "soul_guide",
         systemInstruction,
         history,
         message,
