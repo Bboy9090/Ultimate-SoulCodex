@@ -80,19 +80,27 @@ function scoreLabel(score: number): { text: string; color: string } {
 // ─── Small components ─────────────────────────────────────────────────────────
 
 function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
-  const r = (size / 2) - 7;
-  const circ = 2 * Math.PI * r;
-  const { color } = scoreLabel(score);
+  const [displayScore, setDisplayScore] = useState(0);
+  const circ = 2 * Math.PI * (size / 2 - 4);
+  
+  useEffect(() => {
+    // Animate from 0 to score
+    const timer = setTimeout(() => setDisplayScore(score), 100);
+    return () => clearTimeout(timer);
+  }, [score]);
+
   return (
-    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="6"
-          strokeDasharray={circ} strokeDashoffset={circ - (circ * score) / 100}
-          strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.8s ease-out" }} />
+    <div style={{ position: "relative", width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={size / 2 - 4} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+        <circle 
+          cx={size / 2} cy={size / 2} r={size / 2 - 4} fill="none" 
+          stroke="var(--sc-gold)" strokeWidth="4" 
+          strokeDasharray={circ} strokeDashoffset={circ - (circ * displayScore) / 100}
+          strokeLinecap="round" style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1)", filter: "drop-shadow(0 0 4px var(--sc-gold))" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: size * 0.22, fontWeight: 700, color: "var(--foreground)", lineHeight: 1 }}>{score}</span>
+        <span style={{ fontSize: size * 0.22, fontWeight: 700, color: "var(--foreground)", lineHeight: 1 }}>{displayScore}</span>
         <span style={{ fontSize: size * 0.11, color: "var(--muted-foreground)", letterSpacing: "0.05em" }}>%</span>
       </div>
     </div>
@@ -124,76 +132,99 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, borderColor: elColor + "60", boxShadow: `0 12px 32px -12px ${elColor}33` }}
+      whileHover={{ y: -5, borderColor: elColor + "80", boxShadow: `0 20px 40px -15px ${elColor}44` }}
       onClick={() => setOpen(o => !o)}
       style={{
-        background: "rgba(26,18,10,0.75)", border: `1px solid ${elColor}28`,
-        borderTop: `3px solid ${elColor}`,
-        borderRadius: "14px", padding: "1.25rem",
-        cursor: "pointer", transition: "border-color 0.2s",
+        background: "rgba(28, 22, 53, 0.65)", 
+        backdropFilter: "blur(20px)",
+        border: `1px solid ${elColor}33`,
+        borderTop: `4px solid ${elColor}`,
+        borderRadius: "20px", padding: "1.5rem",
+        cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         position: "relative",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
       }}
     >
       {rank !== undefined && (
         <div style={{
-          position: "absolute", top: "0.75rem", right: "0.75rem",
-          fontSize: "0.6rem", color: "var(--muted-foreground)",
-          background: "rgba(255,255,255,0.06)", borderRadius: "99px",
-          padding: "0.15rem 0.5rem", letterSpacing: "0.08em",
+          position: "absolute", top: "0.85rem", right: "0.85rem",
+          fontSize: "0.65rem", color: elColor, fontWeight: 800,
+          background: `${elColor}15`, borderRadius: "99px",
+          padding: "0.2rem 0.6rem", letterSpacing: "0.1em",
+          border: `1px solid ${elColor}33`
         }}>
           #{rank + 1}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-        <ScoreRing score={match.score} size={72} />
+      <div style={{ display: "flex", gap: "1.25rem", alignItems: "center" }}>
+        <ScoreRing score={match.score} size={80} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.3rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
             {(() => {
               const Glyph = SIGN_GLYPHS[match.sign.name];
-              return Glyph ? <Glyph size={20} style={{ color: elColor }} /> : null;
+              return Glyph ? <Glyph size={24} style={{ color: elColor }} /> : null;
             })()}
-            <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--foreground)" }}>{match.sign.name}</span>
-            <span style={{
-              fontSize: "0.6rem", padding: "0.1rem 0.5rem",
-              background: `${elColor}18`, border: `1px solid ${elColor}40`,
-              borderRadius: "99px", color: elColor, letterSpacing: "0.07em",
-            }}>{match.sign.element}</span>
+            <span style={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--sc-ivory)", letterSpacing: "-0.02em" }}>{match.sign.name}</span>
           </div>
-          <div style={{ fontSize: "0.72rem", color: scoreColor, fontWeight: 600, marginBottom: "0.35rem" }}>{scoreText}</div>
-          <p style={{ fontSize: "0.8rem", color: "rgba(246,241,232,0.72)", margin: 0, lineHeight: 1.5 }}>{match.headline}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <span style={{
+              fontSize: "0.6rem", padding: "0.15rem 0.5rem",
+              background: `${elColor}18`, border: `1px solid ${elColor}40`,
+              borderRadius: "4px", color: elColor, letterSpacing: "0.1em",
+              textTransform: "uppercase", fontWeight: 700
+            }}>{match.sign.element}</span>
+            <span style={{ fontSize: "0.75rem", color: scoreColor, fontWeight: 700 }}>{scoreText}</span>
+          </div>
+          <p style={{ fontSize: "0.88rem", color: "rgba(234, 234, 245, 0.8)", margin: 0, lineHeight: 1.55 }}>{match.headline}</p>
         </div>
       </div>
 
-      {/* Keywords */}
-      <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.85rem", flexWrap: "wrap" }}>
-        {match.sign.keywords.map(k => (
-          <span key={k} style={{
-            fontSize: "0.62rem", padding: "0.15rem 0.55rem",
-            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "99px", color: "var(--muted-foreground)",
-          }}>{k}</span>
-        ))}
-      </div>
-
       {/* Expanded detail */}
-      {open && (
-        <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <p style={{ fontSize: "0.82rem", color: "rgba(246,241,232,0.82)", lineHeight: 1.7, marginBottom: "0.75rem" }}>{match.why}</p>
-          {match.tension && (
-            <p style={{ fontSize: "0.76rem", color: "#f59e0b", lineHeight: 1.6 }}>
-              <span style={{ marginRight: "0.35rem" }}>⚠</span>{match.tension}
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}
+          >
+            <p style={{ fontSize: "0.9rem", color: "rgba(234, 234, 245, 0.95)", lineHeight: 1.7, marginBottom: "1rem", fontStyle: "italic" }}>
+              "{match.why}"
             </p>
-          )}
-          {/* Mini score grid by mode */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem", marginTop: "1rem" }}>
-            {(Object.entries(match.scores) as [Mode, number][]).map(([m, s]) => (
-              <div key={m} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "0.6rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.2rem" }}>{m}</div>
-                <div style={{ fontWeight: 700, fontSize: "0.92rem", color: m === mode ? "#D4A85F" : "var(--foreground)" }}>{s}</div>
+            
+            {match.tension && (
+              <div style={{ 
+                background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", 
+                borderRadius: "10px", padding: "0.85rem", marginBottom: "1rem" 
+              }}>
+                <p style={{ fontSize: "0.8rem", color: "#f59e0b", lineHeight: 1.6, margin: 0 }}>
+                  <span style={{ marginRight: "0.5rem" }}>⚡</span>
+                  <strong>Tension:</strong> {match.tension}
+                </p>
               </div>
-            ))}
-          </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem" }}>
+              {(Object.entries(match.scores) as [Mode, number][]).map(([m, s]) => (
+                <div key={m} style={{ 
+                  textAlign: "center", padding: "0.6rem 0.3rem", 
+                  background: m === mode ? "rgba(212,168,95,0.12)" : "rgba(255,255,255,0.03)",
+                  borderRadius: "10px",
+                  border: `1px solid ${m === mode ? "rgba(212,168,95,0.3)" : "transparent"}`
+                }}>
+                  <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.3rem" }}>{m}</div>
+                  <div style={{ fontWeight: 800, fontSize: "1.1rem", color: m === mode ? "#D4A85F" : "var(--sc-ivory)" }}>{s}%</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {!open && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+           <IconChevronDown size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
         </div>
       )}
     </motion.div>
@@ -523,18 +554,32 @@ export default function CompatibilityPage() {
             </h2>
 
             {archetypeMatchMutation.isPending ? (
-              <div className="py-12">
+              <div style={{ padding: "4rem 0", textAlign: "center" }}>
                 <CosmicLoader label={`Seeking ${modeInfo?.label} Resonances…`} />
               </div>
             ) : matches?.best ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", 
+                gap: "1.25rem" 
+              }}>
                 <AnimatePresence>
                   {matches.best.map((m, i) => (
                     <MatchCard key={m.sign.name} match={m} mode={mode} rank={i} />
                   ))}
                 </AnimatePresence>
               </div>
-            ) : null}
+            ) : (
+              <div style={{ 
+                padding: "3rem", textAlign: "center", 
+                background: "rgba(28, 22, 53, 0.4)", 
+                borderRadius: "20px", border: "1px dashed rgba(212,168,95,0.2)" 
+              }}>
+                <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+                  No matches found for this specific configuration.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* ── Most Challenging ── */}

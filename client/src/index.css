@@ -191,9 +191,9 @@
 
   .nebula-bg {
     background: 
-      radial-gradient(circle at 20% 30%, rgba(147, 51, 234, 0.15) 0%, transparent 60%),
-      radial-gradient(circle at 80% 70%, rgba(79, 70, 229, 0.12) 0%, transparent 60%),
-      rgba(3, 2, 8, 0.4);
+      radial-gradient(circle at 20% 30%, rgba(147, 51, 234, 0.1) 0%, transparent 60%),
+      radial-gradient(circle at 80% 70%, rgba(79, 70, 229, 0.08) 0%, transparent 60%),
+      transparent;
     position: relative;
     overflow: hidden;
     z-index: 1;
@@ -1465,24 +1465,43 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
 @media (max-width: 920px) {
   .sc-app-shell { flex-direction: column; }
   .sc-sidebar {
-    position: sticky;
-    top: 0;
-    height: auto;
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    height: 70px;
     width: 100%;
     border-right: 0;
-    border-bottom: 1px solid rgba(183, 148, 244, 0.16);
-    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    border-top: 1px solid rgba(183, 148, 244, 0.16);
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.45);
     display: flex;
-    gap: 0.35rem;
+    justify-content: space-around;
     align-items: center;
-    overflow-x: auto;
-    padding: 0.65rem;
+    padding: 0 0.5rem;
+    z-index: 100;
+    background: rgba(15, 6, 28, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
-  .sc-sidebar-brand { flex: 0 0 auto; }
-  .sc-nav-item { flex: 0 0 auto; margin-top: 0; }
+  .sc-sidebar-brand { display: none; }
+  .sc-nav-item { 
+    flex: 1; 
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0;
+    margin-top: 0;
+    font-size: 0.65rem;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .sc-nav-item span:first-child { font-size: 1.25rem !important; }
+  .sc-nav-active { color: var(--sc-gold); }
   .sc-sidebar-divider { display: none; }
-  .sc-mode-toggle { flex: 0 0 auto; width: auto; }
-  .sc-main-content { padding-top: 1rem; }
+  .sc-mode-toggle { display: none; }
+  .sc-main-content { padding-top: 0.5rem; padding-bottom: 80px; }
+
   .sc-marketing-header {
     padding: 0.85rem 1rem;
     justify-content: center;
