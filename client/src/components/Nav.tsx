@@ -3,7 +3,8 @@ import { Link, useLocation } from "wouter";
 
 import {
   IconToday, IconProfile, IconGuide, IconTracker, IconTimeline,
-  IconCodex, IconCompat, IconPoster, IconChart, IconBlueprint
+  IconCodex, IconCompat, IconPoster, IconChart, IconBlueprint,
+  IconLogo
 } from "./Icons";
 
 function useMode() {
@@ -65,7 +66,7 @@ export default function Nav() {
   return (
     <nav className="sc-sidebar">
       <Link href="/" className="sc-sidebar-brand">
-        <img src="/soul-codex-logo-star.png" alt="Soul Codex logo" />
+        <IconLogo size={24} style={{ filter: "drop-shadow(0 0 10px rgba(212,168,95,0.4))" }} />
         <span>Soul Codex</span>
       </Link>
 

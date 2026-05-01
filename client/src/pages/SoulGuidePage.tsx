@@ -1,4 +1,4 @@
-import { apiFetch } from "../lib/queryClient";
+import { apiFetch, resolveApiUrl } from "../lib/queryClient";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { 
@@ -89,7 +89,8 @@ export default function SoulGuidePage() {
     const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
 
     try {
-      const res = await apiFetch("/api/chat/soul-guide", {
+      const resolvedUrl = resolveApiUrl("/api/chat/soul-guide");
+      const res = await fetch(resolvedUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, history, profileContext: getProfileContext() }),

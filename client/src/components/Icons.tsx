@@ -19,6 +19,21 @@ interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number | string;
 }
 
+export const IconLogo = memo(({ size = 24, ...props }: IconProps) => (
+  <img 
+    src="/soul-codex-logo-eye.png" 
+    alt="Soul Codex Logo" 
+    style={{ 
+      width: size, 
+      height: size, 
+      objectFit: "contain",
+      filter: "drop-shadow(0 0 15px rgba(212,168,95,0.4))",
+      ...props.style 
+    }} 
+    {...(props as any)}
+  />
+));
+
 export const IconToday = memo(({ size = 24, ...props }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />

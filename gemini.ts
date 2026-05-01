@@ -20,7 +20,7 @@ export function isGeminiAvailable() {
   return !!ai;
 }
 
-const DEFAULT_MODEL = "gemini-1.5-flash";
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 export async function generateText({ model, prompt, temperature = 0.7 }: { model?: string; prompt: string; temperature?: number; }): Promise<string> {
   if (!ai) return "";
@@ -40,7 +40,7 @@ export async function generateText({ model, prompt, temperature = 0.7 }: { model
   }
 }
 
-export async function* streamChat({ model, systemInstruction, history, message, temperature }: any) {
+export async function* streamChat({ model, systemInstruction, history, message, temperature, signal }: any) {
   if (!ai) throw new Error("Gemini not configured");
   
   const contents = [
@@ -60,13 +60,18 @@ export async function* streamChat({ model, systemInstruction, history, message, 
         temperature: temperature || 0.7,
         maxOutputTokens: 2048,
       },
-    });
+    }, { signal });
 
     for await (const chunk of stream) {
+      if (signal?.aborted) throw new Error("AbortError");
       const text = chunk.text;
       if (text) yield text;
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'AbortError' || error.message?.includes('abort')) {
+      console.log("[Gemini] Stream aborted");
+      return;
+    }
     console.error("Gemini Stream Error:", error);
     throw error;
   }

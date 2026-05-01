@@ -47,12 +47,14 @@ export async function* streamChatGroq({
   message,
   model = GROQ_MODEL,
   temperature = 0.7,
+  signal,
 }: {
   systemInstruction: string;
   history: { role: string; content: string }[];
   message: string;
   model?: string;
   temperature?: number;
+  signal?: AbortSignal;
 }): AsyncGenerator<string> {
   if (!apiKey) {
     yield "Soul Guide is reconnecting. Please try again in a moment.";
@@ -79,6 +81,7 @@ export async function* streamChatGroq({
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({ model, messages, temperature, max_tokens: 1000, stream: true }),
+      signal,
     });
 
     if (!res.ok) throw new Error(`Groq stream error: ${res.status}`);

@@ -74,7 +74,7 @@ export async function* streamChatMulti({
   if (isGeminiAvailable()) {
     try {
       const stream = geminiStreamChat({
-        model: "gemini-1.5-flash",
+        model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
         systemInstruction,
         history: history.map(h => ({
           role: h.role,

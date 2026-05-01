@@ -10,7 +10,7 @@ import {
   IconStar, IconProfile, IconGuide, IconTracker, IconTimeline, 
   IconCodex, IconCompat, IconBlueprint, IconMoon, IconBack,
   IconSparkles, IconIdentity, IconAlert, IconDiamond, IconArrowRight,
-  IconLock, IconCheck, IconSquare
+  IconLock, IconCheck, IconSquare, IconLogo
 } from "../components/Icons";
 
 interface ThemeScore {
@@ -34,7 +34,7 @@ interface CodexSynthesis {
 
 const SECTION_ACCENTS: Record<string, { color: string; glyph: any }> = {
   "CODENAME":   { color: "#9D4EDD", glyph: IconCodex },
-  "MOTTO":      { color: "#a78bfa", glyph: IconStar },
+  "MOTTO":      { color: "#a78bfa", glyph: IconLogo },
   "WHO I AM":   { color: "#E0CCFF", glyph: IconProfile },
   "HOW I MOVE": { color: "#FF007F", glyph: IconGuide },
   "WHAT I WON": { color: "#f472b6", glyph: IconCompat },
@@ -47,7 +47,7 @@ function getSectionAccent(header: string) {
   for (const [key, val] of Object.entries(SECTION_ACCENTS)) {
     if (upper.startsWith(key)) return val;
   }
-  return { color: "#D4A85F", glyph: IconStar };
+  return { color: "#D4A85F", glyph: IconLogo };
 }
 
 const SECTION_HEADERS = [

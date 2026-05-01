@@ -10,7 +10,8 @@ import {
   IconReading, IconZodiacAries, IconZodiacTaurus, IconZodiacGemini, 
   IconZodiacCancer, IconZodiacLeo, IconZodiacVirgo, 
   IconZodiacLibra, IconZodiacScorpio, IconZodiacSagittarius, 
-  IconZodiacCapricorn, IconZodiacAquarius, IconZodiacPisces
+  IconZodiacCapricorn, IconZodiacAquarius, IconZodiacPisces,
+  IconLogo
 } from "../components/Icons";
 
 interface SharedProfileView {
@@ -154,7 +155,7 @@ export default function SharePage() {
       </div>
 
       <div style={{ textAlign: "center", padding: "3rem 1.5rem", background: "rgba(28, 22, 53, 0.5)", borderRadius: "20px", border: "1px solid rgba(212,168,95,0.1)" }}>
-        <IconStar size={32} style={{ color: "var(--sc-gold)", marginBottom: "1.5rem" }} />
+        <IconLogo size={48} style={{ color: "var(--sc-gold)", marginBottom: "1.5rem", filter: "drop-shadow(0 0 10px rgba(212,168,95,0.4))" }} />
         <h3 className="heading-display" style={{ marginBottom: "1rem" }}>Build Your Own Blueprint</h3>
         <p style={{ color: "var(--sc-text-muted)", marginBottom: "2rem", maxWidth: "400px", margin: "0 auto 2rem" }}>
           Discover your own soul architecture and behavioral loops.
