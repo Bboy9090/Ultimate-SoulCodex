@@ -19,21 +19,24 @@ async function fixSchema() {
     console.log("Connected to database. Applying fixes...");
 
     // 1. Fix personality_data cast
-    console.log("Casting personality_data to jsonb...");
-    try {
-      await client.query(`
-        ALTER TABLE profiles 
-        ALTER COLUMN personality_data TYPE jsonb 
-        USING personality_data::jsonb
-      `);
-      console.log("personality_data casted to jsonb.");
-    } catch (err) {
-      if (err.code === '42703') {
-        console.log("Column personality_data doesn't exist yet, skipping cast.");
-      } else if (err.code === '42804' || err.message.includes('cannot be cast automatically')) {
-        console.error("Cast failed:", err.message);
-      } else {
-        console.warn("Cast warning:", err.message);
+    const tablesToFix = ['profiles', 'users'];
+    for (const tableName of tablesToFix) {
+      console.log(`Casting ${tableName}.personality_data to jsonb...`);
+      try {
+        await client.query(`
+          ALTER TABLE ${tableName} 
+          ALTER COLUMN personality_data TYPE jsonb 
+          USING personality_data::jsonb
+        `);
+        console.log(`${tableName}.personality_data casted to jsonb.`);
+      } catch (err) {
+        if (err.code === '42703') {
+          console.log(`Column ${tableName}.personality_data doesn't exist yet, skipping cast.`);
+        } else if (err.code === '42804' || err.message.includes('cannot be cast automatically')) {
+          console.error(`Cast failed for ${tableName}:`, err.message);
+        } else {
+          console.warn(`Cast warning for ${tableName}:`, err.message);
+        }
       }
     }
 
