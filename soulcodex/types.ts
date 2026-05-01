@@ -28,6 +28,8 @@ export interface UserInputs {
 }
 
 export interface SoulSignals {
+  name?: string;
+  codename?: string;
   sunSign?: string;
   moonSign?: string;
   risingSign?: string;

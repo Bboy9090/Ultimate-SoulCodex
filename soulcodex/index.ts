@@ -18,6 +18,7 @@ export function buildSoulProfile(inputs: UserInputs, overrides?: Partial<SoulSig
   const drainMap: any = { chaos: "air", repetition: "earth", lies: "metal", misunderstood: "water" };
 
   const signals: SoulSignals = {
+    name: inputs.birthData.name,
     sunSign: overrides?.sunSign,
     moonSign: overrides?.moonSign,
     risingSign: overrides?.risingSign,

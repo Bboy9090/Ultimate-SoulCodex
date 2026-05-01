@@ -24,7 +24,7 @@ const SOCIAL_ENERGY_DESC: Record<string, string> = {
 };
 
 function buildMyPattern(s: SoulSignals, arc: Archetype, v: number): string {
-  const name = s.seed || "I";
+  const name = s.name || "I";
   const nameRef = name !== "I" ? `${name}, I` : "I";
   const variants: string[] = [];
 
@@ -353,18 +353,21 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
 
   const syn: Synthesis = {
     codename:            `${archetype.name.split(' ')[0]} ${archetype.role}`,
-    myPattern:           buildMyPattern(signals, archetype, vIdx),
-    stressPattern:       buildStressPattern(signals, archetype, vIdx),
-    relationshipPattern: buildRelationshipPattern(signals, archetype, vIdx),
-    recognitionMoment:   buildRecognitionMoment(signals, vIdx),
+    myPattern:           cleanup(buildMyPattern(signals, archetype, vIdx)),
+    stressPattern:       cleanup(buildStressPattern(signals, archetype, vIdx)),
+    relationshipPattern: cleanup(buildRelationshipPattern(signals, archetype, vIdx)),
+    recognitionMoment:   cleanup(buildRecognitionMoment(signals, vIdx)),
     moralCode:           deriveMoralCode(signals.pressureStyle, signals.nonNegotiables),
-    powerMode:           buildPowerMode(signals),
-    growthEdges:         buildGrowthEdges(signals),
-    contradiction:       buildContradiction(signals, vIdx),
-    lifeConsequence:     buildLifeConsequence(signals, vIdx),
-    patternInterruption: buildPatternInterruption(signals, vIdx),
-    loopSentence:        buildLoopSentence(signals, vIdx),
+    powerMode:           cleanup(buildPowerMode(signals)),
+    growthEdges:         buildGrowthEdges(signals).map(cleanup),
+    contradiction:       cleanup(buildContradiction(signals, vIdx)),
+    lifeConsequence:     cleanup(buildLifeConsequence(signals, vIdx)),
+    patternInterruption: cleanup(buildPatternInterruption(signals, vIdx)),
+    loopSentence:        cleanup(buildLoopSentence(signals, vIdx)),
   };
+
+  // Clean up moral code notes as well
+  syn.moralCode.notes = cleanup(syn.moralCode.notes);
 
   // Final deduplication check across semantic groups
   const lines = [syn.myPattern, syn.stressPattern, syn.relationshipPattern, syn.contradiction];
@@ -375,4 +378,33 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
   }
 
   return syn;
+}
+
+/**
+ * FINAL CLEANUP: Removes any raw signals or AI leakage that escaped the router.
+ */
+function cleanup(text: string): string {
+  if (!text) return "";
+  
+  // 1. Remove greedy system prefixes like 'hj|1221-12-12|fix|chaoschaos' or 'rg | 1990... | talkwithdraw'
+  let cleaned = text.replace(/^[a-z]{2,3}\s*\|[^A-Z]+(?=[A-Z])/i, "");
+  
+  // 2. If it still starts with artifacts
+  cleaned = cleaned.replace(/^[a-z|,\s]+(?=[A-Z])/i, "").trim();
+
+  // 3. Purge specific leakage tokens
+  const leakage = [
+    /chaosrepetition/gi, /talkwithdraw/gi, /chaoschaos/gi,
+    /chaos/gi, /repetition/gi, /fix/gi, /withdraw/gi,
+    /talk/gi, /analyze/gi, /hj\s*\|/gi, /rg\s*\|/gi
+  ];
+  
+  leakage.forEach(pat => {
+    cleaned = cleaned.replace(pat, "");
+  });
+
+  // 4. Final Polish
+  cleaned = cleaned.replace(/^[,|.\s]+/, "").trim();
+  if (!cleaned) return "";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
