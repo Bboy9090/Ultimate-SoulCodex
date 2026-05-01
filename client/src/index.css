@@ -190,10 +190,7 @@
   }
 
   .nebula-bg {
-    background: 
-      radial-gradient(circle at 20% 30%, rgba(147, 51, 234, 0.1) 0%, transparent 60%),
-      radial-gradient(circle at 80% 70%, rgba(79, 70, 229, 0.08) 0%, transparent 60%),
-      transparent;
+    background: transparent;
     position: relative;
     overflow: hidden;
     z-index: 1;
