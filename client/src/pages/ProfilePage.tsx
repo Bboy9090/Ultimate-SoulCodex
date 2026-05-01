@@ -170,40 +170,7 @@ function afterFirstSentence(text: string): string {
   return parts.slice(1).join(" ");
 }
 
-/**
- * Aggressively cleans all technical artifacts and legacy signals from the text.
- */
-function pureText(text: string): string {
-  if (!text) return "";
-  
-  // 1. Remove system prefixes like 'hj|1221-12-12|fix|chaoschaos' or 'rg |...'
-  let cleaned = text.replace(/^[a-z]{2,3}\s*\|.*?\|/gi, "");
-  
-  // 2. If a pipe still exists near the start, purge everything before the last pipe
-  if (cleaned.includes("|") && cleaned.indexOf("|") < 60) {
-    const parts = cleaned.split("|");
-    cleaned = parts[parts.length - 1] || cleaned;
-  }
 
-  // 3. Purge specific behavioral signal tokens that leak into sentences
-  const systemTokens = [
-    /chaosrepetition/gi, /talkwithdraw/gi, /chaoschaos/gi,
-    /chaos/gi, /repetition/gi, /fix/gi, /withdraw/gi,
-    /talk/gi, /analyze/gi, /hj\s*\|/gi, /rg\s*\|/gi
-  ];
-  
-  systemTokens.forEach(pat => {
-    cleaned = cleaned.replace(pat, "");
-  });
-
-  // 4. Final polish: remove leading punctuation, trim, and capitalize
-  cleaned = cleaned.replace(/^[\s,.;:]+/, "").trim();
-  if (cleaned.length > 0) {
-    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-  }
-  
-  return cleaned;
-}
 
 const ZODIAC = "Aries|Taurus|Gemini|Cancer|Leo|Virgo|Libra|Scorpio|Sagittarius|Capricorn|Aquarius|Pisces";
 const SIGN_OPENER = new RegExp(
