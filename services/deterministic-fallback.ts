@@ -2,7 +2,7 @@
  * Deterministic fallback engine.
  *
  * When both AI providers fail, this generates guidance from profile data alone.
- * No LLM needed. The app keeps speaking.
+ * No LLM needed. The app keeps speaking with surgical accuracy.
  */
 
 import type { AIRequest } from "../src/types/ai";
@@ -10,6 +10,35 @@ import type { AIRequest } from "../src/types/ai";
 interface FallbackResult {
   title: string;
   content: string;
+}
+
+interface PlanetPosition {
+  planet: string;
+  sign: string;
+  degree: number;
+  house: number;
+}
+
+interface Alignment {
+  type: string;
+  planets: string[];
+  orb: number;
+}
+
+interface PersonalTransit {
+  planet: string;
+  aspect: string;
+  house: number;
+}
+
+interface DailyHoroscopeData {
+  date: string;
+  horoscope: string;
+  planets: PlanetPosition[];
+  alignments: Alignment[];
+  personalTransits: PersonalTransit[];
+  moonPhase: { phase: string; percentage: number };
+  personalDayNumber: number;
 }
 
 export function deterministicFallback(input: AIRequest): FallbackResult {
@@ -65,6 +94,41 @@ function extractCoreData(profile: any) {
   };
 }
 
+/**
+ * HIGH-FIDELITY BEHAVIORAL ENGINE
+ * Injects surgical behavioral nuances based on specific sign combinations.
+ */
+function getSurgicalNuance(d: any): string {
+  if (d.sunSign === "Capricorn" && d.moonSign === "Pisces") {
+    return "I build rigid structures to protect my soft interior. I work until I'm exhausted to avoid feeling my own sensitivity.";
+  }
+  if (d.sunSign === "Leo" && d.moonSign === "Scorpio") {
+    return "I crave the spotlight but keep my true intentions hidden. My power comes from the tension between my public warmth and private intensity.";
+  }
+  if (d.sunSign === "Virgo" && d.moonSign === "Gemini") {
+    return "I am a nervous system in search of an anchor. My mind moves at a speed that my physical form cannot always support.";
+  }
+  if (d.sunSign === "Taurus" && d.moonSign === "Aries") {
+    return "I am a fortress that strikes with precision. I demand stability, but I have a short fuse for anything that feels like a delay.";
+  }
+  if (d.sunSign === "Aquarius" && d.moonSign === "Cancer") {
+    return "I am a visionary with a heavy heart. I want to save the future, but I am often pulled back by the nostalgia of what I've lost.";
+  }
+  if (d.hdType === "Projector" && d.sunSign === "Aries") {
+    return "I have the vision to lead but not the sustained energy to labor. I burn out when I try to run the race I've already finished in my mind.";
+  }
+  if (d.hdType === "Manifesting Generator") {
+    return "I move fast to find what works, skipping steps that others find essential. My frustration comes from having to go back and fix the foundations I rushed past.";
+  }
+  if (d.hdType === "Manifestor") {
+    return "I am designed to impact, not to be liked. My presence alone changes the room, and I feel trapped when I have to ask for permission.";
+  }
+  if (d.hdType === "Reflector") {
+    return "I am a mirror of my environment. I do not have a fixed center, only a lunar cycle that reveals the truth of where I am standing.";
+  }
+  return `As a ${d.archetype}, I process life through a lens of ${d.themes[0] || "accuracy"} and ${d.themes[1] || "depth"}. My default is to ${d.shadows[0] || "over-analyze"} when I feel pressured.`;
+}
+
 function soulGuideFallback(
   profile: any,
   timeline?: any,
@@ -74,95 +138,62 @@ function soulGuideFallback(
   const phase = timeline?.phase || timeline?.currentPhase || "your current phase";
   const focus = dailyCard?.focus || "one grounded next step";
   const topTheme = d.themes[0] || "clarity";
+  const nuance = getSurgicalNuance(d);
 
   const lines: string[] = [];
 
-  lines.push(`**Observation**`);
+  lines.push(`## 👁️ THE SURGICAL MIRROR`);
+  lines.push(`${nuance}`);
+  lines.push("");
+  lines.push(`### THE PATTERN`);
   if (d.sunSign && d.moonSign) {
     lines.push(
-      `Your ${d.sunSign} Sun wants to push forward, but your ${d.moonSign} Moon is processing something unresolved. That tension is showing up as indecision or restlessness.`
+      `Your ${d.sunSign} Sun demands concrete progress, while your ${d.moonSign} Moon is tracking a subtle emotional leak. This creates a friction point: you are doing the work, but you don't trust the outcome yet.`
     );
   } else {
     lines.push(
-      `Your strongest pattern right now points to ${topTheme}. Your profile keeps returning to this theme when life gets noisy.`
+      `Your current pattern is centered on ${topTheme}. You are trying to solve a complex problem with a simple tool, which is causing the current stall.`
     );
   }
 
   lines.push("");
-  lines.push(`**Meaning**`);
+  lines.push(`### THE MECHANICS`);
   if (d.hdType) {
     lines.push(
-      `As a ${d.hdType}${d.hdStrategy ? ` (Strategy: ${d.hdStrategy})` : ""}, you're not built to force decisions. ${d.lifePath ? `Life Path ${d.lifePath} reinforces this — ` : ""}the pattern is to simplify before acting, not to stack more options.`
-    );
-  } else if (d.lifePath) {
-    lines.push(
-      `Life Path ${d.lifePath} means your pattern is to ${topTheme}. When pressure builds, your default is to speed up instead of narrow down. That costs clarity.`
+      `As a ${d.hdType}, your power is in ${d.hdStrategy === "To Respond" ? "response, not initiation" : "invitation and recognition"}. ${d.lifePath ? `Life Path ${d.lifePath} confirms this — ` : ""}stop trying to force the timeline. The harder you push, the more noise you create.`
     );
   } else {
     lines.push(
-      `Your ${d.archetype} profile works best when life is simplified instead of overloaded. The pattern that matters most right now is ${topTheme}.`
+      `The mechanics are simple: rushing is a trauma response, not a strategy. You are in ${phase}, which requires observation, not over-correction.`
     );
   }
 
   lines.push("");
-  lines.push(`**Action**`);
-  if (d.primaryElement) {
-    lines.push(
-      `Your ${d.primaryElement} element says: ground yourself physically before making any decision. You are in ${phase}. ${focus}. Do one thing clearly before trying to solve everything at once.`
-    );
-  } else {
-    lines.push(
-      `You are in ${phase}. The best move right now is ${focus}. Do one thing clearly before trying to solve everything at once.`
-    );
-  }
+  lines.push(`### THE STRIKE`);
+  lines.push(`**Do this now:** ${focus}. Do not look at the next three steps. Only the immediate one. Use your ${d.primaryElement || "core"} energy to stabilize before you commit further.`);
 
   return {
-    title: "Backup guidance from your Codex",
+    title: "Codex Failsafe: Deep Alignment",
     content: lines.join("\n"),
   };
 }
 
 function dailyGuidanceFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
+  const nuance = getSurgicalNuance(d);
 
   const lines: string[] = [];
-  lines.push(`**Observation**`);
-  if (d.sunSign) {
-    lines.push(
-      `My ${d.sunSign} Sun is pushing me to act today${d.moonSign ? `, but my ${d.moonSign} Moon needs me to check how I actually feel first` : ""}.`
-    );
-  } else {
-    lines.push(
-      `Today pulls me between what feels urgent and what actually matters. My default is to react to the loudest signal.`
-    );
-  }
-
+  lines.push(`## ⚓ DAILY ANCHOR`);
+  lines.push(`${nuance}`);
   lines.push("");
-  lines.push(`**Meaning**`);
-  if (d.lifePath) {
-    lines.push(
-      `Life Path ${d.lifePath} says this is about building deliberately, not reacting quickly. ${d.hdType ? `As a ${d.hdType}, my strategy is clear: ${d.hdStrategy ? d.hdStrategy.toLowerCase() : "wait for the right signal"}.` : ""}`
-    );
-  } else {
-    lines.push(
-      `The pattern is clear: rushing creates noise, not progress. Today is about choosing one thing and finishing it.`
-    );
-  }
-
+  lines.push(`**Observation**: Today is pulling you toward ${d.themes[1] || "distraction"}. Your ${d.sunSign || "core"} drive is high, but your focus is fragmented.`);
   lines.push("");
-  lines.push(`**Action**`);
-  if (d.primaryElement) {
-    lines.push(
-      `My ${d.primaryElement} element says: tend to the body first. Eat, move, breathe — then decide. Pick one task and complete it before noon.`
-    );
-  } else {
-    lines.push(
-      `Pick one task that matters and complete it before noon. Everything else can wait.`
-    );
-  }
+  lines.push(`**The Shift**: Stop the internal debate. Whether you feel like it or not, the architecture of your ${d.archetype} requires one act of discipline before noon.`);
+  lines.push("");
+  lines.push(`**Strike**: Complete the most avoided task first. No exceptions. No research. Just execution.`);
 
   return {
-    title: "Daily guidance from your Codex",
+    title: "Daily Codex Failsafe",
     content: lines.join("\n"),
   };
 }
@@ -171,74 +202,55 @@ function dailyHoroscopeFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
 
   const lines: string[] = [];
-  lines.push(`**Observation**`);
+  lines.push(`## 🌌 COSMIC MECHANICS`);
   lines.push(
     d.sunSign
-      ? `My ${d.sunSign} drive is active today${d.moonSign ? ` — but my ${d.moonSign} Moon is pulling me toward reflection instead of action` : ""}.`
-      : `Today's pull is between action and reflection. My default is to keep busy instead of sitting with what's actually on my mind.`
+      ? `Your ${d.sunSign} Sun is in high-friction today. This isn't a problem; it's a diagnostic. Where you feel resistance is exactly where you are leaking energy.`
+      : `Today's energy is a mirror. If you feel stuck, it's because you are trying to use an old pattern on a new problem.`
   );
-
   lines.push("");
-  lines.push(`**Meaning**`);
-  lines.push(
-    d.lifePath
-      ? `Life Path ${d.lifePath} says: the tension between doing and being is the work right now. Don't resolve it — hold it.`
-      : `The tension I feel isn't a problem to solve — it's information about what matters most today.`
-  );
-
+  lines.push(`**Alignment**: ${d.moonSign ? `Your ${d.moonSign} Moon needs a boundary.` : "Set a firm boundary around your time."} Do not let external noise dictate your internal pace.`);
   lines.push("");
-  lines.push(`**Action**`);
-  lines.push(
-    d.primaryElement
-      ? `My ${d.primaryElement} element needs attention today. Start with something physical — a walk, a meal, a stretch — before opening the laptop.`
-      : `Start with something physical before diving into mental work. Move the body, then move the plan.`
-  );
+  lines.push(`**Action**: Move the body for 10 minutes. Then do the one thing you said you'd do yesterday.`);
 
   return {
-    title: "Daily reading from your Codex",
+    title: "Horoscope Failsafe",
     content: lines.join("\n"),
   };
 }
 
 function codexReadingFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
+  const nuance = getSurgicalNuance(d);
 
   const sections: string[] = [];
 
-  sections.push(`As a ${d.archetype}${d.sunSign ? ` with a ${d.sunSign} Sun` : ""}, I'm built for cutting through complexity and finding what matters.`);
+  sections.push(`## 🧬 THE SOUL BLUEPRINT`);
+  sections.push(`${nuance}`);
+  sections.push("");
+  sections.push(`### IDENTITY ARCHITECTURE`);
+  sections.push(`As a ${d.archetype}${d.sunSign ? ` with a ${d.sunSign} Sun` : ""}, you are designed for ${d.themes[0] || "high-fidelity execution"}. You see the gaps before others even see the structure.`);
 
   if (d.moonSign) {
     sections.push(
-      `My ${d.moonSign} Moon means my emotional processing happens internally — I look calm on the surface while running full analysis underneath.`
+      `**Emotional Engine**: Your ${d.moonSign} Moon runs the background process. You absorb more than you admit, which leads to sudden ${d.shadows[0] || "withdrawal"} when the load becomes too high.`
     );
   }
 
   if (d.hdType) {
     sections.push(
-      `My ${d.hdType} Human Design${d.hdStrategy ? ` (Strategy: ${d.hdStrategy})` : ""} shapes how I interact with the world — ${d.hdType === "Generator" || d.hdType === "Manifesting Generator" ? "I have sustained energy but only for what genuinely lights me up. Everything else drains me faster than it should." : d.hdType === "Projector" ? "I see what others miss, but I burn out when I try to keep up with the pace around me. My power is in guidance, not labor." : d.hdType === "Manifestor" ? "I initiate without permission. That's my strength and my friction point — people feel left behind when I move without informing." : "I absorb the energy around me. In the right environment I amplify everything good. In the wrong one, I take on everyone else's stress."}.`
+      `**System Logic**: Your ${d.hdType} type is your navigation system. ${d.hdStrategy === "To Respond" ? "Wait for the world to show you where to put your energy." : "Wait for the recognition of your specific genius."} Forcing the world to move at your pace is the quickest way to burnout.`
     );
   }
 
   if (d.lifePath) {
     sections.push(
-      `Life Path ${d.lifePath} runs underneath everything — it shapes the decisions I gravitate toward and the patterns I keep repeating.`
-    );
-  }
-
-  if (d.primaryElement) {
-    sections.push(
-      `My ${d.primaryElement} element shows up in how I handle stress physically. When I'm off-balance, my body tells me before my mind catches up.`
-    );
-  }
-
-  if (d.strengths.length > 0) {
-    sections.push(
-      `My strongest edges are ${d.strengths.slice(0, 3).join(", ")}. These work best when I simplify instead of trying to do everything at once.`
+      `**Long-Game**: Life Path ${d.lifePath} is the current underneath the waves. It pulls you toward ${d.themes[2] || "legacy"}. Every small choice either feeds this legacy or dilutes it.`
     );
   }
 
   return {
-    title: "Codex reading from your profile",
+    title: "Codex Profile Failsafe",
     content: sections.join("\n\n"),
   };
 }
@@ -247,25 +259,20 @@ function todayCardFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
   
   const lines: string[] = [
-    `RECOGNITION: I choose to move with intention today, even when the noise builds.`,
-    `FOCUS: My focus is on ${d.themes[0] || "alignment"} and protecting my core energy.`,
-    `TOMORROW: The tension between progress and rest remains a load-bearing signal.`,
-    `DO:`,
-    `- Complete one task that has been lingering for too long.`,
-    `- Set a clear boundary around my time this afternoon.`,
-    `- Trust my internal rhythm over external demands.`,
-    `DONT:`,
-    `- Let small interruptions derail my primary build.`,
-    `- Say yes to requests that don't align with my values.`,
-    `- Overthink a decision that my gut already knows.`,
-    `WATCHOUT:`,
-    `- Impatience when others don't see the pattern yet.`,
-    `- Rushing the final steps just to be finished.`,
-    `DECISION: I let my internal signal settle before I commit to a path today.`
+    `**RECOGNITION**: I am the architect of my own focus.`,
+    `**FOCUS**: ${d.themes[0] || "Absolute Integrity"}.`,
+    `**DO**:`,
+    `- Zero-out one lingering obligation.`,
+    `- Close the tabs that are leaking my attention.`,
+    `- Trust the ${d.hdAuthority || "internal"} signal.`,
+    `**DONT**:`,
+    `- Accept a "maybe" when I know it's a "no."`,
+    `- Rushing the foundational work.`,
+    `**WATCHOUT**: Impatience with the slow speed of others.`
   ];
 
   return {
-    title: "Today's guidance from your Codex",
+    title: "Today's Failsafe Guidance",
     content: lines.join("\n"),
   };
 }
@@ -275,31 +282,31 @@ function biographyFallback(profile: any): FallbackResult {
   
   const bio = {
     codename: d.archetype,
-    motto: "In alignment, I find my power.",
-    my_pattern: `I act through my ${d.archetype} signature, using my ${d.sunSign || "core"} drive to cut through noise and find what matters.`,
-    how_i_move: `As a ${d.hdType || d.archetype}, I move best when I follow my internal signal${d.hdStrategy ? ` (${d.hdStrategy})` : ""}.`,
-    what_i_wont_tolerate: "I refuse to be defined by external noise or misaligned expectations.",
-    what_im_building: `I am constructing a life of ${d.themes[1] || "purpose"} and ${d.themes[2] || "alignment"}.`
+    motto: `Surgical accuracy. Zero compromise.`,
+    my_pattern: `I operate through the ${d.archetype} lens, using ${d.sunSign || "precise"} logic and ${d.moonSign || "deep"} intuition to build what matters.`,
+    how_i_move: `As a ${d.hdType || d.archetype}, I move when the signal is clear. I don't follow the crowd; I follow the blueprint.`,
+    what_i_wont_tolerate: "Vagueness, generic advice, and misaligned energy.",
+    what_im_building: `A legacy of ${d.themes[1] || "truth"} and ${d.themes[2] || "impact"}.`
   };
 
   return {
-    title: "Profile from your Codex",
+    title: "Biography Failsafe",
     content: JSON.stringify(bio),
   };
 }
 
 function compatibilityFallback(profile: any): FallbackResult {
   return {
-    title: "Compatibility reading",
+    title: "Compatibility Failsafe",
     content:
-      "Your compatibility analysis requires both profiles to be loaded. Complete both profiles and try again — the reading draws on specific placements from each person's Big 3, Human Design, and Element data.",
+      "Compatibility analysis requires a dual-profile sync. Ensure both soul blueprints are fully loaded into the Codex to reveal the friction points and harmonic resonances between your specific placements.",
   };
 }
 
 function genericFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
   return {
-    title: "Guidance from your Codex",
-    content: `Your Codex profile is available${d.sunSign ? ` (${d.sunSign} Sun` : ""}${d.moonSign ? `, ${d.moonSign} Moon` : ""}${d.sunSign ? `)` : ""}. Live AI interpretation is temporarily paused — use your current phase and daily card as the strongest signals for now. Focus on one clear action rather than spreading your attention.`,
+    title: "Codex Failsafe",
+    content: `Your profile (${d.archetype}) is active. AI interpretation is currently paused to protect signal integrity. Use your core strengths—${d.strengths.slice(0, 2).join(" and ")}—to navigate the current complexity. One act of absolute truth is better than a thousand generic guesses.`,
   };
 }

@@ -21,6 +21,9 @@ Must:
 - Keep first-person voice throughout (I / me / my — never "you").
 - Minimum 650 words.
 - No poetic padding. No metaphors. No fluff.
+- NO SINGLE-LETTER PREFIXES (e.g. 'D.', 'C.', 'P.').
+- NO CATEGORY LABELS OR NUMBERING.
+- PRIORITY: ABSOLUTE SURGICAL TRUTH.
 
 BAD: "I feel a deep calling toward transformation."
 GOOD: "I notice I'm bored with my current routine and I've been researching new directions every night instead of sleeping."

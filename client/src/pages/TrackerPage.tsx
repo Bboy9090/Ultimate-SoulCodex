@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { IconLock, IconCheckCircle, IconActivity } from "../components/Icons";
+import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 
 interface FrequencyLog {
   id: number;
@@ -192,7 +193,7 @@ export default function TrackerPage() {
             
             <div className="space-y-2">
               <p className="text-lg font-serif italic text-cosmic-lavender">
-                "{congruence.interpretation}"
+                "{cleanCodexLine(congruence.interpretation, "Calibration in progress — focus on the signals you have while the pattern solidifies.")}"
               </p>
             </div>
 

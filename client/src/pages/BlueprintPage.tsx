@@ -6,6 +6,7 @@ import {
   IconSparkles, IconIdentity, IconMercury, IconChiron,
   IconNorthNode, IconCircle, IconZap, IconLock, IconLoader
 } from "../components/Icons";
+import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 
 const CACHE_PREFIX = "soulBlueprintReading";
 
@@ -450,7 +451,7 @@ export default function BlueprintPage() {
                     </span>
                   </div>
                   <p style={{ color: "rgba(246,241,232,0.8)", fontSize: "0.92rem", lineHeight: 1.7, margin: 0 }}>
-                    {text}
+                    {cleanCodexLine(text, "Calibration in progress...")}
                   </p>
                 </div>
               );

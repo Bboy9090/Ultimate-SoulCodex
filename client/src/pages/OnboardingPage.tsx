@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiRequest } from "../lib/queryClient";
+import { apiRequest, apiFetch } from "../lib/queryClient";
 import CosmicLoader from "@/components/CosmicLoader";
 import ScButton from "@/components/ScButton";
 import AppleSignInButton from "@/components/AppleSignInButton";
@@ -119,6 +119,7 @@ const DEST_CARDS = [
 ];
 
 export default function OnboardingPage() {
+  const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [step, setStep] = useState(0);
   const [successResult, setSuccessResult] = useState<SuccessResult | null>(null);
@@ -239,6 +240,35 @@ export default function OnboardingPage() {
         localStorage.setItem(isGuest ? "soulGuestConfidence" : "soulConfidence", JSON.stringify(result.confidence));
       }
       setSuccessResult(result as SuccessResult);
+
+      // --- Pre-warm Compatibility & Horoscope ---
+      const astro = result.astrologyData || result.natalChart || result.chart || {};
+      const sunSign = astro.sunSign || result.sunSign;
+      if (sunSign) {
+        const lifePath = (result.numerologyData || result.numerology)?.lifePathNumber;
+        const hdType = (result.humanDesignData || result.humanDesign)?.type;
+
+        // Warm up archetype matches
+        queryClient.prefetchQuery({
+          queryKey: ["/api/compatibility/archetype-matches", sunSign, "love", lifePath, hdType],
+          queryFn: async () => {
+            const res = await apiFetch("/api/compatibility/archetype-matches", {
+              method: "POST",
+              body: JSON.stringify({ sunSign, mode: "love", lifePathNumber: lifePath, hdType })
+            });
+            return res.data;
+          }
+        });
+
+        // Warm up daily horoscope
+        queryClient.prefetchQuery({
+          queryKey: ["/api/astro/horoscope/daily", sunSign],
+          queryFn: async () => {
+            const res = await apiFetch(`/api/astro/horoscope/daily?sign=${sunSign}`);
+            return res.data;
+          }
+        });
+      }
     },
   });
 
@@ -339,176 +369,92 @@ export default function OnboardingPage() {
   }
 
   if (successResult) {
-    const rawArchetype = successResult?.archetype?.name;
-    const archetypeName = (rawArchetype && !rawArchetype.toLowerCase().includes("unknown")) ? rawArchetype : "Your Archetype";
-    const rawTagline = successResult?.archetype?.tagline;
-    const archetypeTagline = (rawTagline && !rawTagline.toLowerCase().includes("unknown")) ? rawTagline : "";
+    const archetypeName = successResult?.archetype?.name || "The Seeker";
+    const archetypeTagline = successResult?.archetype?.tagline || "Aligning your natal signals...";
+
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1rem", position: "relative", overflow: "hidden" }}
-      >
-        <div style={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: "translate(-50%, -55%)",
-          width: 600, height: 600,
-          opacity: 0.08, mixBlendMode: "screen",
-          filter: "blur(32px)",
-          pointerEvents: "none", userSelect: "none", zIndex: 0,
-        }}>
-          <IconLogo size={600} />
-        </div>
-        <div style={{ maxWidth: 520, width: "100%", position: "relative", zIndex: 1 }}>
-          <div style={{
-            background: "var(--glass-bg)",
-            border: "1px solid var(--glass-border)",
-            borderTop: "3px solid #d4a85f",
-            borderRadius: "var(--radius)",
-            padding: "2.5rem 2rem",
-            textAlign: "center",
-            marginBottom: "1.25rem",
-          }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#d4a85f", opacity: 0.8 }}><IconSparkles size={24} /></div>
-            <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.5rem, 5vw, 2rem)", marginBottom: "0.5rem", lineHeight: 1.2, color: "var(--foreground)" }}>
-              Your core profile is ready
-            </h1>
-            <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem", lineHeight: 1.65, marginBottom: "0.75rem" }}>
-              The strongest signal is already here. You can refine this over time.
-            </p>
-            {archetypeName && archetypeName !== "Your Archetype" && (
-              <div style={{ display: "inline-block", padding: "0.4rem 1rem", background: "rgba(212,168,95,0.1)", border: "1px solid rgba(212,168,95,0.25)", borderRadius: 99, marginBottom: "0.25rem" }}>
-                <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#d4a85f", letterSpacing: "0.04em" }}>{archetypeName}</span>
-              </div>
-            )}
-            {archetypeTagline && (
-              <p style={{ color: "var(--muted-foreground)", fontSize: "0.82rem", marginTop: "0.5rem", fontStyle: "italic" }}>
-                {archetypeTagline}
-              </p>
-            )}
+      <div className="nebula-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "var(--safe-top) 2rem var(--safe-bottom)" }}>
+        
+        <div className="glassmorphism stagger" style={{ maxWidth: 520, width: "100%", padding: "3rem 2rem", textAlign: "center", borderRadius: 32 }}>
+          
+          <div style={{ marginBottom: "2rem" }}>
+            <IconLogo size={80} className="sc-luminous-logo" />
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginBottom: "1.5rem" }}>
-            {DEST_CARDS.map((card, idx) => (
-              <motion.button
-                key={card.path}
-                type="button"
-                whileHover={{ x: 5, borderColor: "var(--sc-gold)" }}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + idx * 0.1 }}
-                onClick={() => navigate(card.path)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "1rem 1.25rem",
-                  background: "var(--glass-bg)",
-                  border: "1px solid var(--glass-border)",
-                  borderRadius: "var(--radius)",
-                  cursor: "pointer",
-                  color: "var(--foreground)",
-                  fontFamily: "var(--font-sans)",
-                }}
-              >
-                <card.glyph size={20} style={{ color: "#d4a85f", flexShrink: 0 }} />
-                <span>
-                  <span style={{ fontWeight: 600, display: "block", fontSize: "0.88rem" }}>{card.label}</span>
-                  <span style={{ fontSize: "0.77rem", color: "var(--muted-foreground)" }}>{card.desc}</span>
-                </span>
-                <IconArrowRight size={16} style={{ marginLeft: "auto", color: "var(--muted-foreground)" }} />
-              </motion.button>
-            ))}
+          <h1 className="heading-display" style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>
+            Calibration Complete
+          </h1>
+          
+          <div style={{ marginBottom: "2rem" }}>
+            <div style={{ display: "inline-block", padding: "0.5rem 1.25rem", background: "rgba(255, 215, 0, 0.1)", border: "1px solid rgba(255, 215, 0, 0.3)", borderRadius: 99, marginBottom: "1rem" }}>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--sc-gold)", letterSpacing: "0.05em" }}>{archetypeName}</span>
+            </div>
+            <p className="oracle-text" style={{ fontSize: "1rem", opacity: 0.8 }}>{archetypeTagline}</p>
           </div>
 
-          <button className="btn btn-primary" onClick={() => navigate("/profile")} type="button" style={{ width: "100%", marginBottom: "1.25rem" }}>
-            View My Profile
-          </button>
-
-          {/* ── Apple Identity Protection ───────────────────────────────────── */}
-          <div style={{
-            background: "rgba(212,168,95,0.04)",
-            border: "1px dashed rgba(212,168,95,0.25)",
-            borderRadius: "var(--radius)",
-            padding: "1.5rem",
-            textAlign: "center",
-          }}>
-            <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--sc-gold)", marginBottom: "0.4rem", letterSpacing: "0.02em" }}>
-              Secure Your Soul Blueprint
-            </h3>
-            <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginBottom: "1.1rem", lineHeight: 1.5 }}>
-              Apple Sign-In protects your reading and allows you to access it across all your devices.
-            </p>
-            <AppleSignInButton 
-              onSuccess={() => navigate("/profile")}
-              text="Save with Apple"
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem", width: "100%" }}>
+            <button className="btn btn-primary" style={{ height: "4rem" }} onClick={() => navigate("/today")}>
+              Enter Your Dashboard
+            </button>
+            <button className="btn btn-secondary" style={{ height: "4rem" }} onClick={() => navigate("/profile")}>
+              View Soul Map
+            </button>
+            <button className="btn btn-secondary" style={{ height: "4rem" }} onClick={() => navigate("/codex")}>
+              Open Codex Reading
+            </button>
           </div>
 
-          <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)", opacity: 0.65, marginTop: "1.25rem" }}>
-            You can refine this later — your answers are saved
+          <p style={{ marginTop: "2rem", fontSize: "0.75rem", color: "var(--sc-stone)", opacity: 0.6 }}>
+            Your signal is locked. You can refine your data at any time.
           </p>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (step === 0) {
     return (
-      <div className="container" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem" }}>
+      <div className="nebula-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "var(--safe-top) 2rem var(--safe-bottom)" }}>
         <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
+          initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut" }}
           style={{ marginBottom: "3rem" }}
         >
-          <IconLogo size={220} style={{ filter: "drop-shadow(0 0 30px rgba(212,168,95,0.4))" }} />
+          <IconLogo size={180} className="sc-luminous-logo" />
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
-          style={{ maxWidth: "450px" }}
+          style={{ maxWidth: "480px" }}
         >
-          <h1 className="heading-display" style={{ fontSize: "2.8rem", marginBottom: "1rem", lineHeight: 1.1 }}>Audit Your Patterns</h1>
-          <p style={{ color: "var(--muted-foreground)", fontSize: "1rem", lineHeight: 1.6, marginBottom: "3rem" }}>
+          <h1 className="heading-display" style={{ fontSize: "3rem", marginBottom: "1.25rem", lineHeight: 1.1 }}>Audit Your Architecture</h1>
+          <p style={{ color: "var(--sc-stone)", fontSize: "1.1rem", lineHeight: 1.6, marginBottom: "3rem", opacity: 0.8 }}>
             Expose the loop. Map your behavioral blueprint and decode the costs of your instinctive reactions.
           </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
-            <ScButton 
-              size="lg" 
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", width: "100%" }}>
+            <button 
+              id="calibration-begin-btn"
+              className="btn btn-primary" 
+              style={{ height: "4rem", fontSize: "1.1rem" }}
               onClick={() => {
                 localStorage.setItem("soulIsGuest", "false");
                 setStep(1);
               }}
-              className="text-glow"
             >
-              Create Your Soul Codex
-            </ScButton>
+              Begin Calibration
+            </button>
             
             <button 
+              id="guest-terminal-btn"
+              className="btn btn-secondary"
+              style={{ height: "4rem", fontSize: "1rem" }}
               onClick={startGuestMode}
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(212,168,95,0.3)",
-                color: "var(--sc-gold)",
-                padding: "0.85rem",
-                borderRadius: "var(--radius)",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                transition: "all 0.3s",
-                cursor: "pointer"
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(212,168,95,0.05)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
-              Let a Guest Use Your System
+              Open Guest Terminal
             </button>
           </div>
         </motion.div>
@@ -593,6 +539,7 @@ export default function OnboardingPage() {
 
         <div style={{ marginTop: "3rem", display: "flex", gap: "1rem" }}>
           <ScButton
+            id="onboarding-back-btn"
             variant="ghost"
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1 || mutation.isPending}
@@ -602,6 +549,7 @@ export default function OnboardingPage() {
           </ScButton>
           
           <ScButton
+            id="onboarding-continue-btn"
             onClick={handleNext}
             disabled={!canNext()}
             loading={mutation.isPending}

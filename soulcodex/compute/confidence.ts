@@ -12,35 +12,39 @@ export function computeConfidence(input: {
   timeUnknown: boolean;
   hasGeo: boolean;
   hasTimezone: boolean;
+  hasRising?: boolean;
 }): ConfidenceResult {
-  const { timeUnknown, hasGeo, hasTimezone } = input;
+  const { timeUnknown, hasGeo, hasTimezone, hasRising } = input;
 
-  if (!hasGeo || !hasTimezone) {
+  // STRICT RULE: Verified requires EVERYTHING
+  if (!timeUnknown && hasGeo && hasTimezone && hasRising !== false) {
     return {
-      badge: "unverified",
-      label: "Unverified",
-      reason: "Location or timezone is missing — rising sign and houses are not reliable.",
+      badge: "verified",
+      label: "Verified",
+      reason: "Full birth data confirmed — Rising sign and house layers are locked.",
       aiAssuranceNote:
-        "We only show placements we can compute from your date (and time when given). Interpretive text is guidance, not a guarantee.",
+        "Your chart data is high-fidelity. If something feels off, verify your exact birth time.",
     };
   }
 
-  if (timeUnknown) {
+  // PARTIAL: We have the date, but missing precision (Time or Geo)
+  if (!hasGeo || !hasTimezone || timeUnknown) {
     return {
       badge: "partial",
       label: "Partial",
-      reason: "Birth time unknown — rising sign and houses are omitted; Sun, Moon, and Life Path stay grounded.",
+      reason: "Precision data missing — Sun and Moon are stable, but Rising sign is estimated.",
       aiAssuranceNote:
-        "Chart math for Sun and Moon is stable. Written insights may still vary in tone — use the badge above as the source of truth for what is locked in.",
+        "Your primary signals are active, but house-based insights require an exact birth time.",
     };
   }
 
+  // UNVERIFIED: Missing core birth data
   return {
-    badge: "verified",
-    label: "Verified",
-    reason: "Birth time and location are set — full chart layer (houses, rising) is included.",
+    badge: "unverified",
+    label: "Unverified",
+    reason: "Missing birth record — using general archetype fallbacks.",
     aiAssuranceNote:
-      "Your wheel data is computed from the birth record you gave. AI phrasing is tuned for clarity; if something feels off, re-check time and place.",
+      "Onboard with your birth record to unlock your specific soul architecture.",
   };
 }
 

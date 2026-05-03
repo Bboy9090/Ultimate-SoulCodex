@@ -2,8 +2,8 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 
-const BACKGROUND_PATH = '/Users/bj90-m1/.gemini/antigravity/brain/78da2679-a7a3-48c5-ba5d-f8403bf9dd81/nebula_background_v2_1777544316186.png';
-const LOGO_PATH = path.join(process.cwd(), 'icon1.png');
+const BACKGROUND_PATH = path.join(process.cwd(), 'assets', 'splash.png');
+const LOGO_PATH = path.join(process.cwd(), 'assets', 'icon.png');
 const ASSETS_DIR = path.join(process.cwd(), 'ios/App/App/Assets.xcassets');
 
 async function generateAssets() {

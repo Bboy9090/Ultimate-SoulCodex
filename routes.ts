@@ -76,6 +76,8 @@ import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
 import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
 import { VOICE_LAWS } from "./soulcodex/codex30/prompts/voice_laws";
+import { pureText } from "./services/sanitizer";
+
 
 // Utility function for consistent error responses
 function handleError(error: unknown, res: any, context: string) {
@@ -3197,6 +3199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hdInterpretation: "Behavioral guidance based on your Human Design type and authority."
       };
 
+      const isPremium = (req.user as any)?.subscriptionStatus === "premium";
+
       const pdfBuffer = await buildNatalReportPdf({
         name: profile.name,
         birthDate: profile.birthDate,
@@ -3204,7 +3208,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         birthLocation: profile.birthLocation || "",
         astrology: astro,
         humanDesign: hd,
-        aiText: aiText as any
+        aiText: aiText as any,
+        isPremium,
       });
 
       res.setHeader('Content-Type', 'application/pdf');
@@ -3479,7 +3484,20 @@ Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
           const raw = aiResponse.content || "";
           if (raw) {
             const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/,"").trim();
-            aiText = JSON.parse(cleaned);
+            const parsed = JSON.parse(cleaned);
+            // Clean all fields
+            aiText = {
+              overview: pureText(parsed.overview),
+              bigThreeSun: pureText(parsed.bigThreeSun),
+              bigThreeMoon: pureText(parsed.bigThreeMoon),
+              bigThreeRising: pureText(parsed.bigThreeRising),
+              whatStandsOut: (parsed.whatStandsOut || []).map((s: string) => pureText(s)).filter(Boolean),
+              workingInterpretation: pureText(parsed.workingInterpretation),
+              elementEmphasis: pureText(parsed.elementEmphasis),
+              houseEmphasis: pureText(parsed.houseEmphasis),
+              bottomLine: pureText(parsed.bottomLine),
+              hdInterpretation: pureText(parsed.hdInterpretation),
+            };
           }
         } catch (e) {
           console.warn("[NatalReport] AI generation failed, using fallback:", e);
@@ -3528,12 +3546,21 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
           const raw2 = aiResponse2.content || "";
           if (raw2) {
             const cleaned2 = (raw2 ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-            comparables = JSON.parse(cleaned2);
+            const parsed2 = JSON.parse(cleaned2);
+            // Clean comparables
+            comparables = {
+              animal: { name: pureText(parsed2.animal?.name), why: pureText(parsed2.animal?.why) },
+              deity: { name: pureText(parsed2.deity?.name), why: pureText(parsed2.deity?.why) },
+              historical: { name: pureText(parsed2.historical?.name), why: pureText(parsed2.historical?.why) },
+              icon: { name: pureText(parsed2.icon?.name), why: pureText(parsed2.icon?.why) },
+            };
           }
         } catch (ce) {
           console.warn("[NatalReport] Comparables generation failed:", ce);
         }
       }
+
+      const isPremium = (req.user as any)?.subscriptionStatus === "premium";
 
       const pdfBuffer = await buildNatalReportPdf({
         name,
@@ -3544,6 +3571,7 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         humanDesign: hd,
         aiText,
         comparables: comparables ?? undefined,
+        isPremium,
       });
 
       const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
@@ -3582,6 +3610,8 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
 
       const options = req.body.options || { template: 'compatibility', theme: 'mystical' };
       
+      const isPremium = (req.user as any)?.subscriptionStatus === "premium";
+
       const pdfBuffer = await buildCompatibilityReportPdf({
         profile1,
         profile2,
@@ -3591,7 +3621,8 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
           strengths: compatibility.compatibilityData.strengths || [],
           challenges: compatibility.compatibilityData.challenges || [],
           bottomLine: "A partnership with unique growth opportunities."
-        }
+        },
+        isPremium,
       });
 
       res.setHeader('Content-Type', 'application/pdf');

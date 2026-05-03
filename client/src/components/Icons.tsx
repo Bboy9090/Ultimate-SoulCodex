@@ -22,12 +22,12 @@ interface IconProps extends SVGProps<SVGSVGElement> {
 export const IconLogo = memo(({ size = 24, ...props }: IconProps) => (
   <img 
     src="/soul-codex-logo-eye.png" 
-    alt="Soul Codex Logo" 
+    alt="" 
     style={{ 
       width: size, 
       height: size, 
       objectFit: "contain",
-      filter: "drop-shadow(0 0 15px rgba(212,168,95,0.4))",
+      filter: "drop-shadow(0 0 15px rgba(244,197,66,0.4))",
       ...props.style 
     }} 
     {...(props as any)}

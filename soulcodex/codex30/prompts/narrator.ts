@@ -81,6 +81,9 @@ NOT:
 - NO advice or "growth mindset" language.
 - NO interpretive narrators ("I think," "I feel," "I try").
 - NO "assistant" helpfulness. Be a mirror, not a guide.
+- NO SINGLE-LETTER PREFIXES (e.g. 'D.', 'C.', 'P.').
+- NO CATEGORY LABELS OR NUMBERING.
+- PRIORITY: ABSOLUTE SURGICAL TRUTH. EXPOSE THE PATTERN.
 
 DATA for ${codename}:
 ${contradictionBlock}${behaviorBlock}${payload.lifeConsequence ? `\nLIFE CONSEQUENCE: ${sanitize(payload.lifeConsequence)}` : ""}${payload.patternInterruption ? `\nPATTERN INTERRUPTION: ${sanitize(payload.patternInterruption)}` : ""}${payload.loopSentence ? `\nLOOP SENTENCE: ${sanitize(payload.loopSentence)}` : ""}

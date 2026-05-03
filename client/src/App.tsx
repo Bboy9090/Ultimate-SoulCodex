@@ -23,6 +23,8 @@ const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const BlueprintPage = lazy(() => import("./pages/BlueprintPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
+
+import { queryClient, apiFetch } from "./lib/queryClient";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const SharePage = lazy(() => import("./pages/SharePage"));
@@ -54,6 +56,47 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Background Prefetcher: Ensure compatibility and readings are ready before click
+  useEffect(() => {
+    if (hasProfile && hydrated) {
+      const saved = localStorage.getItem("soulProfile");
+      if (saved) {
+        try {
+          const p = JSON.parse(saved);
+          const sunSign = p.sunSign || p.astrologyData?.sunSign;
+          if (sunSign) {
+            // Warm up the compatibility engine and daily readings in the background
+            const lifePath = p.numerologyData?.lifePathNumber;
+            const hdType = p.humanDesignData?.type;
+
+            // 1. Prefetch Archetype Matches
+            queryClient.prefetchQuery({
+              queryKey: ["/api/compatibility/archetype-matches", sunSign, "love", lifePath, hdType],
+              queryFn: async () => {
+                const res = await apiFetch("/api/compatibility/archetype-matches", {
+                  method: "POST",
+                  body: JSON.stringify({ sunSign, mode: "love", lifePathNumber: lifePath, hdType })
+                });
+                return res.data;
+              }
+            });
+
+            // 2. Prefetch Daily Horoscope
+            queryClient.prefetchQuery({
+              queryKey: ["/api/astro/horoscope/daily", sunSign],
+              queryFn: async () => {
+                const res = await apiFetch(`/api/astro/horoscope/daily?sign=${sunSign}`);
+                return res.data;
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("[Prefetch] Background warm-up failed:", e);
+        }
+      }
+    }
+  }, [hasProfile, hydrated]);
+
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
@@ -76,8 +119,9 @@ export default function App() {
         <Suspense fallback={<CosmicLoader fullPage label="Loading Dimension..." />}>
           <Switch>
             <Route path="/">
-              {hasProfile ? <TodayPage /> : <OnboardingPage />}
+              {hasProfile ? <TodayPage /> : <LandingPage />}
             </Route>
+            <Route path="/welcome" component={LandingPage} />
             <Route path="/start" component={OnboardingPage} />
             <Route path="/profile" component={ProfilePage} />
             <Route path="/guide" component={SoulGuidePage} />
