@@ -120,6 +120,22 @@ export default function Nav() {
       </button>
 
       <div style={{ marginTop: "auto", padding: "1rem 0", display: "flex", flexDirection: "column", gap: "0.4rem", opacity: 0.4 }}>
+        <button 
+          onClick={() => {
+            if (confirm("Reset Soul Codex? This will clear your current profile for testing.")) {
+              localStorage.clear();
+              window.location.href = "/";
+            }
+          }}
+          className="sc-nav-item" 
+          style={{ 
+            padding: "0.25rem 0.75rem", fontSize: "0.65rem", 
+            background: "none", border: "none", cursor: "pointer", 
+            textAlign: "left", width: "100%", color: "var(--sc-gold)"
+          }}
+        >
+          Reset Engine
+        </button>
         <Link href="/privacy" className="sc-nav-item" style={{ padding: "0.25rem 0.75rem", fontSize: "0.65rem" }}>
           Privacy
         </Link>

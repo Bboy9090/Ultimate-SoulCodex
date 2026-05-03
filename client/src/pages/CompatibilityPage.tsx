@@ -15,6 +15,7 @@ import {
   IconZodiacLibra, IconZodiacScorpio, IconZodiacSagittarius, 
   IconZodiacCapricorn, IconZodiacAquarius, IconZodiacPisces
 } from "../components/Icons";
+import { pureText } from "../lib/sanitizer";
 
 const SIGN_GLYPHS: Record<string, React.ComponentType<any>> = {
   Aries: IconZodiacAries, Taurus: IconZodiacTaurus, Gemini: IconZodiacGemini, Cancer: IconZodiacCancer, 
@@ -123,6 +124,7 @@ function DimensionBar({ label, glyph: Glyph, color, score }: { label: string; gl
   );
 }
 
+
 function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; rank?: number }) {
   const [open, setOpen] = useState(false);
   const elColor = ELEMENT_COLORS[match.sign.element] || "#D4A85F";
@@ -176,7 +178,7 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
             }}>{match.sign.element}</span>
             <span style={{ fontSize: "0.75rem", color: scoreColor, fontWeight: 700 }}>{scoreText}</span>
           </div>
-          <p style={{ fontSize: "0.88rem", color: "rgba(234, 234, 245, 0.8)", margin: 0, lineHeight: 1.55 }}>{match.headline}</p>
+          <p style={{ fontSize: "0.88rem", color: "rgba(234, 234, 245, 0.8)", margin: 0, lineHeight: 1.55 }}>{pureText(match.headline)}</p>
         </div>
       </div>
 
@@ -190,7 +192,7 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
             style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}
           >
             <p style={{ fontSize: "0.9rem", color: "rgba(234, 234, 245, 0.95)", lineHeight: 1.7, marginBottom: "1rem", fontStyle: "italic" }}>
-              "{match.why}"
+              "{pureText(match.why)}"
             </p>
             
             {match.tension && (
@@ -200,7 +202,7 @@ function MatchCard({ match, mode, rank }: { match: ArchetypeMatch; mode: Mode; r
               }}>
                 <p style={{ fontSize: "0.8rem", color: "#f59e0b", lineHeight: 1.6, margin: 0 }}>
                   <span style={{ marginRight: "0.5rem" }}>⚡</span>
-                  <strong>Tension:</strong> {match.tension}
+                  <strong>Tension:</strong> {pureText(match.tension)}
                 </p>
               </div>
             )}
@@ -250,7 +252,7 @@ function ChallengeCard({ match, mode }: { match: ArchetypeMatch; mode: Mode }) {
         <div style={{ fontWeight: 600, fontSize: "0.88rem", marginBottom: "0.2rem" }}>{match.sign.name}</div>
         <div style={{ fontSize: "0.72rem", color: "#ef4444", fontWeight: 600, marginBottom: "0.2rem" }}>{match.score}% — {scoreLabel(match.score).text}</div>
         {match.tension && (
-          <div style={{ fontSize: "0.75rem", color: "rgba(255,200,150,0.7)", lineHeight: 1.5 }}>{match.tension}</div>
+          <div style={{ fontSize: "0.75rem", color: "rgba(255,200,150,0.7)", lineHeight: 1.5 }}>{pureText(match.tension)}</div>
         )}
       </div>
     </div>
@@ -747,7 +749,7 @@ export default function CompatibilityPage() {
                         <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#22c55e", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
                           <IconSparkles size={12} /> Where You Flow
                         </p>
-                        {result.synergy.map((s, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(200,255,210,0.88)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconArrowRight size={12} style={{ color: "#22c55e", flexShrink: 0 }} />{s}</p>)}
+                        {result.synergy.map((s, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(200,255,210,0.88)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconArrowRight size={12} style={{ color: "#22c55e", flexShrink: 0 }} />{pureText(s)}</p>)}
                       </div>
                     )}
 
@@ -756,7 +758,7 @@ export default function CompatibilityPage() {
                         <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#D4A85F", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
                           <IconGrowth size={12} /> What This Can Build
                         </p>
-                        {result.growthOpportunities.map((g, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconDecisions size={12} style={{ color: "#D4A85F", flexShrink: 0 }} />{g}</p>)}
+                        {result.growthOpportunities.map((g, i) => <p key={i} style={{ fontSize: "0.83rem", color: "rgba(220,210,255,0.85)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconDecisions size={12} style={{ color: "#D4A85F", flexShrink: 0 }} />{pureText(g)}</p>)}
                       </div>
                     )}
 
@@ -765,7 +767,7 @@ export default function CompatibilityPage() {
                         <p style={{ fontSize: "0.6rem", letterSpacing: "0.12em", color: "#f59e0b", textTransform: "uppercase", marginBottom: "0.55rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
                           <IconSquare size={10} /> Watch Points
                         </p>
-                        {result.friction.map((f, i) => <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconAlert size={12} style={{ color: "#f59e0b", flexShrink: 0 }} />{f}</p>)}
+                        {result.friction.map((f, i) => <p key={i} style={{ fontSize: "0.82rem", color: "rgba(255,240,200,0.82)", marginBottom: "0.28rem", lineHeight: 1.65, display: "flex", alignItems: "center", gap: "0.4rem" }}><IconAlert size={12} style={{ color: "#f59e0b", flexShrink: 0 }} />{pureText(f)}</p>)}
                       </div>
                     )}
 

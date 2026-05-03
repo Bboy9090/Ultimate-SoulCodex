@@ -47,6 +47,8 @@ interface DailyHoroscopeData {
   personalDayNumber: number;
 }
 
+import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+
 const DAY_NUMBER_MEANINGS: Record<number, string> = {
   1:  "A day for initiative — start something, lead, act on instinct.",
   2:  "A day for cooperation — listen more, push less, let partnerships work.",
@@ -60,6 +62,37 @@ const DAY_NUMBER_MEANINGS: Record<number, string> = {
   11: "A day for intuition — trust the flash of insight before logic talks me out of it.",
   22: "A day for mastery — commit to the work, not just the idea.",
   33: "A day for presence — my steadiness matters more than my output.",
+};
+
+function getDeterministicArchetypeInterpretation(d: any): string {
+  if (d.sunSign === "Capricorn" && d.moonSign === "Pisces") {
+    return "I build rigid structures to protect my soft interior. I work until I'm exhausted to avoid feeling my own sensitivity.";
+  }
+  if (d.sunSign === "Leo" && d.moonSign === "Scorpio") {
+    return "I crave the spotlight but keep my true intentions hidden. My power comes from the tension between my public warmth and private intensity.";
+  }
+  if (d.sunSign === "Virgo" && d.moonSign === "Gemini") {
+    return "I am a nervous system in search of an anchor. My mind moves at a speed that my physical form cannot always support.";
+  }
+  if (d.sunSign === "Taurus" && d.moonSign === "Aries") {
+    return "I am a fortress that strikes with precision. I demand stability, but I have a short fuse for anything that feels like a delay.";
+  }
+  if (d.sunSign === "Aquarius" && d.moonSign === "Cancer") {
+    return "I am a visionary with a heavy heart. I want to save the future, but I am often pulled back by the nostalgia of what I've lost.";
+  }
+  if (d.hdType === "Projector" && d.sunSign === "Aries") {
+    return "I have the vision to lead but not the sustained energy to labor. I burn out when I try to run the race I've already finished in my mind.";
+  }
+  if (d.hdType === "Manifesting Generator") {
+    return "I move fast to find what works, skipping steps that others find essential. My frustration comes from having to go back and fix the foundations I rushed past.";
+  }
+  if (d.hdType === "Manifestor") {
+    return "I am designed to impact, not to be liked. My presence alone changes the room, and I feel trapped when I have to ask for permission.";
+  }
+  if (d.hdType === "Reflector") {
+    return "I am a mirror of my environment. I do not have a fixed center, only a lunar cycle that reveals the truth of where I am standing.";
+  }
+  return `As a ${d.archetype}, I process life through a lens of ${d.themes[0] || "accuracy"} and ${d.themes[1] || "depth"}. My default is to ${d.shadows[0] || "over-analyze"} when I feel pressured.`;
 };
 
 function getDayMeaning(num: number): string {
@@ -272,7 +305,7 @@ export default function DailyHoroscopePage() {
             <IconReading size={12} /> My Reading
           </h3>
           <p style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1rem, 2.5vw, 1.2rem)", lineHeight: 1.8, color: "#f1f5f9", margin: 0 }}>
-            {data.horoscope}
+            {cleanCodexLine(data.horoscope, "Your celestial alignment is currently calibrating. Focus on steady progress while the energies stabilize.")}
           </p>
         </section>
 

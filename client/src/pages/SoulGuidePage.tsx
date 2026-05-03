@@ -1,4 +1,5 @@
 import { apiFetch, resolveApiUrl } from "../lib/queryClient";
+import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { 
@@ -280,7 +281,8 @@ export default function SoulGuidePage() {
                   <IconSparkles size={12} />
                 </div>
               )}
-              {m.text || (isLoading && i === messages.length - 1 ? "…" : "")}
+              {m.role === "model" ? cleanCodexLine(m.text, "Calibration in progress...") : m.text}
+              {isLoading && i === messages.length - 1 && !m.text ? "…" : ""}
             </div>
           </div>
         ))}

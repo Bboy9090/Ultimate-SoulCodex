@@ -13,6 +13,7 @@ import { deterministicFallback } from "./deterministic-fallback";
 import type { AIResponse, AIRequest, AIStreamRequest, AIStatus, AIProvider } from "../src/types/ai";
 
 import { scoreOutput } from "../soulcodex/codex30/synth/quality";
+import { pureText } from "./sanitizer";
 
 /**
  * FINAL OUTPUT FIREWALL — Zero tolerance for mid-tier content or system leakage.
@@ -28,26 +29,10 @@ export function finalOutputGuard(text: string): string {
     return "";
   }
 
-  // 2. Leakage Patterns (Cleanup)
-  const invalidPatterns = [
-    /\|/g,                        // Raw signal pipes: |1221-12-12|
-    /unknown/i,                   // System placeholders
-    /chaos/i,                     // Leakage tokens
-    /fix/i,                       // Leakage tokens
-    /[0-9]{4}-[0-9]{2}-[0-9]{2}/, // Raw dates: 1221-12-12
-    /[a-z]{1,3}\|/i,              // Specific leakage: hj|
-    /raw variables/i,
-    /placeholder text/i,
-  ];
-
-  for (const pattern of invalidPatterns) {
-    if (pattern.test(text)) {
-      console.warn(`[AI Firewall] Rejected output due to pattern: ${pattern}`);
-      return "";
-    }
-  }
-
-  return text.trim();
+  // 2. Narrative Cleanup & Artifact Purge
+  let cleaned = pureText(text);
+  
+  return cleaned;
 }
 
 /**

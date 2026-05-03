@@ -16,25 +16,25 @@ export const BADGE_CONFIG: Record<string, {
   color: string; bg: string; border: string; label: string; tooltip: string;
 }> = {
   verified: {
-    color: "#22c55e",
-    bg: "rgba(34,197,94,0.08)",
-    border: "rgba(34,197,94,0.3)",
+    color: "var(--sc-gold)",
+    bg: "rgba(255, 215, 0, 0.12)",
+    border: "rgba(255, 215, 0, 0.4)",
     label: "Verified",
-    tooltip: "Birth time and location confirmed. Rising sign and houses are included. Highest signal accuracy.",
+    tooltip: "Full birth data confirmed — Rising sign and house layers are locked.",
   },
   partial: {
-    color: "var(--sc-gold)",
-    bg: "rgba(212,168,95,0.08)",
-    border: "rgba(212,168,95,0.3)",
+    color: "var(--sc-stone)",
+    bg: "rgba(224, 204, 255, 0.12)",
+    border: "rgba(224, 204, 255, 0.3)",
     label: "Partial",
-    tooltip: "Birth time not provided. Sun and Moon are accurate. Houses and rising sign are not included.",
+    tooltip: "Precision data missing — Sun and Moon are stable, but Rising sign is estimated.",
   },
   unverified: {
-    color: "var(--sc-text-muted)",
-    bg: "rgba(176,160,128,0.08)",
-    border: "rgba(176,160,128,0.3)",
+    color: "rgba(255, 255, 255, 0.45)",
+    bg: "rgba(255, 255, 255, 0.05)",
+    border: "rgba(255, 255, 255, 0.2)",
     label: "Unverified",
-    tooltip: "Location data missing. Chart positions may vary by up to a degree.",
+    tooltip: "Missing birth record — using general archetype fallbacks.",
   },
 };
 

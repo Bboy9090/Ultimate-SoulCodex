@@ -518,9 +518,22 @@ export default function LandingPage() {
           <IconLogo size={20} style={{ opacity: 0.6 }} />
           <span style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.35)" }}>Soul Codex</span>
         </div>
-        <p style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.28)", margin: 0 }}>
-          For reflection, not clinical advice.
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+          <button 
+            onClick={() => {
+              if (confirm("Reset your Soul Codex profile? This will clear all your data.")) {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.72rem", color: "var(--sc-gold)", opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.1em" }}
+          >
+            Reset Profile
+          </button>
+          <p style={{ fontSize: "0.72rem", color: "rgba(246,241,232,0.28)", margin: 0 }}>
+            For reflection, not clinical advice.
+          </p>
+        </div>
       </footer>
     </div>
   );
