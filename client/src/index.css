@@ -284,6 +284,8 @@ body {
   padding-bottom: 5rem;
   line-height: 1.65;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
 
 
@@ -819,7 +821,7 @@ input, textarea, select {
   border-radius: 10px;
   padding: 0.68rem 0.95rem;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 16px; /* Prevent iOS Zoom */
   width: 100%;
 }
 
@@ -1410,42 +1412,50 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
 @media (max-width: 920px) {
   .sc-app-shell { flex-direction: column; }
   .sc-sidebar {
+    display: none !important;
+  }
+  .sc-mobile-tabbar {
     position: fixed;
     bottom: 0;
-    top: auto;
     left: 0;
     right: 0;
-    height: 70px;
-    width: 100%;
-    border-right: 0;
+    height: calc(70px + var(--safe-bottom));
+    background: rgba(13, 11, 33, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid rgba(183, 148, 244, 0.16);
-    box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.45);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 0 0.5rem;
-    z-index: 100;
-    background: rgba(15, 6, 28, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    padding: 0 0.5rem var(--safe-bottom);
+    z-index: 1000;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
   }
-  .sc-sidebar-brand { display: none; }
-  .sc-nav-item { 
-    flex: 1; 
+  .sc-tab-item {
+    flex: 1;
+    display: flex;
     flex-direction: column;
-    gap: 0.1rem;
-    padding: 0.5rem 0;
-    margin-top: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    color: rgba(214, 188, 250, 0.6);
+    text-decoration: none;
     font-size: 0.65rem;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    height: 100%;
   }
-  .sc-nav-item span:first-child { font-size: 1.25rem !important; }
-  .sc-nav-active { color: var(--sc-gold); }
-  .sc-sidebar-divider { display: none; }
-  .sc-mode-toggle { display: none; }
-  .sc-main-content { padding-top: 0.5rem; padding-bottom: 80px; }
+  .sc-tab-active {
+    color: var(--sc-gold);
+    text-shadow: 0 0 10px rgba(212, 168, 95, 0.3);
+  }
+  .sc-tab-active svg {
+    filter: drop-shadow(0 0 8px rgba(212, 168, 95, 0.4));
+  }
+  .sc-main-content { 
+    padding-top: 1rem; 
+    padding-bottom: calc(90px + var(--safe-bottom)) !important; 
+  }
 
   .sc-marketing-header {
     padding: 0.85rem 1rem;
