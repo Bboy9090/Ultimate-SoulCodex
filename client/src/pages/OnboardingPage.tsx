@@ -136,6 +136,8 @@ export default function OnboardingPage() {
     drain_pattern_primary: "",
     drain_pattern_secondary: "",
   });
+  const [loadingLineIndex, setLoadingLineIndex] = useState(0);
+
 
   const startGuestMode = () => {
     // Clear any previous guest session but leave owner session intact
@@ -272,6 +274,15 @@ export default function OnboardingPage() {
     },
   });
 
+  useEffect(() => {
+    if (mutation.isPending) {
+      const interval = setInterval(() => {
+        setLoadingLineIndex((prev) => (prev + 1) % LOADING_LINES.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [mutation.isPending]);
+
   const update = (field: keyof FormData, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -365,7 +376,24 @@ export default function OnboardingPage() {
 
 
   if (mutation.isPending) {
-    return <CosmicLoader fullPage label="Building Your Soul Profile" />;
+    return (
+      <div className="nebula-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", textAlign: "center" }}>
+        <CosmicLoader label={LOADING_LINES[loadingLineIndex]} />
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{ marginTop: "1.5rem", maxWidth: "320px" }}
+        >
+          <p style={{ color: "var(--sc-gold)", fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.5rem", letterSpacing: "0.02em" }}>
+            The engine is mapping your behavioral loops.
+          </p>
+          <p style={{ color: "var(--sc-stone)", fontSize: "0.8rem", opacity: 0.7, lineHeight: 1.5 }}>
+            This synthesis usually takes 30-60 seconds. Please keep this window open while we finalize your architecture.
+          </p>
+        </motion.div>
+      </div>
+    );
   }
 
   if (successResult) {

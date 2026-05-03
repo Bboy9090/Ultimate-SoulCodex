@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { CapacitorHttp } from "@capacitor/core";
 
 // --- Timeouts & Fallbacks ---
-const NETWORK_TIMEOUT = 10000; // 10s max for any request
+const NETWORK_TIMEOUT = 60000; // 60s max for any request
 
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
