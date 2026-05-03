@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { triggerHapticFeedback } from "../lib/haptics";
 
 interface ScButtonProps extends Omit<HTMLMotionProps<"button">, "variant"> {
   variant?: "primary" | "secondary" | "ghost" | "outline";
@@ -34,11 +35,15 @@ const ScButton: React.FC<ScButtonProps> = ({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02, y: -1 }}
+      {...props}
+      whileHover={!disabled && !loading ? { scale: 1.02, y: -2 } : undefined}
       whileTap={{ scale: 0.98, y: 0 }}
       className={cn(baseStyles, variants[variant], sizes[size], className)}
       disabled={disabled || loading}
-      {...props}
+      onClick={(e) => {
+        triggerHapticFeedback();
+        props.onClick?.(e);
+      }}
     >
       {loading && (
         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
