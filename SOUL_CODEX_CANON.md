@@ -1,3 +1,5 @@
+> Legacy Canon Notice (May 12, 2026): This file remains as historical context. The canonical source of truth now lives in `docs/soul-codex/` and `docs/engine/` starting with `docs/soul-codex/README.md`.
+
 # Soul Codex Canon — Identity Translation Engine (Final Form)
 
 This document captures the non-negotiable standards for the completed Soul Codex experience. It translates the narrative blueprint into implementation-ready guardrails for engineers, writers, and designers. Every section answers what it is, why it matters, how it shows up for users, and how to integrate it.
