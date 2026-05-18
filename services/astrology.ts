@@ -6,7 +6,8 @@ import {
   getKarmicInterpretation,
   getAspectInterpretation
 } from "./interpretations";
-import * as Astronomy from 'astronomy-engine';
+import * as AstronomyModule from 'astronomy-engine';
+const Astronomy: any = (AstronomyModule as any).default || AstronomyModule;
 import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 
