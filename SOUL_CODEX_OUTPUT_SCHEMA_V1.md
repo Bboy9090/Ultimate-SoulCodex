@@ -1,3 +1,5 @@
+> Legacy Canon Notice (May 12, 2026): This file remains as historical context. Canonical doctrine and engine planning now live in `docs/soul-codex/` and `docs/engine/`. Runtime schema anchors are `packages/core/soulcodex-v1/schema.ts` and `packages/core/soulcodex-v1/generate.ts`.
+
 # Soul Codex Output Schema v1 (Canonical Contract)
 
 This repository now exposes a single canonical, machine-readable profile output contract:
@@ -118,4 +120,3 @@ Recommended next steps (incremental, reviewable):
 
 - The generator is currently **deterministic** and leverages existing stored fields like `profile.astrologyData`, `profile.humanDesignData`, `profile.numerologyData`, and `profile.synthesis` when present.
 - The contract is enforced server-side via zod parse (`soulCodexOutputV1Schema.parse(...)`).
-
