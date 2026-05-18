@@ -23,11 +23,16 @@ interface Fixture {
   notes: string;
 }
 
+const args = process.argv.slice(2);
+const isAudit = args.includes("--audit");
+const isStrict = args.includes("--strict") || !isAudit; // Strict is the default unless --audit is passed
+
 const fixturesPath = path.resolve(process.cwd(), "tests/golden/astrology-fixtures.json");
 const rawData = fs.readFileSync(fixturesPath, "utf-8");
 const fixtures: Fixture[] = JSON.parse(rawData);
 
 console.log(`\n🪐 Loaded ${fixtures.length} Astrology Golden Fixtures...`);
+console.log(`⚙️  Mode: ${isAudit ? "AUDIT (Exits 0 on failure)" : "STRICT (Exits 1 on failure)"}`);
 console.log("=========================================\n");
 
 let passedCount = 0;
@@ -126,8 +131,14 @@ for (const fixture of fixtures) {
 console.log("=========================================");
 console.log(`📊 Test Results: ${passedCount} PASSED, ${failedCount} FAILED\n`);
 
-if (failedCount > 0) {
-  process.exit(1);
-} else {
+if (isAudit) {
+  console.log("⚠️  Audit Mode: Completed with exit code 0.");
   process.exit(0);
+} else {
+  if (failedCount > 0) {
+    console.error("❌ Strict Mode: Terminating with exit code 1 due to failures.");
+    process.exit(1);
+  } else {
+    process.exit(0);
+  }
 }
