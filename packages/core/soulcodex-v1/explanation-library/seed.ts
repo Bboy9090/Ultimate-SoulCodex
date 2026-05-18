@@ -8,7 +8,7 @@ export const EXPLANATION_LIBRARY_SEED: ExplanationLibrary = [
     technicalMeaning:
       "The Sun describes identity focus, conscious direction, and how a person organizes effort. Virgo adds precision, analysis, and service orientation.",
     plainEnglishMeaning:
-      "You tend to build confidence by improving what is in front of you and making systems cleaner over time.",
+      "Building confidence comes from improving immediate surroundings and organizing chaotic processes into clean, functional systems.",
     whyItMatters:
       "This pattern affects work style, standards, trust in process, and how quickly you notice what feels off.",
     howItShowsUp: [
@@ -40,7 +40,7 @@ export const EXPLANATION_LIBRARY_SEED: ExplanationLibrary = [
     technicalMeaning:
       "The Moon describes emotional regulation, attachment memory, and safety reactions. Scorpio adds intensity, privacy, and transformation pressure.",
     plainEnglishMeaning:
-      "You feel deeply and often test for trust before full emotional openness.",
+      "Processing emotional experiences with high intensity requires verifying safety and mutual trust before showing vulnerability.",
     whyItMatters:
       "This pattern influences bonding pace, conflict repair style, and how you respond to emotional threat.",
     howItShowsUp: [
@@ -50,7 +50,7 @@ export const EXPLANATION_LIBRARY_SEED: ExplanationLibrary = [
     ],
     gift: [
       "loyalty under pressure",
-      "strong emotional intuition",
+      "strong emotional perceptiveness",
       "capacity to recover after deep transitions",
     ],
     shadow: [
@@ -104,7 +104,7 @@ export const EXPLANATION_LIBRARY_SEED: ExplanationLibrary = [
     technicalMeaning:
       "Projector design emphasizes guidance, pattern reading, and strategic direction rather than sustained generator-style output.",
     plainEnglishMeaning:
-      "You tend to do your best work by seeing systems clearly and guiding timing, not by forcing constant output.",
+      "Optimizing output requires analyzing systemic flow and guiding timing rather than pushing through forced, constant execution.",
     whyItMatters:
       "This pattern influences energy management, collaboration quality, and burnout risk when work pacing is misaligned.",
     howItShowsUp: [
@@ -136,7 +136,7 @@ export const EXPLANATION_LIBRARY_SEED: ExplanationLibrary = [
     technicalMeaning:
       "Life Path 9 emphasizes completion cycles, broad human concern, and meaning-making through service and perspective.",
     plainEnglishMeaning:
-      "You are often pulled toward impact that helps people beyond your immediate circle.",
+      "Directing focus toward large-scale social impact supports community development beyond immediate personal circles.",
     whyItMatters:
       "This affects motivation, boundaries in helping roles, and decisions about where your effort should scale.",
     howItShowsUp: [
@@ -162,4 +162,3 @@ export const EXPLANATION_LIBRARY_SEED: ExplanationLibrary = [
     },
   },
 ] as const;
-

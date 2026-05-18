@@ -1,4 +1,4 @@
-import bannedLanguage from "../rules/banned-language.js";
+import { EXTENDED_BANNED } from "../content/banned-language.js";
 import {
   explanationLibrarySchema,
   type ExplanationEntry,
@@ -31,6 +31,7 @@ export type ExplanationLanguageViolation = {
 
 function explainableTextByField(entry: ExplanationEntry): Array<{ field: string; value: string }> {
   return [
+    { field: "name", value: entry.name },
     { field: "technicalMeaning", value: entry.technicalMeaning },
     { field: "plainEnglishMeaning", value: entry.plainEnglishMeaning },
     { field: "whyItMatters", value: entry.whyItMatters },
@@ -50,13 +51,13 @@ function findMatches(
 ) {
   const lower = text.toLowerCase();
 
-  for (const phrase of bannedLanguage.phrases) {
-    if (lower.includes(phrase.toLowerCase())) {
+  for (const entry of EXTENDED_BANNED) {
+    if (lower.includes(entry.phrase.toLowerCase())) {
       violations.push({
         entryId,
         field,
         code: "banned_phrase",
-        snippet: phrase,
+        snippet: entry.phrase,
       });
     }
   }
