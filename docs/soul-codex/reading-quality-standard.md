@@ -1,93 +1,51 @@
-# Reading Quality Standard
+# Soul Codex Reading Quality Standard
 
-Soul Codex must explain, not impress.
+## Standard Goal
 
-A reading is successful when the user can understand what a signal means, recognize how it may show up in real life, and know what to do with the insight.
+Soul Codex outputs should explain identity patterns with practical clarity. The target is not mystical style. The target is behavior-level usefulness.
 
-## Required Explanation Fields
+## Minimum Acceptance Rubric
 
-Every placement, number, gate, sign, aspect, asteroid, family pattern, or behavioral signal must include:
+Each major interpretation block must include:
+- plain definition of the signal
+- reason the signal matters
+- real-life manifestation examples
+- gift or strength expression
+- shadow or overuse expression
+- one practical growth move
+- confidence note with uncertainty when relevant
 
-- What this is.
-- Why it matters.
-- How it shows up.
-- Where it helps.
-- Where it can hurt.
-- Growth move.
-- Confidence level.
+## Wording Correctness Rules
 
-Preferred extended fields:
+- Use technically valid system language.
+- Distinguish planet, sign, house, aspect, and rulership correctly.
+- Avoid malformed phrasing such as "Sun is in Venus."
+- Separate technical statement from plain-language translation.
 
-- Technical meaning.
-- Plain-English meaning.
-- Relationship pattern.
-- Stress pattern.
-- Boundary lesson.
-- Daily advice.
-- Missing data note.
+## Toy vs Platform Quality Gate
 
-## Soul Codex Quality Bar
+Toy behavior:
+- generic sign stereotypes
+- interchangeable text across users
+- no uncertainty acknowledgement
+- style over substance
 
-Weak:
+Platform behavior:
+- data-grounded explanations
+- user-specific pattern statements
+- explicit confidence and data gaps
+- clear next-action guidance
 
-```txt
-Moon in Scorpio means intense emotions.
-```
+## Required Delivery Behavior
 
-Soul Codex quality:
+- Beginner mode: concise and calm.
+- Advanced mode: detailed and traceable.
+- Both modes must preserve factual consistency and boundaries.
 
-```txt
-Your Moon describes how your emotional system seeks safety, bonds, remembers, and protects itself. In Scorpio, this can show up as emotional depth, privacy, loyalty, and a strong need to know who is safe before you open. The gift is emotional truth and survival intelligence. The shadow is testing people silently instead of naming what you need. A growth move is to speak the feeling before turning it into an investigation.
-```
+## Quality Failure Triggers
 
-## Beginner Mode Standard
-
-Beginner mode should be:
-
-- Short.
-- Beautiful.
-- Calm.
-- Plain-language.
-- Emotionally useful.
-- Free of unexplained jargon.
-
-Beginner mode may hide technical detail, but it must not hide uncertainty.
-
-## Advanced Mode Standard
-
-Advanced mode should expose:
-
-- System source.
-- Calculation confidence.
-- Birth-time sensitivity.
-- Location sensitivity.
-- Technical name.
-- Trace notes when available.
-- Why this interpretation was selected.
-
-Advanced mode may be detailed, but it must remain readable.
-
-## Banned Reading Patterns
-
-Do not ship readings that:
-
-- Only restate a sign or number stereotype.
-- Use fear as a retention mechanic.
-- Make absolute predictions.
-- Claim certainty from missing data.
-- Diagnose mental or physical conditions.
-- Treat family data as blame.
-- Use advanced symbols without explanation.
-- Give the same reading to everyone with the same Sun sign.
-
-## Acceptance Checklist
-
-Before a reading template, prompt, or generated output is considered Soul Codex quality, confirm:
-
-- It answers the required explanation fields.
-- It uses confidence-aware language.
-- It avoids deterministic and medical claims.
-- It gives at least one actionable growth move.
-- It separates calculation facts from interpretation.
-- It names missing data when missing data changes confidence.
-- It can be understood without prior astrology, numerology, or Human Design knowledge.
+Block or downgrade output when:
+- meaning fields are missing
+- language violates boundary policy
+- confidence cannot be determined
+- interpretation conflicts with known data integrity limits

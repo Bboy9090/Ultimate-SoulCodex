@@ -1,70 +1,50 @@
-# Test Fixtures
+# Test Fixtures and Acceptance Rules
 
-Soul Codex needs fixtures before calculation-engine upgrades.
+## Purpose
 
-Fixtures let future agents compare engines, protect confidence behavior, and prevent generic astrology output from replacing Soul Codex quality.
+Define fixture coverage expectations for deterministic quality checks and uncertainty behavior.
 
-## Fixture Goals
+## Existing Test Anchor
 
-Fixtures should prove:
+- `packages/core/soulcodex-v1/tests/canonical.test.ts`
 
-- Missing birth time lowers or qualifies confidence.
-- Missing location lowers or qualifies confidence.
-- Two users with the same Sun sign receive different readings when other inputs differ.
-- Family context affects imprint language without becoming destiny.
-- Advanced symbols receive plain-language explanation.
-- Medical and deterministic claims are rejected.
-- Engine outputs remain traceable.
+## Fixture Matrix (Planning Baseline)
 
-## Required Fixture Set
+1. Full precision profile
+- complete birth date, time, and location/timezone
+- expected: `verified` chart confidence and valid overall confidence assignment
 
-Create fixture profiles for:
+2. Missing birth time
+- date and location present, no birth time
+- expected: downgraded chart precision with explicit limitation copy
 
-| Fixture | Purpose |
-| --- | --- |
-| Full birth data | Verifies high-confidence astrology, houses, and Human Design-sensitive outputs. |
-| Missing birth time | Verifies rising/houses/degree-sensitive warnings. |
-| Missing location | Verifies location-sensitive warnings. |
-| Same Sun sign A | Verifies non-identical synthesis with distinct Moon/context/self-report. |
-| Same Sun sign B | Paired with A to prevent generic Sun sign output. |
-| Family context present | Verifies imprint language and no blame. |
-| Parent data only | Verifies family confidence is partial without behavioral context. |
-| Numerology name variant | Verifies name source and spelling confidence. |
-| Advanced mode | Verifies trace and technical details are exposed. |
-| Beginner mode | Verifies simple, calm, non-jargon explanation. |
+3. Missing location/timezone
+- date present, incomplete geo/timezone
+- expected: `unverified` chart confidence path where runtime logic requires it
 
-## Quality Assertions
+4. Date-only profile
+- minimal viable input
+- expected: date-stable layers render, precision-sensitive layers disclosed as limited
 
-Each fixture should assert:
+5. Sparse behavioral/context inputs
+- no mirror/family context
+- expected: stable baseline reading without fabricated specificity
 
-- Confidence badge is present.
-- Confidence reason is present.
-- Missing data note appears when needed.
-- No deterministic claims are present.
-- No medical diagnosis is present.
-- At least one growth move is present.
-- Explanation includes gift and shadow.
-- Output separates calculated facts from interpretive guidance.
+6. Rich behavioral/context inputs
+- mirror and contextual answers present
+- expected: differentiation in statement selection while preserving schema stability
 
-## Engine Comparison Assertions
+## Acceptance Rules
 
-When evaluating a future precision engine:
+- no schema parse failures for valid fixture payloads
+- confidence enums must remain in allowed sets
+- missing data must produce explicit limitations
+- deterministic pipeline should avoid placeholder text in production outputs
+- wording guards should block deterministic or diagnostic phrasing
 
-- Compare planetary sign.
-- Compare degree.
-- Compare house placement.
-- Compare aspects.
-- Compare nodes.
-- Compare timezone handling.
-- Compare confidence decisions.
-- Record all differences in a fixture report before switching engines.
+## Drift Monitoring Guidance
 
-## Non-Goals
-
-Fixtures should not require:
-
-- A new Python backend.
-- Swiss Ephemeris implementation.
-- Production schema changes.
-- iOS changes.
-- AI API access for deterministic contract checks.
+When adding new systems or precision engines:
+- compare outputs against baseline fixtures
+- document intentional deltas
+- reject silent contract drift

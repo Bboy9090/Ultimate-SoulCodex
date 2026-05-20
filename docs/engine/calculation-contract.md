@@ -1,83 +1,54 @@
-# Calculation Contract
+# Calculation Contract (Planning Baseline)
 
-This document defines the future calculation-engine contract for Soul Codex.
+## Goal
 
-It is planning documentation only. It does not replace the current engine, add Python code, add Swiss Ephemeris, change public APIs, or alter iOS/App Store hardening.
+Define the stable contract from user inputs to structured Soul Codex outputs without changing runtime behavior in this documentation PR.
 
-## Purpose
+## Verified Code Anchors
 
-The calculation engine must produce precise, traceable, confidence-aware signals that can be translated into Soul Codex explanations.
+Core schema and generation:
+- `packages/core/soulcodex-v1/schema.ts`
+- `packages/core/soulcodex-v1/generate.ts`
 
-The engine should separate:
+Engine internals:
+- `packages/core/soulcodex-v1/engine/index.ts`
+- `packages/core/soulcodex-v1/engine/traitMapper.ts`
+- `packages/core/soulcodex-v1/engine/statementSelector.ts`
+- `packages/core/soulcodex-v1/engine/dailyGuidance.ts`
 
-- Raw inputs.
-- Normalized inputs.
-- Calculated facts.
-- Confidence and trace metadata.
-- Interpretive explanation content.
-- AI or deterministic synthesis.
+Confidence logic:
+- `packages/core/compute/confidence.ts`
+- `soulcodex/compute/confidence.ts`
 
-## Existing Contract Alignment
+## Contract Stages
 
-The current public output reference is [SOUL_CODEX_OUTPUT_SCHEMA_V1.md](../../SOUL_CODEX_OUTPUT_SCHEMA_V1.md).
+1. Input normalization
+- birth data and profile data are normalized
+- missing fields are explicit
 
-Future engine work must preserve existing app stability unless a migration is explicitly planned.
+2. Signal extraction
+- astrology, human design, numerology, and mirror/context signals become structured traits
 
-## Future Engine Responsibilities
+3. Rule filtering
+- contradictions and low-confidence conflicts are filtered deterministically
 
-The engine should eventually calculate or normalize:
+4. Statement selection
+- trait overlap and confidence thresholds drive selected interpretation statements
 
-- Astrology placements: Sun, Moon, Ascendant, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto.
-- Lunar nodes: North Node and South Node.
-- Chiron and Lilith.
-- Houses and house cusps.
-- Major aspects.
-- Asteroids later.
-- Numerology: Life Path, Expression, Soul Urge, Personality, and related values.
-- Human Design: type, strategy, authority, profile, definition, centers, gates, channels, incarnation cross later.
-- Family/context signals.
-- Behavioral self-report signals.
+5. Section assembly
+- output mapped into summary, sections, and daily guidance contract
 
-## Contract Shape
+6. Confidence assignment
+- chart/system confidence badges and overall confidence levels assigned
 
-Future calculation outputs should include:
+## Stability Rules
 
-```txt
-system:
-name:
-value:
-technical_label:
-source_inputs:
-confidence:
-confidence_reason:
-birth_time_sensitive:
-location_sensitive:
-calculation_engine:
-calculated_at:
-trace:
-```
+- Public output schema remains backward compatible within `soul_codex_v1`.
+- Content evolution can expand depth but should not silently break field semantics.
+- Confidence enums remain fixed unless versioned API/schema changes are approved.
 
-Interpretive outputs should be separate and follow [Explanation Template](../soul-codex/explanation-template.md).
+## Out of Scope for This Phase
 
-## Non-Goals
-
-This contract does not authorize:
-
-- Rebuilding the backend.
-- Replacing the current engine.
-- Adding Python services.
-- Adding Swiss Ephemeris or `pyswisseph`.
-- Changing database schema.
-- Changing current API responses.
-- Changing Capacitor or iOS hardening code.
-
-## Upgrade Rule
-
-Before any engine replacement or sidecar is introduced:
-
-1. Define fixtures.
-2. Compare current output against candidate engine output.
-3. Document deltas.
-4. Resolve licensing and deployment risks.
-5. Add trace and confidence behavior.
-6. Migrate incrementally behind a stable contract.
+- runtime backend replacement
+- Python ephemeris implementation
+- route rewiring or deployment architecture changes

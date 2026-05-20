@@ -1,89 +1,51 @@
-# System Inputs
+# System Inputs Contract
 
-Soul Codex inputs should be explicit, normalized, and confidence-aware.
+## Purpose
 
-This document defines future-facing input categories only. It does not change current API shapes or database schemas.
+Define required and optional inputs by system and how missing data affects confidence and output scope.
 
-## Birth Inputs
+## Core Identity Inputs
 
-Canonical birth inputs:
+Required minimum:
+- name (for some narrative and numerology pathways)
+- birth date
 
-- Birth date.
-- Birth time.
-- Birth time known/unknown flag.
-- Birth location label.
-- Latitude.
-- Longitude.
-- Timezone.
-- Timezone resolution source.
-- Calendar/date normalization.
+Precision inputs:
+- birth time
+- birth location
+- timezone or reliable timezone derivation
 
-Birth time and location are required for full confidence in ascendant, houses, degree-sensitive placements, and some Human Design details.
+## Inputs by System
 
-## Name Inputs
+Astrology:
+- required: birth date
+- precision-critical: birth time, location, timezone
+- impact when missing: reduced or unverified rising/house precision
 
-Numerology may use:
+Human Design:
+- required baseline: birth date
+- precision-critical: birth time and location/timezone
+- impact when missing: degraded authority/profile/channel precision
 
-- Full birth name.
-- Current name.
-- Preferred name.
-- Name spelling confidence.
-- Name source.
+Numerology:
+- required: birth date
+- optional: name for expanded numerology layers
+- impact when missing: life-path or derived numerology fields may be unavailable
 
-Name-based readings must state which name was used.
+Behavioral and context layer:
+- optional: mirror answers, user reflections, parent-family context
+- impact when missing: less personalized pattern differentiation
 
-## Self-Report Inputs
+## Context Input Taxonomy
 
-Self-report makes two users with the same Sun sign different.
+- personal birth inputs
+- computed system outputs
+- self-report behavior inputs
+- family and environment context
+- confidence metadata
 
-Useful self-report categories:
+## Input Integrity Rules
 
-- Stress response.
-- Decision style.
-- Relationship pattern.
-- Boundary pattern.
-- Moral compass.
-- Current life stage.
-- Emotional needs.
-- Work style.
-- Conflict style.
-- Spiritual orientation.
-
-## Family And Context Inputs
-
-Family/context inputs may include:
-
-- Parent/caregiver signs or charts.
-- Parent/caregiver numerology.
-- Parent/caregiver Human Design data.
-- Caregiver behavior patterns.
-- Family structure.
-- Emotional climate.
-- Environment and neighborhood context.
-- Cultural or spiritual background.
-- Repeating family expectations.
-
-These inputs are always shaping context, not destiny.
-
-## Input Metadata
-
-Every input should eventually carry:
-
-```txt
-source:
-provided_by:
-collected_at:
-normalized_value:
-confidence:
-missing_or_estimated_fields:
-```
-
-## Missing Input Behavior
-
-When input data is missing:
-
-- Do not invent it.
-- Omit unsupported outputs.
-- Lower confidence where appropriate.
-- Explain what is missing.
-- Continue generating useful guidance from available signals.
+- Unknown values must be explicit, not inferred silently.
+- Approximate values must be marked as approximate.
+- Missing precision must flow into confidence and copy disclosures.

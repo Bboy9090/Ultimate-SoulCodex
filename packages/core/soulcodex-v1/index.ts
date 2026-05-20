@@ -35,3 +35,21 @@ export type { ContradictionPair } from "./content/contradictions.js";
 
 export { STATEMENTS, getCandidates } from "./content/statements/index.js";
 export type { Statement, StatementSection } from "./content/statements/index.js";
+
+// ── Explanation library (v1 skeleton) ────────────────────────────────────────
+export {
+  EXPLANATION_LIBRARY_SEED,
+  explanationSystemSchema,
+  explanationConfidenceSchema,
+  explanationEntrySchema,
+  explanationLibrarySchema,
+  collectExplanationLanguageViolations,
+  validateExplanationLibrary,
+} from "./explanation-library/index.js";
+export type {
+  ExplanationSystem,
+  ExplanationConfidence,
+  ExplanationEntry,
+  ExplanationLibrary,
+  ExplanationLanguageViolation,
+} from "./explanation-library/index.js";

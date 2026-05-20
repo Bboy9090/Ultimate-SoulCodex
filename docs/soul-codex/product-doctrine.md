@@ -1,87 +1,69 @@
-# Product Doctrine
+# Soul Codex Product Doctrine
 
-Soul Codex is not an astrology app with extra features.
+## Identity Definition
 
-Soul Codex is a personal identity intelligence system that uses metaphysical calculation, behavioral patterning, family/context data, and plain-language spiritual explanation to help a person understand how they operate.
+Soul Codex is a personal identity intelligence system using metaphysical calculation, behavioral patterning, family and context data, and plain-language spiritual explanation.
 
-It is not prediction first. It is not "your sign says you are emotional." It is not mystical decoration. It is an identity operating system that helps users recognize patterns, protect boundaries, make clearer choices, and become more conscious.
+It is not prediction-first. It is explanation-first.
 
-## Product Promise
+## Wrong vs Correct Positioning
 
-Soul Codex is a soul operating system: simple enough for daily guidance, deep enough for full-spectrum identity decoding.
+Wrong:
+- Soul Codex is an astrology or numerology reading app.
 
-The system should be:
+Correct:
+- Soul Codex is an everyday soul operating system with professional metaphysical calculation behind it.
 
-- Simple enough for a beginner.
-- Deep enough for a mystic.
-- Precise enough for a skeptic.
-- Honest enough to admit uncertainty.
-- Useful enough to become daily.
+## Product Modes
 
-## Locked Principles
+### Everyday Guidance Mode
 
-1. Every output must explain what it means, why it matters, how it shows up, gifts, shadows, growth move, and confidence level.
-2. No vague placement language.
+Purpose: fast clarity for daily use.
+
+Includes:
+- daily focus
+- strengths and shadows
+- stress pattern and boundary guidance
+- plain language summary
+
+### Codex Engine Mode
+
+Purpose: deep traceability for advanced users.
+
+Includes:
+- chart detail and system-by-system breakdown
+- calculation confidence and missing-data notes
+- expanded explanation and evidence of how outputs were derived
+
+## Ten Locked Principles
+
+1. Every output must explain meaning, relevance, lived expression, gifts, shadows, growth move, and confidence.
+2. No vague placement language or broken terminology.
 3. No deterministic claims.
 4. No medical diagnosis.
 5. Missing birth time or location must trigger confidence warnings.
-6. Parents and family data belong as shaping context, not destiny.
-7. Two users with the same Sun sign must not receive identical readings.
-8. Beginner mode must be simple and beautiful.
+6. Parent and family data is shaping context, not destiny.
+7. Same Sun sign users must not receive identical readings.
+8. Beginner mode must be simple, beautiful, and non-overwhelming.
 9. Advanced mode must expose system detail and calculation confidence.
-10. The app must prioritize clarity, usefulness, and emotional truth over mystical decoration.
+10. Clarity, usefulness, and emotional truth outrank mystical decoration.
 
-## Everyday Guidance Mode
+## Required Output Questions
 
-Everyday Guidance Mode is where normal users live.
+Any major reading section should explicitly answer:
 
-It should include:
+1. What is this signal?
+2. Why does it matter for this user?
+3. How does it show up behaviorally?
+4. Where does it help?
+5. Where can it create friction?
+6. What should the user do with this now?
+7. How confident is this interpretation?
+8. What missing data reduces confidence?
 
-- Daily soul card.
-- Today page.
-- Profile summary.
-- Core archetype.
-- Strengths and shadows.
-- Relationship pattern.
-- Stress pattern.
-- Decision style.
-- Boundary guidance.
-- Plain-English explanations.
-- Compatibility basics.
-- Beginner mode.
+## Launch Discipline
 
-The daily experience should answer:
-
-- What is my pattern doing today?
-- What should I watch?
-- What should I protect?
-- How should I move?
-
-## Codex Engine Mode
-
-Codex Engine Mode is for advanced users, builders, skeptics, and power users.
-
-It may expose:
-
-- Natal chart details.
-- Planetary placements.
-- Aspects.
-- Houses.
-- Asteroids.
-- Nodes.
-- Human Design gates and channels.
-- Numerology.
-- Life path, expression, and soul urge numbers.
-- Future Gene Keys or Vedic layers.
-- Confidence badges.
-- Birth-time accuracy notes.
-- Calculation trace.
-- System-by-system breakdown.
-
-This is not the home screen. It is the engine room. Soul Codex should feel normal first, then reveal depth when a user wants it.
-
-## Doctrine Test
-
-A feature belongs in Soul Codex when it helps a user understand how they operate with more clarity, compassion, responsibility, and agency.
-
-A feature does not belong when it only adds symbols, prediction, novelty, fear, or mystical complexity without useful explanation.
+During TestFlight and launch hardening:
+- no backend replacement in doctrine PRs
+- no forced engine rewrites
+- no hidden scope growth

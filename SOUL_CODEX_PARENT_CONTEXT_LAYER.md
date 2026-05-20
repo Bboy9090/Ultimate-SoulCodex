@@ -1,3 +1,5 @@
+> Legacy Canon Notice (May 12, 2026): This file remains as historical context. Canonical parent/family-layer policy now lives in `docs/soul-codex/parent-family-layer.md`.
+
 🜂 SOUL CODEX
 
 PARENT CONTEXT LAYER — FULL EXECUTION PACKAGE

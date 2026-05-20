@@ -1,119 +1,77 @@
-# Explanation Template
+# Soul Codex Explanation Template
 
-Every advanced symbol in Soul Codex must become a useful human explanation.
+## Purpose
 
-This template applies to planets, signs, houses, aspects, asteroids, nodes, numbers, Human Design gates/channels, family signals, and behavioral patterns.
+Every symbol-level explanation should be structurally consistent and readable in both beginner and advanced modes.
 
-## Required Template
+## Required Fields
 
-```txt
-Name:
-System:
-Input source:
-Confidence:
-Technical meaning:
-Plain-English meaning:
-Why it matters:
-How it shows up:
-Gift:
-Shadow:
-Growth move:
-Missing data note:
+- Name
+- System
+- Technical meaning
+- Plain-English meaning
+- Why it matters
+- How it shows up
+- Gift
+- Shadow
+- Growth move
+- Confidence
+
+## Canonical Object Shape (Planning Contract)
+
+```json
+{
+  "name": "Moon in Scorpio",
+  "system": "Astrology",
+  "technicalMeaning": "...",
+  "plainEnglishMeaning": "...",
+  "whyItMatters": "...",
+  "howItShowsUp": ["...", "..."],
+  "gift": ["..."],
+  "shadow": ["..."],
+  "growthMove": "...",
+  "confidence": {
+    "badge": "partial",
+    "note": "Birth time not provided; house precision is limited."
+  }
+}
 ```
 
-## Field Rules
-
-Name:
-
-- Use the correct technical label.
-- Example: `Moon in Scorpio`, `Life Path 7`, `Gate 57`, `Sun square Saturn`.
-
-System:
-
-- Identify astrology, numerology, Human Design, family layer, behavioral layer, or another named system.
-
-Input source:
-
-- Identify whether the result comes from computed chart data, user self-report, parent/family context, or synthesis.
-
-Confidence:
-
-- Use the current confidence model: `verified`, `partial`, or `unverified`.
-- Add the reason in plain language.
+## Example (Moon in Scorpio)
 
 Technical meaning:
-
-- Define the symbol correctly.
-- Do not over-explain.
-
-Plain-English meaning:
-
-- Translate the symbol into lived experience.
-
-Why it matters:
-
-- Explain why this affects decisions, relationships, stress, identity, boundaries, or growth.
-
-How it shows up:
-
-- Describe realistic behavior patterns without deterministic wording.
-
-Gift:
-
-- Name the strength or capacity.
-
-Shadow:
-
-- Name the distortion, overuse, avoidance, or survival strategy.
-
-Growth move:
-
-- Provide one actionable practice, choice, or reflection.
-
-Missing data note:
-
-- State what is unknown and what that limits.
-
-## Example
-
-```txt
-Name:
-Moon in Scorpio
-
-System:
-Astrology
-
-Input source:
-Natal chart placement
-
-Confidence:
-Partial if birth time is missing; verified only when date, time, and location are resolved.
-
-Technical meaning:
-The Moon describes emotional instincts, safety needs, memory, attachment, and private reactions. Scorpio adds depth, secrecy, intensity, survival intelligence, and transformation.
+- The Moon reflects emotional regulation, attachment, memory, and felt safety.
+- Scorpio adds intensity, privacy, depth-scanning, and transformation pressure.
 
 Plain-English meaning:
-You may not feel lightly. Your emotional system can scan for truth before trusting, and you may need privacy before you can name what is happening inside.
+- You feel deeply, detect hidden tension quickly, and often need earned trust before full emotional openness.
 
 Why it matters:
-This placement can shape bonding, family patterns, privacy, loyalty, jealousy, trust, and recovery after betrayal.
-
-How it shows up:
-You may hold back until you know someone is safe, remember emotional details for a long time, or test closeness when you feel exposed.
+- This influences bonding, privacy boundaries, conflict repair pace, and response to perceived betrayal.
 
 Gift:
-Emotional depth, loyalty, intuition, and the ability to sense what is unspoken.
+- emotional depth
+- loyalty
+- pattern intuition
 
 Shadow:
-Suspicion, silent resentment, emotional testing, and fear of vulnerability.
+- suspicion loops
+- emotional testing
+- silent resentment
 
 Growth move:
-Name what you feel before turning the feeling into a private investigation.
+- Name the feeling directly before running a private investigation.
 
-Missing data note:
-If birth time is missing, Moon sign may still be stable for many dates, but degree-sensitive and house-based details should be treated with caution.
-```
+Confidence note:
+- If birth time is missing, house-level expression may shift.
 
-## Implementation Note
+## Beginner vs Advanced Rendering
 
-Future explanation libraries should store this structure in machine-readable content files before text is composed for beginner or advanced mode.
+Beginner mode:
+- 3 to 6 sentences, zero jargon without explanation.
+
+Advanced mode:
+- include technical frame, system mechanics, and confidence caveats.
+
+Both modes:
+- same factual meaning, different density.

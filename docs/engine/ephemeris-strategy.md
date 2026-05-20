@@ -1,59 +1,37 @@
-# Ephemeris Strategy
+# Ephemeris Strategy (Phased)
 
-Soul Codex should treat ephemeris precision as a staged engine upgrade, not a launch-blocking rebuild.
+## Objective
 
-The current app already uses the existing JavaScript stack and includes `astronomy-engine`. This should remain stable while the product doctrine, explanation library, and test fixtures are locked.
+Increase calculation precision over time without destabilizing launch-track delivery.
 
-## Current Position
+## Current Phase (Now)
 
-Do not:
+- Keep existing JS/TS engine stack in production path.
+- Lock contracts, fixtures, and confidence disclosures first.
+- Do not replace backend architecture during TestFlight hardening.
 
-- Replace the backend.
-- Add Python code.
-- Add Swiss Ephemeris code.
-- Split services.
-- Change iOS/App Store hardening.
+## Future Evaluation Path
 
-Do:
+Potential precision layer options include Swiss Ephemeris-based tooling, but only after formal review.
 
-- Document the future engine contract.
-- Add fixtures.
-- Compare candidate engines.
-- Track confidence and calculation trace.
-- Make a license decision before implementation.
+Required gates before adoption:
+1. license and legal review
+2. deployment and runtime fit review
+3. contract compatibility review
+4. output comparison against baseline fixtures
+5. rollback plan
 
-## Candidate: Swiss Ephemeris / pyswisseph
+## Sidecar Migration Pattern
 
-Swiss Ephemeris and `pyswisseph` may be evaluated later as a precision engine, sidecar, or replacement module.
+1. Keep current engine as baseline.
+2. Add precision engine in sidecar mode.
+3. Run fixture comparisons for drift visibility.
+4. Switch only when acceptance thresholds are met.
 
-Important license warning:
+## Licensing Caution
 
-- The current [`pyswisseph` PyPI page](https://pypi.org/project/pyswisseph/) lists the package license as GNU Affero General Public License v3.
-- The [Swiss Ephemeris documentation](https://www.astro.com/swisseph-download/doc/swisseph.pdf) describes a dual licensing model: AGPL or Swiss Ephemeris Professional License.
+If evaluating `pyswisseph`, complete legal review before implementation or distribution decisions. Documentation alone does not authorize integration.
 
-That means Swiss Ephemeris must be reviewed for commercial, deployment, and architecture fit before any implementation.
+## Anti-Pattern Ban
 
-## Evaluation Questions
-
-Before adopting a new ephemeris engine, answer:
-
-- What license applies to the app's intended commercial deployment?
-- Is the engine embedded, called as a service, or used offline to generate fixtures?
-- Can Railway deploy it cleanly?
-- Does it require native binaries or ephemeris data files?
-- What are the performance and cold-start costs?
-- How does it compare against current `astronomy-engine` output?
-- How are timezones, geocoding, house systems, nodes, and ayanamsha handled?
-- What confidence flags change when birth time or location is missing?
-
-## Comparison Plan
-
-1. Build fixture profiles with known birth date, time, location, and timezone.
-2. Run the current engine.
-3. Run the candidate precision engine in a research branch only.
-4. Compare placements, houses, aspects, nodes, and degree-sensitive outputs.
-5. Document deltas and decide whether the improved precision justifies deployment and licensing complexity.
-
-## Decision Rule
-
-Do not upgrade ephemeris infrastructure until it improves user trust, traceability, or calculation precision without destabilizing the TestFlight path.
+Do not perform a wholesale backend rewrite as a first step for precision upgrades.
