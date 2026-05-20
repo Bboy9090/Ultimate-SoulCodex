@@ -1,66 +1,45 @@
-# Soul Codex Doctrine
+# Soul Codex Canonical Doctrine
 
-Ultimate Soul Codex is not just an astrology app.
+This directory is the canonical source of truth for Soul Codex product identity, boundaries, and reading quality standards.
 
-Soul Codex is a personal identity operating system: an everyday identity guide with a professional metaphysical calculation engine behind it. Astrology, numerology, Human Design, planetary placements, family imprints, moral compass, environment, and behavioral patterns are treated as layered signals inside one living profile.
+Soul Codex is not just an astrology app. Soul Codex is a personal identity operating system: simple enough for daily guidance, deep enough for full-spectrum identity decoding.
 
-The product promise:
+## Positioning Lock
 
-> A soul map that explains the human being, not just the horoscope.
+- Daily Guidance Mode: calm, useful, beginner-safe interpretation for everyday use.
+- Codex Engine Mode: transparent system depth for advanced users, skeptics, and builders.
+- One product, two surfaces: approachable front experience with a precise explanation engine underneath.
 
-## What This Directory Locks
+## Non-Negotiable Product Promise
 
-- Product doctrine: what Soul Codex is, who it serves, and what quality means.
-- System boundaries: what the app must not claim, diagnose, or imply.
-- Reading standards: how every output earns user trust.
-- Confidence rules: how missing birth time, location, and context are surfaced.
-- Explanation structure: how symbols become useful plain-language guidance.
-- Parent and family layer: how family context shapes imprint without becoming destiny.
+Every meaningful output should answer:
 
-## Core Principle
+1. What is this?
+2. Why does it matter?
+3. How does it show up in real life?
+4. What are the gifts?
+5. What are the shadows?
+6. What is the growth move?
+7. How confident is this?
+8. What data is missing?
 
-Every output must answer:
+## Canonical Documents
 
-- What is this?
-- Why does it matter?
-- How does it affect me?
-- Where does it help?
-- Where can it hurt?
-- What can I do with it?
-- How confident is this result?
+- [product-doctrine.md](./product-doctrine.md)
+- [system-boundaries.md](./system-boundaries.md)
+- [reading-quality-standard.md](./reading-quality-standard.md)
+- [confidence-rules.md](./confidence-rules.md)
+- [explanation-template.md](./explanation-template.md)
+- [parent-family-layer.md](./parent-family-layer.md)
 
-If a symbol, placement, number, gate, aspect, asteroid, or system cannot answer those questions, it is not ready for a user-facing Soul Codex reading.
+## Engine Planning Documents
 
-## Product Modes
+- [../engine/calculation-contract.md](../engine/calculation-contract.md)
+- [../engine/ephemeris-strategy.md](../engine/ephemeris-strategy.md)
+- [../engine/system-inputs.md](../engine/system-inputs.md)
+- [../engine/system-outputs.md](../engine/system-outputs.md)
+- [../engine/test-fixtures.md](../engine/test-fixtures.md)
 
-Soul Codex has two complementary modes:
+## Scope Guard
 
-- Everyday Guidance Mode: simple, calm, beautiful, emotionally useful, and beginner-friendly.
-- Codex Engine Mode: detailed, traceable, confidence-aware, and suitable for advanced users, builders, and skeptics.
-
-The home experience should feel useful, not like a math lab. The engine room should be precise, expandable, and honest about uncertainty.
-
-## Current Launch Boundary
-
-This doctrine supports the current React/Vite, Express, Railway, PostgreSQL, Gemini, and Capacitor iOS app. It does not authorize a rebuild.
-
-Immediate track:
-
-1. Keep the iOS TestFlight path stable.
-2. Add Soul Codex doctrine docs.
-3. Lock reading-quality rules.
-4. Build explanation library structure.
-5. Only then upgrade the calculation engine.
-
-## Related Docs
-
-- [Product Doctrine](./product-doctrine.md)
-- [System Boundaries](./system-boundaries.md)
-- [Reading Quality Standard](./reading-quality-standard.md)
-- [Confidence Rules](./confidence-rules.md)
-- [Explanation Template](./explanation-template.md)
-- [Parent And Family Layer](./parent-family-layer.md)
-- [Engine Calculation Contract](../engine/calculation-contract.md)
-- [Ephemeris Strategy](../engine/ephemeris-strategy.md)
-- [Existing Confidence Model](../../CONFIDENCE.md)
-- [Existing Output Schema v1](../../SOUL_CODEX_OUTPUT_SCHEMA_V1.md)
+This docs suite does not authorize runtime refactors by itself. It locks doctrine and contracts first so future implementation can stay coherent and testable.

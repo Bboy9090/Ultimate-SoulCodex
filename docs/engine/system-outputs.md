@@ -1,93 +1,45 @@
-# System Outputs
+# System Outputs Contract
 
-Soul Codex outputs should separate calculated facts from interpretation.
+## Purpose
 
-This document defines future-facing output categories only. It does not change current API shapes or database schemas.
+Define required output objects for daily guidance surface and advanced engine surface while preserving shared meaning and confidence transparency.
 
-## Calculated Fact Outputs
+## Daily Guidance Surface
 
-Calculated outputs should include:
+Required output traits:
+- concise focus
+- actionable do/don't guidance
+- watch-out pattern
+- decision guidance
+- visible confidence context
 
-- System name.
-- Technical label.
-- Value.
-- Degree or exact value when available.
-- Source inputs used.
-- Calculation engine used.
-- Confidence.
-- Confidence reason.
-- Trace notes.
-- Missing data limitations.
+Primary anchor:
+- `packages/core/soulcodex-v1/schema.ts` (`daily_guidance` and `confidence`)
 
-## Astrology Outputs
+## Advanced Engine Surface
 
-Future astrology outputs may include:
+Required output traits:
+- structured core-system snapshot
+- sectioned interpretation blocks
+- signal traceability at section level
+- confidence and uncertainty exposure
 
-- Sun, Moon, Ascendant.
-- Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto.
-- North Node and South Node.
-- Chiron.
-- Lilith.
-- Houses and house cusps.
-- Major aspects.
-- Dominant elements and modes.
-- Asteroids later.
-- Fixed stars later.
-- Transits and progressions later.
+Primary anchors:
+- `packages/core/soulcodex-v1/schema.ts`
+- `packages/core/soulcodex-v1/generate.ts`
+- `packages/core/soulcodex-v1/engine/types.ts`
 
-## Numerology Outputs
+## Confidence and Missing-Data Metadata
 
-Future numerology outputs may include:
+Every major output payload should carry:
+- chart/system confidence badge
+- overall confidence level
+- input summary with known missing precision fields
 
-- Life Path.
-- Expression.
-- Soul Urge.
-- Personality.
-- Birthday number.
-- Maturity number.
-- Personal year/month/day.
-- Name source and spelling confidence.
+Required behavior:
+- if precision is missing, outputs still render where valid
+- outputs must disclose limits instead of pretending full certainty
 
-## Human Design Outputs
+## Explanation Contract Coupling
 
-Future Human Design outputs may include:
-
-- Type.
-- Strategy.
-- Authority.
-- Profile.
-- Definition.
-- Centers.
-- Gates.
-- Channels.
-- Incarnation cross later.
-- Birth-time sensitivity notes.
-
-## Family And Context Outputs
-
-Family/context outputs may include:
-
-- Emotional climate.
-- Attachment imprint.
-- Boundary formation pattern.
-- Survival strategy.
-- Inherited expectations.
-- What to keep.
-- What to release.
-- Confidence and source notes.
-
-These outputs must never blame, diagnose, or define the user.
-
-## Explanation Outputs
-
-Every calculated or contextual output that reaches the user should be paired with a structured explanation:
-
-- What it is.
-- Why it matters.
-- How it shows up.
-- Gift.
-- Shadow.
-- Growth move.
-- Confidence.
-
-See [Explanation Template](../soul-codex/explanation-template.md).
+Symbol-level explanation templates in `docs/soul-codex/explanation-template.md` should remain compatible with structured output sections so daily and advanced surfaces do not contradict each other.
