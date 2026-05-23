@@ -103,7 +103,7 @@
       "DEMO_MODE"
     ],
     "ports": {
-      "default": 3000,
+      "default": 5000,
       "configurable": true
     }
   },

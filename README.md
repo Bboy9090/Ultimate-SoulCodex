@@ -98,7 +98,7 @@ DEMO_MODE=true
 SESSION_SECRET=your-secret-here
 ```
 
-This enables demo mode with an in-memory user (`demo@soulcodex.app` / `demo1234`).
+This enables demo mode with in-memory storage for local development.
 
 4. **Build workspace packages**
 ```bash
@@ -113,7 +113,7 @@ NODE_ENV=development npx tsx server/index.ts
 ```
 
 6. **Open the app**
-Navigate to `http://localhost:3000`
+Navigate to `http://localhost:5000`
 
 ### Production Build
 

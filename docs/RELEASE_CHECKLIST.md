@@ -130,7 +130,7 @@ This checklist ensures every release meets the "No Illusion" standard: features 
 - [ ] Rollback plan ready (previous version tagged in git)
 - [ ] Deployment to production:
   - [ ] Server starts without errors
-  - [ ] Health check endpoint responds (`/api/health` or similar)
+  - [ ] Health check endpoint responds (`/health`)
   - [ ] Database connection successful
   - [ ] AI synthesis works (test with one profile)
   - [ ] No 500 errors in server logs
@@ -205,7 +205,7 @@ A release is complete when:
 
 | Version | Date | Changes | Released By |
 |---------|------|---------|-------------|
-| 1.0.0   | TBD  | Reforged MVP foundation | Bobby's World |
+| 1.0.1   | TBD  | Reforged MVP foundation | Bobby's World |
 
 ---
 

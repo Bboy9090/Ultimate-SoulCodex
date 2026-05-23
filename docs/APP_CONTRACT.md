@@ -15,7 +15,7 @@ This document defines the explicit guarantees, boundaries, and behavioral promis
 - All astrological calculations use real ephemeris data (astronomy-engine library, NASA JPL data)
 - No lookup tables or fake planetary positions
 - Calculations are deterministic: same birth data = same chart output
-- All calculation confidence is explicitly labeled (high/medium/low/unknown)
+- All calculation confidence is explicitly labeled using the current runtime confidence values
 
 **What this means for you:**
 - Your birth chart is mathematically accurate to within 0.01 degrees
@@ -43,11 +43,9 @@ This document defines the explicit guarantees, boundaries, and behavioral promis
 
 **We guarantee:**
 - Every major reading section has a confidence indicator
-- Confidence is based on data availability:
-  - **High Confidence**: Birth date, time, and location all known
-  - **Medium Confidence**: Birth date and time known, location approximated
-  - **Low Confidence**: Birth date known, time/location missing (no Rising sign)
-  - **Unknown Confidence**: Insufficient data for calculation
+- Confidence uses the current runtime labels:
+  - **Overall confidence**: `high`, `medium`, or `low`
+  - **Section badges**: `verified`, `partial`, or `unverified`
 - Missing birth time explicitly degrades outputs (no Rising sign, no house cusps)
 
 **What this means for you:**
@@ -74,17 +72,17 @@ This document defines the explicit guarantees, boundaries, and behavioral promis
 
 ---
 
-### 5. Offline-First Where Possible
+### 5. Local Caching Boundaries
 
 **We guarantee:**
-- Once a reading is generated, it's cached locally (localStorage + service worker)
-- Core UI works offline (profile, journal, saved insights)
-- No unnecessary network requests after first load
+- Some client-side state can be cached locally where the current UI implements browser storage
+- Standard browser caching can speed repeat visits
+- Service-worker-based offline support is not currently guaranteed
 
 **What this means for you:**
-- Review your readings on a plane (no internet needed)
-- Journal entries are saved locally first, synced when online
-- Fast page loads after initial visit
+- Some previously loaded data may remain available in your browser
+- New readings and live calculations still require internet access
+- Repeat visits can feel faster after the first load
 
 **Exceptions:**
 - New readings require internet (AI synthesis, transit calculations)
