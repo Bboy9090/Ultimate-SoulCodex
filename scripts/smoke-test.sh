@@ -99,8 +99,11 @@ echo ""
 
 echo "1. Starting server..."
 
+PORT="${PORT:-5000}"
+BASE_URL="${BASE_URL:-http://localhost:$PORT}"
+
 # Start the server in background
-NODE_ENV=development npx tsx server/index.ts > /tmp/soulcodex-smoke-test.log 2>&1 &
+PORT="$PORT" NODE_ENV=development npx tsx server/index.ts > /tmp/soulcodex-smoke-test.log 2>&1 &
 SERVER_PID=$!
 
 test_pass "Server started (PID $SERVER_PID)"
