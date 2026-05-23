@@ -40,10 +40,10 @@ echo "1. Checking core configuration..."
 
 # Check Node.js version
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -eq 20 ]; then
-  check_pass "Node.js version is 20.x ($(node -v))"
+if [ "$NODE_VERSION" -ge 20 ]; then
+  check_pass "Node.js version is 20+ ($(node -v))"
 else
-  check_fail "Node.js version is $NODE_VERSION, expected 20.x"
+  check_fail "Node.js version is $NODE_VERSION, expected 20+"
 fi
 
 # Check if package.json exists
@@ -68,7 +68,7 @@ fi
 # Check SESSION_SECRET in .env
 if [ -f ".env" ]; then
   if grep -q "SESSION_SECRET=" .env; then
-    SESSION_SECRET=$(grep "SESSION_SECRET=" .env | cut -d'=' -f2)
+    SESSION_SECRET=$(grep "SESSION_SECRET=" .env | cut -d'=' -f2-)
     if [ -n "$SESSION_SECRET" ] && [ "$SESSION_SECRET" != "your-secret-here" ] && [ "$SESSION_SECRET" != "changeme" ]; then
       check_pass "SESSION_SECRET is set and not default"
     else
@@ -82,7 +82,7 @@ fi
 # Check DEMO_MODE setting
 if [ -f ".env" ]; then
   if grep -q "DEMO_MODE=" .env; then
-    DEMO_MODE=$(grep "DEMO_MODE=" .env | cut -d'=' -f2)
+    DEMO_MODE=$(grep "DEMO_MODE=" .env | cut -d'=' -f2-)
     if [ "$DEMO_MODE" = "true" ]; then
       check_warn "DEMO_MODE is enabled (in-memory storage, data not persisted)"
     else
@@ -94,7 +94,7 @@ fi
 # Check DATABASE_URL (optional)
 if [ -f ".env" ]; then
   if grep -q "DATABASE_URL=" .env; then
-    DATABASE_URL=$(grep "DATABASE_URL=" .env | cut -d'=' -f2)
+    DATABASE_URL=$(grep "DATABASE_URL=" .env | cut -d'=' -f2-)
     if [ -n "$DATABASE_URL" ]; then
       check_pass "DATABASE_URL is configured (database mode)"
     fi
@@ -107,14 +107,14 @@ fi
 AI_KEY_FOUND=false
 if [ -f ".env" ]; then
   if grep -q "GEMINI_API_KEY=" .env; then
-    GEMINI_KEY=$(grep "GEMINI_API_KEY=" .env | cut -d'=' -f2)
+    GEMINI_KEY=$(grep "GEMINI_API_KEY=" .env | cut -d'=' -f2-)
     if [ -n "$GEMINI_KEY" ]; then
       check_pass "GEMINI_API_KEY is configured"
       AI_KEY_FOUND=true
     fi
   fi
   if grep -q "OPENAI_API_KEY=" .env; then
-    OPENAI_KEY=$(grep "OPENAI_API_KEY=" .env | cut -d'=' -f2)
+    OPENAI_KEY=$(grep "OPENAI_API_KEY=" .env | cut -d'=' -f2-)
     if [ -n "$OPENAI_KEY" ]; then
       check_pass "OPENAI_API_KEY is configured"
       AI_KEY_FOUND=true
@@ -239,6 +239,24 @@ for page in "${PAGES[@]}"; do
   fi
 done
 
+ROUTES=(
+  "/welcome"
+  "/start"
+  "/profile"
+  "/today"
+  "/codex"
+  "/privacy"
+  "/terms"
+)
+
+for route in "${ROUTES[@]}"; do
+  if grep -Fq "<Route path=\"$route\"" client/src/App.tsx; then
+    check_pass "Route $route is registered"
+  else
+    check_fail "Route $route is not registered in client/src/App.tsx"
+  fi
+done
+
 # Check server entry point
 if [ -f "server/index.ts" ]; then
   check_pass "server/index.ts exists"
@@ -251,6 +269,12 @@ if [ -f "routes.ts" ]; then
   check_pass "routes.ts exists"
 else
   check_fail "routes.ts not found"
+fi
+
+if grep -Fq 'app.get("/api/journal/prompts"' routes.ts; then
+  check_pass "/api/journal/prompts endpoint is wired"
+else
+  check_fail "/api/journal/prompts endpoint is not wired"
 fi
 
 echo ""

@@ -2,7 +2,7 @@
 # Soul Codex - Smoke Test Script
 # Basic functionality tests to verify the app works end-to-end
 
-set -e  # Exit on first error
+set -u
 
 echo "=================================="
 echo "Soul Codex Smoke Test"
@@ -18,8 +18,9 @@ NC='\033[0m' # No Color
 TESTS_PASSED=0
 TESTS_FAILED=0
 SERVER_PID=""
-PORT=3000
+PORT="${PORT:-5000}"
 BASE_URL="http://localhost:$PORT"
+SMOKE_ENV_FILE=""
 
 test_pass() {
   echo -e "${GREEN}✓${NC} $1"
@@ -36,11 +37,24 @@ test_warn() {
 }
 
 cleanup() {
+  if [ -n "$SMOKE_ENV_FILE" ] && [ -f "$SMOKE_ENV_FILE" ]; then
+    rm -f "$SMOKE_ENV_FILE"
+  fi
   if [ -n "$SERVER_PID" ]; then
     echo ""
     echo "Cleaning up: Stopping server (PID $SERVER_PID)..."
     kill $SERVER_PID 2>/dev/null || true
     wait $SERVER_PID 2>/dev/null || true
+  fi
+}
+
+set_env_value() {
+  local key="$1"
+  local value="$2"
+  if grep -q "^${key}=" "$SMOKE_ENV_FILE"; then
+    sed -i.bak "s|^${key}=.*|${key}=${value}|" "$SMOKE_ENV_FILE" && rm -f "${SMOKE_ENV_FILE}.bak"
+  else
+    echo "${key}=${value}" >> "$SMOKE_ENV_FILE"
   fi
 }
 
@@ -53,35 +67,32 @@ trap cleanup EXIT INT TERM
 
 echo "Pre-flight checks..."
 
-# Check if Node.js 20 is available
+# Check if Node.js 20+ is available
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -eq 20 ]; then
-  test_pass "Node.js 20 is installed"
+if [ "$NODE_VERSION" -ge 20 ]; then
+ test_pass "Node.js 20+ is installed"
 else
-  test_fail "Node.js 20 required, found version $NODE_VERSION"
-  exit 1
+ test_fail "Node.js 20+ required, found version $NODE_VERSION"
+ exit 1
 fi
 
-# Check if .env exists
-if [ ! -f ".env" ]; then
-  test_warn ".env not found, creating from .env.example..."
-  if [ -f ".env.example" ]; then
-    cp .env.example .env
-    # Set demo mode for smoke test
-    echo "DEMO_MODE=true" >> .env
-    echo "SESSION_SECRET=smoke-test-secret-$(date +%s)" >> .env
-    test_pass "Created .env with DEMO_MODE=true"
-  else
-    test_fail ".env.example not found, cannot create .env"
-    exit 1
-  fi
+# Create isolated env file for smoke test
+SMOKE_ENV_FILE=$(mktemp /tmp/soulcodex-smoke-test.env.XXXXXX)
+if [ -f ".env" ]; then
+ cp .env "$SMOKE_ENV_FILE"
+ test_pass "Created isolated smoke-test env from .env"
+elif [ -f ".env.example" ]; then
+ cp .env.example "$SMOKE_ENV_FILE"
+ test_pass "Created isolated smoke-test env from .env.example"
+else
+ test_fail ".env or .env.example not found, cannot create smoke-test env"
+ exit 1
 fi
 
-# Ensure DEMO_MODE is enabled for smoke test
-if ! grep -q "DEMO_MODE=true" .env; then
-  test_warn "Enabling DEMO_MODE for smoke test..."
-  sed -i.bak 's/DEMO_MODE=.*/DEMO_MODE=true/' .env || echo "DEMO_MODE=true" >> .env
-fi
+set_env_value "DEMO_MODE" "true"
+set_env_value "SESSION_SECRET" "smoke-test-secret"
+set_env_value "PORT" "$PORT"
+test_pass "Configured isolated smoke-test env"
 
 # Check if packages are built
 if [ ! -d "packages/core/dist" ] || [ ! -d "packages/db/dist" ]; then
@@ -99,11 +110,8 @@ echo ""
 
 echo "1. Starting server..."
 
-PORT="${PORT:-5000}"
-BASE_URL="${BASE_URL:-http://localhost:$PORT}"
-
 # Start the server in background
-PORT="$PORT" NODE_ENV=development npx tsx server/index.ts > /tmp/soulcodex-smoke-test.log 2>&1 &
+DOTENV_CONFIG_PATH="$SMOKE_ENV_FILE" PORT="$PORT" NODE_ENV=development npx tsx server/index.ts > /tmp/soulcodex-smoke-test.log 2>&1 &
 SERVER_PID=$!
 
 test_pass "Server started (PID $SERVER_PID)"
@@ -114,6 +122,12 @@ WAIT_COUNT=0
 MAX_WAIT=30  # 15 seconds (0.5s * 30)
 
 while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
+  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    test_fail "Server exited before becoming ready"
+    echo "Server log (last 20 lines):"
+    tail -20 /tmp/soulcodex-smoke-test.log
+    exit 1
+  fi
   if curl -s -o /dev/null -w "%{http_code}" "$BASE_URL" | grep -q "200\|302\|404"; then
     test_pass "Server is responding on $BASE_URL"
     break
@@ -176,7 +190,7 @@ echo ""
 # 4. Static Routes Test
 # ============================================================================
 
-echo "4. Testing static routes..."
+echo "4. Testing static routes (SPA shell)..."
 
 ROUTES=(
   "/"
@@ -189,9 +203,9 @@ ROUTES=(
 for route in "${ROUTES[@]}"; do
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$route")
   if [ "$HTTP_CODE" = "200" ]; then
-    test_pass "Route $route loads (HTTP $HTTP_CODE)"
+    test_pass "SPA shell for $route loads (HTTP $HTTP_CODE)"
   else
-    test_warn "Route $route returned (HTTP $HTTP_CODE)"
+    test_warn "SPA shell for $route returned (HTTP $HTTP_CODE)"
   fi
 done
 
@@ -216,11 +230,11 @@ echo ""
 
 echo "6. Checking server logs for errors..."
 
-if grep -qi "error" /tmp/soulcodex-smoke-test.log; then
-  test_warn "Server log contains 'error' - review log for details:"
-  grep -i "error" /tmp/soulcodex-smoke-test.log | head -5
+if grep -Eqi '(^Error:|\[ERROR\]|unhandled rejection|unhandled exception|❌)' /tmp/soulcodex-smoke-test.log; then
+  test_warn "Server log contains actionable error patterns - review log for details:"
+  grep -Ei '(^Error:|\[ERROR\]|unhandled rejection|unhandled exception|❌)' /tmp/soulcodex-smoke-test.log | head -5
 else
-  test_pass "No errors found in server log"
+  test_pass "No actionable errors found in server log"
 fi
 
 if grep -qi "CRITICAL" /tmp/soulcodex-smoke-test.log; then

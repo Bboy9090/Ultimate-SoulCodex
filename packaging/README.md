@@ -22,11 +22,11 @@ npm run build:server
 **Deployment:**
 - Deploy `dist/` to any Node.js hosting (Vercel, Railway, Heroku, etc.)
 - Set environment variables (`SESSION_SECRET`, `DATABASE_URL`, etc.)
-- Ensure port 3000 is accessible (or configure via PORT env var)
+- Ensure port 5000 is accessible by default (or configure via PORT env var)
 
 **PWA Installation:**
 - Users can install from browser (Chrome: "Install App", Safari: "Add to Home Screen")
-- Service worker caches assets for offline use
+- Browser install prompts are available, but service-worker-based offline support is still planned
 
 ---
 
@@ -289,7 +289,7 @@ Before distributing any package:
 ## Update Mechanism
 
 ### Web/PWA
-- Automatic updates via service worker
+- Web updates are picked up on the next refresh/revisit (service worker support is still planned)
 - New version deployed, users get update on next visit
 - No user action required
 
