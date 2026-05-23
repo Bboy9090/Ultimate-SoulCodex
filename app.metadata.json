@@ -110,7 +110,7 @@
   "storage": {
     "userProfiles": {
       "type": "database or in-memory",
-      "encrypted": true,
+      "encryptedAtRest": "depends on DB/host configuration",
       "note": "Demo mode uses in-memory storage"
     },
     "journalEntries": {
