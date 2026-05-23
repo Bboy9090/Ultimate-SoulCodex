@@ -163,11 +163,6 @@
       "route": "/timeline",
       "name": "Timeline",
       "description": "Life transit timeline view"
-    },
-    {
-      "route": "/journal",
-      "name": "Journal (Pending)",
-      "description": "Guided reflection prompts (backend exists, frontend pending)"
     }
   ],
   "buildArtifacts": {
