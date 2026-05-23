@@ -1,0 +1,222 @@
+{
+  "appId": "com.bobbysworld.soulcodex",
+  "appName": "Soul Codex",
+  "appVersion": "1.0.0",
+  "appDescription": "A personal insight and journaling app for self-discovery",
+  "appTagline": "Your personal identity operating system",
+  "author": "Bobby's World",
+  "authorUrl": "https://bobbysworld.dev",
+  "repositoryUrl": "https://github.com/Bboy9090/Ultimate-SoulCodex",
+  "homepage": "https://soulcodex.app",
+  "license": "PROPRIETARY",
+  "platform": {
+    "web": {
+      "enabled": true,
+      "url": "https://soulcodex.app",
+      "pwa": true
+    },
+    "ios": {
+      "enabled": false,
+      "bundleId": "com.bobbysworld.soulcodex",
+      "appStoreId": null
+    },
+    "android": {
+      "enabled": false,
+      "packageName": "com.bobbysworld.soulcodex",
+      "playStoreId": null
+    },
+    "windows": {
+      "enabled": false,
+      "msixPackageId": "BobbysWorld.SoulCodex"
+    },
+    "blueprintOS": {
+      "enabled": true,
+      "packageId": "com.bobbysworld.soulcodex",
+      "category": "personal-growth"
+    }
+  },
+  "features": {
+    "profileOnboarding": {
+      "enabled": true,
+      "description": "Create your profile with birth data and behavioral patterns"
+    },
+    "readingDashboard": {
+      "enabled": true,
+      "description": "Multi-system synthesis of astrology, numerology, Human Design, Gene Keys"
+    },
+    "journalSystem": {
+      "enabled": true,
+      "backend": true,
+      "frontend": false,
+      "description": "100+ guided reflection prompts with mood tracking"
+    },
+    "savedInsights": {
+      "enabled": false,
+      "description": "Bookmark and revisit key reading sections"
+    },
+    "compatibility": {
+      "enabled": true,
+      "description": "Relationship synastry analysis between two charts"
+    },
+    "dailyContext": {
+      "enabled": true,
+      "description": "Daily transits, Gene Key, Tarot card, I Ching reading"
+    },
+    "aiSynthesis": {
+      "enabled": true,
+      "requiresApiKey": true,
+      "description": "AI-powered reading narrative generation"
+    },
+    "pdfExport": {
+      "enabled": true,
+      "description": "Export readings to PDF"
+    }
+  },
+  "requirements": {
+    "node": "20.x",
+    "npm": ">=10.0.0",
+    "database": {
+      "optional": true,
+      "type": "PostgreSQL",
+      "note": "Demo mode works without database"
+    },
+    "externalAPIs": {
+      "required": false,
+      "gemini": {
+        "optional": true,
+        "note": "AI synthesis requires GEMINI_API_KEY or OPENAI_API_KEY"
+      },
+      "openai": {
+        "optional": true,
+        "note": "Fallback for AI synthesis"
+      }
+    }
+  },
+  "configuration": {
+    "envVarsRequired": [
+      "SESSION_SECRET"
+    ],
+    "envVarsOptional": [
+      "DATABASE_URL",
+      "GEMINI_API_KEY",
+      "OPENAI_API_KEY",
+      "DEMO_MODE"
+    ],
+    "ports": {
+      "default": 3000,
+      "configurable": true
+    }
+  },
+  "storage": {
+    "userProfiles": {
+      "type": "database or in-memory",
+      "encrypted": true,
+      "note": "Demo mode uses in-memory storage"
+    },
+    "journalEntries": {
+      "type": "database or localStorage",
+      "encrypted": false,
+      "note": "Client-side encryption planned for v1.1"
+    },
+    "savedInsights": {
+      "type": "localStorage",
+      "encrypted": false
+    }
+  },
+  "screens": [
+    {
+      "route": "/",
+      "name": "Landing Page",
+      "description": "Welcome page for new users"
+    },
+    {
+      "route": "/start",
+      "name": "Onboarding",
+      "description": "Profile creation flow"
+    },
+    {
+      "route": "/profile",
+      "name": "Profile Page",
+      "description": "Complete birth chart and multi-system reading"
+    },
+    {
+      "route": "/today",
+      "name": "Today Page",
+      "description": "Daily context, transits, and guidance"
+    },
+    {
+      "route": "/codex",
+      "name": "Codex Reading",
+      "description": "AI-synthesized narrative reading"
+    },
+    {
+      "route": "/guide",
+      "name": "Soul Guide",
+      "description": "Interactive AI chat assistant"
+    },
+    {
+      "route": "/compat",
+      "name": "Compatibility",
+      "description": "Relationship synastry analysis"
+    },
+    {
+      "route": "/timeline",
+      "name": "Timeline",
+      "description": "Life transit timeline view"
+    },
+    {
+      "route": "/journal",
+      "name": "Journal (Pending)",
+      "description": "Guided reflection prompts (backend exists, frontend pending)"
+    }
+  ],
+  "buildArtifacts": {
+    "web": {
+      "outputDir": "dist/public",
+      "entryPoint": "dist/index.js"
+    },
+    "windows": {
+      "format": "MSIX",
+      "outputDir": "packaging/windows/",
+      "instructions": "packaging/README.md"
+    },
+    "blueprintOS": {
+      "format": "AppImage",
+      "outputDir": "packaging/blueprintos/",
+      "instructions": "packaging/README.md"
+    }
+  },
+  "healthcheck": {
+    "script": "scripts/healthcheck.sh",
+    "checks": [
+      "Core configuration validation",
+      "Storage path accessibility",
+      "Required screens/routes responding",
+      "Environment variables present"
+    ]
+  },
+  "smokeTest": {
+    "script": "scripts/smoke-test.sh",
+    "tests": [
+      "Server starts without errors",
+      "Landing page loads",
+      "Profile onboarding flow works",
+      "Reading generation succeeds",
+      "API endpoints respond correctly"
+    ]
+  },
+  "knownLimitations": [
+    "Journal UI page pending implementation",
+    "Saved insights UI pending implementation",
+    "No mobile native apps (PWA-first for MVP)",
+    "English only (no i18n/localization)",
+    "AI features require API keys"
+  ],
+  "releaseDate": null,
+  "minimumVersion": "1.0.0",
+  "releaseNotes": "Reforged MVP foundation with profile onboarding, reading dashboard, journal system backend, and saved insights schema.",
+  "supportContact": {
+    "email": "support@bobbysworld.dev",
+    "github": "https://github.com/Bboy9090/Ultimate-SoulCodex/issues"
+  }
+}
