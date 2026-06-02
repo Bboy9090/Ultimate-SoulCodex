@@ -2,6 +2,14 @@ import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { IconLogo, IconSparkles } from "./Icons";
 
+const goldPinkText: React.CSSProperties = {
+  background: "linear-gradient(135deg, #f6d3ad 0%, #e7b78f 30%, #f0a8d2 64%, #d9a6df 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  color: "#e6b995",
+};
+
 const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   useEffect(() => {
     const timer = setTimeout(() => onComplete(), 2600);
@@ -13,7 +21,7 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden"
       style={{
         backgroundImage:
-          "linear-gradient(180deg, rgba(13,6,16,0.06) 0%, rgba(13,6,16,0.26) 58%, rgba(8,4,10,0.54) 100%), url('/src/assets/soulcodex-nebula-hero.svg')",
+          "linear-gradient(180deg, rgba(13,6,16,0.00) 0%, rgba(13,6,16,0.14) 58%, rgba(8,4,10,0.38) 100%), url('/src/assets/soulcodex-nebula-hero.svg')",
         backgroundSize: "cover",
         backgroundPosition: "center top",
         backgroundRepeat: "no-repeat",
@@ -24,10 +32,21 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         aria-hidden="true"
         className="absolute inset-0 pointer-events-none"
         style={{
+          background:
+            "radial-gradient(ellipse 110% 28% at 18% 0%, rgba(247,219,228,0.58) 0%, rgba(220,165,229,0.38) 34%, transparent 76%), radial-gradient(ellipse 70% 26% at 90% 4%, rgba(156,79,194,0.48) 0%, transparent 78%), radial-gradient(ellipse 64% 32% at 50% 92%, rgba(226,181,221,0.36) 0%, rgba(94,42,126,0.32) 52%, transparent 82%)",
+          filter: "blur(9px)",
+          opacity: 0.96,
+        }}
+      />
+
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(229,182,140,0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(229,182,140,0.08) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(229,182,140,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(229,182,140,0.065) 1px, transparent 1px)",
           backgroundSize: "88px 88px",
-          opacity: 0.36,
+          opacity: 0.28,
         }}
       />
 
@@ -36,7 +55,7 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle at 50% 38%, rgba(232,185,149,0.24) 0%, rgba(169,95,158,0.14) 32%, transparent 66%)",
+            "radial-gradient(circle at 50% 38%, rgba(232,185,149,0.30) 0%, rgba(240,168,210,0.16) 32%, transparent 66%)",
         }}
       />
 
@@ -54,24 +73,24 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         >
           <span
             style={{
-              color: "rgba(240,210,184,0.78)",
-              fontSize: "0.68rem",
+              ...goldPinkText,
+              fontSize: "0.72rem",
               letterSpacing: "0.24em",
               textTransform: "uppercase",
-              fontWeight: 700,
+              fontWeight: 800,
             }}
           >
             Soul Codex
           </span>
-          <div style={{ height: 1, width: 72, background: "linear-gradient(90deg, transparent, rgba(230,185,149,0.72), transparent)" }} />
+          <div style={{ height: 1, width: 82, background: "linear-gradient(90deg, transparent, rgba(230,185,149,0.82), rgba(240,168,210,0.70), transparent)" }} />
         </motion.div>
 
         <div className="relative flex flex-col items-center">
           <motion.div
             aria-hidden="true"
-            className="absolute left-1/2 top-1/2 h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[90px]"
-            style={{ background: "rgba(217,155,117,0.24)" }}
-            animate={{ scale: [1, 1.08, 1], opacity: [0.42, 0.62, 0.42] }}
+            className="absolute left-1/2 top-1/2 h-[27rem] w-[27rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[88px]"
+            style={{ background: "radial-gradient(circle, rgba(217,155,117,0.30) 0%, rgba(240,168,210,0.18) 42%, transparent 72%)" }}
+            animate={{ scale: [1, 1.08, 1], opacity: [0.50, 0.72, 0.50] }}
             transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
           />
 
@@ -79,7 +98,7 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             initial={{ scale: 0.86, opacity: 0, filter: "blur(10px)" }}
             animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
             transition={{ delay: 0.35, duration: 1, type: "spring", stiffness: 62 }}
-            style={{ filter: "drop-shadow(0 0 34px rgba(230,185,149,0.72)) drop-shadow(0 0 76px rgba(169,95,158,0.34))" }}
+            style={{ filter: "drop-shadow(0 0 34px rgba(230,185,149,0.76)) drop-shadow(0 0 76px rgba(240,168,210,0.30))" }}
           >
             <IconLogo size={132} />
           </motion.div>
@@ -90,9 +109,9 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             transition={{ delay: 0.75, duration: 0.75 }}
             className="font-display mt-7 text-center text-5xl leading-none sm:text-6xl md:text-7xl"
             style={{
-              color: "#e6b995",
+              ...goldPinkText,
               letterSpacing: 0,
-              textShadow: "0 0 28px rgba(230,185,149,0.42), 0 0 58px rgba(126,57,167,0.30)",
+              textShadow: "0 0 28px rgba(230,185,149,0.42), 0 0 58px rgba(240,168,210,0.28)",
             }}
           >
             Soul<br />Codex
@@ -107,22 +126,23 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
               display: "inline-flex",
               alignItems: "center",
               gap: "0.55rem",
-              border: "1px solid rgba(230,185,149,0.34)",
+              border: "1px solid rgba(230,185,149,0.40)",
               borderRadius: 999,
-              background: "rgba(41,16,48,0.42)",
+              background: "rgba(41,16,48,0.44)",
               padding: "0.48rem 1rem",
-              color: "rgba(246,226,231,0.76)",
+              color: "rgba(246,226,231,0.80)",
               fontSize: "0.78rem",
+              boxShadow: "0 10px 34px rgba(15,6,20,0.30)",
             }}
           >
-            <IconSparkles size={14} style={{ color: "#e6b995" }} />
+            <IconSparkles size={14} style={{ color: "#f0a8d2" }} />
             <span>Opening your reading</span>
           </motion.div>
         </div>
 
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
+          animate={{ opacity: 0.78 }}
           transition={{ delay: 1.55, duration: 0.7 }}
           className="flex flex-col items-center gap-3"
         >
@@ -130,13 +150,13 @@ const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             {[0, 1, 2].map((i) => (
               <motion.span
                 key={i}
-                style={{ width: 8, height: 8, borderRadius: 999, background: "#e6b995", boxShadow: "0 0 12px rgba(230,185,149,0.55)" }}
+                style={{ width: 8, height: 8, borderRadius: 999, background: i === 1 ? "#f0a8d2" : "#e6b995", boxShadow: "0 0 12px rgba(230,185,149,0.55)" }}
                 animate={{ opacity: [0.3, 1, 0.3], scale: [0.86, 1.08, 0.86] }}
                 transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.16 }}
               />
             ))}
           </div>
-          <span style={{ color: "rgba(246,226,231,0.48)", fontSize: "0.66rem", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+          <span style={{ color: "rgba(246,226,231,0.52)", fontSize: "0.66rem", letterSpacing: "0.16em", textTransform: "uppercase" }}>
             Free to start · private · guided
           </span>
         </motion.div>
