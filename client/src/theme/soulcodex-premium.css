@@ -20,76 +20,50 @@ body,
 
 body {
   background:
-    radial-gradient(ellipse 96% 34% at 16% 8%, rgba(234, 198, 210, 0.36) 0%, rgba(208, 148, 204, 0.24) 32%, transparent 68%),
-    radial-gradient(ellipse 74% 26% at 82% 10%, rgba(136, 59, 172, 0.38) 0%, rgba(93, 36, 127, 0.32) 42%, transparent 78%),
-    radial-gradient(ellipse 64% 34% at 50% 31%, rgba(215, 155, 116, 0.17) 0%, rgba(135, 69, 149, 0.18) 38%, transparent 74%),
-    radial-gradient(ellipse 50% 36% at 17% 86%, rgba(212, 158, 204, 0.26) 0%, rgba(105, 53, 138, 0.34) 45%, transparent 80%),
-    radial-gradient(ellipse 54% 36% at 88% 84%, rgba(160, 82, 184, 0.34) 0%, rgba(57, 25, 87, 0.38) 48%, transparent 82%),
+    radial-gradient(ellipse 70% 38% at 50% 16%, rgba(149, 64, 177, 0.28) 0%, transparent 68%),
     linear-gradient(180deg, #16091b 0%, #241033 45%, #0c0711 100%);
   color: var(--foreground);
 }
 
 body::before {
-  opacity: 0.23;
+  opacity: 0.16;
   background-image:
-    radial-gradient(circle, rgba(245, 218, 188, 0.76) 1px, transparent 1px),
-    radial-gradient(circle, rgba(226, 183, 232, 0.40) 1px, transparent 1px);
+    radial-gradient(circle, rgba(245, 218, 188, 0.58) 1px, transparent 1px),
+    radial-gradient(circle, rgba(226, 183, 232, 0.30) 1px, transparent 1px);
   background-size: 92px 92px, 148px 148px;
   background-position: 0 0, 36px 54px;
 }
 
 body::after {
   background:
-    linear-gradient(rgba(223, 172, 124, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(223, 172, 124, 0.07) 1px, transparent 1px),
-    radial-gradient(ellipse 84% 22% at 18% 3%, rgba(238, 212, 218, 0.38) 0%, rgba(215, 158, 215, 0.28) 36%, transparent 75%),
-    radial-gradient(ellipse 62% 20% at 88% 5%, rgba(151, 64, 180, 0.42) 0%, rgba(82, 31, 122, 0.34) 42%, transparent 80%),
-    radial-gradient(ellipse 54% 24% at 23% 82%, rgba(213, 164, 214, 0.30) 0%, rgba(105, 56, 143, 0.34) 45%, transparent 82%),
-    radial-gradient(ellipse 60% 28% at 85% 79%, rgba(128, 57, 166, 0.36) 0%, rgba(219, 148, 135, 0.15) 45%, transparent 82%),
-    radial-gradient(ellipse 52% 18% at 56% 98%, rgba(230, 178, 171, 0.20) 0%, rgba(70, 33, 99, 0.28) 52%, transparent 84%),
-    linear-gradient(180deg, rgba(19, 8, 24, 0.18), rgba(10, 6, 14, 0.58));
-  background-size: 92px 92px, 92px 92px, auto, auto, auto, auto, auto, auto;
-  filter: blur(0.35px) saturate(1.06);
+    linear-gradient(rgba(223, 172, 124, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(223, 172, 124, 0.048) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(19, 8, 24, 0.12), rgba(10, 6, 14, 0.42));
+  background-size: 92px 92px, 92px 92px, auto;
   mix-blend-mode: normal;
-  opacity: 0.86;
+  opacity: 0.72;
 }
 
 .nebula-bg {
-  background:
-    radial-gradient(ellipse 98% 30% at 18% 4%, rgba(236, 210, 218, 0.40) 0%, rgba(213, 154, 214, 0.28) 34%, transparent 72%),
-    radial-gradient(ellipse 76% 26% at 88% 6%, rgba(147, 60, 181, 0.44) 0%, rgba(79, 30, 119, 0.36) 46%, transparent 82%),
-    radial-gradient(ellipse 74% 38% at 50% 26%, rgba(222, 160, 118, 0.20) 0%, rgba(122, 60, 148, 0.24) 42%, transparent 78%),
-    radial-gradient(ellipse 58% 34% at 16% 86%, rgba(216, 170, 219, 0.30) 0%, rgba(105, 58, 144, 0.38) 44%, transparent 82%),
-    radial-gradient(ellipse 64% 38% at 88% 84%, rgba(128, 57, 167, 0.42) 0%, rgba(218, 150, 133, 0.16) 46%, transparent 84%),
-    radial-gradient(ellipse 70% 28% at 52% 100%, rgba(218, 167, 205, 0.20) 0%, rgba(46, 21, 69, 0.34) 56%, transparent 86%),
-    linear-gradient(180deg, #150819 0%, #28113a 45%, #0b0610 100%);
+  background-image:
+    linear-gradient(180deg, rgba(13, 6, 16, 0.04) 0%, rgba(13, 6, 16, 0.18) 52%, rgba(8, 4, 10, 0.42) 100%),
+    url("../assets/soulcodex-nebula-hero.svg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-color: #100713;
 }
 
 .nebula-bg::before {
-  opacity: 0.42;
+  opacity: 0.30;
   background:
-    linear-gradient(rgba(229, 182, 140, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(229, 182, 140, 0.09) 1px, transparent 1px),
-    radial-gradient(ellipse 62% 16% at 16% 5%, rgba(245, 221, 224, 0.30) 0%, transparent 78%),
-    radial-gradient(ellipse 44% 18% at 84% 8%, rgba(168, 74, 190, 0.26) 0%, transparent 82%),
-    radial-gradient(ellipse 40% 18% at 20% 83%, rgba(221, 177, 224, 0.22) 0%, transparent 82%),
-    radial-gradient(ellipse 44% 20% at 84% 80%, rgba(151, 72, 177, 0.24) 0%, transparent 82%);
-  background-size: 88px 88px, 88px 88px, auto, auto, auto, auto;
+    linear-gradient(rgba(229, 182, 140, 0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(229, 182, 140, 0.08) 1px, transparent 1px);
+  background-size: 88px 88px, 88px 88px;
 }
 
 .nebula-bg::after {
-  content: "";
-  position: absolute;
-  inset: auto -8% -12% -8%;
-  height: 44%;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 46% 40% at 14% 62%, rgba(217, 174, 222, 0.38) 0%, rgba(116, 62, 150, 0.30) 46%, transparent 80%),
-    radial-gradient(ellipse 52% 42% at 88% 58%, rgba(126, 58, 169, 0.40) 0%, rgba(226, 157, 136, 0.16) 48%, transparent 82%),
-    radial-gradient(ellipse 38% 30% at 52% 90%, rgba(236, 188, 173, 0.21) 0%, transparent 76%);
-  filter: blur(12px) saturate(1.12);
-  opacity: 0.88;
-  z-index: 0;
+  display: none;
 }
 
 .gradient-text {
