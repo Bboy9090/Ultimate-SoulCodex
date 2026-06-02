@@ -36,17 +36,19 @@ body::before {
 
 body::after {
   background:
-    linear-gradient(rgba(223, 172, 124, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(223, 172, 124, 0.048) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(19, 8, 24, 0.12), rgba(10, 6, 14, 0.42));
+    linear-gradient(rgba(223, 172, 124, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(223, 172, 124, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(19, 8, 24, 0.08), rgba(10, 6, 14, 0.28));
   background-size: 92px 92px, 92px 92px, auto;
   mix-blend-mode: normal;
-  opacity: 0.72;
+  opacity: 0.55;
 }
 
 .nebula-bg {
+  position: relative;
+  isolation: isolate;
   background-image:
-    linear-gradient(180deg, rgba(13, 6, 16, 0.04) 0%, rgba(13, 6, 16, 0.18) 52%, rgba(8, 4, 10, 0.42) 100%),
+    linear-gradient(180deg, rgba(13, 6, 16, 0.00) 0%, rgba(13, 6, 16, 0.08) 52%, rgba(8, 4, 10, 0.24) 100%),
     url("../assets/soulcodex-nebula-hero.svg");
   background-size: cover;
   background-position: center top;
@@ -55,22 +57,41 @@ body::after {
 }
 
 .nebula-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   opacity: 0.30;
   background:
-    linear-gradient(rgba(229, 182, 140, 0.10) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(229, 182, 140, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(229, 182, 140, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(229, 182, 140, 0.065) 1px, transparent 1px);
   background-size: 88px 88px, 88px 88px;
 }
 
 .nebula-bg::after {
-  display: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 105% 28% at 18% 0%, rgba(247, 219, 228, 0.62) 0%, rgba(220, 165, 229, 0.45) 32%, rgba(109, 42, 148, 0.26) 58%, transparent 76%),
+    radial-gradient(ellipse 78% 24% at 92% 4%, rgba(156, 79, 194, 0.54) 0%, rgba(84, 33, 120, 0.34) 45%, transparent 78%),
+    radial-gradient(ellipse 54% 30% at 8% 86%, rgba(230, 188, 231, 0.50) 0%, rgba(139, 72, 176, 0.40) 45%, transparent 78%),
+    radial-gradient(ellipse 62% 34% at 92% 84%, rgba(141, 72, 180, 0.50) 0%, rgba(220, 150, 135, 0.18) 42%, transparent 80%),
+    radial-gradient(ellipse 76% 24% at 50% 104%, rgba(226, 181, 221, 0.30) 0%, rgba(35, 16, 50, 0.44) 55%, transparent 84%);
+  filter: blur(10px) saturate(1.12);
+  opacity: 0.96;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #f2c9a9 0%, #d89b75 38%, #d7a4d7 74%, #f0d2b8 100%);
+.gradient-text,
+.soulcodex-gold-pink-text {
+  background: linear-gradient(135deg, #f4d1ad 0%, #e6b995 32%, #f0a8d2 66%, #d7a4d7 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: #e6b995;
 }
 
 .mystical-glow {
