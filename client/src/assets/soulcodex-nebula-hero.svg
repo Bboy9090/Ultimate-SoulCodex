@@ -1,94 +1,99 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice">
   <defs>
     <radialGradient id="spaceGlow" cx="48%" cy="30%" r="72%">
-      <stop offset="0" stop-color="#d69792" stop-opacity="0.58"/>
-      <stop offset="0.28" stop-color="#8a3fa5" stop-opacity="0.52"/>
-      <stop offset="0.58" stop-color="#351650" stop-opacity="0.88"/>
+      <stop offset="0" stop-color="#d69792" stop-opacity="0.62"/>
+      <stop offset="0.28" stop-color="#8a3fa5" stop-opacity="0.56"/>
+      <stop offset="0.58" stop-color="#351650" stop-opacity="0.86"/>
       <stop offset="1" stop-color="#09050d"/>
     </radialGradient>
-    <radialGradient id="goldCore" cx="50%" cy="29%" r="26%">
-      <stop offset="0" stop-color="#f2c78e" stop-opacity="0.72"/>
-      <stop offset="0.42" stop-color="#c06c8e" stop-opacity="0.25"/>
+    <radialGradient id="goldCore" cx="50%" cy="29%" r="28%">
+      <stop offset="0" stop-color="#f2c78e" stop-opacity="0.78"/>
+      <stop offset="0.42" stop-color="#c06c8e" stop-opacity="0.30"/>
       <stop offset="1" stop-color="#120817" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="topCloud" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f1d4dd"/>
-      <stop offset="0.38" stop-color="#d49adf"/>
-      <stop offset="1" stop-color="#5a2083"/>
+      <stop offset="0" stop-color="#f7dbe4"/>
+      <stop offset="0.38" stop-color="#dba5e5"/>
+      <stop offset="1" stop-color="#6d2a94"/>
     </linearGradient>
     <linearGradient id="bottomCloud" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ddb1e0"/>
-      <stop offset="0.42" stop-color="#7a3aa0"/>
+      <stop offset="0" stop-color="#e6bce7"/>
+      <stop offset="0.42" stop-color="#8b48b0"/>
       <stop offset="1" stop-color="#1a0a29"/>
     </linearGradient>
-    <filter id="softCloud" x="-30%" y="-30%" width="160%" height="160%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.022" numOctaves="5" seed="23" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="48" xChannelSelector="R" yChannelSelector="G"/>
-      <feGaussianBlur stdDeviation="18"/>
+    <filter id="softCloud" x="-35%" y="-35%" width="170%" height="170%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.020" numOctaves="5" seed="23" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="62" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur stdDeviation="15"/>
     </filter>
     <filter id="fineNoise" x="0" y="0" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="9"/>
       <feColorMatrix type="saturate" values="0"/>
       <feComponentTransfer>
-        <feFuncA type="table" tableValues="0 0.08"/>
+        <feFuncA type="table" tableValues="0 0.06"/>
       </feComponentTransfer>
     </filter>
     <pattern id="grid" width="120" height="120" patternUnits="userSpaceOnUse">
-      <path d="M120 0H0V120" fill="none" stroke="#dba46d" stroke-opacity="0.22" stroke-width="1.2"/>
+      <path d="M120 0H0V120" fill="none" stroke="#dba46d" stroke-opacity="0.18" stroke-width="1.2"/>
     </pattern>
     <pattern id="stars" width="170" height="170" patternUnits="userSpaceOnUse">
-      <circle cx="24" cy="36" r="1.8" fill="#fff0dc" opacity="0.88"/>
-      <circle cx="112" cy="26" r="1.2" fill="#f0d2ff" opacity="0.7"/>
-      <circle cx="148" cy="118" r="1.7" fill="#ffe2ba" opacity="0.78"/>
-      <circle cx="72" cy="142" r="1" fill="#ffffff" opacity="0.56"/>
-      <circle cx="38" cy="112" r="0.9" fill="#e9c7f7" opacity="0.62"/>
+      <circle cx="24" cy="36" r="1.8" fill="#fff0dc" opacity="0.84"/>
+      <circle cx="112" cy="26" r="1.2" fill="#f0d2ff" opacity="0.66"/>
+      <circle cx="148" cy="118" r="1.7" fill="#ffe2ba" opacity="0.72"/>
+      <circle cx="72" cy="142" r="1" fill="#ffffff" opacity="0.50"/>
+      <circle cx="38" cy="112" r="0.9" fill="#e9c7f7" opacity="0.58"/>
     </pattern>
   </defs>
 
   <rect width="1080" height="1920" fill="url(#spaceGlow)"/>
-  <rect width="1080" height="1920" fill="url(#stars)" opacity="0.9"/>
-  <circle cx="540" cy="548" r="300" fill="url(#goldCore)"/>
+  <rect width="1080" height="1920" fill="url(#stars)" opacity="0.82"/>
+  <circle cx="540" cy="548" r="330" fill="url(#goldCore)"/>
 
-  <g filter="url(#softCloud)" opacity="0.92">
-    <ellipse cx="150" cy="56" rx="430" ry="210" fill="url(#topCloud)" opacity="0.88"/>
-    <ellipse cx="470" cy="40" rx="390" ry="190" fill="#dda9dd" opacity="0.72"/>
-    <ellipse cx="850" cy="66" rx="420" ry="230" fill="#6c278f" opacity="0.86"/>
-    <ellipse cx="965" cy="260" rx="270" ry="180" fill="#4a176b" opacity="0.58"/>
+  <g filter="url(#softCloud)" opacity="1">
+    <ellipse cx="70" cy="46" rx="520" ry="260" fill="url(#topCloud)" opacity="0.96"/>
+    <ellipse cx="390" cy="64" rx="500" ry="250" fill="#e6b8e8" opacity="0.88"/>
+    <ellipse cx="780" cy="52" rx="520" ry="270" fill="#9c4fc2" opacity="0.86"/>
+    <ellipse cx="1060" cy="142" rx="430" ry="270" fill="#542178" opacity="0.82"/>
+    <ellipse cx="460" cy="246" rx="470" ry="150" fill="#edc8d7" opacity="0.34"/>
+    <ellipse cx="850" cy="310" rx="360" ry="170" fill="#6e2a96" opacity="0.48"/>
+  </g>
+
+  <g opacity="0.70">
+    <path d="M0 330C116 250 210 242 326 294C463 356 520 274 656 260C805 246 895 344 1080 264V0H0Z" fill="#180a22" opacity="0.36"/>
+    <path d="M0 244C145 152 274 236 416 188C544 145 680 196 820 140C930 96 1006 146 1080 122V0H0Z" fill="#f4dce4" opacity="0.20"/>
+  </g>
+
+  <g filter="url(#softCloud)" opacity="1">
+    <ellipse cx="80" cy="1558" rx="430" ry="310" fill="url(#bottomCloud)" opacity="0.92"/>
+    <ellipse cx="340" cy="1678" rx="520" ry="330" fill="#a86bcc" opacity="0.82"/>
+    <ellipse cx="715" cy="1666" rx="460" ry="300" fill="#8d48b4" opacity="0.76"/>
+    <ellipse cx="980" cy="1538" rx="430" ry="320" fill="#703194" opacity="0.90"/>
+    <ellipse cx="1110" cy="1768" rx="400" ry="290" fill="#32154b" opacity="0.84"/>
+    <ellipse cx="560" cy="1890" rx="640" ry="210" fill="#231032" opacity="0.82"/>
+    <ellipse cx="185" cy="1815" rx="360" ry="170" fill="#e2b5dd" opacity="0.30"/>
+    <ellipse cx="850" cy="1810" rx="330" ry="160" fill="#c788c8" opacity="0.22"/>
   </g>
 
   <g opacity="0.58">
-    <path d="M0 282C116 218 203 232 311 272C449 321 520 257 640 250C790 241 886 321 1080 250V0H0Z" fill="#180a22" opacity="0.45"/>
-    <path d="M0 232C145 154 277 231 408 188C529 148 676 183 807 143C928 106 1001 144 1080 130V0H0Z" fill="#f0d8df" opacity="0.12"/>
+    <path d="M0 1498C96 1438 170 1500 262 1488C364 1475 418 1406 545 1494C646 1564 721 1498 810 1448C902 1396 996 1424 1080 1485V1920H0Z" fill="#e2b7e5" opacity="0.46"/>
+    <path d="M0 1704C145 1628 252 1672 396 1682C532 1691 620 1628 754 1652C880 1674 958 1678 1080 1604V1920H0Z" fill="#14081f" opacity="0.52"/>
   </g>
 
-  <g filter="url(#softCloud)" opacity="0.96">
-    <ellipse cx="120" cy="1618" rx="350" ry="250" fill="url(#bottomCloud)" opacity="0.8"/>
-    <ellipse cx="410" cy="1700" rx="410" ry="260" fill="#9b67c0" opacity="0.62"/>
-    <ellipse cx="850" cy="1605" rx="360" ry="260" fill="#703194" opacity="0.78"/>
-    <ellipse cx="1050" cy="1755" rx="330" ry="250" fill="#32154b" opacity="0.82"/>
-    <ellipse cx="620" cy="1870" rx="540" ry="170" fill="#231032" opacity="0.82"/>
-  </g>
-
-  <g opacity="0.42">
-    <path d="M0 1540C98 1482 170 1530 262 1510C360 1488 425 1424 540 1507C641 1580 722 1516 808 1465C895 1412 990 1447 1080 1510V1920H0Z" fill="#dcaedf" opacity="0.34"/>
-    <path d="M0 1725C145 1647 251 1683 395 1699C534 1714 620 1640 752 1668C879 1695 953 1692 1080 1620V1920H0Z" fill="#14081f" opacity="0.66"/>
-  </g>
-
-  <rect width="1080" height="1920" fill="url(#grid)" opacity="0.9"/>
-  <g fill="none" stroke="#dba46d" stroke-opacity="0.28" stroke-width="1.15">
+  <rect width="1080" height="1920" fill="url(#grid)" opacity="0.82"/>
+  <g fill="none" stroke="#dba46d" stroke-opacity="0.24" stroke-width="1.15">
     <path d="M540 156L1008 966H72Z"/>
     <path d="M540 966L1008 156H72Z"/>
-    <circle cx="540" cy="760" r="246" opacity="0.44"/>
-    <circle cx="540" cy="760" r="156" opacity="0.32"/>
+    <circle cx="540" cy="760" r="246" opacity="0.38"/>
+    <circle cx="540" cy="760" r="156" opacity="0.28"/>
     <path d="M72 966L540 156L1008 966L72 966Z"/>
   </g>
 
-  <g opacity="0.86" stroke="#fff4df" stroke-width="2">
-    <path d="M218 1312h74M255 1275v74" opacity="0.8"/>
-    <path d="M676 560h54M703 533v54" opacity="0.62"/>
-    <path d="M914 1516h74M951 1479v74" opacity="0.72"/>
+  <g opacity="0.82" stroke="#fff4df" stroke-width="2">
+    <path d="M218 1312h74M255 1275v74" opacity="0.72"/>
+    <path d="M676 560h54M703 533v54" opacity="0.58"/>
+    <path d="M914 1516h74M951 1479v74" opacity="0.66"/>
   </g>
 
-  <rect width="1080" height="1920" fill="#08040b" opacity="0.18"/>
-  <rect width="1080" height="1920" filter="url(#fineNoise)" opacity="0.6"/>
+  <rect width="1080" height="1920" fill="#08040b" opacity="0.10"/>
+  <rect width="1080" height="1920" filter="url(#fineNoise)" opacity="0.55"/>
 </svg>
