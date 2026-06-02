@@ -405,7 +405,7 @@ export default function OnboardingPage() {
           <p className="oracle-text" style={{ fontSize: "1rem", opacity: 0.82, marginBottom: "2rem" }}>{archetypeTagline}</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
             <button className="btn btn-primary" style={{ height: "4rem" }} onClick={() => navigate("/today")}>Enter Dashboard</button>
-            <button className="btn btn-secondary" style={{ height: "4rem" }} onClick={() => navigate("/compatibility")}>View Compatibility</button>
+            <button className="btn btn-secondary" style={{ height: "4rem" }} onClick={() => navigate("/compat")}>View Compatibility</button>
             <button className="btn btn-secondary" style={{ height: "4rem" }} onClick={() => navigate("/profile")}>View Soul Map</button>
           </div>
         </div>
