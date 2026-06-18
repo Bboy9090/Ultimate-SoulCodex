@@ -12,15 +12,16 @@ This document defines the explicit guarantees, boundaries, and behavioral promis
 ### 1. Truth in Calculation
 
 **We guarantee:**
-- All astrological calculations use real ephemeris data (astronomy-engine library, NASA JPL data)
+- Astrological calculations use astronomy-engine for deterministic planetary position data
 - No lookup tables or fake planetary positions
 - Calculations are deterministic: same birth data = same chart output
 - All calculation confidence is explicitly labeled using the current runtime confidence values
 
 **What this means for you:**
-- Your birth chart is mathematically accurate to within 0.01 degrees
+- Planetary positions are calculated using astronomy-engine and are deterministic for the same birth data
+- Precision validation against golden fixtures is tracked separately
 - Missing birth time reduces confidence but doesn't produce fake data
-- You can verify outputs against professional ephemeris software (Swiss Ephemeris, etc.)
+- Sections that depend on exact birth time, location-sensitive chart angles, houses, or unresolved historical timezone rules must be labeled with reduced confidence
 
 ---
 
