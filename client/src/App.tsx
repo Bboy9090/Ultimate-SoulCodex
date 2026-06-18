@@ -33,12 +33,11 @@ import ErrorBoundary from "./components/ErrorBoundary";
 
 function hasProfileData(): boolean {
   try {
-    const p = localStorage.getItem("soulProfile");
-    const g = localStorage.getItem("soulGuestProfile");
     const isGuest = localStorage.getItem("soulIsGuest") === "true";
-    
-    if (isGuest) return !!g && g !== "undefined" && g !== "null";
-    return !!p && p !== "undefined" && p !== "null";
+    const raw = localStorage.getItem(isGuest ? "soulGuestProfile" : "soulProfile");
+    if (!raw || raw === "undefined" || raw === "null") return false;
+    const parsed = JSON.parse(raw);
+    return !!parsed && typeof parsed === "object";
   } catch {
     return false;
   }
@@ -49,6 +48,7 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [hydrated, setHydrated] = useState(false);
   const hasProfile = hasProfileData();
+  const isOnboardingRoute = location === "/start" || location === "/welcome";
 
   useEffect(() => {
     // Basic hydration check to ensure localStorage is accessible
@@ -112,8 +112,8 @@ export default function App() {
       <CosmicBackground />
       <div className="sacred-geometry" />
       
-      {/* Sidebar - Only visible if profile exists */}
-      {hasProfile && <Nav />}
+      {/* Sidebar - Only visible after a valid profile and never during onboarding */}
+      {hasProfile && !isOnboardingRoute && <Nav />}
       
       <main style={{ flex: 1, position: "relative", minWidth: 0 }}>
         <Suspense fallback={<CosmicLoader fullPage label="Loading Dimension..." />}>
