@@ -1,99 +1,166 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import { CosmicBackground } from "./CosmicBackground";
+import { IconLogo, IconSparkles } from "./Icons";
+
+const goldPinkText: React.CSSProperties = {
+  background: "linear-gradient(135deg, #f6d3ad 0%, #e7b78f 30%, #f0a8d2 64%, #d9a6df 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  color: "#e6b995",
+};
 
 const SplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   useEffect(() => {
-    const timer = setTimeout(() => onComplete(), 3500);
+    const timer = setTimeout(() => onComplete(), 2600);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#080415] overflow-hidden">
-      {/* Background Layer: High-Fidelity Cosmic Depth */}
-      <div className="absolute inset-0 z-0">
-        <CosmicBackground />
-      </div>
+    <div
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage:
+          "linear-gradient(180deg, rgba(13,6,16,0.00) 0%, rgba(13,6,16,0.14) 58%, rgba(8,4,10,0.38) 100%), url('/src/assets/soulcodex-nebula-hero.svg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+        backgroundRepeat: "no-repeat",
+        backgroundColor: "#100713",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 110% 28% at 18% 0%, rgba(247,219,228,0.58) 0%, rgba(220,165,229,0.38) 34%, transparent 76%), radial-gradient(ellipse 70% 26% at 90% 4%, rgba(156,79,194,0.48) 0%, transparent 78%), radial-gradient(ellipse 64% 32% at 50% 92%, rgba(226,181,221,0.36) 0%, rgba(94,42,126,0.32) 52%, transparent 82%)",
+          filter: "blur(9px)",
+          opacity: 0.96,
+        }}
+      />
 
-      {/* Atmospheric Glow: Pink/Purple Wash */}
-      <div className="absolute inset-0 z-[5] pointer-events-none" style={{
-        background: "radial-gradient(circle at 50% 50%, rgba(123, 97, 255, 0.15) 0%, rgba(255, 0, 255, 0.1) 40%, transparent 80%)",
-        mixBlendMode: "screen"
-      }} />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(229,182,140,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(229,182,140,0.065) 1px, transparent 1px)",
+          backgroundSize: "88px 88px",
+          opacity: 0.28,
+        }}
+      />
 
-      {/* Main Content Container */}
-      <motion.div 
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 38%, rgba(232,185,149,0.30) 0%, rgba(240,168,210,0.16) 32%, transparent 66%)",
+        }}
+      />
+
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1.5 }}
-        className="relative z-10 flex flex-col items-center justify-between h-full py-16 px-4 w-full"
+        transition={{ duration: 0.8 }}
+        className="relative z-10 flex h-full w-full flex-col items-center justify-between px-5 py-14 text-center"
       >
-        {/* Top: Branding */}
         <motion.div
-          initial={{ y: -20, opacity: 0 }}
+          initial={{ y: -12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 1 }}
-          className="flex flex-col items-center"
+          transition={{ delay: 0.25, duration: 0.7 }}
+          className="flex flex-col items-center gap-3"
         >
-          <span className="font-display text-[#E0B0FF] text-xs md:text-sm tracking-[0.4em] uppercase font-bold opacity-80">
-            Bobbysworld presents
+          <span
+            style={{
+              ...goldPinkText,
+              fontSize: "0.72rem",
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              fontWeight: 800,
+            }}
+          >
+            Soul Codex
           </span>
-          <div className="h-px w-12 bg-gradient-to-r from-transparent via-[#FF00FF] to-transparent mt-4 opacity-40" />
+          <div style={{ height: 1, width: 82, background: "linear-gradient(90deg, transparent, rgba(230,185,149,0.82), rgba(240,168,210,0.70), transparent)" }} />
         </motion.div>
 
-        {/* Center: Title (The mirror of the world) */}
-        <div className="flex flex-col items-center relative">
-          {/* Backglow for the title */}
-          <motion.div 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[40vh] bg-[#7B61FF] rounded-full opacity-20 blur-[100px] pointer-events-none"
-            animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.15, 0.25, 0.15]
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        <div className="relative flex flex-col items-center">
+          <motion.div
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 h-[27rem] w-[27rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[88px]"
+            style={{ background: "radial-gradient(circle, rgba(217,155,117,0.30) 0%, rgba(240,168,210,0.18) 42%, transparent 72%)" }}
+            animate={{ scale: [1, 1.08, 1], opacity: [0.50, 0.72, 0.50] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
           />
 
-          <motion.h1
-            initial={{ scale: 0.8, opacity: 0, filter: "blur(10px)" }}
+          <motion.div
+            initial={{ scale: 0.86, opacity: 0, filter: "blur(10px)" }}
             animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
-            transition={{ delay: 0.8, duration: 1.2, type: "spring", stiffness: 50 }}
-            className="font-display text-4xl sm:text-6xl md:text-8xl text-white uppercase font-black text-center leading-none"
-            style={{ 
-              letterSpacing: "-0.02em",
-              textShadow: "0 0 30px rgba(255, 0, 255, 0.6), 0 0 60px rgba(123, 97, 255, 0.4)"
+            transition={{ delay: 0.35, duration: 1, type: "spring", stiffness: 62 }}
+            style={{ filter: "drop-shadow(0 0 34px rgba(230,185,149,0.76)) drop-shadow(0 0 76px rgba(240,168,210,0.30))" }}
+          >
+            <IconLogo size={132} />
+          </motion.div>
+
+          <motion.h1
+            initial={{ y: 14, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.75, duration: 0.75 }}
+            className="font-display mt-7 text-center text-5xl leading-none sm:text-6xl md:text-7xl"
+            style={{
+              ...goldPinkText,
+              letterSpacing: 0,
+              textShadow: "0 0 28px rgba(230,185,149,0.42), 0 0 58px rgba(240,168,210,0.28)",
             }}
           >
-            Ultimate <br />
-            <span className="gradient-text">Soul Codex</span>
+            Soul<br />Codex
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 0.6, y: 0 }}
-            transition={{ delay: 1.5, duration: 1 }}
-            className="mt-6 font-serif italic text-white/60 text-sm md:text-lg tracking-widest uppercase"
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.15, duration: 0.7 }}
+            style={{
+              marginTop: "1.35rem",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.55rem",
+              border: "1px solid rgba(230,185,149,0.40)",
+              borderRadius: 999,
+              background: "rgba(41,16,48,0.44)",
+              padding: "0.48rem 1rem",
+              color: "rgba(246,226,231,0.80)",
+              fontSize: "0.78rem",
+              boxShadow: "0 10px 34px rgba(15,6,20,0.30)",
+            }}
           >
-            The Visionary Mirror of the World
-          </motion.p>
+            <IconSparkles size={14} style={{ color: "#f0a8d2" }} />
+            <span>Opening your reading</span>
+          </motion.div>
         </div>
 
-        {/* Bottom: Credits (Fine Print) */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.35 }}
-          transition={{ delay: 2, duration: 1 }}
-          className="flex flex-col items-center"
+          animate={{ opacity: 0.78 }}
+          transition={{ delay: 1.55, duration: 0.7 }}
+          className="flex flex-col items-center gap-3"
         >
-          <span className="font-sans text-[6px] md:text-[8px] text-white/40 tracking-[0.3em] uppercase text-center max-w-[280px]">
-            Bobbysworld presents Ultimate Soul Codex created in bobbys workshop 2025 (squint to see it)
+          <div style={{ display: "flex", gap: 8 }}>
+            {[0, 1, 2].map((i) => (
+              <motion.span
+                key={i}
+                style={{ width: 8, height: 8, borderRadius: 999, background: i === 1 ? "#f0a8d2" : "#e6b995", boxShadow: "0 0 12px rgba(230,185,149,0.55)" }}
+                animate={{ opacity: [0.3, 1, 0.3], scale: [0.86, 1.08, 0.86] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.16 }}
+              />
+            ))}
+          </div>
+          <span style={{ color: "rgba(246,226,231,0.52)", fontSize: "0.66rem", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+            Free to start · private · guided
           </span>
         </motion.div>
       </motion.div>
-
-      {/* Lens Flare Overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-30 mix-blend-screen overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[radial-gradient(circle,_rgba(255,255,255,0.4)_0%,_transparent_70%)] blur-3xl rotate-45" />
-      </div>
     </div>
   );
 };
