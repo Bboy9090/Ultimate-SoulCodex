@@ -72,3 +72,11 @@ out/
 
 # pnpm lock (optional)
 # pnpm-lock.yaml
+
+# Local npm/package-manager cache artifacts
+npm_cache/
+.npm/
+
+# Local npm/package-manager cache artifacts
+npm_cache/
+.npm/
