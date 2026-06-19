@@ -127,6 +127,7 @@ export default function App() {
             <Route path="/guide" component={SoulGuidePage} />
             <Route path="/tracker" component={TrackerPage} />
             <Route path="/compat" component={CompatibilityPage} />
+            <Route path="/compatibility" component={CompatibilityPage} />
             <Route path="/timeline" component={TimelinePage} />
             <Route path="/horoscope" component={DailyHoroscopePage} />
             <Route path="/poster" component={PosterPage} />
