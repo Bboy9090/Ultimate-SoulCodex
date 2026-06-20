@@ -46,12 +46,37 @@ _Last updated: 2026-06-20 (astronomy-engine hardening pass)_
 ## ❓ Untested (no claim made)
 
 - Compatibility full `analyze` flow now exercised + hardened (see above). Remaining untested: the 15 advanced systems on the onboarding path (intentionally unbuilt).
-- Premium / Stripe entitlements and paid report generation.
 - AI Soul Guide with real provider keys (only fallback path tested).
 - Push notifications (VAPID), PDF generation, email capture.
 - Capacitor native (iOS) runtime; transit endpoints behind auth (function-level smoke only).
 
 ---
+
+## Premium / entitlement (audited 2026-06-20)
+
+The plumbing is real; the front door is fake. Stripe is intentionally removed
+(App Store compliance) — current monetization path is **access-code entitlement**.
+
+| Aspect | Status |
+|---|---|
+| Entitlement source of truth (`entitlement-service.ts`) | ✅ Real — override → Stripe → access code → legacy → none; memoized 5 min. |
+| `/api/entitlements` status endpoint | ✅ Real — owner bypass + session + entitlement. |
+| Access-code redemption (`/api/access-codes/validate`) | ✅ Real — validates active/expiry/maxUses, persists redemption + usage increment, flags session + profile, clears cache. |
+| PDF generation (`server/natalReportPdf.ts`, pdfkit) | ✅ Real — natal wheel + sections; routes send `application/pdf`. |
+| Admin access-code management | ✅ Real. |
+| Stripe payment | ⚪ N/A — removed by design (mock checkout returns success, `confirmSubscription` always true, webhooks no-op). Not "broken." |
+| Backend gating consistency | 🟡 Inconsistent — mix of `entitlementService`, `req.user.subscriptionStatus==="premium"`, `session.isPremium`, "logged-in only." |
+| Frontend premium pages | 🟡 Trust `localStorage.soulPremium` (`if (cachedPremium) setIsPremium(true)`) — cached client flag overrides backend truth. |
+| "Upgrade" button (`PricingPage.handlePurchase`) | ❌ Fake — no backend call; just sets `localStorage.soulPremium=true` + navigate. |
+| User-facing access-code redemption UI | ❌ Missing — only Admin can create codes; the real entitlement path is unreachable for normal users. |
+| `/api/natal-report` | ❌ Ungated — anyone can POST profile data and get the premium PDF. |
+| Frontend↔backend premium agreement | ❌ Mismatch — localStorage unlock shows premium UI, but account-gated PDF endpoints 401 for anonymous users. |
+| Cancel / restore flow | ⚪ None (access codes don't cancel). |
+| Test-mode safety | ✅ Safe by removal (no Stripe keys, no charge path) — but premium has zero integrity (free via the localStorage flip). |
+
+Fix order (tracked on `claude/harden-premium`): remove fake unlock → real access-code
+redemption UI → single `requirePremium` guard (incl. `/api/natal-report`) →
+frontend trusts `/api/entitlements` → PDF smoke validation. Stripe stays mocked.
 
 ## Routes / pages validated this pass
 - API: `/api/health`, `/api/soul-archetype` (known + unknown time), `/api/today/card`, `/api/astro/fullchart`.
