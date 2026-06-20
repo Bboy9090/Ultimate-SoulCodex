@@ -42,6 +42,8 @@ function buildPromptForType(
   const phase = timeline?.phase || timeline?.currentPhase || "current phase";
   const focus = dailyCard?.focus || "one grounded next step";
 
+  const birthTimeKnown = !!risingSign;
+
   const profileBlock = `
 User Profile:
 - Archetype: ${archetype}
@@ -50,9 +52,9 @@ ${lifePath ? `- Life Path: ${lifePath}` : ""}
 ${hdType ? `- Human Design: ${hdType}${hdStrategy ? ` (Strategy: ${hdStrategy})` : ""}` : ""}
 ${primaryElement ? `- Element (Elemental Medicine): ${primaryElement}` : ""}
 - Phase: ${phase}
-- Focus: ${focus}`.trim();
+- Focus: ${focus}${!birthTimeKnown ? `\n\nBIRTH TIME UNKNOWN — Rising sign, ascendant behavior, house placements, and house-based timing are unavailable. Do not infer, guess, or mention them. If relevant, state that those layers require an exact birth time.` : ""}`.trim();
 
-  const systemPrompt = buildSoulCodexSystemPrompt({ includePatternDetection: true });
+  const systemPrompt = buildSoulCodexSystemPrompt({ includePatternDetection: true, birthTimeKnown });
 
   switch (type) {
     case "soul_guide":
@@ -82,7 +84,7 @@ ${primaryElement ? `- Element (Elemental Medicine): ${primaryElement}` : ""}
     case "biography":
       return {
         systemPrompt,
-        prompt: `${profileBlock}\n\nWrite a 2-3 paragraph first-person behavioral profile. Reference Sun, Moon, Rising, Life Path, Human Design, and Element by name. Every sentence must describe something observable.`,
+        prompt: `${profileBlock}\n\nWrite a 2-3 paragraph first-person behavioral profile. Reference Sun, Moon, ${birthTimeKnown ? "Rising, " : ""}Life Path, Human Design, and Element by name where available. Every sentence must describe something observable.`,
       };
 
     case "compatibility":
