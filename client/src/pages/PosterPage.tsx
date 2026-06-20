@@ -96,11 +96,14 @@ export default function PosterPage() {
 
   /* Fetch entitlement status on mount */
   useEffect(() => {
-    const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
-    if (cachedPremium) setIsPremium(true);
+    // Backend is the only source of truth; localStorage is never a standalone unlock.
     apiFetch("/api/entitlements")
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.isPremium) setIsPremium(true); })
+      .then((d) => {
+        const premium = !!d?.isPremium;
+        setIsPremium(premium);
+        try { premium ? localStorage.setItem("soulPremium", "true") : localStorage.removeItem("soulPremium"); } catch {}
+      })
       .catch(() => {});
   }, []);
 

@@ -116,14 +116,17 @@ export default function BlueprintPage() {
 
   const checkEntitlements = (p: any) => {
     setEntitlementError(false);
-    const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
-    if (cachedPremium) setIsPremium(true);
+    // Backend is the only source of truth. localStorage is never a standalone unlock.
     apiFetch("/api/entitlements")
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then((d) => { if (d?.isPremium) setIsPremium(true); })
+      .then((d) => {
+        const premium = !!d?.isPremium;
+        setIsPremium(premium);
+        try { premium ? localStorage.setItem("soulPremium", "true") : localStorage.removeItem("soulPremium"); } catch {}
+      })
       .catch((err) => {
         console.warn("[blueprint] entitlements fetch failed:", err);
-        setEntitlementError(true);
+        setEntitlementError(true); // locked: backend truth unavailable
       })
       .finally(() => setPremiumChecked(true));
   };

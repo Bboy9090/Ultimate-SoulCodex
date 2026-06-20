@@ -428,7 +428,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(error, res, "GetEntitlements");
     }
   });
-  
+
+  // ── Single premium guard ──
+  // The one source of truth for gating premium endpoints. Mirrors /api/entitlements:
+  // owner bypass → session flag → entitlement service (access code / subscription /
+  // legacy). Returns 403 when not entitled. Apply this to every premium route.
+  const requirePremium = async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user?.id;
+      const sessionId = req.sessionID;
+
+      const ownerProfileId = process.env.OWNER_PROFILE_ID;
+      if (ownerProfileId && userId) {
+        try {
+          const dbProfile = await storage.getProfileByUserId(userId);
+          if (dbProfile?.id === ownerProfileId) return next();
+        } catch (e) {
+          console.warn("[requirePremium] Owner lookup failed:", e);
+        }
+        if (userId === ownerProfileId) return next();
+      }
+
+      if ((req.session as any)?.isPremium) return next();
+
+      if (userId || sessionId) {
+        const status = await entitlementService.getUserPremiumStatus({ userId, sessionId });
+        if (status.isPremium) return next();
+      }
+
+      return res.status(403).json({
+        message: "Premium access required.",
+        code: "PREMIUM_REQUIRED",
+        upgrade: "/pricing",
+      });
+    } catch (error) {
+      return handleError(error, res, "requirePremium");
+    }
+  };
+
   // Generate soul archetype (standalone endpoint for frontend)
   app.post("/api/soul-archetype", async (req, res) => {
     try {
@@ -3238,14 +3275,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PDF Generation Endpoints
-  app.post("/api/pdf/profile", async (req, res) => {
+  app.post("/api/pdf/profile", requirePremium, async (req, res) => {
     try {
       const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      const profile = await storage.getProfileByUserId(userId);
+      // Account users resolve by userId; session-premium (anonymous) users pass a profileId.
+      const profile = userId
+        ? await storage.getProfileByUserId(userId)
+        : (req.body?.profileId ? await storage.getProfile(req.body.profileId) : null);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
@@ -3479,7 +3515,7 @@ ${contextData}
   });
 
   // ── Natal Chart + Human Design PDF report ───────────────────────────────
-  app.post("/api/natal-report", async (req, res) => {
+  app.post("/api/natal-report", requirePremium, async (req, res) => {
     try {
       const { profile, astrologyData, humanDesignData } = req.body;
       if (!profile) return res.status(400).json({ error: "profile required" });
@@ -3652,13 +3688,8 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
     }
   });
 
-  app.post("/api/pdf/compatibility", async (req, res) => {
+  app.post("/api/pdf/compatibility", requirePremium, async (req, res) => {
     try {
-      const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
       const { profile1Id, profile2Id } = req.body;
       if (!profile1Id || !profile2Id) {
         return res.status(400).json({ message: "profile1Id and profile2Id are required" });
