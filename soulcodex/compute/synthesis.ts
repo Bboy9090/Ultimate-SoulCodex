@@ -341,6 +341,30 @@ function buildRecognitionMoment(s: SoulSignals, v: number): string {
   return pool[v % pool.length];
 }
 
+/**
+ * Deterministic per-field fallbacks. Used only when a builder + cleanup somehow
+ * yields fewer than 3 words, so the UI never receives an empty or stub value.
+ */
+const FIELD_FALLBACK: Record<string, string> = {
+  myPattern:           "I read the pattern beneath the surface before I commit my energy to a direction.",
+  stressPattern:       "Under pressure I narrow my focus and protect my signal until the noise settles.",
+  relationshipPattern: "I let people in slowly, weighing trust against the long game before I open the door.",
+  recognitionMoment:   "I tell myself I'm protecting my peace, even when I'm really avoiding the harder conversation.",
+  powerMode:           "I discover the specific architecture I was built to build, and I build it without asking permission.",
+  contradiction:       "I crave deep connection, yet I withdraw the moment that connection asks something of me.",
+  lifeConsequence:     "People call me first in a crisis, but they forget me first once things become stable.",
+  patternInterruption: "The loop only breaks when I act before the logic feels completely safe.",
+  loopSentence:        "I follow my pattern, feel the cost, and only move cleanly once I interrupt the loop.",
+  moralNotes:          "I hold a clear internal line and I feel it the moment someone crosses it.",
+  growthEdge:          "My instinct to protect my energy can isolate me from the people who would actually help.",
+};
+
+function guard(value: string, key: string): string {
+  const words = (value || "").split(/\s+/).filter(Boolean);
+  if (words.length >= 3) return value;
+  return FIELD_FALLBACK[key] ?? value;
+}
+
 export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesis {
   // Deterministic variety key based on the unique seed (name)
   const seedStr = signals.seed + (signals.sunSign || "") + (signals.lifePath || 0);
@@ -353,21 +377,26 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
 
   const syn: Synthesis = {
     codename:            `${archetype.name.split(' ')[0]} ${archetype.role}`,
-    myPattern:           cleanup(buildMyPattern(signals, archetype, vIdx)),
-    stressPattern:       cleanup(buildStressPattern(signals, archetype, vIdx)),
-    relationshipPattern: cleanup(buildRelationshipPattern(signals, archetype, vIdx)),
-    recognitionMoment:   cleanup(buildRecognitionMoment(signals, vIdx)),
+    myPattern:           guard(cleanup(buildMyPattern(signals, archetype, vIdx)), "myPattern"),
+    stressPattern:       guard(cleanup(buildStressPattern(signals, archetype, vIdx)), "stressPattern"),
+    relationshipPattern: guard(cleanup(buildRelationshipPattern(signals, archetype, vIdx)), "relationshipPattern"),
+    recognitionMoment:   guard(cleanup(buildRecognitionMoment(signals, vIdx)), "recognitionMoment"),
     moralCode:           deriveMoralCode(signals.pressureStyle, signals.nonNegotiables),
-    powerMode:           cleanup(buildPowerMode(signals)),
-    growthEdges:         buildGrowthEdges(signals).map(cleanup),
-    contradiction:       cleanup(buildContradiction(signals, vIdx)),
-    lifeConsequence:     cleanup(buildLifeConsequence(signals, vIdx)),
-    patternInterruption: cleanup(buildPatternInterruption(signals, vIdx)),
-    loopSentence:        cleanup(buildLoopSentence(signals, vIdx)),
+    powerMode:           guard(cleanup(buildPowerMode(signals)), "powerMode"),
+    growthEdges:         buildGrowthEdges(signals).map(cleanup).filter(e => e.split(/\s+/).filter(Boolean).length >= 3),
+    contradiction:       guard(cleanup(buildContradiction(signals, vIdx)), "contradiction"),
+    lifeConsequence:     guard(cleanup(buildLifeConsequence(signals, vIdx)), "lifeConsequence"),
+    patternInterruption: guard(cleanup(buildPatternInterruption(signals, vIdx)), "patternInterruption"),
+    loopSentence:        guard(cleanup(buildLoopSentence(signals, vIdx)), "loopSentence"),
   };
 
-  // Clean up moral code notes as well
-  syn.moralCode.notes = cleanup(syn.moralCode.notes);
+  // Clean up moral code notes as well, with a guard so it is never a stub.
+  syn.moralCode.notes = guard(cleanup(syn.moralCode.notes), "moralNotes");
+
+  // Guarantee at least one growth edge.
+  if (syn.growthEdges.length === 0) {
+    syn.growthEdges = [FIELD_FALLBACK.growthEdge];
+  }
 
   // Final deduplication check across semantic groups
   const lines = [syn.myPattern, syn.stressPattern, syn.relationshipPattern, syn.contradiction];
@@ -381,30 +410,48 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
 }
 
 /**
- * FINAL CLEANUP: Removes any raw signals or AI leakage that escaped the router.
+ * FINAL CLEANUP: Removes raw signal leakage that escaped the router WITHOUT
+ * mutilating legitimate prose.
+ *
+ * The previous implementation used case-insensitive `[a-z]` prefix strips (which
+ * also matched capitals) and removed plain English words like "fix"/"talk"/
+ * "chaos" anywhere in a sentence. That could shred a full sentence down to a
+ * single-letter stub like "T." reaching the UI. This version only targets
+ * pipe-delimited raw-signal artifacts and concatenated signal tokens, and
+ * guards against ever emitting a stub.
  */
 function cleanup(text: string): string {
   if (!text) return "";
-  
-  // 1. Remove greedy system prefixes like 'hj|1221-12-12|fix|chaoschaos' or 'rg | 1990... | talkwithdraw'
-  let cleaned = text.replace(/^[a-z]{2,3}\s*\|[^A-Z]+(?=[A-Z])/i, "");
-  
-  // 2. If it still starts with artifacts
-  cleaned = cleaned.replace(/^[a-z|,\s]+(?=[A-Z])/i, "").trim();
+  const original = text.trim();
+  let cleaned = original;
 
-  // 3. Purge specific leakage tokens
-  const leakage = [
-    /chaosrepetition/gi, /talkwithdraw/gi, /chaoschaos/gi,
-    /chaos/gi, /repetition/gi, /fix/gi, /withdraw/gi,
-    /talk/gi, /analyze/gi, /hj\s*\|/gi, /rg\s*\|/gi
-  ];
-  
-  leakage.forEach(pat => {
-    cleaned = cleaned.replace(pat, "");
-  });
+  // 1. Remove pipe-delimited raw-signal leakage only (e.g. "hj | 1990-01-01 | fix | chaoschaos | ...").
+  //    Requires a pipe, so normal prose is never touched.
+  if (cleaned.includes("|")) {
+    cleaned = cleaned.replace(/^\s*[a-z]{2,3}\s*\|.*?\|\s*/i, "");
+    cleaned = cleaned.replace(/\|/g, " ");
+  }
 
-  // 4. Final Polish
-  cleaned = cleaned.replace(/^[,|.\s]+/, "").trim();
+  // 2. Remove concatenated raw-signal tokens — these are never real English words.
+  cleaned = cleaned.replace(/\b(chaoschaos|chaosrepetition|talkwithdraw)\b/gi, "");
+
+  // 3. Strip JS artifacts that indicate missing data.
+  cleaned = cleaned
+    .replace(/\[object object\]/gi, "")
+    .replace(/\bundefined\b/g, "")
+    .replace(/\bnull\b/g, "");
+
+  // 4. Collapse whitespace and trim leading punctuation.
+  cleaned = cleaned.replace(/\s{2,}/g, " ").replace(/^[\s,.:;—|-]+/, "").trim();
+
+  // 5. GUARD: the builders always return full sentences, so anything under
+  //    3 words / 12 chars means cleanup over-stripped — fall back to the
+  //    original (de-piped) text rather than emit a stub.
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length < 3 || cleaned.length < 12) {
+    cleaned = original.replace(/\|/g, " ").replace(/\s{2,}/g, " ").trim();
+  }
+
   if (!cleaned) return "";
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }

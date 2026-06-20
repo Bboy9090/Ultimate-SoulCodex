@@ -60,6 +60,7 @@ import { SubscriptionService } from "./services/subscription-service";
 import { entitlementService } from "./services/entitlement-service";
 import { runWithTimeoutAndTiming, TIMEOUT_VALUES } from "./utils/timeout";
 import { buildSoulProfile } from "./soulcodex/index";
+import { deterministicArchetypeProfile } from "./services/deterministic-fallback";
 import type { UserInputs } from "./soulcodex/types";
 import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
@@ -559,7 +560,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("[SoulArchetype] Astrology calculation failed:", error);
       }
-      
+
+      // ── Normalize astrology to a single flat shape and never return silent null. ──
+      // calculateAstrology() returns { sunSign, moonSign, risingSign, houses }.
+      // The provider (astroResult) returns { sun, moon, rising } as STRING signs.
+      // Fall back from the detailed calc to the provider chart, then flatten.
+      const timeKnown = !!validatedBirthData.birthTime;
+      if (!astrologyData && astroResult) {
+        astrologyData = astroResult;
+      }
+      let astrologyStatus: { state: "full" | "partial" | "unavailable"; reason: string };
+      if (astrologyData) {
+        const a: any = astrologyData;
+        const sunSign = a.sunSign ?? a.sun;
+        const moonSign = a.moonSign ?? a.moon;
+        // Honesty rule: Rising sign is ONLY valid with a known birth time. Never estimate it.
+        const risingSign = timeKnown ? (a.risingSign ?? a.rising) : undefined;
+        const housesAvailable = timeKnown && hasCompleteData && !!(a.houses || a.housesAvailable);
+
+        if (!sunSign && !moonSign) {
+          astrologyData = null;
+          astrologyStatus = {
+            state: "unavailable",
+            reason: "The astrology engine returned no placements for the provided birth date. Check the date is valid (YYYY-MM-DD).",
+          };
+        } else {
+          astrologyData = { ...a, sunSign, moonSign, risingSign, housesAvailable };
+          if (!timeKnown) {
+            astrologyStatus = {
+              state: "partial",
+              reason: "Birth time unknown — Sun and Moon are calculated; Rising sign and houses are omitted, not estimated.",
+            };
+          } else if (!hasCompleteData) {
+            astrologyStatus = {
+              state: "partial",
+              reason: "Birth location or timezone is incomplete — Sun and Moon are calculated; houses are omitted.",
+            };
+          } else {
+            astrologyStatus = {
+              state: "full",
+              reason: "Full birth data — Sun, Moon, Rising, and houses are calculated.",
+            };
+          }
+        }
+      } else {
+        astrologyStatus = {
+          state: "unavailable",
+          reason: "Astrology could not be calculated. Provide a valid birth date (add birth time and location to unlock Rising sign and houses).",
+        };
+      }
+
       let numerologyData;
       try {
         numerologyData = calculateNumerology(validatedBirthData.name, validatedBirthData.birthDate);
@@ -755,10 +805,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           goals: req.body.goals ?? [],
         };
 
-        // Use astroResult (full chart) as fallback if simplified calculation failed
-        const sunSign = astrologyData?.sunSign || (astroResult as any)?.sun?.sign;
-        const moonSign = astrologyData?.moonSign || (astroResult as any)?.moon?.sign;
-        const risingSign = astrologyData?.risingSign || (astroResult as any)?.rising?.sign;
+        // astrologyData is already normalized + provider-backed above.
+        // (Provider returns sun/moon/rising as strings; calc returns *Sign fields.)
+        const sunSign = astrologyData?.sunSign || (astroResult as any)?.sun;
+        const moonSign = astrologyData?.moonSign || (astroResult as any)?.moon;
+        // Rising only when birth time is known — never estimated.
+        const risingSign = timeKnown ? (astrologyData?.risingSign || (astroResult as any)?.rising) : undefined;
 
         soulCodexResult = buildSoulProfile(soulInputs, {
           sunSign,
@@ -814,6 +866,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         savedProfile = { id: `temp_${Date.now()}` };
       }
 
+      // Deterministic fill so the core reading is NEVER empty/stubbed without AI.
+      const fill = deterministicArchetypeProfile({
+        sunSign: astrologyData?.sunSign,
+        moonSign: astrologyData?.moonSign,
+        lifePath: numerologyData?.lifePath,
+        element: elementalMedicineData?.primaryElement || (soulCodexResult?.profile.archetype as any)?.element,
+        archetypeName: soulCodexResult?.profile.archetype?.name || soulArchetypeData?.name,
+      });
+      const coreStrengths = (soulArchetypeData?.strengths?.length ? soulArchetypeData.strengths : fill.strengths);
+      const shadowAspects = (soulArchetypeData?.shadows?.length ? soulArchetypeData.shadows : fill.shadows);
+
       // Build response in the format expected by frontend
       const response = {
         id: savedProfile?.id ?? null,
@@ -823,16 +886,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         birthTime: validatedBirthData.birthTime || "",
         birthLocation: validatedBirthData.birthLocation || "",
         astrologyData: astrologyData ?? null,
+        astrologyStatus,
         humanDesignData: humanDesignData ?? null,
         soul_frequency: soulArchetypeData?.soulFrequency || {
           frequency: "432 Hz",
           resonance: "Harmonic",
           vibration: "High"
         },
-        who_i_am: soulArchetypeData?.firstPersonBio || "You are a unique soul with a distinct pattern unlike any other.",
-        core_strengths: soulArchetypeData?.strengths || [],
-        shadow_aspects: soulArchetypeData?.shadows || [],
-        purpose: soulArchetypeData?.purpose || "To bridge ideas and action in the real world.",
+        who_i_am: soulArchetypeData?.firstPersonBio || fill.bio,
+        core_strengths: coreStrengths,
+        shadow_aspects: shadowAspects,
+        purpose: soulArchetypeData?.purpose || fill.purpose,
         soul_architecture: {
           foundation: astrologyData?.sunSign || "Astrological Big 3",
           structure: humanDesignData?.type || "Human Design Type",
