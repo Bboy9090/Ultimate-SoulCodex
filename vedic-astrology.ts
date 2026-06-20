@@ -1,4 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
+const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 import { fromZonedTime } from 'date-fns-tz';
 
 // Lahiri Ayanamsa for sidereal zodiac conversion (approximate for current era)
@@ -259,37 +260,37 @@ export function calculateVedicAstrology(params: {
   const zonedDate = fromZonedTime(new Date(dateTimeParts), timezone);
   
   // Calculate planetary positions (tropical)
-  const sunVec = Astronomy.GeoVector(Astronomy.Body.Sun, zonedDate, false);
-  const sunEcl = Astronomy.Ecliptic(sunVec);
-  const moonVec = Astronomy.GeoVector(Astronomy.Body.Moon, zonedDate, false);
-  const moonEcl = Astronomy.EclipticGeoMoon ? Astronomy.EclipticGeoMoon(zonedDate) : Astronomy.Ecliptic(moonVec);
-  const mercuryVec = Astronomy.GeoVector(Astronomy.Body.Mercury, zonedDate, false);
-  const mercuryEcl = Astronomy.Ecliptic(mercuryVec);
-  const venusVec = Astronomy.GeoVector(Astronomy.Body.Venus, zonedDate, false);
-  const venusEcl = Astronomy.Ecliptic(venusVec);
-  const marsVec = Astronomy.GeoVector(Astronomy.Body.Mars, zonedDate, false);
-  const marsEcl = Astronomy.Ecliptic(marsVec);
-  const jupiterVec = Astronomy.GeoVector(Astronomy.Body.Jupiter, zonedDate, false);
-  const jupiterEcl = Astronomy.Ecliptic(jupiterVec);
-  const saturnVec = Astronomy.GeoVector(Astronomy.Body.Saturn, zonedDate, false);
-  const saturnEcl = Astronomy.Ecliptic(saturnVec);
+  const sunVec = Astro.GeoVector(Astro.Body.Sun, zonedDate, false);
+  const sunEcl = Astro.Ecliptic(sunVec);
+  const moonVec = Astro.GeoVector(Astro.Body.Moon, zonedDate, false);
+  const moonEcl = Astro.EclipticGeoMoon ? Astro.EclipticGeoMoon(zonedDate) : Astro.Ecliptic(moonVec);
+  const mercuryVec = Astro.GeoVector(Astro.Body.Mercury, zonedDate, false);
+  const mercuryEcl = Astro.Ecliptic(mercuryVec);
+  const venusVec = Astro.GeoVector(Astro.Body.Venus, zonedDate, false);
+  const venusEcl = Astro.Ecliptic(venusVec);
+  const marsVec = Astro.GeoVector(Astro.Body.Mars, zonedDate, false);
+  const marsEcl = Astro.Ecliptic(marsVec);
+  const jupiterVec = Astro.GeoVector(Astro.Body.Jupiter, zonedDate, false);
+  const jupiterEcl = Astro.Ecliptic(jupiterVec);
+  const saturnVec = Astro.GeoVector(Astro.Body.Saturn, zonedDate, false);
+  const saturnEcl = Astro.Ecliptic(saturnVec);
   
   // Calculate Rahu (North Node) and Ketu (South Node) - PROPER CALCULATION
   // Rahu = Moon's North Node (Ascending Node) in sidereal zodiac
   // Ketu = Moon's South Node (Descending Node) in sidereal zodiac
   // Uses proper lunar node calculation matching Western astrology standard
   const observer: Astronomy.Observer = { latitude, longitude, height: 0 };
-  const nodeEvent = Astronomy.SearchMoonNode(zonedDate);
+  const nodeEvent = Astro.SearchMoonNode(zonedDate);
   const nodeTime = nodeEvent.time.date;
   const daysSinceNode = (zonedDate.getTime() - nodeTime.getTime()) / (1000 * 60 * 60 * 24);
   const nodeRetrogradeDegrees = daysSinceNode * 0.0529; // Moon nodes move ~0.0529° per day retrograde
   
-  const currentMoonEq = Astronomy.Equator(Astronomy.Body.Moon, nodeTime, observer, true, true);
-  const currentMoonEcl = Astronomy.Ecliptic(currentMoonEq.vec);
+  const currentMoonEq = Astro.Equator(Astro.Body.Moon, nodeTime, observer, true, true);
+  const currentMoonEcl = Astro.Ecliptic(currentMoonEq.vec);
   const nodeAtEventLongitude = currentMoonEcl.elon;
   
   let northNodeLongitudeTropical = (nodeAtEventLongitude - nodeRetrogradeDegrees + 360) % 360;
-  if (nodeEvent.kind !== Astronomy.NodeEventKind.Ascending) {
+  if (nodeEvent.kind !== Astro.NodeEventKind.Ascending) {
     northNodeLongitudeTropical = (northNodeLongitudeTropical + 180) % 360;
   }
   
@@ -298,7 +299,7 @@ export function calculateVedicAstrology(params: {
   const ketuLongitude = (rahuLongitude + 180) % 360;
   
   // Calculate ascendant (sidereal) - simplified calculation
-  const siderealTime = Astronomy.SiderealTime(zonedDate);
+  const siderealTime = Astro.SiderealTime(zonedDate);
   const ascendantTropical = siderealTime * 15; // Convert hours to degrees
   const ascendantSidereal = tropicalToSidereal(ascendantTropical);
   

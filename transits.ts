@@ -1,4 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
+const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
 export interface Transit {
   planet: string;
@@ -83,8 +84,8 @@ const TRANSIT_INTERPRETATIONS: Record<string, Record<string, string>> = {
 };
 
 function calculatePlanetaryPosition(planet: string, date: Date): { longitude: number, sign: string, degree: number } {
-  const body = Astronomy.Body[planet as keyof typeof Astronomy.Body];
-  const ecliptic = Astronomy.EclipticGeoMoon(date);
+  const body = Astro.Body[planet as keyof typeof Astro.Body];
+  const ecliptic = Astro.EclipticGeoMoon(date);
   
   // Get heliocentric position for outer planets
   let longitude = 0;
@@ -92,9 +93,9 @@ function calculatePlanetaryPosition(planet: string, date: Date): { longitude: nu
   if (planet === 'Moon') {
     longitude = ecliptic.lon;
   } else {
-    const helioVector = Astronomy.HelioVector(body, date);
-    const geoVector = Astronomy.GeoVector(body, date, false);
-    const eclipticCoords = Astronomy.Ecliptic(geoVector);
+    const helioVector = Astro.HelioVector(body, date);
+    const geoVector = Astro.GeoVector(body, date, false);
+    const eclipticCoords = Astro.Ecliptic(geoVector);
     longitude = eclipticCoords.elon;
   }
   
