@@ -40,19 +40,18 @@ export default function SoulGuidePage() {
 
   // Fetch usage on mount so returning users see the right state
   useEffect(() => {
-    const cachedPremium = (() => { try { return localStorage.getItem("soulPremium") === "true"; } catch { return false; } })();
-    if (cachedPremium) setIsPremium(true);
-    
+    // Backend is the only source of truth; localStorage is never a standalone unlock.
     const hasLocalProfile = !!getProfileContext();
     apiFetch(`/api/chat/soul-guide/usage?hasProfile=${hasLocalProfile}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d) return;
-        const premium = d.isPremium || cachedPremium;
+        const premium = !!d.isPremium;
         const limit = d.limit ?? (hasLocalProfile ? 2 : 1);
         setIsPremium(premium);
         setFreeLimit(limit);
         setQuestionsUsed(d.used ?? 0);
+        try { premium ? localStorage.setItem("soulPremium", "true") : localStorage.removeItem("soulPremium"); } catch {}
         if (!premium && (d.used ?? 0) >= limit) {
           setIsLimitReached(true);
         }

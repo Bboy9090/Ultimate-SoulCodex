@@ -1,18 +1,21 @@
 import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  IconArrowLeft, IconShield, IconZap, IconSparkles, 
-  IconCheckCircle, IconLoader 
+import {
+  IconArrowLeft, IconShield, IconZap, IconSparkles,
+  IconCheckCircle, IconLoader
 } from "../components/Icons";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { apiFetch } from "../lib/queryClient";
 
 export default function PricingPage() {
   const isIOS = Capacitor.getPlatform() === "ios";
   const [, navigate] = useLocation();
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const benefits = [
     "Full 30-40 page Personal Dossier (PDF)",
@@ -22,20 +25,47 @@ export default function PricingPage() {
     "Zero ads, forever"
   ];
 
-  const handlePurchase = async () => {
+  const getProfileId = (): string | undefined => {
+    try { return JSON.parse(localStorage.getItem("soulProfile") || "null")?.profileId; }
+    catch { return undefined; }
+  };
+
+  // Real entitlement: redeem an access code against the backend. Premium is only
+  // ever granted server-side (session + entitlement); localStorage is written
+  // ONLY after /api/entitlements confirms — never as a standalone unlock.
+  const handleRedeem = async () => {
+    const trimmed = code.trim();
+    if (!trimmed) { setError("Enter your access code."); return; }
+    setError(null);
     setIsVerifying(true);
-    // Beta/Reviewer Auto-Unlock
-    // This allows App Store reviewers and beta testers to access premium features
-    // without requiring a live StoreKit connection during the final audit phase.
-    setTimeout(() => {
+    try {
+      const res = await apiFetch("/api/access-codes/validate", {
+        method: "POST",
+        body: JSON.stringify({ code: trimmed, profileId: getProfileId() }),
+      });
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok || !data?.success) {
+        setIsVerifying(false);
+        setError(data?.message || "Invalid or expired access code.");
+        return;
+      }
+      // Confirm with backend truth before reflecting any premium state in the UI.
+      const ent = await apiFetch("/api/entitlements")
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      if (ent?.isPremium) {
+        try { localStorage.setItem("soulPremium", "true"); } catch {}
+        setIsVerifying(false);
+        setIsSuccess(true);
+        setTimeout(() => navigate("/profile"), 1800);
+      } else {
+        setIsVerifying(false);
+        setError("Code accepted but premium did not activate. Please refresh and try again.");
+      }
+    } catch {
       setIsVerifying(false);
-      setIsSuccess(true);
-      try {
-        localStorage.setItem("soulPremium", "true");
-        // Force a small delay before redirecting
-        setTimeout(() => navigate("/profile"), 2000);
-      } catch {}
-    }, 2000);
+      setError("Network error. Please try again.");
+    }
   };
 
   return (
@@ -46,7 +76,7 @@ export default function PricingPage() {
 
       <AnimatePresence>
         {(isVerifying || isSuccess) && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -64,8 +94,8 @@ export default function PricingPage() {
                     <IconShield size={32} className="absolute m-auto text-[var(--sc-gold)]/50" />
                   </div>
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-serif tracking-tight text-[var(--sc-gold)]">Syncing with Cosmos</h2>
-                    <p className="text-white/60 text-sm">Authenticating your celestial signature...</p>
+                    <h2 className="text-2xl font-serif tracking-tight text-[var(--sc-gold)]">Verifying Access Code</h2>
+                    <p className="text-white/60 text-sm">Confirming your entitlement with the server...</p>
                   </div>
                 </>
               ) : (
@@ -75,7 +105,7 @@ export default function PricingPage() {
                   </div>
                   <div className="space-y-2">
                     <h2 className="text-2xl font-serif tracking-tight text-[var(--sc-gold)]">Access Granted</h2>
-                    <p className="text-white/60 text-sm">Your Soul Codex has been permanently unlocked. Preparing your dossier...</p>
+                    <p className="text-white/60 text-sm">Your Soul Codex premium is active. Preparing your dossier...</p>
                   </div>
                 </>
               )}
@@ -94,7 +124,7 @@ export default function PricingPage() {
           </Link>
           <div className="flex items-center space-x-2 text-[var(--sc-gold)]">
             <IconShield size={20} />
-            <span className="text-xs font-bold uppercase tracking-widest">Beta Access Mode</span>
+            <span className="text-xs font-bold uppercase tracking-widest">Access Code</span>
           </div>
         </div>
 
@@ -110,8 +140,8 @@ export default function PricingPage() {
             The Eternal Now
           </h1>
           <p className="text-white/60 text-lg max-w-2xl mx-auto font-sans leading-relaxed">
-            Experience the full depth of your celestial blueprint. <br className="hidden md:block" /> 
-            Limited-time Beta Access for early souls.
+            Experience the full depth of your celestial blueprint. <br className="hidden md:block" />
+            Unlock premium with your Soul Codex access code.
           </p>
         </div>
 
@@ -121,7 +151,7 @@ export default function PricingPage() {
             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--sc-gold)] mb-6">Unlocked Features</h2>
             <div className="space-y-5">
               {benefits.map((benefit, i) => (
-                <motion.div 
+                <motion.div
                   key={i}
                   initial={{ x: -10, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
@@ -137,35 +167,45 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Action Side */}
-          <div className="p-10 rounded-3xl flex flex-col justify-center items-center text-center space-y-10 bg-[var(--sc-gold)]/[0.03] border-[var(--sc-gold)]/30 border-2 relative overflow-hidden group">
+          {/* Action Side — real access-code redemption */}
+          <div className="p-10 rounded-3xl flex flex-col justify-center items-center text-center space-y-8 bg-[var(--sc-gold)]/[0.03] border-[var(--sc-gold)]/30 border-2 relative overflow-hidden group">
             <div className="absolute inset-0 bg-[var(--sc-gold)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            
+
             <div className="space-y-3 relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--sc-gold)] opacity-80">Beta Phase I</span>
-              <div className="flex flex-col items-center">
-                <span className="text-white/40 text-sm line-through decoration-[var(--sc-gold)]/50">$29.99</span>
-                <span className="text-6xl font-serif font-black text-[var(--sc-gold)]">FREE</span>
-              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--sc-gold)] opacity-80">Redeem Access</span>
+              <p className="text-white/60 text-sm max-w-xs">Enter the access code from your invite or purchase to unlock premium.</p>
             </div>
 
             <div className="w-full space-y-4 relative z-10">
-              <Button 
-                size="lg" 
-                className="w-full h-18 text-xl font-black bg-[var(--sc-gold)] hover:bg-[var(--sc-gold-soft)] text-[var(--sc-bg-ink)] rounded-2xl shadow-[0_10px_40px_rgba(212,168,95,0.4)] transition-all active:scale-95 transform flex items-center justify-center"
-                onClick={handlePurchase}
+              <input
+                value={code}
+                onChange={(e) => { setCode(e.target.value); if (error) setError(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleRedeem(); }}
+                placeholder="ENTER ACCESS CODE"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-label="Access code"
+                className="w-full h-14 px-4 rounded-2xl bg-black/30 border border-[var(--sc-gold)]/30 text-center text-lg tracking-[0.2em] uppercase text-white placeholder-white/25 focus:outline-none focus:border-[var(--sc-gold)] transition-colors"
+              />
+              {error && <p className="text-sm text-rose-400" role="alert">{error}</p>}
+              <Button
+                size="lg"
+                disabled={isVerifying}
+                className="w-full h-16 text-lg font-black bg-[var(--sc-gold)] hover:bg-[var(--sc-gold-soft)] text-[var(--sc-bg-ink)] rounded-2xl shadow-[0_10px_40px_rgba(212,168,95,0.4)] transition-all active:scale-95 transform flex items-center justify-center disabled:opacity-60"
+                onClick={handleRedeem}
               >
-                <IconZap size={24} className="mr-3 fill-current" />
-                GET ACCESS
+                <IconZap size={22} className="mr-3 fill-current" />
+                {isVerifying ? "Verifying…" : "Redeem Code"}
               </Button>
               <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest">
-                Unlock instantly for beta review
+                Access is granted server-side · no card required
               </p>
             </div>
 
             <div className="pt-6 border-t border-white/5 w-full relative z-10">
               <p className="text-xs text-white/40 leading-relaxed italic">
-                By entering, you confirm participation in the <br /> Soul Codex early access program.
+                Don't have a code? It's included with your invite to the <br /> Soul Codex early access program.
               </p>
             </div>
           </div>

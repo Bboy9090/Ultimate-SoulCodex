@@ -52,27 +52,27 @@ _Last updated: 2026-06-20 (astronomy-engine hardening pass)_
 
 ---
 
-## Premium / entitlement (audited 2026-06-20)
+## Premium / entitlement (audited 2026-06-20, **hardened**)
 
-The plumbing is real; the front door is fake. Stripe is intentionally removed
-(App Store compliance) — current monetization path is **access-code entitlement**.
+Plumbing was real; the front door was fake — now fixed. Stripe stays intentionally
+removed (App Store compliance); monetization path is **access-code entitlement**.
+Verified via `scripts/smoke-premium.ts` (7/7) + browser redemption.
 
 | Aspect | Status |
 |---|---|
 | Entitlement source of truth (`entitlement-service.ts`) | ✅ Real — override → Stripe → access code → legacy → none; memoized 5 min. |
 | `/api/entitlements` status endpoint | ✅ Real — owner bypass + session + entitlement. |
-| Access-code redemption (`/api/access-codes/validate`) | ✅ Real — validates active/expiry/maxUses, persists redemption + usage increment, flags session + profile, clears cache. |
-| PDF generation (`server/natalReportPdf.ts`, pdfkit) | ✅ Real — natal wheel + sections; routes send `application/pdf`. |
-| Admin access-code management | ✅ Real. |
-| Stripe payment | ⚪ N/A — removed by design (mock checkout returns success, `confirmSubscription` always true, webhooks no-op). Not "broken." |
-| Backend gating consistency | 🟡 Inconsistent — mix of `entitlementService`, `req.user.subscriptionStatus==="premium"`, `session.isPremium`, "logged-in only." |
-| Frontend premium pages | 🟡 Trust `localStorage.soulPremium` (`if (cachedPremium) setIsPremium(true)`) — cached client flag overrides backend truth. |
-| "Upgrade" button (`PricingPage.handlePurchase`) | ❌ Fake — no backend call; just sets `localStorage.soulPremium=true` + navigate. |
-| User-facing access-code redemption UI | ❌ Missing — only Admin can create codes; the real entitlement path is unreachable for normal users. |
-| `/api/natal-report` | ❌ Ungated — anyone can POST profile data and get the premium PDF. |
-| Frontend↔backend premium agreement | ❌ Mismatch — localStorage unlock shows premium UI, but account-gated PDF endpoints 401 for anonymous users. |
-| Cancel / restore flow | ⚪ None (access codes don't cancel). |
-| Test-mode safety | ✅ Safe by removal (no Stripe keys, no charge path) — but premium has zero integrity (free via the localStorage flip). |
+| Access-code redemption (`/api/access-codes/validate`) | ✅ Real — validates active/expiry/maxUses, persists redemption + usage increment, flags session + profile. |
+| PDF generation (`server/natalReportPdf.ts`, pdfkit) | ✅ Real — verified real `%PDF` bytes for natal/profile/compatibility. |
+| Single backend guard (`requirePremium`) | ✅ Added — owner → session → entitlement; returns 403. Applied to `/api/natal-report`, `/api/pdf/profile`, `/api/pdf/compatibility`. |
+| `/api/natal-report` gating | ✅ Fixed — now 403 for anon/free; real PDF only when entitled. |
+| "Upgrade" button (`PricingPage`) | ✅ Fixed — real access-code redemption calling `/api/access-codes/validate`, then confirms via `/api/entitlements`. No localStorage grant. |
+| User-facing redemption UI | ✅ Added — code input + Redeem on Pricing page, clear success/error. |
+| Frontend premium pages (Blueprint/Poster/SoulGuide) | ✅ Fixed — backend-authoritative; localStorage is optimistic cache only (cleared when backend says false). |
+| Frontend↔backend premium agreement | ✅ Aligned — no client flag unlocks by itself. |
+| Stripe payment | ⚪ N/A — removed by design (mock checkout, no-op webhooks). Not "broken." |
+| Cancel / restore flow | ⚪ None — access codes don't cancel; re-entering a code restores access. |
+| Test-mode safety | ✅ Safe by removal (no Stripe keys, no charge path); premium now requires a real server-side code. |
 
 Fix order (tracked on `claude/harden-premium`): remove fake unlock → real access-code
 redemption UI → single `requirePremium` guard (incl. `/api/natal-report`) →
