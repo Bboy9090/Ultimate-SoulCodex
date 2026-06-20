@@ -305,8 +305,122 @@ function compatibilityFallback(profile: any): FallbackResult {
 
 function genericFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
+  const strengths = d.strengths?.length ? d.strengths : deterministicArchetypeProfile(d).strengths;
   return {
     title: "Codex Failsafe",
-    content: `Your profile (${d.archetype}) is active. AI interpretation is currently paused to protect signal integrity. Use your core strengths—${d.strengths.slice(0, 2).join(" and ")}—to navigate the current complexity. One act of absolute truth is better than a thousand generic guesses.`,
+    content: `Your profile (${d.archetype}) is active. AI interpretation is currently paused to protect signal integrity. Use your core strengths—${strengths.slice(0, 2).join(" and ")}—to navigate the current complexity. One act of absolute truth is better than a thousand generic guesses.`,
+  };
+}
+
+/**
+ * Deterministic archetype profile.
+ *
+ * Produces strong, non-empty strengths / shadows / first-person bio / purpose
+ * from birth-derived signals ALONE (sun, moon, life path, element). Used to
+ * guarantee the core reading never ships empty arrays, generic stubs, or
+ * placeholder text when AI keys are absent or the archetype generator returns
+ * nothing. AI, when available, enhances this — it does not rescue it.
+ */
+interface ArchetypeProfileInput {
+  sunSign?: string;
+  moonSign?: string;
+  lifePath?: number | string;
+  element?: string;
+  archetypeName?: string;
+}
+
+const SUN_STRENGTHS: Record<string, string[]> = {
+  Aries: ["Decisive initiative", "Raw courage", "Momentum under pressure"],
+  Taurus: ["Unshakable persistence", "Grounded reliability", "Patient craftsmanship"],
+  Gemini: ["Quick synthesis", "Verbal agility", "Adaptive curiosity"],
+  Cancer: ["Emotional intelligence", "Protective loyalty", "Deep memory"],
+  Leo: ["Natural leadership", "Generous warmth", "Creative confidence"],
+  Virgo: ["Precision analysis", "Practical service", "Pattern detection"],
+  Libra: ["Diplomatic balance", "Aesthetic judgment", "Fair-mindedness"],
+  Scorpio: ["Strategic depth", "Emotional endurance", "Penetrating focus"],
+  Sagittarius: ["Expansive vision", "Honest directness", "Restless optimism"],
+  Capricorn: ["Long-game discipline", "Structural thinking", "Quiet authority"],
+  Aquarius: ["Original thinking", "Principled independence", "Systems vision"],
+  Pisces: ["Deep empathy", "Imaginative range", "Intuitive attunement"],
+};
+
+const SUN_SHADOWS: Record<string, string[]> = {
+  Aries: ["Impatience with slower paces", "Acting before the plan is ready"],
+  Taurus: ["Resistance to necessary change", "Holding a position past its usefulness"],
+  Gemini: ["Scattered focus", "Committing to ideas before vetting them"],
+  Cancer: ["Retreating into moods", "Carrying others' emotions as your own"],
+  Leo: ["Withdrawing when unacknowledged", "Performing instead of resting"],
+  Virgo: ["Analysis loops", "Mistaking criticism for care"],
+  Libra: ["Avoiding decisions to keep peace", "Losing your own preference"],
+  Scorpio: ["Going cold when threatened", "Controlling what should be released"],
+  Sagittarius: ["Overpromising on vision", "Skipping the unglamorous detail"],
+  Capricorn: ["Equating rigidity with strength", "Working past your own limits"],
+  Aquarius: ["Detaching from feeling", "Defaulting to the contrarian stance"],
+  Pisces: ["Dissolving your boundaries", "Escaping instead of confronting"],
+};
+
+const LIFE_PATH_PURPOSE: Record<number, string> = {
+  1: "To initiate — to clear paths and start what others are afraid to begin.",
+  2: "To harmonize — to hold relationships and details together with care.",
+  3: "To express — to translate inner experience into language others can feel.",
+  4: "To build — to turn chaos into durable structure people can rely on.",
+  5: "To liberate — to test limits and bring change wherever stagnation sets in.",
+  6: "To steward — to take responsibility for the wellbeing of your circle.",
+  7: "To understand — to seek the truth beneath the surface and name it.",
+  8: "To scale — to build impact large enough to outlast you.",
+  9: "To complete — to extract wisdom and close cycles others leave open.",
+  11: "To illuminate — to sense what others miss and bring it into the light.",
+  22: "To master-build — to construct at a scale most won't attempt.",
+  33: "To heal — to carry weight for the collective and return it as care.",
+};
+
+function reduceLifePath(lp: number | string | undefined): number {
+  const n = typeof lp === "string" ? parseInt(lp, 10) : lp;
+  if (!n || Number.isNaN(n)) return 0;
+  if (n === 11 || n === 22 || n === 33) return n;
+  let v = n;
+  while (v > 9) v = String(v).split("").reduce((a, c) => a + Number(c), 0);
+  return v;
+}
+
+export function deterministicArchetypeProfile(input: ArchetypeProfileInput): {
+  strengths: string[];
+  shadows: string[];
+  bio: string;
+  purpose: string;
+} {
+  const sun = input.sunSign && SUN_STRENGTHS[input.sunSign] ? input.sunSign : "";
+  const lp = reduceLifePath(input.lifePath);
+  const element = input.element || "";
+  const archetype = input.archetypeName || "your archetype";
+
+  const strengths = sun
+    ? [...SUN_STRENGTHS[sun]]
+    : ["Self-awareness", "Resilience under pressure", "Pattern recognition"];
+  const shadows = sun
+    ? [...SUN_SHADOWS[sun]]
+    : ["Over-protecting your own energy", "Hesitating past the right moment"];
+
+  const purpose = LIFE_PATH_PURPOSE[lp] || "To turn self-understanding into deliberate, grounded action.";
+
+  const bioParts: string[] = [];
+  if (sun) {
+    bioParts.push(`I lead with ${sun} ${element ? `${element}-toned ` : ""}energy: ${strengths[0].toLowerCase()} and ${strengths[1].toLowerCase()}.`);
+  } else {
+    bioParts.push(`I move through life as ${archetype}, leaning on ${strengths[0].toLowerCase()} and ${strengths[1].toLowerCase()}.`);
+  }
+  if (input.moonSign) {
+    bioParts.push(`My ${input.moonSign} Moon runs the emotional engine underneath, shaping how I recover and what I protect.`);
+  }
+  if (lp) {
+    bioParts.push(`Life Path ${lp} pulls me toward one thing: ${purpose.replace(/^To /, "to ").replace(/\.$/, "")}.`);
+  }
+  bioParts.push(`My growth edge is the same as my gift — ${shadows[0].toLowerCase()}.`);
+
+  return {
+    strengths,
+    shadows,
+    bio: bioParts.join(" "),
+    purpose,
   };
 }
