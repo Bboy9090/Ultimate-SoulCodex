@@ -1,4 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
+const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { generateText, isGeminiAvailable } from '../gemini';
@@ -103,11 +104,11 @@ export interface DailyHoroscope {
 
 function calculatePlanetLongitude(planet: string, date: Date): number {
   if (planet === 'Moon') {
-    return Astronomy.EclipticGeoMoon(date).lon;
+    return Astro.EclipticGeoMoon(date).lon;
   }
-  const body = Astronomy.Body[planet as keyof typeof Astronomy.Body];
-  const geoVector = Astronomy.GeoVector(body, date, false);
-  const ecliptic = Astronomy.Ecliptic(geoVector);
+  const body = Astro.Body[planet as keyof typeof Astro.Body];
+  const geoVector = Astro.GeoVector(body, date, false);
+  const ecliptic = Astro.Ecliptic(geoVector);
   let lon = ecliptic.elon;
   while (lon < 0) lon += 360;
   while (lon >= 360) lon -= 360;

@@ -1,4 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
+const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
 export interface DailyContext {
   date: string;
@@ -51,7 +52,7 @@ export function calculateUniversalDayNumber(currentDate: Date = new Date()): num
 }
 
 export function getMoonSign(date: Date): string {
-  const moonPos = Astronomy.EclipticGeoMoon(date);
+  const moonPos = Astro.EclipticGeoMoon(date);
   const eclipticLongitude = moonPos.lon;
   
   const signs = [
@@ -64,7 +65,7 @@ export function getMoonSign(date: Date): string {
 }
 
 export function getMoonPhase(date: Date): { phase: string; percentage: number } {
-  const illumination = Astronomy.Illumination(Astronomy.Body.Moon, date);
+  const illumination = Astro.Illumination(Astro.Body.Moon, date);
   const phaseAngle = illumination.phase_angle;
   const percentage = Math.round(illumination.phase_fraction * 100);
   
@@ -91,7 +92,7 @@ export function getMoonPhase(date: Date): { phase: string; percentage: number } 
 }
 
 export function getCurrentHDGate(date: Date): { gate: number; line: number } {
-  const sunPos = Astronomy.Ecliptic(Astronomy.GeoVector(Astronomy.Body.Sun, date, false));
+  const sunPos = Astro.Ecliptic(Astro.GeoVector(Astro.Body.Sun, date, false));
   const eclipticLongitude = sunPos.elon;
   
   const normalizedLon = ((eclipticLongitude % 360) + 360) % 360;
