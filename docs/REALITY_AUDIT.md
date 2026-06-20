@@ -29,7 +29,7 @@ _Last updated: 2026-06-20 (astronomy-engine hardening pass)_
 | Area | Status |
 |---|---|
 | Codex deep reading (`/api/codex30/generate`) | Returns 200 from localhost; archetype + codename render. Long-form narrative is brief without AI keys (deterministic fallback is minimal). AI keys enhance it. |
-| Compatibility | `/api/compatibility/archetype-matches` returns 200 locally; full `compatibility/analyze` flow not yet exercised. |
+| Compatibility | **Hardened for scoring honesty.** Astrology + numerology synastry are real; missing systems (Human Design when birth time unknown, personality, moral compass, the 15 advanced) are **excluded and re-normalized**, never scored 0 or a constant 70. Response includes a `confidence` badge + `systemsUsed`/`systemsExcluded`/`missingDataWarnings`. Verified via `scripts/smoke-compatibility.ts` (6/6) + live API. The 15 advanced systems remain unbuilt on the onboarding path — marked unavailable and unweighted, not faked. |
 | Narrative richness without AI | Deterministic copy is solid but shorter than AI output. By design: AI enhances, does not rescue. |
 
 ## ❌ Broken / fixed this pass
@@ -45,7 +45,7 @@ _Last updated: 2026-06-20 (astronomy-engine hardening pass)_
 
 ## ❓ Untested (no claim made)
 
-- Compatibility (`/api/compatibility/*`) — endpoints exist, not exercised this pass.
+- Compatibility full `analyze` flow now exercised + hardened (see above). Remaining untested: the 15 advanced systems on the onboarding path (intentionally unbuilt).
 - Premium / Stripe entitlements and paid report generation.
 - AI Soul Guide with real provider keys (only fallback path tested).
 - Push notifications (VAPID), PDF generation, email capture.
