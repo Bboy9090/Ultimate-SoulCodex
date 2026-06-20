@@ -2323,12 +2323,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const response = {
         ...savedCompatibility,
+        // Surface scoring-honesty fields at the top level too (also in compatibilityData).
+        confidence: (compatibilityResult as any).confidence,
+        systemsUsed: (compatibilityResult as any).systemsUsed,
+        systemsExcluded: (compatibilityResult as any).systemsExcluded,
+        missingDataWarnings: (compatibilityResult as any).missingDataWarnings,
         profile1: {
           name: profile1.name,
           sunSign: astro1?.sunSign,
           moonSign: astro1?.moonSign,
           risingSign: astro1?.risingSign,
-          calculateNumerology: num1?.calculateNumerology,
+          lifePath: num1?.lifePath,
           hdType: hd1?.type,
           enneagramType: pers1?.enneagram?.type,
           mbtiType: pers1?.mbti?.type
@@ -2338,7 +2343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sunSign: astro2?.sunSign,
           moonSign: astro2?.moonSign,
           risingSign: astro2?.risingSign,
-          calculateNumerology: num2?.calculateNumerology,
+          lifePath: num2?.lifePath,
           hdType: hd2?.type,
           enneagramType: pers2?.enneagram?.type,
           mbtiType: pers2?.mbti?.type

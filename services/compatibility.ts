@@ -1105,25 +1105,89 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
   const kabbalah = calculateKabbalahCompatibility(profile1, profile2);
   const tarot = calculateTarotCompatibility(profile1, profile2);
 
-  // Calculate average spiritual/advanced systems score from all 15 systems
-  const spiritualScore = Math.round(
-    (vedic.score + chinese.score + ayurveda.score + geneKeys.score + 
-     iChing.score + mayan.score + chakra.score + sacredGeometry.score +
-     runes.score + sabian.score + biorhythms.score + asteroids.score +
-     arabicParts.score + fixedStars.score + kabbalah.score + tarot.score) / 16
-  );
-
   const synthesis = createCompatibilitySynthesis(astrology, numerology, humanDesign, personality, moralCompass);
 
-  // Calculate overall score with proper weights (ALL 30+ SYSTEMS + MORAL COMPASS INCLUDED)
-  const overallScore = Math.round(
-    astrology.score * 0.25 +
-    numerology.score * 0.18 +
-    humanDesign.score * 0.18 +
-    personality.score * 0.18 +
-    moralCompass.score * 0.08 +
-    spiritualScore * 0.13  // Now calculated from ALL 15 advanced systems!
-  );
+  // ── Availability-aware scoring ──
+  // Missing systems lower CONFIDENCE; they never poison (0) or inflate (constant)
+  // the score. The overall score is a weighted average re-normalized over only
+  // the systems that are actually available from real data. No placeholders.
+  const _a1 = profile1.astrologyData as any, _a2 = profile2.astrologyData as any;
+  const _n1 = profile1.numerologyData as any, _n2 = profile2.numerologyData as any;
+  const _h1 = profile1.humanDesignData as any, _h2 = profile2.humanDesignData as any;
+  const _p1 = profile1.personalityData as any, _p2 = profile2.personalityData as any;
+  const _m1 = (profile1 as any).moralCompassData, _m2 = (profile2 as any).moralCompassData;
+  const _timeKnown1 = !!(profile1 as any).birthTime, _timeKnown2 = !!(profile2 as any).birthTime;
+
+  // Advanced "spiritual" systems: include only those with real data on BOTH
+  // profiles (their sub-fns flag missing data with "unavailable" in description).
+  const advancedResults = [
+    vedic, chinese, ayurveda, geneKeys, iChing, mayan, chakra, sacredGeometry,
+    runes, sabian, biorhythms, asteroids, arabicParts, fixedStars, kabbalah, tarot,
+  ];
+  const advancedAvailable = advancedResults.filter(s => s && !/unavailable/i.test(s.description || ""));
+  const spiritualAvailable = advancedAvailable.length > 0;
+  const spiritualScore = spiritualAvailable
+    ? Math.round(advancedAvailable.reduce((sum, s) => sum + s.score, 0) / advancedAvailable.length)
+    : 0;
+
+  const available: Record<string, boolean> = {
+    astrology: !!(_a1?.sunSign && _a2?.sunSign),
+    numerology: _n1?.lifePath != null && _n2?.lifePath != null,
+    humanDesign: !!(_h1?.type && _h2?.type),
+    personality: !!((_p1?.enneagram?.type || _p1?.mbti?.type) && (_p2?.enneagram?.type || _p2?.mbti?.type)),
+    moralCompass: !!(_m1 && _m2),
+    spiritual: spiritualAvailable,
+  };
+
+  const BASE_WEIGHTS: Record<string, number> = {
+    astrology: 0.25, numerology: 0.18, humanDesign: 0.18, personality: 0.18, moralCompass: 0.08, spiritual: 0.13,
+  };
+  const SYSTEM_SCORES: Record<string, number> = {
+    astrology: astrology.score, numerology: numerology.score, humanDesign: humanDesign.score,
+    personality: personality.score, moralCompass: moralCompass.score, spiritual: spiritualScore,
+  };
+  const EXCLUDE_REASON: Record<string, string> = {
+    astrology: "Astrology unavailable — missing sun-sign data for one or both people.",
+    numerology: "Numerology unavailable — missing birth-date data for one or both people.",
+    humanDesign: (!_timeKnown1 || !_timeKnown2)
+      ? "Human Design excluded — exact birth time unknown for one or both people (not estimated)."
+      : "Human Design unavailable — chart not computed.",
+    personality: "Personality excluded — no Enneagram/MBTI data provided.",
+    moralCompass: "Moral compass excluded — questionnaire data not available.",
+    spiritual: "Advanced spiritual systems excluded — not computed for these profiles.",
+  };
+
+  const systemsUsed: Array<{ system: string; score: number; weight: number }> = [];
+  const systemsExcluded: Array<{ system: string; reason: string }> = [];
+  let weightedSum = 0, weightTotal = 0;
+  for (const key of Object.keys(BASE_WEIGHTS)) {
+    if (available[key]) {
+      systemsUsed.push({ system: key, score: SYSTEM_SCORES[key], weight: BASE_WEIGHTS[key] });
+      weightedSum += SYSTEM_SCORES[key] * BASE_WEIGHTS[key];
+      weightTotal += BASE_WEIGHTS[key];
+    } else {
+      systemsExcluded.push({ system: key, reason: EXCLUDE_REASON[key] });
+    }
+  }
+  const overallScore = weightTotal > 0 ? Math.round(weightedSum / weightTotal) : 0;
+  // Normalize displayed weights to sum to 100% across the systems actually used.
+  for (const u of systemsUsed) u.weight = Math.round((u.weight / weightTotal) * 100);
+
+  // Confidence reflects how much real signal backs the score.
+  const coreAvailable = [available.astrology, available.numerology, available.humanDesign, available.personality].filter(Boolean).length;
+  let confBadge: string, confLabel: string;
+  if (coreAvailable >= 4 && _timeKnown1 && _timeKnown2) { confBadge = "verified"; confLabel = "Verified"; }
+  else if (coreAvailable >= 2) { confBadge = "partial"; confLabel = "Partial"; }
+  else { confBadge = "limited"; confLabel = "Limited"; }
+  const missingDataWarnings = systemsExcluded.map(s => s.reason);
+  const confidence = {
+    badge: confBadge,
+    label: confLabel,
+    reason: `Score reflects ${systemsUsed.length} real system${systemsUsed.length === 1 ? "" : "s"} (${systemsUsed.map(s => s.system).join(", ") || "none"}); ${systemsExcluded.length} excluded.`,
+    aiAssuranceNote: (!_timeKnown1 || !_timeKnown2)
+      ? "One or both birth times are unknown, so time-sensitive systems (Rising, Human Design) are excluded rather than estimated."
+      : "All time-sensitive systems were available.",
+  };
 
   // Get profile data for astrology
   const astro1 = profile1.astrologyData as any;
@@ -1163,6 +1227,10 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
   // Transform to match frontend contract
   return {
     overallScore,
+    confidence,
+    systemsUsed,
+    systemsExcluded,
+    missingDataWarnings,
     categories: {
       astrology: {
         score: astrology.score,
