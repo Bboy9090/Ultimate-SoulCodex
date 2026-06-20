@@ -279,7 +279,8 @@ export function calculateVedicAstrology(params: {
   // Rahu = Moon's North Node (Ascending Node) in sidereal zodiac
   // Ketu = Moon's South Node (Descending Node) in sidereal zodiac
   // Uses proper lunar node calculation matching Western astrology standard
-  const observer: Astronomy.Observer = { latitude, longitude, height: 0 };
+  // astronomy-engine requires a real Observer instance, not a plain object cast.
+  const observer = new Astro.Observer(latitude, longitude, 0);
   const nodeEvent = Astro.SearchMoonNode(zonedDate);
   const nodeTime = nodeEvent.time.date;
   const daysSinceNode = (zonedDate.getTime() - nodeTime.getTime()) / (1000 * 60 * 60 * 24);

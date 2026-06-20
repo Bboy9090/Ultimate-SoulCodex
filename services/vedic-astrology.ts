@@ -259,8 +259,10 @@ export function calculateVedicAstrology(params: {
   const dateTimeParts = `${birthDate}T${birthTime}`;
   const zonedDate = fromZonedTime(new Date(dateTimeParts), timezone);
   
-  // Calculate planetary positions (tropical)
-  const sunEcl = Astro.Ecliptic(Astro.SunPosition(zonedDate));
+  // Calculate planetary positions (tropical).
+  // SunPosition() already returns ecliptic coordinates (.elon) — do NOT wrap it
+  // in Ecliptic() (that expects a Vector and throws on the missing .t/.tt).
+  const sunEcl = Astro.SunPosition(zonedDate);
   const moonEcl = Astro.EclipticGeoMoon(zonedDate);
   const mercuryVec = Astro.GeoVector(Astro.Body.Mercury, zonedDate, false);
   const mercuryEcl = Astro.Ecliptic(mercuryVec);
@@ -277,7 +279,8 @@ export function calculateVedicAstrology(params: {
   // Rahu = Moon's North Node (Ascending Node) in sidereal zodiac
   // Ketu = Moon's South Node (Descending Node) in sidereal zodiac
   // Uses proper lunar node calculation matching Western astrology standard
-  const observer: Astronomy.Observer = { latitude, longitude, height: 0 };
+  // astronomy-engine requires a real Observer instance, not a plain object cast.
+  const observer = new Astro.Observer(latitude, longitude, 0);
   const nodeEvent = Astro.SearchMoonNode(zonedDate);
   const nodeTime = nodeEvent.time.date;
   const daysSinceNode = (zonedDate.getTime() - nodeTime.getTime()) / (1000 * 60 * 60 * 24);
@@ -348,13 +351,15 @@ export function calculateVedicAstrology(params: {
       ruler: ascendantNakshatra.data.ruler
     },
     planets: {
-      sun: processPlanet('sun', sunEcl.lon),
+      // Ecliptic()/SunPosition() return ecliptic longitude as `.elon`.
+      // EclipticGeoMoon() returns a Spherical with `.lon` (Moon only).
+      sun: processPlanet('sun', sunEcl.elon),
       moon: processPlanet('moon', moonEcl.lon),
-      mercury: processPlanet('mercury', mercuryEcl.lon),
-      venus: processPlanet('venus', venusEcl.lon),
-      mars: processPlanet('mars', marsEcl.lon),
-      jupiter: processPlanet('jupiter', jupiterEcl.lon),
-      saturn: processPlanet('saturn', saturnEcl.lon),
+      mercury: processPlanet('mercury', mercuryEcl.elon),
+      venus: processPlanet('venus', venusEcl.elon),
+      mars: processPlanet('mars', marsEcl.elon),
+      jupiter: processPlanet('jupiter', jupiterEcl.elon),
+      saturn: processPlanet('saturn', saturnEcl.elon),
       rahu: processPlanet('rahu', rahuLongitude),
       ketu: processPlanet('ketu', ketuLongitude)
     },
