@@ -104,6 +104,7 @@ export function buildSoulCodexSystemPrompt(
     directMode?: boolean;
     includePatternDetection?: boolean;
     toneMode?: "challenging" | "supportive" | "clinical";
+    birthTimeKnown?: boolean;
   },
   engineData?: ReturnType<typeof runSoulCodexEngine>
 ): string {
@@ -113,6 +114,13 @@ export function buildSoulCodexSystemPrompt(
     "",
     CORE_DATA_RULE,
   ];
+
+  if (options?.birthTimeKnown === false) {
+    parts.push(
+      "",
+      "BIRTH TIME UNKNOWN — Rising sign, ascendant behavior, house placements, house-based timing, and time-dependent chart details are UNAVAILABLE. Do not infer, guess, or mention them. If relevant, state that those layers require an exact birth time."
+    );
+  }
 
   if (engineData) {
     parts.push(

@@ -99,6 +99,7 @@ export function registerChatRoutes(app: Express) {
         systemInstruction = buildSoulCodexSystemPrompt({
           directMode: true,
           includePatternDetection: true,
+          birthTimeKnown: !!profile.risingSign,
         }, engineData);
       } else if (profileContext) {
         systemInstruction = buildProfileContextPrompt(profileContext);
@@ -191,7 +192,10 @@ function buildProfileContextPrompt(profile: any): string {
   if (profile.name) parts.push(`- Name: ${profile.name}`);
   if (profile.archetype) parts.push(`- Archetype: ${profile.archetype}`);
   if (profile.sunSign || profile.moonSign || profile.risingSign) {
-    parts.push(`- Astrology: Sun ${profile.sunSign || 'Omit'}, Moon ${profile.moonSign || 'Omit'}, Rising ${profile.risingSign || 'Omit'}`);
+    parts.push(`- Astrology: Sun ${profile.sunSign || 'Omit'}, Moon ${profile.moonSign || 'Omit'}${profile.risingSign ? `, Rising ${profile.risingSign}` : ''}`);
+  }
+  if (!profile.risingSign) {
+    parts.push(`\nBIRTH TIME UNKNOWN — Rising sign, ascendant behavior, house placements, and house-based timing are unavailable. Do not infer, guess, or mention them. If relevant, state that those layers require an exact birth time.`);
   }
   if (profile.hdType) parts.push(`- Human Design: ${profile.hdType}`);
   if (profile.lifePath) parts.push(`- Numerology: Life Path ${profile.lifePath}`);
