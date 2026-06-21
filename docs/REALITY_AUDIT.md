@@ -4,7 +4,7 @@ A running, honest ledger of what is actually real vs. what is assumed. Update it
 whenever a subsystem is validated, fixed, or found broken. "Working" means
 observed producing real, correct output — not "the file exists."
 
-_Last updated: 2026-06-20 (AI unknown-time honesty hardening pass)_
+_Last updated: 2026-06-20 (production hardening RC1 pass)_
 
 ---
 
@@ -100,19 +100,37 @@ frontend trusts `/api/entitlements` → PDF smoke validation. Stripe stays mocke
 - UI: `/` (landing), `/today`, `/codex`.
 - Service-level (smoke): astrology, horoscope, vedic, asteroids, transits, progressions, daily-context.
 
+## Production hardening (hardened 2026-06-20)
+
+| Aspect | Status |
+|---|---|
+| Security headers (helmet) | ✅ Real — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-DNS-Prefetch-Control, X-Powered-By hidden. |
+| Global API rate limiting | ✅ Real — 300 req/15min global, 10 req/min AI endpoints, 20 req/15min auth endpoints. `express-rate-limit` with standard headers. |
+| AI endpoint rate limiting | ✅ Real — `/api/chat`, `/api/ai`, `/api/codex30`, `/api/codex-tools` at 10 req/min. |
+| Auth endpoint rate limiting | ✅ Real — `/api/auth`, `/api/access-codes` at 20 req/15min. |
+| Session hardening | ✅ Real — httpOnly, secure (production), sameSite=lax, maxAge=7d, `saveUninitialized: false`. |
+| CORS | ✅ Real — env-driven `ALLOWED_ORIGINS` in production, permissive in dev for localhost/Capacitor. |
+| JSON body size limit | ✅ Real — 1MB limit on `express.json()` and `express.urlencoded()`. |
+| Error response safety | ✅ Real — production returns generic 500 message, no stack traces. Dev mode logs full details. |
+| Startup validation | ✅ Real — `SESSION_SECRET` required at boot, AI key absence logged as warning. |
+| Static asset caching | ✅ Real — hashed `/assets/*` get `max-age=1y, immutable`; other static files get `max-age=1h`. |
+| Verified via `scripts/smoke-production.ts` (7/7). |
+
 ## Commands run
 ```
 npm run build:server
 npm run build:client
 npm run check            # workspaces incl. @soulcodex/astrology
-npx tsx scripts/smoke-astrology.ts   # 7/7
-curl /api/soul-archetype  (known + unknown time)
-curl /api/today/card
-curl /api/astro/fullchart
+npx tsx scripts/smoke-astrology.ts       # 7/7
+npx tsx scripts/smoke-compatibility.ts   # 6/6
+npx tsx scripts/smoke-premium.ts         # 7/7
+npx tsx scripts/smoke-unknown-time.ts    # 7/7
+npx tsx scripts/smoke-production.ts      # 7/7
 ```
 
 ## How to re-verify
 ```
 SESSION_SECRET=dev DEMO_MODE=true npm run dev   # boots without a DB
 npx tsx scripts/smoke-astrology.ts              # must print 7/7, exit 0
+npx tsx scripts/smoke-production.ts             # must print 7/7, exit 0
 ```

@@ -123,6 +123,39 @@ npm run build:server  # Build backend to dist/
 npm start             # Run production server
 ```
 
+### Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `SESSION_SECRET` | Yes | Session encryption key. Server fails fast without it. |
+| `DEMO_MODE` | No | Set `true` for in-memory storage (no database). |
+| `DATABASE_URL` | No | Postgres connection string. Omit for MemStorage. |
+| `GEMINI_API_KEY` | No | Google Gemini AI. Falls back to deterministic if absent. |
+| `GROQ_API_KEY` | No | Groq AI (second cascade tier). |
+| `OPENAI_API_KEY` | No | OpenAI (third cascade tier). |
+| `ALLOWED_ORIGINS` | No | Comma-separated CORS origins for production. Dev allows all. |
+| `NODE_ENV` | No | Set `production` for secure cookies, generic errors, helmet defaults. |
+| `PORT` | No | Server port (default: 5000). |
+
+### Testing
+
+Six smoke test suites verify all core systems. No database or AI keys required for non-AI tests.
+
+```bash
+# Service-level tests (no server needed)
+npx tsx scripts/smoke-astrology.ts       # 7/7 — natal chart, vedic, transits
+npx tsx scripts/smoke-compatibility.ts   # 6/6 — scoring honesty, missing systems
+npx tsx scripts/smoke-unknown-time.ts    # 7/7 — AI unknown-time guards
+
+# Server-level tests (start server first)
+SESSION_SECRET=dev DEMO_MODE=true PORT=5055 npx tsx server/index.ts &
+SMOKE_BASE=http://localhost:5055 npx tsx scripts/smoke-premium.ts      # 7/7
+SMOKE_BASE=http://localhost:5055 npx tsx scripts/smoke-production.ts   # 7/7
+SMOKE_BASE=http://localhost:5055 npx tsx scripts/smoke-ai-live.ts      # 4/4 (needs AI keys)
+```
+
+**Total: 38/38 tests across 6 suites.**
+
 ## Architecture Overview
 
 The active app structure:
