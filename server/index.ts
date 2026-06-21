@@ -3,8 +3,27 @@ import "dotenv/config";
 
 import express, { type Express } from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "../routes";
 import { setupVite } from "../vite-server";
+
+// ── Startup validation ─────────────────────────────────────────────────────
+function validateStartup() {
+  const missing: string[] = [];
+  if (!process.env.SESSION_SECRET) missing.push("SESSION_SECRET");
+
+  if (process.env.NODE_ENV === "production") {
+    const hasAI = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
+    if (!hasAI) console.warn("[Startup] No AI provider keys set — deterministic fallback only");
+  }
+
+  if (missing.length) {
+    console.error(`[Startup] Missing required env vars: ${missing.join(", ")}`);
+    process.exit(1);
+  }
+}
+validateStartup();
 
 // Simple logger function
 function log(message: string, source = "express") {
@@ -18,31 +37,67 @@ function log(message: string, source = "express") {
 }
 
 const app: Express = express();
+const isProduction = process.env.NODE_ENV === "production";
 
-// Standard permissive CORS for Railway/Capacitor reliability
-app.use(cors({
-  origin: true,
-  credentials: true
+// ── Security headers (helmet) ───────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
 }));
 
-// Manual headers for extra safety on non-browser environments
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-  res.header("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
+// ── CORS ────────────────────────────────────────────────────────────────────
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim())
+  : null;
+
+app.use(cors({
+  origin: isProduction && allowedOrigins ? allowedOrigins : true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+}));
+
+// ── Global rate limiting ────────────────────────────────────────────────────
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests, please try again later." },
+  skip: (req) => req.path === "/health" || req.path === "/api/health",
 });
+app.use("/api", globalLimiter);
 
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "AI request limit reached. Please wait a moment." },
+});
+app.use("/api/chat", aiLimiter);
+app.use("/api/ai", aiLimiter);
+app.use("/api/codex30", aiLimiter);
+app.use("/api/codex-tools", aiLimiter);
 
-// Add /health endpoint early for health checks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many authentication attempts. Please try again later." },
+});
+app.use("/api/auth", authLimiter);
+app.use("/api/access-codes", authLimiter);
+
+// Health endpoint (before rate limiting, above)
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Parse JSON bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Parse JSON bodies with size limit
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 // Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -69,8 +124,10 @@ let serverInstance: any = null;
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     log(`Error handler caught: ${message}`, "error");
-    console.error("Full error details:", err);
-    res.status(status).json({ message });
+    if (!isProduction) console.error("Full error details:", err);
+    res.status(status).json({
+      message: isProduction && status === 500 ? "Internal Server Error" : message,
+    });
   });
 
   // Use PORT from environment (Render and other platforms set this)

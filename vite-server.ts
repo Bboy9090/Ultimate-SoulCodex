@@ -82,8 +82,12 @@ function serveStatic(app: express.Express) {
       res.status(404).json({ message: "Not found" });
     });
   } else {
-    // Fall back to Vite build (legacy client app)
-    app.use(express.static(viteDistPath));
+    // Hashed assets get long-lived cache; everything else gets revalidation
+    app.use("/assets", express.static(path.join(viteDistPath, "assets"), {
+      maxAge: "1y",
+      immutable: true,
+    }));
+    app.use(express.static(viteDistPath, { maxAge: "1h" }));
 
     const viteFallback = path.join(viteDistPath, "index.html");
     app.get("*", (req, res) => {
