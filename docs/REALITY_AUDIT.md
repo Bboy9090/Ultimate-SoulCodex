@@ -46,7 +46,7 @@ _Last updated: 2026-06-20 (AI unknown-time honesty hardening pass)_
 ## ❓ Untested (no claim made)
 
 - Compatibility full `analyze` flow now exercised + hardened (see above). Remaining untested: the 15 advanced systems on the onboarding path (intentionally unbuilt).
-- AI Soul Guide with real provider keys (only fallback path tested — deterministic fallback, prompt construction, and unknown-time guards verified).
+- ~~AI Soul Guide with real provider keys~~ — now verified (Gemini live, 4/4 pass).
 - Push notifications (VAPID), PDF generation, email capture.
 - Capacitor native (iOS) runtime; transit endpoints behind auth (function-level smoke only).
 
@@ -92,7 +92,7 @@ frontend trusts `/api/entitlements` → PDF smoke validation. Stripe stays mocke
 | Sensitive data in logs | ✅ Clean — Only error messages logged, never prompts, birth data, or API keys. Cache uses SHA256 hashes. |
 | Rate limiting | ✅ Real — Session-based chatCount, 1-2 free then 403. No global IP rate limit (acceptable at current scale). |
 | Provider failure fallback | ✅ Real — Cascading Gemini(8s)→Groq(8s)→OpenAI(8s)→deterministic. User never sees raw error. |
-| Real-key provider smoke | ❓ Untested — No AI keys in dev environment. Cascade logic and fallback verified; live provider response quality untested. |
+| Real-key provider smoke | ✅ Real — Gemini responds live (1200-1500 chars), unknown-time guard holds with live AI (no rising/house fabrication), rate limit fires 403 after 2 free. Verified `scripts/smoke-ai-live.ts` (4/4). |
 
 ## Routes / pages validated this pass
 - API: `/api/health`, `/api/soul-archetype` (known + unknown time), `/api/today/card`, `/api/astro/fullchart`.
