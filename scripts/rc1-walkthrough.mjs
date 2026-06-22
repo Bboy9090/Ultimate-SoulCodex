@@ -1,4 +1,4 @@
-const BASE = "http://localhost:5055";
+const BASE = process.env.SMOKE_BASE || "http://localhost:5055";
 let cookie = "";
 
 async function call(path, init = {}) {
