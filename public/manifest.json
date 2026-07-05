@@ -2,20 +2,36 @@
   "name": "Soul Codex",
   "short_name": "SoulCodex",
   "description": "Your digital psychological mirror. Astrology, numerology, and behavioral patterns synthesized into one intelligence.",
-  "start_url": "/home",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B0E14",
-  "theme_color": "#8C6BFF",
+  "orientation": "portrait",
+  "background_color": "#0B0720",
+  "theme_color": "#0B0720",
+  "categories": ["lifestyle", "personalization"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

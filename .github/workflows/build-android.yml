@@ -1,0 +1,102 @@
+name: Build Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release-apk
+          - release-aab
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build Debug APK
+        if: inputs.build_type == 'debug'
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Decode keystore
+        if: inputs.build_type != 'debug'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > android/app/soul-codex-release.keystore
+
+      - name: Build Release APK
+        if: inputs.build_type == 'release-apk'
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -PRELEASE_STORE_FILE=soul-codex-release.keystore \
+            -PRELEASE_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            -PRELEASE_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
+            -PRELEASE_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Build Release AAB (Play Store)
+        if: inputs.build_type == 'release-aab'
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -PRELEASE_STORE_FILE=soul-codex-release.keystore \
+            -PRELEASE_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            -PRELEASE_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
+            -PRELEASE_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Upload Debug APK
+        if: inputs.build_type == 'debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Release APK
+        if: inputs.build_type == 'release-apk'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+
+      - name: Upload Release AAB
+        if: inputs.build_type == 'release-aab'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
