@@ -115,7 +115,7 @@ export default function App() {
       {/* Sidebar - Only visible after a valid profile and never during onboarding */}
       {hasProfile && !isOnboardingRoute && <Nav />}
       
-      <main style={{ flex: 1, position: "relative", minWidth: 0 }}>
+      <main style={{ flex: 1, position: "relative", minWidth: 0, zIndex: 2 }}>
         <Suspense fallback={<CosmicLoader fullPage label="Loading Dimension..." />}>
           <Switch>
             <Route path="/">
