@@ -24,9 +24,16 @@
     "db:studio": "drizzle-kit studio",
     "check": "npm run check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "clean": "npm run clean --workspaces --if-present"
+    "clean": "npm run clean --workspaces --if-present",
+    "icons": "node scripts/generate-icons.mjs",
+    "splash": "node scripts/generate-splash.mjs",
+    "cap:icons": "npm run icons && npm run splash",
+    "cap:build": "npm run build && npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:android": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.3.1",
     "@capacitor/core": "^8.3.1",
     "@capacitor/ios": "^8.3.1",
