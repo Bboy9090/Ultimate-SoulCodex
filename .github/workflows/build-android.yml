@@ -38,7 +38,12 @@ jobs:
           java-version: 17
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --ignore-scripts || npm install
+
+      - name: Build workspace packages
+        run: |
+          npm run build -w @soulcodex/db --if-present || true
+          npm run build -w @soulcodex/core --if-present || true
 
       - name: Build web app
         run: npm run build
