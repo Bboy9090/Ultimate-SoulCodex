@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 import {
   IconStar,
@@ -113,6 +113,7 @@ const heroButtonStyle: CSSProperties = {
 };
 
 export default function LandingPage() {
+  const [, navigate] = useLocation();
   return (
     <div className="landing-nebula" style={{ minHeight: "100vh", overflowX: "hidden", position: "relative" }}>
       <header className="sc-marketing-header" style={{ background: "rgba(16,7,24,0.82)", borderBottomColor: "rgba(212,168,95,0.16)" }}>
@@ -132,11 +133,9 @@ export default function LandingPage() {
               {link.label}
             </a>
           ))}
-          <Link href="/start">
-            <button className="btn btn-primary sc-marketing-cta" style={{ color: "#2b1532", background: "linear-gradient(135deg, #cba6ff 0%, #f1b58d 100%)" }}>
+          <button onClick={() => navigate("/start")} className="btn btn-primary sc-marketing-cta" style={{ color: "#2b1532", background: "linear-gradient(135deg, #cba6ff 0%, #f1b58d 100%)" }}>
               Get Started
             </button>
-          </Link>
         </nav>
       </header>
 
@@ -228,11 +227,9 @@ export default function LandingPage() {
           </p>
 
           <div className="sc-hero-actions" style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/start">
-              <button className="btn btn-primary" style={{ ...heroButtonStyle, background: "linear-gradient(135deg, #e7c3d6 0%, #d6a789 100%)", color: "#32143f", boxShadow: "0 12px 36px rgba(230,185,149,0.28)" }}>
+            <button onClick={() => navigate("/start")} className="btn btn-primary" style={{ ...heroButtonStyle, background: "linear-gradient(135deg, #e7c3d6 0%, #d6a789 100%)", color: "#32143f", boxShadow: "0 12px 36px rgba(230,185,149,0.28)" }}>
                 Build My Profile
               </button>
-            </Link>
             <a href="#how-it-works" style={{ textDecoration: "none" }}>
               <button className="btn btn-secondary" style={{ ...heroButtonStyle, display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(30,10,23,0.58)", color: "#d9ad8e", borderColor: "rgba(217,173,142,0.38)" }}>
                 How It Works <IconChevronRight size={17} />
@@ -341,9 +338,7 @@ export default function LandingPage() {
                 </div>
                 <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.6rem", color: "var(--sc-ivory)" }}>{feature.title}</h3>
                 <p style={{ fontSize: "0.86rem", color: "rgba(246,241,232,0.58)", lineHeight: 1.65, marginBottom: "1.5rem", flex: 1 }}>{feature.desc}</p>
-                <Link href={feature.href} style={{ textDecoration: "none" }}>
-                  <button className="btn btn-secondary" style={{ width: "100%", fontSize: "0.84rem" }}>{feature.cta}</button>
-                </Link>
+                <button onClick={() => navigate(feature.href)} className="btn btn-secondary" style={{ width: "100%", fontSize: "0.84rem" }}>{feature.cta}</button>
               </div>
             ))}
           </div>
@@ -426,9 +421,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/start" style={{ textDecoration: "none" }}>
-                <button className="btn btn-secondary" style={{ width: "100%" }}>Build My Profile</button>
-              </Link>
+              <button onClick={() => navigate("/start")} className="btn btn-secondary" style={{ width: "100%" }}>Build My Profile</button>
             </div>
 
             <div className="sc-polish-card sc-premium-card" style={{ ...cardStyle, padding: "2.25rem 2rem", position: "relative", borderTop: "2px solid rgba(230,185,149,0.55)", boxShadow: "0 0 40px rgba(230,185,149,0.12), 0 4px 24px rgba(0,0,0,0.4)" }}>
@@ -458,9 +451,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/pricing" style={{ textDecoration: "none" }}>
-                <button className="btn btn-primary" style={{ width: "100%" }}>Upgrade Now</button>
-              </Link>
+              <button onClick={() => navigate("/pricing")} className="btn btn-primary" style={{ width: "100%" }}>Upgrade Now</button>
             </div>
           </div>
         </div>
@@ -484,11 +475,9 @@ export default function LandingPage() {
           <p style={{ color: "rgba(246,241,232,0.62)", fontSize: "1rem", marginBottom: "2.25rem", lineHeight: 1.7 }}>
             Free to start. No account needed.<br />Your reading is ready in about 15 minutes.
           </p>
-          <Link href="/start" style={{ textDecoration: "none" }}>
-            <button className="btn btn-primary" style={{ fontSize: "1.05rem", padding: "0.9rem 2.5rem" }}>
+          <button onClick={() => navigate("/start")} className="btn btn-primary" style={{ fontSize: "1.05rem", padding: "0.9rem 2.5rem" }}>
               Build My Profile
             </button>
-          </Link>
           <p style={{ marginTop: "1rem", fontSize: "0.72rem", color: "rgba(246,241,232,0.3)" }}>
             Already have a profile?{" "}
             <Link href="/today" style={{ color: "#e6b995", opacity: 0.78, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
