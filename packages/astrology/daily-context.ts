@@ -1,4 +1,6 @@
 import * as Astronomy from 'astronomy-engine';
+import { calcPersonalDay } from '@soulcodex/core';
+
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
 export interface DailyContext {
@@ -20,22 +22,12 @@ function reduceToSingleDigit(num: number): number {
   return num;
 }
 
+/**
+ * Calculates Personal Day Number using the shared core module.
+ * This ensures consistency across all surfaces (Today, Timeline, Codex, Profile).
+ */
 export function calculatePersonalDayNumber(birthDate: string, currentDate: Date = new Date()): number {
-  const birth = new Date(birthDate);
-  const day = birth.getDate();
-  const month = birth.getMonth() + 1;
-  const currentDay = currentDate.getDate();
-  const currentMonth = currentDate.getMonth() + 1;
-  const currentYear = currentDate.getFullYear();
-  
-  const reducedBirthDay = reduceToSingleDigit(day);
-  const reducedBirthMonth = reduceToSingleDigit(month);
-  const reducedCurrentDay = reduceToSingleDigit(currentDay);
-  const reducedCurrentMonth = reduceToSingleDigit(currentMonth);
-  const reducedCurrentYear = reduceToSingleDigit(currentYear);
-  
-  const sum = reducedBirthDay + reducedBirthMonth + reducedCurrentDay + reducedCurrentMonth + reducedCurrentYear;
-  return reduceToSingleDigit(sum);
+  return calcPersonalDay(birthDate, currentDate);
 }
 
 export function calculateUniversalDayNumber(currentDate: Date = new Date()): number {
