@@ -1646,6 +1646,49 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   .space-y-8 > * + * {
     margin-top: 1.5rem;
   }
+
+  /* Fix grid layouts to stack on mobile */
+  .grid-cols-2,
+  [style*="gridTemplateColumns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-cols-3,
+  [style*="gridTemplateColumns: 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure text doesn't overflow text containers */
+  p, span, div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Fix button widths on mobile */
+  .btn, button {
+    min-width: auto;
+    width: auto;
+  }
+
+  /* Ensure cards don't overflow */
+  .card, .glassmorphism, [class*="card"], [style*="glassmorphism"] {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Fix common page layouts */
+  [style*="maxWidth:"] {
+    width: 100%;
+  }
+
+  /* Prevent horizontal scrolling on SVG elements */
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 @media (max-width: 720px) {
