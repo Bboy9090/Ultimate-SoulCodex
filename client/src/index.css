@@ -1454,26 +1454,52 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   margin-left: 0.5rem;
 }
 
+/* ── Mobile Tab Bar ──────────────────────────────────────────────────── */
+
+.sc-mobile-tabbar {
+  display: none;
+}
+
 @media (max-width: 920px) {
   .sc-app-shell { flex-direction: column; }
   .sc-sidebar {
-    position: sticky;
-    top: 0;
-    height: auto;
-    width: 100%;
-    border-right: 0;
-    border-bottom: 1px solid rgba(183, 148, 244, 0.16);
-    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
-    display: flex;
-    gap: 0.35rem;
-    align-items: center;
-    overflow-x: auto;
-    padding: 0.65rem;
+    display: none;
   }
-  .sc-sidebar-brand { flex: 0 0 auto; }
-  .sc-nav-item { flex: 0 0 auto; margin-top: 0; }
-  .sc-sidebar-divider { display: none; }
-  .sc-mode-toggle { flex: 0 0 auto; width: auto; }
+  .sc-mobile-tabbar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
+    background: var(--sc-sidebar-bg);
+    border-top: 1px solid rgba(183, 148, 244, 0.16);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
+  }
+  .sc-tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: rgba(214, 188, 250, 0.6);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .sc-tab-item:hover,
+  .sc-tab-active {
+    color: var(--sc-gold);
+    background: rgba(212, 168, 95, 0.08);
+  }
   .sc-main-content { padding-top: 1rem; }
   .sc-marketing-header {
     padding: 0.85rem 1rem;
