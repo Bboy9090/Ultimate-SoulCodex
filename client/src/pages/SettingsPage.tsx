@@ -1,76 +1,135 @@
 import { useLocation } from "wouter";
-import { IconArrowLeft, IconLogo } from "../components/Icons";
+import {
+  IconLogo, IconArrowLeft, IconAlert, IconLock, IconInfo
+} from "../components/Icons";
 
 export default function SettingsPage() {
   const [, navigate] = useLocation();
 
   return (
     <div className="nebula-bg" style={{ minHeight: "100vh", padding: "var(--safe-top) 1.5rem var(--safe-bottom)" }}>
-      <div style={{ maxWidth: 540, margin: "0 auto", paddingBottom: "6rem" }}>
+      <div style={{ maxWidth: 640, margin: "0 auto", paddingBottom: "6rem" }}>
 
+        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.5rem 0", marginBottom: "2rem" }}>
-          <button onClick={() => navigate("/today")} className="btn btn-ghost" style={{ padding: "0.5rem" }}>
+          <button onClick={() => navigate("/")} className="btn btn-ghost" style={{ padding: "0.5rem" }}>
             <IconArrowLeft size={20} />
           </button>
-          <IconLogo size={48} />
+          <h1 className="heading-display" style={{ fontSize: "1.8rem", margin: 0 }}>Settings</h1>
           <div style={{ width: 44 }} />
         </div>
 
-        <h1 className="heading-display" style={{ fontSize: "1.8rem", marginBottom: "2rem", textAlign: "center" }}>Settings</h1>
-
         <div className="stagger">
-          {/* Account */}
-          <div className="glassmorphism" style={{ padding: "1.75rem", borderRadius: "20px", marginBottom: "1.25rem" }}>
-            <h2 className="section-label" style={{ marginBottom: "1.25rem" }}>ACCOUNT</h2>
-            <button
-              className="btn btn-secondary"
-              style={{ width: "100%", height: "3rem", marginBottom: "0.75rem" }}
-              onClick={() => navigate("/start")}
-            >
-              Recalibrate Birth Data
-            </button>
-          </div>
-
-          {/* Legal */}
-          <div className="glassmorphism" style={{ padding: "1.75rem", borderRadius: "20px", marginBottom: "1.25rem" }}>
-            <h2 className="section-label" style={{ marginBottom: "1.25rem" }}>LEGAL</h2>
-            <div style={{ display: "grid", gap: "0.75rem" }}>
-              <button className="btn btn-ghost" style={{ width: "100%", justifyContent: "flex-start", padding: "0.75rem 1rem" }} onClick={() => navigate("/privacy")}>
-                Privacy Policy
-              </button>
-              <button className="btn btn-ghost" style={{ width: "100%", justifyContent: "flex-start", padding: "0.75rem 1rem" }} onClick={() => navigate("/terms")}>
-                Terms of Service
-              </button>
-            </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="glassmorphism" style={{ padding: "1.75rem", borderRadius: "20px", borderTop: "3px solid var(--sc-danger)" }}>
-            <h2 className="section-label" style={{ color: "var(--sc-danger)", marginBottom: "1.25rem" }}>DANGER ZONE</h2>
-            <p style={{ color: "var(--sc-stone)", fontSize: "0.85rem", marginBottom: "1rem", lineHeight: 1.6 }}>
-              This permanently clears all profile data, readings, and settings from this device.
+          {/* Developer / Testing Section */}
+          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", borderLeft: "4px solid var(--sc-danger)" }}>
+            <h2 className="section-label" style={{ marginBottom: "1rem", color: "var(--sc-danger)" }}>Testing Controls</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", marginBottom: "1.5rem" }}>
+              Development tools for testing. Not for daily use.
             </p>
             <button
-              className="btn"
-              style={{
-                width: "100%",
-                height: "3rem",
-                background: "rgba(236, 72, 153, 0.1)",
-                border: "1px solid rgba(236, 72, 153, 0.3)",
-                color: "var(--sc-danger)",
-              }}
               onClick={() => {
-                if (confirm("Reset Soul Codex? This will permanently clear your profile, readings, and all saved data on this device.")) {
+                if (confirm("Reset Soul Codex?\n\nThis will clear your current profile and all local data. You'll return to onboarding.\n\nUse only for testing new birth data or resetting the engine.")) {
                   localStorage.clear();
                   window.location.href = "/";
                 }
               }}
+              style={{
+                width: "100%",
+                padding: "1rem",
+                background: "rgba(239, 68, 68, 0.15)",
+                border: "1px solid var(--sc-danger)",
+                color: "var(--sc-danger)",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLElement).style.background = "rgba(239, 68, 68, 0.25)";
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLElement).style.background = "rgba(239, 68, 68, 0.15)";
+              }}
             >
-              Reset All Data
+              <IconAlert size={16} style={{ marginRight: "0.5rem", display: "inline" }} />
+              Reset Engine
             </button>
           </div>
-        </div>
 
+          {/* Privacy & Legal */}
+          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
+            <h2 className="section-label" style={{ marginBottom: "1.5rem" }}>Privacy & Legal</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <button
+                onClick={() => navigate("/privacy")}
+                style={{
+                  padding: "1rem",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                  borderRadius: "12px",
+                  color: "var(--sc-ivory)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLElement).style.background = "rgba(255,255,255,0.06)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLElement).style.background = "rgba(255,255,255,0.03)";
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <IconLock size={16} />
+                  Privacy Policy
+                </span>
+                <span style={{ opacity: 0.4 }}>›</span>
+              </button>
+              <button
+                onClick={() => navigate("/terms")}
+                style={{
+                  padding: "1rem",
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                  borderRadius: "12px",
+                  color: "var(--sc-ivory)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLElement).style.background = "rgba(255,255,255,0.06)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLElement).style.background = "rgba(255,255,255,0.03)";
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <IconInfo size={16} />
+                  Terms of Service
+                </span>
+                <span style={{ opacity: 0.4 }}>›</span>
+              </button>
+            </div>
+          </div>
+
+          {/* App Info */}
+          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", textAlign: "center", opacity: 0.6 }}>
+            <p style={{ fontSize: "0.85rem", color: "var(--sc-stone)", margin: 0 }}>
+              Soul Codex v1.0
+            </p>
+            <p style={{ fontSize: "0.8rem", color: "var(--sc-stone)", margin: "0.5rem 0 0 0" }}>
+              Your identity engine
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
