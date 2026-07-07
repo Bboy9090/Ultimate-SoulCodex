@@ -22,20 +22,17 @@ function reduceToSingleDigit(num: number): number {
 
 export function calculatePersonalDayNumber(birthDate: string, currentDate: Date = new Date()): number {
   const birth = new Date(birthDate);
-  const day = birth.getDate();
-  const month = birth.getMonth() + 1;
-  const currentDay = currentDate.getDate();
-  const currentMonth = currentDate.getMonth() + 1;
+  const birthMonth = birth.getMonth() + 1;
+  const birthDay = birth.getDate();
   const currentYear = currentDate.getFullYear();
-  
-  const reducedBirthDay = reduceToSingleDigit(day);
-  const reducedBirthMonth = reduceToSingleDigit(month);
-  const reducedCurrentDay = reduceToSingleDigit(currentDay);
-  const reducedCurrentMonth = reduceToSingleDigit(currentMonth);
-  const reducedCurrentYear = reduceToSingleDigit(currentYear);
-  
-  const sum = reducedBirthDay + reducedBirthMonth + reducedCurrentDay + reducedCurrentMonth + reducedCurrentYear;
-  return reduceToSingleDigit(sum);
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentDay = currentDate.getDate();
+
+  const personalYear = reduceToSingleDigit(
+    reduceToSingleDigit(birthMonth) + reduceToSingleDigit(birthDay) + reduceToSingleDigit(currentYear)
+  );
+  const personalMonth = reduceToSingleDigit(personalYear + currentMonth);
+  return reduceToSingleDigit(personalMonth + currentDay);
 }
 
 export function calculateUniversalDayNumber(currentDate: Date = new Date()): number {

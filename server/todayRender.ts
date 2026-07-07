@@ -64,16 +64,28 @@ const DECISION_ADVICE: Record<string, string> = {
   avoidance:      "I pick the thing I've been avoiding longest. I address it first — the rest is easier after."
 };
 
-const MOON_TITLE_PREFIX: Record<string, string> = {
-  "new moon":        "Seed",
-  "waxing crescent": "Build",
-  "first quarter":   "Push",
-  "waxing gibbous":  "Refine",
-  "full moon":       "Release",
-  "waning gibbous":  "Integrate",
-  "third quarter":   "Decide",
-  "waning crescent": "Rest",
-  "balsamic":        "Clear"
+const DAY_TITLE_LABELS: Record<number, string> = {
+  1: "Initiate",
+  2: "Connect",
+  3: "Express",
+  4: "Build",
+  5: "Shift",
+  6: "Tend",
+  7: "Reflect",
+  8: "Command",
+  9: "Release",
+};
+
+const DAY_THEME_DESC: Record<number, string> = {
+  1: "a starting phase for bold moves, independence, and forward momentum",
+  2: "a receptive phase for listening, partnerships, and patience",
+  3: "a creative phase for speaking up, sharing, and social energy",
+  4: "a structure phase for order, discipline, and follow-through",
+  5: "a change phase for movement, freedom, and clearing the stale",
+  6: "a responsibility phase for home, health, and showing up",
+  7: "an inner phase for study, solitude, and trusting the pattern",
+  8: "a power phase for bold calls, boundaries, and leverage",
+  9: "a completion phase for closing chapters, giving, and letting go",
 };
 
 export function buildTodayCard(
@@ -82,8 +94,7 @@ export function buildTodayCard(
   codexSynthesis?: any
 ): TodayCardData {
   const dayNum = Math.min(9, Math.max(1, horoscopeData?.personalDayNumber ?? 4));
-  const moonPhase = (horoscopeData?.moonPhase?.phase ?? "Full Moon").toLowerCase();
-  const moonPrefix = MOON_TITLE_PREFIX[moonPhase] ?? "Focus";
+  const dayLabel = DAY_TITLE_LABELS[dayNum] ?? "Focus";
 
   const decisionStyle: string =
     profile?.signals?.decisionStyle ??
@@ -96,18 +107,17 @@ export function buildTodayCard(
   const codename = codexSynthesis?.codename ?? profile?.archetype?.name ?? "The Quiet Builder";
   const topTheme = codexSynthesis?.topThemes?.[0]?.tag ?? "precision";
 
+  const dayThemeDesc = DAY_THEME_DESC[dayNum] ?? "a focused phase for clarity and precision";
   const topTransit = horoscopeData?.personalTransits?.[0];
-  let focus = `Personal Day ${dayNum} — a ${moonPrefix.toLowerCase()} phase for ${
-    topTheme.replace(/_/g, " ")
-  }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I stay in my lane and build today."}`;
+  let focus = `Personal Day ${dayNum} — ${dayThemeDesc}. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I stay in my lane and build today."}`;
 
-  if (focus.length > 120) focus = focus.slice(0, 117) + "…";
+  if (focus.length > 160) focus = focus.slice(0, 157) + "…";
 
   const dayIndex = ((dayNum - 1) % 9) + 1;
 
   return {
     codename,
-    title: `Day ${dayNum} — ${moonPrefix}`,
+    title: `Day ${dayNum} — ${dayLabel}`,
     focus,
     doList: (DAY_DO[dayIndex] ?? DAY_DO[4]).slice(0, 3),
     dontList: (DAY_DONT[dayIndex] ?? DAY_DONT[4]).slice(0, 3),
