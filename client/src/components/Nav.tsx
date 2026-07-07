@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import {
   IconToday, IconProfile, IconGuide, IconTracker, IconTimeline,
   IconCodex, IconCompat, IconPoster, IconChart, IconBlueprint,
-  IconLogo
+  IconLogo, IconSettings
 } from "./Icons";
 import { triggerHapticFeedback } from "../lib/haptics";
 
@@ -36,6 +36,7 @@ const NAV_ICONS: Record<string, any> = {
   "/poster":     IconPoster,
   "/horoscope":  IconChart,
   "/blueprint":  IconBlueprint,
+  "/settings":   IconSettings,
 };
 
 export default function Nav() {
@@ -133,28 +134,17 @@ export default function Nav() {
           </span>
         </button>
 
-        <div style={{ marginTop: "auto", padding: "1rem 0", display: "flex", flexDirection: "column", gap: "0.4rem", opacity: 0.4 }}>
-          <button 
-            onClick={() => {
-              if (confirm("Reset Soul Codex? This will clear your current profile for testing.")) {
-                localStorage.clear();
-                window.location.href = "/";
-              }
-            }}
-            className="sc-nav-item" 
-            style={{ 
-              padding: "0.25rem 0.75rem", fontSize: "0.65rem", 
-              background: "none", border: "none", cursor: "pointer", 
-              textAlign: "left", width: "100%", color: "var(--sc-gold)"
-            }}
+        <div style={{ marginTop: "auto", paddingTop: "1rem", opacity: 0.5 }}>
+          <Link
+            href="/settings"
+            className={`sc-nav-item${location === "/settings" ? " sc-nav-active" : ""}`}
+            onClick={() => triggerHapticFeedback()}
+            style={{ fontSize: "0.85rem" }}
           >
-            Reset Engine
-          </button>
-          <Link href="/privacy" className="sc-nav-item" style={{ padding: "0.25rem 0.75rem", fontSize: "0.65rem" }}>
-            Privacy
-          </Link>
-          <Link href="/terms" className="sc-nav-item" style={{ padding: "0.25rem 0.75rem", fontSize: "0.65rem" }}>
-            Terms
+            <span style={{ fontSize: "0.85rem", width: "1.1rem", textAlign: "center", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <IconSettings style={{ width: "1rem", height: "1rem" }} />
+            </span>
+            <span>Settings</span>
           </Link>
         </div>
       </nav>

@@ -23,6 +23,7 @@ const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const BlueprintPage = lazy(() => import("./pages/BlueprintPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 import { queryClient, apiFetch } from "./lib/queryClient";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
@@ -136,6 +137,7 @@ export default function App() {
             <Route path="/today" component={TodayPage} />
             <Route path="/privacy" component={PrivacyPage} />
             <Route path="/terms" component={TermsPage} />
+            <Route path="/settings" component={SettingsPage} />
             <Route path="/admin" component={AdminPage} />
             <Route path="/pricing" component={PricingPage} />
             <Route path="/share/:token" component={SharePage} />
