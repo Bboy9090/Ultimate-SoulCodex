@@ -28,10 +28,22 @@ export default function ProfilePage() {
   const archetypeName = profile.archetype?.name || "The Seeker";
   const archetypeTagline = profile.archetype?.tagline || "Aligning your natal signals...";
 
-  // Sanitize synthesis lines
-  const coreEssence = cleanCodexLine(profile.synthesis?.coreEssence, "Your core architecture is forming.");
-  const myPattern = cleanCodexLine(profile.synthesis?.myPattern, "Observing your behavioral loops...");
-  const growthPath = cleanCodexLine(profile.synthesis?.growthPath, "Your next evolutionary stage is calibrating.");
+  const sunSign = profile.chartData?.sunSign || profile.sunSign || profile.astrologyData?.sunSign || profile.natalChart?.sunSign || null;
+  const moonSign = profile.chartData?.moonSign || profile.moonSign || profile.astrologyData?.moonSign || profile.natalChart?.moonSign || null;
+  const hasVerifiedData = !!(sunSign && moonSign);
+
+  const coreEssence = cleanCodexLine(
+    profile.synthesis?.coreEssence,
+    hasVerifiedData ? `${sunSign} Sun, ${moonSign} Moon — your core architecture is active.` : "Your core architecture is forming."
+  );
+  const myPattern = cleanCodexLine(
+    profile.synthesis?.myPattern,
+    hasVerifiedData ? "Your behavioral signature is mapped. Open your Codex for the full pattern." : "Observing your behavioral loops..."
+  );
+  const growthPath = cleanCodexLine(
+    profile.synthesis?.growthPath,
+    hasVerifiedData ? "Your growth vector is calibrated. Check your Timeline for phase details." : "Your next evolutionary stage is calibrating."
+  );
 
   return (
     <div className="nebula-bg" style={{ minHeight: "100vh", padding: "var(--safe-top) 1.5rem var(--safe-bottom)" }}>
@@ -64,11 +76,11 @@ export default function ProfilePage() {
              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                <div style={{ padding: "1.25rem", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ fontSize: "0.6rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem", letterSpacing: "0.1em" }}>Natal Sun</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--sc-gold)" }}>{profile.chartData?.sunSign || "—"}</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--sc-gold)" }}>{sunSign || "—"}</div>
                </div>
                <div style={{ padding: "1.25rem", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ fontSize: "0.6rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem", letterSpacing: "0.1em" }}>Natal Moon</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--sc-ivory)" }}>{profile.chartData?.moonSign || "—"}</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--sc-ivory)" }}>{moonSign || "—"}</div>
                </div>
              </div>
           </div>

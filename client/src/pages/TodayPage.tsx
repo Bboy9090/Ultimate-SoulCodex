@@ -125,9 +125,14 @@ export default function TodayPage() {
   const archetypeName = profile?.archetype?.name || "The Seeker";
   const archetypeTagline = profile?.archetype?.tagline || "Aligning your natal signals...";
   
+  const sunSign = profile.sunSign || profile.astrologyData?.sunSign || profile.chartData?.sunSign;
+  const hasChartData = !!sunSign;
+
   const pattern = cleanCodexLine(
     profile.synthesis?.coreEssence || (profile.archetypeData as any)?.synthesis?.myPattern,
-    "Your pattern needs verified chart data before it can be locked."
+    hasChartData
+      ? `${sunSign} core pattern active. Open your Codex for the full signature.`
+      : "Complete your birth data to unlock your core pattern."
   );
 
   const dailyTheme = cleanCodexLine(card.title, "Calibrating daily focus...");
