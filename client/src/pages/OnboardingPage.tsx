@@ -5,6 +5,7 @@ import { apiRequest, apiFetch } from "../lib/queryClient";
 import CosmicLoader from "@/components/CosmicLoader";
 import ScButton from "@/components/ScButton";
 import { IconCircle, IconLogo, IconSparkles } from "@/components/Icons";
+import { saveActiveProfile } from "../lib/profileStorage";
 
 type PressurePattern =
   | "spiral_inward"
@@ -321,6 +322,7 @@ export default function OnboardingPage() {
       const isGuest = localStorage.getItem("soulIsGuest") === "true";
       const storageKey = isGuest ? "soulGuestProfile" : "soulProfile";
       localStorage.setItem(storageKey, JSON.stringify(result));
+      saveActiveProfile(result);
       if (!isGuest) localStorage.setItem("onboardingData", JSON.stringify(form));
       if (result?.confidence) localStorage.setItem(isGuest ? "soulGuestConfidence" : "soulConfidence", JSON.stringify(result.confidence));
 
