@@ -1,16 +1,115 @@
 import { useLocation } from "wouter";
-import { 
-  IconLogo, IconArrowLeft, IconDiamond, IconStar, 
+import {
+  IconLogo, IconArrowLeft, IconDiamond, IconStar,
   IconIdentity, IconCompass, IconZap, IconActivity
 } from "../components/Icons";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+import {
+  calcPersonalDay,
+  calcPersonalYear,
+  calcPersonalMonth,
+  getPersonalDayLabel,
+  getPersonalYearLabel,
+  getPersonalMonthLabel
+} from "@soulcodex/core";
 
 function getProfile() {
   try {
     const raw = localStorage.getItem("soulProfile");
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+function getLifePathLabel(num: number | undefined): string {
+  if (!num) return "—";
+  const labels: Record<number, string> = {
+    1: "The Innovator",
+    2: "The Peacemaker",
+    3: "The Creator",
+    4: "The Builder",
+    5: "The Explorer",
+    6: "The Caregiver",
+    7: "The Seeker",
+    8: "The Leader",
+    9: "The Humanitarian",
+  };
+  return labels[num] || `Path ${num}`;
+}
+
+function buildIdentityStatement(profile: any): string {
+  const confidence = profile.confidence?.badge || "unverified";
+  const archetype = profile.archetype?.name || "The Seeker";
+  const sunSign = profile.chartData?.sunSign;
+  const moonSign = profile.chartData?.moonSign;
+  const lifePath = profile.numerologyData?.lifePath;
+  const hdType = profile.humanDesignData?.type;
+
+  if (confidence === "unverified" || !profile.birthDate) {
+    return "Complete your birth details to unlock your full identity architecture.";
+  }
+
+  const parts = [];
+  if (sunSign) parts.push(`${sunSign} Sun`);
+  if (moonSign) parts.push(`${moonSign} Moon`);
+  if (hdType) parts.push(`Type ${hdType}`);
+  if (lifePath) parts.push(`Life Path ${lifePath}`);
+
+  if (parts.length === 0) {
+    return `You are ${archetype}—a pattern woven from your birth chart and life experience.`;
+  }
+
+  return `${archetype}. ${parts.join(", ")}. Your essence bridges multiple systems of knowing.`;
+}
+
+function buildCoreEssenceStatement(profile: any): string {
+  const confidence = profile.confidence?.badge || "unverified";
+  const archetype = profile.archetype?.name;
+  const sunSign = profile.chartData?.sunSign;
+  const lifePathLabel = getLifePathLabel(profile.numerologyData?.lifePath);
+
+  if (!profile.synthesis?.coreEssence || confidence === "unverified") {
+    if (confidence === "partial") {
+      return `You carry the ${sunSign || "archetypal"} core of ${archetype}. Birth time would reveal your complete foundation.`;
+    }
+    return `Your core architecture is still being calibrated. Complete your profile to see your essence.`;
+  }
+
+  return profile.synthesis.coreEssence;
+}
+
+function buildOperatingPatternStatement(profile: any): string {
+  const confidence = profile.confidence?.badge || "unverified";
+  const hdType = profile.humanDesignData?.type;
+  const strategy = profile.humanDesignData?.strategy;
+
+  if (!profile.synthesis?.myPattern || confidence === "unverified") {
+    if (confidence === "partial" && hdType) {
+      return `As a Type ${hdType}, your operating system processes the world through ${strategy || "your unique strategy"}. This pattern is your mechanical gift.`;
+    }
+    return `Your behavioral patterns are still being mapped. Add Human Design insights to understand how you operate.`;
+  }
+
+  return profile.synthesis.myPattern;
+}
+
+function buildGrowthPathStatement(profile: any): string {
+  const confidence = profile.confidence?.badge || "unverified";
+  const birthDate = profile.birthDate;
+
+  if (!profile.synthesis?.growthPath || confidence === "unverified") {
+    if (confidence === "partial" || birthDate) {
+      const today = new Date();
+      const personalYear = birthDate ? calcPersonalYear(birthDate, today.getFullYear()) : null;
+      const yearLabel = personalYear ? getPersonalYearLabel(personalYear) : null;
+      if (yearLabel) {
+        return `Your 2026 cycle is ${yearLabel}—a phase calling you toward deeper evolution. Trust the unfolding.`;
+      }
+    }
+    return `Your evolutionary stage is still calibrating. Your growth path will reveal itself as your profile completes.`;
+  }
+
+  return profile.synthesis.growthPath;
 }
 
 export default function ProfilePage() {
@@ -28,10 +127,34 @@ export default function ProfilePage() {
   const archetypeName = profile.archetype?.name || "The Seeker";
   const archetypeTagline = profile.archetype?.tagline || "Aligning your natal signals...";
 
-  // Sanitize synthesis lines
-  const coreEssence = cleanCodexLine(profile.synthesis?.coreEssence, "Your core architecture is forming.");
-  const myPattern = cleanCodexLine(profile.synthesis?.myPattern, "Observing your behavioral loops...");
-  const growthPath = cleanCodexLine(profile.synthesis?.growthPath, "Your next evolutionary stage is calibrating.");
+  // Calculate Personal Day/Year/Month if we have birthDate
+  const today = new Date();
+  const birthDate = profile.birthDate;
+  let personalDay = null;
+  let personalYear = null;
+  let personalMonth = null;
+  let personalDayLabel = "";
+  let personalYearLabel = "";
+  let personalMonthLabel = "";
+
+  if (birthDate) {
+    try {
+      personalDay = calcPersonalDay(birthDate, today);
+      personalDayLabel = getPersonalDayLabel(personalDay);
+      personalYear = calcPersonalYear(birthDate, today.getFullYear());
+      personalYearLabel = getPersonalYearLabel(personalYear);
+      personalMonth = calcPersonalMonth(personalYear, today.getMonth() + 1);
+      personalMonthLabel = getPersonalMonthLabel(personalMonth);
+    } catch (e) {
+      console.warn("Failed to calculate personal numbers:", e);
+    }
+  }
+
+  // Sanitize synthesis lines with hydration-aware copy
+  const coreEssence = cleanCodexLine(buildCoreEssenceStatement(profile), "Your core architecture is forming.");
+  const myPattern = cleanCodexLine(buildOperatingPatternStatement(profile), "Observing your behavioral loops...");
+  const growthPath = cleanCodexLine(buildGrowthPathStatement(profile), "Your next evolutionary stage is calibrating.");
+  const identityStatement = buildIdentityStatement(profile);
 
   return (
     <div className="nebula-bg" style={{ minHeight: "100vh", padding: "var(--safe-top) 1.5rem var(--safe-bottom)" }}>
@@ -51,17 +174,18 @@ export default function ProfilePage() {
           <div className="glassmorphism" style={{ padding: "2.5rem 2rem", borderRadius: "28px", marginBottom: "1.5rem", textAlign: "center" }}>
              <h2 className="section-label" style={{ color: "var(--sc-gold)", marginBottom: "1.25rem" }}>MY IDENTITY</h2>
              <h1 className="heading-display" style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>{archetypeName}</h1>
-             <p className="oracle-text" style={{ fontSize: "1rem", marginBottom: "1.5rem" }}>{archetypeTagline}</p>
+             <p className="oracle-text" style={{ fontSize: "1rem", marginBottom: "1.5rem", color: "var(--sc-ivory)" }}>{identityStatement}</p>
 
              <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-                <ConfidenceBadge 
-                  badge={profile.confidence?.badge || "unverified"} 
+                <ConfidenceBadge
+                  badge={profile.confidence?.badge || "unverified"}
                   label={profile.confidence?.label}
                   reason={profile.confidence?.reason}
                 />
              </div>
 
-             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+             {/* Natal Big 3 */}
+             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
                <div style={{ padding: "1.25rem", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ fontSize: "0.6rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem", letterSpacing: "0.1em" }}>Natal Sun</div>
                   <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--sc-gold)" }}>{profile.chartData?.sunSign || "—"}</div>
@@ -69,6 +193,22 @@ export default function ProfilePage() {
                <div style={{ padding: "1.25rem", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ fontSize: "0.6rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem", letterSpacing: "0.1em" }}>Natal Moon</div>
                   <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--sc-ivory)" }}>{profile.chartData?.moonSign || "—"}</div>
+               </div>
+             </div>
+
+             {/* Numerology + Today Cycle */}
+             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
+               <div style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontSize: "0.6rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem", letterSpacing: "0.1em" }}>Life Path</div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--sc-ivory)" }}>{profile.numerologyData?.lifePath || "—"}</div>
+               </div>
+               <div style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontSize: "0.6rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem", letterSpacing: "0.1em" }}>Personal Year</div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--sc-cyan)" }}>{personalYear || "—"}</div>
+               </div>
+               <div style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontSize: "0.6rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem", letterSpacing: "0.1em" }}>Today's Frequency</div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--sc-slate)" }}>{personalDay || "—"}</div>
                </div>
              </div>
           </div>
