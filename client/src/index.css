@@ -1652,14 +1652,27 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   }
 
   /* Fix grid layouts to stack on mobile */
-  .grid-cols-2,
-  [style*="gridTemplateColumns: 1fr 1fr"] {
+  .grid-cols-2 {
     grid-template-columns: 1fr !important;
   }
 
-  .grid-cols-3,
-  [style*="gridTemplateColumns: 1fr 1fr 1fr"] {
+  .grid-cols-3 {
     grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure grid items don't overflow their columns */
+  [style*="display: grid"],
+  [style*="display:grid"] {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  [style*="display: grid"] > *,
+  [style*="display:grid"] > * {
+    min-width: 0;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   /* Ensure text doesn't overflow text containers */
