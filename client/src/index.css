@@ -1555,9 +1555,10 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
     display: flex;
     gap: 0.35rem;
     align-items: center;
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: hidden;
     padding: 0.65rem;
+    flex-wrap: nowrap;
   }
   .sc-sidebar-brand { flex: 0 0 auto; }
   .sc-nav-item { flex: 0 0 auto; margin-top: 0; }
@@ -1566,6 +1567,9 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   .sc-main-content {
     padding-top: 1rem;
     padding-bottom: 5rem;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
   .sc-marketing-header {
     padding: 0.85rem 1rem;
