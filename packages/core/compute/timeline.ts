@@ -6,7 +6,7 @@
  * leaving the presentation content (copy) in the UI layer.
  */
 
-import { calcPersonalYear, calcPersonalMonth } from './personal-numbers';
+import { calcPersonalYear, calcPersonalMonth } from './personal-numbers.js';
 
 export { calcPersonalYear, calcPersonalMonth };
 
