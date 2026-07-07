@@ -1,3 +1,5 @@
+import { getPersonalDayLabel } from "@soulcodex/core";
+
 export interface TodayCardData {
   codename: string;
   title: string;
@@ -8,6 +10,7 @@ export interface TodayCardData {
   decisionAdvice: string;
   moonPhase: string;
   personalDayNumber: number;
+  personalDayLabel: string;
   confidenceLabel: string;
   topTheme?: string;
   date: string;
@@ -82,6 +85,7 @@ export function buildTodayCard(
   codexSynthesis?: any
 ): TodayCardData {
   const dayNum = Math.min(9, Math.max(1, horoscopeData?.personalDayNumber ?? 4));
+  const dayLabel = getPersonalDayLabel(dayNum);
   const moonPhase = (horoscopeData?.moonPhase?.phase ?? "Full Moon").toLowerCase();
   const moonPrefix = MOON_TITLE_PREFIX[moonPhase] ?? "Focus";
 
@@ -97,7 +101,7 @@ export function buildTodayCard(
   const topTheme = codexSynthesis?.topThemes?.[0]?.tag ?? "precision";
 
   const topTransit = horoscopeData?.personalTransits?.[0];
-  let focus = `Personal Day ${dayNum} — a ${moonPrefix.toLowerCase()} phase for ${
+  let focus = `Personal Day ${dayNum} — a ${dayLabel.toLowerCase()} phase for ${
     topTheme.replace(/_/g, " ")
   }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I stay in my lane and build today."}`;
 
@@ -107,7 +111,7 @@ export function buildTodayCard(
 
   return {
     codename,
-    title: `Day ${dayNum} — ${moonPrefix}`,
+    title: `Day ${dayNum} — ${dayLabel}`,
     focus,
     doList: (DAY_DO[dayIndex] ?? DAY_DO[4]).slice(0, 3),
     dontList: (DAY_DONT[dayIndex] ?? DAY_DONT[4]).slice(0, 3),
@@ -115,6 +119,7 @@ export function buildTodayCard(
     decisionAdvice: DECISION_ADVICE[decisionStyle] ?? "I let my decision breathe before committing. Clarity comes after the noise settles.",
     moonPhase: horoscopeData?.moonPhase?.phase ?? "Full Moon",
     personalDayNumber: dayNum,
+    personalDayLabel: dayLabel,
     confidenceLabel,
     topTheme,
     date: horoscopeData?.date ?? new Date().toISOString().slice(0, 10)
