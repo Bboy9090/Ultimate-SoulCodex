@@ -107,15 +107,15 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
+      <div style={{ display: "flex", minHeight: "100vh", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
       {/* Dynamic Cosmic Background - Always present behind the UI */}
       <CosmicBackground />
       <div className="sacred-geometry" />
-      
+
       {/* Sidebar - Only visible after a valid profile and never during onboarding */}
       {hasProfile && !isOnboardingRoute && <Nav />}
-      
-      <main style={{ flex: 1, position: "relative", minWidth: 0, zIndex: 2 }}>
+
+      <main style={{ flex: 1, position: "relative", minWidth: 0, maxWidth: "100%", overflowX: "hidden", width: "100%", zIndex: 2 }}>
         <Suspense fallback={<CosmicLoader fullPage label="Loading Dimension..." />}>
           <Switch>
             <Route path="/">
