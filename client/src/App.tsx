@@ -25,6 +25,7 @@ const BlueprintPage = lazy(() => import("./pages/BlueprintPage"));
 const GalacticCodePage = lazy(() => import("./pages/GalacticCodePage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 import { queryClient, apiFetch } from "./lib/queryClient";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
