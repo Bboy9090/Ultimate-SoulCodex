@@ -58,7 +58,7 @@ const ASPECT_INTERPRETATIONS: Record<string, Record<string, string>> = {
   'Mars-Pluto': {
     Conjunction: 'Intense willpower. I can transform something fundamental if I stay conscious.',
     Opposition: 'Power struggles surface. Someone pushes my buttons — the reaction reveals my shadow.',
-    Square: 'Compulsive energy that demands an outlet. Physical activity prevents destructive patterns.',
+    Square: 'Compulsive energy that demands an outlet. Physical activity channels it productively.',
     Trine: 'Deep reserves of strength are available. I can push through barriers.',
     Sextile: 'Subtle power shifts in my favor. Strategic action works better than force.',
   },

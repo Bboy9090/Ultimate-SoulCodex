@@ -102,7 +102,7 @@ function buildStressPattern(s: SoulSignals, arc: Archetype, v: number): string {
     ],
     freeze: [
       "I lock my system when I can't see the exit, waiting in the silence until I have a map of the room.",
-      "I go dark when the signal gets too noisy, pausing all action to prevent a catastrophic error.",
+      "I go dark when the signal gets too noisy, pausing all action until clarity returns.",
       "I prioritize observation over action when the environment is hostile, waiting for a clear vector before I move."
     ],
     adapt: [
