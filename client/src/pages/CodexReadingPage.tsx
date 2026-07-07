@@ -61,26 +61,26 @@ function buildCodexSections(
   const strengths = synthesis.strengths.slice(0, 3);
   const whoIAm =
     strengths.length > 0
-      ? `${synthesis.codename}. Your strengths: ${strengths.join(", ")}. You embody these qualities as your core gifts.`
-      : `${synthesis.codename}. You are a unique convergence of patterns, wisdom, and potential.`;
+      ? `${synthesis.codename}. Your core strengths: ${strengths.join(", ")}. These are your operating gifts.`
+      : `${synthesis.codename}. Your identity is built from verifiable patterns—astrology, numerology, Human Design.`;
   sections.push({
     title: "WHO I AM",
-    content: cleanCodexLine(whoIAm, "Your soul carries distinct gifts and a unique way of being."),
+    content: cleanCodexLine(whoIAm, "Your pattern emerges from multiple systems of knowing."),
   });
 
   // 2. HOW I OPERATE
   const authority = profile?.humanDesignData?.authority;
   const strategy = profile?.humanDesignData?.strategy;
-  const topTheme = synthesis.topThemes?.[0]?.tag || "your unique pattern";
+  const topTheme = synthesis.topThemes?.[0]?.tag || "your core theme";
   const howIOperate =
     strategy || authority
       ? `Your decision-making flows through ${authority || "your inner guidance"}. Your strategy is ${strategy || "to trust your process"}. Your natural rhythm centers on ${topTheme}.`
-      : `You operate best when aligned with ${topTheme}. Your natural rhythm is your compass.`;
+      : `Your operating rhythm follows ${topTheme}. Decision-making works best when you trust your mechanical pattern.`;
   sections.push({
     title: "HOW I OPERATE",
     content: cleanCodexLine(
       howIOperate,
-      "Your operating system processes the world through your unique lens."
+      "Your operating system is hardwired from your birth chart and Human Design."
     ),
   });
 
@@ -121,13 +121,13 @@ function buildCodexSections(
   // 6. ONE MOVE TODAY
   const prescription = synthesis.prescriptions?.[0];
   const oneMove = prescription
-    ? `${prescription}. This small action aligns you with your current cycle.`
+    ? `${prescription}. This action anchors you in your current cycle.`
     : personalDay
-    ? `Anchor today's frequency (Day ${personalDay}) with one intentional act. Move, create, or rest according to this number's wisdom.`
-    : "Take one action today that honors your deepest values.";
+    ? `Anchor today's frequency (Day ${personalDay}) with one act: move, create, or rest per this number's logic.`
+    : "Take one action today that moves you toward your stated goals.";
   sections.push({
     title: "ONE MOVE TODAY",
-    content: cleanCodexLine(oneMove, "Small, aligned actions compound into transformation."),
+    content: cleanCodexLine(oneMove, "Small, specific actions compound. Your move today shapes your cycle."),
   });
 
   return sections;

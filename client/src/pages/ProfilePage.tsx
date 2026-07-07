@@ -56,7 +56,7 @@ function buildIdentityStatement(profile: any): string {
   if (lifePath) parts.push(`Life Path ${lifePath}`);
 
   if (parts.length === 0) {
-    return `You are ${archetype}—a unique constellation of inherited and chosen patterns.`;
+    return `You are ${archetype}—a pattern woven from your birth chart and life experience.`;
   }
 
   return `${archetype}. ${parts.join(", ")}. Your essence bridges multiple systems of knowing.`;
