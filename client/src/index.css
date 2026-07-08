@@ -80,9 +80,6 @@
     inset: 0;
     z-index: -1;
     overflow: hidden;
-    width: 100%;
-    height: 100%;
-    max-width: 100vw;
   }
 
   .nebula-glow {
@@ -223,9 +220,6 @@
       );
     -webkit-mask-image: radial-gradient(circle at 50% 44%, #000 0%, rgba(0,0,0,0.35) 55%, transparent 78%);
     mask-image: radial-gradient(circle at 50% 44%, #000 0%, rgba(0,0,0,0.35) 55%, transparent 78%);
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -318,9 +312,6 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
 }
 
 body {
@@ -330,20 +321,6 @@ body {
   min-height: 100dvh;
   padding-bottom: 5rem;
   line-height: 1.65;
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
-}
-
-@media (max-width: 640px) {
-  body {
-    padding-bottom: 70px;
-  }
-}
-
-#root {
-  width: 100%;
-  max-width: 100%;
   overflow-x: hidden;
 }
 
@@ -1200,17 +1177,12 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   display: flex;
   min-height: 100dvh;
   width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
 }
 
 .sc-main-content {
   flex: 1;
   min-width: 0;
-  max-width: 100%;
   padding: 1.25rem 1.25rem 5rem;
-  overflow-x: hidden;
-  width: 100%;
 }
 
 .sc-sidebar {
@@ -1219,16 +1191,12 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   align-self: flex-start;
   height: 100dvh;
   width: 252px;
-  min-width: 252px;
-  max-width: 252px;
   padding: 1rem 0.9rem 0.9rem;
   background: var(--sc-sidebar-bg);
   border-right: 1px solid rgba(183, 148, 244, 0.16);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   box-shadow: 18px 0 60px rgba(0, 0, 0, 0.35);
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .sc-sidebar-brand {
@@ -1486,91 +1454,53 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   margin-left: 0.5rem;
 }
 
-/* Mobile Tab Bar — visible only on mobile, hidden on desktop */
+/* ── Mobile Tab Bar ──────────────────────────────────────────────────── */
+
 .sc-mobile-tabbar {
   display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  max-width: 100%;
-  height: 60px;
-  background: rgba(13, 11, 33, 0.95);
-  border-top: 1px solid rgba(183, 148, 244, 0.16);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 40;
-  overflow-x: hidden;
-}
-
-.sc-tab-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  flex: 1;
-  height: 100%;
-  justify-content: center;
-  text-decoration: none;
-  color: rgba(214, 188, 250, 0.6);
-  font-size: 0.65rem;
-  font-weight: 500;
-  transition: color 0.2s ease;
-  padding: 0.25rem 0;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sc-tab-item:active {
-  color: rgba(212, 168, 95, 0.9);
-}
-
-.sc-tab-active {
-  color: rgba(212, 168, 95, 0.9);
 }
 
 @media (max-width: 920px) {
-  .sc-app-shell {
-    flex-direction: column;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
+  .sc-app-shell { flex-direction: column; }
   .sc-sidebar {
-    position: sticky;
-    top: 0;
-    height: auto;
-    width: 100%;
-    max-width: 100%;
-    min-width: auto;
-    border-right: 0;
-    border-bottom: 1px solid rgba(183, 148, 244, 0.16);
-    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+    display: none;
+  }
+  .sc-mobile-tabbar {
     display: flex;
-    gap: 0.35rem;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    justify-content: space-around;
     align-items: center;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    padding: 0.65rem;
-    flex-wrap: nowrap;
+    padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
+    background: var(--sc-sidebar-bg);
+    border-top: 1px solid rgba(183, 148, 244, 0.16);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
   }
-  .sc-sidebar-brand { flex: 0 0 auto; }
-  .sc-nav-item { flex: 0 0 auto; margin-top: 0; }
-  .sc-sidebar-divider { display: none; }
-  .sc-mode-toggle { flex: 0 0 auto; width: auto; }
-  .sc-main-content {
-    padding-top: 1rem;
-    padding-bottom: 5rem;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
+  .sc-tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: rgba(214, 188, 250, 0.6);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    transition: color 0.15s ease, background 0.15s ease;
   }
+  .sc-tab-item:hover,
+  .sc-tab-active {
+    color: var(--sc-gold);
+    background: rgba(212, 168, 95, 0.08);
+  }
+  .sc-main-content { padding-top: 1rem; }
   .sc-marketing-header {
     padding: 0.85rem 1rem;
     justify-content: center;
@@ -1581,130 +1511,6 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
   }
   .sc-marketing-cta {
     margin-left: 0;
-  }
-}
-
-@media (max-width: 640px) {
-  /* Hide desktop sidebar, show mobile tab bar on mobile */
-  .sc-sidebar {
-    display: none;
-  }
-
-  .sc-mobile-tabbar {
-    display: flex;
-  }
-
-  .sc-app-shell {
-    flex-direction: column;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  .sc-main-content {
-    width: 100%;
-    max-width: 100%;
-    padding: 1rem 1rem 70px 1rem;
-    overflow-x: hidden;
-  }
-
-  /* Ensure containers don't overflow on mobile */
-  .container {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  /* Fix common layout issues */
-  main {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  /* Ensure text doesn't stack letter-by-letter on mobile */
-  h1, h2, h3, h4, h5, h6 {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  /* Ensure buttons and controls fit on mobile */
-  button, input, textarea, select {
-    max-width: 100%;
-  }
-
-  /* Fix grid layouts on mobile */
-  .grid {
-    overflow-x: hidden;
-  }
-
-  /* Ensure flex containers don't overflow */
-  .flex {
-    overflow-x: hidden;
-  }
-
-  /* Fix padding on smaller screens */
-  .space-y-8 > * + * {
-    margin-top: 1.5rem;
-  }
-
-  /* Fix grid layouts to stack on mobile */
-  .grid-cols-2 {
-    grid-template-columns: 1fr !important;
-  }
-
-  .grid-cols-3 {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Ensure grid items don't overflow their columns */
-  [style*="display: grid"],
-  [style*="display:grid"] {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  [style*="display: grid"] > *,
-  [style*="display:grid"] > * {
-    min-width: 0;
-    width: 100%;
-    overflow-x: hidden;
-  }
-
-  /* Ensure text doesn't overflow text containers */
-  p, span, div {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-
-  /* Fix button widths on mobile */
-  .btn, button {
-    min-width: auto;
-    width: auto;
-  }
-
-  /* Ensure cards don't overflow */
-  .card, .glassmorphism, [class*="card"], [style*="glassmorphism"] {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-
-  /* Fix common page layouts */
-  [style*="maxWidth:"] {
-    width: 100%;
-  }
-
-  /* Prevent horizontal scrolling on SVG elements */
-  svg {
-    max-width: 100%;
-    height: auto;
   }
 }
 

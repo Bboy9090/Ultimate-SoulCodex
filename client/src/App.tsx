@@ -29,6 +29,7 @@ import { queryClient, apiFetch } from "./lib/queryClient";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const SharePage = lazy(() => import("./pages/SharePage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -142,6 +143,7 @@ export default function App() {
             <Route path="/today" component={TodayPage} />
             <Route path="/privacy" component={PrivacyPage} />
             <Route path="/terms" component={TermsPage} />
+            <Route path="/settings" component={SettingsPage} />
             <Route path="/admin" component={AdminPage} />
             <Route path="/pricing" component={PricingPage} />
             <Route path="/share/:token" component={SharePage} />
