@@ -67,6 +67,14 @@ export interface CoreDriver {
   explanation: string;
 }
 
+export interface BehaviorPrediction {
+  situation: string;
+  likely: string;
+  trap: string;
+  alternative: string;
+  sources: string[];
+}
+
 export interface Synthesis {
   myPattern: string;
   stressPattern: string;
@@ -82,6 +90,7 @@ export interface Synthesis {
   codename: string;
   synergy?: SynergyInteraction[];
   coreDrivers?: CoreDriver[];
+  predictions?: BehaviorPrediction[];
 }
 
 export interface SoulProfile {

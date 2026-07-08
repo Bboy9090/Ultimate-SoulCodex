@@ -3,6 +3,7 @@ import { stressNotes } from "./elements";
 import { deriveMoralCode } from "./moral";
 import { analyzeSynergy } from "./synergy";
 import { rankCoreDrivers } from "./dominance";
+import { generateBehaviorPredictions } from "./predictive";
 
 const LIFE_PATH_DESC: Record<number, string> = {
   1:  "I clear paths by initiating immediately, even when the direction is unknown, often leaving unfinished logic behind.",
@@ -408,6 +409,12 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
   if (unique.length < lines.length) {
     // If we have a direct duplicate, adjust the seed slightly and retry once
     return synthesize({ ...signals, seed: signals.seed + "1" }, archetype);
+  }
+
+  // Layer 7: Generate behavior predictions based on core drivers
+  const coreDriversForPrediction = syn.coreDrivers || [];
+  if (coreDriversForPrediction.length > 0) {
+    syn.predictions = generateBehaviorPredictions(signals, coreDriversForPrediction);
   }
 
   return syn;

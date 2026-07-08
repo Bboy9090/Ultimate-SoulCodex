@@ -18,6 +18,14 @@ interface CoreDriver {
   explanation: string;
 }
 
+interface BehaviorPrediction {
+  situation: string;
+  likely: string;
+  trap: string;
+  alternative: string;
+  sources: string[];
+}
+
 interface CodexSynthesis {
   codename: string;
   archetype: string;
@@ -29,6 +37,7 @@ interface CodexSynthesis {
   prescriptions: string[];
   narrative: string;
   coreDrivers?: CoreDriver[];
+  predictions?: BehaviorPrediction[];
 }
 
 function getProfile() {
@@ -324,7 +333,54 @@ export default function CodexReadingPage() {
             </div>
           )}
 
-          {/* 5. SHADOW PATTERN */}
+          {/* 5. BEHAVIOR PREDICTIONS (Layer 7: Predictive Behavior Engine) */}
+          {synthesis.predictions && synthesis.predictions.length > 0 && (
+            <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", background: "rgba(59, 130, 246, 0.05)", borderLeft: "4px solid #3b82f6" }}>
+              <h2 className="section-label" style={{ color: "#3b82f6", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <IconZap size={14} /> HOW YOU'LL LIKELY REACT
+              </h2>
+              <div style={{ display: "grid", gap: "1.5rem" }}>
+                {synthesis.predictions.slice(0, 2).map((pred, i) => (
+                  <div key={i} style={{ padding: "1.25rem", background: "rgba(59, 130, 246, 0.05)", borderRadius: "12px", borderLeft: "3px solid #3b82f6" }}>
+                    <h3 style={{ fontSize: "0.95rem", color: "#3b82f6", fontWeight: 600, marginBottom: "1rem" }}>
+                      {pred.situation}
+                    </h3>
+                    <div style={{ display: "grid", gap: "1rem" }}>
+                      <div>
+                        <p style={{ fontSize: "0.8rem", color: "#3b82f6", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.4rem" }}>
+                          What you'll likely do:
+                        </p>
+                        <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: 1.6 }}>
+                          {cleanCodexLine(pred.likely, "This is your natural response pattern.")}
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: "0.8rem", color: "var(--sc-danger)", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.4rem" }}>
+                          The trap:
+                        </p>
+                        <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: 1.6 }}>
+                          {cleanCodexLine(pred.trap, "This is what goes wrong if you follow the pattern.")}
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: "0.8rem", color: "#10b981", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.4rem" }}>
+                          Try instead:
+                        </p>
+                        <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: 1.6 }}>
+                          {cleanCodexLine(pred.alternative, "This shifts the dynamic.")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "#3b82f6", opacity: 0.6, marginTop: "1rem", fontStyle: "italic" }}>
+                These are situational predictions grounded in your Core Drivers. They're not destiny — they're patterns you can recognize and redirect.
+              </p>
+            </div>
+          )}
+
+          {/* 6. SHADOW PATTERN */}
           {synthesis.shadows?.length > 0 && (
             <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", background: "rgba(236, 72, 153, 0.05)", borderLeft: "4px solid var(--sc-danger)" }}>
               <h2 className="section-label" style={{ color: "var(--sc-danger)", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
