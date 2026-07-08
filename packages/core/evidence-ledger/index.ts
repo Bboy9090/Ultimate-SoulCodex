@@ -32,3 +32,9 @@ export {
   formatValue,
   formatSummaryAsText,
 } from './format.js';
+
+export {
+  calcPersonalDayWithEvidence,
+  calcPersonalYearWithEvidence,
+  calcPersonalMonthWithEvidence,
+} from './integrations.js';
