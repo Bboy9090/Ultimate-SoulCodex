@@ -8,6 +8,9 @@ import {
   getNextYearNum,
   getNextMonthNum,
   DAY_LABELS,
+  formatPersonalYear,
+  loadTimelineIntelligence,
+  type TimelineIntelligenceSummary,
 } from "@soulcodex/core";
 import {
   IconCircle, IconSparkles, IconDiamond, IconHexagon,
@@ -15,6 +18,7 @@ import {
   IconX, IconSquare
 } from "../components/Icons";
 import TimelineIntelligence from "../components/TimelineIntelligence";
+import SoulGuide from "../components/SoulGuide";
 
 // ── Phase content ─────────────────────────────────────────────────────────────
 
@@ -246,6 +250,7 @@ const MONTH_DATA: Record<number, MonthData> = {
 export default function TimelinePage() {
   const [, navigate]  = useLocation();
   const [birthData, setBirthData] = useState<{ month: number; day: number } | null>(null);
+  const [intelligence, setIntelligence] = useState<TimelineIntelligenceSummary | null>(null);
   const [todayCard, setTodayCard] = useState<any>(null);
   const [profile, setProfile]     = useState<any>(null);
 
@@ -279,6 +284,11 @@ export default function TimelinePage() {
         }
       } catch {}
     }
+  }, []);
+
+  useEffect(() => {
+    const loaded = loadTimelineIntelligence();
+    setIntelligence(loaded);
   }, []);
 
   const today        = new Date();
@@ -615,6 +625,13 @@ export default function TimelinePage() {
       {systemSignals.length > 0 && (
         <div style={{ marginBottom: "2rem" }}>
           <TimelineIntelligence systemSignals={systemSignals} />
+        </div>
+      )}
+
+      {/* ── Soul Guide AI Interpretation ──────────────────────────────────────── */}
+      {intelligence && (
+        <div style={{ marginBottom: "2rem" }}>
+          <SoulGuide intelligence={intelligence} />
         </div>
       )}
 
