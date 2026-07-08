@@ -51,6 +51,22 @@ export interface Archetype {
   role: string;
 }
 
+export interface SynergyInteraction {
+  system1: string;
+  system2: string;
+  type: "reinforcement" | "balance" | "conflict";
+  intensity: "high" | "medium" | "low";
+  explanation: string;
+}
+
+export interface CoreDriver {
+  name: string;
+  archetype: string;
+  sources: string[];
+  intensity: "high" | "medium" | "low";
+  explanation: string;
+}
+
 export interface Synthesis {
   myPattern: string;
   stressPattern: string;
@@ -64,6 +80,8 @@ export interface Synthesis {
   patternInterruption: string;
   loopSentence: string;
   codename: string;
+  synergy?: SynergyInteraction[];
+  coreDrivers?: CoreDriver[];
 }
 
 export interface SoulProfile {
