@@ -12,3 +12,4 @@ export * from "./events/index.js";
 export * from './compute/timeline.js';
 export * from './compute/personal-numbers.js';
 export * from './soulcodex-v1/index.js';
+export * from './pattern-engine/index.js';
