@@ -9,11 +9,12 @@ import {
   getNextMonthNum,
   DAY_LABELS,
 } from "@soulcodex/core";
-import { 
-  IconCircle, IconSparkles, IconDiamond, IconHexagon, 
+import {
+  IconCircle, IconSparkles, IconDiamond, IconHexagon,
   IconIdentity, IconMoon, IconChevronRight, IconArrowRight,
   IconX, IconSquare
 } from "../components/Icons";
+import TimelineIntelligence from "../components/TimelineIntelligence";
 
 // ── Phase content ─────────────────────────────────────────────────────────────
 
@@ -304,6 +305,45 @@ export default function TimelinePage() {
 
   const dateLabel = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
+  // Build system signals for Timeline Intelligence
+  const systemSignals = [];
+  if (py && yearData) {
+    systemSignals.push({
+      date: today.toISOString().split("T")[0],
+      system: "personal-year" as const,
+      value: py,
+      label: `Year ${py} — ${yearData.label}`,
+      description: yearData.essence,
+    });
+  }
+  if (pm && monthData) {
+    systemSignals.push({
+      date: today.toISOString().split("T")[0],
+      system: "personal-month" as const,
+      value: pm,
+      label: `Month ${pm} — ${monthData.label}`,
+      description: monthData.essence,
+    });
+  }
+  if (todayCard?.moonPhase) {
+    systemSignals.push({
+      date: today.toISOString().split("T")[0],
+      system: "moon-phase" as const,
+      value: todayCard.moonPhase,
+      label: todayCard.moonPhase,
+      description: "Moon phase cycle",
+    });
+  }
+  if (todayCard?.personalDayNumber) {
+    systemSignals.push({
+      date: today.toISOString().split("T")[0],
+      system: "personal-day" as const,
+      value: todayCard.personalDayNumber,
+      label: todayCard.personalDayNumber,
+      description: "Personal day frequency",
+    });
+  }
+
   const noData = !birthData && !todayCard;
 
   if (noData) {
@@ -568,6 +608,13 @@ export default function TimelinePage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Timeline Intelligence ─────────────────────────────────────────────── */}
+      {systemSignals.length > 0 && (
+        <div style={{ marginBottom: "2rem" }}>
+          <TimelineIntelligence systemSignals={systemSignals} />
         </div>
       )}
 
