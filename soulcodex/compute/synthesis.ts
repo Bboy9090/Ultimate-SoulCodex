@@ -1,6 +1,8 @@
 import type { SoulSignals, Synthesis, Archetype } from "../types";
 import { stressNotes } from "./elements";
 import { deriveMoralCode } from "./moral";
+import { analyzeSynergy } from "./synergy";
+import { rankCoreDrivers } from "./dominance";
 
 const LIFE_PATH_DESC: Record<number, string> = {
   1:  "I clear paths by initiating immediately, even when the direction is unknown, often leaving unfinished logic behind.",
@@ -388,6 +390,8 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
     lifeConsequence:     guard(cleanup(buildLifeConsequence(signals, vIdx)), "lifeConsequence"),
     patternInterruption: guard(cleanup(buildPatternInterruption(signals, vIdx)), "patternInterruption"),
     loopSentence:        guard(cleanup(buildLoopSentence(signals, vIdx)), "loopSentence"),
+    synergy:             analyzeSynergy(signals),
+    coreDrivers:         rankCoreDrivers(signals),
   };
 
   // Clean up moral code notes as well, with a guard so it is never a stub.

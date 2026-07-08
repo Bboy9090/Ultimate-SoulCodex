@@ -10,6 +10,14 @@ import {
 } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 
+interface CoreDriver {
+  name: string;
+  archetype: string;
+  sources: string[];
+  intensity: "high" | "medium" | "low";
+  explanation: string;
+}
+
 interface CodexSynthesis {
   codename: string;
   archetype: string;
@@ -20,6 +28,7 @@ interface CodexSynthesis {
   triggers: string[];
   prescriptions: string[];
   narrative: string;
+  coreDrivers?: CoreDriver[];
 }
 
 function getProfile() {
@@ -209,7 +218,113 @@ export default function CodexReadingPage() {
             </div>
           )}
 
-          {/* 4. SHADOW PATTERN */}
+          {/* 4. SYSTEM INTERACTIONS (Layer 2: Synergy) */}
+          {synthesis.synergy && synthesis.synergy.length > 0 && (
+            <>
+              {/* Reinforcements */}
+              {synthesis.synergy.some(s => s.type === "reinforcement") && (
+                <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", borderLeft: "4px solid #22c55e" }}>
+                  <h2 className="section-label" style={{ color: "#22c55e", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <IconSparkles size={14} /> WHAT AMPLIFIES YOU
+                  </h2>
+                  <div style={{ display: "grid", gap: "1rem" }}>
+                    {synthesis.synergy
+                      .filter(s => s.type === "reinforcement")
+                      .slice(0, 3)
+                      .map((interaction, i) => (
+                        <div key={i} style={{ padding: "1rem", background: "rgba(34, 197, 94, 0.05)", borderRadius: "12px", borderLeft: "3px solid #22c55e" }}>
+                          <p style={{ fontSize: "0.85rem", color: "#22c55e", fontWeight: 600, marginBottom: "0.5rem" }}>
+                            {interaction.system1} + {interaction.system2}
+                          </p>
+                          <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: 1.6 }}>
+                            {cleanCodexLine(interaction.explanation, "These systems amplify each other.")}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Balances */}
+              {synthesis.synergy.some(s => s.type === "balance") && (
+                <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", borderLeft: "4px solid #22d3ee" }}>
+                  <h2 className="section-label" style={{ color: "#22d3ee", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <IconCompass size={14} /> WHAT STABILIZES YOU
+                  </h2>
+                  <div style={{ display: "grid", gap: "1rem" }}>
+                    {synthesis.synergy
+                      .filter(s => s.type === "balance")
+                      .slice(0, 3)
+                      .map((interaction, i) => (
+                        <div key={i} style={{ padding: "1rem", background: "rgba(34, 211, 238, 0.05)", borderRadius: "12px", borderLeft: "3px solid #22d3ee" }}>
+                          <p style={{ fontSize: "0.85rem", color: "#22d3ee", fontWeight: 600, marginBottom: "0.5rem" }}>
+                            {interaction.system1} + {interaction.system2}
+                          </p>
+                          <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: 1.6 }}>
+                            {cleanCodexLine(interaction.explanation, "These systems balance each other.")}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Conflicts */}
+              {synthesis.synergy.some(s => s.type === "conflict") && (
+                <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", background: "rgba(236, 72, 153, 0.05)", borderLeft: "4px solid var(--sc-danger)" }}>
+                  <h2 className="section-label" style={{ color: "var(--sc-danger)", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <IconAlert size={14} /> INTERNAL TENSIONS YOU'RE MANAGING
+                  </h2>
+                  <div style={{ display: "grid", gap: "1rem" }}>
+                    {synthesis.synergy
+                      .filter(s => s.type === "conflict")
+                      .slice(0, 3)
+                      .map((interaction, i) => (
+                        <div key={i} style={{ padding: "1rem", background: "rgba(236, 72, 153, 0.1)", borderRadius: "12px", borderLeft: "3px solid var(--sc-danger)" }}>
+                          <p style={{ fontSize: "0.85rem", color: "var(--sc-danger)", fontWeight: 600, marginBottom: "0.5rem" }}>
+                            {interaction.system1} ↔ {interaction.system2}
+                          </p>
+                          <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: 1.6 }}>
+                            {cleanCodexLine(interaction.explanation, "These systems create productive friction.")}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* 4. CORE DRIVERS (Layer 3: Dominance Engine) */}
+          {synthesis.coreDrivers && synthesis.coreDrivers.length > 0 && (
+            <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", borderLeft: "4px solid #f59e0b" }}>
+              <h2 className="section-label" style={{ color: "#f59e0b", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <IconDiamond size={14} /> WHAT ACTUALLY DRIVES YOU
+              </h2>
+              <div style={{ display: "grid", gap: "1rem" }}>
+                {synthesis.coreDrivers.slice(0, 3).map((driver, i) => (
+                  <div key={i} style={{ padding: "1rem", background: "rgba(245, 158, 11, 0.05)", borderRadius: "12px", borderLeft: "3px solid #f59e0b" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                      <p style={{ fontSize: "0.85rem", color: "#f59e0b", fontWeight: 600 }}>
+                        {driver.name}
+                      </p>
+                      <span style={{ fontSize: "0.75rem", color: "#f59e0b", opacity: 0.7 }}>
+                        {driver.archetype}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: 1.6 }}>
+                      {cleanCodexLine(driver.explanation, "This is one of your core archetypal drivers.")}
+                    </p>
+                    <p style={{ fontSize: "0.8rem", color: "#f59e0b", opacity: 0.6, marginTop: "0.5rem" }}>
+                      Source: {driver.sources.join(" + ")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 5. SHADOW PATTERN */}
           {synthesis.shadows?.length > 0 && (
             <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", background: "rgba(236, 72, 153, 0.05)", borderLeft: "4px solid var(--sc-danger)" }}>
               <h2 className="section-label" style={{ color: "var(--sc-danger)", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
