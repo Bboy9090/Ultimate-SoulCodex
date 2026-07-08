@@ -47,37 +47,37 @@ const TRANSIT_THEMES: Record<string, { theme: string, intensity: 'high' | 'mediu
 
 const TRANSIT_INTERPRETATIONS: Record<string, Record<string, string>> = {
   'Pluto': {
-    'Conjunction': 'Deep transformation is occurring. This transit forces you to confront your deepest fears and hidden shadows. Death of old patterns, rebirth into authenticity.',
-    'Opposition': 'External forces mirror your internal shadow. Power struggles reveal what needs to be transformed. The universe is showing you what you refuse to see.',
-    'Square': 'Crisis of power and control. You\'re being forced to release what you\'re clinging to. The friction is intentional - it\'s breaking you open.',
+    'Conjunction': 'Deep transformation is active. Old patterns are being replaced — not destroyed, but composted into something more honest. Stay present with the discomfort.',
+    'Opposition': 'External friction is surfacing something internal. Power dynamics are showing you where your real leverage lives. Look at what keeps repeating.',
+    'Square': 'Pressure is building around control and attachment. The tighter you grip, the more friction you create. Identify what you can release without losing ground.',
     'Trine': 'Natural transformation flowing with ease. Your shadow work is supported. Deep healing happens without force.',
     'Sextile': 'Opportunities for transformation present themselves. The work is available if you choose it.'
   },
   'Saturn': {
-    'Conjunction': 'The Great Teacher arrives. Discipline, responsibility, and mastery are required. This is your initiation into maturity in this area of life.',
-    'Opposition': 'The universe is testing your structure. What you\'ve built is being challenged. Only what\'s real will remain.',
+    'Conjunction': 'A season of discipline and accountability. This area of life is asking for maturity and structure. What you build now is load-bearing.',
+    'Opposition': 'Your existing structure is being stress-tested. What holds up under pressure stays. What doesn\'t gets rebuilt — that\'s useful information.',
     'Square': 'Limitation and pressure reveal what needs strengthening. The obstacle is the path. Build your discipline here.',
     'Trine': 'Your efforts are rewarded. Mastery flows naturally. The structure you\'ve built supports you.',
     'Sextile': 'Opportunities to demonstrate mastery. Discipline creates opportunity.'
   },
   'Uranus': {
-    'Conjunction': 'Lightning strikes. Sudden awakening and liberation. The old structure is breaking apart to reveal your authentic truth.',
-    'Opposition': 'Revolutionary energy confronts you externally. Freedom vs. security. The cage door is open - will you leave?',
-    'Square': 'Chaos and disruption force change. You cannot control this. Surrender to the awakening.',
+    'Conjunction': 'A sudden shift is reorganizing this area of life. The old structure is being updated — not destroyed, but outgrown. Let the new pattern emerge.',
+    'Opposition': 'An external disruption is pushing you to choose between security and authenticity. Both matter — the question is which one is currently overweighted.',
+    'Square': 'Restlessness and disruption are forcing adaptation. You can\'t control the timing, but you can control your response. Move with it rather than against it.',
     'Trine': 'Natural innovation and liberation. Change flows with ease. Your authentic self emerges effortlessly.',
     'Sextile': 'Opportunities for freedom present themselves. Small awakenings lead to larger shifts.'
   },
   'Neptune': {
-    'Conjunction': 'Ego dissolution. Spiritual awakening. Boundaries dissolve. You\'re being asked to surrender completely.',
-    'Opposition': 'Confusion and illusion mirror back to you. What\'s real? What\'s fantasy? The veil is being lifted.',
-    'Square': 'Disillusionment and confusion create crisis. The dream is collapsing. Reality check in progress.',
-    'Trine': 'Spiritual connection flows naturally. Intuition is heightened. Grace and surrender come with ease.',
+    'Conjunction': 'Boundaries are softening. Spiritual and intuitive channels are wide open. Stay grounded while you explore — clarity returns once this transit settles.',
+    'Opposition': 'What you thought was solid may be less clear than expected. This is recalibration, not failure. Separate what you feel from what you know.',
+    'Square': 'Ideals are being tested against reality. Something you believed in is shifting form. This is a course correction, not a loss — update the map.',
+    'Trine': 'Spiritual connection flows naturally. Intuition is heightened. Grace and ease are accessible.',
     'Sextile': 'Gentle spiritual openings. Opportunities for transcendence and compassion.'
   },
   'Jupiter': {
     'Conjunction': 'Expansion and abundance arrive. Growth is accelerated. Optimism and faith are rewarded.',
     'Opposition': 'Excess and overconfidence may create imbalance. Too much of a good thing. Find equilibrium.',
-    'Square': 'Growth comes through tension. You\'re being pushed beyond your comfort zone. Expansion requires friction.',
+    'Square': 'Growth comes through tension. You\'re being stretched beyond your comfort zone. Expansion requires friction.',
     'Trine': 'Natural flow of abundance and opportunity. Your optimism manifests results. Growth is effortless.',
     'Sextile': 'Small opportunities for growth. Say yes to expansion.'
   }

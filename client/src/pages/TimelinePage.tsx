@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
 import {
+  calcPersonalYear,
   calcPersonalMonth,
   getCycleTransitionState,
   getNextYearNum,
   getNextMonthNum,
-  calcPersonalYear as coreCalcPersonalYear,
+  DAY_LABELS,
   formatPersonalYear,
   loadTimelineIntelligence,
   type TimelineIntelligenceSummary,
@@ -612,7 +613,9 @@ export default function TimelinePage() {
               borderRadius: "12px", padding: "1rem", textAlign: "center",
             }}>
               <div style={{ fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "0.35rem" }}>Personal Day</div>
-              <div style={{ fontWeight: 600, fontSize: "0.95rem", color: "var(--foreground)" }}>{todayCard.personalDayNumber}</div>
+              <div style={{ fontWeight: 600, fontSize: "0.95rem", color: "var(--foreground)" }}>
+                {todayCard.personalDayNumber} — {DAY_LABELS[todayCard.personalDayNumber]?.label ?? "Focus"}
+              </div>
             </div>
           )}
         </div>
