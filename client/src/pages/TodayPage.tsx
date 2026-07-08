@@ -3,12 +3,13 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import TodaySkeleton from "@/components/TodaySkeleton";
-import { 
+import {
   IconMoon, IconAlert, IconRefresh, IconDiamond,
   IconLogo, IconIdentity, IconCompass, IconZap
 } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
+import { getDailyPulseForDate, saveDailyPulseEntry, type MoodType } from "../lib/dailyPulseStorage";
 
 interface TodayCard {
   codename: string;
@@ -33,11 +34,46 @@ function getProfile() {
   } catch { return null; }
 }
 
+const MOOD_OPTIONS: { value: MoodType; label: string }[] = [
+  { value: "low", label: "Low" },
+  { value: "steady", label: "Steady" },
+  { value: "charged", label: "Charged" },
+  { value: "heavy", label: "Heavy" },
+  { value: "clear", label: "Clear" },
+];
+
 export default function TodayPage() {
   const [, navigate] = useLocation();
   const [card, setCard] = useState<TodayCard | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pulseState, setPulseState] = useState<{
+    mood: MoodType | "";
+    energy: 1 | 2 | 3 | 4 | 5 | "";
+    alignment: 1 | 2 | 3 | 4 | 5 | "";
+    note: string;
+    saved: boolean;
+  }>({
+    mood: "",
+    energy: "",
+    alignment: "",
+    note: "",
+    saved: false,
+  });
   const profile = getProfile();
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const existing = getDailyPulseForDate(today);
+    if (existing) {
+      setPulseState({
+        mood: existing.mood,
+        energy: existing.energy,
+        alignment: existing.alignment,
+        note: existing.note || "",
+        saved: true,
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const cached = localStorage.getItem("soulTodayCard");
@@ -98,6 +134,24 @@ export default function TodayPage() {
     setCard(null);
     setError(null);
     cardMutation.mutate({ profile });
+  }
+
+  function savePulse() {
+    if (!pulseState.mood || !pulseState.energy || !pulseState.alignment) {
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    saveDailyPulseEntry({
+      date: today,
+      mood: pulseState.mood,
+      energy: pulseState.energy,
+      alignment: pulseState.alignment,
+      note: pulseState.note || undefined,
+    });
+    setPulseState((prev) => ({ ...prev, saved: true }));
+    setTimeout(() => {
+      setPulseState((prev) => ({ ...prev, saved: false }));
+    }, 2000);
   }
 
   if (error) {
@@ -218,6 +272,135 @@ export default function TodayPage() {
               5. ONE MOVE TODAY <IconZap size={14} />
             </h2>
             <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--sc-ivory)" }}>{oneMove}</p>
+          </div>
+
+          {/* 6. DAILY PULSE */}
+          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "2rem", background: "rgba(212, 168, 95, 0.05)", borderLeft: "4px solid var(--sc-gold)" }}>
+            <h2 className="section-label" style={{ color: "var(--sc-gold)", marginBottom: "1.5rem" }}>6. HOW ARE YOU MOVING TODAY?</h2>
+
+            {/* Mood chips */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <label style={{ fontSize: "0.85rem", color: "var(--sc-stone)", textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>Mood</label>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {MOOD_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setPulseState((prev) => ({ ...prev, mood: opt.value }))}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      borderRadius: "20px",
+                      border: `1px solid ${pulseState.mood === opt.value ? "var(--sc-gold)" : "rgba(255,255,255,0.1)"}`,
+                      background: pulseState.mood === opt.value ? "rgba(212, 168, 95, 0.2)" : "rgba(255,255,255,0.03)",
+                      color: pulseState.mood === opt.value ? "var(--sc-gold)" : "var(--sc-ivory)",
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      fontWeight: 500,
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Energy slider */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <label style={{ fontSize: "0.85rem", color: "var(--sc-stone)", textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>
+                Energy: {pulseState.energy || "—"}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="5"
+                value={pulseState.energy || 3}
+                onChange={(e) => setPulseState((prev) => ({ ...prev, energy: parseInt(e.target.value) as any }))}
+                style={{
+                  width: "100%",
+                  height: "6px",
+                  borderRadius: "3px",
+                  background: "rgba(255,255,255,0.1)",
+                  outline: "none",
+                  cursor: "pointer",
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--sc-stone)", marginTop: "0.5rem" }}>
+                <span>Low</span>
+                <span>High</span>
+              </div>
+            </div>
+
+            {/* Alignment slider */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <label style={{ fontSize: "0.85rem", color: "var(--sc-stone)", textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>
+                Alignment: {pulseState.alignment || "—"}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="5"
+                value={pulseState.alignment || 3}
+                onChange={(e) => setPulseState((prev) => ({ ...prev, alignment: parseInt(e.target.value) as any }))}
+                style={{
+                  width: "100%",
+                  height: "6px",
+                  borderRadius: "3px",
+                  background: "rgba(255,255,255,0.1)",
+                  outline: "none",
+                  cursor: "pointer",
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--sc-stone)", marginTop: "0.5rem" }}>
+                <span>Off</span>
+                <span>Aligned</span>
+              </div>
+            </div>
+
+            {/* Note */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <label style={{ fontSize: "0.85rem", color: "var(--sc-stone)", textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>Note (optional)</label>
+              <textarea
+                value={pulseState.note}
+                onChange={(e) => setPulseState((prev) => ({ ...prev, note: e.target.value }))}
+                placeholder="What's on your mind today?"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.02)",
+                  color: "var(--sc-ivory)",
+                  fontSize: "0.9rem",
+                  lineHeight: 1.4,
+                  fontFamily: "inherit",
+                  resize: "vertical",
+                  minHeight: "80px",
+                }}
+              />
+            </div>
+
+            {/* Save button */}
+            <button
+              onClick={savePulse}
+              disabled={!pulseState.mood || !pulseState.energy || !pulseState.alignment}
+              id="pulse-save-btn"
+              style={{
+                width: "100%",
+                padding: "1rem",
+                background: pulseState.mood && pulseState.energy && pulseState.alignment
+                  ? "rgba(212, 168, 95, 0.2)"
+                  : "rgba(255,255,255,0.05)",
+                border: `1px solid ${pulseState.mood && pulseState.energy && pulseState.alignment ? "var(--sc-gold)" : "rgba(255,255,255,0.1)"}`,
+                borderRadius: "8px",
+                color: "var(--sc-gold)",
+                cursor: pulseState.mood && pulseState.energy && pulseState.alignment ? "pointer" : "not-allowed",
+                fontWeight: 600,
+                fontSize: "0.95rem",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {pulseState.saved ? "✓ Pulse logged" : "Log Pulse"}
+            </button>
           </div>
         </div>
 

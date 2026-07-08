@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { IconLock, IconCheckCircle, IconActivity } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+import { getRecentDailyPulseEntries, getDailyPulseSummary } from "../lib/dailyPulseStorage";
 
 interface FrequencyLog {
   id: number;
@@ -22,6 +23,15 @@ export default function TrackerPage() {
   const [notes, setNotes] = useState("");
   const [showLogged, setShowLogged] = useState(false);
   const [purpose, setPurpose] = useState("");
+  const [pulseEntries, setPulseEntries] = useState<any[]>([]);
+  const [pulseSummary, setPulseSummary] = useState<any>(null);
+
+  useEffect(() => {
+    const entries = getRecentDailyPulseEntries(7);
+    setPulseEntries(entries);
+    const summary = getDailyPulseSummary(7);
+    setPulseSummary(summary);
+  }, []);
 
   const { data: logs = [] } = useQuery<FrequencyLog[]>({
     queryKey: ["/api/frequency/logs"],
@@ -212,6 +222,79 @@ export default function TrackerPage() {
         ) : (
           <div className="h-40 flex items-center justify-center animate-pulse">
              <div className="w-32 h-32 rounded-full border-4 border-muted/20" />
+          </div>
+        )}
+      </div>
+
+      {/* Daily Pulse Section */}
+      <div className="glass-card p-6 space-y-6">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <IconActivity size={20} style={{ color: "var(--sc-gold)" }} />
+          Daily Pulse History
+        </h2>
+
+        {pulseEntries.length > 0 ? (
+          <div className="space-y-4">
+            {/* Summary Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+              <div style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", textAlign: "center" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                  Avg Energy
+                </div>
+                <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--sc-ivory)" }}>
+                  {pulseSummary?.avgEnergy.toFixed(1)}
+                </div>
+              </div>
+              <div style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", textAlign: "center" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                  Avg Alignment
+                </div>
+                <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--sc-ivory)" }}>
+                  {pulseSummary?.avgAlignment.toFixed(1)}
+                </div>
+              </div>
+              <div style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", textAlign: "center" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                  Top Mood
+                </div>
+                <div style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--sc-gold)", textTransform: "capitalize" }}>
+                  {pulseSummary?.mostCommonMood || "—"}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Entries */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxHeight: "300px", overflowY: "auto" }}>
+              {pulseEntries.map((entry) => (
+                <div key={entry.date} style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", borderLeft: "3px solid var(--sc-gold)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+                    <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--sc-ivory)" }}>
+                      {new Date(entry.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </div>
+                    <div style={{ display: "flex", gap: "1rem", fontSize: "0.85rem", color: "var(--sc-stone)" }}>
+                      <span>E: {entry.energy}/5</span>
+                      <span>A: {entry.alignment}/5</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                    <span style={{ fontSize: "0.75rem", padding: "0.25rem 0.75rem", background: "rgba(212, 168, 95, 0.2)", borderRadius: "12px", color: "var(--sc-gold)", fontWeight: 500, textTransform: "capitalize" }}>
+                      {entry.mood}
+                    </span>
+                    {entry.note && (
+                      <span style={{ fontSize: "0.8rem", color: "var(--sc-stone)", fontStyle: "italic" }}>
+                        "{entry.note.substring(0, 40)}{entry.note.length > 40 ? "..." : ""}"
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: "2rem", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px dashed rgba(255,255,255,0.1)" }}>
+            <p style={{ color: "var(--sc-stone)", fontSize: "0.9rem" }}>
+              No pulses logged yet. Start from the Today page.
+            </p>
           </div>
         )}
       </div>
