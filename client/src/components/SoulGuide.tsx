@@ -29,8 +29,12 @@ export default function SoulGuide({ intelligence }: SoulGuideProps) {
     // Try to load cached interpretation first
     const cached = loadSoulGuideInterpretation();
     if (cached) {
-      setInterpretation(cached);
-      return;
+      // Validate cache is still fresh for current intelligence data
+      if (cached.dataPointsAnalyzed === intelligence.sampleSize) {
+        setInterpretation(cached);
+        return;
+      }
+      // Cache is stale; fall through to regenerate
     }
 
     // If no cache and no API key configured, show prompt
