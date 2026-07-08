@@ -30,12 +30,6 @@ export function getNextMonthNum(pm: number): number {
   return pm === 9 ? 1 : pm + 1;
 }
 
-export function calcPersonalDay(birthMonth: number, birthDay: number, targetDate: Date): number {
-  const py = calcPersonalYear(birthMonth, birthDay, targetDate.getFullYear());
-  const pm = calcPersonalMonth(py, targetDate.getMonth() + 1);
-  return reduceToSingle(pm + targetDate.getDate());
-}
-
 export const DAY_LABELS: Record<number, { label: string; theme: string }> = {
   1: { label: "Initiate", theme: "a starting phase for bold moves, independence, and forward momentum" },
   2: { label: "Connect", theme: "a receptive phase for listening, partnerships, and patience" },
