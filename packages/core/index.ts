@@ -15,3 +15,4 @@ export * from './soulcodex-v1/index.js';
 export * from './pattern-engine/index.js';
 export * from './timeline-intelligence/index.js';
 export * from './soul-guide/index.js';
+export * from './evidence-ledger/index.js';
