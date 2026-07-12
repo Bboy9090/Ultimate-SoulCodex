@@ -7,6 +7,7 @@ import SplashScreen from "./components/SplashScreen";
 import { CosmicBackground } from "./components/CosmicBackground";
 import CosmicLoader from "./components/CosmicLoader";
 import { IconCodex } from "./components/Icons";
+import { loadActiveProfile, isProfileComplete } from "./lib/profileStorage";
 
 // Lazy load pages to kill freezing/heavy initial bundle
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -33,15 +34,8 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function hasProfileData(): boolean {
-  try {
-    const isGuest = localStorage.getItem("soulIsGuest") === "true";
-    const raw = localStorage.getItem(isGuest ? "soulGuestProfile" : "soulProfile");
-    if (!raw || raw === "undefined" || raw === "null") return false;
-    const parsed = JSON.parse(raw);
-    return !!parsed && typeof parsed === "object";
-  } catch {
-    return false;
-  }
+  const profile = loadActiveProfile();
+  return isProfileComplete(profile);
 }
 
 export default function App() {
@@ -56,6 +50,18 @@ export default function App() {
     const timer = setTimeout(() => setHydrated(true), 50);
     return () => clearTimeout(timer);
   }, []);
+
+  // Route guard: Redirect to onboarding if trying to access protected routes without a complete profile
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const protectedRoutes = ["/", "/profile", "/guide", "/tracker", "/timeline", "/codex", "/compat", "/poster", "/horoscope", "/blueprint", "/today"];
+    const isProtected = protectedRoutes.includes(location);
+
+    if (isProtected && !hasProfile) {
+      setLocation("/start");
+    }
+  }, [location, hasProfile, hydrated, setLocation]);
 
   // Background Prefetcher: Ensure compatibility and readings are ready before click
   useEffect(() => {
@@ -108,15 +114,15 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
+      <div style={{ display: "flex", minHeight: "100vh", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
       {/* Dynamic Cosmic Background - Always present behind the UI */}
       <CosmicBackground />
       <div className="sacred-geometry" />
-      
+
       {/* Sidebar - Only visible after a valid profile and never during onboarding */}
       {hasProfile && !isOnboardingRoute && <Nav />}
-      
-      <main style={{ flex: 1, position: "relative", minWidth: 0, zIndex: 2 }}>
+
+      <main style={{ flex: 1, position: "relative", minWidth: 0, maxWidth: "100%", overflowX: "hidden", width: "100%", zIndex: 2 }}>
         <Suspense fallback={<CosmicLoader fullPage label="Loading Dimension..." />}>
           <Switch>
             <Route path="/">
