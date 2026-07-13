@@ -125,6 +125,29 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* Galactic Code Section */}
+          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", background: "rgba(212, 168, 95, 0.05)", border: "1px solid rgba(212, 168, 95, 0.3)" }}>
+            <h2 className="section-label" style={{ marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ fontSize: "1.2rem" }}>👁</span> GALACTIC CODE
+            </h2>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, color: "var(--sc-gold)", marginBottom: "1.5rem" }}>
+              Your fused identity fingerprint across astrology, Human Design, numerology, and behavioral pattern analysis.
+            </p>
+            {hasVerifiedData ? (
+              <button
+                className="btn btn-primary"
+                style={{ width: "100%", height: "2.5rem" }}
+                onClick={() => navigate("/galactic-code")}
+              >
+                View Galactic Code
+              </button>
+            ) : (
+              <p style={{ fontSize: "0.85rem", color: "var(--sc-stone)" }}>
+                Complete your astrology and Human Design data to unlock your Galactic Code.
+              </p>
+            )}
+          </div>
+
         </div>
 
         {/* Footer Actions */}

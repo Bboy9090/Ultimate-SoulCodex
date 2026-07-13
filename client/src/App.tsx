@@ -22,6 +22,7 @@ const TrackerPage = lazy(() => import("./pages/TrackerPage"));
 const CompatibilityPage = lazy(() => import("./pages/CompatibilityPage"));
 const TimelinePage = lazy(() => import("./pages/TimelinePage"));
 const BlueprintPage = lazy(() => import("./pages/BlueprintPage"));
+const GalacticCodePage = lazy(() => import("./pages/GalacticCodePage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 
@@ -55,7 +56,7 @@ export default function App() {
   useEffect(() => {
     if (!hydrated) return;
 
-    const protectedRoutes = ["/", "/profile", "/guide", "/tracker", "/timeline", "/codex", "/compat", "/poster", "/horoscope", "/blueprint", "/today"];
+    const protectedRoutes = ["/", "/profile", "/guide", "/tracker", "/timeline", "/codex", "/compat", "/poster", "/horoscope", "/blueprint", "/today", "/galactic-code"];
     const isProtected = protectedRoutes.includes(location);
 
     if (isProtected && !hasProfile) {
@@ -140,6 +141,7 @@ export default function App() {
             <Route path="/poster" component={PosterPage} />
             <Route path="/codex" component={CodexReadingPage} />
             <Route path="/blueprint" component={BlueprintPage} />
+            <Route path="/galactic-code" component={GalacticCodePage} />
             <Route path="/today" component={TodayPage} />
             <Route path="/privacy" component={PrivacyPage} />
             <Route path="/terms" component={TermsPage} />
