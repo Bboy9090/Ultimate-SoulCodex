@@ -60,7 +60,9 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
       });
     }
 
-    const intelligence = generateTimelineIntelligence(systemSignals, livedSignals);
+    const intelligence = generateTimelineIntelligence(systemSignals, livedSignals, {
+      sampleSize: pulseEntries.length,
+    });
     setSummary(intelligence);
     saveTimelineIntelligence(intelligence);
   }, [systemSignals]);
