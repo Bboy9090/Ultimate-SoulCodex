@@ -21,6 +21,14 @@ interface TodayCard {
   date: string;
 }
 
+function getLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function formatDate(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso + "T12:00:00");
@@ -48,21 +56,21 @@ export default function TodayPage() {
   const [error, setError] = useState<string | null>(null);
   const [pulseState, setPulseState] = useState<{
     mood: MoodType | "";
-    energy: 1 | 2 | 3 | 4 | 5 | "";
-    alignment: 1 | 2 | 3 | 4 | 5 | "";
+    energy: 1 | 2 | 3 | 4 | 5;
+    alignment: 1 | 2 | 3 | 4 | 5;
     note: string;
     saved: boolean;
   }>({
     mood: "",
-    energy: "",
-    alignment: "",
+    energy: 3,
+    alignment: 3,
     note: "",
     saved: false,
   });
   const profile = getProfile();
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalDateString();
     const existing = getDailyPulseForDate(today);
     if (existing) {
       setPulseState({
@@ -137,10 +145,10 @@ export default function TodayPage() {
   }
 
   function savePulse() {
-    if (!pulseState.mood || !pulseState.energy || !pulseState.alignment) {
+    if (!pulseState.mood) {
       return;
     }
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalDateString();
     saveDailyPulseEntry({
       date: today,
       mood: pulseState.mood,
@@ -307,13 +315,13 @@ export default function TodayPage() {
             {/* Energy slider */}
             <div style={{ marginBottom: "1.5rem" }}>
               <label style={{ fontSize: "0.85rem", color: "var(--sc-stone)", textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>
-                Energy: {pulseState.energy || "—"}
+                Energy: {pulseState.energy}
               </label>
               <input
                 type="range"
                 min="1"
                 max="5"
-                value={pulseState.energy || 3}
+                value={pulseState.energy}
                 onChange={(e) => setPulseState((prev) => ({ ...prev, energy: parseInt(e.target.value) as any }))}
                 style={{
                   width: "100%",
@@ -333,13 +341,13 @@ export default function TodayPage() {
             {/* Alignment slider */}
             <div style={{ marginBottom: "1.5rem" }}>
               <label style={{ fontSize: "0.85rem", color: "var(--sc-stone)", textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>
-                Alignment: {pulseState.alignment || "—"}
+                Alignment: {pulseState.alignment}
               </label>
               <input
                 type="range"
                 min="1"
                 max="5"
-                value={pulseState.alignment || 3}
+                value={pulseState.alignment}
                 onChange={(e) => setPulseState((prev) => ({ ...prev, alignment: parseInt(e.target.value) as any }))}
                 style={{
                   width: "100%",
@@ -382,18 +390,18 @@ export default function TodayPage() {
             {/* Save button */}
             <button
               onClick={savePulse}
-              disabled={!pulseState.mood || !pulseState.energy || !pulseState.alignment}
+              disabled={!pulseState.mood}
               id="pulse-save-btn"
               style={{
                 width: "100%",
                 padding: "1rem",
-                background: pulseState.mood && pulseState.energy && pulseState.alignment
+                background: pulseState.mood
                   ? "rgba(212, 168, 95, 0.2)"
                   : "rgba(255,255,255,0.05)",
-                border: `1px solid ${pulseState.mood && pulseState.energy && pulseState.alignment ? "var(--sc-gold)" : "rgba(255,255,255,0.1)"}`,
+                border: `1px solid ${pulseState.mood ? "var(--sc-gold)" : "rgba(255,255,255,0.1)"}`,
                 borderRadius: "8px",
                 color: "var(--sc-gold)",
-                cursor: pulseState.mood && pulseState.energy && pulseState.alignment ? "pointer" : "not-allowed",
+                cursor: pulseState.mood ? "pointer" : "not-allowed",
                 fontWeight: 600,
                 fontSize: "0.95rem",
                 transition: "all 0.2s ease",

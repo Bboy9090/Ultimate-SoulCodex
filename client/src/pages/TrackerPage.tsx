@@ -269,7 +269,7 @@ export default function TrackerPage() {
                 <div key={entry.date} style={{ padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", borderLeft: "3px solid var(--sc-gold)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
                     <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--sc-ivory)" }}>
-                      {new Date(entry.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {new Date(entry.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </div>
                     <div style={{ display: "flex", gap: "1rem", fontSize: "0.85rem", color: "var(--sc-stone)" }}>
                       <span>E: {entry.energy}/5</span>
