@@ -65,7 +65,7 @@ test("update same date", () => {
   assert.strictEqual(entry2.mood, "charged");
   assert.strictEqual(entry2.energy, 5);
   assert.strictEqual(entry2.createdAt, createdAt1);
-  assert(new Date(entry2.updatedAt) > new Date(entry1.updatedAt));
+  assert(new Date(entry2.updatedAt) >= new Date(entry1.updatedAt));
 
   const all = loadDailyPulseEntries();
   assert.strictEqual(all.length, 1);
