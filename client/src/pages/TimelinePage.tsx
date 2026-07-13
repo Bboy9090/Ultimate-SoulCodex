@@ -312,8 +312,8 @@ export default function TimelinePage() {
       date: today.toISOString().split("T")[0],
       system: "personal-year" as const,
       value: py,
-      label: `Year ${py} — ${yearData.label}`,
-      description: yearData.essence,
+      label: `year-${py}`,
+      description: `Year ${py} — ${yearData.label}`,
     });
   }
   if (pm && monthData) {
@@ -321,8 +321,8 @@ export default function TimelinePage() {
       date: today.toISOString().split("T")[0],
       system: "personal-month" as const,
       value: pm,
-      label: `Month ${pm} — ${monthData.label}`,
-      description: monthData.essence,
+      label: `month-${pm}`,
+      description: `Month ${pm} — ${monthData.label}`,
     });
   }
   if (todayCard?.moonPhase) {
@@ -339,7 +339,7 @@ export default function TimelinePage() {
       date: today.toISOString().split("T")[0],
       system: "personal-day" as const,
       value: todayCard.personalDayNumber,
-      label: todayCard.personalDayNumber,
+      label: `day-${todayCard.personalDayNumber}`,
       description: "Personal day frequency",
     });
   }

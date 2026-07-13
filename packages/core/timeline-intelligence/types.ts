@@ -58,4 +58,5 @@ export interface TimelineIntelligenceSummary {
 export interface TimelineIntelligenceOptions {
   lookbackDays?: number;
   minDataPoints?: number;
+  sampleSize?: number;
 }
