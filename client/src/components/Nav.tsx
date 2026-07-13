@@ -56,10 +56,11 @@ export default function Nav() {
   ];
 
   const advancedLinks = [
-    { href: "/compat",     label: "Compat"     },
-    { href: "/poster",     label: "Poster"     },
-    { href: "/horoscope",  label: "Chart"      },
-    { href: "/blueprint",  label: "Blueprint"  },
+    { href: "/compat",         label: "Compat"        },
+    { href: "/poster",         label: "Poster"        },
+    { href: "/horoscope",      label: "Chart"         },
+    { href: "/blueprint",      label: "Blueprint"     },
+    { href: "/galactic-code",  label: "Galactic Code" },
   ];
 
   const appLinks = mode === "advanced" ? [...baseLinks, ...advancedLinks] : baseLinks;
