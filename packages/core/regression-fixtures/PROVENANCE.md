@@ -158,38 +158,43 @@ Different numerology schools have different conventions for when to preserve mas
 
 **Birth Data**:
 - Date: March 14, 1879
-- Time: 11:30 AM (exact)
+- Time: 11:30 AM (recorded local time)
 - Place: Ulm, Württemberg, Germany (48.4°N, 9.99°E)
-- Source: Astrodatabank (rating A)
+- Source: Astrodatabank (rating A, but access date not recorded)
 
-**Purpose**: Regression testing with a well-documented historical figure
+**Purpose**: Regression testing with documented historical birth data; not verification of astrology or Human Design
 
 **Verification Status**: `partially-verified`
 
-**Verified Input Data**:
-- Birth date and time are well-documented in historical records
-- Birth location is known
-- Astrodatabank source rating is A (reliable)
+**What is Verified**:
+- Birth date is documented in historical records
+- Birth time is documented (though source access is not recorded)
+- Birth location is known and coordinates are established
 
-**Unverified Outputs**:
-- Astrology coordinates (sun, moon, ascendant)
-- Human Design outputs
-- Expected longitude values are not recorded
+**What is NOT Verified**:
+- UTC offset conversion from local mean time (no independent audit)
+- Astrology coordinate calculations (no comparison against external provider)
+- Human Design outputs (no comparison against Human Design provider)
+- Any calculation method or ephemeris version
 
 **Time Handling**:
-- Birth occurred under local mean time (LMT) regime
+- Birth recorded as 11:30 local time in Ulm
+- Birth occurred during local mean time (LMT) regime
 - Germany adopted standard time (Mitteleuropäische Zeit) in 1893
-- UTC conversion based on documented LMT with ±5 minute tolerance
-- Historical method has not been independently audited
+- UTC offset calculation requires geographic coordinates and historical timezone research
+- Uncertainty ±5 minutes reflects potential transcription or rounding error in historical source
+- Astrodatabank provides the birth record; it does not certify the UTC conversion
 
-**Tolerances**: All coordinate tolerances are null (no external comparison documented)
+**Calculation Metadata**: All calculation fields are null (no provider, ephemeris version, or method documented)
+
+**Tolerances**: All coordinate tolerances are null (no external comparison performed)
 
 **Next Action**:
-- Obtain official astrodatabank entry for Albert Einstein
-- Compare expected astrology outputs against a modern astronomy provider (e.g., Swiss Ephemeris)
-- Record the ephemeris version and coordinate mode used
-- Document any discrepancies
-- Update verification status and tolerance fields
+- If future verification is pursued: obtain official Astrodatabank entry with full source citation
+- Compare expected astrology outputs against a modern astronomy provider (e.g., Swiss Ephemeris) with recorded ephemeris version
+- Document UTC conversion method used and verify against historical timezone records
+- Record verification date, verifier, and any limitations
+- Update verification status only after these steps are complete
 
 ---
 
@@ -199,181 +204,209 @@ Different numerology schools have different conventions for when to preserve mas
 
 **Birth Data**:
 - Date: November 24, 1867
-- Time: 18:30 (6:30 PM, exact)
+- Time: 18:30 (6:30 PM, recorded local time)
 - Place: Warsaw, Poland (then Russian Poland, 52.23°N, 21.01°E)
-- Source: Astrodatabank (rating A)
+- Source: Astrodatabank (rating A, but access date not recorded)
 
-**Purpose**: Regression testing with a well-documented historical figure; validates master-number preservation (month 11, year 22)
+**Purpose**: Regression testing with documented historical birth data; validates master-number preservation in numerology tests
 
 **Verification Status**: `partially-verified`
 
-**Verified Input Data**:
-- Birth date and time are documented
-- Birth location is known
-- Astrodatabank source rating is A
-- Numerology: month 11 and year 22 are correctly preserved as master numbers
+**What is Verified**:
+- Birth date is documented
+- Birth time is documented (though source access is not recorded)
+- Birth location is known and coordinates are established
 
-**Unverified Outputs**:
-- Astrology coordinates
-- Human Design outputs
-- Expected longitude values are not recorded
+**What is NOT Verified**:
+- UTC offset conversion from Russian Empire local time (no independent audit)
+- Astrology coordinate calculations (no comparison against external provider)
+- Human Design outputs (no comparison against Human Design provider)
+- Master-number preservation method (asserted but not independently validated)
 
 **Time Handling**:
-- Birth occurred in Russian Poland under Russian Empire time conventions
+- Birth recorded as 18:30 local time in Warsaw
+- Birth occurred during Russian Empire administrative period
 - Poland adopted standard time (Mitteleuropäische Zeit) in 1893
-- UTC conversion based on documented LMT with ±10 minute tolerance
-- Historical reconstruction from Russian time standards has not been independently audited
+- UTC offset calculation requires geographic coordinates and historical Russian time standards research
+- Uncertainty ±10 minutes reflects potential transcription or rounding error
+- Astrodatabank provides the birth record; it does not certify the UTC conversion
 
-**Tolerances**: All coordinate tolerances are null
+**Calculation Metadata**: All calculation fields are null (no provider, ephemeris version, or method documented)
+
+**Tolerances**: All coordinate tolerances are null (no external comparison performed)
 
 **Next Action**:
-- Verify UTC conversion methodology for Russian Poland, 1867
-- Compare expected astrology outputs against a modern astronomy provider
-- Record ephemeris version and coordinate mode
-- Document verification results
-- Update verification status if comparison is completed
+- If future verification is pursued: obtain Astrodatabank entry with full source citation
+- Verify UTC conversion methodology for Russian Poland, 1867 against historical timezone records
+- Compare expected astrology outputs against a modern astronomy provider with recorded ephemeris version
+- Document verification date, verifier, and limitations
+- Update verification status only after these steps are complete
 
 ---
 
 ### fixture-003: Test Subject A
 
-**Person**: Synthetic contemporary test fixture (not a real person)
+**Person**: Internal synthetic test fixture (not a real person)
 
 **Birth Data**:
 - Date: August 15, 1990
-- Time: 14:30 (exact for testing purposes)
-- Place: Unknown
+- Time: 14:30 (synthetic for testing purposes)
+- Place: Unknown (deliberately unspecified)
 - Source: Internal test suite
 
-**Purpose**: Regression testing with a contemporary date; validates engine behavior
+**Purpose**: Deterministic regression testing only; not intended to represent real data or validate any engine accuracy
 
 **Verification Status**: `unverified`
 
 **Rationale**:
-- This is an internal test fixture with no external source
-- Birth location and timezone are not documented
-- Expected outputs are provided for regression consistency only
-- Not intended to represent a real person or historical data
+- This is an internal synthetic fixture created for regression testing
+- No external source record exists
+- Birth location and timezone are deliberately not specified
+- Expected outputs are provided for deterministic regression consistency only
 
 **Input Limitations**:
-- Birthplace coordinates are unknown
-- Timezone information is not documented
+- Birthplace coordinates are unknown (intentional)
+- Timezone information is not documented (intentional)
 - No external source record exists
+- Should not be treated as representing a real person
 
 **Output Limitations**:
 - Expected astrology values are for regression testing only
 - Expected Human Design values are for regression testing only
-- These outputs have not been independently verified
-- Passing regression tests do not establish accuracy
+- No external comparison has been performed
+- Passing regression tests do not establish astrology accuracy, Human Design validity, or any real-world applicability
+- These outputs should never be cited as validation evidence
+
+**Suitable Use**:
+- Regression testing to detect unintended code changes
+- Testing engine behavior under specific input conditions
+
+**Unsuitable Use**:
+- Validating astrology calculations
+- Validating Human Design methodology
+- Making any accuracy or validity claims
 
 **Next Action**:
-- No independent verification is planned for synthetic fixtures
-- This fixture is suitable for deterministic regression testing only
-- Do not use this fixture for any accuracy or validity claims
+- This fixture requires no external verification
+- It is fit for purpose as a regression test
+- Do not use it to support any claims about the engines' real-world accuracy
 
 ---
 
 ### fixture-004: Test Subject B
 
-**Person**: Synthetic test fixture (not a real person)
+**Person**: Internal synthetic test fixture (not a real person)
 
 **Birth Data**:
 - Date: December 31, 1975
-- Time: Unknown (estimated to 00:00 for testing)
-- Place: Unknown
-- Source: Birth certificate record (time not recorded)
+- Time: Unknown (estimated to 00:00 for testing purposes only)
+- Place: Unknown (intentionally unspecified)
+- Source: Internal synthetic fixture (birth certificate scenario)
 
-**Purpose**: Regression testing with missing birth-time data; validates engine behavior when time is unknown
+**Purpose**: Regression testing for missing birth-time data; validates engine behavior when exact time is unavailable
 
 **Verification Status**: `unverified`
 
 **Rationale**:
-- Birth time is completely unknown
+- This fixture tests edge cases where birth time is not available
 - Estimated time of 00:00 (midnight) is arbitrary and used only for testing
 - No external source has been consulted
+- This is NOT a real person or real birth certificate
 
 **Input Limitations**:
-- Birth time is unknown with ±1440-minute uncertainty (full 24-hour range)
+- Birth time is completely unknown; uncertainty ±1440 minutes (full 24-hour range)
 - Birthplace coordinates are unknown
 - Timezone information is not documented
 
-**Output Limitations**:
-- Moon sign calculation is time-sensitive and unreliable without exact birth time
-- Ascendant depends critically on birth time and is unknown without it
-- Human Design outputs (strategy, authority, type) require exact birth time and cannot be reliably calculated
-- Sun sign (Capricorn) is reliable because it depends only on the date
-- Numerology is reliable because it depends only on the date components
+**Output Limitations by Field**:
 
-**Verification Status by Field**:
-
-| Field | Status | Reason |
-|-------|--------|--------|
+| Field | Reliability | Reason |
+|-------|------------|--------|
 | Day Number (4) | Reliable | Depends only on date |
 | Month Number (3) | Reliable | Depends only on date |
 | Year Number (22) | Reliable | Depends only on date |
 | Sun Sign (Capricorn) | Reliable | Depends only on date |
-| Moon Sign | Unknown | Requires accurate birth time |
-| Ascendant | Unknown | Requires accurate birth time |
-| Human Design | Unknown | Requires accurate birth time |
+| Moon Sign | Unreliable | Requires accurate birth time |
+| Ascendant | Unreliable | Requires exact birth time; unknown without it |
+| Human Design (all fields) | Unreliable | Require exact birth time; cannot be reliably calculated |
+
+**Critical Note**: This fixture demonstrates that the engine returns values for fields that cannot be reliably calculated. Do not use Moon sign, Ascendant, or Human Design outputs from this fixture as evidence that the engine correctly calculates these values when birth time is missing.
+
+**Suitable Use**:
+- Regression testing to ensure consistent engine behavior when birth time is missing
+- Testing error handling and fallback behavior for incomplete input
+
+**Unsuitable Use**:
+- Validating astrology calculations for charts without accurate birth times
+- Validating Human Design calculations when birth time is unknown
+- Supporting any claim that the engine correctly calculates time-sensitive fields from date alone
 
 **Next Action**:
-- This fixture documents engine behavior when birth time is missing
-- It is not a candidate for historical verification
-- Use only for testing edge cases and missing data handling
+- This fixture is fit for purpose as a regression test
+- Do not use it for any accuracy or validity validation claims
 
 ---
 
 ### fixture-005: Master Number Test
 
-**Person**: Synthetic test fixture (not a real person)
+**Person**: Internal synthetic test fixture (not a real person)
 
 **Birth Data**:
 - Date: February 29, 1964 (leap day)
 - Time: 11:00 (arbitrary for testing)
-- Place: Unknown
-- Source: Internal synthetic fixture
+- Place: Unknown (not applicable)
+- Source: Internal synthetic fixture designed for edge-case testing
 
-**Purpose**: Regression testing; validates edge-case handling for leap-day dates and master-number preservation
+**Purpose**: Regression testing for leap-day date handling and numerology edge cases; not intended to validate any real-world accuracy
 
 **Verification Status**: `unverified`
 
 **Rationale**:
-- This is a synthetic fixture designed to test numerology edge cases
-- It does not represent a real person or historical data
-- It was created specifically to validate leap-day parsing and master-number preservation
+- This is a synthetic fixture created specifically to test edge cases
+- It does not represent a real person or real historical data
+- It was designed to validate leap-day parsing and test numerology calculations
 
 **Input Focus**:
-- Leap day (February 29) is a valid date only in leap years
-- 1964 was a leap year
-- The fixture tests that the engine correctly parses February 29
+- Leap day (February 29) is valid only in leap years
+- 1964 was a leap year; February 29, 1964 is a valid test date
+- The fixture tests that the engine correctly parses leap dates
 
-**Output Focus**:
-- **Numerology**: Tests master-number preservation
-  - Day: 2 + 9 = 11 (master number, preserved)
-  - Month: 02 → 2 (single digit)
-  - Year: 1 + 9 + 6 + 4 = 20 → 2 + 0 = 2 (single digit)
-- **Astrology and Human Design**: Provided for regression consistency only; not validated
+**Output Focus by Field**:
 
-**Expected Values**:
-- Personal day: 11 (master number)
-- Personal month: 2
-- Personal year: 2
-- Sun sign: Pisces (date-based, reliable)
-- Moon sign: Libra (time-based, for regression only)
-- Ascendant: Taurus (time-based, for regression only)
-- Human Design: Reflector 4/6 (time-based, for regression only)
+| Field | Purpose | Notes |
+|-------|---------|-------|
+| Day (11) | Numerology test | Tests master-number preservation (2 + 9 = 11) |
+| Month (2) | Numerology test | Tests single-digit reduction (0 + 2 = 2) |
+| Year (2) | Numerology test | Tests reduction sequence (1+9+6+4=20, 2+0=2) |
+| Sun sign | Regression only | Pisces, date-based and date-independent |
+| Moon sign | Regression only | Libra, time-based output for regression consistency |
+| Ascendant | Regression only | Taurus, time-based output for regression consistency |
+| Human Design | Regression only | All fields time-based, for regression consistency only |
 
 **Limitations**:
-- Time is arbitrarily set and not realistic
-- Birthplace and timezone are not applicable
-- Astrology and Human Design outputs are for regression testing only
-- This fixture does not validate astronomical accuracy
-- The sole purpose is to ensure the numerology engine handles leap days and preserves master numbers
+- Birth time (11:00) is arbitrarily set and not realistic
+- Birthplace and timezone information are not applicable to this synthetic fixture
+- Numerology convention is not documented in provenance metadata
+- Astrology and Human Design outputs are provided for regression consistency only
+- No external verification or astronomical validation has been performed
+- This fixture does not establish the accuracy or validity of astrology or Human Design calculations
+- Leap-day handling is the only aspect validated by this fixture
+
+**Suitable Use**:
+- Regression testing to ensure consistent engine behavior on leap dates
+- Testing numerology edge cases and master-number preservation
+- Validating that the engine correctly parses February 29
+
+**Unsuitable Use**:
+- Validating astrology calculations
+- Validating Human Design methodology
+- Supporting any claim about the engines' astronomical or numerological accuracy
+- Using as evidence that numerology reduction methods are correct or verified
 
 **Next Action**:
 - This fixture is fit for purpose as a regression test
-- No historical or external verification is expected or appropriate
-- Use only to validate leap-day parsing and master-number preservation
+- No historical or external verification is needed or appropriate
+- Use only to validate leap-date parsing and regression consistency
 
 ---
 
@@ -444,7 +477,7 @@ If you wish to independently verify a fixture against an external source, follow
 
 ## Key Guardrails
 
-**Do not accept this claim:**
+**Do not accept these claims:**
 
 > "Astrodatabank says it, therefore all derived outputs are verified."
 
@@ -456,6 +489,17 @@ Astrodatabank is a source for **birth record data** (date, time, location). It d
 - The engine's numerology reduction algorithm
 
 Each of these is a separate calculation with its own potential sources of error.
+
+> "The test passes, therefore the output is historically accurate."
+
+Passing regression tests establish that the engine produces consistent output under the same code and input. They do NOT establish:
+- Historical accuracy of birth records
+- Correctness of timezone conversions from historical sources
+- Astronomical accuracy of celestial calculations
+- Validity of numerology or Human Design methodologies
+- Accuracy of any output for real-world decision-making
+
+Tests validate deterministic behavior. They do not validate truth claims.
 
 **Do not claim external verification without:**
 - An explicit comparison against a named external source
