@@ -125,20 +125,11 @@ tolerances.sunLongitudeDegrees: null,
 
 Expected value and tolerance are both unknown. The regression test may verify sign labels ("Pisces") but not exact coordinates.
 
-**Example 3: Uncertain birth time**
-
-```
-timeHandling.uncertaintyMinutes: 1440,
-tolerances.ascendantLongitudeDegrees: null,
-```
-
-Birth time is unknown (±24 hours uncertainty). Ascendant cannot be reliably calculated. Do not use a broad tolerance to pretend the Ascendant is valid.
-
 ## Numerology Convention
 
-The repository preserves **master numbers** (11, 22, 33, and sometimes 44+, depending on convention) as final values when they occur as the result of a reduction step.
+The repository preserves **master numbers** (11, 22, 33 only) as final values when they occur as the result of a reduction step.
 
-**Documented convention:**
+**Repository convention:**
 > Reduce each birth-date component independently while preserving 11, 22, and 33 when encountered as final component values.
 
 **Example for Marie Curie (November 24, 1867):**
@@ -323,13 +314,13 @@ Different numerology schools have different conventions for when to preserve mas
 
 | Field | Reliability | Reason |
 |-------|------------|--------|
-| Day Number (4) | Reliable | Depends only on date |
-| Month Number (3) | Reliable | Depends only on date |
-| Year Number (22) | Reliable | Depends only on date |
-| Sun Sign (Capricorn) | Reliable | Depends only on date |
-| Moon Sign | Unreliable | Requires accurate birth time |
-| Ascendant | Unreliable | Requires exact birth time; unknown without it |
-| Human Design (all fields) | Unreliable | Require exact birth time; cannot be reliably calculated |
+| Day Number (4) | Reliable | Time-independent; depends only on date |
+| Month Number (3) | Reliable | Time-independent; depends only on date |
+| Year Number (22) | Reliable | Time-independent; depends only on date |
+| Sun Sign (Capricorn) | Reliable | Time-independent; determined by date alone |
+| Moon Sign | Unreliable | Time-dependent; requires accurate birth time |
+| Ascendant | Unreliable | Time-dependent; requires exact birth time; unknown without it |
+| Human Design (all fields) | Unreliable | Time-dependent; require exact birth time; cannot be reliably calculated |
 
 **Critical Note**: This fixture demonstrates that the engine returns values for fields that cannot be reliably calculated. Do not use Moon sign, Ascendant, or Human Design outputs from this fixture as evidence that the engine correctly calculates these values when birth time is missing.
 
@@ -379,10 +370,10 @@ Different numerology schools have different conventions for when to preserve mas
 | Day (11) | Numerology test | Tests master-number preservation (2 + 9 = 11) |
 | Month (2) | Numerology test | Tests single-digit reduction (0 + 2 = 2) |
 | Year (2) | Numerology test | Tests reduction sequence (1+9+6+4=20, 2+0=2) |
-| Sun sign | Regression only | Pisces, date-based and date-independent |
-| Moon sign | Regression only | Libra, time-based output for regression consistency |
-| Ascendant | Regression only | Taurus, time-based output for regression consistency |
-| Human Design | Regression only | All fields time-based, for regression consistency only |
+| Sun sign | Regression only | Pisces, time-independent (determined by date alone) |
+| Moon sign | Regression only | Libra, time-dependent output for regression consistency |
+| Ascendant | Regression only | Taurus, time-dependent output for regression consistency |
+| Human Design | Regression only | All fields time-dependent, for regression consistency only |
 
 **Limitations**:
 - Birth time (11:00) is arbitrarily set and not realistic
