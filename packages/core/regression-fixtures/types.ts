@@ -1,9 +1,12 @@
 /**
  * Regression Fixture Types
  *
- * Canonical test data for ensuring Soul Codex calculations remain stable.
- * Each fixture represents a verified, historical chart used to detect regressions.
+ * Canonical test datasets for ensuring Soul Codex calculations remain stable.
+ * Fixtures have varying provenance status: some partially-verified, others unverified.
+ * Passing regression tests establish consistent behavior, not historical accuracy.
  */
+
+import type { FixtureProvenance } from './provenance.js';
 
 export interface PersonalNumbers {
   day: number;
@@ -29,11 +32,11 @@ export interface GoldenFixture {
   name: string;
   birthDate: string; // ISO 8601: YYYY-MM-DD
   birthTime?: string; // Optional: HH:MM for astrology/HD
-  timeVerified: 'exact' | 'estimated' | 'unknown';
-  source: string; // Where this data came from (verified source)
-  notes: string; // Context for this fixture
+  timeVerified: 'exact' | 'estimated' | 'unknown'; // Regression metadata: confidence in recorded birth time value, not historical verification
+  source: string; // Regression metadata: source identification for regression tracking (not external verification claim)
+  notes: string; // Regression metadata: context for test fixture
 
-  // Expected outputs (locked in as "correct")
+  // Expected outputs (locked in as "correct" for regression testing)
   expected: {
     personalNumbers: PersonalNumbers;
     astrology: AstrologyData;
@@ -41,12 +44,16 @@ export interface GoldenFixture {
     // Additional fields can be added as engines expand
   };
 
-  // Metadata
-  createdAt: string; // When this fixture was created
-  lastVerified: string; // When this fixture was last confirmed correct
+  // Regression Metadata (do not interpret as external verification)
+  createdAt: string; // When this fixture was created for regression testing
+  lastVerified: string; // When fixture output was last confirmed stable (regression consistency only, not historical accuracy)
   engine_versions: {
     [key: string]: string; // Engine name -> version that produced this output
   };
+
+  // Structured provenance metadata (separate layer documenting source, verification status, and limitations)
+  // numerologyConvention is repository-level behavior (documented in PROVENANCE.md) unless explicitly populated here
+  provenance?: FixtureProvenance;
 }
 
 export interface RegressionTestResult {
