@@ -427,13 +427,11 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
         comparedAgainst: [],
         limitations: [
           'Birth time is completely unknown; estimated to midnight (00:00) for testing purposes only',
-          'Uncertainty ±1440 minutes (full 24-hour range) due to missing birth time',
           'Moon sign calculation requires exact birth time; without it, Moon sign value is unreliable',
           'Ascendant calculation requires exact birth time; without it, Ascendant value is unreliable',
           'Human Design calculations require exact birth time; all HD fields are unreliable',
           'Sun sign (Capricorn) is reliable because it depends only on birth date',
           'Numerology is reliable because it depends only on date components',
-          'No external source record exists; birth certificate had no recorded time',
           'This fixture tests engine behavior when birth time data is missing or unrecorded',
           'Do not use this fixture to validate astrology or Human Design outputs for cases with missing birth time',
         ],

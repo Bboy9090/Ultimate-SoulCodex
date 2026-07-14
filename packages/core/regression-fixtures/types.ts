@@ -1,8 +1,9 @@
 /**
  * Regression Fixture Types
  *
- * Canonical test data for ensuring Soul Codex calculations remain stable.
- * Each fixture represents a verified, historical chart used to detect regressions.
+ * Canonical test datasets for ensuring Soul Codex calculations remain stable.
+ * Fixtures have varying provenance status: some partially-verified, others unverified.
+ * Passing regression tests establish consistent behavior, not historical accuracy.
  */
 
 import type { FixtureProvenance } from './provenance.js';
