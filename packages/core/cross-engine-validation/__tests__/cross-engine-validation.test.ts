@@ -102,7 +102,7 @@ test('analyzeConflicts - detects stress override pattern', () => {
 test('analyzeConflicts - low confidence', () => {
   const entries: EvidenceEntry[] = [
     createEvidenceEntry('numerology', 'Test', 'value', 85, 'high'),
-    createEvidenceEntry('astrology', 'Test', 'value', 'other', 40, 'low'),
+    createEvidenceEntry('astrology', 'Test', 'other', 40, 'low'),
   ];
 
   const conflicts = analyzeConflicts(entries);
@@ -132,7 +132,7 @@ test('scoreAgreement - multiple high-confidence engines', () => {
 test('scoreAgreement - mixed confidence variance penalty', () => {
   const entries: EvidenceEntry[] = [
     createEvidenceEntry('numerology', 'Test', 'value', 95, 'verified'),
-    createEvidenceEntry('astrology', 'Test', 'value', 'value', 50, 'moderate'),
+    createEvidenceEntry('astrology', 'Test', 'value', 50, 'moderate'),
   ];
 
   const score = scoreAgreement(entries);

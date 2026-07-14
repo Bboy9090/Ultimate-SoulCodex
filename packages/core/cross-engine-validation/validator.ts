@@ -71,7 +71,7 @@ export function validateEngineAgreement(
         claim: claimEntries[0].claim,
         engines,
         agreementLevel,
-        confidence: avgConfidence,
+        confidence: Math.round(avgConfidence),
         reasonsForAgreement,
       });
     } else {
