@@ -41,24 +41,16 @@ export function analyzeConflicts(entries: EvidenceEntry[]): ConflictExplanation[
     });
   }
 
-  // Check for stress override patterns (predictive/behavior engines may override during stress)
-  const predictiveEngines = entries.filter(e =>
-    ['predictive', 'behavior', 'dominance'].includes(e.engine)
+  // Check for stress override patterns (only if explicitly mentioned in reasoning)
+  const stressEntries = entries.filter(e =>
+    e.reasoning.some(r => r.toLowerCase().includes('stress'))
   );
-  const staticEngines = entries.filter(e =>
-    ['numerology', 'astrology', 'human-design'].includes(e.engine)
-  );
-
-  if (predictiveEngines.length > 0 && staticEngines.length > 0) {
-    const predictiveValue = predictiveEngines[0]?.value;
-    const staticValue = staticEngines[0]?.value;
-    if (predictiveValue !== staticValue) {
-      conflicts.push({
-        explanation: `Engine type difference: Behavior/predictive engines may override static predictions during stress periods`,
-        stressOverride: true,
-        severity: 'medium',
-      });
-    }
+  if (stressEntries.length > 0 && entries.some(e => !e.reasoning.some(r => r.toLowerCase().includes('stress')))) {
+    conflicts.push({
+      explanation: `Stress override detected: Some engines report stress-influenced behavior`,
+      stressOverride: true,
+      severity: 'medium',
+    });
   }
 
   // Check for sample size or data completeness issues
