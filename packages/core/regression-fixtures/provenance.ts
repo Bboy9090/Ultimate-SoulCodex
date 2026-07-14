@@ -24,12 +24,12 @@ export type TimezoneMethod =
 export type ZodiacMode =
   | 'tropical'
   | 'sidereal'
-  | 'not-applicable';
+  | null;
 
 export type CoordinateMode =
   | 'geocentric'
   | 'topocentric'
-  | 'not-applicable';
+  | null;
 
 export interface FixtureProvenanceSource {
   provider: string;
@@ -69,7 +69,7 @@ export interface FixtureProvenanceCalculation {
   humanDesignProviderVersion: string | null;
   humanDesignMethod: string | null;
 
-  numerologyConvention: string;
+  numerologyConvention: string | null;
 }
 
 export interface FixtureProvenanceExpectedCoordinates {
