@@ -31,7 +31,6 @@ import { queryClient, apiFetch } from "./lib/queryClient";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const SharePage = lazy(() => import("./pages/SharePage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
