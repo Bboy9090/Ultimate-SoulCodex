@@ -1,8 +1,9 @@
 /**
  * Golden Regression Fixtures
  *
- * Canonical birth charts with verified outputs.
+ * Canonical test datasets with deterministic outputs.
  * These act as regression tests: if outputs change, something broke.
+ * Regression testing validates consistent behavior, not historical accuracy.
  */
 
 import type { GoldenFixture } from './types.js';
@@ -12,12 +13,12 @@ import type { FixtureProvenance } from './provenance.js';
 const fixture001Provenance: FixtureProvenance = {
   source: {
     provider: 'Astrodatabank',
-    reference: 'Albert Einstein (March 14, 1879)',
-    rating: 'A (Reliable)',
+    reference: null,
+    rating: null,
     accessedAt: null,
     notes: [
-      'Birth time is documented in historical records',
-      'Birth location (Ulm, Germany) is well-established',
+      'Birth data sourced from Astrodatabank but access record not preserved',
+      'Exact reference URL or ID not recorded and cannot be verified',
     ],
   },
   birthplace: {
@@ -30,15 +31,16 @@ const fixture001Provenance: FixtureProvenance = {
   timeHandling: {
     recordedLocalTime: '11:30',
     utcOffset: null,
-    timezoneMethod: 'local-mean-time',
+    timezoneMethod: 'unknown',
     timezoneIdentifier: null,
-    uncertaintyMinutes: 5,
+    uncertaintyMinutes: null,
     notes: [
       'Birth time recorded as 11:30 local time in Ulm',
       'Germany adopted standard time (Mitteleuropäische Zeit) in 1893',
-      'Birth occurred under pre-standard local mean time regime',
-      'UTC offset calculation from geographic coordinates requires independent audit',
-      'Uncertainty range ±5 minutes reflects potential transcription or rounding error in historical source',
+      'Birth occurred under pre-standard time regime',
+      'Local mean time conversion is a reconstruction hypothesis without independent audit',
+      'UTC offset calculation from geographic coordinates is unverified',
+      'Source does not explicitly report uncertainty in birth time',
     ],
   },
   calculation: {
@@ -154,12 +156,12 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     provenance: {
       source: {
         provider: 'Astrodatabank',
-        reference: 'Marie Curie (November 24, 1867)',
-        rating: 'A (Reliable)',
-        accessedAt: '2024-01-15',
+        reference: null,
+        rating: null,
+        accessedAt: null,
         notes: [
-          'Birth time recorded as 18:30 (6:30 PM)',
-          'Birth in Warsaw, then part of Russian Poland',
+          'Birth data sourced from Astrodatabank but access record not preserved',
+          'Exact reference URL or ID not recorded and cannot be verified',
         ],
       },
       birthplace: {
@@ -172,15 +174,16 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
       timeHandling: {
         recordedLocalTime: '18:30',
         utcOffset: null,
-        timezoneMethod: 'local-mean-time',
+        timezoneMethod: 'unknown',
         timezoneIdentifier: null,
-        uncertaintyMinutes: 10,
+        uncertaintyMinutes: null,
         notes: [
           'Birth time recorded as 18:30 local time in Warsaw',
           'Birth occurred during Russian Empire administrative period',
           'Poland adopted standard time (Mitteleuropäische Zeit) in 1893',
-          'UTC offset calculation from geographic coordinates requires independent audit',
-          'Uncertainty range ±10 minutes reflects potential transcription or rounding error',
+          'Russian Empire local time offset is a reconstruction hypothesis without independent audit',
+          'UTC offset calculation from geographic coordinates is unverified',
+          'Source does not explicitly report uncertainty in birth time',
         ],
       },
       calculation: {
@@ -362,13 +365,13 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     provenance: {
       source: {
         provider: 'Internal Test Suite',
-        reference: 'Birth certificate record (time not recorded)',
+        reference: null,
         rating: null,
         accessedAt: null,
         notes: [
-          'Birth occurred on the last day of the year',
-          'Birth time is not recorded on the birth certificate',
-          'This fixture tests edge cases and missing data handling',
+          'This is a synthetic test fixture, not a real person',
+          'It does not represent a real birth certificate or historical record',
+          'Created to test engine behavior when birth time is completely unknown',
         ],
       },
       birthplace: {
@@ -381,13 +384,15 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
       timeHandling: {
         recordedLocalTime: null,
         utcOffset: null,
-        timezoneMethod: 'estimated',
+        timezoneMethod: 'unknown',
         timezoneIdentifier: null,
-        uncertaintyMinutes: 1440,
+        uncertaintyMinutes: null,
         notes: [
-          'Birth time is completely unknown; time set to 00:00 (midnight) is arbitrary for testing',
-          'Uncertainty range is ±1440 minutes (24 hours / full day)',
-          'Unknown birth time means Ascendant and time-sensitive Human Design fields cannot be accurately calculated',
+          'Birth time is completely unknown and unrecorded',
+          'Test value 00:00 (midnight) is arbitrary placeholder for missing data',
+          'No timezone information available or applicable',
+          'When birth time is unknown, fields like Ascendant and Human Design cannot be calculated reliably',
+          'Test data only; not suitable for any validation claims',
         ],
       },
       calculation: {
