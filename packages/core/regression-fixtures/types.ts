@@ -5,6 +5,8 @@
  * Each fixture represents a verified, historical chart used to detect regressions.
  */
 
+import type { FixtureProvenance } from './provenance.js';
+
 export interface PersonalNumbers {
   day: number;
   month: number;
@@ -47,6 +49,9 @@ export interface GoldenFixture {
   engine_versions: {
     [key: string]: string; // Engine name -> version that produced this output
   };
+
+  // Structured provenance metadata
+  provenance?: FixtureProvenance;
 }
 
 export interface RegressionTestResult {
