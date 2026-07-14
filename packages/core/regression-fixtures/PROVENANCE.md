@@ -158,31 +158,31 @@ Different numerology schools have different conventions for when to preserve mas
 
 **Birth Data**:
 - Date: March 14, 1879
-- Time: 11:30 AM (recorded local time)
+- Time: 11:30 (recorded local time)
 - Place: Ulm, Württemberg, Germany (48.4°N, 9.99°E)
-- Source: Astrodatabank (rating A, but access date not recorded)
+- Source: Astrodatabank (access record not preserved)
 
 **Purpose**: Regression testing with documented historical birth data; not verification of astrology or Human Design
 
 **Verification Status**: `partially-verified`
 
 **What is Verified**:
-- Birth date is documented in historical records
-- Birth time is documented (though source access is not recorded)
+- Birth date is documented
+- Birth time is recorded (11:30 local time)
 - Birth location is known and coordinates are established
 
 **What is NOT Verified**:
-- UTC offset conversion from local mean time (no independent audit)
-- Astrology coordinate calculations (no comparison against external provider)
-- Human Design outputs (no comparison against Human Design provider)
+- UTC offset conversion from local mean time (unaudited reconstruction hypothesis)
+- Astrology coordinate calculations (no external provider comparison)
+- Human Design outputs (no external provider comparison)
 - Any calculation method or ephemeris version
 
 **Time Handling**:
 - Birth recorded as 11:30 local time in Ulm
-- Birth occurred during local mean time (LMT) regime
+- Birth occurred during pre-standard-time period
 - Germany adopted standard time (Mitteleuropäische Zeit) in 1893
-- UTC offset calculation requires geographic coordinates and historical timezone research
-- Uncertainty ±5 minutes reflects potential transcription or rounding error in historical source
+- UTC offset conversion from geographic coordinates is unverified
+- Source does not explicitly report uncertainty in birth time
 - Astrodatabank provides the birth record; it does not certify the UTC conversion
 
 **Calculation Metadata**: All calculation fields are null (no provider, ephemeris version, or method documented)
@@ -204,9 +204,9 @@ Different numerology schools have different conventions for when to preserve mas
 
 **Birth Data**:
 - Date: November 24, 1867
-- Time: 18:30 (6:30 PM, recorded local time)
+- Time: 18:30 (recorded local time)
 - Place: Warsaw, Poland (then Russian Poland, 52.23°N, 21.01°E)
-- Source: Astrodatabank (rating A, but access date not recorded)
+- Source: Astrodatabank (access record not preserved)
 
 **Purpose**: Regression testing with documented historical birth data; validates master-number preservation in numerology tests
 
@@ -214,21 +214,21 @@ Different numerology schools have different conventions for when to preserve mas
 
 **What is Verified**:
 - Birth date is documented
-- Birth time is documented (though source access is not recorded)
+- Birth time is recorded (18:30 local time)
 - Birth location is known and coordinates are established
 
 **What is NOT Verified**:
-- UTC offset conversion from Russian Empire local time (no independent audit)
-- Astrology coordinate calculations (no comparison against external provider)
-- Human Design outputs (no comparison against Human Design provider)
+- UTC offset conversion from Russian Empire local time (unaudited reconstruction hypothesis)
+- Astrology coordinate calculations (no external provider comparison)
+- Human Design outputs (no external provider comparison)
 - Master-number preservation method (asserted but not independently validated)
 
 **Time Handling**:
 - Birth recorded as 18:30 local time in Warsaw
 - Birth occurred during Russian Empire administrative period
 - Poland adopted standard time (Mitteleuropäische Zeit) in 1893
-- UTC offset calculation requires geographic coordinates and historical Russian time standards research
-- Uncertainty ±10 minutes reflects potential transcription or rounding error
+- UTC offset conversion from geographic coordinates is unverified
+- Source does not explicitly report uncertainty in birth time
 - Astrodatabank provides the birth record; it does not certify the UTC conversion
 
 **Calculation Metadata**: All calculation fields are null (no provider, ephemeris version, or method documented)
@@ -299,24 +299,25 @@ Different numerology schools have different conventions for when to preserve mas
 
 **Birth Data**:
 - Date: December 31, 1975
-- Time: Unknown (estimated to 00:00 for testing purposes only)
+- Time: Unknown (placeholder 00:00 for testing purposes only)
 - Place: Unknown (intentionally unspecified)
-- Source: Internal synthetic fixture (birth certificate scenario)
+- Source: Internal synthetic fixture
 
 **Purpose**: Regression testing for missing birth-time data; validates engine behavior when exact time is unavailable
 
 **Verification Status**: `unverified`
 
 **Rationale**:
-- This fixture tests edge cases where birth time is not available
-- Estimated time of 00:00 (midnight) is arbitrary and used only for testing
-- No external source has been consulted
-- This is NOT a real person or real birth certificate
+- This fixture tests edge cases where birth time is completely unknown
+- Placeholder value 00:00 (midnight) is arbitrary and used only for testing
+- No external source exists or is intended
+- This is NOT a real person and does not represent a real birth scenario
 
 **Input Limitations**:
-- Birth time is completely unknown; uncertainty ±1440 minutes (full 24-hour range)
+- Birth time is completely unknown and unrecorded
+- Placeholder 00:00 is arbitrary for test purposes
 - Birthplace coordinates are unknown
-- Timezone information is not documented
+- Timezone information is not applicable
 
 **Output Limitations by Field**:
 
