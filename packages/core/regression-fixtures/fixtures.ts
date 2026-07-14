@@ -91,8 +91,8 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     birthDate: '1879-03-14',
     birthTime: '11:30',
     timeVerified: 'exact',
-    source: 'Astrodatabank (confirmed)',
-    notes: 'Physicist, known birth time verified through historical records',
+    source: 'Astrodatabank (reference not recorded)',
+    notes: 'Birth time is recorded in historical sources; UTC conversion is unaudited',
     expected: {
       personalNumbers: {
         day: 5, // 1+4 = 5
@@ -126,8 +126,8 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     birthDate: '1867-11-24',
     birthTime: '18:30',
     timeVerified: 'exact',
-    source: 'Astrodatabank',
-    notes: 'Physicist, exact birth time confirmed',
+    source: 'Astrodatabank (reference not recorded)',
+    notes: 'Birth time is recorded in historical sources; UTC conversion is unaudited',
     expected: {
       personalNumbers: {
         day: 6, // 2+4 = 6
@@ -233,8 +233,8 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     birthDate: '1990-08-15',
     birthTime: '14:30',
     timeVerified: 'exact',
-    source: 'Direct verification',
-    notes: 'Contemporary chart, exact birth time',
+    source: 'Internal test suite',
+    notes: 'Synthetic fixture for regression testing',
     expected: {
       personalNumbers: {
         day: 6, // 1+5 = 6
@@ -335,8 +335,8 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     birthDate: '1975-12-31',
     birthTime: '00:00',
     timeVerified: 'estimated',
-    source: 'Birth certificate (no time)',
-    notes: 'Birth time estimated to midnight',
+    source: 'Internal test suite',
+    notes: 'Synthetic fixture with estimated birth time for regression testing',
     expected: {
       personalNumbers: {
         day: 4, // 3+1 = 4
@@ -444,8 +444,8 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     birthDate: '1964-02-29',
     birthTime: '11:00',
     timeVerified: 'exact',
-    source: 'Historical leap day birth',
-    notes: 'Leap year birth to test edge case',
+    source: 'Internal test suite',
+    notes: 'Synthetic fixture for leap-day edge case testing',
     expected: {
       personalNumbers: {
         day: 11, // 2+9 = 11 (master number, stop)
