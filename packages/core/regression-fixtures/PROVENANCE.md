@@ -139,7 +139,7 @@ The repository preserves **master numbers** (11, 22, 33 only) as final values wh
 - **Year**: 1867 → 1 + 8 + 6 + 7 = 22 → preserved as 22 (master number)
 - **Life Path**: (1 + 1) + 6 + (2 + 2) = 2 + 6 + 4 = 12 → 1 + 2 = 3
 
-Different numerology schools have different conventions for when to preserve master numbers and how to combine them into the Life Path. This fixture convention is documented in provenance but is not validated against external sources.
+Different numerology schools have different conventions for when to preserve master numbers and how to combine them into the Life Path. This repository-level convention is documented here for regression behavior. Individual fixture provenance leaves numerologyConvention null until fixture-specific methodology is independently recorded.
 
 ## Fixture Inventory
 
