@@ -23,7 +23,7 @@ export default function TermsPage() {
         <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.8rem", marginBottom: "0.5rem" }}>Terms of Service</h1>
         <p style={{ color: "var(--sc-gold)", fontSize: "0.85rem", opacity: 0.7 }}>
 
-          Effective: April 21, 2026
+          Effective: July 16, 2026
         </p>
       </div>
 
@@ -66,9 +66,10 @@ export default function TermsPage() {
 
       <Section title="5. Subscriptions & Payments">
         <p>
-          Premium features are processed exclusively via Apple In-App Purchases. 
-          Subscriptions automatically renew unless cancelled at least 24 hours before the end of the 
-          current period. Refunds are handled according to Apple's App Store policies.
+          Some Soul Codex features require a premium entitlement. Availability and activation methods
+          vary by platform. The iOS and Android store apps do not sell premium access or redeem access
+          codes. If a future store version offers an in-app purchase, that purchase and any refund will
+          be handled under the applicable store's terms shown at the time of purchase.
         </p>
       </Section>
 
@@ -84,7 +85,7 @@ export default function TermsPage() {
         <p>
           As part of our commitment to data sovereignty and App Store compliance, you have the 
           absolute right to be forgotten. You may delete your account and all associated profile 
-          data at any time through the Profile Settings. This action is irreversible and purges 
+          data at any time through Settings → Delete Account & Data. This action is irreversible and purges
           all records from our persistent storage.
         </p>
       </Section>

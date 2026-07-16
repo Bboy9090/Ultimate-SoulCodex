@@ -26,6 +26,8 @@ const GalacticCodePage = lazy(() => import("./pages/GalacticCodePage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const SupportPage = lazy(() => import("./pages/SupportPage"));
+const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
 
 import { queryClient, apiFetch } from "./lib/queryClient";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
@@ -146,6 +148,8 @@ export default function App() {
             <Route path="/privacy" component={PrivacyPage} />
             <Route path="/terms" component={TermsPage} />
             <Route path="/settings" component={SettingsPage} />
+            <Route path="/support" component={SupportPage} />
+            <Route path="/account-deletion" component={AccountDeletionPage} />
             <Route path="/admin" component={AdminPage} />
             <Route path="/pricing" component={PricingPage} />
             <Route path="/share/:token" component={SharePage} />

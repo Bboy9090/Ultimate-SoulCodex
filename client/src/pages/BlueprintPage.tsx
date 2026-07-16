@@ -7,6 +7,7 @@ import {
   IconNorthNode, IconCircle, IconZap, IconLock, IconLoader
 } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+import { isNativeStoreApp } from "../lib/platform";
 
 const CACHE_PREFIX = "soulBlueprintReading";
 
@@ -105,6 +106,7 @@ const LOCKED_FEATURES = [
 ];
 
 export default function BlueprintPage() {
+  const isNative = isNativeStoreApp();
   const [isPremium, setIsPremium]          = useState(false);
   const [premiumChecked, setPremiumChecked] = useState(false);
   const [entitlementError, setEntitlementError] = useState(false);
@@ -311,20 +313,20 @@ export default function BlueprintPage() {
             ))}
           </div>
 
-          <Link href="/profile">
+          <Link href={isNative ? "/support" : "/profile"}>
             <button className="btn btn-primary" style={{
               width: "100%", fontSize: "0.9rem", padding: "0.85rem",
               background: "linear-gradient(135deg, rgba(212,168,95,0.25), rgba(212,168,95,0.12))",
               border: "1px solid rgba(212,168,95,0.5)", color: "var(--sc-gold)", marginBottom: "0.75rem",
             }}>
-              Unlock Full Blueprint
+              {isNative ? "Get Access Help" : "Unlock Full Blueprint"}
             </button>
           </Link>
-          <div style={{ textAlign: "center" }}>
+          {!isNative && <div style={{ textAlign: "center" }}>
             <Link href="/profile" style={{ fontSize: "0.78rem", color: "rgba(246,241,232,0.35)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
               Enter access code
             </Link>
-          </div>
+          </div>}
         </div>
 
         {/* Blurred section preview */}
