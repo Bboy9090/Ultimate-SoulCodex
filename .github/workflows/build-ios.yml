@@ -19,6 +19,8 @@ jobs:
   build-ios:
     runs-on: macos-14
     timeout-minutes: 30
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL }}
 
     steps:
       - name: Checkout
@@ -31,12 +33,15 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install --ignore-scripts || npm install
+        run: npm ci --ignore-scripts
 
       - name: Build workspace packages
         run: |
-          npm run build -w @soulcodex/db --if-present || true
-          npm run build -w @soulcodex/core --if-present || true
+          npm run build -w @soulcodex/db
+          npm run build -w @soulcodex/core
+
+      - name: Validate mobile release configuration
+        run: npm run mobile:validate:ios
 
       - name: Build web app
         run: npm run build
@@ -49,14 +54,11 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Install CocoaPods
-        run: cd ios/App && pod install
-
       - name: Build iOS (Development)
         if: inputs.build_type == 'development'
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild -project App.xcodeproj \
             -scheme "Soul Codex" \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
@@ -73,15 +75,18 @@ jobs:
 
       - name: Install provisioning profile
         if: inputs.build_type == 'app-store'
+        env:
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
+          test -n "$IOS_PROVISIONING_PROFILE"
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "${{ secrets.IOS_PROVISIONING_PROFILE }}" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
 
       - name: Build iOS (App Store)
         if: inputs.build_type == 'app-store'
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace \
+          xcodebuild -project App.xcodeproj \
             -scheme "Soul Codex" \
             -configuration Release \
             -archivePath build/SoulCodex.xcarchive \

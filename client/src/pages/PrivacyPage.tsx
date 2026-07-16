@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       <h1 style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>Privacy Policy</h1>
       <p style={{ color: "var(--sc-gold)", fontSize: "0.85rem", marginBottom: "1.5rem", opacity: 0.7 }}>
 
-        Last updated: April 13, 2026
+        Last updated: July 16, 2026
       </p>
 
       <p>
@@ -33,8 +33,7 @@ export default function PrivacyPage() {
         <p><strong>Information collected automatically:</strong></p>
         <ul>
           <li><strong>Session data:</strong> Anonymous session identifiers to maintain your experience across visits.</li>
-          <li><strong>Usage analytics:</strong> Page views and interaction patterns via Microsoft Clarity (anonymized).</li>
-          <li><strong>Device information:</strong> Browser type, operating system, and screen size for optimizing the experience.</li>
+          <li><strong>Technical information:</strong> Browser or app platform, operating system, screen size, request logs, and error details needed to operate, secure, and troubleshoot Soul Codex.</li>
         </ul>
       </Section>
 
@@ -44,25 +43,24 @@ export default function PrivacyPage() {
           <li>Provide compatibility analysis between profiles.</li>
           <li>Power the AI Soul Guide chat feature.</li>
           <li>Send push notifications (only if you opt in).</li>
-          <li>Process payments for premium features via secure payment partners.</li>
-          <li>Improve the app experience through anonymized analytics.</li>
+          <li>Verify premium entitlements associated with your account or session.</li>
+          <li>Operate, secure, troubleshoot, and improve Soul Codex.</li>
         </ul>
       </Section>
 
       <Section title="3. Data Storage & Security">
         <p>
-          Your profile data is stored securely in a PostgreSQL database hosted on Neon (cloud
-          infrastructure). Passwords are hashed using argon2id with secure parameters. We use HTTPS
-          for all data transmission.
+          Profile data sent to our service is stored in our production PostgreSQL database.
+          Passwords are hashed using argon2id with secure parameters. We use HTTPS for data in transit.
         </p>
         <p>Your soul profile is also cached locally on your device (localStorage) for offline access.</p>
       </Section>
 
       <Section title="4. Third-Party Services">
         <ul>
-          <li><strong>Google Gemini AI:</strong> Processes your profile data to generate personalized text content. Google's AI privacy policy applies.</li>
-          <li><strong>Secure Payment Processors:</strong> Handle payment processing. We do not store your credit card information.</li>
-          <li><strong>Microsoft Clarity:</strong> Collects anonymized usage analytics. No personally identifiable information is shared.</li>
+          <li><strong>AI providers:</strong> Google Gemini, OpenAI, or Groq may process the profile context and questions needed to generate a requested reading or Soul Guide response, depending on service availability.</li>
+          <li><strong>Apple:</strong> Processes Apple identity information when you choose Sign in with Apple.</li>
+          <li><strong>Infrastructure providers:</strong> Host the app, database, and encrypted network traffic needed to provide the service.</li>
         </ul>
       </Section>
 
@@ -77,16 +75,15 @@ export default function PrivacyPage() {
       <Section title="6. Your Rights">
         <ul>
           <li><strong>Access:</strong> You can view all data associated with your profile within the app.</li>
-          <li><strong>Deletion:</strong> You can request deletion of your account and all associated data by contacting us.</li>
-          <li><strong>Portability:</strong> You can export your profile data from the app.</li>
+          <li><strong>Deletion:</strong> Open Settings → Delete Account & Data to permanently delete your account or anonymous session data. You may also use the public account-deletion page.</li>
           <li><strong>Opt-out:</strong> You can disable push notifications at any time through your device settings.</li>
         </ul>
       </Section>
 
       <Section title="7. Children's Privacy">
         <p>
-          Soul Codex is not directed at children under 13. We do not knowingly collect information
-          from children under 13. If we learn we have collected such information, we will delete it
+          Soul Codex is intended for people age 13 and older and is not directed at children under 13.
+          We do not knowingly collect information from children under 13. If we learn we have collected such information, we will delete it
           promptly.
         </p>
       </Section>
@@ -104,6 +101,10 @@ export default function PrivacyPage() {
           <strong>privacy@soulcodex.app</strong>.
         </p>
       </Section>
+
+      <p style={{ marginTop: "2rem" }}>
+        <a href="/account-deletion" style={{ color: "var(--sc-gold)" }}>Delete your Soul Codex account and data</a>
+      </p>
     </div>
   );
 }

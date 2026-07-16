@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link, useLocation } from "wouter";
+import { isNativeStoreApp } from "../lib/platform";
 
 import {
   IconStar,
@@ -114,6 +115,7 @@ const heroButtonStyle: CSSProperties = {
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
+  const isNative = isNativeStoreApp();
   return (
     <div className="landing-nebula" style={{ minHeight: "100vh", overflowX: "hidden", position: "relative" }}>
       <header className="sc-marketing-header" style={{ background: "rgba(16,7,24,0.82)", borderBottomColor: "rgba(212,168,95,0.16)" }}>
@@ -127,7 +129,7 @@ export default function LandingPage() {
         <nav className="sc-marketing-nav">
           {[
             { label: "Systems", href: "#systems" },
-            { label: "Pricing", href: "#pricing" },
+            ...(!isNative ? [{ label: "Pricing", href: "#pricing" }] : []),
           ].map((link) => (
             <a key={link.href} href={link.href} className="sc-marketing-link" style={{ color: "#d9ad8e", fontFamily: "var(--font-serif)", fontSize: "1.05rem" }}>
               {link.label}
@@ -389,7 +391,7 @@ export default function LandingPage() {
 
       <GlowDivider />
 
-      <section id="pricing" style={{ position: "relative", padding: "6rem 1.5rem", overflow: "hidden" }}>
+      {!isNative && <section id="pricing" style={{ position: "relative", padding: "6rem 1.5rem", overflow: "hidden" }}>
         <Orb style={{ width: 500, height: 500, bottom: "-15%", right: "-10%", background: `radial-gradient(circle, ${AMBER},0.18) 0%, transparent 60%)` }} />
         <div style={{ maxWidth: 780, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
@@ -455,9 +457,9 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <GlowDivider />
+      {!isNative && <GlowDivider />}
 
       <section style={{ padding: "7rem 1.5rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <Orb style={{ width: 700, height: 700, top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: `radial-gradient(circle at 50% 50%, ${AMBER},0.16) 0%, transparent 55%)` }} />

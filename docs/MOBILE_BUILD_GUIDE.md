@@ -41,6 +41,12 @@ Go to **repo Settings → Secrets and variables → Actions** and add:
 | `ANDROID_KEY_ALIAS` | `soul-codex` |
 | `ANDROID_KEY_PASSWORD` | The key password you chose |
 
+Add this repository variable for both mobile workflows:
+
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | The public HTTPS origin serving the production Soul Codex API, with no trailing `/api` |
+
 #### Build & Submit
 1. Go to **Actions → Build Android → Run workflow**
 2. Select `release-aab` (Google Play requires AAB format)
@@ -55,15 +61,13 @@ Go to **repo Settings → Secrets and variables → Actions** and add:
 #### One-time: Create signing certificate and profile
 1. Log into [Apple Developer](https://developer.apple.com)
 2. Go to **Certificates, Identifiers & Profiles**
-3. Create an **App ID** with bundle ID: `app.soulcodex.main`
+3. Create an **App ID** with bundle ID: `app.soulcodex.ios`
 4. Create a **Distribution Certificate** (iOS Distribution)
 5. Export as `.p12` file with a password
 6. Create an **App Store Provisioning Profile** for your App ID
 7. Download the `.mobileprovision` file
 
-#### One-time: Update ExportOptions.plist
-Edit `scripts/ExportOptions.plist` and replace `REPLACE_WITH_TEAM_ID` with your Apple Team ID
-(found in Apple Developer → Membership → Team ID)
+The project and `scripts/ExportOptions.plist` currently use Team ID `86NUJ8M3B8`. Verify that this is the Team ID that owns `app.soulcodex.ios` before creating the provisioning profile.
 
 #### One-time: Add GitHub secrets
 | Secret | Value |
@@ -78,6 +82,19 @@ Edit `scripts/ExportOptions.plist` and replace `REPLACE_WITH_TEAM_ID` with your 
 3. Download the `.ipa` artifact
 4. Upload via [Transporter app](https://apps.apple.com/app/transporter/id1450874784) or `xcrun altool`
 5. Go to [App Store Connect](https://appstoreconnect.apple.com) → Submit for review
+
+The workflows build signed artifacts; they intentionally do not submit or release them automatically.
+
+## Required Store Console Work
+
+Code cannot complete these account-bound steps:
+
+- Verify `https://soulcodex.app/privacy`, `/support`, and `/account-deletion` are publicly reachable after deployment.
+- Complete Apple App Privacy and Google Play Data Safety from the shipped app behavior and `PrivacyPage.tsx`.
+- Upload screenshots and the Google Play feature graphic.
+- Complete age/content-rating, target-audience, ads, and app-access questionnaires.
+- Provide review notes and any credentials needed to exercise premium entitlement.
+- Run TestFlight and Google Play internal testing on physical devices before production submission.
 
 ---
 

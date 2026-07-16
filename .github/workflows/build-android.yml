@@ -20,6 +20,8 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL }}
 
     steps:
       - name: Checkout
@@ -38,12 +40,15 @@ jobs:
           java-version: 17
 
       - name: Install dependencies
-        run: npm install --ignore-scripts || npm install
+        run: npm ci --ignore-scripts
 
       - name: Build workspace packages
         run: |
-          npm run build -w @soulcodex/db --if-present || true
-          npm run build -w @soulcodex/core --if-present || true
+          npm run build -w @soulcodex/db
+          npm run build -w @soulcodex/core
+
+      - name: Validate mobile release configuration
+        run: npm run mobile:validate:android
 
       - name: Build web app
         run: npm run build
@@ -60,8 +65,17 @@ jobs:
 
       - name: Decode keystore
         if: inputs.build_type != 'debug'
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > android/app/soul-codex-release.keystore
+          test -n "$ANDROID_KEYSTORE"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soul-codex-release.keystore
 
       - name: Build Release APK
         if: inputs.build_type == 'release-apk'

@@ -335,36 +335,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Delete account / personal data — App Store + Google Play required.
   // Works for both authenticated users (full account delete) and anonymous
-  // sessions (session profile + logs delete). Always destroys the session.
+  // sessions (all session-owned server data). Always destroys the session.
   app.delete('/api/auth/account', async (req: any, res) => {
     try {
       const userId = req.user?.id || req.user?.claims?.sub || null;
       const sessionId = req.sessionID || null;
 
-      if (!userId && !sessionId) {
-        return res.status(400).json({ message: "No account or session to delete." });
-      }
-
       if (userId) {
         await storage.deleteUserAccount(userId);
         console.log(`[DeleteAccount] Removed user ${userId} and all associated data`);
       } else if (sessionId) {
-        // Anonymous: delete the session's profile (if any). Other session-scoped
-        // data (frequency logs, etc.) will be orphaned by the session destroy below.
-        const sessionProfile = await storage.getProfileBySessionId(sessionId);
-        if (sessionProfile) {
-          try {
-            await storage.deleteProfileById(sessionProfile.id);
-          } catch (e) {
-            console.warn("[DeleteAccount] Anonymous profile delete failed:", e);
-          }
-        }
+        await storage.deleteSessionData(sessionId);
         console.log(`[DeleteAccount] Cleared anonymous session ${sessionId} data`);
       }
 
       // End the session and clear premium flag for both cases
-      req.session.isPremium = false;
+      if (req.session) req.session.isPremium = false;
       const finish = () => {
+        if (!req.session) {
+          res.clearCookie("connect.sid");
+          return res.json({ message: "All data associated with this device session has been deleted." });
+        }
         req.session.destroy((destroyErr: any) => {
           if (destroyErr) {
             console.error("[DeleteAccount] Session destroy failed:", destroyErr);

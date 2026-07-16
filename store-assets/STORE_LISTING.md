@@ -59,14 +59,17 @@ astrology,numerology,human design,birth chart,personality,soul,zodiac,compatibil
 Primary: Lifestyle
 Secondary: Entertainment
 
-## Content Rating
-Everyone / 4+
+## Audience and Content Rating
+Intended audience: ages 13 and older. Complete each store's rating questionnaire from the shipped app behavior; do not infer the final rating from this document.
 
 ## Privacy Policy URL
-(Required — needs to be hosted)
+https://soulcodex.app/privacy
 
 ## Support URL
-(Required — needs to be hosted)
+https://soulcodex.app/support
+
+## Account Deletion URL
+https://soulcodex.app/account-deletion
 
 ---
 
@@ -82,7 +85,7 @@ Everyone / 4+
 
 ### Android (Google Play Console)
 - [ ] App icon: 512x512 PNG
-- [ ] Feature graphic: 1024x500 PNG
+- [x] Feature graphic: `play-feature-graphic-1024x500.png` (1024x500 PNG)
 - [ ] Screenshots: phone (min 2, 320-3840px per side), tablet (optional)
 - [ ] Privacy policy URL
 - [ ] Google Play Developer account ($25 one-time)
