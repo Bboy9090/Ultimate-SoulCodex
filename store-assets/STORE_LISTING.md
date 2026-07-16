@@ -63,13 +63,13 @@ Secondary: Entertainment
 Intended audience: ages 13 and older. Complete each store's rating questionnaire from the shipped app behavior; do not infer the final rating from this document.
 
 ## Privacy Policy URL
-https://soulcodex.app/privacy
+https://soulcodex.up.railway.app/privacy
 
 ## Support URL
-https://soulcodex.app/support
+https://soulcodex.up.railway.app/support
 
 ## Account Deletion URL
-https://soulcodex.app/account-deletion
+https://soulcodex.up.railway.app/account-deletion
 
 ---
 

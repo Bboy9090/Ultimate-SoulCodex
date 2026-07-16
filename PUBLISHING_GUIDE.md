@@ -25,7 +25,7 @@ Do not submit a build when asset generation or validation fails. Store artifacts
 ## 3. App Store Metadata
 Use the pre-written metadata in `app_store_metadata.md`.
 - **Hardened Selling Points**: Highlight the "Personality Physics" and "Loop Mapping" features.
-- **Privacy Policy**: Use `https://soulcodex.app/privacy`.
+- **Privacy Policy**: Use `https://soulcodex.up.railway.app/privacy`.
 
 ## 4. Archive & Upload
 1. Set the build destination to **Any iOS Device (arm64)**.

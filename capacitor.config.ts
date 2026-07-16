@@ -30,9 +30,11 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true,
     },
-    StatusBar: {
-      style: "LIGHT",
-      backgroundColor: "#0B0720",
+    SystemBars: {
+      insetsHandling: "css",
+      style: "DARK",
+      hidden: false,
+      animation: "FADE",
     },
     Keyboard: {
       resize: "body",
