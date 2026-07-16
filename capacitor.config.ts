@@ -21,24 +21,11 @@ const config: CapacitorConfig = {
   },
 
   plugins: {
-    SplashScreen: {
-      launchAutoHide: true,
-      launchShowDuration: 2000,
-      backgroundColor: "#0B0720",
-      showSpinner: false,
-      androidScaleType: "CENTER_CROP",
-      splashFullScreen: true,
-      splashImmersive: true,
-    },
     SystemBars: {
       insetsHandling: "css",
       style: "DARK",
       hidden: false,
       animation: "FADE",
-    },
-    Keyboard: {
-      resize: "body",
-      resizeOnFullScreen: true,
     },
   },
 };
