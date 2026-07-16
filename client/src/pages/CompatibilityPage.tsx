@@ -36,6 +36,7 @@ import {
   IconZodiacVirgo,
 } from "../components/Icons";
 import { pureText } from "../lib/sanitizer";
+import { downloadCompatibilityShareCard } from "../lib/compatibilityShareCard";
 
 type Mode = "love" | "attraction" | "friendship" | "growth";
 
@@ -83,6 +84,10 @@ interface CompatibilityResult {
   growthOpportunities: string[];
   profile1Name?: string;
   profile2Name?: string;
+  confidence?: { badge?: string; label?: string; reason?: string; aiAssuranceNote?: string };
+  systemsUsed?: Array<{ system: string; score?: number; weight?: number }>;
+  systemsExcluded?: Array<{ system: string; reason?: string }>;
+  missingDataWarnings?: string[];
 }
 
 const SIGN_GLYPHS: Record<string, React.ComponentType<any>> = {
@@ -363,6 +368,7 @@ export default function CompatibilityPage() {
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [sharePending, setSharePending] = useState(false);
   const [form, setForm] = useState({ name: "", birthDate: "", birthTime: "", birthLocation: "" });
 
   const flash = (fn: (v: string | null) => void, msg: string) => {
@@ -480,9 +486,10 @@ export default function CompatibilityPage() {
       if (!myProfileId) throw new Error("Save your profile first");
       return apiRequest("/api/compatibility", { method: "POST", body: JSON.stringify({ profile1Id: myProfileId, profile2Id: personId }) });
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: any, personId: string) => {
       const cd = data.compatibilityData || {};
       const dims = cd.dimensions || {};
+      const selectedPerson = persons.find((person) => person.id === personId);
       setResult({
         overallScore: data.overallScore ?? cd.overall ?? 0,
         dimensions: {
@@ -494,8 +501,12 @@ export default function CompatibilityPage() {
         friction: cd.friction || [],
         synergy: cd.synergy || [],
         growthOpportunities: cd.growthOpportunities || [],
-        profile1Name: data.profile1?.name,
-        profile2Name: data.profile2?.name,
+        profile1Name: data.profile1?.name ?? myProfile?.name ?? "My Profile",
+        profile2Name: data.profile2?.name ?? selectedPerson?.name ?? "Comparison",
+        confidence: data.confidence ?? cd.confidence,
+        systemsUsed: data.systemsUsed ?? cd.systemsUsed ?? [],
+        systemsExcluded: data.systemsExcluded ?? cd.systemsExcluded ?? [],
+        missingDataWarnings: data.missingDataWarnings ?? cd.missingDataWarnings ?? [],
       });
       setCompareOpen(true);
       setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 100);
@@ -510,6 +521,28 @@ export default function CompatibilityPage() {
     [IconHashtag, "LP", lifePath],
     [IconGrowth, "HD", hdType],
   ] as [React.ComponentType<any>, string, string | number | undefined][], [sunSign, moonSign, rising, lifePath, hdType]);
+
+  const handleShareCard = async () => {
+    if (!result) return;
+    setSharePending(true);
+    try {
+      await downloadCompatibilityShareCard({
+        profile1Name: result.profile1Name ?? "My Profile",
+        profile2Name: result.profile2Name ?? "Comparison",
+        overallScore: result.overallScore,
+        scoreLabel: scoreLabel(result.overallScore).text,
+        confidenceLabel: result.confidence?.label ?? result.confidence?.badge ?? "Partial",
+        confidenceReason: result.confidence?.reason,
+        strongestInsight: result.synergy[0] ? pureText(result.synergy[0]) : undefined,
+        watchPoint: result.friction[0] ? pureText(result.friction[0]) : undefined,
+        systemsUsed: result.systemsUsed?.map((item) => item.system),
+      });
+      flash(setSuccess, "1080×1080 share card created");
+    } catch (shareError) {
+      console.warn("[compatibility-share-card]", shareError);
+      flash(setError, "Share card export failed");
+    } finally { setSharePending(false); }
+  };
 
   return (
     <div style={{ padding: "2rem 1rem 5rem", maxWidth: 860, margin: "0 auto" }}>
@@ -629,8 +662,12 @@ export default function CompatibilityPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1.1rem", marginBottom: "1.5rem" }}>{(Object.entries(DIM_CONFIG) as [keyof typeof DIM_CONFIG, typeof DIM_CONFIG[keyof typeof DIM_CONFIG]][]).map(([key, cfg]) => <DimensionBar key={key} label={cfg.label} glyph={cfg.glyph} color={cfg.color} score={result.dimensions[key]} />)}</div>
                     {result.synergy.length > 0 && <ResultList title="Where You Flow" icon={IconSparkles} color="#22c55e" items={result.synergy} />}
                     {result.growthOpportunities.length > 0 && <ResultList title="What This Can Build" icon={IconGrowth} color="#D4A85F" items={result.growthOpportunities} />}
-                    {result.friction.length > 0 && <ResultList title="Watch Points" icon={IconSquare} color="#f59e0b" items={result.friction} />}
-                  </div>
+                     {result.friction.length > 0 && <ResultList title="Watch Points" icon={IconSquare} color="#f59e0b" items={result.friction} />}
+                     <div style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "1px solid rgba(212,168,95,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+                       <div><p style={{ margin: 0, fontSize: "0.78rem", color: "var(--foreground)", fontWeight: 700 }}>{result.confidence?.label ?? "Partial"} confidence</p><p style={{ margin: "0.2rem 0 0", fontSize: "0.7rem", color: "var(--muted-foreground)" }}>{result.confidence?.reason ?? "The card reflects the systems available for both profiles."}</p></div>
+                       <ScButton onClick={handleShareCard} loading={sharePending} size="sm">Create Share Card</ScButton>
+                     </div>
+                   </div>
                 )}
               </div>
             )}
