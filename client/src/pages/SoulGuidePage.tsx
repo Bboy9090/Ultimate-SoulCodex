@@ -2,6 +2,7 @@ import { apiFetch, resolveApiUrl } from "../lib/queryClient";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
+import { isNativeStoreApp } from "../lib/platform";
 import { 
   IconSend, IconLoader, IconArrowLeft, IconSparkles, 
   IconReading, IconAlert 
@@ -21,6 +22,7 @@ const SUGGESTIONS = [
 ];
 
 export default function SoulGuidePage() {
+  const isNative = isNativeStoreApp();
   const [, navigate] = useLocation();
   const [messages, setMessages]       = useState<Message[]>([]);
   const [input, setInput]             = useState("");
@@ -319,9 +321,11 @@ export default function SoulGuidePage() {
               You've used your {freeLimit} free questions
             </h3>
             <p style={{ color: "rgba(246,241,232,0.55)", fontSize: "0.85rem", lineHeight: 1.65, margin: "0 0 1.5rem", maxWidth: 320, marginLeft: "auto", marginRight: "auto" }}>
-              Unlock unlimited access to the Soul Guide, your Full Cosmic Blueprint, and the premium birth chart.
+              {isNative
+                ? "Premium access already associated with your Soul Codex profile is recognized automatically."
+                : "Unlock unlimited access to the Soul Guide, your Full Cosmic Blueprint, and the premium birth chart."}
             </p>
-            <Link href="/profile">
+            <Link href={isNative ? "/support" : "/profile"}>
               <button style={{
                 background: "linear-gradient(135deg, #D4A85F 0%, #b8883a 100%)",
                 border: "none", borderRadius: "10px",
@@ -329,17 +333,17 @@ export default function SoulGuidePage() {
                 color: "#EAEAF5", fontWeight: 700, cursor: "pointer",
                 marginBottom: "0.75rem", display: "block", width: "100%", maxWidth: 280, margin: "0 auto 0.75rem",
               }}>
-                Unlock Full Access
+                {isNative ? "Get Access Help" : "Unlock Full Access"}
               </button>
             </Link>
-            <p style={{ color: "rgba(246,241,232,0.3)", fontSize: "0.75rem", margin: 0 }}>
+            {!isNative && <p style={{ color: "rgba(246,241,232,0.3)", fontSize: "0.75rem", margin: 0 }}>
               Have an access code?{" "}
               <Link href="/profile">
                 <span style={{ color: "rgba(212,168,95,0.7)", cursor: "pointer", textDecoration: "underline" }}>
                   Enter it on your profile page
                 </span>
               </Link>
-            </p>
+            </p>}
           </div>
         )}
       </div>
@@ -351,7 +355,7 @@ export default function SoulGuidePage() {
             textAlign: "center", fontSize: "0.8rem",
             color: "rgba(246,241,232,0.3)", padding: "0.5rem 0",
           }}>
-            Upgrade to keep the conversation going
+            {isNative ? "Premium access is required to keep the conversation going" : "Upgrade to keep the conversation going"}
           </div>
         ) : (
           <form

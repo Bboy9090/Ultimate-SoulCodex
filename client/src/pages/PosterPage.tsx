@@ -388,10 +388,7 @@ export default function PosterPage() {
               background: "rgba(212,168,95,0.07)",
             }}>
               <span style={{ fontSize: "0.82rem", color: "var(--sc-gold)", opacity: 0.9, lineHeight: 1.5 }}>
-                The full atmospheric chart — dark sky, constellations, and teal gradients — is available with a{" "}
-                <a href="/profile" style={{ color: "var(--sc-gold)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
-                  premium plan
-                </a>.
+                The full atmospheric chart — dark sky, constellations, and teal gradients — requires premium access.
               </span>
             </div>
           )}

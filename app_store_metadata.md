@@ -34,3 +34,6 @@ astrology, human design, numerology, spiritual guidance, soul blueprint, behavio
 
 ## Marketing URL
 <https://soulcodex.app>
+
+## Account Deletion URL
+<https://soulcodex.app/account-deletion>

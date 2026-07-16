@@ -82,6 +82,7 @@ export interface IStorage {
   
   // Account deletion (App Store compliance)
   deleteUserAccount(userId: string): Promise<void>;
+  deleteSessionData(sessionId: string): Promise<void>;
   deleteProfileById(profileId: string): Promise<void>;
   
   // Journal operations
@@ -753,6 +754,11 @@ export class MemStorage implements IStorage {
 
   // ── Account deletion (App Store compliance) ─────────────────────────────
   async deleteUserAccount(userId: string): Promise<void> {
+    const profileIds = new Set(
+      Array.from(this.profiles.values())
+        .filter((profile) => profile.userId === userId)
+        .map((profile) => profile.id),
+    );
     // Remove user record
     this.users.delete(userId);
     // Remove local credentials (LocalUser map is keyed by userId; v.id === userId)
@@ -760,6 +766,12 @@ export class MemStorage implements IStorage {
     for (const [k, v] of this.localUsers) if (v.id === userId) this.localUsers.delete(k);
     // Remove profiles owned by user
     for (const [k, v] of this.profiles) if (v.userId === userId) this.profiles.delete(k);
+    // Remove profile-derived records that are not keyed directly by user.
+    for (const [k, v] of this.assessments) if (profileIds.has(v.profileId)) this.assessments.delete(k);
+    for (const [k, v] of this.dailyInsights) if (profileIds.has(v.profileId)) this.dailyInsights.delete(k);
+    for (const [k, v] of this.compatibilities) {
+      if (profileIds.has(v.profile1Id) || profileIds.has(v.profile2Id)) this.compatibilities.delete(k);
+    }
     // Remove persons (compatibility contacts)
     for (const [k, v] of this.persons) if (v.userId === userId) this.persons.delete(k);
     // Remove frequency logs
@@ -772,6 +784,27 @@ export class MemStorage implements IStorage {
     for (const [k, v] of this.shareableLinks) if (v.userId === userId) this.shareableLinks.delete(k);
     // Remove password reset tokens
     for (const [k, v] of this.passwordResetTokens) if (v.userId === userId) this.passwordResetTokens.delete(k);
+    // Remove premium redemption history for this account.
+    for (const [k, v] of this.accessCodeRedemptions) if (v.userId === userId) this.accessCodeRedemptions.delete(k);
+  }
+
+  async deleteSessionData(sessionId: string): Promise<void> {
+    const profileIds = new Set(
+      Array.from(this.profiles.values())
+        .filter((profile) => profile.sessionId === sessionId)
+        .map((profile) => profile.id),
+    );
+
+    for (const [k, v] of this.profiles) if (v.sessionId === sessionId) this.profiles.delete(k);
+    for (const [k, v] of this.persons) if (v.sessionId === sessionId) this.persons.delete(k);
+    for (const [k, v] of this.frequencyLogs) if (v.sessionId === sessionId) this.frequencyLogs.delete(k);
+    for (const [k, v] of this.pushSubscriptions) if (v.sessionId === sessionId) this.pushSubscriptions.delete(k);
+    for (const [k, v] of this.accessCodeRedemptions) if (v.sessionId === sessionId) this.accessCodeRedemptions.delete(k);
+    for (const [k, v] of this.assessments) if (profileIds.has(v.profileId)) this.assessments.delete(k);
+    for (const [k, v] of this.dailyInsights) if (profileIds.has(v.profileId)) this.dailyInsights.delete(k);
+    for (const [k, v] of this.compatibilities) {
+      if (profileIds.has(v.profile1Id) || profileIds.has(v.profile2Id)) this.compatibilities.delete(k);
+    }
   }
 
   // Journal operations
@@ -1095,6 +1128,10 @@ class DbStorage implements IStorage {
   }
 
   async deleteUserAccount(userId: string): Promise<void> {
+    // Stub
+  }
+
+  async deleteSessionData(sessionId: string): Promise<void> {
     // Stub
   }
 
@@ -1503,6 +1540,8 @@ class HybridStorage extends MemStorage {
     try {
       // 2. Cascade delete from persistent storage
       // Note: order is important if foreign keys are enforced at DB level
+      await db.delete(schema.shareableLinks).where(eq(schema.shareableLinks.userId, userId));
+      await db.delete(schema.journalEntries).where(eq(schema.journalEntries.userId, userId));
       await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
       await db.delete(profiles).where(eq(profiles.userId, userId));
       await db.delete(localUsers).where(eq(localUsers.id, userId));
@@ -1511,6 +1550,19 @@ class HybridStorage extends MemStorage {
       console.log(`[Storage] Permanently purged all records for User: ${userId}`);
     } catch (err) {
       console.error("[HybridStorage] deleteUserAccount DB failure:", err);
+      throw err;
+    }
+  }
+
+  async deleteSessionData(sessionId: string): Promise<void> {
+    await super.deleteSessionData(sessionId);
+
+    try {
+      await db.delete(redemptionsTable).where(eq(redemptionsTable.sessionId, sessionId));
+      await db.delete(profilesTable).where(eq(profilesTable.sessionId, sessionId));
+      console.log(`[Storage] Permanently purged anonymous session data: ${sessionId}`);
+    } catch (err) {
+      console.error("[HybridStorage] deleteSessionData DB failure:", err);
       throw err;
     }
   }
