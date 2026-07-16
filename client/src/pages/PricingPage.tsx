@@ -1,4 +1,3 @@
-import { Capacitor } from "@capacitor/core";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   IconArrowLeft, IconShield, IconZap, IconSparkles,
@@ -8,9 +7,10 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { apiFetch } from "../lib/queryClient";
+import { isNativeStoreApp } from "../lib/platform";
 
 export default function PricingPage() {
-  const isIOS = Capacitor.getPlatform() === "ios";
+  const isNative = isNativeStoreApp();
   const [, navigate] = useLocation();
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -67,6 +67,25 @@ export default function PricingPage() {
       setError("Network error. Please try again.");
     }
   };
+
+  if (isNative) {
+    return (
+      <div className="min-h-screen bg-[var(--sc-bg-ink)] text-white p-6 pt-24">
+        <div className="max-w-xl mx-auto rounded-3xl border border-[var(--sc-gold)]/30 bg-white/[0.03] p-8 text-center space-y-6">
+          <IconShield size={48} className="text-[var(--sc-gold)] mx-auto" />
+          <div className="space-y-2">
+            <h1 className="text-3xl font-serif text-[var(--sc-gold)]">Premium Access</h1>
+            <p className="text-white/65 leading-relaxed">
+              This store version does not sell premium access or redeem access codes. Premium already associated
+              with your Soul Codex profile is recognized automatically by the server.
+            </p>
+          </div>
+          <Button className="w-full" onClick={() => navigate("/profile")}>Return to Profile</Button>
+          <Link href="/support" className="text-[var(--sc-gold)] underline underline-offset-4">Get help restoring access</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--sc-bg-ink)] text-white p-6 pt-24 overflow-hidden relative">
