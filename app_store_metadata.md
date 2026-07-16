@@ -27,13 +27,13 @@ Discover your true soul architecture and see the patterns you repeat—and where
 astrology, human design, numerology, spiritual guidance, soul blueprint, behavioral analysis, daily horoscope, self-awareness, mysticism, archetypes
 
 ## Privacy Policy URL
-<https://soulcodex.app/privacy>
+<https://soulcodex.up.railway.app/privacy>
 
 ## Support URL
-<https://soulcodex.app/support>
+<https://soulcodex.up.railway.app/support>
 
 ## Marketing URL
 <https://soulcodex.app>
 
 ## Account Deletion URL
-<https://soulcodex.app/account-deletion>
+<https://soulcodex.up.railway.app/account-deletion>

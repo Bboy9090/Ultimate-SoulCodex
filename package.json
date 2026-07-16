@@ -43,7 +43,6 @@
     "@capacitor/ios": "^8.4.2",
     "@capacitor/keyboard": "^8.0.5",
     "@capacitor/splash-screen": "^8.0.2",
-    "@capacitor/status-bar": "^8.0.3",
     "@capawesome/capacitor-apple-sign-in": "^0.1.0",
     "@google/genai": "^1.48.0",
     "@google/generative-ai": "^0.24.1",
