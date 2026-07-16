@@ -39,8 +39,8 @@ requireFile("client/src/pages/SupportPage.tsx");
 if (platform === "ios") {
   requireFile("ios/App/App/PrivacyInfo.xcprivacy");
   requireFile("ios/App/App.xcodeproj/xcshareddata/xcschemes/Soul Codex.xcscheme");
-  requireMatch("ios/App/CapApp-SPM/Package.swift", /capacitor-swift-pm\.git", exact: "8\.4\.2"/, "The iOS Capacitor Swift package must remain pinned to 8.4.2.");
-  requireMatch("ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved", /"version"\s*:\s*"8\.4\.2"/, "The resolved iOS Capacitor Swift package is stale; resolve it to 8.4.2.");
+  requireMatch("ios/App/CapApp-SPM/Package.swift", /capacitor-swift-pm\.git", exact: "8\.0\.0"/, "The iOS Capacitor Swift package must remain pinned to the plugin-compatible 8.0.0 release.");
+  requireMatch("ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved", /"version"\s*:\s*"8\.0\.0"/, "The resolved iOS Capacitor Swift package is stale; resolve it to 8.0.0.");
   requireMatch("scripts/ExportOptions.plist", /<string>86NUJ8M3B8<\/string>/, "The iOS export Team ID is missing or incorrect.");
   requireMatch("ios/App/App.xcodeproj/project.pbxproj", /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/, "The iOS bundle identifier must remain app.soulcodex.ios.");
 }
