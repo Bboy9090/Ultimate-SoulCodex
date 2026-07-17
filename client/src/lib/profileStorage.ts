@@ -1,6 +1,7 @@
 const STORAGE_KEY = "soulcodex.activeProfile.v1";
 
 export interface StoredProfile {
+  [key: string]: any;
   birthDate?: string;
   birthTime?: string;
   birthLocation?: string;

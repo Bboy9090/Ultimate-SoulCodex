@@ -7,6 +7,7 @@ import {
   IconLogo, IconSettings
 } from "./Icons";
 import { triggerHapticFeedback } from "../lib/haptics";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 function useMode() {
   const [mode, setMode] = useState<"beginner" | "advanced">(() => {
@@ -44,7 +45,7 @@ export default function Nav() {
   const { mode, toggle } = useMode();
 
   const hasProfileData = (() => {
-    try { return !!localStorage.getItem("soulProfile"); } catch { return false; }
+    return !!loadActiveProfile();
   })();
 
   const baseLinks = [
