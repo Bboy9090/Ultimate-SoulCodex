@@ -1,4 +1,6 @@
-# Soul Codex — App Store Listing
+# Soul Codex — Store Listing Copy
+
+> Canonical submission checklist and privacy drafts: `docs/STORE_SUBMISSION_PACKET.md`
 
 ## App Name
 Soul Codex
@@ -76,18 +78,18 @@ https://soulcodex.up.railway.app/account-deletion
 ## Required Store Assets
 
 ### iOS (App Store Connect)
-- [ ] App icon: 1024x1024 PNG, no alpha, no rounded corners
+- [x] App icon: `app-store-icon-1024.png` — 1024x1024 RGB PNG, no alpha
 - [ ] Screenshots: iPhone 6.7" (1290x2796), iPhone 6.5" (1242x2688), iPad 12.9" (2048x2732)
 - [ ] Minimum 3 screenshots per device size
-- [ ] Privacy policy URL
-- [ ] Support URL
-- [ ] Apple Developer account ($99/year)
+- [x] Privacy policy URL
+- [x] Support URL
+- [x] Apple Developer account ($99/year)
 
 ### Android (Google Play Console)
-- [ ] App icon: 512x512 PNG
+- [x] App icon: `play-store-icon-512.png` — 512x512 RGB PNG, no alpha
 - [x] Feature graphic: `play-feature-graphic-1024x500.png` (1024x500 PNG)
 - [ ] Screenshots: phone (min 2, 320-3840px per side), tablet (optional)
-- [ ] Privacy policy URL
+- [x] Privacy policy URL
 - [ ] Google Play Developer account ($25 one-time)
 
 ### Both Stores
