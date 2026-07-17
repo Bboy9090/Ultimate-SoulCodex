@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { apiFetch } from "../lib/queryClient";
 import { isNativeStoreApp } from "../lib/platform";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 export default function PricingPage() {
   const isNative = isNativeStoreApp();
@@ -26,8 +27,7 @@ export default function PricingPage() {
   ];
 
   const getProfileId = (): string | undefined => {
-    try { return JSON.parse(localStorage.getItem("soulProfile") || "null")?.profileId; }
-    catch { return undefined; }
+    return loadActiveProfile()?.profileId;
   };
 
   // Real entitlement: redeem an access code against the backend. Premium is only
