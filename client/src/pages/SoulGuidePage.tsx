@@ -1,5 +1,6 @@
 import { apiFetch, resolveApiUrl } from "../lib/queryClient";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+import { loadActiveProfile } from "../lib/profileStorage";
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { isNativeStoreApp } from "../lib/platform";
@@ -63,9 +64,8 @@ export default function SoulGuidePage() {
 
   const getProfileContext = () => {
     try {
-      const raw = localStorage.getItem("soulProfile");
-      if (!raw) return null;
-      const p = JSON.parse(raw);
+      const p = loadActiveProfile();
+      if (!p) return null;
       return {
         name:        p.name,
         archetype:   p.archetype?.name,

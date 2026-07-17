@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
 import BirthChartPosterSVG, { type PosterData } from "../components/BirthChartPosterSVG";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 const ZODIAC_SIGNS = [
   "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
@@ -74,7 +75,7 @@ function planetHouse(lon: number, cusps: number[]): number {
 }
 
 function getProfile() {
-  try { return JSON.parse(localStorage.getItem("soulProfile") ?? "{}"); } catch { return {}; }
+  return loadActiveProfile() ?? {};
 }
 
 const DEMO: PosterData = {

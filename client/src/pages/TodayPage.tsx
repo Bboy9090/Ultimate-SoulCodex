@@ -10,6 +10,7 @@ import {
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { getDailyPulseForDate, saveDailyPulseEntry, type MoodType } from "../lib/dailyPulseStorage";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 interface TodayCard {
   codename: string;
@@ -36,10 +37,7 @@ function formatDate(iso: string): string {
 }
 
 function getProfile() {
-  try {
-    const raw = localStorage.getItem("soulProfile");
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+  return loadActiveProfile();
 }
 
 const MOOD_OPTIONS: { value: MoodType; label: string }[] = [

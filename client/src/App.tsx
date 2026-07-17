@@ -69,10 +69,9 @@ export default function App() {
   // Background Prefetcher: Ensure compatibility and readings are ready before click
   useEffect(() => {
     if (hasProfile && hydrated) {
-      const saved = localStorage.getItem("soulProfile");
-      if (saved) {
+      const p = loadActiveProfile();
+      if (p) {
         try {
-          const p = JSON.parse(saved);
           const sunSign = p.sunSign || p.astrologyData?.sunSign;
           if (sunSign) {
             // Warm up the compatibility engine and daily readings in the background

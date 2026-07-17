@@ -19,6 +19,7 @@ import {
 } from "../components/Icons";
 import TimelineIntelligence from "../components/TimelineIntelligence";
 import SoulGuide from "../components/SoulGuide";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 // ── Phase content ─────────────────────────────────────────────────────────────
 
@@ -255,22 +256,16 @@ export default function TimelinePage() {
   const [profile, setProfile]     = useState<any>(null);
 
   useEffect(() => {
-    const savedProfile = localStorage.getItem("soulProfile");
-    if (savedProfile) setProfile(JSON.parse(savedProfile));
+    const activeProfile = loadActiveProfile();
+    if (activeProfile) setProfile(activeProfile);
 
     const savedToday = localStorage.getItem("soulTodayCard");
     if (savedToday) setTodayCard(JSON.parse(savedToday));
 
-    const rawProfile = localStorage.getItem("soulProfile");
-    if (rawProfile) {
-      try {
-        const p = JSON.parse(rawProfile);
-        if (p.birthDate) {
-          const parts = p.birthDate.split("-");
-          setBirthData({ month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) });
-          return; // Birth date found in profile, we're good
-        }
-      } catch {}
+    if (activeProfile?.birthDate) {
+      const parts = activeProfile.birthDate.split("-");
+      setBirthData({ month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) });
+      return;
     }
 
     const rawInputs = localStorage.getItem("onboardingData") || localStorage.getItem("soulUserInputs");

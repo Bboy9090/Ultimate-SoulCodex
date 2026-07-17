@@ -5,12 +5,10 @@ import {
 } from "../components/Icons";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 function getProfile() {
-  try {
-    const raw = localStorage.getItem("soulProfile");
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+  return loadActiveProfile();
 }
 
 export default function ProfilePage() {

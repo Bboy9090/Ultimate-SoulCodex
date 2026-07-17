@@ -9,6 +9,7 @@ import {
   IconIdentity, IconCompass, IconZap, IconActivity, IconAlert
 } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 interface CoreDriver {
   name: string;
@@ -41,10 +42,7 @@ interface CodexSynthesis {
 }
 
 function getProfile() {
-  try {
-    const raw = localStorage.getItem("soulProfile");
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+  return loadActiveProfile();
 }
 
 function extractNarrativeSection(narrative: string, heading: string): string | null {
@@ -103,17 +101,12 @@ export default function CodexReadingPage() {
   }, [synthesis, error]);
 
   function buildAndGenerate() {
-    const rawProfile = localStorage.getItem("soulProfile");
-    if (!rawProfile) {
+    const activeProfile = loadActiveProfile();
+    if (!activeProfile) {
       setError("No profile found. Please complete your calibration first.");
       return;
     }
-    try {
-      const p = JSON.parse(rawProfile);
-      generateMutation.mutate({ profile: p });
-    } catch (e) {
-      setError("Profile data is corrupted. Please recalibrate.");
-    }
+    generateMutation.mutate({ profile: activeProfile });
   }
 
   if (generateMutation.isPending && !synthesis) return <CodexSkeleton />;

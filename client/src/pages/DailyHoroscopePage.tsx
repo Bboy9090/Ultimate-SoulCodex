@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import PlanetWheel from "../components/PlanetWheel";
+import { loadActiveProfile } from "../lib/profileStorage";
 import { 
   IconMoon, IconReading, IconIdentity, IconEarth, 
   IconChevronDown, IconArrowLeft 
@@ -211,8 +212,7 @@ const INTENSITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 export default function DailyHoroscopePage() {
   const profileData = (() => {
-    try { const s = localStorage.getItem("soulProfile"); if (s) return JSON.parse(s); } catch {}
-    return null;
+    return loadActiveProfile();
   })();
   const profileId = profileData?.id || profileData?.profileId;
 
