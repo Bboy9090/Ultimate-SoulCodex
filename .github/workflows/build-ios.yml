@@ -98,7 +98,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/SoulCodex.xcarchive \
             -exportPath build/export \
-            -exportOptionsPlist ../../scripts/ExportOptions.plist
+            -exportOptionsPlist ExportOptions.plist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
