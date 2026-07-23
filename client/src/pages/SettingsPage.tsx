@@ -2,20 +2,9 @@ import { useLocation } from "wouter";
 import {
   IconLogo, IconArrowLeft, IconAlert, IconLock, IconInfo
 } from "../components/Icons";
-import { loadActiveProfile, clearActiveProfile, deriveConfidenceState } from "../lib/profileStorage";
 
 export default function SettingsPage() {
   const [, navigate] = useLocation();
-  const profile = loadActiveProfile();
-  const confidenceLevel = profile ? deriveConfidenceState(profile) : "unverified";
-
-  const handleResetEngine = () => {
-    if (confirm("Reset Soul Codex?\n\nThis will clear your current profile and all local data. You'll return to onboarding.\n\nUse only for testing new birth data or resetting the engine.")) {
-      clearActiveProfile();
-      localStorage.clear();
-      window.location.href = "/";
-    }
-  };
 
   return (
     <div className="nebula-bg" style={{ minHeight: "100vh", padding: "var(--safe-top) 1.5rem var(--safe-bottom)" }}>
@@ -38,7 +27,12 @@ export default function SettingsPage() {
               Development tools for testing. Not for daily use.
             </p>
             <button
-              onClick={handleResetEngine}
+              onClick={() => {
+                if (confirm("Reset Soul Codex?\n\nThis will clear your current profile and all local data. You'll return to onboarding.\n\nUse only for testing new birth data or resetting the engine.")) {
+                  localStorage.clear();
+                  window.location.href = "/";
+                }
+              }}
               style={{
                 width: "100%",
                 padding: "1rem",
@@ -61,77 +55,6 @@ export default function SettingsPage() {
               <IconAlert size={16} style={{ marginRight: "0.5rem", display: "inline" }} />
               Reset Engine
             </button>
-          </div>
-
-          {/* Profile State */}
-          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
-            <h2 className="section-label" style={{ marginBottom: "1.5rem" }}>Active Profile</h2>
-            {profile ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                  <div>
-                    <p style={{ fontSize: "0.85rem", color: "var(--sc-stone)", marginBottom: "0.25rem" }}>Birth Date</p>
-                    <p style={{ fontSize: "1rem", color: "var(--sc-ivory)" }}>{profile.birthDate || "—"}</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: "0.85rem", color: "var(--sc-stone)", marginBottom: "0.25rem" }}>Confidence</p>
-                    <p style={{ fontSize: "1rem", color: "var(--sc-ivory)", textTransform: "capitalize" }}>{confidenceLevel}</p>
-                  </div>
-                </div>
-                <div>
-                  <p style={{ fontSize: "0.85rem", color: "var(--sc-stone)", marginBottom: "0.5rem" }}>Archetype</p>
-                  <p style={{ fontSize: "1rem", color: "var(--sc-gold)" }}>{profile.archetype || profile.codename || "Calibrating..."}</p>
-                </div>
-                <button
-                  onClick={() => navigate("/start")}
-                  style={{
-                    padding: "1rem",
-                    background: "rgba(212, 168, 95, 0.1)",
-                    border: "1px solid var(--sc-gold)",
-                    borderRadius: "12px",
-                    color: "var(--sc-gold)",
-                    cursor: "pointer",
-                    fontSize: "0.95rem",
-                    fontWeight: 600,
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLElement).style.background = "rgba(212, 168, 95, 0.15)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLElement).style.background = "rgba(212, 168, 95, 0.1)";
-                  }}
-                >
-                  Recalibrate Profile
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem", alignItems: "center", textAlign: "center", padding: "2rem 0" }}>
-                <p style={{ fontSize: "1rem", color: "var(--sc-stone)" }}>No active profile</p>
-                <button
-                  onClick={() => navigate("/start")}
-                  style={{
-                    padding: "1rem 2rem",
-                    background: "rgba(212, 168, 95, 0.15)",
-                    border: "1px solid var(--sc-gold)",
-                    borderRadius: "12px",
-                    color: "var(--sc-gold)",
-                    cursor: "pointer",
-                    fontSize: "0.95rem",
-                    fontWeight: 600,
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLElement).style.background = "rgba(212, 168, 95, 0.25)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLElement).style.background = "rgba(212, 168, 95, 0.15)";
-                  }}
-                >
-                  Start Calibration
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Privacy & Legal */}
