@@ -75,21 +75,10 @@ out/
 # pnpm lock (optional)
 # pnpm-lock.yaml
 
-# Android build outputs
-android/app/build/
-android/.gradle/
-android/build/
-android/capacitor-cordova-android-plugins/build/
-*.keystore
-*.jks
-google-services.json
+# Local npm/package-manager cache artifacts
+npm_cache/
+.npm/
 
-# iOS build outputs
-ios/App/build/
-ios/App/Pods/
-*.xcuserdata/
-
-# Signing files (never commit)
-*.p12
-*.mobileprovision
-*.cer
+# Local npm/package-manager cache artifacts
+npm_cache/
+.npm/
