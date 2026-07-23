@@ -9,23 +9,12 @@ import {
   IconIdentity, IconCompass, IconZap, IconActivity, IconAlert
 } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
-import { loadActiveProfile } from "../lib/profileStorage";
-
-interface CoreDriver {
-  name: string;
-  archetype: string;
-  sources: string[];
-  intensity: "high" | "medium" | "low";
-  explanation: string;
-}
-
-interface BehaviorPrediction {
-  situation: string;
-  likely: string;
-  trap: string;
-  alternative: string;
-  sources: string[];
-}
+import {
+  calcPersonalDay,
+  calcPersonalYear,
+  getPersonalDayLabel,
+  getPersonalYearLabel
+} from "@soulcodex/core";
 
 interface CodexSynthesis {
   codename: string;
@@ -55,6 +44,111 @@ function extractNarrativeSection(narrative: string, heading: string): string | n
     }
   }
   return null;
+}
+
+interface CodexSection {
+  title: string;
+  content: string;
+  icon?: string;
+}
+
+function buildCodexSections(
+  synthesis: CodexSynthesis,
+  profile: any,
+  confidenceLevel: string
+): CodexSection[] {
+  const birthDate = profile?.birthDate;
+  const today = new Date();
+  let personalDay = null, personalYear = null;
+  let personalDayLabel = "", personalYearLabel = "";
+
+  if (birthDate) {
+    try {
+      personalDay = calcPersonalDay(birthDate, today);
+      personalDayLabel = getPersonalDayLabel(personalDay);
+      personalYear = calcPersonalYear(birthDate, today.getFullYear());
+      personalYearLabel = getPersonalYearLabel(personalYear);
+    } catch (e) {
+      console.warn("Failed to calculate personal numbers:", e);
+    }
+  }
+
+  const sections: CodexSection[] = [];
+
+  // 1. WHO I AM
+  const strengths = synthesis.strengths.slice(0, 3);
+  const whoIAm =
+    strengths.length > 0
+      ? `${synthesis.codename}. Your core strengths: ${strengths.join(", ")}. These are your operating gifts.`
+      : `${synthesis.codename}. Your identity is built from verifiable patterns—astrology, numerology, Human Design.`;
+  sections.push({
+    title: "WHO I AM",
+    content: cleanCodexLine(whoIAm, "Your pattern emerges from multiple systems of knowing."),
+  });
+
+  // 2. HOW I OPERATE
+  const authority = profile?.humanDesignData?.authority;
+  const strategy = profile?.humanDesignData?.strategy;
+  const topTheme = synthesis.topThemes?.[0]?.tag || "your core theme";
+  const howIOperate =
+    strategy || authority
+      ? `Your decision-making flows through ${authority || "your inner guidance"}. Your strategy is ${strategy || "to trust your process"}. Your natural rhythm centers on ${topTheme}.`
+      : `Your operating rhythm follows ${topTheme}. Decision-making works best when you trust your mechanical pattern.`;
+  sections.push({
+    title: "HOW I OPERATE",
+    content: cleanCodexLine(
+      howIOperate,
+      "Your operating system is hardwired from your birth chart and Human Design."
+    ),
+  });
+
+  // 3. CURRENT PHASE
+  const phaseContent =
+    personalYear && personalYearLabel
+      ? `You are in Year ${personalYear} — ${personalYearLabel}. Today's frequency is Day ${personalDay} — ${personalDayLabel}. This phase calls you toward ${personalYearLabel.toLowerCase()}.`
+      : confidenceLevel === "partial"
+      ? "You are in a transformational phase. Complete your birth time for precise cycle guidance."
+      : "Your current phase is unfolding. Trust the timing of your emergence.";
+  sections.push({
+    title: "CURRENT PHASE",
+    content: cleanCodexLine(phaseContent, "You are in a cycle of growth and integration."),
+  });
+
+  // 4. SHADOW PATTERN
+  const shadows = synthesis.shadows.slice(0, 2);
+  const shadowContent =
+    shadows.length > 0
+      ? `Your shadow aspects include: ${shadows.join(" and ")}. These patterns appear under stress. Awareness transforms them into wisdom.`
+      : "Your shadow contains the raw material for your deepest growth. Integrate what you resist.";
+  sections.push({
+    title: "SHADOW PATTERN",
+    content: cleanCodexLine(shadowContent, "Your shadow is not an enemy—it is guidance."),
+  });
+
+  // 5. GROWTH KEY
+  const triggers = synthesis.triggers.slice(0, 2);
+  const growthKey =
+    triggers.length > 0
+      ? `Your growth edge activates around: ${triggers.join(" and ")}. Meet these moments with curiosity. They contain your next evolution.`
+      : "Your growth emerges through challenges that mirror your deepest values.";
+  sections.push({
+    title: "GROWTH KEY",
+    content: cleanCodexLine(growthKey, "Your evolution lives in what you resist."),
+  });
+
+  // 6. ONE MOVE TODAY
+  const prescription = synthesis.prescriptions?.[0];
+  const oneMove = prescription
+    ? `${prescription}. This action anchors you in your current cycle.`
+    : personalDay
+    ? `Anchor today's frequency (Day ${personalDay}) with one act: move, create, or rest per this number's logic.`
+    : "Take one action today that moves you toward your stated goals.";
+  sections.push({
+    title: "ONE MOVE TODAY",
+    content: cleanCodexLine(oneMove, "Small, specific actions compound. Your move today shapes your cycle."),
+  });
+
+  return sections;
 }
 
 export default function CodexReadingPage() {
@@ -126,27 +220,15 @@ export default function CodexReadingPage() {
 
   if (!synthesis) return <CodexSkeleton />;
 
-  const sunSign = profile?.sunSign || profile?.astrologyData?.sunSign || profile?.chartData?.sunSign;
-  const moonSign = profile?.moonSign || profile?.astrologyData?.moonSign || profile?.chartData?.moonSign;
-  const hdType = profile?.humanDesignData?.type;
-  const hdAuth = profile?.humanDesignData?.authority;
-  const hdProfile = profile?.humanDesignData?.profile;
+  const profile = (() => {
+    try {
+      const raw = localStorage.getItem("soulProfile");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
 
-  const whoIAm = extractNarrativeSection(synthesis.narrative, "who")
-    || extractNarrativeSection(synthesis.narrative, "identity")
-    || (sunSign && moonSign
-      ? `${sunSign} Sun with ${moonSign} Moon${hdType ? `, operating as a ${hdType}` : ""}. Your core frequency is mapped.`
-      : "Your identity architecture is active.");
-
-  const howIOperate = extractNarrativeSection(synthesis.narrative, "operat")
-    || extractNarrativeSection(synthesis.narrative, "how")
-    || (hdAuth
-      ? `${hdType || "Your type"} with ${hdAuth} authority${hdProfile ? `, ${hdProfile} profile` : ""}. Trust that decision-making channel.`
-      : "Your operating pattern is calibrated.");
-
-  const oneMove = synthesis.prescriptions?.[0]
-    ? cleanCodexLine(synthesis.prescriptions[0], "Audit the current state before making the next move.")
-    : "Audit the current state before making the next move.";
+  const confidenceLevel = synthesis.badges?.confidenceLabel || "unverified";
+  const sections = buildCodexSections(synthesis, profile, confidenceLevel);
 
   return (
     <div className="nebula-bg" style={{ minHeight: "100vh", padding: "var(--safe-top) 1.5rem var(--safe-bottom)" }}>
@@ -176,15 +258,15 @@ export default function CodexReadingPage() {
              </div>
           </div>
 
-          {/* 1. WHO I AM */}
-          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
-            <h2 className="section-label" style={{ marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <IconIdentity size={14} color="var(--sc-gold)" /> WHO I AM
-            </h2>
-            <p style={{ fontSize: "1.1rem", lineHeight: 1.7, color: "var(--sc-ivory)" }}>
-              {cleanCodexLine(whoIAm, "Your identity architecture is active.")}
-            </p>
-          </div>
+          {/* 2. EXPANDED PREMIUM SECTIONS */}
+          {sections.map((sec, idx) => (
+            <div key={idx} className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
+              <h2 className="section-label" style={{ marginBottom: "1.25rem", color: "var(--sc-stone)" }}>{sec.title}</h2>
+              <p style={{ fontSize: "1.1rem", lineHeight: 1.7, color: "var(--sc-ivory)" }}>
+                {sec.content}
+              </p>
+            </div>
+          ))}
 
           {/* 2. HOW I OPERATE */}
           <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
