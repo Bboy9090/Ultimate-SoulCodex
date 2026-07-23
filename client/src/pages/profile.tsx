@@ -1,6 +1,5 @@
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Capacitor } from "@capacitor/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,25 +9,25 @@ import Navigation from "@/components/navigation";
 import CosmicChart from "../components/cosmic-chart";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  IconCrown as Crown, 
-  IconSun as Sun, 
-  IconMoon as Moon, 
-  IconStar as Star, 
-  IconInfinity as Infinity, 
-  IconBrain as Brain, 
-  IconHeart as Heart,
-  IconChart as ChartPie,
-  IconCodex as ScrollText,
-  IconSparkles as Sparkles,
-  IconBack as ArrowLeft,
-  IconDownload as Download,
-  IconZap as Zap,
-  IconTarget as Target,
-  IconShield as Shield,
-  IconCompass as Compass,
-  IconBookOpen as BookOpen,
-  IconTimeline as Calendar
-} from "../components/Icons";
+  Crown, 
+  Sun, 
+  Moon, 
+  Star, 
+  Infinity, 
+  Brain, 
+  Heart,
+  ChartPie,
+  ScrollText,
+  Sparkles,
+  ArrowLeft,
+  Download,
+  Zap,
+  Target,
+  Shield,
+  Compass,
+  BookOpen,
+  Calendar
+} from "lucide-react";
 import type { Profile } from "@shared/schema";
 
 export default function ProfilePage() {
@@ -125,16 +124,16 @@ export default function ProfilePage() {
                   {/* Astrology Big 3 */}
                   <div className="flex items-center justify-center space-x-6 text-sm">
                     <div className="flex items-center space-x-2">
-                      <Sun size={16} className="text-accent" />
-                      <span data-testid="text-sun-sign">{astrologyData?.sunSign || "Unknown"}</span>
+                      <Sun className="h-4 w-4 text-accent" />
+                      <span data-testid="text-sun-sign">{astrologyData?.sunSign || "Unknown"} ☉</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Moon size={16} className="text-accent" />
-                      <span data-testid="text-moon-sign">{astrologyData?.moonSign || "Unknown"}</span>
+                      <Moon className="h-4 w-4 text-accent" />
+                      <span data-testid="text-moon-sign">{astrologyData?.moonSign || "Unknown"} ☽</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Star size={16} className="text-accent" />
-                      <span data-testid="text-rising-sign">{astrologyData?.risingSign || "Unknown"}</span>
+                      <Star className="h-4 w-4 text-accent" />
+                      <span data-testid="text-rising-sign">{astrologyData?.risingSign || "Unknown"} ↑</span>
                     </div>
                   </div>
                 </div>
@@ -577,7 +576,7 @@ export default function ProfilePage() {
               )}
 
               {/* Upgrade to Premium */}
-              {!profile.isPremium && Capacitor.getPlatform() !== "ios" && (
+              {!profile.isPremium && (
                 <Card className="cosmic-border mystical-glow bg-transparent border-0">
                   <div className="cosmic-border-inner">
                     <CardContent className="p-8 text-center">
@@ -607,7 +606,7 @@ export default function ProfilePage() {
               <Download className="mr-2 h-4 w-4" />
               Download PDF
             </Button>
-            {!profile.isPremium && Capacitor.getPlatform() !== "ios" && (
+            {!profile.isPremium && (
               <Button className="bg-primary text-primary-foreground" data-testid="button-upgrade-main">
                 <Crown className="mr-2 h-4 w-4" />
                 Upgrade to Premium

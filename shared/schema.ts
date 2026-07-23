@@ -1,3 +1,6 @@
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, timestamp, jsonb, boolean, integer } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { pgTable, uuid, text, varchar, integer, boolean, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql as drizzleSql } from "drizzle-orm";
@@ -132,13 +135,83 @@ export const sessions = pgTable("sessions", {
 
 // ── Zod runtime schemas (used by routes) ──────────────────────────────────────
 
-// Zod schemas used at runtime in routes
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+});
+
+export const profiles = pgTable("soul_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  name: text("name").notNull(),
+  birthDate: timestamp("birth_date").notNull(),
+  birthTime: text("birth_time").notNull(),
+  birthLocation: text("birth_location").notNull(),
+  timezone: text("timezone").notNull(),
+  latitude: text("latitude").notNull(),
+  longitude: text("longitude").notNull(),
+  isPremium: boolean("is_premium").default(false),
+  
+  // Astrology data
+  astrologyData: jsonb("astrology_data"),
+  
+  // Numerology data
+  numerologyData: jsonb("numerology_data"),
+  
+  // Personality data
+  personalityData: jsonb("personality_data"),
+  
+  // Archetype synthesis
+  archetypeData: jsonb("archetype_data"),
+  
+  // Generated content
+  biography: text("biography"),
+  dailyGuidance: text("daily_guidance"),
+  
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const assessmentResponses = pgTable("assessment_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileId: varchar("profile_id").notNull(),
+  assessmentType: text("assessment_type").notNull(), // 'enneagram', 'mbti'
+  responses: jsonb("responses").notNull(),
+  calculatedType: text("calculated_type"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+});
+
+export const insertProfileSchema = createInsertSchema(profiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAssessmentSchema = createInsertSchema(assessmentResponses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+export type InsertProfile = z.infer<typeof insertProfileSchema>;
+export type Profile = typeof profiles.$inferSelect;
+export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
+export type Assessment = typeof assessmentResponses.$inferSelect;
+
+// Additional schemas for API requests
 export const birthDataSchema = z.object({
-  name: z.string().min(1),
-  birthDate: z.string().min(1),
-  birthTime: z.string().optional(),
-  birthLocation: z.string().optional(),
-  timezone: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  birthDate: z.string().min(1, "Birth date is required"),
+  birthTime: z.string().min(1, "Birth time is required"),
+  birthLocation: z.string().min(1, "Birth location is required"),
+  timezone: z.string().min(1, "Timezone is required"),
   latitude: z.union([z.string(), z.number()]).optional(),
   longitude: z.union([z.string(), z.number()]).optional(),
   // Optional: Parent signs for parental influence calculation
@@ -186,38 +259,15 @@ export const insertPushSubscriptionSchema = z.object({
 });
 
 export const enneagramAssessmentSchema = z.object({
-  responses: z.array(z.number()).min(1),
+  responses: z.array(z.number().min(1).max(5)).length(36),
 });
 
 export const mbtiAssessmentSchema = z.object({
-  responses: z.array(z.number()).min(1),
+  responses: z.array(z.string()).length(20),
 });
 
-// ── Type definitions ──────────────────────────────────────────────────────────
-
-export type User = typeof users.$inferSelect;
-export type UpsertUser = Partial<User> & { id: string };
-export type Profile = typeof profiles.$inferSelect;
-export type InsertProfile = typeof profiles.$inferInsert;
-export type LocalUser = typeof localUsers.$inferSelect;
-export type InsertLocalUser = typeof localUsers.$inferInsert;
-
-export type AccessCode = typeof accessCodes.$inferSelect;
-export type InsertAccessCode = typeof accessCodes.$inferInsert;
-export type AccessCodeRedemption = typeof accessCodeRedemptions.$inferSelect;
-
-// Other placeholders can remain 'any' if not used in drizzle tables
-export type Person = any;
-export type InsertPerson = any;
-export type Assessment = any;
-export type InsertAssessment = any;
-export type DailyInsight = any;
-export type InsertDailyInsight = any;
-export type CompatibilityAnalysis = any;
-export type InsertCompatibility = any;
+export type BirthData = z.infer<typeof birthDataSchema>;
+export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
+export type MBTIAssessment = z.infer<typeof mbtiAssessmentSchema>;
 export type PushSubscription = any;
-export type InsertPushSubscription = any;
-export type FrequencyLog = any;
-export type InsertFrequencyLog = any;
-export type WebhookEvent = any;
-export type InsertWebhookEvent = any;
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;

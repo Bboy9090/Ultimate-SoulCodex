@@ -1,5 +1,4 @@
 import { generateText, isGeminiAvailable } from "../../gemini";
-import { VOICE_LAWS } from "../../soulcodex/codex30/prompts/voice_laws";
 
 interface BiographyRequest {
   name: string;
@@ -30,17 +29,13 @@ Profile Summary:
 Core Themes from Analysis:
 ${data.archetype?.themes?.join(', ') || 'Transformation, self-discovery, spiritual growth'}
 
-Write in first person as if ${data.name} is introducing themselves.
-
-${VOICE_LAWS}
-
-Focus on:
+Write in first person as if ${data.name} is introducing themselves. Focus on:
 1. Their core essence and spiritual nature
 2. How they transform challenges into wisdom
 3. Their unique gifts and life purpose
-4. PRIORITY: ABSOLUTE SURGICAL TRUTH.
+4. Keep it mystical yet grounded and authentic
 
-Return ONLY the biographical text. No markdown. No single-letter prefixes (D., C., P.). No labels.`;
+Return only the biographical text, no additional formatting.`;
 
     const result = await generateText({ prompt, temperature: 0.8 });
     return result || generateFallbackBiography(data);
@@ -63,15 +58,9 @@ Profile:
 - Sun/Moon/Rising: ${data.astrologyData?.sunSign}/${data.astrologyData?.moonSign}/${data.astrologyData?.risingSign}
 - Life Path: ${data.numerologyData?.lifePath}
 
-${VOICE_LAWS}
+Generate a brief, actionable daily insight (2-3 sentences) that aligns with their cosmic blueprint. Focus on practical spiritual guidance for today.
 
-Generate a brief, actionable daily insight (2-3 sentences) that aligns with their cosmic blueprint. 
-
-PRIORITY: ABSOLUTE SURGICAL TRUTH.
-NO SINGLE-LETTER PREFIXES (D., C., P.).
-NO LABELS.
-
-Return ONLY the guidance text. No markdown.`;
+Return only the guidance text.`;
 
     const result = await generateText({ prompt, temperature: 0.7 });
     return result || generateFallbackGuidance(data);

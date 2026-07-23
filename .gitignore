@@ -33,6 +33,7 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
+<<<<<<< HEAD
 *.tar.gz
 
 # Next.js build artifacts
@@ -66,19 +67,7 @@ create_pr_and_files.sh
 # Environment variables
 .env
 .env.local
-.env.*.local.next
-
-# Next.js build output
-.next/
-out/
-
-# pnpm lock (optional)
-# pnpm-lock.yaml
-
-# Local npm/package-manager cache artifacts
-npm_cache/
-.npm/
-
-# Local npm/package-manager cache artifacts
-npm_cache/
-.npm/
+.env.*.local
+=======
+*.tar.gz
+>>>>>>> 19a4477 (Update project structure and component styling across the application)

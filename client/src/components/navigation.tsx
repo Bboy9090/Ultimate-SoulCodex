@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { IconEye, IconMenu } from "@/components/Icons";
+import { Eye, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -11,7 +11,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="flex items-center space-x-2" data-testid="link-home">
-            <IconEye className="text-primary text-2xl" />
+            <Eye className="text-primary text-2xl" />
             <span className="text-xl font-bold">Ultimate Soul Codex</span>
           </Link>
           
@@ -35,7 +35,7 @@ export default function Navigation() {
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden" data-testid="button-menu">
-                <IconMenu className="h-6 w-6" />
+                <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
             <SheetContent>

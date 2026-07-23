@@ -1,169 +1,33 @@
-import { Route, Switch, useLocation, Link } from "wouter";
-import Nav from "./components/Nav";
-import { motion } from "framer-motion";
-import ScButton from "./components/ScButton";
-import { useState, useEffect, lazy, Suspense } from "react";
-import SplashScreen from "./components/SplashScreen";
-import { CosmicBackground } from "./components/CosmicBackground";
-import CosmicLoader from "./components/CosmicLoader";
-import { IconCodex } from "./components/Icons";
-import { loadActiveProfile, isProfileComplete } from "./lib/profileStorage";
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "./pages/not-found";
+import Home from "./pages/home";
+import InputForm from "./pages/input-form";
+import Profile from "./pages/profile";
 
-// Lazy load pages to kill freezing/heavy initial bundle
-const LandingPage = lazy(() => import("./pages/LandingPage"));
-const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const DailyHoroscopePage = lazy(() => import("./pages/DailyHoroscopePage"));
-const PosterPage = lazy(() => import("./pages/PosterPage"));
-const CodexReadingPage = lazy(() => import("./pages/CodexReadingPage"));
-const TodayPage = lazy(() => import("./pages/TodayPage"));
-const SoulGuidePage = lazy(() => import("./pages/SoulGuidePage"));
-const TrackerPage = lazy(() => import("./pages/TrackerPage"));
-const CompatibilityPage = lazy(() => import("./pages/CompatibilityPage"));
-const TimelinePage = lazy(() => import("./pages/TimelinePage"));
-const BlueprintPage = lazy(() => import("./pages/BlueprintPage"));
-const GalacticCodePage = lazy(() => import("./pages/GalacticCodePage"));
-const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
-const TermsPage = lazy(() => import("./pages/TermsPage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-
-import { queryClient, apiFetch } from "./lib/queryClient";
-const AdminPage = lazy(() => import("./pages/AdminPage"));
-const PricingPage = lazy(() => import("./pages/PricingPage"));
-const SharePage = lazy(() => import("./pages/SharePage"));
-
-import ErrorBoundary from "./components/ErrorBoundary";
-
-function hasProfileData(): boolean {
-  const profile = loadActiveProfile();
-  return isProfileComplete(profile);
-}
-
-export default function App() {
-  const [location, setLocation] = useLocation();
-  const [showSplash, setShowSplash] = useState(true);
-  const [hydrated, setHydrated] = useState(false);
-  const hasProfile = hasProfileData();
-  const isOnboardingRoute = location === "/start" || location === "/welcome";
-
-  useEffect(() => {
-    // Basic hydration check to ensure localStorage is accessible
-    const timer = setTimeout(() => setHydrated(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Route guard: Redirect to onboarding if trying to access protected routes without a complete profile
-  useEffect(() => {
-    if (!hydrated) return;
-
-    const protectedRoutes = ["/", "/profile", "/guide", "/tracker", "/timeline", "/codex", "/compat", "/poster", "/horoscope", "/blueprint", "/today"];
-    const isProtected = protectedRoutes.includes(location);
-
-    if (isProtected && !hasProfile) {
-      setLocation("/start");
-    }
-  }, [location, hasProfile, hydrated, setLocation]);
-
-  // Background Prefetcher: Ensure compatibility and readings are ready before click
-  useEffect(() => {
-    if (hasProfile && hydrated) {
-      const p = loadActiveProfile();
-      if (p) {
-        try {
-          const sunSign = p.sunSign || p.astrologyData?.sunSign;
-          if (sunSign) {
-            // Warm up the compatibility engine and daily readings in the background
-            const lifePath = p.numerologyData?.lifePathNumber;
-            const hdType = p.humanDesignData?.type;
-
-            // 1. Prefetch Archetype Matches
-            queryClient.prefetchQuery({
-              queryKey: ["/api/compatibility/archetype-matches", sunSign, "love", lifePath, hdType],
-              queryFn: async () => {
-                const res = await apiFetch("/api/compatibility/archetype-matches", {
-                  method: "POST",
-                  body: JSON.stringify({ sunSign, mode: "love", lifePathNumber: lifePath, hdType })
-                });
-                return res.data;
-              }
-            });
-
-            // 2. Prefetch Daily Horoscope
-            queryClient.prefetchQuery({
-              queryKey: ["/api/astro/horoscope/daily", sunSign],
-              queryFn: async () => {
-                const res = await apiFetch(`/api/astro/horoscope/daily?sign=${sunSign}`);
-                return res.data;
-              }
-            });
-          }
-        } catch (e) {
-          console.warn("[Prefetch] Background warm-up failed:", e);
-        }
-      }
-    }
-  }, [hasProfile, hydrated]);
-
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
-  }
-
-  if (!hydrated) {
-    return <div style={{ background: "var(--sc-bg-ink)", minHeight: "100vh" }} />;
-  }
-
+function Router() {
   return (
-    <ErrorBoundary>
-      <div style={{ display: "flex", minHeight: "100vh", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
-      {/* Dynamic Cosmic Background - Always present behind the UI */}
-      <CosmicBackground />
-      <div className="sacred-geometry" />
-
-      {/* Sidebar - Only visible after a valid profile and never during onboarding */}
-      {hasProfile && !isOnboardingRoute && <Nav />}
-
-      <main style={{ flex: 1, position: "relative", minWidth: 0, maxWidth: "100%", overflowX: "hidden", width: "100%", zIndex: 2 }}>
-        <Suspense fallback={<CosmicLoader fullPage label="Loading Dimension..." />}>
-          <Switch>
-            <Route path="/">
-              {hasProfile ? <TodayPage /> : <LandingPage />}
-            </Route>
-            <Route path="/welcome" component={LandingPage} />
-            <Route path="/start" component={OnboardingPage} />
-            <Route path="/profile" component={ProfilePage} />
-            <Route path="/guide" component={SoulGuidePage} />
-            <Route path="/tracker" component={TrackerPage} />
-            <Route path="/compat" component={CompatibilityPage} />
-            <Route path="/compatibility" component={CompatibilityPage} />
-            <Route path="/timeline" component={TimelinePage} />
-            <Route path="/horoscope" component={DailyHoroscopePage} />
-            <Route path="/poster" component={PosterPage} />
-            <Route path="/codex" component={CodexReadingPage} />
-            <Route path="/blueprint" component={BlueprintPage} />
-            <Route path="/galactic-code" component={GalacticCodePage} />
-            <Route path="/today" component={TodayPage} />
-            <Route path="/privacy" component={PrivacyPage} />
-            <Route path="/terms" component={TermsPage} />
-            <Route path="/settings" component={SettingsPage} />
-            <Route path="/admin" component={AdminPage} />
-            <Route path="/pricing" component={PricingPage} />
-            <Route path="/share/:token" component={SharePage} />
-            <Route>
-              <div className="nebula-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", textAlign: "center" }}>
-                <IconCodex size={64} style={{ color: "var(--sc-gold)", marginBottom: "1rem", filter: "drop-shadow(0 0 30px var(--sc-gold-glow))" }} />
-                <h1 className="heading-display" style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>Lost in the Cosmos</h1>
-                <p style={{ color: "var(--sc-text-muted)", maxWidth: "320px", marginBottom: "2rem" }}>
-                  The celestial coordinates you are looking for do not exist in this dimension.
-                </p>
-                <Link href="/">
-                  <ScButton size="lg">Return to Your Path</ScButton>
-                </Link>
-              </div>
-            </Route>
-          </Switch>
-        </Suspense>
-      </main>
-      </div>
-    </ErrorBoundary>
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/create" component={InputForm} />
+      <Route path="/profile/:id" component={Profile} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
