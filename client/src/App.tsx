@@ -58,7 +58,7 @@ export default function App() {
   useEffect(() => {
     if (!hydrated) return;
 
-    const protectedRoutes = ["/", "/profile", "/guide", "/tracker", "/timeline", "/codex", "/compat", "/poster", "/horoscope", "/blueprint", "/today", "/galactic-code"];
+    const protectedRoutes = ["/", "/profile", "/guide", "/tracker", "/timeline", "/codex", "/compat", "/poster", "/horoscope", "/blueprint", "/today"];
     const isProtected = protectedRoutes.includes(location);
 
     if (isProtected && !hasProfile) {
