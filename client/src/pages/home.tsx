@@ -3,31 +3,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
 import { 
-  IconSun as Sun, 
-  IconInfinity as Infinity, 
-  IconHexagon as Shapes, 
-  IconCrown as Crown, 
-  IconCodex as ScrollText, 
-  IconSparkles as Sparkles,
-  IconChart as ChartPie,
-  IconUser as UserCog,
-  IconCalculator as Calculator,
-  IconGlobe as Globe,
-  IconMapPin as MapPin,
-  IconHandMetal as HandMetal,
-  IconFileText as FileText,
-  IconUser as UserCheck,
-  IconTimeline as CalendarDays,
-  IconStar as Star,
-  IconUsers as Users,
-  IconShield as Shield,
-  IconPlay as Play,
-  IconCircleHelp as CircleHelp,
-  IconEye as Eye,
-  IconSmartphone as Smartphone,
-  IconDownload as Download,
-  IconCheck as Check
-} from "../components/Icons";
+  Sun, 
+  Infinity, 
+  Shapes, 
+  Crown, 
+  ScrollText, 
+  Sparkles,
+  ChartPie,
+  UserCog,
+  Calculator,
+  Globe,
+  MapPin,
+  HandMetal,
+  FileText,
+  UserCheck,
+  CalendarDays,
+  Star,
+  Users,
+  Shield,
+  Play,
+  CircleHelp,
+  Eye,
+  Smartphone,
+  Download,
+  Check
+} from "lucide-react";
 
 export default function Home() {
   const scrollToSection = (id: string) => {
@@ -46,15 +46,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight font-display tracking-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
                 Unlock Your
-                <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text font-display ml-3">
+                <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text font-serif ml-3">
                   Complete Soul
                 </span>
                 <br />Profile
               </h1>
               <p className="text-xl text-muted-foreground mt-6 leading-relaxed">
-                One calm map of how you decide, stress, relate, and grow — grounded in your birth data, with clear confidence labels so you always know what is locked in.
+                Merge Western & Vedic astrology, Human Design, Gene Keys, Numerology, and 10+ mystical systems into your personalized Ultimate Soul Codex.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link href="/create">
@@ -106,7 +106,7 @@ export default function Home() {
                       </div>
                       <div>
                         <h4 className="font-medium">Mirror Alchemist</h4>
-                        <p className="text-sm text-muted-foreground">Leo Sun • Scorpio Moon • Virgo Rising</p>
+                        <p className="text-sm text-muted-foreground">Leo ☉ • Scorpio ☽ • Virgo ↑</p>
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -140,9 +140,9 @@ export default function Home() {
       <section id="features" className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 font-display tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Start Your Journey
-              <span className="text-primary font-display ml-2">Free</span>
+              <span className="text-primary font-serif ml-2">Free</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Get your essential soul snapshot to experience the power of unified mystical systems
@@ -150,7 +150,7 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="feature-card bg-card border border-border hover:border-accent hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+            <Card className="feature-card bg-card border border-border">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
                   <Sun className="text-accent mx-auto mb-3 h-8 w-8" />
@@ -162,7 +162,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="feature-card bg-card border border-border hover:border-accent hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+            <Card className="feature-card bg-card border border-border">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
                   <Infinity className="text-accent mx-auto mb-3 h-8 w-8" />
@@ -174,7 +174,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="feature-card bg-card border border-border hover:border-accent hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+            <Card className="feature-card bg-card border border-border">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
                   <Shapes className="text-accent mx-auto mb-3 h-8 w-8" />
@@ -186,7 +186,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="feature-card bg-card border border-border hover:border-accent hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+            <Card className="feature-card bg-card border border-border">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
                   <Crown className="text-accent mx-auto mb-3 h-8 w-8" />
@@ -198,7 +198,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="feature-card bg-card border border-border hover:border-accent hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+            <Card className="feature-card bg-card border border-border">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
                   <ScrollText className="text-accent mx-auto mb-3 h-8 w-8" />
@@ -210,7 +210,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="feature-card bg-card border border-border hover:border-accent hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+            <Card className="feature-card bg-card border border-border">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
                   <Sparkles className="text-accent mx-auto mb-3 h-8 w-8" />
@@ -237,9 +237,9 @@ export default function Home() {
       <section className="py-20 cosmic-gradient">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 font-display tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Unlock Your
-              <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text font-display ml-2">
+              <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text font-serif ml-2">
                 Complete Codex
               </span>
             </h2>
@@ -520,8 +520,8 @@ export default function Home() {
               { icon: Star, name: "Tarot Birth Cards" },
               { icon: Infinity, name: "I Ching" }
             ].map(({ icon: Icon, name }) => (
-              <div key={name} className="glassmorphism rounded-lg p-4 text-center hover:shadow-glow hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-accent/50 cursor-default">
-                <Icon className="text-accent mx-auto mb-2 h-8 w-8 transition-transform duration-300 hover:scale-110" />
+              <div key={name} className="glassmorphism rounded-lg p-4 text-center">
+                <Icon className="text-accent mx-auto mb-2 h-8 w-8" />
                 <h4 className="font-semibold text-sm">{name}</h4>
               </div>
             ))}

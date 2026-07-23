@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Navigation from "@/components/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { IconLoader, IconMapPin, IconClock, IconTimeline, IconUser } from "@/components/Icons";
+import { Loader2, MapPin, Clock, Calendar, User } from "lucide-react";
 
 export default function InputForm() {
   const [, setLocation] = useLocation();
@@ -33,15 +33,10 @@ export default function InputForm() {
 
   const createProfileMutation = useMutation({
     mutationFn: async (data: BirthData) => {
-      return await apiRequest("/api/profiles", { method: "POST", body: data });
+      const response = await apiRequest("POST", "/api/profiles", data);
+      return response.json();
     },
     onSuccess: (profile) => {
-      // Hydrate local storage for immediate app usage (Dual-Path architecture)
-      localStorage.setItem("soulProfile", JSON.stringify(profile));
-      if (profile.rawInput) {
-        localStorage.setItem("onboardingData", JSON.stringify(profile.rawInput));
-      }
-      
       toast({
         title: "Soul Profile Created!",
         description: "Your cosmic blueprint has been generated successfully.",
@@ -142,7 +137,7 @@ export default function InputForm() {
             <div className="cosmic-border-inner">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <IconUser className="h-5 w-5 text-primary" />
+                  <User className="h-5 w-5 text-primary" />
                   <span>Birth Information</span>
                 </CardTitle>
               </CardHeader>
@@ -155,7 +150,7 @@ export default function InputForm() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="flex items-center space-x-2">
-                            <IconUser className="h-4 w-4" />
+                            <User className="h-4 w-4" />
                             <span>Full Name</span>
                           </FormLabel>
                           <FormControl>
@@ -177,7 +172,7 @@ export default function InputForm() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="flex items-center space-x-2">
-                              <IconTimeline className="h-4 w-4" />
+                              <Calendar className="h-4 w-4" />
                               <span>Birth Date</span>
                             </FormLabel>
                             <FormControl>
@@ -198,7 +193,7 @@ export default function InputForm() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="flex items-center space-x-2">
-                              <IconClock className="h-4 w-4" />
+                              <Clock className="h-4 w-4" />
                               <span>Birth Time</span>
                             </FormLabel>
                             <FormControl>
@@ -221,7 +216,7 @@ export default function InputForm() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="flex items-center space-x-2">
-                            <IconMapPin className="h-4 w-4" />
+                            <MapPin className="h-4 w-4" />
                             <span>Birth Location</span>
                           </FormLabel>
                           <div className="flex space-x-2">
@@ -288,7 +283,7 @@ export default function InputForm() {
                     {form.watch("latitude") && form.watch("longitude") && (
                       <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
                         <p className="flex items-center space-x-2">
-                          <IconMapPin className="h-4 w-4" />
+                          <MapPin className="h-4 w-4" />
                           <span>
                             Location confirmed: {form.watch("latitude")}, {form.watch("longitude")} 
                             ({form.watch("timezone")})
@@ -304,7 +299,7 @@ export default function InputForm() {
                       data-testid="button-create-profile"
                     >
                       {createProfileMutation.isPending && (
-                        <IconLoader className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
                       Generate My Soul Codex
                     </Button>

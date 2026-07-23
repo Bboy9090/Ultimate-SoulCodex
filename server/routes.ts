@@ -7,7 +7,6 @@ import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
 import { generateBiography, generateDailyGuidance } from "./services/openai-service";
-import { registerGalacticCodeRoutes } from "./routes/galactic-code";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -197,27 +196,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/profiles/:id/upgrade", async (req, res) => {
     try {
       const profileId = req.params.id;
-
+      
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-
+      
       // In a real app, this would process payment first
-
+      
       const updatedProfile = await storage.updateProfile(profileId, {
         isPremium: true
       });
-
+      
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error upgrading profile:", error);
       res.status(500).json({ message: "Failed to upgrade profile" });
     }
   });
-
-  // Register Galactic Code routes
-  registerGalacticCodeRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

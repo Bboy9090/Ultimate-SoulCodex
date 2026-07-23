@@ -1,30 +1,23 @@
 {
+  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
-    "target": "ESNext",
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
+    "noEmit": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
     "strict": true,
-    "skipLibCheck": true,
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "jsx": "preserve",
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0",
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "bundler",
     "baseUrl": ".",
+    "types": ["node", "vite/client"],
     "paths": {
-      "@/*": ["client/src/*"],
-      "@shared/*": ["shared/*"],
-      "@assets/*": ["attached_assets/*"],
-      "@soulcodex/db": ["packages/db"],
-
-      "@soulcodex/db/*": ["packages/db/*"],
-      "@soulcodex/core": ["packages/core"],
-      "@soulcodex/core/*": ["packages/core/*"],
-      "@soulcodex/astrology": ["packages/astrology"],
-      "@soulcodex/astrology/*": ["packages/astrology/*"],
-      "@soulcodex/ai": ["packages/ai"],
-      "@soulcodex/ai/*": ["packages/ai/*"]
+      "@/*": ["./client/src/*"],
+      "@shared/*": ["./shared/*"]
     }
-  },
-  "include": ["client/src/**/*", "server/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "dist", "packages/**/dist"]
+  }
 }
