@@ -434,14 +434,109 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="container" style={{ padding: "2rem 1rem", maxWidth: 620, position: "relative", overflow: "hidden" }}>
-      <Progress step={step} />
-      <div className="animate-fade-in" key={step} style={{ minHeight: 360 }}>
-        {step === 1 && <StepBasicInfo form={form} update={update} earlySunSign={earlySunSign} />}
-        {step === 2 && <ChoiceStep title="Under pressure, I..." help="Pick up to 2 patterns that show up most when the load gets heavy." options={PRESSURE_OPTIONS} selected={[form.primary_pressure_pattern, form.secondary_pressure_pattern]} count={pressureCount} onSelect={(value) => togglePair("primary_pressure_pattern", "secondary_pressure_pattern", value)} />}
-        {step === 3 && <SingleChoiceStep title="When conflict escalates, I..." help="Pick the pattern that describes your most automatic response." options={ESCALATION_OPTIONS} selected={form.escalation_pattern} onSelect={(value) => update("escalation_pattern", value)} />}
-        {step === 4 && <ChoiceStep title="What slows my decisions" help="Pick up to 2 friction points that get in your way." options={DECISION_OPTIONS} selected={[form.decision_friction_primary, form.decision_friction_secondary]} count={decisionCount} onSelect={(value) => togglePair("decision_friction_primary", "decision_friction_secondary", value)} />}
-        {step === 5 && <ChoiceStep title="What drains me fastest" help="Pick up to 2 situations that cost you the most energy." options={DRAIN_OPTIONS} selected={[form.drain_pattern_primary, form.drain_pattern_secondary]} count={drainCount} onSelect={(value) => togglePair("drain_pattern_primary", "drain_pattern_secondary", value)} />}
+    <div className="container" style={{ padding: "2rem 1rem", maxWidth: 600, position: "relative", overflow: "hidden" }}>
+      <img
+        src="/soul-codex-logo-star.png"
+        aria-hidden="true"
+        style={{
+          position: "absolute", top: "-80px", left: "50%",
+          transform: "translateX(-50%)",
+          width: 500, height: 500, objectFit: "contain",
+          opacity: 0.07, mixBlendMode: "screen",
+          filter: "blur(30px)",
+          pointerEvents: "none", userSelect: "none", zIndex: 0,
+        }}
+      />
+
+      <div style={{ position: "relative", zIndex: 1 }}>
+
+        <div style={{ marginBottom: "2rem" }}>
+          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+              <div key={i} style={{ flex: 1, position: "relative" }}>
+                <div
+                  style={{
+                    height: 4,
+                    borderRadius: 2,
+                    background: i < step ? "var(--sc-gold)" : "var(--muted)",
+                    transition: "background 0.3s",
+                    boxShadow: i < step ? "0 0 6px rgba(212,168,95,0.5)" : "none",
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 5 }}>
+            {STEP_LABELS.map((label, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                <span style={{
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  color: i < step ? "var(--sc-gold)" : "var(--muted-foreground)",
+                  opacity: i < step ? 1 : 0.5,
+                  transition: "color 0.3s",
+                  whiteSpace: "nowrap",
+                }}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="animate-fade-in" key={step} style={{ minHeight: "360px" }}>
+          {step === 1 && <StepBasicInfo form={form} update={update} />}
+          {step === 2 && <StepPressure form={form} toggle={togglePressure} count={pressureCount} />}
+          {step === 3 && <StepEscalation form={form} update={update} />}
+          {step === 4 && <StepDecisions form={form} toggle={toggleDecisionFriction} count={decisionCount} />}
+          {step === 5 && <StepDrain form={form} toggle={toggleDrain} count={drainCount} />}
+        </div>
+
+        {mutation.isError && (
+          <p style={{ color: "var(--destructive)", marginTop: "1rem", fontSize: "0.875rem" }}>
+            {mutation.error instanceof Error ? mutation.error.message : "Something went wrong. Please try again."}
+          </p>
+        )}
+
+        <div style={{ marginTop: "3rem", display: "flex", gap: "1rem" }}>
+          <ScButton
+            variant="ghost"
+            onClick={() => setStep(Math.max(1, step - 1))}
+            disabled={step === 1 || mutation.isPending}
+            className={step === 1 ? "invisible" : ""}
+          >
+            ← Back
+          </ScButton>
+          
+          <ScButton
+            onClick={handleNext}
+            disabled={!canNext()}
+            loading={mutation.isPending}
+            className="flex-1 text-glow"
+          >
+            {step === TOTAL_STEPS ? "Reveal My Profile" : "Continue"}
+          </ScButton>
+        </div>
+
+        {/* ── Legal Compliance Footer ─────────────────────────────────── */}
+        {step === 1 && (
+          <div style={{ marginTop: "2rem", textAlign: "center" }}>
+            <p style={{
+              fontSize: "0.72rem",
+              color: "var(--muted-foreground)",
+              lineHeight: 1.5,
+              opacity: 0.7,
+              maxWidth: "320px",
+              margin: "0 auto"
+            }}>
+              By continuing, you acknowledge that you have read our{" "}
+              <a href="/privacy" target="_blank" style={{ color: "var(--sc-gold)", textDecoration: "underline" }}>Privacy Policy</a>
+              {" "}and agree to our{" "}
+              <a href="/terms" target="_blank" style={{ color: "var(--sc-gold)", textDecoration: "underline" }}>Terms of Service</a>.
+            </p>
+          </div>
+        )}
       </div>
 
       {mutation.isError && <div style={{ color: "#ff4444", marginTop: "1.5rem", fontSize: "0.875rem", lineHeight: 1.5, background: "rgba(255,68,68,0.1)", padding: "1rem", borderRadius: 8, border: "1px solid rgba(255,68,68,0.2)", textAlign: "left" }}><strong style={{ display: "block", marginBottom: "0.25rem" }}>Profile generation failed</strong>{(mutation.error as Error)?.message || "Check your connection and try again."}</div>}
