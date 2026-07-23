@@ -8,9 +8,19 @@ import { registerRoutes } from "./routes.js";
 
 const app: Express = express();
 
-// Parse JSON and URL-encoded bodies
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+// Enable CORS for mobile app connectivity
+app.use(cors({
+  origin: [
+    "soulcodex://localhost", 
+    "capacitor://localhost", 
+    "http://localhost:3000", 
+    "http://localhost:5000",
+    "https://ultimate-soulcodex.up.railway.app"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 
 // Session configuration
 app.use(

@@ -6,22 +6,8 @@ const NETWORK_TIMEOUT = 60000; // 60s max for any request
 
 export function resolveApiUrl(url: string): string {
   if (url.startsWith("/api")) {
-    const configuredBaseUrl = import.meta.env.VITE_API_URL;
-
-    if (configuredBaseUrl) {
-      return `${configuredBaseUrl.replace(/\/$/, "")}${url}`;
-    }
-
-    if (typeof window !== "undefined") {
-      const { hostname, origin } = window.location;
-      const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
-      if (import.meta.env.DEV || isLocalHost) {
-        return `${origin.replace(/\/$/, "")}${url}`;
-      }
-      return `${origin.replace(/\/$/, "")}${url}`;
-    }
-
-    return url;
+    const baseUrl = import.meta.env.VITE_API_URL || "https://ultimate-soulcodex.up.railway.app";
+    return `${baseUrl.replace(/\/$/, "")}${url}`;
   }
   return url;
 }

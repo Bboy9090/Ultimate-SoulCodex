@@ -293,7 +293,7 @@ export default function OnboardingPage() {
         if (!goals.includes(goal)) goals.push(goal);
       }
 
-      return apiRequest("/api/soul-archetype", {
+      return apiRequest("https://ultimate-soulcodex.up.railway.app/api/soul-archetype", {
         method: "POST",
         body: JSON.stringify({
           birth_data: {
