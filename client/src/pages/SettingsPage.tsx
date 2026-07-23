@@ -3,6 +3,7 @@ import {
   IconLogo, IconArrowLeft, IconAlert, IconLock, IconInfo
 } from "../components/Icons";
 import { loadActiveProfile, clearActiveProfile, deriveConfidenceState } from "../lib/profileStorage";
+import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
 
 export default function SettingsPage() {
   const [, navigate] = useLocation();
@@ -132,6 +133,42 @@ export default function SettingsPage() {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Daily Pulse History */}
+          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
+            <h2 className="section-label" style={{ marginBottom: "1rem" }}>Daily Pulse History</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", marginBottom: "1.5rem" }}>
+              Clear your Daily Pulse reflection logs.
+            </p>
+            <button
+              onClick={() => {
+                if (confirm("Clear all Daily Pulse history?\n\nThis cannot be undone.")) {
+                  clearDailyPulseEntries();
+                  alert("Daily Pulse history cleared.");
+                }
+              }}
+              style={{
+                width: "100%",
+                padding: "1rem",
+                background: "rgba(255,215,0,0.1)",
+                border: "1px solid rgba(212,168,95,0.3)",
+                borderRadius: "12px",
+                color: "var(--sc-gold)",
+                cursor: "pointer",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLElement).style.background = "rgba(255,215,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLElement).style.background = "rgba(255,215,0,0.1)";
+              }}
+            >
+              Clear Pulse History
+            </button>
           </div>
 
           {/* Privacy & Legal */}

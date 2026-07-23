@@ -10,7 +10,6 @@ import {
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { getDailyPulseForDate, saveDailyPulseEntry, type MoodType } from "../lib/dailyPulseStorage";
-import { loadActiveProfile } from "../lib/profileStorage";
 
 interface TodayCard {
   codename: string;
