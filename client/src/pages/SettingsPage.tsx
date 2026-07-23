@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const confidenceLevel = profile ? deriveConfidenceState(profile) : "unverified";
 
   const handleResetEngine = () => {
-    if (confirm("Reset Soul Codex?\n\nThis will clear your current profile and all local data. You'll return to onboarding.\n\nUse only for testing new birth data or resetting the engine.")) {
+    if (confirm("Reset local Soul Codex profile?\n\nThis clears profile data stored on this device and returns you to onboarding. Server account data is not deleted.")) {
       clearActiveProfile();
       localStorage.clear();
       window.location.href = "/";
@@ -31,11 +31,11 @@ export default function SettingsPage() {
         </div>
 
         <div className="stagger">
-          {/* Developer / Testing Section */}
+          {/* Local profile data */}
           <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", borderLeft: "4px solid var(--sc-danger)" }}>
-            <h2 className="section-label" style={{ marginBottom: "1rem", color: "var(--sc-danger)" }}>Testing Controls</h2>
+            <h2 className="section-label" style={{ marginBottom: "1rem", color: "var(--sc-danger)" }}>Profile Data</h2>
             <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", marginBottom: "1.5rem" }}>
-              Development tools for testing. Not for daily use.
+              Clear the profile stored on this device and begin calibration again. This does not delete server account data.
             </p>
             <button
               onClick={handleResetEngine}
@@ -59,7 +59,7 @@ export default function SettingsPage() {
               }}
             >
               <IconAlert size={16} style={{ marginRight: "0.5rem", display: "inline" }} />
-              Reset Engine
+              Reset Local Profile
             </button>
           </div>
 
@@ -193,6 +193,32 @@ export default function SettingsPage() {
                   Terms of Service
                 </span>
                 <span style={{ opacity: 0.4 }}>›</span>
+              </button>
+              <button
+                onClick={() => navigate("/support")}
+                style={{
+                  padding: "1rem", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
+                  borderRadius: "12px", color: "var(--sc-ivory)", cursor: "pointer", textAlign: "left",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <IconInfo size={16} /> Support
+                </span>
+                <span style={{ opacity: 0.4 }}>›</span>
+              </button>
+              <button
+                onClick={() => navigate("/account-deletion")}
+                style={{
+                  padding: "1rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.28)",
+                  borderRadius: "12px", color: "var(--sc-danger)", cursor: "pointer", textAlign: "left",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <IconAlert size={16} /> Delete Account & Data
+                </span>
+                <span style={{ opacity: 0.6 }}>›</span>
               </button>
             </div>
           </div>
