@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build:next",
-  "outputDirectory": "dist/next-public",
-  "framework": null,
-  "installCommand": "npm install",
+  "buildCommand": "npm run build -w @soulcodex/web",
+  "installCommand": "npm ci",
+  "outputDirectory": "apps/web/dist",
+  "framework": "vite",
   "headers": [
     {
       "source": "/(.*)",
@@ -12,5 +12,6 @@
         { "key": "X-Frame-Options", "value": "DENY" }
       ]
     }
-  ]
+  ],
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
