@@ -12,16 +12,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "tsx server/index.ts",
-    "build": "npm run build:server && npm run build:client",
-    "build:client": "vite build",
-    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js --external:@soulcodex/core --external:@soulcodex/db",
-    "build:vercel": "npm run build -w @soulcodex/db && npm run build -w @soulcodex/core && npm run build -w @soulcodex/web",
+    "dev": "npx tsx server/index.ts",
+    "build": "npm run build --workspace=packages/db --if-present && npm run build --workspace=packages/core --if-present && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --outExtension:.js=.js",
     "start": "node dist/index.js",
-    "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
-    "db:init": "node scripts/fix-db.cjs && drizzle-kit push --config=drizzle.config.ts --force",
-    "db:studio": "drizzle-kit studio",
     "check": "npm run check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:account-deletion": "node --import tsx --test tests/account-deletion.test.ts",
