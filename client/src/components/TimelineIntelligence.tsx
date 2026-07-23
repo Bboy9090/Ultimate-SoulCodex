@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { generateTimelineIntelligence, saveTimelineIntelligence, type TimelineIntelligenceSummary, type SystemSignal, type LivedSignal } from "@soulcodex/core";
+import { generateTimelineIntelligence, type TimelineIntelligenceSummary, type SystemSignal, type LivedSignal } from "@soulcodex/core";
 import { getRecentDailyPulseEntries, getDailyPulseSummary } from "../lib/dailyPulseStorage";
 import { IconCheckCircle, IconAlertCircle, IconTrendingUp } from "./Icons";
 
@@ -64,7 +64,6 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
       sampleSize: pulseEntries.length,
     });
     setSummary(intelligence);
-    saveTimelineIntelligence(intelligence);
   }, [systemSignals]);
 
   if (showLocked) {
