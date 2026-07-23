@@ -3,7 +3,6 @@ import {
   IconLogo, IconArrowLeft, IconAlert, IconLock, IconInfo
 } from "../components/Icons";
 import { loadActiveProfile, clearActiveProfile, deriveConfidenceState } from "../lib/profileStorage";
-import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
 
 export default function SettingsPage() {
   const [, navigate] = useLocation();
@@ -11,7 +10,7 @@ export default function SettingsPage() {
   const confidenceLevel = profile ? deriveConfidenceState(profile) : "unverified";
 
   const handleResetEngine = () => {
-    if (confirm("Reset local Soul Codex profile?\n\nThis clears profile data stored on this device and returns you to onboarding. Server account data is not deleted.")) {
+    if (confirm("Reset Soul Codex?\n\nThis will clear your current profile and all local data. You'll return to onboarding.\n\nUse only for testing new birth data or resetting the engine.")) {
       clearActiveProfile();
       localStorage.clear();
       window.location.href = "/";
@@ -32,11 +31,11 @@ export default function SettingsPage() {
         </div>
 
         <div className="stagger">
-          {/* Local profile data */}
+          {/* Developer / Testing Section */}
           <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem", borderLeft: "4px solid var(--sc-danger)" }}>
-            <h2 className="section-label" style={{ marginBottom: "1rem", color: "var(--sc-danger)" }}>Profile Data</h2>
+            <h2 className="section-label" style={{ marginBottom: "1rem", color: "var(--sc-danger)" }}>Testing Controls</h2>
             <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", marginBottom: "1.5rem" }}>
-              Clear the profile stored on this device and begin calibration again. This does not delete server account data.
+              Development tools for testing. Not for daily use.
             </p>
             <button
               onClick={handleResetEngine}
@@ -60,7 +59,7 @@ export default function SettingsPage() {
               }}
             >
               <IconAlert size={16} style={{ marginRight: "0.5rem", display: "inline" }} />
-              Reset Local Profile
+              Reset Engine
             </button>
           </div>
 
@@ -135,42 +134,6 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* Daily Pulse History */}
-          <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
-            <h2 className="section-label" style={{ marginBottom: "1rem" }}>Daily Pulse History</h2>
-            <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", marginBottom: "1.5rem" }}>
-              Clear your Daily Pulse reflection logs.
-            </p>
-            <button
-              onClick={() => {
-                if (confirm("Clear all Daily Pulse history?\n\nThis cannot be undone.")) {
-                  clearDailyPulseEntries();
-                  alert("Daily Pulse history cleared.");
-                }
-              }}
-              style={{
-                width: "100%",
-                padding: "1rem",
-                background: "rgba(255,215,0,0.1)",
-                border: "1px solid rgba(212,168,95,0.3)",
-                borderRadius: "12px",
-                color: "var(--sc-gold)",
-                cursor: "pointer",
-                fontSize: "0.95rem",
-                fontWeight: 600,
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLElement).style.background = "rgba(255,215,0,0.15)";
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLElement).style.background = "rgba(255,215,0,0.1)";
-              }}
-            >
-              Clear Pulse History
-            </button>
-          </div>
-
           {/* Privacy & Legal */}
           <div className="glassmorphism" style={{ padding: "2rem", borderRadius: "24px", marginBottom: "1.5rem" }}>
             <h2 className="section-label" style={{ marginBottom: "1.5rem" }}>Privacy & Legal</h2>
@@ -230,32 +193,6 @@ export default function SettingsPage() {
                   Terms of Service
                 </span>
                 <span style={{ opacity: 0.4 }}>›</span>
-              </button>
-              <button
-                onClick={() => navigate("/support")}
-                style={{
-                  padding: "1rem", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
-                  borderRadius: "12px", color: "var(--sc-ivory)", cursor: "pointer", textAlign: "left",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <IconInfo size={16} /> Support
-                </span>
-                <span style={{ opacity: 0.4 }}>›</span>
-              </button>
-              <button
-                onClick={() => navigate("/account-deletion")}
-                style={{
-                  padding: "1rem", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.28)",
-                  borderRadius: "12px", color: "var(--sc-danger)", cursor: "pointer", textAlign: "left",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <IconAlert size={16} /> Delete Account & Data
-                </span>
-                <span style={{ opacity: 0.6 }}>›</span>
               </button>
             </div>
           </div>
