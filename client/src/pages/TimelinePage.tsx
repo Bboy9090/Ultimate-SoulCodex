@@ -2,15 +2,12 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 
 import {
-  calcPersonalYear,
   calcPersonalMonth,
   getCycleTransitionState,
   getNextYearNum,
   getNextMonthNum,
-  DAY_LABELS,
+  calcPersonalYear as coreCalcPersonalYear,
   formatPersonalYear,
-  loadTimelineIntelligence,
-  type TimelineIntelligenceSummary,
 } from "@soulcodex/core";
 import {
   IconCircle, IconSparkles, IconDiamond, IconHexagon,
