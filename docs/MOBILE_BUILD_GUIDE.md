@@ -89,7 +89,7 @@ The workflows build signed artifacts; they intentionally do not submit or releas
 
 Code cannot complete these account-bound steps:
 
-- Verify `https://soulcodex.up.railway.app/privacy`, `/support`, and `/account-deletion` are publicly reachable after deployment.
+- Verify `https://soulcodex.app/privacy`, `/support`, and `/account-deletion` are publicly reachable after deployment.
 - Complete Apple App Privacy and Google Play Data Safety from the shipped app behavior and `PrivacyPage.tsx`.
 - Upload screenshots and the Google Play feature graphic.
 - Complete age/content-rating, target-audience, ads, and app-access questionnaires.

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { apiFetch } from "../lib/queryClient";
 import { isNativeStoreApp } from "../lib/platform";
-import { loadActiveProfile } from "../lib/profileStorage";
 
 export default function PricingPage() {
   const isNative = isNativeStoreApp();

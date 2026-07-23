@@ -65,13 +65,13 @@ Secondary: Entertainment
 Intended audience: ages 13 and older. Complete each store's rating questionnaire from the shipped app behavior; do not infer the final rating from this document.
 
 ## Privacy Policy URL
-https://soulcodex.up.railway.app/privacy
+https://soulcodex.app/privacy
 
 ## Support URL
-https://soulcodex.up.railway.app/support
+https://soulcodex.app/support
 
 ## Account Deletion URL
-https://soulcodex.up.railway.app/account-deletion
+https://soulcodex.app/account-deletion
 
 ---
 
@@ -86,7 +86,7 @@ https://soulcodex.up.railway.app/account-deletion
 - [x] Apple Developer account ($99/year)
 
 ### Android (Google Play Console)
-- [x] App icon: `play-store-icon-512.png` — 512x512 RGB PNG, no alpha
+- [ ] App icon: 512x512 PNG
 - [x] Feature graphic: `play-feature-graphic-1024x500.png` (1024x500 PNG)
 - [ ] Screenshots: phone (min 2, 320-3840px per side), tablet (optional)
 - [x] Privacy policy URL
