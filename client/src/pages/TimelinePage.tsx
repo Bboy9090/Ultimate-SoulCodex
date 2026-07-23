@@ -18,8 +18,6 @@ import {
   IconX, IconSquare
 } from "../components/Icons";
 import TimelineIntelligence from "../components/TimelineIntelligence";
-import SoulGuide from "../components/SoulGuide";
-import { loadActiveProfile } from "../lib/profileStorage";
 
 // ── Phase content ─────────────────────────────────────────────────────────────
 
@@ -620,13 +618,6 @@ export default function TimelinePage() {
       {systemSignals.length > 0 && (
         <div style={{ marginBottom: "2rem" }}>
           <TimelineIntelligence systemSignals={systemSignals} />
-        </div>
-      )}
-
-      {/* ── Soul Guide AI Interpretation ──────────────────────────────────────── */}
-      {intelligence && (
-        <div style={{ marginBottom: "2rem" }}>
-          <SoulGuide intelligence={intelligence} />
         </div>
       )}
 
