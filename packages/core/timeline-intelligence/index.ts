@@ -18,7 +18,7 @@ export function generateTimelineIntelligence(
   const lookbackDays = options.lookbackDays || 30;
   const minDataPoints = options.minDataPoints || 1;
 
-  const sampleSize = options.sampleSize !== undefined ? options.sampleSize : livedSignals.length;
+  const sampleSize = livedSignals.length;
   const confidence = deriveTimelineConfidence(sampleSize);
 
   // Organize lived signals by date range
