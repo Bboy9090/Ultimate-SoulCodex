@@ -1,53 +1,69 @@
-# ── Build Stage ─────────────────────────────────────────────────────────────
-FROM node:20 AS builder
+# Soul Codex Production Dockerfile
+# This builds the Express server from server/index.ts with all root-level dependencies
 
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install build tools for native modules (argon2, sharp)
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+# Copy package files for dependency installation
+COPY package*.json ./
+COPY .nvmrc ./
 
-# Group config files for better caching
-COPY package*.json tsconfig.json ./
-COPY shared ./shared
-COPY packages ./packages
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
-# Install dependencies for all workspaces
-RUN npm install
-
-# Build workspace packages first (required for root build)
-# Explicitly build in order of dependency if needed, but db and core are independent
-RUN npm run build -w packages/db
-RUN npm run build -w packages/core
-
-# Copy remaining source
+# Copy all source files
 COPY . .
 
-# Build main app (Client + Server)
-RUN npm run build
+# Build workspace packages that are required
+RUN npm run build --workspace=packages/db --if-present
+RUN npm run build --workspace=packages/core --if-present
 
-# ── Runtime Stage ───────────────────────────────────────────────────────────
-FROM node:20-slim
+# Build the server bundle using esbuild
+# The server is at server/index.ts (not apps/api/server.ts)
+RUN npx esbuild server/index.ts \
+  --platform=node \
+  --packages=external \
+  --bundle \
+  --format=esm \
+  --outdir=dist \
+  --outExtension:.js=.js
 
+# Production stage
+FROM node:20-alpine AS runner
 WORKDIR /app
-
-# Install runtime dependencies for native modules if needed (usually slim is fine)
-RUN apt-get update && apt-get install -y python3 && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy built assets and necessary files to runtime
+# Copy package files and install production dependencies only
 COPY package*.json ./
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-# Include built packages for runtime imports if they use dist/
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/shared ./shared
-COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
+RUN npm ci --production --ignore-scripts
 
-# Expose production port
+# Copy built server from builder
+COPY --from=builder /app/dist ./dist
+
+# Copy workspace package dist folders (needed for runtime imports)
+COPY --from=builder /app/packages/db/dist ./packages/db/dist
+COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
+COPY --from=builder /app/packages/core/dist ./packages/core/dist
+COPY --from=builder /app/packages/core/package.json ./packages/core/package.json
+
+# Copy TypeScript source packages that don't have build steps
+COPY --from=builder /app/packages/astrology ./packages/astrology
+COPY --from=builder /app/packages/ai ./packages/ai
+
+# Copy necessary root-level files that might be imported
+COPY --from=builder /app/db.ts ./db.ts
+COPY --from=builder /app/storage.ts ./storage.ts
+COPY --from=builder /app/demo-seed.ts ./demo-seed.ts
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
 EXPOSE 3000
 
-# Start the Soul Oracle
-CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then npm run db:init; fi && node dist/index.js"]
+# Use node user for security
+USER node
+
+CMD ["node", "dist/index.js"]
