@@ -212,6 +212,14 @@ test("Depth interpretation quality gates", async (suite) => {
     interpretation.overallConfidence = "moderate";
 
     for (const key of DEPTH_INTERPRETATION_LAYER_KEYS) {
+      if (key === "coreContradiction") {
+        interpretation[key] = unavailableLayer(
+          "Core contradiction",
+          "the supplied signals do not support two distinct sides of a tension.",
+        );
+        continue;
+      }
+
       interpretation[key].evidenceIds = ["mirror.driver"];
       interpretation[key].confidence = "moderate";
     }
