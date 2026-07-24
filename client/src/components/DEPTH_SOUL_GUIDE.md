@@ -48,3 +48,7 @@ Interpretation confidence is labeled as source support. The component does not r
 ## Compatibility
 
 This component is additive. It does not replace the existing Timeline-based `SoulGuide` component, issue provider requests, read profile storage, or generate interpretations. A caller must supply a validated `DepthInterpretationV1`.
+
+## Validation Boundary
+
+The view-model ordering, unavailable-state visibility, evidence summaries, source immutability, disclosure accessibility contract, TSX compilation, workspace tests, and production build are enforced by the repository's permanent CI workflows.
