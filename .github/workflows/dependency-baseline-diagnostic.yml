@@ -42,12 +42,6 @@ jobs:
           rm -rf node_modules
           npm ci --loglevel verbose 2>&1 | tee npm-ci-verification.log
 
-      - name: Verify workspace discovery
-        run: |
-          npm ls --workspaces --depth=0
-          npm run build:workspaces
-          npm run check:workspaces
-
       - name: Commit generated lockfile
         shell: bash
         run: |
@@ -61,6 +55,24 @@ jobs:
           git commit -m "fix(ci): regenerate workspace lockfile"
           git push origin HEAD:${{ github.head_ref || github.ref_name }}
 
+      - name: Verify workspace discovery
+        shell: bash
+        run: |
+          set -o pipefail
+          npm ls --workspaces --depth=0 2>&1 | tee workspace-discovery.log
+
+      - name: Build workspaces
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build:workspaces 2>&1 | tee workspace-build.log
+
+      - name: Check workspaces
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run check:workspaces 2>&1 | tee workspace-check.log
+
       - name: Upload dependency repair logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -69,5 +81,8 @@ jobs:
           path: |
             npm-lock-generation.log
             npm-ci-verification.log
+            workspace-discovery.log
+            workspace-build.log
+            workspace-check.log
           if-no-files-found: warn
           retention-days: 7
