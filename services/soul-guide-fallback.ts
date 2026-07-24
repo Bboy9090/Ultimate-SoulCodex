@@ -1,4 +1,16 @@
-import { synthesizeCodex, type CodexSynthesis } from "../src/codex/synthesize";
+import {
+  createDepthSoulGuideFallback,
+  type SoulGuideDepthCard,
+  type SoulGuideDepthFallbackResult,
+} from "../packages/core/soul-guide/index.js";
+import {
+  synthesizeDepthCodex,
+} from "../src/codex/depth-adapter.js";
+import {
+  synthesizeCodex,
+  type CodexSynthesis,
+} from "../src/codex/synthesize.js";
+import type { SoulProfile } from "../src/types/soulcodex.js";
 
 export interface FallbackCard {
   title: string;
@@ -10,135 +22,216 @@ export interface SoulGuideFallbackResult {
   message: string;
   cards: FallbackCard[];
   prompts: string[];
+  primaryCards?: SoulGuideDepthCard[];
+  detailCards?: SoulGuideDepthCard[];
+  interpretation?: SoulGuideDepthFallbackResult["interpretation"];
+  markdown?: string;
 }
 
-function tryGetSynthesis(profile: any): CodexSynthesis | null {
+function isSoulProfile(profile: unknown): profile is SoulProfile {
+  if (!profile || typeof profile !== "object") return false;
+  const candidate = profile as Partial<SoulProfile>;
+
+  return Boolean(
+    candidate.birth &&
+      typeof candidate.birth.birthDate === "string" &&
+      typeof candidate.birth.birthPlace === "string" &&
+      typeof candidate.birth.timeKnown === "boolean",
+  );
+}
+
+function withTimeline(profile: SoulProfile, timeline?: unknown): SoulProfile {
+  if (profile.timeline || !timeline || typeof timeline !== "object") {
+    return profile;
+  }
+
+  const candidate = timeline as {
+    currentPhase?: SoulProfile["timeline"] extends infer Timeline
+      ? Timeline extends { currentPhase: infer Phase }
+        ? Phase
+        : never
+      : never;
+    phase?: SoulProfile["timeline"] extends infer Timeline
+      ? Timeline extends { currentPhase: infer Phase }
+        ? Phase
+        : never
+      : never;
+    reasons?: string[];
+  };
+  const currentPhase = candidate.currentPhase ?? candidate.phase;
+
+  if (!currentPhase) return profile;
+
+  return {
+    ...profile,
+    timeline: {
+      currentPhase,
+      reasons: candidate.reasons,
+    },
+  };
+}
+
+function tryGetDepthFallback(
+  profile: unknown,
+  timeline?: unknown,
+): SoulGuideDepthFallbackResult | null {
+  if (!isSoulProfile(profile)) return null;
+
   try {
-    if (profile?.synthesis?.coreNature) return profile.synthesis;
+    const interpretation = synthesizeDepthCodex(
+      withTimeline(profile, timeline),
+    );
+    return createDepthSoulGuideFallback(interpretation);
+  } catch {
+    return null;
+  }
+}
+
+function tryGetSynthesis(profile: unknown): CodexSynthesis | null {
+  try {
+    const candidate = profile as { synthesis?: CodexSynthesis };
+    if (candidate?.synthesis?.coreNature) return candidate.synthesis;
+    if (!isSoulProfile(profile)) return null;
     return synthesizeCodex(profile);
   } catch {
     return null;
   }
 }
 
-export function soulGuideFallback(
-  profile: any,
-  timeline?: any,
-  dailyCard?: any,
-): SoulGuideFallbackResult {
-  const synth = tryGetSynthesis(profile);
-
-  if (synth) {
-    return {
-      status: "fallback",
-      message: "Using backup guidance from your Codex.",
-      cards: [
-        {
-          title: "Your strongest edge right now",
-          body: synth.coreNature,
-        },
-        {
-          title: "What may be throwing you off",
-          body: synth.stressPattern,
-        },
-        {
-          title: "What to focus on today",
-          body: synth.currentPhaseMeaning + " " + synth.practicalGuidance[0],
-        },
-      ],
-      prompts: [
-        "What pattern am I repeating right now?",
-        "What do I need to stop tolerating?",
-        "What is this phase trying to teach me?",
-      ],
-    };
-  }
-
-  const archData = profile?.archetypeData || profile?.archetype || {};
-  const archName = archData?.archetype || archData?.name || (typeof profile?.archetype === "string" ? profile.archetype : profile?.archetype?.name) || "";
-  const themes = archData?.themes || profile?.themes?.topThemes || [];
-  const topTheme = themes[0] || "clarity";
-  const strengths = archData?.strengths || [];
-  const shadows = archData?.shadows || [];
-  const oldSynthesis = profile?.synthesis || {};
-  const stressPattern = oldSynthesis?.stressPattern || "";
-  const shadowTrigger = profile?.mirror?.shadowTrigger || stressPattern || "mental overload";
-  const decisionStyle = profile?.mirror?.decisionStyle || oldSynthesis?.moralCode?.name || "analytical";
-  const phase = timeline?.phase || timeline?.currentPhase || profile?.timeline?.currentPhase || "your current phase";
-  const focus = dailyCard?.focus || "one grounded next step";
-
-  const strengthBody = strengths.length > 0
-    ? `Your profile emphasizes ${topTheme}. Your strongest edges are ${strengths.slice(0, 2).join(" and ")}. You operate best when you prioritize precision instead of trying to do everything at once.`
-    : `Your profile emphasizes ${topTheme}. This is the part of you that works best when life gets noisy. ${archName ? `As ${archName}, you're built to cut through confusion and act on what matters.` : "You cut through confusion and act on what matters."}`;
-
-  const blindSpotBody = shadows.length > 0
-    ? `Your blind spot tends to show up as ${shadows[0].toLowerCase()}. Under stress, ${shadowTrigger.toLowerCase()} takes over — your mind speeds up and tries to solve everything at once.`
-    : `Your stress pattern leans toward ${shadowTrigger.toLowerCase()}. When pressure rises, your default is to speed up instead of slow down. Watch for the moment when thinking replaces doing.`;
-
-  const focusBody = `You are in ${phase}. The best move today is ${focus}. Narrow your attention. One finished action will help more than ten partially solved thoughts.`;
+function unavailableFallback(): SoulGuideFallbackResult {
+  const reason =
+    "Unavailable: a complete Soul Profile is required for evidence-linked backup guidance.";
 
   return {
     status: "fallback",
-    message: "Using backup guidance from your Codex.",
+    message:
+      "Backup guidance is unavailable because the profile does not contain the required source data.",
     cards: [
-      { title: "Your strongest edge right now", body: strengthBody },
-      { title: "What may be throwing you off", body: blindSpotBody },
-      { title: "What to focus on today", body: focusBody },
+      { title: "Core Pattern", body: reason },
+      { title: "Main Contradiction", body: reason },
+      { title: "Next Move", body: reason },
     ],
     prompts: [
-      "What pattern am I repeating right now?",
-      "What do I need to stop tolerating?",
-      "What is this phase trying to teach me?",
+      "Which profile fields are still missing?",
+      "Which lived-experience detail should be added before interpretation?",
+      "Is the recorded birth time known, approximate, or unknown?",
     ],
   };
 }
 
+export function soulGuideFallback(
+  profile: unknown,
+  timeline?: unknown,
+  _dailyCard?: unknown,
+): SoulGuideFallbackResult {
+  const depth = tryGetDepthFallback(profile, timeline);
+
+  if (depth) {
+    return {
+      status: depth.status,
+      message: depth.message,
+      cards: depth.cards,
+      prompts: depth.prompts,
+      primaryCards: depth.primaryCards,
+      detailCards: depth.detailCards,
+      interpretation: depth.interpretation,
+      markdown: depth.markdown,
+    };
+  }
+
+  const synthesis = tryGetSynthesis(profile);
+  if (synthesis) {
+    return {
+      status: "fallback",
+      message:
+        "Using legacy deterministic guidance because a complete depth profile is not available.",
+      cards: [
+        { title: "Core Pattern", body: synthesis.coreNature },
+        {
+          title: "Main Contradiction",
+          body: `${synthesis.stressPattern} ${synthesis.blindSpot}`,
+        },
+        {
+          title: "Next Move",
+          body: `${synthesis.currentPhaseMeaning} ${synthesis.practicalGuidance[0] ?? ""}`.trim(),
+        },
+      ],
+      prompts: [
+        "Which part matches lived experience most clearly?",
+        "What evidence would change this interpretation?",
+        "What one grounded action can be tested next?",
+      ],
+    };
+  }
+
+  return unavailableFallback();
+}
+
+function layerText(
+  fallback: SoulGuideDepthFallbackResult,
+  ...keys: SoulGuideDepthCard["key"][]
+): string {
+  return keys
+    .map((key) => fallback.interpretation[key])
+    .map((layer) => `${layer.summary} ${layer.explanation}`.trim())
+    .join(" ")
+    .trim();
+}
+
 export function answerFromProfile(
   question: string,
-  profile: any,
-  timeline?: any,
-  dailyCard?: any,
+  profile: unknown,
+  timeline?: unknown,
+  _dailyCard?: unknown,
 ): string {
-  const synth = tryGetSynthesis(profile);
+  const depth = tryGetDepthFallback(profile, timeline);
 
-  if (synth) {
+  if (depth) {
     const q = question.toLowerCase();
 
     if (q.includes("strength") || q.includes("best") || q.includes("good at")) {
-      return synth.coreNature;
+      return layerText(depth, "gift");
     }
-    if (q.includes("pattern") || q.includes("repeat") || q.includes("sabotage") || q.includes("stuck")) {
-      return `${synth.stressPattern} ${synth.blindSpot}`;
+    if (
+      q.includes("pattern") ||
+      q.includes("repeat") ||
+      q.includes("sabotage") ||
+      q.includes("stuck")
+    ) {
+      return layerText(depth, "claritySummary", "shadow");
     }
     if (q.includes("tolerat") || q.includes("boundary") || q.includes("stop")) {
-      return synth.relationshipStyle;
+      return layerText(depth, "boundaryOrRepair");
     }
-    if (q.includes("phase") || q.includes("teach") || q.includes("learn") || q.includes("season")) {
-      return `${synth.currentPhaseMeaning} ${synth.growthEdge}`;
-    }
-    if (q.includes("focus") || q.includes("today") || q.includes("week") || q.includes("next")) {
-      return `${synth.currentPhaseMeaning} ${synth.practicalGuidance.join(" ")}`;
+    if (
+      q.includes("focus") ||
+      q.includes("today") ||
+      q.includes("week") ||
+      q.includes("next") ||
+      q.includes("phase")
+    ) {
+      return layerText(depth, "claritySummary", "action");
     }
     if (q.includes("decision") || q.includes("choose") || q.includes("decide")) {
-      return synth.decisionStyle;
+      return layerText(depth, "decisionImpact", "action");
     }
     if (q.includes("relationship") || q.includes("love") || q.includes("partner")) {
-      return `${synth.relationshipStyle} ${synth.blindSpot}`;
+      return layerText(depth, "relationshipImpact", "commonMisreading");
     }
     if (q.includes("blind") || q.includes("miss") || q.includes("shadow")) {
-      return `${synth.blindSpot} ${synth.growthEdge}`;
+      return layerText(depth, "shadow", "commonMisreading");
     }
     if (q.includes("grow") || q.includes("edge") || q.includes("improve")) {
-      return synth.growthEdge;
+      return layerText(depth, "boundaryOrRepair", "action");
     }
 
-    return `As ${synth.archetype}: ${synth.coreNature} ${synth.currentPhaseMeaning}`;
+    return layerText(depth, "claritySummary", "coreContradiction", "action");
   }
 
-  const archName = profile?.archetypeData?.archetype || profile?.archetype?.name || "your archetype";
-  const topTheme = profile?.themes?.topThemes?.[0] || "clarity";
-  const phase = timeline?.phase || profile?.timeline?.currentPhase || "your current phase";
-  const sunSign = profile?.astrologyData?.sunSign || profile?.chart?.sun?.sign || "";
+  const synthesis = tryGetSynthesis(profile);
+  if (synthesis) {
+    return `${synthesis.coreNature} ${synthesis.currentPhaseMeaning}`.trim();
+  }
 
-  return `Based on your ${archName} profile${sunSign ? ` (${sunSign})` : ""}: your core pattern revolves around ${topTheme}. You're currently in ${phase}. Focus on one clear action rather than spreading your attention.`;
+  return "Unavailable: a complete Soul Profile is required before the Codex can answer this responsibly.";
 }

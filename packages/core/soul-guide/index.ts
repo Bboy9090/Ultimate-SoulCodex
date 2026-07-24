@@ -5,6 +5,10 @@ import type { TimelineIntelligenceSummary } from "../timeline-intelligence/types
 const STORAGE_KEY = "soulcodex.soulGuide.v1";
 
 export type { SoulGuideInterpretation, SoulGuideOptions };
+export * from "./depth-types.js";
+export * from "./depth-prompt.js";
+export * from "./depth-parser.js";
+export * from "./depth-fallback.js";
 
 /**
  * Generates a Soul Guide prompt for Claude to interpret Timeline Intelligence data.
