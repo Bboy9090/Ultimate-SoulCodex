@@ -105,3 +105,7 @@ The correct response to missing data is visible degradation, not confident fog.
 5. release only when the applicable gate passes
 
 The evaluator is pure. It does not mutate source interpretations, call providers, alter formulas, or read UI state.
+
+## Validation Boundary
+
+The evaluator, public exports, exact fixture scores, source immutability, workspace compilation, complete test suite, and production build are enforced by the repository's permanent CI workflows. A documentation claim cannot override a failing quality fixture or structural gate.
