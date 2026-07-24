@@ -6,6 +6,8 @@ on:
     paths:
       - "package.json"
       - "package-lock.json"
+      - "tsconfig.json"
+      - "packages/*/tsconfig.json"
       - ".github/workflows/dependency-baseline-diagnostic.yml"
   workflow_dispatch:
 
@@ -26,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Generate lockfile from repaired manifest
         shell: bash
@@ -73,6 +75,12 @@ jobs:
           set -o pipefail
           npm run check:workspaces 2>&1 | tee workspace-check.log
 
+      - name: Run workspace tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee workspace-test.log
+
       - name: Upload dependency repair logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -84,5 +92,6 @@ jobs:
             workspace-discovery.log
             workspace-build.log
             workspace-check.log
+            workspace-test.log
           if-no-files-found: warn
           retention-days: 7
