@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import path from "path";
 
 export default defineConfig({
@@ -35,16 +36,16 @@ export default defineConfig({
     target: "es2020",
     cssCodeSplit: false,
     modulePreload: {
-      polyfill: false
+      polyfill: false,
     },
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'wouter'],
-          'vendor-ui': ['framer-motion', 'lucide-react'],
-        }
-      }
-    }
+          "vendor-react": ["react", "react-dom", "wouter"],
+          "vendor-ui": ["framer-motion", "lucide-react"],
+        },
+      },
+    },
   },
   server: {
     fs: {
