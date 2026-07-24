@@ -23,7 +23,7 @@ export default defineConfig({
     { name: "webkit-iphone", use: { browserName: "webkit" } },
   ],
   webServer: {
-    command: "node tests/pwa/static-server.mjs",
+    command: "node static-server.mjs",
     url: "http://127.0.0.1:4173/manifest.webmanifest",
     reuseExistingServer: false,
     timeout: 30_000,
