@@ -3,8 +3,12 @@ import react from "@vitejs/plugin-react";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import path from "path";
 
+const isCapacitorBuild =
+  process.env.npm_lifecycle_event === "build:capacitor" ||
+  process.env.CAPACITOR_BUILD === "true";
+
 export default defineConfig({
-  base: "./",
+  base: isCapacitorBuild ? "./" : "/",
   optimizeDeps: {
     include: ["lucide-react", "react-icons", "framer-motion"],
   },
