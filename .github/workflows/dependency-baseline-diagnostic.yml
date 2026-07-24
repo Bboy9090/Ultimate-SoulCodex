@@ -8,6 +8,7 @@ on:
       - "package-lock.json"
       - "tsconfig.json"
       - "packages/*/tsconfig.json"
+      - "shared/schema.ts"
       - ".github/workflows/dependency-baseline-diagnostic.yml"
   workflow_dispatch:
 
@@ -75,11 +76,23 @@ jobs:
           set -o pipefail
           npm run check:workspaces 2>&1 | tee workspace-check.log
 
+      - name: Check root application
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run check 2>&1 | tee root-check.log
+
       - name: Run workspace tests
         shell: bash
         run: |
           set -o pipefail
           npm test 2>&1 | tee workspace-test.log
+
+      - name: Build root application
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee root-build.log
 
       - name: Upload dependency repair logs
         if: always()
@@ -92,6 +105,8 @@ jobs:
             workspace-discovery.log
             workspace-build.log
             workspace-check.log
+            root-check.log
             workspace-test.log
+            root-build.log
           if-no-files-found: warn
           retention-days: 7
