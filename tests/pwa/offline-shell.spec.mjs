@@ -1,7 +1,8 @@
 import { mkdir } from "node:fs/promises";
-import { devices, expect, test } from "@playwright/test";
+import { chromium, devices, expect, test, webkit } from "@playwright/test";
 
 const BASE_URL = "http://127.0.0.1:4173";
+const BROWSER_TYPES = { chromium, webkit };
 
 function persistentContextOptions(browserName) {
   const descriptor = browserName === "webkit" ? devices["iPhone 15"] : devices["Desktop Chrome"];
@@ -65,7 +66,10 @@ async function assertOfflineProfile(page, profileUrl) {
   await expect(page.getByRole("heading", { name: /Offline Browser Test's Soul Codex/i })).toBeVisible();
 }
 
-test("reopens a saved local Codex after a full offline browser restart", async ({ browserName, browserType }, testInfo) => {
+test("reopens a saved local Codex after a full offline browser restart", async ({ browserName }, testInfo) => {
+  const browserType = BROWSER_TYPES[browserName];
+  if (!browserType) throw new Error(`Unsupported browser project: ${browserName}`);
+
   const userDataDir = testInfo.outputPath(`persistent-${browserName}`);
   await mkdir(userDataDir, { recursive: true });
   const options = persistentContextOptions(browserName);
