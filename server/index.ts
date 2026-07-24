@@ -2,6 +2,7 @@
 // This is the production entry point for the Express server
 import "dotenv/config";
 import express, { type Express } from "express";
+import cors from "cors";
 import session from "express-session";
 import { createServer } from "http";
 import { registerRoutes } from "./routes.js";
