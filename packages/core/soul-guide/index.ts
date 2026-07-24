@@ -9,6 +9,7 @@ export * from "./depth-types.js";
 export * from "./depth-prompt.js";
 export * from "./depth-parser.js";
 export * from "./depth-fallback.js";
+export * from "./depth-view-model.js";
 
 /**
  * Generates a Soul Guide prompt for Claude to interpret Timeline Intelligence data.
