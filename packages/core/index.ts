@@ -15,6 +15,7 @@ export * from './soulcodex-v1/index.js';
 export * from './pattern-engine/index.js';
 export * from './timeline-intelligence/index.js';
 export * from './soul-guide/index.js';
+export * from './depth-interpretation/index.js';
 export * from './evidence-ledger/index.js';
 export * from './cross-engine-validation/index.js';
 export * from './regression-fixtures/types.js';
