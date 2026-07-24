@@ -11,6 +11,8 @@ export type EvidenceSystem =
   | "numerology"
   | "human-design"
   | "mirror"
+  | "elements"
+  | "moral-compass"
   | "timeline"
   | "tracker"
   | "user-stated"
