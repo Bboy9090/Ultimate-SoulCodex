@@ -1,36 +1,40 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests
-# Aligned with Bobby's Workshop CI standards
+# Reproducible build and test workflow for the SoulCodex workspace.
+# Aligned with Bobby's Workshop CI standards.
 
 name: CI Tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-      
+          node-version: "22"
+          cache: "npm"
+
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build workspace packages
-        run: |
-          npm run build -w @soulcodex/db --if-present || true
-          npm run build -w @soulcodex/core --if-present || true
+        run: npm run build:workspaces
+
+      - name: Check workspace packages
+        run: npm run check:workspaces
+
+      - name: Run workspace tests
+        run: npm test
 
       - name: Build project
         run: npm run build
