@@ -1,0 +1,48 @@
+name: Dependency Baseline Diagnostic
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/dependency-baseline-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-install:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Capture clean npm install
+        id: install
+        shell: bash
+        run: |
+          set +e
+          npm install --loglevel verbose > npm-install.log 2>&1
+          status=$?
+          echo "npm install exit code: $status"
+          echo "----- npm failure tail -----"
+          tail -n 180 npm-install.log
+          echo "----- end npm failure tail -----"
+          exit "$status"
+
+      - name: Upload npm diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-install-diagnostic
+          path: npm-install.log
+          if-no-files-found: error
+          retention-days: 7
