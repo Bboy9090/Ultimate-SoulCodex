@@ -1,4 +1,4 @@
-name: Dependency Baseline Diagnostic
+name: Dependency Baseline Repair
 
 on:
   pull_request:
@@ -10,39 +10,64 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose-install:
+  repair-and-verify:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repair branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Capture clean npm install
-        id: install
+      - name: Generate lockfile from repaired manifest
         shell: bash
         run: |
-          set +e
-          npm install --loglevel verbose > npm-install.log 2>&1
-          status=$?
-          echo "npm install exit code: $status"
-          echo "----- npm failure tail -----"
-          tail -n 180 npm-install.log
-          echo "----- end npm failure tail -----"
-          exit "$status"
+          set -o pipefail
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --loglevel verbose 2>&1 | tee npm-lock-generation.log
 
-      - name: Upload npm diagnostic log
+      - name: Verify clean reproducible install
+        shell: bash
+        run: |
+          set -o pipefail
+          rm -rf node_modules
+          npm ci --loglevel verbose 2>&1 | tee npm-ci-verification.log
+
+      - name: Verify workspace discovery
+        run: |
+          npm ls --workspaces --depth=0
+          npm run build:workspaces
+          npm run check:workspaces
+
+      - name: Commit generated lockfile
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Generated lockfile is already current."
+            exit 0
+          fi
+          git commit -m "fix(ci): regenerate workspace lockfile"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
+
+      - name: Upload dependency repair logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: npm-install-diagnostic
-          path: npm-install.log
-          if-no-files-found: error
+          name: dependency-baseline-repair-logs
+          path: |
+            npm-lock-generation.log
+            npm-ci-verification.log
+          if-no-files-found: warn
           retention-days: 7
