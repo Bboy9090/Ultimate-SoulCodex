@@ -31,7 +31,7 @@ async function waitForServiceWorkerControl(page) {
 
 async function createLocalCodex(page) {
   await page.goto(`${BASE_URL}/create`, { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /Create Your Soul Codex/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Create Your\s*Soul Codex/i })).toBeVisible();
 
   await page.getByTestId("input-name").fill("Offline Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
@@ -50,7 +50,7 @@ async function createLocalCodex(page) {
 
   await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
   await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Offline Browser Test's Soul Codex/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
   return page.url();
 }
 
@@ -58,12 +58,12 @@ async function assertOfflineProfile(page, profileUrl) {
   await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
   await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
   await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Offline Browser Test's Soul Codex/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
   await expect(page.getByText("Core numbers", { exact: true })).toBeVisible();
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Offline Browser Test's Soul Codex/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
 }
 
 test("reopens a saved local Codex after a full offline browser restart", async ({ browserName }, testInfo) => {
