@@ -35,3 +35,7 @@ A detected contradiction means both signals are present. It does not establish w
 ## Compatibility
 
 The adapter calls the existing `synthesizeCodex(profile)` function for established deterministic text where useful. It does not mutate the profile, replace the current synthesis return type, or alter existing callers.
+
+## Validation Boundary
+
+The synthesis implementation is validated through the repository's permanent workspace build, type-check, test, and production-build workflows. The documentation records behavior and guardrails; passing examples remain enforced by executable tests rather than prose alone.
