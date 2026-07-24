@@ -37,9 +37,25 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const now = new Date();
+    const user: User = {
+      id: randomUUID(),
+      username: insertUser.username,
+      password: insertUser.password,
+      email: null,
+      firstName: null,
+      lastName: null,
+      profileImageUrl: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionStatus: null,
+      subscriptionPlan: null,
+      subscriptionEndsAt: null,
+      isPremium: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.users.set(user.id, user);
     return user;
   }
 
@@ -54,22 +70,45 @@ export class MemStorage implements IStorage {
   }
 
   async createProfile(insertProfile: InsertProfile): Promise<Profile> {
-    const id = randomUUID();
     const now = new Date();
-    const profile: Profile = { 
-      ...insertProfile, 
-      id, 
+    const profile: Profile = {
+      ...insertProfile,
+      id: randomUUID(),
+      userId: insertProfile.userId ?? null,
+      sessionId: insertProfile.sessionId ?? null,
+      birthTime: insertProfile.birthTime ?? null,
+      birthLocation: insertProfile.birthLocation ?? null,
+      timezone: insertProfile.timezone ?? null,
+      latitude: insertProfile.latitude ?? null,
+      longitude: insertProfile.longitude ?? null,
+      isPremium: insertProfile.isPremium ?? false,
+      astrologyData: insertProfile.astrologyData ?? null,
+      numerologyData: insertProfile.numerologyData ?? null,
+      personalityData: insertProfile.personalityData ?? null,
+      archetypeData: insertProfile.archetypeData ?? null,
+      humanDesignData: insertProfile.humanDesignData ?? null,
+      vedicAstrologyData: insertProfile.vedicAstrologyData ?? null,
+      geneKeysData: insertProfile.geneKeysData ?? null,
+      iChingData: insertProfile.iChingData ?? null,
+      chineseAstrologyData: insertProfile.chineseAstrologyData ?? null,
+      kabbalahData: insertProfile.kabbalahData ?? null,
+      mayanAstrologyData: insertProfile.mayanAstrologyData ?? null,
+      chakraData: insertProfile.chakraData ?? null,
+      sacredGeometryData: insertProfile.sacredGeometryData ?? null,
+      runesData: insertProfile.runesData ?? null,
+      sabianSymbolsData: insertProfile.sabianSymbolsData ?? null,
+      ayurvedaData: insertProfile.ayurvedaData ?? null,
+      biorhythmsData: insertProfile.biorhythmsData ?? null,
+      asteroidsData: insertProfile.asteroidsData ?? null,
+      arabicPartsData: insertProfile.arabicPartsData ?? null,
+      fixedStarsData: insertProfile.fixedStarsData ?? null,
+      purposeStatement: insertProfile.purposeStatement ?? null,
+      biography: insertProfile.biography ?? null,
+      dailyGuidance: insertProfile.dailyGuidance ?? null,
       createdAt: now,
       updatedAt: now,
-      userId: insertProfile.userId || null,
-      astrologyData: insertProfile.astrologyData || null,
-      numerologyData: insertProfile.numerologyData || null,
-      personalityData: insertProfile.personalityData || null,
-      archetypeData: insertProfile.archetypeData || null,
-      biography: insertProfile.biography || null,
-      dailyGuidance: insertProfile.dailyGuidance || null
     };
-    this.profiles.set(id, profile);
+    this.profiles.set(profile.id, profile);
     return profile;
   }
 
@@ -78,10 +117,10 @@ export class MemStorage implements IStorage {
     if (!existing) {
       throw new Error("Profile not found");
     }
-    const updated: Profile = { 
-      ...existing, 
-      ...updates, 
-      updatedAt: new Date() 
+    const updated: Profile = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date(),
     };
     this.profiles.set(id, updated);
     return updated;
@@ -94,14 +133,13 @@ export class MemStorage implements IStorage {
   }
 
   async createAssessment(insertAssessment: InsertAssessment): Promise<Assessment> {
-    const id = randomUUID();
-    const assessment: Assessment = { 
-      ...insertAssessment, 
-      id, 
+    const assessment: Assessment = {
+      ...insertAssessment,
+      id: randomUUID(),
       createdAt: new Date(),
-      calculatedType: insertAssessment.calculatedType || null
+      calculatedType: insertAssessment.calculatedType ?? null,
     };
-    this.assessments.set(id, assessment);
+    this.assessments.set(assessment.id, assessment);
     return assessment;
   }
 }
