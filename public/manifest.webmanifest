@@ -1,0 +1,26 @@
+{
+  "name": "Ultimate SoulCodex",
+  "short_name": "SoulCodex",
+  "description": "A local-first, evidence-linked Soul Codex reading experience.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B0720",
+  "theme_color": "#0B0720",
+  "categories": ["lifestyle", "personalization"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
