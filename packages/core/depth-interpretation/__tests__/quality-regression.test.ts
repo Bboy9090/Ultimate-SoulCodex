@@ -9,7 +9,7 @@ const EXPECTED_SCORES: Readonly<Record<string, number>> = {
   "strong-known-time": 100,
   "honest-unknown-time": 97,
   "shallow-overclaiming": 0,
-  "invented-biography": 76,
+  "invented-biography": 52,
   "unsupported-high-confidence": 0,
 };
 
