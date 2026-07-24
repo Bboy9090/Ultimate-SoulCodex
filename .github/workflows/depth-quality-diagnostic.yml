@@ -1,8 +1,8 @@
 name: Depth Quality Diagnostic
 
 on:
-  push:
-    branches: ["test/codex-depth-quality-gates-v1"]
+  pull_request:
+    branches: ["main"]
     paths:
       - "packages/core/depth-interpretation/**"
       - ".github/workflows/depth-quality-diagnostic.yml"
