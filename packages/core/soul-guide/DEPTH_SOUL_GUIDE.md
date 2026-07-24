@@ -45,3 +45,7 @@ Deeper cards retain claim kind, confidence, evidence IDs, limitations, and unava
 ## Compatibility
 
 The existing `SoulGuideInterpretation` v1 prompt, parser, cache key, and storage behavior remain unchanged. The layered API is additive.
+
+## Validation Boundary
+
+The layered prompt, metadata-preserving parser, deterministic fallback, service adapter, workspace packages, and production build are verified by the repository's permanent CI workflows. Safety and evidence-lock rules remain executable test requirements rather than documentation promises.
