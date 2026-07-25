@@ -4,9 +4,9 @@ on:
   pull_request:
     branches: ["main", "master"]
     paths:
-      - "ios/App/ci_scripts/**"
       - "ios/**"
       - "scripts/patch-apple-sign-in-swiftpm.mjs"
+      - "scripts/patch-capapp-spm-vendored-packages.mjs"
       - "scripts/validate-mobile-release.mjs"
       - "capacitor.config.ts"
       - "package.json"
@@ -23,9 +23,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  resolve-local-swift-packages:
+  resolve-clone-ready-swift-packages:
     runs-on: macos-14
-    timeout-minutes: 35
+    timeout-minutes: 40
     env:
       VITE_API_URL: https://soulcodex.up.railway.app
 
@@ -33,32 +33,55 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify clone-ready Swift package graph
+        run: |
+          set -euo pipefail
+          manifest="ios/App/CapApp-SPM/Package.swift"
+          test -f "$manifest"
+          test -f ios/App/Vendor/CapawesomeCapacitorAppleSignIn/Package.swift
+          test -f ios/App/Vendor/CapacitorSplashScreen/Package.swift
+          test -f ios/App/Vendor/CapacitorStatusBar/Package.swift
+          if grep -q 'node_modules/' "$manifest"; then
+            echo "CapApp-SPM must not depend on node_modules during Xcode Cloud dependency resolution"
+            exit 1
+          fi
+          grep -q 'ionic-team/capacitor-keyboard.git' "$manifest"
+          grep -q '../Vendor/CapacitorSplashScreen' "$manifest"
+          grep -q '../Vendor/CapacitorStatusBar' "$manifest"
+          grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' "$manifest"
+
+      - name: Resolve dependencies before JavaScript bootstrap
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme "Soul Codex" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/PreBootstrapSourcePackages"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Verify hook is beside the Xcode project
-        run: |
-          test -f ios/App/App.xcodeproj/project.pbxproj
-          test -f ios/App/ci_scripts/ci_post_clone.sh
-          test ! -f ci_scripts/ci_pre_xcodebuild.sh
-
       - name: Run project-local Xcode Cloud post-clone hook
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
         run: sh ios/App/ci_scripts/ci_post_clone.sh
 
-      - name: Verify Apple Sign-In local package exists
+      - name: Verify Capacitor sync preserved clone-ready packages
         run: |
-          test -d node_modules/@capawesome/capacitor-apple-sign-in
-          test -f node_modules/@capawesome/capacitor-apple-sign-in/Package.swift
-          grep -q 'CapawesomeCapacitorAppleSignIn' ios/App/CapApp-SPM/Package.swift
+          set -euo pipefail
+          manifest="ios/App/CapApp-SPM/Package.swift"
+          if grep -q 'node_modules/' "$manifest"; then
+            echo "Capacitor sync restored a node_modules Swift package path"
+            exit 1
+          fi
+          test -f ios/App/Vendor/CapawesomeCapacitorAppleSignIn/Sources/AppleSignInPlugin/AppleSignInPlugin.swift
+          grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' "$manifest"
 
-      - name: Resolve Xcode package dependencies
+      - name: Resolve dependencies after Capacitor sync
         run: |
           xcodebuild -resolvePackageDependencies \
             -project ios/App/App.xcodeproj \
             -scheme "Soul Codex" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages"
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/PostBootstrapSourcePackages"
