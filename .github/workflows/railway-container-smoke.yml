@@ -1,0 +1,89 @@
+name: Railway Container Smoke
+
+on:
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "Dockerfile"
+      - "railway.json"
+      - "server/**"
+      - "client/**"
+      - "public/**"
+      - "packages/**"
+      - "scripts/generate-pwa-service-worker.mjs"
+      - "scripts/validate-pwa-output.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/railway-container-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: railway-container-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build --tag soulcodex-railway-smoke .
+
+      - name: Start production container
+        run: |
+          docker run --detach \
+            --name soulcodex-railway-smoke \
+            --publish 3000:3000 \
+            --env PORT=3000 \
+            --env SESSION_SECRET=container-smoke-secret \
+            soulcodex-railway-smoke
+
+      - name: Verify health and web application
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/health > /tmp/health.json; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "Container did not become healthy"
+              docker logs soulcodex-railway-smoke
+              exit 1
+            fi
+            sleep 2
+          done
+
+          grep --quiet '"status":"ok"' /tmp/health.json
+
+          curl --fail --silent http://127.0.0.1:3000/ > /tmp/index.html
+          grep --quiet '<div id="root"></div>' /tmp/index.html
+          grep --quiet 'manifest.webmanifest' /tmp/index.html
+
+          asset_path=$(sed -n 's/.*src="\(\/assets\/[^\"]*\.js\)".*/\1/p' /tmp/index.html | head -n 1)
+          test -n "$asset_path"
+          curl --fail --silent "http://127.0.0.1:3000${asset_path}" > /dev/null
+
+          curl --fail --silent http://127.0.0.1:3000/profile/local-container-smoke > /tmp/deep-route.html
+          grep --quiet '<div id="root"></div>' /tmp/deep-route.html
+
+          if curl --fail --silent http://127.0.0.1:3000/api/not-a-real-route > /tmp/api-404.json; then
+            echo "Unknown API route unexpectedly returned success"
+            exit 1
+          fi
+          grep --quiet 'Route not found' /tmp/api-404.json
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs soulcodex-railway-smoke || true
+
+      - name: Stop production container
+        if: always()
+        run: docker rm --force soulcodex-railway-smoke || true
