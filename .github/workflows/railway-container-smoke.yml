@@ -86,10 +86,8 @@ jobs:
           curl --fail --silent http://127.0.0.1:3000/profile/local-container-smoke > /tmp/deep-route.html
           grep --quiet '<div id="root"></div>' /tmp/deep-route.html
 
-          if curl --fail --silent http://127.0.0.1:3000/api/not-a-real-route > /tmp/api-404.json; then
-            echo "Unknown API route unexpectedly returned success"
-            exit 1
-          fi
+          api_status=$(curl --silent --output /tmp/api-404.json --write-out '%{http_code}' http://127.0.0.1:3000/api/not-a-real-route)
+          test "$api_status" = "404"
           grep --quiet 'Route not found' /tmp/api-404.json
 
       - name: Show container logs on failure
