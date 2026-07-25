@@ -2,7 +2,7 @@
 # Build the complete web application and API in one stage, then copy only
 # production runtime files into the final image.
 
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
 # Copy the full workspace before npm ci. The root package references local
@@ -14,7 +14,7 @@ RUN npm run build:workspaces
 RUN npm run build
 RUN npm prune --omit=dev
 
-FROM node:20-alpine AS runner
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -27,8 +27,8 @@ COPY --from=builder --chown=node:node /app/dist ./dist
 
 EXPOSE 3000
 
-# Railway already performs the /health check declared in railway.json. Avoid a
-# second Docker health check tied to a hard-coded port because Railway may
+# Railway performs the /health check declared in railway.json. Avoid a second
+# image-level health check tied to a hard-coded port because Railway may
 # override PORT at runtime.
 USER node
 CMD ["node", "dist/index.js"]
