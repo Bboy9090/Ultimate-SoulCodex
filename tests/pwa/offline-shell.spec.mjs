@@ -15,6 +15,11 @@ function persistentContextOptions(browserName) {
   };
 }
 
+async function setServerOutage(enabled) {
+  const response = await fetch(`${BASE_URL}/__test/${enabled ? "offline" : "online"}`, { method: "POST" });
+  if (!response.ok) throw new Error(`Unable to ${enabled ? "enable" : "disable"} PWA test outage`);
+}
+
 async function waitForServiceWorkerControl(page) {
   await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) throw new Error("Service workers are not supported by this browser engine");
@@ -88,7 +93,12 @@ test("reopens a saved local Codex after a full offline browser restart", async (
   }
 
   context = await browserType.launchPersistentContext(userDataDir, options);
-  await context.setOffline(true);
+  const useServerOutage = browserName === "webkit";
+  if (useServerOutage) {
+    await setServerOutage(true);
+  } else {
+    await context.setOffline(true);
+  }
   page = context.pages()[0] ?? (await context.newPage());
 
   try {
@@ -107,7 +117,11 @@ test("reopens a saved local Codex after a full offline browser restart", async (
     await testInfo.attach("offline-browser-failure", { path: screenshotPath, contentType: "image/png" }).catch(() => undefined);
     throw error;
   } finally {
-    await context.setOffline(false).catch(() => undefined);
+    if (useServerOutage) {
+      await setServerOutage(false).catch(() => undefined);
+    } else {
+      await context.setOffline(false).catch(() => undefined);
+    }
     await context.close();
   }
 });
