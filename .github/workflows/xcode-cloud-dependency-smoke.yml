@@ -51,11 +51,14 @@ jobs:
           grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' "$manifest"
 
       - name: Resolve dependencies before JavaScript bootstrap
+        shell: bash
         run: |
+          set -o pipefail
           xcodebuild -resolvePackageDependencies \
             -project ios/App/App.xcodeproj \
             -scheme "Soul Codex" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/PreBootstrapSourcePackages"
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/PreBootstrapSourcePackages" \
+            2>&1 | tee pre-bootstrap-resolve.log
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -72,6 +75,8 @@ jobs:
         run: |
           set -euo pipefail
           manifest="ios/App/CapApp-SPM/Package.swift"
+          cp "$manifest" post-sync-Package.swift
+          git diff -- "$manifest" > post-sync-manifest.diff || true
           if grep -q 'node_modules/' "$manifest"; then
             echo "Capacitor sync restored a node_modules Swift package path"
             exit 1
@@ -80,8 +85,24 @@ jobs:
           grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' "$manifest"
 
       - name: Resolve dependencies after Capacitor sync
+        shell: bash
         run: |
+          set -o pipefail
           xcodebuild -resolvePackageDependencies \
             -project ios/App/App.xcodeproj \
             -scheme "Soul Codex" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/PostBootstrapSourcePackages"
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/PostBootstrapSourcePackages" \
+            2>&1 | tee post-bootstrap-resolve.log
+
+      - name: Upload Xcode resolver evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-package-resolution-${{ github.run_id }}
+          path: |
+            pre-bootstrap-resolve.log
+            post-bootstrap-resolve.log
+            post-sync-Package.swift
+            post-sync-manifest.diff
+          if-no-files-found: warn
+          retention-days: 14
