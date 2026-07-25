@@ -33,8 +33,11 @@ const BUILT_IN_LOCATIONS: Record<string, { lat: string; lng: string; timezone: s
 
 function builtInLocation(value: string) {
   const normalized = value.trim().toLowerCase();
-  const match = Object.entries(BUILT_IN_LOCATIONS).find(([name]) => normalized.includes(name));
-  return match?.[1] ?? null;
+  const match = Object.entries(BUILT_IN_LOCATIONS)
+    .map(([name, location]) => ({ index: normalized.indexOf(name), name, location }))
+    .filter(({ index }) => index >= 0)
+    .sort((left, right) => left.index - right.index || right.name.length - left.name.length)[0];
+  return match?.location ?? null;
 }
 
 async function syncProfileWhenOnline(data: BirthData, localId: string): Promise<void> {
@@ -148,8 +151,8 @@ export default function LocalFirstInputForm() {
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-              Create Your
-              <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text font-serif ml-2">Soul Codex</span>
+              Create Your{" "}
+              <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text font-serif">Soul Codex</span>
             </h1>
             <p className="text-xl text-muted-foreground">Generated locally first, then synchronized when services are available.</p>
           </div>

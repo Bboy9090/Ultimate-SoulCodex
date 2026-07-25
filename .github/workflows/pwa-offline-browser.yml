@@ -1,0 +1,68 @@
+name: PWA Offline Browser Validation
+
+on:
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "client/**"
+      - "packages/core/**"
+      - "public/**"
+      - "scripts/generate-pwa-service-worker.mjs"
+      - "scripts/validate-pwa-output.mjs"
+      - "tests/pwa/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/pwa-offline-browser.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pwa-offline-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-browser:
+    name: Chromium and WebKit offline restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install repository dependencies
+        run: npm ci
+
+      - name: Install pinned browser test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.54.1
+
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Build workspace packages
+        run: npm run build:workspaces
+
+      - name: Build production application and PWA assets
+        run: npm run build
+
+      - name: Test offline browser restart and direct local profile reload
+        run: npx playwright test --config=tests/pwa/playwright.config.mjs
+
+      - name: Upload browser evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwa-offline-browser-failure-${{ github.run_id }}
+          path: |
+            playwright-report
+            test-results/pwa
+          if-no-files-found: warn
+          retention-days: 14
