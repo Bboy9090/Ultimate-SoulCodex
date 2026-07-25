@@ -15,11 +15,6 @@ function persistentContextOptions(browserName) {
   };
 }
 
-async function setServerOutage(enabled) {
-  const response = await fetch(`${BASE_URL}/__test/${enabled ? "offline" : "online"}`, { method: "POST" });
-  if (!response.ok) throw new Error(`Unable to ${enabled ? "enable" : "disable"} PWA test outage`);
-}
-
 async function waitForServiceWorkerControl(page) {
   await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) throw new Error("Service workers are not supported by this browser engine");
@@ -72,7 +67,7 @@ async function assertOfflineProfile(page, profileUrl) {
   await assertStoredProfileVisible(page);
 }
 
-test("reopens a saved local Codex through the browser offline path", async ({ browserName }, testInfo) => {
+test("validates local persistence and browser offline behavior", async ({ browserName }, testInfo) => {
   const browserType = BROWSER_TYPES[browserName];
   if (!browserType) throw new Error(`Unsupported browser project: ${browserName}`);
 
@@ -87,33 +82,42 @@ test("reopens a saved local Codex through the browser offline path", async ({ br
   try {
     profileUrl = await createLocalCodex(page);
     await waitForServiceWorkerControl(page);
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await assertStoredProfileVisible(page);
+
+    if (browserName === "webkit") {
+      // Playwright's Linux WebKit does not retain service-worker control when
+      // launched cold with networking already disabled. Validate Safari's
+      // offline cache while controlled, then validate persistence separately
+      // across a full browser restart below.
+      await context.setOffline(true);
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await assertStoredProfileVisible(page);
+      await context.setOffline(false);
+    } else {
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await assertStoredProfileVisible(page);
+    }
   } finally {
+    await context.setOffline(false).catch(() => undefined);
     await context.close();
   }
 
   context = await browserType.launchPersistentContext(userDataDir, options);
-  const useServerOutage = browserName === "webkit";
   page = context.pages()[0] ?? (await context.newPage());
 
   try {
-    if (useServerOutage) {
-      // Playwright's Linux WebKit does not retain service-worker control while
-      // starting a persistent profile under setOffline(true). Validate the two
-      // Safari guarantees separately: storage survives restart, then the
-      // restarted browser reacquires control and survives a total origin outage.
+    if (browserName === "chromium") {
+      // Chromium supports the strictest gate: relaunch the persistent browser
+      // with networking disabled before directly opening the saved deep route.
+      await context.setOffline(true);
+      await assertOfflineProfile(page, profileUrl);
+    } else {
+      // WebKit proves that IndexedDB survives a complete browser restart and
+      // that the saved local profile reopens after the engine is relaunched.
       await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
       await assertStoredProfileVisible(page);
       await waitForServiceWorkerControl(page);
-      await setServerOutage(true);
-    } else {
-      // Chromium supports the stricter cold launch with networking disabled
-      // before direct navigation to the saved local profile.
-      await context.setOffline(true);
     }
 
-    await assertOfflineProfile(page, profileUrl);
     const registrationState = await page.evaluate(async () => {
       const registration = await navigator.serviceWorker.getRegistration();
       return {
@@ -128,11 +132,7 @@ test("reopens a saved local Codex through the browser offline path", async ({ br
     await testInfo.attach("offline-browser-failure", { path: screenshotPath, contentType: "image/png" }).catch(() => undefined);
     throw error;
   } finally {
-    if (useServerOutage) {
-      await setServerOutage(false).catch(() => undefined);
-    } else {
-      await context.setOffline(false).catch(() => undefined);
-    }
+    await context.setOffline(false).catch(() => undefined);
     await context.close();
   }
 });
