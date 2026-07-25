@@ -40,7 +40,7 @@ jobs:
       - name: Bootstrap JavaScript and local Swift packages
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
-        run: ci_scripts/ci_post_clone.sh
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
 
       - name: Validate mobile release configuration
         run: npm run mobile:validate:ios
