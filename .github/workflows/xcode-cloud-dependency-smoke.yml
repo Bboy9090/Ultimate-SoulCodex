@@ -1,0 +1,61 @@
+name: Xcode Cloud Dependency Smoke
+
+on:
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "ci_scripts/**"
+      - "ios/**"
+      - "scripts/patch-apple-sign-in-swiftpm.mjs"
+      - "scripts/validate-mobile-release.mjs"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-ios.yml"
+      - ".github/workflows/xcode-cloud-dependency-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xcode-cloud-dependencies-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve-local-swift-packages:
+    runs-on: macos-14
+    timeout-minutes: 35
+    env:
+      VITE_API_URL: https://soulcodex.up.railway.app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify Xcode Cloud hook is executable
+        run: test -x ci_scripts/ci_post_clone.sh
+
+      - name: Run Xcode Cloud post-clone hook
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+        run: ci_scripts/ci_post_clone.sh
+
+      - name: Verify Apple Sign-In local package exists
+        run: |
+          test -d node_modules/@capawesome/capacitor-apple-sign-in
+          test -f node_modules/@capawesome/capacitor-apple-sign-in/Package.swift
+          grep -q 'CapawesomeCapacitorAppleSignIn' ios/App/CapApp-SPM/Package.swift
+
+      - name: Resolve Xcode package dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme "Soul Codex" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages"
