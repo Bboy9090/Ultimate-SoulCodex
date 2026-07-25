@@ -10,7 +10,6 @@ const HOST = "127.0.0.1";
 const PORT = Number(process.env.PORT ?? 4173);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../dist/public");
 const INDEX_PATH = path.join(ROOT, "index.html");
-let simulateOutage = false;
 
 const MIME_TYPES = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -56,39 +55,9 @@ function sendFile(request, response, filePath) {
   createReadStream(filePath).pipe(response);
 }
 
-function sendUnavailable(response, message = "Test server outage enabled") {
-  response.writeHead(503, {
-    "Cache-Control": "no-store",
-    "Content-Type": "text/plain; charset=utf-8",
-  });
-  response.end(message);
-}
-
 const server = http.createServer(async (request, response) => {
   const method = request.method ?? "GET";
   const requestUrl = new URL(request.url ?? "/", `http://${HOST}:${PORT}`);
-
-  if (method === "POST" && requestUrl.pathname === "/__test/offline") {
-    request.resume();
-    simulateOutage = true;
-    response.writeHead(204, { "Cache-Control": "no-store" });
-    response.end();
-    return;
-  }
-
-  if (method === "POST" && requestUrl.pathname === "/__test/online") {
-    request.resume();
-    simulateOutage = false;
-    response.writeHead(204, { "Cache-Control": "no-store" });
-    response.end();
-    return;
-  }
-
-  if (simulateOutage) {
-    request.resume();
-    sendUnavailable(response);
-    return;
-  }
 
   if (requestUrl.pathname.startsWith("/api/")) {
     request.resume();
