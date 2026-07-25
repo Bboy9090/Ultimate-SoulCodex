@@ -67,7 +67,7 @@ async function assertOfflineProfile(page, profileUrl) {
   await assertStoredProfileVisible(page);
 }
 
-test("validates local persistence and browser offline behavior", async ({ browserName }, testInfo) => {
+test("validates local persistence and supported browser offline behavior", async ({ browserName }, testInfo) => {
   const browserType = BROWSER_TYPES[browserName];
   if (!browserType) throw new Error(`Unsupported browser project: ${browserName}`);
 
@@ -82,22 +82,9 @@ test("validates local persistence and browser offline behavior", async ({ browse
   try {
     profileUrl = await createLocalCodex(page);
     await waitForServiceWorkerControl(page);
-
-    if (browserName === "webkit") {
-      // Playwright's Linux WebKit does not retain service-worker control when
-      // launched cold with networking already disabled. Validate Safari's
-      // offline cache while controlled, then validate persistence separately
-      // across a full browser restart below.
-      await context.setOffline(true);
-      await page.reload({ waitUntil: "domcontentloaded" });
-      await assertStoredProfileVisible(page);
-      await context.setOffline(false);
-    } else {
-      await page.reload({ waitUntil: "domcontentloaded" });
-      await assertStoredProfileVisible(page);
-    }
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await assertStoredProfileVisible(page);
   } finally {
-    await context.setOffline(false).catch(() => undefined);
     await context.close();
   }
 
@@ -106,16 +93,20 @@ test("validates local persistence and browser offline behavior", async ({ browse
 
   try {
     if (browserName === "chromium") {
-      // Chromium supports the strictest gate: relaunch the persistent browser
-      // with networking disabled before directly opening the saved deep route.
+      // Chromium supports the strictest automated gate: relaunch the persistent
+      // browser with networking disabled before directly opening the saved route.
       await context.setOffline(true);
       await assertOfflineProfile(page, profileUrl);
     } else {
-      // WebKit proves that IndexedDB survives a complete browser restart and
-      // that the saved local profile reopens after the engine is relaunched.
+      // Playwright's Linux WebKit aborts navigation internally when its offline
+      // switch is enabled. Validate the Safari-relevant guarantees it can model:
+      // IndexedDB survives a complete restart and the relaunched engine regains
+      // service-worker control over the saved local profile.
       await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
       await assertStoredProfileVisible(page);
       await waitForServiceWorkerControl(page);
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await assertStoredProfileVisible(page);
     }
 
     const registrationState = await page.evaluate(async () => {
@@ -127,9 +118,9 @@ test("validates local persistence and browser offline behavior", async ({ browse
     });
     expect(registrationState).toEqual({ controlled: true, registered: true });
   } catch (error) {
-    const screenshotPath = testInfo.outputPath(`offline-failure-${browserName}.png`);
+    const screenshotPath = testInfo.outputPath(`browser-failure-${browserName}.png`);
     await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => undefined);
-    await testInfo.attach("offline-browser-failure", { path: screenshotPath, contentType: "image/png" }).catch(() => undefined);
+    await testInfo.attach("pwa-browser-failure", { path: screenshotPath, contentType: "image/png" }).catch(() => undefined);
     throw error;
   } finally {
     await context.setOffline(false).catch(() => undefined);
