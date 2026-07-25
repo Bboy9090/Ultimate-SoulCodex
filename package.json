@@ -32,7 +32,7 @@
     "cap:build": "npm run build:capacitor && npx cap sync",
     "mobile:validate:ios": "node scripts/validate-mobile-release.mjs ios",
     "mobile:validate:android": "node scripts/validate-mobile-release.mjs android",
-    "mobile:patch:ios": "node scripts/patch-apple-sign-in-swiftpm.mjs",
+    "mobile:patch:ios": "node scripts/patch-apple-sign-in-swiftpm.mjs && node scripts/patch-capapp-spm-vendored-packages.mjs",
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android"
   },
