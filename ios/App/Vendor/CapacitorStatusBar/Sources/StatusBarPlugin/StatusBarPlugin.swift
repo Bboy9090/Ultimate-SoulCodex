@@ -1,5 +1,6 @@
 import Foundation
 import Capacitor
+import UIKit
 
 @objc(StatusBarPlugin)
 public class StatusBarPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -24,14 +25,51 @@ public class StatusBarPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private func statusBarConfig() -> StatusBarConfig {
         var config = StatusBarConfig()
-        config.overlaysWebView = getConfig().getBoolean("overlaysWebView", config.overlaysWebView)
-        if let colorConfig = getConfig().getString("backgroundColor"), let color = UIColor.capacitor.color(fromHex: colorConfig) {
+        let pluginConfig = getConfig()
+        config.overlaysWebView = pluginConfig.getBoolean("overlaysWebView", config.overlaysWebView)
+
+        if let colorConfig = configString("backgroundColor"),
+           let color = Self.color(fromHex: colorConfig) {
             config.backgroundColor = color
         }
-        if let configStyle = getConfig().getString("style") {
+        if let configStyle = configString("style") {
             config.style = style(fromString: configStyle)
         }
         return config
+    }
+
+    private func configString(_ key: String) -> String? {
+        return getConfig().getConfigJSON()[key] as? String
+    }
+
+    private static func color(fromHex value: String) -> UIColor? {
+        let hex = value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "#", with: "")
+
+        guard hex.count == 6 || hex.count == 8,
+              let raw = UInt64(hex, radix: 16) else {
+            return nil
+        }
+
+        let red: CGFloat
+        let green: CGFloat
+        let blue: CGFloat
+        let alpha: CGFloat
+
+        if hex.count == 6 {
+            red = CGFloat((raw >> 16) & 0xFF) / 255.0
+            green = CGFloat((raw >> 8) & 0xFF) / 255.0
+            blue = CGFloat(raw & 0xFF) / 255.0
+            alpha = 1.0
+        } else {
+            red = CGFloat((raw >> 24) & 0xFF) / 255.0
+            green = CGFloat((raw >> 16) & 0xFF) / 255.0
+            blue = CGFloat((raw >> 8) & 0xFF) / 255.0
+            alpha = CGFloat(raw & 0xFF) / 255.0
+        }
+
+        return UIColor(red: red, green: green, blue: blue, alpha: alpha)
     }
 
     private func style(fromString: String) -> UIStatusBarStyle {
@@ -56,10 +94,14 @@ public class StatusBarPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func setBackgroundColor(_ call: CAPPluginCall) {
-        guard
-            let hexString = call.options["color"] as? String,
-            let color = UIColor.capacitor.color(fromHex: hexString)
-        else { return }
+        guard let hexString = call.options["color"] as? String else {
+            call.reject("A status bar color is required.")
+            return
+        }
+        guard let color = Self.color(fromHex: hexString) else {
+            call.reject("Invalid status bar color. Use #RRGGBB or #RRGGBBAA.")
+            return
+        }
         DispatchQueue.main.async { [weak self] in
             self?.statusBar?.setBackgroundColor(color)
         }
@@ -105,7 +147,10 @@ public class StatusBarPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func setOverlaysWebView(_ call: CAPPluginCall) {
-        guard let overlay = call.options["overlay"] as? Bool else { return }
+        guard let overlay = call.options["overlay"] as? Bool else {
+            call.reject("The overlay value is required.")
+            return
+        }
         DispatchQueue.main.async { [weak self] in
             self?.statusBar?.setOverlaysWebView(overlay)
             guard
