@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: ["main", "master"]
     paths:
-      - "ci_scripts/**"
+      - "ios/App/ci_scripts/**"
       - "ios/**"
       - "scripts/patch-apple-sign-in-swiftpm.mjs"
       - "scripts/validate-mobile-release.mjs"
@@ -39,13 +39,16 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Verify Xcode Cloud hook is executable
-        run: test -x ci_scripts/ci_post_clone.sh
+      - name: Verify hook is beside the Xcode project
+        run: |
+          test -f ios/App/App.xcodeproj/project.pbxproj
+          test -f ios/App/ci_scripts/ci_post_clone.sh
+          test ! -f ci_scripts/ci_pre_xcodebuild.sh
 
-      - name: Run Xcode Cloud post-clone hook
+      - name: Run project-local Xcode Cloud post-clone hook
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
-        run: ci_scripts/ci_post_clone.sh
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
 
       - name: Verify Apple Sign-In local package exists
         run: |

@@ -1,10 +1,17 @@
 #!/bin/sh
 set -eu
 
-REPOSITORY_PATH="${CI_PRIMARY_REPOSITORY_PATH:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPOSITORY_PATH="${CI_PRIMARY_REPOSITORY_PATH:-$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)}"
 cd "$REPOSITORY_PATH"
 
 export VITE_API_URL="${VITE_API_URL:-https://soulcodex.up.railway.app}"
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js is missing; installing Node 22 with Homebrew."
+  brew install node@22
+  export PATH="$(brew --prefix node@22)/bin:$PATH"
+fi
 
 echo "Xcode Cloud post-clone bootstrap"
 echo "Repository: $REPOSITORY_PATH"
