@@ -44,7 +44,7 @@ const panel: React.CSSProperties = {
   boxShadow: "0 18px 60px rgba(0,0,0,.26)",
 };
 
-const tabs = ["Overview", "Love", "Communication", "Chemistry", "Conflict", "Human Design", "Astrology", "Numerology", "Purpose", "Timeline"];
+const sections = ["Overview", "Love", "Communication", "Chemistry", "Conflict", "Human Design", "Astrology", "Numerology", "Purpose", "Timeline"];
 
 function clamp(value: number) {
   return Math.max(0, Math.min(100, Math.round(value || 0)));
@@ -74,7 +74,7 @@ function Bar({ label, value }: { label: string; value: number }) {
 
 function MetricCard({ icon: Icon, title, score, rows }: { icon: React.ComponentType<any>; title: string; score: number; rows: Array<[string, number]> }) {
   return (
-    <motion.article whileHover={{ y: -4 }} style={{ ...panel, padding: 18 }}>
+    <motion.article id={title.toLowerCase().replace(/\s+/g, "-")} whileHover={{ y: -4 }} style={{ ...panel, padding: 18, scrollMarginTop: 90 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
         <Icon size={20} style={{ color: "#c084fc" }} />
         <div style={{ flex: 1 }}><strong>{title}</strong></div>
@@ -93,12 +93,21 @@ function InsightList({ title, items, tone }: { title: string; items: string[]; t
     <section style={{ ...panel, padding: 20 }}>
       <h3 style={{ margin: "0 0 12px", color }}>{title}</h3>
       <div style={{ display: "grid", gap: 10 }}>
-        {(items.length ? items : ["More detail becomes available as both profiles gain complete birth and personality data."]).slice(0, 5).map((item, index) => (
+        {(items.length ? items : ["More detail becomes available as both profiles gain complete birth and personality data."]).slice(0, 8).map((item, index) => (
           <div key={`${title}-${index}`} style={{ display: "flex", gap: 10, lineHeight: 1.55, color: "rgba(247,244,255,.82)" }}>
             <span style={{ color }}>✦</span><span>{pureText(item)}</span>
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+function DetailPanel({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} style={{ ...panel, padding: 22, marginBottom: 18, scrollMarginTop: 90 }}>
+      <h2 style={{ marginTop: 0 }}>{title}</h2>
+      {children}
     </section>
   );
 }
@@ -109,10 +118,10 @@ export default function CompatibilityDashboard() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [result, setResult] = useState<CompatibilityResult | null>(null);
-  const [activeTab, setActiveTab] = useState("Overview");
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ name: "", birthDate: "", birthTime: "", birthLocation: "" });
   const [message, setMessage] = useState<string | null>(null);
+  const [lastAutoKey, setLastAutoKey] = useState("");
 
   useEffect(() => {
     try {
@@ -173,10 +182,17 @@ export default function CompatibilityDashboard() {
         systemsExcluded: data.systemsExcluded ?? cd.systemsExcluded ?? [],
         missingDataWarnings: data.missingDataWarnings ?? cd.missingDataWarnings ?? [],
       });
-      setActiveTab("Overview");
+      setMessage(null);
     },
     onError: (error: any) => setMessage(error?.message || "Comparison failed."),
   });
+
+  useEffect(() => {
+    const key = profileId && selectedId ? `${profileId}:${selectedId}` : "";
+    if (!key || key === lastAutoKey || compare.isPending) return;
+    setLastAutoKey(key);
+    compare.mutate();
+  }, [profileId, selectedId, lastAutoKey, compare.isPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const d = result?.dimensions ?? { identity: 0, stress: 0, values: 0, decisions: 0 };
   const overall = clamp(result?.overallScore ?? 0);
@@ -187,6 +203,8 @@ export default function CompatibilityDashboard() {
   const purpose = clamp((d.identity + d.values + d.decisions) / 3);
   const hdType = profile?.humanDesign?.type ?? profile?.humanDesignData?.type ?? "Awaiting complete data";
   const hdAuthority = profile?.humanDesign?.authority ?? profile?.humanDesignData?.authority ?? "Authority not available";
+  const hdProfile = profile?.humanDesign?.profile ?? profile?.humanDesignData?.profile ?? "Profile not available";
+  const hdDefinition = profile?.humanDesign?.definition ?? profile?.humanDesignData?.definition ?? "Definition not available";
   const confidenceLabel = result?.confidence?.label ?? result?.confidence?.badge ?? "Partial";
 
   const verdict = useMemo(() => {
@@ -196,6 +214,10 @@ export default function CompatibilityDashboard() {
     return `${strength} ${challenge} This connection works best when both people respect different emotional rhythms, communicate directly, and turn recurring triggers into conscious choices.`;
   }, [result]);
 
+  const scrollTo = (label: string) => {
+    document.getElementById(label.toLowerCase().replace(/\s+/g, "-"))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div style={{ minHeight: "100vh", padding: "28px 16px 72px", background: "radial-gradient(circle at 50% 0%, rgba(91,33,182,.22), transparent 35%), #070b1d", color: "#f8f5ff" }}>
       <div style={{ maxWidth: 1180, margin: "0 auto" }}>
@@ -203,15 +225,15 @@ export default function CompatibilityDashboard() {
           <div>
             <div style={{ color: "#d8b4fe", textTransform: "uppercase", letterSpacing: ".18em", fontSize: 12 }}>Soul Codex</div>
             <h1 style={{ margin: "5px 0 0", fontSize: "clamp(2rem,5vw,3.5rem)", fontFamily: "var(--font-serif)" }}>Compatibility</h1>
-            <p style={{ color: "rgba(245,242,255,.66)", margin: "8px 0 0" }}>One relationship story, synthesized across every available system.</p>
+            <p style={{ color: "rgba(245,242,255,.66)", margin: "8px 0 0" }}>The full relationship reading, synthesized across every available system.</p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} style={{ padding: "11px 13px", borderRadius: 12, background: "#111733", color: "white", border: "1px solid rgba(192,132,252,.3)" }}>
+            <select value={selectedId} onChange={(event) => { setSelectedId(event.target.value); setResult(null); }} style={{ padding: "11px 13px", borderRadius: 12, background: "#111733", color: "white", border: "1px solid rgba(192,132,252,.3)" }}>
               <option value="">Choose a person</option>
               {persons.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
             </select>
             <ScButton onClick={() => setFormOpen((open) => !open)} variant="secondary">Add Person</ScButton>
-            <ScButton onClick={() => compare.mutate()} loading={compare.isPending}>Compare</ScButton>
+            <ScButton onClick={() => compare.mutate()} loading={compare.isPending}>Refresh Reading</ScButton>
           </div>
         </header>
 
@@ -229,17 +251,17 @@ export default function CompatibilityDashboard() {
         {!result && !compare.isPending && (
           <section style={{ ...panel, padding: 34, textAlign: "center" }}>
             <IconHeart size={44} style={{ color: "#c084fc", margin: "0 auto 12px" }} />
-            <h2 style={{ margin: 0 }}>Choose someone and run the comparison</h2>
-            <p style={{ color: "rgba(245,242,255,.66)" }}>Your saved profile remains Person A. Add or select Person B above.</p>
+            <h2 style={{ margin: 0 }}>{persons.length ? "Preparing the full compatibility report" : "Add someone to begin"}</h2>
+            <p style={{ color: "rgba(245,242,255,.66)" }}>{persons.length ? "Your saved comparison will load automatically." : "Your profile remains Person A. Add Person B above."}</p>
           </section>
         )}
 
-        {compare.isPending && <div style={{ padding: 80, textAlign: "center" }}><CosmicLoader label="Building the unified relationship reading..." /></div>}
+        {compare.isPending && <div style={{ padding: 80, textAlign: "center" }}><CosmicLoader label="Building the full relationship reading..." /></div>}
 
         {result && !compare.isPending && (
-          <>
-            <section style={{ ...panel, padding: 24, display: "grid", gridTemplateColumns: "minmax(180px,.7fr) minmax(280px,1.6fr) minmax(240px,1fr)", gap: 24, alignItems: "center", marginBottom: 18 }}>
-              <div style={{ textAlign: "center", borderRight: "1px solid rgba(255,255,255,.08)" }}>
+          <main id="overview">
+            <section style={{ ...panel, padding: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 24, alignItems: "center", marginBottom: 18 }}>
+              <div style={{ textAlign: "center" }}>
                 <div style={{ color: "rgba(245,242,255,.66)" }}>Overall Compatibility</div>
                 <div style={{ fontSize: "clamp(4rem,10vw,7rem)", lineHeight: 1, fontFamily: "var(--font-serif)" }}>{overall}<span style={{ fontSize: ".38em" }}>%</span></div>
                 <div style={{ color: "#f0abfc", textTransform: "uppercase", letterSpacing: ".14em", marginTop: 8 }}>{scoreLabel(overall)}</div>
@@ -257,18 +279,17 @@ export default function CompatibilityDashboard() {
               </div>
             </section>
 
-            <nav style={{ ...panel, padding: 8, display: "flex", gap: 6, overflowX: "auto", marginBottom: 18 }}>
-              {tabs.map((tab) => <button key={tab} onClick={() => setActiveTab(tab)} style={{ border: 0, borderRadius: 99, padding: "10px 14px", whiteSpace: "nowrap", cursor: "pointer", color: activeTab === tab ? "white" : "rgba(245,242,255,.62)", background: activeTab === tab ? "linear-gradient(90deg,#6d28d9,#9333ea)" : "transparent" }}>{tab}</button>)}
+            <nav style={{ ...panel, padding: 8, display: "flex", gap: 6, overflowX: "auto", marginBottom: 18, position: "sticky", top: 8, zIndex: 5 }}>
+              {sections.map((section) => <button key={section} onClick={() => scrollTo(section)} style={{ border: 0, borderRadius: 99, padding: "10px 14px", whiteSpace: "nowrap", cursor: "pointer", color: "rgba(245,242,255,.78)", background: "rgba(255,255,255,.04)" }}>{section}</button>)}
             </nav>
 
-            <section style={{ ...panel, padding: 22, marginBottom: 18 }}>
-              <h2 style={{ marginTop: 0 }}>Relationship Core</h2>
+            <DetailPanel id="relationship-core" title="Relationship Core">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 12 }}>
                 {[["Bond Type", scoreLabel(overall)], ["Primary Strength", result.synergy[0] || "Emotional recognition"], ["Primary Challenge", result.friction[0] || "Different processing rhythms"], ["Shared Mission", result.growthOpportunities[0] || "Learning trust without control"], ["Human Design", hdType], ["Authority", hdAuthority]].map(([label, value]) => (
                   <div key={String(label)} style={{ background: "rgba(255,255,255,.04)", borderRadius: 12, padding: 14 }}><div style={{ color: "#c084fc", fontSize: 12, textTransform: "uppercase", letterSpacing: ".1em" }}>{label}</div><div style={{ marginTop: 7, lineHeight: 1.45 }}>{pureText(String(value))}</div></div>
                 ))}
               </div>
-            </section>
+            </DetailPanel>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 14, marginBottom: 18 }}>
               <MetricCard icon={IconHeart} title="Love" score={emotional} rows={[["Emotional Safety", emotional], ["Affection", d.values], ["Romantic Bond", chemistry], ["Commitment Potential", purpose]]} />
@@ -278,21 +299,39 @@ export default function CompatibilityDashboard() {
               <MetricCard icon={IconGrowth} title="Purpose" score={purpose} rows={[["Shared Mission", purpose], ["Creative Vision", d.identity], ["Spiritual Growth", emotional], ["Life Direction", d.decisions]]} />
             </div>
 
-            <section style={{ ...panel, padding: 22, marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><IconIdentity size={22} style={{ color: "#c084fc" }} /><h2 style={{ margin: 0 }}>Human Design Compatibility</h2></div>
+            <DetailPanel id="human-design" title="Human Design Compatibility">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 14 }}>
-                <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 14, padding: 16 }}><strong>Aura Dynamic</strong><p style={{ color: "rgba(247,244,255,.72)", lineHeight: 1.6 }}>{hdType}. The relationship thrives when each person respects the other’s natural energy pace rather than demanding identical output.</p></div>
-                <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 14, padding: 16 }}><strong>Authority and Timing</strong><p style={{ color: "rgba(247,244,255,.72)", lineHeight: 1.6 }}>{hdAuthority}. Major decisions should follow the slower clarity process instead of the louder personality.</p></div>
-                <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 14, padding: 16 }}><strong>Center Dynamics</strong><p style={{ color: "rgba(247,244,255,.72)", lineHeight: 1.6 }}>Identity, stress, values, and decision scores are translated into conditioning risks, natural harmony, and practical relationship guidance.</p></div>
-                <div style={{ background: "rgba(255,255,255,.04)", borderRadius: 14, padding: 16 }}><strong>System Coverage</strong><p style={{ color: "rgba(247,244,255,.72)", lineHeight: 1.6 }}>{result.systemsUsed?.map((item) => item.system).join(", ") || "Astrology, numerology, personality, and available Human Design signals."}</p></div>
+                {[["Aura Dynamic", `${hdType}. Each person must respect the other’s natural pace instead of demanding identical energy output.`], ["Authority and Timing", `${hdAuthority}. Major decisions should follow the slower clarity process instead of the louder personality.`], ["Profile Dynamic", `${hdProfile}. Profile themes describe how each person bonds, withdraws, learns, and handles projection inside the relationship.`], ["Definition", `${hdDefinition}. Definition patterns influence whether clarity happens internally or through relational bridging.`], ["Centers", "Defined and undefined centers reveal where energy is stable, amplified, conditioned, or borrowed between both people."], ["Channels and Gates", "Shared, electromagnetic, compromise, dominance, and companionship connections explain attraction, familiarity, pressure, and growth."], ["Incarnation Cross", "Purpose themes show what the relationship is here to build, expose, heal, or transform together."], ["System Coverage", result.systemsUsed?.map((item) => item.system).join(", ") || "Astrology, numerology, personality, and available Human Design signals."]].map(([title, text]) => (
+                  <div key={title} style={{ background: "rgba(255,255,255,.04)", borderRadius: 14, padding: 16 }}><strong>{title}</strong><p style={{ color: "rgba(247,244,255,.72)", lineHeight: 1.6 }}>{text}</p></div>
+                ))}
               </div>
-            </section>
+            </DetailPanel>
+
+            <DetailPanel id="astrology" title="Astrology Compatibility">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
+                <Bar label="Emotional Synastry" value={emotional} /><Bar label="Romantic Synastry" value={chemistry} /><Bar label="Mental Synastry" value={communication} /><Bar label="Long-Term Synastry" value={purpose} />
+              </div>
+              <p style={{ color: "rgba(247,244,255,.72)", lineHeight: 1.7, marginBottom: 0 }}>Planet-to-planet chemistry, house overlays, Saturn lessons, nodal themes, and available birth-time-sensitive factors are folded into the relationship narrative. Any uncertain house or angle data remains marked by the confidence system.</p>
+            </DetailPanel>
+
+            <DetailPanel id="numerology" title="Numerology Compatibility">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
+                <Bar label="Life Path" value={purpose} /><Bar label="Soul Urge" value={emotional} /><Bar label="Expression" value={communication} /><Bar label="Birthday Energy" value={overall} />
+              </div>
+              <p style={{ color: "rgba(247,244,255,.72)", lineHeight: 1.7, marginBottom: 0 }}>Life Path, Soul Urge, Expression, Birthday, maturity, and timing cycles are interpreted as shared strengths, private needs, recurring lessons, and practical relationship timing.</p>
+            </DetailPanel>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 14, marginBottom: 18 }}>
               <InsightList title="Biggest Strengths" items={result.synergy} tone="good" />
               <InsightList title="Friction Points" items={result.friction} tone="warn" />
               <InsightList title="How to Win Anyway" items={result.growthOpportunities} tone="growth" />
             </div>
+
+            <DetailPanel id="timeline" title="Relationship Timeline">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
+                {["Recognition", "Attraction", "Emotional Bonding", "Trigger Phase", "Choice Point", "Mature Partnership"].map((stage, index) => <div key={stage} style={{ background: "rgba(255,255,255,.04)", borderRadius: 12, padding: 14 }}><div style={{ color: "#c084fc", fontSize: 12 }}>Stage {index + 1}</div><strong style={{ display: "block", marginTop: 6 }}>{stage}</strong></div>)}
+              </div>
+            </DetailPanel>
 
             {(result.missingDataWarnings?.length || result.systemsExcluded?.length) ? (
               <section style={{ ...panel, padding: 18, marginBottom: 18, borderColor: "rgba(251,191,36,.3)" }}>
@@ -301,11 +340,11 @@ export default function CompatibilityDashboard() {
               </section>
             ) : null}
 
-            <section style={{ ...panel, padding: 22, display: "grid", gridTemplateColumns: "1fr minmax(240px,.55fr)", gap: 20 }}>
+            <section style={{ ...panel, padding: 22, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20 }}>
               <div><h2 style={{ marginTop: 0 }}>Final Verdict</h2><p style={{ color: "rgba(247,244,255,.78)", lineHeight: 1.75 }}>{verdict}</p></div>
               <div style={{ background: "radial-gradient(circle,rgba(168,85,247,.25),transparent 65%)", borderRadius: 16, display: "grid", placeItems: "center", minHeight: 170 }}><IconSparkles size={74} style={{ color: "#d8b4fe" }} /></div>
             </section>
-          </>
+          </main>
         )}
       </div>
     </div>
