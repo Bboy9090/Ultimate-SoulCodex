@@ -25,7 +25,7 @@ concurrency:
 jobs:
   resolve-clone-ready-swift-packages:
     runs-on: macos-14
-    timeout-minutes: 40
+    timeout-minutes: 50
     env:
       VITE_API_URL: https://soulcodex.up.railway.app
 
@@ -46,6 +46,7 @@ jobs:
             exit 1
           fi
           grep -q 'ionic-team/capacitor-keyboard.git' "$manifest"
+          grep -q 'package: "capacitor-keyboard"' "$manifest"
           grep -q '../Vendor/CapacitorSplashScreen' "$manifest"
           grep -q '../Vendor/CapacitorStatusBar' "$manifest"
           grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' "$manifest"
@@ -81,6 +82,7 @@ jobs:
             echo "Capacitor sync restored a node_modules Swift package path"
             exit 1
           fi
+          grep -q 'package: "capacitor-keyboard"' "$manifest"
           test -f ios/App/Vendor/CapawesomeCapacitorAppleSignIn/Sources/AppleSignInPlugin/AppleSignInPlugin.swift
           grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' "$manifest"
 
@@ -94,6 +96,20 @@ jobs:
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/PostBootstrapSourcePackages" \
             2>&1 | tee post-bootstrap-resolve.log
 
+      - name: Build iOS app without code signing
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme "Soul Codex" \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/SoulCodexDerivedData" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/PostBootstrapSourcePackages" \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee ios-build.log
+
       - name: Upload Xcode resolver evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -102,6 +118,7 @@ jobs:
           path: |
             pre-bootstrap-resolve.log
             post-bootstrap-resolve.log
+            ios-build.log
             post-sync-Package.swift
             post-sync-manifest.diff
           if-no-files-found: warn
