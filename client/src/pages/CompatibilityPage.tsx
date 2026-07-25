@@ -1,3 +1,3 @@
-import CompatibilityDashboard from "./CompatibilityDashboard";
+import CompatibilityExperience from "./CompatibilityExperience";
 
-export default CompatibilityDashboard;
+export default CompatibilityExperience;
