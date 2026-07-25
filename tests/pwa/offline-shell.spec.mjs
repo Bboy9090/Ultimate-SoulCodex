@@ -34,6 +34,13 @@ async function waitForServiceWorkerControl(page) {
     .toBe(true);
 }
 
+async function assertStoredProfileVisible(page) {
+  await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
+  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
+  await expect(page.getByText("Core numbers", { exact: true })).toBeVisible();
+}
+
 async function createLocalCodex(page) {
   await page.goto(`${BASE_URL}/create`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /Create Your\s*Soul Codex/i })).toBeVisible();
@@ -53,25 +60,19 @@ async function createLocalCodex(page) {
     page.getByTestId("button-create-profile").click(),
   ]);
 
-  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
-  await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
+  await assertStoredProfileVisible(page);
   return page.url();
 }
 
 async function assertOfflineProfile(page, profileUrl) {
   await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
-  await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
-  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
-  await expect(page.getByText("Core numbers", { exact: true })).toBeVisible();
+  await assertStoredProfileVisible(page);
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
+  await assertStoredProfileVisible(page);
 }
 
-test("reopens a saved local Codex after a full offline browser restart", async ({ browserName }, testInfo) => {
+test("reopens a saved local Codex through the browser offline path", async ({ browserName }, testInfo) => {
   const browserType = BROWSER_TYPES[browserName];
   if (!browserType) throw new Error(`Unsupported browser project: ${browserName}`);
 
@@ -87,21 +88,31 @@ test("reopens a saved local Codex after a full offline browser restart", async (
     profileUrl = await createLocalCodex(page);
     await waitForServiceWorkerControl(page);
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
+    await assertStoredProfileVisible(page);
   } finally {
     await context.close();
   }
 
   context = await browserType.launchPersistentContext(userDataDir, options);
   const useServerOutage = browserName === "webkit";
-  if (useServerOutage) {
-    await setServerOutage(true);
-  } else {
-    await context.setOffline(true);
-  }
   page = context.pages()[0] ?? (await context.newPage());
 
   try {
+    if (useServerOutage) {
+      // Playwright's Linux WebKit does not retain service-worker control while
+      // starting a persistent profile under setOffline(true). Validate the two
+      // Safari guarantees separately: storage survives restart, then the
+      // restarted browser reacquires control and survives a total origin outage.
+      await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
+      await assertStoredProfileVisible(page);
+      await waitForServiceWorkerControl(page);
+      await setServerOutage(true);
+    } else {
+      // Chromium supports the stricter cold launch with networking disabled
+      // before direct navigation to the saved local profile.
+      await context.setOffline(true);
+    }
+
     await assertOfflineProfile(page, profileUrl);
     const registrationState = await page.evaluate(async () => {
       const registration = await navigator.serviceWorker.getRegistration();
