@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const manifestPath = "ios/App/CapApp-SPM/Package.swift";
-const replacements = [
+const dependencyReplacements = [
   {
     generated:
       '.package(name: "CapacitorKeyboard", path: "../../../node_modules/@capacitor/keyboard")',
@@ -28,6 +28,15 @@ const replacements = [
   },
 ];
 
+const productIdentityReplacements = [
+  {
+    generated:
+      '.product(name: "CapacitorKeyboard", package: "CapacitorKeyboard")',
+    cloneReady:
+      '.product(name: "CapacitorKeyboard", package: "capacitor-keyboard")',
+  },
+];
+
 const requiredVendorManifests = [
   "ios/App/Vendor/CapacitorSplashScreen/Package.swift",
   "ios/App/Vendor/CapacitorStatusBar/Package.swift",
@@ -41,12 +50,15 @@ for (const vendorManifest of requiredVendorManifests) {
 }
 
 let manifest = readFileSync(manifestPath, "utf8");
-for (const { generated, cloneReady } of replacements) {
+for (const { generated, cloneReady } of [
+  ...dependencyReplacements,
+  ...productIdentityReplacements,
+]) {
   if (manifest.includes(generated)) {
     manifest = manifest.replace(generated, cloneReady);
   } else if (!manifest.includes(cloneReady)) {
     throw new Error(
-      `CapApp-SPM does not contain the generated or clone-ready dependency declaration: ${generated}`,
+      `CapApp-SPM does not contain the generated or clone-ready declaration: ${generated}`,
     );
   }
 }
@@ -57,9 +69,12 @@ if (manifest.includes("node_modules/")) {
   );
 }
 
-for (const { cloneReady } of replacements) {
+for (const { cloneReady } of [
+  ...dependencyReplacements,
+  ...productIdentityReplacements,
+]) {
   if (!manifest.includes(cloneReady)) {
-    throw new Error(`CapApp-SPM is missing clone-ready dependency: ${cloneReady}`);
+    throw new Error(`CapApp-SPM is missing clone-ready declaration: ${cloneReady}`);
   }
 }
 
