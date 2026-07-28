@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Navigation from "../components/navigation";
 import CosmicLoader from "../components/CosmicLoader";
+import { loadActiveProfile, getRecoveryMessage, type ProfileLoadStatus } from "../lib/ActiveProfileRepository";
 import {
   IconAlert,
   IconCircle,
@@ -184,21 +185,30 @@ export default function CompatibilityPage() {
   const [matches, setMatches] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [profileStatus, setProfileStatus] = useState<ProfileLoadStatus>("missing");
+  const [recoveryMessage, setRecoveryMessage] = useState<any>(null);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const response = await fetch("/api/profiles", { credentials: "include" });
-        if (!response.ok) throw new Error("Your Soul Codex profile could not be loaded.");
-        const data = await response.json();
-        const first = Array.isArray(data) ? data[0] : data;
-        if (active) setProfile(first || null);
-      } catch (loadError) {
-        if (active) setError(loadError instanceof Error ? loadError.message : "Your profile could not be loaded.");
+    // Load profile from local storage (canonical repository)
+    const result = loadActiveProfile();
+    setProfile(result.profile);
+    setProfileStatus(result.status);
+
+    // Generate recovery message if needed
+    if (result.status !== "loaded") {
+      setRecoveryMessage(getRecoveryMessage(result));
+    }
+
+    if (!result.profile) {
+      setLoading(false);
+      if (result.status === "missing") {
+        setError("No Soul Codex profile found in this browser or app context.");
+      } else if (result.status === "corrupted") {
+        setError("Your saved profile appears to be corrupted and needs repair.");
+      } else if (result.status === "wrong-version") {
+        setError("Your profile format needs to be updated.");
       }
-    })();
-    return () => { active = false; };
+    }
   }, []);
 
   const sunSign = profile?.sunSign ?? profile?.astrologyData?.sunSign ?? profile?.astrology?.sunSign ?? profile?.astrology?.sun;
@@ -244,7 +254,33 @@ export default function CompatibilityPage() {
           <p style={{ color: "rgba(246,241,232,.65)", lineHeight: 1.6, margin: 0 }}>{sunSign ? `Your ${sunSign} blueprint ranked against all 12 signs.` : "Complete your Soul Codex to reveal your compatibility map."}</p>
         </header>
 
-        {error && <div style={{ ...panel, borderColor: "rgba(239,68,68,.35)", color: "#fca5a5", padding: 14, marginBottom: 18 }}>{error}</div>}
+        {error && recoveryMessage && (
+          <div style={{ ...panel, borderColor: "rgba(239,68,68,.35)", padding: 18, marginBottom: 18 }}>
+            <div style={{ color: "#fca5a5", marginBottom: 12 }}>
+              <strong>{recoveryMessage.title}</strong>
+              <p style={{ color: "rgba(252,165,165,.85)", margin: "6px 0 0" }}>{recoveryMessage.description}</p>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {recoveryMessage.recovery.map((action: string) => (
+                <button
+                  key={action}
+                  onClick={() => action.includes("Create") ? window.location.href = "/create" : null}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(212,168,95,.35)",
+                    background: "rgba(212,168,95,.08)",
+                    color: "#D4A85F",
+                    cursor: "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  {action}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {profile && (
           <section style={{ ...panel, padding: 18, marginBottom: 20, borderLeft: "3px solid #D4A85F" }}>
