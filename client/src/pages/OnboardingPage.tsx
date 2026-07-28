@@ -5,7 +5,8 @@ import { apiRequest, apiFetch } from "../lib/queryClient";
 import CosmicLoader from "@/components/CosmicLoader";
 import ScButton from "@/components/ScButton";
 import { IconCircle, IconLogo, IconSparkles } from "@/components/Icons";
-import { saveActiveProfile } from "../lib/profileStorage";
+import { saveActiveProfile as saveActiveProfileLegacy } from "../lib/profileStorage";
+import { saveActiveProfile } from "../lib/ActiveProfileRepository";
 
 type PressurePattern =
   | "spiral_inward"
@@ -322,7 +323,13 @@ export default function OnboardingPage() {
       const isGuest = localStorage.getItem("soulIsGuest") === "true";
       const storageKey = isGuest ? "soulGuestProfile" : "soulProfile";
       localStorage.setItem(storageKey, JSON.stringify(result));
-      saveActiveProfile(result);
+
+      // Save to canonical repository with validation
+      const saveResult = saveActiveProfile(result);
+      if (!saveResult.success) {
+        console.warn("[OnboardingPage] Profile save failed:", saveResult.error);
+      }
+
       if (!isGuest) localStorage.setItem("onboardingData", JSON.stringify(form));
       if (result?.confidence) localStorage.setItem(isGuest ? "soulGuestConfidence" : "soulConfidence", JSON.stringify(result.confidence));
 
