@@ -1,4 +1,5 @@
 export * from './types.js';
+export * from './accuracy/index.js';
 export * from './compute/synthesis.js';
 export * from './compute/archetype.js';
 export * from './compute/numerology.js';
