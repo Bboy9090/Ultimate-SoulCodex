@@ -7,6 +7,8 @@ import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
 import { generateBiography, generateDailyGuidance } from "./services/openai-service";
+import { registerGalacticCodeRoutes } from "./routes/galactic-code";
+import { calculateArchetypeMatches, getMatchesByMode, type RelationshipMode } from "../services/archetype-matches";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -215,6 +217,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+<<<<<<< HEAD
+=======
+  // Compatibility archetype matches
+  app.post("/api/compatibility/archetype-matches", (req, res) => {
+    try {
+      const { sunSign, lifePathNumber, hdType, mode = "love" } = req.body;
+
+      if (!sunSign) {
+        return res.status(400).json({ message: "sunSign is required" });
+      }
+
+      const all = calculateArchetypeMatches(
+        sunSign,
+        lifePathNumber,
+        hdType,
+        mode as RelationshipMode
+      );
+
+      const { best, challenging } = getMatchesByMode(
+        sunSign,
+        lifePathNumber,
+        hdType,
+        mode as RelationshipMode
+      );
+
+      res.json({
+        all,
+        best,
+        challenging
+      });
+    } catch (error) {
+      console.error("Error calculating archetype matches:", error);
+      res.status(500).json({ message: "Failed to calculate compatibility" });
+    }
+  });
+
+  // Register Galactic Code routes
+  registerGalacticCodeRoutes(app);
+
+>>>>>>> a492afc (feat(compatibility): add archetype-matches endpoint with proper response format)
   const httpServer = createServer(app);
   return httpServer;
 }
