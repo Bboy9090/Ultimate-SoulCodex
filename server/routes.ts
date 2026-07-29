@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema } from "@shared/schema";
-import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
+import { calculateAstrology, getTarotBirthCards } from "../services/astrology";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
