@@ -231,8 +231,7 @@ export function getRecoveryMessage(
     case "legacy-found":
       return {
         title: "Legacy profile restored",
-        description: `Found an older Soul Codex reading (from legacy storage).`,
-        description: "Would you like to continue with this profile?",
+        description: "Found an older Soul Codex reading. Would you like to continue with this profile?",
         recovery: ["Continue with restored profile", "Create new profile"],
       };
 
