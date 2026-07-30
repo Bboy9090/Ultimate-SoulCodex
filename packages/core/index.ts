@@ -1,6 +1,7 @@
 export * from './types.js';
 export * from './soul-codex-reading-types.js';
 export * from './soul-codex-reading-generator-v1.js';
+export * from './soul-codex-evidence-schema-v2.js';
 export * from './accuracy/index.js';
 export * from './compute/synthesis.js';
 export * from './compute/archetype.js';
