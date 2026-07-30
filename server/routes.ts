@@ -217,8 +217,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-<<<<<<< HEAD
-=======
   // Compatibility archetype matches
   app.post("/api/compatibility/archetype-matches", (req, res) => {
     try {
@@ -256,7 +254,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register Galactic Code routes
   registerGalacticCodeRoutes(app);
 
->>>>>>> a492afc (feat(compatibility): add archetype-matches endpoint with proper response format)
   const httpServer = createServer(app);
   return httpServer;
 }
