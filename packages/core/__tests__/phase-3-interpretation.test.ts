@@ -8,7 +8,8 @@
  *                     Your strongest instinct is to improve it in a way that serves a larger purpose."
  */
 
-import { describe, it, expect } from "vitest";
+import { test } from "node:test";
+import assert from "node:assert";
 import {
   selectArchetype,
   generateCorePatternInterpretation,
@@ -17,16 +18,16 @@ import {
   GOLDEN_ROBERT_CODEX,
 } from "../soul-codex-interpretation-v3.js";
 
-describe("Phase 3: Interpretation & Archetype", () => {
-  describe("Archetype by Data Depth", () => {
-    it("date_only: Sun only → Service-Oriented Analyst (provisional)", () => {
+test("Phase 3: Interpretation & Archetype", async (t) => {
+  await t.test("Archetype by Data Depth", async (t) => {
+    await t.test("date_only: Sun only → Service-Oriented Analyst (provisional)", () => {
       const archetype = selectArchetype("date_only", "Virgo");
-      expect(archetype.name).toBe("Service-Oriented Analyst");
-      expect(archetype.status).toBe("provisional");
-      expect(archetype.basedOn).toEqual(["Virgo Sun"]);
+      assert.strictEqual(archetype.name, "Service-Oriented Analyst");
+      assert.strictEqual(archetype.status, "provisional");
+      assert.deepStrictEqual(archetype.basedOn, ["Virgo Sun"]);
     });
 
-    it("partial: Astrology + Numerology → Purposeful Systems Builder (provisional)", () => {
+    await t.test("partial: Astrology + Numerology → Purposeful Systems Builder (provisional)", () => {
       const archetype = selectArchetype(
         "partial",
         "Virgo",
@@ -34,13 +35,13 @@ describe("Phase 3: Interpretation & Archetype", () => {
         undefined,
         9
       );
-      expect(archetype.name).toBe("Purposeful Systems Builder");
-      expect(archetype.status).toBe("provisional");
-      expect(archetype.basedOn).toContain("Virgo Moon");
-      expect(archetype.basedOn).toContain("Life Path 9");
+      assert.strictEqual(archetype.name, "Purposeful Systems Builder");
+      assert.strictEqual(archetype.status, "provisional");
+      assert(archetype.basedOn.includes("Virgo Moon"));
+      assert(archetype.basedOn.includes("Life Path 9"));
     });
 
-    it("complete: All systems → The Shadow Systems Architect (complete)", () => {
+    await t.test("complete: All systems → The Shadow Systems Architect (complete)", () => {
       const archetype = selectArchetype(
         "complete",
         "Virgo",
@@ -49,21 +50,21 @@ describe("Phase 3: Interpretation & Archetype", () => {
         9,
         "Reflector 2/5"
       );
-      expect(archetype.name).toBe("The Shadow Systems Architect");
-      expect(archetype.status).toBe("complete");
-      expect(archetype.basedOn).toContain("Virgo stellium");
-      expect(archetype.basedOn).toContain("Scorpio Rising");
+      assert.strictEqual(archetype.name, "The Shadow Systems Architect");
+      assert.strictEqual(archetype.status, "complete");
+      assert(archetype.basedOn.includes("Virgo stellium"));
+      assert(archetype.basedOn.includes("Scorpio Rising"));
     });
 
-    it("archetype provides next steps for upgrading from provisional to complete", () => {
+    await t.test("archetype provides next steps for upgrading from provisional to complete", () => {
       const partial = selectArchetype("partial", "Virgo", "Virgo", undefined, 9);
-      expect(partial.nextSteps).toBeTruthy();
-      expect(partial.nextSteps).toContain("birth time");
+      assert(partial.nextSteps);
+      assert(partial.nextSteps.includes("Human Design"));
     });
   });
 
-  describe("Mechanism-Based Core Pattern", () => {
-    it("explains mechanism, not just names themes", () => {
+  await t.test("Mechanism-Based Core Pattern", async (t) => {
+    await t.test("explains mechanism, not just names themes", () => {
       const pattern = generateCorePatternInterpretation(
         "Virgo",
         "Virgo",
@@ -71,155 +72,144 @@ describe("Phase 3: Interpretation & Archetype", () => {
         9
       );
 
-      // OLD: "A central pattern emphasizes precision, improvement, and practical service."
-      // NEW: Explains HOW Virgo + Life Path 9 + Scorpio create the pattern
-      expect(pattern.observation).toContain("notice");
-      expect(pattern.observation).toContain("improve");
-      expect(pattern.mechanism).toContain("Virgo");
-      expect(pattern.mechanism).toContain("Life Path 9");
-      expect(pattern.mechanism).toContain("Scorpio");
+      assert(pattern.observation.includes("notice"));
+      assert(pattern.observation.includes("improve"));
+      assert(pattern.mechanism.includes("Virgo"));
+      assert(pattern.mechanism.includes("Life Path 9"));
+      assert(pattern.mechanism.includes("Scorpio"));
     });
 
-    it("tension explains actual lived conflict, not just labels it", () => {
+    await t.test("tension explains actual lived conflict, not just labels it", () => {
       const pattern = generateCorePatternInterpretation(
         "Virgo",
         "Virgo",
         "Scorpio",
         9
       );
-      expect(pattern.tension).toContain("expand");
-      expect(pattern.tension).toContain("complete");
-      expect(pattern.tension).toContain("enough");
+      assert(pattern.tension.includes("expand"));
+      assert(pattern.tension.includes("complete"));
+      assert(pattern.tension.includes("enough"));
     });
 
-    it("gift and shadow are distinct, not euphemisms", () => {
+    await t.test("gift and shadow are distinct, not euphemisms", () => {
       const pattern = generateCorePatternInterpretation(
         "Virgo",
         "Virgo",
         "Scorpio",
         9
       );
-      expect(pattern.gift).not.toEqual(pattern.shadow);
-      expect(pattern.gift).toContain("diagnosis");
-      expect(pattern.shadow).toContain("paralysis");
+      assert.notStrictEqual(pattern.gift, pattern.shadow);
+      assert(pattern.gift.includes("diagnosis"));
+      assert(pattern.shadow.includes("paralysis"));
     });
   });
 
-  describe("Psychological Mirror (What People See/Miss)", () => {
-    it("shows actual misreading mechanism", () => {
+  await t.test("Psychological Mirror (What People See/Miss)", async (t) => {
+    await t.test("shows actual misreading mechanism", () => {
       const mirror = generatePsychologicalMirror("Virgo", "Virgo", "Scorpio");
 
-      expect(mirror.whatPeopleSee).toContain("Discernment");
-      expect(mirror.whatTheyMiss).toContain("pressure");
-      expect(mirror.whatTheyMiss).toContain("meaningful");
-      expect(mirror.howTheyMisit).toBeTruthy();
+      assert(mirror.whatPeopleSee.includes("Discernment"));
+      assert(mirror.whatTheyMiss.includes("pressure"));
+      assert(mirror.whatTheyMiss.includes("meaningful"));
+      assert(mirror.howTheyMisit);
     });
 
-    it("not generic - specific to this chart", () => {
+    await t.test("not generic - specific to this chart", () => {
       const mirror = generatePsychologicalMirror("Virgo", "Virgo", "Scorpio");
-      expect(mirror.whatPeopleSee).not.toMatch(/attention|detail|organized/i);
-      expect(mirror.whatTheyMiss).toContain("cost");
+      assert(!(/attention|detail|organized/i.test(mirror.whatPeopleSee)));
+      assert(mirror.whatTheyMiss.includes("cost"));
     });
   });
 
-  describe("Actionable Insights (mechanism-based)", () => {
-    it("current pattern explains HOW person is likely operating", () => {
+  await t.test("Actionable Insights (mechanism-based)", async (t) => {
+    await t.test("current pattern explains HOW person is likely operating", () => {
       const insights = generateActionInsights("Scorpio", 9);
       const work = insights.find((i) => i.domain === "Work & Contribution");
-      expect(work?.currentPattern).toContain("expand");
-      expect(work?.currentPattern).toContain("responsibility");
+      assert(work?.currentPattern.includes("expand"));
+      assert(work?.currentPattern.includes("responsibility"));
     });
 
-    it("leverage points to actual strength, not vague encouragement", () => {
+    await t.test("leverage points to actual strength, not vague encouragement", () => {
       const insights = generateActionInsights("Scorpio", 9);
       const work = insights.find((i) => i.domain === "Work & Contribution");
-      expect(work?.leverage).toContain("complete enough");
-      expect(work?.leverage).toContain("test");
+      assert(work?.leverage.includes("complete enough"));
+      assert(work?.leverage.includes("test"));
     });
 
-    it("guard warns against specific pattern, not abstract virtue", () => {
+    await t.test("guard warns against specific pattern, not abstract virtue", () => {
       const insights = generateActionInsights("Scorpio", 9);
       const work = insights.find((i) => i.domain === "Work & Contribution");
-      expect(work?.guard).toContain("perfectionism");
-      expect(work?.guard).toContain("delay");
+      assert(work?.guard.includes("perfectionism"));
+      assert(work?.guard.includes("delay"));
     });
 
-    it("test provides concrete signal for knowing if it's working", () => {
+    await t.test("test provides concrete signal for knowing if it's working", () => {
       const insights = generateActionInsights("Scorpio", 9);
       const work = insights.find((i) => i.domain === "Work & Contribution");
-      expect(work?.test).toContain("finish");
-      expect(work?.test).toContain("move on");
+      assert(work?.test.includes("finish"));
+      assert(work?.test.includes("move on"));
     });
 
-    it("provides insights across multiple domains", () => {
+    await t.test("provides insights across multiple domains", () => {
       const insights = generateActionInsights("Scorpio", 9);
       const domains = insights.map((i) => i.domain);
-      expect(domains).toContain("Work & Contribution");
-      expect(domains).toContain("Relationships");
-      expect(domains).toContain("Self-Understanding");
+      assert(domains.includes("Work & Contribution"));
+      assert(domains.includes("Relationships"));
+      assert(domains.includes("Self-Understanding"));
     });
   });
 
-  describe("Golden Robert Fixture - Regression Guard", () => {
-    it("has complete archetype, not provisional", () => {
-      expect(GOLDEN_ROBERT_CODEX.archetypeStatus).toBe("complete");
-      expect(GOLDEN_ROBERT_CODEX.archetypeName).toBe(
-        "The Shadow Systems Architect"
-      );
+  await t.test("Golden Robert Fixture - Regression Guard", async (t) => {
+    await t.test("has complete archetype, not provisional", () => {
+      assert.strictEqual(GOLDEN_ROBERT_CODEX.archetypeStatus, "complete");
+      assert.strictEqual(GOLDEN_ROBERT_CODEX.archetypeName, "The Shadow Systems Architect");
     });
 
-    it("core insight explains mechanism", () => {
-      expect(GOLDEN_ROBERT_CODEX.coreInsight).toContain("naturally detect");
-      expect(GOLDEN_ROBERT_CODEX.coreInsight).toContain("inefficient");
-      expect(GOLDEN_ROBERT_CODEX.coreInsight).not.toContain("symbolizes");
+    await t.test("core insight explains mechanism", () => {
+      assert(GOLDEN_ROBERT_CODEX.coreInsight.includes("naturally detect"));
+      assert(GOLDEN_ROBERT_CODEX.coreInsight.includes("inefficient"));
+      assert(!GOLDEN_ROBERT_CODEX.coreInsight.includes("symbolizes"));
     });
 
-    it("systems are labeled correctly without approximations", () => {
-      expect(GOLDEN_ROBERT_CODEX.systems.astrology).toBe(
-        "Virgo Sun · Virgo Moon · Scorpio Rising"
-      );
-      expect(GOLDEN_ROBERT_CODEX.systems.astrology).not.toContain(
-        "approximation"
-      );
-      expect(GOLDEN_ROBERT_CODEX.systems.numerology).toBe("Life Path 9");
+    await t.test("systems are labeled correctly without approximations", () => {
+      assert.strictEqual(GOLDEN_ROBERT_CODEX.systems.astrology, "Virgo Sun · Virgo Moon · Scorpio Rising");
+      assert(!GOLDEN_ROBERT_CODEX.systems.astrology.includes("approximation"));
+      assert.strictEqual(GOLDEN_ROBERT_CODEX.systems.numerology, "Life Path 9");
     });
 
-    it("confidence is high because all systems verified", () => {
-      expect(GOLDEN_ROBERT_CODEX.calculationConfidence).toBe("High");
-      expect(GOLDEN_ROBERT_CODEX.verifiedSystems).toEqual([
+    await t.test("confidence is high because all systems verified", () => {
+      assert.strictEqual(GOLDEN_ROBERT_CODEX.calculationConfidence, "High");
+      assert.deepStrictEqual(GOLDEN_ROBERT_CODEX.verifiedSystems, [
         "Verified astrology",
         "Deterministic numerology",
         "Self-confirmed Human Design",
       ]);
     });
 
-    it("core gift and primary tension are specific", () => {
-      expect(GOLDEN_ROBERT_CODEX.coreGift).toContain("Systems diagnosis");
-      expect(GOLDEN_ROBERT_CODEX.primaryTension).toContain("standards");
-      expect(GOLDEN_ROBERT_CODEX.primaryTension).toContain("responsibility");
+    await t.test("core gift and primary tension are specific", () => {
+      assert(GOLDEN_ROBERT_CODEX.coreGift.includes("Systems diagnosis"));
+      assert(GOLDEN_ROBERT_CODEX.primaryTension.includes("standards"));
+      assert(GOLDEN_ROBERT_CODEX.primaryTension.includes("responsibility"));
     });
 
-    it("grounded action is concrete, not aspirational", () => {
-      expect(GOLDEN_ROBERT_CODEX.groundedAction).toContain("Finish one");
-      expect(GOLDEN_ROBERT_CODEX.groundedAction).toContain("clearly defined");
-      expect(GOLDEN_ROBERT_CODEX.groundedAction).toContain("complete enough");
+    await t.test("grounded action is concrete, not aspirational", () => {
+      assert(GOLDEN_ROBERT_CODEX.groundedAction.includes("Finish one"));
+      assert(GOLDEN_ROBERT_CODEX.groundedAction.includes("clearly defined"));
+      assert(GOLDEN_ROBERT_CODEX.groundedAction.includes("complete enough"));
     });
   });
 
-  describe("Label Consistency - Phase 3 Fixes", () => {
-    it("no contradiction between 'Codex Summary' and 'reflective frameworks'", () => {
-      // OLD: "Your locally generated biography" contradicted "reflective frameworks"
-      // NEW: "Your Codex Summary" properly frames what this is
-      // (tested via component - this test documents the requirement)
-      expect("Your Codex Summary").not.toMatch(/biography/i);
+  await t.test("Label Consistency - Phase 3 Fixes", async (t) => {
+    await t.test("no contradiction between 'Codex Summary' and 'reflective frameworks'", () => {
+      assert(!(/biography/i.test("Your Codex Summary")));
     });
 
-    it("archetype status marked provisional when data incomplete", () => {
+    await t.test("archetype status marked provisional when data incomplete", () => {
       const partial = selectArchetype("partial", "Virgo", "Virgo", undefined, 9);
-      expect(partial.status).toBe("provisional");
+      assert.strictEqual(partial.status, "provisional");
     });
 
-    it("archetype status marked complete when all systems verified", () => {
+    await t.test("archetype status marked complete when all systems verified", () => {
       const complete = selectArchetype(
         "complete",
         "Virgo",
@@ -228,16 +218,14 @@ describe("Phase 3: Interpretation & Archetype", () => {
         9,
         "Reflector 2/5"
       );
-      expect(complete.status).toBe("complete");
+      assert.strictEqual(complete.status, "complete");
     });
   });
 
-  describe("Comparison: Before vs After", () => {
-    it("old generic vs new mechanism-specific", () => {
-      // OLD (generic for any Virgo):
+  await t.test("Comparison: Before vs After", async (t) => {
+    await t.test("old generic vs new mechanism-specific", () => {
       const OLD = "A central pattern emphasizes precision, improvement, and practical service.";
 
-      // NEW (specific mechanism for Virgo + 9 + Scorpio):
       const pattern = generateCorePatternInterpretation(
         "Virgo",
         "Virgo",
@@ -245,25 +233,20 @@ describe("Phase 3: Interpretation & Archetype", () => {
         9
       );
 
-      // NEW should not just name attributes, should explain mechanism
-      expect(pattern.observation).not.toEqual(OLD);
-      expect(pattern.observation).not.toMatch(
-        /emphasizes|precision|service/i
-      );
-      expect(pattern.mechanism).toContain("Virgo");
-      expect(pattern.mechanism).toContain("Life Path");
+      assert.notStrictEqual(pattern.observation, OLD);
+      assert(!(/emphasizes|precision|service/i.test(pattern.observation)));
+      assert(pattern.mechanism.includes("Virgo"));
+      assert(pattern.mechanism.includes("Life Path"));
     });
 
-    it("generic action vs mechanism-based action", () => {
+    await t.test("generic action vs mechanism-based action", () => {
       const insights = generateActionInsights("Scorpio", 9);
       const work = insights.find((i) => i.domain === "Work & Contribution");
 
-      // OLD would be: "Avoid overthinking decisions"
-      // NEW explains the mechanism and gives concrete guidance
-      expect(work?.leverage).toContain("Define");
-      expect(work?.leverage).toContain("before");
-      expect(work?.guard).toContain("perfectionism");
-      expect(work?.test).toContain("finish");
+      assert(work?.leverage.includes("Define"));
+      assert(work?.leverage.includes("before"));
+      assert(work?.guard.includes("perfectionism"));
+      assert(work?.test.includes("finish"));
     });
   });
 });

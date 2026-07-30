@@ -5,13 +5,14 @@
  * Ensures legacy approximations never override verified ephemeris
  */
 
-import { describe, it, expect } from "vitest";
+import { test } from "node:test";
+import assert from "node:assert";
 import {
   generateSoulCodexReadingV1,
   type RawAnalysisInput,
 } from "../soul-codex-reading-generator-v1.js";
 
-describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
+test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
   // Golden fixture: Robert Gonzalez with verified chart
   const verifiedRobertInput: RawAnalysisInput = {
     subjectName: "Robert Gonzalez",
@@ -40,29 +41,29 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
     },
   };
 
-  it("verified_ephemeris: shows all three (Sun, Moon, Ascendant)", () => {
+  await t.test("verified_ephemeris: shows all three (Sun, Moon, Ascendant)", () => {
     const reading = generateSoulCodexReadingV1(verifiedRobertInput);
 
-    expect(reading.meta.calculationStatus).toBe("verified_ephemeris");
-    expect(reading.verifiedSystems.astrology.sunSign).toBe("Virgo");
-    expect(reading.verifiedSystems.astrology.moonSign).toBe("Virgo");
-    expect(reading.verifiedSystems.astrology.ascendant).toBe("Scorpio");
-    expect(reading.meta.confidence).toBe("high");
+    assert.strictEqual(reading.meta.calculationStatus, "verified_ephemeris");
+    assert.strictEqual(reading.verifiedSystems.astrology.sunSign, "Virgo");
+    assert.strictEqual(reading.verifiedSystems.astrology.moonSign, "Virgo");
+    assert.strictEqual(reading.verifiedSystems.astrology.ascendant, "Scorpio");
+    assert.strictEqual(reading.meta.confidence, "high");
   });
 
-  it("verified_ephemeris: remark says 'Verified', not 'approximation'", () => {
+  await t.test("verified_ephemeris: remark says 'Verified', not 'approximation'", () => {
     const reading = generateSoulCodexReadingV1(verifiedRobertInput);
-    expect(reading.verifiedSystems.astrology.remark).toContain("Verified");
+    assert(reading.verifiedSystems.astrology.remark.includes("Verified"));
   });
 
-  it("never shows legacy approximations when verified_ephemeris is available", () => {
+  await t.test("never shows legacy approximations when verified_ephemeris is available", () => {
     const reading = generateSoulCodexReadingV1(verifiedRobertInput);
-    expect(reading.verifiedSystems.astrology.status).toBe("verified_ephemeris");
+    assert.strictEqual(reading.verifiedSystems.astrology.status, "verified_ephemeris");
     // The component should NOT render legacy-approximation styling
-    expect(reading.verifiedSystems.astrology.remark).not.toContain("approximation");
+    assert(!reading.verifiedSystems.astrology.remark.includes("approximation"));
   });
 
-  describe("date_only: Sun only, no Moon or Ascendant", () => {
+  await t.test("date_only: Sun only, no Moon or Ascendant", async (t) => {
     const dateOnlyInput: RawAnalysisInput = {
       subjectName: "Unknown Person",
       birthData: {
@@ -77,25 +78,25 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
       },
     };
 
-    it("shows Sun when date_only", () => {
+    await t.test("shows Sun when date_only", () => {
       const reading = generateSoulCodexReadingV1(dateOnlyInput);
-      expect(reading.verifiedSystems.astrology.sunSign).toBe("Virgo");
-      expect(reading.meta.calculationStatus).toBe("date_only");
+      assert.strictEqual(reading.verifiedSystems.astrology.sunSign, "Virgo");
+      assert.strictEqual(reading.meta.calculationStatus, "date_only");
     });
 
-    it("does not guess Moon or Ascendant when date_only", () => {
+    await t.test("does not guess Moon or Ascendant when date_only", () => {
       const reading = generateSoulCodexReadingV1(dateOnlyInput);
-      expect(reading.verifiedSystems.astrology.moonSign).toBe("");
-      expect(reading.verifiedSystems.astrology.ascendant).toBeUndefined();
+      assert.strictEqual(reading.verifiedSystems.astrology.moonSign, "");
+      assert.strictEqual(reading.verifiedSystems.astrology.ascendant, undefined);
     });
 
-    it("provides helpful remark about birth time requirement", () => {
+    await t.test("provides helpful remark about birth time requirement", () => {
       const reading = generateSoulCodexReadingV1(dateOnlyInput);
-      expect(reading.verifiedSystems.astrology.remark).toContain("Birth time required");
+      assert(reading.verifiedSystems.astrology.remark.includes("Birth time required"));
     });
   });
 
-  describe("estimated_birth_window: shows range", () => {
+  await t.test("estimated_birth_window: shows range", async (t) => {
     const estimatedInput: RawAnalysisInput = {
       subjectName: "Someone",
       birthData: {
@@ -115,16 +116,16 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
       },
     };
 
-    it("shows all three with caveat about time dependency", () => {
+    await t.test("shows all three with caveat about time dependency", () => {
       const reading = generateSoulCodexReadingV1(estimatedInput);
-      expect(reading.verifiedSystems.astrology.status).toBe("estimated_birth_window");
-      expect(reading.verifiedSystems.astrology.moonSign).toBe("Virgo");
-      expect(reading.verifiedSystems.astrology.remark).toContain("time");
-      expect(reading.meta.confidence).toBe("moderate");
+      assert.strictEqual(reading.verifiedSystems.astrology.status, "estimated_birth_window");
+      assert.strictEqual(reading.verifiedSystems.astrology.moonSign, "Virgo");
+      assert(reading.verifiedSystems.astrology.remark.includes("time"));
+      assert.strictEqual(reading.meta.confidence, "moderate");
     });
   });
 
-  describe("legacy_approximation: lowest priority fallback", () => {
+  await t.test("legacy_approximation: lowest priority fallback", async (t) => {
     const legacyInput: RawAnalysisInput = {
       subjectName: "Legacy Test",
       birthData: {
@@ -144,19 +145,19 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
       },
     };
 
-    it("shows all three but marks as legacy", () => {
+    await t.test("shows all three but marks as legacy", () => {
       const reading = generateSoulCodexReadingV1(legacyInput);
-      expect(reading.verifiedSystems.astrology.status).toBe("legacy_approximation");
-      expect(reading.verifiedSystems.astrology.remark).toContain("simplified formula");
+      assert.strictEqual(reading.verifiedSystems.astrology.status, "legacy_approximation");
+      assert(reading.verifiedSystems.astrology.remark.includes("simplified formula"));
     });
 
-    it("has low confidence when legacy_approximation", () => {
+    await t.test("has low confidence when legacy_approximation", () => {
       const reading = generateSoulCodexReadingV1(legacyInput);
-      expect(reading.meta.confidence).toBe("low");
+      assert.strictEqual(reading.meta.confidence, "low");
     });
   });
 
-  describe("unavailable: no data shown", () => {
+  await t.test("unavailable: no data shown", async (t) => {
     const unavailableInput: RawAnalysisInput = {
       subjectName: "No Data",
       birthData: {
@@ -171,14 +172,14 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
       },
     };
 
-    it("returns unavailable status", () => {
+    await t.test("returns unavailable status", () => {
       const reading = generateSoulCodexReadingV1(unavailableInput);
-      expect(reading.verifiedSystems.astrology.status).toBe("unavailable");
+      assert.strictEqual(reading.verifiedSystems.astrology.status, "unavailable");
     });
   });
 
-  describe("Validation: prevents invalid inputs", () => {
-    it("rejects verified_ephemeris without all three fields", () => {
+  await t.test("Validation: prevents invalid inputs", async (t) => {
+    await t.test("rejects verified_ephemeris without all three fields", () => {
       const invalidInput: RawAnalysisInput = {
         subjectName: "Incomplete",
         birthData: {
@@ -194,10 +195,10 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
         },
       };
 
-      expect(() => generateSoulCodexReadingV1(invalidInput)).toThrow();
+      assert.throws(() => generateSoulCodexReadingV1(invalidInput));
     });
 
-    it("rejects date_only with invented Moon sign", () => {
+    await t.test("rejects date_only with invented Moon sign", () => {
       const invalidInput: RawAnalysisInput = {
         subjectName: "Invalid",
         birthData: {
@@ -215,10 +216,10 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
         },
       };
 
-      expect(() => generateSoulCodexReadingV1(invalidInput)).toThrow();
+      assert.throws(() => generateSoulCodexReadingV1(invalidInput));
     });
 
-    it("rejects date_only with invented Ascendant", () => {
+    await t.test("rejects date_only with invented Ascendant", () => {
       const invalidInput: RawAnalysisInput = {
         subjectName: "Invalid",
         birthData: {
@@ -236,7 +237,7 @@ describe("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", () => {
         },
       };
 
-      expect(() => generateSoulCodexReadingV1(invalidInput)).toThrow();
+      assert.throws(() => generateSoulCodexReadingV1(invalidInput));
     });
   });
 });
