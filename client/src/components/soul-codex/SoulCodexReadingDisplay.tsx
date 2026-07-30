@@ -1,24 +1,39 @@
 /**
- * SoulCodexReadingDisplay
+ * SoulCodexReadingDisplay - Phase 4 Refactored
  *
- * Progressive disclosure reader supporting three depths:
- * - Essential: snapshot + 3 drivers + 1 reinforcement + growth + action
- * - Complete: all engines + interactions + dominance
- * - Technical: exact degrees, calculations, metadata
+ * 11-Section Structured Layout:
+ * 1. Header (Name, Archetype, Timestamp)
+ * 2. Status Banner (Disclosure - persistent)
+ * 3. Core Systems (Astrology, Numerology, Human Design)
+ * 4. Core Insight (Mechanism-driven observation)
+ * 5. Psychological Mirror (What people see/miss)
+ * 6. Core Pattern (Observation, Mechanism, Tension)
+ * 7. Gift & Shadow (Distinct capabilities)
+ * 8. Actionable Insights (Work, Relationships, Self)
+ * 9. System Interactions (Reinforcements, Balances, Conflicts)
+ * 10. Dominance & Pattern (System hierarchy)
+ * 11. Evidence Drawer (Collapsible, hidden by default)
+ *
+ * Progressive disclosure with depth toggles
  */
 
 import { useState } from "react";
 import type { SoulCodexReading, ReadingDepth } from "@soulcodex/core";
 import { getVisibilityRules } from "@soulcodex/core";
 
-import CodexSnapshot from "./CodexSnapshot";
+import CodexHeader from "./CodexHeader";
+import DisclosureBanner from "./DisclosureBanner";
 import VerifiedSystemsPanel from "./VerifiedSystemsPanel";
+import PsychologicalMirror from "./PsychologicalMirror";
+import ActionInsights from "./ActionInsights";
 import EngineCard from "./EngineCard";
 import InteractionCard from "./InteractionCard";
 import DominancePanel from "./DominancePanel";
 import ActionPlanCard from "./ActionPlanCard";
 import TechnicalAppendix from "./TechnicalAppendix";
-import ConfidenceBadge from "../ConfidenceBadge";
+import EvidenceDrawer from "./EvidenceDrawer";
+import SectionContainer from "./SectionContainer";
+import SharedTooltip from "./SharedTooltip";
 
 interface SoulCodexReadingDisplayProps {
   reading: SoulCodexReading;
@@ -44,9 +59,21 @@ export default function SoulCodexReadingDisplay({
     setExpandedEngines(newExpanded);
   };
 
+  // Determine disclosure mode based on reading data
+  const getDisclosureMode = (): "reflective" | "technical" | "mixed" => {
+    const hasVerified =
+      reading.meta.calculationStatus === "verified_ephemeris" ||
+      reading.meta.calculationStatus === "estimated_birth_window";
+    const hasLegacy = reading.meta.calculationStatus === "legacy_approximation";
+
+    if (hasVerified && !hasLegacy) return "technical";
+    if (hasLegacy) return "mixed";
+    return "reflective";
+  };
+
   return (
     <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1.5rem" }}>
-      {/* Reading Depth Toggle */}
+      {/* ===== DEPTH TOGGLE (Above sections) ===== */}
       <div
         style={{
           display: "flex",
@@ -63,7 +90,7 @@ export default function SoulCodexReadingDisplay({
             key={d}
             onClick={() => {
               setDepth(d);
-              setExpandedEngines(new Set()); // Reset expanded sections on depth change
+              setExpandedEngines(new Set());
             }}
             style={{
               padding: "0.75rem 1.5rem",
@@ -78,74 +105,161 @@ export default function SoulCodexReadingDisplay({
               transition: "all 0.2s ease",
             }}
           >
-            {d}
+            {d.charAt(0).toUpperCase() + d.slice(1)}
           </button>
         ))}
       </div>
 
-      {/* Confidence Badge */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-        <ConfidenceBadge
-          badge={reading.meta.confidence === "high" ? "verified" : reading.meta.confidence === "medium" ? "partial" : "unverified"}
-          reason={`Birth time: ${reading.meta.birthData.time ? "known" : "unknown"}`}
-        />
-      </div>
-
-      {/* Snapshot (all depths) */}
-      {visibility.snapshot && (
-        <div style={{ marginBottom: "3rem" }}>
-          <CodexSnapshot snapshot={reading.snapshot} archetype={reading.snapshot.archetype} />
-        </div>
+      {/* ===== SECTION 1: HEADER ===== */}
+      {visibility.snapshot && reading.snapshot && (
+        <SectionContainer variant="primary">
+          <CodexHeader
+            subjectName={reading.snapshot.subjectName}
+            archetypeName={reading.snapshot.archetype.name}
+            archetypeTagline={reading.snapshot.archetype.tagline}
+            archetypeStatus={reading.snapshot.archetype.status === "complete" ? "complete" : "provisional"}
+            coreInsight={reading.snapshot.coreInsight}
+            systems={{
+              astrology: reading.snapshot.systemsSummary?.astrology || "",
+              numerology: reading.snapshot.systemsSummary?.numerology,
+              humanDesign: reading.snapshot.systemsSummary?.humanDesign,
+            }}
+            coreGift={reading.snapshot.coreGift}
+            primaryTension={reading.snapshot.primaryTension}
+            groundedAction={reading.snapshot.groundedAction}
+            calculationConfidence={reading.meta.confidence === "high" ? "High" : reading.meta.confidence === "medium" ? "Moderate" : "Low"}
+            verifiedSystems={reading.meta.verifiedSystems || []}
+          />
+        </SectionContainer>
       )}
 
-      {/* Verified Systems (technical only) */}
+      {/* ===== SECTION 2: STATUS BANNER ===== */}
+      <SectionContainer variant="secondary">
+        <DisclosureBanner mode={getDisclosureMode()} />
+      </SectionContainer>
+
+      {/* ===== SECTION 3: CORE SYSTEMS ===== */}
       {visibility.verifiedSystems && (
-        <div style={{ marginBottom: "3rem" }}>
-          <VerifiedSystemsPanel systems={reading.verifiedSystems} />
-        </div>
+        <SectionContainer title="Core Systems" variant="secondary">
+          <VerifiedSystemsPanel
+            systems={reading.verifiedSystems}
+            astrologyStatus={reading.meta.calculationStatus}
+          />
+        </SectionContainer>
       )}
 
-      {/* Engines */}
-      {(depth === "complete" || depth === "essential") && (
-        <div style={{ marginBottom: "3rem" }}>
-          <h2 style={{ fontSize: "1.1rem", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "1.5rem" }}>
-            Core Engines
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            {reading.engines.slice(0, visibility.topEngines || reading.engines.length).map((engine) => (
-              <EngineCard
-                key={engine.id}
-                engine={engine}
-                isExpanded={expandedEngines.has(engine.id)}
-                onToggle={() => toggleEngine(engine.id)}
-                depth={depth}
-              />
-            ))}
+      {/* ===== SECTION 4: CORE INSIGHT ===== */}
+      {visibility.snapshot && reading.snapshot && (
+        <SectionContainer title="Core Pattern" subtitle="How your systems create this central dynamic">
+          <div style={{ lineHeight: "1.8", color: "var(--sc-ivory)", fontSize: "1rem" }}>
+            <p style={{ margin: "0 0 1rem 0" }}>{reading.snapshot.coreInsight}</p>
           </div>
-        </div>
+        </SectionContainer>
       )}
 
-      {/* Interactions */}
-      {visibility.interactions && (
-        <div style={{ marginBottom: "3rem" }}>
-          <h2 style={{ fontSize: "1.1rem", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "1.5rem" }}>
-            System Interactions
-          </h2>
+      {/* ===== SECTION 5: PSYCHOLOGICAL MIRROR ===== */}
+      {visibility.snapshot && reading.snapshot.psychologicalMirror && (
+        <SectionContainer title="The Mirror Others See">
+          <PsychologicalMirror
+            whatPeopleSee={reading.snapshot.psychologicalMirror.whatPeopleSee}
+            whatTheyMiss={reading.snapshot.psychologicalMirror.whatTheyMiss}
+            howTheyMissIt={reading.snapshot.psychologicalMirror.howTheyMissIt}
+          />
+        </SectionContainer>
+      )}
 
+      {/* ===== SECTION 6: CORE PATTERN ===== */}
+      {visibility.snapshot && reading.snapshot.corePattern && (
+        <SectionContainer title="Core Pattern Detail">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+            <div>
+              <h3 style={{ fontSize: "0.9rem", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "0.75rem" }}>
+                The Mechanism
+              </h3>
+              <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: "1.6", margin: 0 }}>
+                {reading.snapshot.corePattern.mechanism}
+              </p>
+            </div>
+            <div>
+              <h3 style={{ fontSize: "0.9rem", textTransform: "uppercase", color: "var(--sc-amber)", marginBottom: "0.75rem" }}>
+                The Tension
+              </h3>
+              <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: "1.6", margin: 0 }}>
+                {reading.snapshot.corePattern.tension}
+              </p>
+            </div>
+          </div>
+        </SectionContainer>
+      )}
+
+      {/* ===== SECTION 7: GIFT & SHADOW ===== */}
+      {visibility.snapshot && reading.snapshot.corePattern && (
+        <SectionContainer title="Gift & Shadow">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+            <div
+              style={{
+                padding: "1.5rem",
+                background: "rgba(76,175,80,0.08)",
+                border: "1px solid rgba(76,175,80,0.2)",
+                borderRadius: "8px",
+              }}
+            >
+              <h3 style={{ fontSize: "0.9rem", textTransform: "uppercase", color: "var(--sc-teal)", marginBottom: "0.75rem" }}>
+                Your Gift
+              </h3>
+              <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: "1.6", margin: 0 }}>
+                {reading.snapshot.corePattern.gift}
+              </p>
+            </div>
+            <div
+              style={{
+                padding: "1.5rem",
+                background: "rgba(233,30,99,0.08)",
+                border: "1px solid rgba(233,30,99,0.2)",
+                borderRadius: "8px",
+              }}
+            >
+              <h3 style={{ fontSize: "0.9rem", textTransform: "uppercase", color: "var(--sc-rose)", marginBottom: "0.75rem" }}>
+                Shadow Side
+              </h3>
+              <p style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", lineHeight: "1.6", margin: 0 }}>
+                {reading.snapshot.corePattern.shadow}
+              </p>
+            </div>
+          </div>
+        </SectionContainer>
+      )}
+
+      {/* ===== SECTION 8: ACTIONABLE INSIGHTS ===== */}
+      {visibility.actionInsights && reading.actionInsights && (
+        <SectionContainer title="Actionable Insights">
+          <ActionInsights insights={reading.actionInsights} />
+        </SectionContainer>
+      )}
+
+      {/* ===== SECTION 9: SYSTEM INTERACTIONS ===== */}
+      {visibility.interactions && (
+        <SectionContainer title="System Interactions" subtitle="How your core systems work together">
           {reading.interactions.reinforcements.length > 0 && (
             <div style={{ marginBottom: "2rem" }}>
-              <h3 style={{ fontSize: "0.95rem", color: "var(--sc-teal)", marginBottom: "1rem" }}>Reinforcements</h3>
+              <h3 style={{ fontSize: "0.95rem", color: "var(--sc-teal)", marginBottom: "1rem", textTransform: "uppercase" }}>
+                ✓ Reinforcements
+              </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {reading.interactions.reinforcements.slice(0, visibility.topInteractions || undefined).map((interaction, idx) => (
-                  <InteractionCard key={idx} interaction={interaction} />
-                ))}
+                {reading.interactions.reinforcements
+                  .slice(0, visibility.topInteractions || undefined)
+                  .map((interaction, idx) => (
+                    <InteractionCard key={idx} interaction={interaction} />
+                  ))}
               </div>
             </div>
           )}
 
           {reading.interactions.balances.length > 0 && (
             <div style={{ marginBottom: "2rem" }}>
-              <h3 style={{ fontSize: "0.95rem", color: "var(--sc-violet)", marginBottom: "1rem" }}>Balances</h3>
+              <h3 style={{ fontSize: "0.95rem", color: "var(--sc-violet)", marginBottom: "1rem", textTransform: "uppercase" }}>
+                ⟷ Balances
+              </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {reading.interactions.balances.map((interaction, idx) => (
                   <InteractionCard key={idx} interaction={interaction} />
@@ -156,7 +270,9 @@ export default function SoulCodexReadingDisplay({
 
           {reading.interactions.conflicts.length > 0 && (
             <div>
-              <h3 style={{ fontSize: "0.95rem", color: "var(--sc-amber)", marginBottom: "1rem" }}>Conflicts</h3>
+              <h3 style={{ fontSize: "0.95rem", color: "var(--sc-amber)", marginBottom: "1rem", textTransform: "uppercase" }}>
+                ⚡ Tensions
+              </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {reading.interactions.conflicts.map((interaction, idx) => (
                   <InteractionCard key={idx} interaction={interaction} />
@@ -164,28 +280,44 @@ export default function SoulCodexReadingDisplay({
               </div>
             </div>
           )}
-        </div>
+        </SectionContainer>
       )}
 
-      {/* Dominance (complete & technical) */}
-      {visibility.dominance && (
-        <div style={{ marginBottom: "3rem" }}>
+      {/* ===== SECTION 10: DOMINANCE & PATTERN ===== */}
+      {visibility.dominance && reading.dominance && (
+        <SectionContainer title="System Dominance">
           <DominancePanel dominance={reading.dominance} />
-        </div>
+        </SectionContainer>
       )}
 
-      {/* Action Plan (essential & complete) */}
-      {visibility.actionPlan && (
-        <div style={{ marginBottom: "3rem" }}>
-          <ActionPlanCard actionPlan={reading.actionPlan} />
-        </div>
-      )}
-
-      {/* Technical Appendix (technical only) */}
+      {/* ===== SECTION 11: EVIDENCE DRAWER ===== */}
       {visibility.technicalAppendix && reading.meta && (
-        <div style={{ marginBottom: "3rem" }}>
-          <TechnicalAppendix birthData={reading.meta.birthData} meta={reading.meta} />
-        </div>
+        <SectionContainer title="Verification & Methods" variant="technical">
+          <EvidenceDrawer
+            evidenceLayers={reading.evidenceLayers || []}
+            limitations={reading.limitations || []}
+            calculatedAt={reading.meta.generatedAt}
+            engineVersion={reading.meta.engineVersion}
+            calculationMethod={reading.meta.calculationStatus}
+          />
+
+          {/* Technical Appendix (inside drawer) */}
+          <div style={{ marginTop: "2rem" }}>
+            <TechnicalAppendix birthData={reading.meta.birthData} meta={reading.meta} />
+          </div>
+        </SectionContainer>
+      )}
+
+      {/* Pattern Help */}
+      {depth === "technical" && (
+        <SectionContainer title="Pattern Reference" variant="technical">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
+            <SharedTooltip pattern="2-system-synthesis" />
+            <SharedTooltip pattern="3-system-synthesis" />
+            <SharedTooltip pattern="verified-ephemeris" />
+            <SharedTooltip pattern="birth-time-sensitivity" />
+          </div>
+        </SectionContainer>
       )}
     </div>
   );
