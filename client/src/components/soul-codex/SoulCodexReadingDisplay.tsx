@@ -34,6 +34,7 @@ import TechnicalAppendix from "./TechnicalAppendix";
 import EvidenceDrawer from "./EvidenceDrawer";
 import SectionContainer from "./SectionContainer";
 import SharedTooltip from "./SharedTooltip";
+import ResponsiveContainer from "./ResponsiveContainer";
 
 interface SoulCodexReadingDisplayProps {
   reading: SoulCodexReading;
@@ -72,7 +73,7 @@ export default function SoulCodexReadingDisplay({
   };
 
   return (
-    <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1.5rem" }}>
+    <ResponsiveContainer>
       {/* ===== DEPTH TOGGLE (Above sections) ===== */}
       <div
         style={{
@@ -171,7 +172,23 @@ export default function SoulCodexReadingDisplay({
       {/* ===== SECTION 6: CORE PATTERN ===== */}
       {visibility.snapshot && reading.snapshot.corePattern && (
         <SectionContainer title="Core Pattern Detail">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+          <style>{`
+            @media (max-width: 767px) {
+              [data-pattern-grid] {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+              }
+            }
+            @media (min-width: 768px) {
+              [data-pattern-grid] {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+              }
+            }
+          `}</style>
+          <div data-pattern-grid>
             <div>
               <h3 style={{ fontSize: "0.9rem", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "0.75rem" }}>
                 The Mechanism
@@ -195,7 +212,23 @@ export default function SoulCodexReadingDisplay({
       {/* ===== SECTION 7: GIFT & SHADOW ===== */}
       {visibility.snapshot && reading.snapshot.corePattern && (
         <SectionContainer title="Gift & Shadow">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+          <style>{`
+            @media (max-width: 767px) {
+              [data-shadow-grid] {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+              }
+            }
+            @media (min-width: 768px) {
+              [data-shadow-grid] {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+              }
+            }
+          `}</style>
+          <div data-shadow-grid>
             <div
               style={{
                 padding: "1.5rem",
@@ -319,6 +352,6 @@ export default function SoulCodexReadingDisplay({
           </div>
         </SectionContainer>
       )}
-    </div>
+    </ResponsiveContainer>
   );
 }

@@ -28,17 +28,28 @@ export default function PsychologicalMirror({
   howTheyMissIt,
 }: PsychologicalMirrorProps) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "2rem",
-        padding: "2rem",
-        background: "linear-gradient(135deg, rgba(76,175,80,0.08) 0%, rgba(33,150,243,0.08) 100%)",
-        border: "1px solid rgba(76,175,80,0.15)",
-        borderRadius: "12px",
-      }}
-    >
+    <>
+      <style>{`
+        [data-mirror-grid] {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+          padding: 1.5rem;
+          background: linear-gradient(135deg, rgba(76,175,80,0.08) 0%, rgba(33,150,243,0.08) 100%);
+          border: 1px solid rgba(76,175,80,0.15);
+          border-radius: 8px;
+        }
+
+        @media (min-width: 768px) {
+          [data-mirror-grid] {
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            border-radius: 12px;
+          }
+        }
+      `}</style>
+      <div data-mirror-grid>
       {/* What People See */}
       <div>
         <h3
@@ -102,5 +113,6 @@ export default function PsychologicalMirror({
         </div>
       </div>
     </div>
+    </>
   );
 }
