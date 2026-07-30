@@ -89,10 +89,17 @@ export default function ActionInsights({ insights }: ActionInsightsProps) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
+                  gridTemplateColumns: "1fr",
                   gap: "1.5rem",
                 }}
               >
+                <style>{`
+                  @media (min-width: 768px) {
+                    [data-insight-grid] {
+                      grid-template-columns: 1fr 1fr;
+                    }
+                  }
+                `}</style>
                 {/* Left: Current Pattern */}
                 <div>
                   <div
