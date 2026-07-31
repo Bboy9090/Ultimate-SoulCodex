@@ -111,9 +111,9 @@ export default function PosterPage() {
   /* Auto-populate from stored profile */
   useEffect(() => {
     const p = getProfile();
-    const astro = p?.astrology ?? p?.natalChart ?? p?.chart ?? {};
-    const hd    = p?.humanDesign ?? p?.human_design ?? {};
-    const num   = p?.numerology ?? {};
+    const astro = p?.astrologyData ?? p?.astrology ?? p?.natalChart ?? p?.chart ?? {};
+    const hd    = p?.humanDesignData ?? p?.humanDesign ?? p?.human_design ?? {};
+    const num   = p?.numerologyData ?? p?.numerology ?? {};
 
     if (p?.birthDate || p?.dob) {
       setRawProfile(p);

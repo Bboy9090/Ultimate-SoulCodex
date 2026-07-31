@@ -8,6 +8,7 @@ import {
 } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import { isNativeStoreApp } from "../lib/platform";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 const CACHE_PREFIX = "soulBlueprintReading";
 
