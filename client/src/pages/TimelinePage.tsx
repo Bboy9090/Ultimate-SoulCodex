@@ -253,13 +253,13 @@ export default function TimelinePage() {
 
   useEffect(() => {
     const result = loadActiveProfile();
-    if (result.profile) setProfile(result.profile);
+    if (result) setProfile(result);
 
     const savedToday = localStorage.getItem("soulTodayCard");
     if (savedToday) setTodayCard(JSON.parse(savedToday));
 
-    if (result.profile?.birthDate) {
-      const parts = result.profile.birthDate.split("-");
+    if (result?.birthDate) {
+      const parts = result.birthDate.split("-");
       setBirthData({ month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) });
       return;
     }
@@ -458,9 +458,9 @@ export default function TimelinePage() {
       )}
 
       {/* Archetype sub-label (if profile loaded) */}
-      {profile?.archetype?.name && py && (
+      {profile?.archetype && py && (
         <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)", marginBottom: "1.25rem", marginTop: "-0.5rem" }}>
-          {profile.archetype.name} in a Year-{py} phase
+          {profile.archetype} in a Year-{py} phase
         </p>
       )}
 
