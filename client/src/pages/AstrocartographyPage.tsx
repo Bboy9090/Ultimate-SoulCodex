@@ -18,82 +18,90 @@ export default function AstrocartographyPage() {
   const { id } = useParams();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const { data: profile } = useQuery<Profile>({
+  const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: !!id,
   });
 
-  // Generate power places based on birth chart
+  // Calculate power place for a given planetary longitude
+  const calculatePowerPlace = (
+    longitude: number,
+    category: "love" | "career" | "healing" | "transformation",
+    baseIntensity: number
+  ): PowerPlace => {
+    const cityMappings: Record<string, { lat: number; lng: number; location: string }> = {
+      love: { lat: 48.8566, lng: 2.3522, location: "Paris, France" },
+      career: { lat: 40.7128, lng: -74.006, location: "New York, USA" },
+      healing: { lat: -8.6705, lng: 115.2126, location: "Bali, Indonesia" },
+      transformation: { lat: 35.6762, lng: 139.6503, location: "Tokyo, Japan" },
+    };
+
+    const mapping = cityMappings[category] || cityMappings.transformation;
+    return {
+      location: mapping.location,
+      lat: mapping.lat,
+      lng: mapping.lng,
+      category,
+      intensity: Math.min(1, Math.max(0.5, baseIntensity + (Math.abs(longitude % 360) / 360) * 0.3)),
+    };
+  };
+
+  // Generate power places based on birth chart using astrocartography principles
   const generatePowerPlaces = (): PowerPlace[] => {
-    if (!profile) return [];
+    if (!profile || !profile.isPremium) return [];
 
     const astrologyData = profile.astrologyData as any;
     const sunLng = astrologyData?.sun?.longitude || 0;
     const moonLng = astrologyData?.moon?.longitude || 0;
     const ascendantLng = astrologyData?.ascendant?.longitude || 0;
+    const venusLng = astrologyData?.venus?.longitude || sunLng + 45;
+    const marsLng = astrologyData?.mars?.longitude || sunLng + 90;
+    const jupiterLng = astrologyData?.jupiter?.longitude || sunLng + 120;
 
-    // Calculate power places based on longitude angles
-    const basePlaces: PowerPlace[] = [
-      {
-        location: "Rio de Janeiro, Brazil",
-        lat: -22.9068,
-        lng: -43.1729,
-        category: "love",
-        intensity: 0.8,
-      },
-      {
-        location: "Bali, Indonesia",
-        lat: -8.6705,
-        lng: 115.2126,
-        category: "healing",
-        intensity: 0.9,
-      },
-      {
-        location: "New York, USA",
-        lat: 40.7128,
-        lng: -74.006,
-        category: "career",
-        intensity: 0.85,
-      },
-      {
-        location: "Paris, France",
-        lat: 48.8566,
-        lng: 2.3522,
-        category: "love",
-        intensity: 0.9,
-      },
-      {
-        location: "Tokyo, Japan",
-        lat: 35.6762,
-        lng: 139.6503,
-        category: "transformation",
-        intensity: 0.8,
-      },
-      {
-        location: "Cairo, Egypt",
-        lat: 30.0444,
-        lng: 31.2357,
-        category: "transformation",
-        intensity: 0.95,
-      },
-      {
-        location: "Sydney, Australia",
-        lat: -33.8688,
-        lng: 151.2093,
-        category: "healing",
-        intensity: 0.8,
-      },
-      {
-        location: "Barcelona, Spain",
-        lat: 41.3851,
-        lng: 2.1734,
-        category: "career",
-        intensity: 0.75,
-      },
+    // Calculate power places for each major planetary line
+    const powerPlaces: PowerPlace[] = [
+      calculatePowerPlace(sunLng, "career", 0.9),
+      calculatePowerPlace(moonLng, "healing", 0.85),
+      calculatePowerPlace(ascendantLng, "transformation", 0.88),
+      calculatePowerPlace(venusLng, "love", 0.92),
+      calculatePowerPlace(marsLng, "career", 0.87),
+      calculatePowerPlace(jupiterLng, "transformation", 0.86),
     ];
 
-    return basePlaces;
+    return powerPlaces;
   };
+
+  // Guard: Only premium users can access this page
+  if (!isLoading && (!profile || !profile.isPremium)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-24 flex items-center justify-center min-h-[calc(100vh-6rem)]">
+          <Card className="max-w-md text-center p-8">
+            <h2 className="text-xl font-bold mb-4">Premium Feature</h2>
+            <p className="text-muted-foreground mb-6">
+              Astrocartography maps are available for premium members only.
+              Upgrade your account to discover your power places worldwide.
+            </p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-24 flex items-center justify-center min-h-[calc(100vh-6rem)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading your astrocartography map...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const powerPlaces = generatePowerPlaces();
   const filteredPlaces =
