@@ -211,9 +211,9 @@ export default function CompatibilityPage() {
     }
   }, []);
 
-  const sunSign = profile?.sunSign ?? profile?.astrologyData?.sunSign ?? profile?.astrology?.sunSign ?? profile?.astrology?.sun;
-  const lifePath = profile?.numerology?.lifePath ?? profile?.numerologyData?.lifePathNumber ?? profile?.numerologyData?.lifePath;
-  const hdType = profile?.humanDesign?.type ?? profile?.humanDesignData?.type;
+  const sunSign = profile?.sunSign ?? profile?.astrologyData?.sunSign ?? profile?.natalChart?.sunSign ?? profile?.chart?.sunSign ?? profile?.astrology?.sunSign ?? profile?.astrology?.sun;
+  const lifePath = profile?.lifePathNumber ?? profile?.numerology?.lifePath ?? profile?.numerologyData?.lifePathNumber ?? profile?.numerologyData?.lifePath;
+  const hdType = profile?.humanDesignType ?? profile?.humanDesign?.type ?? profile?.humanDesignData?.type;
   const hdAuthority = profile?.humanDesign?.authority ?? profile?.humanDesignData?.authority;
 
   const loadMatches = useCallback(async () => {
