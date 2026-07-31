@@ -124,7 +124,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
             </a>
 
             {/* Native Share */}
-            {navigator.share && (
+            {typeof navigator.share === "function" && (
               <Button onClick={handleShare} className="w-full" variant="secondary">
                 <Share2 className="mr-2 h-4 w-4" />
                 More Share Options

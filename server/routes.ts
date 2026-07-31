@@ -269,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: profile.name,
         birthDate: profile.birthDate.toISOString().split('T')[0],
         birthTime: profile.birthTime || "",
-        birthLocation: profile.birthLocation,
+        birthLocation: profile.birthLocation || "",
         astrology: profile.astrologyData || {},
         humanDesign: {},
         aiText: {
