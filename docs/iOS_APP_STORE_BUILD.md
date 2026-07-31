@@ -228,14 +228,13 @@ xcrun altool --upload-app -f "Soul Codex.ipa" -t ios -u "your-apple-id@example.c
 ## Configuration Files
 
 ### ExportOptions.plist
-**Location**: `ios/App/ExportOptions.plist`
+**Location**: `scripts/ExportOptions.plist`
 
 Contains export settings:
-- **method**: `app-store` - Exports for App Store
-- **signingStyle**: `automatic` - Let Xcode manage signing
+- **method**: `app-store-connect` - Exports for App Store and uploads to App Store Connect
 - **teamID**: `86NUJ8M3B8` - Apple Developer Team ID
-- **stripSwiftSymbols**: `true` - Reduce IPA size
 - **uploadSymbols**: `true` - Upload symbols to App Store
+- **uploadBitcode**: `false` - Don't upload bitcode (deprecated by Apple)
 
 ### ci_post_clone.sh
 **Location**: `ios/App/ci_scripts/ci_post_clone.sh`
@@ -298,7 +297,7 @@ xcodebuild -project App.xcodeproj \
 xcodebuild -exportArchive \
   -archivePath build/SoulCodex.xcarchive \
   -exportPath build/export \
-  -exportOptionsPlist ExportOptions.plist
+  -exportOptionsPlist ../../scripts/ExportOptions.plist
 ```
 
 ## Monitoring

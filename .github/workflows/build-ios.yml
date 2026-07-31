@@ -148,7 +148,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/SoulCodex.xcarchive \
             -exportPath build/export \
-            -exportOptionsPlist ExportOptions.plist \
+            -exportOptionsPlist ../../scripts/ExportOptions.plist \
             -allowProvisioningUpdates \
             -verbose 2>&1 | tee export.log
 
