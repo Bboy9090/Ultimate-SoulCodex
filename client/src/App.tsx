@@ -1,4 +1,4 @@
-import { Switch, Route, useParams, useNavigate } from "wouter";
+import { Switch, Route, useParams, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ interface PremiumRouteProps {
 
 function PremiumRoute({ component: Component }: PremiumRouteProps) {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
 
   const { data: profile, isLoading } = useQuery<ProfileType>({
     queryKey: ["/api/profiles", id],
