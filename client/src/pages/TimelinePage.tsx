@@ -252,14 +252,14 @@ export default function TimelinePage() {
   const [profile, setProfile]     = useState<any>(null);
 
   useEffect(() => {
-    const activeProfile = loadActiveProfile();
-    if (activeProfile) setProfile(activeProfile);
+    const result = loadActiveProfile();
+    if (result.profile) setProfile(result.profile);
 
     const savedToday = localStorage.getItem("soulTodayCard");
     if (savedToday) setTodayCard(JSON.parse(savedToday));
 
-    if (activeProfile?.birthDate) {
-      const parts = activeProfile.birthDate.split("-");
+    if (result.profile?.birthDate) {
+      const parts = result.profile.birthDate.split("-");
       setBirthData({ month: parseInt(parts[1], 10), day: parseInt(parts[2], 10) });
       return;
     }
