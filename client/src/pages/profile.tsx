@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -33,11 +34,58 @@ import type { Profile } from "@shared/schema";
 export default function ProfilePage() {
   const { id } = useParams();
   const { toast } = useToast();
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: !!id,
   });
+
+  const handleDownloadPdf = async () => {
+    if (!profile || !profile.isPremium) {
+      toast({
+        title: "Premium Required",
+        description: "PDF downloads are available for premium members.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    try {
+      const response = await fetch(`/api/pdf/profile/${id}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${profile.name}-soul-codex.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Your Soul Codex PDF has been downloaded.",
+      });
+    } catch (error) {
+      console.error("PDF download error:", error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -602,9 +650,14 @@ export default function ProfilePage() {
               <Star className="mr-2 h-4 w-4" />
               Share Profile
             </Button>
-            <Button variant="outline" data-testid="button-download-pdf">
+            <Button
+              variant="outline"
+              data-testid="button-download-pdf"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Download PDF
+              {isDownloadingPdf ? "Downloading..." : "Download PDF"}
             </Button>
             {!profile.isPremium && (
               <Button className="bg-primary text-primary-foreground" data-testid="button-upgrade-main">
