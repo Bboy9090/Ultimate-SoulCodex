@@ -43,26 +43,53 @@ jobs:
         run: sh ios/App/ci_scripts/ci_post_clone.sh
 
       - name: Validate mobile release configuration
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
         run: npm run mobile:validate:ios
 
       - name: Resolve Xcode package dependencies
         run: |
-          xcodebuild -resolvePackageDependencies \
-            -project ios/App/App.xcodeproj \
+          cd ios/App
+          echo "Resolving Swift package dependencies..."
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages"
+            -resolvePackageDependencies
 
       - name: Build iOS (Development)
         if: inputs.build_type == 'development'
         run: |
           cd ios/App
-          xcodebuild -project App.xcodeproj \
+          echo "Building for iOS Simulator..."
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Verify signing secrets
+        if: inputs.build_type == 'app-store'
+        env:
+          IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          echo "Checking for required secrets..."
+          if [ -z "$IOS_CERTIFICATE_P12" ]; then
+            echo "❌ Error: IOS_CERTIFICATE_P12 secret is not set"
+            echo "Please configure GitHub Secrets: https://github.com/Bboy9090/Ultimate-SoulCodex/settings/secrets/actions"
+            exit 1
+          fi
+          if [ -z "$IOS_CERTIFICATE_PASSWORD" ]; then
+            echo "❌ Error: IOS_CERTIFICATE_PASSWORD secret is not set"
+            exit 1
+          fi
+          if [ -z "$IOS_PROVISIONING_PROFILE" ]; then
+            echo "❌ Error: IOS_PROVISIONING_PROFILE secret is not set"
+            exit 1
+          fi
+          echo "✅ All signing secrets are configured"
 
       - name: Import signing certificate
         if: inputs.build_type == 'app-store'
@@ -76,30 +103,112 @@ jobs:
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
-          test -n "$IOS_PROVISIONING_PROFILE"
+          echo "Installing provisioning profile..."
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+
           printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+          if [ ! -f ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision ]; then
+            echo "❌ Failed to install provisioning profile"
+            exit 1
+          fi
+
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
+          echo "✅ Provisioning profile installed"
 
       - name: Build iOS (App Store)
         if: inputs.build_type == 'app-store'
         run: |
           cd ios/App
-          xcodebuild -project App.xcodeproj \
+          mkdir -p build
+
+          echo "Creating archive..."
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Release \
             -archivePath build/SoulCodex.xcarchive \
-            archive
+            -allowProvisioningUpdates \
+            -verbose \
+            archive 2>&1 | tee archive.log
 
+          if [ ! -d "build/SoulCodex.xcarchive" ]; then
+            echo "❌ Archive creation failed!"
+            echo ""
+            echo "Last 100 lines of archive log:"
+            tail -100 archive.log
+            exit 1
+          fi
+
+          echo "✅ Archive created successfully"
+          ls -lah build/SoulCodex.xcarchive
+
+          echo ""
+          echo "Exporting archive..."
+          mkdir -p build/export
           xcodebuild -exportArchive \
             -archivePath build/SoulCodex.xcarchive \
             -exportPath build/export \
-            -exportOptionsPlist ExportOptions.plist
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -verbose 2>&1 | tee export.log
 
-      - name: Upload artifact
+          echo ""
+          echo "Checking for IPA file..."
+          if find build/export -name "*.ipa" -type f; then
+            echo "✅ IPA export successful"
+            ls -lah build/export/
+          else
+            echo "❌ IPA export failed!"
+            echo "Export directory contents:"
+            ls -la build/export/
+            echo ""
+            echo "Last 50 lines of export log:"
+            tail -50 export.log
+            exit 1
+          fi
+
+      - name: Show build summary
+        if: always()
+        run: |
+          echo "=== Build Summary ==="
+          echo "Build type: ${{ inputs.build_type }}"
+          echo ""
+
+          if [ "${{ inputs.build_type }}" == "development" ]; then
+            echo "=== Development Build Artifacts ==="
+            find ios/App/build -type d -name "*.app" 2>/dev/null && echo "✅ App bundle found" || echo "⚠️ No app bundle found"
+          elif [ "${{ inputs.build_type }}" == "app-store" ]; then
+            echo "=== App Store Build Artifacts ==="
+            if find ios/App/build/export -name "*.ipa" -type f 2>/dev/null; then
+              echo "✅ IPA file(s) found"
+              du -sh ios/App/build/export/*.ipa 2>/dev/null | awk '{print "   " $0}'
+            else
+              echo "⚠️ No IPA files found"
+            fi
+            echo ""
+            echo "Export directory contents:"
+            ls -lah ios/App/build/export/ 2>/dev/null || echo "Export directory not found"
+          fi
+
+          echo ""
+          echo "=== Build Logs Available ==="
+          [ -f ios/App/build.log ] && echo "✅ build.log (development)" || true
+          [ -f ios/App/archive.log ] && echo "✅ archive.log (app-store)" || true
+          [ -f ios/App/export.log ] && echo "✅ export.log (app-store)" || true
+
+      - name: Upload artifact (App Store)
+        if: inputs.build_type == 'app-store'
         uses: actions/upload-artifact@v4
         with:
-          name: ios-build-${{ inputs.build_type }}
-          path: |
-            ios/App/build/export/*.ipa
-            ios/App/build/Build/Products/**/*.app
+          name: ios-app-store-build
+          path: ios/App/build/export/
+          retention-days: 30
+
+      - name: Upload artifact (Development)
+        if: inputs.build_type == 'development'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-development-build
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/
           if-no-files-found: warn
+          retention-days: 7
