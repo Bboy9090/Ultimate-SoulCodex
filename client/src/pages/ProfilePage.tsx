@@ -125,6 +125,13 @@ export default function ProfilePage() {
   const archetypeName = profile.archetype?.name || "The Seeker";
   const archetypeTagline = profile.archetype?.tagline || "Aligning your natal signals...";
 
+  // Check if profile has verified data for Galactic Code
+  const sunSign = profile.sunSign || profile.astrologyData?.sunSign || profile.natalChart?.sunSign || profile.chart?.sunSign;
+  const moonSign = profile.moonSign || profile.astrologyData?.moonSign || profile.natalChart?.moonSign || profile.chart?.moonSign;
+  const hasAstrology = !!sunSign;
+  const hasHumanDesign = !!(profile.humanDesignType || profile.humanDesignData?.type || profile.humanDesign?.type);
+  const hasVerifiedData = hasAstrology && hasHumanDesign;
+
   // Calculate Personal Day/Year/Month if we have birthDate
   const today = new Date();
   const birthDate = profile.birthDate;
