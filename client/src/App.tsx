@@ -12,6 +12,11 @@ import CompatibilityPage from "./pages/CompatibilityPage";
 import TimelinePage from "./pages/TimelinePage";
 import AstrocartographyPage from "./pages/AstrocartographyPage";
 import PalmistryPage from "./pages/PalmistryPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import SupportPage from "./pages/SupportPage";
+import SettingsPage from "./pages/SettingsPage";
+import PricingPage from "./pages/PricingPage";
 
 function ProfileRoute() {
   const { id } = useParams();
@@ -28,6 +33,11 @@ function Router() {
       <Route path="/astrocartography/:id" component={AstrocartographyPage} />
       <Route path="/palmistry/:id" component={PalmistryPage} />
       <Route path="/profile/:id" component={ProfileRoute} />
+      <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/support" component={SupportPage} />
+      <Route path="/settings" component={SettingsPage} />
+      <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
     </Switch>
   );
