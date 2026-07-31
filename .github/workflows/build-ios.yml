@@ -40,6 +40,7 @@ jobs:
       - name: Bootstrap JavaScript and local Swift packages
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
         run: sh ios/App/ci_scripts/ci_post_clone.sh
 
       - name: Validate mobile release configuration
@@ -47,10 +48,10 @@ jobs:
 
       - name: Resolve Xcode package dependencies
         run: |
+          cd ios/App
           xcodebuild -resolvePackageDependencies \
-            -project ios/App/App.xcodeproj \
-            -scheme "Soul Codex" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages"
+            -project App.xcodeproj \
+            -scheme "Soul Codex"
 
       - name: Build iOS (Development)
         if: inputs.build_type == 'development'
@@ -62,7 +63,8 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            -verbose \
+            build 2>&1 | tee build.log
 
       - name: Import signing certificate
         if: inputs.build_type == 'app-store'
@@ -84,22 +86,57 @@ jobs:
         if: inputs.build_type == 'app-store'
         run: |
           cd ios/App
+          mkdir -p build
+
+          echo "Creating archive..."
           xcodebuild -project App.xcodeproj \
             -scheme "Soul Codex" \
             -configuration Release \
             -archivePath build/SoulCodex.xcarchive \
-            archive
+            -verbose \
+            archive 2>&1 | tee archive.log
 
+          if [ ! -d "build/SoulCodex.xcarchive" ]; then
+            echo "Archive creation failed!"
+            exit 1
+          fi
+
+          echo "Exporting archive..."
+          mkdir -p build/export
           xcodebuild -exportArchive \
             -archivePath build/SoulCodex.xcarchive \
             -exportPath build/export \
-            -exportOptionsPlist ExportOptions.plist
+            -exportOptionsPlist ExportOptions.plist \
+            -verbose 2>&1 | tee export.log
 
-      - name: Upload artifact
+          if [ ! -f "build/export/Soul Codex.ipa" ] && [ ! -f "build/export/SoulCodex.ipa" ]; then
+            echo "IPA export failed!"
+            ls -la build/export/
+            exit 1
+          fi
+
+      - name: List build artifacts
+        if: always()
+        run: |
+          echo "=== Build Output ==="
+          find ios/App/build -type f -name "*.ipa" -o -name "*.app" 2>/dev/null || echo "No artifacts found"
+          echo ""
+          echo "=== Build Directory Contents ==="
+          ls -lah ios/App/build/ 2>/dev/null || echo "Build directory not found"
+
+      - name: Upload artifact (App Store)
+        if: inputs.build_type == 'app-store'
         uses: actions/upload-artifact@v4
         with:
-          name: ios-build-${{ inputs.build_type }}
-          path: |
-            ios/App/build/export/*.ipa
-            ios/App/build/Build/Products/**/*.app
+          name: ios-app-store-build
+          path: ios/App/build/export/
+          retention-days: 30
+
+      - name: Upload artifact (Development)
+        if: inputs.build_type == 'development'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-development-build
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/
           if-no-files-found: warn
+          retention-days: 7
