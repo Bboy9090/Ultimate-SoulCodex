@@ -208,12 +208,18 @@ export default function ProfilePage() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+            <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
               <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="astrology" data-testid="tab-astrology">Astrology</TabsTrigger>
               <TabsTrigger value="numerology" data-testid="tab-numerology">Numerology</TabsTrigger>
               <TabsTrigger value="personality" data-testid="tab-personality">Personality</TabsTrigger>
               <TabsTrigger value="guidance" data-testid="tab-guidance">Guidance</TabsTrigger>
+              {profile.isPremium && (
+                <>
+                  <TabsTrigger value="astrocartography" data-testid="tab-astrocartography">Maps</TabsTrigger>
+                  <TabsTrigger value="palmistry" data-testid="tab-palmistry">Palm</TabsTrigger>
+                </>
+              )}
             </TabsList>
 
             {/* Overview Tab */}
@@ -642,6 +648,48 @@ export default function ProfilePage() {
                 </Card>
               )}
             </TabsContent>
+
+            {/* Astrocartography Tab */}
+            {profile.isPremium && (
+              <TabsContent value="astrocartography" className="space-y-6">
+                <Card className="glassmorphism">
+                  <CardHeader>
+                    <CardTitle>Astrocartography Map</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-6">
+                      Discover your power places worldwide. This interactive map shows locations optimized for love, career, healing, and transformation based on your natal chart.
+                    </p>
+                    <Link href={`/astrocartography/${id}`}>
+                      <Button className="w-full">
+                        View Full Astrocartography Map →
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+
+            {/* Palmistry Tab */}
+            {profile.isPremium && (
+              <TabsContent value="palmistry" className="space-y-6">
+                <Card className="glassmorphism">
+                  <CardHeader>
+                    <CardTitle>AI Palmistry Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-6">
+                      Upload a palm photo for computer vision analysis of your life, heart, head, and fate lines. Get insights into your vitality, emotional patterns, mental abilities, and destiny path.
+                    </p>
+                    <Link href={`/palmistry/${id}`}>
+                      <Button className="w-full">
+                        Analyze Your Palm →
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
           </Tabs>
 
           {/* Actions */}
