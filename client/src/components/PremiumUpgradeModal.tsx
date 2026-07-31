@@ -18,10 +18,38 @@ export function PremiumUpgradeModal({
 }: PremiumUpgradeModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const validatePaymentFields = (): boolean => {
+    if (!cardNumber.replace(/\s/g, "")) {
+      setError("Card number is required");
+      return false;
+    }
+    if (cardNumber.replace(/\s/g, "").length < 13) {
+      setError("Invalid card number");
+      return false;
+    }
+    if (!expiryDate || expiryDate.split("/").length !== 2) {
+      setError("Invalid expiry date (MM/YY)");
+      return false;
+    }
+    if (!cvv || cvv.length < 3) {
+      setError("Invalid CVV");
+      return false;
+    }
+    return true;
+  };
+
   const handleUpgrade = async () => {
+    if (!validatePaymentFields()) {
+      setIsProcessing(false);
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
 
@@ -30,7 +58,13 @@ export function PremiumUpgradeModal({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${profileId}`,
         },
+        body: JSON.stringify({
+          cardNumber: cardNumber.replace(/\s/g, ""),
+          expiryDate,
+          cvv,
+        }),
       });
 
       if (!response.ok) {
@@ -125,6 +159,71 @@ export function PremiumUpgradeModal({
                 <span>Personalized rituals</span>
               </div>
             </div>
+          </div>
+
+          {/* Payment Form */}
+          <div className="border-t pt-4 space-y-3">
+            <h3 className="font-semibold text-sm">Payment Details</h3>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">
+                Card Number
+              </label>
+              <input
+                type="text"
+                placeholder="4111 1111 1111 1111"
+                value={cardNumber}
+                onChange={(e) =>
+                  setCardNumber(
+                    e.target.value
+                      .replace(/\s/g, "")
+                      .replace(/(\d{4})/g, "$1 ")
+                      .trim()
+                  )
+                }
+                maxLength={19}
+                className="w-full px-3 py-2 border rounded text-sm bg-background"
+                disabled={isProcessing}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Expiry (MM/YY)
+                </label>
+                <input
+                  type="text"
+                  placeholder="12/25"
+                  value={expiryDate}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, "");
+                    if (val.length >= 2) {
+                      val = val.slice(0, 2) + "/" + val.slice(2, 4);
+                    }
+                    setExpiryDate(val);
+                  }}
+                  maxLength={5}
+                  className="w-full px-3 py-2 border rounded text-sm bg-background"
+                  disabled={isProcessing}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  CVV
+                </label>
+                <input
+                  type="text"
+                  placeholder="123"
+                  value={cvv}
+                  onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  maxLength={4}
+                  className="w-full px-3 py-2 border rounded text-sm bg-background"
+                  disabled={isProcessing}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              For testing: use card 4111 1111 1111 1111
+            </p>
           </div>
 
           {/* Error Message */}

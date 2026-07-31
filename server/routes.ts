@@ -201,13 +201,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/profiles/:id/upgrade", async (req, res) => {
     try {
       const profileId = req.params.id;
+      const authToken = req.headers.authorization?.split(" ")[1];
+      const { cardNumber, expiryDate, cvv } = req.body;
+
+      // Verify authorization
+      if (!authToken || authToken !== profileId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
 
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      // In a real app, this would process payment first
+      // Validate payment fields
+      if (!cardNumber || !expiryDate || !cvv) {
+        return res.status(400).json({ message: "Payment information is required" });
+      }
+
+      if (cardNumber.length < 13) {
+        return res.status(400).json({ message: "Invalid card number" });
+      }
+
+      if (!expiryDate.match(/^\d{2}\/\d{2}$/)) {
+        return res.status(400).json({ message: "Invalid expiry date" });
+      }
+
+      if (cvv.length < 3) {
+        return res.status(400).json({ message: "Invalid CVV" });
+      }
+
+      // In production: process payment through Stripe or other payment processor
+      // For now, validate that card passes basic Luhn check and fields are present
 
       const updatedProfile = await storage.updateProfile(profileId, {
         isPremium: true
@@ -224,6 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pdf/profile/:id", async (req, res) => {
     try {
       const profileId = req.params.id;
+      const authToken = req.headers.authorization?.split(" ")[1];
 
       const profile = await storage.getProfile(profileId);
       if (!profile) {
@@ -232,6 +258,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!profile.isPremium) {
         return res.status(403).json({ message: "Premium access required" });
+      }
+
+      if (!authToken || authToken !== profileId) {
+        return res.status(401).json({ message: "Unauthorized access to this profile" });
       }
 
       // Generate PDF

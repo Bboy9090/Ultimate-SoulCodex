@@ -26,10 +26,42 @@ export default function PalmistryPage() {
   const [palmImage, setPalmImage] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PalmAnalysis | null>(null);
 
-  const { data: profile } = useQuery<Profile>({
+  const { data: profile, isLoading } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: !!id,
   });
+
+  // Guard: Only premium users can access this page
+  if (!isLoading && (!profile || !profile.isPremium)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-24 flex items-center justify-center min-h-[calc(100vh-6rem)]">
+          <Card className="max-w-md text-center p-8">
+            <h2 className="text-xl font-bold mb-4">Premium Feature</h2>
+            <p className="text-muted-foreground mb-6">
+              AI Palmistry Analysis is available for premium members only.
+              Upgrade your account to analyze your palm lines and insights.
+            </p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-24 flex items-center justify-center min-h-[calc(100vh-6rem)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading palmistry analysis...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -52,22 +84,25 @@ export default function PalmistryPage() {
         const imageData = event.target?.result as string;
         setPalmImage(imageData);
 
-        // Simulate AI analysis with realistic results
-        // In a real implementation, this would call a CV API
+        // DEVELOPMENT: Simulated analysis results
+        // In production, this would call a real computer vision API for palm line analysis
+        // This feature is currently in development
         const mockAnalysis: PalmAnalysis = {
           hand: "right",
-          lifeLineStrength: 0.78 + Math.random() * 0.2,
-          heartLineClarity: 0.82 + Math.random() * 0.15,
-          headLineLength: 0.71 + Math.random() * 0.25,
-          fateLinePresence: 0.65 + Math.random() * 0.3,
+          lifeLineStrength: 0.72 + (Math.abs(file.name.charCodeAt(0)) % 20) / 100,
+          heartLineClarity: 0.78 + (Math.abs(file.name.charCodeAt(1)) % 20) / 100,
+          headLineLength: 0.68 + (Math.abs(file.name.charCodeAt(2)) % 20) / 100,
+          fateLinePresence: 0.62 + (Math.abs(file.name.charCodeAt(3)) % 20) / 100,
           interpretation:
-            "Your palm reveals a balanced life with strong emotional intelligence and good decision-making capability. The presence of a clear heart line suggests openness in relationships and emotional expression. Your head line indicates analytical thinking and problem-solving skills.",
+            "[DEVELOPMENT MODE] This is simulated analysis. Real computer vision analysis coming soon. " +
+            "Your palm shows a balanced life with emotional intelligence. The heart line pattern suggests openness in relationships. " +
+            "The head line indicates analytical thinking and problem-solving capabilities.",
         };
 
         setAnalysis(mockAnalysis);
         toast({
-          title: "Analysis Complete",
-          description: "Your palm has been analyzed successfully.",
+          title: "Analysis Complete (Simulated)",
+          description: "This feature is in development. Real CV API integration coming soon.",
         });
       };
       reader.readAsDataURL(file);
