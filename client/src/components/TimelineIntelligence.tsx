@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { generateTimelineIntelligence, type TimelineIntelligenceSummary, type SystemSignal, type LivedSignal } from "@soulcodex/core";
-import { getRecentDailyPulseEntries, getDailyPulseSummary } from "../lib/dailyPulseStorage";
-import { IconCheckCircle, IconAlertCircle, IconTrendingUp } from "./Icons";
+import { getRecentDailyPulseEntries } from "../lib/dailyPulseStorage";
+import { IconCheck } from "./Icons";
 
 interface TimelineIntelligenceProps {
   systemSignals: SystemSignal[];
@@ -118,7 +118,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem" }}>
           {summary.systemSignals.slice(0, 3).map((signal, idx) => (
             <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <IconCheckCircle size={16} style={{ color: "var(--sc-gold)", flexShrink: 0 }} />
+              <IconCheck size={16} style={{ color: "var(--sc-gold)", flexShrink: 0 }} />
               <span style={{ fontSize: "0.9rem", color: "var(--sc-ivory)" }}>{signal.label}</span>
             </div>
           ))}
@@ -180,7 +180,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
             {summary.matches.slice(0, 2).map((match, idx) => (
               <div key={idx} style={{ fontSize: "0.9rem", color: "var(--sc-stone)", lineHeight: "1.5" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
-                  <IconCheckCircle size={16} style={{ color: "var(--sc-teal)", flexShrink: 0, marginTop: "0.25rem" }} />
+                  <IconCheck size={16} style={{ color: "var(--sc-teal)", flexShrink: 0, marginTop: "0.25rem" }} />
                   <span>{match.description}</span>
                 </div>
               </div>

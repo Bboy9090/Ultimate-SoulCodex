@@ -9,6 +9,7 @@ import LocalFirstInputForm from "./pages/local-first-input-form";
 import Profile from "./pages/profile";
 import OfflineProfilePage from "./pages/offline-profile";
 import CompatibilityPage from "./pages/CompatibilityPage";
+import TimelinePage from "./pages/TimelinePage";
 
 function ProfileRoute() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
       <Route path="/compatibility" component={CompatibilityPage} />
+      <Route path="/timeline" component={TimelinePage} />
       <Route path="/profile/:id" component={ProfileRoute} />
       <Route component={NotFound} />
     </Switch>
