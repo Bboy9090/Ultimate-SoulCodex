@@ -19,7 +19,7 @@
 
 import { useState } from "react";
 import type { SoulCodexReading, ReadingDepth } from "@soulcodex/core";
-import { getVisibilityRules } from "@soulcodex/core";
+import { getVisibilityRules } from "@soulcodex/core/soul-codex/reading-validator.js";
 
 import CodexHeader from "./CodexHeader";
 import DisclosureBanner from "./DisclosureBanner";
@@ -267,6 +267,26 @@ export default function SoulCodexReadingDisplay({
       {visibility.actionInsights && reading.actionInsights && (
         <SectionContainer title="Actionable Insights">
           <ActionInsights insights={reading.actionInsights} />
+        </SectionContainer>
+      )}
+
+      {/* ===== SECTION 8.5: ENGINES (Core System Analysis) ===== */}
+      {(visibility.engines || visibility.topEngines) && reading.engines && reading.engines.length > 0 && (
+        <SectionContainer title="Core Systems Analysis">
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {reading.engines
+              .slice(0, visibility.topEngines || undefined)
+              .map((engine, idx) => (
+                <EngineCard key={idx} engine={engine} />
+              ))}
+          </div>
+        </SectionContainer>
+      )}
+
+      {/* ===== SECTION 8.7: ACTION PLAN ===== */}
+      {visibility.actionPlan && reading.actionPlan && (
+        <SectionContainer title="Recommended Next Steps">
+          <ActionPlanCard actionPlan={reading.actionPlan} />
         </SectionContainer>
       )}
 

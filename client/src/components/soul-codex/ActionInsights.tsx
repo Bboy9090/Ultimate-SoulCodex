@@ -87,6 +87,7 @@ export default function ActionInsights({ insights }: ActionInsightsProps) {
 
               {/* Four-part structure: Current / Leverage / Guard / Test */}
               <div
+                data-insight-grid
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr",
