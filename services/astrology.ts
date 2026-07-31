@@ -6,8 +6,8 @@ import {
   getKarmicInterpretation,
   getAspectInterpretation
 } from "./interpretations";
-import * as Astronomy from 'astronomy-engine';
-const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
+import * as AstronomyModule from 'astronomy-engine';
+const Astro = (AstronomyModule as any).default ?? AstronomyModule;
 import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 
@@ -243,15 +243,15 @@ function estimateTimezoneFromCoordinates(latitude: number, longitude: number): s
   return 'UTC';
 }
 
-function calculateCelestialPosition(body: Astro.Body, birthTime: Date): { longitude: number; sign: string; degree: number } {
+function calculateCelestialPosition(body: any, birthTime: Date): { longitude: number; sign: string; degree: number } {
   // Use geocentric coordinates (no observer) for standard astrological calculations
   // This removes topocentric parallax which can shift the Moon by up to 1°
-  const equator = Astro.GeoVector(body, birthTime, true);
+  const equator = (Astro as any).GeoVector(body, birthTime, true);
 
   // Convert to ecliptic coordinates with equinox-of-date
   // astronomy-engine returns J2000 coordinates by default, but we need
   // coordinates precessed to the actual date for tropical astrology
-  const ecliptic = Astro.Ecliptic(equator);
+  const ecliptic = (Astro as any).Ecliptic(equator);
   const longitude = ecliptic.elon;
 
   return {
@@ -262,7 +262,7 @@ function calculateCelestialPosition(body: Astro.Body, birthTime: Date): { longit
 }
 
 function calculateLocalSiderealTime(birthTime: Date, longitude: number): number {
-  const gmst = Astro.SiderealTime(birthTime);
+  const gmst = (Astro as any).SiderealTime(birthTime);
   const lst = gmst + (longitude / 15.0);
   return (lst % 24 + 24) % 24;
 }
@@ -400,16 +400,16 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const longitude = normalizeCoordinate((birthData as any).longitude, 0);
   
   // Calculate geocentric planet positions using equinox-of-date
-  const sunPos = calculateCelestialPosition(Astro.Body.Sun, birthTime);
-  const moonPos = calculateCelestialPosition(Astro.Body.Moon, birthTime);
-  const mercuryPos = calculateCelestialPosition(Astro.Body.Mercury, birthTime);
-  const venusPos = calculateCelestialPosition(Astro.Body.Venus, birthTime);
-  const marsPos = calculateCelestialPosition(Astro.Body.Mars, birthTime);
-  const jupiterPos = calculateCelestialPosition(Astro.Body.Jupiter, birthTime);
-  const saturnPos = calculateCelestialPosition(Astro.Body.Saturn, birthTime);
-  const uranusPos = calculateCelestialPosition(Astro.Body.Uranus, birthTime);
-  const neptunePos = calculateCelestialPosition(Astro.Body.Neptune, birthTime);
-  const plutoPos = calculateCelestialPosition(Astro.Body.Pluto, birthTime);
+  const sunPos = calculateCelestialPosition((Astro as any).Body.Sun, birthTime);
+  const moonPos = calculateCelestialPosition((Astro as any).Body.Moon, birthTime);
+  const mercuryPos = calculateCelestialPosition((Astro as any).Body.Mercury, birthTime);
+  const venusPos = calculateCelestialPosition((Astro as any).Body.Venus, birthTime);
+  const marsPos = calculateCelestialPosition((Astro as any).Body.Mars, birthTime);
+  const jupiterPos = calculateCelestialPosition((Astro as any).Body.Jupiter, birthTime);
+  const saturnPos = calculateCelestialPosition((Astro as any).Body.Saturn, birthTime);
+  const uranusPos = calculateCelestialPosition((Astro as any).Body.Uranus, birthTime);
+  const neptunePos = calculateCelestialPosition((Astro as any).Body.Neptune, birthTime);
+  const plutoPos = calculateCelestialPosition((Astro as any).Body.Pluto, birthTime);
   
   const ascendantData = calculateAscendant(birthTime, latitude, longitude);
   
@@ -465,18 +465,18 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   
   const aspects = calculateAspects(planetPositions);
   
-  const nodeEvent = Astro.SearchMoonNode(birthTime);
+  const nodeEvent = (Astro as any).SearchMoonNode(birthTime);
   const nodeTime = nodeEvent.time.date;
   const daysSinceNode = (birthTime.getTime() - nodeTime.getTime()) / (1000 * 60 * 60 * 24);
   const nodeRetrogradeDegrees = daysSinceNode * 0.0529;
   
-  const baseNodeLongitude = (nodeEvent.kind === Astro.NodeEventKind.Ascending ? 0 : 180);
-  const currentMoonEq = Astro.GeoVector(Astro.Body.Moon, nodeTime, true);
-  const currentMoonEcl = Astro.Ecliptic(currentMoonEq);
+  const baseNodeLongitude = (nodeEvent.kind === (Astro as any).NodeEventKind.Ascending ? 0 : 180);
+  const currentMoonEq = (Astro as any).GeoVector((Astro as any).Body.Moon, nodeTime, true);
+  const currentMoonEcl = (Astro as any).Ecliptic(currentMoonEq);
   const nodeAtEventLongitude = currentMoonEcl.elon;
   
   let northNodeLongitude = (nodeAtEventLongitude - nodeRetrogradeDegrees + 360) % 360;
-  if (nodeEvent.kind !== Astro.NodeEventKind.Ascending) {
+  if (nodeEvent.kind !== (Astro as any).NodeEventKind.Ascending) {
     northNodeLongitude = (northNodeLongitude + 180) % 360;
   }
   

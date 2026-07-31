@@ -19,8 +19,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate all systems
       const astrologyData = calculateAstrology({
+        name: birthData.name,
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
+        birthLocation: birthData.birthLocation,
         latitude: parseFloat(String(birthData.latitude)),
         longitude: parseFloat(String(birthData.longitude)),
         timezone: birthData.timezone
