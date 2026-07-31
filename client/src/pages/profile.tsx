@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/navigation";
 import CosmicChart from "../components/cosmic-chart";
+import { PremiumUpgradeModal } from "@/components/PremiumUpgradeModal";
+import { ShareModal } from "@/components/ShareModal";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Crown, 
@@ -33,11 +36,60 @@ import type { Profile } from "@shared/schema";
 export default function ProfilePage() {
   const { id } = useParams();
   const { toast } = useToast();
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: !!id,
   });
+
+  const handleDownloadPdf = async () => {
+    if (!profile || !profile.isPremium) {
+      toast({
+        title: "Premium Required",
+        description: "PDF downloads are available for premium members.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    try {
+      const response = await fetch(`/api/pdf/profile/${id}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${profile.name}-soul-codex.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Your Soul Codex PDF has been downloaded.",
+      });
+    } catch (error) {
+      console.error("PDF download error:", error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -160,12 +212,18 @@ export default function ProfilePage() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+            <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
               <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
               <TabsTrigger value="astrology" data-testid="tab-astrology">Astrology</TabsTrigger>
               <TabsTrigger value="numerology" data-testid="tab-numerology">Numerology</TabsTrigger>
               <TabsTrigger value="personality" data-testid="tab-personality">Personality</TabsTrigger>
               <TabsTrigger value="guidance" data-testid="tab-guidance">Guidance</TabsTrigger>
+              {profile.isPremium && (
+                <>
+                  <TabsTrigger value="astrocartography" data-testid="tab-astrocartography">Maps</TabsTrigger>
+                  <TabsTrigger value="palmistry" data-testid="tab-palmistry">Palm</TabsTrigger>
+                </>
+              )}
             </TabsList>
 
             {/* Overview Tab */}
@@ -583,10 +641,14 @@ export default function ProfilePage() {
                       <Crown className="h-12 w-12 text-accent mx-auto mb-4" />
                       <h3 className="text-2xl font-bold mb-4">Unlock Your Complete Codex</h3>
                       <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                        Access your full 30-40 page PDF dossier, astrocartography map, palmistry analysis, 
+                        Access your full 30-40 page PDF dossier, astrocartography map, palmistry analysis,
                         and 12+ additional mystical systems for deeper self-understanding.
                       </p>
-                      <Button className="bg-primary text-primary-foreground px-8 py-3 font-semibold" data-testid="button-upgrade-premium">
+                      <Button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="bg-primary text-primary-foreground px-8 py-3 font-semibold"
+                        data-testid="button-upgrade-premium"
+                      >
                         Upgrade to Premium - $47
                       </Button>
                     </CardContent>
@@ -594,20 +656,75 @@ export default function ProfilePage() {
                 </Card>
               )}
             </TabsContent>
+
+            {/* Astrocartography Tab */}
+            {profile.isPremium && (
+              <TabsContent value="astrocartography" className="space-y-6">
+                <Card className="glassmorphism">
+                  <CardHeader>
+                    <CardTitle>Astrocartography Map</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-6">
+                      Discover your power places worldwide. This interactive map shows locations optimized for love, career, healing, and transformation based on your natal chart.
+                    </p>
+                    <Link href={`/astrocartography/${id}`}>
+                      <Button className="w-full">
+                        View Full Astrocartography Map →
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+
+            {/* Palmistry Tab */}
+            {profile.isPremium && (
+              <TabsContent value="palmistry" className="space-y-6">
+                <Card className="glassmorphism">
+                  <CardHeader>
+                    <CardTitle>AI Palmistry Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-6">
+                      Upload a palm photo for computer vision analysis of your life, heart, head, and fate lines. Get insights into your vitality, emotional patterns, mental abilities, and destiny path.
+                    </p>
+                    <Link href={`/palmistry/${id}`}>
+                      <Button className="w-full">
+                        Analyze Your Palm →
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
           </Tabs>
 
           {/* Actions */}
           <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="outline" data-testid="button-share-profile">
+            <Button
+              variant="outline"
+              data-testid="button-share-profile"
+              onClick={() => setShowShareModal(true)}
+            >
               <Star className="mr-2 h-4 w-4" />
               Share Profile
             </Button>
-            <Button variant="outline" data-testid="button-download-pdf">
+            <Button
+              variant="outline"
+              data-testid="button-download-pdf"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Download PDF
+              {isDownloadingPdf ? "Downloading..." : "Download PDF"}
             </Button>
             {!profile.isPremium && (
-              <Button className="bg-primary text-primary-foreground" data-testid="button-upgrade-main">
+              <Button
+                onClick={() => setShowUpgradeModal(true)}
+                className="bg-primary text-primary-foreground"
+                data-testid="button-upgrade-main"
+              >
                 <Crown className="mr-2 h-4 w-4" />
                 Upgrade to Premium
               </Button>
@@ -615,6 +732,21 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {showUpgradeModal && (
+        <PremiumUpgradeModal
+          profileId={id!}
+          onClose={() => setShowUpgradeModal(false)}
+        />
+      )}
+
+      {showShareModal && profile && (
+        <ShareModal
+          profileId={id!}
+          profileName={profile.name}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
   );
 }
