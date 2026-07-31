@@ -19,9 +19,9 @@ permissions:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     env:
-      VITE_API_URL: ${{ vars.VITE_API_URL }}
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
 
     steps:
       - name: Checkout
@@ -38,17 +38,17 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Build workspace packages
         run: |
-          npm run build -w @soulcodex/db
-          npm run build -w @soulcodex/core
+          npm run build:workspaces
 
       - name: Validate mobile release configuration
-        run: npm run mobile:validate:android
+        run: VITE_API_URL="${VITE_API_URL}" npm run mobile:validate:android
 
       - name: Build web app
         run: npm run build
@@ -61,7 +61,19 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace -i 2>&1 | tee build.log
+
+      - name: Verify Debug APK
+        if: inputs.build_type == 'debug'
+        run: |
+          apk_file=$(find android/app/build/outputs/apk/debug -name "*.apk" -type f | head -1)
+          if [ -z "$apk_file" ]; then
+            echo "❌ Debug APK not found!"
+            ls -la android/app/build/outputs/
+            exit 1
+          fi
+          echo "✅ Debug APK created: $apk_file"
+          echo "📦 APK Size: $(du -h "$apk_file" | cut -f1)"
 
       - name: Decode keystore
         if: inputs.build_type != 'debug'
@@ -71,11 +83,32 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          test -n "$ANDROID_KEYSTORE"
-          test -n "$ANDROID_KEYSTORE_PASSWORD"
-          test -n "$ANDROID_KEY_ALIAS"
-          test -n "$ANDROID_KEY_PASSWORD"
+          echo "Verifying keystore secrets..."
+          if [ -z "$ANDROID_KEYSTORE" ]; then
+            echo "❌ Error: ANDROID_KEYSTORE secret is not set"
+            exit 1
+          fi
+          if [ -z "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "❌ Error: ANDROID_KEYSTORE_PASSWORD secret is not set"
+            exit 1
+          fi
+          if [ -z "$ANDROID_KEY_ALIAS" ]; then
+            echo "❌ Error: ANDROID_KEY_ALIAS secret is not set"
+            exit 1
+          fi
+          if [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "❌ Error: ANDROID_KEY_PASSWORD secret is not set"
+            exit 1
+          fi
+
+          echo "Decoding keystore from base64..."
           printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soul-codex-release.keystore
+
+          if [ ! -f "android/app/soul-codex-release.keystore" ]; then
+            echo "❌ Keystore decode failed!"
+            exit 1
+          fi
+          echo "✅ Keystore decoded successfully"
 
       - name: Build Release APK
         if: inputs.build_type == 'release-apk'
@@ -84,9 +117,22 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease \
             -PRELEASE_STORE_FILE=soul-codex-release.keystore \
-            -PRELEASE_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            -PRELEASE_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
-            -PRELEASE_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+            -PRELEASE_STORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -PRELEASE_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -PRELEASE_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+            --stacktrace -i 2>&1 | tee build.log
+
+      - name: Verify Release APK
+        if: inputs.build_type == 'release-apk'
+        run: |
+          apk_file=$(find android/app/build/outputs/apk/release -name "*.apk" -type f | head -1)
+          if [ -z "$apk_file" ]; then
+            echo "❌ Release APK not found!"
+            ls -la android/app/build/outputs/
+            exit 1
+          fi
+          echo "✅ Release APK created: $apk_file"
+          echo "📦 APK Size: $(du -h "$apk_file" | cut -f1)"
 
       - name: Build Release AAB (Play Store)
         if: inputs.build_type == 'release-aab'
@@ -95,27 +141,55 @@ jobs:
           chmod +x gradlew
           ./gradlew bundleRelease \
             -PRELEASE_STORE_FILE=soul-codex-release.keystore \
-            -PRELEASE_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            -PRELEASE_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
-            -PRELEASE_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+            -PRELEASE_STORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -PRELEASE_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -PRELEASE_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+            --stacktrace -i 2>&1 | tee build.log
+
+      - name: Verify Release AAB
+        if: inputs.build_type == 'release-aab'
+        run: |
+          aab_file=$(find android/app/build/outputs/bundle/release -name "*.aab" -type f | head -1)
+          if [ -z "$aab_file" ]; then
+            echo "❌ Release AAB not found!"
+            ls -la android/app/build/outputs/
+            exit 1
+          fi
+          echo "✅ Release AAB created: $aab_file"
+          echo "📦 AAB Size: $(du -h "$aab_file" | cut -f1)"
+
+      - name: List build artifacts
+        if: always()
+        run: |
+          echo "=== Build Output Directory ==="
+          find android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) 2>/dev/null || echo "No artifacts found"
 
       - name: Upload Debug APK
         if: inputs.build_type == 'debug'
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/debug/
+          retention-days: 7
 
       - name: Upload Release APK
         if: inputs.build_type == 'release-apk'
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/
+          retention-days: 30
 
       - name: Upload Release AAB
         if: inputs.build_type == 'release-aab'
         uses: actions/upload-artifact@v4
         with:
           name: android-release-aab
-          path: android/app/build/outputs/bundle/release/*.aab
+          path: android/app/build/outputs/bundle/release/
+          retention-days: 30
+
+      - name: Clean up keystore
+        if: always()
+        run: |
+          rm -f android/app/soul-codex-release.keystore
+          echo "✅ Keystore cleaned up"

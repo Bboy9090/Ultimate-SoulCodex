@@ -19,13 +19,22 @@ Complete guide for building and submitting the iOS app to the Apple App Store:
 4. Trigger workflow: `gh workflow run build-ios.yml -f build_type=app-store`
 
 ### 📱 Android App Store Build
-**File**: `Android_APP_STORE_BUILD.md` (Coming Soon)
+**File**: `Android_APP_STORE_BUILD.md`
 
-Will include:
-- Android build workflow configuration
-- Google Play Console setup
-- Signing key management
-- Build triggers and troubleshooting
+Complete guide for building and submitting the Android app to Google Play Store:
+- Workflow overview and configuration
+- Android signing key setup
+- GitHub Secrets configuration
+- Build types (Debug, Release APK, Release AAB)
+- Google Play Store submission process
+- Troubleshooting guide
+- Local testing with bundletool
+
+**Quick Start**:
+1. Read: `Android_APP_STORE_BUILD.md`
+2. Run setup: `scripts/setup-android-signing.sh`
+3. Configure GitHub Secrets
+4. Trigger workflow: `gh workflow run build-android.yml -f build_type=release-aab`
 
 ### 🚀 Deployment
 **File**: `DEPLOYMENT.md` (See root DEPLOYMENT.md)
@@ -48,6 +57,21 @@ This script will:
 3. Help you download and configure your provisioning profile
 4. Display values for copying to GitHub
 
+### Android Signing Setup
+**File**: `scripts/setup-android-signing.sh`
+
+Interactive script to help configure signing for Android app store builds:
+```bash
+./scripts/setup-android-signing.sh
+```
+
+This script will:
+1. Generate a keystore or use an existing one
+2. Extract keystore information
+3. Encode it to base64 for GitHub Secrets
+4. Display values for copying to GitHub
+5. Optionally save keystore locally (password-protected)
+
 ## GitHub Workflows
 
 ### Build iOS
@@ -68,6 +92,27 @@ gh workflow run build-ios.yml -f build_type=development
 gh workflow run build-ios.yml -f build_type=app-store
 ```
 
+### Build Android
+**File**: `.github/workflows/build-android.yml`
+
+Builds the Android app for testing or Google Play Store.
+
+**Trigger**: Manual workflow dispatch
+**Options**:
+- `build_type`: `debug`, `release-apk`, or `release-aab`
+
+**Usage**:
+```bash
+# Debug build (no signing required)
+gh workflow run build-android.yml -f build_type=debug
+
+# Release APK (requires signing setup)
+gh workflow run build-android.yml -f build_type=release-apk
+
+# Release AAB for Play Store (recommended, requires signing setup)
+gh workflow run build-android.yml -f build_type=release-aab
+```
+
 ### CI Tests
 **File**: `.github/workflows/node.js.yml`
 
@@ -86,7 +131,9 @@ Runs automated tests and builds the web app.
 
 - **Apple Team ID**: `86NUJ8M3B8`
 - **App Bundle ID (iOS)**: `com.soulcodex.app`
-- **Package Name (Android)**: `com.soulcodex.app` (TBD)
+- **Package Name (Android)**: `app.soulcodex.main`
+- **Minimum iOS Version**: 15.0 (iOS 15)
+- **Minimum Android Version**: API 24 (Android 7.0)
 
 ## Support
 
