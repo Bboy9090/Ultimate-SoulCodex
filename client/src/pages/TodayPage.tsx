@@ -182,10 +182,10 @@ export default function TodayPage() {
     );
   }
 
-  const archetypeName = profile?.archetype?.name || "The Seeker";
-  const archetypeTagline = typeof profile?.archetype === "string" ? profile.archetype : profile?.archetype?.tagline || "Aligning your natal signals...";
+  const archetypeName = profile?.archetype || "The Seeker";
+  const archetypeTagline = "Aligning your natal signals...";
 
-  const sunSign = profile.sunSign || profile.astrologyData?.sunSign || profile.natalChart?.sunSign || profile.chart?.sunSign;
+  const sunSign = profile.sunSign || profile.astrologyData?.sunSign;
   const hasChartData = !!sunSign;
 
   const pattern = cleanCodexLine(
