@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
+import { DemoModal } from "@/components/DemoModal";
 import { 
   Sun, 
   Infinity, 
@@ -30,6 +32,8 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const [showDemo, setShowDemo] = useState(false);
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -64,9 +68,10 @@ export default function Home() {
                     </div>
                   </Button>
                 </Link>
-                <Button 
-                  variant="secondary" 
+                <Button
+                  variant="secondary"
                   className="bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                  onClick={() => setShowDemo(true)}
                   data-testid="button-watch-demo"
                 >
                   <Play className="mr-2 h-4 w-4" />
@@ -636,6 +641,8 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {showDemo && <DemoModal onClose={() => setShowDemo(false)} />}
     </div>
   );
 }

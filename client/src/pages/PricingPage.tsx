@@ -1,237 +1,199 @@
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  IconArrowLeft, IconShield, IconZap, IconSparkles,
-  IconCheckCircle, IconLoader
-} from "../components/Icons";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
+import Navigation from "@/components/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { apiFetch } from "../lib/queryClient";
-import { isNativeStoreApp } from "../lib/platform";
+import { Crown, Check } from "lucide-react";
 
 export default function PricingPage() {
-  const isNative = isNativeStoreApp();
-  const [, navigate] = useLocation();
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const benefits = [
-    "Full 30-40 page Personal Dossier (PDF)",
-    "Unlimited Soul Oracle interactions",
-    "Deep-dive Shadow & Trigger analysis",
-    "Priority access to new esoteric systems",
-    "Zero ads, forever"
-  ];
-
-  const getProfileId = (): string | undefined => {
-    return loadActiveProfile()?.profileId;
-  };
-
-  // Real entitlement: redeem an access code against the backend. Premium is only
-  // ever granted server-side (session + entitlement); localStorage is written
-  // ONLY after /api/entitlements confirms — never as a standalone unlock.
-  const handleRedeem = async () => {
-    const trimmed = code.trim();
-    if (!trimmed) { setError("Enter your access code."); return; }
-    setError(null);
-    setIsVerifying(true);
-    try {
-      const res = await apiFetch("/api/access-codes/validate", {
-        method: "POST",
-        body: JSON.stringify({ code: trimmed, profileId: getProfileId() }),
-      });
-      const data = await res.json().catch(() => ({} as any));
-      if (!res.ok || !data?.success) {
-        setIsVerifying(false);
-        setError(data?.message || "Invalid or expired access code.");
-        return;
-      }
-      // Confirm with backend truth before reflecting any premium state in the UI.
-      const ent = await apiFetch("/api/entitlements")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null);
-      if (ent?.isPremium) {
-        try { localStorage.setItem("soulPremium", "true"); } catch {}
-        setIsVerifying(false);
-        setIsSuccess(true);
-        setTimeout(() => navigate("/profile"), 1800);
-      } else {
-        setIsVerifying(false);
-        setError("Code accepted but premium did not activate. Please refresh and try again.");
-      }
-    } catch {
-      setIsVerifying(false);
-      setError("Network error. Please try again.");
-    }
-  };
-
-  if (isNative) {
-    return (
-      <div className="min-h-screen bg-[var(--sc-bg-ink)] text-white p-6 pt-24">
-        <div className="max-w-xl mx-auto rounded-3xl border border-[var(--sc-gold)]/30 bg-white/[0.03] p-8 text-center space-y-6">
-          <IconShield size={48} className="text-[var(--sc-gold)] mx-auto" />
-          <div className="space-y-2">
-            <h1 className="text-3xl font-serif text-[var(--sc-gold)]">Premium Access</h1>
-            <p className="text-white/65 leading-relaxed">
-              This store version does not sell premium access or redeem access codes. Premium already associated
-              with your Soul Codex profile is recognized automatically by the server.
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="pt-24 pb-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <h1 className="text-4xl font-bold mb-4">Soul Codex Pricing</h1>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Choose the plan that resonates with your spiritual journey
             </p>
           </div>
-          <Button className="w-full" onClick={() => navigate("/profile")}>Return to Profile</Button>
-          <Link href="/support" className="text-[var(--sc-gold)] underline underline-offset-4">Get help restoring access</Link>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-[var(--sc-bg-ink)] text-white p-6 pt-24 overflow-hidden relative">
-      <div className="absolute inset-0 z-0 opacity-40">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,var(--sc-gold-glow)_0%,transparent_70%)]" />
-      </div>
+          {/* Pricing Cards */}
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
+            {/* Free Tier */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Free Soul Reading</CardTitle>
+                <p className="text-muted-foreground text-sm mt-2">Perfect for beginners</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="text-3xl font-bold">Free</div>
 
-      <AnimatePresence>
-        {(isVerifying || isSuccess) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-[var(--sc-bg-ink)]/95 backdrop-blur-xl flex items-center justify-center p-6 text-center"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="space-y-6 max-w-sm"
-            >
-              {isVerifying ? (
-                <>
-                  <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
-                    <IconLoader size={80} className="text-[var(--sc-gold)] animate-spin" />
-                    <IconShield size={32} className="absolute m-auto text-[var(--sc-gold)]/50" />
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-serif tracking-tight text-[var(--sc-gold)]">Verifying Access Code</h2>
-                    <p className="text-white/60 text-sm">Confirming your entitlement with the server...</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mx-auto w-24 h-24 bg-[var(--sc-gold)]/10 rounded-full flex items-center justify-center border border-[var(--sc-gold)]/30">
-                    <IconCheckCircle size={48} className="text-[var(--sc-gold)]" />
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-serif tracking-tight text-[var(--sc-gold)]">Access Granted</h2>
-                    <p className="text-white/60 text-sm">Your Soul Codex premium is active. Preparing your dossier...</p>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <ul className="space-y-3">
+                  <li className="flex items-center space-x-3">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Astrology Big 3 (Sun, Moon, Rising)</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Life Path Number</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Enneagram Type</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Archetype Profile</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Personal Biography</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Daily Cosmic Guidance</span>
+                  </li>
+                </ul>
 
-      <div className="max-w-4xl mx-auto relative z-10">
-        <div className="mb-8 flex items-center justify-between">
-          <Link href="/profile">
-            <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/5 border border-white/5 flex items-center gap-2">
-              <IconArrowLeft size={16} />
-              Back to Profile
-            </Button>
-          </Link>
-          <div className="flex items-center space-x-2 text-[var(--sc-gold)]">
-            <IconShield size={20} />
-            <span className="text-xs font-bold uppercase tracking-widest">Access Code</span>
-          </div>
-        </div>
+                <Link href="/create">
+                  <Button variant="outline" className="w-full">
+                    Start Free Reading
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
 
-        <div className="text-center mb-12 space-y-4">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="inline-block p-4 rounded-2xl bg-[var(--sc-gold)]/10 mb-2 border border-[var(--sc-gold)]/20"
-          >
-            <IconSparkles size={40} className="text-[var(--sc-gold)]" />
-          </motion.div>
-          <h1 className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-b from-[var(--sc-gold)] to-[var(--sc-gold-soft)] font-serif">
-            The Eternal Now
-          </h1>
-          <p className="text-white/60 text-lg max-w-2xl mx-auto font-sans leading-relaxed">
-            Experience the full depth of your celestial blueprint. <br className="hidden md:block" />
-            Unlock premium with your Soul Codex access code.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8 items-stretch">
-          {/* Benefits Side */}
-          <div className="space-y-6 p-10 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md">
-            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--sc-gold)] mb-6">Unlocked Features</h2>
-            <div className="space-y-5">
-              {benefits.map((benefit, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ x: -10, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex items-start gap-4"
-                >
-                  <div className="mt-1 w-5 h-5 rounded-full bg-[var(--sc-gold)]/20 flex items-center justify-center shrink-0">
-                    <IconCheckCircle size={12} className="text-[var(--sc-gold)]" />
+            {/* Premium Tier */}
+            <div className="cosmic-border mystical-glow">
+              <Card className="cosmic-border-inner border-0 bg-transparent">
+                <CardHeader>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <CardTitle className="text-2xl">Full Soul Codex</CardTitle>
+                    <Crown className="h-6 w-6 text-accent" />
                   </div>
-                  <span className="text-white/90 text-sm font-medium">{benefit}</span>
-                </motion.div>
-              ))}
+                  <p className="text-muted-foreground text-sm">Complete spiritual blueprint</p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="text-3xl font-bold">
+                    $47
+                    <span className="text-sm text-muted-foreground font-normal ml-2">one-time</span>
+                  </div>
+
+                  <ul className="space-y-3">
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>Everything in Free</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>Complete astrology charts (Western + Vedic)</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>Full Human Design + Gene Keys</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>12+ mystical system integration</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>Astrocartography world map</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>AI palmistry analysis</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>30-40 page PDF dossier</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>First-person bio generator</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span>Personalized rituals & practices</span>
+                    </li>
+                  </ul>
+
+                  <Link href="/create">
+                    <Button className="w-full bg-primary text-primary-foreground">
+                      Get Your Full Codex
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
-          {/* Action Side — real access-code redemption */}
-          <div className="p-10 rounded-3xl flex flex-col justify-center items-center text-center space-y-8 bg-[var(--sc-gold)]/[0.03] border-[var(--sc-gold)]/30 border-2 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[var(--sc-gold)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          {/* FAQ */}
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Is it a subscription?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    No. Premium is a one-time $47 payment. No recurring charges. No subscription.
+                    Once purchased, it's yours forever.
+                  </p>
+                </CardContent>
+              </Card>
 
-            <div className="space-y-3 relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--sc-gold)] opacity-80">Redeem Access</span>
-              <p className="text-white/60 text-sm max-w-xs">Enter the access code from your invite or purchase to unlock premium.</p>
-            </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Can I upgrade from free to premium?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Yes! Create your free profile first to see your free readings. Then upgrade to
+                    premium to unlock all advanced features and download your complete dossier.
+                  </p>
+                </CardContent>
+              </Card>
 
-            <div className="w-full space-y-4 relative z-10">
-              <input
-                value={code}
-                onChange={(e) => { setCode(e.target.value); if (error) setError(null); }}
-                onKeyDown={(e) => { if (e.key === "Enter") handleRedeem(); }}
-                placeholder="ENTER ACCESS CODE"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Access code"
-                className="w-full h-14 px-4 rounded-2xl bg-black/30 border border-[var(--sc-gold)]/30 text-center text-lg tracking-[0.2em] uppercase text-white placeholder-white/25 focus:outline-none focus:border-[var(--sc-gold)] transition-colors"
-              />
-              {error && <p className="text-sm text-rose-400" role="alert">{error}</p>}
-              <Button
-                size="lg"
-                disabled={isVerifying}
-                className="w-full h-16 text-lg font-black bg-[var(--sc-gold)] hover:bg-[var(--sc-gold-soft)] text-[var(--sc-bg-ink)] rounded-2xl shadow-[0_10px_40px_rgba(212,168,95,0.4)] transition-all active:scale-95 transform flex items-center justify-center disabled:opacity-60"
-                onClick={handleRedeem}
-              >
-                <IconZap size={22} className="mr-3 fill-current" />
-                {isVerifying ? "Verifying…" : "Redeem Code"}
-              </Button>
-              <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest">
-                Access is granted server-side · no card required
-              </p>
-            </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">What payment methods do you accept?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    We accept all major credit cards (Visa, Mastercard, Amex) through secure payment
+                    processing. Your payment information is never stored on our servers.
+                  </p>
+                </CardContent>
+              </Card>
 
-            <div className="pt-6 border-t border-white/5 w-full relative z-10">
-              <p className="text-xs text-white/40 leading-relaxed italic">
-                Don't have a code? It's included with your invite to the <br /> Soul Codex early access program.
-              </p>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">What if I'm not satisfied?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    We offer a 30-day money-back guarantee if you're not completely satisfied with
+                    your premium experience. No questions asked.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Can I use premium on multiple devices?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Yes! Your premium upgrade is tied to your Soul Codex account. You can access it
+                    from any device by logging in with your account.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </div>
-
-        <div className="mt-12 text-center text-white/30 text-xs flex justify-center gap-6">
-          <Link href="/terms" className="hover:text-accent underline">Terms of Service</Link>
-          <Link href="/privacy" className="hover:text-accent underline">Privacy Policy</Link>
         </div>
       </div>
     </div>

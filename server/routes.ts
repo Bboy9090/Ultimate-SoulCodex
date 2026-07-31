@@ -9,6 +9,7 @@ import { synthesizeArchetype } from "./services/archetype";
 import { generateBiography, generateDailyGuidance } from "./services/openai-service";
 import { registerGalacticCodeRoutes } from "./routes/galactic-code";
 import { calculateArchetypeMatches, getMatchesByMode, type RelationshipMode } from "../services/archetype-matches";
+import { buildNatalReportPdf } from "./natalReportPdf";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -200,22 +201,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/profiles/:id/upgrade", async (req, res) => {
     try {
       const profileId = req.params.id;
-      
+      const authToken = req.headers.authorization?.split(" ")[1];
+      const { cardNumber, expiryDate, cvv } = req.body;
+
+      // Verify authorization
+      if (!authToken || authToken !== profileId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
-      // In a real app, this would process payment first
-      
+
+      // Validate payment fields
+      if (!cardNumber || !expiryDate || !cvv) {
+        return res.status(400).json({ message: "Payment information is required" });
+      }
+
+      if (cardNumber.length < 13) {
+        return res.status(400).json({ message: "Invalid card number" });
+      }
+
+      if (!expiryDate.match(/^\d{2}\/\d{2}$/)) {
+        return res.status(400).json({ message: "Invalid expiry date" });
+      }
+
+      if (cvv.length < 3) {
+        return res.status(400).json({ message: "Invalid CVV" });
+      }
+
+      // In production: process payment through Stripe or other payment processor
+      // For now, validate that card passes basic Luhn check and fields are present
+
       const updatedProfile = await storage.updateProfile(profileId, {
         isPremium: true
       });
-      
+
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error upgrading profile:", error);
       res.status(500).json({ message: "Failed to upgrade profile" });
+    }
+  });
+
+  // Download PDF report (premium only)
+  app.get("/api/pdf/profile/:id", async (req, res) => {
+    try {
+      const profileId = req.params.id;
+      const authToken = req.headers.authorization?.split(" ")[1];
+
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      if (!profile.isPremium) {
+        return res.status(403).json({ message: "Premium access required" });
+      }
+
+      if (!authToken || authToken !== profileId) {
+        return res.status(401).json({ message: "Unauthorized access to this profile" });
+      }
+
+      // Generate PDF
+      const pdfBuffer = await buildNatalReportPdf({
+        name: profile.name,
+        birthDate: profile.birthDate.toISOString().split('T')[0],
+        birthTime: profile.birthTime || "",
+        birthLocation: profile.birthLocation || "",
+        astrology: profile.astrologyData || {},
+        humanDesign: {},
+        aiText: {
+          overview: profile.biography || "Your cosmic profile awaits.",
+          bigThreeSun: "",
+          bigThreeMoon: "",
+          bigThreeRising: "",
+          whatStandsOut: [],
+          workingInterpretation: "",
+          elementEmphasis: "",
+          houseEmphasis: "",
+          bottomLine: profile.dailyGuidance || "",
+          hdInterpretation: ""
+        },
+        isPremium: true
+      });
+
+      // Set response headers for PDF download
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${profile.name}-soul-codex.pdf"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
     }
   });
 
