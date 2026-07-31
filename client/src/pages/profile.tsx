@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/navigation";
 import CosmicChart from "../components/cosmic-chart";
+import { PremiumUpgradeModal } from "@/components/PremiumUpgradeModal";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Crown, 
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const { id } = useParams();
   const { toast } = useToast();
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
@@ -637,10 +639,14 @@ export default function ProfilePage() {
                       <Crown className="h-12 w-12 text-accent mx-auto mb-4" />
                       <h3 className="text-2xl font-bold mb-4">Unlock Your Complete Codex</h3>
                       <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                        Access your full 30-40 page PDF dossier, astrocartography map, palmistry analysis, 
+                        Access your full 30-40 page PDF dossier, astrocartography map, palmistry analysis,
                         and 12+ additional mystical systems for deeper self-understanding.
                       </p>
-                      <Button className="bg-primary text-primary-foreground px-8 py-3 font-semibold" data-testid="button-upgrade-premium">
+                      <Button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="bg-primary text-primary-foreground px-8 py-3 font-semibold"
+                        data-testid="button-upgrade-premium"
+                      >
                         Upgrade to Premium - $47
                       </Button>
                     </CardContent>
@@ -708,7 +714,11 @@ export default function ProfilePage() {
               {isDownloadingPdf ? "Downloading..." : "Download PDF"}
             </Button>
             {!profile.isPremium && (
-              <Button className="bg-primary text-primary-foreground" data-testid="button-upgrade-main">
+              <Button
+                onClick={() => setShowUpgradeModal(true)}
+                className="bg-primary text-primary-foreground"
+                data-testid="button-upgrade-main"
+              >
                 <Crown className="mr-2 h-4 w-4" />
                 Upgrade to Premium
               </Button>
@@ -716,6 +726,13 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {showUpgradeModal && (
+        <PremiumUpgradeModal
+          profileId={id!}
+          onClose={() => setShowUpgradeModal(false)}
+        />
+      )}
     </div>
   );
 }
