@@ -237,8 +237,8 @@ export function generateSoulCodexReading(input: RawAnalysisInput): SoulCodexRead
       reinforcements: input.interactions.reinforcements.map((r) => ({
         title: r.title,
         relationship: "reinforcement" as const,
-        inputA: { factId: "", system: r.inputA.system as any, detail: r.inputA.detail },
-        inputB: { factId: "", system: r.inputB.system as any, detail: r.inputB.detail },
+        inputA: { factId: r.inputA.factId || "", system: r.inputA.system as any, detail: r.inputA.detail },
+        inputB: { factId: r.inputB.factId || "", system: r.inputB.system as any, detail: r.inputB.detail },
         result: r.result,
         explanation: r.explanation,
         behavior: r.behavior,
@@ -248,8 +248,8 @@ export function generateSoulCodexReading(input: RawAnalysisInput): SoulCodexRead
       balances: input.interactions.balances.map((b) => ({
         title: b.title,
         relationship: "balance" as const,
-        inputA: { factId: "", system: b.inputA.system as any, detail: b.inputA.detail },
-        inputB: { factId: "", system: b.inputB.system as any, detail: b.inputB.detail },
+        inputA: { factId: b.inputA.factId || "", system: b.inputA.system as any, detail: b.inputA.detail },
+        inputB: { factId: b.inputB.factId || "", system: b.inputB.system as any, detail: b.inputB.detail },
         result: b.result,
         explanation: b.explanation,
         behavior: b.behavior,
@@ -259,8 +259,8 @@ export function generateSoulCodexReading(input: RawAnalysisInput): SoulCodexRead
       conflicts: input.interactions.conflicts.map((c) => ({
         title: c.title,
         relationship: "conflict" as const,
-        inputA: { factId: "", system: c.inputA.system as any, detail: c.inputA.detail },
-        inputB: { factId: "", system: c.inputB.system as any, detail: c.inputB.detail },
+        inputA: { factId: c.inputA.factId || "", system: c.inputA.system as any, detail: c.inputA.detail },
+        inputB: { factId: c.inputB.factId || "", system: c.inputB.system as any, detail: c.inputB.detail },
         result: c.result,
         explanation: c.explanation,
         behavior: c.behavior,
