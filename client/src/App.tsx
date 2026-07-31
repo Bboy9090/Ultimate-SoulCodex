@@ -10,6 +10,8 @@ import Profile from "./pages/profile";
 import OfflineProfilePage from "./pages/offline-profile";
 import CompatibilityPage from "./pages/CompatibilityPage";
 import TimelinePage from "./pages/TimelinePage";
+import AstrocartographyPage from "./pages/AstrocartographyPage";
+import PalmistryPage from "./pages/PalmistryPage";
 
 function ProfileRoute() {
   const { id } = useParams();
@@ -23,6 +25,8 @@ function Router() {
       <Route path="/create" component={LocalFirstInputForm} />
       <Route path="/compatibility" component={CompatibilityPage} />
       <Route path="/timeline" component={TimelinePage} />
+      <Route path="/astrocartography/:id" component={AstrocartographyPage} />
+      <Route path="/palmistry/:id" component={PalmistryPage} />
       <Route path="/profile/:id" component={ProfileRoute} />
       <Route component={NotFound} />
     </Switch>
