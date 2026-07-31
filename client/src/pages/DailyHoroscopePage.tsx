@@ -211,35 +211,27 @@ function aspectColor(aspect: string): string {
 const INTENSITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 export default function DailyHoroscopePage() {
-  const profileData = (() => {
-    return loadActiveProfile();
-  })();
+  const profileData = loadActiveProfile();
+  const sunSign = profileData?.sunSign || profileData?.astrologyData?.sunSign || profileData?.natalChart?.sunSign || profileData?.chart?.sunSign;
   const profileId = profileData?.id || profileData?.profileId;
 
   const { data, isLoading, isError, error, refetch } = useQuery<DailyHoroscopeData>({
-    queryKey: ["/api/profiles", profileId, "daily-horoscope"],
+    queryKey: ["/api/daily-horoscope", sunSign],
     queryFn: async () => {
-      const res = await apiFetch(`/api/profiles/${profileId}/daily-horoscope`);
-      if (res.status === 404 && profileData) {
-        // ID mismatch between local and server (e.g. server restart). Re-sync.
-        console.log("[DailyHoroscope] ID mismatch. Re-syncing profile...");
-        await apiRequest("/api/soul-archetype", {
-          method: "POST",
-          body: JSON.stringify(profileData)
-        });
+      const res = await apiFetch(`/api/astro/horoscope/daily?sign=${sunSign}`);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
         // Try again after sync
         const retryRes = await apiFetch(`/api/profiles/${profileId}/daily-horoscope`);
         if (!retryRes.ok) throw new Error(await retryRes.text());
         return retryRes.json();
       }
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
     },
-    enabled: !!profileId,
+    enabled: !!sunSign,
     retry: 1,
   });
 
-  if (!profileId) {
+  if (!sunSign) {
     return (
       <div style={{ padding: "4rem 1rem", textAlign: "center", maxWidth: "560px", margin: "0 auto" }}>
         <IconMoon size={72} style={{ marginBottom: "1rem", opacity: 0.4 }} />
