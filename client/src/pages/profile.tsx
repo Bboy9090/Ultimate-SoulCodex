@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/navigation";
 import CosmicChart from "../components/cosmic-chart";
 import { PremiumUpgradeModal } from "@/components/PremiumUpgradeModal";
+import { ShareModal } from "@/components/ShareModal";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Crown, 
@@ -37,6 +38,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
@@ -700,7 +702,11 @@ export default function ProfilePage() {
 
           {/* Actions */}
           <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="outline" data-testid="button-share-profile">
+            <Button
+              variant="outline"
+              data-testid="button-share-profile"
+              onClick={() => setShowShareModal(true)}
+            >
               <Star className="mr-2 h-4 w-4" />
               Share Profile
             </Button>
@@ -731,6 +737,14 @@ export default function ProfilePage() {
         <PremiumUpgradeModal
           profileId={id!}
           onClose={() => setShowUpgradeModal(false)}
+        />
+      )}
+
+      {showShareModal && profile && (
+        <ShareModal
+          profileId={id!}
+          profileName={profile.name}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>
