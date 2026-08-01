@@ -219,19 +219,99 @@ jobs:
 
           echo "✅ Provisioning profile audit passed"
           echo "UUID for xcodebuild: $UUID"
+          echo "$UUID" > /tmp/profile_uuid.txt
+
+      - name: Verify certificate fingerprints
+        if: inputs.build_type == 'app-store'
+        run: |
+          echo "=== Certificate Fingerprint Verification ==="
+          PROFILE_PATH=~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+          echo "Extracting embedded certificates from provisioning profile..."
+          security cms -D -i "$PROFILE_PATH" -o /tmp/profile.der 2>&1
+
+          # Extract and list embedded certificates
+          echo ""
+          echo "Embedded certificates in profile:"
+          /usr/libexec/PlistBuddy -c "Print :DeveloperCertificates" /tmp/profile.plist 2>/dev/null | head -20
+
+          echo ""
+          echo "Installed code signing identities:"
+          security find-identity -v -p codesigning
+
+          echo ""
+          echo "✅ Certificate extraction complete - visually compare fingerprints above"
+
+      - name: Verify entitlements
+        if: inputs.build_type == 'app-store'
+        run: |
+          echo "=== Entitlements Verification ==="
+          PROFILE_PATH=~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+          echo "Extracting entitlements from provisioning profile..."
+          plutil -extract Entitlements xml1 /tmp/profile.plist -o /tmp/entitlements.plist 2>/dev/null
+
+          echo ""
+          echo "Profile entitlements:"
+          cat /tmp/entitlements.plist
+
+          # List expected entitlements for SoulCodex
+          echo ""
+          echo "Expected entitlements for app.soulcodex.ios:"
+          echo "  - application-identifier: 86NUJ8M3B8.app.soulcodex.ios"
+          echo "  - aps-environment: (absent for App Store)"
+          echo "  - get-task-allow: 0 (false for release)"
+          echo "  - keychain-access-groups: optional"
+
+          echo ""
+          echo "✅ Entitlements extraction complete"
+
+      - name: Install provisioning profile by UUID
+        if: inputs.build_type == 'app-store'
+        env:
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          echo "Installing provisioning profile using UUID as filename..."
+          PROFILE_UUID="9252a540-f85f-41c8-824e-e454b37f562f"
+          PROFILE_DIR=~/Library/MobileDevice/Provisioning\ Profiles
+
+          # Create the directory if it doesn't exist
+          mkdir -p "$PROFILE_DIR"
+
+          # Decode and install profile with UUID filename
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+
+          if [ ! -f "$PROFILE_DIR/$PROFILE_UUID.mobileprovision" ]; then
+            echo "❌ Failed to install provisioning profile with UUID"
+            exit 1
+          fi
+
+          echo "✅ Provisioning profile installed at $PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+          ls -lah "$PROFILE_DIR/$PROFILE_UUID.mobileprovision"
 
       - name: Build iOS (App Store)
         if: inputs.build_type == 'app-store'
+        env:
+          PROVISIONING_PROFILE_SPECIFIER: "9252a540-f85f-41c8-824e-e454b37f562f"
+          DEVELOPMENT_TEAM: "86NUJ8M3B8"
+          CODE_SIGN_STYLE: "Manual"
         run: |
           cd ios/App
           mkdir -p build
 
-          echo "Creating archive..."
+          echo "Creating archive with provisioning profile UUID..."
+          echo "PROVISIONING_PROFILE_SPECIFIER: $PROVISIONING_PROFILE_SPECIFIER"
+          echo "DEVELOPMENT_TEAM: $DEVELOPMENT_TEAM"
+          echo "CODE_SIGN_STYLE: $CODE_SIGN_STYLE"
+
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Release \
             -archivePath build/SoulCodex.xcarchive \
             -allowProvisioningUpdates \
+            PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_SPECIFIER" \
+            DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+            CODE_SIGN_STYLE="$CODE_SIGN_STYLE" \
             -verbose \
             archive 2>&1 | tee archive.log
 
