@@ -1,32 +1,40 @@
 interface BirthData {
   birthDate: string;
-  birthTime: string;
-  latitude: number;
-  longitude: number;
-  timezone: string;
+  birthTime?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+}
+
+interface PlacementVerification {
+  sign: string | null;
+  status: "verified" | "pending_ephemeris" | "requires_verified_birth_time" | "requires_location";
+  confidence: number | null;
+  source: string | null;
+  reason?: string;
 }
 
 interface AstrologyData {
-  sunSign: string;
-  moonSign: string;
-  risingSign: string;
-  planets: {
-    sun: { sign: string; house: number; degree: number };
-    moon: { sign: string; house: number; degree: number };
-    mercury: { sign: string; house: number; degree: number };
-    venus: { sign: string; house: number; degree: number };
-    mars: { sign: string; house: number; degree: number };
-    jupiter: { sign: string; house: number; degree: number };
-    saturn: { sign: string; house: number; degree: number };
-    uranus: { sign: string; house: number; degree: number };
-    neptune: { sign: string; house: number; degree: number };
-    pluto: { sign: string; house: number; degree: number };
+  sun: PlacementVerification;
+  moon: PlacementVerification;
+  rising: PlacementVerification;
+  planets?: {
+    sun?: { sign?: string; house?: number; degree?: number };
+    moon?: { sign?: string; house?: number; degree?: number };
+    [key: string]: any;
   };
-  houses: Array<{ sign: string; degree: number }>;
-  aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: { sign: string; house: number; degree: number };
-  southNode: { sign: string; house: number; degree: number };
-  chiron: { sign: string; house: number; degree: number };
+  houses?: Array<{ sign?: string; degree?: number }>;
+  aspects?: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
+  northNode?: { sign?: string; house?: number; degree?: number };
+  southNode?: { sign?: string; house?: number; degree?: number };
+  chiron?: { sign?: string; house?: number; degree?: number };
+
+  verification: {
+    complete: boolean;
+    missingData: string[];
+    suggestions: string;
+    lastUpdated: string;
+  };
 }
 
 const ZODIAC_SIGNS = [
@@ -34,107 +42,128 @@ const ZODIAC_SIGNS = [
   'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
 ];
 
-function calculateSunSign(birthDate: string): string {
-  const date = new Date(birthDate);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+// DEPRECATED: Old approximate calculation functions
+// These are kept for reference but no longer used in production
+// They were replaced because they silently returned fake precision
 
-  // Simplified sun sign calculation
-  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Aries';
-  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'Taurus';
-  if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'Gemini';
-  if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return 'Cancer';
-  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return 'Leo';
-  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return 'Virgo';
-  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return 'Libra';
-  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return 'Scorpio';
-  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return 'Sagittarius';
-  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return 'Capricorn';
-  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return 'Aquarius';
-  return 'Pisces';
+// function calculateSunSign(birthDate: string): string - REMOVED
+// function calculateMoonSign(...): string - REMOVED
+// function calculateRisingSign(...): string - REMOVED
+
+// All three have been replaced with verification-aware functions below
+
+function getSunPlacement(birthData: BirthData): PlacementVerification {
+  // Sun sign requires no birth time, but we don't calculate from date boundaries
+  // Accurate sun requires ephemeris engine (future implementation)
+  return {
+    sign: null,
+    status: "pending_ephemeris",
+    confidence: null,
+    source: null,
+    reason: "Awaiting verified ephemeris engine for accurate calculation"
+  };
 }
 
-function calculateMoonSign(birthDate: string, birthTime: string): string {
-  // Simplified moon sign calculation - in a real app this would use ephemeris data
-  const date = new Date(birthDate);
-  const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
-  const timeHours = parseInt(birthTime.split(':')[0]);
-  
-  const index = (dayOfYear + timeHours) % 12;
-  return ZODIAC_SIGNS[index];
+function getMoonPlacement(birthData: BirthData): PlacementVerification {
+  // Moon requires birth time for any meaningful calculation
+  if (!birthData.birthTime) {
+    return {
+      sign: null,
+      status: "requires_verified_birth_time",
+      confidence: null,
+      source: null,
+      reason: "Birth time required for Moon sign calculation"
+    };
+  }
+
+  return {
+    sign: null,
+    status: "pending_ephemeris",
+    confidence: null,
+    source: null,
+    reason: "Awaiting verified ephemeris engine for accurate calculation"
+  };
 }
 
-function calculateRisingSign(birthDate: string, birthTime: string, latitude: number): string {
-  // Simplified rising sign calculation - in a real app this would use sidereal time and house system
-  const date = new Date(birthDate);
-  const timeHours = parseInt(birthTime.split(':')[0]);
-  const timeMinutes = parseInt(birthTime.split(':')[1]);
-  
-  const totalMinutes = timeHours * 60 + timeMinutes;
-  const latitudeAdjustment = Math.floor(latitude / 10);
-  
-  const index = (Math.floor(totalMinutes / 120) + latitudeAdjustment) % 12;
-  return ZODIAC_SIGNS[index];
+function getRisingPlacement(birthData: BirthData): PlacementVerification {
+  // Rising sign requires both birth time and accurate location
+  if (!birthData.birthTime) {
+    return {
+      sign: null,
+      status: "requires_verified_birth_time",
+      confidence: null,
+      source: null,
+      reason: "Birth time and location required for Rising sign calculation"
+    };
+  }
+
+  if (birthData.latitude === undefined || birthData.longitude === undefined) {
+    return {
+      sign: null,
+      status: "requires_location",
+      confidence: null,
+      source: null,
+      reason: "Precise birth location required for Rising sign calculation"
+    };
+  }
+
+  return {
+    sign: null,
+    status: "pending_ephemeris",
+    confidence: null,
+    source: null,
+    reason: "Awaiting verified ephemeris engine for accurate calculation"
+  };
 }
 
 export function calculateAstrology(birthData: BirthData): AstrologyData {
-  const sunSign = calculateSunSign(birthData.birthDate);
-  const moonSign = calculateMoonSign(birthData.birthDate, birthData.birthTime);
-  const risingSign = calculateRisingSign(birthData.birthDate, birthData.birthTime, parseFloat(birthData.latitude.toString()));
+  // TRUST BOUNDARY: This function no longer returns approximate data
+  // It returns explicit unresolved states with verification context
+  // Clients MUST handle null values with verification status
 
-  // Simplified planetary calculations - in production this would use Swiss Ephemeris
-  const planets = {
-    sun: { sign: sunSign, house: 1, degree: 15.5 },
-    moon: { sign: moonSign, house: 4, degree: 23.2 },
-    mercury: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 1) % 12], house: 3, degree: 8.7 },
-    venus: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 2) % 12], house: 2, degree: 19.3 },
-    mars: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 3) % 12], house: 6, degree: 12.8 },
-    jupiter: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 4) % 12], house: 9, degree: 26.1 },
-    saturn: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 5) % 12], house: 10, degree: 4.9 },
-    uranus: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 6) % 12], house: 11, degree: 18.4 },
-    neptune: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 7) % 12], house: 12, degree: 21.7 },
-    pluto: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 8) % 12], house: 8, degree: 14.2 }
-  };
+  const sun = getSunPlacement(birthData);
+  const moon = getMoonPlacement(birthData);
+  const rising = getRisingPlacement(birthData);
 
-  const houses = Array.from({ length: 12 }, (_, i) => ({
-    sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(risingSign) + i) % 12],
-    degree: (i * 30 + Math.random() * 30) % 360
-  }));
+  const missingData: string[] = [];
+  if (!birthData.birthTime) missingData.push("verified_birth_time");
+  if (birthData.latitude === undefined || birthData.longitude === undefined) missingData.push("precise_location");
+  if (!sun.sign) missingData.push("ephemeris_engine");
 
-  const aspects = [
-    { planet1: 'sun', planet2: 'moon', aspect: 'sextile', orb: 2.3 },
-    { planet1: 'venus', planet2: 'mars', aspect: 'trine', orb: 1.8 },
-    { planet1: 'jupiter', planet2: 'saturn', aspect: 'square', orb: 3.1 }
-  ];
-
-  const northNode = { 
-    sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(moonSign) + 6) % 12], 
-    house: 5, 
-    degree: 11.3 
-  };
-  
-  const southNode = { 
-    sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(northNode.sign) + 6) % 12], 
-    house: 11, 
-    degree: 11.3 
-  };
-
-  const chiron = { 
-    sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 9) % 12], 
-    house: 7, 
-    degree: 16.8 
-  };
+  // Only provide planetary data if we have verified base placements
+  // For now, we don't because we don't have ephemeris
+  const planets = undefined;
+  const houses = undefined;
+  const aspects = undefined;
+  const northNode = undefined;
+  const southNode = undefined;
+  const chiron = undefined;
 
   return {
-    sunSign,
-    moonSign,
-    risingSign,
+    sun,
+    moon,
+    rising,
     planets,
     houses,
     aspects,
     northNode,
     southNode,
-    chiron
+    chiron,
+
+    // VERIFICATION LAYER (new)
+    verification: {
+      complete: false,
+      missingData,
+      suggestions: missingData.length > 0
+        ? `To calculate your astrology: ${missingData.map(d => {
+            if (d === "verified_birth_time") return "provide exact birth time";
+            if (d === "precise_location") return "provide precise birth location";
+            if (d === "ephemeris_engine") return "activate ephemeris calculation engine";
+            return d;
+          }).join(", ")}.`
+        : "Your astrology chart is ready for calculation.",
+      lastUpdated: new Date().toISOString()
+    }
   };
 }
 
