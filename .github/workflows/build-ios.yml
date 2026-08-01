@@ -98,6 +98,15 @@ jobs:
           p12-file-base64: ${{ secrets.IOS_CERTIFICATE_P12 }}
           p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
 
+      - name: List installed signing certificates
+        if: inputs.build_type == 'app-store'
+        run: |
+          echo "=== Installed Code Signing Identities ==="
+          security find-identity -v -p codesigning
+          echo ""
+          echo "=== Distribution Certificates ==="
+          security find-identity -v -p codesigning | grep -i "distribution" || echo "No distribution certificates found in grep"
+
       - name: Install provisioning profile
         if: inputs.build_type == 'app-store'
         env:
