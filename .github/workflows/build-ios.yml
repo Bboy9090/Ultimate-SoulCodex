@@ -116,6 +116,110 @@ jobs:
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
           echo "✅ Provisioning profile installed"
 
+      - name: Audit provisioning profile
+        if: inputs.build_type == 'app-store'
+        run: |
+          echo "=== Auditing Provisioning Profile ==="
+          PROFILE_PATH=~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+          if [ ! -f "$PROFILE_PATH" ]; then
+            echo "❌ Profile not found at $PROFILE_PATH"
+            exit 1
+          fi
+
+          echo "Profile file size: $(stat -f%z "$PROFILE_PATH" 2>/dev/null || stat -c%s "$PROFILE_PATH")"
+
+          # Extract the embedded plist from the .mobileprovision file
+          echo ""
+          echo "Extracting and parsing profile plist..."
+          security cms -D -i "$PROFILE_PATH" > /tmp/profile.plist
+
+          # Use plutil or plistbuddy to extract key fields
+          echo ""
+          echo "Profile Details:"
+          echo "================"
+
+          # Name
+          NAME=$(plutil -extract Name raw /tmp/profile.plist 2>/dev/null || echo "N/A")
+          echo "Name: $NAME"
+
+          # UUID
+          UUID=$(plutil -extract UUID raw /tmp/profile.plist 2>/dev/null || echo "N/A")
+          echo "UUID: $UUID"
+
+          # TeamIdentifier
+          TEAM=$(plutil -extract TeamIdentifier.0 raw /tmp/profile.plist 2>/dev/null || echo "N/A")
+          echo "TeamIdentifier: $TEAM"
+
+          # application-identifier
+          APP_ID=$(plutil -extract Entitlements.application-identifier raw /tmp/profile.plist 2>/dev/null || echo "N/A")
+          echo "application-identifier: $APP_ID"
+
+          # ExpirationDate
+          EXP_DATE=$(plutil -extract ExpirationDate raw /tmp/profile.plist 2>/dev/null || echo "N/A")
+          echo "ExpirationDate: $EXP_DATE"
+
+          # get-task-allow
+          GET_TASK=$(plutil -extract Entitlements.get-task-allow raw /tmp/profile.plist 2>/dev/null || echo "N/A")
+          echo "get-task-allow: $GET_TASK"
+
+          # ProvisionedDevices
+          DEVICES=$(plutil -extract ProvisionedDevices 0 /tmp/profile.plist 2>/dev/null && echo "PRESENT" || echo "ABSENT")
+          echo "ProvisionedDevices: $DEVICES"
+
+          echo ""
+          echo "=== Validation ==="
+
+          # Validate TeamIdentifier
+          if [ "$TEAM" = "86NUJ8M3B8" ]; then
+            echo "✅ TeamIdentifier matches 86NUJ8M3B8"
+          else
+            echo "❌ TeamIdentifier mismatch: expected 86NUJ8M3B8, got $TEAM"
+            exit 1
+          fi
+
+          # Validate application-identifier
+          if [ "$APP_ID" = "86NUJ8M3B8.app.soulcodex.ios" ]; then
+            echo "✅ application-identifier matches"
+          else
+            echo "❌ application-identifier mismatch: expected 86NUJ8M3B8.app.soulcodex.ios, got $APP_ID"
+            exit 1
+          fi
+
+          # Validate get-task-allow
+          if [ "$GET_TASK" = "0" ] || [ "$GET_TASK" = "false" ]; then
+            echo "✅ get-task-allow is false (release profile)"
+          else
+            echo "❌ get-task-allow is not false: $GET_TASK"
+            exit 1
+          fi
+
+          # Validate ProvisionedDevices is absent
+          if [ "$DEVICES" = "ABSENT" ]; then
+            echo "✅ ProvisionedDevices is absent (distribution profile)"
+          else
+            echo "❌ ProvisionedDevices present (should be absent for App Store)"
+            exit 1
+          fi
+
+          # Check expiration
+          EPOCH=$(date -jf "%Y-%m-%dT%H:%M:%SZ" "$EXP_DATE" +%s 2>/dev/null || echo "0")
+          NOW=$(date +%s)
+          if [ "$EPOCH" -gt "$NOW" ]; then
+            echo "✅ Profile is not expired"
+          else
+            echo "❌ Profile is expired"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Certificate Fingerprints ==="
+          # Extract certificates
+          security cms -D -i "$PROFILE_PATH" -o /tmp/profile.der 2>&1 | grep -i cert || true
+
+          echo "✅ Provisioning profile audit passed"
+          echo "UUID for xcodebuild: $UUID"
+
       - name: Build iOS (App Store)
         if: inputs.build_type == 'app-store'
         run: |
