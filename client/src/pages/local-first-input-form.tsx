@@ -131,7 +131,7 @@ export default function LocalFirstInputForm() {
         title: "Soul Codex created on this device",
         description: "The full evidence-linked reading is saved locally and remains available without a connection.",
       });
-      setLocation(`/profile`);
+      setLocation(`/profile/${profile.id}`);
     } catch (error) {
       console.error("Local profile creation failed", error);
       toast({

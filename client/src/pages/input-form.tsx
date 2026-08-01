@@ -41,7 +41,7 @@ export default function InputForm() {
         title: "Soul Profile Created!",
         description: "Your cosmic blueprint has been generated successfully.",
       });
-      setLocation(`/profile`);
+      setLocation(`/profile/${profile.id}`);
     },
     onError: (error) => {
       toast({
