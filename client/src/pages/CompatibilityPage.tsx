@@ -212,7 +212,7 @@ export default function CompatibilityPage() {
   }, []);
 
   const sunSign = profile?.sunSign ?? profile?.astrologyData?.sunSign;
-  const lifePath = profile?.lifePathNumber ?? profile?.numerologyData?.lifePathNumber;
+  const lifePath = profile?.lifePathNumber ?? profile?.numerologyData?.lifePathNumber ?? profile?.numerologyData?.lifePath;
   const hdType = profile?.humanDesignType ?? profile?.humanDesignData?.type;
   const hdAuthority = profile?.humanDesignData?.authority;
 

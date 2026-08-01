@@ -460,7 +460,7 @@ export default function TimelinePage() {
       {/* Archetype sub-label (if profile loaded) */}
       {profile?.archetype && py && (
         <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)", marginBottom: "1.25rem", marginTop: "-0.5rem" }}>
-          {profile.archetype} in a Year-{py} phase
+          {typeof profile.archetype === 'string' ? profile.archetype : profile.archetype?.name || 'Unknown'} in a Year-{py} phase
         </p>
       )}
 
