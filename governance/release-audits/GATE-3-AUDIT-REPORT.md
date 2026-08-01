@@ -12,10 +12,11 @@
 
 This audit scanned the entire codebase for violations of the trust model established in PR #131 (Reading Experience). The trust model requires that **unverified astrology data is never rendered as fact without visible confidence indicators or "Pending" labels**.
 
-**Result:** The audit identified **2 CRITICAL BLOCKERS** that violate this trust model by silently rendering hardcoded or approximate astrology values without user awareness.
+**Result:** The audit identified **3 CRITICAL BLOCKERS** that violate this trust model by silently rendering hardcoded or approximate astrology values without user awareness. Most critically, **the backend astrology service itself returns approximate data without verification status**, which cascades through the entire system.
 
 | Finding | Severity | File | Lines | Issue |
 |---------|----------|------|-------|-------|
+| Hardcoded backend astrology | CRITICAL | server/services/astrology.ts | 37-139 | All sun/moon/rising calculated from date boundaries, returned as verified |
 | Hardcoded fallback signs | CRITICAL | PosterPage.tsx | 82, 125-126 | "Gemini"/"Pisces" rendered when astrology unavailable |
 | Approximate sun sign as fallback | CRITICAL | OnboardingPage.tsx | 79-93, 139-150, 205, 337, 583 | Date-based sun calculation silently used as profile value |
 
@@ -66,6 +67,148 @@ Traced fallback chains through multiple pages:
 ---
 
 ## Detailed Findings
+
+### ❌ CRITICAL BLOCKER 0: Backend Astrology Service Hardcoded Calculations
+
+**File:** `/server/services/astrology.ts`  
+**Lines:** 37-139  
+**Severity:** CRITICAL — MOST SEVERE (Core backend issue)
+
+**Issue Description:**
+
+The server's astrology calculation service returns hardcoded approximate sun/moon/rising signs based on date boundaries without any verification status or "pending" label. This is the ROOT CAUSE for multiple client-side issues.
+
+**Code Evidence:**
+
+Lines 37-55 — Approximate sun sign from date boundaries:
+```typescript
+function calculateSunSign(birthDate: string): string {
+  const date = new Date(birthDate);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  
+  // Simplified sun sign calculation
+  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Aries';
+  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'Taurus';
+  if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'Gemini';
+  ...
+  return 'Pisces';  // Silent fallback
+}
+```
+
+Lines 57-78 — Approximate moon and rising signs:
+```typescript
+function calculateMoonSign(birthDate: string, birthTime: string): string {
+  // Simplified moon sign calculation - not using ephemeris
+  const dayOfYear = ...;
+  const timeHours = parseInt(birthTime.split(':')[0]);
+  const index = (dayOfYear + timeHours) % 12;
+  return ZODIAC_SIGNS[index];  // Simplified, not accurate
+}
+
+function calculateRisingSign(birthDate: string, birthTime: string, latitude: number): string {
+  // Simplified rising sign calculation - not using sidereal time
+  ...
+  return ZODIAC_SIGNS[index];  // Simplified, not accurate
+}
+```
+
+Lines 80-139 — All returned as verified astrology:
+```typescript
+export function calculateAstrology(birthData: BirthData): AstrologyData {
+  const sunSign = calculateSunSign(birthData.birthDate);  // Approximate
+  const moonSign = calculateMoonSign(...);  // Simplified
+  const risingSign = calculateRisingSign(...);  // Simplified
+  
+  // All derivatives calculated from approximate sun sign
+  const planets = {
+    sun: { sign: sunSign, house: 1, degree: 15.5 },
+    mercury: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 1) % 12], ... },
+    venus: { sign: ZODIAC_SIGNS[(ZODIAC_SIGNS.indexOf(sunSign) + 2) % 12], ... },
+    // ... all other planets derived from approximate sun
+  };
+  
+  // Returned with NO verification status
+  return {
+    sunSign,        // No: "status": "pending"
+    moonSign,       // No: "confidence": "low"
+    risingSign,     // No indication this is approximate
+    planets,        // Derived from approximate values
+    ...
+  };
+}
+```
+
+**Failure Scenario:**
+
+1. User creates profile with birth date only (no birth time)
+2. Frontend requests `/api/astrology/calculate` with birth data
+3. Server's `calculateAstrology()` runs:
+   - Calculates approximate sun from date boundary (e.g., Jan 15 = Capricorn)
+   - Calculates simplified moon from (dayOfYear + hours) % 12
+   - Calculates simplified rising from (totalMinutes + latitude) % 12
+   - Derives ALL planets from approximate sun sign
+4. Returns object with no verification status:
+   ```json
+   {
+     "sunSign": "Capricorn",
+     "moonSign": "Scorpio",
+     "risingSign": "Sagittarius",
+     "planets": { "sun": { "sign": "Capricorn", ... }, ... }
+   }
+   ```
+5. Frontend stores this in profile
+6. Client pages use sunSign for horoscopes, readings, AI synthesis
+7. Backend AI service (openai-service.ts) receives unverified data:
+   ```typescript
+   const prompt = `Sun Sign: ${data.astrologyData?.sunSign} Moon Sign: ${data.astrologyData?.moonSign}`;
+   ```
+8. AI generates guidance based on approximate astrology
+9. User sees readings and AI insights without knowing data is approximate
+
+**Why This Fails Trust Model — MOST CRITICALLY:**
+
+- ❌ Backend returns approximate data as if it's calculated from ephemeris
+- ❌ No verification status included in response
+- ❌ Cascades to ALL client-side and AI systems
+- ❌ All downstream calculations (planets, nodes, transits) derive from approximate sun
+- ❌ User has no way to know data is not from real ephemeris
+- ❌ Foundation release would ship with compromised astrology layer
+- ❌ Trust model is violated at the SOURCE, not just the UI
+
+**Verification State Violation:**
+
+Server treats approximate date-boundary calculation as equivalent to ephemeris calculation. This is fundamentally dishonest about data quality.
+
+**Required Fix:**
+
+Must return verification status with astrology data:
+
+```typescript
+export function calculateAstrology(birthData: BirthData): AstrologyData & { verification: AstrologyVerification } {
+  if (!birthData.birthTime) {
+    // Birth time missing → cannot verify astrology
+    return {
+      sunSign: null,
+      moonSign: null,
+      risingSign: null,
+      planets: { /* null values */ },
+      verification: {
+        sunStatus: "pending_independent_verification",
+        moonStatus: "pending_independent_verification",
+        risingStatus: "pending_independent_verification",
+        reason: "Birth time required for accurate ephemeris calculation"
+      },
+      // Do NOT include approximate calculations
+    };
+  }
+  
+  // Only return verified astrology if data is complete and accurate
+  // Use real ephemeris provider (Swiss Ephemeris, etc.)
+}
+```
+
+---
 
 ### ❌ CRITICAL BLOCKER 1: PosterPage Hardcoded Fallback Signs
 
@@ -380,6 +523,7 @@ Robert fixture correctly uses `null` for all unverified astrology placements.
 
 | Component | File | Status | Evidence |
 |-----------|------|--------|----------|
+| **Astrology Service (SERVER)** | server/services/astrology.ts | ❌ FAIL | Hardcoded sun/moon/rising calculations |
 | **PosterPage** | PosterPage.tsx | ❌ FAIL | Hardcoded fallback signs (Gemini/Pisces) |
 | **OnboardingPage** | OnboardingPage.tsx | ❌ FAIL | Approximate sun stored as verified |
 | ProfilePage | ProfilePage.tsx | ✅ PASS | Confidence guard gates rendering |
@@ -394,16 +538,19 @@ Robert fixture correctly uses `null` for all unverified astrology placements.
 
 ## Gate 3 Audit Result
 
-**Total Findings:** 2  
-**Critical (must fix):** 2  
+**Total Findings:** 3  
+**Critical (must fix):** 3  
 **Warnings:** 0  
-**Passes:** 6  
+**Passes:** 10  
 
-**Gate Status:** ❌ **FAILED**
+**Gate Status:** ❌ **FAILED — 3 CRITICAL BLOCKERS**
 
 **Gate Unblocking Criteria:**
+- [ ] Fix backend astrology service to return null/verification for unverified data
 - [ ] Fix PosterPage hardcoded fallback signs
 - [ ] Fix OnboardingPage approximate sun sign storage
+- [ ] Integrate real ephemeris provider (Swiss Ephemeris or equivalent)
+- [ ] Add verification status to all AstrologyData responses
 - [ ] Re-run automated scan to verify no new violations
 - [ ] Re-submit audit report with sign-off
 
@@ -413,15 +560,19 @@ Robert fixture correctly uses `null` for all unverified astrology placements.
 
 **Current State:**
 - Foundation release is **BLOCKED** at Gate 3
+- Backend astrology service returns approximate data without verification
 - PosterPage users can export posters with fabricated astrology
 - OnboardingPage cascades approximate sun sign through entire app
-- Both violations directly contradict PR #131 trust model
+- All 3 violations directly contradict PR #131 trust model and ADR-001
 
 **If Released As-Is:**
-- Foundation release would ship with known trust violations
-- Users would receive readings for unverified data
-- No way to trace approximate vs verified
+- Foundation release would ship with compromised astronomy layer
+- Users would receive AI-generated guidance based on approximate data
+- Astrology readings would be based on date boundaries, not ephemeris
+- No way to trace approximate vs verified astrology
+- Core trust model violated at backend level
 - Violates ADR-001 (Verification is part of design)
+- Undermines entire Foundation release commitment to trustworthiness
 
 ---
 
