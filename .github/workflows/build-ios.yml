@@ -316,6 +316,7 @@ jobs:
             PROVISIONING_PROFILE_SPECIFIER="$PROVISIONING_PROFILE_SPECIFIER" \
             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
             CODE_SIGN_STYLE="$CODE_SIGN_STYLE" \
+            CODE_SIGN_IDENTITY="-" \
             -verbose \
             archive 2>&1 | tee archive.log
 
