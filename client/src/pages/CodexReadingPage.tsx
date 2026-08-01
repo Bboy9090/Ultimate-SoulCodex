@@ -15,6 +15,7 @@ import {
   getPersonalDayLabel,
   getPersonalYearLabel
 } from "@soulcodex/core";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 interface CodexSynthesis {
   codename: string;

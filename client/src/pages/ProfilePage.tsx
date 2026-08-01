@@ -5,6 +5,7 @@ import {
 } from "../components/Icons";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
+import { loadActiveProfile } from "../lib/profileStorage";
 import {
   calcPersonalDay,
   calcPersonalYear,
@@ -36,11 +37,11 @@ function getLifePathLabel(num: number | undefined): string {
 
 function buildIdentityStatement(profile: any): string {
   const confidence = profile.confidence?.badge || "unverified";
-  const archetype = profile.archetype?.name || "The Seeker";
-  const sunSign = profile.chartData?.sunSign;
-  const moonSign = profile.chartData?.moonSign;
-  const lifePath = profile.numerologyData?.lifePath;
-  const hdType = profile.humanDesignData?.type;
+  const archetype = typeof profile.archetype === "string" ? profile.archetype : profile.archetype?.name || "The Seeker";
+  const sunSign = profile.sunSign || profile.astrologyData?.sunSign || profile.natalChart?.sunSign || profile.chart?.sunSign;
+  const moonSign = profile.moonSign || profile.astrologyData?.moonSign || profile.natalChart?.moonSign || profile.chart?.moonSign;
+  const lifePath = profile.lifePathNumber || profile.numerologyData?.lifePathNumber || profile.numerologyData?.lifePath;
+  const hdType = profile.humanDesignType || profile.humanDesignData?.type;
 
   if (confidence === "unverified" || !profile.birthDate) {
     return "Complete your birth details to unlock your full identity architecture.";
@@ -61,9 +62,9 @@ function buildIdentityStatement(profile: any): string {
 
 function buildCoreEssenceStatement(profile: any): string {
   const confidence = profile.confidence?.badge || "unverified";
-  const archetype = profile.archetype?.name;
-  const sunSign = profile.chartData?.sunSign;
-  const lifePathLabel = getLifePathLabel(profile.numerologyData?.lifePath);
+  const archetype = typeof profile.archetype === "string" ? profile.archetype : profile.archetype?.name;
+  const sunSign = profile.sunSign || profile.astrologyData?.sunSign || profile.natalChart?.sunSign || profile.chart?.sunSign;
+  const lifePathLabel = getLifePathLabel(profile.lifePathNumber || profile.numerologyData?.lifePathNumber || profile.numerologyData?.lifePath);
 
   if (!profile.synthesis?.coreEssence || confidence === "unverified") {
     if (confidence === "partial") {
@@ -123,6 +124,13 @@ export default function ProfilePage() {
 
   const archetypeName = profile.archetype?.name || "The Seeker";
   const archetypeTagline = profile.archetype?.tagline || "Aligning your natal signals...";
+
+  // Check if profile has verified data for Galactic Code
+  const sunSign = profile.sunSign || profile.astrologyData?.sunSign || profile.natalChart?.sunSign || profile.chart?.sunSign;
+  const moonSign = profile.moonSign || profile.astrologyData?.moonSign || profile.natalChart?.moonSign || profile.chart?.moonSign;
+  const hasAstrology = !!sunSign;
+  const hasHumanDesign = !!(profile.humanDesignType || profile.humanDesignData?.type || profile.humanDesign?.type);
+  const hasVerifiedData = hasAstrology && hasHumanDesign;
 
   // Calculate Personal Day/Year/Month if we have birthDate
   const today = new Date();

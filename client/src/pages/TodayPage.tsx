@@ -10,6 +10,7 @@ import {
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import { getDailyPulseForDate, saveDailyPulseEntry, type MoodType } from "../lib/dailyPulseStorage";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 interface TodayCard {
   codename: string;
@@ -181,14 +182,14 @@ export default function TodayPage() {
     );
   }
 
-  const archetypeName = profile?.archetype?.name || "The Seeker";
-  const archetypeTagline = profile?.archetype?.tagline || "Aligning your natal signals...";
-  
-  const sunSign = profile.sunSign || profile.astrologyData?.sunSign || profile.chartData?.sunSign;
+  const archetypeName = profile?.archetype || "The Seeker";
+  const archetypeTagline = "Aligning your natal signals...";
+
+  const sunSign = profile.sunSign || profile.astrologyData?.sunSign;
   const hasChartData = !!sunSign;
 
   const pattern = cleanCodexLine(
-    profile.synthesis?.coreEssence || (profile.archetypeData as any)?.synthesis?.myPattern,
+    profile.synthesis?.coreEssence || profile.humanDesignData?.strategy,
     hasChartData
       ? `${sunSign} core pattern active. Open your Codex for the full signature.`
       : "Complete your birth data to unlock your core pattern."
