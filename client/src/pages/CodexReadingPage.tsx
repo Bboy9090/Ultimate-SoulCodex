@@ -163,8 +163,8 @@ function buildReadingElements(profile: any): Record<string, ReadingElementType> 
   const chart = profile.chart;
   const readings: Record<string, ReadingElementType> = {};
 
-  // Sun Sign
-  if (chart.sun) {
+  // Sun Sign - Always calculable from date
+  if (chart.sun?.sign) {
     readings.sunSign = {
       headline: `You see patterns others miss—your ${chart.sun.sign} Sun drives constant analysis.`,
       mechanism: `${chart.sun.sign} Sun creates a drive to understand systems. Your mind automatically scans for structure, logic, and improvement. When you spot inefficiency, your impulse is to fix it.`,
@@ -187,8 +187,9 @@ function buildReadingElements(profile: any): Record<string, ReadingElementType> 
     };
   }
 
-  // Moon Sign
-  if (chart.moon) {
+  // Moon Sign - Requires independent verification
+  // CRITICAL: Do NOT render if sign is null (unresolved)
+  if (chart.moon?.sign) {
     readings.moonSign = {
       headline: `You process emotions through logic—your ${chart.moon.sign} Moon needs understanding before expression.`,
       mechanism: `${chart.moon.sign} Moon means you analyze feelings before you express them. You prefer observation and analysis to raw emotional response. Chaos—emotional or otherwise—makes you deeply uncomfortable.`,
@@ -211,8 +212,9 @@ function buildReadingElements(profile: any): Record<string, ReadingElementType> 
     };
   }
 
-  // Rising Sign (requires birth time)
-  if (chart.rising && profile.birthTime) {
+  // Rising Sign - Requires independent verification AND birth time
+  // CRITICAL: Do NOT render if sign is null (unresolved)
+  if (chart.rising?.sign && profile.birthTime) {
     readings.risingSign = {
       headline: `You appear as ${chart.rising.sign} to the world—intense, observant, hard to read.`,
       mechanism: `${chart.rising.sign} Rising is your mask, how people first experience you. It's protective—you signal depth and complexity. People feel like you're reading them.`,
@@ -376,7 +378,7 @@ export default function CodexReadingPage() {
           </div>
 
           {/* NEW READING EXPERIENCE - Display Mode Toggle */}
-          {elementsForMode.length > 0 && (
+          {elementsForMode.length > 0 || (profile?.chart?.moon === null || profile?.chart?.rising === null) ? (
             <>
               <div style={{
                 display: "flex",
@@ -419,13 +421,116 @@ export default function CodexReadingPage() {
                 }}>
                   Your Core Patterns
                 </h2>
+
+                {/* Render available verified readings */}
                 {elementsForMode.map((element, i) => (
                   <ReadingElement key={i} element={element} mode={displayMode} showEvidence={displayMode === "technical"} />
                 ))}
+
+                {/* Show unresolved status for Moon and Ascendant */}
+                {profile?.chart?.moon?.sign === null && (
+                  <div style={{
+                    marginBottom: "2.5rem",
+                    padding: "2rem",
+                    background: "rgba(212,168,95,0.08)",
+                    borderLeft: "4px solid rgba(212,168,95,0.3)",
+                    borderRadius: "8px",
+                  }}>
+                    <h3 style={{
+                      margin: "0 0 1rem 0",
+                      fontSize: "1.15rem",
+                      fontWeight: 700,
+                      color: "var(--sc-stone)",
+                      lineHeight: 1.5,
+                    }}>
+                      Moon
+                    </h3>
+                    <p style={{
+                      margin: "0 0 0.5rem 0",
+                      fontSize: "0.85rem",
+                      textTransform: "uppercase",
+                      color: "var(--sc-stone)",
+                      opacity: 0.7,
+                      letterSpacing: "0.05em",
+                    }}>
+                      VERIFICATION STATUS
+                    </p>
+                    <p style={{
+                      margin: 0,
+                      fontSize: "0.95rem",
+                      color: "var(--sc-ivory)",
+                      lineHeight: 1.7,
+                    }}>
+                      Pending independent verification. Moon position requires accurate birth time and comparison with a second ephemeris source.
+                      {!profile.birthTime && " Complete your birth time to enable calculation."}
+                    </p>
+                  </div>
+                )}
+
+                {profile?.chart?.rising?.sign === null && (
+                  <div style={{
+                    marginBottom: "2.5rem",
+                    padding: "2rem",
+                    background: "rgba(236,72,153,0.05)",
+                    borderLeft: "4px solid rgba(236,72,153,0.3)",
+                    borderRadius: "8px",
+                  }}>
+                    <h3 style={{
+                      margin: "0 0 1rem 0",
+                      fontSize: "1.15rem",
+                      fontWeight: 700,
+                      color: "var(--sc-stone)",
+                      lineHeight: 1.5,
+                    }}>
+                      Ascendant
+                    </h3>
+                    <p style={{
+                      margin: "0 0 0.5rem 0",
+                      fontSize: "0.85rem",
+                      textTransform: "uppercase",
+                      color: "var(--sc-stone)",
+                      opacity: 0.7,
+                      letterSpacing: "0.05em",
+                    }}>
+                      CALCULATION STATUS
+                    </p>
+                    <p style={{
+                      margin: 0,
+                      fontSize: "0.95rem",
+                      color: "var(--sc-ivory)",
+                      lineHeight: 1.7,
+                    }}>
+                      Unresolved. Ascendant calculation requires Local Sidereal Time + house system implementation + independent verification.
+                      {!profile.birthTime && " Exact birth time is required but not sufficient."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Show notice if any time-sensitive placements are unresolved */}
+                {(profile?.chart?.moon?.sign === null || profile?.chart?.rising?.sign === null) && (
+                  <div style={{
+                    marginBottom: "2.5rem",
+                    padding: "1.5rem",
+                    background: "rgba(59,130,246,0.05)",
+                    borderLeft: "4px solid #3b82f6",
+                    borderRadius: "8px",
+                  }}>
+                    <p style={{
+                      margin: 0,
+                      fontSize: "0.95rem",
+                      color: "#3b82f6",
+                      lineHeight: 1.7,
+                      fontStyle: "italic",
+                    }}>
+                      ⚠️ Interpretation paused for time-sensitive placements until independent ephemeris verification is complete.
+                    </p>
+                  </div>
+                )}
+
                 <LimitationsPanel profile={profile} />
               </div>
             </>
-          )}
+          ) : null}
 
           {/* 2. EXPANDED PREMIUM SECTIONS */}
           {sections.map((sec, idx) => (
