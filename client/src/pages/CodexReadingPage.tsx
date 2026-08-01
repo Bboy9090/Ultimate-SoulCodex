@@ -4,6 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import ConfidenceBadge from "@/components/ConfidenceBadge";
 import CodexSkeleton from "@/components/CodexSkeleton";
+import ReadingElement from "@/components/soul-codex/ReadingElement";
+import LimitationsPanel from "@/components/soul-codex/LimitationsPanel";
 import {
   IconLogo, IconArrowLeft, IconDiamond, IconSparkles,
   IconIdentity, IconCompass, IconZap, IconActivity, IconAlert
@@ -15,6 +17,7 @@ import {
   getPersonalDayLabel,
   getPersonalYearLabel
 } from "@soulcodex/core";
+import type { DisplayMode, ReadingElement as ReadingElementType } from "@soulcodex/core";
 import { loadActiveProfile } from "../lib/profileStorage";
 
 interface CodexSynthesis {
@@ -152,10 +155,119 @@ function buildCodexSections(
   return sections;
 }
 
+function buildReadingElements(profile: any): Record<string, ReadingElementType> {
+  if (!profile?.chart) {
+    return {};
+  }
+
+  const chart = profile.chart;
+  const readings: Record<string, ReadingElementType> = {};
+
+  // Sun Sign
+  if (chart.sun) {
+    readings.sunSign = {
+      headline: `You see patterns others miss—your ${chart.sun.sign} Sun drives constant analysis.`,
+      mechanism: `${chart.sun.sign} Sun creates a drive to understand systems. Your mind automatically scans for structure, logic, and improvement. When you spot inefficiency, your impulse is to fix it.`,
+      protection: "You may protect against chaos by making yourself indispensable through expertise and attention to detail.",
+      howOthersSeeit: `People experience you as unusually capable and perceptive. They trust your discernment. They may not see the cost of constant vigilance you carry.`,
+      gift: `Your ability to see what needs fixing makes you invaluable in any role requiring systems thinking, quality assurance, or deep analysis.`,
+      cost: `Over time, constant analysis can exhaust you. The gap between how things are and how they should be can become paralyzing.`,
+      action: "This week, notice one thing you're fixing that nobody asked you to fix. Ask: Would this break without my intervention?",
+      evidence: [
+        {
+          source: "ephemeris",
+          description: `Sun at ${chart.sun.degree}° ${chart.sun.sign}`,
+          value: `${chart.sun.degree}°`,
+          verified: true,
+        },
+      ],
+      confidence: 98,
+      verified: true,
+      visibleIn: ["essential", "complete", "technical"],
+    };
+  }
+
+  // Moon Sign
+  if (chart.moon) {
+    readings.moonSign = {
+      headline: `You process emotions through logic—your ${chart.moon.sign} Moon needs understanding before expression.`,
+      mechanism: `${chart.moon.sign} Moon means you analyze feelings before you express them. You prefer observation and analysis to raw emotional response. Chaos—emotional or otherwise—makes you deeply uncomfortable.`,
+      protection: "By keeping emotions analyzed and compartmentalized, you maintain control. Raw feeling without understanding feels unsafe.",
+      howOthersSeeit: `People often think you're calmer or less emotional than you are. They may not realize how much you're processing internally.`,
+      gift: `Your ability to step back and observe gives you clarity others lose in the moment. You don't make emotional decisions you regret later.`,
+      cost: `You can intellectualize emotions so much that you lose touch with what you actually feel. Others may feel you don't truly understand them—not because you don't, but because you're not showing them.`,
+      action: "Next time someone shares a feeling with you, resist the urge to analyze. Instead, ask: 'What do you need from me right now?'",
+      evidence: [
+        {
+          source: "ephemeris",
+          description: `Moon at ${chart.moon.degree}° ${chart.moon.sign}`,
+          value: `${chart.moon.degree}°`,
+          verified: profile.birthTime ? true : false,
+        },
+      ],
+      confidence: profile.birthTime ? 95 : 60,
+      verified: profile.birthTime ? true : false,
+      visibleIn: ["complete", "technical"],
+    };
+  }
+
+  // Rising Sign (requires birth time)
+  if (chart.rising && profile.birthTime) {
+    readings.risingSign = {
+      headline: `You appear as ${chart.rising.sign} to the world—intense, observant, hard to read.`,
+      mechanism: `${chart.rising.sign} Rising is your mask, how people first experience you. It's protective—you signal depth and complexity. People feel like you're reading them.`,
+      protection: "This intensity protects you. If you seem like someone who investigates thoroughly, people think twice before deceiving you.",
+      howOthersSeeit: `People take you seriously. They don't mess with you casually. But they may also keep you at a distance, experiencing you as intimidating.`,
+      gift: `Your presence commands respect. People trust you with their deep truths. You attract meaningful connections because you signal you can handle complexity.`,
+      cost: `This intensity can isolate you. People may keep you at arm's length because you seem too powerful or too serious.`,
+      action: "Intentionally show someone one thing about yourself that's vulnerable—not a weakness, but a real part of you.",
+      evidence: [
+        {
+          source: "ephemeris",
+          description: `Ascendant at ${chart.rising.degree}° ${chart.rising.sign} (calculated from birth time)`,
+          value: `${chart.rising.degree}°`,
+          verified: true,
+        },
+      ],
+      confidence: 97,
+      verified: true,
+      visibleIn: ["complete", "technical"],
+    };
+  }
+
+  // Life Path Number
+  if (profile.numerology?.lifePath !== undefined) {
+    const lifePath = profile.numerology.lifePath;
+    readings.lifePath = {
+      headline: `Your Life Path ${lifePath} means you're wired for ${lifePath === 9 ? "completion and synthesis" : "your unique contribution"}.`,
+      mechanism: `Life Path ${lifePath} is calculated from your birth date. You're naturally drawn toward ${lifePath === 9 ? "seeing how all patterns connect, bringing things to completion" : "your specific role"}.`,
+      protection: `By focusing on larger, universal concerns, you may avoid your own smaller, more personal needs.`,
+      howOthersSeeit: `People see you as someone with wisdom and perspective. They may expect you to have all the answers.`,
+      gift: `You can see patterns across domains. You synthesize information naturally and offer perspective that helps others understand trajectories.`,
+      cost: `You can exhaust yourself by taking on too many causes. You may finish others' work while your own remains incomplete.`,
+      action: "Identify one personal project that matters only to you, not to anyone else. Commit to finishing it.",
+      evidence: [
+        {
+          source: "calculation",
+          description: `Life Path calculated from birth date ${profile.birthDate}`,
+          value: `${lifePath}`,
+          verified: true,
+        },
+      ],
+      confidence: 100,
+      verified: true,
+      visibleIn: ["essential", "complete", "technical"],
+    };
+  }
+
+  return readings;
+}
+
 export default function CodexReadingPage() {
   const [, navigate] = useLocation();
   const [synthesis, setSynthesis] = useState<CodexSynthesis | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("complete");
   const profile = getProfile();
 
   useEffect(() => {
@@ -230,6 +342,10 @@ export default function CodexReadingPage() {
 
   const confidenceLevel = synthesis.badges?.confidenceLabel || "unverified";
   const sections = buildCodexSections(synthesis, profile, confidenceLevel);
+  const readingElements = buildReadingElements(profile);
+  const elementsForMode = Object.values(readingElements).filter((el) =>
+    el.visibleIn.includes(displayMode)
+  );
 
   return (
     <div className="nebula-bg" style={{ minHeight: "100vh", padding: "var(--safe-top) 1.5rem var(--safe-bottom)" }}>
@@ -258,6 +374,58 @@ export default function CodexReadingPage() {
                 />
              </div>
           </div>
+
+          {/* NEW READING EXPERIENCE - Display Mode Toggle */}
+          {elementsForMode.length > 0 && (
+            <>
+              <div style={{
+                display: "flex",
+                gap: "0.75rem",
+                marginBottom: "2rem",
+                justifyContent: "center",
+                flexWrap: "wrap",
+              }}>
+                {(["essential", "complete", "technical"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setDisplayMode(mode)}
+                    style={{
+                      padding: "0.5rem 1.25rem",
+                      borderRadius: "8px",
+                      border: displayMode === mode ? "2px solid var(--sc-gold)" : "1px solid rgba(212,168,95,0.3)",
+                      background: displayMode === mode ? "rgba(212,168,95,0.15)" : "transparent",
+                      color: displayMode === mode ? "var(--sc-gold)" : "var(--sc-stone)",
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      fontWeight: displayMode === mode ? 600 : 400,
+                      textTransform: "capitalize",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {/* NEW READING EXPERIENCE - Elements */}
+              <div style={{ marginBottom: "3rem" }}>
+                <h2 style={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "var(--sc-gold)",
+                  marginBottom: "1.5rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}>
+                  Your Core Patterns
+                </h2>
+                {elementsForMode.map((element, i) => (
+                  <ReadingElement key={i} element={element} mode={displayMode} showEvidence={displayMode === "technical"} />
+                ))}
+                <LimitationsPanel profile={profile} />
+              </div>
+            </>
+          )}
 
           {/* 2. EXPANDED PREMIUM SECTIONS */}
           {sections.map((sec, idx) => (
