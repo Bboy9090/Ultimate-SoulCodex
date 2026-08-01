@@ -163,8 +163,12 @@ jobs:
           GET_TASK=$(plutil -extract Entitlements.get-task-allow raw /tmp/profile.plist 2>/dev/null || echo "N/A")
           echo "get-task-allow: $GET_TASK"
 
-          # ProvisionedDevices
-          DEVICES=$(plutil -extract ProvisionedDevices 0 /tmp/profile.plist 2>/dev/null && echo "PRESENT" || echo "ABSENT")
+          # ProvisionedDevices - check if key exists (it should NOT exist for App Store profile)
+          if plutil -extract ProvisionedDevices /tmp/profile.plist >/dev/null 2>&1; then
+            DEVICES="PRESENT"
+          else
+            DEVICES="ABSENT"
+          fi
           echo "ProvisionedDevices: $DEVICES"
 
           echo ""
@@ -194,7 +198,7 @@ jobs:
             exit 1
           fi
 
-          # Validate ProvisionedDevices is absent
+          # Validate ProvisionedDevices is absent (App Store profiles should not have device restrictions)
           if [ "$DEVICES" = "ABSENT" ]; then
             echo "✅ ProvisionedDevices is absent (distribution profile)"
           else
