@@ -1,6 +1,6 @@
 # Soul Codex Golden Dataset
 
-The Golden Dataset is the regression testing suite for Soul Codex. It contains 100+ verified birth charts with known correct outputs across all systems.
+The Golden Dataset is the regression testing suite for Soul Codex. It is structured to contain 100+ verified birth charts with known correct outputs across all systems (currently in development phase).
 
 ## Purpose
 
@@ -62,7 +62,7 @@ Each entry in the Golden Dataset follows this structure:
     },
     "humanDesign": {
       "type": "Reflector",
-      "authority": "Emotional",
+      "authority": "Lunar",
       "strategy": "Wait for lunar month",
       "definition": "Open"
     }

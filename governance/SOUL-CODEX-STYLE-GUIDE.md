@@ -51,7 +51,7 @@ Show the calculation. Show confidence. Make it verifiable.
 ```
 Evidence:
 ├─ Sun in Virgo (natal chart position: 23° Virgo)
-├─ Life Path 8 (birth date numerology: 9/17/1990 → 9+1+7+1+9+9+0 = 36 → 3+6 = 9)
+├─ Life Path 9 (birth date numerology: 9/17/1990 → 9+1+7+1+9+9+0 = 36 → 3+6 = 9)
 └─ Confidence: 98% (both factors well-established)
 ```
 
@@ -187,7 +187,7 @@ Never use:
 **NOT**: "Life Path 8 might mean you lead sometimes or maybe you don't. Who knows?"
 
 ### For Probabilistic Patterns
-"Virgo Sun + Life Path 8 suggests analytical leadership. About 73% of people with this combination gravitate toward systems roles. Your actual path depends on your choices."
+"Virgo Sun + Life Path 9 suggests analytical leadership. Individuals with this combination frequently gravitate toward systems roles. Your actual path depends on your choices."
 
 **NOT**: "You'll probably be a systems person but maybe not."
 
