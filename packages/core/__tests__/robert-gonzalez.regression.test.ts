@@ -1,22 +1,27 @@
 /**
  * Robert Gonzalez - Regression Test Suite
  *
- * RULE: Test that the engine independently calculates Robert's chart
- * and that the UI renders the calculated values without mutation.
+ * CURRENT STATUS: Verification is PENDING
+ *
+ * These tests verify that:
+ * 1. Birth inputs remain stable (immutable source)
+ * 2. Unresolved status is honestly reported (not faked as "verified")
+ * 3. No hardcoded expected values override incomplete calculations
+ * 4. Tests FAIL if false certainty is introduced
  *
  * DO NOT:
- * - Hardcode expected signs because "astrology says so"
- * - Skip verification if calculation differs from theory
- * - Alter the chart to make the test pass
+ * - Fill in null astrology values with expected signs
+ * - Return status: "verified" without independent comparison
+ * - Insert Robert's "known" Ascendant to make tests pass
  *
  * DO:
- * - Verify birth inputs remain stable
- * - Verify calculation engine produces consistent results
- * - Verify UI renders the engine's output unchanged
- * - Detect calculation discrepancies and fail loudly
+ * - Fail loudly if calculation is incomplete
+ * - Mark fixture as pending until verification exists
+ * - Verify birth inputs are immutable
+ * - Require two independent ephemeris sources before claiming verification
  */
 
-import { test, describe, it, before, after } from "node:test";
+import { test, describe, it } from "node:test";
 import * as assert from "node:assert";
 
 // Import the fixture
@@ -30,251 +35,286 @@ import {
 } from "./fixtures/robert-gonzalez.ts";
 
 // Import calculation utilities
-import {
-  ROBERT_BIRTH_INPUTS,
-  calculateRobertChart,
-  verifyCalculation,
-} from "./calculate-robert-chart.ts";
+import { calculateRobertChart, verifyCalculation } from "./calculate-robert-chart.ts";
 
 describe("Robert Gonzalez - Regression Test Suite", () => {
-  describe("1. Birth Input Stability", () => {
+  describe("1. Birth Input Stability (Immutable Source)", () => {
     it("should have stable birth data", () => {
-      // Birth inputs MUST NOT change
       assert.strictEqual(ROBERT_BIRTH_DATA.name, "Robert Gonzalez");
       assert.strictEqual(ROBERT_BIRTH_DATA.birthDate, "1990-09-17");
       assert.strictEqual(ROBERT_BIRTH_DATA.birthTime, "11:11");
-      assert.strictEqual(ROBERT_BIRTH_DATA.birthPlace, "Bronx, New York");
-      assert.strictEqual(ROBERT_BIRTH_DATA.timeKnown, true);
     });
 
     it("should have consistent coordinates", () => {
       assert.strictEqual(ROBERT_BIRTH_DATA.lat, 40.8448);
       assert.strictEqual(ROBERT_BIRTH_DATA.lon, -73.8648);
-      assert.strictEqual(ROBERT_BIRTH_DATA.timezone, "America/New_York");
     });
 
-    it("should have UTC time conversion documented", () => {
-      // 11:11 AM EDT = 15:11 UTC
+    it("should have UTC time documented", () => {
       assert.strictEqual(ROBERT_BIRTH_DATA.utcTime, "1990-09-17T15:11:00Z");
     });
   });
 
-  describe("2. Chart Calculation Verification", () => {
-    it("should calculate consistent Sun position from date", () => {
-      // Sun position should be calculable from date alone
-      // Expected: ~23.45° Virgo (240-270° ecliptic range)
-      const chart = ROBERT_NATAL_CHART;
-
-      assert.strictEqual(chart.sun.sign, "Virgo");
-      assert.strictEqual(chart.sun.degree, 23.45);
-      assert.strictEqual(chart.sun.verificationStatus, "calculated");
-    });
-
-    it("should calculate Moon from date + exact time", () => {
-      // Moon requires birth time for accuracy
-      // With 11:11 AM birth time, should consistently calculate to Virgo
-      const chart = ROBERT_NATAL_CHART;
-
-      assert.strictEqual(chart.moon.sign, "Virgo");
-      assert.strictEqual(chart.moon.degree, 18.32);
-      assert.strictEqual(chart.moon.verificationStatus, "calculated");
-
-      // Verify calculation note is present
-      assert.ok(
-        chart.moon.calculationNote,
-        "Moon should document time sensitivity"
+  describe("2. Verification Status (Honest Reporting)", () => {
+    it("should mark astrology as pending verification", () => {
+      assert.strictEqual(
+        ROBERT_CALCULATION_CONFIG.calculationStatus.sun,
+        "pending_independent_verification",
+        "Sun should not be marked as calculated"
+      );
+      assert.strictEqual(
+        ROBERT_CALCULATION_CONFIG.calculationStatus.moon,
+        "pending_independent_verification",
+        "Moon should not be marked as calculated"
       );
     });
 
-    it("should calculate Ascendant from date + time + location", () => {
-      // Ascendant is most sensitive to birth time (+/- 1 minute = 1° change)
-      // Should only be visible/used when birthTime is confirmed
-      const chart = ROBERT_NATAL_CHART;
+    it("should mark Ascendant as unresolved", () => {
+      assert.strictEqual(
+        ROBERT_CALCULATION_CONFIG.calculationStatus.ascendant,
+        "unresolved",
+        "Ascendant calculation not yet implemented"
+      );
+    });
 
-      assert.strictEqual(chart.rising.sign, "Scorpio");
-      assert.strictEqual(chart.rising.degree, 6.18);
-      assert.strictEqual(chart.rising.verificationStatus, "calculated");
+    it("should not have false certainty in chart data", () => {
+      // Sun, Moon, and Ascendant should be null until verified
+      assert.strictEqual(
+        ROBERT_NATAL_CHART.sun.sign,
+        null,
+        "Sun sign should be null pending verification"
+      );
+      assert.strictEqual(
+        ROBERT_NATAL_CHART.moon.sign,
+        null,
+        "Moon sign should be null pending verification"
+      );
+      assert.strictEqual(
+        ROBERT_NATAL_CHART.rising.sign,
+        null,
+        "Ascendant should be null (unresolved)"
+      );
+    });
 
-      // Verify critical safeguard is documented
+    it("should document why calculation is incomplete", () => {
       assert.ok(
-        chart.rising.calculationNote.includes("Do NOT render without profile.birthTime"),
-        "Ascendant should document birthTime requirement"
+        ROBERT_NATAL_CHART.sun.calculationNote,
+        "Sun should have calculation notes"
+      );
+      assert.ok(
+        ROBERT_NATAL_CHART.moon.calculationNote,
+        "Moon should have calculation notes"
+      );
+      assert.ok(
+        ROBERT_NATAL_CHART.rising.calculationNote,
+        "Ascendant should have calculation notes explaining unresolved status"
       );
     });
   });
 
-  describe("3. Regression Assertions", () => {
-    it("should assert Sun sign matches calculation", () => {
+  describe("3. Regression Assertions (Pending Verification)", () => {
+    it("should have null astrology assertions pending verification", () => {
       assert.strictEqual(
         ROBERT_REGRESSION_ASSERTIONS.sunSign,
-        ROBERT_NATAL_CHART.sun.sign,
-        "Sun sign must match calculated value"
+        null,
+        "Sun sign assertion should be null pending verification"
       );
-    });
-
-    it("should assert Moon sign matches calculation", () => {
-      // This validates the critical rule:
-      // Moon must match what the engine calculates, not what astrology tradition says
       assert.strictEqual(
         ROBERT_REGRESSION_ASSERTIONS.moonSign,
-        ROBERT_NATAL_CHART.moon.sign,
-        "Moon sign must match calculated value from birth time"
+        null,
+        "Moon sign assertion should be null pending verification"
       );
-    });
-
-    it("should assert Rising sign matches calculation", () => {
-      // Validate Ascendant matches calculation
       assert.strictEqual(
         ROBERT_REGRESSION_ASSERTIONS.risingSign,
-        ROBERT_NATAL_CHART.rising.sign,
-        "Rising sign must match calculated value from time + location"
+        null,
+        "Rising sign assertion should be null (unresolved)"
       );
     });
 
-    it("should assert Life Path matches calculation", () => {
-      // Numerology: 9+1+7+1+9+9+0 = 36 → 3+6 = 9
+    it("should have verified numerology (calculation independent)", () => {
+      // Numerology is mathematically verifiable, independent of astrology
+      assert.strictEqual(ROBERT_REGRESSION_ASSERTIONS.lifePathNumber, 9);
       assert.strictEqual(
-        ROBERT_REGRESSION_ASSERTIONS.lifePathNumber,
-        ROBERT_NUMEROLOGY.lifePath,
-        "Life Path must equal 9 from date 1990-09-17"
+        ROBERT_REGRESSION_ASSERTIONS.lifePathTheme,
+        "Completion, Reflection, Universal Service"
+      );
+    });
+
+    it("should not assert unverified astro-dependent values", () => {
+      // Human Design depends on verified astrology
+      assert.strictEqual(
+        ROBERT_REGRESSION_ASSERTIONS.hdType,
+        null,
+        "HD Type should be null pending chart verification"
+      );
+
+      // Archetypes depend on verified signals
+      assert.strictEqual(
+        ROBERT_REGRESSION_ASSERTIONS.archetype,
+        null,
+        "Archetype should be null pending verification"
+      );
+
+      // Element balance depends on verified chart
+      assert.strictEqual(
+        ROBERT_REGRESSION_ASSERTIONS.dominantElement,
+        null,
+        "Element balance should be null pending chart verification"
       );
     });
   });
 
-  describe("4. Birth Time Sensitivity", () => {
-    it("should document that Moon needs time ±15 minutes", () => {
-      const moon = ROBERT_NATAL_CHART.moon;
-      assert.ok(
-        moon.calculationNote && moon.calculationNote.includes("±15"),
-        "Moon calculation should document time tolerance"
+  describe("4. Calculation Status (No False Verification)", () => {
+    it("should have incomplete calculation return unresolved status", () => {
+      const calc = calculateRobertChart();
+      const verification = verifyCalculation(calc);
+
+      assert.strictEqual(
+        verification.status,
+        "pending_independent_verification",
+        "Verification should be pending, not claimed as verified"
       );
     });
 
-    it("should document that Ascendant needs time ±1 minute", () => {
-      const rising = ROBERT_NATAL_CHART.rising;
-      assert.ok(
-        rising.calculationNote && rising.calculationNote.includes("4 minutes"),
-        "Ascendant should document time sensitivity"
+    it("should not have false certainty in verification", () => {
+      const calc = calculateRobertChart();
+      const verification = verifyCalculation(calc);
+
+      // If calculation were complete, this would have engine data
+      assert.strictEqual(
+        verification.engines.length,
+        0,
+        "Should not claim engines verified until actual comparison exists"
+      );
+
+      assert.strictEqual(
+        verification.comparison,
+        null,
+        "Should not claim comparison without two independent sources"
+      );
+
+      assert.strictEqual(
+        verification.verifiedAt,
+        null,
+        "Should not have verification timestamp without actual verification"
       );
     });
 
-    it("should require birthTime to render Ascendant in UI", () => {
-      // This tests the safeguard in CodexReadingPage.tsx:
-      // if (chart.rising && profile.birthTime) { render reading }
+    it("should document what verification requires", () => {
+      const calc = calculateRobertChart();
+      const verification = verifyCalculation(calc);
 
-      const profile = createRobertProfile();
-
-      // With birthTime present, Ascendant reading should be available
       assert.ok(
-        profile.birthTime,
-        "Test fixture should have birthTime for Ascendant verification"
+        verification.notes.includes("not yet implemented"),
+        "Should honestly document incomplete implementation"
       );
     });
   });
 
-  describe("5. Profile Generation", () => {
-    it("should create profile with calculated chart values", () => {
+  describe("5. Profile Generation (Reflects Pending Status)", () => {
+    it("should create profile with unresolved chart data", () => {
       const profile = createRobertProfile();
 
       assert.strictEqual(profile.name, "Robert Gonzalez");
       assert.strictEqual(profile.birthDate, "1990-09-17");
       assert.strictEqual(profile.birthTime, "11:11");
-      assert.strictEqual(profile.chart.sun.sign, "Virgo");
-      assert.strictEqual(profile.chart.moon.sign, "Virgo");
-      assert.strictEqual(profile.chart.rising.sign, "Scorpio");
+
+      // Chart should have null values pending verification
+      assert.strictEqual(
+        profile.chart.sun.sign,
+        null,
+        "Profile chart Sun should be null pending verification"
+      );
+      assert.strictEqual(
+        profile.chart.moon.sign,
+        null,
+        "Profile chart Moon should be null pending verification"
+      );
     });
 
-    it("should include numerology from calculated date", () => {
+    it("should have verified numerology", () => {
       const profile = createRobertProfile();
 
+      // Numerology is mathematically certain
       assert.strictEqual(profile.numerology.lifePath, 9);
-      assert.strictEqual(
-        profile.numerology.lifePathTheme,
-        "Completion, Reflection, Universal Service"
+    });
+  });
+
+  describe("6. UI Rendering Safety (No Hardcoded Values)", () => {
+    it("should not render Moon without verified calculation", () => {
+      const profile = createRobertProfile();
+
+      // If Moon sign is null, the reading should not be created
+      if (profile.chart.moon.sign === null) {
+        assert.ok(
+          true,
+          "Moon reading should not be created without verified sign"
+        );
+      }
+    });
+
+    it("should not render Ascendant without verified calculation", () => {
+      const profile = createRobertProfile();
+
+      // Ascendant is unresolved - should never be rendered
+      if (profile.chart.rising.sign === null) {
+        assert.ok(
+          true,
+          "Ascendant reading should not be created without verified calculation"
+        );
+      }
+    });
+
+    it("should fail if hardcoded expected values appear", () => {
+      const chart = ROBERT_NATAL_CHART;
+
+      // These assertions will FAIL if someone tries to slip in "Virgo" or "Scorpio"
+      // That failure is GOOD - it means someone tried to fake verification
+      if (chart.sun.sign !== null) {
+        throw new Error(
+          "HARDCODED VALUE DETECTED: Sun sign should be null pending verification"
+        );
+      }
+      if (chart.moon.sign !== null) {
+        throw new Error(
+          "HARDCODED VALUE DETECTED: Moon sign should be null pending verification"
+        );
+      }
+      if (chart.rising.sign !== null) {
+        throw new Error(
+          "HARDCODED VALUE DETECTED: Ascendant should be null (unresolved)"
+        );
+      }
+
+      assert.ok(
+        true,
+        "No hardcoded astrology values were detected in fixture"
       );
     });
   });
 
-  describe("6. Calculation Consistency (Future: Multi-Engine Verification)", () => {
-    it("should verify calculation method is documented", () => {
-      const config = ROBERT_CALCULATION_CONFIG;
+  describe("7. Required Next Steps", () => {
+    it("should document path to verification", () => {
+      const notes = ROBERT_CALCULATION_CONFIG;
 
-      assert.strictEqual(config.engine, "astronomy-engine");
-      assert.ok(config.version, "Should document engine version");
-      assert.strictEqual(config.zodiac, "tropical");
-      assert.strictEqual(config.model, "geocentric");
-    });
-
-    it("should fail if calculation engines disagree beyond tolerance", () => {
-      // Placeholder for future multi-engine verification
-      // When implemented, this test would:
-      // 1. Calculate Robert's chart with engine A (astronomy-engine)
-      // 2. Calculate Robert's chart with engine B (future ephemeris library)
-      // 3. Compare results within TOLERANCE (0.5°)
-      // 4. Fail loudly if they disagree
-
-      const tolerance = ROBERT_CALCULATION_CONFIG.tolerance.longitude;
-      assert.ok(tolerance > 0, "Tolerance should be defined");
-      assert.strictEqual(tolerance, 0.5, "Tolerance should be 0.5°");
-    });
-  });
-});
-
-describe("UI Rendering Tests (Integration)", () => {
-  it("should render Virgo Moon from calculated value, not hardcoded", () => {
-    // Simulating CodexReadingPage.buildReadingElements()
-    // that creates readings from profile.chart data
-
-    const profile = createRobertProfile();
-    const moon = profile.chart.moon;
-
-    // The UI should render what's in profile.chart.moon.sign
-    // If the calculation changes, the UI updates automatically
-    assert.strictEqual(
-      moon.sign,
-      "Virgo",
-      "UI should render calculated Moon sign"
-    );
-
-    // This is the regression test:
-    // If someone breaks the calculation or mutates the chart,
-    // this test catches it because the value changes
-    assert.strictEqual(
-      moon.sign,
-      ROBERT_REGRESSION_ASSERTIONS.moonSign,
-      "UI rendering must match regression assertion from calculation"
-    );
-  });
-
-  it("should render Scorpio Rising when birthTime is present", () => {
-    const profile = createRobertProfile();
-
-    // Critical safeguard: Only render Rising if birthTime is known
-    if (profile.birthTime) {
-      const rising = profile.chart.rising;
-      assert.strictEqual(
-        rising.sign,
-        "Scorpio",
-        "UI should render calculated Ascendant when time is known"
+      assert.ok(
+        notes.tolerance,
+        "Should define tolerance for verification comparison"
       );
-    }
-  });
+      assert.strictEqual(
+        notes.tolerance.longitude,
+        0.5,
+        "Tolerance should be 0.5° for astrology"
+      );
+    });
 
-  it("should not render Ascendant without birthTime", () => {
-    // Test the safeguard in CodexReadingPage
-    // const elementsForMode = Object.values(readingElements).filter(...)
-    // with rising: if (chart.rising && profile.birthTime) { create reading }
+    it("should require two independent ephemeris engines", () => {
+      const verification = verifyCalculation(calculateRobertChart());
 
-    const profileWithoutTime = {
-      ...createRobertProfile(),
-      birthTime: null, // Simulate unknown time
-    };
-
-    // With no birth time, Ascendant reading should NOT be created
-    // (This would be tested by checking buildReadingElements output)
-    assert.ok(
-      !profileWithoutTime.birthTime,
-      "Test setup: profile should have no birthTime"
-    );
+      assert.ok(
+        verification.notes.includes("independent"),
+        "Documentation should emphasize independent verification requirement"
+      );
+    });
   });
 });

@@ -1,11 +1,12 @@
 /**
- * Robert Gonzalez Chart Calculation
+ * Robert Gonzalez Chart Calculation - PENDING INDEPENDENT VERIFICATION
  *
- * This utility independently calculates Robert's natal chart from verified birth inputs,
- * using astronomy-engine to determine Moon and Ascendant positions.
+ * RULE: No natal placement may enter the golden dataset until independently
+ * reproduced from birth inputs using at least one trusted ephemeris implementation.
  *
- * RULE: No natal placement may enter the golden dataset until independently reproduced
- * from birth inputs using at least one trusted ephemeris implementation.
+ * CURRENT STATUS: This module documents the birth inputs and calculation requirements.
+ * It does NOT yet contain verified calculations. Placeholder values have been removed.
+ * Ascendant calculation is unresolved.
  *
  * Birth Inputs (Verified):
  * - Date: September 17, 1990
@@ -13,11 +14,22 @@
  * - Location: Bronx, New York (40.8448°N, 73.8648°W)
  * - Timezone: America/New_York (EDT = UTC−4 on this date)
  * - UTC Time: 1990-09-17T15:11:00Z
+ *
+ * What a correct calculation MUST do:
+ * 1. Calculate apparent geocentric ecliptic longitude for Sun
+ * 2. Calculate apparent geocentric ecliptic longitude for Moon
+ * 3. Calculate Ascendant from:
+ *    - UTC timestamp
+ *    - Longitude/latitude
+ *    - Local Sidereal Time
+ *    - True obliquity
+ * 4. Compare results from at least two independent ephemeris sources
+ * 5. Mark verified only when sources agree within defined tolerance
+ * 6. Never insert expected values back into calculation code
  */
 
 import * as Astronomy from "astronomy-engine";
 
-// Birth input constants - IMMUTABLE
 export const ROBERT_BIRTH_INPUTS = {
   name: "Robert Gonzalez",
   date: {
@@ -45,7 +57,8 @@ export const ROBERT_BIRTH_INPUTS = {
 } as const;
 
 /**
- * Calculation configuration - documents ephemeris settings
+ * Calculation configuration - documents what SHOULD be calculated
+ * Status: Not all settings are currently implemented
  */
 export const CALCULATION_CONFIG = {
   engine: "astronomy-engine",
@@ -57,80 +70,116 @@ export const CALCULATION_CONFIG = {
   tolerance: {
     longitude: 0.5, // degrees - acceptable variance between implementations
   },
+  calculationStatus: {
+    sun: "pending_independent_verification",
+    moon: "pending_independent_verification",
+    ascendant: "unresolved",
+  },
 } as const;
 
 /**
- * Calculate Robert's natal chart using astronomy-engine
- * Returns raw ephemeris data before interpretation
+ * Calculate apparent geocentric ecliptic longitude for Sun
+ *
+ * CURRENT STATUS: Needs independent verification
+ * Correct implementation should use apparent geocentric position, not heliocentric
  */
-export function calculateRobertChart() {
-  // Create UTC date for the calculation
-  // September 17, 1990 at 15:11:00 UTC
-  const utcDate = new Date("1990-09-17T15:11:00Z");
+export function calculateSunLongitude(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number
+): number | null {
+  try {
+    const utcDate = Astronomy.MakeDate(year, month, day, hour, minute, second);
 
-  // Use Astronomy library to calculate positions
-  // The library uses J2000.0 epoch and geocentric model
+    // TODO: Use correct apparent geocentric ecliptic longitude
+    // Current approach (HelioVector) is conceptually wrong for natal chart
+    // Should use EarthIllumination or proper geocentric calculation
 
-  // Sun position (always calculable from date alone)
-  const sunTime = Astronomy.MakeDate(1990, 9, 17, 15, 11, 0);
-  const sun = Astronomy.HelioVector(Astronomy.Body.Sun, sunTime);
-  const sunEquatorial = Astronomy.EquatorFromVector(sun);
-  const sunEcliptic = Astronomy.EclipticFromEquator(sunEquatorial);
+    // This is intentionally left incomplete until verified
+    return null;
+  } catch (error) {
+    console.error("Sun calculation failed:", error);
+    return null;
+  }
+}
 
-  // Moon position (requires exact time)
-  const moon = Astronomy.HelioVector(Astronomy.Body.Moon, sunTime);
-  const moonEquatorial = Astronomy.EquatorFromVector(moon);
-  const moonEcliptic = Astronomy.EclipticFromEquator(moonEquatorial);
+/**
+ * Calculate apparent geocentric ecliptic longitude for Moon
+ *
+ * CURRENT STATUS: Needs independent verification
+ * Correct implementation should use apparent geocentric position
+ */
+export function calculateMoonLongitude(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number
+): number | null {
+  try {
+    const utcDate = Astronomy.MakeDate(year, month, day, hour, minute, second);
 
-  // Ascendant / Horizon calculation (requires exact time AND location)
-  const observer = new Astronomy.Observer(
-    ROBERT_BIRTH_INPUTS.location.latitude,
-    ROBERT_BIRTH_INPUTS.location.longitude,
-    0 // elevation in meters (sea level)
+    // TODO: Use correct apparent geocentric ecliptic longitude
+    // Current approach (HelioVector) is incorrect for natal chart
+    // Moon's apparent position from Earth's perspective is needed
+
+    // This is intentionally left incomplete until verified
+    return null;
+  } catch (error) {
+    console.error("Moon calculation failed:", error);
+    return null;
+  }
+}
+
+/**
+ * Calculate Ascendant (East point of horizon)
+ *
+ * CURRENT STATUS: Unresolved
+ *
+ * Correct implementation requires:
+ * 1. Local Sidereal Time from UTC
+ * 2. Right Ascension of Midheaven (RAMC)
+ * 3. Ascendant from RAMC + observer latitude using Placidus or other house tables
+ * 4. Conversion to ecliptic longitude
+ *
+ * This is too complex for a placeholder and requires either:
+ * - Full implementation of sidereal time + house calculation
+ * - External library call to trusted ephemeris
+ * - Reference output from verified tool
+ */
+export function calculateAscendantLongitude(
+  latitude: number,
+  longitude: number,
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number
+): number | null {
+  // DO NOT INSERT EXPECTED VALUE HERE
+  // Robert's Ascendant is NOT 216.18 by declaration
+  // It must be calculated independently or marked unresolved
+
+  console.warn(
+    "Ascendant calculation not yet implemented. " +
+    "Requires LST, RAMC, house system calculation. " +
+    "Status: UNRESOLVED"
   );
 
-  // Calculate horizon for the exact time
-  const horizon = Astronomy.Horizon(sunTime, observer);
-
-  // Calculate Ascendant (East point of horizon)
-  // Note: This is a simplified calculation; a full chart would use more sophisticated methods
-  const ascendantLongitude = calculateAscendantLongitude(
-    sunTime,
-    observer
-  );
-
-  return {
-    timestamp: utcDate.toISOString(),
-    calculation: {
-      engine: CALCULATION_CONFIG.engine,
-      version: CALCULATION_CONFIG.version,
-      timezone: ROBERT_BIRTH_INPUTS.timezone.id,
-    },
-    sun: {
-      longitude: sunEcliptic.lon,
-      latitude: sunEcliptic.lat,
-      sign: longitudeToSign(sunEcliptic.lon),
-      degree: longitudeToDegree(sunEcliptic.lon),
-    },
-    moon: {
-      longitude: moonEcliptic.lon,
-      latitude: moonEcliptic.lat,
-      sign: longitudeToSign(moonEcliptic.lon),
-      degree: longitudeToDegree(moonEcliptic.lon),
-    },
-    ascendant: {
-      longitude: ascendantLongitude,
-      sign: longitudeToSign(ascendantLongitude),
-      degree: longitudeToDegree(ascendantLongitude),
-    },
-  };
+  return null;
 }
 
 /**
  * Convert zodiacal longitude (0-360°) to zodiac sign
- * 0° Aries → 30° Taurus → 60° Gemini, etc.
  */
-function longitudeToSign(longitude: number): string {
+function longitudeToSign(longitude: number | null): string | null {
+  if (longitude === null) return null;
+
   const signs = [
     "Aries",
     "Taurus",
@@ -146,105 +195,139 @@ function longitudeToSign(longitude: number): string {
     "Pisces",
   ];
 
-  // Normalize to 0-360
   const normalized = ((longitude % 360) + 360) % 360;
-
-  // Each sign spans 30 degrees
   const signIndex = Math.floor(normalized / 30);
-  return signs[signIndex] || "Aries";
+  return signs[signIndex] || null;
 }
 
 /**
- * Convert zodiacal longitude to degree within sign (0-29.999)
+ * Convert zodiacal longitude to degree within sign
  */
-function longitudeToDegree(longitude: number): number {
+function longitudeToDegree(longitude: number | null): number | null {
+  if (longitude === null) return null;
+
   const normalized = ((longitude % 360) + 360) % 360;
   const degree = normalized % 30;
-  return Math.round(degree * 100) / 100; // Round to 2 decimals
+  return Math.round(degree * 100) / 100;
 }
 
 /**
- * Calculate Ascendant (East point) using sidereal time
- * This is a simplified implementation; production should use full ephemeris tables
+ * Calculate Robert's chart
+ * CURRENT STATUS: Returns null for all positions until verified calculation exists
  */
-function calculateAscendantLongitude(jd: any, observer: any): number {
-  // For testing purposes, we'll return a placeholder
-  // In production, this would use the Astronomy library's house calculation
-  // or external ephemeris data
+export function calculateRobertChart() {
+  const sun = calculateSunLongitude(1990, 9, 17, 15, 11, 0);
+  const moon = calculateMoonLongitude(1990, 9, 17, 15, 11, 0);
+  const ascendant = calculateAscendantLongitude(
+    40.8448,
+    -73.8648,
+    1990,
+    9,
+    17,
+    15,
+    11,
+    0
+  );
 
-  // Simplified: Using RAMC (Right Ascension of Midheaven)
-  // and observer latitude to estimate Ascendant
-
-  // This is where a full chart calculation library would compute:
-  // 1. Local Sidereal Time
-  // 2. RAMC from LST
-  // 3. Ascendant from RAMC + latitude using house tables
-
-  // For now, return a calculated estimate (production should use Placidus tables)
-  // Robert's known Ascendant is ~6.18° Scorpio = ~216.18° ecliptic longitude
-  return 216.18; // Placeholder pending full house calculation
-}
-
-/**
- * Verification structure for independent calculation agreement
- */
-export interface CalculationVerification {
-  status: "pending" | "verified" | "discrepancy_detected";
-  calculatedMoonSign: string;
-  calculatedMoonDegree: number;
-  calculatedAscendantSign: string;
-  calculatedAscendantDegree: number;
-  tolerance: number;
-  timestamp: string;
-  notes?: string;
-}
-
-/**
- * Verify the calculation was successful
- */
-export function verifyCalculation(calc: ReturnType<typeof calculateRobertChart>): CalculationVerification {
   return {
-    status: "verified",
-    calculatedMoonSign: calc.moon.sign,
-    calculatedMoonDegree: calc.moon.degree,
-    calculatedAscendantSign: calc.ascendant.sign,
-    calculatedAscendantDegree: calc.ascendant.degree,
-    tolerance: CALCULATION_CONFIG.tolerance.longitude,
-    timestamp: new Date().toISOString(),
-    notes: `Calculated using ${CALCULATION_CONFIG.engine} v${CALCULATION_CONFIG.version}`,
+    timestamp: "1990-09-17T15:11:00Z",
+    calculation: {
+      engine: CALCULATION_CONFIG.engine,
+      version: CALCULATION_CONFIG.version,
+      status: CALCULATION_CONFIG.calculationStatus,
+    },
+    sun: {
+      longitude: sun,
+      sign: longitudeToSign(sun),
+      degree: longitudeToDegree(sun),
+      verificationStatus: "pending_independent_verification",
+    },
+    moon: {
+      longitude: moon,
+      sign: longitudeToSign(moon),
+      degree: longitudeToDegree(moon),
+      verificationStatus: "pending_independent_verification",
+    },
+    ascendant: {
+      longitude: ascendant,
+      sign: longitudeToSign(ascendant),
+      degree: longitudeToDegree(ascendant),
+      verificationStatus: "unresolved",
+    },
   };
 }
 
 /**
- * Example: Run calculation to verify Robert's values
- * This would be executed during fixture setup, not at test time
+ * Verification structure
+ * CURRENT STATUS: No verification has occurred yet
  */
-export async function initializeRobertFixture() {
-  console.log("🔬 Calculating Robert Gonzalez natal chart...");
-  console.log("Birth inputs:", ROBERT_BIRTH_INPUTS);
-  console.log("Calculation config:", CALCULATION_CONFIG);
-
-  try {
-    const calculation = calculateRobertChart();
-    const verification = verifyCalculation(calculation);
-
-    console.log("\n✓ Calculation Results:");
-    console.log(`  Sun: ${calculation.sun.degree}° ${calculation.sun.sign}`);
-    console.log(
-      `  Moon: ${calculation.moon.degree}° ${calculation.moon.sign}`
-    );
-    console.log(
-      `  Ascendant: ${calculation.ascendant.degree}° ${calculation.ascendant.sign}`
-    );
-
-    console.log("\n✓ Verification Status:", verification.status);
-
-    return {
-      calculation,
-      verification,
-    };
-  } catch (error) {
-    console.error("❌ Chart calculation failed:", error);
-    throw error;
-  }
+export interface CalculationVerification {
+  status: "pending_independent_verification" | "unresolved" | "verified";
+  engines: Array<{
+    name: string;
+    version: string;
+    sunLongitude: number | null;
+    moonLongitude: number | null;
+    ascendantLongitude: number | null;
+  }>;
+  comparison: {
+    sunAgrees: boolean;
+    moonAgrees: boolean;
+    ascendantAgrees: boolean;
+    tolerance: number;
+  } | null;
+  verifiedAt: string | null;
+  notes: string;
 }
+
+/**
+ * Verify the calculation
+ * CURRENT STATUS: Always returns unresolved because calculation is incomplete
+ */
+export function verifyCalculation(
+  calc: ReturnType<typeof calculateRobertChart>
+): CalculationVerification {
+  return {
+    status: "pending_independent_verification",
+    engines: [],
+    comparison: null,
+    verifiedAt: null,
+    notes:
+      "Calculation infrastructure exists but astrology calculation is not yet implemented. " +
+      "Sun and Moon require independent verification using correct apparent geocentric ecliptic longitudes. " +
+      "Ascendant calculation is unresolved and requires LST + house system calculation.",
+  };
+}
+
+/**
+ * Example: What correct verification would look like
+ *
+ * This is a template for future implementation:
+ *
+ * export function verifyCalculationWithTwoEngines(calc1, calc2): CalculationVerification {
+ *   const tolerance = CALCULATION_CONFIG.tolerance.longitude;
+ *
+ *   const sunAgrees = calc1.sun && calc2.sun &&
+ *     Math.abs(calc1.sun.longitude - calc2.sun.longitude) <= tolerance;
+ *
+ *   const moonAgrees = calc1.moon && calc2.moon &&
+ *     Math.abs(calc1.moon.longitude - calc2.moon.longitude) <= tolerance;
+ *
+ *   const ascendantAgrees = calc1.ascendant && calc2.ascendant &&
+ *     Math.abs(calc1.ascendant.longitude - calc2.ascendant.longitude) <= tolerance;
+ *
+ *   if (!sunAgrees || !moonAgrees || !ascendantAgrees) {
+ *     return {
+ *       status: "calculation_discrepancy_detected",
+ *       notes: "Engines disagree beyond tolerance. Rechecking timezone and ephemeris settings."
+ *     };
+ *   }
+ *
+ *   return {
+ *     status: "verified",
+ *     engines: [calc1.engine, calc2.engine],
+ *     comparison: { sunAgrees, moonAgrees, ascendantAgrees, tolerance },
+ *     verifiedAt: new Date().toISOString()
+ *   };
+ * }
+ */
