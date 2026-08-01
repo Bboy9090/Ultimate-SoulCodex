@@ -67,14 +67,11 @@ export default function SoulGuidePage() {
       const p = loadActiveProfile();
       if (!p) return null;
       return {
-        name:        p.name,
-        archetype:   p.archetype?.name,
-        element:     p.archetype?.element,
-        role:        p.archetype?.role,
+        archetype:   p.archetype,
         sunSign:     p.sunSign,
         moonSign:    p.moonSign,
         risingSign:  p.risingSign,
-        lifePath:    p.lifePath,
+        lifePath:    p.lifePathNumber,
         myPattern:   p.synthesis?.myPattern,
       };
     } catch { return null; }

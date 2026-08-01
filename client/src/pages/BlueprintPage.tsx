@@ -8,6 +8,7 @@ import {
 } from "../components/Icons";
 import { cleanCodexLine } from "../lib/soul-codex/utils/cleanCodexLine";
 import { isNativeStoreApp } from "../lib/platform";
+import { loadActiveProfile } from "../lib/profileStorage";
 
 const CACHE_PREFIX = "soulBlueprintReading";
 
@@ -60,8 +61,9 @@ function getProfile() {
 }
 
 function cacheKey(profile: any): string {
-  const id = profile?.id ?? profile?.userId ?? profile?.name ?? "anon";
-  return `${CACHE_PREFIX}:${id}`;
+  // Local-first app uses single active profile, so use fixed cache key
+  const birthDate = profile?.birthDate ?? "unknown";
+  return `${CACHE_PREFIX}:${birthDate}`;
 }
 
 function getCached(profile: any): CachedReading | null {
