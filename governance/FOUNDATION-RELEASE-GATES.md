@@ -73,9 +73,9 @@ Release Approval
 
 ---
 
-## Gate 3: No Silent Data Upgrade ⏳
+## Gate 3: No Silent Data Upgrade ❌
 
-**Status:** PENDING AUDIT
+**Status:** BLOCKED — 2 Critical Violations Found
 
 **What:** Codebase scan to verify no unverified data is rendered as fact.
 

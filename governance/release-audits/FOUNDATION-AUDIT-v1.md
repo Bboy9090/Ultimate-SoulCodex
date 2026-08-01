@@ -251,12 +251,13 @@ if (moon) {  // null check, but renders Virgo Moon anyway
   - Test 3: Restart recovery
   - Test 4: Offline mode
 
-### Gate 3: Silent Upgrade Audit ⏳
-- No Silent Data Upgrade audit: ⏳ PENDING
-  - Codebase scan complete
-  - All hardcoded values removed
-  - All fallbacks labeled
-  - All confidence transparent
+### Gate 3: Silent Upgrade Audit ❌ BLOCKED
+- No Silent Data Upgrade audit: ❌ FAILED
+  - Codebase scan complete: ✅ 2 critical blockers identified
+  - Hardcoded values found: ❌ PosterPage (Gemini/Pisces fallback)
+  - Approximate data cascading: ❌ OnboardingPage (date-based sun sign)
+  - Evidence: `/governance/release-audits/GATE-3-AUDIT-REPORT.md`
+  - Status: **Awaiting Blocker Fixes + Re-Test**
 
 ### Gate 4: Mobile Validation ⏳
 - Responsive testing: ⏳ PENDING
@@ -276,13 +277,19 @@ if (moon) {  // null check, but renders Virgo Moon anyway
 
 - ✅ Gate 1: Core Systems Verified (PASSED)
 - ⏳ Gate 2: Lifecycle Proof (Pending manual test execution)
-- ⏳ Gate 3: Silent Upgrade Audit (Pending codebase scan)
-- ⏳ Gate 4: Mobile Validation (Pending device testing)
-- ⏳ Gate 5: Documentation (Pending release package)
+- ❌ Gate 3: Silent Upgrade Audit (BLOCKED — 2 critical blockers identified)
+- ⏳ Gate 4: Mobile Validation (Blocked by Gate 3)
+- ⏳ Gate 5: Documentation (Blocked by Gate 3)
 
 **Current Status:** 1/5 gates passing
 
-**Estimated Next Gate:** After Timeline Lifecycle Receipt signed
+**BLOCKER:** Gate 3 audit found critical violations:
+1. PosterPage hardcoded fallback signs (Gemini/Pisces)
+2. OnboardingPage approximate sun sign cascading as verified
+
+**Unblocking Path:** Fix blockers → Re-run Gate 3 audit → Sign off → Gate 4
+
+**Estimated Timeline After Fixes:** 3-4 days (Gates 3-5)
 
 ---
 
