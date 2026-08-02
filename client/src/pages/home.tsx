@@ -12,7 +12,7 @@ const panel: React.CSSProperties = {
 
 function getProfileIdentity(profile: any) {
   const id = profile?.id ?? profile?.uuid;
-  const name = profile?.name ?? profile?.firstName ?? "there";
+  const name = profile?.name ?? profile?.codename ?? profile?.firstName ?? "there";
   return { id, name };
 }
 
