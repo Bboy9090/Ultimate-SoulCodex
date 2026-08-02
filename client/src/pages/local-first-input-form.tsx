@@ -6,6 +6,7 @@ import { birthDataSchema, type BirthData } from "@shared/schema";
 import { generateOfflineCodexProfile } from "@soulcodex/core";
 import { apiRequest } from "@/lib/queryClient";
 import { saveOfflineProfile } from "@/lib/offlineProfileStore";
+import { saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -126,6 +127,34 @@ export default function LocalFirstInputForm() {
     try {
       const profile = generateOfflineCodexProfile(data);
       await saveOfflineProfile(profile);
+
+      const activeSave = saveActiveProfile({
+        id: profile.id,
+        codename: data.name,
+        birthDate: data.birthDate,
+        birthTime: data.birthTime,
+        birthLocation: data.birthLocation,
+        birthplace: {
+          city: data.birthLocation,
+        },
+        sunSign: profile.astrology?.sunSign ?? profile.astrologyData?.sunSign,
+        moonSign: profile.astrology?.moonSign ?? profile.astrologyData?.moonSign,
+        risingSign: profile.astrology?.risingSign ?? profile.astrologyData?.risingSign,
+        astrologyData: profile.astrologyData ?? profile.astrology,
+        lifePathNumber: profile.numerology?.lifePathNumber ?? profile.numerologyData?.lifePathNumber ?? profile.numerologyData?.lifePath,
+        numerologyData: profile.numerologyData ?? profile.numerology,
+        humanDesignType: profile.humanDesign?.type ?? profile.humanDesignData?.type,
+        humanDesignData: profile.humanDesignData ?? profile.humanDesign,
+        archetype: typeof profile.archetype === "string" ? profile.archetype : profile.archetype?.name,
+        synthesis: profile.synthesis,
+        elements: profile.elements,
+        confidence: profile.confidence,
+      });
+
+      if (!activeSave.success) {
+        throw new Error(activeSave.error || "The active profile could not be registered.");
+      }
+
       void syncProfileWhenOnline(data, profile.id);
       toast({
         title: "Soul Codex created on this device",
