@@ -53,7 +53,7 @@ async function createFoundationProfile(page) {
   expect(profile.birthDate).toBe("1990-09-17");
   expect(profile.schemaVersion).toBe(1);
   expect(profile.id).toBeTruthy();
-  return profile;
+  return { profile, profilePath: new URL(page.url()).pathname };
 }
 
 async function assertIdentityStable(page, expectedId) {
@@ -77,11 +77,12 @@ async function assertCoreRoute(page, path, visiblePattern, expectedId) {
   await expect(page).toHaveURL(new RegExp(`${path.replaceAll("/", "\\/")}$`));
   await expect(page.locator("body")).toContainText(visiblePattern);
   await expect(page.locator("body")).not.toContainText(/Create Your Soul Codex/i);
+  await expect(page.locator("body")).not.toContainText(/404 Page Not Found/i);
   await assertIdentityStable(page, expectedId);
 }
 
-async function runCoreJourney(page, expectedId) {
-  await assertCoreRoute(page, "/codex-reading", /Clarity|Core Pattern|Soul Codex/i, expectedId);
+async function runCoreJourney(page, profilePath, expectedId) {
+  await assertCoreRoute(page, profilePath, /Saved on this device|Works offline|Soul Codex/i, expectedId);
   await assertCoreRoute(page, "/timeline", /Timeline|Your Season|Completion|Personal Year/i, expectedId);
   await assertCoreRoute(page, "/compatibility", /Compatibility|Relationship|Match/i, expectedId);
 
@@ -101,11 +102,14 @@ test("one saved Soul Profile survives Reading, Timeline, Compatibility, restart,
   let context = await browserType.launchPersistentContext(userDataDir, options);
   let page = context.pages()[0] ?? (await context.newPage());
   let profile;
+  let profilePath;
 
   try {
-    profile = await createFoundationProfile(page);
+    const created = await createFoundationProfile(page);
+    profile = created.profile;
+    profilePath = created.profilePath;
     await waitForServiceWorkerControl(page);
-    await runCoreJourney(page, profile.id);
+    await runCoreJourney(page, profilePath, profile.id);
   } finally {
     await context.close();
   }
@@ -115,6 +119,10 @@ test("one saved Soul Profile survives Reading, Timeline, Compatibility, restart,
 
   try {
     if (browserName === "chromium") await context.setOffline(true);
+
+    await page.goto(`${BASE_URL}${profilePath}`, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("body")).toContainText(/Saved on this device|Works offline|Soul Codex/i);
+    await assertIdentityStable(page, profile.id);
 
     await page.goto(`${BASE_URL}/timeline`, { waitUntil: "domcontentloaded" });
     await expect(page.locator("body")).toContainText(/Timeline|Your Season|Completion|Personal Year/i);
