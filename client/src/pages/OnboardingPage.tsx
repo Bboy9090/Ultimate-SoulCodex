@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, apiFetch } from "../lib/queryClient";
@@ -7,6 +7,7 @@ import ScButton from "@/components/ScButton";
 import { IconCircle, IconLogo, IconSparkles } from "@/components/Icons";
 import { saveActiveProfile as saveActiveProfileLegacy } from "../lib/profileStorage";
 import { saveActiveProfile } from "../lib/ActiveProfileRepository";
+import { getVerifiedPlacement } from "../lib/placementVerification";
 
 type PressurePattern =
   | "spiral_inward"
@@ -76,21 +77,6 @@ const TOTAL_STEPS = 5;
 const STEP_LABELS = ["Birth", "Pressure", "Conflict", "Decisions", "Energy"];
 const WARMUP_MODES: WarmupMode[] = ["love", "attraction", "friendship", "growth"];
 
-const SIGN_BOUNDARIES = [
-  { sign: "Capricorn", month: 1, day: 1 },
-  { sign: "Aquarius", month: 1, day: 20 },
-  { sign: "Pisces", month: 2, day: 19 },
-  { sign: "Aries", month: 3, day: 21 },
-  { sign: "Taurus", month: 4, day: 20 },
-  { sign: "Gemini", month: 5, day: 21 },
-  { sign: "Cancer", month: 6, day: 21 },
-  { sign: "Leo", month: 7, day: 23 },
-  { sign: "Virgo", month: 8, day: 23 },
-  { sign: "Libra", month: 9, day: 23 },
-  { sign: "Scorpio", month: 10, day: 23 },
-  { sign: "Sagittarius", month: 11, day: 22 },
-  { sign: "Capricorn", month: 12, day: 22 },
-];
 
 const PRESSURE_OPTIONS: { value: PressurePattern; label: string; description: string }[] = [
   { value: "spiral_inward", label: "I spiral inward", description: "My thoughts loop and I overthink every angle." },
@@ -136,19 +122,6 @@ const LOADING_LINES = [
   "Preparing your Soul Codex...",
 ];
 
-function getApproxSunSign(birthDate: string): string | null {
-  const parts = birthDate.split("-").map(Number);
-  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
-  const month = parts[1];
-  const day = parts[2];
-  let current = SIGN_BOUNDARIES[0].sign;
-  for (const boundary of SIGN_BOUNDARIES) {
-    if (month > boundary.month || (month === boundary.month && day >= boundary.day)) {
-      current = boundary.sign;
-    }
-  }
-  return current;
-}
 
 function isValidBirthDate(value: string): boolean {
   if (!value) return false;
@@ -176,7 +149,6 @@ export default function OnboardingPage() {
     drain_pattern_secondary: "",
   });
 
-  const earlySunSign = useMemo(() => getApproxSunSign(form.birthDate), [form.birthDate]);
   const pressureCount = [form.primary_pressure_pattern, form.secondary_pressure_pattern].filter(Boolean).length;
   const decisionCount = [form.decision_friction_primary, form.decision_friction_secondary].filter(Boolean).length;
   const drainCount = [form.drain_pattern_primary, form.drain_pattern_secondary].filter(Boolean).length;
@@ -197,47 +169,10 @@ export default function OnboardingPage() {
   };
 
   useEffect(() => {
-    if (!earlySunSign || !isValidBirthDate(form.birthDate)) return;
-
-    try {
-      localStorage.setItem("soulOnboardingWarmup", JSON.stringify({
-        status: "running",
-        sunSign: earlySunSign,
-        birthDate: form.birthDate,
-        birthTime: form.birthTime || null,
-        birthLocation: form.birthLocation || null,
-        startedAt: new Date().toISOString(),
-      }));
-    } catch {}
-
-    prefetchCompatibility(earlySunSign);
-
-    queryClient.prefetchQuery({
-      queryKey: ["/api/astro/horoscope/daily", earlySunSign],
-      queryFn: async () => {
-        const res = await apiFetch(`/api/astro/horoscope/daily?sign=${earlySunSign}`);
-        return res.data;
-      },
-    });
-
-    if (form.birthLocation.trim()) {
-      queryClient.prefetchQuery({
-        queryKey: ["/api/astro/fullchart", form.birthDate, form.birthTime || "unknown", form.birthLocation.trim()],
-        queryFn: async () => {
-          const res = await apiFetch("/api/astro/fullchart", {
-            method: "POST",
-            body: JSON.stringify({
-              birthDate: form.birthDate,
-              birthTime: form.birthTime || undefined,
-              timeUnknown: !form.birthTime,
-              birthLocation: form.birthLocation.trim(),
-            }),
-          });
-          return res.data;
-        },
-      });
-    }
-  }, [earlySunSign, form.birthDate, form.birthTime, form.birthLocation, queryClient]);
+    if (!isValidBirthDate(form.birthDate) || !form.birthLocation.trim()) return;
+    try { localStorage.setItem("soulOnboardingWarmup", JSON.stringify({ status: "pending_verified_calculation", birthDate: form.birthDate, birthTime: form.birthTime || null, birthLocation: form.birthLocation.trim(), startedAt: new Date().toISOString() })); } catch {}
+    queryClient.prefetchQuery({ queryKey: ["/api/astro/fullchart", form.birthDate, form.birthTime || "unknown", form.birthLocation.trim()], queryFn: async () => { const res = await apiFetch("/api/astro/fullchart", { method: "POST", body: JSON.stringify({ birthDate: form.birthDate, birthTime: form.birthTime || undefined, timeUnknown: !form.birthTime, birthLocation: form.birthLocation.trim() }) }); return res.data; } });
+  }, [form.birthDate, form.birthTime, form.birthLocation, queryClient]);
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -333,8 +268,9 @@ export default function OnboardingPage() {
       if (!isGuest) localStorage.setItem("onboardingData", JSON.stringify(form));
       if (result?.confidence) localStorage.setItem(isGuest ? "soulGuestConfidence" : "soulConfidence", JSON.stringify(result.confidence));
 
-      const astro = result.astrologyData || result.natalChart || result.chart || {};
-      const sunSign = astro.sunSign || result.sunSign || earlySunSign;
+      const astro: any = result.astrologyData || result.natalChart || result.chart || {};
+      const verifiedSun = getVerifiedPlacement(astro.sun ?? result.chart?.sun);
+      const sunSign = verifiedSun?.sign;
       if (sunSign) {
         const lifePath = (result.numerologyData || result.numerology)?.lifePathNumber || result.numerology?.lifePath;
         const hdType = (result.humanDesignData || result.humanDesign)?.type;
@@ -349,7 +285,7 @@ export default function OnboardingPage() {
       }
 
       try {
-        localStorage.setItem("soulOnboardingWarmup", JSON.stringify({ status: "complete", sunSign, completedAt: new Date().toISOString() }));
+        localStorage.setItem("soulOnboardingWarmup", JSON.stringify({ status: sunSign ? "complete_verified" : "complete_unresolved", sunSign: sunSign ?? null, verificationStatus: verifiedSun?.verificationStatus ?? "unresolved", provenance: verifiedSun?.evidence ?? null, completedAt: new Date().toISOString() }));
       } catch {}
       setSuccessResult(result);
     },
