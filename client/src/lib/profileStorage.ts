@@ -59,19 +59,17 @@ export function clearActiveProfile(): void {
 
 /**
  * Confidence describes verified calculation evidence, not merely completed
- * form fields. Birth time and location improve calculation capability, but
- * their presence alone cannot promote a profile to verified.
+ * form fields or a copied verification label. Birth time and location improve
+ * calculation capability, but neither they nor profile-level status can
+ * promote placements without evidence-complete calculation records.
  */
 export function deriveConfidenceState(
   profile: StoredProfile | null
 ): "verified" | "partial" | "unverified" {
   if (!profile?.birthDate) return "unverified";
 
-  const explicit = (profile as any)?.confidence?.verificationStatus ?? (profile as any)?.confidence?.status;
-  if (explicit === "verified") return "verified";
-
-  const verifiedPlacements = ["sun", "moon", "rising"].filter((key) =>
-    isEvidenceComplete(placement(profile, key as "sun" | "moon" | "rising"))
+  const verifiedPlacements = (["sun", "moon", "rising"] as const).filter((key) =>
+    isEvidenceComplete(placement(profile, key))
   );
 
   if (verifiedPlacements.length === 3) return "verified";
