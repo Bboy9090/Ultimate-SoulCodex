@@ -24,10 +24,10 @@ export default function CompatibilityHubPage() {
   const result = loadActiveProfile();
   const profile = result.profile;
 
-  const name = fact(profile, ["name", "firstName"]) || "Your";
+  const name = fact(profile, ["name", "firstName", "codename"]) || "Your";
   const lifePath = fact(profile, ["lifePathNumber", "numerologyData.lifePathNumber", "numerologyData.lifePath"]);
   const hdType = fact(profile, ["humanDesignType", "humanDesignData.type"]);
-  const sunSign = fact(profile, ["astrologyData.sun.sign", "astrology.sun.sign", "sunSign"]);
+  const sunSign = fact(profile, ["astrologyData.sun.sign", "astrology.sun.sign"]);
   const profileId = fact(profile, ["id", "uuid"]);
 
   if (!profile) {
