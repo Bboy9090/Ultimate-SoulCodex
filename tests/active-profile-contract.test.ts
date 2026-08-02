@@ -54,6 +54,18 @@ describe("canonical active Soul Profile contract", () => {
     })).toBe("partial");
   });
 
+  it("rejects a copied profile-level verified label without placement evidence", () => {
+    expect(deriveConfidenceState({
+      birthDate: "1990-09-17",
+      confidence: { verificationStatus: "verified" },
+      astrologyData: {
+        sun: { sign: "Virgo", verificationStatus: "pending_independent_verification" },
+        moon: { sign: "Virgo", verificationStatus: "pending_independent_verification" },
+        rising: { sign: "Scorpio", verificationStatus: "unresolved" },
+      },
+    })).toBe("partial");
+  });
+
   it("requires evidence-complete verified placements for verified confidence", () => {
     expect(deriveConfidenceState({
       birthDate: "1990-09-17",
