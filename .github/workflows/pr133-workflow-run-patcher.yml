@@ -15,12 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix/gate-3-client-no-silent-upgrades
+          ref: feat/soul-codex-reading-experience-v1
           fetch-depth: 0
       - name: Check whether patch is needed
         id: needed
         run: |
-          if ! grep -q 'SIGN_BOUNDARIES' client/src/pages/OnboardingPage.tsx && ! grep -q '?? "Gemini"' client/src/pages/PosterPage.tsx; then
+          if grep -q 'getVerifiedPlacement(placement)' client/src/pages/CodexReadingPage.tsx; then
             echo 'needed=false' >> "$GITHUB_OUTPUT"
           else
             echo 'needed=true' >> "$GITHUB_OUTPUT"
@@ -30,43 +30,51 @@ jobs:
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import re
-
-          poster = Path('client/src/pages/PosterPage.tsx')
-          text = poster.read_text()
+          path = Path('client/src/pages/CodexReadingPage.tsx')
+          text = path.read_text()
           import_line = 'import { loadActiveProfile } from "../lib/profileStorage";'
-          if 'placementDisplayStatus' not in text:
-              text = text.replace(import_line, import_line + '\nimport { getVerifiedPlacement, placementDisplayStatus } from "../lib/placementVerification";')
-          text = text.replace('const DEMO: PosterData = {\n  name: "", birthDate: "", sunSign: "Gemini", moonSign: "Pisces",\n  risingSign: "Sagittarius", lifePathNumber: 9, masterNumber: 11,\n};', 'const DEMO: PosterData = {\n  name: "", birthDate: "", sunSign: "", moonSign: "",\n  risingSign: undefined, lifePathNumber: 1, masterNumber: undefined,\n};')
-          text = text.replace('sunSign:         astro.sun ?? p.sunSign ?? "Gemini",\n        moonSign:        astro.moon ?? p.moonSign ?? "Pisces",\n        risingSign:      astro.rising ?? p.risingSign ?? undefined,', 'sunSign:         getVerifiedPlacement(astro.sun)?.sign ?? "",\n        moonSign:        getVerifiedPlacement(astro.moon)?.sign ?? "",\n        risingSign:      getVerifiedPlacement(astro.rising)?.sign ?? undefined,')
-          text = text.replace('const planets = Object.entries(json.planets ?? {})\n              .filter(([, v]: any) => typeof v?.longitude === "number")', 'const planets = Object.entries(json.planets ?? {})\n              .filter(([, v]: any) => getVerifiedPlacement(v) && typeof v?.longitude === "number")')
-          text = text.replace('...(json.sun    ? { sunSign:    json.sun    } : {}),\n              ...(json.moon   ? { moonSign:   json.moon   } : {}),\n              ...(json.rising ? { risingSign: json.rising } : {}),', '...(getVerifiedPlacement(json.sun) ? { sunSign: getVerifiedPlacement(json.sun)!.sign } : { sunSign: "" }),\n              ...(getVerifiedPlacement(json.moon) ? { moonSign: getVerifiedPlacement(json.moon)!.sign } : { moonSign: "" }),\n              ...(getVerifiedPlacement(json.rising) ? { risingSign: getVerifiedPlacement(json.rising)!.sign } : { risingSign: undefined }),')
-          text = text.replace('if (json.sun)    update("sunSign", json.sun);\n      if (json.moon)   update("moonSign", json.moon);\n      if (json.rising) update("risingSign", json.rising);', 'const verifiedSun = getVerifiedPlacement(json.sun);\n      const verifiedMoon = getVerifiedPlacement(json.moon);\n      const verifiedRising = getVerifiedPlacement(json.rising);\n      update("sunSign", verifiedSun?.sign ?? "");\n      update("moonSign", verifiedMoon?.sign ?? "");\n      update("risingSign", verifiedRising?.sign);\n      if (!verifiedSun || !verifiedMoon || !verifiedRising) { setComputeError(`Astrology remains unresolved: Sun ${placementDisplayStatus(json.sun)}, Moon ${placementDisplayStatus(json.moon)}, Ascendant ${placementDisplayStatus(json.rising)}.`); }')
-          poster.write_text(text)
+          if import_line not in text: raise SystemExit('profile import missing')
+          text = text.replace(import_line, import_line + '\nimport { getVerifiedPlacement, placementDisplayStatus } from "../lib/placementVerification";', 1)
+          start = text.index('function buildReadingElements(')
+          end = text.index('export default function CodexReadingPage()', start)
+          replacement = r'''function buildReadingElements(profile: any): Record<string, ReadingElementType> {
+  if (!profile?.chart) return {};
+  const chart = profile.chart;
+  const readings: Record<string, ReadingElementType> = {};
+  const addPlacementReading = (key: "sunSign" | "moonSign" | "risingSign", placement: any, visibleIn: DisplayMode[], copy: (sign: string) => Omit<ReadingElementType, "evidence" | "confidence" | "verified" | "visibleIn">) => {
+    const verifiedPlacement = getVerifiedPlacement(placement);
+    if (!verifiedPlacement || typeof verifiedPlacement.evidence.confidence !== "number") return;
+    const { sign, degree, evidence } = verifiedPlacement;
+    const label = key === "risingSign" ? "Ascendant" : key === "moonSign" ? "Moon" : "Sun";
+    readings[key] = { ...copy(sign), evidence: [{ source: evidence.source ?? "verified calculation", description: `${label}${typeof degree === "number" ? ` at ${degree}°` : ""} ${sign}`, value: typeof degree === "number" ? `${degree}°` : sign, verified: true }], confidence: evidence.confidence, verified: true, visibleIn };
+  };
+  addPlacementReading("sunSign", chart.sun, ["essential", "complete", "technical"], (sign) => ({ headline: `Your verified ${sign} Sun describes a central symbolic pattern.`, mechanism: `${sign} Sun symbolism is used only because the placement carries verified calculation evidence.`, protection: "Notice how identity patterns may organize your response to uncertainty.", howOthersSeeit: "People may notice behavior before seeing the reasoning behind it.", gift: "Verified solar symbolism can provide language for recurring priorities.", cost: "Symbolism becomes limiting when treated as fixed biography.", action: "Compare one symbolic claim with a concrete event from your week." }));
+  addPlacementReading("moonSign", chart.moon, ["complete", "technical"], (sign) => ({ headline: `Your verified ${sign} Moon describes emotional rhythm.`, mechanism: `${sign} Moon symbolism is used only because the placement carries verified calculation evidence.`, protection: "Notice what creates emotional safety before deciding what the pattern means.", howOthersSeeit: "Others may see the response without seeing the internal processing.", gift: "Verified lunar symbolism can offer language for emotional regulation.", cost: "Treating symbolism as destiny can narrow self-understanding.", action: "Track one emotional reaction and compare the symbolism with what happened." }));
+  addPlacementReading("risingSign", chart.rising, ["complete", "technical"], (sign) => ({ headline: `Your verified ${sign} Ascendant describes first-impression style.`, mechanism: `${sign} Rising symbolism is used only because the placement carries verified calculation evidence.`, protection: "First-impression behavior can function as a boundary while trust develops.", howOthersSeeit: "People may initially respond to presentation before understanding the person underneath.", gift: "Verified Ascendant symbolism can clarify how presence and social approach are experienced.", cost: "A first-impression pattern can become a mask if treated as the whole identity.", action: "Notice where your first impression differs from how trusted people experience you." }));
+  if (profile.numerology?.lifePath !== undefined) {
+    const lifePath = profile.numerology.lifePath;
+    readings.lifePath = { headline: `Your Life Path ${lifePath} offers a structured reflection theme.`, mechanism: `Life Path ${lifePath} is calculated deterministically from your birth date.`, protection: "A larger mission can sometimes distract from smaller personal needs.", howOthersSeeit: "People may expect perspective while you are still finding your footing.", gift: "Numerology can provide a structured prompt for recurring priorities.", cost: "Symbolic frameworks become limiting when treated as fixed biography.", action: "Choose one personal project and define the smallest finishable next step.", evidence: [{ source: "deterministic numerology calculation", description: `Life Path calculated from birth date ${profile.birthDate}`, value: `${lifePath}`, verified: true }], confidence: 100, verified: true, visibleIn: ["essential", "complete", "technical"] };
+  }
+  return readings;
+}
 
-          onboarding = Path('client/src/pages/OnboardingPage.tsx')
-          text = onboarding.read_text()
-          import_line = 'import { saveActiveProfile } from "../lib/ActiveProfileRepository";'
-          if 'getVerifiedPlacement' not in text:
-              text = text.replace(import_line, import_line + '\nimport { getVerifiedPlacement } from "../lib/placementVerification";')
-          text = re.sub(r'\nconst SIGN_BOUNDARIES = \[.*?\n\];\n', '\n', text, flags=re.S)
-          text = re.sub(r'\nfunction getApproxSunSign\(birthDate: string\): string \| null \{.*?\n\}\n', '\n', text, flags=re.S)
-          text = text.replace('import { useEffect, useMemo, useState } from "react";', 'import { useEffect, useState } from "react";')
-          text = text.replace('  const earlySunSign = useMemo(() => getApproxSunSign(form.birthDate), [form.birthDate]);\n', '')
-          pattern = re.compile(r'\n  useEffect\(\(\) => \{\n    if \(!earlySunSign.*?\n  \}, \[earlySunSign, form\.birthDate, form\.birthTime, form\.birthLocation, queryClient\]\);', re.S)
-          replacement = '''\n  useEffect(() => {\n    if (!isValidBirthDate(form.birthDate) || !form.birthLocation.trim()) return;\n    try { localStorage.setItem("soulOnboardingWarmup", JSON.stringify({ status: "pending_verified_calculation", birthDate: form.birthDate, birthTime: form.birthTime || null, birthLocation: form.birthLocation.trim(), startedAt: new Date().toISOString() })); } catch {}\n    queryClient.prefetchQuery({ queryKey: ["/api/astro/fullchart", form.birthDate, form.birthTime || "unknown", form.birthLocation.trim()], queryFn: async () => { const res = await apiFetch("/api/astro/fullchart", { method: "POST", body: JSON.stringify({ birthDate: form.birthDate, birthTime: form.birthTime || undefined, timeUnknown: !form.birthTime, birthLocation: form.birthLocation.trim() }) }); return res.data; } });\n  }, [form.birthDate, form.birthTime, form.birthLocation, queryClient]);'''
-          if not pattern.search(text): raise SystemExit('warmup effect not found')
-          text = pattern.sub(replacement, text, count=1)
-          text = text.replace('const astro = result.astrologyData || result.natalChart || result.chart || {};\n      const sunSign = astro.sunSign || result.sunSign || earlySunSign;', 'const astro: any = result.astrologyData || result.natalChart || result.chart || {};\n      const verifiedSun = getVerifiedPlacement(astro.sun ?? result.chart?.sun);\n      const sunSign = verifiedSun?.sign;')
-          text = text.replace('localStorage.setItem("soulOnboardingWarmup", JSON.stringify({ status: "complete", sunSign, completedAt: new Date().toISOString() }));', 'localStorage.setItem("soulOnboardingWarmup", JSON.stringify({ status: sunSign ? "complete_verified" : "complete_unresolved", sunSign: sunSign ?? null, verificationStatus: verifiedSun?.verificationStatus ?? "unresolved", provenance: verifiedSun?.evidence ?? null, completedAt: new Date().toISOString() }));')
-          onboarding.write_text(text)
-          Path('client/src/lib/__tests__/gate3ClientIntegration.test.ts').write_text('''import { describe, expect, it } from "vitest";\nimport fs from "node:fs";\nimport path from "node:path";\nconst poster = fs.readFileSync(path.resolve("client/src/pages/PosterPage.tsx"), "utf8");\nconst onboarding = fs.readFileSync(path.resolve("client/src/pages/OnboardingPage.tsx"), "utf8");\ndescribe("Gate 3 client integration", () => {\n  it("removes fabricated poster fallbacks", () => { expect(poster).not.toContain('?? "Gemini"'); expect(poster).not.toContain('?? "Pisces"'); expect(poster).not.toContain('sunSign: "Gemini"'); expect(poster).not.toContain('moonSign: "Pisces"'); expect(poster).toContain("getVerifiedPlacement(astro.sun)"); });\n  it("removes date-boundary Sun promotion", () => { expect(onboarding).not.toContain("SIGN_BOUNDARIES"); expect(onboarding).not.toContain("getApproxSunSign"); expect(onboarding).not.toContain("earlySunSign"); expect(onboarding).toContain("getVerifiedPlacement(astro.sun"); });\n});\n''')
+'''
+          text = text[:start] + replacement + text[end:]
+          needle = 'const readingElements = buildReadingElements(profile);'
+          text = text.replace(needle, needle + '\n  const moonVerified = getVerifiedPlacement(profile?.chart?.moon);\n  const risingVerified = getVerifiedPlacement(profile?.chart?.rising);\n  const moonStatus = placementDisplayStatus(profile?.chart?.moon);\n  const risingStatus = placementDisplayStatus(profile?.chart?.rising);', 1)
+          text = text.replace('elementsForMode.length > 0 || (profile?.chart?.moon === null || profile?.chart?.rising === null)', 'elementsForMode.length > 0 || !moonVerified || !risingVerified')
+          text = text.replace('profile?.chart?.moon?.sign === null', '!moonVerified')
+          text = text.replace('profile?.chart?.rising?.sign === null', '!risingVerified')
+          text = text.replace('Pending independent verification. Moon position requires accurate birth time and comparison with a second ephemeris source.\n                      {!profile.birthTime && " Complete your birth time to enable calculation."}', '{moonStatus}. Interpretation remains paused until verified calculation evidence is available.')
+          text = text.replace('Unresolved. Ascendant calculation requires Local Sidereal Time + house system implementation + independent verification.\n                      {!profile.birthTime && " Exact birth time is required but not sufficient."}', '{risingStatus}. Interpretation remains paused until verified calculation evidence is available.')
+          path.write_text(text)
+          Path('client/src/lib/__tests__/codexReadingTrustBoundary.test.ts').write_text('''import { describe, expect, it } from "vitest";\nimport fs from "node:fs";\nimport path from "node:path";\nconst source = fs.readFileSync(path.resolve("client/src/pages/CodexReadingPage.tsx"), "utf8");\ndescribe("Codex reading trust boundary", () => {\n  it("requires verified placement evidence", () => expect(source).toContain("getVerifiedPlacement(placement)"));\n  it("requires evidence confidence", () => expect(source).toContain('typeof verifiedPlacement.evidence.confidence !== "number"'));\n  it("does not infer verification from birth time", () => { expect(source).not.toContain("verified: profile.birthTime ? true : false"); expect(source).not.toContain("if (chart.rising?.sign && profile.birthTime)"); });\n  it("does not invent astrology confidence", () => { expect(source).not.toContain("confidence: 98"); expect(source).not.toContain("confidence: 97"); expect(source).not.toContain("confidence: profile.birthTime ? 95 : 60"); });\n});\n''')
           PY
       - name: Commit patch
         if: steps.needed.outputs.needed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add client/src/pages/PosterPage.tsx client/src/pages/OnboardingPage.tsx client/src/lib/__tests__/gate3ClientIntegration.test.ts
-          git commit -m "fix(trust): remove client-side silent astrology upgrades"
-          git push origin HEAD:fix/gate-3-client-no-silent-upgrades
+          git add client/src/pages/CodexReadingPage.tsx client/src/lib/__tests__/codexReadingTrustBoundary.test.ts
+          git commit -m "fix(reading): enforce placement verification before interpretation"
+          git push origin HEAD:feat/soul-codex-reading-experience-v1
