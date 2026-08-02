@@ -6,6 +6,7 @@ import { birthDataSchema, type BirthData } from "@shared/schema";
 import { generateOfflineCodexProfile } from "@soulcodex/core";
 import { apiRequest } from "@/lib/queryClient";
 import { saveOfflineProfile } from "@/lib/offlineProfileStore";
+import { saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -126,6 +127,32 @@ export default function LocalFirstInputForm() {
     try {
       const profile = generateOfflineCodexProfile(data);
       await saveOfflineProfile(profile);
+
+      const activeSave = saveActiveProfile({
+        id: profile.id,
+        codename: profile.name,
+        birthDate: profile.birthDate,
+        birthTime: profile.birthTime ?? undefined,
+        birthLocation: profile.birthLocation,
+        birthplace: {
+          city: profile.birthLocation,
+        },
+        sunSign: profile.astrologyData.sunSign,
+        moonSign: profile.astrologyData.moonSign,
+        risingSign: profile.astrologyData.risingSign,
+        astrologyData: profile.astrologyData,
+        lifePathNumber: profile.numerologyData.lifePath,
+        numerologyData: profile.numerologyData,
+        archetype: profile.archetypeData.title,
+        synthesis: profile.depthInterpretation,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+      });
+
+      if (!activeSave.success) {
+        throw new Error(activeSave.error || "The active profile could not be registered.");
+      }
+
       void syncProfileWhenOnline(data, profile.id);
       toast({
         title: "Soul Codex created on this device",
