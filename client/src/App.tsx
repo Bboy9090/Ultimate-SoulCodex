@@ -11,7 +11,7 @@ import Home from "./pages/home";
 import LocalFirstInputForm from "./pages/local-first-input-form";
 import Profile from "./pages/profile";
 import OfflineProfilePage from "./pages/offline-profile";
-import CompatibilityPage from "./pages/CompatibilityPage";
+import CompatibilityExplorerPage from "./pages/CompatibilityExplorerPage";
 import CompatibilityHubPage from "./pages/CompatibilityHubPage";
 import TimelinePage from "./pages/TimelinePage";
 import AstrocartographyPage from "./pages/AstrocartographyPage";
@@ -86,7 +86,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
       <Route path="/compatibility" component={CompatibilityHubPage} />
-      <Route path="/compatibility/explorer" component={CompatibilityPage} />
+      <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
       <Route path="/timeline" component={TimelinePage} />
       <Route path="/astrocartography/:id">
         {() => <PremiumRoute component={AstrocartographyPage} />}
