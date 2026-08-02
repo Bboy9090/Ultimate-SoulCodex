@@ -8,6 +8,7 @@ import {
 } from "../server/services/astrology-verification";
 
 const candidate: EphemerisCandidate = {
+  body: "Sun",
   sign: "Virgo",
   longitude: 174.25,
   source: "Astronomy Engine geocentric true-ecliptic-of-date calculation",
@@ -38,6 +39,7 @@ test("approved independent agreement can produce a verified result", () => {
 
   assert.equal(result.status, "verified");
   if (result.status !== "verified") return;
+  assert.equal(result.body, "Sun");
   assert.equal(result.sign, "Virgo");
   assert.equal(result.policyId, "ASTRO-LONGITUDE-v1");
   assert.ok(result.longitudeDeltaDegrees <= 0.1);
@@ -60,6 +62,16 @@ test("draft policy cannot promote a candidate", () => {
   });
 });
 
+test("a Moon reference cannot verify a Sun candidate", () => {
+  const result = verifyAgainstIndependentReference(candidate, {
+    ...reference,
+    body: "Moon",
+  }, approvedPolicy);
+
+  assert.equal(result.status, "rejected");
+  if (result.status === "rejected") assert.equal(result.reason, "body_mismatch");
+});
+
 test("the same engine cannot verify itself", () => {
   const result = verifyAgainstIndependentReference(candidate, {
     ...reference,
@@ -68,6 +80,16 @@ test("the same engine cannot verify itself", () => {
 
   assert.equal(result.status, "rejected");
   if (result.status === "rejected") assert.equal(result.reason, "same_engine_not_independent");
+});
+
+test("the same source cannot be relabeled as independent", () => {
+  const result = verifyAgainstIndependentReference(candidate, {
+    ...reference,
+    source: candidate.source,
+  }, approvedPolicy);
+
+  assert.equal(result.status, "rejected");
+  if (result.status === "rejected") assert.equal(result.reason, "same_source_not_independent");
 });
 
 test("timestamp mismatch blocks promotion", () => {
