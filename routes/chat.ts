@@ -139,7 +139,7 @@ export function registerChatRoutes(app: Express) {
       if (!checked.valid && generated.trim()) {
         console.warn("[Diamond Runtime] Initial output rejected:", checked.violations);
         const rewrite = await routeAIRequest({
-          promptType: "soul_guide_rewrite",
+          promptType: "validation",
           systemPrompt: systemInstruction,
           prompt: buildRewriteLayerPrompt(generated),
           temperature: 0.3,
