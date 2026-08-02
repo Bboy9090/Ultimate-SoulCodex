@@ -1,3 +1,6 @@
+import { Body, Ecliptic, GeoVector } from "astronomy-engine";
+import { fromZonedTime } from "date-fns-tz";
+
 interface BirthData {
   birthDate: string;
   birthTime?: string;
@@ -6,12 +9,29 @@ interface BirthData {
   timezone?: string;
 }
 
+type PlacementStatus =
+  | "verified"
+  | "calculated_pending_independent_verification"
+  | "pending_ephemeris"
+  | "requires_verified_birth_time"
+  | "requires_location";
+
+interface PlacementCandidate {
+  sign: string;
+  longitude: number;
+  source: string;
+  engine: string;
+  calculatedAt: string;
+  inputTimestamp: string;
+}
+
 interface PlacementVerification {
   sign: string | null;
-  status: "verified" | "pending_ephemeris" | "requires_verified_birth_time" | "requires_location";
+  status: PlacementStatus;
   confidence: number | null;
   source: string | null;
   reason?: string;
+  candidate?: PlacementCandidate;
 }
 
 interface AstrologyData {
@@ -36,14 +56,104 @@ interface AstrologyData {
   };
 }
 
-function getSunPlacement(_birthData: BirthData): PlacementVerification {
+const ZODIAC_SIGNS = [
+  "Aries",
+  "Taurus",
+  "Gemini",
+  "Cancer",
+  "Leo",
+  "Virgo",
+  "Libra",
+  "Scorpio",
+  "Sagittarius",
+  "Capricorn",
+  "Aquarius",
+  "Pisces",
+] as const;
+
+const EPHEMERIS_ENGINE = "astronomy-engine@2.1.19";
+const EPHEMERIS_SOURCE = "Astronomy Engine geocentric true-ecliptic-of-date calculation";
+
+function normalizeLongitude(longitude: number): number {
+  return ((longitude % 360) + 360) % 360;
+}
+
+function signFromLongitude(longitude: number): string {
+  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(longitude) / 30)];
+}
+
+function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthData.birthDate)) return null;
+
+  const birthTime = birthData.birthTime?.trim();
+  if (requiresTime && !birthTime) return null;
+
+  const time = birthTime && /^\d{2}:\d{2}$/.test(birthTime) ? birthTime : "12:00";
+  const localTimestamp = `${birthData.birthDate}T${time}:00`;
+
+  if (birthData.timezone) {
+    const zoned = fromZonedTime(localTimestamp, birthData.timezone);
+    return Number.isNaN(zoned.getTime()) ? null : zoned;
+  }
+
+  // Date-only Sun calculations remain useful at noon UTC because the Sun moves
+  // roughly one degree per day. Time-sensitive placements remain blocked unless
+  // an explicit timezone is present.
+  if (requiresTime) return null;
+  const utc = new Date(`${localTimestamp}Z`);
+  return Number.isNaN(utc.getTime()) ? null : utc;
+}
+
+function calculateCandidate(body: Body, timestamp: Date): PlacementCandidate {
+  const vector = GeoVector(body, timestamp, true);
+  const longitude = normalizeLongitude(Ecliptic(vector).elon);
+
   return {
+    sign: signFromLongitude(longitude),
+    longitude,
+    source: EPHEMERIS_SOURCE,
+    engine: EPHEMERIS_ENGINE,
+    calculatedAt: new Date().toISOString(),
+    inputTimestamp: timestamp.toISOString(),
+  };
+}
+
+function pendingCandidatePlacement(candidate: PlacementCandidate): PlacementVerification {
+  return {
+    // Candidate values are deliberately withheld from the authoritative `sign`
+    // field until an independent reference agrees within the release tolerance.
     sign: null,
-    status: "pending_ephemeris",
+    status: "calculated_pending_independent_verification",
     confidence: null,
     source: null,
-    reason: "Awaiting verified ephemeris engine for accurate calculation",
+    candidate,
+    reason: "Calculated by one trusted ephemeris engine; independent comparison is still required before interpretation",
   };
+}
+
+function getSunPlacement(birthData: BirthData): PlacementVerification {
+  const timestamp = buildUtcBirthTimestamp(birthData, false);
+  if (!timestamp) {
+    return {
+      sign: null,
+      status: "pending_ephemeris",
+      confidence: null,
+      source: null,
+      reason: "A valid birth date is required for ephemeris calculation",
+    };
+  }
+
+  try {
+    return pendingCandidatePlacement(calculateCandidate(Body.Sun, timestamp));
+  } catch {
+    return {
+      sign: null,
+      status: "pending_ephemeris",
+      confidence: null,
+      source: null,
+      reason: "Ephemeris calculation failed safely; no placement was promoted",
+    };
+  }
 }
 
 function getMoonPlacement(birthData: BirthData): PlacementVerification {
@@ -57,23 +167,48 @@ function getMoonPlacement(birthData: BirthData): PlacementVerification {
     };
   }
 
-  return {
-    sign: null,
-    status: "pending_ephemeris",
-    confidence: null,
-    source: null,
-    reason: "Awaiting verified ephemeris engine for accurate calculation",
-  };
-}
-
-function getRisingPlacement(birthData: BirthData): PlacementVerification {
-  if (!birthData.birthTime) {
+  if (!birthData.timezone) {
     return {
       sign: null,
       status: "requires_verified_birth_time",
       confidence: null,
       source: null,
-      reason: "Birth time and location required for Rising sign calculation",
+      reason: "Timezone required to convert the entered birth time to UTC",
+    };
+  }
+
+  const timestamp = buildUtcBirthTimestamp(birthData, true);
+  if (!timestamp) {
+    return {
+      sign: null,
+      status: "pending_ephemeris",
+      confidence: null,
+      source: null,
+      reason: "Birth date, time, or timezone could not be converted safely",
+    };
+  }
+
+  try {
+    return pendingCandidatePlacement(calculateCandidate(Body.Moon, timestamp));
+  } catch {
+    return {
+      sign: null,
+      status: "pending_ephemeris",
+      confidence: null,
+      source: null,
+      reason: "Ephemeris calculation failed safely; no placement was promoted",
+    };
+  }
+}
+
+function getRisingPlacement(birthData: BirthData): PlacementVerification {
+  if (!birthData.birthTime || !birthData.timezone) {
+    return {
+      sign: null,
+      status: "requires_verified_birth_time",
+      confidence: null,
+      source: null,
+      reason: "Verified birth time and timezone required for Rising sign calculation",
     };
   }
 
@@ -83,7 +218,7 @@ function getRisingPlacement(birthData: BirthData): PlacementVerification {
       status: "requires_location",
       confidence: null,
       source: null,
-      reason: "Precise birth location required for Rising sign calculation",
+      reason: "Precise birth coordinates required for Rising sign calculation",
     };
   }
 
@@ -92,7 +227,7 @@ function getRisingPlacement(birthData: BirthData): PlacementVerification {
     status: "pending_ephemeris",
     confidence: null,
     source: null,
-    reason: "Awaiting verified ephemeris engine for accurate calculation",
+    reason: "Ascendant calculation remains intentionally blocked until its formula and independent reference suite are validated",
   };
 }
 
@@ -103,8 +238,11 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
 
   const missingData: string[] = [];
   if (!birthData.birthTime) missingData.push("verified_birth_time");
+  if (!birthData.timezone) missingData.push("timezone");
   if (birthData.latitude === undefined || birthData.longitude === undefined) missingData.push("precise_location");
-  if (!sun.sign) missingData.push("ephemeris_engine");
+  if (sun.status !== "verified") missingData.push("independent_sun_verification");
+  if (moon.status !== "verified") missingData.push("independent_moon_verification");
+  if (rising.status !== "verified") missingData.push("validated_ascendant_engine");
 
   return {
     sun,
@@ -118,15 +256,8 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     chiron: undefined,
     verification: {
       complete: false,
-      missingData,
-      suggestions: missingData.length > 0
-        ? `To calculate your astrology: ${missingData.map((item) => {
-            if (item === "verified_birth_time") return "provide exact birth time";
-            if (item === "precise_location") return "provide precise birth location";
-            if (item === "ephemeris_engine") return "activate ephemeris calculation engine";
-            return item;
-          }).join(", ")}.`
-        : "Your astrology chart is ready for calculation.",
+      missingData: [...new Set(missingData)],
+      suggestions: "Sun and Moon may carry evidence-bearing candidate calculations, but interpretation remains paused until independent verification. Ascendant remains unresolved until its dedicated validation suite passes.",
       lastUpdated: new Date().toISOString(),
     },
   };
