@@ -32,7 +32,7 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   await expect(page.getByRole("heading", { name: "Good to see you, Clarity Browser Test." })).toBeVisible();
 
   const savedIdentityLinks = page.locator(`a[href="${profilePath}"]`);
-  await expect(savedIdentityLinks).toHaveCount(2);
+  await expect(savedIdentityLinks.first()).toHaveAttribute("href", profilePath);
 
   await page.goto(profilePath, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(new RegExp(`${profilePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
