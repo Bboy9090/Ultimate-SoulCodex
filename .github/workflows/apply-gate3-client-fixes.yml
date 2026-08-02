@@ -1,0 +1,168 @@
+name: Apply Gate3 Client Trust Fixes
+
+on:
+  push:
+    branches:
+      - fix/gate-3-client-no-silent-upgrades
+    paths:
+      - .github/workflows/apply-gate3-client-fixes.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/gate-3-client-no-silent-upgrades
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Apply Poster and Onboarding fixes
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          # PosterPage
+          poster = Path('client/src/pages/PosterPage.tsx')
+          text = poster.read_text()
+          import_line = 'import { loadActiveProfile } from "../lib/profileStorage";'
+          text = text.replace(import_line, import_line + '\nimport { getVerifiedPlacement, placementDisplayStatus } from "../lib/placementVerification";')
+          text = text.replace(
+              'const DEMO: PosterData = {\n  name: "", birthDate: "", sunSign: "Gemini", moonSign: "Pisces",\n  risingSign: "Sagittarius", lifePathNumber: 9, masterNumber: 11,\n};',
+              'const DEMO: PosterData = {\n  name: "", birthDate: "", sunSign: "", moonSign: "",\n  risingSign: undefined, lifePathNumber: 1, masterNumber: undefined,\n};'
+          )
+          text = text.replace(
+              'sunSign:         astro.sun ?? p.sunSign ?? "Gemini",\n        moonSign:        astro.moon ?? p.moonSign ?? "Pisces",\n        risingSign:      astro.rising ?? p.risingSign ?? undefined,',
+              'sunSign:         getVerifiedPlacement(astro.sun)?.sign ?? "",\n        moonSign:        getVerifiedPlacement(astro.moon)?.sign ?? "",\n        risingSign:      getVerifiedPlacement(astro.rising)?.sign ?? undefined,'
+          )
+          text = text.replace(
+              'const planets = Object.entries(json.planets ?? {})\n              .filter(([, v]: any) => typeof v?.longitude === "number")',
+              'const planets = Object.entries(json.planets ?? {})\n              .filter(([, v]: any) => getVerifiedPlacement(v) && typeof v?.longitude === "number")'
+          )
+          text = text.replace(
+              '...(json.sun    ? { sunSign:    json.sun    } : {}),\n              ...(json.moon   ? { moonSign:   json.moon   } : {}),\n              ...(json.rising ? { risingSign: json.rising } : {}),',
+              '...(getVerifiedPlacement(json.sun) ? { sunSign: getVerifiedPlacement(json.sun)!.sign } : { sunSign: "" }),\n              ...(getVerifiedPlacement(json.moon) ? { moonSign: getVerifiedPlacement(json.moon)!.sign } : { moonSign: "" }),\n              ...(getVerifiedPlacement(json.rising) ? { risingSign: getVerifiedPlacement(json.rising)!.sign } : { risingSign: undefined }),'
+          )
+          text = text.replace(
+              'if (json.sun)    update("sunSign", json.sun);\n      if (json.moon)   update("moonSign", json.moon);\n      if (json.rising) update("risingSign", json.rising);',
+              'const verifiedSun = getVerifiedPlacement(json.sun);\n      const verifiedMoon = getVerifiedPlacement(json.moon);\n      const verifiedRising = getVerifiedPlacement(json.rising);\n      update("sunSign", verifiedSun?.sign ?? "");\n      update("moonSign", verifiedMoon?.sign ?? "");\n      update("risingSign", verifiedRising?.sign);\n      if (!verifiedSun || !verifiedMoon || !verifiedRising) {\n        setComputeError(`Astrology remains unresolved: Sun ${placementDisplayStatus(json.sun)}, Moon ${placementDisplayStatus(json.moon)}, Ascendant ${placementDisplayStatus(json.rising)}.`);\n      }'
+          )
+          poster.write_text(text)
+
+          # OnboardingPage
+          onboarding = Path('client/src/pages/OnboardingPage.tsx')
+          text = onboarding.read_text()
+          import_line = 'import { saveActiveProfile } from "../lib/ActiveProfileRepository";'
+          text = text.replace(import_line, import_line + '\nimport { getVerifiedPlacement } from "../lib/placementVerification";')
+
+          text = re.sub(r'\nconst SIGN_BOUNDARIES = \[.*?\n\];\n', '\n', text, flags=re.S)
+          text = re.sub(r'\nfunction getApproxSunSign\(birthDate: string\): string \| null \{.*?\n\}\n', '\n', text, flags=re.S)
+          text = text.replace('  const earlySunSign = useMemo(() => getApproxSunSign(form.birthDate), [form.birthDate]);\n', '')
+          text = text.replace('import { useEffect, useMemo, useState } from "react";', 'import { useEffect, useState } from "react";')
+
+          warmup_pattern = re.compile(r'\n  useEffect\(\(\) => \{\n    if \(!earlySunSign.*?\n  \}, \[earlySunSign, form\.birthDate, form\.birthTime, form\.birthLocation, queryClient\]\);', re.S)
+          warmup_replacement = r'''
+  useEffect(() => {
+    if (!isValidBirthDate(form.birthDate) || !form.birthLocation.trim()) return;
+
+    try {
+      localStorage.setItem("soulOnboardingWarmup", JSON.stringify({
+        status: "pending_verified_calculation",
+        birthDate: form.birthDate,
+        birthTime: form.birthTime || null,
+        birthLocation: form.birthLocation.trim(),
+        startedAt: new Date().toISOString(),
+      }));
+    } catch {}
+
+    queryClient.prefetchQuery({
+      queryKey: ["/api/astro/fullchart", form.birthDate, form.birthTime || "unknown", form.birthLocation.trim()],
+      queryFn: async () => {
+        const res = await apiFetch("/api/astro/fullchart", {
+          method: "POST",
+          body: JSON.stringify({
+            birthDate: form.birthDate,
+            birthTime: form.birthTime || undefined,
+            timeUnknown: !form.birthTime,
+            birthLocation: form.birthLocation.trim(),
+          }),
+        });
+        return res.data;
+      },
+    });
+  }, [form.birthDate, form.birthTime, form.birthLocation, queryClient]);'''
+          if not warmup_pattern.search(text):
+              raise SystemExit('Onboarding warmup effect not found')
+          text = warmup_pattern.sub(warmup_replacement, text, count=1)
+
+          text = text.replace(
+              'const astro = result.astrologyData || result.natalChart || result.chart || {};\n      const sunSign = astro.sunSign || result.sunSign || earlySunSign;',
+              'const astro: any = result.astrologyData || result.natalChart || result.chart || {};\n      const verifiedSun = getVerifiedPlacement(astro.sun ?? result.chart?.sun);\n      const sunSign = verifiedSun?.sign;'
+          )
+          text = text.replace(
+              'localStorage.setItem("soulOnboardingWarmup", JSON.stringify({ status: "complete", sunSign, completedAt: new Date().toISOString() }));',
+              'localStorage.setItem("soulOnboardingWarmup", JSON.stringify({\n          status: sunSign ? "complete_verified" : "complete_unresolved",\n          sunSign: sunSign ?? null,\n          verificationStatus: verifiedSun?.verificationStatus ?? "unresolved",\n          provenance: verifiedSun?.evidence ?? null,\n          completedAt: new Date().toISOString(),\n        }));'
+          )
+          onboarding.write_text(text)
+
+          test = Path('client/src/lib/__tests__/gate3ClientIntegration.test.ts')
+          test.write_text(r'''import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+
+const poster = fs.readFileSync(path.resolve("client/src/pages/PosterPage.tsx"), "utf8");
+const onboarding = fs.readFileSync(path.resolve("client/src/pages/OnboardingPage.tsx"), "utf8");
+
+describe("Gate 3 client integration", () => {
+  it("removes fabricated poster fallbacks", () => {
+    expect(poster).not.toContain('?? "Gemini"');
+    expect(poster).not.toContain('?? "Pisces"');
+    expect(poster).not.toContain('sunSign: "Gemini"');
+    expect(poster).not.toContain('moonSign: "Pisces"');
+    expect(poster).toContain("getVerifiedPlacement(astro.sun)");
+    expect(poster).toContain("getVerifiedPlacement(astro.moon)");
+  });
+
+  it("removes date-boundary Sun promotion from onboarding", () => {
+    expect(onboarding).not.toContain("SIGN_BOUNDARIES");
+    expect(onboarding).not.toContain("getApproxSunSign");
+    expect(onboarding).not.toContain("earlySunSign");
+    expect(onboarding).toContain("getVerifiedPlacement(astro.sun");
+  });
+
+  it("does not prefetch horoscope or compatibility from an unverified sign", () => {
+    expect(onboarding).toContain('if (sunSign)');
+    expect(onboarding).toContain('status: sunSign ? "complete_verified" : "complete_unresolved"');
+  });
+});
+''')
+
+          workflow = Path('.github/workflows/apply-gate3-client-fixes.yml')
+          if workflow.exists():
+              workflow.unlink()
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Gate 3 tests and type checks
+        run: |
+          npm test -- --run client/src/lib/__tests__/placementVerification.test.ts client/src/lib/__tests__/gate3ClientIntegration.test.ts
+          npm run check
+
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/src/pages/PosterPage.tsx client/src/pages/OnboardingPage.tsx client/src/lib/__tests__/gate3ClientIntegration.test.ts .github/workflows/apply-gate3-client-fixes.yml
+          git commit -m "fix(trust): remove client-side silent astrology upgrades"
+          git push origin HEAD:fix/gate-3-client-no-silent-upgrades
