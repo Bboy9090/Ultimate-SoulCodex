@@ -1,10 +1,45 @@
 import type { Express } from "express";
 import { storage } from "../storage";
-import { routeAIStream } from "../services/ai-router";
+import { routeAIRequest, routeAIStream } from "../services/ai-router";
 import { entitlementService } from "../services/entitlement-service";
-import { buildSoulCodexSystemPrompt } from "../src/ai/soulCodexEngine";
+import { buildRewriteLayerPrompt, buildSoulCodexSystemPrompt } from "../src/ai/soulCodexEngine";
+import { validateDiamondOutput } from "../src/ai/diamondClarity";
 import { runSoulCodexEngine } from "@soulcodex/core";
 import { buildVerifiedAstrologyLines, extractVerifiedAstrology } from "../server/lib/verified-astrology";
+
+const SAFE_DIAMOND_REFUSAL = `**Pattern**
+The first response did not meet Soul Codex clarity standards.
+
+**Why**
+It lacked enough supported structure to reach a trustworthy conclusion.
+
+**Need**
+This protects you from receiving polished certainty without adequate evidence.
+
+**Gift**
+The system can stop instead of pretending an incomplete answer is reliable.
+
+**Cost**
+You receive less detail now rather than a confident but unsupported reading.
+
+**Action**
+Ask one narrower question or complete the missing profile information.
+
+**Evidence**
+The runtime clarity validator rejected the generated response. No unresolved placement was promoted into interpretation.`;
+
+export function enforceDiamondRuntimeOutput(text: string): {
+  content: string;
+  valid: boolean;
+  violations: string[];
+} {
+  const validation = validateDiamondOutput(text);
+  return {
+    content: validation.valid ? text : SAFE_DIAMOND_REFUSAL,
+    valid: validation.valid,
+    violations: [...validation.missing.map((section) => `Missing ${section}`), ...validation.violations],
+  };
+}
 
 export function registerChatRoutes(app: Express) {
   app.post("/api/chat/soul-guide", async (req, res) => {
@@ -88,17 +123,34 @@ export function registerChatRoutes(app: Express) {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const stream = routeAIStream({
+      let generated = "";
+      for await (const { chunk } of routeAIStream({
         promptType: "soul_guide",
         systemInstruction,
         history,
         message,
         temperature: 0.8,
-      });
-
-      for await (const { chunk } of stream) {
-        if (chunk) res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+      })) {
+        generated += chunk || "";
       }
+
+      let checked = enforceDiamondRuntimeOutput(generated);
+
+      if (!checked.valid && generated.trim()) {
+        console.warn("[Diamond Runtime] Initial output rejected:", checked.violations);
+        const rewrite = await routeAIRequest({
+          promptType: "validation",
+          systemPrompt: systemInstruction,
+          prompt: buildRewriteLayerPrompt(generated),
+          temperature: 0.3,
+        });
+        checked = enforceDiamondRuntimeOutput(rewrite.content || "");
+        if (!checked.valid) {
+          console.warn("[Diamond Runtime] Rewrite rejected:", checked.violations);
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ content: checked.content })}\n\n`);
       res.write("data: [DONE]\n\n");
       res.end();
     } catch (error) {
@@ -119,27 +171,18 @@ export function registerChatRoutes(app: Express) {
       if (!isPremium) {
         const ownerProfileId = process.env.OWNER_PROFILE_ID;
         if (ownerProfileId && userId) {
-          try {
-            const dbProfile = await storage.getProfileByUserId(userId);
-            if (dbProfile?.id === ownerProfileId) isPremium = true;
-          } catch {}
+          try { const dbProfile = await storage.getProfileByUserId(userId); if (dbProfile?.id === ownerProfileId) isPremium = true; } catch {}
           if (!isPremium && userId === ownerProfileId) isPremium = true;
         }
       }
       if (!isPremium) {
-        try {
-          const status = await entitlementService.getUserPremiumStatus({ userId, sessionId });
-          isPremium = status.isPremium;
-        } catch {}
+        try { const status = await entitlementService.getUserPremiumStatus({ userId, sessionId }); isPremium = status.isPremium; } catch {}
       }
 
       const hasLocalProfile = req.query.hasProfile === "true";
       let profile: any = null;
-      if (userId) {
-        try { profile = await storage.getProfileByUserId(userId); } catch {}
-      } else if (sessionId) {
-        try { profile = await storage.getProfileBySessionId(sessionId); } catch {}
-      }
+      if (userId) { try { profile = await storage.getProfileByUserId(userId); } catch {} }
+      else if (sessionId) { try { profile = await storage.getProfileBySessionId(sessionId); } catch {} }
 
       const limit = profile || hasLocalProfile ? 2 : 1;
       const used = isPremium ? 0 : (session?.chatCount ?? 0);
