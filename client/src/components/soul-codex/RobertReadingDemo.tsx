@@ -1,240 +1,245 @@
-/**
- * Robert Gonzalez Reading Demo
- *
- * Demonstrates the Soul Codex reading experience v1 with Robert as golden fixture.
- * Used for rendering screenshots in all three display modes.
- */
-
 import { useState } from "react";
-import ReadingElement from "./ReadingElement";
-import LimitationsPanel from "./LimitationsPanel";
-import type { ReadingElement as ReadingElementType, DisplayMode } from "@soulcodex/core";
-import { createRobertProfile } from "@soulcodex/core/__tests__/fixtures/robert-gonzalez";
+import type { DisplayMode } from "@soulcodex/core";
 
-// Mock reading elements for Robert
-const ROBERT_READING_ELEMENTS: Record<string, ReadingElementType> = {
-  sunSign: {
-    headline: "You see inefficiency before anyone else, and you move to fix it.",
-    mechanism:
-      "Virgo Sun creates a drive for precision and improvement. Your mind automatically scans for what's wrong, not because you're negative, but because systems interest you. When you spot a flaw, your impulse is to correct it—immediately.",
-    protection:
-      "You may be protecting against chaos and disorganization by making yourself the person who catches problems. There's safety in being competent and necessary.",
-    howOthersSeeit:
-      "People experience you as unusually capable and detail-oriented. They trust your eye for quality. They may not see that you're also carrying the burden of noticing what everyone else misses.",
-    gift:
-      "Your ability to see and solve problems quickly makes you invaluable in roles requiring systems thinking—engineering, operations, quality assurance. You prevent disasters others don't yet see coming.",
-    cost:
-      "Over time, constant analysis becomes exhausting. You can paralyzed by the gap between how things are and how they should be. Others may perceive you as picky or hard to please, when really you're just seeing what needs to improve.",
-    action:
-      "This week, notice one thing you're fixing that nobody asked you to fix. Ask: Would this break without my intervention? If yes, fix it. If no, let it sit and observe what happens.",
-    evidence: [
-      {
-        source: "ephemeris",
-        description: "Sun at 23.45° Virgo (natal chart position)",
-        value: "23.45°",
-        verified: true,
-      },
-      {
-        source: "calculation",
-        description: "Date of birth September 17, 1990 determines solar position",
-        verified: true,
-      },
-    ],
-    confidence: 98,
-    verified: true,
-    visibleIn: ["essential", "complete", "technical"],
-  },
+const facts = [
+  { label: "Birth date", value: "September 17, 1990", state: "provided" },
+  { label: "Birth time", value: "11:11 AM", state: "provided" },
+  { label: "Birth place", value: "Bronx, New York", state: "provided" },
+  { label: "Life Path", value: "9", state: "calculated" },
+  { label: "Moon", value: "Pending independent verification", state: "pending" },
+  { label: "Ascendant", value: "Unresolved", state: "pending" },
+];
 
-  moonSign: {
-    headline: "You process emotions quietly, and you expect others to do the same.",
-    mechanism:
-      "Virgo Moon means you feel emotions, but your first instinct is to analyze them before you express them. You prefer to observe and understand before you act. Mess and chaos—emotional or otherwise—make you uncomfortable.",
-    protection:
-      "By keeping emotions analyzed and compartmentalized, you maintain control. Raw feeling without understanding feels dangerous. So you think your way to safety.",
-    howOthersSeeit:
-      "People often think you're calmer or less emotional than you actually are. They may not realize how much you're processing internally. Some may perceive you as cold when you're actually just careful.",
-    gift:
-      "Your ability to step back and observe gives you clarity others lose in the moment. You don't make emotional decisions you regret later. You can help others find the precise problem beneath their feelings.",
-    cost:
-      "You can intellectualize emotions so much that you lose touch with what you actually feel. You may hold hurt for years without addressing it directly. Others may feel like you don't truly understand them—not because you don't, but because you're not showing them.",
-    action:
-      "Next time someone shares a feeling with you, resist the urge to analyze it right away. Instead, ask: 'What do you need from me right now?' Listen to the answer instead of offering improvement.",
-    evidence: [
-      {
-        source: "ephemeris",
-        description: "Moon at 18.32° Virgo (verified from birth time 11:11 AM)",
-        value: "18.32°",
-        verified: true,
-      },
-    ],
-    confidence: 95,
-    verified: true,
-    visibleIn: ["complete", "technical"],
-  },
-
-  risingSign: {
-    headline: "You come across as intense and investigating, and that's not accidental.",
-    mechanism:
-      "Scorpio Rising is how the world first experiences you. You present as penetrating, observant, someone who doesn't accept surface answers. Your eyes go deep. People feel like you're reading them.",
-    protection:
-      "This intensity protects you. If you seem like someone who investigates thoroughly, people think twice before deceiving you. Depth and power are safer than openness and vulnerability.",
-    howOthersSeeit:
-      "People take you seriously. They don't mess with you casually. But they may also experience you as intimidating or keep you at a distance. Some may test you early to see if you're trustworthy before getting closer.",
-    gift:
-      "Your Scorpio presence commands respect. People trust you with their deep truths. You attract meaningful connections because you signal that you can handle complexity and darkness without flinching.",
-    cost:
-      "This intensity can isolate you. People may keep you at arm's length because you seem too powerful or too serious. You may feel lonely even in relationships because no one sees your softer side.",
-    action:
-      "Intentionally show someone one thing about yourself that's vulnerable—not a weakness, but a real part of you that's not about power or control. Watch what happens.",
-    evidence: [
-      {
-        source: "ephemeris",
-        description: "Ascendant at 6.18° Scorpio (calculated from exact birth time)",
-        value: "6.18°",
-        verified: true,
-      },
-    ],
-    confidence: 97,
-    verified: true,
-    visibleIn: ["complete", "technical"],
-  },
-
-  lifePathNumber: {
-    headline: "Your purpose is about completion—finishing what others start.",
-    mechanism:
-      "Life Path 9 is calculated from your birth date (9+1+7+1+9+9+0 = 36 → 3+6 = 9). You're wired for synthesis, seeing the big picture, and bringing things to their natural conclusion. You're the person who can see how all the threads connect.",
-    protection:
-      "By taking on bigger, universal concerns, you may avoid your own smaller, more personal needs. Serving the larger cause gives permission to ignore your own life.",
-    howOthersSeeit:
-      "People see you as someone with wisdom and perspective beyond your years. You seem to understand cycles and endings. Some may expect you to have all the answers.",
-    gift:
-      "You can see patterns across domains. You synthesize information naturally and offer perspective that helps others understand where things are heading. You're trusted with complexity.",
-    cost:
-      "You can exhaust yourself by taking on too many causes. You may finish others' work while your own remains incomplete. Over-identification with universal service can leave you personally empty.",
-    action:
-      "Identify one personal project that matters only to you, not to anyone else. Commit to finishing it this year. Notice what happens to your sense of purpose.",
-    evidence: [
-      {
-        source: "calculation",
-        description: "September 17, 1990 → 9+1+7+1+9+9+0 = 36 → 3+6 = 9",
-        verified: true,
-      },
-    ],
-    confidence: 100,
-    verified: true,
-    visibleIn: ["essential", "complete", "technical"],
-  },
-};
-
-export default function RobertReadingDemo() {
-  const [mode, setMode] = useState<DisplayMode>("complete");
-  const profile = createRobertProfile();
-
-  const elementsForMode = Object.values(ROBERT_READING_ELEMENTS).filter((el) =>
-    el.visibleIn.includes(mode)
+function Section({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      style={{
+        padding: "1.5rem 0",
+        borderTop: "1px solid rgba(212,168,95,0.18)",
+      }}
+    >
+      <p
+        style={{
+          margin: "0 0 0.45rem",
+          color: "var(--sc-gold)",
+          fontSize: "0.72rem",
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+        }}
+      >
+        {eyebrow}
+      </p>
+      <h2
+        style={{
+          margin: "0 0 0.8rem",
+          color: "var(--sc-ivory)",
+          fontSize: "clamp(1.2rem, 3vw, 1.55rem)",
+          lineHeight: 1.25,
+        }}
+      >
+        {title}
+      </h2>
+      <div style={{ color: "var(--sc-stone)", fontSize: "1rem", lineHeight: 1.72 }}>
+        {children}
+      </div>
+    </section>
   );
+}
 
+function EvidencePanel() {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)",
-        color: "var(--sc-ivory)",
-        fontFamily: '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI"',
-        padding: "2rem",
+        marginTop: "1.5rem",
+        padding: "1.25rem",
+        borderRadius: 14,
+        background: "rgba(255,255,255,0.025)",
+        border: "1px solid rgba(212,168,95,0.18)",
       }}
     >
-      {/* Header */}
-      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-        <div
-          style={{
-            marginBottom: "2rem",
-            paddingBottom: "2rem",
-            borderBottom: "1px solid rgba(212,168,95,0.2)",
-          }}
-        >
+      <h2 style={{ margin: "0 0 0.35rem", fontSize: "1.1rem", color: "var(--sc-ivory)" }}>
+        Why the app said this
+      </h2>
+      <p style={{ margin: "0 0 1rem", color: "var(--sc-stone)", lineHeight: 1.6 }}>
+        This sample uses verified birth inputs and deterministic numerology. Time-sensitive astrology remains paused until the calculation layer supplies independent evidence.
+      </p>
+      <div style={{ display: "grid", gap: "0.65rem" }}>
+        {facts.map((fact) => (
+          <div
+            key={fact.label}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "1rem",
+              padding: "0.7rem 0",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <span style={{ color: "var(--sc-stone)" }}>{fact.label}</span>
+            <span style={{ color: fact.state === "pending" ? "#f0b7d5" : "var(--sc-ivory)", textAlign: "right" }}>
+              {fact.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function RobertReadingDemo() {
+  const [mode, setMode] = useState<DisplayMode>("essential");
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "radial-gradient(circle at top, #24162f 0%, #111014 46%, #09090b 100%)",
+        color: "var(--sc-ivory)",
+        padding: "clamp(1.25rem, 4vw, 3rem)",
+      }}
+    >
+      <article style={{ width: "min(760px, 100%)", margin: "0 auto" }}>
+        <header style={{ marginBottom: "1.5rem" }}>
+          <p
+            style={{
+              margin: "0 0 0.6rem",
+              color: "var(--sc-gold)",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
+          >
+            Soul Codex · Clarity Reading
+          </p>
           <h1
             style={{
-              margin: "0 0 0.5rem 0",
-              fontSize: "2rem",
-              fontWeight: 700,
-              color: "var(--sc-gold)",
+              margin: "0 0 0.7rem",
+              fontSize: "clamp(2rem, 7vw, 3.7rem)",
+              lineHeight: 1.02,
+              letterSpacing: "-0.04em",
             }}
           >
-            Robert Gonzalez
+            You do not need more information. You need to know what matters.
           </h1>
-          <p
-            style={{
-              margin: "0",
-              fontSize: "1rem",
-              color: "var(--sc-stone)",
-            }}
-          >
-            The Shadow Systems Architect
+          <p style={{ margin: 0, color: "var(--sc-stone)", fontSize: "1.05rem", lineHeight: 1.65 }}>
+            Robert, your strongest pattern is not simply perfectionism. It is the habit of becoming responsible for whatever you can see clearly enough to fix.
           </p>
-          <p
-            style={{
-              margin: "0.5rem 0 0 0",
-              fontSize: "0.85rem",
-              color: "var(--sc-stone)",
-              opacity: 0.7,
-            }}
-          >
-            Virgo Sun • Virgo Moon • Scorpio Rising • Life Path 9 • Reflector 2/5
-          </p>
-        </div>
+        </header>
 
-        {/* Display Mode Toggle */}
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            marginBottom: "2rem",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
+        <nav
+          aria-label="Reading depth"
+          style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "1rem" }}
         >
-          {(["essential", "complete", "technical"] as const).map((m) => (
+          {(["essential", "complete", "technical"] as DisplayMode[]).map((item) => (
             <button
-              key={m}
-              onClick={() => setMode(m)}
+              key={item}
+              type="button"
+              onClick={() => setMode(item)}
               style={{
-                padding: "0.75rem 1.5rem",
-                borderRadius: "8px",
-                border: mode === m ? "2px solid var(--sc-gold)" : "1px solid rgba(212,168,95,0.3)",
-                background: mode === m ? "rgba(212,168,95,0.15)" : "transparent",
-                color: mode === m ? "var(--sc-gold)" : "var(--sc-stone)",
+                border: item === mode ? "1px solid var(--sc-gold)" : "1px solid rgba(255,255,255,0.12)",
+                background: item === mode ? "rgba(212,168,95,0.12)" : "rgba(255,255,255,0.02)",
+                color: item === mode ? "var(--sc-gold)" : "var(--sc-stone)",
+                borderRadius: 999,
+                padding: "0.65rem 1rem",
                 cursor: "pointer",
-                fontSize: "0.9rem",
-                fontWeight: mode === m ? 600 : 400,
                 textTransform: "capitalize",
-                transition: "all 0.2s ease",
               }}
             >
-              {m.charAt(0).toUpperCase() + m.slice(1)}
+              {item}
             </button>
           ))}
-        </div>
+        </nav>
 
-        {/* Reading Elements */}
-        <div style={{ marginTop: "2rem" }}>
-          {elementsForMode.map((element, i) => (
-            <ReadingElement key={i} element={element} mode={mode} showEvidence={mode === "technical"} />
-          ))}
-        </div>
+        <Section eyebrow="The pattern" title="You notice what is missing, then quietly make it your responsibility.">
+          <p style={{ margin: 0 }}>
+            You are naturally drawn to broken systems, unfinished ideas, and people who need help finding a way forward. Once you understand the problem, walking away can feel almost irresponsible. That is why your projects grow, your roles expand, and other people begin depending on you before anyone formally asks.
+          </p>
+        </Section>
 
-        {/* Limitations Panel */}
-        <LimitationsPanel profile={profile} />
-      </div>
+        <Section eyebrow="Why it happens" title="Competence became one of your safest ways to create order.">
+          <p style={{ margin: 0 }}>
+            Knowing what to do gives you steadiness. Solving the problem gives you control over uncertainty. The deeper pattern is not that you believe everyone else is incapable. It is that relying on yourself often feels more predictable than waiting to discover whether someone else will follow through.
+          </p>
+        </Section>
 
-      {/* CSS Variables */}
+        <Section eyebrow="The gift" title="You can turn scattered pieces into a working system.">
+          <p style={{ margin: 0 }}>
+            You see connections across technology, storytelling, psychology, design, and lived experience. Where other people see separate ideas, you look for the structure that can hold them together. That is why you keep creating platforms rather than isolated products. You are not merely collecting features. You are trying to build a world that makes sense.
+          </p>
+        </Section>
+
+        {mode !== "essential" && (
+          <>
+            <Section eyebrow="What people may miss" title="Being capable does not mean carrying everything feels easy.">
+              <p style={{ margin: 0 }}>
+                People may meet your vision before they meet your exhaustion. They can see the ideas, urgency, and determination while missing how much emotional weight sits underneath them. When you feel unappreciated, the pain is rarely only about recognition. It is also about wondering whether anyone understands what it costs you to keep showing up.
+              </p>
+            </Section>
+
+            <Section eyebrow="The cost" title="Improvement can become a moving finish line.">
+              <p style={{ margin: 0 }}>
+                Every solved problem reveals another possible upgrade. That makes your work ambitious, but it can also erase the feeling of arrival. When nothing is allowed to be complete, progress stops feeling real. The danger is not that you will fail to build enough. It is that you will build so much that you never pause long enough to recognize what already exists.
+              </p>
+            </Section>
+          </>
+        )}
+
+        <Section eyebrow="Clarity" title="Your next move is not expansion. It is selection.">
+          <p style={{ margin: "0 0 0.8rem" }}>
+            Choose one foundation that deserves your full protection. Finish it before volunteering for another mission. Let some problems remain visible without immediately making them yours.
+          </p>
+          <blockquote
+            style={{
+              margin: 0,
+              padding: "1rem 1.1rem",
+              borderLeft: "3px solid var(--sc-gold)",
+              background: "rgba(212,168,95,0.07)",
+              color: "var(--sc-ivory)",
+              fontSize: "1.05rem",
+              lineHeight: 1.55,
+            }}
+          >
+            Before saying yes, ask: “Is this mine to carry, or am I only carrying it because I can?”
+          </blockquote>
+        </Section>
+
+        {mode === "technical" && <EvidencePanel />}
+
+        <footer
+          style={{
+            marginTop: "2rem",
+            paddingTop: "1.25rem",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            color: "var(--sc-stone)",
+            lineHeight: 1.6,
+            fontSize: "0.9rem",
+          }}
+        >
+          This reading is a reflective interpretation, not a fixed biography. Keep what creates clarity. Question what does not. Your lived experience remains the final authority.
+        </footer>
+      </article>
+
       <style>{`
         :root {
-          --sc-gold: #D4A85F;
-          --sc-ivory: #F5F5F0;
-          --sc-stone: #9E9E9E;
+          --sc-gold: #d4a85f;
+          --sc-ivory: #f5f2ea;
+          --sc-stone: #aaa2ad;
+        }
+        button:focus-visible {
+          outline: 2px solid var(--sc-gold);
+          outline-offset: 3px;
         }
       `}</style>
-    </div>
+    </main>
   );
 }
