@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: /offline-shell\.spec\.mjs/,
+  testMatch: /(offline-shell|project-clarity)\.spec\.mjs/,
   timeout: 120_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
