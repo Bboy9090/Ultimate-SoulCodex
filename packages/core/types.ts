@@ -90,3 +90,28 @@ export interface CompatibilityScore {
   friction: string[];
   synergy: string[];
 }
+
+// Soul Codex Reading Experience v1 types
+export type DisplayMode = "essential" | "complete" | "technical";
+
+export interface EvidencePoint {
+  source: string;
+  description: string;
+  value?: string;
+  verified?: boolean;
+  confidence?: number;
+}
+
+export interface ReadingElement {
+  headline: string;
+  mechanism: string;
+  protection: string;
+  howOthersSeeit: string;
+  gift: string;
+  cost: string;
+  action: string;
+  evidence: EvidencePoint[];
+  confidence: number;
+  verified: boolean;
+  visibleIn: DisplayMode[];
+}
