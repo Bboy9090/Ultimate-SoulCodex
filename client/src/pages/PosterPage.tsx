@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
 import BirthChartPosterSVG, { type PosterData } from "../components/BirthChartPosterSVG";
 import { loadActiveProfile } from "../lib/profileStorage";
+import { getVerifiedPlacement, placementDisplayStatus } from "../lib/placementVerification";
 
 const ZODIAC_SIGNS = [
   "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
@@ -79,8 +80,8 @@ function getProfile() {
 }
 
 const DEMO: PosterData = {
-  name: "", birthDate: "", sunSign: "Gemini", moonSign: "Pisces",
-  risingSign: "Sagittarius", lifePathNumber: 9, masterNumber: 11,
+  name: "", birthDate: "", sunSign: "", moonSign: "",
+  risingSign: undefined, lifePathNumber: 1, masterNumber: undefined,
 };
 
 export default function PosterPage() {
@@ -122,9 +123,9 @@ export default function PosterPage() {
         birthDate:       p.birthDate ?? p.dob ?? "",
         birthTime:       p.birthTime ?? p.time ?? "",
         birthLocation:   p.birthLocation ?? p.location ?? p.city ?? "",
-        sunSign:         astro.sun ?? p.sunSign ?? "Gemini",
-        moonSign:        astro.moon ?? p.moonSign ?? "Pisces",
-        risingSign:      astro.rising ?? p.risingSign ?? undefined,
+        sunSign:         getVerifiedPlacement(astro.sun)?.sign ?? "",
+        moonSign:        getVerifiedPlacement(astro.moon)?.sign ?? "",
+        risingSign:      getVerifiedPlacement(astro.rising)?.sign ?? undefined,
         lifePathNumber:  num.lifePathNumber ?? p.lifePathNumber ?? 9,
         masterNumber:    num.masterNumber ?? p.masterNumber ?? undefined,
         planets: astro.planets
@@ -154,15 +155,15 @@ export default function PosterPage() {
           .then(json => {
             if (!json.ok) return;
             const planets = Object.entries(json.planets ?? {})
-              .filter(([, v]: any) => typeof v?.longitude === "number")
+              .filter(([, v]: any) => getVerifiedPlacement(v) && typeof v?.longitude === "number")
               .map(([name, v]: any) => ({ name, longitude: v.longitude }));
             setData(prev => ({
               ...prev,
               planets,
               houseCusps: json.houses?.cusps ?? [],
-              ...(json.sun    ? { sunSign:    json.sun    } : {}),
-              ...(json.moon   ? { moonSign:   json.moon   } : {}),
-              ...(json.rising ? { risingSign: json.rising } : {}),
+              ...(getVerifiedPlacement(json.sun) ? { sunSign: getVerifiedPlacement(json.sun)!.sign } : { sunSign: "" }),
+              ...(getVerifiedPlacement(json.moon) ? { moonSign: getVerifiedPlacement(json.moon)!.sign } : { moonSign: "" }),
+              ...(getVerifiedPlacement(json.rising) ? { risingSign: getVerifiedPlacement(json.rising)!.sign } : { risingSign: undefined }),
             }));
             setProfileAstro(json);
           })
@@ -193,9 +194,13 @@ export default function PosterPage() {
         .map(([name, v]: any) => ({ name, longitude: v.longitude }));
       update("planets", planets);
       update("houseCusps", json.houses?.cusps ?? []);
-      if (json.sun)    update("sunSign", json.sun);
-      if (json.moon)   update("moonSign", json.moon);
-      if (json.rising) update("risingSign", json.rising);
+      const verifiedSun = getVerifiedPlacement(json.sun);
+      const verifiedMoon = getVerifiedPlacement(json.moon);
+      const verifiedRising = getVerifiedPlacement(json.rising);
+      update("sunSign", verifiedSun?.sign ?? "");
+      update("moonSign", verifiedMoon?.sign ?? "");
+      update("risingSign", verifiedRising?.sign);
+      if (!verifiedSun || !verifiedMoon || !verifiedRising) { setComputeError(`Astrology remains unresolved: Sun ${placementDisplayStatus(json.sun)}, Moon ${placementDisplayStatus(json.moon)}, Ascendant ${placementDisplayStatus(json.rising)}.`); }
       setProfileAstro(json);
     } catch (err: any) { setComputeError(err?.message ?? "Network error."); }
     finally { setComputing(false); }
