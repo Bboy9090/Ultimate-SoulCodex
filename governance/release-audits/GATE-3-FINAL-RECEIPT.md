@@ -2,16 +2,14 @@
 
 Date: 2026-08-02
 Repository: `Bboy9090/Ultimate-SoulCodex`
-Audit basis: `main` after merged PR #138
-Merge commit: `971940cee85d35ca9ddeaa985033df5d1dcb969e`
+Audit basis: `main` after merged PRs #138 and #140
+Latest remediation merge: `2682a0cfce0c2ccb68b0a4155957e2f399dc0817`
 
 ## Decision
 
-**Gate 3 remains FAILED.**
+**Gate 3 remediation is complete for every confirmed critical blocker. Final Gate 3 sign-off remains pending one last repository-wide classification pass.**
 
-PR #138 successfully removed the three originally documented silent-upgrade paths, but the post-merge repository-wide re-audit found additional AI ingress paths that still send unverified legacy astrology strings into interpretation prompts.
-
-This receipt intentionally refuses to convert partial remediation into a passing release gate.
+This status is deliberately narrower than `PASS`. The original backend, Onboarding, Poster/export, AI-ingress, and deterministic-fallback violations are now corrected and protected by tests. The remaining work is to classify other legacy sign consumers across the repository and confirm that none can bypass the evidence boundary.
 
 ## Completed remediation
 
@@ -20,7 +18,7 @@ This receipt intentionally refuses to convert partial remediation into a passing
 `server/services/astrology.ts` now:
 
 - returns `sign: null` when no verified ephemeris result exists;
-- uses explicit states such as `pending_ephemeris`, `requires_verified_birth_time`, and `requires_location`;
+- uses explicit unresolved states;
 - returns no fabricated planets, houses, aspects, nodes, or Chiron data;
 - carries missing-data reasons instead of silently producing approximations.
 
@@ -30,19 +28,47 @@ This receipt intentionally refuses to convert partial remediation into a passing
 
 - removes the date-boundary Sun-sign shortcut;
 - does not prefetch compatibility or horoscope content from an approximate sign;
-- requires `getVerifiedPlacement(...)` before sending a Sun placement into downstream warmups;
-- records `complete_unresolved` when no verified placement is available.
+- requires verified placement evidence before downstream warmups;
+- records an unresolved completion state when verification is unavailable.
 
 ### Poster and export surface
 
 `client/src/pages/PosterPage.tsx` now:
 
-- removes hardcoded Gemini, Pisces, and Sagittarius defaults;
+- removes fabricated sign defaults;
 - loads only placements that pass the centralized verification gate;
-- clears unresolved placements instead of exporting fabricated values;
+- clears unresolved placements instead of exporting guesses;
 - surfaces unresolved status to the user.
 
-### CI evidence
+### AI ingress and deterministic fallbacks
+
+Merged PR #140 added a shared server-side verification boundary and corrected:
+
+- `routes/chat.ts`;
+- `routes/ai-respond.ts`;
+- `server/services/openai-service.ts`.
+
+These paths now:
+
+- reject naked legacy `sunSign`, `moonSign`, and `risingSign` strings;
+- require verified status plus source, engine, and calculation timestamp;
+- derive birth-time-sensitive behavior only from evidence-cleared Ascendant data;
+- omit unresolved placements from AI prompts;
+- prevent deterministic fallback copy from turning unverified signs into identity claims;
+- emit explicit unresolved-placement refusal language.
+
+### Regression protection
+
+Adversarial tests now cover:
+
+- populated legacy sign strings without verification evidence;
+- pending placements that look plausible;
+- false `verified` labels without provenance;
+- evidence-complete verified placements;
+- unresolved placement messaging;
+- deterministic fallback refusal behavior.
+
+## CI evidence
 
 PR #138 passed:
 
@@ -51,87 +77,46 @@ PR #138 passed:
 - Railway Container Smoke;
 - Chromium and WebKit PWA Offline Browser Validation.
 
-## Post-merge re-audit findings
+PR #140 passed:
 
-### Critical blocker 1: Soul Guide database-profile path
+- CI Tests;
+- Ultimate SoulCodex CI;
+- Railway Container Smoke.
 
-File: `routes/chat.ts`
-
-The route passes legacy database fields directly into `runSoulCodexEngine(...)`:
-
-- `profile.sunSign`
-- `profile.moonSign`
-- `profile.risingSign`
-
-No placement verification status, source, engine, or calculation timestamp is checked before interpretation.
-
-The same file also constructs profile-context prompts from raw `sunSign`, `moonSign`, and `risingSign` values. A caller can therefore supply a sign string and receive interpretation even when the value is unresolved or unverified.
-
-**Severity: Critical**
-
-### Critical blocker 2: Shared AI response gateway
-
-File: `routes/ai-respond.ts`
-
-The gateway creates prompt facts from:
-
-- `astrologyData.sunSign || profile.sunSign`
-- `astrologyData.moonSign || profile.moonSign`
-- `astrologyData.risingSign || profile.risingSign`
-
-It substitutes `"Unknown"` for missing signs, but it does not require verified evidence before interpreting populated values. It also infers `birthTimeKnown` from the presence of a Rising string rather than verified birth-time and calculation evidence.
-
-The daily horoscope and biography prompt variants explicitly request Sun and Moon references even when the input states are not independently verified.
-
-**Severity: Critical**
-
-### Critical blocker 3: Biography and daily-guidance service
-
-File: `server/services/openai-service.ts`
-
-The service directly inserts legacy `sunSign`, `moonSign`, and `risingSign` strings into AI prompts and deterministic fallback text. The fallback biography and fallback guidance can turn any supplied sign string into confident user-facing identity language without provenance.
-
-**Severity: Critical**
-
-## Search observations
-
-The repository search index still referenced the pre-merge `69acb07...` snapshot during part of this audit. Therefore, search results were treated as discovery hints only. Final blocker confirmation came from direct reads of the current `main` files after merge commit `971940c...`.
-
-Additional legacy sign consumers exist across compatibility, horoscope, profile, prompt, and fallback modules. Their presence is not automatically a violation, because some are type definitions, deterministic lookup tables, tests, or display-only consumers. They require classification in the next audit pass rather than blanket deletion.
-
-## Gate 3 pass conditions still unmet
-
-Gate 3 cannot pass until:
-
-1. all AI ingress paths accept evidence-aware placement objects rather than naked sign strings;
-2. raw legacy fields are either migrated to `legacy_unverified` or rejected from interpretation;
-3. `birthTimeKnown` is derived from validated birth data, not the presence of a Rising value;
-4. deterministic fallbacks refuse to interpret unresolved astrology;
-5. adversarial tests prove that a correct-looking sign with a pending status cannot reach AI or fallback interpretation;
-6. the follow-up repository-wide audit reports zero critical silent-upgrade paths.
-
-## Required follow-up work order
-
-Create one focused trust PR covering:
-
-- `routes/chat.ts`;
-- `routes/ai-respond.ts`;
-- `server/services/openai-service.ts`;
-- shared server-side placement filtering;
-- adversarial AI-ingress regression tests.
-
-## Final classification
+## Confirmed blocker status
 
 ```text
-Original backend approximation blocker       RESOLVED
-Original Onboarding promotion blocker         RESOLVED
-Original Poster/export fallback blocker       RESOLVED
-AI ingress trust boundary                      FAILED
-Deterministic fallback trust boundary          FAILED
-Repository-wide zero-critical result           NOT ACHIEVED
-
-GATE 3                                      FAILED
-FOUNDATION RELEASE                          BLOCKED
+Backend approximate astrology                  RESOLVED
+Onboarding approximate Sun promotion           RESOLVED
+Poster/export fabricated signs                 RESOLVED
+Soul Guide AI ingress                          RESOLVED
+Shared AI response gateway                     RESOLVED
+Biography/daily-guidance AI ingress             RESOLVED
+Deterministic fallback astrology promotion      RESOLVED
+Adversarial regression protection               IMPLEMENTED
 ```
 
-The system is safer than before PR #138, but it is not yet entitled to claim a complete trust boundary. A partial lock is still an unlocked door with better branding.
+## Remaining sign-off requirement
+
+Before Gate 3 is marked `PASS`, perform one final repository-wide classification of remaining legacy sign consumers. Each occurrence must be labeled as one of:
+
+1. verified calculation output;
+2. evidence-aware presentation;
+3. deterministic lookup table or symbolic content;
+4. test or documentation fixture;
+5. unsafe interpretation ingress.
+
+Gate 3 passes only if category 5 contains zero critical findings.
+
+## Current classification
+
+```text
+CONFIRMED CRITICAL BLOCKERS                    0
+CONFIRMED REMEDIATIONS                         COMPLETE
+FINAL REPOSITORY-WIDE CLASSIFICATION           PENDING
+
+GATE 3                                         PENDING FINAL AUDIT
+FOUNDATION RELEASE                             BLOCKED BY FINAL AUDIT RECEIPT
+```
+
+The implementation is corrected. The receipt will not claim victory until the last audit proves there is no forgotten side door, because software loves side doors almost as much as humans love declaring things finished five minutes early.
