@@ -6,7 +6,7 @@ import { loadActiveProfile } from "../lib/ActiveProfileRepository";
 
 function profileHref() {
   const result = loadActiveProfile();
-  const id = result.profile?.id ?? result.profile?.uuid;
+  const id = result.profile?.id;
   return id ? `/profile/${id}` : "/create";
 }
 
