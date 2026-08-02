@@ -1,4 +1,7 @@
+export type VerifiableBody = "Sun" | "Moon";
+
 export interface EphemerisCandidate {
+  body: VerifiableBody;
   sign: string;
   longitude: number;
   source: string;
@@ -8,7 +11,7 @@ export interface EphemerisCandidate {
 }
 
 export interface IndependentEphemerisReference {
-  body: "Sun" | "Moon";
+  body: VerifiableBody;
   sign: string;
   longitude: number;
   source: string;
@@ -27,6 +30,7 @@ export interface VerificationPolicy {
 export type IndependentVerificationResult =
   | {
       status: "verified";
+      body: VerifiableBody;
       sign: string;
       longitudeDeltaDegrees: number;
       candidate: EphemerisCandidate;
@@ -40,7 +44,9 @@ export type IndependentVerificationResult =
       reason:
         | "policy_not_approved"
         | "invalid_policy_tolerance"
+        | "body_mismatch"
         | "same_engine_not_independent"
+        | "same_source_not_independent"
         | "timestamp_mismatch"
         | "sign_disagreement"
         | "longitude_outside_tolerance"
@@ -59,6 +65,10 @@ function isValidLongitude(value: number): boolean {
 function circularLongitudeDelta(left: number, right: number): number {
   const raw = Math.abs(normalizeLongitude(left) - normalizeLongitude(right));
   return Math.min(raw, 360 - raw);
+}
+
+function normalizedIdentity(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 export function verifyAgainstIndependentReference(
@@ -80,8 +90,16 @@ export function verifyAgainstIndependentReference(
     return { status: "rejected", sign: null, reason: "invalid_longitude", longitudeDeltaDegrees: null };
   }
 
-  if (candidate.engine.trim().toLowerCase() === reference.engine.trim().toLowerCase()) {
+  if (candidate.body !== reference.body) {
+    return { status: "rejected", sign: null, reason: "body_mismatch", longitudeDeltaDegrees: null };
+  }
+
+  if (normalizedIdentity(candidate.engine) === normalizedIdentity(reference.engine)) {
     return { status: "rejected", sign: null, reason: "same_engine_not_independent", longitudeDeltaDegrees: null };
+  }
+
+  if (normalizedIdentity(candidate.source) === normalizedIdentity(reference.source)) {
+    return { status: "rejected", sign: null, reason: "same_source_not_independent", longitudeDeltaDegrees: null };
   }
 
   if (candidate.inputTimestamp !== reference.inputTimestamp) {
@@ -100,6 +118,7 @@ export function verifyAgainstIndependentReference(
 
   return {
     status: "verified",
+    body: candidate.body,
     sign: candidate.sign,
     longitudeDeltaDegrees,
     candidate,
