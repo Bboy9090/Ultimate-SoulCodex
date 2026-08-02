@@ -1,69 +1,83 @@
-const STORAGE_KEY = "soulcodex.activeProfile.v1";
+import {
+  clearActiveProfile as clearCanonicalProfile,
+  loadActiveProfile as loadCanonicalProfile,
+  saveActiveProfile as saveCanonicalProfile,
+  type StoredProfile,
+} from "./ActiveProfileRepository";
 
-export interface StoredProfile {
-  birthDate?: string;
-  birthTime?: string;
-  birthLocation?: string;
-  sunSign?: string;
-  moonSign?: string;
-  risingSign?: string;
-  lifePathNumber?: number;
-  astrologyData?: any;
-  numerologyData?: any;
-  humanDesignData?: any;
-  synthesis?: any;
-  codename?: string;
-  archetype?: string;
+export type { StoredProfile } from "./ActiveProfileRepository";
+
+interface EvidenceLike {
+  source?: string | null;
+  engine?: string | null;
+  calculatedAt?: string | null;
 }
 
+interface PlacementLike {
+  verificationStatus?: string | null;
+  status?: string | null;
+  evidence?: EvidenceLike | null;
+  provenance?: EvidenceLike | null;
+}
+
+function isEvidenceComplete(value: PlacementLike | null | undefined): boolean {
+  const state = value?.verificationStatus ?? value?.status;
+  const evidence = value?.provenance ?? value?.evidence;
+  return state === "verified" && Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt);
+}
+
+function placement(profile: StoredProfile, key: "sun" | "moon" | "rising"): PlacementLike | undefined {
+  return (
+    profile?.astrologyData?.[key] ??
+    (profile as any)?.astrology?.[key] ??
+    (profile as any)?.natalChart?.[key] ??
+    (profile as any)?.chart?.[key]
+  );
+}
+
+/**
+ * Compatibility wrapper for older callers.
+ *
+ * The canonical repository owns migration, schema validation, timestamps,
+ * recovery status, and read-after-write verification. This wrapper exists only
+ * to keep older pages compiling while they migrate to the richer result API.
+ */
 export function loadActiveProfile(): StoredProfile | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw || raw === "undefined" || raw === "null") return null;
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch {
-    return null;
-  }
+  return loadCanonicalProfile().profile;
 }
 
-export function saveActiveProfile(profilePayload: any): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profilePayload));
-  } catch (e) {
-    console.warn("[profileStorage] Failed to save profile:", e);
+export function saveActiveProfile(profilePayload: StoredProfile): void {
+  const result = saveCanonicalProfile(profilePayload);
+  if (!result.success) {
+    console.warn("[profileStorage] Canonical profile save failed:", result.error);
   }
 }
 
 export function clearActiveProfile(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (e) {
-    console.warn("[profileStorage] Failed to clear profile:", e);
-  }
+  clearCanonicalProfile();
 }
 
+/**
+ * Confidence describes verified calculation evidence, not merely completed
+ * form fields. Birth time and location improve calculation capability, but
+ * their presence alone cannot promote a profile to verified.
+ */
 export function deriveConfidenceState(
-  profile: StoredProfile
+  profile: StoredProfile | null
 ): "verified" | "partial" | "unverified" {
-  if (!profile) return "unverified";
+  if (!profile?.birthDate) return "unverified";
 
-  // Verified: birthDate + birthTime + birthLocation present
-  if (profile.birthDate && profile.birthTime && profile.birthLocation) {
-    return "verified";
-  }
+  const explicit = (profile as any)?.confidence?.verificationStatus ?? (profile as any)?.confidence?.status;
+  if (explicit === "verified") return "verified";
 
-  // Partial: birthDate present but missing time or location
-  if (profile.birthDate) {
-    return "partial";
-  }
+  const verifiedPlacements = ["sun", "moon", "rising"].filter((key) =>
+    isEvidenceComplete(placement(profile, key as "sun" | "moon" | "rising"))
+  );
 
-  // Unverified: no birth data
-  return "unverified";
+  if (verifiedPlacements.length === 3) return "verified";
+  return "partial";
 }
 
 export function isProfileComplete(profile: StoredProfile | null): boolean {
-  if (!profile) return false;
-  // Profile is complete if it has a birth date (minimum requirement for onboarding)
-  return !!profile.birthDate;
+  return Boolean(profile?.birthDate);
 }
