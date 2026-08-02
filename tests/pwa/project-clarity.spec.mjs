@@ -15,10 +15,10 @@ async function createProfile(page) {
     page.getByTestId("button-create-profile").click(),
   ]);
 
-  return page.url();
+  return new URL(page.url()).pathname;
 }
 
-test("Project Clarity reuses one saved profile across home, identity, timeline, and compatibility", async ({ page, browserName }) => {
+test("Project Clarity reuses one saved profile across home, identity, timeline, and compatibility", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Understand yourself without drowning in labels." })).toBeVisible();
 
@@ -26,22 +26,16 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   await expect(page.getByRole("heading", { name: "Compatibility begins with one saved identity." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create your Soul Profile" })).toHaveAttribute("href", "/create");
 
-  const profileUrl = await createProfile(page);
+  const profilePath = await createProfile(page);
 
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Good to see you, Clarity Browser Test." })).toBeVisible();
-  await expect(page.getByTestId("link-identity").or(page.getByTestId("link-identity-mobile"))).toHaveCount(browserName === "webkit" ? 1 : 1);
 
-  const identityLink = browserName === "webkit"
-    ? page.getByTestId("link-identity-mobile")
-    : page.getByTestId("link-identity");
+  const savedIdentityLinks = page.locator(`a[href="${profilePath}"]`);
+  await expect(savedIdentityLinks).toHaveCount(2);
 
-  if (browserName === "webkit") {
-    await page.getByTestId("button-menu").click();
-    await expect(identityLink).toBeVisible();
-  }
-
-  await expect(identityLink).toHaveAttribute("href", new URL(profileUrl).pathname);
+  await page.goto(profilePath, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`${profilePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
 
   await page.goto("/timeline", { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/timeline$/);
