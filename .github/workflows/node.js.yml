@@ -36,5 +36,8 @@ jobs:
       - name: Run workspace tests
         run: npm test
 
+      - name: Run astrology candidate trust tests
+        run: node --import tsx --test tests/astrology-candidate.test.ts
+
       - name: Build project
         run: npm run build
