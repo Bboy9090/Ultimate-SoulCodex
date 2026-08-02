@@ -9,6 +9,8 @@
 
 The core local-first product now behaves as one integrated system across the saved reading, Timeline, and Compatibility. The runtime synthesis contract is enforced, profile storage is canonical, uncertainty cannot be promoted by presentation code, and the complete saved-profile journey is browser-validated across Chromium and WebKit.
 
+Chromium additionally validates the persistent offline restart path. WebKit validates persistent restart and service-worker control under the current Playwright Linux environment; it does not constitute a native iOS offline-device receipt.
+
 Foundation backend status is **integrated and browser-validated**, but not yet a public release candidate. Mobile packaging, final security/dependency review, and production calculation-engine verification remain separate gates.
 
 ## Evidence chain
@@ -87,8 +89,8 @@ Create profile
 
 Validated in:
 
-- Chromium desktop
-- WebKit iPhone profile
+- Chromium desktop: full lifecycle plus offline persistent restart
+- WebKit iPhone profile: full lifecycle, persistent restart, and service-worker control
 
 Assertions include:
 
@@ -99,30 +101,31 @@ Assertions include:
 - no redirect back to onboarding
 - no 404 route accepted
 - service-worker registration and control retained
-- offline route restoration supported
+- Chromium offline route restoration supported
 
 Classification:
 
 - Implemented: yes
 - Integrated: yes
-- Browser-validated: yes
-- Offline-validated: yes
+- Browser-validated: Chromium and WebKit
+- Offline-validated: Chromium browser environment
+- Native-device validated: no
 
 ## System classification
 
 | System | Classification | Current truth |
 |---|---|---|
-| Active Profile | Integrated, browser-validated | One canonical local identity survives refresh, restart, and offline use. |
+| Active Profile | Integrated, browser-validated | One canonical local identity survives refresh and persistent restart in Chromium and WebKit; Chromium also validates offline restart. |
 | Numerology | Implemented, regression-validated | Deterministic local calculations remain available. |
 | Reading Synthesis | Integrated, runtime-enforced | Diamond structure and clarity checks are enforced before delivery. |
 | Compatibility | Integrated, browser-validated | Reuses the saved profile and excludes unresolved evidence. |
 | Timeline | Integrated, browser-validated | Reuses the saved profile and survives lifecycle transitions. |
 | Persistence | Browser-validated | Canonical profile survives refresh and persistent browser restart. |
-| Offline/PWA | Browser-validated | Chromium and WebKit journeys pass supported offline behavior. |
+| Offline/PWA | Chromium browser-validated | Chromium passes the offline persistent journey; WebKit confirms persistence and service-worker control, not native iOS offline behavior. |
 | Uncertainty Handling | Integrated, regression-protected | Presentation cannot promote unresolved data. |
 | Astrology Engine | Partial | Trust boundary is established; production-grade independent ephemeris verification is not yet declared complete. |
 | Human Design Engine | Partial | Unverified values remain excluded; complete verified calculation lane is not declared complete. |
-| Native iOS Packaging | Blocked/separate lane | App Store archive and signing evidence remain outside this receipt. |
+| Native iOS Packaging | Blocked/separate lane | App Store archive, signing, installation, and native offline evidence remain outside this receipt. |
 | Android Packaging | Pending | Device/package receipt not included here. |
 
 ## Release blockers
@@ -131,7 +134,7 @@ Foundation must not be called a public release candidate until the following are
 
 1. Production-grade astrology verification receipt for every placement allowed into interpretation.
 2. Verified Human Design calculation receipt, or explicit Foundation exclusion.
-3. Native iOS archive/export/install receipt.
+3. Native iOS archive/export/install/offline receipt.
 4. Android package/install/offline receipt.
 5. Dependency and security audit disposition for production dependencies.
 6. Final release documentation, versioning, support, privacy, and store metadata.
@@ -151,7 +154,9 @@ Reading runtime contract:     PASS
 Compatibility reuse:          PASS
 Timeline lifecycle:           PASS
 Persistence lifecycle:        PASS
-Supported offline journey:    PASS
+Chromium offline journey:     PASS
+WebKit persistence/SW:        PASS
+Native mobile offline:        PENDING
 Uncertainty boundary:         PASS
 Astronomy verification:       PENDING
 Human Design verification:    PENDING OR EXCLUDE
