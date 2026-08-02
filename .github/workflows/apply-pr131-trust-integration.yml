@@ -1,0 +1,204 @@
+name: Apply PR131 Trust Integration
+
+on:
+  push:
+    branches:
+      - feat/soul-codex-reading-experience-v1
+    paths:
+      - .github/workflows/apply-pr131-trust-integration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/soul-codex-reading-experience-v1
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Apply trust-boundary integration
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('client/src/pages/CodexReadingPage.tsx')
+          text = path.read_text()
+
+          import_line = 'import { loadActiveProfile } from "../lib/profileStorage";'
+          replacement_import = import_line + '\nimport { getVerifiedPlacement, placementDisplayStatus } from "../lib/placementVerification";'
+          if 'getVerifiedPlacement' not in text:
+              text = text.replace(import_line, replacement_import)
+
+          new_function = r'''function buildReadingElements(profile: any): Record<string, ReadingElementType> {
+  if (!profile?.chart) return {};
+
+  const chart = profile.chart;
+  const readings: Record<string, ReadingElementType> = {};
+
+  const addPlacementReading = (
+    key: "sunSign" | "moonSign" | "risingSign",
+    placement: any,
+    visibleIn: DisplayMode[],
+    copy: (sign: string) => Omit<ReadingElementType, "evidence" | "confidence" | "verified" | "visibleIn">
+  ) => {
+    const verifiedPlacement = getVerifiedPlacement(placement);
+    if (!verifiedPlacement) return;
+
+    const { sign, degree, evidence } = verifiedPlacement;
+    const confidence = typeof evidence.confidence === "number" ? evidence.confidence : undefined;
+    const description = `${key === "risingSign" ? "Ascendant" : key === "moonSign" ? "Moon" : "Sun"}${typeof degree === "number" ? ` at ${degree}°` : ""} ${sign}`;
+
+    readings[key] = {
+      ...copy(sign),
+      evidence: [{
+        source: evidence.source ?? "verified calculation",
+        description,
+        value: typeof degree === "number" ? `${degree}°` : sign,
+        verified: true,
+      }],
+      ...(typeof confidence === "number" ? { confidence } : {}),
+      verified: true,
+      visibleIn,
+    };
+  };
+
+  addPlacementReading("sunSign", chart.sun, ["essential", "complete", "technical"], (sign) => ({
+    headline: `You see patterns others miss—your ${sign} Sun drives constant analysis.`,
+    mechanism: `${sign} Sun creates a drive to understand systems. Your mind automatically scans for structure, logic, and improvement. When you spot inefficiency, your impulse is to fix it.`,
+    protection: "You may protect against chaos by making yourself indispensable through expertise and attention to detail.",
+    howOthersSeeit: "People experience you as unusually capable and perceptive. They may not see the cost of constant vigilance you carry.",
+    gift: "Your ability to see what needs fixing makes you valuable in roles requiring systems thinking, quality assurance, or deep analysis.",
+    cost: "Constant analysis can exhaust you. The gap between how things are and how they should be can become paralyzing.",
+    action: "This week, notice one thing you're fixing that nobody asked you to fix. Ask whether it would actually break without your intervention.",
+  }));
+
+  addPlacementReading("moonSign", chart.moon, ["complete", "technical"], (sign) => ({
+    headline: `Your verified ${sign} Moon describes how you process emotional experience.`,
+    mechanism: `${sign} Moon symbolism is used here only because the placement carries verified calculation evidence.`,
+    protection: "Notice what you do to create emotional safety before you decide what the pattern means.",
+    howOthersSeeit: "Other people may see the outward response without seeing the internal processing behind it.",
+    gift: "Verified lunar symbolism can offer a useful language for emotional rhythm and regulation.",
+    cost: "Treating symbolism as destiny can narrow self-understanding, so lived experience remains the final authority.",
+    action: "Track one emotional reaction this week and compare the symbolism with what actually happened.",
+  }));
+
+  addPlacementReading("risingSign", chart.rising, ["complete", "technical"], (sign) => ({
+    headline: `Your verified ${sign} Ascendant describes the style of your first impression.`,
+    mechanism: `${sign} Rising symbolism is used here only because the placement carries verified calculation evidence.`,
+    protection: "First-impression behavior can function as a boundary while trust develops.",
+    howOthersSeeit: "People may initially respond to the presentation layer before they understand the person underneath it.",
+    gift: "Verified Ascendant symbolism can clarify how presence, pacing, and social approach are experienced.",
+    cost: "A first-impression pattern can become a mask if it is treated as the whole identity.",
+    action: "Notice where your first impression differs from how trusted people experience you over time.",
+  }));
+
+  if (profile.numerology?.lifePath !== undefined) {
+    const lifePath = profile.numerology.lifePath;
+    readings.lifePath = {
+      headline: `Your Life Path ${lifePath} points toward ${lifePath === 9 ? "completion and synthesis" : "your characteristic contribution"}.`,
+      mechanism: `Life Path ${lifePath} is calculated deterministically from your birth date.`,
+      protection: "A larger mission can sometimes distract from smaller personal needs.",
+      howOthersSeeit: "People may expect perspective or direction from you even when you are still finding your own footing.",
+      gift: "Numerology can provide a structured reflection prompt for recurring priorities and choices.",
+      cost: "Symbolic frameworks become limiting when they are treated as fixed biography.",
+      action: "Choose one personal project and define the smallest finishable next step.",
+      evidence: [{
+        source: "deterministic numerology calculation",
+        description: `Life Path calculated from birth date ${profile.birthDate}`,
+        value: `${lifePath}`,
+        verified: true,
+      }],
+      confidence: 100,
+      verified: true,
+      visibleIn: ["essential", "complete", "technical"],
+    };
+  }
+
+  return readings;
+}
+'''
+
+          pattern = re.compile(r'function buildReadingElements\(profile: any\): Record<string, ReadingElementType> \{.*?\n\}\n\nexport default function', re.S)
+          if not pattern.search(text):
+              raise SystemExit('buildReadingElements block not found')
+          text = pattern.sub(new_function + '\nexport default function', text, count=1)
+
+          # Replace null-only unresolved checks with verification-aware checks.
+          text = text.replace(
+              'const readingElements = buildReadingElements(profile);',
+              'const readingElements = buildReadingElements(profile);\n  const moonVerified = getVerifiedPlacement(profile?.chart?.moon);\n  const risingVerified = getVerifiedPlacement(profile?.chart?.rising);\n  const moonStatus = placementDisplayStatus(profile?.chart?.moon);\n  const risingStatus = placementDisplayStatus(profile?.chart?.rising);'
+          )
+          text = text.replace(
+              'elementsForMode.length > 0 || (profile?.chart?.moon === null || profile?.chart?.rising === null)',
+              'elementsForMode.length > 0 || !moonVerified || !risingVerified'
+          )
+          text = text.replace('profile?.chart?.moon?.sign === null', '!moonVerified')
+          text = text.replace('profile?.chart?.rising?.sign === null', '!risingVerified')
+          text = text.replace(
+              'Pending independent verification. Moon position requires accurate birth time and comparison with a second ephemeris source.\n                      {!profile.birthTime && " Complete your birth time to enable calculation."}',
+              '{moonStatus}. Interpretation remains paused until verified calculation evidence is available.'
+          )
+          text = text.replace(
+              'Unresolved. Ascendant calculation requires Local Sidereal Time + house system implementation + independent verification.\n                      {!profile.birthTime && " Exact birth time is required but not sufficient."}',
+              '{risingStatus}. Interpretation remains paused until verified calculation evidence is available.'
+          )
+
+          path.write_text(text)
+
+          test_path = Path('client/src/lib/__tests__/codexReadingTrustBoundary.test.ts')
+          test_path.write_text(r'''import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+
+const source = fs.readFileSync(path.resolve("client/src/pages/CodexReadingPage.tsx"), "utf8");
+
+describe("CodexReadingPage trust boundary", () => {
+  it("routes astrology placements through getVerifiedPlacement", () => {
+    expect(source).toContain("getVerifiedPlacement(placement)");
+    expect(source).toContain("getVerifiedPlacement(profile?.chart?.moon)");
+    expect(source).toContain("getVerifiedPlacement(profile?.chart?.rising)");
+  });
+
+  it("does not infer Moon or Rising verification from birth time", () => {
+    expect(source).not.toContain("verified: profile.birthTime ? true : false");
+    expect(source).not.toContain("if (chart.rising?.sign && profile.birthTime)");
+  });
+
+  it("does not invent astrology confidence values in the page", () => {
+    expect(source).not.toContain("confidence: 98");
+    expect(source).not.toContain("confidence: 97");
+    expect(source).not.toContain("confidence: profile.birthTime ? 95 : 60");
+  });
+});
+''')
+
+          workflow = Path('.github/workflows/apply-pr131-trust-integration.yml')
+          if workflow.exists():
+              workflow.unlink()
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run trust tests and type checks
+        run: |
+          npm test -- --run client/src/lib/__tests__/placementVerification.test.ts client/src/lib/__tests__/codexReadingTrustBoundary.test.ts
+          npm run check
+
+      - name: Commit integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/src/pages/CodexReadingPage.tsx client/src/lib/__tests__/codexReadingTrustBoundary.test.ts .github/workflows/apply-pr131-trust-integration.yml
+          git commit -m "fix(reading): enforce placement verification before interpretation"
+          git push origin HEAD:feat/soul-codex-reading-experience-v1
