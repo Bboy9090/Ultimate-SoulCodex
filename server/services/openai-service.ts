@@ -1,4 +1,5 @@
 import { generateText, isGeminiAvailable } from "../../gemini";
+import { extractVerifiedAstrology } from "../lib/verified-astrology";
 
 interface BiographyRequest {
   name: string;
@@ -9,33 +10,43 @@ interface BiographyRequest {
   archetype: any;
 }
 
-export async function generateBiography(data: BiographyRequest): Promise<string> {
-  if (!isGeminiAvailable()) {
-    return generateFallbackBiography(data);
+function verifiedAstrologyFor(data: BiographyRequest) {
+  return extractVerifiedAstrology({ astrologyData: data.astrologyData });
+}
+
+function astrologyPromptLines(data: BiographyRequest): string[] {
+  const astrology = verifiedAstrologyFor(data);
+  const lines: string[] = [];
+  if (astrology.sun) lines.push(`- Sun: ${astrology.sun}`);
+  if (astrology.moon) lines.push(`- Moon: ${astrology.moon}`);
+  if (astrology.rising) lines.push(`- Rising: ${astrology.rising}`);
+  if (astrology.unresolved.length) {
+    lines.push(`- Unresolved astrology: ${astrology.unresolved.join(", ")}. Do not infer or interpret these placements.`);
   }
+  return lines;
+}
+
+export async function generateBiography(data: BiographyRequest): Promise<string> {
+  if (!isGeminiAvailable()) return generateFallbackBiography(data);
 
   try {
-    const prompt = `You are an expert mystical biographer. Create a compelling 2-3 paragraph first-person biographical narrative for ${data.name}.
+    const prompt = `You are an expert behavioral biographer. Create a compelling 2-3 paragraph first-person narrative for ${data.name}.
 
 Profile Summary:
 - Archetype: ${data.archetypeTitle}
-- Sun Sign: ${data.astrologyData?.sunSign || 'Unknown'}
-- Moon Sign: ${data.astrologyData?.moonSign || 'Unknown'}
-- Rising Sign: ${data.astrologyData?.risingSign || 'Unknown'}
-- Life Path Number: ${data.numerologyData?.lifePath || 'Unknown'}
-- Enneagram Type: ${data.personalityData?.enneagram?.type || 'Unknown'}
-- MBTI Type: ${data.personalityData?.mbti?.type || 'Unknown'}
+${astrologyPromptLines(data).join("\n")}
+- Life Path Number: ${data.numerologyData?.lifePath || "Unresolved"}
+- Enneagram Type: ${data.personalityData?.enneagram?.type || "Unresolved"}
+- MBTI Type: ${data.personalityData?.mbti?.type || "Unresolved"}
 
 Core Themes from Analysis:
-${data.archetype?.themes?.join(', ') || 'Transformation, self-discovery, spiritual growth'}
+${data.archetype?.themes?.join(", ") || "No verified themes supplied"}
 
-Write in first person as if ${data.name} is introducing themselves. Focus on:
-1. Their core essence and spiritual nature
-2. How they transform challenges into wisdom
-3. Their unique gifts and life purpose
-4. Keep it mystical yet grounded and authentic
-
-Return only the biographical text, no additional formatting.`;
+Rules:
+1. Use only supplied profile facts.
+2. Do not invent or infer unresolved astrology, biography, motives, trauma, or confidence.
+3. Describe observable patterns and practical meaning.
+4. Return only the biographical text.`;
 
     const result = await generateText({ prompt, temperature: 0.8 });
     return result || generateFallbackBiography(data);
@@ -46,21 +57,17 @@ Return only the biographical text, no additional formatting.`;
 }
 
 export async function generateDailyGuidance(data: BiographyRequest): Promise<string> {
-  if (!isGeminiAvailable()) {
-    return generateFallbackGuidance(data);
-  }
+  if (!isGeminiAvailable()) return generateFallbackGuidance(data);
 
   try {
-    const prompt = `Create personalized daily guidance for ${data.name} based on their spiritual profile.
+    const prompt = `Create brief, actionable daily guidance for ${data.name}.
 
-Profile:
+Supported profile:
 - Archetype: ${data.archetypeTitle}
-- Sun/Moon/Rising: ${data.astrologyData?.sunSign}/${data.astrologyData?.moonSign}/${data.astrologyData?.risingSign}
-- Life Path: ${data.numerologyData?.lifePath}
+${astrologyPromptLines(data).join("\n")}
+- Life Path: ${data.numerologyData?.lifePath || "Unresolved"}
 
-Generate a brief, actionable daily insight (2-3 sentences) that aligns with their cosmic blueprint. Focus on practical spiritual guidance for today.
-
-Return only the guidance text.`;
+Use only supported data. Do not infer unresolved astrology. Return 2-3 grounded sentences.`;
 
     const result = await generateText({ prompt, temperature: 0.7 });
     return result || generateFallbackGuidance(data);
@@ -71,14 +78,22 @@ Return only the guidance text.`;
 }
 
 function generateFallbackBiography(data: BiographyRequest): string {
-  return `I am ${data.name}, a soul walking the path of the ${data.archetypeTitle}. With my ${data.astrologyData?.sunSign || 'cosmic'} Sun illuminating my core essence and my ${data.astrologyData?.moonSign || 'intuitive'} Moon guiding my emotional depths, I navigate life's journey with purpose and wonder.
+  const astrology = verifiedAstrologyFor(data);
+  const supported: string[] = [];
+  if (astrology.sun) supported.push(`${astrology.sun} Sun`);
+  if (astrology.moon) supported.push(`${astrology.moon} Moon`);
+  if (astrology.rising) supported.push(`${astrology.rising} Rising`);
+  if (data.numerologyData?.lifePath) supported.push(`Life Path ${data.numerologyData.lifePath}`);
 
-My Life Path ${data.numerologyData?.lifePath || 'number'} reveals the lessons I came here to learn and the gifts I have to share. Each day brings new opportunities for growth, transformation, and deeper self-understanding.
+  const evidenceSentence = supported.length
+    ? `The supported layers currently available are ${supported.join(", ")}.`
+    : "The symbolic layers needed for a personalized biography are still unresolved.";
 
-I embrace my unique cosmic blueprint, knowing that my journey is both deeply personal and universally connected to the greater tapestry of existence.`;
+  return `I am ${data.name}, and my current Soul Codex centers on the ${data.archetypeTitle}. ${evidenceSentence}\n\nThis reading stays with what has actually been supplied and verified. Unresolved astrology is intentionally omitted rather than turned into a polished guess.\n\nMy next useful step is to compare the supported pattern with my lived experience and keep only what creates clarity.`;
 }
 
 function generateFallbackGuidance(data: BiographyRequest): string {
-  const sunSign = data.astrologyData?.sunSign || 'your sign';
-  return `Today, dear ${data.name}, embrace the energy of ${sunSign} and let your inner ${data.archetypeTitle} guide you toward meaningful connections and insights.`;
+  const astrology = verifiedAstrologyFor(data);
+  const anchor = astrology.sun ? `your verified ${astrology.sun} Sun` : `your ${data.archetypeTitle} pattern`;
+  return `Today, use ${anchor} as a reflection point only where it matches your lived experience. Unresolved astrology remains paused, so focus on one grounded action you can verify through your own behavior.`;
 }
