@@ -9,7 +9,7 @@
     "build": "tsc --project tsconfig.json"
   },
   "dependencies": {
-    "drizzle-orm": "^0.39.1",
+    "drizzle-orm": "0.45.2",
     "drizzle-zod": "^0.7.0",
     "zod": "^3.24.1"
   }
