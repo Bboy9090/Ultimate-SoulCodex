@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   audit:
@@ -25,6 +25,12 @@ jobs:
 
       - name: Install locked dependencies
         run: npm ci
+
+      - name: Enforce production high-severity threshold
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Enforce full-tree high-severity threshold
+        run: npm audit --audit-level=high
 
       - name: Capture full npm audit evidence
         shell: bash
@@ -61,45 +67,3 @@ jobs:
           path: evidence/
           if-no-files-found: error
           retention-days: 90
-
-  remediate:
-    if: github.event_name == 'pull_request' && github.head_ref == 'security/dependency-remediation'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - name: Checkout remediation branch
-        uses: actions/checkout@v4
-        with:
-          ref: security/dependency-remediation
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Upgrade compatible security dependency set and refresh lockfile
-        run: |
-          npm install --save-exact drizzle-orm@0.45.2 sharp@0.35.3 vite@8.2.0 esbuild@0.28.1 @vitejs/plugin-react@latest drizzle-kit@0.31.10
-
-      - name: Verify audit thresholds
-        run: |
-          npm audit --omit=dev --audit-level=high
-          npm audit --audit-level=high
-
-      - name: Run typecheck and build
-        run: |
-          npm run check
-          npm run build
-
-      - name: Commit remediated manifest and lockfile
-        run: |
-          if git diff --quiet -- package.json package-lock.json; then
-            echo "No dependency changes to commit."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json
-          git commit -m "fix(security): upgrade vulnerable dependencies"
-          git push origin HEAD:security/dependency-remediation
