@@ -1,7 +1,22 @@
 import { Body, Ecliptic, GeoVector } from "astronomy-engine";
 import { fromZonedTime } from "date-fns-tz";
+import {
+  fetchHorizonsReference,
+  type SupportedHorizonsBody,
+} from "./jpl-horizons-reference";
+import {
+  verifyAgainstIndependentReference,
+  type EphemerisCandidate,
+  type IndependentEphemerisReference,
+  type VerificationPolicy,
+  type VerifiableBody,
+} from "./astrology-verification";
+import {
+  APPROVED_LONGITUDE_TOLERANCE_EVIDENCE,
+  getApprovedLongitudeTolerancePolicy,
+} from "./astrology-tolerance-policy";
 
-interface BirthData {
+export interface BirthData {
   birthDate: string;
   birthTime?: string;
   latitude?: number;
@@ -9,14 +24,14 @@ interface BirthData {
   timezone?: string;
 }
 
-type PlacementStatus =
+export type PlacementStatus =
   | "verified"
   | "calculated_pending_independent_verification"
   | "pending_ephemeris"
   | "requires_verified_birth_time"
   | "requires_location";
 
-interface PlacementCandidate {
+export interface PlacementCandidate {
   sign: string;
   longitude: number;
   source: string;
@@ -25,23 +40,45 @@ interface PlacementCandidate {
   inputTimestamp: string;
 }
 
-interface PlacementVerification {
+export interface PlacementProvenance {
+  source: string;
+  engine: string;
+  calculatedAt: string;
+  inputTimestamp: string;
+  candidateSource: string;
+  candidateEngine: string;
+  candidateCalculatedAt: string;
+  referenceSource: string;
+  referenceEngine: string;
+  referenceCalculatedAt: string;
+  policyId: string;
+  evidenceReceiptId: string;
+  evidenceArtifactId: string;
+  longitudeDeltaDegrees: number;
+}
+
+export interface PlacementVerification {
   sign: string | null;
   status: PlacementStatus;
   confidence: number | null;
   source: string | null;
   reason?: string;
   candidate?: PlacementCandidate;
+  provenance?: PlacementProvenance;
+  verificationFailure?: {
+    reason: string;
+    attemptedAt: string;
+  };
 }
 
-interface AstrologyData {
+export interface AstrologyData {
   sun: PlacementVerification;
   moon: PlacementVerification;
   rising: PlacementVerification;
   planets?: {
     sun?: { sign?: string; house?: number; degree?: number };
     moon?: { sign?: string; house?: number; degree?: number };
-    [key: string]: any;
+    [key: string]: unknown;
   };
   houses?: Array<{ sign?: string; degree?: number }>;
   aspects?: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
@@ -50,10 +87,24 @@ interface AstrologyData {
   chiron?: { sign?: string; house?: number; degree?: number };
   verification: {
     complete: boolean;
+    verifiedBodies: VerifiableBody[];
+    unresolvedBodies: string[];
     missingData: string[];
     suggestions: string;
+    policyId: string | null;
+    evidenceReceiptId: string | null;
     lastUpdated: string;
   };
+}
+
+export type IndependentReferenceFetcher = (
+  body: SupportedHorizonsBody,
+  inputTimestamp: string,
+) => Promise<IndependentEphemerisReference>;
+
+export interface VerifiedAstrologyOptions {
+  referenceFetcher?: IndependentReferenceFetcher;
+  policyForBody?: (body: VerifiableBody) => VerificationPolicy;
 }
 
 const ZODIAC_SIGNS = [
@@ -96,9 +147,8 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
     return Number.isNaN(zoned.getTime()) ? null : zoned;
   }
 
-  // Date-only Sun calculations remain useful at noon UTC because the Sun moves
-  // roughly one degree per day. Time-sensitive placements remain blocked unless
-  // an explicit timezone is present.
+  // Date-only Sun candidates remain useful for evidence collection, but the
+  // production verifier will not promote them without an explicit time zone.
   if (requiresTime) return null;
   const utc = new Date(`${localTimestamp}Z`);
   return Number.isNaN(utc.getTime()) ? null : utc;
@@ -127,7 +177,8 @@ function pendingCandidatePlacement(candidate: PlacementCandidate): PlacementVeri
     confidence: null,
     source: null,
     candidate,
-    reason: "Calculated by one trusted ephemeris engine; independent comparison is still required before interpretation",
+    reason:
+      "Calculated by one trusted ephemeris engine; independent comparison is still required before interpretation",
   };
 }
 
@@ -227,7 +278,145 @@ function getRisingPlacement(birthData: BirthData): PlacementVerification {
     status: "pending_ephemeris",
     confidence: null,
     source: null,
-    reason: "Ascendant calculation remains intentionally blocked until its formula and independent reference suite are validated",
+    reason:
+      "Ascendant calculation remains intentionally blocked until its formula and independent reference suite are validated",
+  };
+}
+
+function candidateForBody(
+  body: VerifiableBody,
+  placement: PlacementVerification,
+): EphemerisCandidate | null {
+  if (!placement.candidate) return null;
+  return {
+    body,
+    ...placement.candidate,
+  };
+}
+
+function verifiedPlacement(
+  candidate: EphemerisCandidate,
+  reference: IndependentEphemerisReference,
+  result: Extract<ReturnType<typeof verifyAgainstIndependentReference>, { status: "verified" }>,
+): PlacementVerification {
+  const source = `${candidate.source}; independently confirmed by ${reference.source}`;
+  const engine = `${candidate.engine} + ${reference.engine}`;
+
+  return {
+    sign: result.sign,
+    status: "verified",
+    confidence: 1,
+    source,
+    candidate: {
+      sign: candidate.sign,
+      longitude: candidate.longitude,
+      source: candidate.source,
+      engine: candidate.engine,
+      calculatedAt: candidate.calculatedAt,
+      inputTimestamp: candidate.inputTimestamp,
+    },
+    provenance: {
+      source,
+      engine,
+      calculatedAt: result.verifiedAt,
+      inputTimestamp: candidate.inputTimestamp,
+      candidateSource: candidate.source,
+      candidateEngine: candidate.engine,
+      candidateCalculatedAt: candidate.calculatedAt,
+      referenceSource: reference.source,
+      referenceEngine: reference.engine,
+      referenceCalculatedAt: reference.calculatedAt,
+      policyId: result.policyId,
+      evidenceReceiptId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.receiptRunId,
+      evidenceArtifactId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.artifactId,
+      longitudeDeltaDegrees: result.longitudeDeltaDegrees,
+    },
+    reason:
+      "Astronomical longitude and zodiac sign independently agreed within the approved production tolerance",
+  };
+}
+
+async function verifyPlacement(
+  body: VerifiableBody,
+  placement: PlacementVerification,
+  options: Required<VerifiedAstrologyOptions>,
+): Promise<PlacementVerification> {
+  const candidate = candidateForBody(body, placement);
+  if (!candidate) return placement;
+
+  try {
+    const reference = await options.referenceFetcher(body, candidate.inputTimestamp);
+    const policy = options.policyForBody(body);
+    const result = verifyAgainstIndependentReference(candidate, reference, policy);
+
+    if (result.status === "verified") {
+      return verifiedPlacement(candidate, reference, result);
+    }
+
+    return {
+      ...placement,
+      reason: `Independent verification rejected the candidate: ${result.reason}`,
+      verificationFailure: {
+        reason: result.reason,
+        attemptedAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "independent_reference_failed";
+    return {
+      ...placement,
+      reason:
+        "Independent verification was unavailable or invalid; the candidate remains withheld from interpretation",
+      verificationFailure: {
+        reason,
+        attemptedAt: new Date().toISOString(),
+      },
+    };
+  }
+}
+
+function buildVerificationSummary(
+  sun: PlacementVerification,
+  moon: PlacementVerification,
+  rising: PlacementVerification,
+  birthData: BirthData,
+): AstrologyData["verification"] {
+  const verifiedBodies: VerifiableBody[] = [];
+  if (sun.status === "verified") verifiedBodies.push("Sun");
+  if (moon.status === "verified") verifiedBodies.push("Moon");
+
+  const unresolvedBodies = [
+    sun.status !== "verified" ? "Sun" : null,
+    moon.status !== "verified" ? "Moon" : null,
+    rising.status !== "verified" ? "Ascendant" : null,
+  ].filter((value): value is string => Boolean(value));
+
+  const missingData: string[] = [];
+  if (!birthData.birthTime) missingData.push("verified_birth_time");
+  if (!birthData.timezone) missingData.push("timezone");
+  if (birthData.latitude === undefined || birthData.longitude === undefined) {
+    missingData.push("precise_location");
+  }
+  if (sun.status !== "verified") missingData.push("independent_sun_verification");
+  if (moon.status !== "verified") missingData.push("independent_moon_verification");
+  if (rising.status !== "verified") missingData.push("validated_ascendant_engine");
+
+  return {
+    complete: unresolvedBodies.length === 0,
+    verifiedBodies,
+    unresolvedBodies,
+    missingData: [...new Set(missingData)],
+    suggestions:
+      unresolvedBodies.length === 0
+        ? "All currently supported placements are verified."
+        : `Verified placements may be interpreted. ${unresolvedBodies.join(", ")} remain paused until their stated requirements pass.`,
+    policyId:
+      verifiedBodies.length > 0 ? "ASTRO-LONGITUDE-v1" : null,
+    evidenceReceiptId:
+      verifiedBodies.length > 0
+        ? APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.receiptRunId
+        : null,
+    lastUpdated: new Date().toISOString(),
   };
 }
 
@@ -235,14 +424,6 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const sun = getSunPlacement(birthData);
   const moon = getMoonPlacement(birthData);
   const rising = getRisingPlacement(birthData);
-
-  const missingData: string[] = [];
-  if (!birthData.birthTime) missingData.push("verified_birth_time");
-  if (!birthData.timezone) missingData.push("timezone");
-  if (birthData.latitude === undefined || birthData.longitude === undefined) missingData.push("precise_location");
-  if (sun.status !== "verified") missingData.push("independent_sun_verification");
-  if (moon.status !== "verified") missingData.push("independent_moon_verification");
-  if (rising.status !== "verified") missingData.push("validated_ascendant_engine");
 
   return {
     sun,
@@ -254,33 +435,119 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     northNode: undefined,
     southNode: undefined,
     chiron: undefined,
-    verification: {
-      complete: false,
-      missingData: [...new Set(missingData)],
-      suggestions: "Sun and Moon may carry evidence-bearing candidate calculations, but interpretation remains paused until independent verification. Ascendant remains unresolved until its dedicated validation suite passes.",
-      lastUpdated: new Date().toISOString(),
-    },
+    verification: buildVerificationSummary(sun, moon, rising, birthData),
   };
 }
 
-export function getTarotBirthCards(birthDate: string): { card1: string; card2: string; interpretation: string } {
+export async function calculateVerifiedAstrology(
+  birthData: BirthData,
+  suppliedOptions: VerifiedAstrologyOptions = {},
+): Promise<AstrologyData> {
+  const candidateData = calculateAstrology(birthData);
+
+  // A date-only noon candidate is useful internally, but it cannot become a
+  // production fact without the user's explicit birth time and timezone.
+  const canVerifyTimedPlacements = Boolean(birthData.birthTime && birthData.timezone);
+  if (!canVerifyTimedPlacements) {
+    return {
+      ...candidateData,
+      sun: candidateData.sun.candidate
+        ? {
+            ...candidateData.sun,
+            reason:
+              "A candidate exists, but explicit birth time and timezone are required before production verification",
+          }
+        : candidateData.sun,
+    };
+  }
+
+  const options: Required<VerifiedAstrologyOptions> = {
+    referenceFetcher:
+      suppliedOptions.referenceFetcher ??
+      ((body, inputTimestamp) =>
+        fetchHorizonsReference(body, inputTimestamp, { timeoutMs: 5_000 })),
+    policyForBody:
+      suppliedOptions.policyForBody ?? getApprovedLongitudeTolerancePolicy,
+  };
+
+  const [sun, moon] = await Promise.all([
+    verifyPlacement("Sun", candidateData.sun, options),
+    verifyPlacement("Moon", candidateData.moon, options),
+  ]);
+  const rising = candidateData.rising;
+
+  return {
+    ...candidateData,
+    sun,
+    moon,
+    rising,
+    verification: buildVerificationSummary(sun, moon, rising, birthData),
+  };
+}
+
+export function getTarotBirthCards(
+  birthDate: string,
+): { card1: string; card2: string; interpretation: string } {
   const date = new Date(birthDate);
   const sum = date.getDate() + (date.getMonth() + 1) + date.getFullYear();
-  const digitalRoot = sum.toString().split("").reduce((acc, digit) => acc + parseInt(digit, 10), 0);
-  const finalSum = digitalRoot > 9
-    ? digitalRoot.toString().split("").reduce((acc, digit) => acc + parseInt(digit, 10), 0)
-    : digitalRoot;
+  const digitalRoot = sum
+    .toString()
+    .split("")
+    .reduce((acc, digit) => acc + Number.parseInt(digit, 10), 0);
+  const finalSum =
+    digitalRoot > 9
+      ? digitalRoot
+          .toString()
+          .split("")
+          .reduce((acc, digit) => acc + Number.parseInt(digit, 10), 0)
+      : digitalRoot;
 
   const tarotCards = [
-    { card1: "The Fool", card2: "The World", interpretation: "Journey of infinite potential and cosmic completion" },
-    { card1: "The Magician", card2: "The High Priestess", interpretation: "Balance of conscious will and intuitive wisdom" },
-    { card1: "The Empress", card2: "The Emperor", interpretation: "Creative nurturing paired with structured authority" },
-    { card1: "The Hierophant", card2: "The Lovers", interpretation: "Traditional wisdom meets heart-centered choices" },
-    { card1: "The Chariot", card2: "Strength", interpretation: "Directed willpower flowing through inner courage" },
-    { card1: "The Hermit", card2: "Wheel of Fortune", interpretation: "Inner guidance navigating life's cycles" },
-    { card1: "Justice", card2: "The Hanged Man", interpretation: "Divine balance through surrender and perspective" },
-    { card1: "Death", card2: "Temperance", interpretation: "Transformation through divine alchemy" },
-    { card1: "The Devil", card2: "The Tower", interpretation: "Breaking free from illusion and limitation" },
+    {
+      card1: "The Fool",
+      card2: "The World",
+      interpretation: "Journey of infinite potential and cosmic completion",
+    },
+    {
+      card1: "The Magician",
+      card2: "The High Priestess",
+      interpretation: "Balance of conscious will and intuitive wisdom",
+    },
+    {
+      card1: "The Empress",
+      card2: "The Emperor",
+      interpretation: "Creative nurturing paired with structured authority",
+    },
+    {
+      card1: "The Hierophant",
+      card2: "The Lovers",
+      interpretation: "Traditional wisdom meets heart-centered choices",
+    },
+    {
+      card1: "The Chariot",
+      card2: "Strength",
+      interpretation: "Directed willpower flowing through inner courage",
+    },
+    {
+      card1: "The Hermit",
+      card2: "Wheel of Fortune",
+      interpretation: "Inner guidance navigating life's cycles",
+    },
+    {
+      card1: "Justice",
+      card2: "The Hanged Man",
+      interpretation: "Divine balance through surrender and perspective",
+    },
+    {
+      card1: "Death",
+      card2: "Temperance",
+      interpretation: "Transformation through divine alchemy",
+    },
+    {
+      card1: "The Devil",
+      card2: "The Tower",
+      interpretation: "Breaking free from illusion and limitation",
+    },
   ];
 
   return tarotCards[finalSum % tarotCards.length];
