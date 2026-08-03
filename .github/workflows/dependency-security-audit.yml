@@ -78,10 +78,10 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Upgrade vulnerable dependencies and refresh lockfile
+      - name: Upgrade compatible security dependency set and refresh lockfile
         run: |
           npm install --save-exact drizzle-orm@0.45.2 sharp@0.35.3 vite@8.2.0
-          npm install --save-dev --save-exact drizzle-kit@0.31.10
+          npm install --save-dev --save-exact drizzle-kit@0.31.10 esbuild@0.28.1 @vitejs/plugin-react@latest
 
       - name: Verify audit thresholds
         run: |
