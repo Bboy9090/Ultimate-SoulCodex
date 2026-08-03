@@ -44,9 +44,22 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "wouter"],
-          "vendor-ui": ["framer-motion", "lucide-react"],
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("/wouter/")
+          ) {
+            return "vendor-react";
+          }
+          if (
+            id.includes("/framer-motion/") ||
+            id.includes("/lucide-react/")
+          ) {
+            return "vendor-ui";
+          }
+          return undefined;
         },
       },
     },

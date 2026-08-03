@@ -1,0 +1,69 @@
+name: Dependency Security Audit
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Enforce production high-severity threshold
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Enforce full-tree high-severity threshold
+        run: npm audit --audit-level=high
+
+      - name: Capture full npm audit evidence
+        shell: bash
+        run: |
+          mkdir -p evidence
+          npm audit --json > evidence/npm-audit.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('evidence/npm-audit.json', 'utf8'));
+          const vulnerabilities = report.vulnerabilities || {};
+          const rows = Object.entries(vulnerabilities).map(([name, value]) => ({
+            name,
+            severity: value.severity,
+            direct: Boolean(value.isDirect),
+            via: Array.isArray(value.via)
+              ? value.via.map(item => typeof item === 'string' ? item : item.title || item.name || 'advisory')
+              : [],
+            range: value.range,
+            fixAvailable: value.fixAvailable,
+            nodes: value.nodes || [],
+          }));
+          const summary = {
+            metadata: report.metadata,
+            vulnerabilities: rows,
+          };
+          fs.writeFileSync('evidence/npm-audit-summary.json', JSON.stringify(summary, null, 2));
+          console.log(JSON.stringify(summary, null, 2));
+          NODE
+
+      - name: Upload dependency audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-audit
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
