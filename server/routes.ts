@@ -1,90 +1,131 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema } from "@shared/schema";
-import { calculateAstrology, getTarotBirthCards } from "../services/astrology";
+import {
+  birthDataSchema,
+  enneagramAssessmentSchema,
+  mbtiAssessmentSchema,
+} from "@shared/schema";
+import {
+  calculateVerifiedAstrology,
+  getTarotBirthCards,
+  type AstrologyData,
+} from "./services/astrology";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
-import { generateBiography, generateDailyGuidance } from "./services/openai-service";
+import {
+  generateBiography,
+  generateDailyGuidance,
+} from "./services/openai-service";
 import { registerGalacticCodeRoutes } from "./routes/galactic-code";
-import { calculateArchetypeMatches, getMatchesByMode, type RelationshipMode } from "../services/archetype-matches";
+import {
+  calculateArchetypeMatches,
+  getMatchesByMode,
+  type RelationshipMode,
+} from "../services/archetype-matches";
 import { buildNatalReportPdf } from "./natalReportPdf";
 
+function finiteCoordinate(value: string | number | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = typeof value === "number" ? value : Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
+  return {
+    ...astrologyData,
+    // Older screens still read these keys. They receive verified values only,
+    // never raw candidates or the blocked Ascendant approximation.
+    sunSign:
+      astrologyData.sun.status === "verified" ? astrologyData.sun.sign : null,
+    moonSign:
+      astrologyData.moon.status === "verified" ? astrologyData.moon.sign : null,
+    risingSign:
+      astrologyData.rising.status === "verified"
+        ? astrologyData.rising.sign
+        : null,
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  
   // Create a soul profile
   app.post("/api/profiles", async (req, res) => {
     try {
       const birthData = birthDataSchema.parse(req.body);
-      
-      // Calculate all systems
-      const astrologyData = calculateAstrology({
-        name: birthData.name,
+
+      const verifiedAstrologyData = await calculateVerifiedAstrology({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
-        birthLocation: birthData.birthLocation,
-        latitude: parseFloat(String(birthData.latitude)),
-        longitude: parseFloat(String(birthData.longitude)),
-        timezone: birthData.timezone
+        latitude: finiteCoordinate(birthData.latitude),
+        longitude: finiteCoordinate(birthData.longitude),
+        timezone: birthData.timezone,
       });
-      
-      const numerologyData = calculateNumerology(birthData.name, birthData.birthDate);
-      
-      // Get Tarot birth cards
+      const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
+
+      const numerologyData = calculateNumerology(
+        birthData.name,
+        birthData.birthDate,
+      );
+
       const tarotCards = getTarotBirthCards(birthData.birthDate);
-      
-      // Basic archetype synthesis (will be enhanced with personality data)
-      const archetypeData = synthesizeArchetype(astrologyData, numerologyData, {});
-      
-      // Generate biography and guidance
+
+      // Archetype and AI layers receive the evidence-traceable astrology object.
+      // They are not permitted to pull values from legacy sunSign/moonSign keys.
+      const archetypeData = synthesizeArchetype(
+        astrologyData,
+        numerologyData,
+        {},
+      );
+
       const biography = await generateBiography({
         name: birthData.name,
         archetypeTitle: archetypeData.title,
         astrologyData,
         numerologyData,
         personalityData: {},
-        archetype: archetypeData
+        archetype: archetypeData,
       });
-      
+
       const dailyGuidance = await generateDailyGuidance({
         name: birthData.name,
         archetypeTitle: archetypeData.title,
         astrologyData,
         numerologyData,
         personalityData: {},
-        archetype: archetypeData
+        archetype: archetypeData,
       });
-      
-      // Create profile
+
       const profile = await storage.createProfile({
-        userId: null, // Guest profile for now
+        userId: null,
         name: birthData.name,
         birthDate: new Date(birthData.birthDate),
         birthTime: birthData.birthTime,
         birthLocation: birthData.birthLocation,
         timezone: birthData.timezone,
-        latitude: String(birthData.latitude),
-        longitude: String(birthData.longitude),
+        latitude:
+          birthData.latitude === undefined ? null : String(birthData.latitude),
+        longitude:
+          birthData.longitude === undefined ? null : String(birthData.longitude),
         isPremium: false,
         astrologyData,
         numerologyData,
         personalityData: {},
         archetypeData: {
           ...archetypeData,
-          tarotCards
+          tarotCards,
         },
         biography,
-        dailyGuidance
+        dailyGuidance,
       });
-      
-      res.json(profile);
+
+      res.status(201).json(profile);
     } catch (error) {
       console.error("Error creating profile:", error);
       res.status(500).json({ message: "Failed to create profile" });
     }
   });
-  
+
   // Get a profile
   app.get("/api/profiles/:id", async (req, res) => {
     try {
@@ -98,105 +139,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get profile" });
     }
   });
-  
+
   // Submit Enneagram assessment
   app.post("/api/profiles/:id/enneagram", async (req, res) => {
     try {
       const assessment = enneagramAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
-      
+
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       const enneagramResult = calculateEnneagram(assessment.responses);
-      
-      // Save assessment
+
       await storage.createAssessment({
         profileId,
-        assessmentType: 'enneagram',
+        assessmentType: "enneagram",
         responses: assessment.responses,
-        calculatedType: enneagramResult?.type?.toString() || null
+        calculatedType: enneagramResult?.type?.toString() || null,
       });
-      
-      // Update profile with personality data
+
       const updatedPersonalityData = {
-        ...profile.personalityData as any,
-        enneagram: enneagramResult
+        ...(profile.personalityData as any),
+        enneagram: enneagramResult,
       };
-      
-      // Re-synthesize archetype with new data
+
       const archetypeData = synthesizeArchetype(
         profile.astrologyData,
         profile.numerologyData,
-        updatedPersonalityData
+        updatedPersonalityData,
       );
-      
+
       const updatedProfile = await storage.updateProfile(profileId, {
         personalityData: updatedPersonalityData,
         archetypeData: {
           ...archetypeData,
-          tarotCards: (profile.archetypeData as any)?.tarotCards
-        }
+          tarotCards: (profile.archetypeData as any)?.tarotCards,
+        },
       });
-      
+
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error processing Enneagram assessment:", error);
       res.status(500).json({ message: "Failed to process assessment" });
     }
   });
-  
+
   // Submit MBTI assessment
   app.post("/api/profiles/:id/mbti", async (req, res) => {
     try {
       const assessment = mbtiAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
-      
+
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       const mbtiResult = calculateMBTI(assessment.responses);
-      
-      // Save assessment
+
       await storage.createAssessment({
         profileId,
-        assessmentType: 'mbti',
+        assessmentType: "mbti",
         responses: assessment.responses,
-        calculatedType: mbtiResult?.type || null
+        calculatedType: mbtiResult?.type || null,
       });
-      
-      // Update profile with personality data
+
       const updatedPersonalityData = {
-        ...profile.personalityData as any,
-        mbti: mbtiResult
+        ...(profile.personalityData as any),
+        mbti: mbtiResult,
       };
-      
-      // Re-synthesize archetype with new data
+
       const archetypeData = synthesizeArchetype(
         profile.astrologyData,
         profile.numerologyData,
-        updatedPersonalityData
+        updatedPersonalityData,
       );
-      
+
       const updatedProfile = await storage.updateProfile(profileId, {
         personalityData: updatedPersonalityData,
         archetypeData: {
           ...archetypeData,
-          tarotCards: (profile.archetypeData as any)?.tarotCards
-        }
+          tarotCards: (profile.archetypeData as any)?.tarotCards,
+        },
       });
-      
+
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error processing MBTI assessment:", error);
       res.status(500).json({ message: "Failed to process assessment" });
     }
   });
-  
+
   // Upgrade to premium
   app.post("/api/profiles/:id/upgrade", async (req, res) => {
     try {
@@ -204,7 +239,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authToken = req.headers.authorization?.split(" ")[1];
       const { cardNumber, expiryDate, cvv } = req.body;
 
-      // Verify authorization
       if (!authToken || authToken !== profileId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -214,9 +248,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      // Validate payment fields
       if (!cardNumber || !expiryDate || !cvv) {
-        return res.status(400).json({ message: "Payment information is required" });
+        return res
+          .status(400)
+          .json({ message: "Payment information is required" });
       }
 
       if (cardNumber.length < 13) {
@@ -231,11 +266,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid CVV" });
       }
 
-      // In production: process payment through Stripe or other payment processor
-      // For now, validate that card passes basic Luhn check and fields are present
-
       const updatedProfile = await storage.updateProfile(profileId, {
-        isPremium: true
+        isPremium: true,
       });
 
       res.json(updatedProfile);
@@ -261,13 +293,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!authToken || authToken !== profileId) {
-        return res.status(401).json({ message: "Unauthorized access to this profile" });
+        return res
+          .status(401)
+          .json({ message: "Unauthorized access to this profile" });
       }
 
-      // Generate PDF
       const pdfBuffer = await buildNatalReportPdf({
         name: profile.name,
-        birthDate: profile.birthDate.toISOString().split('T')[0],
+        birthDate: profile.birthDate.toISOString().split("T")[0],
         birthTime: profile.birthTime || "",
         birthLocation: profile.birthLocation || "",
         astrology: profile.astrologyData || {},
@@ -282,14 +315,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           elementEmphasis: "",
           houseEmphasis: "",
           bottomLine: profile.dailyGuidance || "",
-          hdInterpretation: ""
+          hdInterpretation: "",
         },
-        isPremium: true
+        isPremium: true,
       });
 
-      // Set response headers for PDF download
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${profile.name}-soul-codex.pdf"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${profile.name}-soul-codex.pdf"`,
+      );
       res.setHeader("Content-Length", pdfBuffer.length);
 
       res.send(pdfBuffer);
@@ -312,20 +347,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sunSign,
         lifePathNumber,
         hdType,
-        mode as RelationshipMode
+        mode as RelationshipMode,
       );
 
       const { best, challenging } = getMatchesByMode(
         sunSign,
         lifePathNumber,
         hdType,
-        mode as RelationshipMode
+        mode as RelationshipMode,
       );
 
       res.json({
         all,
         best,
-        challenging
+        challenging,
       });
     } catch (error) {
       console.error("Error calculating archetype matches:", error);
@@ -333,7 +368,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Register Galactic Code routes
   registerGalacticCodeRoutes(app);
 
   const httpServer = createServer(app);
