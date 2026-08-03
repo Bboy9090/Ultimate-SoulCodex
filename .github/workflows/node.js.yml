@@ -37,7 +37,7 @@ jobs:
         run: npm test
 
       - name: Run astrology trust tests
-        run: node --import tsx --test tests/astrology-candidate.test.ts tests/astrology-independent-verification.test.ts tests/jpl-horizons-reference.test.ts
+        run: node --import tsx --test tests/astrology-candidate.test.ts tests/astrology-independent-verification.test.ts tests/jpl-horizons-reference.test.ts tests/astrology-evidence-matrix.test.ts
 
       - name: Build project
         run: npm run build
