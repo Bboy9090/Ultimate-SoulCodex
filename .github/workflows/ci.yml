@@ -35,7 +35,7 @@ jobs:
       - name: Run Workspace Tests
         run: npm test
 
-      - name: Run Astrology Trust Tests
+      - name: Run Trust Boundary Tests
         run: >-
           node --import tsx --test
           tests/astrology-candidate.test.ts
@@ -44,6 +44,7 @@ jobs:
           tests/astrology-evidence-matrix.test.ts
           tests/astrology-tolerance-policy.test.ts
           tests/astrology-production-verification.test.ts
+          tests/human-design-trust.test.ts
 
       - name: Build Application
         run: npm run build
