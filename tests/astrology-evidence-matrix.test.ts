@@ -8,11 +8,11 @@ import {
 
 function horizonsPayload(longitude: number): Response {
   const result = `
-+ Date__(UT)__HR:MN:SC.fff, ObsEcLon, ObsEcLat,
-+$$SOE
-+2000-Jan-01 00:00:00.000, ${longitude.toFixed(8)}, 0.00000000,
-+$$EOE
-+`;
+ Date__(UT)__HR:MN:SC.fff, ObsEcLon, ObsEcLat,
+$$SOE
+2000-Jan-01 00:00:00.000, ${longitude.toFixed(8)}, 0.00000000,
+$$EOE
+`;
   return new Response(JSON.stringify({
     signature: { source: "NASA/JPL Horizons API", version: "1.3" },
     result,
