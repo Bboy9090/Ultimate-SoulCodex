@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - chore/live-ephemeris-evidence-receipt
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
