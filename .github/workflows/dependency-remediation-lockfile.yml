@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: dependency-remediation-lockfile
+  cancel-in-progress: false
+
 jobs:
   remediate:
     runs-on: ubuntu-24.04
