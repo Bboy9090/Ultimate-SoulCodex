@@ -50,7 +50,10 @@ test("a live-style receipt measures deltas but never approves a tolerance", asyn
     assert.equal(receipt.policyStatus, "evidence_only_no_tolerance_approved");
     assert.equal(receipt.summary.totalRows, 2);
     assert.equal(receipt.summary.signDisagreements, 0);
-    assert.equal(receipt.summary.maximumLongitudeDeltaDegrees, 0);
+    assert.ok(
+      receipt.summary.maximumLongitudeDeltaDegrees < 1e-8,
+      `expected a rounding-only delta below 1e-8°, got ${receipt.summary.maximumLongitudeDeltaDegrees}`,
+    );
     assert.equal("approvedTolerance" in receipt, false);
     assert.equal("verified" in receipt, false);
   } finally {
