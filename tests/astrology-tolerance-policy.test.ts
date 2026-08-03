@@ -4,25 +4,25 @@ import { proposeLongitudeTolerancePolicy } from "../server/services/astrology-to
 import { verifyAgainstIndependentReference } from "../server/services/astrology-verification";
 
 const liveSummary = {
-  totalRows: 10,
+  totalRows: 40,
   signDisagreements: 0,
   maximumLongitudeDeltaDegrees: 0.0007351139863658318,
   sunMaximumDeltaDegrees: 0.0002682866178815857,
   moonMaximumDeltaDegrees: 0.0007351139863658318,
 };
 
-test("live evidence produces a conservative draft tolerance without enabling promotion", () => {
-  const proposal = proposeLongitudeTolerancePolicy(liveSummary, "actions-run-30793529466");
+test("expanded live evidence produces a conservative draft tolerance without enabling promotion", () => {
+  const proposal = proposeLongitudeTolerancePolicy(liveSummary, "expanded-live-receipt");
 
   assert.equal(proposal.policy.status, "draft");
   assert.equal(proposal.policy.maximumLongitudeDeltaDegrees, 0.001);
   assert.equal(proposal.promotionAllowed, false);
-  assert.equal(proposal.evidence.totalRows, 10);
+  assert.equal(proposal.evidence.totalRows, 40);
   assert.equal(proposal.evidence.signDisagreements, 0);
 });
 
 test("the draft proposal cannot verify a placement", () => {
-  const proposal = proposeLongitudeTolerancePolicy(liveSummary, "actions-run-30793529466");
+  const proposal = proposeLongitudeTolerancePolicy(liveSummary, "expanded-live-receipt");
   const result = verifyAgainstIndependentReference({
     body: "Sun",
     sign: "Virgo",
@@ -52,9 +52,16 @@ test("sign disagreements block even a draft proposal", () => {
   );
 });
 
-test("too little evidence cannot produce a proposal", () => {
+test("the old 10-row matrix no longer satisfies the evidence floor", () => {
   assert.throws(
-    () => proposeLongitudeTolerancePolicy({ ...liveSummary, totalRows: 9 }, "run"),
+    () => proposeLongitudeTolerancePolicy({ ...liveSummary, totalRows: 10 }, "run"),
+    /insufficient_evidence_rows/,
+  );
+});
+
+test("39 rows still cannot produce a proposal", () => {
+  assert.throws(
+    () => proposeLongitudeTolerancePolicy({ ...liveSummary, totalRows: 39 }, "run"),
     /insufficient_evidence_rows/,
   );
 });
