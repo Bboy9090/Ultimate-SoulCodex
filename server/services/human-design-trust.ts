@@ -5,18 +5,36 @@ export type HumanDesignVerificationStatus =
 
 export type HumanDesignCoreField = "type" | "strategy" | "authority" | "profile";
 
-export interface HumanDesignCandidateEvidence {
+type HumanDesignCandidateFields = Partial<Record<HumanDesignCoreField, string>>;
+
+interface HumanDesignEvidenceBase {
+  limitations: readonly string[];
+}
+
+export interface HumanDesignCandidateEvidence extends HumanDesignEvidenceBase {
   status: "calculated_unverified";
   engine: "soulcodex-hd-candidate-v0";
   source: "Soul Codex deterministic Human Design candidate engine";
   calculatedAt: string;
   inputTimestampUtc: string;
   birthTimeKnown: true;
-  candidate: Partial<Record<HumanDesignCoreField, string>>;
-  limitations: readonly string[];
+  candidate: HumanDesignCandidateFields;
 }
 
-export interface HumanDesignUnresolvedEvidence {
+export interface HumanDesignVerifiedEvidence extends HumanDesignEvidenceBase {
+  status: "verified";
+  engine: string;
+  source: string;
+  calculatedAt: string;
+  inputTimestampUtc: string;
+  birthTimeKnown: true;
+  candidate: HumanDesignCandidateFields;
+  verificationReceiptId: string;
+  independentSource: string;
+  verifiedAt: string;
+}
+
+export interface HumanDesignUnresolvedEvidence extends HumanDesignEvidenceBase {
   status: "unresolved";
   engine: null;
   source: null;
@@ -24,11 +42,11 @@ export interface HumanDesignUnresolvedEvidence {
   inputTimestampUtc: null;
   birthTimeKnown: false;
   candidate: Record<string, never>;
-  limitations: readonly string[];
 }
 
 export type HumanDesignTrustRecord =
   | HumanDesignCandidateEvidence
+  | HumanDesignVerifiedEvidence
   | HumanDesignUnresolvedEvidence;
 
 const UNVERIFIED_LIMITATIONS = Object.freeze([
@@ -45,7 +63,7 @@ export function createHumanDesignTrustRecord(input: {
   birthTimeKnown: boolean;
   inputTimestampUtc?: string | null;
   calculatedAt?: string;
-  candidate?: Partial<Record<HumanDesignCoreField, string>> | null;
+  candidate?: HumanDesignCandidateFields | null;
 }): HumanDesignTrustRecord {
   if (!input.birthTimeKnown || !input.inputTimestampUtc) {
     return {
@@ -76,7 +94,7 @@ export function createHumanDesignTrustRecord(input: {
     Object.entries(input.candidate ?? {}).filter(
       ([, value]) => typeof value === "string" && value.trim().length > 0,
     ),
-  ) as Partial<Record<HumanDesignCoreField, string>>;
+  ) as HumanDesignCandidateFields;
 
   return {
     status: "calculated_unverified",
@@ -98,7 +116,7 @@ export function getVerifiedHumanDesignField(
     return null;
   }
 
-  const value = (record as HumanDesignCandidateEvidence).candidate[field];
+  const value = record.candidate[field];
   return typeof value === "string" && value.trim() ? value : null;
 }
 
