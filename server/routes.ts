@@ -9,6 +9,7 @@ import {
 import {
   calculateVerifiedAstrology,
   getTarotBirthCards,
+  type AstrologyData,
 } from "./services/astrology";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
@@ -31,19 +32,36 @@ function finiteCoordinate(value: string | number | undefined): number | undefine
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
+  return {
+    ...astrologyData,
+    // Older screens still read these keys. They receive verified values only,
+    // never raw candidates or the blocked Ascendant approximation.
+    sunSign:
+      astrologyData.sun.status === "verified" ? astrologyData.sun.sign : null,
+    moonSign:
+      astrologyData.moon.status === "verified" ? astrologyData.moon.sign : null,
+    risingSign:
+      astrologyData.rising.status === "verified"
+        ? astrologyData.rising.sign
+        : null,
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create a soul profile
   app.post("/api/profiles", async (req, res) => {
     try {
       const birthData = birthDataSchema.parse(req.body);
 
-      const astrologyData = await calculateVerifiedAstrology({
+      const verifiedAstrologyData = await calculateVerifiedAstrology({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
         latitude: finiteCoordinate(birthData.latitude),
         longitude: finiteCoordinate(birthData.longitude),
         timezone: birthData.timezone,
       });
+      const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
 
       const numerologyData = calculateNumerology(
         birthData.name,
