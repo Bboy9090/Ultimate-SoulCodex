@@ -19,16 +19,29 @@ $$EOE
   }), { status: 200, headers: { "Content-Type": "application/json" } });
 }
 
-test("the versioned matrix covers golden, boundary, DST, and historical evidence categories", () => {
+test("the versioned matrix covers identity, boundaries, civil-time edges, leap days, and history", () => {
   const categories = new Set(EPHEMERIS_EVIDENCE_FIXTURES.map((fixture) => fixture.category));
   assert.deepEqual(categories, new Set([
     "golden_profile",
     "zodiac_boundary",
     "dst_transition",
+    "leap_day",
+    "timezone_edge",
     "historical",
   ]));
+  assert.ok(EPHEMERIS_EVIDENCE_FIXTURES.length >= 20);
+  assert.equal(new Set(EPHEMERIS_EVIDENCE_FIXTURES.map((fixture) => fixture.id)).size, EPHEMERIS_EVIDENCE_FIXTURES.length);
   assert.ok(EPHEMERIS_EVIDENCE_FIXTURES.every((fixture) => fixture.bodies.includes("Sun")));
   assert.ok(EPHEMERIS_EVIDENCE_FIXTURES.every((fixture) => fixture.bodies.includes("Moon")));
+});
+
+test("every expanded fixture produces both local candidates before live comparison", () => {
+  for (const fixture of EPHEMERIS_EVIDENCE_FIXTURES) {
+    const astrology = calculateAstrology(fixture);
+    assert.ok(astrology.sun.candidate, `missing Sun candidate for ${fixture.id}`);
+    assert.ok(astrology.moon.candidate, `missing Moon candidate for ${fixture.id}`);
+    assert.equal(astrology.sun.candidate?.inputTimestamp, astrology.moon.candidate?.inputTimestamp);
+  }
 });
 
 test("a live-style receipt measures deltas but never approves a tolerance", async () => {
@@ -51,7 +64,8 @@ test("a live-style receipt measures deltas but never approves a tolerance", asyn
     assert.equal(receipt.summary.totalRows, 2);
     assert.equal(receipt.summary.signDisagreements, 0);
     assert.ok(
-      receipt.summary.maximumLongitudeDeltaDegrees < 1e-8,
+      receipt.summary.maximumLongitudeDeltaDegrees !== null
+        && receipt.summary.maximumLongitudeDeltaDegrees < 1e-8,
       `expected a rounding-only delta below 1e-8°, got ${receipt.summary.maximumLongitudeDeltaDegrees}`,
     );
     assert.equal("approvedTolerance" in receipt, false);
