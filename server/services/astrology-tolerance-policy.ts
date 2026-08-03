@@ -21,7 +21,7 @@ export interface TolerancePolicyProposal {
   rationale: string;
 }
 
-const MINIMUM_EVIDENCE_ROWS = 10;
+const MINIMUM_EVIDENCE_ROWS = 40;
 const SAFETY_MULTIPLIER = 1.25;
 const ROUNDING_INCREMENT_DEGREES = 0.001;
 
@@ -80,6 +80,6 @@ export function proposeLongitudeTolerancePolicy(
     },
     promotionAllowed: false,
     rationale:
-      "The live matrix supports a draft tolerance only. Human governance approval and a larger evidence set are still required before any placement can be promoted to verified.",
+      "The expanded live matrix supports a draft tolerance only. Explicit governance approval is still required before any placement can be promoted to verified.",
   };
 }
