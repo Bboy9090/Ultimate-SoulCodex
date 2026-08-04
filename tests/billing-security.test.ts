@@ -42,12 +42,13 @@ test("profile billing actions require the existing bearer capability", () => {
   );
 });
 
-test("billing remains disabled unless the complete hosted-checkout configuration exists", () => {
+test("billing remains disabled unless checkout and persistent entitlement storage are complete", () => {
   const previous = {
     secret: process.env.STRIPE_SECRET_KEY,
     price: process.env.STRIPE_PRICE_ID,
     webhook: process.env.STRIPE_WEBHOOK_SECRET,
     appUrl: process.env.PUBLIC_APP_URL,
+    databaseUrl: process.env.DATABASE_URL,
   };
 
   try {
@@ -55,26 +56,39 @@ test("billing remains disabled unless the complete hosted-checkout configuration
     delete process.env.STRIPE_PRICE_ID;
     delete process.env.STRIPE_WEBHOOK_SECRET;
     delete process.env.PUBLIC_APP_URL;
+    delete process.env.DATABASE_URL;
 
     assert.deepEqual(getBillingStatus(), {
       enabled: false,
       provider: "stripe_checkout",
       collectsCardDataOnSoulCodex: false,
+      persistentEntitlements: false,
       reason: "not_configured",
     });
 
     process.env.STRIPE_SECRET_KEY = "sk_test_example";
     process.env.STRIPE_PRICE_ID = "price_example";
     process.env.STRIPE_WEBHOOK_SECRET = "whsec_example";
-    process.env.PUBLIC_APP_URL = "http://not-secure.example.com";
-    assert.equal(getBillingStatus().enabled, false);
-
     process.env.PUBLIC_APP_URL = "https://soulcodex.example.com";
+
+    assert.deepEqual(getBillingStatus(), {
+      enabled: false,
+      provider: "stripe_checkout",
+      collectsCardDataOnSoulCodex: false,
+      persistentEntitlements: false,
+      reason: "not_configured",
+    });
+
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/soulcodex";
     assert.deepEqual(getBillingStatus(), {
       enabled: true,
       provider: "stripe_checkout",
       collectsCardDataOnSoulCodex: false,
+      persistentEntitlements: true,
     });
+
+    process.env.PUBLIC_APP_URL = "http://not-secure.example.com";
+    assert.equal(getBillingStatus().enabled, false);
   } finally {
     if (previous.secret === undefined) delete process.env.STRIPE_SECRET_KEY;
     else process.env.STRIPE_SECRET_KEY = previous.secret;
@@ -87,5 +101,8 @@ test("billing remains disabled unless the complete hosted-checkout configuration
 
     if (previous.appUrl === undefined) delete process.env.PUBLIC_APP_URL;
     else process.env.PUBLIC_APP_URL = previous.appUrl;
+
+    if (previous.databaseUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = previous.databaseUrl;
   }
 });
