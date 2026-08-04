@@ -7,9 +7,63 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  remediate:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.ref == 'fix/profile-verification-reconciliation-v1' &&
+      github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Apply non-breaking security updates
+        run: npm audit fix
+
+      - name: Enforce production high-severity threshold
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Enforce full-tree high-severity threshold
+        run: npm audit --audit-level=high
+
+      - name: Typecheck repaired tree
+        run: npm run check
+
+      - name: Run workspace tests
+        run: npm test
+
+      - name: Build repaired application
+        run: npm run build
+
+      - name: Commit repaired lockfile
+        shell: bash
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo 'No dependency manifest changes were required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m 'fix(security): refresh transitive dependency lock'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
   audit:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
