@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { ArrowLeft, CloudOff, Compass, Crown, Infinity, ShieldCheck, Sparkles } from "lucide-react";
@@ -8,10 +9,30 @@ import Navigation from "@/components/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { loadOfflineProfile } from "@/lib/offlineProfileStore";
+import {
+  loadActiveProfile,
+  saveActiveProfile,
+} from "@/lib/ActiveProfileRepository";
+import {
+  loadOfflineProfile,
+  saveOfflineProfile,
+} from "@/lib/offlineProfileStore";
+import {
+  getVerifiedAstrologySign,
+  profileNeedsOnlineVerification,
+  reconcileActiveProfile,
+  reconcileOfflineProfile,
+  type ReconciledOfflineProfile,
+} from "@/lib/profileVerificationReconciliation";
+
+type VerificationAttempt = "idle" | "running" | "complete" | "deferred";
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
+  const [verificationAttempt, setVerificationAttempt] =
+    useState<VerificationAttempt>("idle");
+
   const { data: profile, isLoading, error } = useQuery<OfflineCodexProfile>({
     queryKey: ["offline-profile", id],
     enabled: !!id,
@@ -22,6 +43,101 @@ export default function OfflineProfilePage() {
       return stored;
     },
   });
+
+  const reconciledProfile = profile as ReconciledOfflineProfile | undefined;
+
+  useEffect(() => {
+    if (!reconciledProfile || verificationAttempt !== "idle") return;
+    if (!profileNeedsOnlineVerification(reconciledProfile)) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setVerificationAttempt("deferred");
+      return;
+    }
+
+    const currentProfile = reconciledProfile;
+    let cancelled = false;
+    setVerificationAttempt("running");
+
+    async function refreshVerification() {
+      try {
+        const response = await fetch("/api/profiles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            name: currentProfile.name,
+            birthDate: currentProfile.birthDate,
+            ...(currentProfile.birthTime
+              ? { birthTime: currentProfile.birthTime }
+              : {}),
+            birthLocation: currentProfile.birthLocation,
+            timezone: currentProfile.timezone,
+            latitude: currentProfile.latitude ?? undefined,
+            longitude: currentProfile.longitude ?? undefined,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`verification_refresh_failed_${response.status}`);
+        }
+
+        const remote = await response.json();
+        const syncedAt = new Date().toISOString();
+        const hydrated = reconcileOfflineProfile(
+          currentProfile,
+          remote,
+          syncedAt,
+        );
+
+        await saveOfflineProfile(hydrated);
+
+        const active = loadActiveProfile().profile;
+        if (active?.id === currentProfile.id) {
+          const saved = saveActiveProfile(
+            reconcileActiveProfile(active, remote, syncedAt),
+          );
+          if (!saved.success) {
+            throw new Error(saved.error || "active_profile_reconciliation_failed");
+          }
+        }
+
+        localStorage.setItem(
+          `soulcodex.offlineProfileRemote.v1.${currentProfile.id}`,
+          JSON.stringify({ remoteId: remote.id, syncedAt }),
+        );
+
+        if (!cancelled) {
+          queryClient.setQueryData(["offline-profile", id], hydrated);
+          setVerificationAttempt("complete");
+        }
+      } catch (cause) {
+        console.warn(
+          "[offline-profile] Online verification refresh deferred",
+          cause,
+        );
+        if (!cancelled) setVerificationAttempt("deferred");
+      }
+    }
+
+    void refreshVerification();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, queryClient, reconciledProfile, verificationAttempt]);
+
+  const verifiedAstrology = reconciledProfile?.verifiedAstrologyData;
+  const verifiedSun = useMemo(
+    () => getVerifiedAstrologySign(verifiedAstrology, "sun"),
+    [verifiedAstrology],
+  );
+  const verifiedMoon = useMemo(
+    () => getVerifiedAstrologySign(verifiedAstrology, "moon"),
+    [verifiedAstrology],
+  );
+  const verifiedRising = useMemo(
+    () => getVerifiedAstrologySign(verifiedAstrology, "rising"),
+    [verifiedAstrology],
+  );
 
   if (isLoading) {
     return (
@@ -37,7 +153,7 @@ export default function OfflineProfilePage() {
     );
   }
 
-  if (error || !profile) {
+  if (error || !profile || !reconciledProfile) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -58,6 +174,7 @@ export default function OfflineProfilePage() {
   const astrology = profile.astrologyData;
   const numerology = profile.numerologyData;
   const archetype = profile.archetypeData;
+  const hasVerifiedCore = Boolean(verifiedSun && verifiedMoon);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -70,6 +187,11 @@ export default function OfflineProfilePage() {
             <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
               <Badge variant="secondary" className="gap-1"><ShieldCheck className="h-3.5 w-3.5" /> Saved on this device</Badge>
               <Badge variant="outline" className="gap-1"><CloudOff className="h-3.5 w-3.5" /> Works offline</Badge>
+              {hasVerifiedCore && (
+                <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-500">
+                  <ShieldCheck className="h-3.5 w-3.5" /> Sun and Moon verified
+                </Badge>
+              )}
             </div>
             <h1 className="mb-2 text-3xl font-bold sm:text-4xl">
               {profile.name}'s
@@ -78,6 +200,18 @@ export default function OfflineProfilePage() {
             <p className="text-muted-foreground">Generated locally on {new Date(profile.createdAt).toLocaleDateString()}</p>
           </div>
 
+          {verificationAttempt === "running" && (
+            <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-muted-foreground">
+              Checking the saved birth data against the independent online astronomy reference. The local reading remains available while this finishes.
+            </div>
+          )}
+
+          {verificationAttempt === "deferred" && !hasVerifiedCore && (
+            <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-muted-foreground">
+              Online verification is unavailable right now. Local symbolic layers remain visible, while Moon, Rising, houses, and sign-based compatibility stay paused rather than guessed.
+            </div>
+          )}
+
           <Card className="cosmic-border mystical-glow mb-8 border-0 bg-transparent">
             <div className="cosmic-border-inner">
               <CardContent className="p-8 text-center">
@@ -85,9 +219,9 @@ export default function OfflineProfilePage() {
                 <h2 className="mb-2 text-2xl font-bold sm:text-3xl">{archetype.title}</h2>
                 <p className="mx-auto mb-6 max-w-2xl text-lg text-muted-foreground">{archetype.description}</p>
                 <div className="flex flex-wrap items-center justify-center gap-5 text-sm">
-                  <span>{astrology.sunSign} Sun</span>
-                  <span>{astrology.moonSign} Moon approximation</span>
-                  <span>{astrology.risingSign} Rising approximation</span>
+                  <span>{verifiedSun ? `${verifiedSun} Sun · verified` : `${astrology.sunSign} Sun · local symbolic layer`}</span>
+                  <span>{verifiedMoon ? `${verifiedMoon} Moon · verified` : "Moon · unresolved"}</span>
+                  <span>{verifiedRising ? `${verifiedRising} Rising · verified` : "Rising · unresolved"}</span>
                 </div>
               </CardContent>
             </div>
@@ -122,12 +256,14 @@ export default function OfflineProfilePage() {
           </div>
 
           <Card className="glassmorphism mb-8">
-            <CardHeader><CardTitle>Your locally generated biography</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Your locally available biography</CardTitle></CardHeader>
             <CardContent><p className="text-lg leading-relaxed">{profile.biography}</p></CardContent>
           </Card>
 
           <div className="mb-5 rounded-lg border border-primary/25 bg-primary/5 p-4 text-sm text-muted-foreground">
-            This reading was generated without an AI provider. Sun and numerology layers are deterministic. Moon, Rising, houses, and planetary placements are explicitly labeled as legacy-grade approximations until the astronomical engine is connected.
+            {hasVerifiedCore
+              ? "Sun and Moon were independently verified and merged into this device profile. Rising, houses, nodes, Chiron, and unsupported planetary details remain unresolved or local symbolic context until their own verification contracts pass."
+              : "This local reading does not promote Moon, Rising, houses, or planetary approximations into verified identity facts. Those layers remain unresolved until independent astronomical verification succeeds."}
           </div>
 
           <DepthSoulGuide interpretation={profile.depthInterpretation} defaultOpenGroupIds={["behavior", "relationships-decisions"]} />

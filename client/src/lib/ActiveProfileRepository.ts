@@ -15,12 +15,17 @@
 export interface StoredProfile {
   // Identification
   id?: string;
+  remoteId?: string;
+  name?: string;
   codename?: string;
 
   // Birth data
   birthDate?: string;
   birthTime?: string;
   birthLocation?: string;
+  timezone?: string;
+  latitude?: string;
+  longitude?: string;
   birthplace?: {
     city?: string;
     region?: string;
@@ -28,9 +33,9 @@ export interface StoredProfile {
   };
 
   // Astrological data
-  sunSign?: string;
-  moonSign?: string;
-  risingSign?: string;
+  sunSign?: string | null;
+  moonSign?: string | null;
+  risingSign?: string | null;
   astrologyData?: any;
 
   // Numerology data
