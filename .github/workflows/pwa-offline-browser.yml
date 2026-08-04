@@ -5,13 +5,18 @@ on:
     branches: ["main", "master"]
     paths:
       - "client/**"
+      - "server/**"
       - "packages/core/**"
       - "public/**"
+      - "governance/FOUNDATION-WEB-RELEASE-v1.md"
+      - "governance/release-audits/FOUNDATION-WEB-RC-RECEIPT-v1.md"
       - "scripts/generate-pwa-service-worker.mjs"
       - "scripts/validate-pwa-output.mjs"
+      - "scripts/verify-foundation-web-rc.mjs"
       - "tests/pwa/**"
       - "package.json"
       - "package-lock.json"
+      - ".github/workflows/ci.yml"
       - ".github/workflows/pwa-offline-browser.yml"
   workflow_dispatch:
 
