@@ -34,7 +34,7 @@ const verifiedRemote = {
   name: "Robert Example",
   astrologyData: {
     sun: { status: "verified", sign: "Virgo" },
-    moon: { status: "verified", sign: "Scorpio" },
+    moon: { status: "verified", sign: "Virgo" },
     rising: { status: "verified", sign: "Scorpio" },
     // Legacy aliases cannot bypass the nested verification state.
     sunSign: "Aries",
@@ -88,7 +88,7 @@ test("verified remote placements replace legacy active aliases without changing 
   assert.equal(active.id, "local-robert");
   assert.equal(active.remoteId, "remote-robert");
   assert.equal(active.sunSign, "Virgo");
-  assert.equal(active.moonSign, "Scorpio");
+  assert.equal(active.moonSign, "Virgo");
   assert.equal(active.risingSign, "Scorpio");
   assert.equal(active.timezone, "America/New_York");
   assert.equal(active.archetype, "Evidence-Cleared Guardian");
@@ -125,7 +125,9 @@ test("offline profile keeps its local chart while carrying a separate verified B
   assert.equal(hydrated.astrologyData.sunSign, local.astrologyData.sunSign);
   assert.equal(hydrated.verifiedAstrologyData?.sun?.status, "verified");
   assert.equal(hydrated.verifiedAstrologyData?.moon?.status, "verified");
+  assert.equal(hydrated.verifiedAstrologyData?.moon?.sign, "Virgo");
   assert.equal(hydrated.verifiedAstrologyData?.rising?.status, "verified");
+  assert.equal(hydrated.verifiedAstrologyData?.rising?.sign, "Scorpio");
   assert.equal(hydrated.remoteSync?.remoteId, "remote-robert");
   assert.equal(hydrated.remoteSync?.status, "verified-online");
   assert.equal(
@@ -158,6 +160,7 @@ test("a profile synchronized before Ascendant support refreshes exactly once whe
     "2026-08-04T04:30:00.000Z",
   );
 
+  assert.equal(migrated.verifiedAstrologyData?.moon?.sign, "Virgo");
   assert.equal(migrated.verifiedAstrologyData?.rising?.sign, "Scorpio");
   assert.equal(
     migrated.remoteSync?.verificationVersion,
