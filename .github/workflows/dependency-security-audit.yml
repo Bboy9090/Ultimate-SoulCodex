@@ -34,7 +34,7 @@ jobs:
         run: npm ci
 
       - name: Apply non-breaking security updates
-        run: npm audit fix
+        run: npm audit fix --audit-level=high
 
       - name: Enforce production high-severity threshold
         run: npm audit --omit=dev --audit-level=high
