@@ -1,6 +1,11 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 const ACTIVE_PROFILE_KEY = "soulcodex.activeProfile.v1";
+const VISUAL_EVIDENCE_DIRECTORY = path.resolve(
+  "test-results/pwa/visual-evidence",
+);
 
 const routeCases = [
   { path: "/", pattern: /Soul Codex/i },
@@ -18,6 +23,23 @@ const chromiumViewports = [
   { name: "tablet", width: 834, height: 1194 },
   { name: "desktop", width: 1440, height: 900 },
 ];
+
+function safeRouteName(routePath) {
+  if (routePath === "/") return "home";
+  if (routePath.startsWith("/profile/")) return "identity";
+  return routePath.replace(/^\//, "").replace(/[^a-z0-9-]+/gi, "-");
+}
+
+async function captureVisualEvidence(page, browserName, viewport, routePath) {
+  mkdirSync(VISUAL_EVIDENCE_DIRECTORY, { recursive: true });
+  const filename = `${browserName}-${viewport.name}-${safeRouteName(routePath)}.jpg`;
+  await page.screenshot({
+    path: path.join(VISUAL_EVIDENCE_DIRECTORY, filename),
+    fullPage: true,
+    type: "jpeg",
+    quality: 72,
+  });
+}
 
 async function createLocalProfile(page) {
   await page.goto("/create", { waitUntil: "domcontentloaded" });
@@ -113,6 +135,9 @@ test("Foundation consumer journey is readable and navigable at common web widths
 ) => {
   const criticalConsoleErrors = [];
   const pageErrors = [];
+  const capturedEvidence = [];
+
+  mkdirSync(VISUAL_EVIDENCE_DIRECTORY, { recursive: true });
 
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
@@ -149,11 +174,30 @@ test("Foundation consumer journey is readable and navigable at common web widths
           /Saved on this device|Works offline|Soul Codex/i,
           viewport,
         );
+        await captureVisualEvidence(page, browserName, viewport, profilePath);
+        capturedEvidence.push({
+          browserName,
+          viewport: viewport.name,
+          route: profilePath,
+          file: `${browserName}-${viewport.name}-identity.jpg`,
+        });
       });
 
       for (const route of routeCases) {
         await test.step(`${viewport.name} ${route.path}`, async () => {
           await assertRoute(page, route.path, route.pattern, viewport);
+          await captureVisualEvidence(
+            page,
+            browserName,
+            viewport,
+            route.path,
+          );
+          capturedEvidence.push({
+            browserName,
+            viewport: viewport.name,
+            route: route.path,
+            file: `${browserName}-${viewport.name}-${safeRouteName(route.path)}.jpg`,
+          });
         });
       }
 
@@ -166,22 +210,26 @@ test("Foundation consumer journey is readable and navigable at common web widths
     });
   }
 
+  const summary = {
+    browserName,
+    viewports: viewports.map(({ name, width, height }) => ({
+      name,
+      width,
+      height,
+    })),
+    routes: [profilePath, ...routeCases.map(({ path }) => path)],
+    capturedEvidence,
+    pageErrors,
+    criticalConsoleErrors,
+  };
+
+  writeFileSync(
+    path.join(VISUAL_EVIDENCE_DIRECTORY, `${browserName}-summary.json`),
+    JSON.stringify(summary, null, 2),
+  );
+
   await testInfo.attach("responsive-qa-summary", {
-    body: JSON.stringify(
-      {
-        browserName,
-        viewports: viewports.map(({ name, width, height }) => ({
-          name,
-          width,
-          height,
-        })),
-        routes: [profilePath, ...routeCases.map(({ path }) => path)],
-        pageErrors,
-        criticalConsoleErrors,
-      },
-      null,
-      2,
-    ),
+    body: JSON.stringify(summary, null, 2),
     contentType: "application/json",
   });
 
