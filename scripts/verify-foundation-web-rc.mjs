@@ -57,7 +57,7 @@ check(
 check(
   "BILLING-02",
   "Checkout uses Stripe hosted sessions",
-  files.billing.includes("stripe.checkout.sessions.create") &&
+  /checkout\.sessions\.create\s*\(/.test(files.billing) &&
     files.billing.includes('provider: "stripe_checkout"'),
 );
 check(
@@ -82,7 +82,10 @@ check(
   "ASTRO-01",
   "Production astrology integrates independent Ascendant verification",
   files.astrology.includes("verifyAscendant") &&
-    files.astrology.includes('verifiedBodies.push("Ascendant")'),
+    files.astrology.includes('rising.status === "verified"') &&
+    files.astrology.includes('(["Ascendant"] as const)') &&
+    files.astrology.includes("ASTRO-ASCENDANT-v1") &&
+    files.astrology.includes("withRisingVerificationSummary(base, rising)"),
 );
 check(
   "ASTRO-02",
