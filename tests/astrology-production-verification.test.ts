@@ -5,12 +5,13 @@ import {
   calculateAstrology,
   calculateVerifiedAstrology,
   type BirthData,
-  type IndependentReferenceFetcher,
-} from "../server/services/astrology";
+} from "../server/services/astrology-production";
+import type { IndependentReferenceFetcher } from "../server/services/astrology";
 import {
   APPROVED_LONGITUDE_TOLERANCE_EVIDENCE,
   getApprovedLongitudeTolerancePolicy,
 } from "../server/services/astrology-tolerance-policy";
+import { APPROVED_ASCENDANT_POLICY } from "../server/services/ascendant-verification";
 import type {
   IndependentEphemerisReference,
   VerifiableBody,
@@ -63,7 +64,7 @@ test("the governed policy is approved only for Sun and Moon at 0.001 degrees", (
   );
 });
 
-test("matching independent references promote Sun and Moon with complete provenance", async () => {
+test("matching independent references promote Sun, Moon, and Ascendant with complete provenance", async () => {
   const result = await calculateVerifiedAstrology(birthData, {
     referenceFetcher: matchingReferenceFetcher(),
   });
@@ -95,10 +96,21 @@ test("matching independent references promote Sun and Moon with complete provena
     assert.ok(placement.provenance.longitudeDeltaDegrees <= 0.001);
   }
 
-  assert.deepEqual(result.verification.verifiedBodies, ["Sun", "Moon"]);
-  assert.deepEqual(result.verification.unresolvedBodies, ["Ascendant"]);
-  assert.equal(result.rising.status, "pending_ephemeris");
-  assert.equal(result.rising.sign, null);
+  assert.equal(result.rising.status, "verified");
+  assert.equal(result.rising.sign, "Scorpio");
+  assert.equal(result.rising.confidence, 1);
+  assert.ok(result.rising.provenance);
+  assert.equal(result.rising.provenance.policyId, "ASTRO-ASCENDANT-v1");
+  assert.equal(
+    result.rising.provenance.evidenceReceiptId,
+    "ASCENDANT-VERIFICATION-RECEIPT-v1",
+  );
+  assert.ok(result.rising.provenance.longitudeDeltaDegrees <= 0.02);
+  assert.deepEqual(result.verification.unresolvedBodies, []);
+  assert.equal(result.verification.complete, true);
+  assert.ok(result.verification.verifiedBodies.includes("Sun"));
+  assert.ok(result.verification.verifiedBodies.includes("Moon"));
+  assert.ok((result.verification.verifiedBodies as string[]).includes("Ascendant"));
 });
 
 test("a sign disagreement leaves the candidate withheld while independent matches may still verify", async () => {
@@ -150,9 +162,10 @@ test("a sign disagreement leaves the candidate withheld while independent matche
   assert.equal(result.sun.verificationFailure?.reason, "sign_disagreement");
   assert.equal(result.moon.status, "verified");
   assert.ok(result.moon.sign);
+  assert.equal(result.rising.status, "verified");
 });
 
-test("reference failure cannot leak a candidate sign into authoritative output", async () => {
+test("reference failure cannot leak a candidate sign into authoritative Sun or Moon output", async () => {
   const result = await calculateVerifiedAstrology(birthData, {
     referenceFetcher: async () => {
       throw new Error("horizons_http_503");
@@ -168,9 +181,11 @@ test("reference failure cannot leak a candidate sign into authoritative output",
     assert.ok(placement.candidate?.sign);
     assert.equal(placement.verificationFailure?.reason, "horizons_http_503");
   }
+  assert.equal(result.rising.status, "verified");
+  assert.equal(result.rising.sign, "Scorpio");
 });
 
-test("a draft policy cannot promote production candidates", async () => {
+test("a draft Sun/Moon policy cannot promote production candidates", async () => {
   const draftPolicyForBody = (_body: VerifiableBody): VerificationPolicy => ({
     status: "draft",
     policyId: "ASTRO-LONGITUDE-v1-draft",
@@ -190,6 +205,24 @@ test("a draft policy cannot promote production candidates", async () => {
     assert.equal(placement.sign, null);
     assert.equal(placement.verificationFailure?.reason, "policy_not_approved");
   }
+  assert.equal(result.rising.status, "verified");
+});
+
+test("a draft Ascendant policy cannot promote the Rising candidate", async () => {
+  const result = await calculateVerifiedAstrology(birthData, {
+    referenceFetcher: matchingReferenceFetcher(),
+    ascendantPolicy: {
+      ...APPROVED_ASCENDANT_POLICY,
+      status: "draft",
+      approvedAt: undefined,
+    },
+  });
+
+  assert.equal(result.sun.status, "verified");
+  assert.equal(result.moon.status, "verified");
+  assert.equal(result.rising.status, "calculated_pending_independent_verification");
+  assert.equal(result.rising.sign, null);
+  assert.equal(result.rising.verificationFailure?.reason, "policy_not_approved");
 });
 
 test("missing birth time prevents network verification and leaves timed placements unresolved", async () => {
