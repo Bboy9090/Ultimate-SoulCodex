@@ -57,7 +57,7 @@ describe("clarityReadingModel", () => {
     expect(model.signals.some((signal) => signal.id === "rising")).toBe(false);
   });
 
-  it("uses depth interpretation before generic fallbacks", () => {
+  it("uses direct depth interpretation before generic fallbacks", () => {
     const model = buildClarityReadingModel({
       depthInterpretation: {
         title: "Quiet Precision",
@@ -82,5 +82,41 @@ describe("clarityReadingModel", () => {
       relationshipImpact: "You may correct before first acknowledging.",
       groundedAction: "Name what is already good before suggesting a repair.",
     });
+  });
+
+  it("normalizes nested offline depth sections into the same reading contract", () => {
+    const model = buildClarityReadingModel({
+      depthInterpretation: {
+        claritySummary: {
+          title: "The Quiet Guardian",
+          summary: "You stabilize the room before naming what you need.",
+        },
+        behavior: { summary: "You notice pressure before other people name it." },
+        protectiveFunction: { summary: "Preparedness protects emotional safety." },
+        gift: { summary: "Your awareness becomes steady practical care." },
+        shadow: { summary: "Responsibility can become silent resentment." },
+        relationshipImpact: { summary: "You may help before asking whether help is wanted." },
+        action: { summary: "Ask one direct question before solving the problem." },
+      },
+      numerologyData: { lifePath: 9, expression: 4, soulUrge: 5 },
+    });
+
+    expect(model).toMatchObject({
+      title: "The Quiet Guardian",
+      summary: "You stabilize the room before naming what you need.",
+      visiblePattern: "You notice pressure before other people name it.",
+      protectiveFunction: "Preparedness protects emotional safety.",
+      gift: "Your awareness becomes steady practical care.",
+      cost: "Responsibility can become silent resentment.",
+      relationshipImpact: "You may help before asking whether help is wanted.",
+      groundedAction: "Ask one direct question before solving the problem.",
+    });
+    expect(model.signals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "life-path", confidence: "deterministic" }),
+        expect.objectContaining({ id: "expression", confidence: "deterministic" }),
+        expect.objectContaining({ id: "soul-urge", confidence: "deterministic" }),
+      ]),
+    );
   });
 });
