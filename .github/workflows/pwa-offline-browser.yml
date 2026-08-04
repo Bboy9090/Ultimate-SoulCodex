@@ -61,6 +61,15 @@ jobs:
       - name: Test offline browser restart and direct local profile reload
         run: npx playwright test --config=tests/pwa/playwright.config.mjs
 
+      - name: Upload responsive visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-web-visual-evidence-${{ github.run_id }}
+          path: test-results/pwa/visual-evidence
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Upload browser evidence on failure
         if: failure()
         uses: actions/upload-artifact@v4
