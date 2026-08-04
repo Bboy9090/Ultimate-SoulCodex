@@ -50,6 +50,9 @@ jobs:
           tests/profile-verification-reconciliation.test.ts
           tests/billing-security.test.ts
 
+      - name: Run Foundation Web RC Invariant Audit
+        run: node scripts/verify-foundation-web-rc.mjs
+
       - name: Build Application
         run: npm run build
 
