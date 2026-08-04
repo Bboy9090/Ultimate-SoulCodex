@@ -10,7 +10,7 @@ import {
   calculateVerifiedAstrology,
   getTarotBirthCards,
   type AstrologyData,
-} from "./services/astrology";
+} from "./services/astrology-production";
 import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
