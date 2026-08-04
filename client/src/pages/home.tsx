@@ -31,6 +31,7 @@ export default function Home() {
   const profile = result.profile;
   const { id, name } = getProfileIdentity(profile);
   const identityHref = id ? `/profile/${id}` : "/create";
+  const readingHref = id ? `/reading/${id}` : "/create";
 
   const destinations = [
     {
@@ -42,7 +43,7 @@ export default function Home() {
         "Your saved facts, calculated systems, and verification status in one calm place.",
     },
     {
-      href: identityHref,
+      href: readingHref,
       icon: BookOpen,
       title: "Reading",
       question: "Why do I operate this way?",
@@ -185,7 +186,7 @@ export default function Home() {
               Depth should create clarity, not bury it.
             </p>
             <Link
-              href={identityHref}
+              href={profile ? readingHref : identityHref}
               className="inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold transition-transform hover:-translate-y-0.5"
               style={{
                 background: "linear-gradient(135deg,#e0bb72,#c9943f)",
@@ -194,7 +195,7 @@ export default function Home() {
                 boxShadow: "0 12px 34px rgba(214,171,94,.2)",
               }}
             >
-              {profile ? "Continue your Codex" : "Create your Soul Profile"}
+              {profile ? "Continue your clarity reading" : "Create your Soul Profile"}
               <ArrowRight size={17} />
             </Link>
           </div>
