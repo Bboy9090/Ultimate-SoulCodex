@@ -6,6 +6,8 @@ type PlacementRecord = {
   sign?: string | null;
 };
 
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 2;
+
 export type RemoteProfileSnapshot = {
   id?: string;
   name?: string;
@@ -41,6 +43,7 @@ export type ReconciledOfflineProfile = OfflineCodexProfile & {
     remoteId: string;
     syncedAt: string;
     status: "verified-online";
+    verificationVersion?: number;
   };
 };
 
@@ -61,6 +64,26 @@ export function hasVerifiedSunAndMoon(
   return Boolean(
     getVerifiedAstrologySign(astrology, "sun") &&
       getVerifiedAstrologySign(astrology, "moon"),
+  );
+}
+
+export function hasVerifiedBigThree(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  return Boolean(
+    hasVerifiedSunAndMoon(astrology) &&
+      getVerifiedAstrologySign(astrology, "rising"),
+  );
+}
+
+function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
+  return Boolean(
+    profile.birthTime &&
+      profile.timezone &&
+      profile.latitude !== null &&
+      profile.latitude !== undefined &&
+      profile.longitude !== null &&
+      profile.longitude !== undefined,
   );
 }
 
@@ -105,6 +128,7 @@ export function reconcileActiveProfile(
         ? local.confidence
         : {}),
       astrologyVerification: astrology?.verification ?? null,
+      astrologyVerificationVersion: CURRENT_ASTROLOGY_VERIFICATION_VERSION,
       remoteSyncedAt: syncedAt,
     },
     updatedAt: syncedAt,
@@ -133,6 +157,7 @@ export function reconcileOfflineProfile(
       remoteId,
       syncedAt,
       status: "verified-online",
+      verificationVersion: CURRENT_ASTROLOGY_VERIFICATION_VERSION,
     },
     updatedAt: syncedAt,
   };
@@ -141,5 +166,15 @@ export function reconcileOfflineProfile(
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
 ): boolean {
-  return !hasVerifiedSunAndMoon(profile.verifiedAstrologyData);
+  if (!hasVerifiedSunAndMoon(profile.verifiedAstrologyData)) {
+    return true;
+  }
+
+  const syncedVersion = profile.remoteSync?.verificationVersion ?? 1;
+  const needsAscendantMigration =
+    hasExactAscendantInputs(profile) &&
+    syncedVersion < CURRENT_ASTROLOGY_VERIFICATION_VERSION &&
+    !getVerifiedAstrologySign(profile.verifiedAstrologyData, "rising");
+
+  return needsAscendantMigration;
 }
