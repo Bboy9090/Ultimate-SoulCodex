@@ -1,111 +1,155 @@
 import React from "react";
-import { IconDiamond } from "../components/Icons";
 import { motion } from "framer-motion";
+import Navigation from "@/components/navigation";
+import { IconDiamond } from "../components/Icons";
 
 export default function TermsPage() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
-        maxWidth: 720,
-        margin: "2rem auto",
-        padding: "2rem 1.5rem",
-        background: "rgba(28, 22, 53, 0.72)",
-        borderRadius: 16,
-        color: "#EAEAF5",
-        lineHeight: 1.7,
-        fontSize: "0.95rem",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-      }}
-    >
-      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.8rem", marginBottom: "0.5rem" }}>Terms of Service</h1>
-        <p style={{ color: "var(--sc-gold)", fontSize: "0.85rem", opacity: 0.7 }}>
+    <div style={{ minHeight: "100vh" }}>
+      <Navigation />
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "7rem 1.5rem 3rem" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            padding: "2rem 1.5rem",
+            background: "rgba(28, 22, 53, 0.72)",
+            borderRadius: 16,
+            color: "#EAEAF5",
+            lineHeight: 1.7,
+            fontSize: "0.95rem",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+            <h1
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontSize: "1.8rem",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Terms of Service
+            </h1>
+            <p
+              style={{
+                color: "var(--sc-gold)",
+                fontSize: "0.85rem",
+                opacity: 0.7,
+              }}
+            >
+              Effective: August 4, 2026
+            </p>
+          </div>
 
-          Effective: July 16, 2026
-        </p>
-      </div>
+          <Section title="1. Acceptance of Terms">
+            <p>
+              By accessing or using Soul Codex, you agree to these Terms of
+              Service. If you do not agree, do not use the service.
+            </p>
+          </Section>
 
-      <Section title="1. Acceptance of Terms">
-        <p>
-          By accessing or using Soul Codex ("the App"), you agree to be bound by these Terms of Service. 
-          If you do not agree, please do not use the App.
-        </p>
-      </Section>
+          <Section title="2. Nature of Soul Codex">
+            <p>
+              Soul Codex combines astronomical calculations, numerology,
+              symbolic systems, and reflective interpretation for personal
+              insight. Verified, unverified, and unresolved outputs are labeled
+              separately where the product supports those distinctions.
+            </p>
+            <p style={{ fontWeight: 600, color: "var(--sc-gold)" }}>
+              Soul Codex does not provide medical, legal, financial, mental
+              health, or other professional advice. Do not use its readings as
+              a substitute for qualified professional care or as the sole basis
+              for a high-stakes decision.
+            </p>
+          </Section>
 
-      <Section title="2. The Nature of the Soul Codex">
-        <p>
-          Soul Codex provides metaphysical, astronomical, and psychological interpretations for personal 
-          growth and self-reflection. 
-        </p>
-        <p style={{ fontWeight: 600, color: "var(--sc-gold)" }}>
+          <Section title="3. Calculations, Interpretations, and AI">
+            <p>
+              Calculated facts are kept separate from narrative interpretation.
+              Some requested explanations may use a configured AI provider. AI
+              output can be incomplete or inaccurate, so inspect the available
+              evidence, uncertainty, and limitations before relying on it.
+            </p>
+          </Section>
 
-          CRITICAL DISCLAIMER: The App does not provide medical, legal, financial, or professional advice. 
-          All guidance, including AI-generated responses from the "Soul Oracle," is for entertainment and 
-          spiritual inquiry only.
-        </p>
-      </Section>
+          <Section title="4. Your Information and Access">
+            <p>
+              You are responsible for providing accurate birth details and for
+              protecting any account credentials or profile-access capability
+              associated with your use. Local-first profiles may remain on the
+              device where they were created unless you deliberately use a
+              server-backed feature.
+            </p>
+          </Section>
 
-      <Section title="3. AI Integration (Soul Oracle)">
-        <p>
-          Our platform utilizes advanced Large Language Models (including Google Gemini) to synthesize 
-          complex esoteric data into narrative guidance. You acknowledge that AI can generate 
-          inaccurate or metaphysical content. Soul Codex is not responsible for any actions taken 
-          based on AI-generated guidance.
-        </p>
-      </Section>
+          <Section title="5. Premium Access and Payments">
+            <p>
+              Premium availability, included tools, and price are shown before
+              purchase. When web checkout is enabled, payment details are
+              entered on Stripe's hosted checkout page. Soul Codex does not
+              collect or store card numbers, security codes, or expiration
+              dates. Premium entitlement is activated only after confirmed
+              payment and requires persistent profile storage.
+            </p>
+          </Section>
 
-      <Section title="4. User Identity & Data">
-        <p>
-          You are responsible for the security of your account (including Apple Identity or local 
-          credentials). You agree to provide accurate birth details for calculations. We reserve 
-          the right to terminate accounts that violate our community standards.
-        </p>
-      </Section>
+          <Section title="6. Intellectual Property">
+            <p>
+              Soul Codex branding, original software, original presentation,
+              and original written material are protected by applicable
+              intellectual-property law. You receive a personal,
+              non-transferable right to use the service, not ownership of the
+              underlying software or brand.
+            </p>
+          </Section>
 
-      <Section title="5. Subscriptions & Payments">
-        <p>
-          Some Soul Codex features require a premium entitlement. Availability and activation methods
-          vary by platform. The iOS and Android store apps do not sell premium access or redeem access
-          codes. If a future store version offers an in-app purchase, that purchase and any refund will
-          be handled under the applicable store's terms shown at the time of purchase.
-        </p>
-      </Section>
+          <Section title="7. Deletion and Data Control">
+            <p>
+              You may clear local profile data through Settings. Account holders
+              may request deletion of server-backed account data through the
+              available account controls or by contacting support when account
+              access is unavailable. Deletion may be irreversible.
+            </p>
+          </Section>
 
-      <Section title="6. Intellectual Property">
-        <p>
-          The underlying Engine of the Eternal Now, the Soul Codex branding, and the visual 
-          synthesis of esoteric symbols are the exclusive property of Soul Codex. You are granted 
-          a personal, non-transferable license to use the App.
-        </p>
-      </Section>
+          <Section title="8. Availability and Changes">
+            <p>
+              Features may be corrected, limited, paused, or removed when their
+              calculation, verification, security, or infrastructure does not
+              meet the current release standard. We may update these terms when
+              the product or its operating requirements change.
+            </p>
+          </Section>
 
-      <Section title="7. Data Deletion">
-        <p>
-          As part of our commitment to data sovereignty and App Store compliance, you have the 
-          absolute right to be forgotten. You may delete your account and all associated profile 
-          data at any time through Settings → Delete Account & Data. This action is irreversible and purges
-          all records from our persistent storage.
-        </p>
-      </Section>
+          <Section title="9. Contact">
+            <p>
+              For questions regarding these terms, contact{" "}
+              <strong>legal@soulcodex.app</strong>.
+            </p>
+          </Section>
 
-      <Section title="8. Contact">
-        <p>
-          For questions regarding these terms, contact us at <strong>legal@soulcodex.app</strong>.
-        </p>
-      </Section>
-
-      <div style={{ marginTop: "3rem", textAlign: "center", opacity: 0.5, fontSize: "0.8rem" }}>
-        <IconDiamond size={12} style={{ verticalAlign: "middle" }} /> © 2026 Soul Codex <IconDiamond size={12} style={{ verticalAlign: "middle" }} />
-      </div>
-    </motion.div>
+          <div
+            style={{
+              marginTop: "3rem",
+              textAlign: "center",
+              opacity: 0.5,
+              fontSize: "0.8rem",
+            }}
+          >
+            <IconDiamond size={12} style={{ verticalAlign: "middle" }} /> © 2026
+            Soul Codex{" "}
+            <IconDiamond size={12} style={{ verticalAlign: "middle" }} />
+          </div>
+        </motion.div>
+      </main>
+    </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: "2rem" }}>
+    <section style={{ marginBottom: "2rem" }}>
       <h2
         style={{
           fontSize: "1.2rem",
@@ -119,6 +163,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         {title}
       </h2>
       <div style={{ marginTop: "0.75rem" }}>{children}</div>
-    </div>
+    </section>
   );
 }
