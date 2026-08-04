@@ -52,9 +52,19 @@ export default function CompatibilityExplorerPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loaded = loadActiveProfile();
-    setProfile(loaded.profile ?? null);
-    if (!loaded.profile) setLoading(false);
+    const refreshProfile = () => {
+      const loaded = loadActiveProfile();
+      setProfile(loaded.profile ?? null);
+      if (!loaded.profile) setLoading(false);
+    };
+
+    refreshProfile();
+    window.addEventListener("soulcodex:profile-updated", refreshProfile);
+    window.addEventListener("storage", refreshProfile);
+    return () => {
+      window.removeEventListener("soulcodex:profile-updated", refreshProfile);
+      window.removeEventListener("storage", refreshProfile);
+    };
   }, []);
 
   const verifiedSun = useMemo(() => getVerifiedPlacement(placementCandidate(profile, "sun")), [profile]);
@@ -122,7 +132,12 @@ export default function CompatibilityExplorerPage() {
             <p className="mt-3 text-muted-foreground">
               Current status: <strong>{sunStatus}</strong>. Your saved profile remains active, but the sign-ranking engine will not convert a legacy or approximate sign into relationship advice.
             </p>
-            <p className="mt-3 text-sm text-muted-foreground">Numerology and other supported layers remain preserved for the future multi-system compatibility engine.</p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Open Identity while online to refresh the saved birth data against the independent astronomy reference. Numerology remains preserved while verification is pending.
+            </p>
+            <a href={profile.id ? `/profile/${profile.id}` : "/create"} className="mt-5 inline-flex rounded-lg border border-amber-500/40 px-4 py-2 text-sm font-semibold text-amber-600">
+              Refresh verification in Identity
+            </a>
           </section>
         )}
 
