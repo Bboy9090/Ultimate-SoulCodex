@@ -1,4 +1,9 @@
-export type ClarityConfidence = "verified" | "deterministic" | "supported" | "tentative" | "unavailable";
+export type ClarityConfidence =
+  | "verified"
+  | "deterministic"
+  | "supported"
+  | "tentative"
+  | "unavailable";
 
 export interface ClaritySignal {
   id: string;
@@ -32,6 +37,20 @@ export function firstSupportedText(...values: unknown[]): string | undefined {
   ) as string | undefined;
 }
 
+function sectionText(section: unknown): string | undefined {
+  if (typeof section === "string") return section.trim() || undefined;
+  if (!section || typeof section !== "object") return undefined;
+  const record = section as AnyRecord;
+  return firstSupportedText(
+    record.summary,
+    record.description,
+    record.text,
+    record.body,
+    record.insight,
+    record.value,
+  );
+}
+
 function addSignal(
   signals: ClaritySignal[],
   id: string,
@@ -40,6 +59,7 @@ function addSignal(
   confidence: ClarityConfidence,
   source: string,
 ) {
+  if (signals.some((signal) => signal.id === id)) return;
   if (typeof value !== "string" && typeof value !== "number") return;
   const normalized = String(value).trim();
   if (!normalized) return;
@@ -55,12 +75,17 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   const depth = (profile.depthInterpretation ?? {}) as AnyRecord;
 
   const title =
-    firstSupportedText(depth.title, archetype.title, archetype.name) ??
-    "Your evolving pattern";
+    firstSupportedText(
+      depth.title,
+      depth.claritySummary?.title,
+      archetype.title,
+      archetype.name,
+    ) ?? "Your evolving pattern";
 
   const summary =
     firstSupportedText(
       depth.summary,
+      sectionText(depth.claritySummary),
       profile.biography,
       archetype.description,
     ) ??
@@ -69,7 +94,9 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   const visiblePattern =
     firstSupportedText(
       depth.visiblePattern,
-      depth.behavior?.summary,
+      sectionText(depth.visiblePattern),
+      sectionText(depth.behavior),
+      sectionText(depth.behaviorPattern),
       archetype.strengths?.[0],
       archetype.gifts?.[0],
     ) ??
@@ -77,17 +104,17 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
 
   const protectiveFunction =
     firstSupportedText(
-      depth.protectiveFunction,
-      depth.hiddenNeed,
-      archetype.protectiveFunction,
-      archetype.hiddenNeed,
+      sectionText(depth.protectiveFunction),
+      sectionText(depth.hiddenNeed),
+      sectionText(archetype.protectiveFunction),
+      sectionText(archetype.hiddenNeed),
     ) ??
     "This pattern may protect stability, dignity, belonging, certainty, or emotional safety. The profile cannot prove which one without lived context.";
 
   const gift =
     firstSupportedText(
-      depth.gift,
-      depth.healthyExpression,
+      sectionText(depth.gift),
+      sectionText(depth.healthyExpression),
       archetype.gifts?.[0],
       archetype.strengths?.[0],
     ) ??
@@ -95,8 +122,8 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
 
   const cost =
     firstSupportedText(
-      depth.cost,
-      depth.shadow,
+      sectionText(depth.cost),
+      sectionText(depth.shadow),
       archetype.shadows?.[0],
       archetype.growthAreas?.[0],
     ) ??
@@ -104,24 +131,90 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
 
   const relationshipImpact =
     firstSupportedText(
-      depth.relationshipImpact,
-      personality.relationshipStyle,
-      archetype.relationshipImpact,
+      sectionText(depth.relationshipImpact),
+      sectionText(depth.relationships),
+      sectionText(personality.relationshipStyle),
+      sectionText(archetype.relationshipImpact),
     ) ??
     "In relationships, the central task is to name needs and boundaries directly instead of expecting other people to decode them.";
 
   const signals: ClaritySignal[] = [];
-  addSignal(signals, "sun", "Sun", verifiedAstrology.sun?.sign ?? verifiedAstrology.sunSign, "verified", "independent astronomy");
-  addSignal(signals, "moon", "Moon", verifiedAstrology.moon?.sign ?? verifiedAstrology.moonSign, "verified", "independent astronomy");
-  addSignal(signals, "rising", "Rising", verifiedAstrology.rising?.sign ?? verifiedAstrology.risingSign, "verified", "independent astronomy");
+  addSignal(
+    signals,
+    "sun",
+    "Sun",
+    verifiedAstrology.sun?.sign ?? verifiedAstrology.sunSign,
+    "verified",
+    "independent astronomy",
+  );
+  addSignal(
+    signals,
+    "moon",
+    "Moon",
+    verifiedAstrology.moon?.sign ?? verifiedAstrology.moonSign,
+    "verified",
+    "independent astronomy",
+  );
+  addSignal(
+    signals,
+    "rising",
+    "Rising",
+    verifiedAstrology.rising?.sign ?? verifiedAstrology.risingSign,
+    "verified",
+    "independent astronomy",
+  );
 
   if (!signals.some((signal) => signal.id === "sun")) {
-    addSignal(signals, "sun-symbolic", "Sun", astrology.sunSign, "supported", "saved symbolic profile");
+    addSignal(
+      signals,
+      "sun-symbolic",
+      "Sun",
+      astrology.sunSign,
+      "supported",
+      "saved symbolic profile",
+    );
   }
-  addSignal(signals, "life-path", "Life Path", numerology.lifePath, "deterministic", "birth-date calculation");
-  addSignal(signals, "expression", "Expression", numerology.expression, "deterministic", "name calculation");
-  addSignal(signals, "enneagram", "Enneagram", personality.enneagram?.type, "supported", "user assessment");
-  addSignal(signals, "mbti", "MBTI", personality.mbti?.type, "supported", "user assessment");
+
+  addSignal(
+    signals,
+    "life-path",
+    "Life Path",
+    numerology.lifePath,
+    "deterministic",
+    "birth-date calculation",
+  );
+  addSignal(
+    signals,
+    "expression",
+    "Expression",
+    numerology.expression,
+    "deterministic",
+    "name calculation",
+  );
+  addSignal(
+    signals,
+    "soul-urge",
+    "Soul Urge",
+    numerology.soulUrge,
+    "deterministic",
+    "name-vowel calculation",
+  );
+  addSignal(
+    signals,
+    "enneagram",
+    "Enneagram",
+    personality.enneagram?.type,
+    "supported",
+    "user assessment",
+  );
+  addSignal(
+    signals,
+    "mbti",
+    "MBTI",
+    personality.mbti?.type,
+    "supported",
+    "user assessment",
+  );
 
   const limitations = [
     "Symbolic overlap is supporting context, not independent proof.",
@@ -130,7 +223,9 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   ];
 
   if (!signals.some((signal) => signal.confidence === "verified")) {
-    limitations.unshift("No independently verified astronomical signal is available in this reading model.");
+    limitations.unshift(
+      "No independently verified astronomical signal is available in this reading model.",
+    );
   }
 
   return {
@@ -141,7 +236,12 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     gift,
     cost,
     relationshipImpact,
-    groundedAction: firstSupportedText(depth.groundedAction, depth.action) ?? DEFAULT_ACTION,
+    groundedAction:
+      firstSupportedText(
+        sectionText(depth.groundedAction),
+        sectionText(depth.action),
+        profile.dailyGuidance,
+      ) ?? DEFAULT_ACTION,
     signals,
     limitations,
   };

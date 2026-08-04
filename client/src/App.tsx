@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
+import ProfileClarityLauncher from "@/components/ProfileClarityLauncher";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 import LocalFirstInputForm from "./pages/local-first-input-form";
@@ -27,7 +28,13 @@ import type { Profile as ProfileType } from "@shared/schema";
 
 function ProfileRoute() {
   const { id } = useParams();
-  return id?.startsWith("local-") ? <OfflineProfilePage /> : <Profile />;
+  const profile = id?.startsWith("local-") ? <OfflineProfilePage /> : <Profile />;
+
+  return (
+    <ProfileClarityLauncher profileId={id}>
+      {profile}
+    </ProfileClarityLauncher>
+  );
 }
 
 function ReadingRoute() {
