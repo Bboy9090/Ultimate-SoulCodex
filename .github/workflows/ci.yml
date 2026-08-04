@@ -35,7 +35,7 @@ jobs:
       - name: Run Workspace Tests
         run: npm test
 
-      - name: Run Trust Boundary Tests
+      - name: Run Trust And Security Boundary Tests
         run: >-
           node --import tsx --test
           tests/astrology-candidate.test.ts
@@ -48,6 +48,7 @@ jobs:
           tests/bobby-big-three-golden.test.ts
           tests/human-design-trust.test.ts
           tests/profile-verification-reconciliation.test.ts
+          tests/billing-security.test.ts
 
       - name: Build Application
         run: npm run build
