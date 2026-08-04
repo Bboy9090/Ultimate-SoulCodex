@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
 import {
+  CURRENT_ASTROLOGY_VERIFICATION_VERSION,
   getVerifiedAstrologySign,
+  hasVerifiedBigThree,
   hasVerifiedSunAndMoon,
   profileNeedsOnlineVerification,
   reconcileActiveProfile,
   reconcileOfflineProfile,
+  type ReconciledOfflineProfile,
 } from "../client/src/lib/profileVerificationReconciliation.ts";
 
 const local = generateOfflineCodexProfile(
@@ -32,20 +35,32 @@ const verifiedRemote = {
   astrologyData: {
     sun: { status: "verified", sign: "Virgo" },
     moon: { status: "verified", sign: "Scorpio" },
-    rising: { status: "pending_ephemeris", sign: null },
+    rising: { status: "verified", sign: "Scorpio" },
     // Legacy aliases cannot bypass the nested verification state.
     sunSign: "Aries",
     moonSign: "Gemini",
     risingSign: "Capricorn",
     verification: {
-      verifiedBodies: ["Sun", "Moon"],
-      policyId: "ASTRO-LONGITUDE-v1",
+      verifiedBodies: ["Sun", "Moon", "Ascendant"],
+      policyId: "ASTRO-LONGITUDE-v1 + ASTRO-ASCENDANT-v1",
     },
   },
   numerologyData: local.numerologyData,
   archetypeData: {
     ...local.archetypeData,
     title: "Evidence-Cleared Guardian",
+  },
+};
+
+const preAscendantRemote = {
+  ...verifiedRemote,
+  astrologyData: {
+    ...verifiedRemote.astrologyData,
+    rising: { status: "pending_ephemeris", sign: null },
+    verification: {
+      verifiedBodies: ["Sun", "Moon"],
+      policyId: "ASTRO-LONGITUDE-v1",
+    },
   },
 };
 
@@ -67,16 +82,20 @@ test("verified remote placements replace legacy active aliases without changing 
       archetype: local.archetypeData.title,
     },
     verifiedRemote,
-    "2026-08-03T23:00:00.000Z",
+    "2026-08-04T04:30:00.000Z",
   );
 
   assert.equal(active.id, "local-robert");
   assert.equal(active.remoteId, "remote-robert");
   assert.equal(active.sunSign, "Virgo");
   assert.equal(active.moonSign, "Scorpio");
-  assert.equal(active.risingSign, null);
+  assert.equal(active.risingSign, "Scorpio");
   assert.equal(active.timezone, "America/New_York");
   assert.equal(active.archetype, "Evidence-Cleared Guardian");
+  assert.equal(
+    (active.confidence as Record<string, unknown>).astrologyVerificationVersion,
+    CURRENT_ASTROLOGY_VERIFICATION_VERSION,
+  );
 });
 
 test("unverified nested placements never inherit populated legacy aliases", () => {
@@ -91,21 +110,75 @@ test("unverified nested placements never inherit populated legacy aliases", () =
 
   assert.equal(getVerifiedAstrologySign(astrology, "sun"), null);
   assert.equal(getVerifiedAstrologySign(astrology, "moon"), null);
+  assert.equal(getVerifiedAstrologySign(astrology, "rising"), null);
   assert.equal(hasVerifiedSunAndMoon(astrology), false);
+  assert.equal(hasVerifiedBigThree(astrology), false);
 });
 
-test("offline profile keeps its local chart while carrying a separate verified overlay", () => {
+test("offline profile keeps its local chart while carrying a separate verified Big Three overlay", () => {
   const hydrated = reconcileOfflineProfile(
     local,
     verifiedRemote,
-    "2026-08-03T23:00:00.000Z",
+    "2026-08-04T04:30:00.000Z",
   );
 
   assert.equal(hydrated.astrologyData.sunSign, local.astrologyData.sunSign);
   assert.equal(hydrated.verifiedAstrologyData?.sun?.status, "verified");
   assert.equal(hydrated.verifiedAstrologyData?.moon?.status, "verified");
+  assert.equal(hydrated.verifiedAstrologyData?.rising?.status, "verified");
   assert.equal(hydrated.remoteSync?.remoteId, "remote-robert");
   assert.equal(hydrated.remoteSync?.status, "verified-online");
+  assert.equal(
+    hydrated.remoteSync?.verificationVersion,
+    CURRENT_ASTROLOGY_VERIFICATION_VERSION,
+  );
   assert.equal(hydrated.archetypeData.title, "Evidence-Cleared Guardian");
+  assert.equal(hasVerifiedBigThree(hydrated.verifiedAstrologyData), true);
   assert.equal(profileNeedsOnlineVerification(hydrated), false);
+});
+
+test("a profile synchronized before Ascendant support refreshes exactly once when raw inputs exist", () => {
+  const legacyHydrated = {
+    ...local,
+    verifiedAstrologyData: preAscendantRemote.astrologyData,
+    remoteSync: {
+      remoteId: "remote-robert",
+      syncedAt: "2026-08-03T23:00:00.000Z",
+      status: "verified-online" as const,
+    },
+  } satisfies ReconciledOfflineProfile;
+
+  assert.equal(hasVerifiedSunAndMoon(legacyHydrated.verifiedAstrologyData), true);
+  assert.equal(hasVerifiedBigThree(legacyHydrated.verifiedAstrologyData), false);
+  assert.equal(profileNeedsOnlineVerification(legacyHydrated), true);
+
+  const migrated = reconcileOfflineProfile(
+    legacyHydrated,
+    verifiedRemote,
+    "2026-08-04T04:30:00.000Z",
+  );
+
+  assert.equal(migrated.verifiedAstrologyData?.rising?.sign, "Scorpio");
+  assert.equal(
+    migrated.remoteSync?.verificationVersion,
+    CURRENT_ASTROLOGY_VERIFICATION_VERSION,
+  );
+  assert.equal(profileNeedsOnlineVerification(migrated), false);
+});
+
+test("missing exact Ascendant inputs do not create an endless migration loop", () => {
+  const legacyWithoutCoordinates = {
+    ...local,
+    latitude: null,
+    longitude: null,
+    verifiedAstrologyData: preAscendantRemote.astrologyData,
+    remoteSync: {
+      remoteId: "remote-robert",
+      syncedAt: "2026-08-03T23:00:00.000Z",
+      status: "verified-online" as const,
+    },
+  } satisfies ReconciledOfflineProfile;
+
+  assert.equal(hasVerifiedSunAndMoon(legacyWithoutCoordinates.verifiedAstrologyData), true);
+  assert.equal(profileNeedsOnlineVerification(legacyWithoutCoordinates), false);
 });
