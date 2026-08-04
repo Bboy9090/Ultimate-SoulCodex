@@ -44,7 +44,7 @@ export type ReconciledOfflineProfile = OfflineCodexProfile & {
   };
 };
 
-function verifiedSign(
+export function getVerifiedAstrologySign(
   astrology: RemoteProfileSnapshot["astrologyData"],
   body: "sun" | "moon" | "rising",
 ): string | null {
@@ -58,7 +58,10 @@ function verifiedSign(
 export function hasVerifiedSunAndMoon(
   astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
 ): boolean {
-  return Boolean(verifiedSign(astrology, "sun") && verifiedSign(astrology, "moon"));
+  return Boolean(
+    getVerifiedAstrologySign(astrology, "sun") &&
+      getVerifiedAstrologySign(astrology, "moon"),
+  );
 }
 
 export function reconcileActiveProfile(
@@ -67,9 +70,9 @@ export function reconcileActiveProfile(
   syncedAt = new Date().toISOString(),
 ): StoredProfile {
   const astrology = remote.astrologyData;
-  const sunSign = verifiedSign(astrology, "sun");
-  const moonSign = verifiedSign(astrology, "moon");
-  const risingSign = verifiedSign(astrology, "rising");
+  const sunSign = getVerifiedAstrologySign(astrology, "sun");
+  const moonSign = getVerifiedAstrologySign(astrology, "moon");
+  const risingSign = getVerifiedAstrologySign(astrology, "rising");
 
   return {
     ...local,
