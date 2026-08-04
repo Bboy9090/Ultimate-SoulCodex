@@ -28,6 +28,17 @@ function ProfileRoute() {
   return id?.startsWith("local-") ? <OfflineProfilePage /> : <Profile />;
 }
 
+function TimelineRoute() {
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="pt-20">
+        <TimelinePage />
+      </div>
+    </div>
+  );
+}
+
 interface PremiumRouteProps {
   component: React.ComponentType<any>;
 }
@@ -87,7 +98,7 @@ function Router() {
       <Route path="/create" component={LocalFirstInputForm} />
       <Route path="/compatibility" component={CompatibilityHubPage} />
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
-      <Route path="/timeline" component={TimelinePage} />
+      <Route path="/timeline" component={TimelineRoute} />
       <Route path="/astrocartography/:id">
         {() => <PremiumRoute component={AstrocartographyPage} />}
       </Route>
