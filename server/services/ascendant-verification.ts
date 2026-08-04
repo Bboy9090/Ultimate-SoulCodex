@@ -97,11 +97,11 @@ const REFERENCE_SOURCE =
 export const APPROVED_ASCENDANT_POLICY: AscendantVerificationPolicy = Object.freeze({
   status: "approved",
   policyId: "ASTRO-ASCENDANT-v1",
-  maximumLongitudeDeltaDegrees: 0.02,
-  approvedAt: "2026-08-04T00:00:00.000Z",
+  maximumLongitudeDeltaDegrees: 0.01,
+  approvedAt: "2026-08-04T04:07:09.547Z",
   evidenceReceiptId: "ASCENDANT-VERIFICATION-RECEIPT-v1",
   evidenceFixtureCount: 24,
-  evidenceMaximumObservedDeltaDegrees: 0.01,
+  evidenceMaximumObservedDeltaDegrees: 0.0042490351064543574,
 });
 
 function radians(degrees: number): number {
