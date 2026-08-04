@@ -45,6 +45,7 @@ jobs:
           tests/astrology-tolerance-policy.test.ts
           tests/astrology-production-verification.test.ts
           tests/human-design-trust.test.ts
+          tests/profile-verification-reconciliation.test.ts
 
       - name: Build Application
         run: npm run build
