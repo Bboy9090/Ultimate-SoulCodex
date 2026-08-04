@@ -23,6 +23,7 @@ export interface BillingStatus {
   enabled: boolean;
   provider: "stripe_checkout";
   collectsCardDataOnSoulCodex: false;
+  persistentEntitlements: boolean;
   reason?: "not_configured";
 }
 
@@ -46,9 +47,15 @@ function configuredPublicAppUrl(): string | null {
   }
 }
 
+function persistentStorageConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim());
+}
+
 export function getBillingStatus(): BillingStatus {
+  const persistentEntitlements = persistentStorageConfigured();
   const enabled = Boolean(
-    process.env.STRIPE_SECRET_KEY?.trim() &&
+    persistentEntitlements &&
+      process.env.STRIPE_SECRET_KEY?.trim() &&
       process.env.STRIPE_PRICE_ID?.trim() &&
       process.env.STRIPE_WEBHOOK_SECRET?.trim() &&
       configuredPublicAppUrl(),
@@ -59,11 +66,13 @@ export function getBillingStatus(): BillingStatus {
         enabled: true,
         provider: "stripe_checkout",
         collectsCardDataOnSoulCodex: false,
+        persistentEntitlements: true,
       }
     : {
         enabled: false,
         provider: "stripe_checkout",
         collectsCardDataOnSoulCodex: false,
+        persistentEntitlements,
         reason: "not_configured",
       };
 }
@@ -129,8 +138,9 @@ export function registerBillingRawRoutes(app: Express): void {
       const stripe = stripeClient();
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
       const signature = req.headers["stripe-signature"];
+      const billingStatus = getBillingStatus();
 
-      if (!stripe || !webhookSecret) {
+      if (!stripe || !webhookSecret || !billingStatus.enabled) {
         return res.status(503).json({
           message: "Billing webhook is not configured",
           code: "billing_not_configured",
@@ -229,7 +239,9 @@ export function registerBillingRoutes(app: Express): void {
     const status = getBillingStatus();
     if (!status.enabled) {
       return res.status(503).json({
-        message: "Secure checkout is temporarily unavailable",
+        message: status.persistentEntitlements
+          ? "Secure checkout is temporarily unavailable"
+          : "Secure checkout requires persistent profile storage",
         code: "billing_not_configured",
       });
     }
