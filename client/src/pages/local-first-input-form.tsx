@@ -3,10 +3,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation } from "wouter";
 import { birthDataSchema, type BirthData } from "@shared/schema";
-import { generateOfflineCodexProfile } from "@soulcodex/core";
+import { generateOfflineCodexProfile, type OfflineCodexProfile } from "@soulcodex/core";
 import { apiRequest } from "@/lib/queryClient";
 import { saveOfflineProfile } from "@/lib/offlineProfileStore";
-import { saveActiveProfile } from "@/lib/ActiveProfileRepository";
+import {
+  loadActiveProfile,
+  saveActiveProfile,
+} from "@/lib/ActiveProfileRepository";
+import {
+  reconcileActiveProfile,
+  reconcileOfflineProfile,
+} from "@/lib/profileVerificationReconciliation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -41,15 +48,48 @@ function builtInLocation(value: string) {
   return match?.location ?? null;
 }
 
-async function syncProfileWhenOnline(data: BirthData, localId: string): Promise<void> {
+async function syncProfileWhenOnline(
+  data: BirthData,
+  localProfile: OfflineCodexProfile,
+): Promise<void> {
   if (typeof navigator !== "undefined" && !navigator.onLine) return;
   try {
     const response = await apiRequest("POST", "/api/profiles", data);
     const remote = await response.json();
+    const syncedAt = new Date().toISOString();
+
     localStorage.setItem(
-      `soulcodex.offlineProfileRemote.v1.${localId}`,
-      JSON.stringify({ remoteId: remote.id, syncedAt: new Date().toISOString() }),
+      `soulcodex.offlineProfileRemote.v1.${localProfile.id}`,
+      JSON.stringify({ remoteId: remote.id, syncedAt }),
     );
+
+    const currentActive = loadActiveProfile().profile;
+    if (currentActive) {
+      const activeSave = saveActiveProfile(
+        reconcileActiveProfile(currentActive, remote, syncedAt),
+      );
+      if (!activeSave.success) {
+        throw new Error(
+          activeSave.error || "Verified profile reconciliation failed.",
+        );
+      }
+    }
+
+    await saveOfflineProfile(
+      reconcileOfflineProfile(localProfile, remote, syncedAt),
+    );
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("soulcodex:profile-updated", {
+          detail: {
+            localId: localProfile.id,
+            remoteId: remote.id,
+            syncedAt,
+          },
+        }),
+      );
+    }
   } catch (error) {
     console.warn("[local-first-create] Cloud sync deferred; local profile remains available", error);
   }
@@ -130,10 +170,14 @@ export default function LocalFirstInputForm() {
 
       const activeSave = saveActiveProfile({
         id: profile.id,
+        name: profile.name,
         codename: profile.name,
         birthDate: profile.birthDate,
         birthTime: profile.birthTime ?? undefined,
         birthLocation: profile.birthLocation,
+        timezone: profile.timezone,
+        latitude: profile.latitude ?? undefined,
+        longitude: profile.longitude ?? undefined,
         birthplace: {
           city: profile.birthLocation,
         },
@@ -153,10 +197,10 @@ export default function LocalFirstInputForm() {
         throw new Error(activeSave.error || "The active profile could not be registered.");
       }
 
-      void syncProfileWhenOnline(data, profile.id);
+      void syncProfileWhenOnline(data, profile);
       toast({
         title: "Soul Codex created on this device",
-        description: "The full evidence-linked reading is saved locally and remains available without a connection.",
+        description: "The local reading is ready now. Verified online placements will merge into this same profile when available.",
       });
       setLocation(`/profile/${profile.id}`);
     } catch (error) {
@@ -256,7 +300,7 @@ export default function LocalFirstInputForm() {
           </Card>
 
           <div className="mt-6 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-            The core reading is generated and stored on this device. Cloud sync is best effort. AI wording, account verification, and payments still require online services.
+            The core reading is generated and stored on this device. Cloud verification is best effort and merges into the same local profile; it never replaces offline access.
           </div>
         </div>
       </div>
