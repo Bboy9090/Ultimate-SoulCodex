@@ -12,6 +12,7 @@ import LocalFirstInputForm from "./pages/local-first-input-form";
 import Profile from "./pages/profile";
 import OfflineProfilePage from "./pages/offline-profile";
 import ClarityReadingPage from "./pages/ClarityReadingPage";
+import OfflineClarityReadingPage from "./pages/OfflineClarityReadingPage";
 import CompatibilityExplorerPage from "./pages/CompatibilityExplorerPage";
 import CompatibilityHubPage from "./pages/CompatibilityHubPage";
 import TimelinePage from "./pages/TimelinePage";
@@ -27,6 +28,11 @@ import type { Profile as ProfileType } from "@shared/schema";
 function ProfileRoute() {
   const { id } = useParams();
   return id?.startsWith("local-") ? <OfflineProfilePage /> : <Profile />;
+}
+
+function ReadingRoute() {
+  const { id } = useParams();
+  return id?.startsWith("local-") ? <OfflineClarityReadingPage /> : <ClarityReadingPage />;
 }
 
 function TimelineRoute() {
@@ -100,7 +106,7 @@ function Router() {
       <Route path="/compatibility" component={CompatibilityHubPage} />
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
       <Route path="/timeline" component={TimelineRoute} />
-      <Route path="/reading/:id" component={ClarityReadingPage} />
+      <Route path="/reading/:id" component={ReadingRoute} />
       <Route path="/astrocartography/:id">
         {() => <PremiumRoute component={AstrocartographyPage} />}
       </Route>
