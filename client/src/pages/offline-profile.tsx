@@ -54,6 +54,7 @@ export default function OfflineProfilePage() {
       return;
     }
 
+    const currentProfile = reconciledProfile;
     let cancelled = false;
     setVerificationAttempt("running");
 
@@ -64,15 +65,15 @@ export default function OfflineProfilePage() {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            name: reconciledProfile.name,
-            birthDate: reconciledProfile.birthDate,
-            ...(reconciledProfile.birthTime
-              ? { birthTime: reconciledProfile.birthTime }
+            name: currentProfile.name,
+            birthDate: currentProfile.birthDate,
+            ...(currentProfile.birthTime
+              ? { birthTime: currentProfile.birthTime }
               : {}),
-            birthLocation: reconciledProfile.birthLocation,
-            timezone: reconciledProfile.timezone,
-            latitude: reconciledProfile.latitude ?? undefined,
-            longitude: reconciledProfile.longitude ?? undefined,
+            birthLocation: currentProfile.birthLocation,
+            timezone: currentProfile.timezone,
+            latitude: currentProfile.latitude ?? undefined,
+            longitude: currentProfile.longitude ?? undefined,
           }),
         });
 
@@ -83,7 +84,7 @@ export default function OfflineProfilePage() {
         const remote = await response.json();
         const syncedAt = new Date().toISOString();
         const hydrated = reconcileOfflineProfile(
-          reconciledProfile,
+          currentProfile,
           remote,
           syncedAt,
         );
@@ -91,7 +92,7 @@ export default function OfflineProfilePage() {
         await saveOfflineProfile(hydrated);
 
         const active = loadActiveProfile().profile;
-        if (active?.id === reconciledProfile.id) {
+        if (active?.id === currentProfile.id) {
           const saved = saveActiveProfile(
             reconcileActiveProfile(active, remote, syncedAt),
           );
@@ -101,7 +102,7 @@ export default function OfflineProfilePage() {
         }
 
         localStorage.setItem(
-          `soulcodex.offlineProfileRemote.v1.${reconciledProfile.id}`,
+          `soulcodex.offlineProfileRemote.v1.${currentProfile.id}`,
           JSON.stringify({ remoteId: remote.id, syncedAt }),
         );
 
