@@ -1,12 +1,12 @@
 # Foundation Web RC Receipt v1
 
-Status: **AUTOMATED RE-AUDIT IN PROGRESS**
+Status: **AUTOMATED WEB FOUNDATION PASS**
 
 ## Scope
 
 This receipt covers the Soul Codex Foundation web application only.
 
-The owner has explicitly deferred iOS App Store and Google Play work until further notice. Native-store status is therefore recorded but is not a web release gate.
+The owner has explicitly deferred iOS App Store and Google Play work until further notice. Native-store status is recorded but is not a web release gate.
 
 ## Canonical journey
 
@@ -41,50 +41,46 @@ Create one local-first profile
 | Bobby Big Three golden fixture | PR #161 | Virgo Sun, Virgo Moon, Scorpio Rising locked in CI |
 | Web privacy and billing hardening | PR #162 | Merged and deployed |
 
-## Latest completed security-lane evidence
+## Foundation web RC automation evidence
 
-PR #162 head: `19c5f4b84ad03e0ec63ae2aadf1fd4ea64187abe`
+Validated code head: `b3b6a881996e869882262d2da405d38a3209b5a0`
 
 | Workflow | Run | Result |
 |---|---:|---|
-| Ultimate SoulCodex CI | 30884749128 | PASS |
-| CI Tests | 30884750033 | PASS |
-| Dependency Security Audit | 30884749118 | PASS |
-| Live Ephemeris Evidence | 30884749199 | PASS |
-| Railway Container Smoke | 30884749412 | PASS |
-| PWA Offline Browser Validation | 30884749632 | PASS |
+| Ultimate SoulCodex CI | 30885940725 | PASS |
+| CI Tests | 30885940600 | PASS |
+| Dependency Security Audit | 30885940630 | PASS |
+| Live Ephemeris Evidence | 30885940665 | PASS |
+| Railway Container Smoke | 30885940596 | PASS |
+| PWA Offline Browser Validation | 30885940638 | PASS |
 
-PR #162 merge commit: `fe30613d765fdff24a7bd1fc04203cd3bc62a8c7`
+The Ultimate SoulCodex CI run included the new 16-check Foundation Web RC invariant audit. All 16 checks passed.
 
-Railway deployment for the merge commit: **PASS**.
+## Permanent RC invariants
 
-## New RC gate added in this lane
-
-The `scripts/verify-foundation-web-rc.mjs` audit fails CI unless the following invariants remain true:
+The `scripts/verify-foundation-web-rc.mjs` audit fails CI unless the following remain true:
 
 - Helmet and API rate limiting are active.
 - API responses are non-cacheable.
 - referrer leakage is disabled.
-- the client contains no card-number, expiry, CVV, or CVC fields;
-- billing uses hosted Stripe Checkout;
-- webhook signatures are verified;
-- raw payment fields are rejected;
-- the retired direct-card route is rejected before JSON parsing;
-- production astrology integrates verified Ascendant output;
-- the approved Ascendant evidence receipt remains attached;
-- saved profiles require the Big Three verification migration;
-- Human Design remains unresolved or calculated-unverified until verified;
-- Human Design cannot contribute to Compatibility without verification;
-- Big Three golden and billing security tests remain in CI;
+- the client contains no card-number, expiry, CVV, or CVC fields.
+- billing uses hosted Stripe Checkout.
+- webhook signatures are verified.
+- raw payment fields are rejected.
+- the retired direct-card route is rejected before JSON parsing.
+- production astrology integrates verified Ascendant output.
+- the approved Ascendant evidence receipt remains attached.
+- saved profiles require the Big Three verification migration.
+- Human Design remains unresolved or calculated-unverified until verified.
+- Human Design cannot contribute to Compatibility without verification.
+- Big Three golden and billing security tests remain in CI.
 - Chromium and WebKit offline restart validation remains configured.
 
 ## Billing persistence correction
 
-This lane adds an additional fail-closed requirement discovered during the RC audit:
+Stripe Checkout cannot become enabled unless persistent database storage is configured.
 
-> Stripe Checkout cannot become enabled unless persistent database storage is configured.
-
-Without `DATABASE_URL`, the active server uses memory storage. Accepting payment in that state could lose a premium entitlement after restart, which would be an astonishingly efficient way to turn a customer into an enemy. The billing status now remains disabled until both Stripe configuration and persistent entitlement storage are present.
+Without `DATABASE_URL`, the active server uses memory storage. Accepting payment in that state could lose premium entitlement after restart. Billing now remains disabled until both Stripe configuration and persistent entitlement storage are present.
 
 ## Deliberately unresolved
 
@@ -105,19 +101,19 @@ Automated evidence does not replace the final human consumer pass. Before declar
 - Compatibility opens once verified core inputs exist;
 - no direct card-entry interface appears anywhere;
 - no critical console error appears during the canonical journey;
-- the current copy reflects what the product actually includes rather than advertising systems still behind trust boundaries.
+- current copy reflects what the product actually includes rather than advertising systems still behind trust boundaries.
 
 ## Final classification
 
-To be updated from this PR's final head after all workflows complete.
-
 ```text
-Automated web foundation:       RE-AUDIT IN PROGRESS
-Trust boundary:                 PASS on prior merged head
-Security boundary:              PASS on prior merged head
-Persistent billing entitlement: FIX IMPLEMENTED, CI PENDING
-Offline lifecycle:              PASS on prior merged head
+Automated web foundation:       PASS
+Trust boundary:                 PASS
+Security boundary:              PASS
+Persistent billing entitlement: PASS, FAIL-CLOSED WITHOUT DATABASE
+Offline lifecycle:              PASS
 Manual consumer QA:             PENDING
 Foundation Web RC:              NOT DECLARED YET
 Native stores:                  OWNER-DEFERRED
 ```
+
+This receipt establishes that the automated web foundation is release-candidate capable. Public RC declaration remains blocked only by the final manual consumer and responsive-layout pass.
