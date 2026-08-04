@@ -1,10 +1,12 @@
 # Ascendant Verification Receipt v1
 
-Status: **evidence run pending**
+Status: **APPROVED FOR ASCENDANT PRODUCTION PROMOTION**
+
+Approval timestamp: `2026-08-04T04:07:09.547Z`
 
 ## Scope
 
-This receipt governs the tropical Ascendant only. It does not approve houses, Midheaven, nodes, Chiron, planetary house placements, or any interpretation layer.
+This receipt governs the tropical Ascendant only. It does not approve houses, Midheaven, nodes, Chiron, planetary house placements, or interpretation claims beyond the verified Ascendant placement itself.
 
 ## Candidate engine
 
@@ -15,7 +17,7 @@ This receipt governs the tropical Ascendant only. It does not approve houses, Mi
 ## Independent reference
 
 - Independently coded Meeus apparent sidereal time
-- True obliquity with a separate nutation calculation
+- Separate nutation calculation and true obliquity
 - Swiss-Ephemeris-compatible Asc1 geometry
 
 ## External fixture authority
@@ -36,6 +38,35 @@ A production Ascendant may be exposed only when:
 6. the 24-row Swiss Ephemeris regression matrix passes;
 7. provenance is retained in the saved profile.
 
-## Evidence result
+## Evidence execution
 
-To be filled from CI before merge. No hardcoded sign is permitted, including the known Bobby fixture expectation.
+- Pull request: `#159`
+- Workflow: `Ultimate SoulCodex CI`
+- Workflow run: `30876666388`
+- Job: `91889441968`
+- Fixture count: `24`
+- Fixture sign disagreements: `0`
+- Maximum candidate-to-Swiss delta: `0.004287078014272083°`
+- Maximum independent-reference-to-Swiss delta: `0.00047676849806066457°`
+- Maximum candidate-to-independent-reference delta: `0.0042490351064543574°`
+- Approved production tolerance: `0.01°`
+- Full trust-boundary test result: `49 passed, 0 failed`
+- Full workspace test result: `385 passed, 0 failed`
+- TypeScript check: `PASS`
+- Production build: `PASS`
+
+The `0.01°` tolerance is more than twice the maximum observed cross-engine delta while remaining one-third of a zodiac degree minute. Sign agreement remains mandatory, so a value near a sign boundary cannot be promoted merely because its longitude difference is small.
+
+## Bobby fixture
+
+Raw input:
+
+- Local birth date and time: `1990-09-17 11:11`
+- Timezone: `America/New_York`
+- UTC timestamp: `1990-09-17T15:11:00Z`
+- Latitude: `40.8448`
+- Longitude: `-73.8648`
+
+Swiss Ephemeris fixture longitude: `227.314087669°`, which is approximately `17.314° Scorpio`.
+
+The production result is derived from the raw timestamp and coordinates. The expected sign is a regression assertion, not a hardcoded return value.
