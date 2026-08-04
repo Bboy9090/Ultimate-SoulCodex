@@ -4,7 +4,7 @@ const ACTIVE_PROFILE_KEY = "soulcodex.activeProfile.v1";
 
 const routeCases = [
   { path: "/", pattern: /Soul Codex/i },
-  { path: "/timeline", pattern: /Timeline|Your Season|Personal Year/i },
+  { path: "/timeline", pattern: /Timeline|Current Phase|Personal Year/i },
   { path: "/compatibility", pattern: /Compatibility|Relationship|Match/i },
   { path: "/pricing", pattern: /Pricing|Premium|Free/i },
   { path: "/privacy", pattern: /Privacy/i },
@@ -62,12 +62,15 @@ async function assertNoHorizontalOverflow(page, label) {
   ).toBeLessThanOrEqual(geometry.viewportWidth + 1);
 }
 
-async function assertPrimaryNavigation(page, viewportWidth) {
-  await expect(page.getByTestId("link-home")).toBeVisible();
+async function assertPrimaryNavigation(page, viewportWidth, routeLabel) {
+  await expect(
+    page.getByTestId("link-home"),
+    `${routeLabel}: shared Home navigation is missing`,
+  ).toBeVisible();
 
   if (viewportWidth < 768) {
     const menu = page.getByTestId("button-menu");
-    await expect(menu).toBeVisible();
+    await expect(menu, `${routeLabel}: mobile menu button is missing`).toBeVisible();
     const box = await menu.boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(24);
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
@@ -82,9 +85,10 @@ async function assertPrimaryNavigation(page, viewportWidth) {
 
 async function assertRoute(page, path, pattern, viewport) {
   await page.goto(path, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`${path === "/" ? "/$" : path}$`));
   await expect(page.locator("body")).toContainText(pattern);
   await expect(page.locator("body")).not.toContainText(/404 Page Not Found/i);
-  await assertPrimaryNavigation(page, viewport.width);
+  await assertPrimaryNavigation(page, viewport.width, `${viewport.name} ${path}`);
   await assertNoHorizontalOverflow(page, `${viewport.name} ${path}`);
 }
 
@@ -99,7 +103,7 @@ async function assertMobileMenuJourney(page, profilePath) {
   await page.getByTestId("link-timeline-mobile").click();
   await expect(page).toHaveURL(/\/timeline$/);
   await expect(page.locator("body")).toContainText(
-    /Timeline|Your Season|Personal Year/i,
+    /Timeline|Current Phase|Personal Year/i,
   );
 }
 
@@ -132,26 +136,32 @@ test("Foundation consumer journey is readable and navigable at common web widths
   const profilePath = await createLocalProfile(page);
 
   for (const viewport of viewports) {
-    await test.step(`${viewport.name} canonical routes`, async () => {
+    await test.step(`${viewport.name} responsive journey`, async () => {
       await page.setViewportSize({
         width: viewport.width,
         height: viewport.height,
       });
 
-      await assertRoute(
-        page,
-        profilePath,
-        /Saved on this device|Works offline|Soul Codex/i,
-        viewport,
-      );
+      await test.step(`${viewport.name} ${profilePath}`, async () => {
+        await assertRoute(
+          page,
+          profilePath,
+          /Saved on this device|Works offline|Soul Codex/i,
+          viewport,
+        );
+      });
 
       for (const route of routeCases) {
-        await assertRoute(page, route.path, route.pattern, viewport);
+        await test.step(`${viewport.name} ${route.path}`, async () => {
+          await assertRoute(page, route.path, route.pattern, viewport);
+        });
       }
 
       if (viewport.width < 768) {
-        await assertMobileMenuJourney(page, profilePath);
-        await assertNoHorizontalOverflow(page, `${viewport.name} mobile menu`);
+        await test.step(`${viewport.name} mobile menu journey`, async () => {
+          await assertMobileMenuJourney(page, profilePath);
+          await assertNoHorizontalOverflow(page, `${viewport.name} mobile menu`);
+        });
       }
     });
   }
