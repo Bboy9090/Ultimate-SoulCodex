@@ -14,7 +14,7 @@ import type {
   ClarityConfidence,
   ClarityReadingModel,
 } from "@/lib/clarityReadingModel";
-import { profilePath } from "@/lib/profilePaths";
+import { getProfilePath } from "@/lib/clarityNavigation";
 
 type ReadingCardProps = {
   eyebrow: string;
@@ -59,7 +59,7 @@ function ReadingCard({ eyebrow, title, body, icon: Icon, tone = "gold" }: Readin
 export default function ClarityReadingExperience({ profileId, profileName, model, offline = false }: ClarityReadingExperienceProps) {
   return (
     <main id="main-content" className="mx-auto max-w-6xl px-4 pb-24 pt-28 sm:px-6" aria-labelledby="clarity-reading-title">
-      <Link href={profilePath(profileId) ?? "/"} className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-white/60 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
+      <Link href={getProfilePath(profileId)} className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-white/60 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
         <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         {offline ? "Local profile and evidence" : "Full profile and evidence"}
       </Link>
