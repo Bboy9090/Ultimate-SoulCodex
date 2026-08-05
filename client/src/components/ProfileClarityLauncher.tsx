@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { readingPath } from "@/lib/profilePaths";
+import { getReadingPath } from "@/lib/clarityNavigation";
 
 interface ProfileClarityLauncherProps {
   profileId?: string;
@@ -21,7 +21,7 @@ export default function ProfileClarityLauncher({
     return () => window.removeEventListener("scroll", update);
   }, []);
 
-  const href = readingPath(profileId);
+  const href = profileId?.trim() ? getReadingPath(profileId) : null;
 
   return (
     <div className="relative">
