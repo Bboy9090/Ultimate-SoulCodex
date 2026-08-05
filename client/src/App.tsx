@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
 import ProfileClarityLauncher from "@/components/ProfileClarityLauncher";
+import TimelineContinuityHeader from "@/components/TimelineContinuityHeader";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 import LocalFirstInputForm from "./pages/local-first-input-form";
@@ -29,7 +30,13 @@ import type { Profile as ProfileType } from "@shared/schema";
 function ProfileRoute() {
   const { id } = useParams();
   const profile = id?.startsWith("local-") ? <OfflineProfilePage /> : <Profile />;
-  return <ProfileClarityLauncher profileId={id}>{profile}</ProfileClarityLauncher>;
+  return (
+    <ProfileClarityLauncher profileId={id}>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_50%_-10%,rgba(106,61,170,.18),transparent_34%),linear-gradient(180deg,#090610,#0d0917_52%,#08060d)]">
+        {profile}
+      </div>
+    </ProfileClarityLauncher>
+  );
 }
 
 function ReadingRoute() {
@@ -39,9 +46,12 @@ function ReadingRoute() {
 
 function TimelineRoute() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_50%_-10%,rgba(106,61,170,.16),transparent_34%),#09070f]">
       <Navigation />
-      <div className="pt-20"><TimelinePage /></div>
+      <div className="pt-20">
+        <TimelineContinuityHeader />
+        <TimelinePage />
+      </div>
     </div>
   );
 }
