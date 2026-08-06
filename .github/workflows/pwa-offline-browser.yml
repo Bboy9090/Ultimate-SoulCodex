@@ -1,37 +1,23 @@
 name: PWA Offline Browser Validation
 
 on:
-  pull_request:
-    branches: ["main", "master"]
-    paths:
-      - "client/**"
-      - "server/**"
-      - "packages/core/**"
-      - "public/**"
-      - "governance/FOUNDATION-WEB-RELEASE-v1.md"
-      - "governance/release-audits/FOUNDATION-WEB-RC-RECEIPT-v1.md"
-      - "scripts/generate-pwa-service-worker.mjs"
-      - "scripts/validate-pwa-output.mjs"
-      - "scripts/verify-foundation-web-rc.mjs"
-      - "tests/pwa/**"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/ci.yml"
-      - ".github/workflows/pwa-offline-browser.yml"
   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: read
 
 concurrency:
-  group: pwa-offline-browser-${{ github.event.pull_request.number || github.ref }}
+  group: pwa-offline-browser-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   offline-browser:
     name: Chromium and WebKit offline restart
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -70,4 +56,4 @@ jobs:
             playwright-report
             test-results/pwa
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 2
