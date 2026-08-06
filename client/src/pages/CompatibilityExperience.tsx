@@ -1,21 +1,14 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navigation from "../components/navigation";
-import CosmicLoader from "../components/CosmicLoader";
-import ConfidenceBadge from "../components/ConfidenceBadge";
-import ScButton from "../components/ScButton";
+import HumanDepthSurface, { type HumanDepthItem } from "../components/HumanDepthSurface";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "../lib/queryClient";
-import { IconAlert, IconHeart, IconSparkles } from "../components/Icons";
-import { pureText } from "../lib/sanitizer";
 
 interface Profile {
   id: string | number;
   name?: string;
-  astrologyData?: Record<string, any>;
-  astrology?: Record<string, any>;
-  numerologyData?: Record<string, any>;
-  numerology?: Record<string, any>;
-  humanDesignData?: Record<string, any>;
-  humanDesign?: Record<string, any>;
   [key: string]: any;
 }
 
@@ -33,83 +26,42 @@ interface Result {
   missingDataWarnings?: string[];
 }
 
-const panel: CSSProperties = {
-  background: "linear-gradient(145deg,rgba(19,24,54,.96),rgba(26,16,48,.92))",
-  border: "1px solid rgba(178,120,255,.28)",
-  borderRadius: 18,
-  boxShadow: "0 18px 60px rgba(0,0,0,.26)",
-};
+const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
 
-const inputStyle: CSSProperties = {
-  padding: 12,
-  borderRadius: 11,
-  background: "#111733",
-  color: "white",
-  border: "1px solid rgba(192,132,252,.3)",
-};
-
-function clamp(value: number) {
-  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+function scoreLanguage(score: number) {
+  const value = clamp(score);
+  if (value >= 80) return "This area may feel naturally reinforcing, but ease still requires honest communication and reciprocal effort.";
+  if (value >= 60) return "This area appears workable with meaningful overlap and enough difference to require translation rather than assumption.";
+  if (value >= 40) return "This area may alternate between connection and friction depending on stress, timing, and whether needs are stated directly.";
+  return "This area may require deliberate communication, boundaries, and realistic expectations. A lower score is not a verdict on the relationship.";
 }
 
-function label(score: number) {
-  if (score >= 90) return "Exceptional";
-  if (score >= 80) return "Deep Resonance";
-  if (score >= 65) return "Strong Connection";
-  if (score >= 50) return "Mixed but Workable";
-  return "Growth Intensive";
-}
-
-function read(profile: Profile | null, system: string, key: string) {
-  return profile?.[system]?.[key] ?? profile?.[`${system}Data`]?.[key] ?? "Not available";
-}
-
-function Bar({ name, score }: { name: string; score: number }) {
-  return (
-    <div style={{ display: "grid", gap: 6 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-        <span style={{ color: "rgba(245,242,255,.75)" }}>{name}</span><strong>{clamp(score)}%</strong>
-      </div>
-      <div style={{ height: 7, borderRadius: 99, overflow: "hidden", background: "rgba(255,255,255,.08)" }}>
-        <div style={{ height: "100%", width: `${clamp(score)}%`, background: "linear-gradient(90deg,#7c3aed,#c084fc)" }} />
-      </div>
-    </div>
-  );
-}
-
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
-  return (
-    <section id={id} style={{ ...panel, padding: 21, marginBottom: 18, scrollMarginTop: 96 }}>
-      <h2 style={{ marginTop: 0 }}>{title}</h2>{children}
-    </section>
-  );
-}
-
-function Facts({ items }: { items: Array<[string, ReactNode]> }) {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
-      {items.map(([name, value]) => (
-        <div key={name} style={{ background: "rgba(255,255,255,.045)", borderRadius: 13, padding: 15 }}>
-          <div style={{ color: "#c084fc", fontSize: 11, textTransform: "uppercase", letterSpacing: ".11em" }}>{name}</div>
-          <div style={{ marginTop: 8, lineHeight: 1.58, color: "rgba(250,248,255,.88)" }}>{value}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Insights({ title, items, color }: { title: string; items: string[]; color: string }) {
-  const shown = items.length ? items : ["More detail becomes available as complete profile data is added."];
-  return (
-    <div style={{ ...panel, padding: 19 }}>
-      <h3 style={{ color, marginTop: 0 }}>{title}</h3>
-      {shown.map((item, index) => (
-        <p key={index} style={{ display: "flex", gap: 9, lineHeight: 1.6, color: "rgba(247,244,255,.8)" }}>
-          <span style={{ color }}>✦</span><span>{pureText(item)}</span>
-        </p>
-      ))}
-    </div>
-  );
+function relationshipItem(id: string, title: string, observation: string, score?: number, kind: "synergy" | "friction" | "growth" | "dimension" = "dimension"): HumanDepthItem {
+  const scoreText = typeof score === "number" ? ` The model assigned ${clamp(score)}%, which should be treated as a summary signal rather than the meaning itself.` : "";
+  return {
+    id,
+    title,
+    observation: `${observation}${scoreText}`,
+    realLife: kind === "synergy" ? [
+      "You may recover from small misunderstandings more easily because there is enough shared language, pace, or value beneath them.",
+      "Support can feel natural here, but unspoken expectations may still turn an easy strength into quiet resentment.",
+      "The useful test is whether this strength remains present during stress, inconvenience, and disagreement, not only during good moments.",
+    ] : kind === "friction" ? [
+      "One person may interpret the other's pace, silence, intensity, directness, or need for space as a statement about love rather than a difference in regulation or communication.",
+      "The same argument may repeat because each person is defending a different need while discussing only the visible behavior.",
+      "Friction becomes more informative when you can name the trigger, the assumption, the unmet need, and the repair each person recognizes.",
+    ] : [
+      "Notice whether you make decisions at the same speed or whether one person needs discussion while the other needs space, evidence, or immediate action.",
+      "Compare what each person does under pressure. Compatibility in calm conditions does not automatically predict conflict behavior.",
+      "Ask whether your shared values produce shared behavior. Agreement in theory is less useful than what both people repeatedly choose.",
+    ],
+    benefit: kind === "friction" ? "Difference can expose blind spots and teach clearer boundaries, repair, and translation when both people are willing to participate." : "This area can become a dependable source of connection when both people understand what is actually working and protect it deliberately.",
+    tradeoff: kind === "synergy" ? "Ease can create complacency. People sometimes stop explaining, appreciating, or repairing because they expect the connection to carry itself." : "Without direct communication, difference can become mind-reading, scorekeeping, withdrawal, control, or repeated arguments about the wrong issue.",
+    misunderstanding: "Compatibility does not mean sameness, permanence, safety, or destiny. It describes patterns that may become easier or harder under specific conditions.",
+    relationshipView: "The central question is not 'Are we compatible?' It is 'What happens between us when needs, stress responses, and decision styles differ, and can we repair without erasing either person?'",
+    practicalTakeaway: "Choose one recurring interaction. Each person names what happened, what they assumed, what they needed, and one repair action they would actually recognize.",
+    evidence: typeof score === "number" ? `Based on the compatibility dimension score and available profile systems. ${scoreLanguage(score)}` : "Based on generated compatibility themes. Interpretive statements must be tested against the relationship's lived history.",
+  };
 }
 
 export default function CompatibilityExperience() {
@@ -120,333 +72,104 @@ export default function CompatibilityExperience() {
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", birthDate: "", birthTime: "", birthLocation: "" });
-  const [lastKey, setLastKey] = useState("");
-
-  const personA = profiles.find((profile) => String(profile.id) === aId) ?? null;
-  const personB = profiles.find((profile) => String(profile.id) === bId) ?? null;
 
   useEffect(() => {
     let active = true;
-    (async () => {
-      try {
-        const response = await fetch("/api/profiles", { credentials: "include" });
+    fetch("/api/profiles", { credentials: "include" })
+      .then((response) => {
         if (!response.ok) throw new Error("Saved profiles could not be loaded.");
-        const list = await response.json();
+        return response.json();
+      })
+      .then((data) => {
         if (!active) return;
-        const safe = Array.isArray(list) ? list : [];
+        const safe = Array.isArray(data) ? data : [];
         setProfiles(safe);
-        const params = new URLSearchParams(window.location.search);
-        const requested = params.get("profileId");
-        const rememberedA = localStorage.getItem("soulCompatibilityPrimaryId");
-        const rememberedB = localStorage.getItem("soulCompatibilityPartnerId");
-        const firstA = safe.find((p: Profile) => String(p.id) === requested)?.id
-          ?? safe.find((p: Profile) => String(p.id) === rememberedA)?.id
-          ?? safe[0]?.id ?? "";
-        const firstB = safe.find((p: Profile) => String(p.id) === rememberedB && String(p.id) !== String(firstA))?.id
-          ?? safe.find((p: Profile) => String(p.id) !== String(firstA))?.id ?? "";
-        setAId(String(firstA));
-        setBId(String(firstB));
-      } catch (error) {
-        if (active) setMessage(error instanceof Error ? error.message : "Saved profiles could not be loaded.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
+        setAId(String(safe[0]?.id ?? ""));
+        setBId(String(safe[1]?.id ?? ""));
+      })
+      .catch((error) => active && setMessage(error instanceof Error ? error.message : "Saved profiles could not be loaded."))
+      .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    if (aId) localStorage.setItem("soulCompatibilityPrimaryId", aId);
-    if (bId) localStorage.setItem("soulCompatibilityPartnerId", bId);
-  }, [aId, bId]);
-
-  async function compare(first = aId, second = bId) {
-    if (!first || !second || first === second) {
+  async function compare() {
+    if (!aId || !bId || aId === bId) {
       setMessage("Choose two different saved profiles.");
       return;
     }
     setReportLoading(true);
     setMessage("");
     try {
-      const response = await apiRequest("POST", "/api/compatibility", { profile1Id: first, profile2Id: second });
+      const response = await apiRequest("POST", "/api/compatibility", { profile1Id: aId, profile2Id: bId });
       const data = await response.json();
-      const cd = data.compatibilityData || {};
-      const d = cd.dimensions || {};
+      const compatibility = data.compatibilityData || {};
+      const dimensions = compatibility.dimensions || {};
       setResult({
-        overallScore: data.overallScore ?? cd.overall ?? 0,
+        overallScore: data.overallScore ?? compatibility.overall ?? 0,
         dimensions: {
-          identity: d.identity?.score ?? d.identity ?? 0,
-          stress: d.stress?.score ?? d.stress ?? 0,
-          values: d.values?.score ?? d.values ?? 0,
-          decisions: d.decisions?.score ?? d.decisions ?? 0,
+          identity: dimensions.identity?.score ?? dimensions.identity ?? 0,
+          stress: dimensions.stress?.score ?? dimensions.stress ?? 0,
+          values: dimensions.values?.score ?? dimensions.values ?? 0,
+          decisions: dimensions.decisions?.score ?? dimensions.decisions ?? 0,
         },
-        friction: cd.friction || data.friction || [],
-        synergy: cd.synergy || data.synergy || [],
-        growthOpportunities: cd.growthOpportunities || data.growthOpportunities || [],
-        profile1Name: data.profile1?.name ?? personA?.name ?? "Person A",
-        profile2Name: data.profile2?.name ?? personB?.name ?? "Person B",
-        confidence: data.confidence ?? cd.confidence,
-        systemsUsed: data.systemsUsed ?? cd.systemsUsed ?? [],
-        systemsExcluded: data.systemsExcluded ?? cd.systemsExcluded ?? [],
-        missingDataWarnings: data.missingDataWarnings ?? cd.missingDataWarnings ?? [],
+        friction: compatibility.friction ?? data.friction ?? [],
+        synergy: compatibility.synergy ?? data.synergy ?? [],
+        growthOpportunities: compatibility.growthOpportunities ?? data.growthOpportunities ?? [],
+        profile1Name: data.profile1Name,
+        profile2Name: data.profile2Name,
+        confidence: data.confidence ?? compatibility.confidence,
+        systemsUsed: data.systemsUsed ?? compatibility.systemsUsed,
+        systemsExcluded: data.systemsExcluded ?? compatibility.systemsExcluded,
+        missingDataWarnings: data.missingDataWarnings ?? compatibility.missingDataWarnings,
       });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "The compatibility report could not be generated.");
-      setResult(null);
+      setMessage(error instanceof Error ? error.message : "Compatibility could not be calculated.");
     } finally {
       setReportLoading(false);
     }
   }
 
-  useEffect(() => {
-    const key = aId && bId ? `${aId}:${bId}` : "";
-    if (!key || key === lastKey || loading) return;
-    setLastKey(key);
-    void compare(aId, bId);
-  }, [aId, bId, lastKey, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  const personA = profiles.find((profile) => String(profile.id) === aId);
+  const personB = profiles.find((profile) => String(profile.id) === bId);
 
-  async function addPerson() {
-    if (!form.name.trim() || !form.birthDate) {
-      setMessage("Name and birth date are required.");
-      return;
-    }
-    setReportLoading(true);
-    try {
-      const response = await apiRequest("POST", "/api/profiles", {
-        ...form,
-        birthTime: form.birthTime || undefined,
-        birthLocation: form.birthLocation || undefined,
-      });
-      const created = await response.json();
-      setProfiles((current) => [...current, created]);
-      if (!aId) setAId(String(created.id)); else setBId(String(created.id));
-      setForm({ name: "", birthDate: "", birthTime: "", birthLocation: "" });
-      setFormOpen(false);
-      setLastKey("");
-      setMessage(`${created.name || form.name} was added.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to add this person.");
-    } finally {
-      setReportLoading(false);
-    }
-  }
-
-  const d = result?.dimensions ?? { identity: 0, stress: 0, values: 0, decisions: 0 };
-  const overall = clamp(result?.overallScore ?? 0);
-  const emotional = clamp((d.values + d.identity) / 2);
-  const communication = clamp((d.decisions + d.identity) / 2);
-  const chemistry = clamp((overall + d.values + 8) / 2);
-  const conflict = clamp((d.stress + d.decisions) / 2);
-  const purpose = clamp((d.identity + d.values + d.decisions) / 3);
-
-  const verdict = useMemo(() => {
-    if (!result) return "";
-    return [
-      result.synergy[0] || "This bond contains meaningful natural recognition and shared potential.",
-      result.friction[0] || "The central challenge is learning each other’s timing, pressure responses, and emotional language.",
-      result.growthOpportunities[0] || "Direct communication and deliberate repair turn recurring triggers into maturity.",
-    ].map(pureText).join(" ");
+  const items = useMemo<HumanDepthItem[]>(() => {
+    if (!result) return [];
+    const built: HumanDepthItem[] = [
+      relationshipItem("identity", "Identity and recognition", scoreLanguage(result.dimensions.identity), result.dimensions.identity),
+      relationshipItem("stress", "Stress and repair", scoreLanguage(result.dimensions.stress), result.dimensions.stress),
+      relationshipItem("values", "Values in practice", scoreLanguage(result.dimensions.values), result.dimensions.values),
+      relationshipItem("decisions", "Decision pace and style", scoreLanguage(result.dimensions.decisions), result.dimensions.decisions),
+    ];
+    result.synergy.forEach((value, index) => built.push(relationshipItem(`synergy-${index}`, "Where connection may feel natural", value, undefined, "synergy")));
+    result.friction.forEach((value, index) => built.push(relationshipItem(`friction-${index}`, "Where misunderstanding may repeat", value, undefined, "friction")));
+    result.growthOpportunities.forEach((value, index) => built.push(relationshipItem(`growth-${index}`, "What this relationship may ask you to practice", value, undefined, "growth")));
+    return built;
   }, [result]);
 
-  const nav = ["Overview", "Love", "Communication", "Chemistry", "Conflict", "Human Design", "Astrology", "Numerology", "Purpose", "Timeline"];
-  const timeline = ["Recognition", "Attraction", "Bonding", "Trigger Phase", "Choice Point", "Mature Partnership"];
-
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(circle at 50% 0%,rgba(91,33,182,.23),transparent 34%),#070b1d", color: "#f8f5ff" }}>
+    <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "104px 16px 72px" }}>
-        <header style={{ marginBottom: 20 }}>
-          <div style={{ color: "#d8b4fe", textTransform: "uppercase", letterSpacing: ".18em", fontSize: 12 }}>Soul Codex Relationship Intelligence</div>
-          <h1 style={{ margin: "7px 0 8px", fontSize: "clamp(2rem,7vw,4rem)", fontFamily: "var(--font-serif)" }}>Full Compatibility Report</h1>
-          <p style={{ color: "rgba(245,242,255,.68)", lineHeight: 1.6 }}>Every available section is displayed in one continuous reading.</p>
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-28 sm:px-6">
+        <header className="mb-7 rounded-3xl border border-rose-300/20 bg-gradient-to-br from-violet-950/70 to-black/40 p-6 sm:p-9">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-200">Relationship intelligence</p>
+          <h1 className="mt-2 font-serif text-4xl sm:text-6xl">Explain the relationship, not just the score.</h1>
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-white/68">A percentage cannot tell you how two people misunderstand each other, what feels easy, what breaks under stress, or what repair actually looks like. This report follows the numbers into lived interaction.</p>
         </header>
 
-        <section style={{ ...panel, padding: 18, marginBottom: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12, alignItems: "end" }}>
-            <label style={{ display: "grid", gap: 7, fontSize: 12 }}>Person A
-              <select value={aId} onChange={(event) => { const next = event.target.value; setAId(next); if (next === bId) setBId(String(profiles.find((p) => String(p.id) !== next)?.id ?? "")); setResult(null); setLastKey(""); }} style={inputStyle}>
-                <option value="">Choose Person A</option>
-                {profiles.map((profile) => <option key={String(profile.id)} value={String(profile.id)}>{profile.name || `Profile ${profile.id}`}</option>)}
-              </select>
-            </label>
-            <label style={{ display: "grid", gap: 7, fontSize: 12 }}>Person B
-              <select value={bId} onChange={(event) => { setBId(event.target.value); setResult(null); setLastKey(""); }} style={inputStyle}>
-                <option value="">Choose Person B</option>
-                {profiles.filter((p) => String(p.id) !== aId).map((profile) => <option key={String(profile.id)} value={String(profile.id)}>{profile.name || `Profile ${profile.id}`}</option>)}
-              </select>
-            </label>
-            <ScButton variant="secondary" onClick={() => setFormOpen((open) => !open)}>Add Another Person</ScButton>
-            <ScButton loading={reportLoading} onClick={() => void compare()}>Generate Full Report</ScButton>
-          </div>
-        </section>
+        <Card className="mb-7 border-white/10 bg-black/20"><CardContent className="grid gap-4 p-5 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <label className="grid gap-2 text-sm font-semibold">First profile<select value={aId} onChange={(event) => setAId(event.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-background px-3">{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name || `Profile ${profile.id}`}</option>)}</select></label>
+          <label className="grid gap-2 text-sm font-semibold">Second profile<select value={bId} onChange={(event) => setBId(event.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-background px-3">{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name || `Profile ${profile.id}`}</option>)}</select></label>
+          <Button onClick={compare} disabled={loading || reportLoading}>{reportLoading ? "Explaining…" : "Compare deeply"}</Button>
+        </CardContent></Card>
 
-        {message && <div style={{ ...panel, padding: 13, marginBottom: 16, color: "#f0abfc" }}>{message}</div>}
+        {message && <p className="mb-5 rounded-xl border border-amber-300/20 bg-amber-300/10 p-4 text-amber-100">{message}</p>}
 
-        {formOpen && (
-          <section style={{ ...panel, padding: 18, marginBottom: 18, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
-            <input placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} />
-            <input type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} style={inputStyle} />
-            <input type="time" value={form.birthTime} onChange={(e) => setForm({ ...form, birthTime: e.target.value })} style={inputStyle} />
-            <input placeholder="Birth location" value={form.birthLocation} onChange={(e) => setForm({ ...form, birthLocation: e.target.value })} style={inputStyle} />
-            <ScButton loading={reportLoading} onClick={() => void addPerson()}>Save Person</ScButton>
-          </section>
-        )}
-
-        {(loading || reportLoading) && <div style={{ padding: 72, textAlign: "center" }}><CosmicLoader label={loading ? "Loading saved profiles..." : "Building the complete relationship reading..."} /></div>}
-
-        {!loading && !reportLoading && profiles.length < 2 && (
-          <section style={{ ...panel, padding: 34, textAlign: "center" }}>
-            <IconHeart size={46} style={{ color: "#c084fc", margin: "0 auto 12px" }} />
-            <h2>{profiles.length ? "Add Person B" : "Create the first profile"}</h2>
-            <p style={{ color: "rgba(245,242,255,.68)" }}>Two saved profiles are required for a compatibility report.</p>
-            {!profiles.length && <a href="/create"><ScButton>Start First Reading</ScButton></a>}
-          </section>
-        )}
-
-        {result && !loading && !reportLoading && (
-          <main id="overview">
-            <section style={{ ...panel, padding: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 24, alignItems: "center", marginBottom: 18 }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ color: "rgba(245,242,255,.66)" }}>Overall Compatibility</div>
-                <div style={{ fontSize: "clamp(4rem,14vw,7rem)", lineHeight: 1, fontFamily: "var(--font-serif)" }}>{overall}<span style={{ fontSize: ".38em" }}>%</span></div>
-                <div style={{ color: "#f0abfc", textTransform: "uppercase", letterSpacing: ".14em" }}>{label(overall)}</div>
-              </div>
-              <div>
-                <div style={{ color: "#d8b4fe", textTransform: "uppercase", letterSpacing: ".12em", fontSize: 12 }}>{result.profile1Name} + {result.profile2Name}</div>
-                <h2 style={{ margin: "8px 0 10px" }}>Relationship Core</h2>
-                <p style={{ color: "rgba(247,244,255,.8)", lineHeight: 1.75 }}>{verdict}</p>
-              </div>
-              <div style={{ display: "grid", gap: 14 }}>
-                <Bar name="Natural Harmony" score={emotional} />
-                <Bar name="Conscious Effort" score={conflict} />
-                <Bar name="Growth Potential" score={purpose} />
-                <ConfidenceBadge badge={result.confidence?.label ?? result.confidence?.badge ?? "Partial"} reason={result.confidence?.reason} size="sm" />
-              </div>
-            </section>
-
-            <nav style={{ ...panel, padding: 8, display: "flex", gap: 6, overflowX: "auto", marginBottom: 18, position: "sticky", top: 78, zIndex: 20 }}>
-              {nav.map((item) => <button key={item} onClick={() => document.getElementById(item.toLowerCase().replace(/\s+/g, "-"))?.scrollIntoView({ behavior: "smooth" })} style={{ border: 0, borderRadius: 99, padding: "10px 14px", whiteSpace: "nowrap", color: "white", background: "rgba(124,58,237,.2)" }}>{item}</button>)}
-            </nav>
-
-            <Section id="relationship-core" title="Relationship Core">
-              <Facts items={[
-                ["Bond Type", label(overall)],
-                ["Primary Strength", pureText(result.synergy[0] || "Emotional recognition and shared potential")],
-                ["Primary Challenge", pureText(result.friction[0] || "Different processing rhythms")],
-                ["Shared Mission", pureText(result.growthOpportunities[0] || "Learning trust without control")],
-              ]} />
-            </Section>
-
-            <Section id="love" title={`Love Compatibility · ${emotional}%`}>
-              <Bar name="Emotional Safety" score={emotional} /><br />
-              <Facts items={[
-                [`How ${personA?.name || "Person A"} loves`, "Presence, loyalty, protection, reassurance, consistency, and the patterns visible in the complete profile."],
-                [`How ${personB?.name || "Person B"} loves`, "Attention, affection, shared experience, honesty, support, and the patterns visible in the complete profile."],
-                ["What strengthens love", "State needs clearly, translate actions into emotional meaning, and let consistency carry more weight than intensity."],
-                ["What weakens love", "Expecting the other person to automatically understand unspoken needs, boundaries, fears, or promises."],
-              ]} />
-            </Section>
-
-            <Section id="communication" title={`Communication Compatibility · ${communication}%`}>
-              <Facts items={[
-                ["Mental Understanding", `${d.identity}% identity alignment shapes how naturally their perspectives recognize one another.`],
-                ["Decision Rhythm", `${d.decisions}% decision alignment shows whether they reach clarity in similar ways and at similar speeds.`],
-                ["Emotional Language", `${d.values}% values alignment shows how closely their private meanings and priorities match.`],
-                ["Best Repair Method", "Acknowledge the impact, identify the real issue, allow honest processing time, and return with a direct agreement."],
-              ]} />
-            </Section>
-
-            <Section id="chemistry" title={`Chemistry and Attraction · ${chemistry}%`}>
-              <Facts items={[
-                ["Physical Pull", `${chemistry}% projected attraction from overall resonance, values, identity, and available chemistry signals.`],
-                ["Emotional Magnetism", `${emotional}% emotional recognition. Attraction deepens when both people feel seen rather than merely desired.`],
-                ["Mental Stimulation", `${communication}% mental engagement. Difference can feed curiosity instead of automatically becoming friction.`],
-                ["Reality Check", "Chemistry explains the pull. It does not replace honesty, consent, stability, safety, maturity, or compatible life choices."],
-              ]} />
-            </Section>
-
-            <Section id="conflict" title={`Conflict, Triggers, and Repair · ${conflict}%`}>
-              <Facts items={[
-                ["Pressure Response", `${d.stress}% alignment under pressure. Lower alignment requires more deliberate pause and repair habits.`],
-                ["Likely Trigger", pureText(result.friction[0] || "Different processing speeds, expectations, boundaries, or reassurance needs.")],
-                ["Hidden Fear", "Conflict often protects a deeper fear involving rejection, abandonment, loss of control, disrespect, or not being understood."],
-                ["How to Win Anyway", pureText(result.growthOpportunities[0] || "Do not force instant answers, weaponize silence, or treat intensity as final truth.")],
-              ]} />
-            </Section>
-
-            <Section id="human-design" title="Human Design Compatibility">
-              <Facts items={[
-                [`${personA?.name || "Person A"} Type`, read(personA, "humanDesign", "type")],
-                [`${personB?.name || "Person B"} Type`, read(personB, "humanDesign", "type")],
-                ["Authority Comparison", `${read(personA, "humanDesign", "authority")} + ${read(personB, "humanDesign", "authority")}`],
-                ["Profile Comparison", `${read(personA, "humanDesign", "profile")} + ${read(personB, "humanDesign", "profile")}`],
-                ["Definition Pattern", `${read(personA, "humanDesign", "definition")} + ${read(personB, "humanDesign", "definition")}`],
-                ["Relationship Guidance", "Respect each person’s strategy, energy pace, and authority. Major decisions should move at the speed of the slower clarity process."],
-              ]} />
-            </Section>
-
-            <Section id="astrology" title="Astrology and Synastry">
-              <Facts items={[
-                [`${personA?.name || "Person A"} Sun / Moon / Rising`, `${read(personA, "astrology", "sunSign")} / ${read(personA, "astrology", "moonSign")} / ${read(personA, "astrology", "risingSign")}`],
-                [`${personB?.name || "Person B"} Sun / Moon / Rising`, `${read(personB, "astrology", "sunSign")} / ${read(personB, "astrology", "moonSign")} / ${read(personB, "astrology", "risingSign")}`],
-                ["Identity Chemistry", `${d.identity}% identity resonance reflects how naturally the two personal styles reinforce or challenge one another.`],
-                ["Emotional Synastry", `${emotional}% projected emotional rhythm from the available birth and relationship signals.`],
-                ["Long-Term Lesson", "Commitment themes appear through responsibility, boundaries, timing, consequences, and whether promises become reliable behavior."],
-                ["Unknown-Time Honesty", "Time-sensitive placements remain limited or explicitly estimated when exact birth times are unavailable."],
-              ]} />
-            </Section>
-
-            <Section id="numerology" title="Numerology Compatibility">
-              <Facts items={[
-                [`${personA?.name || "Person A"} Core Numbers`, `Life Path ${read(personA, "numerology", "lifePath")}, Expression ${read(personA, "numerology", "expression")}, Soul Urge ${read(personA, "numerology", "soulUrge")}`],
-                [`${personB?.name || "Person B"} Core Numbers`, `Life Path ${read(personB, "numerology", "lifePath")}, Expression ${read(personB, "numerology", "expression")}, Soul Urge ${read(personB, "numerology", "soulUrge")}`],
-                ["Life Direction", `${purpose}% projected shared-purpose alignment.`],
-                ["Private Needs", "Soul Urge patterns describe what each person privately needs to feel fulfilled, valued, and emotionally honest."],
-                ["Visible Expression", "Expression numbers describe how each person acts, communicates, solves problems, creates, and moves through the world."],
-                ["Timing", "Personal-year influences are temporary context, not permanent destiny carved into celestial paperwork."],
-              ]} />
-            </Section>
-
-            <Section id="purpose" title={`Shared Purpose and Soul Lessons · ${purpose}%`}>
-              <Facts items={[
-                ["Why the Bond Matters", pureText(result.growthOpportunities[0] || "The relationship reveals patterns that neither person can fully see alone.")],
-                ["Highest Expression", "Mutual courage, honest interdependence, shared creation, clearer boundaries, and a bond that strengthens both identities."],
-                ["Shadow Expression", "Rescuing, withdrawing, chasing, controlling, projecting, or repeating the same conflict without changing the underlying behavior."],
-                ["Shared Mission", `${purpose}% purpose alignment across identity, values, decisions, and available symbolic systems.`],
-              ]} />
-            </Section>
-
-            <Section id="timeline" title="Relationship Timeline">
-              <div style={{ display: "grid", gap: 11 }}>
-                {timeline.map((stage, index) => <div key={stage} style={{ display: "grid", gridTemplateColumns: "38px 1fr", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center", background: "linear-gradient(145deg,#6d28d9,#c084fc)", fontWeight: 800 }}>{index + 1}</div>
-                  <div style={{ background: "rgba(255,255,255,.045)", borderRadius: 12, padding: 14 }}><strong>{stage}</strong></div>
-                </div>)}
-              </div>
-            </Section>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 14, marginBottom: 18 }}>
-              <Insights title="Biggest Strengths" items={result.synergy} color="#5eead4" />
-              <Insights title="Friction Points" items={result.friction} color="#fb7185" />
-              <Insights title="How to Win Anyway" items={result.growthOpportunities} color="#c084fc" />
-            </div>
-
-            {(result.missingDataWarnings?.length || result.systemsExcluded?.length) ? (
-              <section style={{ ...panel, padding: 18, marginBottom: 18 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}><IconAlert size={18} style={{ color: "#fbbf24" }} /><strong>Confidence and Missing-Data Notes</strong></div>
-                {[...(result.missingDataWarnings || []), ...(result.systemsExcluded || []).map((item) => `${item.system}: ${item.reason || "not included"}`)].map((item, index) => <p key={index} style={{ color: "rgba(247,244,255,.72)" }}>{pureText(item)}</p>)}
-              </section>
-            ) : null}
-
-            <section style={{ ...panel, padding: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20 }}>
-              <div><h2 style={{ marginTop: 0 }}>Final Verdict</h2><p style={{ color: "rgba(247,244,255,.82)", lineHeight: 1.8 }}>{verdict}</p><p style={{ color: "rgba(247,244,255,.62)", lineHeight: 1.7 }}>This report describes patterns, not guaranteed behavior. Character, consent, honesty, safety, maturity, and repeated choices remain more important than any symbolic system.</p></div>
-              <div style={{ minHeight: 180, display: "grid", placeItems: "center", background: "radial-gradient(circle,rgba(168,85,247,.27),transparent 65%)", borderRadius: 18 }}><IconSparkles size={82} style={{ color: "#d8b4fe" }} /></div>
-            </section>
-          </main>
-        )}
-      </div>
+        {result && <>
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-5"><Badge className="text-base">Overall {clamp(result.overallScore)}%</Badge><strong>{result.profile1Name || personA?.name} + {result.profile2Name || personB?.name}</strong><span className="text-sm text-white/55">{result.confidence?.label || result.confidence?.badge || "Interpretive confidence shown in evidence details"}</span></div>
+          <HumanDepthSurface profileId={`${aId}-${bId}`} heading="How this connection may work in real life" intro="Use the score as navigation, not judgment. The meaning lives in repeated behavior, stress, communication, repair, and whether both people remain willing to participate." items={items} />
+          {(result.missingDataWarnings?.length || result.systemsExcluded?.length) ? <details className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5"><summary className="cursor-pointer font-semibold">Missing data and excluded systems</summary><ul className="mt-3 space-y-2 text-sm text-white/60">{result.missingDataWarnings?.map((warning) => <li key={warning}>• {warning}</li>)}{result.systemsExcluded?.map((entry) => <li key={entry.system}>• {entry.system}: {entry.reason || "not included"}</li>)}</ul></details> : null}
+        </>}
+      </main>
     </div>
   );
 }
