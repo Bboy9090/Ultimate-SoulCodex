@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   buildDepthChapters,
@@ -42,7 +43,7 @@ describe("Depth Engine", () => {
   });
 
   it("keeps progressive depth controls in the reading experience", () => {
-    const source = require("node:fs").readFileSync("client/src/components/ClarityReadingExperience.tsx", "utf8");
+    const source = fs.readFileSync("client/src/components/ClarityReadingExperience.tsx", "utf8");
     expect(source).toContain("Quick insight");
     expect(source).toContain("Standard reading");
     expect(source).toContain("Deep dive");
