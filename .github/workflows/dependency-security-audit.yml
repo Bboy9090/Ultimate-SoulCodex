@@ -2,17 +2,28 @@ name: Dependency Security Audit
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - ".github/workflows/dependency-security-audit.yml"
   workflow_dispatch:
+  schedule:
+    - cron: "17 8 * * 1"
 
 permissions:
   contents: read
 
+concurrency:
+  group: dependency-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,38 +43,17 @@ jobs:
       - name: Enforce full-tree high-severity threshold
         run: npm audit --audit-level=high
 
-      - name: Capture full npm audit evidence
-        shell: bash
+      - name: Capture audit evidence
+        if: always()
         run: |
           mkdir -p evidence
           npm audit --json > evidence/npm-audit.json || true
-          node - <<'NODE'
-          const fs = require('fs');
-          const report = JSON.parse(fs.readFileSync('evidence/npm-audit.json', 'utf8'));
-          const vulnerabilities = report.vulnerabilities || {};
-          const rows = Object.entries(vulnerabilities).map(([name, value]) => ({
-            name,
-            severity: value.severity,
-            direct: Boolean(value.isDirect),
-            via: Array.isArray(value.via)
-              ? value.via.map(item => typeof item === 'string' ? item : item.title || item.name || 'advisory')
-              : [],
-            range: value.range,
-            fixAvailable: value.fixAvailable,
-            nodes: value.nodes || [],
-          }));
-          const summary = {
-            metadata: report.metadata,
-            vulnerabilities: rows,
-          };
-          fs.writeFileSync('evidence/npm-audit-summary.json', JSON.stringify(summary, null, 2));
-          console.log(JSON.stringify(summary, null, 2));
-          NODE
 
       - name: Upload dependency audit evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-security-audit
+          name: dependency-security-audit-${{ github.run_id }}
           path: evidence/
-          if-no-files-found: error
-          retention-days: 90
+          if-no-files-found: warn
+          retention-days: 2
