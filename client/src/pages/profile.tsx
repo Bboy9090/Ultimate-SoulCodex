@@ -1,752 +1,209 @@
-import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useMemo } from "react";
+import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, Crown, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
-import CosmicChart from "../components/cosmic-chart";
-import { PremiumUpgradeModal } from "@/components/PremiumUpgradeModal";
-import { ShareModal } from "@/components/ShareModal";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Crown, 
-  Sun, 
-  Moon, 
-  Star, 
-  Infinity, 
-  Brain, 
-  Heart,
-  ChartPie,
-  ScrollText,
-  Sparkles,
-  ArrowLeft,
-  Download,
-  Zap,
-  Target,
-  Shield,
-  Compass,
-  BookOpen,
-  Calendar
-} from "lucide-react";
+import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { Profile } from "@shared/schema";
+
+const text = (...values: unknown[]) => values.find((value) => typeof value === "string" && value.trim().length > 0) as string | undefined;
+
+function explainLabel(label: string, kind: "strength" | "growth"): HumanDepthItem {
+  const clean = label.trim();
+  const strength = kind === "strength";
+  return {
+    id: `${kind}-${clean.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    title: clean,
+    observation: strength
+      ? `${clean} is more useful as a lived pattern than as a flattering label. It may describe the way you respond when responsibility, loyalty, care, judgment, or contribution matters to you.`
+      : `${clean} is not a verdict about your character. It points to a response that may once have protected you, but can become costly when it is repeated without checking what the present situation actually requires.`,
+    realLife: strength
+      ? [
+          `In decisions, ${clean.toLowerCase()} may show up as taking time to make the choice useful, dependable, or aligned rather than merely fast.`,
+          `At work or while creating, people may rely on this quality before they fully recognize how much attention and effort it requires from you.`,
+          `In conflict, the same strength may be visible in what you repair, organize, protect, explain, or continue carrying after others have stepped back.`,
+        ]
+      : [
+          `Under pressure, ${clean.toLowerCase()} may become faster and less flexible, making an old protective response feel like the only available option.`,
+          `In relationships, another person may notice the behavior while missing the fear, need, or unfinished experience underneath it.`,
+          `In work or creativity, this pattern may appear as delay, overwork, withdrawal, control, repetition, or difficulty declaring a version complete.`,
+        ],
+    benefit: strength
+      ? `Used deliberately, ${clean.toLowerCase()} can make you steady, useful, trustworthy, perceptive, or capable of turning good intentions into something other people can actually feel and depend on.`
+      : `Even a difficult pattern often began as protection. It may have helped you avoid chaos, rejection, helplessness, conflict, wasted effort, or the feeling of being controlled.`,
+    tradeoff: strength
+      ? `The cost begins when ${clean.toLowerCase()} becomes an obligation rather than a choice. You may carry too much, expect yourself to remain composed, or keep proving a strength that other people have started taking for granted.`
+      : `The tradeoff is that protection can outlive the danger. What once created safety may now reduce honesty, flexibility, closeness, completion, or your ability to respond to the situation in front of you.`,
+    misunderstanding: strength
+      ? `People may see the result and miss the internal work behind it. Calm can be mistaken for indifference, loyalty for endless tolerance, independence for distance, and careful thought for hesitation.`
+      : `Other people may judge the visible response without understanding its purpose. Explanation matters, but the pattern still remains your responsibility to notice and update.`,
+    relationshipView: `The clearest relationship move is to name the hidden need directly. Do not require another person to decode care, fear, boundaries, or overwhelm from silence, intensity, over-explaining, control, or disappearance.`,
+    practicalTakeaway: strength
+      ? `Choose one place where this strength deserves a boundary. Keep the useful part, but stop performing the version that requires you to abandon your own limits.`
+      : `The next time this response appears, pause long enough to ask: “What am I protecting, and is that protection still necessary here?” Then choose one smaller, direct action instead of repeating the full reflex.`,
+    evidence: `This item came from the saved archetype ${kind === "strength" ? "strength" : "growth"} list. It is symbolic interpretation, not a diagnosis or independently verified fact.`,
+  };
+}
 
 export default function ProfilePage() {
   const { id } = useParams();
-  const { toast } = useToast();
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
-    enabled: !!id,
+    enabled: Boolean(id),
   });
 
-  const handleDownloadPdf = async () => {
-    if (!profile || !profile.isPremium) {
-      toast({
-        title: "Premium Required",
-        description: "PDF downloads are available for premium members.",
-        variant: "destructive",
+  const items = useMemo<HumanDepthItem[]>(() => {
+    if (!profile) return [];
+    const astrology = (profile.astrologyData ?? {}) as any;
+    const numerology = (profile.numerologyData ?? {}) as any;
+    const personality = (profile.personalityData ?? {}) as any;
+    const archetype = (profile.archetypeData ?? {}) as any;
+    const result: HumanDepthItem[] = [];
+
+    const biography = text(profile.biography, archetype.description);
+    if (biography) {
+      result.push({
+        id: "core-story",
+        title: archetype.title || "Your core story",
+        observation: biography,
+        realLife: [
+          "Notice where this theme appears in actual decisions rather than only in words that sound meaningful.",
+          "Compare how the pattern changes at work, with family, in close relationships, and when you are alone.",
+          "Pay attention to the contradiction: a real pattern often contains both a strength and the behavior that protects it.",
+        ],
+        benefit: "A useful core story can organize scattered details into a pattern you can recognize and work with.",
+        tradeoff: "A story becomes limiting when it hardens into identity and makes contradictory experiences feel invalid.",
+        misunderstanding: "Symbolic language can sound more certain than the evidence allows. Recognition matters more than dramatic wording.",
+        relationshipView: "The people closest to you may see different versions of this pattern. Their experience can add context without overruling your own.",
+        practicalTakeaway: "Name one recent event that supports this description and one that complicates it. Keep both. Nuance is more useful than forced agreement.",
+        evidence: "Built from the saved biography and archetype description. These are interpretive synthesis fields, not clinical findings.",
       });
-      return;
     }
 
-    setIsDownloadingPdf(true);
-    try {
-      const response = await fetch(`/api/pdf/profile/${id}`, {
-        method: "GET",
-      });
+    for (const strength of archetype.strengths ?? []) result.push(explainLabel(String(strength), "strength"));
+    for (const growth of archetype.shadows ?? archetype.growthAreas ?? []) result.push(explainLabel(String(growth), "growth"));
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${profile.name}-soul-codex.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "Success",
-        description: "Your Soul Codex PDF has been downloaded.",
+    const sun = astrology.sunSign ?? astrology.sun?.sign;
+    const moon = astrology.moonSign ?? astrology.moon?.sign;
+    const rising = astrology.risingSign ?? astrology.rising?.sign;
+    if (sun || moon || rising) {
+      result.push({
+        id: "astrology-big-three",
+        title: "How the Big Three may divide the work",
+        observation: `Your saved profile lists ${sun ? `${sun} Sun` : "an unresolved Sun"}, ${moon ? `${moon} Moon` : "an unresolved Moon"}, and ${rising ? `${rising} Rising` : "an unresolved Rising"}. Rather than treating these as three personality slogans, use them as three different questions about identity, emotional processing, and first response.`,
+        realLife: [
+          "The Sun layer is most useful when asking what you are trying to develop, express, or stand behind consciously.",
+          "The Moon layer is most useful when asking what restores safety and what becomes automatic when emotions are involved.",
+          "The Rising layer is most useful when asking what other people meet first and how you enter unfamiliar situations.",
+        ],
+        benefit: "Separating the layers can explain why you may appear one way, feel another way privately, and still choose a third response deliberately.",
+        tradeoff: "The model becomes shallow when signs are reduced to stereotypes or used to excuse behavior.",
+        misunderstanding: "A placement does not force a trait. It offers symbolic language for testing patterns against lived experience.",
+        relationshipView: "Conflict often begins when another person responds to the visible layer while you expect them to understand the private one.",
+        practicalTakeaway: "During one emotionally important moment, write down what you showed, what you felt, and what you chose. Compare the three without forcing them to match.",
+        evidence: "Derived from saved astrology fields. Birth-time-dependent claims remain limited when the recorded time is missing or approximate.",
       });
-    } catch (error) {
-      console.error("PDF download error:", error);
-      toast({
-        title: "Download Failed",
-        description: "Failed to download PDF. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloadingPdf(false);
     }
-  };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="pt-24 flex items-center justify-center min-h-[calc(100vh-6rem)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Generating your cosmic blueprint...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    if (numerology.lifePath || numerology.expression || numerology.soulUrge) {
+      result.push({
+        id: "numerology-core",
+        title: "What your core numbers are trying to describe",
+        observation: `The saved profile includes Life Path ${numerology.lifePath ?? "unknown"}, Expression ${numerology.expression ?? "unknown"}, and Soul Urge ${numerology.soulUrge ?? "unknown"}. These numbers should not sit on the page like serial numbers for a soul. Each points to a different question: recurring life lessons, outward capacity, and inward motivation.`,
+        realLife: [
+          "Life Path is most useful when looking for themes that repeat across different periods rather than predicting a fixed destiny.",
+          "Expression is most useful when asking what skills or modes of contribution become available when you are engaged and practiced.",
+          "Soul Urge is most useful when asking what feels meaningful even when nobody is watching or rewarding you.",
+        ],
+        benefit: "Used together, the numbers can expose a gap between what you can do, what life keeps asking you to learn, and what you privately want.",
+        tradeoff: "A number becomes restrictive when it is treated as permission to stop growing or as proof that every matching sentence must be true.",
+        misunderstanding: "Numerology is deterministic as arithmetic but interpretive in meaning. The calculation can be exact while the explanation remains symbolic.",
+        relationshipView: "Differences often matter less than whether two people understand each other's priorities, pace, and way of contributing.",
+        practicalTakeaway: "Choose one current responsibility. Ask whether it serves your development, uses your real capacities, and matters to you inwardly. A mismatch tells you more than the number alone.",
+        evidence: "The numeric values come from saved calculations. Their psychological or spiritual meanings are interpretive.",
+      });
+    }
 
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="pt-24 flex items-center justify-center min-h-[calc(100vh-6rem)]">
-          <Card className="max-w-md">
-            <CardContent className="pt-6 text-center">
-              <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
-              <p className="text-muted-foreground mb-4">
-                The soul profile you're looking for doesn't exist or couldn't be loaded.
-              </p>
-              <Link href="/">
-                <Button>Return Home</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+    if (personality.enneagram?.type || personality.mbti?.type) {
+      result.push({
+        id: "personality-bridge",
+        title: "How assessed personality may show up under pressure",
+        observation: `Your saved assessments include ${personality.enneagram?.type ? `Enneagram Type ${personality.enneagram.type}` : "no Enneagram result"} and ${personality.mbti?.type ? personality.mbti.type : "no MBTI result"}. These systems are most useful when they explain motivation and information-processing habits, not when they become decorative identity badges.`,
+        realLife: [
+          "Notice which need becomes urgent during conflict: safety, control, understanding, approval, freedom, competence, peace, or something else.",
+          "Notice what kind of information you trust first and what evidence you tend to ignore when rushed.",
+          "Compare your relaxed behavior with your stressed behavior. A useful model should explain the change, not pretend you act the same everywhere.",
+        ],
+        benefit: "Assessment language can make invisible motives and decision habits easier to discuss.",
+        tradeoff: "Typing can become an excuse, a social costume, or a way to avoid evidence that does not fit the preferred identity.",
+        misunderstanding: "Your type describes a tendency within a model. It does not contain your history, maturity, context, culture, or every choice.",
+        relationshipView: "The practical value is learning how another person interprets your behavior and how to state the need underneath it before resentment does the translating.",
+        practicalTakeaway: "Identify one recent disagreement. Separate what happened, what you assumed, what you needed, and what you actually communicated.",
+        evidence: "Based on saved user-assessment fields. Assessment quality depends on honest responses and the limits of each framework.",
+      });
+    }
 
-  const astrologyData = profile.astrologyData as any;
-  const numerologyData = profile.numerologyData as any;
-  const personalityData = profile.personalityData as any;
-  const archetypeData = profile.archetypeData as any;
+    const guidance = text(profile.dailyGuidance, archetype.guidance);
+    if (guidance) {
+      result.push({
+        id: "guidance",
+        title: "Turn guidance into an observable experiment",
+        observation: guidance,
+        realLife: [
+          "A useful guidance statement should change one decision, conversation, boundary, or repeated behavior.",
+          "The action should be small enough to complete and specific enough that you can tell what happened afterward.",
+          "If the statement only sounds beautiful, it belongs in decoration rather than guidance.",
+        ],
+        benefit: "Guidance becomes valuable when it turns reflection into a testable next step.",
+        tradeoff: "Vague guidance can create the feeling of insight without producing evidence, change, or clearer self-understanding.",
+        misunderstanding: "Symbolic guidance is not a command or prediction. You remain responsible for context and consequences.",
+        relationshipView: "When guidance involves another person, communicate directly rather than silently testing whether they can guess what you need.",
+        practicalTakeaway: "Rewrite the guidance as one sentence beginning with “Today I will…” and include a behavior another person could observe.",
+        evidence: "Drawn from the saved daily and archetype guidance fields. Relevance must be confirmed through lived experience.",
+      });
+    }
+
+    return result;
+  }, [profile]);
+
+  if (isLoading) return <div className="min-h-screen bg-background"><Navigation /><main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-4"><p className="text-muted-foreground">Building the reading from available evidence…</p></main></div>;
+
+  if (error || !profile) return <div className="min-h-screen bg-background"><Navigation /><main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-4"><Card><CardContent className="p-8 text-center"><Shield className="mx-auto mb-4 h-10 w-10 text-destructive" /><h1 className="mb-2 text-2xl font-bold">Profile not found</h1><p className="mb-5 text-muted-foreground">The requested profile could not be loaded.</p><Link href="/"><Button>Return home</Button></Link></CardContent></Card></main></div>;
+
+  const astrology = (profile.astrologyData ?? {}) as any;
+  const numerology = (profile.numerologyData ?? {}) as any;
+  const archetype = (profile.archetypeData ?? {}) as any;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navigation />
-      
-      <div className="pt-24 pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
-            <Link href="/">
-              <Button variant="ghost" className="mb-4" data-testid="button-back">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
-              </Button>
-            </Link>
-            
-            <div className="text-center">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-                {profile.name}'s
-                <span className="text-transparent bg-gradient-to-r from-primary to-accent bg-clip-text font-serif ml-2">
-                  Soul Codex
-                </span>
-              </h1>
-              <p className="text-muted-foreground">
-                Generated on {new Date(profile.createdAt!).toLocaleDateString()}
-              </p>
-            </div>
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-28 sm:px-6">
+        <Link href="/"><Button variant="ghost" className="mb-6"><ArrowLeft className="mr-2 h-4 w-4" /> Back home</Button></Link>
+
+        <header className="mb-8 rounded-3xl border border-amber-300/25 bg-gradient-to-br from-violet-950/70 to-black/40 p-6 sm:p-9">
+          <div className="mb-4 flex items-center gap-3 text-amber-300"><Crown className="h-6 w-6" /><span className="text-xs font-bold uppercase tracking-[0.2em]">Unified Soul Codex</span></div>
+          <h1 className="font-serif text-4xl sm:text-6xl">{profile.name}</h1>
+          <p className="mt-3 max-w-3xl text-lg leading-8 text-white/70">This page now explains the profile as one connected human story. Labels remain visible, but none of them are allowed to stand alone and pretend they explained you.</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {astrology.sunSign && <Badge variant="secondary">{astrology.sunSign} Sun</Badge>}
+            {astrology.moonSign && <Badge variant="secondary">{astrology.moonSign} Moon</Badge>}
+            {astrology.risingSign && <Badge variant="secondary">{astrology.risingSign} Rising</Badge>}
+            {numerology.lifePath && <Badge variant="secondary">Life Path {numerology.lifePath}</Badge>}
+            {archetype.title && <Badge variant="secondary">{archetype.title}</Badge>}
           </div>
+        </header>
 
-          {/* Archetype Hero Card */}
-          <Card className="cosmic-border mystical-glow bg-transparent border-0 mb-8">
-            <div className="cosmic-border-inner">
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <Crown className="h-12 w-12 text-accent mx-auto mb-4" />
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-2" data-testid="text-archetype-title">
-                    {archetypeData?.title || "Cosmic Soul"}
-                  </h2>
-                  <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto" data-testid="text-archetype-description">
-                    {archetypeData?.description || "Your unique spiritual essence is being revealed..."}
-                  </p>
-                  
-                  {/* Astrology Big 3 */}
-                  <div className="flex items-center justify-center space-x-6 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <Sun className="h-4 w-4 text-accent" />
-                      <span data-testid="text-sun-sign">{astrologyData?.sunSign || "Unknown"} ☉</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Moon className="h-4 w-4 text-accent" />
-                      <span data-testid="text-moon-sign">{astrologyData?.moonSign || "Unknown"} ☽</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Star className="h-4 w-4 text-accent" />
-                      <span data-testid="text-rising-sign">{astrologyData?.risingSign || "Unknown"} ↑</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </div>
-          </Card>
-
-          {/* Biography Card */}
-          {profile.biography && (
-            <Card className="glassmorphism mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <ScrollText className="h-5 w-5 text-primary" />
-                  <span>Your Soul Biography</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg leading-relaxed" data-testid="text-biography">
-                  {profile.biography}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
-              <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-              <TabsTrigger value="astrology" data-testid="tab-astrology">Astrology</TabsTrigger>
-              <TabsTrigger value="numerology" data-testid="tab-numerology">Numerology</TabsTrigger>
-              <TabsTrigger value="personality" data-testid="tab-personality">Personality</TabsTrigger>
-              <TabsTrigger value="guidance" data-testid="tab-guidance">Guidance</TabsTrigger>
-              {profile.isPremium && (
-                <>
-                  <TabsTrigger value="astrocartography" data-testid="tab-astrocartography">Maps</TabsTrigger>
-                  <TabsTrigger value="palmistry" data-testid="tab-palmistry">Palm</TabsTrigger>
-                </>
-              )}
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Core Numbers */}
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Infinity className="h-5 w-5 text-primary" />
-                      <span>Core Numbers</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Life Path</span>
-                      <Badge variant="secondary" data-testid="text-life-path">
-                        {numerologyData?.lifePath || "Unknown"}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Expression</span>
-                      <Badge variant="secondary" data-testid="text-expression">
-                        {numerologyData?.expression || "Unknown"}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Soul Urge</span>
-                      <Badge variant="secondary" data-testid="text-soul-urge">
-                        {numerologyData?.soulUrge || "Unknown"}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Personality Types */}
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Brain className="h-5 w-5 text-primary" />
-                      <span>Personality</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Enneagram</span>
-                      <Badge variant="secondary" data-testid="text-enneagram">
-                        {personalityData?.enneagram?.type ? `Type ${personalityData.enneagram.type}` : "Take Assessment"}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>MBTI</span>
-                      <Badge variant="secondary" data-testid="text-mbti">
-                        {personalityData?.mbti?.type || "Take Assessment"}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Tarot Birth Cards */}
-                {archetypeData?.tarotCards && (
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
-                        <span>Tarot Birth Cards</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <div className="font-medium text-sm mb-1">Primary Cards</div>
-                        <div className="text-accent font-semibold" data-testid="text-tarot-cards">
-                          {archetypeData.tarotCards.card1} • {archetypeData.tarotCards.card2}
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground" data-testid="text-tarot-interpretation">
-                        {archetypeData.tarotCards.interpretation}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Archetype Details */}
-              {archetypeData && (
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Zap className="h-5 w-5 text-primary" />
-                        <span>Strengths & Gifts</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {archetypeData.strengths?.map((strength: string, index: number) => (
-                          <li key={index} className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-accent rounded-full"></div>
-                            <span>{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Target className="h-5 w-5 text-primary" />
-                        <span>Growth Areas</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {archetypeData.shadows?.map((shadow: string, index: number) => (
-                          <li key={index} className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
-                            <span>{shadow}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Astrology Tab */}
-            <TabsContent value="astrology" className="space-y-6">
-              <div className="grid lg:grid-cols-2 gap-6">
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <ChartPie className="h-5 w-5 text-primary" />
-                      <span>Birth Chart</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CosmicChart 
-                      astrologyData={astrologyData}
-                      size={300}
-                    />
-                  </CardContent>
-                </Card>
-
-                <div className="space-y-6">
-                  {/* Planetary Positions */}
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle>Planetary Positions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {astrologyData?.planets && Object.entries(astrologyData.planets).map(([planet, data]: [string, any]) => (
-                        <div key={planet} className="flex justify-between items-center">
-                          <span className="capitalize">{planet}</span>
-                          <Badge variant="outline" data-testid={`text-planet-${planet}`}>
-                            {data.sign} {data.house}H
-                          </Badge>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-
-                  {/* Nodes & Chiron */}
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle>Karmic Points</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span>North Node</span>
-                        <Badge variant="outline" data-testid="text-north-node">
-                          {astrologyData?.northNode?.sign} {astrologyData?.northNode?.house}H
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>South Node</span>
-                        <Badge variant="outline" data-testid="text-south-node">
-                          {astrologyData?.southNode?.sign} {astrologyData?.southNode?.house}H
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Chiron</span>
-                        <Badge variant="outline" data-testid="text-chiron">
-                          {astrologyData?.chiron?.sign} {astrologyData?.chiron?.house}H
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Numerology Tab */}
-            <TabsContent value="numerology" className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle>Core Numbers</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">Life Path Number</span>
-                          <Badge className="bg-primary text-primary-foreground">
-                            {numerologyData?.lifePath}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground" data-testid="text-life-path-interpretation">
-                          {numerologyData?.interpretations?.lifePath}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">Expression Number</span>
-                          <Badge variant="secondary">
-                            {numerologyData?.expression}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground" data-testid="text-expression-interpretation">
-                          {numerologyData?.interpretations?.expression}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle>Soul & Personality</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">Soul Urge</span>
-                          <Badge variant="secondary">
-                            {numerologyData?.soulUrge}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground" data-testid="text-soul-urge-interpretation">
-                          {numerologyData?.interpretations?.soulUrge}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">Personality Number</span>
-                          <Badge variant="secondary">
-                            {numerologyData?.personality}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground" data-testid="text-personality-interpretation">
-                          {numerologyData?.interpretations?.personality}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className="glassmorphism">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <span>Current Year Cycle</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-4 mb-3">
-                    <span className="font-medium">Personal Year</span>
-                    <Badge className="bg-accent text-accent-foreground">
-                      {numerologyData?.personalYear}
-                    </Badge>
-                  </div>
-                  <p className="text-muted-foreground" data-testid="text-personal-year-interpretation">
-                    {numerologyData?.interpretations?.personalYear}
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Personality Tab */}
-            <TabsContent value="personality" className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Enneagram */}
-                {personalityData?.enneagram ? (
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Heart className="h-5 w-5 text-primary" />
-                        <span>Enneagram Type {personalityData.enneagram.type}</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm" data-testid="text-enneagram-description">
-                        {personalityData.enneagram.description}
-                      </p>
-                      <div>
-                        <h4 className="font-medium mb-2">Core Motivation</h4>
-                        <p className="text-sm text-muted-foreground" data-testid="text-enneagram-motivation">
-                          {personalityData.enneagram.motivation}
-                        </p>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-2">Basic Fear</h4>
-                        <p className="text-sm text-muted-foreground" data-testid="text-enneagram-fear">
-                          {personalityData.enneagram.fear}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle>Enneagram Assessment</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4">
-                        Complete the Enneagram assessment to unlock deeper personality insights.
-                      </p>
-                      <Button variant="outline" data-testid="button-take-enneagram">
-                        Take Assessment
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* MBTI */}
-                {personalityData?.mbti ? (
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Brain className="h-5 w-5 text-primary" />
-                        <span>MBTI - {personalityData.mbti.type}</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm" data-testid="text-mbti-description">
-                        {personalityData.mbti.description}
-                      </p>
-                      <div>
-                        <h4 className="font-medium mb-2">Cognitive Functions</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {personalityData.mbti.functions?.map((func: string, index: number) => (
-                            <Badge key={index} variant="outline">
-                              {func}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="glassmorphism">
-                    <CardHeader>
-                      <CardTitle>MBTI Assessment</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4">
-                        Complete the MBTI assessment to discover your cognitive preferences.
-                      </p>
-                      <Button variant="outline" data-testid="button-take-mbti">
-                        Take Assessment
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Guidance Tab */}
-            <TabsContent value="guidance" className="space-y-6">
-              {/* Daily Guidance */}
-              {profile.dailyGuidance && (
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Compass className="h-5 w-5 text-primary" />
-                      <span>Today's Cosmic Guidance</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg leading-relaxed" data-testid="text-daily-guidance">
-                      {profile.dailyGuidance}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Archetype Guidance */}
-              {archetypeData?.guidance && (
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      <span>Your Soul Path Guidance</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg leading-relaxed" data-testid="text-archetype-guidance">
-                      {archetypeData.guidance}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Upgrade to Premium */}
-              {!profile.isPremium && (
-                <Card className="cosmic-border mystical-glow bg-transparent border-0">
-                  <div className="cosmic-border-inner">
-                    <CardContent className="p-8 text-center">
-                      <Crown className="h-12 w-12 text-accent mx-auto mb-4" />
-                      <h3 className="text-2xl font-bold mb-4">Unlock Your Complete Codex</h3>
-                      <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                        Access your full 30-40 page PDF dossier, astrocartography map, palmistry analysis,
-                        and 12+ additional mystical systems for deeper self-understanding.
-                      </p>
-                      <Button
-                        onClick={() => setShowUpgradeModal(true)}
-                        className="bg-primary text-primary-foreground px-8 py-3 font-semibold"
-                        data-testid="button-upgrade-premium"
-                      >
-                        Upgrade to Premium - $47
-                      </Button>
-                    </CardContent>
-                  </div>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Astrocartography Tab */}
-            {profile.isPremium && (
-              <TabsContent value="astrocartography" className="space-y-6">
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle>Astrocartography Map</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-6">
-                      Discover your power places worldwide. This interactive map shows locations optimized for love, career, healing, and transformation based on your natal chart.
-                    </p>
-                    <Link href={`/astrocartography/${id}`}>
-                      <Button className="w-full">
-                        View Full Astrocartography Map →
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-
-            {/* Palmistry Tab */}
-            {profile.isPremium && (
-              <TabsContent value="palmistry" className="space-y-6">
-                <Card className="glassmorphism">
-                  <CardHeader>
-                    <CardTitle>AI Palmistry Analysis</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-6">
-                      Upload a palm photo for computer vision analysis of your life, heart, head, and fate lines. Get insights into your vitality, emotional patterns, mental abilities, and destiny path.
-                    </p>
-                    <Link href={`/palmistry/${id}`}>
-                      <Button className="w-full">
-                        Analyze Your Palm →
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-          </Tabs>
-
-          {/* Actions */}
-          <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              variant="outline"
-              data-testid="button-share-profile"
-              onClick={() => setShowShareModal(true)}
-            >
-              <Star className="mr-2 h-4 w-4" />
-              Share Profile
-            </Button>
-            <Button
-              variant="outline"
-              data-testid="button-download-pdf"
-              onClick={handleDownloadPdf}
-              disabled={isDownloadingPdf}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {isDownloadingPdf ? "Downloading..." : "Download PDF"}
-            </Button>
-            {!profile.isPremium && (
-              <Button
-                onClick={() => setShowUpgradeModal(true)}
-                className="bg-primary text-primary-foreground"
-                data-testid="button-upgrade-main"
-              >
-                <Crown className="mr-2 h-4 w-4" />
-                Upgrade to Premium
-              </Button>
-            )}
-          </div>
+        <div className="mb-7 rounded-2xl border border-teal-300/15 bg-teal-300/[0.035] p-5">
+          <div className="flex items-start gap-3"><Sparkles className="mt-1 h-5 w-5 text-teal-300" /><div><h2 className="font-semibold text-teal-100">One profile, one explanation standard</h2><p className="mt-1 leading-7 text-white/60">Astrology, numerology, personality, archetype, biography, and guidance are integrated below. Evidence labels stay separate from interpretation, and your feedback corrects the explanation rather than rewriting calculated data.</p></div></div>
         </div>
-      </div>
 
-      {showUpgradeModal && (
-        <PremiumUpgradeModal
-          profileId={id!}
-          onClose={() => setShowUpgradeModal(false)}
-        />
-      )}
+        <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
 
-      {showShareModal && profile && (
-        <ShareModal
-          profileId={id!}
-          profileName={profile.name}
-          onClose={() => setShowShareModal(false)}
-        />
-      )}
+        <div className="mt-8 flex justify-center"><Link href={`/profile/${id}/reading`}><Button size="lg">Open full Quick / Standard / Deep Dive reading</Button></Link></div>
+      </main>
     </div>
   );
 }
