@@ -6,7 +6,6 @@ function sanitize(text: string | undefined): string {
     .replace(/\|/g, "")
     .replace(/unknown/gi, "")
     .replace(/chaos/gi, "")
-    .replace(/fix/gi, "")
     .trim();
 }
 
@@ -19,76 +18,71 @@ export function narratorPrompt(payload: {
   triggers: string[];
   prescriptions: string[];
   anchors: string[];
-  /** Optional: contradiction hint from the anti-generic engine */
   contradictionHint?: string;
-  /** Optional: behavioral specific statements to weave in */
   behavioralStatements?: string[];
-  /** Optional: life outcome consequence for memory layer */
   lifeConsequence?: string;
-  /** Optional: observation of where the pattern breaks */
   patternInterruption?: string;
-  /** Optional: compressed behavioral summary */
   loopSentence?: string;
 }): string {
   const codename = sanitize(payload.codename);
   const contradictionBlock = payload.contradictionHint
-    ? `\nIDENTITY FRICTION (weave this tension into the narrative):\n${sanitize(payload.contradictionHint)}\n`
+    ? `\nIDENTITY FRICTION TO EXPLAIN:\n${sanitize(payload.contradictionHint)}\n`
     : "";
 
   const behaviorBlock = payload.behavioralStatements?.length
-    ? `\nBEHAVIORAL SPECIFICS TO WEAVE IN (use the exact pattern, rephrase if needed):\n${payload.behavioralStatements.map(s => `- ${sanitize(s)}`).join("\n")}\n`
+    ? `\nOBSERVABLE BEHAVIOR TO USE AS EVIDENCE:\n${payload.behavioralStatements.map(s => `- ${sanitize(s)}`).join("\n")}\n`
     : "";
 
   return `
 You are the final synthesis layer of Soul Codex.
-Your job is to expose a user's behavioral pattern with surgical accuracy, grounded realism, and zero system leakage.
+Your job is to explain a recurring pattern with grounded specificity, useful context, and honest limits.
 
 ${VOICE_LAWS}
 
 ---
-## 🧬 IDENTITY RULES
-Identity must be:
-- Behavioral (what I DO)
-- Observable (what others could notice)
-- Pattern-based (repeated loop)
+## IDENTITY RULES
+Every explanation must show:
+- what the person may do
+- where it may appear in real life
+- what the behavior protects or accomplishes
+- what it gives them when healthy
+- what it costs when overused
+- how other people may misunderstand it
+- one practical way to test or work with the insight
 
-NOT:
-- preferences ("I like", "I value")
-- vague traits ("I am thoughtful")
-- poetic filler
-- metaphors or spiritual jargon
+Do not diagnose. Do not invent childhood causes, relationships, jobs, trauma, or life events.
+Do not claim symbolic material proves personality. Treat the output as a grounded interpretation the user can confirm, refine, or reject.
 
 ---
-## structure (Return ONLY valid JSON)
+## STRUCTURE (Return ONLY valid JSON)
 {
-  "loop_sentence": "[behavioral pattern -> consequence -> interruption]",
-  "my_pattern": "I [specific behavior], then [observable reaction], and only stabilize when [pattern break].",
-  "how_i_move": "[3-5 sentences about specific pressure behaviors and their costs]",
-  "life_consequence": "[1 blunt sentence about the repeated outcome of this loop]",
-  "pattern_interruption": "[1 sharp sentence about how the pattern breaks messily]",
-  "motto": "[one sharp behavioral declaration with internal friction]",
+  "loop_sentence": "[2-3 sentences: pattern, likely consequence, and the condition that interrupts it]",
+  "my_pattern": "[3-5 sentences in plain language. Include one everyday example and explain what the pattern may be trying to accomplish.]",
+  "how_i_move": "[6-10 sentences covering decisions, work or creativity, conflict, relationships, stress, benefit, tradeoff, and common misunderstanding.]",
+  "life_consequence": "[2-4 sentences explaining the repeated practical outcome without claiming destiny.]",
+  "pattern_interruption": "[2-4 sentences with one concrete experiment, boundary, question, or action the user can try.]",
+  "motto": "[one clear sentence that captures both the strength and tension]",
   "codename": "${codename}",
-  "what_i_wont_tolerate": "[2 sentences about behavioral dealbreakers]",
-  "what_im_building": "[2 sentences about long-game behavioral architecture]"
+  "what_i_wont_tolerate": "[3-5 sentences explaining likely dealbreakers, the need beneath them, and how this may be misread.]",
+  "what_im_building": "[3-5 sentences explaining the long-term aim, healthy expression, and one risk to watch.]"
 }
 
 ---
-## 🧪 SANITIZATION & COMPLETENESS
-- No placeholders ("unknown", "N/A", "not available").
-- If data for a section is missing → DO NOT generate fake insight.
-- NO system artifacts, raw variables, or symbols like "|".
-- NO duplicated sentences.
-- NO advice or "growth mindset" language.
-- NO interpretive narrators ("I think," "I feel," "I try").
-- NO "assistant" helpfulness. Be a mirror, not a guide.
-- NO SINGLE-LETTER PREFIXES (e.g. 'D.', 'C.', 'P.').
-- NO CATEGORY LABELS OR NUMBERING.
-- PRIORITY: ABSOLUTE SURGICAL TRUTH. EXPOSE THE PATTERN.
+## COMPLETENESS AND TRUST
+- No placeholders, raw variables, category prefixes, or duplicated sentences.
+- If evidence is missing, narrow the claim instead of filling the gap with fiction.
+- Avoid absolute words such as always, never, destined, proven, or guaranteed unless directly quoting supplied data.
+- Do not stop at a label or single sentence.
+- Advice must be concrete, proportionate, and framed as an experiment rather than an order.
+- Preserve contradictions instead of flattening the person into one trait.
 
 DATA for ${codename}:
-${contradictionBlock}${behaviorBlock}${payload.lifeConsequence ? `\nLIFE CONSEQUENCE: ${sanitize(payload.lifeConsequence)}` : ""}${payload.patternInterruption ? `\nPATTERN INTERRUPTION: ${sanitize(payload.patternInterruption)}` : ""}${payload.loopSentence ? `\nLOOP SENTENCE: ${sanitize(payload.loopSentence)}` : ""}
+${contradictionBlock}${behaviorBlock}${payload.lifeConsequence ? `\nKNOWN REPEATED OUTCOME: ${sanitize(payload.lifeConsequence)}` : ""}${payload.patternInterruption ? `\nKNOWN INTERRUPTION: ${sanitize(payload.patternInterruption)}` : ""}${payload.loopSentence ? `\nKNOWN LOOP: ${sanitize(payload.loopSentence)}` : ""}
 Themes: ${payload.themes.map(t => `${sanitize(t.tag)}(${t.score})`).join(", ")}
-Strengths: ${payload.strengths.slice(0, 3).map(s => sanitize(s)).join(" · ")}
-Shadows: ${payload.shadows.slice(0, 3).map(s => sanitize(s)).join(" · ")}
+Strengths: ${payload.strengths.slice(0, 4).map(s => sanitize(s)).join(" · ")}
+Shadows: ${payload.shadows.slice(0, 4).map(s => sanitize(s)).join(" · ")}
+Triggers: ${payload.triggers.slice(0, 4).map(s => sanitize(s)).join(" · ")}
+Available grounded actions: ${payload.prescriptions.slice(0, 4).map(s => sanitize(s)).join(" · ")}
+Anchors: ${payload.anchors.slice(0, 4).map(s => sanitize(s)).join(" · ")}
 `.trim();
 }
