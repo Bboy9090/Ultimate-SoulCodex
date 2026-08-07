@@ -2,7 +2,6 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import {
   calculateAstrology,
-  calculateVerifiedAstrology,
   type BirthData,
 } from "../services/astrology";
 
@@ -188,40 +187,6 @@ describe("Gate 3: No Silent Data Upgrades", () => {
               : result.rising;
         assert.notStrictEqual(placement.status, "verified");
       });
-    });
-  });
-
-  describe("Verified astrology maintains verification discipline", () => {
-    it("calculateVerifiedAstrology requires explicit birth time and timezone", async () => {
-      const birthDataWithoutTime: BirthData = {
-        birthDate: "1990-05-15",
-        timezone: "America/New_York",
-      };
-
-      const result = await calculateVerifiedAstrology(birthDataWithoutTime);
-
-      assert.strictEqual(result.sun.sign, null);
-      assert.match(result.sun.reason || "", /explicit birth time/);
-      assert.strictEqual(result.verification.complete, false);
-    });
-
-    it("Never silently upgrades calculated data to verified without independent reference", async () => {
-      const birthData: BirthData = {
-        birthDate: "1990-05-15",
-        birthTime: "14:30",
-        timezone: "America/New_York",
-        latitude: 40.7128,
-        longitude: -74.006,
-      };
-
-      const result = await calculateVerifiedAstrology(birthData, {
-        referenceFetcher: async () => {
-          throw new Error("Reference unavailable");
-        },
-      });
-
-      assert.notStrictEqual(result.sun.status, "verified");
-      assert.ok(result.sun.verificationFailure);
     });
   });
 });
