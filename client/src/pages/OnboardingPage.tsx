@@ -77,7 +77,6 @@ const TOTAL_STEPS = 5;
 const STEP_LABELS = ["Birth", "Pressure", "Conflict", "Decisions", "Energy"];
 const WARMUP_MODES: WarmupMode[] = ["love", "attraction", "friendship", "growth"];
 
-
 const PRESSURE_OPTIONS: { value: PressurePattern; label: string; description: string }[] = [
   { value: "spiral_inward", label: "I spiral inward", description: "My thoughts loop and I overthink every angle." },
   { value: "explode_outward", label: "I explode outward", description: "I get sharp, reactive, and say things too fast." },
@@ -121,7 +120,6 @@ const LOADING_LINES = [
   "Blending your answers into the profile...",
   "Preparing your Soul Codex...",
 ];
-
 
 function isValidBirthDate(value: string): boolean {
   if (!value) return false;
@@ -505,7 +503,7 @@ function Progress({ step }: { step: number }) {
   );
 }
 
-function StepBasicInfo({ form, update, earlySunSign }: { form: FormData; update: (f: keyof FormData, v: any) => void; earlySunSign: string | null }) {
+function StepBasicInfo({ form, update }: { form: FormData; update: (f: keyof FormData, v: any) => void }) {
   const hasTime = form.birthTime.length > 0;
   const hasLocation = form.birthLocation.trim().length > 0;
   return (
@@ -516,7 +514,6 @@ function StepBasicInfo({ form, update, earlySunSign }: { form: FormData; update:
       </div>
       <Field id="name" label="Name" type="text" placeholder="Your first name" value={form.name} onChange={(value) => update("name", value)} />
       <Field id="birthDate" label="Birth Date" type="date" value={form.birthDate} onChange={(value) => update("birthDate", value)} />
-      {earlySunSign && <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginTop: "-0.35rem", marginBottom: "1.1rem", padding: "0.35rem 0.7rem", border: "1px solid rgba(212,168,95,0.25)", borderRadius: 99, color: "var(--sc-gold)", fontSize: "0.75rem" }}><IconSparkles size={12} /> Background readings warming for {earlySunSign}</div>}
       <Field id="birthTime" label="Birth Time" type="time" optional value={form.birthTime} onChange={(value) => update("birthTime", value)} />
       <div style={{ display: "flex", gap: "0.6rem", marginTop: "-0.3rem", marginBottom: "1.1rem", flexWrap: "wrap" }}>
         <span className="system-badge" style={{ opacity: hasTime ? 0.4 : 1 }}><IconCircle size={10} /><span>No time: Sun and Moon focus</span></span>
