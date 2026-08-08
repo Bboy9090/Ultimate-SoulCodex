@@ -209,36 +209,36 @@ export interface HumanDesignData {
     description: string;
     defined: boolean;
   }>;
-  activations: {
-    conscious: {
-      sun: { gate: number; line: number };
-      earth: { gate: number; line: number };
-      moon: { gate: number; line: number };
-      northNode: { gate: number; line: number };
-      southNode: { gate: number; line: number };
-      mercury: { gate: number; line: number };
-      venus: { gate: number; line: number };
-      mars: { gate: number; line: number };
-      jupiter: { gate: number; line: number };
-      saturn: { gate: number; line: number };
-      uranus: { gate: number; line: number };
-      neptune: { gate: number; line: number };
-      pluto: { gate: number; line: number };
+  activations?: {
+    conscious?: {
+      sun?: { gate: number; line: number };
+      earth?: { gate: number; line: number };
+      moon?: { gate: number; line: number };
+      northNode?: { gate: number; line: number };
+      southNode?: { gate: number; line: number };
+      mercury?: { gate: number; line: number };
+      venus?: { gate: number; line: number };
+      mars?: { gate: number; line: number };
+      jupiter?: { gate: number; line: number };
+      saturn?: { gate: number; line: number };
+      uranus?: { gate: number; line: number };
+      neptune?: { gate: number; line: number };
+      pluto?: { gate: number; line: number };
     };
-    unconscious: {
-      sun: { gate: number; line: number };
-      earth: { gate: number; line: number };
-      moon: { gate: number; line: number };
-      northNode: { gate: number; line: number };
-      southNode: { gate: number; line: number };
-      mercury: { gate: number; line: number };
-      venus: { gate: number; line: number };
-      mars: { gate: number; line: number };
-      jupiter: { gate: number; line: number };
-      saturn: { gate: number; line: number };
-      uranus: { gate: number; line: number };
-      neptune: { gate: number; line: number };
-      pluto: { gate: number; line: number };
+    unconscious?: {
+      sun?: { gate: number; line: number };
+      earth?: { gate: number; line: number };
+      moon?: { gate: number; line: number };
+      northNode?: { gate: number; line: number };
+      southNode?: { gate: number; line: number };
+      mercury?: { gate: number; line: number };
+      venus?: { gate: number; line: number };
+      mars?: { gate: number; line: number };
+      jupiter?: { gate: number; line: number };
+      saturn?: { gate: number; line: number };
+      uranus?: { gate: number; line: number };
+      neptune?: { gate: number; line: number };
+      pluto?: { gate: number; line: number };
     };
   };
   activatedGates: number[];
@@ -527,6 +527,7 @@ export function calculateHumanDesign(birthData: {
   const astroData = calculateAstrology(birthData);
 
   // Return unresolved Human Design if birth time is missing
+  // Activations are absent (not fabricated with zero values)
   if (!birthData.birthTime) {
     return {
       type: "unresolved",
@@ -536,30 +537,7 @@ export function calculateHumanDesign(birthData: {
       definition: "unknown",
       centers: {},
       channels: [],
-      activations: {
-        conscious: {
-          sun: { gate: 0, line: 0 },
-          earth: { gate: 0, line: 0 },
-          moon: { gate: 0, line: 0 },
-          northNode: { gate: 0, line: 0 },
-          southNode: { gate: 0, line: 0 },
-          mercury: { gate: 0, line: 0 },
-          venus: { gate: 0, line: 0 },
-          mars: { gate: 0, line: 0 },
-          jupiter: { gate: 0, line: 0 },
-        },
-        unconscious: {
-          sun: { gate: 0, line: 0 },
-          earth: { gate: 0, line: 0 },
-          moon: { gate: 0, line: 0 },
-          northNode: { gate: 0, line: 0 },
-          southNode: { gate: 0, line: 0 },
-          mercury: { gate: 0, line: 0 },
-          venus: { gate: 0, line: 0 },
-          mars: { gate: 0, line: 0 },
-          jupiter: { gate: 0, line: 0 },
-        },
-      },
+      // activations intentionally absent: unresolved state cannot calculate them
     };
   }
 
