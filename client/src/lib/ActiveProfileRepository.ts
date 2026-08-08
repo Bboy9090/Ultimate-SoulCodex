@@ -12,6 +12,30 @@
  * 5. Recovery messaging (missing, corrupted, wrong version)
  */
 
+export type VerificationStatus = 'unresolved' | 'pending_independent_verification' | 'verified';
+export type ConfidenceLevel = 'high' | 'moderate' | 'low';
+
+export interface AstrologyPlacementEvidence {
+  sign: string | null;
+  verificationStatus: VerificationStatus;
+  calculationStatus: 'deterministic' | 'ephemeris_verified' | 'estimated' | 'unavailable';
+  evidence?: {
+    source: string;
+    engine: string;
+    engineVersion?: string;
+    calculatedAt: string;
+    unresolvedReason?: string;
+  };
+  timeSensitive?: boolean;
+  confidence?: ConfidenceLevel;
+}
+
+export interface AstrologyEvidence {
+  sun?: AstrologyPlacementEvidence;
+  moon?: AstrologyPlacementEvidence;
+  rising?: AstrologyPlacementEvidence;
+}
+
 export interface StoredProfile {
   // Identification
   id?: string;
@@ -36,7 +60,9 @@ export interface StoredProfile {
   sunSign?: string | null;
   moonSign?: string | null;
   risingSign?: string | null;
-  astrologyData?: any;
+  astrologyData?: any & {
+    evidence?: AstrologyEvidence;
+  };
 
   // Numerology data
   lifePathNumber?: number;

@@ -30,6 +30,30 @@ interface PlanetData {
   };
 }
 
+type VerificationStatus = 'unresolved' | 'pending_independent_verification' | 'verified';
+type ConfidenceLevel = 'high' | 'moderate' | 'low';
+
+interface AstrologyPlacementEvidence {
+  sign: string | null;
+  verificationStatus: VerificationStatus;
+  calculationStatus: 'deterministic' | 'ephemeris_verified' | 'estimated' | 'unavailable';
+  evidence?: {
+    source: string;
+    engine: string;
+    engineVersion?: string;
+    calculatedAt: string;
+    unresolvedReason?: string;
+  };
+  timeSensitive?: boolean;
+  confidence?: ConfidenceLevel;
+}
+
+interface AstrologyEvidence {
+  sun?: AstrologyPlacementEvidence;
+  moon?: AstrologyPlacementEvidence;
+  rising?: AstrologyPlacementEvidence;
+}
+
 interface AstrologyData {
   sunSign: string;
   moonSign: string;
@@ -46,8 +70,8 @@ interface AstrologyData {
     neptune: PlanetData;
     pluto: PlanetData;
   };
-  houses: Array<{ 
-    sign: string; 
+  houses: Array<{
+    sign: string;
     degree: number;
     interpretation: {
       title: string;
@@ -57,9 +81,9 @@ interface AstrologyData {
     };
   }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: { 
-    sign: string; 
-    house: number; 
+  northNode: {
+    sign: string;
+    house: number;
     degree: number;
     interpretation: {
       title: string;
@@ -67,9 +91,9 @@ interface AstrologyData {
       spiritualGrowth: string;
     };
   };
-  southNode: { 
-    sign: string; 
-    house: number; 
+  southNode: {
+    sign: string;
+    house: number;
     degree: number;
     interpretation: {
       title: string;
@@ -77,9 +101,9 @@ interface AstrologyData {
       spiritualGrowth: string;
     };
   };
-  chiron: { 
-    sign: string; 
-    house: number; 
+  chiron: {
+    sign: string;
+    house: number;
     degree: number;
     interpretation: {
       title: string;
@@ -95,6 +119,7 @@ interface AstrologyData {
     };
     summary: string;
   };
+  evidence?: AstrologyEvidence;
 }
 
 const ZODIAC_SIGNS = [
@@ -334,15 +359,60 @@ function calculateChironPosition(birthTime: Date): { longitude: number; sign: st
   const epochTime = new Date('2000-01-01T12:00:00Z').getTime();
   const currentTime = birthTime.getTime();
   const yearsSinceEpoch = (currentTime - epochTime) / (1000 * 60 * 60 * 24 * 365.25);
-  
+
   const epochChironDegree = 270;
   const chironDegree = (epochChironDegree + (yearsSinceEpoch * 7.2)) % 360;
   const normalizedDegree = chironDegree < 0 ? chironDegree + 360 : chironDegree;
-  
+
   return {
     longitude: normalizedDegree,
     sign: eclipticToZodiacSign(normalizedDegree),
     degree: getDegreesInSign(normalizedDegree)
+  };
+}
+
+function buildPlacementEvidence(
+  placement: 'sun' | 'moon' | 'rising',
+  sign: string,
+  birthData: BirthData,
+  calculatedAt: string
+): AstrologyPlacementEvidence {
+  const hasExactTime = birthData.birthTime && birthData.birthTime !== '12:00';
+  const hasLocation = birthData.latitude != null && birthData.longitude != null;
+
+  let confidenceLevel: ConfidenceLevel = 'low';
+  let unresolvedReason: string | undefined;
+
+  if (hasExactTime && hasLocation) {
+    confidenceLevel = 'high';
+  } else if (!hasExactTime && hasLocation) {
+    confidenceLevel = 'moderate';
+    unresolvedReason = 'requires_verified_birth_time';
+  } else if (hasExactTime && !hasLocation) {
+    confidenceLevel = 'moderate';
+  } else {
+    confidenceLevel = 'low';
+  }
+
+  const timeSensitiveMap = {
+    'sun': false,
+    'moon': true,
+    'rising': true
+  };
+
+  return {
+    sign,
+    verificationStatus: 'unresolved',
+    calculationStatus: 'deterministic',
+    evidence: {
+      source: 'user-provided-birth-data',
+      engine: 'astronomy-engine',
+      engineVersion: '1.50.1',
+      calculatedAt,
+      unresolvedReason
+    },
+    timeSensitive: timeSensitiveMap[placement],
+    confidence: confidenceLevel
   };
 }
 
@@ -467,7 +537,14 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const sunInterpretation = getPlanetSignInterpretation('sun', sunSign);
   const moonInterpretation = getPlanetSignInterpretation('moon', moonSign);
   const risingInterpretation = getPlanetSignInterpretation('sun', risingSign);
-  
+
+  const calculatedAt = new Date().toISOString();
+  const evidence: AstrologyEvidence = {
+    sun: buildPlacementEvidence('sun', sunSign, birthData, calculatedAt),
+    moon: buildPlacementEvidence('moon', moonSign, birthData, calculatedAt),
+    rising: buildPlacementEvidence('rising', risingSign, birthData, calculatedAt)
+  };
+
   return {
     sunSign,
     moonSign,
@@ -485,7 +562,8 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
         rising: `You present to the world as ${risingSign}, projecting ${risingInterpretation.keywords.join(', ')} energy`
       },
       summary: `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies. Your soul's journey involves balancing these cosmic influences to express your highest potential.`
-    }
+    },
+    evidence
   };
 }
 
