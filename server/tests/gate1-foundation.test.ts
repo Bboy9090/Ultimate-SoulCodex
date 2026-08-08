@@ -8,7 +8,12 @@ import {
 } from "../../packages/core/compute/personal-numbers";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import type { BirthData } from "../services/astrology-production";
-import { utcToZonedTime, fromZonedTime, toZonedTime } from "date-fns-tz";
+import { fromZonedTime } from "date-fns-tz";
+import {
+  saveActiveProfile,
+  loadActiveProfile,
+  clearActiveProfile,
+} from "../../client/src/lib/profileStorage";
 
 describe("Gate 1: Foundation Regression Suite", () => {
   describe("Birth Date Normalization — Exact Behavior", () => {
@@ -125,100 +130,94 @@ describe("Gate 1: Foundation Regression Suite", () => {
       assert.strictEqual(result.rising.status, "requires_verified_birth_time");
     });
 
-    it("converts DST spring forward (2023-03-12 02:30) to consistent UTC and deterministic calculation", () => {
+    it("converts DST spring forward (2023-03-12 02:30) to library's deterministic UTC conversion and calculation", () => {
       const dstSpringForward: BirthData = {
         birthDate: "2023-03-12",
-        birthTime: "02:30", // Pre-DST local time (EST = UTC-5)
+        birthTime: "02:30", // On spring-forward date, 02:30 doesn't exist in EST (clocks jump 02:00→03:00); library interprets as EDT
         timezone: "America/New_York",
         latitude: 40.7128,
         longitude: -74.006,
       };
 
-      // Verify library produces consistent UTC conversion for this time
-      const localDateTime = new Date("2023-03-12T02:30:00");
-      const utcTime = fromZonedTime(localDateTime, "America/New_York");
-      const libraryUTCHour = utcTime.getUTCHours();
-      const libraryUTCMinute = utcTime.getUTCMinutes();
+      // EXACT ASSERTION: Verify library's deterministic policy for spring-forward ambiguous times
+      // On 2023-03-12, EDT begins when clocks spring forward at 02:00 EST → 03:00 EDT
+      // The time 02:30 doesn't exist; the library interprets it as 02:30 EDT (UTC-4), giving 06:30 UTC
+      const utcTime = fromZonedTime("2023-03-12T02:30:00", "America/New_York");
+      assert.strictEqual(utcTime.getUTCHours(), 6, "Spring forward: 02:30 interpreted as EDT gives 06:30 UTC");
+      assert.strictEqual(utcTime.getUTCMinutes(), 30);
+      assert.strictEqual(utcTime.getUTCDate(), 12, "Date should not shift");
 
-      // Call multiple times to verify deterministic UTC conversion
+      // Call multiple times to verify deterministic calculation
       const result1 = calculateAstrology(dstSpringForward);
       const result2 = calculateAstrology(dstSpringForward);
       const result3 = calculateAstrology(dstSpringForward);
 
-      // EXACT ASSERTIONS: All three calls must produce identical results
-      // (Proves UTC conversion is deterministic across DST boundary, no random state or off-by-one errors)
+      // EXACT ASSERTIONS: All three calls must produce identical results (determinism guarantee)
       assert.strictEqual(result1.sun.sign, result2.sun.sign);
       assert.strictEqual(result2.sun.sign, result3.sun.sign);
       assert.strictEqual(result1.sun.degree, result2.sun.degree);
       assert.strictEqual(result2.sun.degree, result3.sun.degree);
-      assert.strictEqual(result1.sun.status, result2.sun.status);
-      assert.strictEqual(result2.sun.status, result3.sun.status);
-      // Status must be valid (library is producing consistent output)
-      assert.ok(["calculated_pending_independent_verification", "pending_ephemeris", "verified"].includes(result1.sun.status));
     });
 
-    it("converts DST fall back (2023-11-05 01:30 ambiguous) to consistent UTC with deterministic offset choice", () => {
+    it("converts DST fall back (2023-11-05 01:30 ambiguous) to library's deterministic ambiguity policy", () => {
       const dstFallBack: BirthData = {
         birthDate: "2023-11-05",
-        birthTime: "01:30", // Ambiguous: first occurrence is EDT (UTC-4), second is EST (UTC-5)
+        birthTime: "01:30", // Ambiguous: first occurrence is EDT (UTC-4 → 05:30 UTC), second is EST (UTC-5 → 06:30 UTC)
         timezone: "America/New_York",
         latitude: 40.7128,
         longitude: -74.006,
       };
 
-      // Call multiple times to verify deterministic offset choice during ambiguous hour
+      // EXACT ASSERTION: Determine library's ambiguity policy by checking what UTC instant it produces
+      // The library should consistently choose one (typically first occurrence = EDT = UTC-4)
+      const utcTime = fromZonedTime("2023-11-05T01:30:00", "America/New_York");
+      const libraryChosenUTCHour = utcTime.getUTCHours();
+
+      // Validate library chose a legal offset for the ambiguous hour
+      // Valid options: 05:30 UTC (EDT) or 06:30 UTC (EST)
+      assert.ok(libraryChosenUTCHour === 5 || libraryChosenUTCHour === 6,
+        `Fall-back ambiguous hour must resolve to either 05:30 UTC (EDT) or 06:30 UTC (EST), got ${libraryChosenUTCHour}:30 UTC`);
+
+      // Call multiple times to verify library consistently applies its ambiguity policy
       const result1 = calculateAstrology(dstFallBack);
       const result2 = calculateAstrology(dstFallBack);
       const result3 = calculateAstrology(dstFallBack);
 
-      // EXACT ASSERTIONS: All three calls must produce identical results
-      // (Proves library consistently resolves ambiguous hour, no random offset selection)
+      // EXACT ASSERTIONS: All three calls must produce identical results (deterministic policy enforcement)
       assert.strictEqual(result1.sun.sign, result2.sun.sign);
       assert.strictEqual(result2.sun.sign, result3.sun.sign);
       assert.strictEqual(result1.sun.degree, result2.sun.degree);
       assert.strictEqual(result2.sun.degree, result3.sun.degree);
-      // Result must be either: (1) a valid zodiac sign, or (2) null (if unresolved)
-      const validSigns = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
-      assert.ok(result1.sun.sign === null || validSigns.includes(result1.sun.sign));
-      // If sign exists, degree must be valid (0-30 within a sign)
-      if (result1.sun.sign) {
-        assert.ok(result1.sun.degree >= 0 && result1.sun.degree <= 30);
-      }
     });
 
-    it("handles extreme timezone (UTC+14 Kiritimati) with correct offset and no day-boundary errors", () => {
+    it("converts extreme timezone (UTC+14 Kiritimati 2000-08-15 12:00) to exact UTC 22:00 on previous day", () => {
       const utcPlus14: BirthData = {
-        birthDate: "1990-08-15",
-        birthTime: "12:00", // Noon Kiritimati time
+        birthDate: "2000-08-15",
+        birthTime: "12:00", // Noon Kiritimati time at UTC+14 = 22:00 UTC August 14 (previous day)
         timezone: "Pacific/Kiritimati",
         latitude: 1.9709,
         longitude: -157.4474,
       };
 
-      // Verify library produces consistent UTC conversion for extreme offset
-      const localDateTime = new Date("1990-08-15T12:00:00");
-      const utcTime = fromZonedTime(localDateTime, "Pacific/Kiritimati");
-      // Just verify the library produces a valid UTC time (no crash, no NaN)
-      assert.ok(!isNaN(utcTime.getTime()));
+      // EXACT ASSERTION: Verify library converts UTC+14 correctly
+      // Input: "2000-08-15T12:00:00" in Pacific/Kiritimati (UTC+14 after 1995 timezone change)
+      // Expected: 22:00 UTC on 2000-08-14 (previous day)
+      // Calculation: 12:00 local (UTC+14) = 12:00 - 14:00 = -2:00 = 22:00 previous day
+      const utcTime = fromZonedTime("2000-08-15T12:00:00", "Pacific/Kiritimati");
+      assert.strictEqual(utcTime.getUTCHours(), 22, "UTC+14: 12:00 local should convert to 22:00 UTC");
+      assert.strictEqual(utcTime.getUTCMinutes(), 0);
+      assert.strictEqual(utcTime.getUTCDate(), 14, "UTC+14 day boundary: should roll back to August 14");
 
-      // Call multiple times to verify no offset miscalculation or day-boundary errors
+      // Call multiple times to verify consistent conversion with no day-boundary errors
       const result1 = calculateAstrology(utcPlus14);
       const result2 = calculateAstrology(utcPlus14);
       const result3 = calculateAstrology(utcPlus14);
 
-      // EXACT ASSERTIONS: All three calls must produce identical results
-      // (Proves UTC+14 offset is handled correctly and consistently, no off-by-one day errors)
+      // EXACT ASSERTIONS: All three calls must produce identical results (determinism guarantee)
       assert.strictEqual(result1.sun.sign, result2.sun.sign);
       assert.strictEqual(result2.sun.sign, result3.sun.sign);
       assert.strictEqual(result1.sun.degree, result2.sun.degree);
       assert.strictEqual(result2.sun.degree, result3.sun.degree);
-      // Result must be either: (1) a valid zodiac sign, or (2) null (if unresolved)
-      const validSigns = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
-      assert.ok(result1.sun.sign === null || validSigns.includes(result1.sun.sign));
-      // If sign exists, degree must be valid (0-30 within a sign)
-      if (result1.sun.sign) {
-        assert.ok(result1.sun.degree >= 0 && result1.sun.degree <= 30);
-      }
     });
   });
 
@@ -557,15 +556,25 @@ describe("Gate 1: Foundation Regression Suite", () => {
   });
 
   describe("Profile Persistence & Refresh Survival (Canonical Storage Layer)", () => {
-    // Setup mock localStorage for persistence testing
-    let localStorageMock: { [key: string]: string } = {};
+    class MemoryStorage implements Storage {
+      private values = new Map<string, string>();
+      get length() { return this.values.size; }
+      clear() { this.values.clear(); }
+      getItem(key: string) { return this.values.get(key) ?? null; }
+      key(index: number) { return [...this.values.keys()][index] ?? null; }
+      removeItem(key: string) { this.values.delete(key); }
+      setItem(key: string, value: string) { this.values.set(key, value); }
+    }
 
     beforeEach(() => {
-      localStorageMock = {};
+      Object.defineProperty(globalThis, "localStorage", {
+        value: new MemoryStorage(),
+        configurable: true,
+      });
     });
 
     it("profile saved through canonical layer survives simulated page refresh/reload", () => {
-      // Simulate: calculate → save to localStorage → reload app → load from localStorage
+      // EXACT TEST: Calculate → Save via ActiveProfileRepository → Simulate reload → Load → Verify identical
       const birthData: BirthData = {
         birthDate: "1990-08-15",
         birthTime: "14:30",
@@ -577,72 +586,64 @@ describe("Gate 1: Foundation Regression Suite", () => {
       // Step 1: Calculate profile
       const calculatedProfile = calculateAstrology(birthData);
 
-      // Step 2: Create canonical storage object with Soul Codex schema
-      const canonicalKey = "soulcodex.activeProfile.v1";
-      const storageTimestamp = new Date().toISOString();
-      const profileToStore = {
-        schemaVersion: 1,
-        createdAt: storageTimestamp,
-        updatedAt: storageTimestamp,
+      // Step 2: Save through actual canonical layer (ActiveProfileRepository via profileStorage)
+      const profileToSave = {
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
         timezone: birthData.timezone,
         latitude: birthData.latitude,
         longitude: birthData.longitude,
         sunSign: calculatedProfile.sun.sign,
-        sunDegree: calculatedProfile.sun.degree,
-        sunStatus: calculatedProfile.sun.status,
         moonSign: calculatedProfile.moon.sign,
-        moonStatus: calculatedProfile.moon.status,
         risingSign: calculatedProfile.rising.sign,
-        risingStatus: calculatedProfile.rising.status,
       };
+      saveActiveProfile(profileToSave);
 
-      // Step 3: Simulate "save to localStorage"
-      localStorageMock[canonicalKey] = JSON.stringify(profileToStore);
-
-      // Step 4: Verify profile exists in storage (canonical key check)
-      assert.ok(localStorageMock[canonicalKey]);
-      const storedRaw = localStorageMock[canonicalKey];
+      // Step 3: Verify profile was stored under canonical key with schema version and timestamps
+      const canonicalKey = "soulcodex.activeProfile.v1";
+      const storedRaw = localStorage.getItem(canonicalKey);
+      assert.ok(storedRaw, "Profile must be stored under canonical key");
       assert.strictEqual(typeof storedRaw, "string");
 
-      // Step 5: Simulate "page refresh" — parse from storage
-      const recoveredProfile = JSON.parse(storedRaw);
+      // Step 4: Simulate "page refresh" — load through canonical layer
+      const recoveredProfile = loadActiveProfile();
+      assert.ok(recoveredProfile, "Profile must be recoverable after refresh");
 
-      // Step 6: Recalculate with recovered birth data (simulates reinitialization)
+      // Step 5: Recalculate with recovered birth data (simulates app reinitialization)
       const recalculatedProfile = calculateAstrology({
-        birthDate: recoveredProfile.birthDate,
-        birthTime: recoveredProfile.birthTime,
-        timezone: recoveredProfile.timezone,
-        latitude: recoveredProfile.latitude,
-        longitude: recoveredProfile.longitude,
+        birthDate: recoveredProfile!.birthDate!,
+        birthTime: recoveredProfile!.birthTime!,
+        timezone: recoveredProfile!.timezone!,
+        latitude: recoveredProfile!.latitude!,
+        longitude: recoveredProfile!.longitude!,
       });
 
-      // EXACT ASSERTIONS: Profile data must survive the round-trip unchanged
-      // Schema must be preserved
-      assert.strictEqual(recoveredProfile.schemaVersion, 1);
-      // Timestamps must be preserved
-      assert.strictEqual(recoveredProfile.createdAt, storageTimestamp);
-      assert.strictEqual(recoveredProfile.updatedAt, storageTimestamp);
-      // Birth data must be preserved
-      assert.strictEqual(recoveredProfile.birthDate, birthData.birthDate);
-      assert.strictEqual(recoveredProfile.birthTime, birthData.birthTime);
-      // Astrological data must be preserved AND must match recalculation
-      assert.strictEqual(recoveredProfile.sunSign, calculatedProfile.sun.sign);
-      assert.strictEqual(recoveredProfile.sunDegree, calculatedProfile.sun.degree);
-      assert.strictEqual(recoveredProfile.sunStatus, calculatedProfile.sun.status);
-      assert.strictEqual(recoveredProfile.moonSign, calculatedProfile.moon.sign);
-      assert.strictEqual(recoveredProfile.moonStatus, calculatedProfile.moon.status);
-      assert.strictEqual(recoveredProfile.risingSign, calculatedProfile.rising.sign);
-      assert.strictEqual(recoveredProfile.risingStatus, calculatedProfile.rising.status);
-      // Recalculation must produce identical results (determinism)
+      // EXACT ASSERTIONS: Profile data must survive the round-trip through actual storage
+      // Schema must be preserved by canonical layer
+      assert.strictEqual(recoveredProfile!.schemaVersion, 1, "Schema version must be set by canonical layer");
+      // Timestamps must be auto-generated by canonical layer
+      assert.ok(recoveredProfile!.createdAt, "createdAt timestamp must be set");
+      assert.ok(recoveredProfile!.updatedAt, "updatedAt timestamp must be set");
+      // Birth data must be preserved exactly
+      assert.strictEqual(recoveredProfile!.birthDate, birthData.birthDate);
+      assert.strictEqual(recoveredProfile!.birthTime, birthData.birthTime);
+      assert.strictEqual(recoveredProfile!.timezone, birthData.timezone);
+      assert.strictEqual(recoveredProfile!.latitude, birthData.latitude);
+      assert.strictEqual(recoveredProfile!.longitude, birthData.longitude);
+      // Astrological data must be preserved
+      assert.strictEqual(recoveredProfile!.sunSign, calculatedProfile.sun.sign);
+      assert.strictEqual(recoveredProfile!.moonSign, calculatedProfile.moon.sign);
+      assert.strictEqual(recoveredProfile!.risingSign, calculatedProfile.rising.sign);
+      // Recalculation from recovered birth data must produce identical results (determinism guarantee)
       assert.strictEqual(recalculatedProfile.sun.sign, calculatedProfile.sun.sign);
       assert.strictEqual(recalculatedProfile.sun.degree, calculatedProfile.sun.degree);
       assert.strictEqual(recalculatedProfile.moon.sign, calculatedProfile.moon.sign);
+      assert.strictEqual(recalculatedProfile.moon.degree, calculatedProfile.moon.degree);
+      assert.strictEqual(recalculatedProfile.rising.sign, calculatedProfile.rising.sign);
     });
 
     it("profile persistence layer prevents data loss: stored ≡ recalculated across refresh", () => {
-      // Canonical acceptance test: Generate → Store → Reload → Verify identical
+      // EXACT TEST: Generate → Save via real canonical layer → Reload/reinitialize → Verify identical with fresh calculation
       const birthData: BirthData = {
         birthDate: "1990-08-15",
         birthTime: "14:30",
@@ -651,41 +652,60 @@ describe("Gate 1: Foundation Regression Suite", () => {
         longitude: -74.006,
       };
 
-      // Initial calculation
+      // Initial calculation (before save)
       const initial = calculateAstrology(birthData);
 
-      // Store with schema version (as canonical layer does)
-      const canonicalKey = "soulcodex.activeProfile.v1";
-      const storageEntry = JSON.stringify({
-        schemaVersion: 1,
+      // Save through actual canonical layer with birth data
+      saveActiveProfile({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
         timezone: birthData.timezone,
         latitude: birthData.latitude,
         longitude: birthData.longitude,
-        calculatedSunSign: initial.sun.sign,
-        calculatedMoonSign: initial.moon.sign,
-        calculatedRisingSign: initial.rising.sign,
       });
 
-      localStorageMock[canonicalKey] = storageEntry;
+      // Simulate reload: load through canonical layer and recalculate
+      const recovered = loadActiveProfile();
+      assert.ok(recovered, "Must recover profile after reload");
 
-      // Simulate reload: parse from storage and recalculate
-      const loaded = JSON.parse(localStorageMock[canonicalKey]);
+      // Recalculate from recovered birth data
       const recalculated = calculateAstrology({
-        birthDate: loaded.birthDate,
-        birthTime: loaded.birthTime,
-        timezone: loaded.timezone,
-        latitude: loaded.latitude,
-        longitude: loaded.longitude,
+        birthDate: recovered!.birthDate!,
+        birthTime: recovered!.birthTime!,
+        timezone: recovered!.timezone!,
+        latitude: recovered!.latitude!,
+        longitude: recovered!.longitude!,
       });
 
-      // EXACT ASSERTION: Stored calculated data must match fresh recalculation
-      // (Proves both determinism and storage fidelity)
-      assert.strictEqual(loaded.calculatedSunSign, initial.sun.sign);
-      assert.strictEqual(loaded.calculatedSunSign, recalculated.sun.sign);
-      assert.strictEqual(loaded.calculatedMoonSign, recalculated.moon.sign);
-      assert.strictEqual(loaded.calculatedRisingSign, recalculated.rising.sign);
+      // EXACT ASSERTIONS: Canonical storage must maintain deterministic round-trip
+      // Birth data must survive exactly
+      assert.strictEqual(recovered!.birthDate, birthData.birthDate);
+      assert.strictEqual(recovered!.birthTime, birthData.birthTime);
+      assert.strictEqual(recovered!.timezone, birthData.timezone);
+      // Schema version must be set by canonical layer
+      assert.strictEqual(recovered!.schemaVersion, 1);
+      // Fresh recalculation from recovered data must match original calculation (determinism)
+      // This proves both the storage layer and calculation engine are deterministic
+      assert.strictEqual(recalculated.sun.sign, initial.sun.sign, "Sun sign must be deterministic");
+      assert.strictEqual(recalculated.sun.degree, initial.sun.degree, "Sun degree must be deterministic");
+      assert.strictEqual(recalculated.moon.sign, initial.moon.sign, "Moon sign must be deterministic");
+      assert.strictEqual(recalculated.moon.degree, initial.moon.degree, "Moon degree must be deterministic");
+      assert.strictEqual(recalculated.rising.sign, initial.rising.sign, "Rising sign must be deterministic");
+    });
+
+    it("clears active profile through canonical layer", () => {
+      // Verify clearActiveProfile actually removes data from storage
+      saveActiveProfile({
+        birthDate: "1990-08-15",
+        birthTime: "14:30",
+        timezone: "America/New_York",
+      });
+
+      assert.ok(loadActiveProfile(), "Profile must exist after save");
+
+      clearActiveProfile();
+
+      assert.strictEqual(loadActiveProfile(), null, "Profile must be cleared from storage");
     });
   });
 });
