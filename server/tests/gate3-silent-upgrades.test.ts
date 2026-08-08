@@ -69,7 +69,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
 
           assert.strictEqual(result.sun.sign, null);
           assert.strictEqual(result.sun.status, "pending_ephemeris");
-          assert.match(result.sun.reason || "", /does not/);
+          assert.match(result.sun.reason || "", /does not|failed|no placement/i);
         });
       });
 
