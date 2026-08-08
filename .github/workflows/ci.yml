@@ -38,6 +38,7 @@ jobs:
       - name: Run Trust And Security Boundary Tests
         run: >-
           node --import tsx --test
+          server/tests/gate1-foundation.test.ts
           tests/astrology-candidate.test.ts
           tests/astrology-independent-verification.test.ts
           tests/jpl-horizons-reference.test.ts
