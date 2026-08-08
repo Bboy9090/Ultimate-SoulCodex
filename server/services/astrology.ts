@@ -1,4 +1,7 @@
-import { Body, Ecliptic, GeoVector } from "astronomy-engine";
+// Namespace import for ESM/CJS compatibility
+// @see https://github.com/cosinekitty/astronomy/issues (ESM export issues)
+import * as AstronomyEngine from "astronomy-engine";
+const { Body, Ecliptic, GeoVector } = AstronomyEngine;
 import { fromZonedTime } from "date-fns-tz";
 import {
   fetchHorizonsReference,
@@ -155,7 +158,7 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
 }
 
 function calculateCandidate(body: Body, timestamp: Date): PlacementCandidate {
-  const vector = GeoVector(body, timestamp, true);
+  const vector = GeoVector(body as any, timestamp, true);
   const longitude = normalizeLongitude(Ecliptic(vector).elon);
 
   return {
@@ -195,7 +198,7 @@ function getSunPlacement(birthData: BirthData): PlacementVerification {
   }
 
   try {
-    return pendingCandidatePlacement(calculateCandidate(Body.Sun, timestamp));
+    return pendingCandidatePlacement(calculateCandidate(Body.Sun as any, timestamp));
   } catch {
     return {
       sign: null,
@@ -240,7 +243,7 @@ function getMoonPlacement(birthData: BirthData): PlacementVerification {
   }
 
   try {
-    return pendingCandidatePlacement(calculateCandidate(Body.Moon, timestamp));
+    return pendingCandidatePlacement(calculateCandidate(Body.Moon as any, timestamp));
   } catch {
     return {
       sign: null,

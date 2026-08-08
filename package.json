@@ -21,6 +21,7 @@
     "check": "tsc",
     "check:workspaces": "npm run check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "test:gate3": "node --import tsx --test server/tests/gate3-silent-upgrades.test.ts",
     "test:account-deletion": "node --import tsx --test tests/account-deletion.test.ts",
     "clean": "npm run clean --workspaces --if-present",
     "db:generate": "drizzle-kit generate",
