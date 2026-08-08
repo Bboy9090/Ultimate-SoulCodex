@@ -209,36 +209,36 @@ export interface HumanDesignData {
     description: string;
     defined: boolean;
   }>;
-  activations: {
-    conscious: {
-      sun: { gate: number; line: number };
-      earth: { gate: number; line: number };
-      moon: { gate: number; line: number };
-      northNode: { gate: number; line: number };
-      southNode: { gate: number; line: number };
-      mercury: { gate: number; line: number };
-      venus: { gate: number; line: number };
-      mars: { gate: number; line: number };
-      jupiter: { gate: number; line: number };
-      saturn: { gate: number; line: number };
-      uranus: { gate: number; line: number };
-      neptune: { gate: number; line: number };
-      pluto: { gate: number; line: number };
+  activations?: {
+    conscious?: {
+      sun?: { gate: number; line: number };
+      earth?: { gate: number; line: number };
+      moon?: { gate: number; line: number };
+      northNode?: { gate: number; line: number };
+      southNode?: { gate: number; line: number };
+      mercury?: { gate: number; line: number };
+      venus?: { gate: number; line: number };
+      mars?: { gate: number; line: number };
+      jupiter?: { gate: number; line: number };
+      saturn?: { gate: number; line: number };
+      uranus?: { gate: number; line: number };
+      neptune?: { gate: number; line: number };
+      pluto?: { gate: number; line: number };
     };
-    unconscious: {
-      sun: { gate: number; line: number };
-      earth: { gate: number; line: number };
-      moon: { gate: number; line: number };
-      northNode: { gate: number; line: number };
-      southNode: { gate: number; line: number };
-      mercury: { gate: number; line: number };
-      venus: { gate: number; line: number };
-      mars: { gate: number; line: number };
-      jupiter: { gate: number; line: number };
-      saturn: { gate: number; line: number };
-      uranus: { gate: number; line: number };
-      neptune: { gate: number; line: number };
-      pluto: { gate: number; line: number };
+    unconscious?: {
+      sun?: { gate: number; line: number };
+      earth?: { gate: number; line: number };
+      moon?: { gate: number; line: number };
+      northNode?: { gate: number; line: number };
+      southNode?: { gate: number; line: number };
+      mercury?: { gate: number; line: number };
+      venus?: { gate: number; line: number };
+      mars?: { gate: number; line: number };
+      jupiter?: { gate: number; line: number };
+      saturn?: { gate: number; line: number };
+      uranus?: { gate: number; line: number };
+      neptune?: { gate: number; line: number };
+      pluto?: { gate: number; line: number };
     };
   };
   activatedGates: number[];
@@ -525,26 +525,41 @@ export function calculateHumanDesign(birthData: {
 }): HumanDesignData {
   // Get astrological data first (conscious/personality)
   const astroData = calculateAstrology(birthData);
-  
-  // Calculate 88° of solar arc before birth for unconscious/design data  
+
+  // Return unresolved Human Design if birth time is missing
+  // Activations are absent (not fabricated with zero values)
+  if (!birthData.birthTime) {
+    return {
+      type: "unresolved",
+      strategy: "requires_verified_birth_time",
+      authority: "unknown",
+      profile: "unknown",
+      definition: "unknown",
+      centers: {},
+      channels: [],
+      // activations intentionally absent: unresolved state cannot calculate them
+    };
+  }
+
+  // Calculate 88° of solar arc before birth for unconscious/design data
   // Human Design uses exactly 88° of solar arc, not a fixed number of days
   // Note: Empirically calibrated to match official calculators (Jovian Archive, mybodygraph, etc.)
   const DESIGN_SOLAR_ARC = 87.975;
-  
+
   // Calculate birth Sun's absolute longitude
   const birthSunLongitude = calculateAbsoluteLongitude(astroData.planets.sun.sign, astroData.planets.sun.degree);
-  
+
   // Calculate target longitude (88° before birth)
   let targetLongitude = birthSunLongitude - DESIGN_SOLAR_ARC;
   if (targetLongitude < 0) targetLongitude += 360;
-  
+
   // Resolve timezone properly
   const resolvedTimezone = resolveHDTimezone(
     birthData.timezone,
     parseFloat(birthData.latitude),
     parseFloat(birthData.longitude)
   );
-  
+
   // Create birth time in the correct timezone
   const [year, month, day] = birthData.birthDate.split('-').map(Number);
   const [hours, minutes] = birthData.birthTime.split(':').map(Number);

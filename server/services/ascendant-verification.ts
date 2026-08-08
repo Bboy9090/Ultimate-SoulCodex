@@ -1,4 +1,5 @@
-import { SiderealTime } from "astronomy-engine";
+import * as AstronomyEngine from "astronomy-engine";
+const { SiderealTime } = AstronomyEngine;
 
 export type AscendantSign =
   | "Aries"
