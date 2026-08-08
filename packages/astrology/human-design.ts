@@ -525,26 +525,63 @@ export function calculateHumanDesign(birthData: {
 }): HumanDesignData {
   // Get astrological data first (conscious/personality)
   const astroData = calculateAstrology(birthData);
-  
-  // Calculate 88° of solar arc before birth for unconscious/design data  
+
+  // Return unresolved Human Design if birth time is missing
+  if (!birthData.birthTime) {
+    return {
+      type: "unresolved",
+      strategy: "requires_verified_birth_time",
+      authority: "unknown",
+      profile: "unknown",
+      definition: "unknown",
+      centers: {},
+      channels: [],
+      activations: {
+        conscious: {
+          sun: { gate: 0, line: 0 },
+          earth: { gate: 0, line: 0 },
+          moon: { gate: 0, line: 0 },
+          northNode: { gate: 0, line: 0 },
+          southNode: { gate: 0, line: 0 },
+          mercury: { gate: 0, line: 0 },
+          venus: { gate: 0, line: 0 },
+          mars: { gate: 0, line: 0 },
+          jupiter: { gate: 0, line: 0 },
+        },
+        unconscious: {
+          sun: { gate: 0, line: 0 },
+          earth: { gate: 0, line: 0 },
+          moon: { gate: 0, line: 0 },
+          northNode: { gate: 0, line: 0 },
+          southNode: { gate: 0, line: 0 },
+          mercury: { gate: 0, line: 0 },
+          venus: { gate: 0, line: 0 },
+          mars: { gate: 0, line: 0 },
+          jupiter: { gate: 0, line: 0 },
+        },
+      },
+    };
+  }
+
+  // Calculate 88° of solar arc before birth for unconscious/design data
   // Human Design uses exactly 88° of solar arc, not a fixed number of days
   // Note: Empirically calibrated to match official calculators (Jovian Archive, mybodygraph, etc.)
   const DESIGN_SOLAR_ARC = 87.975;
-  
+
   // Calculate birth Sun's absolute longitude
   const birthSunLongitude = calculateAbsoluteLongitude(astroData.planets.sun.sign, astroData.planets.sun.degree);
-  
+
   // Calculate target longitude (88° before birth)
   let targetLongitude = birthSunLongitude - DESIGN_SOLAR_ARC;
   if (targetLongitude < 0) targetLongitude += 360;
-  
+
   // Resolve timezone properly
   const resolvedTimezone = resolveHDTimezone(
     birthData.timezone,
     parseFloat(birthData.latitude),
     parseFloat(birthData.longitude)
   );
-  
+
   // Create birth time in the correct timezone
   const [year, month, day] = birthData.birthDate.split('-').map(Number);
   const [hours, minutes] = birthData.birthTime.split(':').map(Number);

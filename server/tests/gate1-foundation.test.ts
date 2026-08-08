@@ -228,8 +228,9 @@ describe("Gate 1: Foundation Regression Suite", () => {
     });
 
     it("calculates personal day consistently", () => {
-      const day1 = calcPersonalDay("1990-08-15", "2026-08-15");
-      const day2 = calcPersonalDay("1990-08-15", "2026-08-15");
+      const targetDate = new Date("2026-08-15");
+      const day1 = calcPersonalDay("1990-08-15", targetDate);
+      const day2 = calcPersonalDay("1990-08-15", new Date("2026-08-15"));
       assert.strictEqual(day1, day2);
     });
 
