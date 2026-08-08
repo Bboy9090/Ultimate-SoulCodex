@@ -159,31 +159,30 @@ describe("Gate 1: Foundation Regression Suite", () => {
       assert.strictEqual(result2.sun.degree, result3.sun.degree);
     });
 
-    it("converts DST fall back (2023-11-05 01:30 ambiguous) to library's deterministic ambiguity policy", () => {
+    it("converts DST fall back (2023-11-05 01:30 ambiguous) to EDT first-occurrence policy: 05:30 UTC", () => {
       const dstFallBack: BirthData = {
         birthDate: "2023-11-05",
-        birthTime: "01:30", // Ambiguous: first occurrence is EDT (UTC-4 → 05:30 UTC), second is EST (UTC-5 → 06:30 UTC)
+        birthTime: "01:30", // Ambiguous: occurs twice (EDT at 05:30 UTC, then EST at 06:30 UTC after transition)
         timezone: "America/New_York",
         latitude: 40.7128,
         longitude: -74.006,
       };
 
-      // EXACT ASSERTION: Determine library's ambiguity policy by checking what UTC instant it produces
-      // The library should consistently choose one (typically first occurrence = EDT = UTC-4)
+      // EXACT ASSERTION: Lock Soul Codex's explicit DST fall-back ambiguity policy
+      // When 01:30 local time occurs twice on 2023-11-05 (due to DST transition at 02:00),
+      // date-fns-tz chooses EDT (first occurrence, pre-transition) = UTC-4, yielding 05:30 UTC.
+      // This is Soul Codex's committed behavior for ambiguous times.
       const utcTime = fromZonedTime("2023-11-05T01:30:00", "America/New_York");
-      const libraryChosenUTCHour = utcTime.getUTCHours();
+      assert.strictEqual(utcTime.getUTCHours(), 5, "Fall-back ambiguous 01:30: Soul Codex chooses EDT first-occurrence policy (05:30 UTC)");
+      assert.strictEqual(utcTime.getUTCMinutes(), 30);
+      assert.strictEqual(utcTime.getUTCDate(), 5, "Date should remain November 5");
 
-      // Validate library chose a legal offset for the ambiguous hour
-      // Valid options: 05:30 UTC (EDT) or 06:30 UTC (EST)
-      assert.ok(libraryChosenUTCHour === 5 || libraryChosenUTCHour === 6,
-        `Fall-back ambiguous hour must resolve to either 05:30 UTC (EDT) or 06:30 UTC (EST), got ${libraryChosenUTCHour}:30 UTC`);
-
-      // Call multiple times to verify library consistently applies its ambiguity policy
+      // Call multiple times to verify Soul Codex consistently applies this policy
       const result1 = calculateAstrology(dstFallBack);
       const result2 = calculateAstrology(dstFallBack);
       const result3 = calculateAstrology(dstFallBack);
 
-      // EXACT ASSERTIONS: All three calls must produce identical results (deterministic policy enforcement)
+      // EXACT ASSERTIONS: All three calls must produce identical results (policy determinism guarantee)
       assert.strictEqual(result1.sun.sign, result2.sun.sign);
       assert.strictEqual(result2.sun.sign, result3.sun.sign);
       assert.strictEqual(result1.sun.degree, result2.sun.degree);
