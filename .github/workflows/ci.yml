@@ -39,6 +39,7 @@ jobs:
         run: >-
           node --import tsx --test
           server/tests/gate1-foundation.test.ts
+          packages/astrology/__tests__/astrology-evidence.test.ts
           tests/astrology-candidate.test.ts
           tests/astrology-independent-verification.test.ts
           tests/jpl-horizons-reference.test.ts

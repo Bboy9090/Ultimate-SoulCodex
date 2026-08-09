@@ -1,8 +1,8 @@
 import type { BirthData } from "@soulcodex/core";
-import { 
-  getPlanetSignInterpretation, 
-  getHouseInterpretation, 
-  getPlanetMeaning, 
+import {
+  getPlanetSignInterpretation,
+  getHouseInterpretation,
+  getPlanetMeaning,
   getKarmicInterpretation,
   getAspectInterpretation
 } from "./interpretations";
@@ -10,6 +10,38 @@ import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
+
+/**
+ * Canonical types from client/src/lib/placementVerification.ts
+ * Import here for type-only reference (no runtime dependency)
+ */
+type VerificationState =
+  | "verified"
+  | "calculated"
+  | "pending_independent_verification"
+  | "pending_ephemeris"
+  | "requires_verified_birth_time"
+  | "requires_location"
+  | "approximate"
+  | "unresolved"
+  | "unknown";
+
+interface PlacementEvidence {
+  source?: string | null;
+  engine?: string | null;
+  calculatedAt?: string | null;
+  comparisonSource?: string | null;
+  confidence?: number | null;
+}
+
+interface PlacementLike {
+  sign?: string | null;
+  degree?: number | null;
+  verificationStatus?: VerificationState | string | null;
+  status?: VerificationState | string | null;
+  provenance?: PlacementEvidence | null;
+  evidence?: PlacementEvidence | null;
+}
 
 interface PlanetData {
   sign: string;
@@ -28,30 +60,6 @@ interface PlanetData {
     themes: string[];
     spiritualFocus: string;
   };
-}
-
-type VerificationStatus = 'unresolved' | 'pending_independent_verification' | 'verified';
-type ConfidenceLevel = 'high' | 'moderate' | 'low';
-
-interface AstrologyPlacementEvidence {
-  sign: string | null;
-  verificationStatus: VerificationStatus;
-  calculationStatus: 'deterministic' | 'ephemeris_verified' | 'estimated' | 'unavailable';
-  evidence?: {
-    source: string;
-    engine: string;
-    engineVersion?: string;
-    calculatedAt: string;
-    unresolvedReason?: string;
-  };
-  timeSensitive?: boolean;
-  confidence?: ConfidenceLevel;
-}
-
-interface AstrologyEvidence {
-  sun?: AstrologyPlacementEvidence;
-  moon?: AstrologyPlacementEvidence;
-  rising?: AstrologyPlacementEvidence;
 }
 
 interface AstrologyData {
@@ -119,7 +127,11 @@ interface AstrologyData {
     };
     summary: string;
   };
-  evidence?: AstrologyEvidence;
+  placements?: {
+    sun?: PlacementLike;
+    moon?: PlacementLike;
+    rising?: PlacementLike;
+  };
 }
 
 const ZODIAC_SIGNS = [
@@ -371,48 +383,81 @@ function calculateChironPosition(birthTime: Date): { longitude: number; sign: st
   };
 }
 
-function buildPlacementEvidence(
-  placement: 'sun' | 'moon' | 'rising',
-  sign: string,
+/**
+ * Authority Split for Placement Verification:
+ *
+ * VerificationState = placement lifecycle (unresolved → calculated → verified)
+ * PlacementEvidence = source + engine + timestamps + comparison metadata
+ *
+ * Sun placement:
+ * - Never requires birth time for sign (moves ~1°/day)
+ * - Missing time → do NOT set unresolvedReason
+ * - State: 'calculated' (repeatable but not yet independently verified)
+ *
+ * Moon placement:
+ * - Requires exact birth time (moves ~12°/day)
+ * - Missing time → verificationStatus: 'requires_verified_birth_time'
+ * - State: 'calculated' if time available
+ *
+ * Rising (Ascendant) placement:
+ * - Requires exact birth time (changes ~1°/4 minutes)
+ * - Also requires birth location (local horizon depends on observer position)
+ * - Missing time → 'requires_verified_birth_time'
+ * - Missing location → 'requires_location'
+ * - Has time + location → 'calculated'
+ */
+function determinePlacementStatus(
   birthData: BirthData,
-  calculatedAt: string
-): AstrologyPlacementEvidence {
+  placement: 'sun' | 'moon' | 'rising'
+): VerificationState {
   const hasExactTime = birthData.birthTime && birthData.birthTime !== '12:00';
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
 
-  let confidenceLevel: ConfidenceLevel = 'low';
-  let unresolvedReason: string | undefined;
-
-  if (hasExactTime && hasLocation) {
-    confidenceLevel = 'high';
-  } else if (!hasExactTime && hasLocation) {
-    confidenceLevel = 'moderate';
-    unresolvedReason = 'requires_verified_birth_time';
-  } else if (hasExactTime && !hasLocation) {
-    confidenceLevel = 'moderate';
-  } else {
-    confidenceLevel = 'low';
+  // Sun: never requires time
+  if (placement === 'sun') {
+    return 'calculated';  // Repeatable but not yet verified
   }
 
-  const timeSensitiveMap = {
-    'sun': false,
-    'moon': true,
-    'rising': true
+  // Moon/Rising: require time
+  if (!hasExactTime) {
+    return 'requires_verified_birth_time';
+  }
+
+  // Rising: also requires location
+  if (placement === 'rising' && !hasLocation) {
+    return 'requires_location';
+  }
+
+  return 'calculated';  // Repeatable but not yet verified
+}
+
+function buildPlacementEvidence(
+  birthData: BirthData,
+  placement: 'sun' | 'moon' | 'rising',
+  calculatedAt: string
+): PlacementEvidence {
+  return {
+    source: 'user-provided-birth-data',
+    engine: 'astronomy-engine',
+    calculatedAt,
+    // confidence is optional per canonical type
+    // Do not set categorical confidence at placement level
   };
+}
+
+function buildPlacement(
+  sign: string,
+  birthData: BirthData,
+  placement: 'sun' | 'moon' | 'rising',
+  calculatedAt: string
+): PlacementLike {
+  const verificationStatus = determinePlacementStatus(birthData, placement);
+  const evidence = buildPlacementEvidence(birthData, placement, calculatedAt);
 
   return {
     sign,
-    verificationStatus: 'unresolved',
-    calculationStatus: 'deterministic',
-    evidence: {
-      source: 'user-provided-birth-data',
-      engine: 'astronomy-engine',
-      engineVersion: '1.50.1',
-      calculatedAt,
-      unresolvedReason
-    },
-    timeSensitive: timeSensitiveMap[placement],
-    confidence: confidenceLevel
+    verificationStatus,
+    evidence,
   };
 }
 
@@ -539,11 +584,9 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const risingInterpretation = getPlanetSignInterpretation('sun', risingSign);
 
   const calculatedAt = new Date().toISOString();
-  const evidence: AstrologyEvidence = {
-    sun: buildPlacementEvidence('sun', sunSign, birthData, calculatedAt),
-    moon: buildPlacementEvidence('moon', moonSign, birthData, calculatedAt),
-    rising: buildPlacementEvidence('rising', risingSign, birthData, calculatedAt)
-  };
+  const sunPlacement = buildPlacement(sunSign, birthData, 'sun', calculatedAt);
+  const moonPlacement = buildPlacement(moonSign, birthData, 'moon', calculatedAt);
+  const risingPlacement = buildPlacement(risingSign, birthData, 'rising', calculatedAt);
 
   return {
     sunSign,
@@ -563,7 +606,11 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
       },
       summary: `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies. Your soul's journey involves balancing these cosmic influences to express your highest potential.`
     },
-    evidence
+    placements: {
+      sun: sunPlacement,
+      moon: moonPlacement,
+      rising: risingPlacement,
+    }
   };
 }
 
