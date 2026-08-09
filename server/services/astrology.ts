@@ -1,7 +1,4 @@
-// Namespace import for ESM/CJS compatibility
-// @see https://github.com/cosinekitty/astronomy/issues (ESM export issues)
-import * as AstronomyEngine from "astronomy-engine";
-const { Body, Ecliptic, GeoVector } = AstronomyEngine.default;
+import { Body, Ecliptic, GeoVector } from "astronomy-engine";
 import { fromZonedTime } from "date-fns-tz";
 import type {
   VerificationState,
