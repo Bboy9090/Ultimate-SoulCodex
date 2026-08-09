@@ -1,8 +1,13 @@
-import type { BirthData } from "@soulcodex/core";
-import { 
-  getPlanetSignInterpretation, 
-  getHouseInterpretation, 
-  getPlanetMeaning, 
+import type {
+  BirthData,
+  VerificationState,
+  PlacementEvidence,
+  PlacementLike
+} from "@soulcodex/core";
+import {
+  getPlanetSignInterpretation,
+  getHouseInterpretation,
+  getPlanetMeaning,
   getKarmicInterpretation,
   getAspectInterpretation
 } from "./interpretations";
@@ -46,8 +51,8 @@ interface AstrologyData {
     neptune: PlanetData;
     pluto: PlanetData;
   };
-  houses: Array<{ 
-    sign: string; 
+  houses: Array<{
+    sign: string;
     degree: number;
     interpretation: {
       title: string;
@@ -57,9 +62,9 @@ interface AstrologyData {
     };
   }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: { 
-    sign: string; 
-    house: number; 
+  northNode: {
+    sign: string;
+    house: number;
     degree: number;
     interpretation: {
       title: string;
@@ -67,9 +72,9 @@ interface AstrologyData {
       spiritualGrowth: string;
     };
   };
-  southNode: { 
-    sign: string; 
-    house: number; 
+  southNode: {
+    sign: string;
+    house: number;
     degree: number;
     interpretation: {
       title: string;
@@ -77,9 +82,9 @@ interface AstrologyData {
       spiritualGrowth: string;
     };
   };
-  chiron: { 
-    sign: string; 
-    house: number; 
+  chiron: {
+    sign: string;
+    house: number;
     degree: number;
     interpretation: {
       title: string;
@@ -94,6 +99,11 @@ interface AstrologyData {
       rising: string;
     };
     summary: string;
+  };
+  placements?: {
+    sun?: PlacementLike;
+    moon?: PlacementLike;
+    rising?: PlacementLike;
   };
 }
 
@@ -334,15 +344,93 @@ function calculateChironPosition(birthTime: Date): { longitude: number; sign: st
   const epochTime = new Date('2000-01-01T12:00:00Z').getTime();
   const currentTime = birthTime.getTime();
   const yearsSinceEpoch = (currentTime - epochTime) / (1000 * 60 * 60 * 24 * 365.25);
-  
+
   const epochChironDegree = 270;
   const chironDegree = (epochChironDegree + (yearsSinceEpoch * 7.2)) % 360;
   const normalizedDegree = chironDegree < 0 ? chironDegree + 360 : chironDegree;
-  
+
   return {
     longitude: normalizedDegree,
     sign: eclipticToZodiacSign(normalizedDegree),
     degree: getDegreesInSign(normalizedDegree)
+  };
+}
+
+/**
+ * Authority Split for Placement Verification:
+ *
+ * VerificationState = placement lifecycle (unresolved → calculated → verified)
+ * PlacementEvidence = source + engine + timestamps + comparison metadata
+ *
+ * Sun placement:
+ * - Never requires birth time for sign (moves ~1°/day)
+ * - Missing time → do NOT set unresolvedReason
+ * - State: 'calculated' (repeatable but not yet independently verified)
+ *
+ * Moon placement:
+ * - Requires exact birth time (moves ~12°/day)
+ * - Missing time → verificationStatus: 'requires_verified_birth_time'
+ * - State: 'calculated' if time available
+ *
+ * Rising (Ascendant) placement:
+ * - Requires exact birth time (changes ~1°/4 minutes)
+ * - Also requires birth location (local horizon depends on observer position)
+ * - Missing time → 'requires_verified_birth_time'
+ * - Missing location → 'requires_location'
+ * - Has time + location → 'calculated'
+ */
+function determinePlacementStatus(
+  birthData: BirthData,
+  placement: 'sun' | 'moon' | 'rising'
+): VerificationState {
+  const hasExactTime = birthData.birthTime && birthData.birthTime !== '12:00';
+  const hasLocation = birthData.latitude != null && birthData.longitude != null;
+
+  // Sun: never requires time
+  if (placement === 'sun') {
+    return 'calculated';  // Repeatable but not yet verified
+  }
+
+  // Moon/Rising: require time
+  if (!hasExactTime) {
+    return 'requires_verified_birth_time';
+  }
+
+  // Rising: also requires location
+  if (placement === 'rising' && !hasLocation) {
+    return 'requires_location';
+  }
+
+  return 'calculated';  // Repeatable but not yet verified
+}
+
+function buildPlacementEvidence(
+  birthData: BirthData,
+  placement: 'sun' | 'moon' | 'rising',
+  calculatedAt: string
+): PlacementEvidence {
+  return {
+    source: 'user-provided-birth-data',
+    engine: 'astronomy-engine',
+    calculatedAt,
+    // confidence is optional per canonical type
+    // Do not set categorical confidence at placement level
+  };
+}
+
+function buildPlacement(
+  sign: string,
+  birthData: BirthData,
+  placement: 'sun' | 'moon' | 'rising',
+  calculatedAt: string
+): PlacementLike {
+  const verificationStatus = determinePlacementStatus(birthData, placement);
+  const evidence = buildPlacementEvidence(birthData, placement, calculatedAt);
+
+  return {
+    sign,
+    verificationStatus,
+    evidence,
   };
 }
 
@@ -467,7 +555,12 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const sunInterpretation = getPlanetSignInterpretation('sun', sunSign);
   const moonInterpretation = getPlanetSignInterpretation('moon', moonSign);
   const risingInterpretation = getPlanetSignInterpretation('sun', risingSign);
-  
+
+  const calculatedAt = new Date().toISOString();
+  const sunPlacement = buildPlacement(sunSign, birthData, 'sun', calculatedAt);
+  const moonPlacement = buildPlacement(moonSign, birthData, 'moon', calculatedAt);
+  const risingPlacement = buildPlacement(risingSign, birthData, 'rising', calculatedAt);
+
   return {
     sunSign,
     moonSign,
@@ -485,6 +578,11 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
         rising: `You present to the world as ${risingSign}, projecting ${risingInterpretation.keywords.join(', ')} energy`
       },
       summary: `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies. Your soul's journey involves balancing these cosmic influences to express your highest potential.`
+    },
+    placements: {
+      sun: sunPlacement,
+      moon: moonPlacement,
+      rising: risingPlacement,
     }
   };
 }
