@@ -1,37 +1,16 @@
-export type VerificationState =
-  | "verified"
-  | "calculated"
-  | "pending_independent_verification"
-  | "pending_ephemeris"
-  | "requires_verified_birth_time"
-  | "requires_location"
-  | "approximate"
-  | "unresolved"
-  | "unknown";
+/**
+ * Canonical placement verification types imported from @soulcodex/core
+ * Re-exported for backwards compatibility with existing client imports
+ * New code should import directly from @soulcodex/core
+ */
+import type {
+  VerificationState,
+  PlacementEvidence,
+  PlacementLike,
+  VerifiedPlacement
+} from '@soulcodex/core';
 
-export interface PlacementEvidence {
-  source?: string | null;
-  engine?: string | null;
-  calculatedAt?: string | null;
-  comparisonSource?: string | null;
-  confidence?: number | null;
-}
-
-export interface PlacementLike {
-  sign?: string | null;
-  degree?: number | null;
-  verificationStatus?: VerificationState | string | null;
-  status?: VerificationState | string | null;
-  provenance?: PlacementEvidence | null;
-  evidence?: PlacementEvidence | null;
-}
-
-export interface VerifiedPlacement {
-  sign: string;
-  degree?: number;
-  verificationStatus: "verified";
-  evidence: PlacementEvidence;
-}
+export type { VerificationState, PlacementEvidence, PlacementLike, VerifiedPlacement };
 
 /**
  * Interpretation code may consume a placement only when the calculation layer

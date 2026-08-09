@@ -1,4 +1,9 @@
-import type { BirthData } from "@soulcodex/core";
+import type {
+  BirthData,
+  VerificationState,
+  PlacementEvidence,
+  PlacementLike
+} from "@soulcodex/core";
 import {
   getPlanetSignInterpretation,
   getHouseInterpretation,
@@ -10,38 +15,6 @@ import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
-
-/**
- * Canonical types from client/src/lib/placementVerification.ts
- * Import here for type-only reference (no runtime dependency)
- */
-type VerificationState =
-  | "verified"
-  | "calculated"
-  | "pending_independent_verification"
-  | "pending_ephemeris"
-  | "requires_verified_birth_time"
-  | "requires_location"
-  | "approximate"
-  | "unresolved"
-  | "unknown";
-
-interface PlacementEvidence {
-  source?: string | null;
-  engine?: string | null;
-  calculatedAt?: string | null;
-  comparisonSource?: string | null;
-  confidence?: number | null;
-}
-
-interface PlacementLike {
-  sign?: string | null;
-  degree?: number | null;
-  verificationStatus?: VerificationState | string | null;
-  status?: VerificationState | string | null;
-  provenance?: PlacementEvidence | null;
-  evidence?: PlacementEvidence | null;
-}
 
 interface PlanetData {
   sign: string;

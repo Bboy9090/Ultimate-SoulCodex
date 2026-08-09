@@ -1,16 +1,10 @@
-export interface PlacementEvidence {
-  source?: string | null;
-  engine?: string | null;
-  calculatedAt?: string | null;
-}
+/**
+ * Canonical placement verification types imported from @soulcodex/core
+ * Re-exported for backwards compatibility with existing server imports
+ */
+import type { PlacementEvidence, PlacementLike } from '@soulcodex/core';
 
-export interface PlacementLike {
-  sign?: string | null;
-  status?: string | null;
-  verificationStatus?: string | null;
-  evidence?: PlacementEvidence | null;
-  provenance?: PlacementEvidence | null;
-}
+export type { PlacementEvidence, PlacementLike };
 
 export interface VerifiedAstrology {
   sun?: string;
