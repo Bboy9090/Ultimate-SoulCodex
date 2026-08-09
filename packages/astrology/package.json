@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test __tests__/**/*.test.ts"
   },
   "dependencies": {
     "astronomy-engine": "^2.1.19"

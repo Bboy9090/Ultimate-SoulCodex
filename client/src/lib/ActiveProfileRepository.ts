@@ -12,6 +12,8 @@
  * 5. Recovery messaging (missing, corrupted, wrong version)
  */
 
+import type { VerificationState, PlacementEvidence, PlacementLike } from './placementVerification';
+
 export interface StoredProfile {
   // Identification
   id?: string;
@@ -36,7 +38,13 @@ export interface StoredProfile {
   sunSign?: string | null;
   moonSign?: string | null;
   risingSign?: string | null;
-  astrologyData?: any;
+  astrologyData?: any & {
+    placements?: {
+      sun?: PlacementLike;
+      moon?: PlacementLike;
+      rising?: PlacementLike;
+    };
+  };
 
   // Numerology data
   lifePathNumber?: number;
