@@ -51,6 +51,17 @@ export interface PlacementEvidence {
   calculatedAt?: string | null;        // ISO 8601 timestamp
   comparisonSource?: string | null;    // Reference for verification
   confidence?: number | null;          // Numeric 0-100 (optional)
+  inputTimestamp?: string | null;      // UTC timestamp of input data
+  candidateSource?: string | null;     // Candidate calculation source (e.g., ephemeris engine)
+  candidateEngine?: string | null;     // Candidate calculation engine version
+  candidateCalculatedAt?: string | null; // Candidate calculation timestamp
+  referenceSource?: string | null;     // Independent reference source (e.g., JPL Horizons)
+  referenceEngine?: string | null;     // Independent reference engine version
+  referenceCalculatedAt?: string | null; // Independent reference timestamp
+  policyId?: string | null;            // Verification policy applied (e.g., ASTRO-LONGITUDE-v1)
+  evidenceReceiptId?: string | null;   // Audit trail receipt ID
+  evidenceArtifactId?: string | null;  // Audit trail artifact ID
+  longitudeDeltaDegrees?: number | null; // Verification precision delta (for astrology)
 }
 
 export interface PlacementLike {
