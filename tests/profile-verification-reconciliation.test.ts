@@ -33,9 +33,9 @@ const verifiedRemote = {
   id: "remote-robert",
   name: "Robert Example",
   astrologyData: {
-    sun: { status: "verified", sign: "Virgo" },
-    moon: { status: "verified", sign: "Virgo" },
-    rising: { status: "verified", sign: "Scorpio" },
+    sun: { verificationStatus: "verified", sign: "Virgo" },
+    moon: { verificationStatus: "verified", sign: "Virgo" },
+    rising: { verificationStatus: "verified", sign: "Scorpio" },
     // Legacy aliases cannot bypass the nested verification state.
     sunSign: "Aries",
     moonSign: "Gemini",
@@ -56,7 +56,7 @@ const preAscendantRemote = {
   ...verifiedRemote,
   astrologyData: {
     ...verifiedRemote.astrologyData,
-    rising: { status: "pending_ephemeris", sign: null },
+    rising: { verificationStatus: "pending_ephemeris", sign: null },
     verification: {
       verifiedBodies: ["Sun", "Moon"],
       policyId: "ASTRO-LONGITUDE-v1",
@@ -100,9 +100,9 @@ test("verified remote placements replace legacy active aliases without changing 
 
 test("unverified nested placements never inherit populated legacy aliases", () => {
   const astrology = {
-    sun: { status: "calculated_pending_independent_verification", sign: null },
-    moon: { status: "requires_verified_birth_time", sign: null },
-    rising: { status: "pending_ephemeris", sign: null },
+    sun: { verificationStatus: "pending_independent_verification", sign: null },
+    moon: { verificationStatus: "requires_verified_birth_time", sign: null },
+    rising: { verificationStatus: "pending_ephemeris", sign: null },
     sunSign: "Virgo",
     moonSign: "Scorpio",
     risingSign: "Capricorn",
@@ -123,10 +123,10 @@ test("offline profile keeps its local chart while carrying a separate verified B
   );
 
   assert.equal(hydrated.astrologyData.sunSign, local.astrologyData.sunSign);
-  assert.equal(hydrated.verifiedAstrologyData?.sun?.status, "verified");
-  assert.equal(hydrated.verifiedAstrologyData?.moon?.status, "verified");
+  assert.equal(hydrated.verifiedAstrologyData?.sun?.verificationStatus, "verified");
+  assert.equal(hydrated.verifiedAstrologyData?.moon?.verificationStatus, "verified");
   assert.equal(hydrated.verifiedAstrologyData?.moon?.sign, "Virgo");
-  assert.equal(hydrated.verifiedAstrologyData?.rising?.status, "verified");
+  assert.equal(hydrated.verifiedAstrologyData?.rising?.verificationStatus, "verified");
   assert.equal(hydrated.verifiedAstrologyData?.rising?.sign, "Scorpio");
   assert.equal(hydrated.remoteSync?.remoteId, "remote-robert");
   assert.equal(hydrated.remoteSync?.status, "verified-online");

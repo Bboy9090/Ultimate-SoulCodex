@@ -31,13 +31,13 @@ function matchingReferenceFetcher(delta = 0.0005): IndependentReferenceFetcher {
 
   return async (body, inputTimestamp): Promise<IndependentEphemerisReference> => {
     const placement = body === "Sun" ? candidates.sun : candidates.moon;
-    assert.ok(placement.candidate, `${body} candidate must exist for the test`);
-    assert.equal(inputTimestamp, placement.candidate.inputTimestamp);
+    assert.ok(placement.internalCandidate, `${body} candidate must exist for the test`);
+    assert.equal(inputTimestamp, placement.internalCandidate.inputTimestamp);
 
     return {
       body,
-      sign: placement.candidate.sign,
-      longitude: (placement.candidate.longitude + delta) % 360,
+      sign: placement.internalCandidate.sign,
+      longitude: (placement.internalCandidate.longitude + delta) % 360,
       source:
         "NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
       engine: "nasa-jpl-horizons-api@1.3",
@@ -73,39 +73,39 @@ test("matching independent references promote Sun, Moon, and Ascendant with comp
     ["Sun", result.sun],
     ["Moon", result.moon],
   ] as const) {
-    assert.equal(placement.status, "verified");
+    assert.equal(placement.verificationStatus, "verified");
     assert.ok(placement.sign, `${body} sign should be exposed after verification`);
-    assert.equal(placement.confidence, 1);
-    assert.ok(placement.provenance);
-    assert.equal(placement.provenance.policyId, "ASTRO-LONGITUDE-v1");
+    assert.equal(placement.evidence?.confidence, 1);
+    assert.ok(placement.evidence);
+    assert.equal(placement.evidence.policyId, "ASTRO-LONGITUDE-v1");
     assert.equal(
-      placement.provenance.evidenceReceiptId,
+      placement.evidence.evidenceReceiptId,
       APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.receiptRunId,
     );
     assert.equal(
-      placement.provenance.evidenceArtifactId,
+      placement.evidence.evidenceArtifactId,
       APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.artifactId,
     );
     assert.equal(
-      placement.provenance.inputTimestamp,
-      placement.candidate?.inputTimestamp,
+      placement.evidence.inputTimestamp,
+      placement.internalCandidate?.inputTimestamp,
     );
-    assert.ok(placement.provenance.source);
-    assert.ok(placement.provenance.engine);
-    assert.ok(placement.provenance.calculatedAt);
-    assert.ok(placement.provenance.longitudeDeltaDegrees <= 0.001);
+    assert.ok(placement.evidence.source);
+    assert.ok(placement.evidence.engine);
+    assert.ok(placement.evidence.calculatedAt);
+    assert.ok(placement.evidence.longitudeDeltaDegrees <= 0.001);
   }
 
-  assert.equal(result.rising.status, "verified");
+  assert.equal(result.rising.verificationStatus, "verified");
   assert.equal(result.rising.sign, "Scorpio");
-  assert.equal(result.rising.confidence, 1);
-  assert.ok(result.rising.provenance);
-  assert.equal(result.rising.provenance.policyId, "ASTRO-ASCENDANT-v1");
+  assert.equal(result.rising.evidence?.confidence, 1);
+  assert.ok(result.rising.evidence);
+  assert.equal(result.rising.evidence.policyId, "ASTRO-ASCENDANT-v1");
   assert.equal(
-    result.rising.provenance.evidenceReceiptId,
+    result.rising.evidence.evidenceReceiptId,
     "ASCENDANT-VERIFICATION-RECEIPT-v1",
   );
-  assert.ok(result.rising.provenance.longitudeDeltaDegrees <= 0.02);
+  assert.ok(result.rising.evidence.longitudeDeltaDegrees <= 0.02);
   assert.deepEqual(result.verification.unresolvedBodies, []);
   assert.equal(result.verification.complete, true);
   assert.ok(result.verification.verifiedBodies.includes("Sun"));
@@ -135,8 +135,8 @@ test("a sign disagreement leaves the candidate withheld while independent matche
     inputTimestamp,
   ) => {
     const placement = body === "Sun" ? candidates.sun : candidates.moon;
-    assert.ok(placement.candidate);
-    const candidate = placement.candidate;
+    assert.ok(placement.internalCandidate);
+    const candidate = placement.internalCandidate;
     const sign =
       body === "Sun"
         ? signs[(signs.indexOf(candidate.sign) + 1) % signs.length]
@@ -157,12 +157,12 @@ test("a sign disagreement leaves the candidate withheld while independent matche
     referenceFetcher,
   });
 
-  assert.equal(result.sun.status, "calculated_pending_independent_verification");
+  assert.equal(result.sun.verificationStatus, "pending_independent_verification");
   assert.equal(result.sun.sign, null);
   assert.equal(result.sun.verificationFailure?.reason, "sign_disagreement");
-  assert.equal(result.moon.status, "verified");
+  assert.equal(result.moon.verificationStatus, "verified");
   assert.ok(result.moon.sign);
-  assert.equal(result.rising.status, "verified");
+  assert.equal(result.rising.verificationStatus, "verified");
 });
 
 test("reference failure cannot leak a candidate sign into authoritative Sun or Moon output", async () => {
@@ -174,14 +174,14 @@ test("reference failure cannot leak a candidate sign into authoritative Sun or M
 
   for (const placement of [result.sun, result.moon]) {
     assert.equal(
-      placement.status,
-      "calculated_pending_independent_verification",
+      placement.verificationStatus,
+      "pending_independent_verification",
     );
     assert.equal(placement.sign, null);
-    assert.ok(placement.candidate?.sign);
+    assert.ok(placement.internalCandidate?.sign);
     assert.equal(placement.verificationFailure?.reason, "horizons_http_503");
   }
-  assert.equal(result.rising.status, "verified");
+  assert.equal(result.rising.verificationStatus, "verified");
   assert.equal(result.rising.sign, "Scorpio");
 });
 
@@ -199,13 +199,13 @@ test("a draft Sun/Moon policy cannot promote production candidates", async () =>
 
   for (const placement of [result.sun, result.moon]) {
     assert.equal(
-      placement.status,
-      "calculated_pending_independent_verification",
+      placement.verificationStatus,
+      "pending_independent_verification",
     );
     assert.equal(placement.sign, null);
     assert.equal(placement.verificationFailure?.reason, "policy_not_approved");
   }
-  assert.equal(result.rising.status, "verified");
+  assert.equal(result.rising.verificationStatus, "verified");
 });
 
 test("a draft Ascendant policy cannot promote the Rising candidate", async () => {
@@ -218,9 +218,9 @@ test("a draft Ascendant policy cannot promote the Rising candidate", async () =>
     },
   });
 
-  assert.equal(result.sun.status, "verified");
-  assert.equal(result.moon.status, "verified");
-  assert.equal(result.rising.status, "calculated_pending_independent_verification");
+  assert.equal(result.sun.verificationStatus, "verified");
+  assert.equal(result.moon.verificationStatus, "verified");
+  assert.equal(result.rising.verificationStatus, "pending_independent_verification");
   assert.equal(result.rising.sign, null);
   assert.equal(result.rising.verificationFailure?.reason, "policy_not_approved");
 });
@@ -245,12 +245,12 @@ test("missing birth time prevents network verification and leaves timed placemen
   assert.equal(calls, 0);
   assert.equal(result.sun.sign, null);
   assert.equal(
-    result.sun.status,
-    "calculated_pending_independent_verification",
+    result.sun.verificationStatus,
+    "pending_independent_verification",
   );
   assert.match(result.sun.reason ?? "", /birth time and timezone/i);
-  assert.equal(result.moon.status, "requires_verified_birth_time");
-  assert.equal(result.rising.status, "requires_verified_birth_time");
+  assert.equal(result.moon.verificationStatus, "requires_verified_birth_time");
+  assert.equal(result.rising.verificationStatus, "requires_verified_birth_time");
 });
 
 test("legacy astrology labels cannot steer archetype synthesis without verified evidence", () => {
@@ -272,15 +272,15 @@ test("verified astrology may contribute to archetype synthesis", () => {
     {
       sun: {
         sign: "Virgo",
-        status: "verified",
-        provenance: {
+        verificationStatus: "verified",
+        evidence: {
           source: "Astronomy Engine plus NASA/JPL Horizons",
           engine: "astronomy-engine@2.1.19 + nasa-jpl-horizons-api@1.3",
           calculatedAt: "2026-08-03T11:32:00.000Z",
         },
       },
-      moon: { sign: null, status: "calculated_pending_independent_verification" },
-      rising: { sign: null, status: "pending_ephemeris" },
+      moon: { sign: null, verificationStatus: "pending_independent_verification" },
+      rising: { sign: null, verificationStatus: "pending_ephemeris" },
     },
     {},
     {},
