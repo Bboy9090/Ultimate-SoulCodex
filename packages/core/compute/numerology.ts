@@ -9,21 +9,13 @@ function reduceToSingleDigit(num: number): number {
 }
 
 export function calcLifePath(dateISO: string): number {
-  const cleaned = dateISO.replace(/-/g, "");
-  let sum = 0;
-  for (const ch of cleaned) {
-    const d = parseInt(ch, 10);
-    if (!isNaN(d)) sum += d;
-  }
-  while (sum > 9 && sum !== 11 && sum !== 22 && sum !== 33) {
-    let next = 0;
-    while (sum > 0) {
-      next += sum % 10;
-      sum = Math.floor(sum / 10);
-    }
-    sum = next;
-  }
-  return sum;
+  const date = new Date(dateISO);
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+
+  let sum = day + month + year;
+  return reduceToSingleDigit(sum);
 }
 
 function getLetterValue(letter: string): number {
