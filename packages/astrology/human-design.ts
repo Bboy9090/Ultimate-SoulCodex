@@ -1136,12 +1136,15 @@ export function calculateHumanDesignWithEvidence(birthData: {
     return { evidence: entries };
   }
 
+  // Type assertion: result is now definitely resolved
+  const resolvedResult = result as HumanDesignResolved;
+
   // Create evidence entries for each HD component
   entries.push(
     createEvidenceEntry(
       'human-design',
       'Human Design Type',
-      result.type,
+      resolvedResult.type,
       95,
       'high',
       {
@@ -1151,8 +1154,8 @@ export function calculateHumanDesignWithEvidence(birthData: {
           'sacral_definition',
         ],
         reasoning: [
-          `Sacral defined: ${result.centers.Sacral.defined}`,
-          `Throat defined: ${result.centers.Throat.defined}`,
+          `Sacral defined: ${resolvedResult.centers.Sacral.defined}`,
+          `Throat defined: ${resolvedResult.centers.Throat.defined}`,
           `Type determined by center definitions and connections`,
         ],
         limitations: [
@@ -1170,13 +1173,13 @@ export function calculateHumanDesignWithEvidence(birthData: {
     createEvidenceEntry(
       'human-design',
       'Human Design Strategy',
-      result.strategy,
+      resolvedResult.strategy,
       95,
       'high',
       {
         inputsUsed: ['type'],
         reasoning: [
-          `Strategy "${result.strategy}" derived from type "${result.type}"`,
+          `Strategy "${resolvedResult.strategy}" derived from type "${resolvedResult.type}"`,
           'Strategy determines how to make decisions and take action',
         ],
         limitations: [
@@ -1193,21 +1196,21 @@ export function calculateHumanDesignWithEvidence(birthData: {
     createEvidenceEntry(
       'human-design',
       'Human Design Authority',
-      result.authority,
+      resolvedResult.authority,
       95,
       'high',
       {
         inputsUsed: [
-          `solar_plexus_defined_${result.centers['Solar Plexus'].defined}`,
-          `sacral_defined_${result.centers.Sacral.defined}`,
-          `spleen_defined_${result.centers.Spleen.defined}`,
-          `g_center_defined_${result.centers.G.defined}`,
+          `solar_plexus_defined_${resolvedResult.centers['Solar Plexus'].defined}`,
+          `sacral_defined_${resolvedResult.centers.Sacral.defined}`,
+          `spleen_defined_${resolvedResult.centers.Spleen.defined}`,
+          `g_center_defined_${resolvedResult.centers.G.defined}`,
         ],
         reasoning: [
           'Authority determined by hierarchical priority of defined centers',
-          `Solar Plexus defined: ${result.centers['Solar Plexus'].defined}`,
-          `Sacral defined: ${result.centers.Sacral.defined}`,
-          `Spleen defined: ${result.centers.Spleen.defined}`,
+          `Solar Plexus defined: ${resolvedResult.centers['Solar Plexus'].defined}`,
+          `Sacral defined: ${resolvedResult.centers.Sacral.defined}`,
+          `Spleen defined: ${resolvedResult.centers.Spleen.defined}`,
         ],
         limitations: [
           'Authority accuracy depends on accurate center definitions',
@@ -1223,17 +1226,17 @@ export function calculateHumanDesignWithEvidence(birthData: {
     createEvidenceEntry(
       'human-design',
       'Human Design Profile',
-      result.profile,
+      resolvedResult.profile,
       90,
       'high',
       {
         inputsUsed: [
-          `conscious_sun_line_${result.activations.conscious.sun.line}`,
-          `unconscious_sun_line_${result.activations.unconscious.sun.line}`,
+          `conscious_sun_line_${resolvedResult.activations!.conscious!.sun!.line}`,
+          `unconscious_sun_line_${resolvedResult.activations!.unconscious!.sun!.line}`,
         ],
         reasoning: [
-          `Profile ${result.profile} determined by conscious and unconscious sun line positions`,
-          `Conscious line: ${result.activations.conscious.sun.line}, Unconscious line: ${result.activations.unconscious.sun.line}`,
+          `Profile ${resolvedResult.profile} determined by conscious and unconscious sun line positions`,
+          `Conscious line: ${resolvedResult.activations!.conscious!.sun!.line}, Unconscious line: ${resolvedResult.activations!.unconscious!.sun!.line}`,
           '88° solar arc precisely calculated for unconscious line',
         ],
         limitations: [
@@ -1251,17 +1254,17 @@ export function calculateHumanDesignWithEvidence(birthData: {
     createEvidenceEntry(
       'human-design',
       'Human Design Definition',
-      result.definition,
+      resolvedResult.definition,
       90,
       'high',
       {
         inputsUsed: [
-          `defined_channels_count_${result.channels.filter(ch => ch.defined).length}`,
+          `defined_channels_count_${resolvedResult.channels.filter(ch => ch.defined).length}`,
           `connected_components_count`,
         ],
         reasoning: [
-          `Definition type: ${result.definition}`,
-          `Determined by ${result.channels.filter(ch => ch.defined).length} defined channels`,
+          `Definition type: ${resolvedResult.definition}`,
+          `Determined by ${resolvedResult.channels.filter(ch => ch.defined).length} defined channels`,
           'Connected components analyzed for relationship pattern',
         ],
         limitations: [
@@ -1278,16 +1281,16 @@ export function calculateHumanDesignWithEvidence(birthData: {
     createEvidenceEntry(
       'human-design',
       'Human Design Incarnation Cross',
-      result.incarnationCross,
+      resolvedResult.incarnationCross,
       85,
       'high',
       {
         inputsUsed: [
-          `conscious_sun_gate_${result.activations.conscious.sun.gate}`,
+          `conscious_sun_gate_${resolvedResult.activations!.conscious!.sun!.gate}`,
         ],
         reasoning: [
-          `Incarnation cross named after conscious Sun gate ${result.activations.conscious.sun.gate}`,
-          `Gate name: ${HD_GATES[result.activations.conscious.sun.gate as keyof typeof HD_GATES].name}`,
+          `Incarnation cross named after conscious Sun gate ${resolvedResult.activations!.conscious!.sun!.gate}`,
+          `Gate name: ${HD_GATES[resolvedResult.activations!.conscious!.sun!.gate as keyof typeof HD_GATES].name}`,
           'Represents life purpose and overarching life theme',
         ],
         limitations: [
@@ -1305,9 +1308,9 @@ export function calculateHumanDesignWithEvidence(birthData: {
       'human-design',
       'Human Design Activations (88° Solar Arc)',
       {
-        conscious_gates: result.activations.conscious,
-        unconscious_gates: result.activations.unconscious,
-        total_activated_gates: result.activatedGates.length,
+        conscious_gates: resolvedResult.activations!.conscious,
+        unconscious_gates: resolvedResult.activations!.unconscious,
+        total_activated_gates: resolvedResult.activatedGates.length,
       },
       85,
       'high',
@@ -1325,7 +1328,7 @@ export function calculateHumanDesignWithEvidence(birthData: {
         ],
         reasoning: [
           `88° solar arc (configured: ${forensics?.configuredSolarArc || 87.975}°, actual: ${forensics?.actualSolarArc.toFixed(3) || 'unknown'}°) precisely calculated for design authority`,
-          `${result.activatedGates.length} gates activated across conscious and unconscious`,
+          `${resolvedResult.activatedGates.length} gates activated across conscious and unconscious`,
           'Activations determined by planetary positions at birth and 88° before birth',
           ...(forensics ? [
             `Bisection algorithm completed in ${forensics.iterationCount} iterations`,
@@ -1362,6 +1365,8 @@ export function calculateHumanDesignWithEvidence(birthData: {
       }
     )
   );
+
+  return { result: resolvedResult, evidence: entries };
 
   return { result, evidence: entries };
 }
