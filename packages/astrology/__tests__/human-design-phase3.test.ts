@@ -827,15 +827,15 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
     });
 
     it('should track timezone resolution source for coordinate lookup', () => {
-      // Use a location that can be resolved via geo-tz
+      // Empty timezone + valid coordinates = coordinate lookup
       const result = calculateHumanDesignWithEvidence({
         name: 'Test Person',
         birthDate: '1879-03-14',
         birthTime: '11:30',
-        birthLocation: 'Some City',
+        birthLocation: 'New York, NY',
         latitude: '40.7128',
         longitude: '-74.0060',
-        timezone: 'Unknown', // Not IANA, not abbreviation - will trigger geo-tz lookup
+        timezone: '', // Empty timezone triggers coordinate lookup
       });
 
       assert.strictEqual(result.result?.status, 'resolved');
@@ -851,6 +851,22 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
         activationsEntry.metadata?.solar_arc_receipt?.timezoneResolutionSource,
         'coordinate_lookup'
       );
+    });
+
+    it('should reject bogus timezone even with valid coordinates', () => {
+      // Bogus timezone like Mars/Olympus should fail even with good coordinates
+      const result = calculateHumanDesign({
+        name: 'Test Person',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Mars',
+        latitude: '40.7128',
+        longitude: '-74.0060',
+        timezone: 'Mars/Olympus',
+      });
+
+      assert.strictEqual(result.status, 'unresolved');
+      assert.strictEqual(result.reason, 'invalid_timezone');
     });
   });
 
