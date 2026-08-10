@@ -38,11 +38,11 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
     // Older screens still read these keys. They receive verified values only,
     // never raw candidates or the blocked Ascendant approximation.
     sunSign:
-      astrologyData.sun.status === "verified" ? astrologyData.sun.sign : null,
+      astrologyData.sun.verificationStatus === "verified" ? astrologyData.sun.sign : null,
     moonSign:
-      astrologyData.moon.status === "verified" ? astrologyData.moon.sign : null,
+      astrologyData.moon.verificationStatus === "verified" ? astrologyData.moon.sign : null,
     risingSign:
-      astrologyData.rising.status === "verified"
+      astrologyData.rising.verificationStatus === "verified"
         ? astrologyData.rising.sign
         : null,
   };

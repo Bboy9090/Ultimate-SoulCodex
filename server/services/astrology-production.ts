@@ -25,9 +25,7 @@ function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
   if (!birthData.birthTime || !birthData.timezone) {
     return {
       sign: null,
-      status: "requires_verified_birth_time",
-      confidence: null,
-      source: null,
+      verificationStatus: "requires_verified_birth_time",
       reason: "Verified birth time and timezone required for Rising sign calculation",
     };
   }
@@ -35,21 +33,17 @@ function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
   if (birthData.latitude === undefined || birthData.longitude === undefined) {
     return {
       sign: null,
-      status: "requires_location",
-      confidence: null,
-      source: null,
+      verificationStatus: "requires_location",
       reason: "Precise birth coordinates required for Rising sign calculation",
     };
   }
 
   const base = calculateBaseAstrology(birthData);
-  const timestamp = base.moon.candidate?.inputTimestamp;
+  const timestamp = base.moon.internalCandidate?.inputTimestamp;
   if (!timestamp) {
     return {
       sign: null,
-      status: "pending_ephemeris",
-      confidence: null,
-      source: null,
+      verificationStatus: "pending_ephemeris",
       reason: "Birth date, time, or timezone could not be converted safely",
     };
   }
@@ -62,10 +56,14 @@ function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
     });
     return {
       sign: null,
-      status: "calculated_pending_independent_verification",
-      confidence: null,
-      source: null,
-      candidate: {
+      verificationStatus: "pending_independent_verification",
+      evidence: {
+        inputTimestamp: timestamp,
+        candidateSource: candidate.source,
+        candidateEngine: candidate.engine,
+        candidateCalculatedAt: candidate.calculatedAt,
+      },
+      internalCandidate: {
         sign: candidate.sign,
         longitude: candidate.longitudeDegrees,
         source: candidate.source,
@@ -79,9 +77,7 @@ function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
   } catch {
     return {
       sign: null,
-      status: "pending_ephemeris",
-      confidence: null,
-      source: null,
+      verificationStatus: "pending_ephemeris",
       reason: "Ascendant calculation failed safely; no placement was promoted",
     };
   }
@@ -93,7 +89,7 @@ function verifiedRisingPlacement(
 ): PlacementVerification {
   const candidatePlacement = candidateRisingPlacement(birthData);
   if (
-    !candidatePlacement.candidate ||
+    !candidatePlacement.internalCandidate ||
     birthData.latitude === undefined ||
     birthData.longitude === undefined
   ) {
@@ -102,7 +98,7 @@ function verifiedRisingPlacement(
 
   const result = verifyAscendant(
     {
-      inputTimestamp: candidatePlacement.candidate.inputTimestamp,
+      inputTimestamp: candidatePlacement.internalCandidate.inputTimestamp,
       latitude: birthData.latitude,
       longitude: birthData.longitude,
     },
@@ -124,11 +120,8 @@ function verifiedRisingPlacement(
   const engine = `${result.candidate.engine} + ${result.reference.engine}`;
   return {
     sign: result.sign,
-    status: "verified",
-    confidence: 1,
-    source,
-    candidate: candidatePlacement.candidate,
-    provenance: {
+    verificationStatus: "verified",
+    evidence: {
       source,
       engine,
       calculatedAt: result.verifiedAt,
@@ -144,7 +137,9 @@ function verifiedRisingPlacement(
         result.policy.evidenceReceiptId ?? "ASCENDANT-VERIFICATION-RECEIPT-v1",
       evidenceArtifactId: "swiss-ephemeris-2.10.03-24-fixture-matrix",
       longitudeDeltaDegrees: result.longitudeDeltaDegrees,
+      confidence: 1,
     },
+    internalCandidate: candidatePlacement.internalCandidate,
     reason:
       "Ascendant longitude and sign agreed across independent engines within the approved tolerance",
   };
@@ -156,17 +151,17 @@ function withRisingVerificationSummary(
 ): AstrologyData {
   const verifiedBodies = [
     ...astrology.verification.verifiedBodies,
-    ...(rising.status === "verified" ? (["Ascendant"] as const) : []),
+    ...(rising.verificationStatus === "verified" ? (["Ascendant"] as const) : []),
   ];
   const unresolvedBodies = astrology.verification.unresolvedBodies.filter(
     (body) => body !== "Ascendant",
   );
-  if (rising.status !== "verified") unresolvedBodies.push("Ascendant");
+  if (rising.verificationStatus !== "verified") unresolvedBodies.push("Ascendant");
 
   const missingData = astrology.verification.missingData.filter(
     (item) => item !== "validated_ascendant_engine",
   );
-  if (rising.status !== "verified") {
+  if (rising.verificationStatus !== "verified") {
     missingData.push("independent_ascendant_verification");
   }
 
@@ -184,11 +179,11 @@ function withRisingVerificationSummary(
           ? "Sun, Moon, and Ascendant are independently verified."
           : `Verified placements may be interpreted. ${unresolvedBodies.join(", ")} remain paused until their stated requirements pass.`,
       policyId:
-        rising.status === "verified"
+        rising.verificationStatus === "verified"
           ? "ASTRO-LONGITUDE-v1 + ASTRO-ASCENDANT-v1"
           : astrology.verification.policyId,
       evidenceReceiptId:
-        rising.status === "verified"
+        rising.verificationStatus === "verified"
           ? `${astrology.verification.evidenceReceiptId ?? "ASTRO-LONGITUDE-v1"} + ASCENDANT-VERIFICATION-RECEIPT-v1`
           : astrology.verification.evidenceReceiptId,
       lastUpdated: new Date().toISOString(),

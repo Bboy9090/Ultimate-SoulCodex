@@ -25,7 +25,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(birthData);
       // Exact assertions: result must have valid structure and status
-      assert.ok(typeof result.sun.status === "string");
+      assert.ok(typeof result.sun.verificationStatus === "string");
       assert.ok(result.verification.verifiedBodies !== undefined);
       // Sun calculation should complete without error with full birth data
       assert.ok(!isNaN(Date.parse(birthData.birthDate)));
@@ -39,7 +39,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(birthData);
       // Exact assertion: must be pending_ephemeris, not crash
-      assert.strictEqual(result.sun.status, "pending_ephemeris");
+      assert.strictEqual(result.sun.verificationStatus, "pending_ephemeris");
       assert.strictEqual(result.sun.sign, null);
     });
 
@@ -62,7 +62,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       assert.strictEqual(result1.sun.degree, result2.sun.degree);
       assert.strictEqual(result2.sun.degree, result3.sun.degree);
       // Leap day is valid; should calculate with valid status
-      assert.ok(["calculated_pending_independent_verification", "pending_ephemeris", "verified"].includes(result1.sun.status));
+      assert.ok(["pending_independent_verification", "pending_ephemeris", "verified"].includes(result1.sun.verificationStatus));
     });
 
     it("handles very old dates (1900) without crash", () => {
@@ -73,8 +73,8 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(birthData);
       // Exact assertion: old date must not crash, may be unresolved if outside ephemeris range
-      assert.ok(result.sun.status);
-      assert.ok(["calculated_pending_independent_verification", "pending_ephemeris"].includes(result.sun.status));
+      assert.ok(result.sun.verificationStatus);
+      assert.ok(["pending_independent_verification", "pending_ephemeris"].includes(result.sun.verificationStatus));
     });
   });
 
@@ -86,9 +86,9 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(noTimeData);
       // Exact assertions: status must be explicit, sign must be null
-      assert.strictEqual(result.moon.status, "requires_verified_birth_time");
+      assert.strictEqual(result.moon.verificationStatus, "requires_verified_birth_time");
       assert.strictEqual(result.moon.sign, null);
-      assert.strictEqual(result.rising.status, "requires_verified_birth_time");
+      assert.strictEqual(result.rising.verificationStatus, "requires_verified_birth_time");
       assert.strictEqual(result.rising.sign, null);
     });
 
@@ -100,11 +100,11 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(unknownTime);
       // Exact assertion: explicit unresolved state, no fabrication
-      assert.strictEqual(result.moon.status, "requires_verified_birth_time");
-      assert.strictEqual(result.rising.status, "requires_verified_birth_time");
+      assert.strictEqual(result.moon.verificationStatus, "requires_verified_birth_time");
+      assert.strictEqual(result.rising.verificationStatus, "requires_verified_birth_time");
     });
 
-    it("with exact birth time, returns calculated_pending_independent_verification", () => {
+    it("with exact birth time, returns pending_independent_verification", () => {
       const exactTime: BirthData = {
         birthDate: "1990-08-15",
         birthTime: "14:30",
@@ -113,7 +113,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       const result = calculateAstrology(exactTime);
       // Exact assertion: status must indicate calculation occurred
       if (result.moon.candidate) {
-        assert.strictEqual(result.moon.status, "calculated_pending_independent_verification");
+        assert.strictEqual(result.moon.verificationStatus, "pending_independent_verification");
       }
     });
   });
@@ -126,8 +126,8 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(noTz);
       // Exact assertion: must explicitly require timezone
-      assert.strictEqual(result.moon.status, "requires_verified_birth_time");
-      assert.strictEqual(result.rising.status, "requires_verified_birth_time");
+      assert.strictEqual(result.moon.verificationStatus, "requires_verified_birth_time");
+      assert.strictEqual(result.rising.verificationStatus, "requires_verified_birth_time");
     });
 
     it("converts DST spring forward (2023-03-12 02:30) to library's deterministic UTC conversion and calculation", () => {
@@ -231,7 +231,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(validCoords);
       // Exact assertion: with valid coords, should not require location
-      assert.notStrictEqual(result.rising.status, "requires_location");
+      assert.notStrictEqual(result.rising.verificationStatus, "requires_location");
     });
 
     it("rejects latitude > 90 and returns non-verified status", () => {
@@ -244,7 +244,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(invalidLat);
       // Exact assertion: invalid latitude must not verify
-      assert.notStrictEqual(result.rising.status, "verified");
+      assert.notStrictEqual(result.rising.verificationStatus, "verified");
     });
 
     it("rejects latitude < -90 and returns non-verified status", () => {
@@ -256,7 +256,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
         longitude: 0,
       };
       const result = calculateAstrology(invalidLat);
-      assert.notStrictEqual(result.rising.status, "verified");
+      assert.notStrictEqual(result.rising.verificationStatus, "verified");
     });
 
     it("rejects longitude > 180 and returns non-verified status", () => {
@@ -268,7 +268,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
         longitude: 181,
       };
       const result = calculateAstrology(invalidLon);
-      assert.notStrictEqual(result.rising.status, "verified");
+      assert.notStrictEqual(result.rising.verificationStatus, "verified");
     });
 
     it("rejects longitude < -180 and returns non-verified status", () => {
@@ -280,7 +280,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
         longitude: -181,
       };
       const result = calculateAstrology(invalidLon);
-      assert.notStrictEqual(result.rising.status, "verified");
+      assert.notStrictEqual(result.rising.verificationStatus, "verified");
     });
 
     it("accepts North Pole (latitude 90, longitude 0)", () => {
@@ -293,7 +293,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(northPole);
       // Exact assertion: extreme but valid coordinate must not crash
-      assert.ok(result.rising.status);
+      assert.ok(result.rising.verificationStatus);
     });
 
     it("accepts South Pole (latitude -90, longitude 0)", () => {
@@ -305,7 +305,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
         longitude: 0,
       };
       const result = calculateAstrology(southPole);
-      assert.ok(result.rising.status);
+      assert.ok(result.rising.verificationStatus);
     });
 
     it("accepts International Date Line (longitude ±180)", () => {
@@ -317,7 +317,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
         longitude: 180,
       };
       const result = calculateAstrology(dateLine);
-      assert.ok(result.rising.status);
+      assert.ok(result.rising.verificationStatus);
     });
   });
 
@@ -329,9 +329,9 @@ describe("Gate 1: Foundation Regression Suite", () => {
       };
       const result = calculateAstrology(unknownTime);
       // Exact assertions: no fabrication
-      assert.strictEqual(result.moon.status, "requires_verified_birth_time");
+      assert.strictEqual(result.moon.verificationStatus, "requires_verified_birth_time");
       assert.strictEqual(result.moon.sign, null);
-      assert.strictEqual(result.rising.status, "requires_verified_birth_time");
+      assert.strictEqual(result.rising.verificationStatus, "requires_verified_birth_time");
       assert.strictEqual(result.rising.sign, null);
       assert.ok(result.verification.unresolvedBodies.includes("Moon"));
       assert.ok(result.verification.unresolvedBodies.includes("Ascendant"));
@@ -346,7 +346,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       const result = calculateAstrology(noLocation);
       // Exact assertions: null sign, explicit status
       assert.strictEqual(result.rising.sign, null);
-      assert.strictEqual(result.rising.status, "requires_location");
+      assert.strictEqual(result.rising.verificationStatus, "requires_location");
     });
 
     it("unresolved state is consistent across multiple calls", () => {
@@ -357,9 +357,9 @@ describe("Gate 1: Foundation Regression Suite", () => {
       const result1 = calculateAstrology(unknownTime);
       const result2 = calculateAstrology(unknownTime);
       // Exact assertion: identical unresolved state
-      assert.strictEqual(result1.moon.status, result2.moon.status);
+      assert.strictEqual(result1.moon.verificationStatus, result2.moon.verificationStatus);
       assert.strictEqual(result1.moon.sign, result2.moon.sign);
-      assert.strictEqual(result1.rising.status, result2.rising.status);
+      assert.strictEqual(result1.rising.verificationStatus, result2.rising.verificationStatus);
       assert.strictEqual(result1.rising.sign, result2.rising.sign);
     });
   });
@@ -460,7 +460,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
   });
 
   describe("Verification State Accuracy — No Ambiguous Status", () => {
-    it("calculated placements return calculated_pending_independent_verification, not mixed states", () => {
+    it("calculated placements return pending_independent_verification, not mixed states", () => {
       const birthData: BirthData = {
         birthDate: "1990-08-15",
         birthTime: "14:30",
@@ -469,11 +469,11 @@ describe("Gate 1: Foundation Regression Suite", () => {
       const result = calculateAstrology(birthData);
       // Exact assertion: status is one of the valid states, consistent
       const validStatuses = [
-        "calculated_pending_independent_verification",
+        "pending_independent_verification",
         "requires_verified_birth_time",
         "pending_ephemeris",
       ];
-      assert.ok(validStatuses.includes(result.moon.status));
+      assert.ok(validStatuses.includes(result.moon.verificationStatus));
     });
   });
 
@@ -485,10 +485,10 @@ describe("Gate 1: Foundation Regression Suite", () => {
         timezone: "America/New_York",
       };
       const result = calculateAstrology(noLocation);
-      // Exact assertions: null sign, no upgrade
+      // Exact assertions: null sign, no upgrade, no evidence
       assert.strictEqual(result.rising.sign, null);
-      assert.strictEqual(result.rising.status, "requires_location");
-      assert.strictEqual(result.rising.confidence, null);
+      assert.strictEqual(result.rising.verificationStatus, "requires_location");
+      assert.strictEqual(result.rising.evidence, undefined);
     });
 
     it("verifiedBodies list only contains placements that passed independent reference", () => {
@@ -500,11 +500,11 @@ describe("Gate 1: Foundation Regression Suite", () => {
       // Exact assertion: no false verification claims
       for (const body of result.verification.verifiedBodies) {
         if (body === "Sun") {
-          assert.strictEqual(result.sun.status, "verified");
+          assert.strictEqual(result.sun.verificationStatus, "verified");
         } else if (body === "Moon") {
-          assert.strictEqual(result.moon.status, "verified");
+          assert.strictEqual(result.moon.verificationStatus, "verified");
         } else if (body === "Ascendant") {
-          assert.strictEqual(result.rising.status, "verified");
+          assert.strictEqual(result.rising.verificationStatus, "verified");
         }
       }
     });
