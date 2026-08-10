@@ -1,6 +1,7 @@
 import { calculateAstrology } from './astrology';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
+import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core/evidence-ledger';
 
 // Human Design Gates mapped to their correct centers and meanings
 const HD_GATES = {
@@ -969,7 +970,7 @@ export function calculateHumanDesign(birthData: {
 
 export function getHumanDesignInterpretation(hdData: HumanDesignData): string {
   const { type, strategy, authority, profile } = hdData;
-  
+
   const typeDescriptions = {
     "Manifestor": "You are here to initiate and impact others. Your aura is closed and repelling, designed to make things happen without waiting for others.",
     "Generator": "You are here to respond and build. Your life force energy is sustainable when you're doing what you love and responding to what comes to you.",
@@ -979,4 +980,265 @@ export function getHumanDesignInterpretation(hdData: HumanDesignData): string {
   };
 
   return `As a ${type}, ${typeDescriptions[type as keyof typeof typeDescriptions] || typeDescriptions.Generator} Your strategy is "${strategy}" and your authority is "${authority}". Your profile ${profile} indicates your life theme and how you interact with the world. This combination creates your unique energetic blueprint for navigating life authentically.`;
+}
+
+export function calculateHumanDesignWithEvidence(birthData: {
+  name: string;
+  birthDate: string;
+  birthTime: string;
+  birthLocation: string;
+  latitude: string;
+  longitude: string;
+  timezone: string;
+}): {
+  result?: HumanDesignResult;
+  evidence: EvidenceEntry[];
+} {
+  const entries: EvidenceEntry[] = [];
+  const result = calculateHumanDesign(birthData);
+
+  // Track input validation
+  const dateValid = isValidDate(birthData.birthDate);
+  const timeValid = isValidTime(birthData.birthTime);
+  const tzValid = isValidTimezone(birthData.timezone);
+  const coordsValid = isValidCoordinates(birthData.latitude, birthData.longitude);
+  const allInputsValid = dateValid && timeValid && tzValid && coordsValid;
+
+  if (result.status === 'unresolved') {
+    // Create evidence for unresolved calculation
+    entries.push(
+      createEvidenceEntry(
+        'human-design',
+        `Human Design Chart`,
+        `UNRESOLVED: ${result.reason}`,
+        10,
+        'unverified',
+        {
+          inputsUsed: [
+            `birth_date_${birthData.birthDate || 'missing'}`,
+            `birth_time_${birthData.birthTime || 'missing'}`,
+            `timezone_${birthData.timezone || 'missing'}`,
+            `location_${birthData.latitude || 'missing'},${birthData.longitude || 'missing'}`,
+          ],
+          reasoning: [
+            `Input validation failed: ${result.reason}`,
+            `Date valid: ${dateValid}, Time valid: ${timeValid}, Timezone valid: ${tzValid}, Coordinates valid: ${coordsValid}`,
+          ],
+          limitations: [
+            'Chart calculation requires all inputs to be valid and properly formatted',
+            'Birth time is absolute requirement; no noon fallback or guesses permitted',
+          ],
+          formulaId: 'human-design.calculation',
+          formulaVersion: '1.0.0',
+          calculationStatus: 'unresolved',
+          inputState: allInputsValid ? 'valid' : 'invalid',
+          calculatedAt: new Date().toISOString(),
+        }
+      )
+    );
+
+    return { evidence: entries };
+  }
+
+  // Create evidence entries for each HD component
+  entries.push(
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Type',
+      result.type,
+      95,
+      'high',
+      {
+        inputsUsed: [
+          'defined_centers_count',
+          'motor_throat_connections',
+          'sacral_definition',
+        ],
+        reasoning: [
+          `Sacral defined: ${result.centers.Sacral.defined}`,
+          `Throat defined: ${result.centers.Throat.defined}`,
+          `Type determined by center definitions and connections`,
+        ],
+        limitations: [
+          'Type accuracy depends on accurate birth time and location',
+          '88° solar arc calculation affects design authority',
+        ],
+        formulaId: 'human-design.type',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Strategy',
+      result.strategy,
+      95,
+      'high',
+      {
+        inputsUsed: ['type'],
+        reasoning: [
+          `Strategy "${result.strategy}" derived from type "${result.type}"`,
+          'Strategy determines how to make decisions and take action',
+        ],
+        limitations: [
+          'Strategy is deterministic from type; no independent verification',
+        ],
+        formulaId: 'human-design.strategy',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Authority',
+      result.authority,
+      95,
+      'high',
+      {
+        inputsUsed: [
+          `solar_plexus_defined_${result.centers['Solar Plexus'].defined}`,
+          `sacral_defined_${result.centers.Sacral.defined}`,
+          `spleen_defined_${result.centers.Spleen.defined}`,
+          `g_center_defined_${result.centers.G.defined}`,
+        ],
+        reasoning: [
+          'Authority determined by hierarchical priority of defined centers',
+          `Solar Plexus defined: ${result.centers['Solar Plexus'].defined}`,
+          `Sacral defined: ${result.centers.Sacral.defined}`,
+          `Spleen defined: ${result.centers.Spleen.defined}`,
+        ],
+        limitations: [
+          'Authority accuracy depends on accurate center definitions',
+        ],
+        formulaId: 'human-design.authority',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Profile',
+      result.profile,
+      90,
+      'high',
+      {
+        inputsUsed: [
+          `conscious_sun_line_${result.activations.conscious.sun.line}`,
+          `unconscious_sun_line_${result.activations.unconscious.sun.line}`,
+        ],
+        reasoning: [
+          `Profile ${result.profile} determined by conscious and unconscious sun line positions`,
+          `Conscious line: ${result.activations.conscious.sun.line}, Unconscious line: ${result.activations.unconscious.sun.line}`,
+          '88° solar arc precisely calculated for unconscious line',
+        ],
+        limitations: [
+          'Profile accuracy depends on precise birth time and 88° arc calculation',
+          'Unconscious sun requires calculating position 88° before birth',
+        ],
+        formulaId: 'human-design.profile',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Definition',
+      result.definition,
+      90,
+      'high',
+      {
+        inputsUsed: [
+          `defined_channels_count_${result.channels.filter(ch => ch.defined).length}`,
+          `connected_components_count`,
+        ],
+        reasoning: [
+          `Definition type: ${result.definition}`,
+          `Determined by ${result.channels.filter(ch => ch.defined).length} defined channels`,
+          'Connected components analyzed for relationship pattern',
+        ],
+        limitations: [
+          'Definition depends on accurate gate activations',
+        ],
+        formulaId: 'human-design.definition',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Incarnation Cross',
+      result.incarnationCross,
+      85,
+      'high',
+      {
+        inputsUsed: [
+          `conscious_sun_gate_${result.activations.conscious.sun.gate}`,
+        ],
+        reasoning: [
+          `Incarnation cross named after conscious Sun gate ${result.activations.conscious.sun.gate}`,
+          `Gate name: ${HD_GATES[result.activations.conscious.sun.gate as keyof typeof HD_GATES].name}`,
+          'Represents life purpose and overarching life theme',
+        ],
+        limitations: [
+          'Incarnation cross is symbolic representation of life purpose theme',
+        ],
+        formulaId: 'human-design.incarnation-cross',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Activations (88° Solar Arc)',
+      {
+        conscious_gates: result.activations.conscious,
+        unconscious_gates: result.activations.unconscious,
+        total_activated_gates: result.activatedGates.length,
+      },
+      85,
+      'high',
+      {
+        inputsUsed: [
+          `birth_time_${birthData.birthTime}`,
+          `birth_date_${birthData.birthDate}`,
+          'astrology_planetary_positions',
+        ],
+        reasoning: [
+          `88° solar arc (87.975°) precisely calculated for design authority`,
+          `${result.activatedGates.length} gates activated across conscious and unconscious`,
+          'Activations determined by planetary positions at birth and 88° before birth',
+        ],
+        limitations: [
+          'Activation accuracy depends on precise birth time and timezone',
+          '88° arc is empirically calibrated constant',
+          'Astrology ephemeris used for position calculations',
+        ],
+        formulaId: 'human-design.activations',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    )
+  );
+
+  return { result, evidence: entries };
 }
