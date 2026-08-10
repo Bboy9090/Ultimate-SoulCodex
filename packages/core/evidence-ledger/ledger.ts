@@ -28,6 +28,11 @@ export function createEvidenceEntry(
     inputsUsed?: string[];
     limitations?: string[];
     reasoning?: string[];
+    formulaId?: string;
+    formulaVersion?: string;
+    calculationStatus?: 'resolved' | 'unresolved';
+    inputState?: 'valid' | 'partial' | 'missing' | 'invalid';
+    calculatedAt?: string;
   } = {}
 ): EvidenceEntry {
   return {
@@ -42,6 +47,11 @@ export function createEvidenceEntry(
     reasoning: options.reasoning || [],
     generatedAt: new Date().toISOString(),
     version: '1.0',
+    formulaId: options.formulaId,
+    formulaVersion: options.formulaVersion,
+    calculationStatus: options.calculationStatus,
+    inputState: options.inputState,
+    calculatedAt: options.calculatedAt,
   };
 }
 

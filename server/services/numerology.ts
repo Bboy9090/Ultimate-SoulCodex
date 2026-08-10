@@ -1,4 +1,13 @@
-interface NumerologyData {
+import {
+  calcLifePath,
+  calcExpression,
+  calcSoulUrge,
+  calcPersonality,
+} from '@soulcodex/core/compute/numerology';
+import { calcPersonalYear } from '@soulcodex/core/compute/personal-numbers';
+
+interface ResolvedNumerologyData {
+  status: 'resolved';
   lifePath: number;
   expression: number;
   soulUrge: number;
@@ -13,56 +22,46 @@ interface NumerologyData {
   };
 }
 
-function reduceToSingleDigit(num: number): number {
-  while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
-    num = num.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
-  }
-  return num;
+interface UnresolvedNumerologyData {
+  status: 'unresolved';
+  reason: string;
+  lifePath?: undefined;
+  expression?: undefined;
+  soulUrge?: undefined;
+  personality?: undefined;
+  personalYear?: undefined;
+  interpretations?: undefined;
 }
 
-function calculateLifePath(birthDate: string): number {
-  const date = new Date(birthDate);
-  const sum = date.getDate() + (date.getMonth() + 1) + date.getFullYear();
-  return reduceToSingleDigit(sum);
+export type NumerologyData = ResolvedNumerologyData | UnresolvedNumerologyData;
+
+function isValidDate(dateStr: string): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  // Reject invalid month/day ranges
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+
+  // Round-trip validation: ensure JavaScript doesn't normalize the date
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }
 
-function getLetterValue(letter: string): number {
-  const values: { [key: string]: number } = {
-    'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9,
-    'J': 1, 'K': 2, 'L': 3, 'M': 4, 'N': 5, 'O': 6, 'P': 7, 'Q': 8, 'R': 9,
-    'S': 1, 'T': 2, 'U': 3, 'V': 4, 'W': 5, 'X': 6, 'Y': 7, 'Z': 8
-  };
-  return values[letter.toUpperCase()] || 0;
-}
-
-function calculateExpression(fullName: string): number {
-  const sum = fullName.replace(/[^A-Z]/gi, '').split('').reduce((total, letter) => {
-    return total + getLetterValue(letter);
-  }, 0);
-  return reduceToSingleDigit(sum);
-}
-
-function calculateSoulUrge(fullName: string): number {
-  const vowels = 'AEIOU';
-  const sum = fullName.replace(/[^A-Z]/gi, '').split('').reduce((total, letter) => {
-    return vowels.includes(letter.toUpperCase()) ? total + getLetterValue(letter) : total;
-  }, 0);
-  return reduceToSingleDigit(sum);
-}
-
-function calculatePersonality(fullName: string): number {
-  const vowels = 'AEIOU';
-  const sum = fullName.replace(/[^A-Z]/gi, '').split('').reduce((total, letter) => {
-    return !vowels.includes(letter.toUpperCase()) ? total + getLetterValue(letter) : total;
-  }, 0);
-  return reduceToSingleDigit(sum);
-}
-
-function calculatePersonalYear(birthDate: string): number {
-  const date = new Date(birthDate);
-  const currentYear = new Date().getFullYear();
-  const sum = date.getDate() + (date.getMonth() + 1) + currentYear;
-  return reduceToSingleDigit(sum);
+function isValidName(name: string): boolean {
+  if (!name || typeof name !== 'string') return false;
+  const letters = name.replace(/[^A-Za-z]/g, '');
+  return letters.length > 0;
 }
 
 const interpretations = {
@@ -83,13 +82,30 @@ const interpretations = {
 };
 
 export function calculateNumerology(fullName: string, birthDate: string): NumerologyData {
-  const lifePath = calculateLifePath(birthDate);
-  const expression = calculateExpression(fullName);
-  const soulUrge = calculateSoulUrge(fullName);
-  const personality = calculatePersonality(fullName);
-  const personalYear = calculatePersonalYear(birthDate);
+  // FAIL-CLOSED: Validate inputs before calculating
+  if (!isValidName(fullName)) {
+    return {
+      status: 'unresolved',
+      reason: fullName ? `Name "${fullName}" contains no usable letters` : 'Name is required',
+    };
+  }
+
+  if (!isValidDate(birthDate)) {
+    return {
+      status: 'unresolved',
+      reason: birthDate ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format or is not a real date` : 'Birth date is required',
+    };
+  }
+
+  // Only calculate if inputs are valid
+  const lifePath = calcLifePath(birthDate);
+  const expression = calcExpression(fullName);
+  const soulUrge = calcSoulUrge(fullName);
+  const personality = calcPersonality(fullName);
+  const personalYear = calcPersonalYear(birthDate);
 
   return {
+    status: 'resolved',
     lifePath,
     expression,
     soulUrge,

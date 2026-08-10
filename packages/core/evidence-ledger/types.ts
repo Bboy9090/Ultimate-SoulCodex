@@ -36,6 +36,12 @@ export interface EvidenceEntry {
   reasoning: string[]; // e.g., ["Personal Year is 5 + current month 7 = 3", "Pattern matches historical data"]
   generatedAt: string; // ISO 8601 timestamp
   version: string; // e.g., "1.0"
+  // Optional calculation metadata
+  formulaId?: string; // e.g., "numerology.personal-day"
+  formulaVersion?: string; // e.g., "1.0.0"
+  calculationStatus?: 'resolved' | 'unresolved'; // Whether calculation produced a valid result
+  inputState?: 'valid' | 'partial' | 'missing' | 'invalid'; // Actual input validity (not caller-supplied)
+  calculatedAt?: string; // ISO 8601 timestamp when calculation was performed
 }
 
 export interface EvidenceLedger {
