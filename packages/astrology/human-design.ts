@@ -647,19 +647,6 @@ function isValidTimezone(tzStr: string): boolean {
 }
 
 function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): TimezoneResolution | null {
-  // Check if already IANA format (contains /)
-  // Validate it's a real IANA timezone before accepting
-  if (inputTimezone.includes('/')) {
-    try {
-      Intl.DateTimeFormat(undefined, { timeZone: inputTimezone });
-      return { timezone: inputTimezone, source: 'supplied_iana' };
-    } catch {
-      // Supplied IANA format but not valid - fail closed
-      return null;
-    }
-  }
-
-  // Try abbreviation mapping first
   const timezoneMap: { [key: string]: string } = {
     'EST': 'America/New_York',
     'EDT': 'America/New_York',
@@ -675,12 +662,33 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
     'CEST': 'Europe/Paris'
   };
 
-  const mapped = timezoneMap[inputTimezone.toUpperCase()];
-  if (mapped) {
-    return { timezone: mapped, source: 'abbreviation_mapping' };
+  // Case 1: Timezone supplied - validate and accept if real
+  if (inputTimezone && inputTimezone.trim().length > 0) {
+    // Check if it's a mappable abbreviation
+    const mapped = timezoneMap[inputTimezone.toUpperCase()];
+    if (mapped) {
+      return { timezone: mapped, source: 'abbreviation_mapping' };
+    }
+
+    // Check if it's a valid IANA timezone (contains /)
+    if (inputTimezone.includes('/')) {
+      try {
+        Intl.DateTimeFormat(undefined, { timeZone: inputTimezone });
+        return { timezone: inputTimezone, source: 'supplied_iana' };
+      } catch {
+        // Supplied IANA format but not valid - fail closed with explicit error
+        return null;
+      }
+    }
+
+    // Timezone supplied but doesn't match abbreviation or valid IANA
+    // This is an explicitly bogus timezone (e.g., "Mars/Olympus", "Foo/Bar")
+    // Return null to trigger invalid_timezone error
+    return null;
   }
 
-  // Try coordinate-based lookup
+  // Case 2: No timezone supplied - try coordinate-based lookup
+  // This is semantically clean: no timezone hint + valid coordinates = infer from location
   try {
     const timezones = geoTz.find(latitude, longitude);
     if (timezones && timezones.length > 0) {
@@ -690,7 +698,7 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
     console.warn('Geo-tz lookup failed:', error);
   }
 
-  // FAIL-CLOSED: Return null instead of UTC fallback
+  // FAIL-CLOSED: No timezone supplied and lookup failed
   return null;
 }
 
@@ -743,26 +751,7 @@ function calculateHumanDesignInternal(birthData: {
     };
   }
 
-  // Validate timezone
-  if (!birthData.timezone) {
-    return {
-      result: {
-        status: 'unresolved',
-        reason: 'missing_timezone',
-      }
-    };
-  }
-
-  if (!isValidTimezone(birthData.timezone)) {
-    return {
-      result: {
-        status: 'unresolved',
-        reason: 'invalid_timezone',
-      }
-    };
-  }
-
-  // Validate coordinates
+  // Validate coordinates first (always required)
   if (!birthData.latitude || !birthData.longitude) {
     return {
       result: {
@@ -781,9 +770,13 @@ function calculateHumanDesignInternal(birthData: {
     };
   }
 
-  // Resolve timezone with coordinates, fail-closed
+  // Resolve timezone with coordinates. Timezone can be:
+  // - Valid IANA (e.g., "America/New_York")
+  // - Valid abbreviation (e.g., "EST")
+  // - Empty/missing (will attempt coordinate lookup)
+  // - Bogus (e.g., "Mars/Olympus") - will fail
   const timezoneResolution = resolveHDTimezone(
-    birthData.timezone,
+    birthData.timezone || '',
     parseFloat(birthData.latitude),
     parseFloat(birthData.longitude)
   );
