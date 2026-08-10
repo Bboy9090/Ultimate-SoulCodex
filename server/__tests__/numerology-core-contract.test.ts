@@ -296,6 +296,50 @@ describe('Server/Core Numerology Contract', () => {
       assert.strictEqual(serverResult.personality, undefined);
       assert.strictEqual(serverResult.soulUrge, undefined);
     });
+
+    it('should reject Feb 29 in non-leap year (2023-02-29)', () => {
+      const serverResult = calculateNumerology('John Doe', '2023-02-29');
+
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+      assert.strictEqual(serverResult.lifePath, undefined);
+    });
+
+    it('should accept Feb 29 in leap year (2024-02-29)', () => {
+      const serverResult = calculateNumerology('John Doe', '2024-02-29');
+
+      assert.strictEqual(serverResult.status, 'resolved');
+      assert.ok(typeof serverResult.lifePath === 'number');
+    });
+
+    it('should reject normalized dates like Feb 30 (2023-02-30)', () => {
+      const serverResult = calculateNumerology('John Doe', '2023-02-30');
+
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+      assert.strictEqual(serverResult.lifePath, undefined);
+    });
+
+    it('should reject day 31 in 30-day month (2023-04-31)', () => {
+      const serverResult = calculateNumerology('John Doe', '2023-04-31');
+
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+    });
+
+    it('should reject invalid month 13 (2023-13-01)', () => {
+      const serverResult = calculateNumerology('John Doe', '2023-13-01');
+
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+    });
+
+    it('should reject invalid month 0 (2023-00-10)', () => {
+      const serverResult = calculateNumerology('John Doe', '2023-00-10');
+
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+    });
   });
 
   describe('Interpretation Layer (Server-Added Value)', () => {
