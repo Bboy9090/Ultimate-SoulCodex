@@ -1,4 +1,4 @@
-import { Body, Ecliptic, GeoVector } from "astronomy-engine";
+import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
 import { fromZonedTime } from "date-fns-tz";
 import type {
   VerificationState,
