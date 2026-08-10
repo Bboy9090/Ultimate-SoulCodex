@@ -251,6 +251,58 @@ export interface HumanDesignData {
   };
 }
 
+/**
+ * Unresolved reasons for Human Design calculation failure.
+ * Indicates why calculation cannot proceed with exact reasons.
+ */
+export type HumanDesignUnresolvedReason =
+  | 'requires_exact_birth_time'
+  | 'invalid_birth_date'
+  | 'malformed_birth_time'
+  | 'invalid_timezone'
+  | 'timezone_resolution_failed'
+  | 'invalid_coordinates'
+  | 'missing_birth_date'
+  | 'missing_birth_time'
+  | 'missing_timezone'
+  | 'missing_coordinates';
+
+/**
+ * Resolved Human Design chart with all calculated values.
+ * Returned only when birth date, time, timezone, and coordinates are valid.
+ */
+export interface HumanDesignResolved extends HumanDesignData {
+  status: 'resolved';
+}
+
+/**
+ * Unresolved Human Design result.
+ * Returned when any required input is missing, invalid, or resolution fails.
+ * All calculation fields are explicitly undefined to signal failure.
+ */
+export interface HumanDesignUnresolved {
+  status: 'unresolved';
+  reason: HumanDesignUnresolvedReason;
+  type?: undefined;
+  strategy?: undefined;
+  authority?: undefined;
+  profile?: undefined;
+  definition?: undefined;
+  centers?: undefined;
+  channels?: undefined;
+  activations?: undefined;
+  activatedGates?: undefined;
+  incarnationCross?: undefined;
+  variables?: undefined;
+}
+
+/**
+ * Discriminated union result type for Human Design calculation.
+ * Always has status field to distinguish resolved vs. unresolved.
+ * Never produces 0-valued gates, placeholder profiles, or guessed charts.
+ */
+export type HumanDesignResult = HumanDesignResolved | HumanDesignUnresolved;
+
 // Convert zodiac sign name to base degree offset
 function signToOffset(sign: string): number {
   const signs: { [key: string]: number } = {
@@ -522,24 +574,18 @@ export function calculateHumanDesign(birthData: {
   latitude: string;
   longitude: string;
   timezone: string;
-}): HumanDesignData {
-  // Get astrological data first (conscious/personality)
-  const astroData = calculateAstrology(birthData);
-
-  // Return unresolved Human Design if birth time is missing
-  // Activations are absent (not fabricated with zero values)
-  if (!birthData.birthTime) {
+}): HumanDesignResult {
+  // Validate birth time BEFORE any astrology calculation
+  // Fail-closed: missing exact birth time means no chart can be calculated
+  if (!birthData.birthTime || typeof birthData.birthTime !== 'string' || !birthData.birthTime.trim()) {
     return {
-      type: "unresolved",
-      strategy: "requires_verified_birth_time",
-      authority: "unknown",
-      profile: "unknown",
-      definition: "unknown",
-      centers: {},
-      channels: [],
-      // activations intentionally absent: unresolved state cannot calculate them
+      status: 'unresolved',
+      reason: 'requires_exact_birth_time',
     };
   }
+
+  // Get astrological data (conscious/personality)
+  const astroData = calculateAstrology(birthData);
 
   // Calculate 88° of solar arc before birth for unconscious/design data
   // Human Design uses exactly 88° of solar arc, not a fixed number of days
@@ -760,6 +806,7 @@ export function calculateHumanDesign(birthData: {
   };
 
   return {
+    status: 'resolved',
     type,
     strategy,
     authority,
