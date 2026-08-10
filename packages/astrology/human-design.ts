@@ -591,12 +591,7 @@ function isValidCoordinates(latStr: string, lonStr: string): boolean {
 function isValidTimezone(tzStr: string): boolean {
   if (!tzStr || typeof tzStr !== 'string') return false;
 
-  // Already in IANA format (contains /)
-  if (tzStr.includes('/')) {
-    return true;
-  }
-
-  // Common abbreviations that can be mapped
+  // Check if it's a mappable abbreviation
   const timezoneMap: { [key: string]: string } = {
     'EST': 'America/New_York',
     'EDT': 'America/New_York',
@@ -612,23 +607,39 @@ function isValidTimezone(tzStr: string): boolean {
     'CEST': 'Europe/Paris'
   };
 
-  return tzStr.toUpperCase() in timezoneMap;
+  if (tzStr.toUpperCase() in timezoneMap) {
+    return true;
+  }
+
+  // Validate IANA format using Intl.DateTimeFormat (authoritative timezone database)
+  // Invalid zones throw TypeError
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tzStr });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): string | null {
+type TimezoneResolution = {
+  timezone: string;
+  source: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
+};
+
+function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): TimezoneResolution | null {
+  // Check if already IANA format (contains /)
+  // Validate it's a real IANA timezone before accepting
   if (inputTimezone.includes('/')) {
-    return inputTimezone;
-  }
-
-  try {
-    const timezones = geoTz.find(latitude, longitude);
-    if (timezones && timezones.length > 0) {
-      return timezones[0];
+    try {
+      Intl.DateTimeFormat(undefined, { timeZone: inputTimezone });
+      return { timezone: inputTimezone, source: 'supplied_iana' };
+    } catch {
+      // Supplied IANA format but not valid - fail closed
+      return null;
     }
-  } catch (error) {
-    console.warn('Geo-tz lookup failed, falling back to mapping:', error);
   }
 
+  // Try abbreviation mapping first
   const timezoneMap: { [key: string]: string } = {
     'EST': 'America/New_York',
     'EDT': 'America/New_York',
@@ -646,14 +657,36 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
 
   const mapped = timezoneMap[inputTimezone.toUpperCase()];
   if (mapped) {
-    return mapped;
+    return { timezone: mapped, source: 'abbreviation_mapping' };
+  }
+
+  // Try coordinate-based lookup
+  try {
+    const timezones = geoTz.find(latitude, longitude);
+    if (timezones && timezones.length > 0) {
+      return { timezone: timezones[0], source: 'coordinate_lookup' };
+    }
+  } catch (error) {
+    console.warn('Geo-tz lookup failed:', error);
   }
 
   // FAIL-CLOSED: Return null instead of UTC fallback
   return null;
 }
 
-export function calculateHumanDesign(birthData: {
+interface SolarArcForensics {
+  configuredSolarArc: number;
+  actualSolarArc: number;
+  iterationCount: number;
+  finalSearchWindowDays: number;
+  finalToleranceDays: number;
+  resolvedTimezone: string;
+  timezoneResolutionSource: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
+  algorithmId: string;
+  algorithmVersion: string;
+}
+
+function calculateHumanDesignInternal(birthData: {
   name: string;
   birthDate: string;
   birthTime: string;
@@ -661,82 +694,103 @@ export function calculateHumanDesign(birthData: {
   latitude: string;
   longitude: string;
   timezone: string;
-}): HumanDesignResult {
+}): { result: HumanDesignResult; forensics?: SolarArcForensics } {
   // FAIL-CLOSED: Validate all inputs BEFORE any astrology calculation
 
   // Validate birth date
   if (!birthData.birthDate) {
     return {
-      status: 'unresolved',
-      reason: 'missing_birth_date',
+      result: {
+        status: 'unresolved',
+        reason: 'missing_birth_date',
+      }
     };
   }
 
   if (!isValidDate(birthData.birthDate)) {
     return {
-      status: 'unresolved',
-      reason: 'invalid_birth_date',
+      result: {
+        status: 'unresolved',
+        reason: 'invalid_birth_date',
+      }
     };
   }
 
   // Validate birth time
   if (!birthData.birthTime) {
     return {
-      status: 'unresolved',
-      reason: 'missing_birth_time',
+      result: {
+        status: 'unresolved',
+        reason: 'missing_birth_time',
+      }
     };
   }
 
   if (!isValidTime(birthData.birthTime)) {
     return {
-      status: 'unresolved',
-      reason: 'malformed_birth_time',
+      result: {
+        status: 'unresolved',
+        reason: 'malformed_birth_time',
+      }
     };
   }
 
   // Validate timezone
   if (!birthData.timezone) {
     return {
-      status: 'unresolved',
-      reason: 'missing_timezone',
+      result: {
+        status: 'unresolved',
+        reason: 'missing_timezone',
+      }
     };
   }
 
   if (!isValidTimezone(birthData.timezone)) {
     return {
-      status: 'unresolved',
-      reason: 'invalid_timezone',
+      result: {
+        status: 'unresolved',
+        reason: 'invalid_timezone',
+      }
     };
   }
 
   // Validate coordinates
   if (!birthData.latitude || !birthData.longitude) {
     return {
-      status: 'unresolved',
-      reason: 'missing_coordinates',
+      result: {
+        status: 'unresolved',
+        reason: 'missing_coordinates',
+      }
     };
   }
 
   if (!isValidCoordinates(birthData.latitude, birthData.longitude)) {
     return {
-      status: 'unresolved',
-      reason: 'invalid_coordinates',
+      result: {
+        status: 'unresolved',
+        reason: 'invalid_coordinates',
+      }
     };
   }
 
   // Resolve timezone with coordinates, fail-closed
-  const resolvedTimezone = resolveHDTimezone(
+  const timezoneResolution = resolveHDTimezone(
     birthData.timezone,
     parseFloat(birthData.latitude),
     parseFloat(birthData.longitude)
   );
 
-  if (!resolvedTimezone) {
+  if (!timezoneResolution) {
     return {
-      status: 'unresolved',
-      reason: 'timezone_resolution_failed',
+      result: {
+        status: 'unresolved',
+        reason: 'timezone_resolution_failed',
+      }
     };
   }
+
+  const resolvedTimezone = timezoneResolution.timezone;
+  const timezoneResolutionSource = timezoneResolution.source;
 
   // Get astrological data (conscious/personality)
   const astroData = calculateAstrology(birthData);
@@ -759,7 +813,7 @@ export function calculateHumanDesign(birthData: {
   const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
 
   const birthTimeUTC = fromZonedTime(new Date(localTimeString), resolvedTimezone);
-  
+
   // Find the date when Sun was at target longitude using bisection
   // The Sun moves forward, so we search backwards from birth
   let minDays = 80;  // Minimum days to search (Sun at faster speed)
@@ -767,57 +821,74 @@ export function calculateHumanDesign(birthData: {
   let iteration = 0;
   const maxIterations = 20;
   let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - (88 * 24 * 60 * 60 * 1000));
-  
+
   while (iteration < maxIterations && (maxDays - minDays) > 0.01) {
     const midDays = (minDays + maxDays) / 2;
     const testTimeUTC = new Date(birthTimeUTC.getTime() - (midDays * 24 * 60 * 60 * 1000));
     const testTimeLocal = toZonedTime(testTimeUTC, resolvedTimezone);
-    
+
     const testYear = testTimeLocal.getFullYear();
     const testMonth = String(testTimeLocal.getMonth() + 1).padStart(2, '0');
     const testDay = String(testTimeLocal.getDate()).padStart(2, '0');
     const testHours = String(testTimeLocal.getHours()).padStart(2, '0');
     const testMinutes = String(testTimeLocal.getMinutes()).padStart(2, '0');
-    
+
     const testAstro = calculateAstrology({
       ...birthData,
       birthDate: `${testYear}-${testMonth}-${testDay}`,
       birthTime: `${testHours}:${testMinutes}`
     });
-    
+
     const testSunLongitude = calculateAbsoluteLongitude(testAstro.planets.sun.sign, testAstro.planets.sun.degree);
-    
+
     // Calculate angular distance (accounting for 360° wrap)
     let diff = testSunLongitude - targetLongitude;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
-    
+
     // If test Sun is ahead of target, we need to go back more days
     if (diff > 0) {
       minDays = midDays;
     } else {
       maxDays = midDays;
     }
-    
+
     unconsciousTimeUTC = testTimeUTC;
     iteration++;
   }
-  
+
+  // Capture final solar arc forensics for evidence
+  const finalSearchWindowDays = maxDays - minDays;
+  const finalToleranceDays = (maxDays - minDays) / 2;
+
   const unconsciousTimeLocal = toZonedTime(unconsciousTimeUTC, resolvedTimezone);
   const unconsciousYear = unconsciousTimeLocal.getFullYear();
   const unconsciousMonth = String(unconsciousTimeLocal.getMonth() + 1).padStart(2, '0');
   const unconsciousDay = String(unconsciousTimeLocal.getDate()).padStart(2, '0');
   const unconsciousHours = String(unconsciousTimeLocal.getHours()).padStart(2, '0');
   const unconsciousMinutes = String(unconsciousTimeLocal.getMinutes()).padStart(2, '0');
-  
+
   const unconsciousAstroData = calculateAstrology({
     ...birthData,
     birthDate: `${unconsciousYear}-${unconsciousMonth}-${unconsciousDay}`,
     birthTime: `${unconsciousHours}:${unconsciousMinutes}`
   });
-  
+
   const unconsciousSunLongitude = calculateAbsoluteLongitude(unconsciousAstroData.planets.sun.sign, unconsciousAstroData.planets.sun.degree);
   const actualArc = (birthSunLongitude - unconsciousSunLongitude + 360) % 360;
+
+  // Store solar arc forensics for evidence receipt
+  const solarArcForensics = {
+    configuredSolarArc: DESIGN_SOLAR_ARC,
+    actualSolarArc: actualArc,
+    iterationCount: iteration,
+    finalSearchWindowDays,
+    finalToleranceDays,
+    resolvedTimezone,
+    timezoneResolutionSource,
+    algorithmId: 'human-design.design-solar-arc',
+    algorithmVersion: '1.0.0'
+  };
 
   // Helper to calculate gate and line from sign and degree
   const toGateAndLine = (sign: string, degree: number) => 
