@@ -6,7 +6,8 @@ import {
 } from '@soulcodex/core/compute/numerology';
 import { calcPersonalYear } from '@soulcodex/core/compute/personal-numbers';
 
-interface NumerologyData {
+interface ResolvedNumerologyData {
+  status: 'resolved';
   lifePath: number;
   expression: number;
   soulUrge: number;
@@ -19,6 +20,33 @@ interface NumerologyData {
     personality: string;
     personalYear: string;
   };
+}
+
+interface UnresolvedNumerologyData {
+  status: 'unresolved';
+  reason: string;
+  lifePath?: undefined;
+  expression?: undefined;
+  soulUrge?: undefined;
+  personality?: undefined;
+  personalYear?: undefined;
+  interpretations?: undefined;
+}
+
+export type NumerologyData = ResolvedNumerologyData | UnresolvedNumerologyData;
+
+function isValidDate(dateStr: string): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  return true;
+}
+
+function isValidName(name: string): boolean {
+  if (!name || typeof name !== 'string') return false;
+  const letters = name.replace(/[^A-Za-z]/g, '');
+  return letters.length > 0;
 }
 
 const interpretations = {
@@ -39,6 +67,22 @@ const interpretations = {
 };
 
 export function calculateNumerology(fullName: string, birthDate: string): NumerologyData {
+  // FAIL-CLOSED: Validate inputs before calculating
+  if (!isValidName(fullName)) {
+    return {
+      status: 'unresolved',
+      reason: fullName ? `Name "${fullName}" contains no usable letters` : 'Name is required',
+    };
+  }
+
+  if (!isValidDate(birthDate)) {
+    return {
+      status: 'unresolved',
+      reason: birthDate ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format or is not a real date` : 'Birth date is required',
+    };
+  }
+
+  // Only calculate if inputs are valid
   const lifePath = calcLifePath(birthDate);
   const expression = calcExpression(fullName);
   const soulUrge = calcSoulUrge(fullName);
@@ -46,6 +90,7 @@ export function calculateNumerology(fullName: string, birthDate: string): Numero
   const personalYear = calcPersonalYear(birthDate);
 
   return {
+    status: 'resolved',
     lifePath,
     expression,
     soulUrge,
