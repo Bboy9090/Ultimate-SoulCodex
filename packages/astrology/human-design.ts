@@ -304,6 +304,31 @@ export interface HumanDesignUnresolved {
  */
 export type HumanDesignResult = HumanDesignResolved | HumanDesignUnresolved;
 
+/**
+ * Timezone resolution with source tracking.
+ * Indicates which of 3 paths was used to resolve the timezone.
+ */
+export interface TimezoneResolution {
+  timezone: string;
+  source: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
+}
+
+/**
+ * Forensic metadata for 88° solar arc calculation.
+ * Captures structured provenance for reconstructing the calculation.
+ */
+export interface SolarArcForensics {
+  configuredSolarArc: number;           // 87.975 constant
+  actualSolarArc: number;               // computed from bisection
+  iterationCount: number;               // bisection loop count
+  finalSearchWindowDays: number;        // maxDays - minDays final value
+  finalToleranceDays: number;           // tolerance achieved
+  resolvedTimezone: string;             // final timezone used
+  timezoneResolutionSource: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
+  algorithmId: string;                  // 'human-design.design-solar-arc'
+  algorithmVersion: string;             // '1.0.0'
+}
+
 // Convert zodiac sign name to base degree offset
 function signToOffset(sign: string): number {
   const signs: { [key: string]: number } = {
@@ -621,11 +646,6 @@ function isValidTimezone(tzStr: string): boolean {
   }
 }
 
-type TimezoneResolution = {
-  timezone: string;
-  source: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
-};
-
 function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): TimezoneResolution | null {
   // Check if already IANA format (contains /)
   // Validate it's a real IANA timezone before accepting
@@ -672,18 +692,6 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
 
   // FAIL-CLOSED: Return null instead of UTC fallback
   return null;
-}
-
-interface SolarArcForensics {
-  configuredSolarArc: number;
-  actualSolarArc: number;
-  iterationCount: number;
-  finalSearchWindowDays: number;
-  finalToleranceDays: number;
-  resolvedTimezone: string;
-  timezoneResolutionSource: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
-  algorithmId: string;
-  algorithmVersion: string;
 }
 
 function calculateHumanDesignInternal(birthData: {
@@ -1024,19 +1032,35 @@ function calculateHumanDesignInternal(birthData: {
   };
 
   return {
-    status: 'resolved',
-    type,
-    strategy,
-    authority,
-    profile,
-    definition,
-    centers,
-    channels,
-    activations,
-    activatedGates: Array.from(new Set(allGates)),
-    incarnationCross,
-    variables
+    result: {
+      status: 'resolved',
+      type,
+      strategy,
+      authority,
+      profile,
+      definition,
+      centers,
+      channels,
+      activations,
+      activatedGates: Array.from(new Set(allGates)),
+      incarnationCross,
+      variables
+    },
+    forensics: solarArcForensics
   };
+}
+
+export function calculateHumanDesign(birthData: {
+  name: string;
+  birthDate: string;
+  birthTime: string;
+  birthLocation: string;
+  latitude: string;
+  longitude: string;
+  timezone: string;
+}): HumanDesignResult {
+  const { result } = calculateHumanDesignInternal(birthData);
+  return result;
 }
 
 export function getHumanDesignInterpretation(hdData: HumanDesignData): string {
@@ -1066,7 +1090,9 @@ export function calculateHumanDesignWithEvidence(birthData: {
   evidence: EvidenceEntry[];
 } {
   const entries: EvidenceEntry[] = [];
-  const result = calculateHumanDesign(birthData);
+  const internalResult = calculateHumanDesignInternal(birthData);
+  const result = internalResult.result;
+  const forensics = internalResult.forensics;
 
   // Track input validation
   const dateValid = isValidDate(birthData.birthDate);
@@ -1283,6 +1309,17 @@ export function calculateHumanDesignWithEvidence(birthData: {
         conscious_gates: result.activations.conscious,
         unconscious_gates: result.activations.unconscious,
         total_activated_gates: result.activatedGates.length,
+        solar_arc_receipt: forensics ? {
+          configuredSolarArc: forensics.configuredSolarArc,
+          actualSolarArc: forensics.actualSolarArc,
+          iterationCount: forensics.iterationCount,
+          finalSearchWindowDays: forensics.finalSearchWindowDays,
+          finalToleranceDays: forensics.finalToleranceDays,
+          resolvedTimezone: forensics.resolvedTimezone,
+          timezoneResolutionSource: forensics.timezoneResolutionSource,
+          algorithmId: forensics.algorithmId,
+          algorithmVersion: forensics.algorithmVersion,
+        } : undefined,
       },
       85,
       'high',
@@ -1291,16 +1328,30 @@ export function calculateHumanDesignWithEvidence(birthData: {
           `birth_time_${birthData.birthTime}`,
           `birth_date_${birthData.birthDate}`,
           'astrology_planetary_positions',
+          ...(forensics ? [
+            `configured_solar_arc_${forensics.configuredSolarArc}`,
+            `actual_solar_arc_${forensics.actualSolarArc.toFixed(3)}`,
+            `iteration_count_${forensics.iterationCount}`,
+            `timezone_resolution_source_${forensics.timezoneResolutionSource}`,
+          ] : []),
         ],
         reasoning: [
-          `88° solar arc (87.975°) precisely calculated for design authority`,
+          `88° solar arc (configured: ${forensics?.configuredSolarArc || 87.975}°, actual: ${forensics?.actualSolarArc.toFixed(3) || 'unknown'}°) precisely calculated for design authority`,
           `${result.activatedGates.length} gates activated across conscious and unconscious`,
           'Activations determined by planetary positions at birth and 88° before birth',
+          ...(forensics ? [
+            `Bisection algorithm completed in ${forensics.iterationCount} iterations`,
+            `Final search window: ${forensics.finalSearchWindowDays.toFixed(4)} days (±${forensics.finalToleranceDays.toFixed(4)} days tolerance)`,
+            `Timezone resolved via ${forensics.timezoneResolutionSource}`,
+          ] : []),
         ],
         limitations: [
           'Activation accuracy depends on precise birth time and timezone',
-          '88° arc is empirically calibrated constant',
+          '88° arc is empirically calibrated constant (87.975° target)',
           'Astrology ephemeris used for position calculations',
+          ...(forensics ? [
+            `Achieved arc within ${forensics.finalToleranceDays.toFixed(4)} days of tolerance`,
+          ] : []),
         ],
         formulaId: 'human-design.activations',
         formulaVersion: '1.0.0',

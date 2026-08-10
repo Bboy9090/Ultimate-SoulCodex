@@ -712,5 +712,314 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
 
       assert.strictEqual(result.status, 'resolved');
     });
+
+    it('should reject bogus slash timezone (Mars/Olympus)', () => {
+      const result = calculateHumanDesign({
+        name: 'Test Person',
+        birthDate: '1990-08-15',
+        birthTime: '14:30',
+        birthLocation: 'Mars',
+        latitude: '0',
+        longitude: '0',
+        timezone: 'Mars/Olympus',
+      });
+
+      assert.strictEqual(result.status, 'unresolved');
+      assert.strictEqual(result.reason, 'invalid_timezone');
+    });
+
+    it('should reject bogus slash timezone (Foo/Bar)', () => {
+      const result = calculateHumanDesign({
+        name: 'Test Person',
+        birthDate: '1990-08-15',
+        birthTime: '14:30',
+        birthLocation: 'Imaginary',
+        latitude: '0',
+        longitude: '0',
+        timezone: 'Foo/Bar',
+      });
+
+      assert.strictEqual(result.status, 'unresolved');
+      assert.strictEqual(result.reason, 'invalid_timezone');
+    });
+
+    it('should accept valid IANA timezone (America/New_York)', () => {
+      const result = calculateHumanDesign({
+        name: 'Test Person',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'America/New_York',
+      });
+
+      assert.strictEqual(result.status, 'resolved');
+    });
+
+    it('should accept valid IANA timezone (Europe/Berlin)', () => {
+      const result = calculateHumanDesign({
+        name: 'Test Person',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      assert.strictEqual(result.status, 'resolved');
+    });
+  });
+
+  describe('Timezone Resolution Source Tracking', () => {
+    it('should track timezone resolution source for supplied IANA', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Test Person',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      assert.strictEqual(result.result?.status, 'resolved');
+
+      // Find activations evidence entry
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      assert.ok(activationsEntry);
+      assert.ok(activationsEntry.metadata?.solar_arc_receipt);
+      assert.ok(activationsEntry.metadata?.solar_arc_receipt?.timezoneResolutionSource);
+      assert.strictEqual(
+        activationsEntry.metadata?.solar_arc_receipt?.timezoneResolutionSource,
+        'supplied_iana'
+      );
+    });
+
+    it('should track timezone resolution source for abbreviation mapping', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Test Person',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'New York, NY',
+        latitude: '40.7128',
+        longitude: '-74.0060',
+        timezone: 'EST',
+      });
+
+      assert.strictEqual(result.result?.status, 'resolved');
+
+      // Find activations evidence entry
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      assert.ok(activationsEntry);
+      assert.ok(activationsEntry.metadata?.solar_arc_receipt);
+      assert.strictEqual(
+        activationsEntry.metadata?.solar_arc_receipt?.timezoneResolutionSource,
+        'abbreviation_mapping'
+      );
+    });
+
+    it('should track timezone resolution source for coordinate lookup', () => {
+      // Use a location that can be resolved via geo-tz
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Test Person',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Some City',
+        latitude: '40.7128',
+        longitude: '-74.0060',
+        timezone: 'Unknown', // Not IANA, not abbreviation - will trigger geo-tz lookup
+      });
+
+      assert.strictEqual(result.result?.status, 'resolved');
+
+      // Find activations evidence entry
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      assert.ok(activationsEntry);
+      assert.ok(activationsEntry.metadata?.solar_arc_receipt);
+      assert.strictEqual(
+        activationsEntry.metadata?.solar_arc_receipt?.timezoneResolutionSource,
+        'coordinate_lookup'
+      );
+    });
+  });
+
+  describe('Solar Arc Evidence Receipt (88° Forensics)', () => {
+    it('should include structured solar arc receipt in activations evidence', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Albert Einstein',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      assert.strictEqual(result.result?.status, 'resolved');
+
+      // Find activations evidence entry
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      assert.ok(activationsEntry);
+      assert.ok(activationsEntry.metadata?.solar_arc_receipt);
+
+      const receipt = activationsEntry.metadata?.solar_arc_receipt;
+
+      // Check all required fields are present
+      assert.ok(typeof receipt?.configuredSolarArc === 'number');
+      assert.ok(typeof receipt?.actualSolarArc === 'number');
+      assert.ok(typeof receipt?.iterationCount === 'number');
+      assert.ok(typeof receipt?.finalSearchWindowDays === 'number');
+      assert.ok(typeof receipt?.finalToleranceDays === 'number');
+      assert.ok(typeof receipt?.resolvedTimezone === 'string');
+      assert.ok(typeof receipt?.timezoneResolutionSource === 'string');
+      assert.ok(typeof receipt?.algorithmId === 'string');
+      assert.ok(typeof receipt?.algorithmVersion === 'string');
+    });
+
+    it('should have configured arc equal to 87.975', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Albert Einstein',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      const receipt = activationsEntry?.metadata?.solar_arc_receipt;
+      assert.strictEqual(receipt?.configuredSolarArc, 87.975);
+    });
+
+    it('should have actual arc within tolerance', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Albert Einstein',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      const receipt = activationsEntry?.metadata?.solar_arc_receipt;
+
+      // Actual arc should be close to configured (87.975)
+      assert.ok(receipt?.actualSolarArc !== undefined);
+      const difference = Math.abs((receipt?.actualSolarArc || 0) - 87.975);
+      assert.ok(difference < 1, `Arc difference ${difference} should be less than 1 degree`);
+    });
+
+    it('should have iteration count within bounds', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Albert Einstein',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      const receipt = activationsEntry?.metadata?.solar_arc_receipt;
+
+      // Iteration count should be positive and less than max iterations (20)
+      assert.ok((receipt?.iterationCount ?? 0) > 0);
+      assert.ok((receipt?.iterationCount ?? 0) < 20);
+    });
+
+    it('should have positive search window and tolerance', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Albert Einstein',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      const receipt = activationsEntry?.metadata?.solar_arc_receipt;
+
+      // Search window should be positive
+      assert.ok((receipt?.finalSearchWindowDays ?? 0) > 0);
+      // Tolerance should be positive and less than window
+      assert.ok((receipt?.finalToleranceDays ?? 0) > 0);
+      assert.ok(
+        (receipt?.finalToleranceDays ?? 0) <= (receipt?.finalSearchWindowDays ?? 0),
+        'Tolerance should not exceed search window'
+      );
+    });
+
+    it('should have correct algorithm metadata', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Albert Einstein',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      const receipt = activationsEntry?.metadata?.solar_arc_receipt;
+
+      assert.strictEqual(receipt?.algorithmId, 'human-design.design-solar-arc');
+      assert.strictEqual(receipt?.algorithmVersion, '1.0.0');
+    });
+
+    it('should have resolved timezone in receipt', () => {
+      const result = calculateHumanDesignWithEvidence({
+        name: 'Albert Einstein',
+        birthDate: '1879-03-14',
+        birthTime: '11:30',
+        birthLocation: 'Ulm, Germany',
+        latitude: '48.4008',
+        longitude: '9.9876',
+        timezone: 'Europe/Berlin',
+      });
+
+      const activationsEntry = result.evidence.find(e =>
+        e.name === 'Human Design Activations (88° Solar Arc)'
+      );
+
+      const receipt = activationsEntry?.metadata?.solar_arc_receipt;
+
+      assert.strictEqual(receipt?.resolvedTimezone, 'Europe/Berlin');
+    });
   });
 });

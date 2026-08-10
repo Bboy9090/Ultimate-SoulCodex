@@ -411,45 +411,56 @@ describe("Gate 1: Foundation Regression Suite", () => {
 
   describe("Human Design Calculation — Deterministic with Explicit Unresolved", () => {
     it("calculates Human Design type deterministically", () => {
-      const birthData: BirthData = {
+      const birthData = {
+        name: "Test Person",
         birthDate: "1990-08-15",
         birthTime: "14:30",
+        birthLocation: "New York, NY",
         timezone: "America/New_York",
-        latitude: 40.7128,
-        longitude: -74.006,
+        latitude: "40.7128",
+        longitude: "-74.006",
       };
       const hd1 = calculateHumanDesign(birthData);
       const hd2 = calculateHumanDesign(birthData);
-      // Exact assertion: identical type across calls
+      // Exact assertion: identical type across calls, both resolved
+      assert.strictEqual(hd1.status, "resolved");
+      assert.strictEqual(hd2.status, "resolved");
       assert.strictEqual(hd1.type, hd2.type);
       assert.ok(typeof hd1.type === "string");
     });
 
     it("missing birth time returns unresolved state without fabricated activations", () => {
-      const noTime: BirthData = {
+      const noTime = {
+        name: "Test Person",
         birthDate: "1990-08-15",
+        birthTime: "",
+        birthLocation: "New York, NY",
         timezone: "America/New_York",
+        latitude: "40.7128",
+        longitude: "-74.006",
       };
       const result = calculateHumanDesign(noTime);
       // Exact assertions: explicit unresolved state, activations omitted (not fabricated)
-      assert.strictEqual(result.type, "unresolved");
-      assert.strictEqual(result.strategy, "requires_verified_birth_time");
+      assert.strictEqual(result.status, "unresolved");
+      assert.strictEqual(result.reason, "missing_birth_time");
       // Activations must be undefined or omitted; we do not fabricate gate:0 line:0
       assert.strictEqual(result.activations, undefined);
     });
 
     it("calculates all required Human Design components when data complete", () => {
-      const birthData: BirthData = {
+      const birthData = {
+        name: "Test Person",
         birthDate: "1990-08-15",
         birthTime: "14:30",
+        birthLocation: "New York, NY",
         timezone: "America/New_York",
-        latitude: 40.7128,
-        longitude: -74.006,
+        latitude: "40.7128",
+        longitude: "-74.006",
       };
       const result = calculateHumanDesign(birthData);
       // Exact assertions: all components present and typed
+      assert.strictEqual(result.status, "resolved");
       assert.ok(result.type);
-      assert.notStrictEqual(result.type, "unresolved");
       assert.ok(result.strategy);
       assert.ok(result.authority);
       assert.ok(result.profile);
