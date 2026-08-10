@@ -646,7 +646,12 @@ function isValidTimezone(tzStr: string): boolean {
   }
 }
 
-function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): TimezoneResolution | null {
+type TimezoneResolutionResult =
+  | TimezoneResolution
+  | { error: 'invalid_timezone' }
+  | { error: 'timezone_resolution_failed' };
+
+function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): TimezoneResolutionResult | null {
   const timezoneMap: { [key: string]: string } = {
     'EST': 'America/New_York',
     'EDT': 'America/New_York',
@@ -677,14 +682,13 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
         return { timezone: inputTimezone, source: 'supplied_iana' };
       } catch {
         // Supplied IANA format but not valid - fail closed with explicit error
-        return null;
+        return { error: 'invalid_timezone' };
       }
     }
 
     // Timezone supplied but doesn't match abbreviation or valid IANA
-    // This is an explicitly bogus timezone (e.g., "Mars/Olympus", "Foo/Bar")
-    // Return null to trigger invalid_timezone error
-    return null;
+    // This is an explicitly bogus timezone (e.g., "Mars/Olympus", "Foo/Bar", "XYZ")
+    return { error: 'invalid_timezone' };
   }
 
   // Case 2: No timezone supplied - try coordinate-based lookup
@@ -699,7 +703,7 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
   }
 
   // FAIL-CLOSED: No timezone supplied and lookup failed
-  return null;
+  return { error: 'timezone_resolution_failed' };
 }
 
 function calculateHumanDesignInternal(birthData: {
@@ -781,11 +785,13 @@ function calculateHumanDesignInternal(birthData: {
     parseFloat(birthData.longitude)
   );
 
-  if (!timezoneResolution) {
+  if (!timezoneResolution || 'error' in timezoneResolution) {
     return {
       result: {
         status: 'unresolved',
-        reason: 'timezone_resolution_failed',
+        reason: (timezoneResolution && 'error' in timezoneResolution)
+          ? timezoneResolution.error
+          : 'timezone_resolution_failed',
       }
     };
   }
@@ -1302,17 +1308,6 @@ export function calculateHumanDesignWithEvidence(birthData: {
         conscious_gates: result.activations.conscious,
         unconscious_gates: result.activations.unconscious,
         total_activated_gates: result.activatedGates.length,
-        solar_arc_receipt: forensics ? {
-          configuredSolarArc: forensics.configuredSolarArc,
-          actualSolarArc: forensics.actualSolarArc,
-          iterationCount: forensics.iterationCount,
-          finalSearchWindowDays: forensics.finalSearchWindowDays,
-          finalToleranceDays: forensics.finalToleranceDays,
-          resolvedTimezone: forensics.resolvedTimezone,
-          timezoneResolutionSource: forensics.timezoneResolutionSource,
-          algorithmId: forensics.algorithmId,
-          algorithmVersion: forensics.algorithmVersion,
-        } : undefined,
       },
       85,
       'high',
@@ -1351,6 +1346,19 @@ export function calculateHumanDesignWithEvidence(birthData: {
         calculationStatus: 'resolved',
         inputState: 'valid',
         calculatedAt: new Date().toISOString(),
+        metadata: forensics ? {
+          solar_arc_receipt: {
+            configuredSolarArc: forensics.configuredSolarArc,
+            actualSolarArc: forensics.actualSolarArc,
+            iterationCount: forensics.iterationCount,
+            finalSearchWindowDays: forensics.finalSearchWindowDays,
+            finalToleranceDays: forensics.finalToleranceDays,
+            resolvedTimezone: forensics.resolvedTimezone,
+            timezoneResolutionSource: forensics.timezoneResolutionSource,
+            algorithmId: forensics.algorithmId,
+            algorithmVersion: forensics.algorithmVersion,
+          }
+        } : undefined,
       }
     )
   );

@@ -25,6 +25,7 @@ export function createEvidenceEntry(
   confidence: number,
   confidenceLabel: EvidenceConfidenceLevel,
   options: {
+    name?: string;
     inputsUsed?: string[];
     limitations?: string[];
     reasoning?: string[];
@@ -33,12 +34,14 @@ export function createEvidenceEntry(
     calculationStatus?: 'resolved' | 'unresolved';
     inputState?: 'valid' | 'partial' | 'missing' | 'invalid';
     calculatedAt?: string;
+    metadata?: Record<string, unknown>;
   } = {}
 ): EvidenceEntry {
   return {
     id: generateId(),
     engine,
     claim,
+    name: options.name || claim,
     value,
     confidence: Math.min(100, Math.max(0, confidence)),
     confidenceLabel,
@@ -52,6 +55,7 @@ export function createEvidenceEntry(
     calculationStatus: options.calculationStatus,
     inputState: options.inputState,
     calculatedAt: options.calculatedAt,
+    metadata: options.metadata,
   };
 }
 
