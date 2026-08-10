@@ -529,23 +529,76 @@ function calculateDefinition(centers: any, channels: any[]): string {
   }
 }
 
-function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): string {
-  if (inputTimezone.includes('/')) {
-    return inputTimezone;
+function isValidDate(dateStr: string): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  // Reject invalid month/day ranges
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+
+  // Round-trip validation: ensure JavaScript doesn't normalize the date
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function isValidTime(timeStr: string): boolean {
+  if (!timeStr || typeof timeStr !== 'string') return false;
+  if (!/^\d{2}:\d{2}$/.test(timeStr)) return false;
+
+  const [hoursStr, minutesStr] = timeStr.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+
+  // Validate ranges
+  if (hours < 0 || hours > 23) return false;
+  if (minutes < 0 || minutes > 59) return false;
+
+  return true;
+}
+
+function isValidCoordinates(latStr: string, lonStr: string): boolean {
+  if (!latStr || typeof latStr !== 'string' || !lonStr || typeof lonStr !== 'string') {
+    return false;
   }
-  
-  try {
-    const timezones = geoTz.find(latitude, longitude);
-    if (timezones && timezones.length > 0) {
-      return timezones[0];
-    }
-  } catch (error) {
-    console.warn('Geo-tz lookup failed, falling back to mapping:', error);
+
+  const lat = parseFloat(latStr);
+  const lon = parseFloat(lonStr);
+
+  // Check if parsed successfully and are finite numbers
+  if (!isFinite(lat) || !isFinite(lon)) return false;
+
+  // Validate latitude range: -90 to +90
+  if (lat < -90 || lat > 90) return false;
+
+  // Validate longitude range: -180 to +180
+  if (lon < -180 || lon > 180) return false;
+
+  return true;
+}
+
+function isValidTimezone(tzStr: string): boolean {
+  if (!tzStr || typeof tzStr !== 'string') return false;
+
+  // Already in IANA format (contains /)
+  if (tzStr.includes('/')) {
+    return true;
   }
-  
+
+  // Common abbreviations that can be mapped
   const timezoneMap: { [key: string]: string } = {
     'EST': 'America/New_York',
-    'EDT': 'America/New_York', 
+    'EDT': 'America/New_York',
     'CST': 'America/Chicago',
     'CDT': 'America/Chicago',
     'MST': 'America/Denver',
@@ -557,13 +610,46 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
     'CET': 'Europe/Paris',
     'CEST': 'Europe/Paris'
   };
-  
+
+  return tzStr.toUpperCase() in timezoneMap;
+}
+
+function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): string | null {
+  if (inputTimezone.includes('/')) {
+    return inputTimezone;
+  }
+
+  try {
+    const timezones = geoTz.find(latitude, longitude);
+    if (timezones && timezones.length > 0) {
+      return timezones[0];
+    }
+  } catch (error) {
+    console.warn('Geo-tz lookup failed, falling back to mapping:', error);
+  }
+
+  const timezoneMap: { [key: string]: string } = {
+    'EST': 'America/New_York',
+    'EDT': 'America/New_York',
+    'CST': 'America/Chicago',
+    'CDT': 'America/Chicago',
+    'MST': 'America/Denver',
+    'MDT': 'America/Denver',
+    'PST': 'America/Los_Angeles',
+    'PDT': 'America/Los_Angeles',
+    'GMT': 'Europe/London',
+    'BST': 'Europe/London',
+    'CET': 'Europe/Paris',
+    'CEST': 'Europe/Paris'
+  };
+
   const mapped = timezoneMap[inputTimezone.toUpperCase()];
   if (mapped) {
     return mapped;
   }
-  
-  return 'UTC';
+
+  // FAIL-CLOSED: Return null instead of UTC fallback
+  return null;
 }
 
 export function calculateHumanDesign(birthData: {
@@ -575,12 +661,79 @@ export function calculateHumanDesign(birthData: {
   longitude: string;
   timezone: string;
 }): HumanDesignResult {
-  // Validate birth time BEFORE any astrology calculation
-  // Fail-closed: missing exact birth time means no chart can be calculated
-  if (!birthData.birthTime || typeof birthData.birthTime !== 'string' || !birthData.birthTime.trim()) {
+  // FAIL-CLOSED: Validate all inputs BEFORE any astrology calculation
+
+  // Validate birth date
+  if (!birthData.birthDate) {
     return {
       status: 'unresolved',
-      reason: 'requires_exact_birth_time',
+      reason: 'missing_birth_date',
+    };
+  }
+
+  if (!isValidDate(birthData.birthDate)) {
+    return {
+      status: 'unresolved',
+      reason: 'invalid_birth_date',
+    };
+  }
+
+  // Validate birth time
+  if (!birthData.birthTime) {
+    return {
+      status: 'unresolved',
+      reason: 'missing_birth_time',
+    };
+  }
+
+  if (!isValidTime(birthData.birthTime)) {
+    return {
+      status: 'unresolved',
+      reason: 'malformed_birth_time',
+    };
+  }
+
+  // Validate timezone
+  if (!birthData.timezone) {
+    return {
+      status: 'unresolved',
+      reason: 'missing_timezone',
+    };
+  }
+
+  if (!isValidTimezone(birthData.timezone)) {
+    return {
+      status: 'unresolved',
+      reason: 'invalid_timezone',
+    };
+  }
+
+  // Validate coordinates
+  if (!birthData.latitude || !birthData.longitude) {
+    return {
+      status: 'unresolved',
+      reason: 'missing_coordinates',
+    };
+  }
+
+  if (!isValidCoordinates(birthData.latitude, birthData.longitude)) {
+    return {
+      status: 'unresolved',
+      reason: 'invalid_coordinates',
+    };
+  }
+
+  // Resolve timezone with coordinates, fail-closed
+  const resolvedTimezone = resolveHDTimezone(
+    birthData.timezone,
+    parseFloat(birthData.latitude),
+    parseFloat(birthData.longitude)
+  );
+
+  if (!resolvedTimezone) {
+    return {
+      status: 'unresolved',
+      reason: 'timezone_resolution_failed',
     };
   }
 
@@ -599,18 +752,11 @@ export function calculateHumanDesign(birthData: {
   let targetLongitude = birthSunLongitude - DESIGN_SOLAR_ARC;
   if (targetLongitude < 0) targetLongitude += 360;
 
-  // Resolve timezone properly
-  const resolvedTimezone = resolveHDTimezone(
-    birthData.timezone,
-    parseFloat(birthData.latitude),
-    parseFloat(birthData.longitude)
-  );
-
-  // Create birth time in the correct timezone
+  // Create birth time in the correct timezone (timezone already validated and resolved)
   const [year, month, day] = birthData.birthDate.split('-').map(Number);
   const [hours, minutes] = birthData.birthTime.split(':').map(Number);
   const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-  
+
   const birthTimeUTC = fromZonedTime(new Date(localTimeString), resolvedTimezone);
   
   // Find the date when Sun was at target longitude using bisection
