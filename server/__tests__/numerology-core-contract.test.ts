@@ -22,8 +22,20 @@ describe('Server/Core Numerology Contract', () => {
     const fullName = 'Albert Einstein';
     const birthDate = '1879-03-14';
 
+    it('should resolve valid input', () => {
+      const serverResult = calculateNumerology(fullName, birthDate);
+
+      assert.strictEqual(serverResult.status, 'resolved');
+      assert.ok(typeof serverResult.lifePath === 'number');
+      assert.ok(typeof serverResult.expression === 'number');
+      assert.ok(typeof serverResult.soulUrge === 'number');
+      assert.ok(typeof serverResult.personality === 'number');
+      assert.ok(typeof serverResult.personalYear === 'number');
+    });
+
     it('should match core lifePath calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcLifePath(birthDate);
 
       assert.strictEqual(
@@ -35,6 +47,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core expression calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcExpression(fullName);
 
       assert.strictEqual(
@@ -46,6 +59,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core soulUrge calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcSoulUrge(fullName);
 
       assert.strictEqual(
@@ -57,6 +71,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personality calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonality(fullName);
 
       assert.strictEqual(
@@ -68,6 +83,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personalYear calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonalYear(birthDate);
 
       assert.strictEqual(
@@ -82,8 +98,17 @@ describe('Server/Core Numerology Contract', () => {
     const fullName = 'John Smith';
     const birthDate = '1990-08-15';
 
+    it('should resolve valid input', () => {
+      const serverResult = calculateNumerology(fullName, birthDate);
+
+      assert.strictEqual(serverResult.status, 'resolved');
+      assert.ok(typeof serverResult.lifePath === 'number');
+      assert.ok(typeof serverResult.expression === 'number');
+    });
+
     it('should match core lifePath calculation (tests master number handling)', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcLifePath(birthDate);
 
       assert.strictEqual(serverResult.lifePath, coreResult);
@@ -95,6 +120,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core expression calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcExpression(fullName);
 
       assert.strictEqual(serverResult.expression, coreResult);
@@ -102,6 +128,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core soulUrge calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcSoulUrge(fullName);
 
       assert.strictEqual(serverResult.soulUrge, coreResult);
@@ -109,6 +136,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personality calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonality(fullName);
 
       assert.strictEqual(serverResult.personality, coreResult);
@@ -116,6 +144,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personalYear calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonalYear(birthDate);
 
       assert.strictEqual(serverResult.personalYear, coreResult);
@@ -126,8 +155,17 @@ describe('Server/Core Numerology Contract', () => {
     const fullName = "Jane O'Connor-Smith";
     const birthDate = '1985-12-25';
 
+    it('should resolve valid input', () => {
+      const serverResult = calculateNumerology(fullName, birthDate);
+
+      assert.strictEqual(serverResult.status, 'resolved');
+      assert.ok(typeof serverResult.lifePath === 'number');
+      assert.ok(typeof serverResult.expression === 'number');
+    });
+
     it('should match core lifePath calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcLifePath(birthDate);
 
       assert.strictEqual(serverResult.lifePath, coreResult);
@@ -135,6 +173,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core expression calculation (tests punctuation handling)', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcExpression(fullName);
 
       assert.strictEqual(
@@ -146,6 +185,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core soulUrge calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcSoulUrge(fullName);
 
       assert.strictEqual(serverResult.soulUrge, coreResult);
@@ -153,6 +193,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personality calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonality(fullName);
 
       assert.strictEqual(serverResult.personality, coreResult);
@@ -160,6 +201,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personalYear calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonalYear(birthDate);
 
       assert.strictEqual(serverResult.personalYear, coreResult);
@@ -170,8 +212,17 @@ describe('Server/Core Numerology Contract', () => {
     const fullName = 'Marie Rose du Pont';
     const birthDate = '1950-06-21';
 
+    it('should resolve valid input', () => {
+      const serverResult = calculateNumerology(fullName, birthDate);
+
+      assert.strictEqual(serverResult.status, 'resolved');
+      assert.ok(typeof serverResult.lifePath === 'number');
+      assert.ok(typeof serverResult.expression === 'number');
+    });
+
     it('should match core lifePath calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcLifePath(birthDate);
 
       assert.strictEqual(serverResult.lifePath, coreResult);
@@ -179,6 +230,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core expression calculation (tests multi-word name)', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcExpression(fullName);
 
       assert.strictEqual(
@@ -190,6 +242,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core soulUrge calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcSoulUrge(fullName);
 
       assert.strictEqual(serverResult.soulUrge, coreResult);
@@ -197,6 +250,7 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personality calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonality(fullName);
 
       assert.strictEqual(serverResult.personality, coreResult);
@@ -204,39 +258,43 @@ describe('Server/Core Numerology Contract', () => {
 
     it('should match core personalYear calculation', () => {
       const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreResult = calcPersonalYear(birthDate);
 
       assert.strictEqual(serverResult.personalYear, coreResult);
     });
   });
 
-  describe('Malformed Input Policy: Upstream Validation Required', () => {
-    it('should produce numeric result for empty name (caller responsibility)', () => {
-      // Server does NOT validate input — it delegates to core
-      // Empty name will produce 0 (sum of no letters)
+  describe('Fail-Closed Boundary: Invalid Inputs Return Unresolved', () => {
+    it('should return unresolved status for empty name', () => {
       const serverResult = calculateNumerology('', '1990-08-15');
 
-      assert.ok(typeof serverResult.expression === 'number');
-      // Core calcExpression('') returns 0 (no letters = 0 sum)
-      assert.strictEqual(serverResult.expression, 0);
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+      assert.ok(serverResult.reason.includes('Name'));
+      assert.strictEqual(serverResult.lifePath, undefined);
+      assert.strictEqual(serverResult.expression, undefined);
     });
 
-    it('should produce numeric result for malformed date (caller responsibility)', () => {
-      // Server relies on core to handle date parsing
+    it('should return unresolved status for malformed date', () => {
       const serverResult = calculateNumerology('John Doe', 'invalid-date');
 
-      assert.ok(typeof serverResult.lifePath === 'number');
-      // Invalid date will produce NaN, which is a signal that input was bad
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+      assert.ok(serverResult.reason.includes('Birth date'));
+      assert.strictEqual(serverResult.lifePath, undefined);
+      assert.strictEqual(serverResult.personalYear, undefined);
     });
 
-    it('should not validate punctuation-only names', () => {
-      // Server delegates all calculation to core
-      // Punctuation-only will produce 0
+    it('should return unresolved status for punctuation-only name', () => {
       const serverResult = calculateNumerology('!@#$%^&*()', '1990-08-15');
 
-      assert.strictEqual(serverResult.expression, 0);
-      assert.strictEqual(serverResult.personality, 0);
-      assert.strictEqual(serverResult.soulUrge, 0);
+      assert.strictEqual(serverResult.status, 'unresolved');
+      assert.ok(serverResult.reason);
+      assert.ok(serverResult.reason.includes('Name'));
+      assert.strictEqual(serverResult.expression, undefined);
+      assert.strictEqual(serverResult.personality, undefined);
+      assert.strictEqual(serverResult.soulUrge, undefined);
     });
   });
 
@@ -244,6 +302,7 @@ describe('Server/Core Numerology Contract', () => {
     it('should include interpretation text for valid lifePath', () => {
       const serverResult = calculateNumerology('John Smith', '1990-08-15');
 
+      assert.strictEqual(serverResult.status, 'resolved');
       assert.ok(serverResult.interpretations.lifePath);
       assert.ok(typeof serverResult.interpretations.lifePath === 'string');
       assert.ok(serverResult.interpretations.lifePath.length > 0);
@@ -252,6 +311,7 @@ describe('Server/Core Numerology Contract', () => {
     it('should include interpretation text for valid expression', () => {
       const serverResult = calculateNumerology('John Smith', '1990-08-15');
 
+      assert.strictEqual(serverResult.status, 'resolved');
       assert.ok(serverResult.interpretations.expression);
       assert.strictEqual(
         serverResult.interpretations.expression,
@@ -263,6 +323,8 @@ describe('Server/Core Numerology Contract', () => {
       const fullName = 'Albert Einstein';
       const birthDate = '1879-03-14';
       const serverResult = calculateNumerology(fullName, birthDate);
+
+      assert.strictEqual(serverResult.status, 'resolved');
       const coreValues = {
         lifePath: calcLifePath(birthDate),
         expression: calcExpression(fullName),
@@ -279,10 +341,11 @@ describe('Server/Core Numerology Contract', () => {
     });
   });
 
-  describe('Contract Guarantee: 5 Values Always Present', () => {
-    it('should always return all 5 numerology values', () => {
+  describe('Contract Guarantee: Resolved Results Have 5 Values', () => {
+    it('should return all 5 numerology values when resolved', () => {
       const result = calculateNumerology('Jane Doe', '1990-08-15');
 
+      assert.strictEqual(result.status, 'resolved');
       assert.ok(typeof result.lifePath === 'number');
       assert.ok(typeof result.expression === 'number');
       assert.ok(typeof result.soulUrge === 'number');
@@ -290,14 +353,22 @@ describe('Server/Core Numerology Contract', () => {
       assert.ok(typeof result.personalYear === 'number');
     });
 
-    it('should always return all 5 interpretation texts', () => {
+    it('should return all 5 interpretation texts when resolved', () => {
       const result = calculateNumerology('Jane Doe', '1990-08-15');
 
+      assert.strictEqual(result.status, 'resolved');
       assert.ok(typeof result.interpretations.lifePath === 'string');
       assert.ok(typeof result.interpretations.expression === 'string');
       assert.ok(typeof result.interpretations.soulUrge === 'string');
       assert.ok(typeof result.interpretations.personality === 'string');
       assert.ok(typeof result.interpretations.personalYear === 'string');
+    });
+
+    it('should return unresolved status for invalid input', () => {
+      const result = calculateNumerology('', 'invalid-date');
+
+      assert.strictEqual(result.status, 'unresolved');
+      assert.ok(result.reason);
     });
   });
 });
