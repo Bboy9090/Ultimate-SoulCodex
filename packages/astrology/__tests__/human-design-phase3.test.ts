@@ -234,7 +234,8 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
     });
 
     describe('Timezone Validation', () => {
-      it('should reject missing timezone', () => {
+      it('should resolve empty timezone with coordinate lookup', () => {
+        // Empty timezone + valid coordinates = coordinate lookup (new policy)
         const result = calculateHumanDesign({
           name: 'Test Person',
           birthDate: '1990-08-15',
@@ -245,11 +246,11 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
           timezone: '',
         });
 
-        assert.strictEqual(result.status, 'unresolved');
-        assert.strictEqual(result.reason, 'missing_timezone');
+        assert.strictEqual(result.status, 'resolved');
+        // Coordinates should resolve via geo-tz lookup
       });
 
-      it('should reject invalid timezone abbreviation', () => {
+      it('should reject bogus timezone abbreviation', () => {
         const result = calculateHumanDesign({
           name: 'Test Person',
           birthDate: '1990-08-15',
