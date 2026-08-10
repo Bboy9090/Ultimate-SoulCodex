@@ -37,10 +37,25 @@ export type NumerologyData = ResolvedNumerologyData | UnresolvedNumerologyData;
 
 function isValidDate(dateStr: string): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return false;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
-  return true;
+
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  // Reject invalid month/day ranges
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+
+  // Round-trip validation: ensure JavaScript doesn't normalize the date
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }
 
 function isValidName(name: string): boolean {
