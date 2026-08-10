@@ -38,9 +38,9 @@ test("the versioned matrix covers identity, boundaries, civil-time edges, leap d
 test("every expanded fixture produces both local candidates before live comparison", () => {
   for (const fixture of EPHEMERIS_EVIDENCE_FIXTURES) {
     const astrology = calculateAstrology(fixture);
-    assert.ok(astrology.sun.candidate, `missing Sun candidate for ${fixture.id}`);
-    assert.ok(astrology.moon.candidate, `missing Moon candidate for ${fixture.id}`);
-    assert.equal(astrology.sun.candidate?.inputTimestamp, astrology.moon.candidate?.inputTimestamp);
+    assert.ok(astrology.sun.internalCandidate, `missing Sun candidate for ${fixture.id}`);
+    assert.ok(astrology.moon.internalCandidate, `missing Moon candidate for ${fixture.id}`);
+    assert.equal(astrology.sun.internalCandidate?.inputTimestamp, astrology.moon.internalCandidate?.inputTimestamp);
   }
 });
 
@@ -48,8 +48,8 @@ test("a live-style receipt measures deltas but never approves a tolerance", asyn
   const fixture = EPHEMERIS_EVIDENCE_FIXTURES[0];
   const astrology = calculateAstrology(fixture);
   const longitudes = [
-    astrology.sun.candidate?.longitude,
-    astrology.moon.candidate?.longitude,
+    astrology.sun.internalCandidate?.longitude,
+    astrology.moon.internalCandidate?.longitude,
   ];
   assert.ok(longitudes.every((value) => typeof value === "number"));
 

@@ -1,8 +1,10 @@
-// Namespace import for ESM/CJS compatibility
-// @see https://github.com/cosinekitty/astronomy/issues (ESM export issues)
-import * as AstronomyEngine from "astronomy-engine";
-const { Body, Ecliptic, GeoVector } = AstronomyEngine;
+import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
 import { fromZonedTime } from "date-fns-tz";
+import type {
+  VerificationState,
+  PlacementEvidence,
+  PlacementLike,
+} from "@soulcodex/core";
 import {
   fetchHorizonsReference,
   type SupportedHorizonsBody,
@@ -27,14 +29,8 @@ export interface BirthData {
   timezone?: string;
 }
 
-export type PlacementStatus =
-  | "verified"
-  | "calculated_pending_independent_verification"
-  | "pending_ephemeris"
-  | "requires_verified_birth_time"
-  | "requires_location";
-
-export interface PlacementCandidate {
+// Internal-only candidate representation during calculation
+interface InternalCandidate {
   sign: string;
   longitude: number;
   source: string;
@@ -43,31 +39,13 @@ export interface PlacementCandidate {
   inputTimestamp: string;
 }
 
-export interface PlacementProvenance {
-  source: string;
-  engine: string;
-  calculatedAt: string;
-  inputTimestamp: string;
-  candidateSource: string;
-  candidateEngine: string;
-  candidateCalculatedAt: string;
-  referenceSource: string;
-  referenceEngine: string;
-  referenceCalculatedAt: string;
-  policyId: string;
-  evidenceReceiptId: string;
-  evidenceArtifactId: string;
-  longitudeDeltaDegrees: number;
-}
-
-export interface PlacementVerification {
+// Server-side placement verification using canonical types
+export interface PlacementVerification extends PlacementLike {
   sign: string | null;
-  status: PlacementStatus;
-  confidence: number | null;
-  source: string | null;
+  verificationStatus: VerificationState;
+  evidence?: PlacementEvidence | null;
   reason?: string;
-  candidate?: PlacementCandidate;
-  provenance?: PlacementProvenance;
+  internalCandidate?: InternalCandidate;
   verificationFailure?: {
     reason: string;
     attemptedAt: string;
@@ -157,7 +135,7 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
   return Number.isNaN(utc.getTime()) ? null : utc;
 }
 
-function calculateCandidate(body: Body, timestamp: Date): PlacementCandidate {
+function calculateCandidate(body: Body, timestamp: Date): InternalCandidate {
   const vector = GeoVector(body as any, timestamp, true);
   const longitude = normalizeLongitude(Ecliptic(vector).elon);
 
@@ -171,15 +149,17 @@ function calculateCandidate(body: Body, timestamp: Date): PlacementCandidate {
   };
 }
 
-function pendingCandidatePlacement(candidate: PlacementCandidate): PlacementVerification {
+function pendingCandidatePlacement(candidate: InternalCandidate): PlacementVerification {
   return {
-    // Candidate values are deliberately withheld from the authoritative `sign`
-    // field until an independent reference agrees within the release tolerance.
     sign: null,
-    status: "calculated_pending_independent_verification",
-    confidence: null,
-    source: null,
-    candidate,
+    verificationStatus: "pending_independent_verification",
+    evidence: {
+      inputTimestamp: candidate.inputTimestamp,
+      candidateSource: candidate.source,
+      candidateEngine: candidate.engine,
+      candidateCalculatedAt: candidate.calculatedAt,
+    },
+    internalCandidate: candidate,
     reason:
       "Calculated by one trusted ephemeris engine; independent comparison is still required before interpretation",
   };
@@ -190,9 +170,7 @@ function getSunPlacement(birthData: BirthData): PlacementVerification {
   if (!timestamp) {
     return {
       sign: null,
-      status: "pending_ephemeris",
-      confidence: null,
-      source: null,
+      verificationStatus: "pending_ephemeris",
       reason: "A valid birth date is required for ephemeris calculation",
     };
   }
@@ -202,9 +180,7 @@ function getSunPlacement(birthData: BirthData): PlacementVerification {
   } catch {
     return {
       sign: null,
-      status: "pending_ephemeris",
-      confidence: null,
-      source: null,
+      verificationStatus: "pending_ephemeris",
       reason: "Ephemeris calculation failed safely; no placement was promoted",
     };
   }
@@ -214,9 +190,7 @@ function getMoonPlacement(birthData: BirthData): PlacementVerification {
   if (!birthData.birthTime) {
     return {
       sign: null,
-      status: "requires_verified_birth_time",
-      confidence: null,
-      source: null,
+      verificationStatus: "requires_verified_birth_time",
       reason: "Birth time required for Moon sign calculation",
     };
   }
@@ -224,9 +198,7 @@ function getMoonPlacement(birthData: BirthData): PlacementVerification {
   if (!birthData.timezone) {
     return {
       sign: null,
-      status: "requires_verified_birth_time",
-      confidence: null,
-      source: null,
+      verificationStatus: "requires_verified_birth_time",
       reason: "Timezone required to convert the entered birth time to UTC",
     };
   }
@@ -235,9 +207,7 @@ function getMoonPlacement(birthData: BirthData): PlacementVerification {
   if (!timestamp) {
     return {
       sign: null,
-      status: "pending_ephemeris",
-      confidence: null,
-      source: null,
+      verificationStatus: "pending_ephemeris",
       reason: "Birth date, time, or timezone could not be converted safely",
     };
   }
@@ -247,9 +217,7 @@ function getMoonPlacement(birthData: BirthData): PlacementVerification {
   } catch {
     return {
       sign: null,
-      status: "pending_ephemeris",
-      confidence: null,
-      source: null,
+      verificationStatus: "pending_ephemeris",
       reason: "Ephemeris calculation failed safely; no placement was promoted",
     };
   }
@@ -259,9 +227,7 @@ function getRisingPlacement(birthData: BirthData): PlacementVerification {
   if (!birthData.birthTime || !birthData.timezone) {
     return {
       sign: null,
-      status: "requires_verified_birth_time",
-      confidence: null,
-      source: null,
+      verificationStatus: "requires_verified_birth_time",
       reason: "Verified birth time and timezone required for Rising sign calculation",
     };
   }
@@ -269,18 +235,14 @@ function getRisingPlacement(birthData: BirthData): PlacementVerification {
   if (birthData.latitude === undefined || birthData.longitude === undefined) {
     return {
       sign: null,
-      status: "requires_location",
-      confidence: null,
-      source: null,
+      verificationStatus: "requires_location",
       reason: "Precise birth coordinates required for Rising sign calculation",
     };
   }
 
   return {
     sign: null,
-    status: "pending_ephemeris",
-    confidence: null,
-    source: null,
+    verificationStatus: "pending_ephemeris",
     reason:
       "Ascendant calculation remains intentionally blocked until its formula and independent reference suite are validated",
   };
@@ -290,10 +252,10 @@ function candidateForBody(
   body: VerifiableBody,
   placement: PlacementVerification,
 ): EphemerisCandidate | null {
-  if (!placement.candidate) return null;
+  if (!placement.internalCandidate) return null;
   return {
     body,
-    ...placement.candidate,
+    ...placement.internalCandidate,
   };
 }
 
@@ -307,18 +269,8 @@ function verifiedPlacement(
 
   return {
     sign: result.sign,
-    status: "verified",
-    confidence: 1,
-    source,
-    candidate: {
-      sign: candidate.sign,
-      longitude: candidate.longitude,
-      source: candidate.source,
-      engine: candidate.engine,
-      calculatedAt: candidate.calculatedAt,
-      inputTimestamp: candidate.inputTimestamp,
-    },
-    provenance: {
+    verificationStatus: "verified",
+    evidence: {
       source,
       engine,
       calculatedAt: result.verifiedAt,
@@ -333,6 +285,15 @@ function verifiedPlacement(
       evidenceReceiptId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.receiptRunId,
       evidenceArtifactId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.artifactId,
       longitudeDeltaDegrees: result.longitudeDeltaDegrees,
+      confidence: 1,
+    },
+    internalCandidate: {
+      sign: candidate.sign,
+      longitude: candidate.longitude,
+      source: candidate.source,
+      engine: candidate.engine,
+      calculatedAt: candidate.calculatedAt,
+      inputTimestamp: candidate.inputTimestamp,
     },
     reason:
       "Astronomical longitude and zodiac sign independently agreed within the approved production tolerance",
@@ -385,13 +346,13 @@ function buildVerificationSummary(
   birthData: BirthData,
 ): AstrologyData["verification"] {
   const verifiedBodies: VerifiableBody[] = [];
-  if (sun.status === "verified") verifiedBodies.push("Sun");
-  if (moon.status === "verified") verifiedBodies.push("Moon");
+  if (sun.verificationStatus === "verified") verifiedBodies.push("Sun");
+  if (moon.verificationStatus === "verified") verifiedBodies.push("Moon");
 
   const unresolvedBodies = [
-    sun.status !== "verified" ? "Sun" : null,
-    moon.status !== "verified" ? "Moon" : null,
-    rising.status !== "verified" ? "Ascendant" : null,
+    sun.verificationStatus !== "verified" ? "Sun" : null,
+    moon.verificationStatus !== "verified" ? "Moon" : null,
+    rising.verificationStatus !== "verified" ? "Ascendant" : null,
   ].filter((value): value is string => Boolean(value));
 
   const missingData: string[] = [];
@@ -400,9 +361,9 @@ function buildVerificationSummary(
   if (birthData.latitude === undefined || birthData.longitude === undefined) {
     missingData.push("precise_location");
   }
-  if (sun.status !== "verified") missingData.push("independent_sun_verification");
-  if (moon.status !== "verified") missingData.push("independent_moon_verification");
-  if (rising.status !== "verified") missingData.push("validated_ascendant_engine");
+  if (sun.verificationStatus !== "verified") missingData.push("independent_sun_verification");
+  if (moon.verificationStatus !== "verified") missingData.push("independent_moon_verification");
+  if (rising.verificationStatus !== "verified") missingData.push("validated_ascendant_engine");
 
   return {
     complete: unresolvedBodies.length === 0,
@@ -454,7 +415,7 @@ export async function calculateVerifiedAstrology(
   if (!canVerifyTimedPlacements) {
     return {
       ...candidateData,
-      sun: candidateData.sun.candidate
+      sun: candidateData.sun.internalCandidate
         ? {
             ...candidateData.sun,
             reason:

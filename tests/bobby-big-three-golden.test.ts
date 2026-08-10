@@ -51,27 +51,27 @@ test("Bobby's raw birth inputs verify as Virgo Sun, Virgo Moon, and Scorpio Risi
     referenceFetcher,
   });
 
-  assert.equal(result.sun.status, "verified");
+  assert.equal(result.sun.verificationStatus, "verified");
   assert.equal(result.sun.sign, "Virgo");
-  assert.equal(result.sun.candidate?.inputTimestamp, "1990-09-17T15:11:00.000Z");
-  assert.ok(result.sun.provenance);
-  assert.ok(result.sun.provenance.longitudeDeltaDegrees <= 0.001);
+  assert.equal(result.sun.internalCandidate?.inputTimestamp, "1990-09-17T15:11:00.000Z");
+  assert.ok(result.sun.evidence);
+  assert.ok(result.sun.evidence.longitudeDeltaDegrees <= 0.001);
 
-  assert.equal(result.moon.status, "verified");
+  assert.equal(result.moon.verificationStatus, "verified");
   assert.equal(result.moon.sign, "Virgo");
-  assert.equal(result.moon.candidate?.inputTimestamp, "1990-09-17T15:11:00.000Z");
-  assert.ok(result.moon.provenance);
-  assert.ok(result.moon.provenance.longitudeDeltaDegrees <= 0.001);
+  assert.equal(result.moon.internalCandidate?.inputTimestamp, "1990-09-17T15:11:00.000Z");
+  assert.ok(result.moon.evidence);
+  assert.ok(result.moon.evidence.longitudeDeltaDegrees <= 0.001);
 
-  assert.equal(result.rising.status, "verified");
+  assert.equal(result.rising.verificationStatus, "verified");
   assert.equal(result.rising.sign, "Scorpio");
-  assert.equal(result.rising.candidate?.inputTimestamp, "1990-09-17T15:11:00.000Z");
-  assert.ok(result.rising.candidate);
-  assert.ok(result.rising.candidate.longitude > 227.3);
-  assert.ok(result.rising.candidate.longitude < 227.33);
-  assert.ok(result.rising.provenance);
-  assert.equal(result.rising.provenance.policyId, "ASTRO-ASCENDANT-v1");
-  assert.ok(result.rising.provenance.longitudeDeltaDegrees <= 0.01);
+  assert.equal(result.rising.internalCandidate?.inputTimestamp, "1990-09-17T15:11:00.000Z");
+  assert.ok(result.rising.internalCandidate);
+  assert.ok(result.rising.internalCandidate.longitude > 227.3);
+  assert.ok(result.rising.internalCandidate.longitude < 227.33);
+  assert.ok(result.rising.evidence);
+  assert.equal(result.rising.evidence.policyId, "ASTRO-ASCENDANT-v1");
+  assert.ok(result.rising.evidence.longitudeDeltaDegrees <= 0.01);
 
   assert.equal(result.verification.complete, true);
   assert.deepEqual(result.verification.unresolvedBodies, []);
