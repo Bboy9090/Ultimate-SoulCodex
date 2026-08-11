@@ -295,7 +295,7 @@ export async function runLiveEphemerisEvidenceMatrix(
 
     for (const body of fixture.bodies) {
       const placement = body === "Sun" ? astrology.sun : astrology.moon;
-      const candidate = placement.candidate;
+      const candidate = placement.internalCandidate;
       if (!candidate) {
         throw new Error(`candidate_missing:${fixture.id}:${body}`);
       }

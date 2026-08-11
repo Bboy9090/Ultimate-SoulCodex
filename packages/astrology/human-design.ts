@@ -1,6 +1,7 @@
 import { calculateAstrology } from './astrology';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
+import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core/evidence-ledger';
 
 // Human Design Gates mapped to their correct centers and meanings
 const HD_GATES = {
@@ -251,6 +252,83 @@ export interface HumanDesignData {
   };
 }
 
+/**
+ * Unresolved reasons for Human Design calculation failure.
+ * Indicates why calculation cannot proceed with exact reasons.
+ */
+export type HumanDesignUnresolvedReason =
+  | 'requires_exact_birth_time'
+  | 'invalid_birth_date'
+  | 'malformed_birth_time'
+  | 'invalid_timezone'
+  | 'timezone_resolution_failed'
+  | 'invalid_coordinates'
+  | 'missing_birth_date'
+  | 'missing_birth_time'
+  | 'missing_timezone'
+  | 'missing_coordinates';
+
+/**
+ * Resolved Human Design chart with all calculated values.
+ * Returned only when birth date, time, timezone, and coordinates are valid.
+ */
+export interface HumanDesignResolved extends HumanDesignData {
+  status: 'resolved';
+}
+
+/**
+ * Unresolved Human Design result.
+ * Returned when any required input is missing, invalid, or resolution fails.
+ * All calculation fields are explicitly undefined to signal failure.
+ */
+export interface HumanDesignUnresolved {
+  status: 'unresolved';
+  reason: HumanDesignUnresolvedReason;
+  type?: undefined;
+  strategy?: undefined;
+  authority?: undefined;
+  profile?: undefined;
+  definition?: undefined;
+  centers?: undefined;
+  channels?: undefined;
+  activations?: undefined;
+  activatedGates?: undefined;
+  incarnationCross?: undefined;
+  variables?: undefined;
+}
+
+/**
+ * Discriminated union result type for Human Design calculation.
+ * Always has status field to distinguish resolved vs. unresolved.
+ * Never produces 0-valued gates, placeholder profiles, or guessed charts.
+ */
+export type HumanDesignResult = HumanDesignResolved | HumanDesignUnresolved;
+
+/**
+ * Timezone resolution with source tracking.
+ * Indicates which of 3 paths was used to resolve the timezone.
+ */
+export interface TimezoneResolution {
+  timezone: string;
+  source: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
+}
+
+/**
+ * Forensic metadata for 88° solar arc calculation.
+ * Captures structured provenance for reconstructing the calculation.
+ */
+export interface SolarArcForensics {
+  configuredSolarArc: number;           // 87.975 constant
+  actualSolarArc: number;               // computed from bisection
+  iterationCount: number;               // bisection loop count
+  finalSearchWindowDays: number;        // maxDays - minDays final value
+  finalToleranceDays: number;           // tolerance achieved
+  resolvedTimezone: string;             // final timezone used
+  timezoneResolutionSource: 'supplied_iana' | 'coordinate_lookup' | 'abbreviation_mapping';
+  algorithmId: string;                  // 'human-design.design-solar-arc'
+  algorithmVersion: string;             // '1.0.0'
+}
+
 // Convert zodiac sign name to base degree offset
 function signToOffset(sign: string): number {
   const signs: { [key: string]: number } = {
@@ -477,23 +555,71 @@ function calculateDefinition(centers: any, channels: any[]): string {
   }
 }
 
-function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): string {
-  if (inputTimezone.includes('/')) {
-    return inputTimezone;
+function isValidDate(dateStr: string): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  // Reject invalid month/day ranges
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+
+  // Round-trip validation: ensure JavaScript doesn't normalize the date
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function isValidTime(timeStr: string): boolean {
+  if (!timeStr || typeof timeStr !== 'string') return false;
+  if (!/^\d{2}:\d{2}$/.test(timeStr)) return false;
+
+  const [hoursStr, minutesStr] = timeStr.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+
+  // Validate ranges
+  if (hours < 0 || hours > 23) return false;
+  if (minutes < 0 || minutes > 59) return false;
+
+  return true;
+}
+
+function isValidCoordinates(latStr: string, lonStr: string): boolean {
+  if (!latStr || typeof latStr !== 'string' || !lonStr || typeof lonStr !== 'string') {
+    return false;
   }
-  
-  try {
-    const timezones = geoTz.find(latitude, longitude);
-    if (timezones && timezones.length > 0) {
-      return timezones[0];
-    }
-  } catch (error) {
-    console.warn('Geo-tz lookup failed, falling back to mapping:', error);
-  }
-  
+
+  const lat = parseFloat(latStr);
+  const lon = parseFloat(lonStr);
+
+  // Check if parsed successfully and are finite numbers
+  if (!isFinite(lat) || !isFinite(lon)) return false;
+
+  // Validate latitude range: -90 to +90
+  if (lat < -90 || lat > 90) return false;
+
+  // Validate longitude range: -180 to +180
+  if (lon < -180 || lon > 180) return false;
+
+  return true;
+}
+
+function isValidTimezone(tzStr: string): boolean {
+  if (!tzStr || typeof tzStr !== 'string') return false;
+
+  // Check if it's a mappable abbreviation
   const timezoneMap: { [key: string]: string } = {
     'EST': 'America/New_York',
-    'EDT': 'America/New_York', 
+    'EDT': 'America/New_York',
     'CST': 'America/Chicago',
     'CDT': 'America/Chicago',
     'MST': 'America/Denver',
@@ -505,16 +631,82 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
     'CET': 'Europe/Paris',
     'CEST': 'Europe/Paris'
   };
-  
-  const mapped = timezoneMap[inputTimezone.toUpperCase()];
-  if (mapped) {
-    return mapped;
+
+  if (tzStr.toUpperCase() in timezoneMap) {
+    return true;
   }
-  
-  return 'UTC';
+
+  // Validate IANA format using Intl.DateTimeFormat (authoritative timezone database)
+  // Invalid zones throw TypeError
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tzStr });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function calculateHumanDesign(birthData: {
+type TimezoneResolutionResult =
+  | TimezoneResolution
+  | { error: 'invalid_timezone' }
+  | { error: 'timezone_resolution_failed' };
+
+function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): TimezoneResolutionResult | null {
+  const timezoneMap: { [key: string]: string } = {
+    'EST': 'America/New_York',
+    'EDT': 'America/New_York',
+    'CST': 'America/Chicago',
+    'CDT': 'America/Chicago',
+    'MST': 'America/Denver',
+    'MDT': 'America/Denver',
+    'PST': 'America/Los_Angeles',
+    'PDT': 'America/Los_Angeles',
+    'GMT': 'Europe/London',
+    'BST': 'Europe/London',
+    'CET': 'Europe/Paris',
+    'CEST': 'Europe/Paris'
+  };
+
+  // Case 1: Timezone supplied - validate and accept if real
+  if (inputTimezone && inputTimezone.trim().length > 0) {
+    // Check if it's a mappable abbreviation
+    const mapped = timezoneMap[inputTimezone.toUpperCase()];
+    if (mapped) {
+      return { timezone: mapped, source: 'abbreviation_mapping' };
+    }
+
+    // Check if it's a valid IANA timezone (contains /)
+    if (inputTimezone.includes('/')) {
+      try {
+        Intl.DateTimeFormat(undefined, { timeZone: inputTimezone });
+        return { timezone: inputTimezone, source: 'supplied_iana' };
+      } catch {
+        // Supplied IANA format but not valid - fail closed with explicit error
+        return { error: 'invalid_timezone' };
+      }
+    }
+
+    // Timezone supplied but doesn't match abbreviation or valid IANA
+    // This is an explicitly bogus timezone (e.g., "Mars/Olympus", "Foo/Bar", "XYZ")
+    return { error: 'invalid_timezone' };
+  }
+
+  // Case 2: No timezone supplied - try coordinate-based lookup
+  // This is semantically clean: no timezone hint + valid coordinates = infer from location
+  try {
+    const timezones = geoTz.find(latitude, longitude);
+    if (timezones && timezones.length > 0) {
+      return { timezone: timezones[0], source: 'coordinate_lookup' };
+    }
+  } catch (error) {
+    console.warn('Geo-tz lookup failed:', error);
+  }
+
+  // FAIL-CLOSED: No timezone supplied and lookup failed
+  return { error: 'timezone_resolution_failed' };
+}
+
+function calculateHumanDesignInternal(birthData: {
   name: string;
   birthDate: string;
   birthTime: string;
@@ -522,24 +714,93 @@ export function calculateHumanDesign(birthData: {
   latitude: string;
   longitude: string;
   timezone: string;
-}): HumanDesignData {
-  // Get astrological data first (conscious/personality)
-  const astroData = calculateAstrology(birthData);
+}): { result: HumanDesignResult; forensics?: SolarArcForensics } {
+  // FAIL-CLOSED: Validate all inputs BEFORE any astrology calculation
 
-  // Return unresolved Human Design if birth time is missing
-  // Activations are absent (not fabricated with zero values)
-  if (!birthData.birthTime) {
+  // Validate birth date
+  if (!birthData.birthDate) {
     return {
-      type: "unresolved",
-      strategy: "requires_verified_birth_time",
-      authority: "unknown",
-      profile: "unknown",
-      definition: "unknown",
-      centers: {},
-      channels: [],
-      // activations intentionally absent: unresolved state cannot calculate them
+      result: {
+        status: 'unresolved',
+        reason: 'missing_birth_date',
+      }
     };
   }
+
+  if (!isValidDate(birthData.birthDate)) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'invalid_birth_date',
+      }
+    };
+  }
+
+  // Validate birth time
+  if (!birthData.birthTime) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'missing_birth_time',
+      }
+    };
+  }
+
+  if (!isValidTime(birthData.birthTime)) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'malformed_birth_time',
+      }
+    };
+  }
+
+  // Validate coordinates first (always required)
+  if (!birthData.latitude || !birthData.longitude) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'missing_coordinates',
+      }
+    };
+  }
+
+  if (!isValidCoordinates(birthData.latitude, birthData.longitude)) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'invalid_coordinates',
+      }
+    };
+  }
+
+  // Resolve timezone with coordinates. Timezone can be:
+  // - Valid IANA (e.g., "America/New_York")
+  // - Valid abbreviation (e.g., "EST")
+  // - Empty/missing (will attempt coordinate lookup)
+  // - Bogus (e.g., "Mars/Olympus") - will fail
+  const timezoneResolution = resolveHDTimezone(
+    birthData.timezone || '',
+    parseFloat(birthData.latitude),
+    parseFloat(birthData.longitude)
+  );
+
+  if (!timezoneResolution || 'error' in timezoneResolution) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: (timezoneResolution && 'error' in timezoneResolution)
+          ? timezoneResolution.error
+          : 'timezone_resolution_failed',
+      }
+    };
+  }
+
+  const resolvedTimezone = timezoneResolution.timezone;
+  const timezoneResolutionSource = timezoneResolution.source;
+
+  // Get astrological data (conscious/personality)
+  const astroData = calculateAstrology(birthData);
 
   // Calculate 88° of solar arc before birth for unconscious/design data
   // Human Design uses exactly 88° of solar arc, not a fixed number of days
@@ -553,20 +814,13 @@ export function calculateHumanDesign(birthData: {
   let targetLongitude = birthSunLongitude - DESIGN_SOLAR_ARC;
   if (targetLongitude < 0) targetLongitude += 360;
 
-  // Resolve timezone properly
-  const resolvedTimezone = resolveHDTimezone(
-    birthData.timezone,
-    parseFloat(birthData.latitude),
-    parseFloat(birthData.longitude)
-  );
-
-  // Create birth time in the correct timezone
+  // Create birth time in the correct timezone (timezone already validated and resolved)
   const [year, month, day] = birthData.birthDate.split('-').map(Number);
   const [hours, minutes] = birthData.birthTime.split(':').map(Number);
   const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-  
+
   const birthTimeUTC = fromZonedTime(new Date(localTimeString), resolvedTimezone);
-  
+
   // Find the date when Sun was at target longitude using bisection
   // The Sun moves forward, so we search backwards from birth
   let minDays = 80;  // Minimum days to search (Sun at faster speed)
@@ -574,57 +828,74 @@ export function calculateHumanDesign(birthData: {
   let iteration = 0;
   const maxIterations = 20;
   let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - (88 * 24 * 60 * 60 * 1000));
-  
+
   while (iteration < maxIterations && (maxDays - minDays) > 0.01) {
     const midDays = (minDays + maxDays) / 2;
     const testTimeUTC = new Date(birthTimeUTC.getTime() - (midDays * 24 * 60 * 60 * 1000));
     const testTimeLocal = toZonedTime(testTimeUTC, resolvedTimezone);
-    
+
     const testYear = testTimeLocal.getFullYear();
     const testMonth = String(testTimeLocal.getMonth() + 1).padStart(2, '0');
     const testDay = String(testTimeLocal.getDate()).padStart(2, '0');
     const testHours = String(testTimeLocal.getHours()).padStart(2, '0');
     const testMinutes = String(testTimeLocal.getMinutes()).padStart(2, '0');
-    
+
     const testAstro = calculateAstrology({
       ...birthData,
       birthDate: `${testYear}-${testMonth}-${testDay}`,
       birthTime: `${testHours}:${testMinutes}`
     });
-    
+
     const testSunLongitude = calculateAbsoluteLongitude(testAstro.planets.sun.sign, testAstro.planets.sun.degree);
-    
+
     // Calculate angular distance (accounting for 360° wrap)
     let diff = testSunLongitude - targetLongitude;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
-    
+
     // If test Sun is ahead of target, we need to go back more days
     if (diff > 0) {
       minDays = midDays;
     } else {
       maxDays = midDays;
     }
-    
+
     unconsciousTimeUTC = testTimeUTC;
     iteration++;
   }
-  
+
+  // Capture final solar arc forensics for evidence
+  const finalSearchWindowDays = maxDays - minDays;
+  const finalToleranceDays = (maxDays - minDays) / 2;
+
   const unconsciousTimeLocal = toZonedTime(unconsciousTimeUTC, resolvedTimezone);
   const unconsciousYear = unconsciousTimeLocal.getFullYear();
   const unconsciousMonth = String(unconsciousTimeLocal.getMonth() + 1).padStart(2, '0');
   const unconsciousDay = String(unconsciousTimeLocal.getDate()).padStart(2, '0');
   const unconsciousHours = String(unconsciousTimeLocal.getHours()).padStart(2, '0');
   const unconsciousMinutes = String(unconsciousTimeLocal.getMinutes()).padStart(2, '0');
-  
+
   const unconsciousAstroData = calculateAstrology({
     ...birthData,
     birthDate: `${unconsciousYear}-${unconsciousMonth}-${unconsciousDay}`,
     birthTime: `${unconsciousHours}:${unconsciousMinutes}`
   });
-  
+
   const unconsciousSunLongitude = calculateAbsoluteLongitude(unconsciousAstroData.planets.sun.sign, unconsciousAstroData.planets.sun.degree);
   const actualArc = (birthSunLongitude - unconsciousSunLongitude + 360) % 360;
+
+  // Store solar arc forensics for evidence receipt
+  const solarArcForensics = {
+    configuredSolarArc: DESIGN_SOLAR_ARC,
+    actualSolarArc: actualArc,
+    iterationCount: iteration,
+    finalSearchWindowDays,
+    finalToleranceDays,
+    resolvedTimezone,
+    timezoneResolutionSource,
+    algorithmId: 'human-design.design-solar-arc',
+    algorithmVersion: '1.0.0'
+  };
 
   // Helper to calculate gate and line from sign and degree
   const toGateAndLine = (sign: string, degree: number) => 
@@ -760,23 +1031,40 @@ export function calculateHumanDesign(birthData: {
   };
 
   return {
-    type,
-    strategy,
-    authority,
-    profile,
-    definition,
-    centers,
-    channels,
-    activations,
-    activatedGates: Array.from(new Set(allGates)),
-    incarnationCross,
-    variables
+    result: {
+      status: 'resolved',
+      type,
+      strategy,
+      authority,
+      profile,
+      definition,
+      centers,
+      channels,
+      activations,
+      activatedGates: Array.from(new Set(allGates)),
+      incarnationCross,
+      variables
+    },
+    forensics: solarArcForensics
   };
+}
+
+export function calculateHumanDesign(birthData: {
+  name: string;
+  birthDate: string;
+  birthTime: string;
+  birthLocation: string;
+  latitude: string;
+  longitude: string;
+  timezone: string;
+}): HumanDesignResult {
+  const { result } = calculateHumanDesignInternal(birthData);
+  return result;
 }
 
 export function getHumanDesignInterpretation(hdData: HumanDesignData): string {
   const { type, strategy, authority, profile } = hdData;
-  
+
   const typeDescriptions = {
     "Manifestor": "You are here to initiate and impact others. Your aura is closed and repelling, designed to make things happen without waiting for others.",
     "Generator": "You are here to respond and build. Your life force energy is sustainable when you're doing what you love and responding to what comes to you.",
@@ -786,4 +1074,299 @@ export function getHumanDesignInterpretation(hdData: HumanDesignData): string {
   };
 
   return `As a ${type}, ${typeDescriptions[type as keyof typeof typeDescriptions] || typeDescriptions.Generator} Your strategy is "${strategy}" and your authority is "${authority}". Your profile ${profile} indicates your life theme and how you interact with the world. This combination creates your unique energetic blueprint for navigating life authentically.`;
+}
+
+export function calculateHumanDesignWithEvidence(birthData: {
+  name: string;
+  birthDate: string;
+  birthTime: string;
+  birthLocation: string;
+  latitude: string;
+  longitude: string;
+  timezone: string;
+}): {
+  result?: HumanDesignResult;
+  evidence: EvidenceEntry[];
+} {
+  const entries: EvidenceEntry[] = [];
+  const internalResult = calculateHumanDesignInternal(birthData);
+  const result = internalResult.result;
+  const forensics = internalResult.forensics;
+
+  // Track input validation
+  const dateValid = isValidDate(birthData.birthDate);
+  const timeValid = isValidTime(birthData.birthTime);
+  const tzValid = isValidTimezone(birthData.timezone);
+  const coordsValid = isValidCoordinates(birthData.latitude, birthData.longitude);
+  const allInputsValid = dateValid && timeValid && tzValid && coordsValid;
+
+  if (result.status === 'unresolved') {
+    // Create evidence for unresolved calculation
+    entries.push(
+      createEvidenceEntry(
+        'human-design',
+        `Human Design Chart`,
+        `UNRESOLVED: ${result.reason}`,
+        10,
+        'unverified',
+        {
+          inputsUsed: [
+            `birth_date_${birthData.birthDate || 'missing'}`,
+            `birth_time_${birthData.birthTime || 'missing'}`,
+            `timezone_${birthData.timezone || 'missing'}`,
+            `location_${birthData.latitude || 'missing'},${birthData.longitude || 'missing'}`,
+          ],
+          reasoning: [
+            `Input validation failed: ${result.reason}`,
+            `Date valid: ${dateValid}, Time valid: ${timeValid}, Timezone valid: ${tzValid}, Coordinates valid: ${coordsValid}`,
+          ],
+          limitations: [
+            'Chart calculation requires all inputs to be valid and properly formatted',
+            'Birth time is absolute requirement; no noon fallback or guesses permitted',
+          ],
+          formulaId: 'human-design.calculation',
+          formulaVersion: '1.0.0',
+          calculationStatus: 'unresolved',
+          inputState: allInputsValid ? 'valid' : 'invalid',
+          calculatedAt: new Date().toISOString(),
+        }
+      )
+    );
+
+    return { evidence: entries };
+  }
+
+  // Type assertion: result is now definitely resolved
+  const resolvedResult = result as HumanDesignResolved;
+
+  // Create evidence entries for each HD component
+  entries.push(
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Type',
+      resolvedResult.type,
+      95,
+      'high',
+      {
+        inputsUsed: [
+          'defined_centers_count',
+          'motor_throat_connections',
+          'sacral_definition',
+        ],
+        reasoning: [
+          `Sacral defined: ${resolvedResult.centers.Sacral.defined}`,
+          `Throat defined: ${resolvedResult.centers.Throat.defined}`,
+          `Type determined by center definitions and connections`,
+        ],
+        limitations: [
+          'Type accuracy depends on accurate birth time and location',
+          '88° solar arc calculation affects design authority',
+        ],
+        formulaId: 'human-design.type',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Strategy',
+      resolvedResult.strategy,
+      95,
+      'high',
+      {
+        inputsUsed: ['type'],
+        reasoning: [
+          `Strategy "${resolvedResult.strategy}" derived from type "${resolvedResult.type}"`,
+          'Strategy determines how to make decisions and take action',
+        ],
+        limitations: [
+          'Strategy is deterministic from type; no independent verification',
+        ],
+        formulaId: 'human-design.strategy',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Authority',
+      resolvedResult.authority,
+      95,
+      'high',
+      {
+        inputsUsed: [
+          `solar_plexus_defined_${resolvedResult.centers['Solar Plexus'].defined}`,
+          `sacral_defined_${resolvedResult.centers.Sacral.defined}`,
+          `spleen_defined_${resolvedResult.centers.Spleen.defined}`,
+          `g_center_defined_${resolvedResult.centers.G.defined}`,
+        ],
+        reasoning: [
+          'Authority determined by hierarchical priority of defined centers',
+          `Solar Plexus defined: ${resolvedResult.centers['Solar Plexus'].defined}`,
+          `Sacral defined: ${resolvedResult.centers.Sacral.defined}`,
+          `Spleen defined: ${resolvedResult.centers.Spleen.defined}`,
+        ],
+        limitations: [
+          'Authority accuracy depends on accurate center definitions',
+        ],
+        formulaId: 'human-design.authority',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Profile',
+      resolvedResult.profile,
+      90,
+      'high',
+      {
+        inputsUsed: [
+          `conscious_sun_line_${resolvedResult.activations!.conscious!.sun!.line}`,
+          `unconscious_sun_line_${resolvedResult.activations!.unconscious!.sun!.line}`,
+        ],
+        reasoning: [
+          `Profile ${resolvedResult.profile} determined by conscious and unconscious sun line positions`,
+          `Conscious line: ${resolvedResult.activations!.conscious!.sun!.line}, Unconscious line: ${resolvedResult.activations!.unconscious!.sun!.line}`,
+          '88° solar arc precisely calculated for unconscious line',
+        ],
+        limitations: [
+          'Profile accuracy depends on precise birth time and 88° arc calculation',
+          'Unconscious sun requires calculating position 88° before birth',
+        ],
+        formulaId: 'human-design.profile',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Definition',
+      resolvedResult.definition,
+      90,
+      'high',
+      {
+        inputsUsed: [
+          `defined_channels_count_${resolvedResult.channels.filter(ch => ch.defined).length}`,
+          `connected_components_count`,
+        ],
+        reasoning: [
+          `Definition type: ${resolvedResult.definition}`,
+          `Determined by ${resolvedResult.channels.filter(ch => ch.defined).length} defined channels`,
+          'Connected components analyzed for relationship pattern',
+        ],
+        limitations: [
+          'Definition depends on accurate gate activations',
+        ],
+        formulaId: 'human-design.definition',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Incarnation Cross',
+      resolvedResult.incarnationCross,
+      85,
+      'high',
+      {
+        inputsUsed: [
+          `conscious_sun_gate_${resolvedResult.activations!.conscious!.sun!.gate}`,
+        ],
+        reasoning: [
+          `Incarnation cross named after conscious Sun gate ${resolvedResult.activations!.conscious!.sun!.gate}`,
+          `Gate name: ${HD_GATES[resolvedResult.activations!.conscious!.sun!.gate as keyof typeof HD_GATES].name}`,
+          'Represents life purpose and overarching life theme',
+        ],
+        limitations: [
+          'Incarnation cross is symbolic representation of life purpose theme',
+        ],
+        formulaId: 'human-design.incarnation-cross',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+
+    createEvidenceEntry(
+      'human-design',
+      'Human Design Activations (88° Solar Arc)',
+      {
+        conscious_gates: resolvedResult.activations!.conscious,
+        unconscious_gates: resolvedResult.activations!.unconscious,
+        total_activated_gates: resolvedResult.activatedGates.length,
+      },
+      85,
+      'high',
+      {
+        inputsUsed: [
+          `birth_time_${birthData.birthTime}`,
+          `birth_date_${birthData.birthDate}`,
+          'astrology_planetary_positions',
+          ...(forensics ? [
+            `configured_solar_arc_${forensics.configuredSolarArc}`,
+            `actual_solar_arc_${forensics.actualSolarArc.toFixed(3)}`,
+            `iteration_count_${forensics.iterationCount}`,
+            `timezone_resolution_source_${forensics.timezoneResolutionSource}`,
+          ] : []),
+        ],
+        reasoning: [
+          `88° solar arc (configured: ${forensics?.configuredSolarArc || 87.975}°, actual: ${forensics?.actualSolarArc.toFixed(3) || 'unknown'}°) precisely calculated for design authority`,
+          `${resolvedResult.activatedGates.length} gates activated across conscious and unconscious`,
+          'Activations determined by planetary positions at birth and 88° before birth',
+          ...(forensics ? [
+            `Bisection algorithm completed in ${forensics.iterationCount} iterations`,
+            `Final search window: ${forensics.finalSearchWindowDays.toFixed(4)} days (±${forensics.finalToleranceDays.toFixed(4)} days tolerance)`,
+            `Timezone resolved via ${forensics.timezoneResolutionSource}`,
+          ] : []),
+        ],
+        limitations: [
+          'Activation accuracy depends on precise birth time and timezone',
+          '88° arc is empirically calibrated constant (87.975° target)',
+          'Astrology ephemeris used for position calculations',
+          ...(forensics ? [
+            `Achieved arc within ${forensics.finalToleranceDays.toFixed(4)} days of tolerance`,
+          ] : []),
+        ],
+        formulaId: 'human-design.activations',
+        formulaVersion: '1.0.0',
+        calculationStatus: 'resolved',
+        inputState: 'valid',
+        calculatedAt: new Date().toISOString(),
+        metadata: forensics ? {
+          solar_arc_receipt: {
+            configuredSolarArc: forensics.configuredSolarArc,
+            actualSolarArc: forensics.actualSolarArc,
+            iterationCount: forensics.iterationCount,
+            finalSearchWindowDays: forensics.finalSearchWindowDays,
+            finalToleranceDays: forensics.finalToleranceDays,
+            resolvedTimezone: forensics.resolvedTimezone,
+            timezoneResolutionSource: forensics.timezoneResolutionSource,
+            algorithmId: forensics.algorithmId,
+            algorithmVersion: forensics.algorithmVersion,
+          }
+        } : undefined,
+      }
+    )
+  );
+
+  return { result: resolvedResult, evidence: entries };
+
+  return { result, evidence: entries };
 }
