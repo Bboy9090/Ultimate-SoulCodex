@@ -5,8 +5,12 @@
  * behavioral traits, and symbolic archetypes into a stable identity fingerprint.
  */
 
-export type GalacticConfidence = 'verified' | 'partial' | 'unverified';
-export type SourceConfidence = 'verified' | 'partial' | 'missing';
+/**
+ * Coverage states represent data completeness, not verification status.
+ * Complete data ≠ verified data (Diamond Doctrine principle).
+ */
+export type SourceCoverageState = 'complete' | 'partial' | 'missing';
+export type GalacticCoverageState = 'high' | 'partial' | 'insufficient';
 
 export interface GalacticAstrologyInput {
   sun?: string;
@@ -19,7 +23,7 @@ export interface GalacticAstrologyInput {
   dominantModalities?: string[];
   houseEmphasis?: string[];
   majorAspects?: string[];
-  confidence: SourceConfidence;
+  coverage: SourceCoverageState;
 }
 
 export interface GalacticHumanDesignInput {
@@ -35,7 +39,7 @@ export interface GalacticHumanDesignInput {
   channels?: string[];
   gates?: string[];
   incarnationCross?: string;
-  confidence: SourceConfidence;
+  coverage: SourceCoverageState;
 }
 
 export interface GalacticNumerologyInput {
@@ -45,7 +49,7 @@ export interface GalacticNumerologyInput {
   soulUrgeNumber?: number | string;
   personalityNumber?: number | string;
   maturityNumber?: number | string;
-  confidence: SourceConfidence;
+  coverage: SourceCoverageState;
 }
 
 export interface GalacticBehaviorInput {
@@ -85,9 +89,9 @@ export interface GalacticAxisScore {
 }
 
 export interface SourceCoverageResult {
-  astrology: SourceConfidence;
-  humanDesign: SourceConfidence;
-  numerology: SourceConfidence;
+  astrology: SourceCoverageState;
+  humanDesign: SourceCoverageState;
+  numerology: SourceCoverageState;
   behavioralTraitCount: number;
 }
 
@@ -96,7 +100,7 @@ export interface GalacticCodeResult {
   version: 'galactic-code-v1';
   fingerprint: string;
   shortCode: string;
-  confidence: GalacticConfidence;
+  coverage: GalacticCoverageState;
   sourceCoverage: SourceCoverageResult;
   codename: string;
   designation: string;
@@ -136,7 +140,7 @@ export interface NormalizedGalacticInput {
     dominantModalities: string[];
     houseEmphasis: string[];
     majorAspects: string[];
-    confidence: SourceConfidence;
+    coverage: SourceCoverageState;
   };
   humanDesign: {
     type: string | null;
@@ -149,7 +153,7 @@ export interface NormalizedGalacticInput {
     channels: string[];
     gates: string[];
     incarnationCross: string | null;
-    confidence: SourceConfidence;
+    coverage: SourceCoverageState;
   };
   numerology: {
     lifePath: string | null;
@@ -158,7 +162,7 @@ export interface NormalizedGalacticInput {
     soulUrgeNumber: string | null;
     personalityNumber: string | null;
     maturityNumber: string | null;
-    confidence: SourceConfidence;
+    coverage: SourceCoverageState;
   };
   behavior: {
     traits: string[];
