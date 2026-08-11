@@ -3,6 +3,7 @@ import type { StoredProfile } from "./ActiveProfileRepository";
 
 type PlacementRecord = {
   status?: string;
+  verificationStatus?: string;
   sign?: string | null;
 };
 
