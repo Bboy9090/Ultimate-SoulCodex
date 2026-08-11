@@ -165,9 +165,20 @@ function calculateSourceCoverage(
         ? 'partial'
         : 'missing';
 
-  // Numerology coverage: partial when Life Path exists (it's deterministic, not independently verified)
+  // Numerology coverage: complete when all six fields are present, partial if some are present
+  const numerologyFieldsPresent = [
+    normalized.numerology.lifePath,
+    normalized.numerology.birthdayNumber,
+    normalized.numerology.expressionNumber,
+    normalized.numerology.soulUrgeNumber,
+    normalized.numerology.personalityNumber,
+    normalized.numerology.maturityNumber,
+  ].filter(Boolean).length;
+
   const numerologyCoverage =
-    normalized.numerology.lifePath ? 'partial' : 'missing';
+    numerologyFieldsPresent === 6 ? 'complete' :
+    numerologyFieldsPresent > 0 ? 'partial' :
+    'missing';
 
   return {
     astrology: astrologyCoverage,
