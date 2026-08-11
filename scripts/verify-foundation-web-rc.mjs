@@ -82,7 +82,7 @@ check(
   "ASTRO-01",
   "Production astrology integrates independent Ascendant verification",
   files.astrology.includes("verifyAscendant") &&
-    files.astrology.includes('rising.status === "verified"') &&
+    files.astrology.includes('rising.verificationStatus === "verified"') &&
     files.astrology.includes('(["Ascendant"] as const)') &&
     files.astrology.includes("ASTRO-ASCENDANT-v1") &&
     files.astrology.includes("withRisingVerificationSummary(base, rising)"),
