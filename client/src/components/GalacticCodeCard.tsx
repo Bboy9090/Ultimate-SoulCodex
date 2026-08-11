@@ -11,10 +11,10 @@ interface GalacticCodeCardProps {
 }
 
 export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
-  const confidenceColor = {
-    verified: 'bg-emerald-900/30 border-emerald-500/50 text-emerald-200',
+  const coverageColor = {
+    high: 'bg-emerald-900/30 border-emerald-500/50 text-emerald-200',
     partial: 'bg-amber-900/30 border-amber-500/50 text-amber-200',
-    unverified: 'bg-slate-900/30 border-slate-500/50 text-slate-200',
+    insufficient: 'bg-slate-900/30 border-slate-500/50 text-slate-200',
   };
 
   return (
@@ -36,9 +36,9 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
           </div>
 
           <div
-            className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${confidenceColor[code.confidence]}`}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${coverageColor[code.coverage]}`}
           >
-            {code.confidence}
+            {code.coverage}
           </div>
         </div>
 
@@ -74,19 +74,19 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
         <div className="grid grid-cols-4 gap-2 pt-2 text-center text-xs">
           <div className="rounded bg-slate-800/50 p-2">
             <p className="text-slate-400">Astrology</p>
-            <p className={`font-semibold ${code.sourceCoverage.astrology === 'verified' ? 'text-emerald-300' : code.sourceCoverage.astrology === 'partial' ? 'text-amber-300' : 'text-slate-400'}`}>
+            <p className={`font-semibold ${code.sourceCoverage.astrology === 'complete' ? 'text-emerald-300' : code.sourceCoverage.astrology === 'partial' ? 'text-amber-300' : 'text-slate-400'}`}>
               {code.sourceCoverage.astrology}
             </p>
           </div>
           <div className="rounded bg-slate-800/50 p-2">
             <p className="text-slate-400">HD</p>
-            <p className={`font-semibold ${code.sourceCoverage.humanDesign === 'verified' ? 'text-emerald-300' : code.sourceCoverage.humanDesign === 'partial' ? 'text-amber-300' : 'text-slate-400'}`}>
+            <p className={`font-semibold ${code.sourceCoverage.humanDesign === 'complete' ? 'text-emerald-300' : code.sourceCoverage.humanDesign === 'partial' ? 'text-amber-300' : 'text-slate-400'}`}>
               {code.sourceCoverage.humanDesign}
             </p>
           </div>
           <div className="rounded bg-slate-800/50 p-2">
             <p className="text-slate-400">Numerology</p>
-            <p className={`font-semibold ${code.sourceCoverage.numerology === 'verified' ? 'text-emerald-300' : code.sourceCoverage.numerology === 'partial' ? 'text-amber-300' : 'text-slate-400'}`}>
+            <p className={`font-semibold ${code.sourceCoverage.numerology === 'complete' ? 'text-emerald-300' : code.sourceCoverage.numerology === 'partial' ? 'text-amber-300' : 'text-slate-400'}`}>
               {code.sourceCoverage.numerology}
             </p>
           </div>
