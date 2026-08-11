@@ -191,6 +191,29 @@ const HD_CHANNELS = [
   { gates: [47, 64], name: "Channel of Abstraction", description: "A design of mental activity mixed with clarity", connects: ["Ajna", "Head"] }
 ];
 
+type GateLine = { gate: number; line: number };
+
+type ActivationPlanets = {
+  sun: GateLine;
+  earth: GateLine;
+  moon: GateLine;
+  northNode: GateLine;
+  southNode: GateLine;
+  mercury: GateLine;
+  venus: GateLine;
+  mars: GateLine;
+  jupiter: GateLine;
+  saturn: GateLine;
+  uranus: GateLine;
+  neptune: GateLine;
+  pluto: GateLine;
+};
+
+type ActivationsStructure = {
+  conscious: ActivationPlanets;
+  unconscious: ActivationPlanets;
+};
+
 export interface HumanDesignData {
   type: string;
   strategy: string;
@@ -269,11 +292,39 @@ export type HumanDesignUnresolvedReason =
   | 'missing_coordinates';
 
 /**
- * Resolved Human Design chart with all calculated values.
+ * Resolved Human Design chart with all calculated values guaranteed to be present.
  * Returned only when birth date, time, timezone, and coordinates are valid.
+ * All fields are required (not optional) to guarantee completeness.
  */
-export interface HumanDesignResolved extends HumanDesignData {
+export interface HumanDesignResolved {
   status: 'resolved';
+  type: string;
+  strategy: string;
+  authority: string;
+  profile: string;
+  definition: string;
+  centers: {
+    [centerName: string]: {
+      defined: boolean;
+      gates: number[];
+      description: string;
+    };
+  };
+  channels: Array<{
+    gates: number[];
+    name: string;
+    description: string;
+    defined: boolean;
+  }>;
+  activations: ActivationsStructure;
+  activatedGates: number[];
+  incarnationCross: string;
+  variables: {
+    cognition: string;
+    environment: string;
+    motivation: string;
+    perspective: string;
+  };
 }
 
 /**
