@@ -9,7 +9,7 @@
  * - convert missing values to null
  */
 
-import type { GalacticCodeInput, NormalizedGalacticInput, SourceConfidence } from '../../../shared/galactic-code/types';
+import type { GalacticCodeInput, NormalizedGalacticInput, SourceCoverageState } from '../../../shared/galactic-code/types';
 
 function normalizeText(value?: string): string | null {
   if (!value) return null;
@@ -25,11 +25,11 @@ function normalizeArray(values?: string[]): string[] {
   )].sort();
 }
 
-function normalizeConfidence(confidence?: SourceConfidence): SourceConfidence {
-  if (!confidence || !['verified', 'partial', 'missing'].includes(confidence)) {
+function normalizeCoverage(coverage?: SourceCoverageState): SourceCoverageState {
+  if (!coverage || !['complete', 'partial', 'missing'].includes(coverage)) {
     return 'missing';
   }
-  return confidence;
+  return coverage;
 }
 
 export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGalacticInput {
@@ -49,7 +49,7 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
       dominantModalities: normalizeArray(input.astrology.dominantModalities),
       houseEmphasis: normalizeArray(input.astrology.houseEmphasis),
       majorAspects: normalizeArray(input.astrology.majorAspects),
-      confidence: normalizeConfidence(input.astrology.confidence),
+      coverage: normalizeCoverage(input.astrology.coverage),
     },
     humanDesign: {
       type: normalizeText(input.humanDesign.type),
@@ -62,7 +62,7 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
       channels: normalizeArray(input.humanDesign.channels),
       gates: normalizeArray(input.humanDesign.gates),
       incarnationCross: normalizeText(input.humanDesign.incarnationCross),
-      confidence: normalizeConfidence(input.humanDesign.confidence),
+      coverage: normalizeCoverage(input.humanDesign.coverage),
     },
     numerology: {
       lifePath: normalizeText(String(input.numerology.lifePath ?? '')),
@@ -71,7 +71,7 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
       soulUrgeNumber: normalizeText(String(input.numerology.soulUrgeNumber ?? '')),
       personalityNumber: normalizeText(String(input.numerology.personalityNumber ?? '')),
       maturityNumber: normalizeText(String(input.numerology.maturityNumber ?? '')),
-      confidence: normalizeConfidence(input.numerology.confidence),
+      coverage: normalizeCoverage(input.numerology.coverage),
     },
     behavior: {
       traits: normalizeArray(input.behavior.traits),

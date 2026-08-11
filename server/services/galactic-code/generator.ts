@@ -7,7 +7,7 @@
 import type {
   GalacticCodeInput,
   GalacticCodeResult,
-  GalacticConfidence,
+  GalacticCoverageState,
   SourceCoverageResult,
 } from '../../../shared/galactic-code/types';
 import { normalizeGalacticInput, extractHashableInput } from './normalize';
@@ -46,9 +46,9 @@ const FUNCTION_WORDS = [
 
 export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResult {
   // Step 1: Validate minimum system coverage
-  const hasAstrology = input.astrology.confidence !== 'missing' && input.astrology.sun;
-  const hasHD = input.humanDesign.confidence !== 'missing' && input.humanDesign.type;
-  const hasNumerology = input.numerology.confidence !== 'missing' && input.numerology.lifePath;
+  const hasAstrology = input.astrology.coverage !== 'missing' && input.astrology.sun;
+  const hasHD = input.humanDesign.coverage !== 'missing' && input.humanDesign.type;
+  const hasNumerology = input.numerology.coverage !== 'missing' && input.numerology.lifePath;
   const traitCount = (input.behavior.traits || []).length;
 
   const systemCount = [hasAstrology, hasHD, hasNumerology].filter(Boolean).length;
@@ -64,9 +64,9 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
   const hashableInput = extractHashableInput(normalized);
   const { fingerprint, shortCode, uniquenessKey } = createGalacticFingerprint(hashableInput);
 
-  // Step 4: Calculate source coverage and confidence
+  // Step 4: Calculate source coverage and galactic coverage
   const sourceCoverage = calculateSourceCoverage(normalized, traitCount);
-  const confidence = calculateConfidence(sourceCoverage, systemCount);
+  const coverage = calculateCoverage(sourceCoverage, systemCount);
 
   // Step 5: Score axes
   const allAxes = scoreAxes(normalized);
@@ -122,7 +122,7 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
     version: 'galactic-code-v1',
     fingerprint,
     shortCode,
-    confidence,
+    coverage,
     sourceCoverage,
     codename,
     designation,
@@ -145,56 +145,75 @@ function calculateSourceCoverage(
   normalized: any,
   traitCount: number
 ): SourceCoverageResult {
-  const astrologyConfidence =
+  // Astrology coverage: complete when all three bodies are present (Sun/Moon/Rising)
+  const astrologyCoverage =
     normalized.astrology.sun &&
     normalized.astrology.moon &&
     normalized.astrology.rising
-      ? 'verified'
+      ? 'complete'
       : normalized.astrology.sun
         ? 'partial'
         : 'missing';
 
-  const hdConfidence =
+  // Human Design coverage: complete when core fields are present (type/authority/profile)
+  const hdCoverage =
     normalized.humanDesign.type &&
     normalized.humanDesign.authority &&
     normalized.humanDesign.profile
-      ? 'verified'
+      ? 'complete'
       : normalized.humanDesign.type
         ? 'partial'
         : 'missing';
 
-  const numerologyConfidence =
-    normalized.numerology.lifePath ? 'partial' : 'missing';
+  // Numerology coverage: complete when all six fields are present, partial if some are present
+  const numerologyFieldsPresent = [
+    normalized.numerology.lifePath,
+    normalized.numerology.birthdayNumber,
+    normalized.numerology.expressionNumber,
+    normalized.numerology.soulUrgeNumber,
+    normalized.numerology.personalityNumber,
+    normalized.numerology.maturityNumber,
+  ].filter(Boolean).length;
+
+  const numerologyCoverage =
+    numerologyFieldsPresent === 6 ? 'complete' :
+    numerologyFieldsPresent > 0 ? 'partial' :
+    'missing';
 
   return {
-    astrology: astrologyConfidence,
-    humanDesign: hdConfidence,
-    numerology: numerologyConfidence,
+    astrology: astrologyCoverage,
+    humanDesign: hdCoverage,
+    numerology: numerologyCoverage,
     behavioralTraitCount: traitCount,
   };
 }
 
-function calculateConfidence(coverage: SourceCoverageResult, systemCount: number): GalacticConfidence {
-  const verifiedCount = [
-    coverage.astrology === 'verified' ? 1 : 0,
-    coverage.humanDesign === 'verified' ? 1 : 0,
-    coverage.numerology === 'verified' ? 1 : 0,
+function calculateCoverage(sourceCoverage: SourceCoverageResult, systemCount: number): GalacticCoverageState {
+  // Count how many systems have complete data (not including 'partial')
+  const completeCount = [
+    sourceCoverage.astrology === 'complete' ? 1 : 0,
+    sourceCoverage.humanDesign === 'complete' ? 1 : 0,
   ].reduce((a, b) => a + b);
 
-  const hasBehavior = coverage.behavioralTraitCount >= 5;
+  const hasBehavior = sourceCoverage.behavioralTraitCount >= 5;
 
-  if (verifiedCount >= 2 && (coverage.astrology === 'verified' || coverage.humanDesign === 'verified')) {
-    if (hasBehavior) {
-      return 'verified';
-    }
+  // High coverage: at least 2 complete systems (astrology + HD) plus behavioral traits
+  if (completeCount >= 2 && hasBehavior) {
+    return 'high';
+  }
+
+  // High/Partial boundary: at least 2 complete systems but insufficient behavioral traits
+  if (completeCount >= 2) {
     return 'partial';
   }
 
-  if (systemCount >= 2 && verifiedCount >= 1) {
+  // Partial coverage: 2+ systems present, even if not complete
+  if (systemCount >= 2) {
     return 'partial';
   }
 
-  return 'unverified';
+  // Insufficient: less than 2 systems or insufficient data
+  return 'insufficient';
 }
 
 function determineLegacyFunction(lifePathStr?: string, builderMode?: string | null): string {
