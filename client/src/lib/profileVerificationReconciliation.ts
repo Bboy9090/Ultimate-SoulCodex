@@ -52,7 +52,7 @@ export function getVerifiedAstrologySign(
   body: "sun" | "moon" | "rising",
 ): string | null {
   const placement = astrology?.[body];
-  if (placement?.status !== "verified") return null;
+  if (placement?.verificationStatus !== "verified") return null;
   return typeof placement.sign === "string" && placement.sign.trim()
     ? placement.sign
     : null;
