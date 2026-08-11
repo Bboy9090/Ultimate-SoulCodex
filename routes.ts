@@ -12,7 +12,7 @@ import { calculateNumerology } from "./services/numerology";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype, generateIntegrationAnalysis, generatePersonalizedInsights } from "./services/archetype";
 import { generateBiography, generateDailyGuidance } from "./services/openai";
-import { calculateHumanDesign } from "./services/human-design";
+import { calculateHumanDesign } from "@soulcodex/astrology";
 import { generateDailyInsights } from "./services/daily-insights";
 import { calculateCompatibility } from "./services/compatibility";
 import { generateCompatibilityInsights } from "./services/compatibility-insights";

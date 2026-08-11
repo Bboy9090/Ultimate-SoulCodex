@@ -13,7 +13,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
         const result = calculateAstrology(birthData);
 
         assert.strictEqual(result.sun.sign, null);
-        assert.strictEqual(result.sun.status, "pending_ephemeris");
+        assert.strictEqual(result.sun.verificationStatus, "pending_ephemeris");
         assert.strictEqual(result.sun.confidence, null);
         assert.strictEqual(result.sun.source, null);
         assert.ok(result.sun.reason);
@@ -27,7 +27,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
         const result = calculateAstrology(birthData);
 
         assert.strictEqual(result.moon.sign, null);
-        assert.strictEqual(result.moon.status, "requires_verified_birth_time");
+        assert.strictEqual(result.moon.verificationStatus, "requires_verified_birth_time");
         assert.strictEqual(result.moon.confidence, null);
         assert.match(result.moon.reason || "", /Birth time required/);
       });
@@ -40,7 +40,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
         const result = calculateAstrology(birthData);
 
         assert.strictEqual(result.rising.sign, null);
-        assert.strictEqual(result.rising.status, "requires_verified_birth_time");
+        assert.strictEqual(result.rising.verificationStatus, "requires_verified_birth_time");
       });
 
       it("returns rising placement with requires_location when no location", () => {
@@ -52,7 +52,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
         const result = calculateAstrology(birthData);
 
         assert.strictEqual(result.rising.sign, null);
-        assert.strictEqual(result.rising.status, "requires_location");
+        assert.strictEqual(result.rising.verificationStatus, "requires_location");
       });
 
       it("never invents approximate sun signs from date boundaries", () => {
@@ -68,7 +68,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
           const result = calculateAstrology(birthData);
 
           assert.strictEqual(result.sun.sign, null);
-          assert.strictEqual(result.sun.status, "pending_ephemeris");
+          assert.strictEqual(result.sun.verificationStatus, "pending_ephemeris");
           assert.match(result.sun.reason || "", /does not|failed|no placement/i);
         });
       });
@@ -132,7 +132,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
       const result = calculateAstrology(birthData);
 
       assert.strictEqual(result.sun.sign, null);
-      assert.notStrictEqual(result.sun.status, "verified");
+      assert.notStrictEqual(result.sun.verificationStatus, "verified");
       assert.ok(!result.verification.verifiedBodies.includes("Sun"));
     });
 
@@ -144,7 +144,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
       const result = calculateAstrology(birthData);
 
       assert.strictEqual(result.moon.sign, null);
-      assert.notStrictEqual(result.moon.status, "verified");
+      assert.notStrictEqual(result.moon.verificationStatus, "verified");
       assert.ok(!result.verification.verifiedBodies.includes("Moon"));
     });
 
@@ -157,8 +157,8 @@ describe("Gate 3: No Silent Data Upgrades", () => {
       const result = calculateAstrology(birthData);
 
       assert.strictEqual(result.rising.sign, null);
-      assert.notStrictEqual(result.rising.status, "verified");
-      assert.strictEqual(result.rising.status, "requires_verified_birth_time");
+      assert.notStrictEqual(result.rising.verificationStatus, "verified");
+      assert.strictEqual(result.rising.verificationStatus, "requires_verified_birth_time");
     });
 
     it("FAILS if verification.complete is true with missing data", () => {
@@ -185,7 +185,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
             : body === "Moon"
               ? result.moon
               : result.rising;
-        assert.notStrictEqual(placement.status, "verified");
+        assert.notStrictEqual(placement.verificationStatus, "verified");
       });
     });
   });

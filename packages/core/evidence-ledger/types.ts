@@ -28,6 +28,7 @@ export interface EvidenceEntry {
   id: string;
   engine: EngineType;
   claim: string;
+  name?: string; // Alias for claim, used in some contexts
   value: string | number | boolean | Record<string, unknown>;
   confidence: number; // 0-100
   confidenceLabel: EvidenceConfidenceLevel;
@@ -42,6 +43,7 @@ export interface EvidenceEntry {
   calculationStatus?: 'resolved' | 'unresolved'; // Whether calculation produced a valid result
   inputState?: 'valid' | 'partial' | 'missing' | 'invalid'; // Actual input validity (not caller-supplied)
   calculatedAt?: string; // ISO 8601 timestamp when calculation was performed
+  metadata?: Record<string, unknown>; // Optional structured metadata (e.g., solar_arc_receipt)
 }
 
 export interface EvidenceLedger {
