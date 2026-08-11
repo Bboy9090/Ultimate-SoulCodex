@@ -51,6 +51,7 @@ jobs:
           tests/bobby-big-three-golden.test.ts
           tests/human-design-trust.test.ts
           tests/profile-verification-reconciliation.test.ts
+          tests/active-profile-contract.test.ts
           tests/billing-security.test.ts
 
       - name: Run Foundation Web RC Invariant Audit
