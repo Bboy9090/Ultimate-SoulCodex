@@ -123,7 +123,7 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
     assert.strictEqual(result.coverage, 'partial');
     assert.strictEqual(result.sourceCoverage.astrology, 'complete');
     assert.strictEqual(result.sourceCoverage.humanDesign, 'complete');
-    assert.strictEqual(result.sourceCoverage.numerology, 'partial');
+    assert.strictEqual(result.sourceCoverage.numerology, 'complete');
   });
 
   await t.test('missing Human Design lowers coverage', () => {
