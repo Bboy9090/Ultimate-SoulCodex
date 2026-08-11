@@ -52,6 +52,7 @@ jobs:
           tests/human-design-trust.test.ts
           tests/profile-verification-reconciliation.test.ts
           tests/active-profile-contract.test.ts
+          tests/ui-backend-consistency-contract.test.ts
           tests/billing-security.test.ts
 
       - name: Run Foundation Web RC Invariant Audit
