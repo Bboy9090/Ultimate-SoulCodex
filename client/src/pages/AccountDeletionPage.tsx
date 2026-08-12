@@ -20,16 +20,30 @@ export default function AccountDeletionPage() {
 
     try {
       await apiRequest("DELETE", "/api/auth/account");
-      await clearOfflineProfiles();
-
-      queryClient.clear();
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.replace("/?accountDeleted=1");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Deletion failed. Please try again.");
       setIsDeleting(false);
+      return;
     }
+
+    // Server deletion is irreversible. From this point forward local cleanup is
+    // best-effort but unconditional so a blocked IndexedDB connection cannot
+    // leave canonical Web Storage behind or make the app report account deletion
+    // as failed after the server has already removed the account.
+    try {
+      await clearOfflineProfiles();
+    } catch (cause) {
+      console.warn("[AccountDeletion] offline profile cleanup incomplete after server deletion", cause);
+    }
+
+    queryClient.clear();
+    try {
+      localStorage.clear();
+    } catch {}
+    try {
+      sessionStorage.clear();
+    } catch {}
+    window.location.replace("/?accountDeleted=1");
   };
 
   return (
