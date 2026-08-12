@@ -2,83 +2,96 @@
 
 **Base:** `main@b5cdcc25665fb1d9c1cc7a087252e69c02b49624`  
 **Branch:** `gate4/profile-lifecycle-consistency`  
-**Status:** **IN PROGRESS — PROFILE LIFECYCLE HARDENED, EXACT-HEAD CI REQUIRED**
+**Validated candidate:** `b3bfe57b1a32dc9a3672a91cc7305d790d2aaae9`  
+**Status:** **REGRESSION + BROWSER LIFECYCLE VALIDATED — CONSUMER DELETION/RESTART JOURNEY OPEN**
 
 ## Purpose
 
-Gate 4 proves that a user's Soul Codex state remains coherent through creation, persistence, restart, offline use, migration, corruption, reset, and deletion. The gate is intentionally broader than a happy-path browser session: stale or malformed local data must not silently become trusted current state, and reset/deletion must not permit old state to reappear.
+Gate 4 proves that a user's Soul Codex state remains coherent through creation, persistence, restart, offline use, migration, corruption, reset, and deletion. Stale or malformed local data must not silently become trusted current state, and reset/deletion must not permit old state to reappear.
 
-## Defects Found on Main
+## Release-Critical Defects Repaired
 
-The active-profile repository and its existing tests disagreed in three release-critical places:
+The active-profile repository and its existing tests disagreed in several release-critical places:
 
-1. Malformed canonical JSON was swallowed by the storage helper and therefore looked absent rather than corrupted.
-2. Legacy migration passed unversioned legacy payloads through the current-schema validator, which requires schema version 1, making the documented migration path unreachable for ordinary legacy data.
-3. Reset removed only the canonical key. Remaining legacy keys could be discovered on the next load and resurrect a profile the user had just cleared.
+1. Malformed canonical JSON was swallowed and could be misclassified as missing.
+2. Unversioned legacy profiles could not satisfy the current schema validator, making the documented migration path inconsistent.
+3. Reset removed only the canonical key, allowing stale legacy profile sources to resurrect.
+4. Raw onboarding form data (`onboardingData`) could be promoted into a completed canonical profile solely because it contained a birth date.
+5. Root storage/account-deletion tests depended on schema exports for `localUsers` and `accessCodeRedemptions` that were absent, preventing the deletion contract from executing correctly in the Gate 4 lane.
 
-These are lifecycle consistency defects, not cosmetic behavior.
-
-## Remediation on This Branch
+## Remediation
 
 `client/src/lib/ActiveProfileRepository.ts` now:
 
 - distinguishes missing, loaded, and corrupted storage reads;
-- treats an existing corrupted canonical profile as authoritative failure and does not silently fall back to stale legacy data;
-- migrates eligible unversioned legacy payloads into the current schema with schema/timestamp normalization;
-- refuses to silently rewrite an explicitly incompatible legacy schema version;
-- immediately reads back and validates canonical saves/migrations;
-- clears the canonical profile plus every legacy profile source on reset so stale state cannot resurrect.
+- treats corrupted canonical state as authoritative failure instead of falling back to stale legacy data;
+- migrates eligible unversioned **profile** payloads into schema v1 with read-back validation;
+- refuses to silently rewrite explicitly incompatible schema versions;
+- excludes raw onboarding questionnaire/form data from completed-profile migration;
+- clears canonical and legacy profile sources on reset so stale state cannot resurrect.
 
-## Regression Coverage
+Root schema/storage support was also corrected so account-deletion storage contracts execute against the intended in-memory storage implementation instead of failing during module initialization.
 
-`client/src/lib/__tests__/ActiveProfileRepository.test.ts` now locks:
+## Exact-Head Evidence
 
-- canonical save/load and schema/timestamp enrichment;
-- malformed canonical data reported as corrupted;
-- corrupted canonical data remaining fail-closed even when a valid legacy profile exists;
-- unversioned legacy migration into schema v1;
-- migration read-back becoming the canonical loaded profile;
-- explicitly incompatible legacy schema not silently rewritten;
-- generate → close/reopen → compatibility identity continuity;
-- reset removing canonical and legacy profile sources.
+Candidate `b3bfe57b1a32dc9a3672a91cc7305d790d2aaae9` completed the following pull-request workflows:
 
-## Existing End-to-End Lifecycle Evidence on Main
+- `Ultimate SoulCodex CI` — **PASS** (run `31580830072`)
+- `CI Tests` — **PASS** (run `31580829965`)
+- `Gate 4 Lifecycle Validation` — **PASS** (run `31580829935`)
+- `Live Ephemeris Evidence` — **FAIL** (run `31580830029`) because the separate live NASA/JPL evidence dependency remains unavailable. Gate 4 does not reclassify that independent failure.
 
-The repository already contains a PWA browser journey in `tests/pwa/foundation-profile-journey.spec.mjs`. It creates one profile, verifies the canonical local profile identity, traverses Reading/Timeline/Compatibility, closes the persistent browser context, reopens it, enters supported offline mode, and verifies the same profile identity remains stable while service-worker control remains active.
+### Profile and deletion contracts — PASS
 
-The corresponding `.github/workflows/pwa-offline-browser.yml` currently runs manually and on version tags, not on ordinary pull requests. Gate 4 therefore does not claim new exact-head browser evidence from that workflow until it is run against the candidate or promoted into an appropriate release-gate trigger.
+The Gate 4 contract job passed:
 
-## Existing Deletion Evidence on Main
+- focused `ActiveProfileRepository` lifecycle regressions;
+- account-deletion storage contracts for anonymous-session and authenticated-account data;
+- corruption fail-closed behavior;
+- legacy profile migration;
+- onboarding-data non-promotion;
+- reset non-resurrection behavior.
 
-`tests/account-deletion.test.ts` covers storage-layer deletion for:
+### Chromium + WebKit persistent/offline journey — PASS
 
-- anonymous session profile, contacts, frequency logs, push subscriptions, and access-code redemption;
-- authenticated user account, profile-derived assessment data, and access-code redemption.
+The Gate 4 browser job passed on both named browser engines. It:
 
-`package.json` exposes this as `npm run test:account-deletion`. Gate 4 still requires exact-head execution evidence and route/consumer-path reconciliation before deletion is promoted to fully validated consumer behavior.
+- builds the production application/PWA assets;
+- creates and persists the canonical profile;
+- traverses profile-dependent surfaces;
+- closes and reopens persistent browser state;
+- exercises supported offline mode;
+- verifies the same canonical profile identity remains stable after restart/offline use.
 
-## Gate 4 Validation Ladder
+## Consumer Deletion Surface
 
-- **Implemented:** lifecycle repository, PWA persistence path, offline service-worker path, and deletion storage functions exist.
-- **Integrated:** active-profile consumers use the canonical repository and deletion routes connect to storage deletion behavior.
-- **Regression validated:** corruption/migration/reset invariants pass focused automated tests.
-- **Browser lifecycle validated:** one canonical profile survives route traversal, browser restart, and supported offline mode on named browser engines.
-- **Deletion journey validated:** user-visible deletion request removes server and local profile state and does not resurrect after restart.
-- **Release candidate:** all Gate 4 checks pass on the exact release candidate with no unresolved lifecycle contradiction.
+`client/src/pages/AccountDeletionPage.tsx` calls the server deletion endpoint and, after a successful response, clears the query cache, `localStorage`, and `sessionStorage` before replacing the location with `/welcome?accountDeleted=1`.
+
+Storage-level deletion contracts are now exact-head validated. A browser-level deletion journey that performs the user-visible deletion action and then restarts the application to prove the deleted profile cannot reappear remains open and will be tracked as the final Gate 4 closure proof.
+
+## Validation Ladder
+
+- **Implemented:** PASS — lifecycle repository, PWA persistence/offline path, deletion endpoint/UI/storage functions exist.
+- **Integrated:** PASS — canonical profile consumers and deletion surfaces are connected.
+- **Regression validated:** PASS — corruption/migration/onboarding/reset/deletion storage invariants pass exact-head contracts.
+- **Browser lifecycle validated:** PASS — Chromium and WebKit persistence/offline restart journey passes on exact head.
+- **Consumer deletion/restart validated:** OPEN — browser-visible delete → restart → non-resurrection receipt still required.
+- **Gate 4 release candidate:** OPEN until that final consumer deletion/restart proof is recorded.
 
 ## Gate 4 Pass Criteria
 
-- [ ] Exact-head CI passes after profile lifecycle hardening.
-- [ ] Focused ActiveProfileRepository regression suite passes on exact head.
-- [ ] Canonical corrupted state cannot silently fall back to legacy state.
-- [ ] Legacy migration produces a valid current-schema canonical profile.
-- [ ] Reset removes all local profile sources capable of restoring stale identity.
-- [ ] PWA persistent-browser journey passes on the Gate 4 candidate in Chromium and WebKit.
-- [ ] Supported offline restart preserves exactly one canonical profile identity.
-- [ ] Account deletion storage tests pass on exact head.
-- [ ] Consumer deletion flow clears/reconciles local active-profile state after server deletion.
-- [ ] Reopen after deletion/reset cannot resurrect the deleted profile.
+- [x] Exact-head core CI passes after profile lifecycle hardening.
+- [x] Focused ActiveProfileRepository regression suite passes on exact head.
+- [x] Canonical corrupted state cannot silently fall back to legacy state.
+- [x] Eligible legacy profile migration produces a valid current-schema canonical profile.
+- [x] Raw onboarding form data cannot become a completed canonical profile through legacy migration.
+- [x] Reset removes all local profile sources capable of restoring stale identity.
+- [x] PWA persistent-browser journey passes on the Gate 4 candidate in Chromium and WebKit.
+- [x] Supported offline restart preserves exactly one canonical profile identity.
+- [x] Account deletion storage tests pass on exact head.
+- [x] Consumer deletion UI clears local/session state after successful server deletion by implementation contract.
+- [ ] Browser-level delete → application restart proves the deleted profile cannot resurrect.
 
 ## Non-Claims
 
-This receipt does not yet declare Gate 4 PASS. It records defects, implemented remediation, and existing evidence surfaces. Exact-head automated results and the full deletion/restart consumer path remain required before closure.
+This receipt does **not** declare full Gate 4 closure yet. It records exact-head regression, storage-deletion, Chromium/WebKit persistence, and offline-restart evidence. The final browser-level consumer deletion/restart proof remains intentionally open.
