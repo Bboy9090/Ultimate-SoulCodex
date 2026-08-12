@@ -12,6 +12,20 @@ async function countRows(db: any, table: any, column: any, value: string) {
   return rows.length;
 }
 
+function reportDriverCause(error: unknown) {
+  const candidate = error as any;
+  const cause = candidate?.cause;
+  if (cause) {
+    console.error("[Gate4DBCause]", {
+      name: cause.name,
+      message: cause.message,
+      code: cause.code,
+      detail: cause.detail,
+      constraint: cause.constraint,
+    });
+  }
+}
+
 async function withServer(app: express.Express, run: (baseUrl: string) => Promise<void>) {
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve, reject) => {
@@ -32,7 +46,7 @@ test("Gate 4: active DELETE /api/auth/account purges session-owned PostgreSQL da
 
   const [{ registerRoutes }, { db }, schema] = await Promise.all([
     import("../server/routes"),
-    import("../db"),
+    import("../server/db"),
     import("../shared/schema"),
   ]);
 
@@ -40,9 +54,8 @@ test("Gate 4: active DELETE /api/auth/account purges session-owned PostgreSQL da
   app.use(express.json());
   await registerRoutes(app);
 
-  // Test-only session bootstrap registered *after* production routes. It uses
-  // the exact express-session middleware that registerRoutes installs, giving
-  // us a genuine signed connect.sid cookie and real server-generated sessionId.
+  // Test-only session bootstrap registered after production routes. It uses the
+  // exact active express-session middleware and returns the server-owned id.
   app.post("/__gate4/session", (req: any, res) => {
     req.session.gate4Proof = true;
     res.json({ sessionId: req.sessionID });
@@ -61,17 +74,22 @@ test("Gate 4: active DELETE /api/auth/account purges session-owned PostgreSQL da
     const profileId = `gate4-profile-${Date.now()}`;
     const redemptionId = `gate4-redemption-${Date.now()}`;
 
-    await db.insert(schema.profiles).values({
-      id: profileId,
-      sessionId,
-      name: "Gate 4 Persistent Delete",
-      birthDate: new Date("1990-09-17T00:00:00.000Z"),
-    });
-    await db.insert(schema.accessCodeRedemptions).values({
-      id: redemptionId,
-      accessCodeId: "gate4-delete-proof",
-      sessionId,
-    });
+    try {
+      await db.insert(schema.profiles).values({
+        id: profileId,
+        sessionId,
+        name: "Gate 4 Persistent Delete",
+        birthDate: new Date("1990-09-17T00:00:00.000Z"),
+      });
+      await db.insert(schema.accessCodeRedemptions).values({
+        id: redemptionId,
+        accessCodeId: "gate4-delete-proof",
+        sessionId,
+      });
+    } catch (error) {
+      reportDriverCause(error);
+      throw error;
+    }
 
     assert.equal(await countRows(db, schema.profiles, schema.profiles.sessionId, sessionId), 1);
     assert.equal(await countRows(db, schema.accessCodeRedemptions, schema.accessCodeRedemptions.sessionId, sessionId), 1);
