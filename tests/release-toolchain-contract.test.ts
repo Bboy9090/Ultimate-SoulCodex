@@ -4,7 +4,10 @@ import test from "node:test";
 
 const iosWorkflowPath = ".github/workflows/build-ios.yml";
 const androidWorkflowPath = ".github/workflows/build-android.yml";
+const gate5WorkflowPath = ".github/workflows/gate5-release-preflight.yml";
+const validatorPath = "scripts/validate-mobile-release.mjs";
 const iosProjectPath = "ios/App/App.xcodeproj/project.pbxproj";
+const iosExportOptionsPath = "ios/App/ExportOptions.plist";
 
 async function text(path: string): Promise<string> {
   return readFile(path, "utf8");
@@ -45,6 +48,22 @@ test("iOS provisioning preflight binds the Apple Team ID to the release bundle I
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
   assert.match(workflow, /test "\$PROFILE_TEAM" = "86NUJ8M3B8"/);
   assert.match(workflow, /test "\$APP_IDENTIFIER" = "86NUJ8M3B8\.app\.soulcodex\.ios"/);
+});
+
+test("iOS release validator checks the same ExportOptions plist consumed by Xcode", async () => {
+  const workflow = await text(iosWorkflowPath);
+  const validator = await text(validatorPath);
+  const exportOptions = await text(iosExportOptionsPath);
+
+  assert.match(workflow, /-exportOptionsPlist ExportOptions\.plist/);
+  assert.match(validator, /ios\/App\/ExportOptions\.plist/);
+  assert.match(exportOptions, /<key>teamID<\/key>\s*<string>86NUJ8M3B8<\/string>/);
+  assert.match(exportOptions, /<key>method<\/key>\s*<string>(app-store|app-store-connect)<\/string>/);
+});
+
+test("Gate 5 preflight runs when Capacitor package identity configuration changes", async () => {
+  const workflow = await text(gate5WorkflowPath);
+  assert.match(workflow, /- "capacitor\.config\.ts"/);
 });
 
 test("Android Play workflow requires signing material and a real AAB", async () => {
