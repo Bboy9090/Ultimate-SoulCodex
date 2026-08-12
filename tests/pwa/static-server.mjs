@@ -59,6 +59,19 @@ const server = http.createServer(async (request, response) => {
   const method = request.method ?? "GET";
   const requestUrl = new URL(request.url ?? "/", `http://${HOST}:${PORT}`);
 
+  // Gate 4 needs one explicit server-backed success path so the real consumer
+  // deletion flow can be exercised through the service-worker/network stack.
+  // All other cloud APIs remain intentionally unavailable in this harness.
+  if (requestUrl.pathname === "/api/auth/account" && method === "DELETE") {
+    request.resume();
+    response.writeHead(200, {
+      "Cache-Control": "no-store",
+      "Content-Type": "application/json; charset=utf-8",
+    });
+    response.end(JSON.stringify({ success: true }));
+    return;
+  }
+
   if (requestUrl.pathname.startsWith("/api/")) {
     request.resume();
     response.writeHead(503, {
