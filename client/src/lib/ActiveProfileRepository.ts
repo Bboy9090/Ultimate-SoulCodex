@@ -12,7 +12,7 @@
  * 5. Recovery messaging (missing, corrupted, wrong version)
  */
 
-import type { VerificationState, PlacementEvidence, PlacementLike } from './placementVerification';
+import type { PlacementLike } from './placementVerification';
 
 export interface StoredProfile {
   // Identification
@@ -84,13 +84,21 @@ export interface ProfileLoadResult {
 const CANONICAL_KEY = "soulcodex.activeProfile.v1";
 const SCHEMA_VERSION = 1;
 
-// Legacy keys to check during migration
-const LEGACY_KEYS = [
+// Only keys that historically stored completed/generated profile-like payloads
+// are eligible for automatic migration. Raw onboarding form state is not a
+// completed profile and must never be promoted merely because birthDate exists.
+const LEGACY_PROFILE_KEYS = [
   "soulProfile",
   "soulCodexReading",
   "soulConfidence",
   "soulGuestProfile",
   "soulGuestConfidence",
+];
+
+// Reset must still clear raw onboarding state so a user asking to start fresh
+// actually starts fresh, even though onboardingData is not migration-eligible.
+const PROFILE_RELATED_KEYS_TO_CLEAR = [
+  ...LEGACY_PROFILE_KEYS,
   "onboardingData",
 ];
 
@@ -101,7 +109,7 @@ type StorageReadResult =
 
 /**
  * Load active profile with migration and validation.
- * Tries canonical key first, then legacy keys.
+ * Tries canonical key first, then legacy completed-profile keys.
  * Never returns both a profile and an error—always one truth.
  */
 export function loadActiveProfile(): ProfileLoadResult {
@@ -132,9 +140,9 @@ export function loadActiveProfile(): ProfileLoadResult {
       };
     }
 
-    // Second: try legacy keys. Legacy payloads may predate schemaVersion, so
-    // validate their minimum contract and normalize them before canonical save.
-    for (const legacyKey of LEGACY_KEYS) {
+    // Second: try legacy completed-profile keys. Legacy payloads may predate
+    // schemaVersion, so validate their minimum contract and normalize them.
+    for (const legacyKey of LEGACY_PROFILE_KEYS) {
       const legacy = readFromKey(legacyKey);
       if (legacy.status !== "loaded") continue;
 
@@ -148,7 +156,8 @@ export function loadActiveProfile(): ProfileLoadResult {
       };
     }
 
-    // Third: nothing usable found
+    // Third: nothing usable found. Raw onboardingData is intentionally ignored
+    // here; it is input state, not evidence that a profile was generated.
     return {
       status: "missing",
       profile: null,
@@ -215,15 +224,14 @@ export function saveActiveProfile(profile: StoredProfile): {
 }
 
 /**
- * Clear every local profile source that can feed the active profile.
- * Removing only the canonical key would allow stale legacy data to resurrect
- * on the next load after logout/reset.
+ * Clear every local profile-related source that could repopulate user state.
+ * Raw onboarding input is cleared here but is never migration-eligible.
  */
 export function clearActiveProfile(): void {
   try {
     localStorage.removeItem(CANONICAL_KEY);
-    for (const legacyKey of LEGACY_KEYS) {
-      localStorage.removeItem(legacyKey);
+    for (const key of PROFILE_RELATED_KEYS_TO_CLEAR) {
+      localStorage.removeItem(key);
     }
   } catch (error) {
     console.error("[ActiveProfileRepository] Clear error:", error);
