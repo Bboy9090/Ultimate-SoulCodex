@@ -114,11 +114,11 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build
-          test -d "build/Build/Products/Debug-iphonesimulator/App.app"
+          test -d "build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app"
 
       - name: Upload iOS simulator artifact
         uses: actions/upload-artifact@v4
         with:
           name: gate2-ios-simulator-app
-          path: ios/App/build/Build/Products/Debug-iphonesimulator/App.app
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app
           retention-days: 7
