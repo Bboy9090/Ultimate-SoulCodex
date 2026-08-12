@@ -112,43 +112,70 @@ export function parseHorizonsLongitude(result: string): number {
   return longitude;
 }
 
+function isRetryableHorizonsStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+async function delay(milliseconds: number): Promise<void> {
+  if (milliseconds <= 0) return;
+  await new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+}
+
 export async function fetchHorizonsReference(
   body: SupportedHorizonsBody,
   inputTimestamp: string,
   options: {
     fetchImpl?: FetchLike;
     timeoutMs?: number;
+    retryAttempts?: number;
+    retryDelayMs?: number;
   } = {},
 ): Promise<IndependentEphemerisReference> {
   const fetchImpl = options.fetchImpl ?? fetch;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 8_000);
+  const retryAttempts = Math.max(1, Math.floor(options.retryAttempts ?? 3));
+  const retryDelayMs = Math.max(0, options.retryDelayMs ?? 350);
+  let response: Response | undefined;
 
-  try {
-    const response = await fetchImpl(buildHorizonsReferenceUrl(body, inputTimestamp), {
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) throw new Error(`horizons_http_${response.status}`);
+  for (let attempt = 1; attempt <= retryAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 8_000);
 
-    const payload = await response.json() as HorizonsPayload;
-    if (payload.error) throw new Error("horizons_api_error");
-    if (!payload.signature?.source?.toLowerCase().includes("jpl")) {
-      throw new Error("horizons_signature_invalid");
+    try {
+      response = await fetchImpl(buildHorizonsReferenceUrl(body, inputTimestamp), {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+    } finally {
+      clearTimeout(timeout);
     }
-    if (!payload.result) throw new Error("horizons_result_missing");
 
-    const longitude = parseHorizonsLongitude(payload.result);
-    return {
-      body,
-      sign: signFromLongitude(longitude),
-      longitude,
-      source: HORIZONS_SOURCE,
-      engine: HORIZONS_ENGINE,
-      calculatedAt: new Date().toISOString(),
-      inputTimestamp: new Date(inputTimestamp).toISOString(),
-    };
-  } finally {
-    clearTimeout(timeout);
+    if (response.ok) break;
+
+    const retryable = isRetryableHorizonsStatus(response.status);
+    if (!retryable || attempt === retryAttempts) {
+      throw new Error(`horizons_http_${response.status}`);
+    }
+
+    await delay(retryDelayMs * attempt);
   }
+
+  if (!response?.ok) throw new Error("horizons_http_unavailable");
+
+  const payload = await response.json() as HorizonsPayload;
+  if (payload.error) throw new Error("horizons_api_error");
+  if (!payload.signature?.source?.toLowerCase().includes("jpl")) {
+    throw new Error("horizons_signature_invalid");
+  }
+  if (!payload.result) throw new Error("horizons_result_missing");
+
+  const longitude = parseHorizonsLongitude(payload.result);
+  return {
+    body,
+    sign: signFromLongitude(longitude),
+    longitude,
+    source: HORIZONS_SOURCE,
+    engine: HORIZONS_ENGINE,
+    calculatedAt: new Date().toISOString(),
+    inputTimestamp: new Date(inputTimestamp).toISOString(),
+  };
 }
