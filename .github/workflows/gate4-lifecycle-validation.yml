@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "client/src/App.tsx"
+      - "client/src/pages/SettingsPage.tsx"
+      - "client/src/pages/AccountDeletionPage.tsx"
       - "client/src/lib/ActiveProfileRepository.ts"
       - "client/src/lib/__tests__/ActiveProfileRepository.test.ts"
       - "tests/gate4-profile-lifecycle.test.ts"
@@ -27,8 +30,15 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
+      - name: Checkout exact candidate head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact candidate SHA
+        run: |
+          echo "candidate_sha=$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -61,13 +71,20 @@ jobs:
           retention-days: 7
 
   persistent-offline-browser:
-    name: Chromium and WebKit persistent/offline journey
+    name: Chromium and WebKit lifecycle journeys
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Checkout exact candidate head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact candidate SHA
+        run: |
+          echo "candidate_sha=$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -90,8 +107,12 @@ jobs:
       - name: Build production application and PWA assets
         run: npm run build
 
-      - name: Run persistent profile and offline restart journey
-        run: npx playwright test tests/pwa/foundation-profile-journey.spec.mjs --config=tests/pwa/playwright.config.mjs
+      - name: Run persistent profile, offline restart, and account deletion restart journeys
+        run: >-
+          npx playwright test
+          tests/pwa/foundation-profile-journey.spec.mjs
+          tests/pwa/account-deletion-restart.spec.mjs
+          --config=tests/pwa/playwright.config.mjs
 
       - name: Upload browser evidence on failure
         if: failure()
