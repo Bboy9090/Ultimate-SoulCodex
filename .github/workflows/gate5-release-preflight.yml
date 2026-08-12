@@ -7,6 +7,7 @@ on:
       - ".github/workflows/build-ios.yml"
       - ".github/workflows/build-android.yml"
       - ".github/workflows/gate5-release-preflight.yml"
+      - "capacitor.config.ts"
       - "scripts/validate-mobile-release.mjs"
       - "ios/**"
       - "android/**"
