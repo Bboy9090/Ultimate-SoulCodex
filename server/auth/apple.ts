@@ -8,14 +8,22 @@ export type AppleIdentity = {
 export class AppleAuthConfigurationError extends Error {}
 export class AppleAuthVerificationError extends Error {}
 
+type AppleTokenClaims = {
+  sub?: unknown;
+  email?: unknown;
+};
+
 type VerifyAppleToken = (
   token: string,
   options: { audience: string; ignoreExpiration: boolean },
-) => Promise<Record<string, unknown>>;
+) => Promise<AppleTokenClaims>;
+
+const defaultAppleVerifier: VerifyAppleToken = (token, options) =>
+  appleSignin.verifyIdToken(token, options);
 
 export async function verifyAppleIdentityToken(
   identityToken: string,
-  verifier: VerifyAppleToken = appleSignin.verifyIdToken as VerifyAppleToken,
+  verifier: VerifyAppleToken = defaultAppleVerifier,
 ): Promise<AppleIdentity> {
   const audience = process.env.APPLE_CLIENT_ID?.trim();
   if (!audience) {
@@ -25,7 +33,7 @@ export async function verifyAppleIdentityToken(
     throw new AppleAuthVerificationError("identityToken is required");
   }
 
-  let claims: Record<string, unknown>;
+  let claims: AppleTokenClaims;
   try {
     claims = await verifier(identityToken, { audience, ignoreExpiration: false });
   } catch {
