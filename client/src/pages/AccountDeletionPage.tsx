@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { IconAlert, IconArrowLeft, IconLock } from "../components/Icons";
 import { apiRequest, queryClient } from "../lib/queryClient";
+import { clearOfflineProfiles } from "../lib/offlineProfileStore";
 
 const DELETE_CONFIRMATION = "DELETE";
 
@@ -19,6 +20,7 @@ export default function AccountDeletionPage() {
 
     try {
       await apiRequest("DELETE", "/api/auth/account");
+      await clearOfflineProfiles();
 
       queryClient.clear();
       localStorage.clear();
