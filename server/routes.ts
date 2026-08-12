@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth } from "../auth";
 import {
   birthDataSchema,
   enneagramAssessmentSchema,
@@ -35,8 +36,6 @@ function finiteCoordinate(value: string | number | undefined): number | undefine
 function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   return {
     ...astrologyData,
-    // Older screens still read these keys. They receive verified values only,
-    // never raw candidates or the blocked Ascendant approximation.
     sunSign:
       astrologyData.sun.verificationStatus === "verified" ? astrologyData.sun.sign : null,
     moonSign:
@@ -49,8 +48,38 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Create a soul profile
-  app.post("/api/profiles", async (req, res) => {
+  await setupAuth(app);
+
+  app.delete("/api/auth/account", async (req: any, res) => {
+    try {
+      const userId = req.user?.id || req.user?.claims?.sub || null;
+      const sessionId = req.sessionID || null;
+
+      if (userId) {
+        await storage.deleteUserAccount(userId);
+      } else if (sessionId) {
+        await storage.deleteSessionData(sessionId);
+      } else {
+        return res.status(400).json({ message: "No account or session data was found to delete." });
+      }
+
+      const finish = () => {
+        res.clearCookie("connect.sid");
+        return res.json({ message: "All your data has been permanently deleted." });
+      };
+
+      if (!req.session) return finish();
+      req.session.destroy((destroyErr: unknown) => {
+        if (destroyErr) console.error("[DeleteAccount] Session destroy failed:", destroyErr);
+        finish();
+      });
+    } catch (error) {
+      console.error("[DeleteAccount] Failed:", error);
+      res.status(500).json({ message: "Failed to delete account data" });
+    }
+  });
+
+  app.post("/api/profiles", async (req: any, res) => {
     try {
       const birthData = birthDataSchema.parse(req.body);
 
@@ -67,16 +96,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         birthData.name,
         birthData.birthDate,
       );
-
       const tarotCards = getTarotBirthCards(birthData.birthDate);
-
-      // Archetype and AI layers receive the evidence-traceable astrology object.
-      // They are not permitted to pull values from legacy sunSign/moonSign keys.
-      const archetypeData = synthesizeArchetype(
-        astrologyData,
-        numerologyData,
-        {},
-      );
+      const archetypeData = synthesizeArchetype(astrologyData, numerologyData, {});
 
       const biography = await generateBiography({
         name: birthData.name,
@@ -97,27 +118,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const profile = await storage.createProfile({
-        userId: null,
+        userId: req.user?.id ?? null,
+        sessionId: req.user?.id ? null : (req.sessionID ?? null),
         name: birthData.name,
         birthDate: new Date(birthData.birthDate),
         birthTime: birthData.birthTime,
         birthLocation: birthData.birthLocation,
         timezone: birthData.timezone,
-        latitude:
-          birthData.latitude === undefined ? null : String(birthData.latitude),
-        longitude:
-          birthData.longitude === undefined ? null : String(birthData.longitude),
+        latitude: birthData.latitude === undefined ? null : String(birthData.latitude),
+        longitude: birthData.longitude === undefined ? null : String(birthData.longitude),
         isPremium: false,
         astrologyData,
         numerologyData,
         personalityData: {},
-        archetypeData: {
-          ...archetypeData,
-          tarotCards,
-        },
+        archetypeData: { ...archetypeData, tarotCards },
         biography,
         dailyGuidance,
       });
+
+      // Force anonymous sessions to persist so their server-owned profile can
+      // be found and deleted later through the same session cookie.
+      if (!req.user && req.session) req.session.profileCreated = true;
 
       res.status(201).json(profile);
     } catch (error) {
@@ -126,13 +147,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get a profile
   app.get("/api/profiles/:id", async (req, res) => {
     try {
       const profile = await storage.getProfile(req.params.id);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
       res.json(profile);
     } catch (error) {
       console.error("Error getting profile:", error);
@@ -140,19 +158,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit Enneagram assessment
   app.post("/api/profiles/:id/enneagram", async (req, res) => {
     try {
       const assessment = enneagramAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
-
       const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
 
       const enneagramResult = calculateEnneagram(assessment.responses);
-
       await storage.createAssessment({
         profileId,
         assessmentType: "enneagram",
@@ -164,13 +177,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(profile.personalityData as any),
         enneagram: enneagramResult,
       };
-
       const archetypeData = synthesizeArchetype(
         profile.astrologyData,
         profile.numerologyData,
         updatedPersonalityData,
       );
-
       const updatedProfile = await storage.updateProfile(profileId, {
         personalityData: updatedPersonalityData,
         archetypeData: {
@@ -178,7 +189,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tarotCards: (profile.archetypeData as any)?.tarotCards,
         },
       });
-
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error processing Enneagram assessment:", error);
@@ -186,19 +196,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit MBTI assessment
   app.post("/api/profiles/:id/mbti", async (req, res) => {
     try {
       const assessment = mbtiAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
-
       const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
 
       const mbtiResult = calculateMBTI(assessment.responses);
-
       await storage.createAssessment({
         profileId,
         assessmentType: "mbti",
@@ -210,13 +215,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(profile.personalityData as any),
         mbti: mbtiResult,
       };
-
       const archetypeData = synthesizeArchetype(
         profile.astrologyData,
         profile.numerologyData,
         updatedPersonalityData,
       );
-
       const updatedProfile = await storage.updateProfile(profileId, {
         personalityData: updatedPersonalityData,
         archetypeData: {
@@ -224,7 +227,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tarotCards: (profile.archetypeData as any)?.tarotCards,
         },
       });
-
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error processing MBTI assessment:", error);
@@ -232,7 +234,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upgrade to premium
   app.post("/api/profiles/:id/upgrade", async (req, res) => {
     try {
       const profileId = req.params.id;
@@ -242,34 +243,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!authToken || authToken !== profileId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-
       const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
       if (!cardNumber || !expiryDate || !cvv) {
-        return res
-          .status(400)
-          .json({ message: "Payment information is required" });
+        return res.status(400).json({ message: "Payment information is required" });
       }
-
-      if (cardNumber.length < 13) {
-        return res.status(400).json({ message: "Invalid card number" });
-      }
-
+      if (cardNumber.length < 13) return res.status(400).json({ message: "Invalid card number" });
       if (!expiryDate.match(/^\d{2}\/\d{2}$/)) {
         return res.status(400).json({ message: "Invalid expiry date" });
       }
+      if (cvv.length < 3) return res.status(400).json({ message: "Invalid CVV" });
 
-      if (cvv.length < 3) {
-        return res.status(400).json({ message: "Invalid CVV" });
-      }
-
-      const updatedProfile = await storage.updateProfile(profileId, {
-        isPremium: true,
-      });
-
+      const updatedProfile = await storage.updateProfile(profileId, { isPremium: true });
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error upgrading profile:", error);
@@ -277,25 +262,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Download PDF report (premium only)
   app.get("/api/pdf/profile/:id", async (req, res) => {
     try {
       const profileId = req.params.id;
       const authToken = req.headers.authorization?.split(" ")[1];
-
       const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      if (!profile.isPremium) {
-        return res.status(403).json({ message: "Premium access required" });
-      }
-
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
+      if (!profile.isPremium) return res.status(403).json({ message: "Premium access required" });
       if (!authToken || authToken !== profileId) {
-        return res
-          .status(401)
-          .json({ message: "Unauthorized access to this profile" });
+        return res.status(401).json({ message: "Unauthorized access to this profile" });
       }
 
       const pdfBuffer = await buildNatalReportPdf({
@@ -321,12 +296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${profile.name}-soul-codex.pdf"`,
-      );
+      res.setHeader("Content-Disposition", `attachment; filename="${profile.name}-soul-codex.pdf"`);
       res.setHeader("Content-Length", pdfBuffer.length);
-
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -334,14 +305,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Compatibility archetype matches
   app.post("/api/compatibility/archetype-matches", (req, res) => {
     try {
       const { sunSign, lifePathNumber, hdType, mode = "love" } = req.body;
-
-      if (!sunSign) {
-        return res.status(400).json({ message: "sunSign is required" });
-      }
+      if (!sunSign) return res.status(400).json({ message: "sunSign is required" });
 
       const all = calculateArchetypeMatches(
         sunSign,
@@ -349,19 +316,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hdType,
         mode as RelationshipMode,
       );
-
       const { best, challenging } = getMatchesByMode(
         sunSign,
         lifePathNumber,
         hdType,
         mode as RelationshipMode,
       );
-
-      res.json({
-        all,
-        best,
-        challenging,
-      });
+      res.json({ all, best, challenging });
     } catch (error) {
       console.error("Error calculating archetype matches:", error);
       res.status(500).json({ message: "Failed to calculate compatibility" });
@@ -369,7 +330,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   registerGalacticCodeRoutes(app);
-
-  const httpServer = createServer(app);
-  return httpServer;
+  return createServer(app);
 }
