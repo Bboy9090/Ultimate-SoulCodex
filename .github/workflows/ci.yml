@@ -55,6 +55,7 @@ jobs:
           tests/ui-backend-consistency-contract.test.ts
           tests/billing-security.test.ts
           tests/active-consumer-auth.test.ts
+          tests/native-api-routing.test.ts
 
       - name: Run Foundation Web RC Invariant Audit
         run: node scripts/verify-foundation-web-rc.mjs

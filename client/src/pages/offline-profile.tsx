@@ -24,6 +24,7 @@ import {
   reconcileOfflineProfile,
   type ReconciledOfflineProfile,
 } from "@/lib/profileVerificationReconciliation";
+import { apiFetch } from "@/lib/queryClient";
 
 type VerificationAttempt = "idle" | "running" | "complete" | "deferred";
 
@@ -60,10 +61,9 @@ export default function OfflineProfilePage() {
 
     async function refreshVerification() {
       try {
-        const response = await fetch("/api/profiles", {
+        const response = await apiFetch("/api/profiles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({
             name: currentProfile.name,
             birthDate: currentProfile.birthDate,

@@ -33,6 +33,9 @@ app.use(
 const allowedOrigins = [
   "soulcodex://localhost",
   "capacitor://localhost",
+  // capacitor.config.ts sets androidScheme=https, making Android's shell origin
+  // https://localhost for bundled store builds.
+  "https://localhost",
   "http://localhost:3000",
   "http://localhost:5000",
   "https://soulcodex.up.railway.app",
