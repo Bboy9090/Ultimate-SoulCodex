@@ -1,7 +1,7 @@
 # Gate 2 — Native Mobile Platform Validation
 
 **Base:** `main@b5cdcc25665fb1d9c1cc7a087252e69c02b49624`  
-**Candidate:** `f97c37ca024009b0c9eb6ece0e7bdf32635f405f`  
+**Candidate:** `443c23cfb5fcb19771589721d75132224ab3c65e`  
 **Status:** **SIMULATOR / EMULATOR VALIDATED — SIGNED, HARDWARE, AND STORE VALIDATION OPEN**
 
 ## Purpose
@@ -22,12 +22,16 @@ Gate 2 separates native mobile implementation from actual validation. It proves 
 
 ## Exact-Head Native CI Evidence
 
-Candidate `f97c37ca024009b0c9eb6ece0e7bdf32635f405f` completed Mobile Native Smoke run `31576839055` successfully.
+Candidate `443c23cfb5fcb19771589721d75132224ab3c65e` completed Mobile Native Smoke run `31579821940` successfully.
+
+The workflow explicitly checks out `github.event.pull_request.head.sha` for PR runs and verifies `git rev-parse HEAD` equals the candidate SHA before native build work begins. This prevents GitHub's synthetic PR merge commit from being misreported as exact-head evidence.
 
 ### Android debug build — PASS
 
 The PR-triggered Android job:
 
+- checked out the exact PR head;
+- used Node 22, the minimum generation supported by Capacitor 8.4.2;
 - installed exact npm dependencies;
 - built canonical workspaces;
 - passed Android release configuration validation;
@@ -39,45 +43,52 @@ The PR-triggered Android job:
 Artifact:
 
 - name: `gate2-android-debug-apk`
-- artifact id: `9133532842`
-- digest: `sha256:2212df5fea67520233c0ebb1bec9efc4cb86eeca98c2983ea7c16d3138149288`
+- artifact id: `9134704520`
+- digest: `sha256:f7c3c60385a5dc8b899a3cf87d018e839e2f23fd65e420c4618e269c9a0b84c9`
 
 ### iOS Simulator build — PASS
 
 The PR-triggered iOS job:
 
-- runs on GitHub `macos-26`;
-- explicitly verifies Xcode major version 26 or newer because Capacitor 8 requires the Xcode 26 / Swift 6.2 toolchain;
-- bootstraps JavaScript and local Swift packages;
-- passes iOS release configuration validation;
-- resolves Swift package dependencies;
-- builds the checked-in `Soul Codex` scheme for generic iOS Simulator with signing disabled;
-- verifies and uploads `Ultimate Soul Codex.app`;
-- retains the Xcode build log as a diagnostic artifact.
+- checked out the exact PR head;
+- used Node 22 because Capacitor 8.4.2 declares `node >=22.0.0`;
+- ran on GitHub `macos-26`;
+- explicitly verified Xcode major version 26 or newer;
+- bootstrapped JavaScript and local Swift packages;
+- passed iOS release configuration validation;
+- resolved Swift package dependencies;
+- built the checked-in `Soul Codex` scheme for generic iOS Simulator with signing disabled;
+- verified and uploaded `Ultimate Soul Codex.app`;
+- retained the Xcode build log as a diagnostic artifact.
 
 Artifacts:
 
 - app name: `gate2-ios-simulator-app`
-- app artifact id: `9133559275`
-- app digest: `sha256:68afd4aab73e52fdf7f89ccce2e2814964367f734ae329f3f85c242e8dba0a96`
+- app artifact id: `9134755003`
+- app digest: `sha256:6f9846f91267e2dd15500885ccb47c8bcdb6cd230692645dc39312aca8e45892`
 - diagnostic name: `gate2-ios-xcodebuild-log`
-- diagnostic artifact id: `9133557914`
-- diagnostic digest: `sha256:8d863595261e2ae78bda822ccd3a1197a092b38cfed97b0582601b963348c2aa`
+- diagnostic artifact id: `9134753289`
+- diagnostic digest: `sha256:ba22673c54ddf304c05a292366403dd51011442989d2395b5c392fbd67b4a6d2`
 
-## Toolchain Failure Resolved During Gate 2
+## Toolchain Reconciliation
 
-Earlier Gate 2 runs used `macos-14`, which selected Xcode 16.2. The build reached Swift compilation but failed in Capacitor 8 plugin source with missing `PluginConfig.getString` and incompatible color API signatures. This was not treated as an application-source defect. The workflow was moved to the supported Xcode 26 toolchain and an explicit toolchain guard was added so future runner-image drift fails clearly. The next exact-head native run passed Android and iOS.
+Two stale assumptions were exposed during this gate.
+
+1. `macos-14` selected Xcode 16.2, which is unsupported by Capacitor 8's current iOS toolchain. The native iOS lane was moved to `macos-26` with an explicit Xcode-major guard.
+2. Repository legacy-development instructions still describe Node 20 for the root server lane, but the installed `@capacitor/cli@8.4.2` package declares `node >=22.0.0`. Native mobile workflows therefore use Node 22 while legacy server instructions remain independently scoped.
+
+The release gate follows the actual dependency contract rather than forcing an unsupported Node/Xcode combination merely to satisfy stale documentation.
 
 ## Companion Exact-Head Checks
 
-On candidate `f97c37ca024009b0c9eb6ece0e7bdf32635f405f`:
+On candidate `443c23cfb5fcb19771589721d75132224ab3c65e`:
 
-- `Ultimate SoulCodex CI` — **PASS** (`31576839098`)
-- `CI Tests` — **PASS** (`31576839121`)
-- `Mobile Native Smoke` — **PASS** (`31576839055`)
-- `Live Ephemeris Evidence` — **FAIL** (`31576839086`) because the external NASA/JPL Horizons service remains unavailable to the live evidence job. This failure is not reclassified or waived here.
+- `Ultimate SoulCodex CI` — **PASS** (`31579821995`)
+- `CI Tests` — **PASS** (`31579821945`)
+- `Mobile Native Smoke` — **PASS** (`31579821940`)
+- `Live Ephemeris Evidence` — **FAIL** (`31579822012`) because the external NASA/JPL Horizons service remains unavailable to the live evidence job. This failure is not reclassified or silently waived by Gate 2.
 
-The JPL condition prevents claiming an all-green repository release candidate, but it does not erase the native build evidence recorded above.
+The JPL condition prevents claiming an all-green repository release candidate, but it does not invalidate the native build evidence recorded above because the failing job exercises an independent external astronomy-verification dependency rather than the native packaging path.
 
 ## Validation Ladder
 
