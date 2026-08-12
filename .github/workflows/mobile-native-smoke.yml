@@ -1,0 +1,168 @@
+name: Mobile Native Smoke
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-native-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VITE_API_URL: ${{ vars.VITE_API_URL }}
+
+jobs:
+  android-debug:
+    name: Android debug build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      # Native Capacitor 8.4.2 requires Node >=22. The legacy server lane remains pinned separately.
+      - name: Setup Node.js for Capacitor 8
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify native Node toolchain
+        run: |
+          node --version
+          node -e 'const major=Number(process.versions.node.split(".")[0]); if (major < 22) process.exit(1)'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Record exact candidate SHA
+        run: |
+          echo "candidate_sha=$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+
+      - name: Build canonical workspaces
+        run: |
+          npm run build -w @soulcodex/db
+          npm run build -w @soulcodex/core
+
+      - name: Validate Android release configuration
+        run: npm run mobile:validate:android
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Sync Capacitor Android project
+        run: npx cap sync android
+
+      - name: Build Android debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+          test -f app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Android smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate2-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+  ios-simulator:
+    name: iOS Simulator build
+    runs-on: macos-26
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      # Native Capacitor 8.4.2 requires Node >=22. The legacy server lane remains pinned separately.
+      - name: Setup Node.js for Capacitor 8
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify native Node toolchain
+        run: |
+          node --version
+          node -e 'const major=Number(process.versions.node.split(".")[0]); if (major < 22) process.exit(1)'
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Verify supported Xcode toolchain
+        run: |
+          xcodebuild -version
+          XCODE_MAJOR=$(xcodebuild -version | awk '/Xcode/{split($2,v,"."); print v[1]}')
+          test "$XCODE_MAJOR" -ge 26
+
+      - name: Record exact candidate SHA
+        run: |
+          echo "candidate_sha=$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+
+      - name: Bootstrap JavaScript and local Swift packages
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
+
+      - name: Validate iOS release configuration
+        run: npm run mobile:validate:ios
+
+      - name: Resolve Swift package dependencies
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace \
+            -scheme "Soul Codex" \
+            -resolvePackageDependencies
+
+      - name: Build iOS Simulator application
+        shell: bash
+        run: |
+          set -o pipefail
+          cd ios/App
+          mkdir -p build
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace \
+            -scheme "Soul Codex" \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee build/xcodebuild.log
+          test -d "build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app"
+
+      - name: Upload iOS build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate2-ios-xcodebuild-log
+          path: ios/App/build/xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload iOS simulator artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate2-ios-simulator-app
+          path: ios/App/build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app
+          retention-days: 7
