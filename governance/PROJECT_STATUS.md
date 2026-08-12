@@ -1,75 +1,71 @@
 # Soul Codex Foundation Release — Project Status
 
-**Last Updated:** 2026-08-08  
-**Current Branch:** `main`  
-**Current Milestone:** Foundation Release Certification
+**Last Updated:** 2026-08-12  
+**Current Release Base:** `main@b5cdcc25665fb1d9c1cc7a087252e69c02b49624`  
+**Current Milestone:** Foundation Gate Closure → Native/Store Release Validation
 
 ---
 
 ## Gate Status
 
-| Gate | Status | Completion | Notes |
-|------|--------|-----------|-------|
-| Gate 1 | 🟡 Pending | — | Foundation architecture & design |
-| Gate 2 | 🟡 Pending | — | Mobile platform validation |
-| Gate 3 | 🟢 **PASS** | 100% | No-silent-upgrade trust boundary ✅ |
-| Gate 4 | 🟡 Pending | — | Lifecycle & data consistency |
-| Gate 5 | 🟡 Pending | — | Deployment & release readiness |
+| Gate | Status | Notes |
+|------|--------|-------|
+| Gate 1 | 🟡 **READY FOR PASS** | Technical requirements merged through PR #188; final governance closure receipt pending exact-head CI/review |
+| Gate 2 | 🟡 Pending | Native/mobile platform validation, signed artifacts, simulator/device evidence |
+| Gate 3 | 🟢 **PASS** | No-silent-upgrade trust boundary; final receipt recorded |
+| Gate 4 | 🟡 Pending | End-to-end lifecycle, offline/reconnect, persistence, accessibility and real-device journey validation |
+| Gate 5 | 🟡 Pending | Production deployment, rollback, store compliance/assets, signed RC and submission readiness |
 
 ---
 
-## Foundation Components
+## Gate 1 Technical Closure Evidence
 
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| Diamond Doctrine | ✅ Canonical | `governance/THE-DIAMOND-DOCTRINE.md` |
-| Gate 3 Final Receipt | ✅ Recorded | `governance/release-audits/GATE-3-FINAL-RECEIPT.md` |
-| Gate 3 Regression Tests | ✅ 13/13 PASS | `server/tests/gate3-silent-upgrades.test.ts` |
-| Workspace Tests | ✅ 385/385 PASS | `npm test` |
-| TypeScript Checks | ✅ PASS | `npm run check` |
-| Production Build | ✅ PASS | `npm run build` (166.7kb) |
-| Security Audit | ✅ 0 high | 4 moderate pre-existing (unrelated) |
+Merged work now covers the two requirements that previously blocked Gate 1:
 
----
+- Canonical astrology evidence architecture and server canonicalization — PRs #181–#182
+- Numerology evidence integration and fail-closed boundary — PR #183
+- Human Design canonical evidence, timezone and solar-arc receipts — PRs #184–#185
+- Galactic Code coverage semantics separated from verification — PR #186
+- Active-profile evidence persistence contract — PR #187
+- UI/backend certainty-ceiling contract — PR #188
 
-## What Gate 3 Guarantees
+PR #188 reported **431/431 workspace tests** and **184 trust-boundary assertions** passing on its merge candidate. Its exact PR head also received successful Ultimate SoulCodex CI, CI Tests, and Live Ephemeris Evidence workflows.
 
-Gate 3 established architectural guarantees enforced by code and regression tests:
-
-- ✅ Unknown data stays unknown (no fabricated defaults)
-- ✅ Approximate data never becomes verified (no silent upgrades)
-- ✅ AI cannot accidentally elevate uncertain data (verification boundary)
-- ✅ Onboarding no longer manufactures confidence (removed date-boundary sun signs)
-- ✅ Regression tests enforce these rules permanently (13 assertions, all passing)
-
-**Status:** Locked. No feature work touches Gate 3 code unless production bugs, security issues, or narrowly scoped later-gate changes require it.
+**Gate 1 remains READY FOR PASS until the final closure receipt itself passes exact-head CI, receives independent review, and merges.**
 
 ---
 
-## Next Required Action
+## Gate 3 Locked Guarantees
 
-**Finish independent audits for Gates 1, 2, 4, and 5.**
+Gate 3 remains closed and regression-protected:
 
-Once all gates have evidence-backed PASS receipts:
-1. Consolidate documentation under the Diamond Doctrine
-2. Freeze foundation governance
-3. Begin next major development cycle on new release branch (Soul Genome, Galactic Code expansion, Timeline Intelligence)
+- Unknown data stays unknown.
+- Approximate data cannot silently become verified.
+- AI routes cannot elevate uncertain astrology into verified context.
+- Onboarding does not manufacture approximate verified signs.
 
----
-
-## Why This Matters
-
-For Soul Codex, trust is the product.
-
-Gate 3 proves that unknown data cannot be silently elevated to certainty. That's not a feature. That's a promise kept by architecture, not marketing.
-
-The Diamond Doctrine principle—**Truth before certainty**—is now enforced by code.
-
-That's a milestone.
+No feature work should reopen Gate 3 unless a production bug, security issue, or later-gate requirement proves a defect.
 
 ---
 
-**For more details:**
-- Foundation philosophy: `governance/THE-DIAMOND-DOCTRINE.md`
-- Gate 3 evidence: `governance/release-audits/GATE-3-FINAL-RECEIPT.md`
-- Regression tests: `server/tests/gate3-silent-upgrades.test.ts`
+## Mobile / Store Release State
+
+The repository already contains Capacitor native projects, mobile validation scripts, App Store / Play build documentation, privacy/support/account-deletion surfaces, and release workflows.
+
+The remaining mobile/store work is evidence and operations, not a new application rewrite:
+
+1. Gate 2 — verify native configuration, production API origin, Apple/Android signing, signed AAB/IPA generation, and simulator/physical-device behavior.
+2. Gate 4 — verify complete consumer journeys, offline/reconnect, accessibility, persistence, error handling, deletion, and entitlement flows.
+3. Gate 5 — verify production deployment/health/rollback, final privacy/store disclosures, assets, RC artifacts, beta testing, and submission readiness.
+
+The current Apple/Xcode external status on `main@b5cdcc...` is red and must be investigated as part of Gate 2; it is not treated as a Gate 1 failure.
+
+---
+
+## Release Rule
+
+Soul Codex may be called **release candidate** only when the required gates have evidence against the same candidate SHA and signed native artifacts are produced from that candidate.
+
+Implemented ≠ integrated ≠ simulator-validated ≠ hardware-validated ≠ release-candidate validated ≠ store-submission validated.
+
+Truth before certainty applies to release governance too.
