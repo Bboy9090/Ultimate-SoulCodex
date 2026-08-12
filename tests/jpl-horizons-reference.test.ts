@@ -16,6 +16,13 @@ $$EOE
 *******************************************************************************
 `;
 
+function validHorizonsResponse(): Response {
+  return new Response(JSON.stringify({
+    signature: { source: "NASA/JPL Horizons API", version: "1.3" },
+    result: sampleResult,
+  }), { status: 200, headers: { "Content-Type": "application/json" } });
+}
+
 test("builds an official geocentric quantity-31 request for the same UTC instant", () => {
   const url = new URL(buildHorizonsReferenceUrl("Sun", "1990-09-17T15:11:00.000Z"));
 
@@ -34,10 +41,7 @@ test("parses the named Horizons ecliptic-longitude column instead of guessing a 
 });
 
 test("creates an independent Sun reference with provenance but does not promote it", async () => {
-  const fetchImpl = async () => new Response(JSON.stringify({
-    signature: { source: "NASA/JPL Horizons API", version: "1.3" },
-    result: sampleResult,
-  }), { status: 200, headers: { "Content-Type": "application/json" } });
+  const fetchImpl = async () => validHorizonsResponse();
 
   const reference = await fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", { fetchImpl });
 
@@ -53,6 +57,61 @@ test("creates an independent Sun reference with provenance but does not promote 
 test("uses the Moon major-body command for Moon references", () => {
   const url = new URL(buildHorizonsReferenceUrl("Moon", "1990-09-17T15:11:00.000Z"));
   assert.equal(url.searchParams.get("COMMAND"), "'301'");
+});
+
+test("retries transient 5xx responses and succeeds without weakening validation", async () => {
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    if (calls < 3) return new Response("temporary failure", { status: 500 });
+    return validHorizonsResponse();
+  };
+
+  const reference = await fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", {
+    fetchImpl,
+    retryAttempts: 3,
+    retryDelayMs: 0,
+  });
+
+  assert.equal(calls, 3);
+  assert.equal(reference.longitude, 174.27);
+  assert.equal(reference.sign, "Virgo");
+});
+
+test("fails closed after the configured retry budget is exhausted", async () => {
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    return new Response("still unavailable", { status: 500 });
+  };
+
+  await assert.rejects(
+    fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", {
+      fetchImpl,
+      retryAttempts: 2,
+      retryDelayMs: 0,
+    }),
+    /horizons_http_500/,
+  );
+  assert.equal(calls, 2);
+});
+
+test("does not retry non-transient HTTP failures", async () => {
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    return new Response("bad request", { status: 400 });
+  };
+
+  await assert.rejects(
+    fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", {
+      fetchImpl,
+      retryAttempts: 3,
+      retryDelayMs: 0,
+    }),
+    /horizons_http_400/,
+  );
+  assert.equal(calls, 1);
 });
 
 test("rejects unsigned, malformed, or incomplete Horizons responses", async () => {
