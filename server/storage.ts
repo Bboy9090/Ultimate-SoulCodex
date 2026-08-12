@@ -210,9 +210,7 @@ class PostgresStorage implements IStorage {
   async getOrCreateAppleUser(subject: string, email?: string | null, firstName?: string | null, lastName?: string | null): Promise<User> {
     const db = await this.db();
     const username = appleUsername(subject);
-    const existing = (await db.select().from(users).where(eq(users.username, username)).limit(1))[0];
-    if (existing) return existing;
-    return (await db.insert(users).values({
+    const inserted = await db.insert(users).values({
       username,
       password: `apple-disabled:${randomUUID()}:${randomUUID()}`,
       email: email ?? null,
@@ -220,7 +218,11 @@ class PostgresStorage implements IStorage {
       lastName: lastName ?? null,
       subscriptionStatus: "free",
       isPremium: false,
-    }).returning())[0];
+    }).onConflictDoNothing({ target: users.username }).returning();
+    if (inserted[0]) return inserted[0];
+    const existing = (await db.select().from(users).where(eq(users.username, username)).limit(1))[0];
+    if (!existing) throw new Error("Apple user could not be resolved after concurrent creation");
+    return existing;
   }
   async migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void> {
     const db = await this.db();
