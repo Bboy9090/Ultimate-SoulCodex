@@ -12,7 +12,7 @@
  * 5. Recovery messaging (missing, corrupted, wrong version)
  */
 
-import type { VerificationState, PlacementEvidence, PlacementLike } from './placementVerification';
+import type { PlacementLike } from './placementVerification';
 
 export interface StoredProfile {
   // Identification
@@ -84,34 +84,55 @@ export interface ProfileLoadResult {
 const CANONICAL_KEY = "soulcodex.activeProfile.v1";
 const SCHEMA_VERSION = 1;
 
-// Legacy keys to check during migration
-const LEGACY_KEYS = [
+// Only keys that historically stored completed/generated profile-like payloads
+// are eligible for automatic migration. Raw onboarding form state is not a
+// completed profile and must never be promoted merely because birthDate exists.
+const LEGACY_PROFILE_KEYS = [
   "soulProfile",
   "soulCodexReading",
   "soulConfidence",
   "soulGuestProfile",
   "soulGuestConfidence",
+];
+
+// Reset must still clear raw onboarding state so a user asking to start fresh
+// actually starts fresh, even though onboardingData is not migration-eligible.
+const PROFILE_RELATED_KEYS_TO_CLEAR = [
+  ...LEGACY_PROFILE_KEYS,
   "onboardingData",
 ];
 
+type StorageReadResult =
+  | { status: "missing"; profile: null }
+  | { status: "loaded"; profile: StoredProfile }
+  | { status: "corrupted"; profile: null; reason: string };
+
 /**
  * Load active profile with migration and validation.
- * Tries canonical key first, then legacy keys.
+ * Tries canonical key first, then legacy completed-profile keys.
  * Never returns both a profile and an error—always one truth.
  */
 export function loadActiveProfile(): ProfileLoadResult {
   try {
-    // First: try canonical key
-    const canonical = loadFromKey(CANONICAL_KEY);
-    if (canonical) {
-      const validation = validateProfile(canonical);
+    // First: canonical storage is authoritative. If it exists but is malformed,
+    // fail closed instead of silently falling back to stale legacy data.
+    const canonical = readFromKey(CANONICAL_KEY);
+    if (canonical.status === "corrupted") {
+      return {
+        status: "corrupted",
+        profile: null,
+        reason: canonical.reason,
+      };
+    }
+
+    if (canonical.status === "loaded") {
+      const validation = validateProfile(canonical.profile);
       if (validation.valid) {
         return {
           status: "loaded",
-          profile: canonical,
+          profile: canonical.profile,
         };
       }
-      // Canonical key exists but is corrupted/wrong version
       return {
         status: validation.reason === "wrong-version" ? "wrong-version" : "corrupted",
         profile: null,
@@ -119,24 +140,24 @@ export function loadActiveProfile(): ProfileLoadResult {
       };
     }
 
-    // Second: try legacy keys
-    for (const legacyKey of LEGACY_KEYS) {
-      const legacy = loadFromKey(legacyKey);
-      if (legacy) {
-        const validation = validateProfile(legacy);
-        if (validation.valid) {
-          // Found valid legacy profile—migrate it to canonical
-          saveToKey(CANONICAL_KEY, legacy);
-          return {
-            status: "legacy-found",
-            profile: legacy,
-            legacyKey,
-          };
-        }
-      }
+    // Second: try legacy completed-profile keys. Legacy payloads may predate
+    // schemaVersion, so validate their minimum contract and normalize them.
+    for (const legacyKey of LEGACY_PROFILE_KEYS) {
+      const legacy = readFromKey(legacyKey);
+      if (legacy.status !== "loaded") continue;
+
+      const migrated = migrateLegacyProfile(legacy.profile);
+      if (!migrated.success || !migrated.profile) continue;
+
+      return {
+        status: "legacy-found",
+        profile: migrated.profile,
+        legacyKey,
+      };
     }
 
-    // Third: nothing found
+    // Third: nothing usable found. Raw onboardingData is intentionally ignored
+    // here; it is input state, not evidence that a profile was generated.
     return {
       status: "missing",
       profile: null,
@@ -161,31 +182,29 @@ export function saveActiveProfile(profile: StoredProfile): {
   error?: string;
 } {
   try {
+    const now = new Date().toISOString();
     const enriched: StoredProfile = {
       ...profile,
       schemaVersion: SCHEMA_VERSION,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
+      createdAt: profile.createdAt ?? now,
     };
 
-    // Set creation time only on first save
-    if (!profile.createdAt) {
-      enriched.createdAt = new Date().toISOString();
-    }
-
-    // Save to canonical key
     saveToKey(CANONICAL_KEY, enriched);
 
-    // Immediately verify it can be read back
-    const verification = loadFromKey(CANONICAL_KEY);
-    if (!verification) {
+    // Immediately verify it can be read back and parsed.
+    const verification = readFromKey(CANONICAL_KEY);
+    if (verification.status !== "loaded") {
       return {
         success: false,
-        error: "Profile saved but could not be verified immediately.",
+        error:
+          verification.status === "corrupted"
+            ? `Profile saved but read-back was corrupted: ${verification.reason}`
+            : "Profile saved but could not be verified immediately.",
       };
     }
 
-    // Validate the read-back result
-    const validation = validateProfile(verification);
+    const validation = validateProfile(verification.profile);
     if (!validation.valid) {
       return {
         success: false,
@@ -205,12 +224,15 @@ export function saveActiveProfile(profile: StoredProfile): {
 }
 
 /**
- * Clear the active profile.
- * Use this for logout or reset flows.
+ * Clear every local profile-related source that could repopulate user state.
+ * Raw onboarding input is cleared here but is never migration-eligible.
  */
 export function clearActiveProfile(): void {
   try {
     localStorage.removeItem(CANONICAL_KEY);
+    for (const key of PROFILE_RELATED_KEYS_TO_CLEAR) {
+      localStorage.removeItem(key);
+    }
   } catch (error) {
     console.error("[ActiveProfileRepository] Clear error:", error);
   }
@@ -276,14 +298,46 @@ export function getRecoveryMessage(
 // Private utilities
 // ─────────────────────────────────────────────────────────────────────────
 
-function loadFromKey(key: string): StoredProfile | null {
+function readFromKey(key: string): StorageReadResult {
+  let raw: string | null;
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw || raw === "undefined" || raw === "null") return null;
+    raw = localStorage.getItem(key);
+  } catch (error) {
+    return {
+      status: "corrupted",
+      profile: null,
+      reason: error instanceof Error ? error.message : `Unable to read ${key}`,
+    };
+  }
+
+  if (raw === null) {
+    return { status: "missing", profile: null };
+  }
+
+  if (!raw.trim() || raw === "undefined" || raw === "null") {
+    return {
+      status: "corrupted",
+      profile: null,
+      reason: `Stored value for ${key} is empty or invalid`,
+    };
+  }
+
+  try {
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch {
-    return null;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {
+        status: "corrupted",
+        profile: null,
+        reason: `Stored value for ${key} is not a profile object`,
+      };
+    }
+    return { status: "loaded", profile: parsed as StoredProfile };
+  } catch (error) {
+    return {
+      status: "corrupted",
+      profile: null,
+      reason: error instanceof Error ? error.message : `Invalid JSON in ${key}`,
+    };
   }
 }
 
@@ -296,10 +350,48 @@ function saveToKey(key: string, profile: StoredProfile): void {
   }
 }
 
+function migrateLegacyProfile(profile: StoredProfile): {
+  success: boolean;
+  profile?: StoredProfile;
+} {
+  // Explicit incompatible versions must not be silently rewritten.
+  if (
+    profile.schemaVersion !== undefined &&
+    profile.schemaVersion !== SCHEMA_VERSION
+  ) {
+    return { success: false };
+  }
+
+  if (!profile.birthDate) {
+    return { success: false };
+  }
+
+  const now = new Date().toISOString();
+  const migrated: StoredProfile = {
+    ...profile,
+    schemaVersion: SCHEMA_VERSION,
+    createdAt: profile.createdAt ?? now,
+    updatedAt: now,
+  };
+
+  saveToKey(CANONICAL_KEY, migrated);
+  const readBack = readFromKey(CANONICAL_KEY);
+  if (readBack.status !== "loaded") {
+    return { success: false };
+  }
+
+  const validation = validateProfile(readBack.profile);
+  if (!validation.valid) {
+    return { success: false };
+  }
+
+  return { success: true, profile: readBack.profile };
+}
+
 function validateProfile(
   profile: any
 ): { valid: boolean; reason?: string; message?: string } {
-  if (!profile || typeof profile !== "object") {
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
     return {
       valid: false,
       reason: "not-object",
