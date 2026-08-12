@@ -105,16 +105,28 @@ jobs:
             -resolvePackageDependencies
 
       - name: Build iOS Simulator application
+        shell: bash
         run: |
+          set -o pipefail
           cd ios/App
+          mkdir -p build
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build 2>&1 | tee build/xcodebuild.log
           test -d "build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app"
+
+      - name: Upload iOS build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate2-ios-xcodebuild-log
+          path: ios/App/build/xcodebuild.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload iOS simulator artifact
         uses: actions/upload-artifact@v4
