@@ -37,9 +37,11 @@ requireFile("client/src/pages/AccountDeletionPage.tsx");
 requireFile("client/src/pages/SupportPage.tsx");
 
 if (platform === "ios") {
+  const exportOptionsPath = "ios/App/ExportOptions.plist";
   requireFile("ios/App/App/PrivacyInfo.xcprivacy");
   requireFile("ios/App/App.xcodeproj/xcshareddata/xcschemes/Soul Codex.xcscheme");
-  requireMatch("scripts/ExportOptions.plist", /<string>86NUJ8M3B8<\/string>/, "The iOS export Team ID is missing or incorrect.");
+  requireMatch(exportOptionsPath, /<key>teamID<\/key>\s*<string>86NUJ8M3B8<\/string>/, "The iOS export Team ID is missing or incorrect in ios/App/ExportOptions.plist.");
+  requireMatch(exportOptionsPath, /<key>method<\/key>\s*<string>(app-store|app-store-connect)<\/string>/, "The iOS export method must target App Store distribution.");
   requireMatch("ios/App/App.xcodeproj/project.pbxproj", /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/, "The iOS bundle identifier must remain app.soulcodex.ios.");
 }
 

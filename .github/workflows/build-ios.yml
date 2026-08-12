@@ -17,25 +17,42 @@ permissions:
 
 jobs:
   build-ios:
-    runs-on: macos-14
-    timeout-minutes: 40
+    # Capacitor 8 requires the Xcode 26 / Swift 6.2 generation.
+    runs-on: macos-26
+    timeout-minutes: 45
     env:
       VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
 
     steps:
-      - name: Checkout
+      - name: Checkout requested release candidate
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Record candidate identity
+        run: |
+          echo "candidate_sha=$(git rev-parse HEAD)"
+          git rev-parse HEAD > release-candidate-sha.txt
+
+      - name: Setup Node.js for Capacitor 8
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
+      - name: Verify native Node toolchain
+        run: |
+          node --version
+          node -e 'const major=Number(process.versions.node.split(".")[0]); if (major < 22) process.exit(1)'
+
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+
+      - name: Verify supported Xcode toolchain
+        run: |
+          xcodebuild -version
+          XCODE_MAJOR=$(xcodebuild -version | awk '/Xcode/{split($2,v,"."); print v[1]}')
+          test "$XCODE_MAJOR" -ge 26
 
       - name: Bootstrap JavaScript and local Swift packages
         env:
@@ -43,8 +60,6 @@ jobs:
         run: sh ios/App/ci_scripts/ci_post_clone.sh
 
       - name: Validate mobile release configuration
-        env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
         run: npm run mobile:validate:ios
 
       - name: Resolve Xcode package dependencies
@@ -57,7 +72,9 @@ jobs:
 
       - name: Build iOS (Development)
         if: inputs.build_type == 'development'
+        shell: bash
         run: |
+          set -euo pipefail
           cd ios/App
           echo "Building for iOS Simulator..."
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
@@ -66,7 +83,8 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build 2>&1 | tee build-development.log
+          test -d "build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app"
 
       - name: Verify signing secrets
         if: inputs.build_type == 'app-store'
@@ -75,21 +93,12 @@ jobs:
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
-          echo "Checking for required secrets..."
-          if [ -z "$IOS_CERTIFICATE_P12" ]; then
-            echo "❌ Error: IOS_CERTIFICATE_P12 secret is not set"
-            echo "Please configure GitHub Secrets: https://github.com/Bboy9090/Ultimate-SoulCodex/settings/secrets/actions"
-            exit 1
-          fi
-          if [ -z "$IOS_CERTIFICATE_PASSWORD" ]; then
-            echo "❌ Error: IOS_CERTIFICATE_PASSWORD secret is not set"
-            exit 1
-          fi
-          if [ -z "$IOS_PROVISIONING_PROFILE" ]; then
-            echo "❌ Error: IOS_PROVISIONING_PROFILE secret is not set"
-            exit 1
-          fi
-          echo "✅ All signing secrets are configured"
+          set -euo pipefail
+          echo "Checking for required signing material..."
+          test -n "$IOS_CERTIFICATE_P12" || { echo "IOS_CERTIFICATE_P12 is not set"; exit 1; }
+          test -n "$IOS_CERTIFICATE_PASSWORD" || { echo "IOS_CERTIFICATE_PASSWORD is not set"; exit 1; }
+          test -n "$IOS_PROVISIONING_PROFILE" || { echo "IOS_PROVISIONING_PROFILE is not set"; exit 1; }
+          echo "Signing material is configured"
 
       - name: Import signing certificate
         if: inputs.build_type == 'app-store'
@@ -98,110 +107,81 @@ jobs:
           p12-file-base64: ${{ secrets.IOS_CERTIFICATE_P12 }}
           p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
 
-      - name: Install provisioning profile
+      - name: Install and inspect provisioning profile
         if: inputs.build_type == 'app-store'
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        shell: bash
         run: |
-          echo "Installing provisioning profile..."
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-
-          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
-
-          if [ ! -f ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision ]; then
-            echo "❌ Failed to install provisioning profile"
-            exit 1
-          fi
-
-          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
-          echo "✅ Provisioning profile installed"
+          set -euo pipefail
+          PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles/SoulCodex.mobileprovision"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE_PATH"
+          test -s "$PROFILE_PATH"
+          security cms -D -i "$PROFILE_PATH" > provisioning-profile.plist
+          /usr/libexec/PlistBuddy -c 'Print :Name' provisioning-profile.plist
+          /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' provisioning-profile.plist
+          /usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' provisioning-profile.plist
+          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' provisioning-profile.plist)
+          test "$PROFILE_TEAM" = "86NUJ8M3B8"
+          APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' provisioning-profile.plist)
+          test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios"
 
       - name: Build iOS (App Store)
         if: inputs.build_type == 'app-store'
+        shell: bash
         run: |
+          set -euo pipefail
           cd ios/App
-          mkdir -p build
+          mkdir -p build build/export
 
-          echo "Creating archive..."
+          echo "Creating App Store archive..."
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Release \
             -archivePath build/SoulCodex.xcarchive \
-            -allowProvisioningUpdates \
-            -verbose \
             archive 2>&1 | tee archive.log
 
-          if [ ! -d "build/SoulCodex.xcarchive" ]; then
-            echo "❌ Archive creation failed!"
-            echo ""
-            echo "Last 100 lines of archive log:"
-            tail -100 archive.log
-            exit 1
-          fi
+          test -d "build/SoulCodex.xcarchive"
+          test -f "build/SoulCodex.xcarchive/Info.plist"
 
-          echo "✅ Archive created successfully"
-          ls -lah build/SoulCodex.xcarchive
-
-          echo ""
           echo "Exporting archive..."
-          mkdir -p build/export
           xcodebuild -exportArchive \
             -archivePath build/SoulCodex.xcarchive \
             -exportPath build/export \
             -exportOptionsPlist ExportOptions.plist \
-            -allowProvisioningUpdates \
-            -verbose 2>&1 | tee export.log
+            2>&1 | tee export.log
 
-          echo ""
-          echo "Checking for IPA file..."
-          if find build/export -name "*.ipa" -type f; then
-            echo "✅ IPA export successful"
-            ls -lah build/export/
-          else
-            echo "❌ IPA export failed!"
-            echo "Export directory contents:"
-            ls -la build/export/
-            echo ""
-            echo "Last 50 lines of export log:"
-            tail -50 export.log
-            exit 1
-          fi
+          IPA_PATH=$(find build/export -maxdepth 1 -name "*.ipa" -type f -print -quit)
+          test -n "$IPA_PATH"
+          test -s "$IPA_PATH"
+          echo "ipa_path=$IPA_PATH"
+          shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
 
-      - name: Show build summary
+      - name: Upload build diagnostics
         if: always()
-        run: |
-          echo "=== Build Summary ==="
-          echo "Build type: ${{ inputs.build_type }}"
-          echo ""
-
-          if [ "${{ inputs.build_type }}" == "development" ]; then
-            echo "=== Development Build Artifacts ==="
-            find ios/App/build -type d -name "*.app" 2>/dev/null && echo "✅ App bundle found" || echo "⚠️ No app bundle found"
-          elif [ "${{ inputs.build_type }}" == "app-store" ]; then
-            echo "=== App Store Build Artifacts ==="
-            if find ios/App/build/export -name "*.ipa" -type f 2>/dev/null; then
-              echo "✅ IPA file(s) found"
-              du -sh ios/App/build/export/*.ipa 2>/dev/null | awk '{print "   " $0}'
-            else
-              echo "⚠️ No IPA files found"
-            fi
-            echo ""
-            echo "Export directory contents:"
-            ls -lah ios/App/build/export/ 2>/dev/null || echo "Export directory not found"
-          fi
-
-          echo ""
-          echo "=== Build Logs Available ==="
-          [ -f ios/App/build.log ] && echo "✅ build.log (development)" || true
-          [ -f ios/App/archive.log ] && echo "✅ archive.log (app-store)" || true
-          [ -f ios/App/export.log ] && echo "✅ export.log (app-store)" || true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-diagnostics-${{ github.run_id }}
+          path: |
+            release-candidate-sha.txt
+            provisioning-profile.plist
+            ios/App/build-development.log
+            ios/App/archive.log
+            ios/App/export.log
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Upload artifact (App Store)
         if: inputs.build_type == 'app-store'
         uses: actions/upload-artifact@v4
         with:
           name: ios-app-store-build
-          path: ios/App/build/export/
+          path: |
+            ios/App/build/export/*.ipa
+            ios/App/build/export/IPA-SHA256.txt
+            release-candidate-sha.txt
+          if-no-files-found: error
           retention-days: 30
 
       - name: Upload artifact (Development)
@@ -209,6 +189,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-development-build
-          path: ios/App/build/Build/Products/Debug-iphonesimulator/
-          if-no-files-found: warn
+          path: |
+            ios/App/build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app
+            release-candidate-sha.txt
+          if-no-files-found: error
           retention-days: 7
