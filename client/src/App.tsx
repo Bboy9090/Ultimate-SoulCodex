@@ -24,6 +24,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import SupportPage from "./pages/SupportPage";
 import SettingsPage from "./pages/SettingsPage";
+import AccountDeletionPage from "./pages/AccountDeletionPage";
 import PricingPage from "./pages/PricingPage";
 import type { Profile as ProfileType } from "@shared/schema";
 
@@ -108,6 +109,7 @@ function Router() {
       <Route path="/terms" component={TermsPage} />
       <Route path="/support" component={SupportPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/delete-account" component={AccountDeletionPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
     </Switch>
