@@ -1,0 +1,93 @@
+name: Gate 4 Lifecycle Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/lib/ActiveProfileRepository.ts"
+      - "client/src/lib/__tests__/ActiveProfileRepository.test.ts"
+      - "tests/gate4-profile-lifecycle.test.ts"
+      - "tests/account-deletion.test.ts"
+      - "tests/pwa/**"
+      - ".github/workflows/gate4-lifecycle-validation.yml"
+      - ".github/workflows/pwa-offline-browser.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate4-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lifecycle-contracts:
+    name: Profile and deletion contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build:workspaces
+
+      - name: Run Gate 4 profile lifecycle contracts
+        run: node --import tsx --test tests/gate4-profile-lifecycle.test.ts
+
+      - name: Run account deletion storage contracts
+        run: npm run test:account-deletion
+
+  persistent-offline-browser:
+    name: Chromium and WebKit persistent/offline journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install pinned browser test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.54.1
+
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Build workspace packages
+        run: npm run build:workspaces
+
+      - name: Build production application and PWA assets
+        run: npm run build
+
+      - name: Run persistent profile and offline restart journey
+        run: npx playwright test tests/pwa/foundation-profile-journey.spec.mjs --config=tests/pwa/playwright.config.mjs
+
+      - name: Upload browser evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate4-browser-failure-${{ github.run_id }}
+          path: |
+            playwright-report
+            test-results/pwa
+          if-no-files-found: warn
+          retention-days: 7
