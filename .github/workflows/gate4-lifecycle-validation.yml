@@ -10,11 +10,15 @@ on:
       - "client/src/lib/ActiveProfileRepository.ts"
       - "client/src/lib/offlineProfileStore.ts"
       - "client/src/lib/__tests__/ActiveProfileRepository.test.ts"
+      - "server/auth/**"
+      - "server/routes/consumer-auth.ts"
       - "server/routes.ts"
       - "server/storage.ts"
       - "server/session.ts"
       - "server/db.ts"
       - "shared/schema.ts"
+      - "tests/active-consumer-auth.test.ts"
+      - "tests/active-consumer-auth-postgres.test.ts"
       - "tests/gate4-profile-lifecycle.test.ts"
       - "tests/account-deletion.test.ts"
       - "tests/gate4-production-deletion.test.ts"
@@ -32,7 +36,7 @@ concurrency:
 
 jobs:
   lifecycle-contracts:
-    name: Profile and deletion contracts
+    name: Profile, auth, and deletion contracts
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -84,6 +88,9 @@ jobs:
 
       - name: Run Gate 4 profile lifecycle contracts
         run: node --import tsx --test tests/gate4-profile-lifecycle.test.ts
+
+      - name: Run active consumer auth contract against PostgreSQL
+        run: node --import tsx --test tests/active-consumer-auth-postgres.test.ts
 
       - name: Run account deletion storage contracts
         shell: bash
