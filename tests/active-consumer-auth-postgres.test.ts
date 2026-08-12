@@ -58,8 +58,9 @@ test("PostgreSQL active auth migrates session profile into canonical Apple user"
       headers: { "content-type": "application/json", Cookie: bootstrapCookie },
       body: JSON.stringify({ identityToken: "ci-injected-verified-token" }),
     });
-    assert.equal(login.status, 200, await login.text());
-    const loginBody = await login.json() as any;
+    const loginText = await login.text();
+    assert.equal(login.status, 200, loginText);
+    const loginBody = JSON.parse(loginText) as any;
     const authCookie = cookieFrom(login);
 
     const migrated = await storage.getProfile(profile.id);
