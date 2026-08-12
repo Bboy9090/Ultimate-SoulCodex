@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSession } from "./session";
+import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
 import {
   birthDataSchema,
   enneagramAssessmentSchema,
@@ -44,10 +45,11 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
+  registerConsumerAuthRoutes(app);
 
   app.delete("/api/auth/account", async (req: any, res) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub || null;
+      const userId = req.session?.userId ?? null;
       const sessionId = req.sessionID || null;
       if (userId) await storage.deleteUserAccount(userId);
       else if (sessionId) await storage.deleteSessionData(sessionId);
@@ -99,9 +101,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         archetype: archetypeData,
       });
 
+      const authenticatedUserId = req.session?.userId ?? null;
       const profile = await storage.createProfile({
-        userId: req.user?.id ?? null,
-        sessionId: req.user?.id ? null : (req.sessionID ?? null),
+        userId: authenticatedUserId,
+        sessionId: authenticatedUserId ? null : (req.sessionID ?? null),
         name: birthData.name,
         birthDate: new Date(birthData.birthDate),
         birthTime: birthData.birthTime,
@@ -117,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         biography,
         dailyGuidance,
       });
-      if (!req.user && req.session) req.session.profileCreated = true;
+      if (!authenticatedUserId && req.session) req.session.profileCreated = true;
       res.status(201).json(profile);
     } catch (error) {
       console.error("Error creating profile:", error);
