@@ -27,65 +27,63 @@ async function withServer(app: express.Express, run: (baseUrl: string) => Promis
   }
 }
 
-test("Gate 4: real DELETE /api/auth/account purges PostgreSQL session-owned profile and redemption", async () => {
+test("Gate 4: active DELETE /api/auth/account purges session-owned PostgreSQL data", async () => {
   assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required for persistent Gate 4 proof");
 
   const [{ registerRoutes }, { db }, schema] = await Promise.all([
-    import("../routes"),
+    import("../server/routes"),
     import("../db"),
     import("../shared/schema"),
   ]);
-
-  const sessionId = `gate4-session-${Date.now()}`;
-  const profileId = `gate4-profile-${Date.now()}`;
-  const redemptionId = `gate4-redemption-${Date.now()}`;
-
-  await db.insert(schema.profiles).values({
-    id: profileId,
-    sessionId,
-    name: "Gate 4 Persistent Delete",
-    birthDate: new Date("1990-09-17T00:00:00.000Z"),
-  });
-  await db.insert(schema.accessCodeRedemptions).values({
-    id: redemptionId,
-    accessCodeId: "gate4-delete-proof",
-    sessionId,
-  });
-
-  assert.equal(await countRows(db, schema.profiles, schema.profiles.sessionId, sessionId), 1);
-  assert.equal(await countRows(db, schema.accessCodeRedemptions, schema.accessCodeRedemptions.sessionId, sessionId), 1);
 
   const app = express();
   app.use(express.json());
   await registerRoutes(app);
 
-  // Inject the known session id immediately before the production deletion handler.
-  // This preserves the real route and HybridStorage implementation while avoiding
-  // dependence on a pre-seeded connect-pg-simple session row.
-  app._router.stack.splice(
-    app._router.stack.findIndex((layer: any) => layer.route?.path === "/api/auth/account"),
-    0,
-    {
-      route: undefined,
-      name: "gate4SessionFixture",
-      handle(req: any, _res: any, next: any) {
-        Object.defineProperty(req, "sessionID", { value: sessionId, configurable: true });
-        next();
-      },
-      regexp: /^\/api\/auth\/account\/?$/i,
-      keys: [],
-      params: undefined,
-      path: undefined,
-      match(path: string) { return /^\/api\/auth\/account\/?$/i.test(path); },
-    } as any,
-  );
-
-  await withServer(app, async (baseUrl) => {
-    const response = await fetch(`${baseUrl}/api/auth/account`, { method: "DELETE" });
-    const body = await response.json();
-    assert.equal(response.status, 200, JSON.stringify(body));
+  // Test-only session bootstrap registered *after* production routes. It uses
+  // the exact express-session middleware that registerRoutes installs, giving
+  // us a genuine signed connect.sid cookie and real server-generated sessionId.
+  app.post("/__gate4/session", (req: any, res) => {
+    req.session.gate4Proof = true;
+    res.json({ sessionId: req.sessionID });
   });
 
-  assert.equal(await countRows(db, schema.profiles, schema.profiles.sessionId, sessionId), 0);
-  assert.equal(await countRows(db, schema.accessCodeRedemptions, schema.accessCodeRedemptions.sessionId, sessionId), 0);
+  await withServer(app, async (baseUrl) => {
+    const sessionResponse = await fetch(`${baseUrl}/__gate4/session`, { method: "POST" });
+    assert.equal(sessionResponse.status, 200);
+    const { sessionId } = await sessionResponse.json() as { sessionId: string };
+    assert.ok(sessionId);
+
+    const setCookie = sessionResponse.headers.get("set-cookie") || "";
+    const cookie = setCookie.split(";")[0];
+    assert.match(cookie, /^connect\.sid=/);
+
+    const profileId = `gate4-profile-${Date.now()}`;
+    const redemptionId = `gate4-redemption-${Date.now()}`;
+
+    await db.insert(schema.profiles).values({
+      id: profileId,
+      sessionId,
+      name: "Gate 4 Persistent Delete",
+      birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    });
+    await db.insert(schema.accessCodeRedemptions).values({
+      id: redemptionId,
+      accessCodeId: "gate4-delete-proof",
+      sessionId,
+    });
+
+    assert.equal(await countRows(db, schema.profiles, schema.profiles.sessionId, sessionId), 1);
+    assert.equal(await countRows(db, schema.accessCodeRedemptions, schema.accessCodeRedemptions.sessionId, sessionId), 1);
+
+    const response = await fetch(`${baseUrl}/api/auth/account`, {
+      method: "DELETE",
+      headers: { Cookie: cookie },
+    });
+    const body = await response.json();
+    assert.equal(response.status, 200, JSON.stringify(body));
+
+    assert.equal(await countRows(db, schema.profiles, schema.profiles.sessionId, sessionId), 0);
+    assert.equal(await countRows(db, schema.accessCodeRedemptions, schema.accessCodeRedemptions.sessionId, sessionId), 0);
+  });
 });
