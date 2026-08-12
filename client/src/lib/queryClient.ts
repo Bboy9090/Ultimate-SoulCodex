@@ -1,10 +1,10 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { resolveApiUrlWithBase } from "./api-url";
 
-const configuredApiBase = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+const configuredApiBase = import.meta.env.VITE_API_URL || "";
 
 export function resolveApiUrl(url: string): string {
-  if (!url.startsWith("/api/")) return url;
-  return configuredApiBase ? `${configuredApiBase}${url}` : url;
+  return resolveApiUrlWithBase(url, configuredApiBase);
 }
 
 export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
