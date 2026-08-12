@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: ".",
   testMatch:
-    /(offline-shell|project-clarity|foundation-profile-journey|foundation-consumer-responsive)\.spec\.mjs/,
+    /(offline-shell|project-clarity|foundation-profile-journey|foundation-consumer-responsive|account-deletion-restart)\.spec\.mjs/,
   timeout: 180_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
