@@ -1,75 +1,56 @@
 # Soul Codex Foundation Release — Project Status
 
-**Last Updated:** 2026-08-08  
+**Last Updated:** 2026-08-12  
 **Current Branch:** `main`  
-**Current Milestone:** Foundation Release Certification
+**Current Milestone:** Consumer/App Store Release Certification
 
 ---
 
 ## Gate Status
 
-| Gate | Status | Completion | Notes |
-|------|--------|-----------|-------|
-| Gate 1 | 🟡 Pending | — | Foundation architecture & design |
-| Gate 2 | 🟡 Pending | — | Mobile platform validation |
-| Gate 3 | 🟢 **PASS** | 100% | No-silent-upgrade trust boundary ✅ |
-| Gate 4 | 🟡 Pending | — | Lifecycle & data consistency |
-| Gate 5 | 🟡 Pending | — | Deployment & release readiness |
+| Gate | Status | Notes |
+|------|--------|-------|
+| Gate 1 | 🟡 **READY FOR PASS** | Canonical evidence, persistence, certainty ceiling, and live-reference fail-closed policy complete; final closure PR pending |
+| Gate 2 | 🟡 **SIMULATOR / EMULATOR VALIDATED** | Android debug APK + iOS Simulator exact-head builds pass; signed artifacts, hardware, and stores remain open |
+| Gate 3 | 🟢 **PASS** | No-silent-upgrade trust boundary enforced |
+| Gate 4 | 🟢 **PASS (evidence complete)** | Profile/offline/deletion/restart/non-resurrection journeys pass in Chromium + WebKit; final receipt PR #196 pending |
+| Gate 5 | 🟡 **RELEASE TOOLCHAIN VALIDATED** | Release preflight and signed-build workflows hardened; real signing, deployment rollback, and store acceptance remain account/environment bound |
 
 ---
 
-## Foundation Components
+## Foundation / Release Evidence
 
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| Diamond Doctrine | ✅ Canonical | `governance/THE-DIAMOND-DOCTRINE.md` |
-| Gate 3 Final Receipt | ✅ Recorded | `governance/release-audits/GATE-3-FINAL-RECEIPT.md` |
-| Gate 3 Regression Tests | ✅ 13/13 PASS | `server/tests/gate3-silent-upgrades.test.ts` |
-| Workspace Tests | ✅ 385/385 PASS | `npm test` |
-| TypeScript Checks | ✅ PASS | `npm run check` |
-| Production Build | ✅ PASS | `npm run build` (166.7kb) |
-| Security Audit | ✅ 0 high | 4 moderate pre-existing (unrelated) |
+- Diamond Doctrine is canonical under `governance/THE-DIAMOND-DOCTRINE.md`.
+- Gate 1 calculation/evidence architecture was reconciled across astrology, numerology, Human Design, Galactic Code, persistence, and UI certainty contracts.
+- Gate 2 native smoke validation now builds Android and iOS from the supported Capacitor 8 toolchain on exact candidate heads.
+- Gate 3 remains closed and protected by no-silent-upgrade regressions.
+- Gate 4 now covers canonical profile persistence, corruption, legacy migration, offline restart, account deletion, blocked IndexedDB deletion, browser restart, and non-resurrection.
+- Gate 5 hardened iOS/Android release automation so unsupported Xcode, masked archive failures, bad provisioning identity, empty IPA output, and unsigned-release claims fail closed.
+- NASA/JPL Horizons availability is tracked as an external evidence dependency. Transient outages produce explicit fail-closed receipts and no longer masquerade as unrelated application regressions.
 
 ---
 
-## What Gate 3 Guarantees
+## What Is Still Required Before Consumer Store Release
 
-Gate 3 established architectural guarantees enforced by code and regression tests:
-
-- ✅ Unknown data stays unknown (no fabricated defaults)
-- ✅ Approximate data never becomes verified (no silent upgrades)
-- ✅ AI cannot accidentally elevate uncertain data (verification boundary)
-- ✅ Onboarding no longer manufactures confidence (removed date-boundary sun signs)
-- ✅ Regression tests enforce these rules permanently (13 assertions, all passing)
-
-**Status:** Locked. No feature work touches Gate 3 code unless production bugs, security issues, or narrowly scoped later-gate changes require it.
-
----
-
-## Next Required Action
-
-**Finish independent audits for Gates 1, 2, 4, and 5.**
-
-Once all gates have evidence-backed PASS receipts:
-1. Consolidate documentation under the Diamond Doctrine
-2. Freeze foundation governance
-3. Begin next major development cycle on new release branch (Soul Genome, Galactic Code expansion, Timeline Intelligence)
+1. Merge the final Gate 1 and Gate 4 governance closure receipts after exact-head checks/review.
+2. Produce a signed Android release AAB with release keystore identity recorded.
+3. Produce a signed iOS App Store archive/IPA with Apple certificate, Team ID, bundle ID, and provisioning identity recorded.
+4. Install and exercise the signed release candidate on identified physical Android and Apple devices.
+5. Validate staging/production deployment, health checks, database migration state, monitoring, and rollback to the previous stable release.
+6. Complete TestFlight/App Store Connect validation and Google Play internal-testing validation.
+7. Record store metadata/privacy/support/account-deletion URLs and any store review findings against the exact release candidate.
+8. Tag the exact approved release SHA and create the final release receipt only after all account-bound evidence exists.
 
 ---
 
-## Why This Matters
+## Classification Discipline
 
-For Soul Codex, trust is the product.
+A lower validation class never implies a higher one:
 
-Gate 3 proves that unknown data cannot be silently elevated to certainty. That's not a feature. That's a promise kept by architecture, not marketing.
+- simulator build ≠ signed artifact;
+- signed artifact ≠ physical-device validation;
+- physical-device validation ≠ store acceptance;
+- external reference outage ≠ calculation failure;
+- documentation saying PASS ≠ PASS without executable evidence.
 
-The Diamond Doctrine principle—**Truth before certainty**—is now enforced by code.
-
-That's a milestone.
-
----
-
-**For more details:**
-- Foundation philosophy: `governance/THE-DIAMOND-DOCTRINE.md`
-- Gate 3 evidence: `governance/release-audits/GATE-3-FINAL-RECEIPT.md`
-- Regression tests: `server/tests/gate3-silent-upgrades.test.ts`
+The release remains fail-closed until the account-bound signing, deployment, hardware, and store receipts exist.
