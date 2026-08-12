@@ -12,6 +12,7 @@ on:
       - "client/src/lib/__tests__/ActiveProfileRepository.test.ts"
       - "tests/gate4-profile-lifecycle.test.ts"
       - "tests/account-deletion.test.ts"
+      - "tests/gate4-production-deletion.test.ts"
       - "tests/pwa/**"
       - ".github/workflows/gate4-lifecycle-validation.yml"
       - ".github/workflows/pwa-offline-browser.yml"
@@ -29,6 +30,26 @@ jobs:
     name: Profile and deletion contracts
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: soulcodex
+          POSTGRES_PASSWORD: soulcodex
+          POSTGRES_DB: soulcodex_gate4
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U soulcodex -d soulcodex_gate4"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://soulcodex:soulcodex@127.0.0.1:5432/soulcodex_gate4
+      SESSION_SECRET: gate4-ci-session-secret
+      NODE_ENV: test
 
     steps:
       - name: Checkout exact candidate head
@@ -53,6 +74,9 @@ jobs:
       - name: Build workspace packages
         run: npm run build:workspaces
 
+      - name: Prepare isolated Gate 4 PostgreSQL schema
+        run: npx drizzle-kit push --force
+
       - name: Run Gate 4 profile lifecycle contracts
         run: node --import tsx --test tests/gate4-profile-lifecycle.test.ts
 
@@ -62,12 +86,20 @@ jobs:
           set -o pipefail
           npm run test:account-deletion 2>&1 | tee gate4-account-deletion.log
 
+      - name: Run real route plus PostgreSQL deletion proof
+        shell: bash
+        run: |
+          set -o pipefail
+          node --import tsx --test tests/gate4-production-deletion.test.ts 2>&1 | tee gate4-production-deletion.log
+
       - name: Upload deletion diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gate4-account-deletion-log
-          path: gate4-account-deletion.log
+          path: |
+            gate4-account-deletion.log
+            gate4-production-deletion.log
           if-no-files-found: warn
           retention-days: 7
 
