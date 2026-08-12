@@ -6,7 +6,7 @@
  * → The same profile appears without re-entry
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   loadActiveProfile,
   saveActiveProfile,
@@ -20,7 +20,7 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
 
   return {
-    getItem: (key: string) => store[key] || null,
+    getItem: (key: string) => store[key] ?? null,
     setItem: (key: string, value: string) => {
       store[key] = value.toString();
     },
@@ -124,6 +124,20 @@ describe("ActiveProfileRepository", () => {
       expect(loadResult.status).toBe("corrupted");
       expect(loadResult.profile).toBeNull();
     });
+
+    it("should fail closed on corrupted canonical data even if valid legacy data exists", () => {
+      localStorageMock.setItem("soulcodex.activeProfile.v1", "{ definitely-not-json");
+      localStorageMock.setItem(
+        "soulProfile",
+        JSON.stringify({ birthDate: "1990-09-17", sunSign: "Virgo" }),
+      );
+
+      const loadResult = loadActiveProfile();
+
+      expect(loadResult.status).toBe("corrupted");
+      expect(loadResult.profile).toBeNull();
+      expect(localStorageMock.getItem("soulcodex.activeProfile.v1")).toBe("{ definitely-not-json");
+    });
   });
 
   describe("Legacy migration", () => {
@@ -139,30 +153,67 @@ describe("ActiveProfileRepository", () => {
       expect(loadResult.status).toBe("legacy-found");
       expect(loadResult.legacyKey).toBe("soulProfile");
       expect(loadResult.profile?.sunSign).toBe("Virgo");
+      expect(loadResult.profile?.schemaVersion).toBe(1);
+      expect(loadResult.profile?.createdAt).toBeDefined();
+      expect(loadResult.profile?.updatedAt).toBeDefined();
 
-      // Verify it was migrated to canonical key
       const secondLoad = loadActiveProfile();
       expect(secondLoad.status).toBe("loaded");
+      expect(secondLoad.profile?.schemaVersion).toBe(1);
     });
 
-    it("should check multiple legacy keys in order", () => {
+    it("should check multiple legacy profile keys in order", () => {
       const profile = {
         birthDate: "1990-09-17",
         codename: "Legacy Test",
       };
 
-      // Set an older legacy key
       localStorageMock.setItem("soulCodexReading", JSON.stringify(profile));
 
       const loadResult = loadActiveProfile();
       expect(loadResult.legacyKey).toBe("soulCodexReading");
       expect(loadResult.profile?.codename).toBe("Legacy Test");
     });
+
+    it("should not promote raw onboarding form data into a completed active profile", () => {
+      localStorageMock.setItem(
+        "onboardingData",
+        JSON.stringify({
+          name: "Form Only",
+          birthDate: "1990-09-17",
+          birthTime: "11:11",
+          birthLocation: "Bronx, New York",
+        }),
+      );
+
+      const loadResult = loadActiveProfile();
+
+      expect(loadResult.status).toBe("missing");
+      expect(loadResult.profile).toBeNull();
+      expect(localStorageMock.getItem("soulcodex.activeProfile.v1")).toBeNull();
+      expect(localStorageMock.getItem("onboardingData")).not.toBeNull();
+    });
+
+    it("should not silently rewrite an explicitly incompatible legacy schema", () => {
+      localStorageMock.setItem(
+        "soulProfile",
+        JSON.stringify({
+          birthDate: "1990-09-17",
+          schemaVersion: 999,
+          sunSign: "Virgo",
+        }),
+      );
+
+      const loadResult = loadActiveProfile();
+
+      expect(loadResult.status).toBe("missing");
+      expect(loadResult.profile).toBeNull();
+      expect(localStorageMock.getItem("soulcodex.activeProfile.v1")).toBeNull();
+    });
   });
 
   describe("Critical acceptance test: Generate → Close → Reopen → Compatibility", () => {
     it("should persist profile across page close and reopen", () => {
-      // STEP 1: Generate reading (Onboarding page saves)
       const generatedReading: StoredProfile = {
         birthDate: "1990-09-17",
         birthTime: "11:11",
@@ -178,21 +229,11 @@ describe("ActiveProfileRepository", () => {
       const saveResult = saveActiveProfile(generatedReading);
       expect(saveResult.success).toBe(true);
 
-      // STEP 2: User closes page
-      // (In real app: window closes, localStorage persists)
-      // (In test: we clear memory but localStorage remains)
-
-      // STEP 3: User reopens app
-      // (In real app: new page load happens)
-      // (In test: we just call load again on same localStorage)
-
       const loadResult = loadActiveProfile();
 
-      // STEP 4: Compatibility page opens and loads profile
       expect(loadResult.status).toBe("loaded");
       expect(loadResult.profile).toBeDefined();
 
-      // STEP 5: Same profile appears without re-entry
       const profile = loadResult.profile!;
       expect(profile.birthDate).toBe("1990-09-17");
       expect(profile.birthTime).toBe("11:11");
@@ -201,8 +242,6 @@ describe("ActiveProfileRepository", () => {
       expect(profile.risingSign).toBe("Scorpio");
       expect(profile.lifePathNumber).toBe(7);
       expect(profile.humanDesignType).toBe("Manifestor");
-
-      // All expected fields are present
       expect(Object.keys(profile).length).toBeGreaterThan(5);
     });
 
@@ -216,9 +255,7 @@ describe("ActiveProfileRepository", () => {
       const loadResult = loadActiveProfile();
       const recovery = getRecoveryMessage(loadResult);
 
-      // Should NOT have the contradictory pair:
-      // "Your profile could not be loaded" AND "Complete your Soul Codex first"
-      expect(recovery.recovery.length).toBe(0); // No recovery actions needed
+      expect(recovery.recovery.length).toBe(0);
       expect(loadResult.status).toBe("loaded");
     });
   });
@@ -269,6 +306,33 @@ describe("ActiveProfileRepository", () => {
       clearActiveProfile();
       loadResult = loadActiveProfile();
 
+      expect(loadResult.status).toBe("missing");
+      expect(loadResult.profile).toBeNull();
+    });
+
+    it("should clear legacy and onboarding sources so they cannot resurrect after reset", () => {
+      saveActiveProfile({ birthDate: "1990-09-17", sunSign: "Virgo" });
+      localStorageMock.setItem(
+        "soulProfile",
+        JSON.stringify({ birthDate: "1988-10-29", sunSign: "Scorpio" }),
+      );
+      localStorageMock.setItem(
+        "soulCodexReading",
+        JSON.stringify({ birthDate: "1993-07-26", sunSign: "Leo" }),
+      );
+      localStorageMock.setItem(
+        "onboardingData",
+        JSON.stringify({ birthDate: "2003-02-06", name: "Raw Form" }),
+      );
+
+      clearActiveProfile();
+
+      expect(localStorageMock.getItem("soulcodex.activeProfile.v1")).toBeNull();
+      expect(localStorageMock.getItem("soulProfile")).toBeNull();
+      expect(localStorageMock.getItem("soulCodexReading")).toBeNull();
+      expect(localStorageMock.getItem("onboardingData")).toBeNull();
+
+      const loadResult = loadActiveProfile();
       expect(loadResult.status).toBe("missing");
       expect(loadResult.profile).toBeNull();
     });
