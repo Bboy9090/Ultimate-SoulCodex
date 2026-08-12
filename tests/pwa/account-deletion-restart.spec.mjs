@@ -123,15 +123,6 @@ test("Settings exposes account deletion and deleted profile cannot resurrect aft
     await seedConsumerState(page);
     expect(await readOfflineIndexedDbProfile(page)).toMatchObject({ id: OFFLINE_PROFILE_ID });
 
-    await page.route("**/api/auth/account", async (route) => {
-      if (route.request().method() !== "DELETE") return route.fallback();
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ success: true }),
-      });
-    });
-
     await page.goto(`${BASE_URL}/settings`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
     await page.getByRole("button", { name: /Delete Account & Data/i }).click();
