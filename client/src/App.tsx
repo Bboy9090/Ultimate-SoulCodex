@@ -110,6 +110,7 @@ function Router() {
       <Route path="/support" component={SupportPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/delete-account" component={AccountDeletionPage} />
+      <Route path="/account-deletion" component={AccountDeletionPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
     </Switch>
