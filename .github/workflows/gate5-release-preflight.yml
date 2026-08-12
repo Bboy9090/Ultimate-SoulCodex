@@ -1,0 +1,69 @@
+name: Gate 5 Release Preflight
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-ios.yml"
+      - ".github/workflows/build-android.yml"
+      - ".github/workflows/gate5-release-preflight.yml"
+      - "scripts/validate-mobile-release.mjs"
+      - "ios/**"
+      - "android/**"
+      - "tests/release-toolchain-contract.test.ts"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate5-release-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-contracts:
+    name: Release workflow contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Record exact candidate SHA
+        run: |
+          echo "candidate_sha=$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+
+      - name: Build canonical workspaces
+        run: npm run build:workspaces
+
+      - name: Run signed-build workflow contracts
+        run: node --import tsx --test tests/release-toolchain-contract.test.ts
+
+      - name: Validate Android release configuration
+        run: npm run mobile:validate:android
+
+      - name: Validate iOS release configuration
+        run: npm run mobile:validate:ios
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Production dependency security audit
+        run: npm audit --omit=dev --audit-level=high
