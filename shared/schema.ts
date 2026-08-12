@@ -6,6 +6,7 @@ import {
   timestamp,
   jsonb,
   boolean,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -27,6 +28,27 @@ export const users = pgTable("users", {
   isPremium: boolean("is_premium").default(false),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+// Root storage.ts imports these active auth/redemption tables directly. They
+// must remain real schema exports even while the wider root schema is being
+// reconciled with packages/db.
+export const localUsers = pgTable("local_users", {
+  id: varchar("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  passwordVersion: integer("password_version").notNull().default(1),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
+export const accessCodeRedemptions = pgTable("access_code_redemptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  accessCodeId: varchar("access_code_id").notNull(),
+  userId: varchar("user_id"),
+  sessionId: varchar("session_id"),
+  redeemedAt: timestamp("redeemed_at").default(sql`now()`),
 });
 
 export const profiles = pgTable("soul_profiles", {
@@ -180,13 +202,13 @@ export type UpsertUser = Partial<User> & { id: string };
 export type Person = any;
 export type InsertPerson = any;
 export type AccessCode = any;
-export type AccessCodeRedemption = any;
+export type AccessCodeRedemption = typeof accessCodeRedemptions.$inferSelect;
 export type InsertAccessCode = any;
 export type DailyInsight = any;
 export type InsertDailyInsight = any;
 export type CompatibilityAnalysis = any;
 export type InsertCompatibility = any;
-export type LocalUser = any;
+export type LocalUser = typeof localUsers.$inferSelect;
 export type FrequencyLog = any;
 export type InsertFrequencyLog = any;
 export type WebhookEvent = any;
