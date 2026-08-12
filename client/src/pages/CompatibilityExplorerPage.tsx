@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Navigation from "../components/navigation";
 import { loadActiveProfile } from "../lib/ActiveProfileRepository";
 import { getVerifiedPlacement, placementDisplayStatus } from "../lib/placementVerification";
+import { apiFetch } from "../lib/queryClient";
 
 type Mode = "love" | "attraction" | "friendship" | "growth";
 
@@ -78,10 +79,9 @@ export default function CompatibilityExplorerPage() {
       setLoading(true);
       setError("");
       try {
-        const response = await fetch("/api/compatibility/archetype-matches", {
+        const response = await apiFetch("/api/compatibility/archetype-matches", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ profile, mode }),
         });
         const payload = await response.json();
