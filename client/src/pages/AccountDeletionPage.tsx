@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { IconAlert, IconArrowLeft, IconLock } from "../components/Icons";
-import { apiFetch, queryClient } from "../lib/queryClient";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { clearOfflineProfiles } from "../lib/offlineProfileStore";
 
 const DELETE_CONFIRMATION = "DELETE";
 
@@ -18,16 +19,13 @@ export default function AccountDeletionPage() {
     setIsDeleting(true);
 
     try {
-      const response = await apiFetch("/api/auth/account", { method: "DELETE" });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(body?.message || "We could not delete your server data.");
-      }
+      await apiRequest("DELETE", "/api/auth/account");
+      await clearOfflineProfiles();
 
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.replace("/welcome?accountDeleted=1");
+      window.location.replace("/?accountDeleted=1");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Deletion failed. Please try again.");
       setIsDeleting(false);
