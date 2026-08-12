@@ -117,8 +117,9 @@ test("active Apple auth rotates session, migrates anonymous profile, exposes saf
       headers: { "content-type": "application/json", Cookie: firstCookie },
       body: JSON.stringify({ identityToken: "verified-apple-token" }),
     });
-    assert.equal(login.status, 200, await login.text());
-    const loginBody = await login.json() as any;
+    const loginText = await login.text();
+    assert.equal(login.status, 200, loginText);
+    const loginBody = JSON.parse(loginText) as any;
     assert.equal(loginBody.user.email, "verified@example.com");
     assert.equal("password" in loginBody.user, false);
     assert.equal(loginBody.user.username, "apple:apple-subject-42");
