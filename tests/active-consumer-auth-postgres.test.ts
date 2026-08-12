@@ -24,6 +24,19 @@ function cookieFrom(response: Response) {
   return (response.headers.get("set-cookie") || "").split(";")[0];
 }
 
+test("PostgreSQL Apple user resolution is concurrency-safe", async () => {
+  assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required");
+  const subject = `concurrent-subject-${Date.now()}`;
+  const users = await Promise.all([
+    storage.getOrCreateAppleUser(subject, "race@example.com"),
+    storage.getOrCreateAppleUser(subject, "race@example.com"),
+    storage.getOrCreateAppleUser(subject, "race@example.com"),
+    storage.getOrCreateAppleUser(subject, "race@example.com"),
+  ]);
+  assert.equal(new Set(users.map((user) => user.id)).size, 1);
+  await storage.deleteUserAccount(users[0].id);
+});
+
 test("PostgreSQL active auth migrates session profile into canonical Apple user", async () => {
   assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required");
   assert.ok(process.env.SESSION_SECRET, "SESSION_SECRET is required");
