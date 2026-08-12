@@ -1,9 +1,6 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { createRequire } from "node:module";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "@shared/schema";
-
-neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -11,5 +8,15 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+// connect-pg-simple is a direct runtime dependency and owns a compatible `pg`
+// dependency. Resolve `pg` from that dependency context so the active server
+// uses ordinary PostgreSQL transport instead of the Neon WebSocket adapter.
+// This supports Railway/local PostgreSQL DATABASE_URL values directly.
+const rootRequire = createRequire(import.meta.url);
+const connectPgRequire = createRequire(rootRequire.resolve("connect-pg-simple"));
+const { Pool } = connectPgRequire("pg") as {
+  Pool: new (options: { connectionString: string }) => any;
+};
+
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle(pool, { schema });

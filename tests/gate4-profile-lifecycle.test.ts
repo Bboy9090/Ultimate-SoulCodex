@@ -99,6 +99,24 @@ test("Gate 4: unversioned legacy profile migrates exactly once to schema v1", ()
   assert.equal(reloaded.profile?.schemaVersion, 1);
 });
 
+test("Gate 4: raw onboarding form data is not promoted into a completed active profile", () => {
+  localStorage.setItem(
+    "onboardingData",
+    JSON.stringify({
+      name: "Form Only",
+      birthDate: "1990-09-17",
+      birthTime: "11:11",
+      birthLocation: "Bronx, New York",
+    }),
+  );
+
+  const loaded = loadActiveProfile();
+  assert.equal(loaded.status, "missing");
+  assert.equal(loaded.profile, null);
+  assert.equal(localStorage.getItem("soulcodex.activeProfile.v1"), null);
+  assert.notEqual(localStorage.getItem("onboardingData"), null);
+});
+
 test("Gate 4: explicitly incompatible legacy schema is not silently upgraded", () => {
   localStorage.setItem(
     "soulProfile",
@@ -115,7 +133,7 @@ test("Gate 4: explicitly incompatible legacy schema is not silently upgraded", (
   assert.equal(localStorage.getItem("soulcodex.activeProfile.v1"), null);
 });
 
-test("Gate 4: reset removes canonical and legacy sources so profile cannot resurrect", () => {
+test("Gate 4: reset removes canonical, legacy, and onboarding sources so profile cannot resurrect", () => {
   assert.equal(saveActiveProfile({ birthDate: "1990-09-17" }).success, true);
   localStorage.setItem(
     "soulProfile",
@@ -125,12 +143,17 @@ test("Gate 4: reset removes canonical and legacy sources so profile cannot resur
     "soulCodexReading",
     JSON.stringify({ birthDate: "1993-07-26", sunSign: "Leo" }),
   );
+  localStorage.setItem(
+    "onboardingData",
+    JSON.stringify({ birthDate: "2003-02-06", name: "Raw Form" }),
+  );
 
   clearActiveProfile();
 
   assert.equal(localStorage.getItem("soulcodex.activeProfile.v1"), null);
   assert.equal(localStorage.getItem("soulProfile"), null);
   assert.equal(localStorage.getItem("soulCodexReading"), null);
+  assert.equal(localStorage.getItem("onboardingData"), null);
 
   const loaded = loadActiveProfile();
   assert.equal(loaded.status, "missing");
