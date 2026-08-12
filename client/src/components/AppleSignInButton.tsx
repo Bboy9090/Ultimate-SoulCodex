@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { AppleSignIn } from "@capawesome/capacitor-apple-sign-in";
+import { AppleSignIn, SignInScope } from "@capawesome/capacitor-apple-sign-in";
 import { apiRequest, queryClient } from "../lib/queryClient";
 
 interface Props {
   onSuccess?: (user: any) => void;
   text?: string;
   className?: string;
+}
+
+function randomState(): string {
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export default function AppleSignInButton({ onSuccess, text = "Sign in with Apple", className = "" }: Props) {
@@ -16,17 +22,21 @@ export default function AppleSignInButton({ onSuccess, text = "Sign in with Appl
     setLoading(true);
     try {
       if (Capacitor.isNativePlatform()) {
+        const state = randomState();
         const result = await AppleSignIn.signIn({
-          state: "soul_codex_auth",
-          scopes: ["email", "name"],
+          state,
+          scopes: [SignInScope.Email, SignInScope.FullName],
         });
 
-        if (!result.identityToken) {
-          throw new Error("Apple did not return an identity token");
+        if (result.state && result.state !== state) {
+          throw new Error("Apple Sign-In state validation failed");
+        }
+        if (!result.idToken) {
+          throw new Error("Apple did not return an ID token");
         }
 
         const response = await apiRequest("POST", "/api/auth/apple", {
-          identityToken: result.identityToken,
+          identityToken: result.idToken,
         });
         const loginData = await response.json() as { user: any };
 
