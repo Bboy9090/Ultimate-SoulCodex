@@ -3,6 +3,7 @@ import type { IndependentEphemerisReference } from "./astrology-verification";
 export type SupportedHorizonsBody = "Sun" | "Moon";
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+type SleepLike = (milliseconds: number) => Promise<void>;
 
 interface HorizonsPayload {
   signature?: {
@@ -20,6 +21,7 @@ const BODY_COMMAND: Record<SupportedHorizonsBody, string> = {
   Sun: "10",
   Moon: "301",
 };
+const TRANSIENT_HTTP_STATUSES = new Set([429, 500, 502, 503, 504]);
 
 const ZODIAC_SIGNS = [
   "Aries",
@@ -54,6 +56,10 @@ function horizonsTime(timestamp: string): string {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) throw new Error("invalid_input_timestamp");
   return date.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 export function buildHorizonsReferenceUrl(body: SupportedHorizonsBody, inputTimestamp: string): string {
@@ -118,37 +124,58 @@ export async function fetchHorizonsReference(
   options: {
     fetchImpl?: FetchLike;
     timeoutMs?: number;
+    maxAttempts?: number;
+    retryBaseDelayMs?: number;
+    sleepImpl?: SleepLike;
   } = {},
 ): Promise<IndependentEphemerisReference> {
   const fetchImpl = options.fetchImpl ?? fetch;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 8_000);
+  const maxAttempts = Math.max(1, options.maxAttempts ?? 4);
+  const retryBaseDelayMs = Math.max(0, options.retryBaseDelayMs ?? 500);
+  const sleepImpl = options.sleepImpl ?? sleep;
+  const url = buildHorizonsReferenceUrl(body, inputTimestamp);
 
-  try {
-    const response = await fetchImpl(buildHorizonsReferenceUrl(body, inputTimestamp), {
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) throw new Error(`horizons_http_${response.status}`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 8_000);
 
-    const payload = await response.json() as HorizonsPayload;
-    if (payload.error) throw new Error("horizons_api_error");
-    if (!payload.signature?.source?.toLowerCase().includes("jpl")) {
-      throw new Error("horizons_signature_invalid");
+    try {
+      const response = await fetchImpl(url, {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        const error = new Error(`horizons_http_${response.status}`);
+        if (TRANSIENT_HTTP_STATUSES.has(response.status) && attempt < maxAttempts) {
+          clearTimeout(timeout);
+          await sleepImpl(retryBaseDelayMs * 2 ** (attempt - 1));
+          continue;
+        }
+        throw error;
+      }
+
+      const payload = await response.json() as HorizonsPayload;
+      if (payload.error) throw new Error("horizons_api_error");
+      if (!payload.signature?.source?.toLowerCase().includes("jpl")) {
+        throw new Error("horizons_signature_invalid");
+      }
+      if (!payload.result) throw new Error("horizons_result_missing");
+
+      const longitude = parseHorizonsLongitude(payload.result);
+      return {
+        body,
+        sign: signFromLongitude(longitude),
+        longitude,
+        source: HORIZONS_SOURCE,
+        engine: HORIZONS_ENGINE,
+        calculatedAt: new Date().toISOString(),
+        inputTimestamp: new Date(inputTimestamp).toISOString(),
+      };
+    } finally {
+      clearTimeout(timeout);
     }
-    if (!payload.result) throw new Error("horizons_result_missing");
-
-    const longitude = parseHorizonsLongitude(payload.result);
-    return {
-      body,
-      sign: signFromLongitude(longitude),
-      longitude,
-      source: HORIZONS_SOURCE,
-      engine: HORIZONS_ENGINE,
-      calculatedAt: new Date().toISOString(),
-      inputTimestamp: new Date(inputTimestamp).toISOString(),
-    };
-  } finally {
-    clearTimeout(timeout);
   }
+
+  throw new Error("horizons_retry_exhausted");
 }
