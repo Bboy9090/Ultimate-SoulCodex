@@ -16,6 +16,11 @@ $$EOE
 *******************************************************************************
 `;
 
+const validPayload = JSON.stringify({
+  signature: { source: "NASA/JPL Horizons API", version: "1.3" },
+  result: sampleResult,
+});
+
 test("builds an official geocentric quantity-31 request for the same UTC instant", () => {
   const url = new URL(buildHorizonsReferenceUrl("Sun", "1990-09-17T15:11:00.000Z"));
 
@@ -34,10 +39,10 @@ test("parses the named Horizons ecliptic-longitude column instead of guessing a 
 });
 
 test("creates an independent Sun reference with provenance but does not promote it", async () => {
-  const fetchImpl = async () => new Response(JSON.stringify({
-    signature: { source: "NASA/JPL Horizons API", version: "1.3" },
-    result: sampleResult,
-  }), { status: 200, headers: { "Content-Type": "application/json" } });
+  const fetchImpl = async () => new Response(validPayload, {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 
   const reference = await fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", { fetchImpl });
 
@@ -53,6 +58,67 @@ test("creates an independent Sun reference with provenance but does not promote 
 test("uses the Moon major-body command for Moon references", () => {
   const url = new URL(buildHorizonsReferenceUrl("Moon", "1990-09-17T15:11:00.000Z"));
   assert.equal(url.searchParams.get("COMMAND"), "'301'");
+});
+
+test("retries transient Horizons availability failures with bounded exponential backoff", async () => {
+  let calls = 0;
+  const delays: number[] = [];
+  const fetchImpl = async () => {
+    calls += 1;
+    if (calls < 3) return new Response("database unavailable", { status: 500 });
+    return new Response(validPayload, { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+
+  const reference = await fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", {
+    fetchImpl,
+    maxAttempts: 3,
+    retryBaseDelayMs: 10,
+    sleepImpl: async (milliseconds) => { delays.push(milliseconds); },
+  });
+
+  assert.equal(reference.longitude, 174.27);
+  assert.equal(calls, 3);
+  assert.deepEqual(delays, [10, 20]);
+});
+
+test("fails closed after transient Horizons retry budget is exhausted", async () => {
+  let calls = 0;
+  const delays: number[] = [];
+  const fetchImpl = async () => {
+    calls += 1;
+    return new Response("database unavailable", { status: 500 });
+  };
+
+  await assert.rejects(
+    fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", {
+      fetchImpl,
+      maxAttempts: 3,
+      retryBaseDelayMs: 5,
+      sleepImpl: async (milliseconds) => { delays.push(milliseconds); },
+    }),
+    /horizons_http_500/,
+  );
+
+  assert.equal(calls, 3);
+  assert.deepEqual(delays, [5, 10]);
+});
+
+test("does not retry permanent HTTP client errors", async () => {
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    return new Response("bad request", { status: 400 });
+  };
+
+  await assert.rejects(
+    fetchHorizonsReference("Sun", "1990-09-17T15:11:00.000Z", {
+      fetchImpl,
+      maxAttempts: 4,
+      sleepImpl: async () => undefined,
+    }),
+    /horizons_http_400/,
+  );
+  assert.equal(calls, 1);
 });
 
 test("rejects unsigned, malformed, or incomplete Horizons responses", async () => {
