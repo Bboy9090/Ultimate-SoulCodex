@@ -97,3 +97,26 @@ export async function deleteOfflineProfile(id: string): Promise<void> {
     console.warn("[offlineProfileStore] IndexedDB delete failed", error);
   }
 }
+
+/**
+ * Remove every locally persisted offline profile for account/data deletion.
+ * This intentionally clears both the IndexedDB authority and localStorage
+ * fallbacks so a deleted profile cannot reappear from a bookmarked local URL.
+ */
+export async function clearOfflineProfiles(): Promise<void> {
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith(FALLBACK_PREFIX)) localStorage.removeItem(key);
+    }
+  } catch {}
+
+  if (!hasIndexedDb()) return;
+
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error("Unable to delete offline profile database"));
+    request.onblocked = () => reject(new Error("Offline profile database deletion was blocked"));
+  });
+}
