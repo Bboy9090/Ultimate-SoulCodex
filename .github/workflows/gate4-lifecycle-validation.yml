@@ -7,18 +7,24 @@ on:
       - "client/src/App.tsx"
       - "client/src/pages/SettingsPage.tsx"
       - "client/src/pages/AccountDeletionPage.tsx"
+      - "client/src/pages/CompatibilityExplorerPage.tsx"
+      - "client/src/pages/offline-profile.tsx"
+      - "client/src/lib/queryClient.ts"
+      - "client/src/lib/api-url.ts"
       - "client/src/lib/ActiveProfileRepository.ts"
       - "client/src/lib/offlineProfileStore.ts"
       - "client/src/lib/__tests__/ActiveProfileRepository.test.ts"
       - "server/auth/**"
       - "server/routes/consumer-auth.ts"
       - "server/routes.ts"
+      - "server/index.ts"
       - "server/storage.ts"
       - "server/session.ts"
       - "server/db.ts"
       - "shared/schema.ts"
       - "tests/active-consumer-auth.test.ts"
       - "tests/active-consumer-auth-postgres.test.ts"
+      - "tests/native-api-routing.test.ts"
       - "tests/gate4-profile-lifecycle.test.ts"
       - "tests/account-deletion.test.ts"
       - "tests/gate4-production-deletion.test.ts"
@@ -91,6 +97,9 @@ jobs:
 
       - name: Run active consumer auth contract against PostgreSQL
         run: node --import tsx --test tests/active-consumer-auth-postgres.test.ts
+
+      - name: Run native API routing contract
+        run: node --import tsx --test tests/native-api-routing.test.ts
 
       - name: Run account deletion storage contracts
         shell: bash
