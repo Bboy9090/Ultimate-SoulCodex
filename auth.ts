@@ -21,8 +21,6 @@ export async function setupAuth(app: Express) {
 
   app.set("trust proxy", 1);
 
-  // Persistent session store (Postgres) when DATABASE_URL is set (and not in DEMO_MODE).
-  // Falls back to in-memory only for local dev without a DB.
   const isDemoMode = process.env.DEMO_MODE === "true";
   const usePostgresStore = !!process.env.DATABASE_URL && !isDemoMode;
 
@@ -30,12 +28,14 @@ export async function setupAuth(app: Express) {
     ? new PgSession({
         conString: process.env.DATABASE_URL,
         tableName: "sessions",
-        createTableIfMissing: false,
+        // The session table is infrastructure owned by connect-pg-simple rather
+        // than application-domain schema. Self-initialize it so fresh staging
+        // and production databases do not silently fall back to broken sessions.
+        createTableIfMissing: true,
       })
     : new MemoryStore({ checkPeriod: 86400000 });
 
-  // Prevent session store errors from hanging the app
-  (sessionStore as any).on?.('error', (err: any) => {
+  (sessionStore as any).on?.("error", (err: any) => {
     console.error("[Sessions] Store Error:", err.message || err);
   });
 
@@ -54,7 +54,7 @@ export async function setupAuth(app: Express) {
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
+        sameSite: "lax",
         maxAge: 1000 * 60 * 60 * 24 * 7,
       },
     })
@@ -96,5 +96,5 @@ export async function setupAuth(app: Express) {
 
 export function isAuthenticated(req: any, _res: any, next: any) {
   if (req.isAuthenticated && req.isAuthenticated()) return next();
-  return next(); // allow anonymous for now; tighten later if needed
+  return next();
 }
