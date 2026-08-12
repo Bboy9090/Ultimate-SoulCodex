@@ -71,7 +71,7 @@ jobs:
 
   ios-simulator:
     name: iOS Simulator build
-    runs-on: macos-14
+    runs-on: macos-26
     timeout-minutes: 45
 
     steps:
@@ -88,6 +88,12 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+
+      - name: Verify supported Xcode toolchain
+        run: |
+          xcodebuild -version
+          XCODE_MAJOR=$(xcodebuild -version | awk '/Xcode/{split($2,v,"."); print v[1]}')
+          test "$XCODE_MAJOR" -ge 26
 
       - name: Bootstrap JavaScript and local Swift packages
         env:
