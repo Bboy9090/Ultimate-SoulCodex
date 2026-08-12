@@ -91,7 +91,44 @@ async function readOfflineIndexedDbProfile(page) {
   }, OFFLINE_PROFILE_ID);
 }
 
-async function assertDeviceStorageEmpty(page) {
+async function holdBlockingIndexedDbConnection(page) {
+  await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+  await page.evaluate(async () => {
+    await new Promise((resolve, reject) => {
+      const request = indexedDB.open("soulcodex-offline", 1);
+      request.onerror = () => reject(request.error ?? new Error("Unable to open blocker IndexedDB connection"));
+      request.onsuccess = () => {
+        // Deliberately keep a second-tab connection open and do not install a
+        // versionchange handler. This reproduces a real multi-tab condition
+        // where deleteDatabase() is blocked after account deletion succeeds.
+        window.__gate4BlockingDb = request.result;
+        resolve();
+      };
+    });
+  });
+}
+
+async function readProfileThroughBlockingConnection(page) {
+  return page.evaluate(async (profileId) => {
+    const database = window.__gate4BlockingDb;
+    if (!database) throw new Error("Gate 4 blocking IndexedDB connection is missing");
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction("profiles", "readonly");
+      const request = transaction.objectStore("profiles").get(profileId);
+      request.onsuccess = () => resolve(request.result ?? null);
+      request.onerror = () => reject(request.error ?? new Error("Unable to read through blocker connection"));
+    });
+  }, OFFLINE_PROFILE_ID);
+}
+
+async function closeBlockingIndexedDbConnection(page) {
+  await page.evaluate(() => {
+    window.__gate4BlockingDb?.close();
+    delete window.__gate4BlockingDb;
+  }).catch(() => undefined);
+}
+
+async function assertWebStorageEmpty(page) {
   const state = await page.evaluate(({ activeKey, legacyKeys, profileId }) => ({
     activeProfile: localStorage.getItem(activeKey),
     legacyValues: legacyKeys.map((key) => localStorage.getItem(key)),
@@ -105,10 +142,9 @@ async function assertDeviceStorageEmpty(page) {
   expect(state.fallbackProfile).toBeNull();
   expect(state.localCount).toBe(0);
   expect(state.sessionCount).toBe(0);
-  expect(await readOfflineIndexedDbProfile(page)).toBeNull();
 }
 
-test("Settings exposes account deletion and deleted profile cannot resurrect after restart", async ({ browserName }, testInfo) => {
+test("Settings deletion clears Web Storage and offline IndexedDB even when a second tab blocks database deletion", async ({ browserName }, testInfo) => {
   const browserType = BROWSER_TYPES[browserName];
   if (!browserType) throw new Error(`Unsupported browser project: ${browserName}`);
 
@@ -118,10 +154,13 @@ test("Settings exposes account deletion and deleted profile cannot resurrect aft
 
   let context = await browserType.launchPersistentContext(userDataDir, options);
   let page = context.pages()[0] ?? (await context.newPage());
+  let blockerPage = await context.newPage();
 
   try {
     await seedConsumerState(page);
     expect(await readOfflineIndexedDbProfile(page)).toMatchObject({ id: OFFLINE_PROFILE_ID });
+    await holdBlockingIndexedDbConnection(blockerPage);
+    expect(await readProfileThroughBlockingConnection(blockerPage)).toMatchObject({ id: OFFLINE_PROFILE_ID });
 
     await page.goto(`${BASE_URL}/settings`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
@@ -136,8 +175,14 @@ test("Settings exposes account deletion and deleted profile cannot resurrect aft
       page.getByRole("button", { name: /Permanently Delete My Data/i }).click(),
     ]);
 
-    await assertDeviceStorageEmpty(page);
+    // The second tab deliberately prevents deleteDatabase() from completing.
+    // The profile store itself still has to be empty, and canonical Web Storage
+    // must be cleared unconditionally after server deletion succeeds.
+    await assertWebStorageEmpty(page);
+    expect(await readProfileThroughBlockingConnection(blockerPage)).toBeNull();
   } finally {
+    await closeBlockingIndexedDbConnection(blockerPage);
+    await blockerPage.close().catch(() => undefined);
     await context.close();
   }
 
@@ -146,7 +191,8 @@ test("Settings exposes account deletion and deleted profile cannot resurrect aft
 
   try {
     await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
-    await assertDeviceStorageEmpty(page);
+    await assertWebStorageEmpty(page);
+    expect(await readOfflineIndexedDbProfile(page)).toBeNull();
     await expect(page.locator("body")).not.toContainText(OFFLINE_PROFILE_ID);
   } catch (error) {
     const screenshotPath = testInfo.outputPath(`account-deletion-restart-failure-${browserName}.png`);
