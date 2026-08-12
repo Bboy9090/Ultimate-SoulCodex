@@ -27,7 +27,7 @@ export default function AccountDeletionPage() {
       queryClient.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.replace("/welcome?accountDeleted=1");
+      window.location.replace("/?accountDeleted=1");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Deletion failed. Please try again.");
       setIsDeleting(false);
