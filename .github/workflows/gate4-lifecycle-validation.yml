@@ -8,6 +8,7 @@ on:
       - "client/src/pages/SettingsPage.tsx"
       - "client/src/pages/AccountDeletionPage.tsx"
       - "client/src/lib/ActiveProfileRepository.ts"
+      - "client/src/lib/offlineProfileStore.ts"
       - "client/src/lib/__tests__/ActiveProfileRepository.test.ts"
       - "tests/gate4-profile-lifecycle.test.ts"
       - "tests/account-deletion.test.ts"
