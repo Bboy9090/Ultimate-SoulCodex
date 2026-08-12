@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { IconAlert, IconArrowLeft, IconLock } from "../components/Icons";
-import { apiFetch, queryClient } from "../lib/queryClient";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { clearOfflineProfiles } from "../lib/offlineProfileStore";
 
 const DELETE_CONFIRMATION = "DELETE";
 
@@ -18,20 +19,31 @@ export default function AccountDeletionPage() {
     setIsDeleting(true);
 
     try {
-      const response = await apiFetch("/api/auth/account", { method: "DELETE" });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(body?.message || "We could not delete your server data.");
-      }
-
-      queryClient.clear();
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.replace("/welcome?accountDeleted=1");
+      await apiRequest("DELETE", "/api/auth/account");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Deletion failed. Please try again.");
       setIsDeleting(false);
+      return;
     }
+
+    // Server deletion is irreversible. From this point forward local cleanup is
+    // best-effort but unconditional so a blocked IndexedDB connection cannot
+    // leave canonical Web Storage behind or make the app report account deletion
+    // as failed after the server has already removed the account.
+    try {
+      await clearOfflineProfiles();
+    } catch (cause) {
+      console.warn("[AccountDeletion] offline profile cleanup incomplete after server deletion", cause);
+    }
+
+    queryClient.clear();
+    try {
+      localStorage.clear();
+    } catch {}
+    try {
+      sessionStorage.clear();
+    } catch {}
+    window.location.replace("/?accountDeleted=1");
   };
 
   return (

@@ -18,7 +18,11 @@ function openDatabase(): Promise<IDBDatabase> {
         database.createObjectStore(PROFILE_STORE, { keyPath: "id" });
       }
     };
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const database = request.result;
+      database.onversionchange = () => database.close();
+      resolve(database);
+    };
     request.onerror = () => reject(request.error ?? new Error("Unable to open offline profile database"));
   });
 }
@@ -96,4 +100,50 @@ export async function deleteOfflineProfile(id: string): Promise<void> {
   } catch (error) {
     console.warn("[offlineProfileStore] IndexedDB delete failed", error);
   }
+}
+
+/**
+ * Remove every locally persisted offline profile for account/data deletion.
+ * The object store is cleared before database deletion so profile data is gone
+ * even if another tab temporarily blocks deleteDatabase().
+ */
+export async function clearOfflineProfiles(): Promise<void> {
+  try {
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith(FALLBACK_PREFIX)) localStorage.removeItem(key);
+    }
+  } catch {}
+
+  if (!hasIndexedDb()) return;
+
+  let storeCleared = false;
+  try {
+    await withStore("readwrite", (store) => store.clear());
+    storeCleared = true;
+  } catch (error) {
+    console.warn("[offlineProfileStore] IndexedDB profile-store clear failed", error);
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => {
+      const error = request.error ?? new Error("Unable to delete offline profile database");
+      if (storeCleared) {
+        console.warn("[offlineProfileStore] Database deletion failed after profile store was cleared", error);
+        resolve();
+      } else {
+        reject(error);
+      }
+    };
+    request.onblocked = () => {
+      if (storeCleared) {
+        console.warn("[offlineProfileStore] Database deletion blocked; profile store was already cleared");
+        resolve();
+      } else {
+        reject(new Error("Offline profile database deletion was blocked before profile data could be cleared"));
+      }
+    };
+  });
 }

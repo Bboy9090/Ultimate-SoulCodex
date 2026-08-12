@@ -120,6 +120,11 @@ export default function SettingsPage() {
                 icon={<IconInfo size={16} />}
                 onClick={() => navigate("/support")}
               />
+              <SettingsLink
+                label="Delete Account & Data"
+                icon={<IconAlert size={16} />}
+                onClick={() => navigate("/delete-account")}
+              />
             </div>
           </section>
 
