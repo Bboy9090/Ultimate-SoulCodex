@@ -14,10 +14,14 @@ on:
       - "server/services/astrology-evidence-matrix.ts"
       - "server/services/astrology.ts"
       - "server/services/astrology-verification.ts"
+      - "server/services/astrology-engine-compat.ts"
+      - "server/services/ascendant-verification.ts"
       - "tests/jpl-horizons-reference.test.ts"
       - "tests/astrology-evidence-matrix.test.ts"
       - "packages/astrology/**"
       - "packages/core/placement/**"
+      - "package.json"
+      - "package-lock.json"
 
 permissions:
   contents: read
