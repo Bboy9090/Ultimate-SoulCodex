@@ -1,9 +1,23 @@
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/navigation";
+import AppleSignInButton from "@/components/AppleSignInButton";
 import { IconAlert, IconInfo, IconLock } from "../components/Icons";
+import { apiRequest, queryClient } from "../lib/queryClient";
+
+type CurrentUser = {
+  id: string;
+  username: string;
+  email?: string | null;
+  authProvider?: string;
+};
 
 export default function SettingsPage() {
   const [, navigate] = useLocation();
+  const { data: currentUser, isLoading: userLoading } = useQuery<CurrentUser | null>({
+    queryKey: ["/api/auth/user"],
+    refetchOnMount: true,
+  });
 
   const clearLocalData = () => {
     const confirmed = window.confirm(
@@ -14,6 +28,12 @@ export default function SettingsPage() {
 
     localStorage.clear();
     window.location.href = "/";
+  };
+
+  const logout = async () => {
+    await apiRequest("POST", "/api/auth/logout");
+    queryClient.setQueryData(["/api/auth/user"], null);
+    queryClient.setQueryData(["/api/user"], null);
   };
 
   return (
@@ -34,11 +54,66 @@ export default function SettingsPage() {
             Settings
           </h1>
           <p style={{ color: "var(--sc-stone)", lineHeight: 1.7 }}>
-            Manage local data, privacy information, and support access.
+            Manage your account, local data, privacy information, and support access.
           </p>
         </div>
 
         <div className="stagger">
+          <section
+            className="glassmorphism"
+            style={{
+              padding: "clamp(1.25rem, 5vw, 2rem)",
+              borderRadius: 24,
+              marginBottom: "1.5rem",
+            }}
+          >
+            <h2 className="section-label" style={{ marginBottom: "1rem" }}>
+              Account
+            </h2>
+            {userLoading ? (
+              <p style={{ color: "var(--sc-stone)", margin: 0 }}>Checking account status...</p>
+            ) : currentUser ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div>
+                  <p style={{ margin: 0, color: "var(--sc-ivory)", fontWeight: 600 }}>
+                    Signed in with {currentUser.authProvider === "apple" ? "Apple" : "your account"}
+                  </p>
+                  <p style={{ margin: "0.35rem 0 0", color: "var(--sc-stone)", fontSize: "0.9rem" }}>
+                    {currentUser.email || "Private Apple account"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  data-testid="button-logout"
+                  onClick={logout}
+                  style={{
+                    width: "100%",
+                    padding: "0.9rem 1rem",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "var(--sc-ivory)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p style={{ color: "var(--sc-stone)", lineHeight: 1.65, fontSize: "0.9rem" }}>
+                  Sign in on iPhone or iPad to attach this device's Soul Codex profile to your account and keep server-backed data under one identity.
+                </p>
+                <AppleSignInButton
+                  onSuccess={(user) => {
+                    queryClient.setQueryData(["/api/auth/user"], { ...user, authProvider: "apple" });
+                  }}
+                />
+              </div>
+            )}
+          </section>
+
           <section
             className="glassmorphism"
             style={{
