@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   users,
   profiles,
@@ -14,10 +14,16 @@ import {
   type InsertAssessment,
 } from "@shared/schema";
 
+function appleUsername(subject: string) {
+  return `apple:${subject}`;
+}
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getOrCreateAppleUser(subject: string, email?: string | null, firstName?: string | null, lastName?: string | null): Promise<User>;
+  migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void>;
   getProfile(id: string): Promise<Profile | undefined>;
   getProfileByUserId(userId: string): Promise<Profile | undefined>;
   createProfile(profile: InsertProfile): Promise<Profile>;
@@ -58,6 +64,38 @@ export class MemStorage implements IStorage {
     } satisfies User;
     this.users.set(user.id, user);
     return user;
+  }
+  async getOrCreateAppleUser(subject: string, email?: string | null, firstName?: string | null, lastName?: string | null): Promise<User> {
+    const username = appleUsername(subject);
+    const existing = await this.getUserByUsername(username);
+    if (existing) return existing;
+    const now = new Date();
+    const user = {
+      id: randomUUID(),
+      username,
+      password: `apple-disabled:${randomUUID()}:${randomUUID()}`,
+      email: email ?? null,
+      firstName: firstName ?? null,
+      lastName: lastName ?? null,
+      profileImageUrl: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionStatus: "free",
+      subscriptionPlan: null,
+      subscriptionEndsAt: null,
+      isPremium: false,
+      createdAt: now,
+      updatedAt: now,
+    } satisfies User;
+    this.users.set(user.id, user);
+    return user;
+  }
+  async migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void> {
+    for (const [id, profile] of this.profiles) {
+      if (profile.sessionId === sessionId && !profile.userId) {
+        this.profiles.set(id, { ...profile, userId, sessionId: null, updatedAt: new Date() });
+      }
+    }
   }
   async getProfile(id: string) { return this.profiles.get(id); }
   async getProfileByUserId(userId: string) {
@@ -168,6 +206,32 @@ class PostgresStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const db = await this.db();
     return (await db.insert(users).values(insertUser).returning())[0];
+  }
+  async getOrCreateAppleUser(subject: string, email?: string | null, firstName?: string | null, lastName?: string | null): Promise<User> {
+    const db = await this.db();
+    const username = appleUsername(subject);
+    const inserted = await db.insert(users).values({
+      username,
+      password: `apple-disabled:${randomUUID()}:${randomUUID()}`,
+      email: email ?? null,
+      firstName: firstName ?? null,
+      lastName: lastName ?? null,
+      subscriptionStatus: "free",
+      isPremium: false,
+    }).onConflictDoNothing({ target: users.username }).returning();
+    if (inserted[0]) return inserted[0];
+    const existing = (await db.select().from(users).where(eq(users.username, username)).limit(1))[0];
+    if (!existing) throw new Error("Apple user could not be resolved after concurrent creation");
+    return existing;
+  }
+  async migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void> {
+    const db = await this.db();
+    await db.update(profiles)
+      .set({ userId, sessionId: null, updatedAt: new Date() })
+      .where(and(eq(profiles.sessionId, sessionId), isNull(profiles.userId)));
+    await db.update(accessCodeRedemptions)
+      .set({ userId, sessionId: null })
+      .where(and(eq(accessCodeRedemptions.sessionId, sessionId), isNull(accessCodeRedemptions.userId)));
   }
   async getProfile(id: string) {
     const db = await this.db();
