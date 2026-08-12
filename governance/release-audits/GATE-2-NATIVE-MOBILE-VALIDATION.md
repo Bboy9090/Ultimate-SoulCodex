@@ -1,7 +1,8 @@
 # Gate 2 — Native Mobile Platform Validation
 
 **Base:** `main@b5cdcc25665fb1d9c1cc7a087252e69c02b49624`  
-**Status:** **IN PROGRESS**
+**Candidate:** `f97c37ca024009b0c9eb6ece0e7bdf32635f405f`  
+**Status:** **SIMULATOR / EMULATOR VALIDATED — SIGNED, HARDWARE, AND STORE VALIDATION OPEN**
 
 ## Purpose
 
@@ -19,47 +20,84 @@ Gate 2 separates native mobile implementation from actual validation. It proves 
 - Manual iOS workflow supports simulator development build and signed App Store archive/export.
 - Release builds require a public HTTPS `VITE_API_URL` and reject localhost.
 
-## New Gate 2 CI Evidence
+## Exact-Head Native CI Evidence
 
-This branch adds `.github/workflows/mobile-native-smoke.yml` with two PR-triggered jobs:
+Candidate `f97c37ca024009b0c9eb6ece0e7bdf32635f405f` completed Mobile Native Smoke run `31576839055` successfully.
 
-1. **Android debug build**
-   - installs exact npm dependencies;
-   - builds canonical workspaces;
-   - validates Android release configuration;
-   - builds the production web bundle;
-   - syncs Capacitor;
-   - runs Gradle `assembleDebug`;
-   - verifies and uploads the APK.
+### Android debug build — PASS
 
-2. **iOS Simulator build**
-   - bootstraps JavaScript and local Swift packages;
-   - validates iOS release configuration;
-   - resolves Swift packages;
-   - builds the checked-in `Soul Codex` scheme for generic iOS Simulator with signing disabled;
-   - verifies and uploads the `.app` bundle.
+The PR-triggered Android job:
 
-The workflow intentionally uses repository variable `VITE_API_URL` with no hidden localhost/default substitution. Missing production API configuration must fail closed.
+- installed exact npm dependencies;
+- built canonical workspaces;
+- passed Android release configuration validation;
+- built the production web bundle;
+- synced Capacitor Android;
+- completed Gradle `assembleDebug`;
+- verified and uploaded the debug APK.
+
+Artifact:
+
+- name: `gate2-android-debug-apk`
+- artifact id: `9133532842`
+- digest: `sha256:2212df5fea67520233c0ebb1bec9efc4cb86eeca98c2983ea7c16d3138149288`
+
+### iOS Simulator build — PASS
+
+The PR-triggered iOS job:
+
+- runs on GitHub `macos-26`;
+- explicitly verifies Xcode major version 26 or newer because Capacitor 8 requires the Xcode 26 / Swift 6.2 toolchain;
+- bootstraps JavaScript and local Swift packages;
+- passes iOS release configuration validation;
+- resolves Swift package dependencies;
+- builds the checked-in `Soul Codex` scheme for generic iOS Simulator with signing disabled;
+- verifies and uploads `Ultimate Soul Codex.app`;
+- retains the Xcode build log as a diagnostic artifact.
+
+Artifacts:
+
+- app name: `gate2-ios-simulator-app`
+- app artifact id: `9133559275`
+- app digest: `sha256:68afd4aab73e52fdf7f89ccce2e2814964367f734ae329f3f85c242e8dba0a96`
+- diagnostic name: `gate2-ios-xcodebuild-log`
+- diagnostic artifact id: `9133557914`
+- diagnostic digest: `sha256:8d863595261e2ae78bda822ccd3a1197a092b38cfed97b0582601b963348c2aa`
+
+## Toolchain Failure Resolved During Gate 2
+
+Earlier Gate 2 runs used `macos-14`, which selected Xcode 16.2. The build reached Swift compilation but failed in Capacitor 8 plugin source with missing `PluginConfig.getString` and incompatible color API signatures. This was not treated as an application-source defect. The workflow was moved to the supported Xcode 26 toolchain and an explicit toolchain guard was added so future runner-image drift fails clearly. The next exact-head native run passed Android and iOS.
+
+## Companion Exact-Head Checks
+
+On candidate `f97c37ca024009b0c9eb6ece0e7bdf32635f405f`:
+
+- `Ultimate SoulCodex CI` — **PASS** (`31576839098`)
+- `CI Tests` — **PASS** (`31576839121`)
+- `Mobile Native Smoke` — **PASS** (`31576839055`)
+- `Live Ephemeris Evidence` — **FAIL** (`31576839086`) because the external NASA/JPL Horizons service remains unavailable to the live evidence job. This failure is not reclassified or waived here.
+
+The JPL condition prevents claiming an all-green repository release candidate, but it does not erase the native build evidence recorded above.
 
 ## Validation Ladder
 
-Gate 2 evidence must be classified explicitly:
+Gate 2 evidence is classified explicitly:
 
-- **Implemented:** native projects/workflows/configuration exist.
-- **Integrated:** Capacitor sync and native dependency paths connect to the production web build.
-- **Simulator/emulator validated:** Android debug APK and iOS Simulator app build successfully in CI.
-- **Signed-artifact validated:** release AAB and App Store IPA are produced with the configured signing identities.
-- **Hardware validated:** signed candidate is exercised on identified physical Android/iPhone/iPad hardware.
-- **Store validation:** App Store/Play pre-submission validation accepts the candidate artifact.
+- **Implemented:** PASS — native projects, workflows, and configuration exist.
+- **Integrated:** PASS — Capacitor sync and native dependency paths connect to the production web build.
+- **Simulator/emulator validated:** PASS — Android debug APK and iOS Simulator app build successfully in exact-head CI.
+- **Signed-artifact validated:** OPEN — release AAB and App Store IPA still require configured signing identities/secrets.
+- **Hardware validated:** OPEN — signed candidate has not yet been recorded as exercised on identified physical Android/iPhone/iPad hardware.
+- **Store validation:** OPEN — App Store/Play pre-submission validation has not yet been recorded for this candidate.
 
 No lower class is promoted into a higher class.
 
 ## Gate 2 Pass Criteria
 
-- [ ] PR-triggered Android debug build passes on the exact candidate head.
-- [ ] PR-triggered iOS Simulator build passes on the exact candidate head.
-- [ ] Production `VITE_API_URL` is configured and passes both mobile validators.
-- [ ] Android release keystore/secrets are configured.
+- [x] PR-triggered Android debug build passes on the exact candidate head.
+- [x] PR-triggered iOS Simulator build passes on the exact candidate head.
+- [x] Production `VITE_API_URL` passes both mobile validators in exact-head CI.
+- [ ] Android release keystore/secrets are configured for this release lane.
 - [ ] Signed Android AAB is produced and artifact identity recorded.
 - [ ] Apple distribution certificate/provisioning profile match Team ID and bundle ID.
 - [ ] Signed iOS archive exports a valid IPA and artifact identity is recorded.
@@ -68,14 +106,14 @@ No lower class is promoted into a higher class.
 
 ## Account-Bound Actions
 
-The following cannot be fabricated by repository automation and require the owner account:
+The following cannot be fabricated by repository automation and require release-account material or owner-console access:
 
-- GitHub Actions repository variable `VITE_API_URL` if not already configured;
 - Android keystore and signing secrets;
 - Apple distribution certificate `.p12` and password;
 - Apple App Store provisioning profile;
-- App Store Connect/TestFlight and Google Play Console upload/testing actions.
+- App Store Connect/TestFlight upload/testing;
+- Google Play Console upload/testing.
 
-## Current External Signal
+## Current Classification
 
-GitHub currently reports an external Apple/Xcode status failure on `main@b5cdcc...`. The target points to App Store Connect/Xcode Cloud, whose private job details are not available through the repository connector. Gate 2 remains open until native CI and signed-artifact evidence establish the current failure's relevance or supersede it with a successful exact-candidate build.
+Gate 2 is **simulator/emulator validated**. Code-side native reproducibility has been demonstrated on the exact candidate head for both platforms. Full Gate 2 PASS remains intentionally open until signed-artifact and hardware/store evidence is recorded.
