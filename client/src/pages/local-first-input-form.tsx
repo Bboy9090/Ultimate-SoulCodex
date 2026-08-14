@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation } from "wouter";
 import { birthDataSchema, type BirthData } from "@shared/schema";
-import { generateOfflineCodexProfile, type OfflineCodexProfile } from "@soulcodex/core";
+import type { OfflineCodexProfile } from "@soulcodex/core";
+import { generateFoundationOfflineCodexProfile } from "@/lib/foundationOfflineCodex";
 import { apiRequest } from "@/lib/queryClient";
 import { saveOfflineProfile } from "@/lib/offlineProfileStore";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
@@ -116,7 +117,7 @@ export default function LocalFirstInputForm() {
   const onSubmit = async (data: BirthData) => {
     setIsCreating(true);
     try {
-      const profile = generateOfflineCodexProfile(data);
+      const profile = generateFoundationOfflineCodexProfile(data);
       await saveOfflineProfile(profile);
       const activeSave = saveActiveProfile({
         id: profile.id, name: profile.name, codename: profile.name, birthDate: profile.birthDate,
