@@ -61,7 +61,7 @@ async function syncProfileWhenOnline(data: BirthData, localProfile: OfflineCodex
       window.dispatchEvent(new CustomEvent("soulcodex:profile-updated", { detail: { localId: localProfile.id, remoteId: remote.id, syncedAt } }));
     }
   } catch (error) {
-    console.warn("[local-first-create] Cloud sync deferred; local profile remains available", error);
+    console.warn("[local-first-create] Requested online verification could not complete; local profile remains available", error);
   }
 }
 
@@ -70,6 +70,7 @@ export default function LocalFirstInputForm() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [verifyOnline, setVerifyOnline] = useState(false);
   const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
   const form = useForm<BirthData>({
@@ -121,8 +122,17 @@ export default function LocalFirstInputForm() {
         archetype: profile.archetypeData.title, synthesis: profile.depthInterpretation, createdAt: profile.createdAt, updatedAt: profile.updatedAt,
       });
       if (!activeSave.success) throw new Error(activeSave.error || "The active profile could not be registered.");
-      void syncProfileWhenOnline(data, profile);
-      toast({ title: "Soul Codex created on this device", description: "The local reading is ready now. Verified online placements will merge into this same profile when available." });
+
+      if (verifyOnline) {
+        void syncProfileWhenOnline(data, profile);
+      }
+
+      toast({
+        title: "Soul Codex created on this device",
+        description: verifyOnline
+          ? "Your local reading is ready. You chose online verification; if the network is available, verified placements will merge into this same profile."
+          : "Your local reading is ready. No profile data was uploaded for verification.",
+      });
       setLocation(`/profile/${profile.id}`);
     } catch (error) {
       console.error("Local profile creation failed", error);
@@ -141,7 +151,7 @@ export default function LocalFirstInputForm() {
         <section className="mx-auto mb-10 max-w-3xl text-center">
           <div className="codex-eyebrow mb-4"><Sparkles className="h-3.5 w-3.5" /> Build your identity map</div>
           <h1 className="codex-display text-4xl font-semibold tracking-[-0.035em] sm:text-6xl">Start with the facts.<br /><span className="codex-gold-text">Then go deeper.</span></h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">Your birth information anchors the Codex. The first reading is created locally on this device, while verified online layers can merge in without replacing your offline copy.</p>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">Your birth information anchors the Codex. The first reading is created locally on this device. Online verification happens only when you explicitly choose it.</p>
         </section>
 
         <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -182,6 +192,21 @@ export default function LocalFirstInputForm() {
                     </div>
                   </div>
 
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-primary/15 bg-primary/[0.035] p-4" htmlFor="verify-online">
+                    <input
+                      id="verify-online"
+                      data-testid="checkbox-online-verification"
+                      type="checkbox"
+                      checked={verifyOnline}
+                      onChange={(event) => setVerifyOnline(event.target.checked)}
+                      className="mt-1 h-4 w-4 accent-[var(--primary)]"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold">Verify supported placements online after creation</span>
+                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">Optional. If selected, your entered birth data is sent to the Soul Codex server so independently checked placements can merge into the same local profile. Leave this off to keep profile creation on-device only.</span>
+                    </span>
+                  </label>
+
                   <Button type="submit" className="codex-primary-cta h-14 w-full rounded-xl text-[15px] font-semibold" disabled={isCreating} data-testid="button-create-profile">{isCreating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Building your Codex...</> : <>Create my Soul Codex <ArrowRight className="ml-2 h-4 w-4" /></>}</Button>
                 </form>
               </Form>
@@ -189,7 +214,7 @@ export default function LocalFirstInputForm() {
           </Card>
 
           <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
-            <div className="codex-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="codex-icon-well codex-icon-trust"><ShieldCheck className="h-5 w-5" /></div><div><p className="font-semibold">Local first</p><p className="text-xs text-muted-foreground">Your reading does not wait on the cloud.</p></div></div><div className="space-y-3 text-sm text-muted-foreground">{["Generated on this device", "Offline copy stays available", "Online verification merges later"].map((item) => <div key={item} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /><span>{item}</span></div>)}</div></div>
+            <div className="codex-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="codex-icon-well codex-icon-trust"><ShieldCheck className="h-5 w-5" /></div><div><p className="font-semibold">Local first</p><p className="text-xs text-muted-foreground">Your reading does not wait on the cloud.</p></div></div><div className="space-y-3 text-sm text-muted-foreground">{["Generated on this device", "Offline copy stays available", "Online verification is opt-in"].map((item) => <div key={item} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /><span>{item}</span></div>)}</div></div>
             <div className="codex-panel p-5"><p className="codex-kicker mb-2">Accuracy rule</p><p className="codex-display text-xl leading-snug">Missing data stays missing.</p><p className="mt-3 text-sm leading-6 text-muted-foreground">A useful Codex distinguishes verified facts, calculated results, symbolic interpretation, and unresolved information. Precision theater is still theater.</p></div>
           </aside>
         </div>
