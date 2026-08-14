@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { ArrowLeft, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react";
 import Navigation from "../components/navigation";
 import { loadActiveProfile } from "../lib/ActiveProfileRepository";
+import { buildCompatibilityProfilePayload } from "../lib/compatibilityProfilePayload";
 import { apiFetch } from "../lib/queryClient";
 
 const SIGNS = [
@@ -48,6 +49,7 @@ function profileName(profile: any) {
 
 export default function CompatibilityPersonPage() {
   const profile = useMemo(() => loadActiveProfile().profile ?? null, []);
+  const compatibilityProfile = useMemo(() => buildCompatibilityProfilePayload(profile), [profile]);
   const [name, setName] = useState("");
   const [sunSign, setSunSign] = useState("");
   const [result, setResult] = useState<PersonComparisonResult | null>(null);
@@ -67,7 +69,7 @@ export default function CompatibilityPersonPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profile,
+          profile: compatibilityProfile,
           otherPerson: {
             name: name.trim() || "This person",
             sunSign,
@@ -119,6 +121,9 @@ export default function CompatibilityPersonPage() {
           <h1 className="mt-3 text-4xl font-bold md:text-6xl">Compare one person without rebuilding yourself.</h1>
           <p className="mt-4 text-base leading-7 text-muted-foreground md:text-lg">
             {profileName(profile)} stays loaded. Enter only the other person's details. This Foundation comparison uses a bounded Sun-sign model plus your deterministic Life Path when available, and it refuses to invent missing synastry layers.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            The request sends only the saved Sun evidence and Life Path needed by this model. Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in the compatibility payload.
           </p>
         </header>
 
