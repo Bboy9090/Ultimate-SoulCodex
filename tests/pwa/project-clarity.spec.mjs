@@ -49,5 +49,23 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
 
   await explorer.click();
   await expect(page).toHaveURL(/\/compatibility\/explorer$/);
-  await expect(page.getByRole("heading", { name: "Compatibility" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Clarity Browser Test Compatibility Map/i })).toBeVisible();
+
+  await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
+  const comparePerson = page.getByTestId("compatibility-compare-person");
+  await expect(comparePerson).toHaveAttribute("href", "/compatibility/compare");
+  await comparePerson.click();
+  await expect(page).toHaveURL(/\/compatibility\/compare$/);
+  await expect(page.getByText(/Clarity Browser Test stays loaded/i)).toBeVisible();
+
+  await page.getByTestId("compatibility-person-name").fill("Comparison Person");
+  await page.getByTestId("compatibility-person-sun").selectOption("Pisces");
+  await page.getByTestId("compatibility-person-submit").click();
+
+  await expect(page.getByRole("heading", { name: /Comparison Person · Pisces/i })).toBeVisible();
+  await expect(page.getByText("Romantic", { exact: true })).toBeVisible();
+  await expect(page.getByText("Chemistry", { exact: true })).toBeVisible();
+  await expect(page.getByText("Mental & friendship", { exact: true })).toBeVisible();
+  await expect(page.getByText("Growth", { exact: true })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
 });
