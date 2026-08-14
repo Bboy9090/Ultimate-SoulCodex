@@ -38,6 +38,28 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   };
 }
 
+export function profileBelongsToActor(
+  profile: { userId?: string | null; sessionId?: string | null } | null | undefined,
+  actor: { userId?: string | null; sessionId?: string | null },
+): boolean {
+  if (!profile) return false;
+  if (profile.userId) return Boolean(actor.userId && actor.userId === profile.userId);
+  if (profile.sessionId) return Boolean(actor.sessionId && actor.sessionId === profile.sessionId);
+  return false;
+}
+
+function requestOwnsProfile(req: any, profile: any): boolean {
+  return profileBelongsToActor(profile, {
+    userId: req.session?.userId ?? null,
+    sessionId: req.sessionID ?? null,
+  });
+}
+
+function profileNotFound(res: any) {
+  // Deliberately do not reveal whether another user's profile ID exists.
+  return res.status(404).json({ message: "Profile not found" });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
@@ -123,10 +145,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/profiles/:id", async (req, res) => {
+  app.get("/api/profiles/:id", async (req: any, res) => {
     try {
       const profile = await storage.getProfile(req.params.id);
-      if (!profile) return res.status(404).json({ message: "Profile not found" });
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
       res.json(profile);
     } catch (error) {
       console.error("Error getting profile:", error);
@@ -134,12 +156,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/profiles/:id/enneagram", async (req, res) => {
+  app.post("/api/profiles/:id/enneagram", async (req: any, res) => {
     try {
       const assessment = enneagramAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
       const profile = await storage.getProfile(profileId);
-      if (!profile) return res.status(404).json({ message: "Profile not found" });
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
       const enneagramResult = calculateEnneagram(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "enneagram", responses: assessment.responses, calculatedType: enneagramResult?.type?.toString() || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), enneagram: enneagramResult };
@@ -152,12 +174,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/profiles/:id/mbti", async (req, res) => {
+  app.post("/api/profiles/:id/mbti", async (req: any, res) => {
     try {
       const assessment = mbtiAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
       const profile = await storage.getProfile(profileId);
-      if (!profile) return res.status(404).json({ message: "Profile not found" });
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
       const mbtiResult = calculateMBTI(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "mbti", responses: assessment.responses, calculatedType: mbtiResult?.type || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), mbti: mbtiResult };
@@ -180,12 +202,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/pdf/profile/:id", async (req, res) => {
+  app.get("/api/pdf/profile/:id", async (req: any, res) => {
     try {
       const profileId = req.params.id;
       const authToken = req.headers.authorization?.split(" ")[1];
       const profile = await storage.getProfile(profileId);
-      if (!profile) return res.status(404).json({ message: "Profile not found" });
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
       if (!profile.isPremium) return res.status(403).json({ message: "Premium access required" });
       if (!authToken || authToken !== profileId) return res.status(401).json({ message: "Unauthorized access to this profile" });
       const pdfBuffer = await buildNatalReportPdf({
