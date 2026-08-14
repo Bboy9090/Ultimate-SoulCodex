@@ -13,6 +13,7 @@ const files = {
   serverRoutes: read("server/routes.ts"),
   app: read("client/src/App.tsx"),
   localFirst: read("client/src/pages/local-first-input-form.tsx"),
+  offlineProfile: read("client/src/pages/offline-profile.tsx"),
   billing: read("server/billing.ts"),
   premiumModal: read("client/src/components/PremiumUpgradeModal.tsx"),
   astrology: read("server/services/astrology-production.ts"),
@@ -79,13 +80,21 @@ check(
 );
 check(
   "PRIVACY-02",
+  "Opening an offline profile does not upload it; verification requires an explicit action",
+  files.offlineProfile.includes("const requestOnlineVerification = async () =>") &&
+    files.offlineProfile.includes('data-testid="button-verify-online-profile"') &&
+    files.offlineProfile.includes("Merely opening this local profile does not upload it.") &&
+    !/useEffect\s*\(\s*\(\)\s*=>[\s\S]*apiFetch\("\/api\/profiles"/.test(files.offlineProfile),
+);
+check(
+  "PRIVACY-03",
   "Local-first UI explains the online verification boundary",
   files.localFirst.includes("Online verification happens only when you explicitly choose it.") &&
     files.localFirst.includes("Leave this off to keep profile creation on-device only.") &&
     files.localFirst.includes("No profile data was uploaded for verification."),
 );
 check(
-  "PRIVACY-03",
+  "PRIVACY-04",
   "Server-backed profile reads and personal-data mutations enforce user/session ownership",
   files.serverRoutes.includes("profileBelongsToActor") &&
     files.serverRoutes.includes("requestOwnsProfile") &&
@@ -199,7 +208,7 @@ check(
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 4,
+  version: 5,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,
