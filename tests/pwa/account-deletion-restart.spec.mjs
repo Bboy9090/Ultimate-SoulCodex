@@ -163,7 +163,7 @@ test("Settings deletion clears Web Storage and offline IndexedDB even when a sec
     expect(await readProfileThroughBlockingConnection(blockerPage)).toMatchObject({ id: OFFLINE_PROFILE_ID });
 
     await page.goto(`${BASE_URL}/settings`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Delete Account & Data/i })).toBeVisible();
     await page.getByRole("button", { name: /Delete Account & Data/i }).click();
 
     await expect(page).toHaveURL(/\/delete-account$/);

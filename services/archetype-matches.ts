@@ -1,27 +1,32 @@
-// Archetype match engine — research-backed ranking of all 12 signs
+// Archetype match engine — symbolic ranking across all 12 signs.
+//
+// This module encodes traditional astrology, numerology, and Human Design
+// heuristics as a reflective scoring model. The weights are product rules, not
+// empirical relationship-effect estimates, and must not be presented as
+// scientific validation or prediction.
 //
 // Formula layers (applied additively, then clamped 20-99):
 //
-//  1. Ptolemaic Aspect Base (dominant) — arc distance between signs maps to
-//     classical aspects: Trine=same element (harmony), Sextile=complementary
-//     element (flow), Opposition=polarity (magnetism), Square=same modality
-//     conflict (tension), Quincunx=awkward adjustment, Conjunction=mirror energy.
+//  1. Classical Aspect Base (dominant) — arc distance between signs maps to
+//     traditional aspect categories: Trine=same element (harmony),
+//     Sextile=complementary element (flow), Opposition=polarity (magnetism),
+//     Square=same modality conflict (tension), Quincunx=adjustment, and
+//     Conjunction=mirror energy.
 //
-//  2. Ruling Planet Synergy — inter-planet contacts backed by 2000+ years of
-//     synastry tradition: Sun↔Moon (most enduring love), Venus↔Mars (passion axis),
-//     Mercury↔Mercury (communication), Moon↔Moon (emotional resonance), etc.
+//  2. Ruling Planet Synergy — tradition-based associations between planetary
+//     rulers, such as Sun↔Moon, Venus↔Mars, and Mercury↔Mercury. These are
+//     symbolic conventions, not independently validated relationship effects.
 //
-//  3. Numerological Ruler Resonance — each sign maps to a numerological ruler
-//     (Sun=1, Moon=2, Jupiter=3 … etc); user's Life Path is tested against
-//     that ruler using the 45-pair research table (mode-differentiated).
+//  3. Numerological Ruler Resonance — each sign maps to a numerological ruler;
+//     the user's Life Path is compared with that ruler using a configured
+//     tradition-based pair table.
 //
-//  4. Human Design Element Affinity — each HD type has researched energetic
-//     affinities with the four elements per mode (Projector drawn to Water/Fire
-//     in love; Generator drawn to Earth for stability, Fire for attraction, etc.)
+//  4. Human Design Element Affinity — product-level symbolic affinities between
+//     HD types and the four elements. These are interpretive rules, not
+//     scientific energy measurements.
 //
-//  5. Sign-Pair Special Overrides — bonus for classically confirmed "soulmate"
-//     pairings; penalty for "fixed square" conflicts (Taurus-Leo, Scorpio-Leo,
-//     Aquarius-Taurus) which are the most historically difficult.
+//  5. Sign-Pair Special Overrides — small tradition-based bonuses/penalties for
+//     selected familiar pairings and fixed-square combinations.
 
 export type RelationshipMode = "love" | "attraction" | "friendship" | "growth";
 
@@ -63,25 +68,19 @@ const SIGNS: SignMeta[] = [
 type Scores4 = { love: number; attraction: number; friendship: number; growth: number };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LAYER 1: Ptolemaic Aspect Base Scores
+// LAYER 1: Classical Aspect Base Scores
 //
-// Arc distance between the two sun signs (0 = same sign, 6 = opposite sign)
-// maps to the five classical Ptolemaic aspects.
+// Arc distance between the two Sun signs (0 = same sign, 6 = opposite sign)
+// maps to traditional aspect categories. The scores below are deliberate
+// symbolic product weights; they do not estimate measured relationship outcomes.
 //
-// Research basis:
-//  Trine (4, same element) — highest natural harmony; shared elemental language
-//  Sextile (2, complementary element) — flowing complementarity; each provides
-//    what the other lacks; Earth-Water and Fire-Air research shows these score
-//    highest for romantic longevity because need-gap fulfillment
-//  Opposition (6, complementary element at maximum polarity) — strongest raw
-//    attraction and magnetic pull; Gottman research shows high initial passion
-//    but requires more conflict-resolution skill for lasting love
-//  Square (3, non-complementary element/same modality) — tension and friction;
-//    the highest growth catalyst but the lowest harmony for love/friendship
-//  Quincunx (5, inconjunct) — perpetual adjustment; no shared element or modality
-//  Conjunction (0, same sign) — amplified self; familiar but can feel suffocating
-//    in love; good for friendship/mirroring, weak for complementarity
-//  Semi-sextile (1) — adjacent but mismatched; modest affinity
+//  Trine (4, same element) — modeled as strong natural harmony.
+//  Sextile (2, complementary element) — modeled as complementary flow.
+//  Opposition (6) — modeled as strong polarity/attraction with more friction.
+//  Square (3) — modeled as lower harmony and higher growth pressure.
+//  Quincunx (5) — modeled as repeated adjustment.
+//  Conjunction (0) — modeled as familiarity/mirroring.
+//  Semi-sextile (1) — modeled as modest affinity.
 // ─────────────────────────────────────────────────────────────────────────────
 const ASPECT_BASE: Record<number, Scores4> = {
   0: { love: 63, attraction: 70, friendship: 75, growth: 52 }, // Conjunction — mirror
@@ -101,12 +100,9 @@ function signDistance(a: SignMeta, b: SignMeta): number {
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYER 2: Ruling Planet Synergy
 //
-// Synthesizes 2000+ years of synastry research on inter-planetary contacts.
-// Most impactful contacts (Sun↔Moon, Venus↔Mars) modeled per mode:
-//   Love: Sun↔Moon is strongest (enduring partnership)
-//   Attraction: Venus↔Mars is strongest (classical passion axis)
-//   Friendship: Mercury↔Mercury highest (communication resonance)
-//   Growth: Saturn contacts highest (structure + challenge = evolution)
+// These weights encode familiar synastry conventions about planetary rulers.
+// They are tradition-based symbolic associations, not empirical findings about
+// relationship durability, attraction, communication, or personal growth.
 // ─────────────────────────────────────────────────────────────────────────────
 const PLANET_SYNERGY: Record<string, Scores4> = {
   "same":            { love:  5, attraction:  5, friendship:  7, growth:  3 }, // same ruler
@@ -174,15 +170,9 @@ function planetSynergy(p1: string, p2: string): Scores4 {
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYER 3: Numerological Ruler Resonance
 //
-// Each sign carries a numerological vibration via its ruling planet:
-//   Sun(Leo)=1, Moon(Cancer)=2, Jupiter(Sag)=3, Uranus(Aqua)=4,
-//   Mercury(Gem/Virgo)=5, Venus(Tau/Lib)=6, Neptune(Pisces)=7,
-//   Saturn(Cap)=8, Mars/Pluto(Aries/Scorp)=9
-//
-// 45-pair numerology compatibility table (condensed from tradition consensus):
-//   Love: LP 1 harmonizes with rulers 2, 5, 9 → highest love bond
-//   Friendship: LP 1 harmonizes with 1, 3, 7 → mutual understanding
-//   Growth: LP 1 challenged by 8, 4 → friction that produces evolution
+// Each sign is assigned a numerological ruler through the model's traditional
+// planet-number mapping. The pair tables below are symbolic product rules drawn
+// from numerology convention; they are not validated relationship statistics.
 // ─────────────────────────────────────────────────────────────────────────────
 const LP_LOVE_BEST: Record<number, number[]> = {
   1: [2, 5, 9], 2: [6, 8, 9], 3: [1, 5, 7],
@@ -231,16 +221,9 @@ function lpResonance(userLp: number | undefined, signRuler: number, mode: Relati
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYER 4: Human Design Element Affinity (mode-differentiated)
 //
-// Each HD type has researched energy dynamics with the four elements:
-//   Generator / MG (sacral beings) — respond to initiated energy; best with
-//     Earth (steady response) for love, Fire (excited response) for attraction
-//   Projector (focused aura) — guides energy; drawn to Water/Fire they can read;
-//     best with Fire/Water love, Air for friendship (shared perspective)
-//   Manifestor (initiating, closed aura) — grounds in Earth love; Fire
-//     clash (two initiators); Water absorbs their initiating energy well
-//   Reflector (sampling aura, lunar) — most open; resonates deepest with
-//     Water (fluid like themselves); Earth supports their sensitive nature
-//
+// These are configured symbolic associations between HD type labels and
+// astrological elements. They intentionally remain interpretive and should not
+// be described as measured energetic affinity.
 // Values normalized: 5 = neutral, >5 = bonus applied, <5 = penalty applied.
 // ─────────────────────────────────────────────────────────────────────────────
 const HD_ELEMENT_AFFINITY: Record<string, Record<string, Scores4>> = {
@@ -286,15 +269,9 @@ function hdAffinityBonus(hdType: string | undefined, element: string, mode: Rela
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYER 5: Sign-Pair Special Overrides
 //
-// A handful of classically studied pairings get bonus/penalty refinements:
-//
-//  Legendary pairs (extra +6 love): Taurus↔Cancer, Scorpio↔Pisces, Leo↔Sag,
-//    Virgo↔Cap, Gem↔Aqua, Cancer↔Scorpio — all validated across multiple
-//    practitioner traditions and large-sample couple studies
-//
-//  Fixed Squares (extra −7 love, −5 friendship): Taurus-Leo, Scorpio-Leo,
-//    Aquarius-Taurus, Scorpio-Aquarius — double-fixed energy squares are
-//    the most persistently documented difficult combinations; neither yields
+// A small set of familiar tradition-based pairings receives configured
+// bonus/penalty refinements. These heuristics are not evidence that a real
+// couple will be compatible or incompatible.
 // ─────────────────────────────────────────────────────────────────────────────
 const LEGENDARY_LOVE_PAIRS = new Set([
   "Taurus-Cancer", "Cancer-Taurus",

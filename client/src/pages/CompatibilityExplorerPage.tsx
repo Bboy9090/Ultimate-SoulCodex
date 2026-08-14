@@ -5,6 +5,7 @@ import { getVerifiedPlacement, placementDisplayStatus } from "../lib/placementVe
 import { apiFetch } from "../lib/queryClient";
 
 type Mode = "love" | "attraction" | "friendship" | "growth";
+type EvidenceMode = "verified" | "symbolic" | "unavailable";
 
 type Match = {
   sign: { name: string; element: string };
@@ -17,12 +18,15 @@ type Match = {
 
 type Result = {
   available: boolean;
+  evidenceMode?: EvidenceMode;
+  evidenceLabel?: string;
   reason?: string;
   all: Match[];
   best: Match[];
   challenging: Match[];
   picks?: Record<string, Match | null>;
   unresolved?: { astrology?: string[]; humanDesign?: string[] };
+  excludedLayers?: string[];
   formula?: { layers?: string[]; inputs?: Record<string, unknown> };
 };
 
@@ -43,6 +47,66 @@ function placementCandidate(profile: any, key: "sun" | "moon" | "rising") {
 
 function matchScore(match: Match, mode: Mode) {
   return match.scores?.[mode] ?? match.score ?? 0;
+}
+
+function EvidenceState({
+  profile,
+  result,
+  loading,
+  sunStatus,
+}: {
+  profile: any;
+  result: Result | null;
+  loading: boolean;
+  sunStatus: string;
+}) {
+  if (loading && !result) {
+    return (
+      <section className="rounded-2xl border border-white/10 bg-card p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Evidence mode</p>
+        <h2 className="mt-2 text-xl font-semibold">Checking what this profile can support…</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Verified inputs are preferred. Supported symbolic inputs can remain useful without being relabeled as verified facts.</p>
+      </section>
+    );
+  }
+
+  if (result?.evidenceMode === "verified") {
+    return (
+      <section className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-500">Verified input · symbolic model</p>
+        <h2 className="mt-2 text-xl font-semibold">The Sun placement passed the independent evidence contract.</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">The birth input is verified; the compatibility interpretation remains a symbolic relationship model, not a prediction or scientific relationship assessment.</p>
+      </section>
+    );
+  }
+
+  if (result?.evidenceMode === "symbolic") {
+    return (
+      <section className="rounded-2xl border border-violet-400/25 bg-violet-400/5 p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-violet-300">Symbolic compatibility</p>
+        <h2 className="mt-2 text-xl font-semibold">Useful as reflection, lower certainty by design.</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          The saved Sun sign is being used as a traditional symbolic input while independent verification is incomplete. Current Sun verification status: <strong>{sunStatus}</strong>. Unverified Moon, Rising, houses, and Human Design layers stay out of the score instead of being guessed.
+        </p>
+        <a href={profile.id ? `/profile/${profile.id}` : "/create"} className="mt-4 inline-flex rounded-lg border border-violet-400/30 px-4 py-2 text-sm font-semibold text-violet-200">
+          Review or refresh identity evidence
+        </a>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
+      <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">Compatibility unavailable</p>
+      <h2 className="mt-2 text-xl font-semibold">A usable Sun input is still missing.</h2>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        Current Sun verification status: <strong>{sunStatus}</strong>. Soul Codex will not manufacture a placement to produce a result. Open Identity while online to refresh the saved birth data, or keep using the parts of the Codex that do not depend on this layer.
+      </p>
+      <a href={profile.id ? `/profile/${profile.id}` : "/create"} className="mt-4 inline-flex rounded-lg border border-amber-500/40 px-4 py-2 text-sm font-semibold text-amber-500">
+        Review identity evidence
+      </a>
+    </section>
+  );
 }
 
 export default function CompatibilityExplorerPage() {
@@ -125,27 +189,14 @@ export default function CompatibilityExplorerPage() {
           </section>
         )}
 
-        {profile && !verifiedSun && (
-          <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">Interpretation paused</p>
-            <h2 className="mt-2 text-2xl font-semibold">Verified Sun placement required</h2>
-            <p className="mt-3 text-muted-foreground">
-              Current status: <strong>{sunStatus}</strong>. Your saved profile remains active, but the sign-ranking engine will not convert a legacy or approximate sign into relationship advice.
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Open Identity while online to refresh the saved birth data against the independent astronomy reference. Numerology remains preserved while verification is pending.
-            </p>
-            <a href={profile.id ? `/profile/${profile.id}` : "/create"} className="mt-5 inline-flex rounded-lg border border-amber-500/40 px-4 py-2 text-sm font-semibold text-amber-600">
-              Refresh verification in Identity
-            </a>
-          </section>
-        )}
+        {profile && <EvidenceState profile={profile} result={result} loading={loading} sunStatus={verifiedSun ? "Verified" : sunStatus} />}
 
         {profile && (
           <section className="mt-8 grid gap-3 md:grid-cols-4">
             {MODES.map((item) => (
               <button
                 key={item.key}
+                type="button"
                 onClick={() => setMode(item.key)}
                 className={`rounded-2xl border p-4 text-left transition ${mode === item.key ? "border-primary bg-primary/10" : "bg-card hover:border-primary/40"}`}
               >
@@ -202,11 +253,17 @@ export default function CompatibilityExplorerPage() {
 
             <details className="mt-8 rounded-2xl border bg-card p-5">
               <summary className="cursor-pointer font-semibold">Why the app reached these conclusions</summary>
+              {result.evidenceLabel && <p className="mt-4 text-sm font-medium text-foreground/80">Evidence mode: {result.evidenceLabel}</p>}
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {(result.formula?.layers ?? []).map((layer) => <li key={layer}>• {layer}</li>)}
               </ul>
-              {(result.unresolved?.astrology?.length || result.unresolved?.humanDesign?.length) ? (
-                <p className="mt-4 text-sm text-amber-600">Unresolved layers were excluded rather than guessed.</p>
+              {result.excludedLayers?.length ? (
+                <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <p className="text-sm font-semibold text-amber-500">Excluded rather than guessed</p>
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    {result.excludedLayers.map((layer) => <li key={layer}>• {layer}</li>)}
+                  </ul>
+                </div>
               ) : null}
             </details>
           </>

@@ -42,6 +42,29 @@ describe("Depth Engine", () => {
     }
   });
 
+  it("gives structurally different chapters their own reasoning", () => {
+    const chapters = buildDepthChapters(model);
+    expect(new Set(chapters.map((chapter) => chapter.translation)).size).toBe(5);
+    expect(new Set(chapters.map((chapter) => chapter.strength)).size).toBe(5);
+    expect(new Set(chapters.map((chapter) => chapter.cost)).size).toBe(5);
+    const source = fs.readFileSync("client/src/lib/depthEngine.ts", "utf8");
+    expect(source).not.toContain("When used consciously, this pattern can become");
+    expect(source).not.toContain("A strength can keep its honorable name long after it has stopped helping");
+  });
+
+  it("uses lived feedback to recalibrate the current and subsequent chapters", () => {
+    const baseline = buildDepthChapters(model);
+    const corrected = buildDepthChapters(model, { "visible-pattern": "not-really" });
+
+    expect(corrected[0].translation).not.toBe(baseline[0].translation);
+    expect(corrected[0].practicalTakeaway).toContain("Do not force yourself into it");
+    expect(corrected[1].practicalTakeaway).toContain("An earlier layer did not fit your experience");
+
+    const confirmed = buildDepthChapters(model, { "visible-pattern": "very-much" });
+    expect(confirmed[0].practicalTakeaway).toContain("fitting very strongly");
+    expect(confirmed[1].practicalTakeaway).toContain("An earlier layer fit strongly");
+  });
+
   it("keeps progressive depth controls in the reading experience", () => {
     const source = fs.readFileSync("client/src/components/ClarityReadingExperience.tsx", "utf8");
     expect(source).toContain("Quick insight");
@@ -50,5 +73,6 @@ describe("Depth Engine", () => {
     expect(source).toContain("What this means in plain language");
     expect(source).toContain("How other people may experience it");
     expect(source).toContain("Reflection check");
+    expect(source).toContain("buildDepthChapters(model, fits)");
   });
 });

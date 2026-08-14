@@ -45,9 +45,34 @@ test("Offline Codex runtime", async (suite) => {
     });
 
     assert.equal(validation.valid, true);
-    assert.ok(profile.depthInterpretation.evidence.length >= 3);
+    assert.ok(profile.depthInterpretation.evidence.length >= 5);
+    assert.ok(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.expression"));
+    assert.ok(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.soul-urge"));
     assert.notEqual(profile.depthInterpretation.claritySummary.claimKind, "unavailable");
     assert.match(profile.depthInterpretation.action.summary, /define|identify|finish|state|pause|protect|choose|ground|return|teach|lead|keep|reduce/i);
+  });
+
+  await suite.test("uses Expression 1 and Soul Urge 6 as first-class contradiction evidence", () => {
+    const profile = generateOfflineCodexProfile(
+      { ...birthInput, name: "Bobby" },
+      {
+        id: "local-name-number-tension",
+        generatedAt: "2026-07-24T20:00:00.000Z",
+        currentYear: 2026,
+      },
+    );
+
+    assert.equal(profile.astrologyData.sunSign, "Virgo");
+    assert.equal(profile.numerologyData.lifePath, 9);
+    assert.equal(profile.numerologyData.expression, 1);
+    assert.equal(profile.numerologyData.soulUrge, 6);
+    assert.deepEqual(profile.depthInterpretation.coreContradiction.evidenceIds, [
+      "offline.numerology.expression",
+      "offline.numerology.soul-urge",
+    ]);
+    assert.match(profile.depthInterpretation.coreContradiction.summary, /Expression 1 Independence/);
+    assert.match(profile.depthInterpretation.coreContradiction.summary, /Soul Urge 6 Responsibility/);
+    assert.equal(profile.depthInterpretation.coreContradiction.claimKind, "inferred");
   });
 
   await suite.test("degrades time-sensitive claims when birth time is unknown", () => {
@@ -63,5 +88,7 @@ test("Offline Codex runtime", async (suite) => {
     assert.ok(profile.depthInterpretation.missingData.some((item) => item.includes("Exact birth time is required")));
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.astrology.rising"), false);
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.astrology.moon"), false);
+    assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.expression"), true);
+    assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.soul-urge"), true);
   });
 });

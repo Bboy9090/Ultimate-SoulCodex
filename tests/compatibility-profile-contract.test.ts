@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildCompatibilityProfileInput } from "../routes/compatibility";
+import {
+  buildCompatibilityProfileInput,
+  buildMatchResponse,
+  symbolicSunSign,
+} from "../routes/compatibility";
 
 const evidence = {
   source: "independent ephemeris comparison",
@@ -8,7 +12,7 @@ const evidence = {
 };
 
 describe("compatibility saved-profile contract", () => {
-  it("rejects naked legacy astrology strings", () => {
+  it("rejects naked legacy astrology strings from the verified input path", () => {
     const input = buildCompatibilityProfileInput({
       sunSign: "Virgo",
       moonSign: "Scorpio",
@@ -21,7 +25,7 @@ describe("compatibility saved-profile contract", () => {
     expect(input.unresolved.astrology).toContain("Sun");
   });
 
-  it("rejects a populated Sun placement that is still pending", () => {
+  it("rejects a populated Sun placement that is still pending from the verified path", () => {
     const input = buildCompatibilityProfileInput({
       astrologyData: {
         sun: {
@@ -84,5 +88,44 @@ describe("compatibility saved-profile contract", () => {
 
     expect(input.humanDesignType).toBe("Reflector");
     expect(input.unresolved.humanDesign).toEqual([]);
+  });
+
+  it("allows a supported symbolic Sun without promoting it into verified astrology", () => {
+    const result = buildMatchResponse({
+      astrologyData: { sunSign: "Virgo" },
+      numerologyData: { lifePath: 9 },
+      humanDesignType: "Reflector",
+    });
+
+    expect(result.available).toBe(true);
+    expect(result.evidenceMode).toBe("symbolic");
+    expect(result.formula.inputs.sunSign).toBe("Virgo");
+    expect(result.formula.inputs.lifePathNumber).toBe(9);
+    expect(result.formula.inputs.humanDesignType).toBeNull();
+    expect(result.formula.layers.join(" ")).toContain("not verified astronomy");
+    expect(result.excludedLayers).toContain("Human Design type");
+  });
+
+  it("prefers the verified Sun over a conflicting symbolic alias", () => {
+    const result = buildMatchResponse({
+      sunSign: "Leo",
+      astrologyData: {
+        sunSign: "Leo",
+        sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+      },
+    });
+
+    expect(result.available).toBe(true);
+    expect(result.evidenceMode).toBe("verified");
+    expect(result.formula.inputs.sunSign).toBe("Virgo");
+  });
+
+  it("keeps compatibility unavailable when neither verified nor valid symbolic Sun exists", () => {
+    const result = buildMatchResponse({ astrologyData: { sunSign: "NotASign" } });
+
+    expect(symbolicSunSign({ astrologyData: { sunSign: "NotASign" } })).toBeUndefined();
+    expect(result.available).toBe(false);
+    expect(result.evidenceMode).toBe("unavailable");
+    expect(result.formula.inputs.sunSign).toBeNull();
   });
 });
