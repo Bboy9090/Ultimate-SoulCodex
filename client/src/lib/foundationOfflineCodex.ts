@@ -135,7 +135,7 @@ function evidence(input: Omit<InterpretationEvidenceRef, "provenanceStatus" | "n
   };
 }
 
-function makeSeed(id: string, system: string, field: string, value: string | number, label: string, patternValue: Pattern, priority: number): DepthSynthesisSeed {
+function makeSeed(id: string, system: InterpretationEvidenceRef["system"], field: string, value: string | number, label: string, patternValue: Pattern, priority: number): DepthSynthesisSeed {
   return {
     evidence: evidence({ id, system, field, value, confidence: "moderate", timeSensitivity: "none" }),
     label,

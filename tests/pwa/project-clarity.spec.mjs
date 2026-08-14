@@ -62,10 +62,10 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   await page.getByTestId("compatibility-person-sun").selectOption("Pisces");
   await page.getByTestId("compatibility-person-submit").click();
 
-  await expect(page.getByRole("heading", { name: /Comparison Person · Pisces/i })).toBeVisible();
-  await expect(page.getByText("Romantic", { exact: true })).toBeVisible();
-  await expect(page.getByText("Chemistry", { exact: true })).toBeVisible();
-  await expect(page.getByText("Mental & friendship", { exact: true })).toBeVisible();
-  await expect(page.getByText("Growth", { exact: true })).toBeVisible();
+  // This PWA harness intentionally returns 503 for cloud APIs. The browser
+  // contract here is graceful degradation, not a fabricated offline match.
+  await expect(page.getByTestId("compatibility-person-unavailable")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This layer remains visible instead of guessing." })).toBeVisible();
+  await expect(page.getByText(/Cloud services intentionally unavailable during offline browser validation/i).first()).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
 });
