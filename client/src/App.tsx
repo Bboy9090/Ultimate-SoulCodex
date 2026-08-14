@@ -16,6 +16,7 @@ import OfflineProfilePage from "./pages/offline-profile";
 import ClarityReadingPage from "./pages/ClarityReadingPage";
 import OfflineClarityReadingPage from "./pages/OfflineClarityReadingPage";
 import CompatibilityExplorerPage from "./pages/CompatibilityExplorerPage";
+import CompatibilityPersonPage from "./pages/CompatibilityPersonPage";
 import CompatibilityRoute from "./pages/CompatibilityRoute";
 import TimelinePage from "./pages/TimelinePage";
 import AstrocartographyPage from "./pages/AstrocartographyPage";
@@ -100,6 +101,7 @@ function Router() {
       <Route path="/create" component={LocalFirstInputForm} />
       <Route path="/compatibility" component={CompatibilityRoute} />
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
+      <Route path="/compatibility/compare" component={CompatibilityPersonPage} />
       <Route path="/timeline" component={TimelineRoute} />
       <Route path="/reading/:id" component={ReadingRoute} />
       <Route path="/astrocartography/:id">{() => <PremiumRoute component={AstrocartographyPage} />}</Route>
