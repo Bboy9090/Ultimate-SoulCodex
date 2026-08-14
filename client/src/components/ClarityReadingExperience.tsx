@@ -164,7 +164,7 @@ export default function ClarityReadingExperience({ profileId, profileName, model
       return {};
     }
   });
-  const chapters = useMemo(() => buildDepthChapters(model), [model]);
+  const chapters = useMemo(() => buildDepthChapters(model, fits), [model, fits]);
 
   const recordFit = (chapterId: string, fit: ReadingFit) => {
     const next = { ...fits, [chapterId]: fit };
