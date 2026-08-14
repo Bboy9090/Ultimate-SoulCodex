@@ -32,30 +32,27 @@ export default function OfflineProfilePage() {
     const currentProfile = reconciledProfile;
     setVerificationAttempt("running");
     try {
-      const response = await apiFetch("/api/profiles", {
+      const response = await apiFetch("/api/verification/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: currentProfile.name,
           birthDate: currentProfile.birthDate,
           ...(currentProfile.birthTime ? { birthTime: currentProfile.birthTime } : {}),
-          birthLocation: currentProfile.birthLocation,
           timezone: currentProfile.timezone,
           latitude: currentProfile.latitude ?? undefined,
           longitude: currentProfile.longitude ?? undefined,
         }),
       });
       if (!response.ok) throw new Error(`verification_refresh_failed_${response.status}`);
-      const remote = await response.json();
-      const syncedAt = new Date().toISOString();
-      const hydrated = reconcileOfflineProfile(currentProfile, remote, syncedAt);
+      const verification = await response.json();
+      const syncedAt = verification.updatedAt || new Date().toISOString();
+      const hydrated = reconcileOfflineProfile(currentProfile, verification, syncedAt);
       await saveOfflineProfile(hydrated);
       const active = loadActiveProfile().profile;
       if (active?.id === currentProfile.id) {
-        const saved = saveActiveProfile(reconcileActiveProfile(active, remote, syncedAt));
+        const saved = saveActiveProfile(reconcileActiveProfile(active, verification, syncedAt));
         if (!saved.success) throw new Error(saved.error || "active_profile_reconciliation_failed");
       }
-      localStorage.setItem(`soulcodex.offlineProfileRemote.v1.${currentProfile.id}`, JSON.stringify({ remoteId: remote.id, syncedAt }));
       queryClient.setQueryData(["offline-profile", id], hydrated);
       setVerificationAttempt("complete");
     } catch (cause) {
@@ -110,16 +107,16 @@ export default function OfflineProfilePage() {
                 )}
               </div>
               {needsOnlineVerification && verificationAttempt !== "complete" && (
-                <p className="mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">Optional. Choosing Verify online sends the saved birth details shown in this profile to Soul Codex&apos;s server-backed verification flow. Merely opening this local profile does not upload it.</p>
+                <p className="mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">Optional. Choosing Verify online sends only birth date, optional birth time, timezone, and coordinates to Soul Codex&apos;s astronomy verification endpoint. It does not create a server profile or invoke AI generation. Merely opening this local profile does not upload it.</p>
               )}
             </div>
             <div className="relative mx-auto flex aspect-square w-full max-w-[260px] items-center justify-center rounded-full border border-primary/20 bg-black/20 shadow-[inset_0_0_60px_rgba(123,97,255,.08)]"><div className="absolute inset-4 rounded-full border border-dashed border-accent/25" /><Crown className="h-12 w-12 text-accent" /><div className="absolute bottom-8 text-center"><p className="codex-kicker">archetype</p><p className="mt-1 max-w-[180px] text-sm font-semibold">{archetype.title}</p></div></div>
           </div>
         </section>
 
-        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" /><span>You requested online verification. Soul Codex is checking the saved birth data against the independent astronomy reference while your local reading remains available.</span></div>}
+        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" /><span>You requested astronomy verification. Soul Codex is checking only the calculation inputs needed for that evidence while your local reading remains available.</span></div>}
         {verificationAttempt === "deferred" && !hasVerifiedCore && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-muted-foreground">The requested online verification could not complete. Local symbolic layers remain visible; Moon, Rising, houses, and sign-based compatibility stay unresolved rather than guessed.</div>}
-        {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.04] p-4 text-sm text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile.</span></div>}
+        {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.04] p-4 text-sm text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
           <div className="codex-panel p-5"><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3"><div className="codex-icon-well"><Sparkles className="h-5 w-5" /></div><div><p className="font-semibold">Astrology core</p><p className="text-xs text-muted-foreground">verified where available</p></div></div></div><div className="space-y-3">{[["Sun", verifiedSun || astrology.sunSign, Boolean(verifiedSun)], ["Moon", verifiedMoon || "Unresolved", Boolean(verifiedMoon)], ["Rising", verifiedRising || "Unresolved", Boolean(verifiedRising)]].map(([label, value, verified]) => <div key={String(label)} className="flex items-center justify-between border-b border-white/6 pb-3 last:border-0 last:pb-0"><span className="text-sm text-muted-foreground">{String(label)}</span><span className="flex items-center gap-2 text-sm font-semibold">{String(value)} {verified && <Check className="h-3.5 w-3.5 text-emerald-400" />}</span></div>)}</div></div>
