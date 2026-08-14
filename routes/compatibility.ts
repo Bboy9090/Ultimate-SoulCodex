@@ -5,6 +5,12 @@ import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
 const router = Router();
 
 const MODE_KEYS: RelationshipMode[] = ["love", "attraction", "friendship", "growth"];
+const ZODIAC_SIGNS = new Set([
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]);
+
+export type CompatibilityEvidenceMode = "verified" | "symbolic" | "unavailable";
 
 interface EvidenceLike {
   source?: string | null;
@@ -45,6 +51,20 @@ function deterministicLifePath(profile: any): number | undefined {
   return Number.isInteger(parsed) && parsed >= 1 && parsed <= 9 ? parsed : undefined;
 }
 
+function validSymbolicSign(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const clean = value.trim();
+  return ZODIAC_SIGNS.has(clean) ? clean : undefined;
+}
+
+export function symbolicSunSign(profile: any): string | undefined {
+  return (
+    validSymbolicSign(profile?.astrologyData?.sunSign) ??
+    validSymbolicSign(profile?.astrology?.sunSign) ??
+    validSymbolicSign(profile?.sunSign)
+  );
+}
+
 function averageScore(match: ArchetypeMatch): number {
   return Math.round((match.scores.love + match.scores.attraction + match.scores.friendship + match.scores.growth) / 4);
 }
@@ -55,24 +75,41 @@ function topBy(matches: ArchetypeMatch[], mode: RelationshipMode): ArchetypeMatc
 
 export function buildCompatibilityProfileInput(profile: any) {
   const astrology = extractVerifiedAstrology(profile);
+  const humanDesignType = verifiedHumanDesignType(profile);
   return {
     sunSign: astrology.sun,
     lifePathNumber: deterministicLifePath(profile),
-    humanDesignType: verifiedHumanDesignType(profile),
+    humanDesignType,
     unresolved: {
       astrology: astrology.unresolved,
-      humanDesign: verifiedHumanDesignType(profile) ? [] : ["Human Design type"],
+      humanDesign: humanDesignType ? [] : ["Human Design type"],
     },
   };
 }
 
-function buildMatchResponse(profile: any, mode: RelationshipMode = "love") {
-  const input = buildCompatibilityProfileInput(profile);
-  if (!input.sunSign) {
+export function buildMatchResponse(profile: any, mode: RelationshipMode = "love") {
+  const verifiedInput = buildCompatibilityProfileInput(profile);
+  const symbolicSun = symbolicSunSign(profile);
+  const evidenceMode: CompatibilityEvidenceMode = verifiedInput.sunSign
+    ? "verified"
+    : symbolicSun
+      ? "symbolic"
+      : "unavailable";
+
+  const sunSign = verifiedInput.sunSign ?? symbolicSun;
+  const humanDesignType = evidenceMode === "verified" ? verifiedInput.humanDesignType : undefined;
+  const excludedLayers = [
+    ...(verifiedInput.unresolved.astrology ?? []).map((item) => `Verified ${item}`),
+    ...(verifiedInput.unresolved.humanDesign ?? []),
+  ];
+
+  if (!sunSign) {
     return {
       available: false,
-      reason: "A verified Sun placement is required for the sign compatibility explorer.",
-      unresolved: input.unresolved,
+      evidenceMode,
+      reason: "No verified or supported symbolic Sun sign is available for compatibility interpretation.",
+      unresolved: verifiedInput.unresolved,
+      excludedLayers,
       all: [],
       best: [],
       challenging: [],
@@ -80,22 +117,27 @@ function buildMatchResponse(profile: any, mode: RelationshipMode = "love") {
       formula: {
         inputs: {
           sunSign: null,
-          lifePathNumber: input.lifePathNumber ?? null,
-          humanDesignType: input.humanDesignType ?? null,
+          lifePathNumber: verifiedInput.lifePathNumber ?? null,
+          humanDesignType: null,
           mode,
+          evidenceMode,
         },
-        layers: ["Verified Sun placement required before sign-pair interpretation"],
+        layers: ["A verified or explicitly symbolic Sun sign is required before sign-pair interpretation"],
         modes: MODE_KEYS,
       },
     };
   }
 
-  const all = calculateArchetypeMatches(input.sunSign, input.lifePathNumber, input.humanDesignType, mode);
+  const all = calculateArchetypeMatches(sunSign, verifiedInput.lifePathNumber, humanDesignType, mode);
   const ranked = [...all].sort((a, b) => b.score - a.score);
   const averageRanked = [...all].sort((a, b) => averageScore(b) - averageScore(a));
 
   return {
     available: true,
+    evidenceMode,
+    evidenceLabel: evidenceMode === "verified"
+      ? "Verified birth input · symbolic relationship model"
+      : "Supported symbolic Sun · lower-certainty relationship model",
     all: ranked,
     best: ranked.slice(0, 4),
     challenging: ranked.slice(-3).reverse(),
@@ -107,20 +149,24 @@ function buildMatchResponse(profile: any, mode: RelationshipMode = "love") {
       easiest: averageRanked[0] ?? null,
       hardest: averageRanked[averageRanked.length - 1] ?? null,
     },
-    unresolved: input.unresolved,
+    unresolved: verifiedInput.unresolved,
+    excludedLayers,
     formula: {
       inputs: {
-        sunSign: input.sunSign,
-        lifePathNumber: input.lifePathNumber ?? null,
-        humanDesignType: input.humanDesignType ?? null,
+        sunSign,
+        lifePathNumber: verifiedInput.lifePathNumber ?? null,
+        humanDesignType: humanDesignType ?? null,
         mode,
+        evidenceMode,
       },
       layers: [
-        "Verified Sun-sign pair pattern",
-        "Ruling planet chemistry",
-        ...(input.lifePathNumber ? ["Deterministic Life Path resonance"] : []),
-        ...(input.humanDesignType ? ["Verified Human Design type fit"] : []),
-        "Known high-friction and high-flow sign pairs",
+        evidenceMode === "verified"
+          ? "Verified Sun placement used inside a symbolic sign-pair model"
+          : "Saved symbolic Sun sign used as tradition-based reflection, not verified astronomy",
+        "Traditional element, modality, and ruler associations",
+        ...(verifiedInput.lifePathNumber ? ["Deterministic Life Path resonance"] : []),
+        ...(humanDesignType ? ["Verified Human Design type fit"] : []),
+        "High-flow and high-friction symbolic sign-pair rules",
       ],
       modes: MODE_KEYS,
     },
