@@ -1,16 +1,22 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 const ACTIVE_PROFILE_KEY = "soulcodex.activeProfile.v1";
+const VISUAL_EVIDENCE_DIRECTORY = path.resolve(
+  "test-results/pwa/visual-evidence",
+);
 
 const routeCases = [
   { path: "/", pattern: /Soul Codex/i },
   { path: "/timeline", pattern: /Timeline|Current Phase|Personal Year/i },
   { path: "/compatibility", pattern: /Compatibility|Relationship|Match/i },
+  { path: "/compatibility/compare", pattern: /Compare one person|Specific person/i },
   { path: "/pricing", pattern: /Pricing|Premium|Free/i },
   { path: "/privacy", pattern: /Privacy/i },
   { path: "/terms", pattern: /Terms/i },
   { path: "/support", pattern: /Support/i },
-  { path: "/settings", pattern: /Settings/i },
+  { path: "/settings", pattern: /Settings|Your Codex|Account/i },
 ];
 
 const chromiumViewports = [
@@ -19,30 +25,70 @@ const chromiumViewports = [
   { name: "desktop", width: 1440, height: 900 },
 ];
 
+function safeRouteName(routePath) {
+  if (routePath === "/") return "home";
+  if (routePath.startsWith("/profile/")) return "identity";
+  return routePath.replace(/^\//, "").replace(/[^a-z0-9-]+/gi, "-");
+}
+
+async function captureVisualEvidence(page, browserName, viewport, routePath) {
+  mkdirSync(VISUAL_EVIDENCE_DIRECTORY, { recursive: true });
+  const filename = `${browserName}-${viewport.name}-${safeRouteName(routePath)}.jpg`;
+  await page.screenshot({
+    path: path.join(VISUAL_EVIDENCE_DIRECTORY, filename),
+    fullPage: true,
+    type: "jpeg",
+    quality: 72,
+  });
+  return filename;
+}
+
 async function createLocalProfile(page) {
-  await page.goto("/create", { waitUntil: "domcontentloaded" });
-  await expect(
-    page.getByRole("heading", { name: /Create Your\s*Soul Codex/i }),
-  ).toBeVisible();
+  const profileUploadRequests = [];
+  const requestListener = (request) => {
+    const url = new URL(request.url());
+    if (request.method() === "POST" && url.pathname === "/api/profiles") {
+      profileUploadRequests.push(url.pathname);
+    }
+  };
+  page.on("request", requestListener);
 
-  await page.getByTestId("input-name").fill("Responsive Journey Test");
-  await page.getByTestId("input-birth-date").fill("1990-09-17");
-  await page.getByTestId("input-birth-time").fill("11:11");
-  await page.getByTestId("input-birth-location").fill("Bronx, New York");
-  await page.getByTestId("button-location-lookup").click();
+  try {
+    await page.goto("/create", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("input-name")).toBeVisible();
+    await expect(page.getByTestId("button-create-profile")).toBeVisible();
+    await expect(page.getByTestId("checkbox-online-verification")).not.toBeChecked();
 
-  await Promise.all([
-    page.waitForURL(/\/profile\/local-/),
-    page.getByTestId("button-create-profile").click(),
-  ]);
+    await page.getByTestId("input-name").fill("Responsive Journey Test");
+    await page.getByTestId("input-birth-date").fill("1990-09-17");
+    await page.getByTestId("input-birth-time").fill("11:11");
+    await page.getByTestId("input-birth-location").fill("Bronx, New York");
+    await page.getByTestId("button-location-lookup").click();
 
-  const profile = await page.evaluate((key) => {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  }, ACTIVE_PROFILE_KEY);
+    await Promise.all([
+      page.waitForURL(/\/profile\/local-/),
+      page.getByTestId("button-create-profile").click(),
+    ]);
 
-  expect(profile?.id).toMatch(/^local-/);
-  return `/profile/${profile.id}`;
+    await expect(
+      page.getByRole("heading", { name: "Responsive Journey Test" }),
+    ).toBeVisible();
+
+    expect(
+      profileUploadRequests,
+      "local-first profile creation uploaded to /api/profiles without explicit verification consent",
+    ).toEqual([]);
+
+    const profile = await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    }, ACTIVE_PROFILE_KEY);
+
+    expect(profile?.id).toMatch(/^local-/);
+    return `/profile/${profile.id}`;
+  } finally {
+    page.off("request", requestListener);
+  }
 }
 
 async function assertNoHorizontalOverflow(page, label) {
@@ -83,13 +129,19 @@ async function assertPrimaryNavigation(page, viewportWidth, routeLabel) {
   }
 }
 
-async function assertRoute(page, path, pattern, viewport) {
-  await page.goto(path, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`${path === "/" ? "/$" : path}$`));
+async function assertRoute(page, routePath, pattern, viewport) {
+  await page.goto(routePath, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(
+    new RegExp(`${routePath === "/" ? "/$" : routePath}$`),
+  );
   await expect(page.locator("body")).toContainText(pattern);
   await expect(page.locator("body")).not.toContainText(/404 Page Not Found/i);
-  await assertPrimaryNavigation(page, viewport.width, `${viewport.name} ${path}`);
-  await assertNoHorizontalOverflow(page, `${viewport.name} ${path}`);
+  await assertPrimaryNavigation(
+    page,
+    viewport.width,
+    `${viewport.name} ${routePath}`,
+  );
+  await assertNoHorizontalOverflow(page, `${viewport.name} ${routePath}`);
 }
 
 async function assertMobileMenuJourney(page, profilePath) {
@@ -113,6 +165,9 @@ test("Foundation consumer journey is readable and navigable at common web widths
 ) => {
   const criticalConsoleErrors = [];
   const pageErrors = [];
+  const capturedEvidence = [];
+
+  mkdirSync(VISUAL_EVIDENCE_DIRECTORY, { recursive: true });
 
   page.on("pageerror", (error) => pageErrors.push(error.message));
   page.on("console", (message) => {
@@ -146,14 +201,38 @@ test("Foundation consumer journey is readable and navigable at common web widths
         await assertRoute(
           page,
           profilePath,
-          /Saved on this device|Works offline|Soul Codex/i,
+          /Responsive Journey Test/i,
           viewport,
         );
+        const file = await captureVisualEvidence(
+          page,
+          browserName,
+          viewport,
+          profilePath,
+        );
+        capturedEvidence.push({
+          browserName,
+          viewport: viewport.name,
+          route: profilePath,
+          file,
+        });
       });
 
       for (const route of routeCases) {
         await test.step(`${viewport.name} ${route.path}`, async () => {
           await assertRoute(page, route.path, route.pattern, viewport);
+          const file = await captureVisualEvidence(
+            page,
+            browserName,
+            viewport,
+            route.path,
+          );
+          capturedEvidence.push({
+            browserName,
+            viewport: viewport.name,
+            route: route.path,
+            file,
+          });
         });
       }
 
@@ -166,22 +245,26 @@ test("Foundation consumer journey is readable and navigable at common web widths
     });
   }
 
+  const summary = {
+    browserName,
+    viewports: viewports.map(({ name, width, height }) => ({
+      name,
+      width,
+      height,
+    })),
+    routes: [profilePath, ...routeCases.map(({ path: routePath }) => routePath)],
+    capturedEvidence,
+    pageErrors,
+    criticalConsoleErrors,
+  };
+
+  writeFileSync(
+    path.join(VISUAL_EVIDENCE_DIRECTORY, `${browserName}-summary.json`),
+    JSON.stringify(summary, null, 2),
+  );
+
   await testInfo.attach("responsive-qa-summary", {
-    body: JSON.stringify(
-      {
-        browserName,
-        viewports: viewports.map(({ name, width, height }) => ({
-          name,
-          width,
-          height,
-        })),
-        routes: [profilePath, ...routeCases.map(({ path }) => path)],
-        pageErrors,
-        criticalConsoleErrors,
-      },
-      null,
-      2,
-    ),
+    body: JSON.stringify(summary, null, 2),
     contentType: "application/json",
   });
 

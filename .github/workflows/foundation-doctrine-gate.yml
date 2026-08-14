@@ -1,0 +1,85 @@
+name: Foundation Doctrine Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "client/**"
+      - "server/**"
+      - "routes/**"
+      - "shared/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "scripts/verify-foundation-web-rc.mjs"
+      - "AGENTS.md"
+      - ".nvmrc"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/foundation-doctrine-gate.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-doctrine-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  doctrine:
+    name: Truth, privacy, and release invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact candidate SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          echo "expected_sha=$EXPECTED_SHA"
+          echo "actual_sha=$ACTUAL_SHA"
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build:workspaces
+
+      - name: TypeScript check
+        run: npm run check
+
+      - name: Run Foundation doctrine contracts
+        run: >-
+          node --import tsx --test
+          tests/unknown-time-input-contract.test.ts
+          tests/foundation-local-astronomy-boundary.test.ts
+          tests/profile-verification-boundary.test.ts
+          tests/local-first-privacy-contract.test.ts
+          tests/server-profile-ownership.test.ts
+          tests/compatibility-profile-contract.test.ts
+          tests/compatibility-data-minimization.test.ts
+          tests/billing-security.test.ts
+          tests/no-simulated-release-routes.test.ts
+          tests/bobby-big-three-golden.test.ts
+          tests/human-design-trust.test.ts
+          tests/profile-verification-reconciliation.test.ts
+          tests/ui-backend-consistency-contract.test.ts
+
+      - name: Run Foundation Web RC invariant audit
+        run: node scripts/verify-foundation-web-rc.mjs
+
+      - name: Build release application
+        run: npm run build

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   containsRawPaymentFields,
@@ -8,6 +9,7 @@ import {
 } from "../server/billing.ts";
 
 const profileId = "profile-12345678";
+const serverRoutesSource = readFileSync("server/routes.ts", "utf8");
 
 test("checkout accepts only the profile capability request shape", () => {
   assert.deepEqual(parseCheckoutRequest({ profileId }), { profileId });
@@ -28,6 +30,13 @@ test("raw payment fields are rejected before checkout session creation", () => {
   assert.equal(containsRawPaymentFields({ profileId, cvv: "123" }), true);
   assert.equal(containsRawPaymentFields({ profileId, cvc: "123" }), true);
   assert.equal(containsRawPaymentFields({ profileId, expiryDate: "12/30" }), true);
+});
+
+test("legacy profile upgrade route can never collect raw card fields or grant premium directly", () => {
+  assert.match(serverRoutesSource, /direct_card_upgrade_retired/);
+  assert.match(serverRoutesSource, /Direct card upgrades are retired/);
+  assert.doesNotMatch(serverRoutesSource, /const\s*\{\s*cardNumber\s*,\s*expiryDate\s*,\s*cvv\s*\}\s*=\s*req\.body/);
+  assert.doesNotMatch(serverRoutesSource, /updateProfile\([^)]*\{\s*isPremium:\s*true\s*\}/);
 });
 
 test("profile billing actions require the existing bearer capability", () => {
