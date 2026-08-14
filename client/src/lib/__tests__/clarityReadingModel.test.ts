@@ -84,7 +84,7 @@ describe("clarityReadingModel", () => {
     });
   });
 
-  it("normalizes nested offline depth sections into the same reading contract", () => {
+  it("normalizes nested offline depth sections and enriches them with deterministic name-number themes", () => {
     const model = buildClarityReadingModel({
       depthInterpretation: {
         claritySummary: {
@@ -101,22 +101,49 @@ describe("clarityReadingModel", () => {
       numerologyData: { lifePath: 9, expression: 4, soulUrge: 5 },
     });
 
-    expect(model).toMatchObject({
-      title: "The Quiet Guardian",
-      summary: "You stabilize the room before naming what you need.",
-      visiblePattern: "You notice pressure before other people name it.",
-      protectiveFunction: "Preparedness protects emotional safety.",
-      gift: "Your awareness becomes steady practical care.",
-      cost: "Responsibility can become silent resentment.",
-      relationshipImpact: "You may help before asking whether help is wanted.",
-      groundedAction: "Ask one direct question before solving the problem.",
-    });
+    expect(model.title).toBe("The Quiet Guardian");
+    expect(model.summary).toBe("You stabilize the room before naming what you need.");
+    expect(model.visiblePattern).toContain("You notice pressure before other people name it.");
+    expect(model.visiblePattern).toContain("Expression 4");
+    expect(model.protectiveFunction).toContain("Preparedness protects emotional safety.");
+    expect(model.protectiveFunction).toContain("Soul Urge 5");
+    expect(model.gift).toContain("Expression 4");
+    expect(model.cost).toContain("Responsibility can become silent resentment.");
+    expect(model.relationshipImpact).toContain("Expression 4");
+    expect(model.relationshipImpact).toContain("Soul Urge 5");
+    expect(model.groundedAction).toBe("Ask one direct question before solving the problem.");
     expect(model.signals).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: "life-path", confidence: "deterministic" }),
         expect.objectContaining({ id: "expression", confidence: "deterministic" }),
         expect.objectContaining({ id: "soul-urge", confidence: "deterministic" }),
       ]),
+    );
+  });
+
+  it("turns Expression 1 and Soul Urge 6 into a visible independence-versus-responsibility tension", () => {
+    const model = buildClarityReadingModel({
+      astrologyData: { sunSign: "Virgo" },
+      numerologyData: { lifePath: 9, expression: 1, soulUrge: 6 },
+      depthInterpretation: {
+        claritySummary: { summary: "Precision and service are prominent symbolic themes." },
+        behavior: { summary: "You tend to look for the weak link before you commit." },
+        protectiveFunction: { summary: "Preparation can protect against preventable chaos." },
+        gift: { summary: "Discernment can become useful problem solving." },
+        shadow: { summary: "Analysis can keep expanding after a decision is ready." },
+        relationshipImpact: { summary: "Reliability and clear effort matter in close bonds." },
+      },
+    });
+
+    expect(model.coreContradiction).toContain("Expression 1 (Independence)");
+    expect(model.coreContradiction).toContain("Soul Urge 6 (Responsibility)");
+    expect(model.coreContradiction).toContain("Both can be active at once");
+    expect(model.visiblePattern).toContain("self-directed initiation and leadership");
+    expect(model.protectiveFunction).toContain("care, loyalty, and dependable belonging");
+    expect(model.relationshipImpact).toContain("Expression 1");
+    expect(model.relationshipImpact).toContain("Soul Urge 6");
+    expect(model.limitations).toContain(
+      "Numerology values are deterministic calculations from supplied birth/name data; their personality meanings remain symbolic interpretation.",
     );
   });
 });
