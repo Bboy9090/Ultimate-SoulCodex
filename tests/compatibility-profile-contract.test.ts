@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCompatibilityProfileInput,
   buildMatchResponse,
+  buildPersonComparisonResponse,
   symbolicSunSign,
 } from "../routes/compatibility";
 
@@ -56,7 +57,7 @@ describe("compatibility saved-profile contract", () => {
     expect(input.unresolved.astrology).not.toContain("Sun");
   });
 
-  it("does not consume a naked Human Design type", () => {
+  it("excludes a naked Human Design type from Foundation compatibility", () => {
     const input = buildCompatibilityProfileInput({
       astrologyData: {
         sun: { sign: "Virgo", verificationStatus: "verified", evidence },
@@ -65,10 +66,10 @@ describe("compatibility saved-profile contract", () => {
     });
 
     expect(input.humanDesignType).toBeUndefined();
-    expect(input.unresolved.humanDesign).toEqual(["Human Design type"]);
+    expect(input.unresolved.humanDesign).toEqual(["Human Design excluded from Foundation compatibility"]);
   });
 
-  it("accepts an evidence-complete Human Design type object", () => {
+  it("still excludes an evidence-complete Human Design object until its compatibility contract is independently promoted", () => {
     const input = buildCompatibilityProfileInput({
       astrologyData: {
         sun: { sign: "Virgo", verificationStatus: "verified", evidence },
@@ -86,13 +87,13 @@ describe("compatibility saved-profile contract", () => {
       },
     });
 
-    expect(input.humanDesignType).toBe("Reflector");
-    expect(input.unresolved.humanDesign).toEqual([]);
+    expect(input.humanDesignType).toBeUndefined();
+    expect(input.unresolved.humanDesign).toEqual(["Human Design excluded from Foundation compatibility"]);
   });
 
   it("allows a supported symbolic Sun without promoting it into verified astrology", () => {
     const result = buildMatchResponse({
-      astrologyData: { sunSign: "Virgo" },
+      astrologyData: { sunSign: "virgo" },
       numerologyData: { lifePath: 9 },
       humanDesignType: "Reflector",
     });
@@ -103,7 +104,7 @@ describe("compatibility saved-profile contract", () => {
     expect(result.formula.inputs.lifePathNumber).toBe(9);
     expect(result.formula.inputs.humanDesignType).toBeNull();
     expect(result.formula.layers.join(" ")).toContain("not verified astronomy");
-    expect(result.excludedLayers).toContain("Human Design type");
+    expect(result.excludedLayers).toContain("Human Design excluded from Foundation compatibility");
   });
 
   it("prefers the verified Sun over a conflicting symbolic alias", () => {
@@ -127,5 +128,33 @@ describe("compatibility saved-profile contract", () => {
     expect(result.available).toBe(false);
     expect(result.evidenceMode).toBe("unavailable");
     expect(result.formula.inputs.sunSign).toBeNull();
+  });
+
+  it("compares one person by dimensions without inventing a universal relationship score", () => {
+    const result = buildPersonComparisonResponse(
+      {
+        astrologyData: {
+          sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+        },
+        numerologyData: { lifePath: 9 },
+        humanDesignType: "Reflector",
+      },
+      { name: "Alex", sunSign: "pisces" },
+    );
+
+    expect(result.available).toBe(true);
+    expect(result.evidenceMode).toBe("symbolic");
+    expect(result.savedSunEvidenceMode).toBe("verified");
+    expect(result.person).toEqual({ name: "Alex", sunSign: "Pisces" });
+    expect(result.dimensions).toEqual({
+      romantic: expect.any(Number),
+      chemistry: expect.any(Number),
+      mentalFriendship: expect.any(Number),
+      growth: expect.any(Number),
+    });
+    expect(result).not.toHaveProperty("overallScore");
+    expect(result.formula.inputs.humanDesignType).toBeNull();
+    expect(result.excludedLayers).toContain("Human Design excluded from Foundation compatibility");
+    expect(result.formula.layers.join(" ")).toContain("user-supplied symbolic data");
   });
 });
