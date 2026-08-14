@@ -4,7 +4,6 @@ import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CloudOff, Compass, Crown, Infinity, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import DepthSoulGuide from "@/components/DepthSoulGuide";
-import CosmicChart from "@/components/cosmic-chart";
 import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -125,11 +124,18 @@ export default function OfflineProfilePage() {
         </section>
 
         <section className="mb-6 grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div className="codex-panel flex min-h-[360px] items-center justify-center p-5"><CosmicChart astrologyData={astrology} size={280} /></div>
+          <div className="codex-panel flex min-h-[300px] items-center justify-center p-6" data-testid="local-astronomy-unresolved-panel">
+            <div className="max-w-[280px] text-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-amber-400/25 bg-amber-400/[0.05] text-amber-300"><Compass className="h-7 w-7" /></div>
+              <p className="codex-kicker mt-5">Natal wheel</p>
+              <h2 className="codex-display mt-2 text-2xl">Unavailable locally without verified placements.</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">Soul Codex does not draw sample planets, random aspects, approximate houses, or an invented wheel. Exact chart geometry appears only after the required astronomy evidence exists.</p>
+            </div>
+          </div>
           <div className="codex-panel p-6 sm:p-8"><p className="codex-kicker mb-3">Local biography</p><h2 className="codex-display mb-4 text-3xl">The story this profile currently tells.</h2><p className="text-base leading-8 text-foreground/80">{profile.biography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-accent">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
         </section>
 
-        <div className="mb-6 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.035] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" /><div><p className="font-semibold">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{hasVerifiedCore ? "Sun and Moon were independently verified and merged into this device profile. Rising, houses, nodes, Chiron, and unsupported planetary details remain unresolved or symbolic context until their own verification contracts pass." : "This reading does not promote Moon, Rising, houses, or planetary approximations into verified identity facts. Those layers remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>
+        <div className="mb-6 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.035] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" /><div><p className="font-semibold">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{hasVerifiedCore ? "Sun and Moon were independently verified and merged into this device profile. Rising, houses, nodes, Chiron, and unsupported planetary details remain unresolved or symbolic context until their own verification contracts pass." : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, houses, aspects, nodes, Chiron, and chart geometry remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>
 
         <DepthSoulGuide interpretation={profile.depthInterpretation} defaultOpenGroupIds={["behavior", "relationships-decisions"]} />
       </main>
