@@ -20,7 +20,6 @@ import CompatibilityPersonPage from "./pages/CompatibilityPersonPage";
 import CompatibilityRoute from "./pages/CompatibilityRoute";
 import TimelinePage from "./pages/TimelinePage";
 import AstrocartographyPage from "./pages/AstrocartographyPage";
-import PalmistryPage from "./pages/PalmistryPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import SupportPage from "./pages/SupportPage";
@@ -105,7 +104,6 @@ function Router() {
       <Route path="/timeline" component={TimelineRoute} />
       <Route path="/reading/:id" component={ReadingRoute} />
       <Route path="/astrocartography/:id">{() => <PremiumRoute component={AstrocartographyPage} />}</Route>
-      <Route path="/palmistry/:id">{() => <PremiumRoute component={PalmistryPage} />}</Route>
       <Route path="/profile/:id" component={ProfileRoute} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/terms" component={TermsPage} />
