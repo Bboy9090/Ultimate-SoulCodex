@@ -2,6 +2,18 @@ name: PWA Offline Browser Validation
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "client/**"
+      - "packages/core/offline-codex/**"
+      - "tests/pwa/**"
+      - "scripts/generate-pwa-service-worker.mjs"
+      - "scripts/validate-pwa-output.mjs"
+      - "vite.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/pwa-offline-browser.yml"
   push:
     tags:
       - "v*"
@@ -10,7 +22,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: pwa-offline-browser-${{ github.ref }}
+  group: pwa-offline-browser-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,8 +32,20 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact candidate
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact candidate SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          echo "expected_sha=$EXPECTED_SHA"
+          echo "actual_sha=$ACTUAL_SHA"
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
+          printf '%s\n' "$ACTUAL_SHA" > pwa-candidate-sha.txt
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -47,13 +71,25 @@ jobs:
       - name: Test offline browser restart and direct local profile reload
         run: npx playwright test --config=tests/pwa/playwright.config.mjs
 
+      - name: Upload responsive visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-web-visual-evidence-${{ github.run_id }}
+          path: |
+            pwa-candidate-sha.txt
+            test-results/pwa/visual-evidence
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Upload browser evidence on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: pwa-offline-browser-failure-${{ github.run_id }}
           path: |
+            pwa-candidate-sha.txt
             playwright-report
             test-results/pwa
           if-no-files-found: warn
-          retention-days: 2
+          retention-days: 7
