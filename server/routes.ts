@@ -21,11 +21,6 @@ import {
   generateDailyGuidance,
 } from "./services/openai-service";
 import { registerGalacticCodeRoutes } from "./routes/galactic-code";
-import {
-  calculateArchetypeMatches,
-  getMatchesByMode,
-  type RelationshipMode,
-} from "../services/archetype-matches";
 import { buildNatalReportPdf } from "./natalReportPdf";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
@@ -175,23 +170,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/profiles/:id/upgrade", async (req, res) => {
-    try {
-      const profileId = req.params.id;
-      const authToken = req.headers.authorization?.split(" ")[1];
-      const { cardNumber, expiryDate, cvv } = req.body;
-      if (!authToken || authToken !== profileId) return res.status(401).json({ message: "Unauthorized" });
-      const profile = await storage.getProfile(profileId);
-      if (!profile) return res.status(404).json({ message: "Profile not found" });
-      if (!cardNumber || !expiryDate || !cvv) return res.status(400).json({ message: "Payment information is required" });
-      if (cardNumber.length < 13) return res.status(400).json({ message: "Invalid card number" });
-      if (!expiryDate.match(/^\d{2}\/\d{2}$/)) return res.status(400).json({ message: "Invalid expiry date" });
-      if (cvv.length < 3) return res.status(400).json({ message: "Invalid CVV" });
-      res.json(await storage.updateProfile(profileId, { isPremium: true }));
-    } catch (error) {
-      console.error("Error upgrading profile:", error);
-      res.status(500).json({ message: "Failed to upgrade profile" });
-    }
+  // Retired direct-card upgrade route. Soul Codex never accepts PAN, expiry,
+  // or security-code data into application memory. Premium purchase starts only
+  // through the hosted checkout routes registered in server/billing.ts.
+  app.post("/api/profiles/:id/upgrade", (_req, res) => {
+    res.status(410).json({
+      message: "Direct card upgrades are retired. Use hosted checkout to purchase premium access.",
+      code: "direct_card_upgrade_retired",
+    });
   });
 
   app.get("/api/pdf/profile/:id", async (req, res) => {
@@ -225,18 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/compatibility/archetype-matches", (req, res) => {
-    try {
-      const { sunSign, lifePathNumber, hdType, mode = "love" } = req.body;
-      if (!sunSign) return res.status(400).json({ message: "sunSign is required" });
-      const all = calculateArchetypeMatches(sunSign, lifePathNumber, hdType, mode as RelationshipMode);
-      const { best, challenging } = getMatchesByMode(sunSign, lifePathNumber, hdType, mode as RelationshipMode);
-      res.json({ all, best, challenging });
-    } catch (error) {
-      console.error("Error calculating archetype matches:", error);
-      res.status(500).json({ message: "Failed to calculate compatibility" });
-    }
-  });
+  // Compatibility is mounted once, before registerRoutes(), by server/index.ts
+  // through the evidence-aware router in routes/compatibility.ts. Do not add a
+  // second naked-sign or Human Design compatibility path here: alternate routes
+  // become alternate truth policies.
 
   registerGalacticCodeRoutes(app);
   return createServer(app);
