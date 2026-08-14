@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CloudOff, Compass, Crown, Infinity, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import DepthSoulGuide from "@/components/DepthSoulGuide";
-import CosmicChart from "@/components/cosmic-chart";
 import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,29 +21,44 @@ export default function OfflineProfilePage() {
   const { data: profile, isLoading, error } = useQuery<OfflineCodexProfile>({ queryKey: ["offline-profile", id], enabled: !!id, queryFn: async () => { if (!id) throw new Error("Profile id is missing"); const stored = await loadOfflineProfile(id); if (!stored) throw new Error("Offline profile not found on this device"); return stored; } });
   const reconciledProfile = profile as ReconciledOfflineProfile | undefined;
 
-  useEffect(() => {
-    if (!reconciledProfile || verificationAttempt !== "idle" || !profileNeedsOnlineVerification(reconciledProfile)) return;
-    if (typeof navigator !== "undefined" && !navigator.onLine) { setVerificationAttempt("deferred"); return; }
-    const currentProfile = reconciledProfile;
-    let cancelled = false;
-    setVerificationAttempt("running");
-    async function refreshVerification() {
-      try {
-        const response = await apiFetch("/api/profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: currentProfile.name, birthDate: currentProfile.birthDate, ...(currentProfile.birthTime ? { birthTime: currentProfile.birthTime } : {}), birthLocation: currentProfile.birthLocation, timezone: currentProfile.timezone, latitude: currentProfile.latitude ?? undefined, longitude: currentProfile.longitude ?? undefined }) });
-        if (!response.ok) throw new Error(`verification_refresh_failed_${response.status}`);
-        const remote = await response.json();
-        const syncedAt = new Date().toISOString();
-        const hydrated = reconcileOfflineProfile(currentProfile, remote, syncedAt);
-        await saveOfflineProfile(hydrated);
-        const active = loadActiveProfile().profile;
-        if (active?.id === currentProfile.id) { const saved = saveActiveProfile(reconcileActiveProfile(active, remote, syncedAt)); if (!saved.success) throw new Error(saved.error || "active_profile_reconciliation_failed"); }
-        localStorage.setItem(`soulcodex.offlineProfileRemote.v1.${currentProfile.id}`, JSON.stringify({ remoteId: remote.id, syncedAt }));
-        if (!cancelled) { queryClient.setQueryData(["offline-profile", id], hydrated); setVerificationAttempt("complete"); }
-      } catch (cause) { console.warn("[offline-profile] Online verification refresh deferred", cause); if (!cancelled) setVerificationAttempt("deferred"); }
+  const requestOnlineVerification = async () => {
+    if (!reconciledProfile || verificationAttempt === "running" || !profileNeedsOnlineVerification(reconciledProfile)) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setVerificationAttempt("deferred");
+      return;
     }
-    void refreshVerification();
-    return () => { cancelled = true; };
-  }, [id, queryClient, reconciledProfile, verificationAttempt]);
+
+    const currentProfile = reconciledProfile;
+    setVerificationAttempt("running");
+    try {
+      const response = await apiFetch("/api/verification/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          birthDate: currentProfile.birthDate,
+          ...(currentProfile.birthTime ? { birthTime: currentProfile.birthTime } : {}),
+          timezone: currentProfile.timezone,
+          latitude: currentProfile.latitude ?? undefined,
+          longitude: currentProfile.longitude ?? undefined,
+        }),
+      });
+      if (!response.ok) throw new Error(`verification_refresh_failed_${response.status}`);
+      const verification = await response.json();
+      const syncedAt = verification.updatedAt || new Date().toISOString();
+      const hydrated = reconcileOfflineProfile(currentProfile, verification, syncedAt);
+      await saveOfflineProfile(hydrated);
+      const active = loadActiveProfile().profile;
+      if (active?.id === currentProfile.id) {
+        const saved = saveActiveProfile(reconcileActiveProfile(active, verification, syncedAt));
+        if (!saved.success) throw new Error(saved.error || "active_profile_reconciliation_failed");
+      }
+      queryClient.setQueryData(["offline-profile", id], hydrated);
+      setVerificationAttempt("complete");
+    } catch (cause) {
+      console.warn("[offline-profile] Requested online verification could not complete", cause);
+      setVerificationAttempt("deferred");
+    }
+  };
 
   const verifiedAstrology = reconciledProfile?.verifiedAstrologyData;
   const verifiedSun = useMemo(() => getVerifiedAstrologySign(verifiedAstrology, "sun"), [verifiedAstrology]);
@@ -58,6 +72,7 @@ export default function OfflineProfilePage() {
   const numerology = profile.numerologyData;
   const archetype = profile.archetypeData;
   const hasVerifiedCore = Boolean(verifiedSun && verifiedMoon);
+  const needsOnlineVerification = profileNeedsOnlineVerification(reconciledProfile);
   const readingHref = `/reading/${profile.id}`;
 
   return (
@@ -74,14 +89,33 @@ export default function OfflineProfilePage() {
               <p className="codex-kicker mb-3">Identity · Soul Codex</p>
               <h1 className="codex-display text-4xl font-semibold tracking-[-0.035em] sm:text-6xl">{profile.name}</h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">{archetype.description}</p>
-              <div className="mt-6 flex flex-wrap gap-3"><Link href={readingHref}><Button className="codex-primary-cta h-11 rounded-xl px-5">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Button></Link><Link href="/compatibility"><Button variant="outline" className="h-11 rounded-xl border-white/10 bg-white/[0.035] px-5">Explore compatibility</Button></Link></div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href={readingHref}><Button className="codex-primary-cta h-11 rounded-xl px-5">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+                <Link href="/compatibility"><Button variant="outline" className="h-11 rounded-xl border-white/10 bg-white/[0.035] px-5">Explore compatibility</Button></Link>
+                {needsOnlineVerification && verificationAttempt !== "complete" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 rounded-xl border-emerald-400/25 bg-emerald-400/[0.04] px-5 text-emerald-200"
+                    onClick={() => void requestOnlineVerification()}
+                    disabled={verificationAttempt === "running"}
+                    data-testid="button-verify-online-profile"
+                  >
+                    {verificationAttempt === "running" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verifying…</> : <><ShieldCheck className="mr-2 h-4 w-4" />Verify online</>}
+                  </Button>
+                )}
+              </div>
+              {needsOnlineVerification && verificationAttempt !== "complete" && (
+                <p className="mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">Optional. Choosing Verify online sends only birth date, optional birth time, timezone, and coordinates to Soul Codex&apos;s astronomy verification endpoint. It does not create a server profile or invoke AI generation. Merely opening this local profile does not upload it.</p>
+              )}
             </div>
             <div className="relative mx-auto flex aspect-square w-full max-w-[260px] items-center justify-center rounded-full border border-primary/20 bg-black/20 shadow-[inset_0_0_60px_rgba(123,97,255,.08)]"><div className="absolute inset-4 rounded-full border border-dashed border-accent/25" /><Crown className="h-12 w-12 text-accent" /><div className="absolute bottom-8 text-center"><p className="codex-kicker">archetype</p><p className="mt-1 max-w-[180px] text-sm font-semibold">{archetype.title}</p></div></div>
           </div>
         </section>
 
-        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" /><span>Checking saved birth data against the independent online astronomy reference. Your local reading remains available.</span></div>}
-        {verificationAttempt === "deferred" && !hasVerifiedCore && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-muted-foreground">Online verification is unavailable. Local symbolic layers remain visible; Moon, Rising, houses, and sign-based compatibility stay unresolved rather than guessed.</div>}
+        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" /><span>You requested astronomy verification. Soul Codex is checking only the calculation inputs needed for that evidence while your local reading remains available.</span></div>}
+        {verificationAttempt === "deferred" && !hasVerifiedCore && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-muted-foreground">The requested online verification could not complete. Local symbolic layers remain visible; Moon, Rising, houses, and sign-based compatibility stay unresolved rather than guessed.</div>}
+        {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.04] p-4 text-sm text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
           <div className="codex-panel p-5"><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3"><div className="codex-icon-well"><Sparkles className="h-5 w-5" /></div><div><p className="font-semibold">Astrology core</p><p className="text-xs text-muted-foreground">verified where available</p></div></div></div><div className="space-y-3">{[["Sun", verifiedSun || astrology.sunSign, Boolean(verifiedSun)], ["Moon", verifiedMoon || "Unresolved", Boolean(verifiedMoon)], ["Rising", verifiedRising || "Unresolved", Boolean(verifiedRising)]].map(([label, value, verified]) => <div key={String(label)} className="flex items-center justify-between border-b border-white/6 pb-3 last:border-0 last:pb-0"><span className="text-sm text-muted-foreground">{String(label)}</span><span className="flex items-center gap-2 text-sm font-semibold">{String(value)} {verified && <Check className="h-3.5 w-3.5 text-emerald-400" />}</span></div>)}</div></div>
@@ -90,11 +124,18 @@ export default function OfflineProfilePage() {
         </section>
 
         <section className="mb-6 grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div className="codex-panel flex min-h-[360px] items-center justify-center p-5"><CosmicChart astrologyData={astrology} size={280} /></div>
+          <div className="codex-panel flex min-h-[300px] items-center justify-center p-6" data-testid="local-astronomy-unresolved-panel">
+            <div className="max-w-[280px] text-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-amber-400/25 bg-amber-400/[0.05] text-amber-300"><Compass className="h-7 w-7" /></div>
+              <p className="codex-kicker mt-5">Natal wheel</p>
+              <h2 className="codex-display mt-2 text-2xl">Unavailable locally without verified placements.</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">Soul Codex does not draw sample planets, random aspects, approximate houses, or an invented wheel. Exact chart geometry appears only after the required astronomy evidence exists.</p>
+            </div>
+          </div>
           <div className="codex-panel p-6 sm:p-8"><p className="codex-kicker mb-3">Local biography</p><h2 className="codex-display mb-4 text-3xl">The story this profile currently tells.</h2><p className="text-base leading-8 text-foreground/80">{profile.biography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-accent">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
         </section>
 
-        <div className="mb-6 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.035] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" /><div><p className="font-semibold">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{hasVerifiedCore ? "Sun and Moon were independently verified and merged into this device profile. Rising, houses, nodes, Chiron, and unsupported planetary details remain unresolved or symbolic context until their own verification contracts pass." : "This reading does not promote Moon, Rising, houses, or planetary approximations into verified identity facts. Those layers remain unresolved until independent astronomical verification succeeds."}</p></div></div></div>
+        <div className="mb-6 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.035] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" /><div><p className="font-semibold">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{hasVerifiedCore ? "Sun and Moon were independently verified and merged into this device profile. Rising, houses, nodes, Chiron, and unsupported planetary details remain unresolved or symbolic context until their own verification contracts pass." : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, houses, aspects, nodes, Chiron, and chart geometry remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>
 
         <DepthSoulGuide interpretation={profile.depthInterpretation} defaultOpenGroupIds={["behavior", "relationships-decisions"]} />
       </main>

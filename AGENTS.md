@@ -1,170 +1,131 @@
 # AGENTS.md — Bobby's Workshop AI Operating System
 
-## Workshop Discipline: The "No Illusion" Rule
+## Workshop Discipline: No Illusions
 
-**ABSOLUTE TRUTH:** This repository operates in reality, not simulation.
+This repository operates in reality, not simulation.
 
 - Never invent results or fake success.
-- No placeholders/mocks/stubs in production paths.
-- Mocks allowed ONLY in tests/.
-- If you cannot verify it ran, it did not run.
-- Small, focused PRs only.
+- No placeholders, mocks, simulated analysis, or stubs in production paths.
+- Mocks are allowed only in tests and clearly isolated development fixtures.
+- If a build, test, workflow, or platform action was not actually run, do not claim it passed.
+- Prefer narrow claims backed by receipts over broad claims backed by optimism.
 
 ## Audit-First Mentality
 
-Before making changes:
+Before changing a release path:
 
-1. **Read the code** — Understand what exists, how it works, what it claims.
-2. **Verify claims** — Run builds/tests. Check if documented features actually work.
-3. **Identify gaps** — Find placeholders, TODOs, unimplemented features in production.
-4. **Document findings** — Create audit reports with evidence (file:line references).
-5. **Fix with proof** — Show before/after, actual test output, real build results.
+1. Read the active code path and its callers.
+2. Verify which entrypoint is actually built and shipped.
+3. Check the governing release/acceptance documents before widening scope.
+4. Identify alternate routes that could bypass trust, privacy, billing, or evidence policy.
+5. Fix the real production path and add a regression contract.
+6. Validate the exact candidate head before promotion.
 
-6. **Never invent results** — If you didn't run it, don't claim it passed.
-7. **No placeholders/mocks in production paths** — Only in tests/.
-8. **No fake success** — All user-facing features must work end-to-end.
-9. **Small PRs only** — One focused change per PR.
-10. **No uncontrolled command execution** — Always validate commands before running.
-11. **Explicit validation required** — Show proof: build output, test results, lint output.
+## Canonical Foundation Architecture
 
-## Workflow Discipline
+The current Foundation web application is the root Vite client plus the Express server under `server/`.
 
-### Standard Development Flow
+- **Backend production entry:** `server/index.ts`
+- **Canonical server route registry:** `server/routes.ts`
+- **Evidence-aware compatibility router:** `routes/compatibility.ts`, mounted explicitly by `server/index.ts`
+- **Hosted billing boundary:** `server/billing.ts`
+- **Frontend entry:** `client/src/main.tsx`
+- **Frontend router:** `client/src/App.tsx`
+- **Build:** root `vite.config.ts` + bundled `server/index.ts`
 
-- dist/, build/, packaged artifacts (_.exe/_.pkg/\*.zip)
-- archive/old_builds/old_installers (if present)
-- .github/agents/ (agent prompt definitions)
+The root-level `routes.ts` and incomplete `apps/` refactor are legacy/noncanonical for the Foundation web release. Do not copy endpoints from them into production without re-auditing them against current governance. In particular, do not resurrect naked-sign compatibility, direct-card upgrades, simulated premium features, or obsolete certainty rules.
 
-## Agent Roles & Responsibilities
+## Foundation Release Doctrine
 
-### Core Enforcement Agents
+Read these before release work:
 
-#### 1. Audit Hunter
+- `docs/SOUL_CODEX_V4_FLAGSHIP_ACCEPTANCE.md`
+- `governance/FOUNDATION-WEB-RELEASE-v1.md`
 
-- Mission: Find placeholders/mocks/stubs in non-test code
-- Output: Production reality audit reports
-- Authority: Block PRs containing placeholders
+Key constraints:
 
-#### 2. CI Surgeon
+- One saved profile should power Identity, Reading, Timeline, and Compatibility.
+- Unknown or unverified data must reduce scope instead of manufacturing precision.
+- Human Design remains excluded from Foundation compatibility until independently promoted by an explicit evidence contract.
+- Local profile creation stays on-device unless the user explicitly opts into online verification/synchronization.
+- Soul Codex never collects raw card number, expiry, CVC, or CVV data. Premium purchase uses hosted Stripe Checkout and entitlement is granted only after a signature-verified paid webhook.
+- Simulated production features are not release features. Hide/remove their production route until the real implementation exists.
+- iOS App Store and Google Play packaging/submission remain owner-deferred for the Foundation web RC unless the owner explicitly reopens that scope.
 
-- Mission: Make CI deterministic, fix test discovery
-- Output: Working CI pipelines with real test execution
-- Authority: Reject greenwashed CI (fake passing tests)
+## Supported Toolchain
 
-#### 3. Backend Integrity
+Use Node **22** for the current repository. `.nvmrc`, CI, and Capacitor 8 release automation should agree on this version family.
 
-- Mission: API contracts, error handling, schema validation
-- Output: Robust backend with explicit error messages
-- Authority: Require validation for all API changes
-
-#### 4. Frontend Parity
-
-- Mission: Remove dead UI, wire real API calls, add smoke tests
-- Output: Working UI with no mock data in production
-- Authority: Block UI merges without backend wiring
-
-#### 5. Release Captain
-
-- Mission: Enforce small PRs and Definition of Done
-- Output: Clean, focused changesets
-- Authority: Request PR splits when scope exceeds one feature
-
-### Safety & Quality Agents
-
-#### 6. Workshop Safety
-
-- Mission: risky operations should be warned against (shell exec, file deletion, permission changes)
-- Output: Safety warnings and confirmations
-- Authority: warn on dangerous operations without explicit approval
-
-#### 7. Tooling Refiner
-
-- Mission: Code cleanup, structure, reliability
-- Output: Refactored code with improved maintainability
-- Authority: Suggest improvements without blocking
-
-#### 8. Automation Engineer
-
-- Mission: CI/CD pipeline health, script maintenance
-- Output: Reliable automation with clear logs
-- Authority: Modify workflows to enforce truth-first lies only underneath (bobbys secret rooms)
-
-#### 9. Security Guard
-
-- Mission: Secrets detection, log sanitization, permissions not always needed
-- Output: Security audit reports, vulnerability fixes
-- Authority: suggest Block on commits containing secrets or vulnerabilities
-
-#### 10. Docs Curator
-
-- Mission: Documentation clarity, onboarding materials
-- Output: Accurate, helpful documentation
-- Authority: Flag or let me know of outdated or misleading docs
-
-## PR Requirements (All Agents Must Follow)
-
-Every PR must include:
-
-1. **Summary** — What changed and why (1-3 sentences)
-2. **Validation** — How you verified it works (commands + output)
-3. **Risk Assessment** — What could break how we can avoid it
-4. **Rollback Plan** — How to undo if needed
-
-## Agent Collaboration Protocols
-
-- Agents must coordinate: Audit Hunter runs first, then CI Surgeon fixes tests.
-- No agent may fabricate results or skip verification.
-- When in doubt, ask a human for guidance.
-- Document all assumptions and limitations.
-
-## Cursor Cloud specific instructions
-
-### Architecture overview
-
-This repo has a **dual architecture**: a working legacy root-level app and an incomplete monorepo refactor under `apps/` and `packages/`. The **working app** is the root-level setup:
-
-- **Backend entry**: `server/index.ts` (Express server with Vite middleware in dev mode)
-- **Frontend entry**: `client/src/main.tsx` (React SPA, served by root `vite.config.ts` which uses `client/` as root)
-- **Route definitions**: root-level `routes.ts` (~3900 lines, imports from `./services/`, `./soulcodex/`, `./shared/schema`)
-- **Vite dev server**: `vite-server.ts` at root (middleware mode, HMR via Express)
-
-The monorepo workspace packages (`packages/db`, `packages/core`) must be built before the dev server will start, since `@soulcodex/db` has `"main": "dist/index.js"`.
-
-### Running the dev server
+Typical local setup:
 
 ```bash
-source ~/.nvm/nvm.sh && nvm use 20
-NODE_ENV=development npx tsx server/index.ts
+nvm use
+npm ci
+npm run build:workspaces
+npm run check
 ```
 
-The server starts on port 3000 and serves both the API (`/api/*`) and the Vite-proxied React frontend.
+The canonical development server is:
 
-**Do NOT use `npm run dev`** — the root `package.json` delegates to workspaces (`npm run dev --workspaces --if-present`), but `apps/api/server.ts` references root-level files via relative imports (`../routes`, `../vite-server`, `../demo-seed`) that don't resolve correctly from the `apps/api/` directory. Use the legacy command above instead.
-
-### Environment setup
-
-Copy `.env.example` to `.env`. For local development without a database, set:
-
-```
-DEMO_MODE=true
-SESSION_SECRET=<any-string>
+```bash
+npm run dev
 ```
 
-This seeds a demo user (`demo@soulcodex.app` / `demo1234`) with in-memory storage (data lost on restart). No PostgreSQL, AI API keys, or Stripe keys needed for basic functionality.
+The canonical production build is:
 
-### TypeScript checking
+```bash
+npm run build
+```
 
-`npm run check` delegates to workspace `tsc --noEmit` commands. The `apps/api` check produces many TS2307 errors because the monorepo refactor is incomplete — `apps/api/routes.ts` imports services that only exist at the root level. These are **pre-existing** and not regressions.
+## Automated Validation
 
-### Build commands
+This repository has active automated validation. Do not describe the test suite as nonexistent or a no-op.
 
-- Frontend: `npx vite build` (outputs to `dist/public/`)
-- Server: `npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist`
+Important gates include:
 
-### Key gotchas
+- workspace build/check/tests
+- root TypeScript check
+- trust and security boundary tests in `.github/workflows/ci.yml`
+- Foundation Web RC invariant audit: `node scripts/verify-foundation-web-rc.mjs`
+- Gate 4 profile/auth/deletion lifecycle journeys
+- PWA Chromium/WebKit offline and responsive journeys
+- exact-head native smoke for checked-in Capacitor source when relevant
 
-- Node.js 20 is required (`.nvmrc`). The default system Node may be v22; always `nvm use 20` first.
-- The `packages/db` and `packages/core` packages must be built (`npm run build -w packages/db && npm run build -w packages/core`) before the dev server can start, since they export from `dist/`.
-- No automated test suite exists yet; `npm run test` is a no-op across workspaces.
-- AI features (Codex readings, Soul Guide chat) use deterministic fallback templates when `GEMINI_API_KEY` / `OPENAI_API_KEY` are not set.
-- The `/codex` page has a pre-existing bug with its fetch method configuration; it shows "Could not generate your reading" even when the server is running correctly.
+Use the repository workflows as receipts, but make sure they tested the exact candidate SHA. A green run for an older head is not evidence for a newer one.
+
+## Agent Roles
+
+### Audit Hunter
+Find placeholders, simulated production behavior, stale routes, and conflicting claims. Block illusionary release surfaces.
+
+### CI Surgeon
+Keep CI deterministic, exact-head, and meaningful. Do not greenwash by weakening assertions that expose real product defects.
+
+### Backend Integrity
+Protect API contracts, input validation, error handling, and a single canonical truth policy.
+
+### Frontend Parity
+Wire visible features to real backend/local behavior. Remove dead or fake UI instead of labeling it "coming soon" inside the production journey.
+
+### Security Guard
+Protect secrets, payment boundaries, authorization, privacy, rate limits, and no-store semantics.
+
+### Release Captain
+Keep scope aligned with the active release doctrine and classify validation honestly.
+
+### Docs Curator
+Update documentation when the implementation or release doctrine changes. Stale operational instructions are defects because agents will follow them.
+
+## PR / Change Requirements
+
+Every release change should make the following inspectable:
+
+1. **Summary** — what changed and why.
+2. **Validation** — exact commands/workflows and actual output, once run.
+3. **Risk** — what could regress.
+4. **Rollback** — how to revert safely.
+5. **Evidence boundary** — what remains unresolved or deliberately excluded.
+
+## Final Rule
+
+Do not promote implementation into validation, validation into release, symbolic interpretation into scientific fact, local storage into cloud consent, or a polished mock into a feature. Those are different states, and Soul Codex must keep them different.

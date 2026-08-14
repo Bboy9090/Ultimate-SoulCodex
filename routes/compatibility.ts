@@ -5,41 +5,12 @@ import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
 const router = Router();
 
 const MODE_KEYS: RelationshipMode[] = ["love", "attraction", "friendship", "growth"];
-const ZODIAC_SIGNS = new Set([
+const ZODIAC_SIGNS = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-]);
+] as const;
 
 export type CompatibilityEvidenceMode = "verified" | "symbolic" | "unavailable";
-
-interface EvidenceLike {
-  source?: string | null;
-  engine?: string | null;
-  calculatedAt?: string | null;
-}
-
-interface VerifiedValueLike {
-  value?: string | null;
-  type?: string | null;
-  verificationStatus?: string | null;
-  status?: string | null;
-  evidence?: EvidenceLike | null;
-  provenance?: EvidenceLike | null;
-}
-
-function hasEvidence(value: VerifiedValueLike | null | undefined): boolean {
-  const state = value?.verificationStatus ?? value?.status;
-  const evidence = value?.provenance ?? value?.evidence;
-  return state === "verified" && Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt);
-}
-
-function verifiedHumanDesignType(profile: any): string | undefined {
-  const candidate = profile?.humanDesignData?.type ?? profile?.humanDesign?.type;
-  if (typeof candidate === "object" && candidate && hasEvidence(candidate)) {
-    return candidate.value ?? candidate.type ?? undefined;
-  }
-  return undefined;
-}
 
 function deterministicLifePath(profile: any): number | undefined {
   const raw =
@@ -53,8 +24,8 @@ function deterministicLifePath(profile: any): number | undefined {
 
 function validSymbolicSign(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
-  const clean = value.trim();
-  return ZODIAC_SIGNS.has(clean) ? clean : undefined;
+  const clean = value.trim().toLowerCase();
+  return ZODIAC_SIGNS.find((sign) => sign.toLowerCase() === clean);
 }
 
 export function symbolicSunSign(profile: any): string | undefined {
@@ -75,16 +46,25 @@ function topBy(matches: ArchetypeMatch[], mode: RelationshipMode): ArchetypeMatc
 
 export function buildCompatibilityProfileInput(profile: any) {
   const astrology = extractVerifiedAstrology(profile);
-  const humanDesignType = verifiedHumanDesignType(profile);
   return {
     sunSign: astrology.sun,
     lifePathNumber: deterministicLifePath(profile),
-    humanDesignType,
+    // Foundation v1 deliberately excludes Human Design from compatibility.
+    // Keep the property for backward-compatible consumers, but never populate it.
+    humanDesignType: undefined as string | undefined,
     unresolved: {
       astrology: astrology.unresolved,
-      humanDesign: humanDesignType ? [] : ["Human Design type"],
+      humanDesign: ["Human Design excluded from Foundation compatibility"],
     },
   };
+}
+
+function excludedFoundationLayers(astrologyUnresolved: string[] = []) {
+  return [
+    ...astrologyUnresolved.map((item) => `Verified ${item}`),
+    "Human Design excluded from Foundation compatibility",
+    "Houses and house-based interpretation excluded from Foundation compatibility",
+  ];
 }
 
 export function buildMatchResponse(profile: any, mode: RelationshipMode = "love") {
@@ -97,11 +77,7 @@ export function buildMatchResponse(profile: any, mode: RelationshipMode = "love"
       : "unavailable";
 
   const sunSign = verifiedInput.sunSign ?? symbolicSun;
-  const humanDesignType = evidenceMode === "verified" ? verifiedInput.humanDesignType : undefined;
-  const excludedLayers = [
-    ...(verifiedInput.unresolved.astrology ?? []).map((item) => `Verified ${item}`),
-    ...(verifiedInput.unresolved.humanDesign ?? []),
-  ];
+  const excludedLayers = excludedFoundationLayers(verifiedInput.unresolved.astrology);
 
   if (!sunSign) {
     return {
@@ -128,7 +104,10 @@ export function buildMatchResponse(profile: any, mode: RelationshipMode = "love"
     };
   }
 
-  const all = calculateArchetypeMatches(sunSign, verifiedInput.lifePathNumber, humanDesignType, mode);
+  // Human Design is deliberately omitted from the Foundation model even when a
+  // legacy profile happens to contain it. Alternate certainty rules are worse
+  // than a narrower model.
+  const all = calculateArchetypeMatches(sunSign, verifiedInput.lifePathNumber, undefined, mode);
   const ranked = [...all].sort((a, b) => b.score - a.score);
   const averageRanked = [...all].sort((a, b) => averageScore(b) - averageScore(a));
 
@@ -155,7 +134,7 @@ export function buildMatchResponse(profile: any, mode: RelationshipMode = "love"
       inputs: {
         sunSign,
         lifePathNumber: verifiedInput.lifePathNumber ?? null,
-        humanDesignType: humanDesignType ?? null,
+        humanDesignType: null,
         mode,
         evidenceMode,
       },
@@ -165,10 +144,121 @@ export function buildMatchResponse(profile: any, mode: RelationshipMode = "love"
           : "Saved symbolic Sun sign used as tradition-based reflection, not verified astronomy",
         "Traditional element, modality, and ruler associations",
         ...(verifiedInput.lifePathNumber ? ["Deterministic Life Path resonance"] : []),
-        ...(humanDesignType ? ["Verified Human Design type fit"] : []),
         "High-flow and high-friction symbolic sign-pair rules",
       ],
       modes: MODE_KEYS,
+    },
+  };
+}
+
+export function buildPersonComparisonResponse(profile: any, otherPerson: any) {
+  const verifiedInput = buildCompatibilityProfileInput(profile);
+  const savedSymbolicSun = symbolicSunSign(profile);
+  const savedSunSign = verifiedInput.sunSign ?? savedSymbolicSun;
+  const savedSunEvidenceMode: CompatibilityEvidenceMode = verifiedInput.sunSign
+    ? "verified"
+    : savedSymbolicSun
+      ? "symbolic"
+      : "unavailable";
+  const otherSunSign = validSymbolicSign(otherPerson?.sunSign);
+  const otherName = typeof otherPerson?.name === "string"
+    ? otherPerson.name.trim().slice(0, 80)
+    : "This person";
+  const excludedLayers = [
+    ...excludedFoundationLayers(verifiedInput.unresolved.astrology),
+    "Partner Moon, Rising, Venus, Mars, and houses are not inferred from a user-supplied Sun sign",
+  ];
+
+  if (!savedSunSign || !otherSunSign) {
+    return {
+      available: false,
+      evidenceMode: "unavailable" as CompatibilityEvidenceMode,
+      savedSunEvidenceMode,
+      reason: !savedSunSign
+        ? "Your saved profile does not contain a verified or supported symbolic Sun sign."
+        : "Choose the other person's Sun sign before comparing.",
+      person: { name: otherName, sunSign: otherSunSign ?? null },
+      dimensions: null,
+      interpretation: null,
+      excludedLayers,
+      formula: {
+        inputs: {
+          savedSunSign: savedSunSign ?? null,
+          otherSunSign: otherSunSign ?? null,
+          lifePathNumber: verifiedInput.lifePathNumber ?? null,
+          humanDesignType: null,
+        },
+        layers: [],
+      },
+    };
+  }
+
+  const match = calculateArchetypeMatches(
+    savedSunSign,
+    verifiedInput.lifePathNumber,
+    undefined,
+    "love",
+  ).find((candidate) => candidate.sign.name === otherSunSign);
+
+  if (!match) {
+    return {
+      available: false,
+      evidenceMode: "unavailable" as CompatibilityEvidenceMode,
+      savedSunEvidenceMode,
+      reason: "The selected Sun-sign pair could not be evaluated.",
+      person: { name: otherName, sunSign: otherSunSign },
+      dimensions: null,
+      interpretation: null,
+      excludedLayers,
+      formula: {
+        inputs: {
+          savedSunSign,
+          otherSunSign,
+          lifePathNumber: verifiedInput.lifePathNumber ?? null,
+          humanDesignType: null,
+        },
+        layers: [],
+      },
+    };
+  }
+
+  return {
+    available: true,
+    // The partner Sun is user-supplied, so the pair result remains symbolic even
+    // when the saved user's Sun has independent verification evidence.
+    evidenceMode: "symbolic" as CompatibilityEvidenceMode,
+    savedSunEvidenceMode,
+    evidenceLabel: verifiedInput.sunSign
+      ? "Verified saved Sun + user-supplied symbolic partner Sun"
+      : "Supported symbolic Sun pair · lower-certainty relationship model",
+    person: { name: otherName || "This person", sunSign: otherSunSign },
+    dimensions: {
+      romantic: match.scores.love,
+      chemistry: match.scores.attraction,
+      mentalFriendship: match.scores.friendship,
+      growth: match.scores.growth,
+    },
+    interpretation: {
+      headline: match.headline,
+      why: match.why,
+      tension: match.tension ?? null,
+    },
+    excludedLayers,
+    formula: {
+      inputs: {
+        savedSunSign,
+        otherSunSign,
+        lifePathNumber: verifiedInput.lifePathNumber ?? null,
+        humanDesignType: null,
+      },
+      layers: [
+        verifiedInput.sunSign
+          ? "Your saved Sun placement passed the independent evidence contract"
+          : "Your saved Sun is an explicitly symbolic input",
+        "The other person's Sun sign is user-supplied symbolic data, not independently verified astronomy",
+        "Traditional sign-pair element, modality, aspect, and ruler associations",
+        ...(verifiedInput.lifePathNumber ? ["Your deterministic Life Path resonance"] : []),
+      ],
     },
   };
 }
@@ -185,6 +275,23 @@ router.post("/compatibility/archetype-matches", (req, res) => {
     res.status(result.available ? 200 : 422).json(result);
   } catch (err: any) {
     res.status(500).json({ message: err?.message || "Compatibility match generation failed" });
+  }
+});
+
+router.post("/compatibility/person", (req, res) => {
+  try {
+    const { profile, otherPerson } = req.body ?? {};
+    if (!profile || typeof profile !== "object") {
+      return res.status(400).json({ message: "A saved Soul Profile is required." });
+    }
+    if (!otherPerson || typeof otherPerson !== "object") {
+      return res.status(400).json({ message: "The other person's details are required." });
+    }
+
+    const result = buildPersonComparisonResponse(profile, otherPerson);
+    res.status(result.available ? 200 : 422).json(result);
+  } catch (err: any) {
+    res.status(500).json({ message: err?.message || "Person compatibility comparison failed" });
   }
 });
 

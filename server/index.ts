@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
+import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
 import compatibilityRouter from "../routes/compatibility.js";
 import {
   registerBillingRawRoutes,
@@ -87,14 +88,17 @@ registerBillingRawRoutes(app);
 app.use(express.json({ limit: "256kb", strict: true }));
 app.use(express.urlencoded({ extended: false, limit: "64kb" }));
 
+// Local-first users can request astronomy verification without creating a
+// server profile, invoking AI generation, or sending unrelated identity data.
+registerProfileVerificationRoutes(app);
+
 // Soul Codex never handles card details. Checkout sessions are created here,
 // while Stripe's hosted page collects payment information.
 registerBillingRoutes(app);
 
-// Mount the evidence-aware compatibility contract before the legacy route
-// registration in server/routes.ts. The consumer explorer submits a complete
-// saved profile so the server can enforce verification boundaries instead of
-// accepting naked sign strings.
+// Mount the evidence-aware compatibility contract before the canonical route
+// registry. Consumer compatibility sends only the minimum supported Sun
+// evidence and Life Path needed for the selected symbolic model.
 app.use("/api", compatibilityRouter);
 
 // Health check endpoint used by Railway.

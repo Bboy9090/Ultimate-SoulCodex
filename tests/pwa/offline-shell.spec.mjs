@@ -30,15 +30,16 @@ async function waitForServiceWorkerControl(page) {
 }
 
 async function assertStoredProfileVisible(page) {
-  await expect(page.getByText("Works offline", { exact: true })).toBeVisible();
-  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Offline Browser Test's\s*Soul Codex/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Offline Browser Test", exact: true })).toBeVisible();
   await expect(page.getByText("Core numbers", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("local-astronomy-unresolved-panel")).toBeVisible();
+  await expect(page.getByTestId("button-verify-online-profile")).toBeVisible();
 }
 
 async function createLocalCodex(page) {
   await page.goto(`${BASE_URL}/create`, { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /Create Your\s*Soul Codex/i })).toBeVisible();
+  await expect(page.getByTestId("input-name")).toBeVisible();
+  await expect(page.getByTestId("button-create-profile")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Offline Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");

@@ -2,7 +2,8 @@ import { expect, test } from "@playwright/test";
 
 async function createProfile(page) {
   await page.goto("/create", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /Create Your\s*Soul Codex/i })).toBeVisible();
+  await expect(page.getByTestId("input-name")).toBeVisible();
+  await expect(page.getByTestId("button-create-profile")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Clarity Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
@@ -20,16 +21,17 @@ async function createProfile(page) {
 
 test("Project Clarity reuses one saved profile across home, identity, timeline, and compatibility", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Understand yourself without drowning in labels." })).toBeVisible();
+  await expect(page.getByTestId("link-home")).toBeVisible();
+  await expect(page.locator("main")).toContainText(/Soul Codex|identity|reading/i);
 
   await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Compatibility begins with one saved identity." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Compatibility starts with one saved identity\./i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create your Soul Profile" })).toHaveAttribute("href", "/create");
 
   const profilePath = await createProfile(page);
 
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Good to see you, Clarity Browser Test." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Clarity Browser Test/i })).toBeVisible();
 
   const savedIdentityLinks = page.locator(`a[href="${profilePath}"]`);
   await expect(savedIdentityLinks.first()).toHaveAttribute("href", profilePath);
@@ -47,5 +49,23 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
 
   await explorer.click();
   await expect(page).toHaveURL(/\/compatibility\/explorer$/);
-  await expect(page.getByRole("heading", { name: "Compatibility" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Clarity Browser Test Compatibility Map/i })).toBeVisible();
+
+  await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
+  const comparePerson = page.getByTestId("compatibility-compare-person");
+  await expect(comparePerson).toHaveAttribute("href", "/compatibility/compare");
+  await comparePerson.click();
+  await expect(page).toHaveURL(/\/compatibility\/compare$/);
+  await expect(page.getByText(/Clarity Browser Test stays loaded/i)).toBeVisible();
+
+  await page.getByTestId("compatibility-person-name").fill("Comparison Person");
+  await page.getByTestId("compatibility-person-sun").selectOption("Pisces");
+  await page.getByTestId("compatibility-person-submit").click();
+
+  // This PWA harness intentionally returns 503 for cloud APIs. The browser
+  // contract here is graceful degradation, not a fabricated offline match.
+  await expect(page.getByTestId("compatibility-person-unavailable")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This layer remains visible instead of guessing." })).toBeVisible();
+  await expect(page.getByText(/Cloud services intentionally unavailable during offline browser validation/i).first()).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
 });
