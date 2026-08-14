@@ -42,23 +42,28 @@ function builtInLocation(value: string) {
   return match?.location ?? null;
 }
 
-async function syncProfileWhenOnline(data: BirthData, localProfile: OfflineCodexProfile): Promise<void> {
+async function requestVerificationWhenOnline(data: BirthData, localProfile: OfflineCodexProfile): Promise<void> {
   if (typeof navigator !== "undefined" && !navigator.onLine) return;
   try {
-    const response = await apiRequest("POST", "/api/profiles", data);
-    const remote = await response.json();
-    const syncedAt = new Date().toISOString();
-    localStorage.setItem(`soulcodex.offlineProfileRemote.v1.${localProfile.id}`, JSON.stringify({ remoteId: remote.id, syncedAt }));
+    const response = await apiRequest("POST", "/api/verification/profile", {
+      birthDate: data.birthDate,
+      ...(data.birthTime ? { birthTime: data.birthTime } : {}),
+      timezone: data.timezone,
+      latitude: data.latitude,
+      longitude: data.longitude,
+    });
+    const verification = await response.json();
+    const syncedAt = verification.updatedAt || new Date().toISOString();
 
     const currentActive = loadActiveProfile().profile;
     if (currentActive) {
-      const activeSave = saveActiveProfile(reconcileActiveProfile(currentActive, remote, syncedAt));
+      const activeSave = saveActiveProfile(reconcileActiveProfile(currentActive, verification, syncedAt));
       if (!activeSave.success) throw new Error(activeSave.error || "Verified profile reconciliation failed.");
     }
 
-    await saveOfflineProfile(reconcileOfflineProfile(localProfile, remote, syncedAt));
+    await saveOfflineProfile(reconcileOfflineProfile(localProfile, verification, syncedAt));
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("soulcodex:profile-updated", { detail: { localId: localProfile.id, remoteId: remote.id, syncedAt } }));
+      window.dispatchEvent(new CustomEvent("soulcodex:profile-updated", { detail: { localId: localProfile.id, verifiedAt: syncedAt } }));
     }
   } catch (error) {
     console.warn("[local-first-create] Requested online verification could not complete; local profile remains available", error);
@@ -124,13 +129,13 @@ export default function LocalFirstInputForm() {
       if (!activeSave.success) throw new Error(activeSave.error || "The active profile could not be registered.");
 
       if (verifyOnline) {
-        void syncProfileWhenOnline(data, profile);
+        void requestVerificationWhenOnline(data, profile);
       }
 
       toast({
         title: "Soul Codex created on this device",
         description: verifyOnline
-          ? "Your local reading is ready. You chose online verification; if the network is available, verified placements will merge into this same profile."
+          ? "Your local reading is ready. You chose astronomy verification; only the calculation inputs needed for that check are sent, and the evidence merges back into this same local profile."
           : "Your local reading is ready. No profile data was uploaded for verification.",
       });
       setLocation(`/profile/${profile.id}`);
@@ -151,7 +156,7 @@ export default function LocalFirstInputForm() {
         <section className="mx-auto mb-10 max-w-3xl text-center">
           <div className="codex-eyebrow mb-4"><Sparkles className="h-3.5 w-3.5" /> Build your identity map</div>
           <h1 className="codex-display text-4xl font-semibold tracking-[-0.035em] sm:text-6xl">Start with the facts.<br /><span className="codex-gold-text">Then go deeper.</span></h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">Your birth information anchors the Codex. The first reading is created locally on this device. Online verification happens only when you explicitly choose it.</p>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">Your birth information anchors the Codex. The first reading is created locally on this device. Online astronomy verification happens only when you explicitly choose it.</p>
         </section>
 
         <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -175,12 +180,12 @@ export default function LocalFirstInputForm() {
                       <FormItem><FormLabel className="codex-field-label"><Calendar className="h-4 w-4" /> Birth date</FormLabel><FormControl><Input {...field} className={inputClass} type="date" data-testid="input-birth-date" /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="birthTime" render={({ field }) => (
-                      <FormItem><FormLabel className="codex-field-label"><Clock className="h-4 w-4" /> Birth time <span className="ml-auto text-[11px] font-normal text-muted-foreground">optional when unknown</span></FormLabel><FormControl><Input {...field} className={inputClass} type="time" data-testid="input-birth-time" /></FormControl><FormMessage /><p className="text-xs leading-5 text-muted-foreground">Leave this blank if you do not know it. Soul Codex should expose uncertainty, not manufacture a rising sign.</p></FormItem>
+                      <FormItem><FormLabel className="codex-field-label"><Clock className="h-4 w-4" /> Birth time <span className="ml-auto text-[11px] font-normal text-muted-foreground">optional when unknown</span></FormLabel><FormControl><Input {...field} className={inputClass} type="time" data-testid="input-birth-time" /></FormControl><FormMessage /><p className="text-xs leading-5 text-muted-foreground">Leave this blank if you do not know it. Soul Codex accepts unknown time and keeps time-dependent layers unresolved rather than manufacturing precision.</p></FormItem>
                     )} />
                   </div>
 
                   <FormField control={form.control} name="birthLocation" render={({ field }) => (
-                    <FormItem><FormLabel className="codex-field-label"><MapPin className="h-4 w-4" /> Birth location</FormLabel><div className="flex flex-col gap-2 sm:flex-row"><FormControl><Input {...field} className={inputClass} placeholder="City, state/province, country" data-testid="input-birth-location" /></FormControl><Button type="button" variant="outline" className="h-12 rounded-xl border-primary/25 bg-primary/5 px-5 hover:bg-primary/10" onClick={resolveLocation} disabled={isLocating} data-testid="button-location-lookup">{isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}Resolve place</Button></div><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="codex-field-label"><MapPin className="h-4 w-4" /> Birth location</FormLabel><div className="flex flex-col gap-2 sm:flex-row"><FormControl><Input {...field} className={inputClass} placeholder="City, state/province, country" data-testid="input-birth-location" /></FormControl><Button type="button" variant="outline" className="h-12 rounded-xl border-primary/25 bg-primary/5 px-5 hover:bg-primary/10" onClick={resolveLocation} disabled={isLocating} data-testid="button-location-lookup">{isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}Resolve place</Button></div><FormMessage /><p className="text-xs leading-5 text-muted-foreground">Resolve place uses the built-in city list first. If no built-in match exists and you are online, the entered place text may be sent to OpenStreetMap/Nominatim for coordinates. Manual coordinates avoid that lookup.</p></FormItem>
                   )} />
 
                   <div className="rounded-2xl border border-white/8 bg-black/15 p-4 sm:p-5">
@@ -203,7 +208,7 @@ export default function LocalFirstInputForm() {
                     />
                     <span>
                       <span className="block text-sm font-semibold">Verify supported placements online after creation</span>
-                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">Optional. If selected, your entered birth data is sent to the Soul Codex server so independently checked placements can merge into the same local profile. Leave this off to keep profile creation on-device only.</span>
+                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">Optional. If selected, Soul Codex sends only birth date, optional birth time, timezone, and coordinates to the astronomy verification endpoint. It does not create a server profile or invoke AI generation for this check. Leave this off to keep profile creation entirely on-device.</span>
                     </span>
                   </label>
 
