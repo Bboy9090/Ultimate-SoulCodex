@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSession } from "./session";
 import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
+import { profileBelongsToActor } from "./lib/profile-ownership";
 import {
   birthDataSchema,
   enneagramAssessmentSchema,
@@ -36,16 +37,6 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
     moonSign: astrologyData.moon.verificationStatus === "verified" ? astrologyData.moon.sign : null,
     risingSign: astrologyData.rising.verificationStatus === "verified" ? astrologyData.rising.sign : null,
   };
-}
-
-export function profileBelongsToActor(
-  profile: { userId?: string | null; sessionId?: string | null } | null | undefined,
-  actor: { userId?: string | null; sessionId?: string | null },
-): boolean {
-  if (!profile) return false;
-  if (profile.userId) return Boolean(actor.userId && actor.userId === profile.userId);
-  if (profile.sessionId) return Boolean(actor.sessionId && actor.sessionId === profile.sessionId);
-  return false;
 }
 
 function requestOwnsProfile(req: any, profile: any): boolean {
