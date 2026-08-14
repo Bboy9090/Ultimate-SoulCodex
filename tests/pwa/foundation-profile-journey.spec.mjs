@@ -43,7 +43,7 @@ async function createFoundationProfile(page) {
     page.getByTestId("button-create-profile").click(),
   ]);
 
-  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Foundation Journey Test" })).toBeVisible();
 
   const profile = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
