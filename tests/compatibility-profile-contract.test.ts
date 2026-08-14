@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   buildCompatibilityProfileInput,
   buildMatchResponse,
@@ -21,9 +22,9 @@ describe("compatibility saved-profile contract", () => {
       lifePathNumber: 9,
     });
 
-    expect(input.sunSign).toBeUndefined();
-    expect(input.lifePathNumber).toBe(9);
-    expect(input.unresolved.astrology).toContain("Sun");
+    assert.equal(input.sunSign, undefined);
+    assert.equal(input.lifePathNumber, 9);
+    assert.ok(input.unresolved.astrology.includes("Sun"));
   });
 
   it("rejects a populated Sun placement that is still pending from the verified path", () => {
@@ -37,7 +38,7 @@ describe("compatibility saved-profile contract", () => {
       },
     });
 
-    expect(input.sunSign).toBeUndefined();
+    assert.equal(input.sunSign, undefined);
   });
 
   it("accepts an evidence-complete verified Sun placement", () => {
@@ -52,9 +53,9 @@ describe("compatibility saved-profile contract", () => {
       numerologyData: { lifePath: 9 },
     });
 
-    expect(input.sunSign).toBe("Virgo");
-    expect(input.lifePathNumber).toBe(9);
-    expect(input.unresolved.astrology).not.toContain("Sun");
+    assert.equal(input.sunSign, "Virgo");
+    assert.equal(input.lifePathNumber, 9);
+    assert.equal(input.unresolved.astrology.includes("Sun"), false);
   });
 
   it("excludes a naked Human Design type from Foundation compatibility", () => {
@@ -65,8 +66,8 @@ describe("compatibility saved-profile contract", () => {
       humanDesignType: "Reflector",
     });
 
-    expect(input.humanDesignType).toBeUndefined();
-    expect(input.unresolved.humanDesign).toEqual(["Human Design excluded from Foundation compatibility"]);
+    assert.equal(input.humanDesignType, undefined);
+    assert.deepEqual(input.unresolved.humanDesign, ["Human Design excluded from Foundation compatibility"]);
   });
 
   it("still excludes an evidence-complete Human Design object until its compatibility contract is independently promoted", () => {
@@ -87,8 +88,8 @@ describe("compatibility saved-profile contract", () => {
       },
     });
 
-    expect(input.humanDesignType).toBeUndefined();
-    expect(input.unresolved.humanDesign).toEqual(["Human Design excluded from Foundation compatibility"]);
+    assert.equal(input.humanDesignType, undefined);
+    assert.deepEqual(input.unresolved.humanDesign, ["Human Design excluded from Foundation compatibility"]);
   });
 
   it("allows a supported symbolic Sun without promoting it into verified astrology", () => {
@@ -98,13 +99,13 @@ describe("compatibility saved-profile contract", () => {
       humanDesignType: "Reflector",
     });
 
-    expect(result.available).toBe(true);
-    expect(result.evidenceMode).toBe("symbolic");
-    expect(result.formula.inputs.sunSign).toBe("Virgo");
-    expect(result.formula.inputs.lifePathNumber).toBe(9);
-    expect(result.formula.inputs.humanDesignType).toBeNull();
-    expect(result.formula.layers.join(" ")).toContain("not verified astronomy");
-    expect(result.excludedLayers).toContain("Human Design excluded from Foundation compatibility");
+    assert.equal(result.available, true);
+    assert.equal(result.evidenceMode, "symbolic");
+    assert.equal(result.formula.inputs.sunSign, "Virgo");
+    assert.equal(result.formula.inputs.lifePathNumber, 9);
+    assert.equal(result.formula.inputs.humanDesignType, null);
+    assert.match(result.formula.layers.join(" "), /not verified astronomy/);
+    assert.ok(result.excludedLayers.includes("Human Design excluded from Foundation compatibility"));
   });
 
   it("prefers the verified Sun over a conflicting symbolic alias", () => {
@@ -116,18 +117,18 @@ describe("compatibility saved-profile contract", () => {
       },
     });
 
-    expect(result.available).toBe(true);
-    expect(result.evidenceMode).toBe("verified");
-    expect(result.formula.inputs.sunSign).toBe("Virgo");
+    assert.equal(result.available, true);
+    assert.equal(result.evidenceMode, "verified");
+    assert.equal(result.formula.inputs.sunSign, "Virgo");
   });
 
   it("keeps compatibility unavailable when neither verified nor valid symbolic Sun exists", () => {
     const result = buildMatchResponse({ astrologyData: { sunSign: "NotASign" } });
 
-    expect(symbolicSunSign({ astrologyData: { sunSign: "NotASign" } })).toBeUndefined();
-    expect(result.available).toBe(false);
-    expect(result.evidenceMode).toBe("unavailable");
-    expect(result.formula.inputs.sunSign).toBeNull();
+    assert.equal(symbolicSunSign({ astrologyData: { sunSign: "NotASign" } }), undefined);
+    assert.equal(result.available, false);
+    assert.equal(result.evidenceMode, "unavailable");
+    assert.equal(result.formula.inputs.sunSign, null);
   });
 
   it("compares one person by dimensions without inventing a universal relationship score", () => {
@@ -142,19 +143,18 @@ describe("compatibility saved-profile contract", () => {
       { name: "Alex", sunSign: "pisces" },
     );
 
-    expect(result.available).toBe(true);
-    expect(result.evidenceMode).toBe("symbolic");
-    expect(result.savedSunEvidenceMode).toBe("verified");
-    expect(result.person).toEqual({ name: "Alex", sunSign: "Pisces" });
-    expect(result.dimensions).toEqual({
-      romantic: expect.any(Number),
-      chemistry: expect.any(Number),
-      mentalFriendship: expect.any(Number),
-      growth: expect.any(Number),
-    });
-    expect(result).not.toHaveProperty("overallScore");
-    expect(result.formula.inputs.humanDesignType).toBeNull();
-    expect(result.excludedLayers).toContain("Human Design excluded from Foundation compatibility");
-    expect(result.formula.layers.join(" ")).toContain("user-supplied symbolic data");
+    assert.equal(result.available, true);
+    assert.equal(result.evidenceMode, "symbolic");
+    assert.equal(result.savedSunEvidenceMode, "verified");
+    assert.deepEqual(result.person, { name: "Alex", sunSign: "Pisces" });
+    assert.ok(result.dimensions);
+    assert.equal(typeof result.dimensions.romantic, "number");
+    assert.equal(typeof result.dimensions.chemistry, "number");
+    assert.equal(typeof result.dimensions.mentalFriendship, "number");
+    assert.equal(typeof result.dimensions.growth, "number");
+    assert.equal(Object.prototype.hasOwnProperty.call(result, "overallScore"), false);
+    assert.equal(result.formula.inputs.humanDesignType, null);
+    assert.ok(result.excludedLayers.includes("Human Design excluded from Foundation compatibility"));
+    assert.match(result.formula.layers.join(" "), /user-supplied symbolic data/);
   });
 });
