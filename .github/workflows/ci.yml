@@ -55,6 +55,7 @@ jobs:
           tests/ui-backend-consistency-contract.test.ts
           tests/billing-security.test.ts
           tests/local-first-privacy-contract.test.ts
+          tests/server-profile-ownership.test.ts
           tests/active-consumer-auth.test.ts
           tests/native-api-routing.test.ts
 
