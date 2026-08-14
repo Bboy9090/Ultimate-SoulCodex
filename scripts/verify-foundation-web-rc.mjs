@@ -10,11 +10,15 @@ function read(relativePath) {
 
 const files = {
   server: read("server/index.ts"),
+  serverRoutes: read("server/routes.ts"),
   billing: read("server/billing.ts"),
   premiumModal: read("client/src/components/PremiumUpgradeModal.tsx"),
   astrology: read("server/services/astrology-production.ts"),
   ascendant: read("server/services/ascendant-verification.ts"),
   humanDesign: read("server/services/human-design-trust.ts"),
+  compatibility: read("routes/compatibility.ts"),
+  compatibilityHub: read("client/src/pages/CompatibilityHubPage.tsx"),
+  compatibilityPerson: read("client/src/pages/CompatibilityPersonPage.tsx"),
   reconciliation: read(
     "client/src/lib/profileVerificationReconciliation.ts",
   ),
@@ -77,6 +81,13 @@ check(
   files.server.indexOf("registerBillingRawRoutes(app)") <
     files.server.indexOf("express.json"),
 );
+check(
+  "BILLING-06",
+  "Legacy profile upgrade route cannot collect card data or grant premium directly",
+  files.serverRoutes.includes("direct_card_upgrade_retired") &&
+    !/const\s*\{\s*cardNumber\s*,\s*expiryDate\s*,\s*cvv\s*\}\s*=\s*req\.body/.test(files.serverRoutes) &&
+    !/updateProfile\([^)]*\{\s*isPremium:\s*true\s*\}/.test(files.serverRoutes),
+);
 
 check(
   "ASTRO-01",
@@ -109,8 +120,25 @@ check(
 );
 check(
   "HD-02",
-  "Human Design cannot affect compatibility unless verified",
-  files.humanDesign.includes('return record.status === "verified"'),
+  "Foundation compatibility excludes Human Design even when legacy profile data contains it",
+  files.compatibility.includes("Human Design excluded from Foundation compatibility") &&
+    files.compatibility.includes("calculateArchetypeMatches(sunSign, verifiedInput.lifePathNumber, undefined") &&
+    !files.compatibility.includes("verifiedHumanDesignType"),
+);
+
+check(
+  "COMPAT-01",
+  "Specific-person compatibility reuses the saved profile and asks only for the other person's data",
+  files.compatibility.includes('router.post("/compatibility/person"') &&
+    files.compatibilityPerson.includes("otherPerson") &&
+    files.compatibilityPerson.includes("loadActiveProfile") &&
+    files.compatibilityPerson.includes("Four dimensions, not one verdict"),
+);
+check(
+  "COMPAT-02",
+  "Compatibility hub exposes the specific-person comparison instead of a future-work placeholder",
+  files.compatibilityHub.includes('/compatibility/compare') &&
+    !files.compatibilityHub.includes("Next consumer pass"),
 );
 
 check(
@@ -129,7 +157,7 @@ check(
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 1,
+  version: 2,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,
@@ -143,7 +171,7 @@ const receipt = {
   deliberatelyUnresolved: [
     "Astrological houses and Midheaven",
     "Nodes, Chiron, and planetary house placements",
-    "Human Design verification and interpretation",
+    "Human Design compatibility and authoritative interpretation",
   ],
 };
 
