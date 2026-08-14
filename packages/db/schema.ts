@@ -33,20 +33,10 @@ export const profiles = pgTable("soul_profiles", {
   latitude: text("latitude"),
   longitude: text("longitude"),
   isPremium: boolean("is_premium").default(false),
-  
-  // Astrology data
   astrologyData: jsonb("astrology_data"),
-  
-  // Numerology data
   numerologyData: jsonb("numerology_data"),
-  
-  // Personality data
   personalityData: jsonb("personality_data"),
-  
-  // Archetype synthesis
   archetypeData: jsonb("archetype_data"),
-  
-  // Additional synthesis data
   humanDesignData: jsonb("human_design_data"),
   vedicAstrologyData: jsonb("vedic_astrology_data"),
   geneKeysData: jsonb("gene_keys_data"),
@@ -64,11 +54,8 @@ export const profiles = pgTable("soul_profiles", {
   arabicPartsData: jsonb("arabic_parts_data"),
   fixedStarsData: jsonb("fixed_stars_data"),
   purposeStatement: text("purpose_statement"),
-  
-  // Generated content
   biography: text("biography"),
   dailyGuidance: text("daily_guidance"),
-  
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
@@ -76,16 +63,14 @@ export const profiles = pgTable("soul_profiles", {
 export const assessmentResponses = pgTable("assessment_responses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull(),
-  assessmentType: text("assessment_type").notNull(), // 'enneagram', 'mbti'
+  assessmentType: text("assessment_type").notNull(),
   responses: jsonb("responses").notNull(),
   calculatedType: text("calculated_type"),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
 export const insertUserSchema = createInsertSchema(users);
-
 export const insertProfileSchema = createInsertSchema(profiles);
-
 export const insertAssessmentSchema = createInsertSchema(assessmentResponses);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -95,19 +80,23 @@ export type Profile = typeof profiles.$inferSelect;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessmentResponses.$inferSelect;
 
+const birthTimeSchema = z.union([
+  z.literal(""),
+  z.string().regex(/^\d{2}:\d{2}$/, "Birth time must use HH:MM when provided"),
+]);
+
 // Additional schemas for API requests
 export const birthDataSchema = z.object({
   name: z.string().min(1, "Name is required"),
   birthDate: z.string().min(1, "Birth date is required"),
-  birthTime: z.string().min(1, "Birth time is required"),
+  // Empty string represents an explicitly unknown birth time.
+  birthTime: birthTimeSchema,
   birthLocation: z.string().min(1, "Birth location is required"),
   timezone: z.string().min(1, "Timezone is required"),
   latitude: z.union([z.string(), z.number()]).optional(),
   longitude: z.union([z.string(), z.number()]).optional(),
-  // Optional: Parent signs for parental influence calculation
   fatherSign: z.string().optional(),
   motherSign: z.string().optional(),
-  // Optional: Moral compass answers (1-3 simple questions)
   moralCompassAnswers: z.object({
     familyValues: z.enum(["traditional", "progressive", "mixed", "independent"]).optional(),
     neighborhoodType: z.enum(["close-knit", "diverse", "individualistic", "supportive"]).optional(),
@@ -159,8 +148,8 @@ export interface PushSubscription extends InsertPushSubscription {
   isActive: boolean;
 }
 
-// Missing STUB types
-export type UpsertUser = any;
+// Transitional types retained for storage interfaces not yet modeled in this lane.
+export type UpsertUser = Partial<User> & { id: string };
 export type Person = any;
 export type InsertPerson = any;
 export type AccessCode = any;
@@ -175,5 +164,3 @@ export type FrequencyLog = any;
 export type InsertFrequencyLog = any;
 export type WebhookEvent = any;
 export type InsertWebhookEvent = any;
-
-
