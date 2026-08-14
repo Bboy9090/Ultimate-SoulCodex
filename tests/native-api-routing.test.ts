@@ -45,6 +45,7 @@ test("reachable compatibility and offline verification paths use the centralized
   const offline = readFileSync("client/src/pages/offline-profile.tsx", "utf8");
   assert.match(compatibility, /apiFetch\("\/api\/compatibility\/archetype-matches"/);
   assert.doesNotMatch(compatibility, /fetch\("\/api\//);
-  assert.match(offline, /apiFetch\("\/api\/profiles"/);
+  assert.match(offline, /apiFetch\("\/api\/verification\/profile"/);
+  assert.doesNotMatch(offline, /apiFetch\("\/api\/profiles"/);
   assert.doesNotMatch(offline, /fetch\("\/api\//);
 });

@@ -55,6 +55,7 @@ export default function CompatibilityPersonPage() {
   const [result, setResult] = useState<PersonComparisonResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const dimensionScores = result?.dimensions ?? null;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,7 +78,10 @@ export default function CompatibilityPersonPage() {
         }),
       });
       const payload = await response.json();
-      setResult(payload);
+      const normalizedPayload = payload && typeof payload === "object"
+        ? { ...payload, reason: payload.reason ?? payload.message }
+        : payload;
+      setResult(normalizedPayload);
       if (!response.ok && response.status !== 422) {
         setError(payload?.message || "This comparison could not be generated.");
       }
@@ -191,14 +195,14 @@ export default function CompatibilityPersonPage() {
             {error && <p className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-destructive">{error}</p>}
 
             {result && !result.available && (
-              <section className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-6">
+              <section data-testid="compatibility-person-unavailable" className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-6">
                 <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">Comparison unavailable</p>
                 <h2 className="mt-2 text-2xl font-semibold">This layer remains visible instead of guessing.</h2>
                 <p className="mt-3 leading-7 text-muted-foreground">{result.reason}</p>
               </section>
             )}
 
-            {result?.available && result.dimensions && (
+            {result?.available && dimensionScores && (
               <>
                 <section className="rounded-3xl border border-violet-400/25 bg-violet-400/5 p-6">
                   <p className="text-xs font-semibold uppercase tracking-wider text-violet-300">Symbolic comparison</p>
@@ -211,7 +215,7 @@ export default function CompatibilityPersonPage() {
                     <article className="min-w-0 rounded-2xl border bg-card p-5" key={dimension.key}>
                       <div className="flex items-start justify-between gap-4">
                         <h3 className="font-semibold">{dimension.label}</h3>
-                        <span className="rounded-full border px-2.5 py-1 text-sm font-semibold text-primary" aria-label={`${dimension.label} symbolic model score ${result.dimensions?.[dimension.key]}`}>{result.dimensions[dimension.key]}</span>
+                        <span className="rounded-full border px-2.5 py-1 text-sm font-semibold text-primary" aria-label={`${dimension.label} symbolic model score ${dimensionScores[dimension.key]}`}>{dimensionScores[dimension.key]}</span>
                       </div>
                       <p className="mt-3 text-sm leading-6 text-muted-foreground">{dimension.detail}</p>
                     </article>

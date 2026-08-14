@@ -14,6 +14,9 @@ const files = {
   app: read("client/src/App.tsx"),
   localFirst: read("client/src/pages/local-first-input-form.tsx"),
   offlineProfile: read("client/src/pages/offline-profile.tsx"),
+  foundationOffline: read("client/src/lib/foundationOfflineCodex.ts"),
+  verificationRoute: read("server/routes/profile-verification.ts"),
+  schema: read("shared/schema.ts"),
   billing: read("server/billing.ts"),
   premiumModal: read("client/src/components/PremiumUpgradeModal.tsx"),
   astrology: read("server/services/astrology-production.ts"),
@@ -28,6 +31,7 @@ const files = {
     "client/src/lib/profileVerificationReconciliation.ts",
   ),
   ci: read(".github/workflows/ci.yml"),
+  doctrineWorkflow: read(".github/workflows/foundation-doctrine-gate.yml"),
   pwaWorkflow: read(".github/workflows/pwa-offline-browser.yml"),
 };
 
@@ -78,7 +82,7 @@ check(
   "Local profile creation does not upload for verification unless the user explicitly opts in",
   files.localFirst.includes("const [verifyOnline, setVerifyOnline] = useState(false)") &&
     files.localFirst.includes('data-testid="checkbox-online-verification"') &&
-    /if \(verifyOnline\) \{\s*void syncProfileWhenOnline\(data, profile\);\s*\}/s.test(files.localFirst),
+    /if \(verifyOnline\) \{\s*void requestVerificationWhenOnline\(data, profile\);\s*\}/s.test(files.localFirst),
 );
 check(
   "PRIVACY-02",
@@ -91,8 +95,8 @@ check(
 check(
   "PRIVACY-03",
   "Local-first UI explains the online verification boundary",
-  files.localFirst.includes("Online verification happens only when you explicitly choose it.") &&
-    files.localFirst.includes("Leave this off to keep profile creation on-device only.") &&
+  files.localFirst.includes("Online astronomy verification happens only when you explicitly choose it.") &&
+    files.localFirst.includes("Leave this off to keep profile creation entirely on-device.") &&
     files.localFirst.includes("No profile data was uploaded for verification."),
 );
 check(
@@ -112,6 +116,36 @@ check(
     files.compatibilityPerson.includes("buildCompatibilityProfilePayload") &&
     files.compatibilityPerson.includes("profile: compatibilityProfile") &&
     files.ci.includes("tests/compatibility-data-minimization.test.ts"),
+);
+check(
+  "PRIVACY-06",
+  "Astronomy verification is a minimal evidence-only endpoint and cannot create a server profile or invoke AI",
+  files.localFirst.includes('"/api/verification/profile"') &&
+    files.offlineProfile.includes('"/api/verification/profile"') &&
+    files.verificationRoute.includes('app.post("/api/verification/profile"') &&
+    files.verificationRoute.includes("persistedProfile: false") &&
+    files.verificationRoute.includes("aiGeneration: false") &&
+    !/^import .*storage/im.test(files.verificationRoute) &&
+    !/^import .*openai/im.test(files.verificationRoute),
+);
+
+check(
+  "TRUTH-01",
+  "Foundation local generation does not fabricate time-dependent astronomy",
+  files.localFirst.includes("generateFoundationOfflineCodexProfile") &&
+    files.foundationOffline.includes("moonSign: \"\"") &&
+    files.foundationOffline.includes("risingSign: \"\"") &&
+    files.foundationOffline.includes("planets: {}") &&
+    files.foundationOffline.includes("houses: []") &&
+    files.foundationOffline.includes("aspects: []") &&
+    files.foundationOffline.includes("Moon, Rising, planets, houses, aspects, nodes, and Chiron are deliberately absent rather than approximated."),
+);
+check(
+  "TRUTH-02",
+  "Unknown birth time is accepted explicitly instead of forcing invented precision",
+  files.schema.includes('z.literal("")') &&
+    files.schema.includes("birthTime: birthTimeSchema") &&
+    files.localFirst.includes("Unknown time is better than invented precision."),
 );
 
 check(
@@ -220,6 +254,17 @@ check(
     files.ci.includes("tests/server-profile-ownership.test.ts"),
 );
 check(
+  "CI-02",
+  "The exact-head doctrine gate enforces unknown-time, no-fabrication, minimal verification, privacy, compatibility, billing, and no-simulation contracts",
+  files.doctrineWorkflow.includes("tests/unknown-time-input-contract.test.ts") &&
+    files.doctrineWorkflow.includes("tests/foundation-local-astronomy-boundary.test.ts") &&
+    files.doctrineWorkflow.includes("tests/profile-verification-boundary.test.ts") &&
+    files.doctrineWorkflow.includes("tests/local-first-privacy-contract.test.ts") &&
+    files.doctrineWorkflow.includes("tests/compatibility-data-minimization.test.ts") &&
+    files.doctrineWorkflow.includes("tests/billing-security.test.ts") &&
+    files.doctrineWorkflow.includes("tests/no-simulated-release-routes.test.ts"),
+);
+check(
   "PWA-01",
   "Chromium and WebKit offline restart validation remains configured",
   files.pwaWorkflow.includes("Chromium and WebKit offline restart") &&
@@ -229,7 +274,7 @@ check(
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 6,
+  version: 7,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,
