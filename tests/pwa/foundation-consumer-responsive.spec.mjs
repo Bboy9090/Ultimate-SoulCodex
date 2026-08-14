@@ -44,32 +44,51 @@ async function captureVisualEvidence(page, browserName, viewport, routePath) {
 }
 
 async function createLocalProfile(page) {
-  await page.goto("/create", { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("input-name")).toBeVisible();
-  await expect(page.getByTestId("button-create-profile")).toBeVisible();
+  const profileUploadRequests = [];
+  const requestListener = (request) => {
+    const url = new URL(request.url());
+    if (request.method() === "POST" && url.pathname === "/api/profiles") {
+      profileUploadRequests.push(url.pathname);
+    }
+  };
+  page.on("request", requestListener);
 
-  await page.getByTestId("input-name").fill("Responsive Journey Test");
-  await page.getByTestId("input-birth-date").fill("1990-09-17");
-  await page.getByTestId("input-birth-time").fill("11:11");
-  await page.getByTestId("input-birth-location").fill("Bronx, New York");
-  await page.getByTestId("button-location-lookup").click();
+  try {
+    await page.goto("/create", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("input-name")).toBeVisible();
+    await expect(page.getByTestId("button-create-profile")).toBeVisible();
+    await expect(page.getByTestId("checkbox-online-verification")).not.toBeChecked();
 
-  await Promise.all([
-    page.waitForURL(/\/profile\/local-/),
-    page.getByTestId("button-create-profile").click(),
-  ]);
+    await page.getByTestId("input-name").fill("Responsive Journey Test");
+    await page.getByTestId("input-birth-date").fill("1990-09-17");
+    await page.getByTestId("input-birth-time").fill("11:11");
+    await page.getByTestId("input-birth-location").fill("Bronx, New York");
+    await page.getByTestId("button-location-lookup").click();
 
-  await expect(
-    page.getByRole("heading", { name: "Responsive Journey Test" }),
-  ).toBeVisible();
+    await Promise.all([
+      page.waitForURL(/\/profile\/local-/),
+      page.getByTestId("button-create-profile").click(),
+    ]);
 
-  const profile = await page.evaluate((key) => {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  }, ACTIVE_PROFILE_KEY);
+    await expect(
+      page.getByRole("heading", { name: "Responsive Journey Test" }),
+    ).toBeVisible();
 
-  expect(profile?.id).toMatch(/^local-/);
-  return `/profile/${profile.id}`;
+    expect(
+      profileUploadRequests,
+      "local-first profile creation uploaded to /api/profiles without explicit verification consent",
+    ).toEqual([]);
+
+    const profile = await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    }, ACTIVE_PROFILE_KEY);
+
+    expect(profile?.id).toMatch(/^local-/);
+    return `/profile/${profile.id}`;
+  } finally {
+    page.off("request", requestListener);
+  }
 }
 
 async function assertNoHorizontalOverflow(page, label) {
