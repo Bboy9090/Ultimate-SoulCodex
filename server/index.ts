@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
+import compatibilityRouter from "../routes/compatibility.js";
 import {
   registerBillingRawRoutes,
   registerBillingRoutes,
@@ -89,6 +90,12 @@ app.use(express.urlencoded({ extended: false, limit: "64kb" }));
 // Soul Codex never handles card details. Checkout sessions are created here,
 // while Stripe's hosted page collects payment information.
 registerBillingRoutes(app);
+
+// Mount the evidence-aware compatibility contract before the legacy route
+// registration in server/routes.ts. The consumer explorer submits a complete
+// saved profile so the server can enforce verification boundaries instead of
+// accepting naked sign strings.
+app.use("/api", compatibilityRouter);
 
 // Health check endpoint used by Railway.
 app.get("/health", (_req, res) => {

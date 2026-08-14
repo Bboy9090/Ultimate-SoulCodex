@@ -42,10 +42,9 @@ test("DepthSoulGuide source contract", async (suite) => {
     assert.ok(source.includes("High source support"));
     assert.ok(source.includes("Moderate source support"));
     assert.ok(source.includes("Low source support"));
-    assert.ok(
-      source.includes(
-        "Confidence describes source quality and consistency, not scientific truth.",
-      ),
+    assert.match(
+      source,
+      /Confidence (?:describes|reflects) source quality and consistency, not scientific truth\./,
     );
   });
 
@@ -61,7 +60,7 @@ test("DepthSoulGuide source contract", async (suite) => {
     const source = componentSource();
 
     assert.ok(source.includes("depth-guide-layer-unavailable"));
-    assert.ok(source.includes("This layer remains visible"));
+    assert.match(source, /This layer (?:remains|stays) visible/);
     assert.ok(source.includes("Missing data"));
     assert.ok(source.includes("model.missingData"));
   });

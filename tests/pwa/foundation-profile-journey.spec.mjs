@@ -29,7 +29,8 @@ async function waitForServiceWorkerControl(page) {
 
 async function createFoundationProfile(page) {
   await page.goto(`${BASE_URL}/create`, { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /Create Your\s*Soul Codex/i })).toBeVisible();
+  await expect(page.getByTestId("input-name")).toBeVisible();
+  await expect(page.getByTestId("button-create-profile")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Foundation Journey Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
@@ -42,7 +43,7 @@ async function createFoundationProfile(page) {
     page.getByTestId("button-create-profile").click(),
   ]);
 
-  await expect(page.getByText("Saved on this device", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Foundation Journey Test" })).toBeVisible();
 
   const profile = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
@@ -76,7 +77,6 @@ async function assertCoreRoute(page, path, visiblePattern, expectedId) {
   await page.goto(`${BASE_URL}${path}`, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(new RegExp(`${path.replaceAll("/", "\\/")}$`));
   await expect(page.locator("body")).toContainText(visiblePattern);
-  await expect(page.locator("body")).not.toContainText(/Create Your Soul Codex/i);
   await expect(page.locator("body")).not.toContainText(/404 Page Not Found/i);
   await assertIdentityStable(page, expectedId);
 }

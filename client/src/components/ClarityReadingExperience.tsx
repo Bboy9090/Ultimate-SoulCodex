@@ -164,7 +164,7 @@ export default function ClarityReadingExperience({ profileId, profileName, model
       return {};
     }
   });
-  const chapters = useMemo(() => buildDepthChapters(model), [model]);
+  const chapters = useMemo(() => buildDepthChapters(model, fits), [model, fits]);
 
   const recordFit = (chapterId: string, fit: ReadingFit) => {
     const next = { ...fits, [chapterId]: fit };
@@ -193,6 +193,13 @@ export default function ClarityReadingExperience({ profileId, profileName, model
         <div className="mb-4 flex items-center gap-3 text-amber-300"><Sparkles aria-hidden="true" className="h-5 w-5" /><span className="text-[11px] font-bold uppercase tracking-[0.18em]">Core synthesis</span></div>
         <h2 id="core-synthesis-title" className="mb-4 font-serif text-3xl sm:text-5xl">{model.title}</h2>
         <p className="max-w-3xl text-base leading-8 text-white/70">The goal is not to hand you another list of traits. Each chapter follows the pattern into decisions, work, relationships, stress, misunderstanding, tradeoffs, and one action you can test.</p>
+        {model.coreContradiction && (
+          <div className="mt-6 rounded-2xl border border-violet-300/20 bg-violet-300/[0.06] p-4 sm:p-5" aria-label="Cross-system tension">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-200">Cross-system tension</p>
+            <p className="max-w-3xl leading-7 text-white/75">{model.coreContradiction}</p>
+            <p className="mt-3 text-xs leading-5 text-white/45">A tension means two supported symbolic themes can coexist. It is not proof of an inner conflict, diagnosis, or fixed identity.</p>
+          </div>
+        )}
       </section>
 
       <section aria-label="Reading depth" className="mb-6 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
