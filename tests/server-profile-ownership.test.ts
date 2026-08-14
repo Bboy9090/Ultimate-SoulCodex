@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { profileBelongsToActor } from "../server/routes.ts";
+import { profileBelongsToActor } from "../server/lib/profile-ownership.ts";
 
 test("user-owned profiles are readable only by the matching authenticated user", () => {
   const profile = { userId: "user-a", sessionId: null };
