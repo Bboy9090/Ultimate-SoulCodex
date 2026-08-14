@@ -136,6 +136,12 @@ const LIFE_PATH_TRAITS: Record<number, LifePathTrait> = {
   33: life("master teaching", "uplifting others through example", "becoming responsible for everyone's healing", "Teach the principle without taking over the person's work.", ["partnership", "sensitivity", "recognition"]),
 };
 
+const NUMBER_LABELS: Record<number, string> = {
+  1: "Independence", 2: "Partnership", 3: "Expression", 4: "Structure",
+  5: "Freedom", 6: "Responsibility", 7: "Analysis", 8: "Power", 9: "Legacy",
+  11: "Intuition", 22: "Master Building", 33: "Master Teaching",
+};
+
 const ARCHETYPES: ArchetypeTemplate[] = [
   archetype(["fire", "leo", "1", "8"], "Solar Sovereign", "Radiant leadership and creative power organize the profile.", ["Natural leadership", "Creative expression", "Courageous action"], ["Approval dependence", "Over-commanding", "Burnout"], ["Leadership", "Creativity", "Authority"], "Use visible strength to create direction without requiring constant recognition."),
   archetype(["water", "scorpio", "cancer", "4", "5"], "Mirror Alchemist", "Depth, reflection, and transformation organize the profile.", ["Emotional depth", "Transformative insight", "Loyalty"], ["Emotional overwhelm", "Isolation", "Suspicion"], ["Transformation", "Healing", "Depth"], "Use depth to clarify reality, not to remain submerged in it."),
@@ -334,6 +340,8 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
   const birthTimeStatus: BirthTimeStatus = parseTime(input.birthTime).known ? "known" : "unknown";
   const sign = SIGN_TRAITS[astrology.sunSign];
   const path = LIFE_PATH_TRAITS[numerology.lifePath] ?? LIFE_PATH_TRAITS[9];
+  const expression = LIFE_PATH_TRAITS[numerology.expression] ?? LIFE_PATH_TRAITS[1];
+  const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge] ?? LIFE_PATH_TRAITS[6];
   const seeds: DepthSynthesisSeed[] = [
     {
       evidence: makeEvidence({ id: "offline.astrology.sun", system: "astrology", field: "sunSign", value: astrology.sunSign, confidence: "moderate", timeSensitivity: "none", notes: ["Sun-sign boundary calculation is local and deterministic."] }),
@@ -357,6 +365,30 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       },
       tensionAxes: path.axes,
       limitations: ["Numerology is a symbolic framework and should be tested against lived experience."],
+    },
+    {
+      evidence: makeEvidence({ id: "offline.numerology.expression", system: "numerology", field: "expression", value: numerology.expression, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from the supplied name."] }),
+      label: `Expression ${numerology.expression} ${NUMBER_LABELS[numerology.expression] ?? expression.theme}`, priority: 108, claimKind: "derived",
+      facets: {
+        visiblePattern: `Expression ${numerology.expression} adds ${expression.drive} as a symbolic outward-development theme.`,
+        gift: `The Expression layer can become ${expression.drive} when it is chosen rather than performed.`,
+        decisionImpact: `Expression ${numerology.expression} may favor choices that preserve ${expression.drive}.`,
+        commonMisreading: `The visible Expression pattern may be mistaken for a fixed personality when it is only one name-number interpretation.`,
+      },
+      tensionAxes: expression.axes,
+      limitations: ["The Expression number is deterministic from the supplied name; its personality meaning remains symbolic interpretation."],
+    },
+    {
+      evidence: makeEvidence({ id: "offline.numerology.soul-urge", system: "numerology", field: "soulUrge", value: numerology.soulUrge, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from vowels in the supplied name."] }),
+      label: `Soul Urge ${numerology.soulUrge} ${NUMBER_LABELS[numerology.soulUrge] ?? soulUrge.theme}`, priority: 107, claimKind: "derived",
+      facets: {
+        hiddenNeed: `Soul Urge ${numerology.soulUrge} adds ${soulUrge.drive} as a symbolic inner-motivation theme.`,
+        protectiveFunction: `Protection may become organized around preserving room for ${soulUrge.drive}.`,
+        relationshipImpact: `The Soul Urge layer may make ${soulUrge.drive} especially noticeable around trust and belonging.`,
+        shadow: `When overused, the Soul Urge theme may repeat ${soulUrge.shadow}.`,
+      },
+      tensionAxes: soulUrge.axes,
+      limitations: ["The Soul Urge number is deterministic from the supplied name; its motivation meaning remains symbolic interpretation."],
     },
     {
       evidence: makeEvidence({ id: "offline.archetype.primary", system: "system", field: "archetype", value: archetypeData.title, confidence: "moderate", timeSensitivity: "none", notes: ["Synthesized from the local astrology and numerology layers."] }),
@@ -438,7 +470,7 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
     latitude: input.latitude === undefined ? null : String(input.latitude),
     longitude: input.longitude === undefined ? null : String(input.longitude),
     isPremium: false, astrologyData, numerologyData, personalityData: {}, archetypeData,
-    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism, Life Path ${numerologyData.lifePath}, and the ${archetypeData.title} synthesis. The strongest supported themes are ${sign.drive} and ${path.drive}. These are reflective frameworks, not fixed identity or guaranteed biography.`,
+    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism, Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}, Soul Urge ${numerologyData.soulUrge}, and the ${archetypeData.title} synthesis. The strongest supported themes are ${sign.drive} and ${path.drive}. These are reflective frameworks, not fixed identity or guaranteed biography.`,
     dailyGuidance: `${path.action} ${sign.action}`,
     depthInterpretation, localOnly: true, syncStatus: "local-only",
     createdAt: generatedAt, updatedAt: generatedAt,
