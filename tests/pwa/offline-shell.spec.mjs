@@ -38,7 +38,8 @@ async function assertStoredProfileVisible(page) {
 
 async function createLocalCodex(page) {
   await page.goto(`${BASE_URL}/create`, { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /Create Your\s*Soul Codex/i })).toBeVisible();
+  await expect(page.getByTestId("input-name")).toBeVisible();
+  await expect(page.getByTestId("button-create-profile")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Offline Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
