@@ -21,7 +21,9 @@ const files = {
   humanDesign: read("server/services/human-design-trust.ts"),
   compatibility: read("routes/compatibility.ts"),
   compatibilityHub: read("client/src/pages/CompatibilityHubPage.tsx"),
+  compatibilityExplorer: read("client/src/pages/CompatibilityExplorerPage.tsx"),
   compatibilityPerson: read("client/src/pages/CompatibilityPersonPage.tsx"),
+  compatibilityPayload: read("client/src/lib/compatibilityProfilePayload.ts"),
   reconciliation: read(
     "client/src/lib/profileVerificationReconciliation.ts",
   ),
@@ -100,6 +102,16 @@ check(
     files.serverRoutes.includes("requestOwnsProfile") &&
     files.serverRoutes.includes("if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res)") &&
     files.ci.includes("tests/server-profile-ownership.test.ts"),
+);
+check(
+  "PRIVACY-05",
+  "Compatibility uploads are minimized to Sun evidence and Life Path instead of the full saved profile",
+  files.compatibilityPayload.includes("minimum server payload required by Foundation compatibility") &&
+    files.compatibilityExplorer.includes("buildCompatibilityProfilePayload") &&
+    files.compatibilityExplorer.includes("profile: compatibilityProfile") &&
+    files.compatibilityPerson.includes("buildCompatibilityProfilePayload") &&
+    files.compatibilityPerson.includes("profile: compatibilityProfile") &&
+    files.ci.includes("tests/compatibility-data-minimization.test.ts"),
 );
 
 check(
@@ -189,11 +201,20 @@ check(
   files.compatibilityHub.includes('/compatibility/compare') &&
     !files.compatibilityHub.includes("Next consumer pass"),
 );
+check(
+  "COMPAT-03",
+  "Universal compatibility labels model values as symbolic scores rather than relationship probabilities",
+  files.compatibilityExplorer.includes("Highest symbolic fit") &&
+    files.compatibilityExplorer.includes("Highest symbolic friction") &&
+    files.compatibilityExplorer.includes("not relationship probability") &&
+    files.compatibilityExplorer.includes("symbolic score"),
+);
 
 check(
   "CI-01",
-  "Golden Big Three, billing, local-first privacy, and profile ownership tests run in CI",
+  "Golden Big Three, data minimization, billing, local-first privacy, and profile ownership tests run in CI",
   files.ci.includes("tests/bobby-big-three-golden.test.ts") &&
+    files.ci.includes("tests/compatibility-data-minimization.test.ts") &&
     files.ci.includes("tests/billing-security.test.ts") &&
     files.ci.includes("tests/local-first-privacy-contract.test.ts") &&
     files.ci.includes("tests/server-profile-ownership.test.ts"),
@@ -208,7 +229,7 @@ check(
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 5,
+  version: 6,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,
