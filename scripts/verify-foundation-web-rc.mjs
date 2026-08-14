@@ -11,6 +11,8 @@ function read(relativePath) {
 const files = {
   server: read("server/index.ts"),
   serverRoutes: read("server/routes.ts"),
+  app: read("client/src/App.tsx"),
+  localFirst: read("client/src/pages/local-first-input-form.tsx"),
   billing: read("server/billing.ts"),
   premiumModal: read("client/src/components/PremiumUpgradeModal.tsx"),
   astrology: read("server/services/astrology-production.ts"),
@@ -33,6 +35,19 @@ function check(id, description, condition) {
 }
 
 check(
+  "ARCH-01",
+  "Production server uses the canonical server/routes entrypoint",
+  files.server.includes('from "./routes.js"') &&
+    !files.server.includes('from "../routes.js"'),
+);
+check(
+  "ARCH-02",
+  "Simulated Palmistry is not exposed by the Foundation production router",
+  !files.app.includes("PalmistryPage") &&
+    !files.app.includes('path="/palmistry/:id"'),
+);
+
+check(
   "WEB-HTTP-01",
   "Helmet security headers are active",
   files.server.includes("helmet({"),
@@ -51,6 +66,21 @@ check(
   "WEB-HTTP-04",
   "Referrer leakage is disabled",
   files.server.includes('referrerPolicy: { policy: "no-referrer" }'),
+);
+
+check(
+  "PRIVACY-01",
+  "Local profile creation does not upload for verification unless the user explicitly opts in",
+  files.localFirst.includes("const [verifyOnline, setVerifyOnline] = useState(false)") &&
+    files.localFirst.includes('data-testid="checkbox-online-verification"') &&
+    /if \(verifyOnline\) \{\s*void syncProfileWhenOnline\(data, profile\);\s*\}/s.test(files.localFirst),
+);
+check(
+  "PRIVACY-02",
+  "Local-first UI explains the online verification boundary",
+  files.localFirst.includes("Online verification happens only when you explicitly choose it.") &&
+    files.localFirst.includes("Leave this off to keep profile creation on-device only.") &&
+    files.localFirst.includes("No profile data was uploaded for verification."),
 );
 
 check(
@@ -143,9 +173,10 @@ check(
 
 check(
   "CI-01",
-  "Golden Big Three and billing security tests run in CI",
+  "Golden Big Three, billing security, and local-first privacy tests run in CI",
   files.ci.includes("tests/bobby-big-three-golden.test.ts") &&
-    files.ci.includes("tests/billing-security.test.ts"),
+    files.ci.includes("tests/billing-security.test.ts") &&
+    files.ci.includes("tests/local-first-privacy-contract.test.ts"),
 );
 check(
   "PWA-01",
@@ -157,7 +188,7 @@ check(
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 2,
+  version: 3,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,
@@ -172,6 +203,7 @@ const receipt = {
     "Astrological houses and Midheaven",
     "Nodes, Chiron, and planetary house placements",
     "Human Design compatibility and authoritative interpretation",
+    "Palmistry computer-vision analysis",
   ],
 };
 
