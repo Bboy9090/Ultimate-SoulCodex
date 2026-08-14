@@ -11,6 +11,7 @@ const routeCases = [
   { path: "/", pattern: /Soul Codex/i },
   { path: "/timeline", pattern: /Timeline|Current Phase|Personal Year/i },
   { path: "/compatibility", pattern: /Compatibility|Relationship|Match/i },
+  { path: "/compatibility/compare", pattern: /Compare one person|Specific person/i },
   { path: "/pricing", pattern: /Pricing|Premium|Free/i },
   { path: "/privacy", pattern: /Privacy/i },
   { path: "/terms", pattern: /Terms/i },
