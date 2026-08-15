@@ -7,7 +7,10 @@ const androidWorkflowPath = ".github/workflows/build-android.yml";
 const gate5WorkflowPath = ".github/workflows/gate5-release-preflight.yml";
 const validatorPath = "scripts/validate-mobile-release.mjs";
 const iosProjectPath = "ios/App/App.xcodeproj/project.pbxproj";
+const iosInfoPlistPath = "ios/App/App/Info.plist";
 const iosExportOptionsPath = "ios/App/ExportOptions.plist";
+const androidBuildGradlePath = "android/app/build.gradle";
+const v4ManifestPath = "client/src/lib/v4ReleaseManifest.ts";
 
 async function text(path: string): Promise<string> {
   return readFile(path, "utf8");
@@ -75,4 +78,16 @@ test("Android Play workflow requires signing material and a real AAB", async () 
   assert.match(workflow, /ANDROID_KEY_PASSWORD/);
   assert.match(workflow, /\.\/gradlew bundleRelease/);
   assert.match(workflow, /test -f app\/build\/outputs\/bundle\/release\/app-release\.aab|if \[ ! -f "app\/build\/outputs\/bundle\/release\/app-release\.aab" \]/);
+});
+
+test("native distributable identity matches the canonical V4 release candidate", async () => {
+  const manifest = await text(v4ManifestPath);
+  const iosInfo = await text(iosInfoPlistPath);
+  const androidGradle = await text(androidBuildGradlePath);
+
+  assert.match(manifest, /releaseVersion:\s*"4\.0\.0-rc\.1"/);
+  assert.match(iosInfo, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.0<\/string>/);
+  assert.match(iosInfo, /<key>CFBundleVersion<\/key>\s*<string>4000001<\/string>/);
+  assert.match(androidGradle, /versionCode\s+4000001/);
+  assert.match(androidGradle, /versionName\s+"4\.0\.0-rc\.1"/);
 });
