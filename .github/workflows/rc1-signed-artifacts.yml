@@ -1,0 +1,188 @@
+name: RC1 Signed Native Artifacts
+
+on:
+  push:
+    branches: [ops/rc1-signed-artifacts]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rc1-signed-native-artifacts
+  cancel-in-progress: true
+
+env:
+  RC_SHA: e322d58f5a342c041bda5f11c1aa0b7964527181
+  VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+
+jobs:
+  android-aab:
+    name: Signed Android AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact V4 RC
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+
+      - name: Verify exact candidate
+        run: test "$(git rev-parse HEAD)" = "$RC_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install and build
+        run: |
+          npm ci --ignore-scripts
+          npm run build:workspaces
+          npm run mobile:validate:android
+          npm run build
+          npx cap sync android
+
+      - name: Verify Android signing material
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE" || { echo "MISSING: ANDROID_KEYSTORE"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "MISSING: ANDROID_KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "MISSING: ANDROID_KEY_ALIAS"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "MISSING: ANDROID_KEY_PASSWORD"; exit 1; }
+          printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soul-codex-release.keystore
+          test -s android/app/soul-codex-release.keystore
+
+      - name: Build signed Play Store AAB
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -PRELEASE_STORE_FILE=soul-codex-release.keystore \
+            -PRELEASE_STORE_PASSWORD='${{ secrets.ANDROID_KEYSTORE_PASSWORD }}' \
+            -PRELEASE_KEY_ALIAS='${{ secrets.ANDROID_KEY_ALIAS }}' \
+            -PRELEASE_KEY_PASSWORD='${{ secrets.ANDROID_KEY_PASSWORD }}' \
+            --stacktrace
+          test -s app/build/outputs/bundle/release/app-release.aab
+          sha256sum app/build/outputs/bundle/release/app-release.aab | tee app/build/outputs/bundle/release/AAB-SHA256.txt
+          printf '%s\n' "$RC_SHA" > app/build/outputs/bundle/release/RELEASE-CANDIDATE-SHA.txt
+
+      - name: Upload signed Android RC
+        uses: actions/upload-artifact@v4
+        with:
+          name: soul-codex-v4-rc1-android-aab
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/bundle/release/AAB-SHA256.txt
+            android/app/build/outputs/bundle/release/RELEASE-CANDIDATE-SHA.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Cleanup keystore
+        if: always()
+        run: rm -f android/app/soul-codex-release.keystore
+
+  ios-ipa:
+    name: Signed iOS App Store IPA
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact V4 RC
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+
+      - name: Verify exact candidate
+        run: test "$(git rev-parse HEAD)" = "$RC_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Bootstrap native project
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
+
+      - name: Validate and resolve
+        run: |
+          npm run mobile:validate:ios
+          cd ios/App
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -resolvePackageDependencies
+
+      - name: Verify iOS signing material
+        env:
+          IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          test -n "$IOS_CERTIFICATE_P12" || { echo "MISSING: IOS_CERTIFICATE_P12"; exit 1; }
+          test -n "$IOS_CERTIFICATE_PASSWORD" || { echo "MISSING: IOS_CERTIFICATE_PASSWORD"; exit 1; }
+          test -n "$IOS_PROVISIONING_PROFILE" || { echo "MISSING: IOS_PROVISIONING_PROFILE"; exit 1; }
+
+      - name: Import signing certificate
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+
+      - name: Install and verify provisioning profile
+        env:
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles/SoulCodex.mobileprovision"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE_PATH"
+          test -s "$PROFILE_PATH"
+          security cms -D -i "$PROFILE_PATH" > provisioning-profile.plist
+          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' provisioning-profile.plist)
+          APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' provisioning-profile.plist)
+          test "$PROFILE_TEAM" = "86NUJ8M3B8"
+          test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios"
+
+      - name: Build and export signed App Store IPA
+        run: |
+          set -euo pipefail
+          cd ios/App
+          mkdir -p build build/export
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace \
+            -scheme "Soul Codex" \
+            -configuration Release \
+            -archivePath build/SoulCodex.xcarchive \
+            archive 2>&1 | tee archive.log
+          test -d build/SoulCodex.xcarchive
+          xcodebuild -exportArchive \
+            -archivePath build/SoulCodex.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist \
+            2>&1 | tee export.log
+          IPA_PATH=$(find build/export -maxdepth 1 -name '*.ipa' -type f -print -quit)
+          test -n "$IPA_PATH"
+          test -s "$IPA_PATH"
+          shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
+          printf '%s\n' "$RC_SHA" > build/export/RELEASE-CANDIDATE-SHA.txt
+
+      - name: Upload signed iOS RC
+        uses: actions/upload-artifact@v4
+        with:
+          name: soul-codex-v4-rc1-ios-ipa
+          path: |
+            ios/App/build/export/*.ipa
+            ios/App/build/export/IPA-SHA256.txt
+            ios/App/build/export/RELEASE-CANDIDATE-SHA.txt
+          if-no-files-found: error
+          retention-days: 30
