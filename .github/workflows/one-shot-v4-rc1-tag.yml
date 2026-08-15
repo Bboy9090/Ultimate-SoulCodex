@@ -1,0 +1,97 @@
+name: One-shot v4.0.0 RC1 tag
+
+on:
+  push:
+    branches:
+      - "ops/tag-v4.0.0-rc.1"
+    paths:
+      - ".github/workflows/one-shot-v4-rc1-tag.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  tag-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      EXPECTED_SHA: "5f68e70a7e3c33a283de6c8bf3ebf52b1259186a"
+      TAG: "v4.0.0-rc.1"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Verify validated main is still the expected release commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual=$(gh api "repos/${GITHUB_REPOSITORY}/branches/main" --jq '.commit.sha')
+          echo "expected_main=$EXPECTED_SHA"
+          echo "actual_main=$actual"
+          test "$actual" = "$EXPECTED_SHA"
+
+      - name: Refuse tag collision
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists; refusing to move or overwrite it."
+            exit 1
+          fi
+
+      - name: Create immutable RC tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+            -f ref="refs/tags/${TAG}" \
+            -f sha="$EXPECTED_SHA" >/tmp/tag.json
+          test "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" --jq '.object.sha')" = "$EXPECTED_SHA"
+
+      - name: Publish GitHub prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/release-notes.md <<'NOTES'
+          # Soul Codex v4.0.0-rc.1
+
+          Foundation Web Release Candidate.
+
+          Release commit: `5f68e70a7e3c33a283de6c8bf3ebf52b1259186a`
+          Validated PR candidate: `68eda77ce15799704a74bca2410b12e59648d20a`
+
+          The candidate passed the complete reconciled nine-gate release matrix on one exact SHA:
+          - Ultimate SoulCodex CI
+          - CI Tests
+          - Foundation Doctrine Gate
+          - Gate 4 Lifecycle Validation
+          - PWA Offline Browser Validation
+          - Mobile Native Smoke
+          - Dependency Security Audit
+          - Railway Container Smoke
+          - Live Ephemeris Evidence
+
+          Post-merge `main` also passed its applicable push-triggered CI, dependency, live-ephemeris, and Railway container gates.
+
+          This is a prerelease, not a claim of App Store / Google Play publication. Production web publication requires a Railway deployment receipt and post-deploy smoke against the deployed commit.
+          NOTES
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$EXPECTED_SHA" \
+            --title "Soul Codex v4.0.0-rc.1" \
+            --notes-file /tmp/release-notes.md \
+            --prerelease \
+            --verify-tag
+
+      - name: Verify release target
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" --jq '.object.sha')
+          release_tag=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.tag_name')
+          prerelease=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.prerelease')
+          test "$tag_sha" = "$EXPECTED_SHA"
+          test "$release_tag" = "$TAG"
+          test "$prerelease" = "true"
+          echo "release_tag=$release_tag"
+          echo "release_sha=$tag_sha"
+          echo "prerelease=$prerelease"
