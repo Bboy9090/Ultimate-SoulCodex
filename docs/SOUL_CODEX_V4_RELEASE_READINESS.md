@@ -1,57 +1,111 @@
 # Soul Codex V4 Release Readiness
 
-## Current classification
+## Proposed release
 
-**Integrated, automated-test validated, and deployment-smoke validated. Not yet declared release candidate.**
+**Version:** `4.0.0-rc.1`  
+**Release line:** `v4-clarity-first`  
+**Target:** Foundation Web Release Candidate  
+**Native stores:** owner-deferred and not a Foundation Web RC blocker
 
-A release-candidate declaration requires every item below to have current evidence against the same commit.
+This declaration branch may merge only after every workflow named in `V4_RELEASE_MANIFEST.requiredWorkflows` passes on the same exact head SHA. Older green runs remain historical evidence only.
 
 ## Product journey gates
 
-- [ ] A new user can create a local profile without an account.
-- [ ] A returning user can resume the active profile from the home screen.
-- [ ] Server and local profiles both open the same clarity-reading contract.
-- [ ] Every profile exposes an obvious route into the clarity reading.
-- [ ] Every clarity reading exposes a route back to the full evidence profile.
-- [ ] Missing profiles fail honestly and do not generate replacement interpretations.
+- [x] A new user can create a local profile without an account.
+- [x] A returning user can resume the active profile from the home screen.
+- [x] Server and local profiles use the same clarity/depth contract.
+- [x] Every profile exposes a direct route into the reading.
+- [x] Readings expose evidence, limitations, and a route back to Identity.
+- [x] Missing profiles fail honestly and do not generate replacement interpretations.
+- [x] Timeline reuses the active profile.
+- [x] Compatibility reuses the active profile and specific-person comparison asks only for the other person's supported inputs.
 
 ## Trust gates
 
-- [ ] Verified astronomy is visibly distinguished from symbolic fallback.
-- [ ] Deterministic numerology is not labeled independently verified.
-- [ ] Unknown or approximate birth time never creates confident Moon, Rising, house, or timing claims.
-- [ ] Evidence source and confidence class remain inspectable.
-- [ ] Lived experience is presented as the final correction layer.
-- [ ] No fake user counts, ratings, testimonials, or unsupported outcome claims exist.
+- [x] Verified astronomy is visibly distinguished from symbolic fallback.
+- [x] Deterministic numerology is not labeled independently verified.
+- [x] Unknown birth time remains unknown and does not manufacture Moon, Rising, houses, planets, or timing claims.
+- [x] Local profile generation is Foundation-safe and does not use the legacy placeholder astronomy path.
+- [x] Evidence source, confidence class, exclusions, and limitations remain inspectable.
+- [x] Lived experience is presented as a correction layer rather than model obedience.
+- [x] Human Design is excluded from Foundation Compatibility until its own evidence contract is promoted.
+- [x] Simulated Palmistry and Astrocartography are not exposed by production routes.
+- [x] No universal soulmate probability is presented as fact.
 
 ## Offline and privacy gates
 
-- [ ] Local profiles remain readable with the network disabled.
-- [ ] Offline reading and evidence navigation survive reload.
-- [ ] No local profile data is silently uploaded.
-- [ ] Online verification failures preserve the local reading and show deferred status.
-- [ ] Privacy and terms pages describe actual behavior rather than aspirational behavior.
+- [x] Local profiles remain readable with the network disabled after the application shell has been cached.
+- [x] Offline reading and evidence navigation survive reload/restart.
+- [x] Local profile creation does not silently upload data.
+- [x] Online astronomy verification is explicit opt-in and uses a minimal verification-only endpoint.
+- [x] Reopening a local profile does not trigger background upload.
+- [x] Server-backed profile reads and personal-data mutations enforce user/session ownership.
+- [x] Compatibility requests minimize transmitted profile data.
+- [x] Privacy and Terms describe the implemented data boundary.
 
-## Accessibility and mobile gates
+## Security and billing gates
 
-- [ ] Main content has a landmark and logical heading hierarchy.
-- [ ] Keyboard focus is visible on all interactive elements.
-- [ ] Primary controls meet minimum mobile tap-target expectations.
-- [ ] Reading typography remains usable at narrow phone widths.
-- [ ] Fixed controls respect safe-area insets.
-- [ ] Loading and failure states are announced without relying only on animation or color.
+- [x] Hosted Stripe Checkout is the only payment-entry boundary.
+- [x] Raw card number, expiry, CVC, and CVV fields are rejected from application routes.
+- [x] Premium entitlement remains webhook-driven.
+- [x] API responses are no-store and referrer leakage is disabled.
+- [x] Helmet security headers and rate limiting are active.
+- [x] Production errors do not expose internal stack traces to clients.
 
-## Engineering gates
+## Accessibility, responsive, and browser evidence
 
-- [ ] TypeScript check passes.
-- [ ] Production build passes.
-- [ ] Unit and integration tests pass.
-- [ ] Dependency security audit passes.
-- [ ] PWA offline browser validation passes.
-- [ ] Railway container smoke passes.
-- [ ] Live ephemeris evidence passes.
-- [ ] The release commit and all evidence refer to the same SHA.
+Exact-head PWA evidence from candidate `3a4cfd5db2a41650240b7d0a1767bb544d432cdf` captured 40 screens across:
 
-## Release declaration rule
+- Chromium phone `390x844`
+- Chromium tablet `834x1194`
+- Chromium desktop `1440x900`
+- WebKit iPhone `390x844`
 
-Soul Codex V4 may be called a **release candidate** only after the checklist is completed with links to current evidence. Green checks from an older commit do not count. Human optimism is not a test runner.
+The captured routes include Identity, Home, Timeline, Compatibility, specific-person comparison, Pricing, Privacy, Terms, Support, and Settings.
+
+Evidence summary:
+
+- [x] No page errors were reported.
+- [x] No critical console errors were reported.
+- [x] Primary layouts are readable at phone, tablet, and desktop widths.
+- [x] The repaired Compatibility layout does not horizontally overflow at the tablet breakpoint.
+- [x] Main navigation and consumer hierarchy remain coherent across the captured viewport matrix.
+
+## Engineering and release gates
+
+The formal `4.0.0-rc.1` declaration requires all of these workflows to pass on one exact release-declaration SHA:
+
+- [ ] Ultimate SoulCodex CI
+- [ ] CI Tests
+- [ ] Foundation Doctrine Gate
+- [ ] Gate 4 Lifecycle Validation
+- [ ] PWA Offline Browser Validation
+- [ ] Mobile Native Smoke
+- [ ] Dependency Security Audit
+- [ ] Railway Container Smoke
+- [ ] Live Ephemeris Evidence
+
+The three legacy V4 gates are now wired into pull-request and main-branch exact-head validation so they can no longer rely on evidence from an older commit.
+
+## Rollback contract
+
+A release candidate is not publishable without a rollback path.
+
+1. Keep the last known-good main SHA and release tag recorded before deployment.
+2. If production smoke fails, redeploy the last known-good Railway deployment or deploy that exact prior SHA.
+3. Verify `/health`, the application shell, the canonical local-profile journey, and API 404 behavior after rollback.
+4. Do not migrate forward or grant paid entitlement while the rollback state is uncertain.
+5. Open a focused hotfix only after the stable deployment is restored.
+
+## Declaration rule
+
+`4.0.0-rc.1` may be called **Foundation Web Release Candidate** only when:
+
+- every required workflow above is green on the same exact declaration SHA;
+- the responsive/offline visual evidence remains valid;
+- the release receipt records that exact SHA and workflow run IDs;
+- the declaration branch merges without changing runtime behavior after validation.
+
+Publication is a separate state. **Published** requires a production deployment receipt and post-deploy smoke evidence against the deployed commit.
+
+A release candidate is a tested thing, not a mood.
