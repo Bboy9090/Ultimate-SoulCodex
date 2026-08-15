@@ -55,7 +55,7 @@ jobs:
           XCODE_MAJOR=$(xcodebuild -version | awk '/Xcode/{split($2,v,"."); print v[1]}')
           test "$XCODE_MAJOR" -ge 26
 
-      - name: Prove committed graph is resolvable before npm exists
+      - name: Verify committed clone-ready graph and lock
         run: |
           set -euo pipefail
           test ! -d node_modules
@@ -63,22 +63,24 @@ jobs:
           test -f ios/App/Vendor/CapacitorSplashScreen/Package.swift
           test -f ios/App/Vendor/CapacitorStatusBar/Package.swift
           test -f ios/App/Vendor/CapawesomeCapacitorAppleSignIn/Package.swift
+          test -s "$RESOLVED_FILE"
           ! grep -q 'node_modules/' ios/App/CapApp-SPM/Package.swift
-          rm -f "$RESOLVED_FILE"
+          grep -q '"identity" : "capacitor-keyboard"' "$RESOLVED_FILE"
+          grep -q '"version" : "8.0.3"' "$RESOLVED_FILE"
+          grep -q '279a3b4daf1c0e0cb63d4a46994ba65ea8a97da6' "$RESOLVED_FILE"
+          grep -q '"identity" : "capacitor-swift-pm"' "$RESOLVED_FILE"
+          grep -q '"version" : "8.4.2"' "$RESOLVED_FILE"
+          grep -q '9b9fb0af76b2b653f6e9b999f658adc132b9ab4c' "$RESOLVED_FILE"
+          shasum -a 256 "$RESOLVED_FILE" | tee "$RUNNER_TEMP/package-resolved-before.txt"
+
+      - name: Resolve strictly before npm exists
+        run: |
           xcodebuild -resolvePackageDependencies \
             -workspace ios/App/App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages"
-          test -s "$RESOLVED_FILE"
-          cat "$RESOLVED_FILE"
-
-      - name: Upload authoritative generated Package.resolved
-        uses: actions/upload-artifact@v4
-        with:
-          name: xcode-cloud-generated-package-resolved-${{ github.run_id }}
-          path: ${{ env.RESOLVED_FILE }}
-          if-no-files-found: error
-          retention-days: 7
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            -disableAutomaticPackageResolution \
+            -onlyUsePackageVersionsFromResolvedFile
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -91,16 +93,19 @@ jobs:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
         run: sh ios/App/ci_scripts/ci_post_clone.sh
 
-      - name: Prove Capacitor sync restored the clone-safe graph
+      - name: Prove Capacitor sync preserved the locked clone-ready contract
         run: |
+          set -euo pipefail
           test -s "$RESOLVED_FILE"
           ! grep -q 'node_modules/' ios/App/CapApp-SPM/Package.swift
           grep -q 'capacitor-keyboard.git' ios/App/CapApp-SPM/Package.swift
           grep -q '../Vendor/CapacitorSplashScreen' ios/App/CapApp-SPM/Package.swift
           grep -q '../Vendor/CapacitorStatusBar' ios/App/CapApp-SPM/Package.swift
           grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' ios/App/CapApp-SPM/Package.swift
+          shasum -a 256 "$RESOLVED_FILE" | tee "$RUNNER_TEMP/package-resolved-after.txt"
+          diff -u "$RUNNER_TEMP/package-resolved-before.txt" "$RUNNER_TEMP/package-resolved-after.txt"
 
-      - name: Resolve strictly from the generated lock after bootstrap
+      - name: Resolve strictly again after bootstrap
         run: |
           xcodebuild -resolvePackageDependencies \
             -workspace ios/App/App.xcodeproj/project.xcworkspace \
@@ -108,3 +113,6 @@ jobs:
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             -disableAutomaticPackageResolution \
             -onlyUsePackageVersionsFromResolvedFile
+
+      - name: Validate native release configuration
+        run: npm run mobile:validate:ios
