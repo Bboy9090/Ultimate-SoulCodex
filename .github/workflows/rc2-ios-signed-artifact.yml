@@ -1,99 +1,59 @@
 # rerun-after-ios-certificate-refresh: 2026-08-15T17:38-04:00
 name: RC2 Signed iOS Artifact
-
 on:
   push:
     branches: [ops/rc2-ios-signed-artifact]
-
 permissions:
   contents: read
-
 concurrency:
   group: rc2-signed-ios-artifact
   cancel-in-progress: true
-
 env:
   RC_SHA: 2e02d1023ddeb4e453236c34f2d4d2b7f6948957
-  VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
-
 jobs:
   signed-ios-ipa:
-    name: Signed rc2 App Store IPA
     runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-      - name: Verify exact candidate
-        run: test "$(git rev-parse HEAD)" = "$RC_SHA"
-      - name: Verify required signing secrets
-        env:
-          IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
-          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-        run: |
-          test -n "$IOS_CERTIFICATE_P12"
-          test -n "$IOS_CERTIFICATE_PASSWORD"
-          test -n "$IOS_PROVISIONING_PROFILE"
-      - name: Verify complete P12 signing identity
+      - run: test "$(git rev-parse HEAD)" = "$RC_SHA"
+      - name: Verify P12 identity
         env:
           IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
         run: |
           set -euo pipefail
-          P12="$RUNNER_TEMP/soulcodex-distribution.p12"
-          CERTS="$RUNNER_TEMP/all-certificates.pem"
-          KEY="$RUNNER_TEMP/private-key.pem"
-          KEY_PUB="$RUNNER_TEMP/key-public.der"
-          CERT_PUB="$RUNNER_TEMP/cert-public.der"
-          LEAF="$RUNNER_TEMP/matching-certificate.pem"
+          P12="$RUNNER_TEMP/soulcodex.p12"; CERTS="$RUNNER_TEMP/certs.pem"; KEY="$RUNNER_TEMP/key.pem"; KP="$RUNNER_TEMP/key.der"; CP="$RUNNER_TEMP/cert.der"; LEAF="$RUNNER_TEMP/leaf.pem"
           printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
-          test -s "$P12" || { echo "IOS_P12_DECODE_EMPTY"; exit 1; }
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS" >/dev/null 2>&1 || { echo "IOS_P12_CERTIFICATE_EXTRACTION_FAILED"; exit 1; }
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY" >/dev/null 2>&1 || { echo "IOS_P12_PRIVATE_KEY_EXTRACTION_FAILED"; exit 1; }
-          grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY" || { echo "IOS_P12_HAS_NO_PRIVATE_KEY"; exit 1; }
-          CERT_COUNT=$(grep -c 'BEGIN CERTIFICATE' "$CERTS" || true)
-          test "$CERT_COUNT" -gt 0 || { echo "IOS_P12_HAS_NO_CERTIFICATE_ANYWHERE"; exit 1; }
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY" || { echo IOS_P12_HAS_NO_PRIVATE_KEY; exit 1; }
+          [ "$(grep -c 'BEGIN CERTIFICATE' "$CERTS" || true)" -gt 0 ] || { echo IOS_P12_HAS_NO_CERTIFICATE_ANYWHERE; exit 1; }
           awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
-          openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
+          openssl pkey -in "$KEY" -pubout -outform DER > "$KP"
           MATCHED=""
-          for candidate in "$RUNNER_TEMP"/candidate-*.pem; do
-            [ -f "$candidate" ] || continue
-            openssl x509 -in "$candidate" -pubkey -noout | openssl pkey -pubin -outform DER > "$CERT_PUB"
-            if cmp -s "$CERT_PUB" "$KEY_PUB"; then cp "$candidate" "$LEAF"; MATCHED=1; break; fi
-          done
-          test -n "$MATCHED" || { echo "IOS_CERTIFICATE_PRIVATE_KEY_MISMATCH"; exit 1; }
-          openssl x509 -in "$LEAF" -noout -checkend 0 >/dev/null || { echo "IOS_CERTIFICATE_EXPIRED"; exit 1; }
-          echo "P12 contains a current certificate matching its private key."
-      - name: Import usable codesigning identity
+          for c in "$RUNNER_TEMP"/candidate-*.pem; do openssl x509 -in "$c" -pubkey -noout | openssl pkey -pubin -outform DER > "$CP"; if cmp -s "$CP" "$KP"; then cp "$c" "$LEAF"; MATCHED=1; break; fi; done
+          test -n "$MATCHED" || { echo IOS_CERTIFICATE_PRIVATE_KEY_MISMATCH; exit 1; }
+          openssl x509 -in "$LEAF" -noout -checkend 0 || { echo IOS_CERTIFICATE_EXPIRED; exit 1; }
+      - name: Import signing identity
         env:
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
         run: |
           set -euo pipefail
-          P12="$RUNNER_TEMP/soulcodex-distribution.p12"
-          KEYCHAIN="$RUNNER_TEMP/soulcodex-signing.keychain-db"
-          KEYCHAIN_PASSWORD=$(uuidgen)
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security import "$P12" -k "$KEYCHAIN" -f pkcs12 -P "$IOS_CERTIFICATE_PASSWORD" -A
-          security default-keychain -d user -s "$KEYCHAIN"
-          security list-keychains -d user -s "$KEYCHAIN"
-          security find-identity -v -p codesigning "$KEYCHAIN" > "$RUNNER_TEMP/codesigning-identities.txt"
-          grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/codesigning-identities.txt" || { echo "IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY"; exit 1; }
+          KC="$RUNNER_TEMP/signing.keychain-db"; PW=$(uuidgen)
+          security create-keychain -p "$PW" "$KC"
+          security unlock-keychain -p "$PW" "$KC"
+          security import "$RUNNER_TEMP/soulcodex.p12" -k "$KC" -f pkcs12 -P "$IOS_CERTIFICATE_PASSWORD" -A
+          security list-keychains -d user -s "$KC"
+          security find-identity -v -p codesigning "$KC" > "$RUNNER_TEMP/ids.txt"
+          grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/ids.txt" || { echo IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY; exit 1; }
       - name: Verify provisioning profile
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
-          set -euo pipefail
-          PROFILE="$HOME/Library/MobileDevice/Provisioning Profiles/SoulCodex.mobileprovision"
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE"
-          test -s "$PROFILE"
-          security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8.app.soulcodex.ios"
+          PROFILE="$HOME/Library/MobileDevice/Provisioning Profiles/SoulCodex.mobileprovision"; mkdir -p "$(dirname "$PROFILE")"; printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE"; security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"; test "$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8"; test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8.app.soulcodex.ios"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -101,7 +61,7 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
-      - name: Bootstrap, validate, and resolve
+      - name: Bootstrap and build signed IPA
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
         run: |
@@ -109,19 +69,10 @@ jobs:
           npm run mobile:validate:ios
           cd ios/App
           xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -resolvePackageDependencies
-      - name: Build and export signed App Store IPA
-        run: |
-          set -euo pipefail
-          cd ios/App
           mkdir -p build build/export
-          xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -configuration Release -archivePath build/SoulCodex.xcarchive archive 2>&1 | tee build/archive.log
-          test -d build/SoulCodex.xcarchive
-          xcodebuild -exportArchive -archivePath build/SoulCodex.xcarchive -exportPath build/export -exportOptionsPlist ExportOptions.plist 2>&1 | tee build/export.log
-          IPA_PATH=$(find build/export -maxdepth 1 -name '*.ipa' -type f -print -quit)
-          test -n "$IPA_PATH"
-          test -s "$IPA_PATH"
-          shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
-          printf '%s\n' "$RC_SHA" > build/export/RELEASE-CANDIDATE-SHA.txt
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -configuration Release -archivePath build/SoulCodex.xcarchive archive
+          xcodebuild -exportArchive -archivePath build/SoulCodex.xcarchive -exportPath build/export -exportOptionsPlist ExportOptions.plist
+          IPA=$(find build/export -maxdepth 1 -name '*.ipa' -type f -print -quit); test -s "$IPA"; shasum -a 256 "$IPA" > build/export/IPA-SHA256.txt; printf '%s\n' "$RC_SHA" > build/export/RELEASE-CANDIDATE-SHA.txt
       - uses: actions/upload-artifact@v4
         with:
           name: soul-codex-v4-rc2-ios-ipa
@@ -130,9 +81,3 @@ jobs:
             ios/App/build/export/IPA-SHA256.txt
             ios/App/build/export/RELEASE-CANDIDATE-SHA.txt
           if-no-files-found: error
-          retention-days: 30
-      - name: Cleanup signing material
-        if: always()
-        run: |
-          rm -f "$RUNNER_TEMP/soulcodex-distribution.p12" "$RUNNER_TEMP/all-certificates.pem" "$RUNNER_TEMP/private-key.pem" "$RUNNER_TEMP/key-public.der" "$RUNNER_TEMP/cert-public.der" "$RUNNER_TEMP/matching-certificate.pem" "$RUNNER_TEMP/codesigning-identities.txt" "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP"/candidate-*.pem
-          security delete-keychain "$RUNNER_TEMP/soulcodex-signing.keychain-db" >/dev/null 2>&1 || true
