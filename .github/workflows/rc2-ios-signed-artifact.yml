@@ -22,8 +22,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     steps:
-      - name: Checkout exact rc2 merge
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
       - name: Verify exact candidate
@@ -123,8 +122,7 @@ jobs:
           test -s "$IPA_PATH"
           shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
           printf '%s\n' "$RC_SHA" > build/export/RELEASE-CANDIDATE-SHA.txt
-      - name: Upload signed rc2 iOS artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: soul-codex-v4-rc2-ios-ipa
           path: |
