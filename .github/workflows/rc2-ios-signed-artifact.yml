@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: true
 env:
   RC_SHA: 2e02d1023ddeb4e453236c34f2d4d2b7f6948957
+  VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
 jobs:
   signed-ios-ipa:
     runs-on: macos-26
