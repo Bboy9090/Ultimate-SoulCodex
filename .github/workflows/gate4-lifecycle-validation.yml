@@ -14,6 +14,7 @@ on:
       - "client/src/lib/ActiveProfileRepository.ts"
       - "client/src/lib/offlineProfileStore.ts"
       - "client/src/lib/__tests__/ActiveProfileRepository.test.ts"
+      - "client/src/lib/v4ReleaseManifest.ts"
       - "server/auth/**"
       - "server/routes/consumer-auth.ts"
       - "server/routes.ts"
@@ -29,6 +30,8 @@ on:
       - "tests/account-deletion.test.ts"
       - "tests/gate4-production-deletion.test.ts"
       - "tests/pwa/**"
+      - "governance/**"
+      - "docs/SOUL_CODEX_V4_RELEASE_READINESS.md"
       - ".github/workflows/gate4-lifecycle-validation.yml"
       - ".github/workflows/pwa-offline-browser.yml"
   workflow_dispatch:

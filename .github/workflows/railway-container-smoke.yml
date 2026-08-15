@@ -2,15 +2,46 @@ name: Railway Container Smoke
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "railway.json"
+      - "server/**"
+      - "client/**"
+      - "routes/**"
+      - "shared/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/**"
+      - "governance/**"
+      - "docs/SOUL_CODEX_V4_RELEASE_READINESS.md"
+      - ".github/workflows/railway-container-smoke.yml"
   push:
+    branches: [main]
     tags:
       - "v*"
+    paths:
+      - "Dockerfile"
+      - "railway.json"
+      - "server/**"
+      - "client/**"
+      - "routes/**"
+      - "shared/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/**"
+      - "governance/**"
+      - "docs/SOUL_CODEX_V4_RELEASE_READINESS.md"
+      - ".github/workflows/railway-container-smoke.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: railway-container-${{ github.ref }}
+  group: railway-container-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,8 +50,19 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact candidate
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact candidate SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          echo "expected_sha=$EXPECTED_SHA"
+          echo "actual_sha=$ACTUAL_SHA"
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
 
       - name: Build production image
         shell: bash
