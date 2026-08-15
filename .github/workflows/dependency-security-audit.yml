@@ -8,6 +8,20 @@ on:
       - "package-lock.json"
       - "**/package.json"
       - "**/package-lock.json"
+      - "client/src/lib/v4ReleaseManifest.ts"
+      - "governance/**"
+      - "docs/SOUL_CODEX_V4_RELEASE_READINESS.md"
+      - ".github/workflows/dependency-security-audit.yml"
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "client/src/lib/v4ReleaseManifest.ts"
+      - "governance/**"
+      - "docs/SOUL_CODEX_V4_RELEASE_READINESS.md"
       - ".github/workflows/dependency-security-audit.yml"
   workflow_dispatch:
   schedule:
@@ -25,8 +39,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout repository
+      - name: Checkout exact candidate
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact candidate SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          echo "expected_sha=$EXPECTED_SHA"
+          echo "actual_sha=$ACTUAL_SHA"
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -56,4 +81,4 @@ jobs:
           name: dependency-security-audit-${{ github.run_id }}
           path: evidence/
           if-no-files-found: warn
-          retention-days: 2
+          retention-days: 30
