@@ -3,8 +3,8 @@ import {
   calcExpression,
   calcSoulUrge,
   calcPersonality,
-} from '@soulcodex/core/compute/numerology';
-import { calcPersonalYear } from '@soulcodex/core/compute/personal-numbers';
+  calcPersonalYear,
+} from '@soulcodex/core';
 
 interface ResolvedNumerologyData {
   status: 'resolved';
