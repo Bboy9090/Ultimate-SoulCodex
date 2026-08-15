@@ -26,20 +26,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ env.RC_SHA }}
-
       - name: Verify exact candidate
         run: test "$(git rev-parse HEAD)" = "$RC_SHA"
-
       - name: Verify required signing secrets
         env:
           IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
-          test -n "$IOS_CERTIFICATE_P12" || { echo "MISSING: IOS_CERTIFICATE_P12"; exit 1; }
-          test -n "$IOS_CERTIFICATE_PASSWORD" || { echo "MISSING: IOS_CERTIFICATE_PASSWORD"; exit 1; }
-          test -n "$IOS_PROVISIONING_PROFILE" || { echo "MISSING: IOS_PROVISIONING_PROFILE"; exit 1; }
-
+          test -n "$IOS_CERTIFICATE_P12"
+          test -n "$IOS_CERTIFICATE_PASSWORD"
+          test -n "$IOS_PROVISIONING_PROFILE"
       - name: Verify complete P12 signing identity
         env:
           IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
@@ -52,43 +49,24 @@ jobs:
           KEY_PUB="$RUNNER_TEMP/key-public.der"
           CERT_PUB="$RUNNER_TEMP/cert-public.der"
           LEAF="$RUNNER_TEMP/matching-certificate.pem"
-
           printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
           test -s "$P12" || { echo "IOS_P12_DECODE_EMPTY"; exit 1; }
-
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS" >/dev/null 2>&1 || {
-            echo "IOS_P12_CERTIFICATE_EXTRACTION_FAILED"; exit 1;
-          }
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY" >/dev/null 2>&1 || {
-            echo "IOS_P12_PRIVATE_KEY_EXTRACTION_FAILED"; exit 1;
-          }
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS" >/dev/null 2>&1 || { echo "IOS_P12_CERTIFICATE_EXTRACTION_FAILED"; exit 1; }
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY" >/dev/null 2>&1 || { echo "IOS_P12_PRIVATE_KEY_EXTRACTION_FAILED"; exit 1; }
           grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY" || { echo "IOS_P12_HAS_NO_PRIVATE_KEY"; exit 1; }
-
           CERT_COUNT=$(grep -c 'BEGIN CERTIFICATE' "$CERTS" || true)
           test "$CERT_COUNT" -gt 0 || { echo "IOS_P12_HAS_NO_CERTIFICATE_ANYWHERE"; exit 1; }
-          echo "P12 contains certificate bag(s); checking private-key match."
-
-          awk '
-            /-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) }
-            f { print > f }
-            /-----END CERTIFICATE-----/ { close(f); f="" }
-          ' "$CERTS"
-
+          awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
           openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
           MATCHED=""
           for candidate in "$RUNNER_TEMP"/candidate-*.pem; do
             [ -f "$candidate" ] || continue
             openssl x509 -in "$candidate" -pubkey -noout | openssl pkey -pubin -outform DER > "$CERT_PUB"
-            if cmp -s "$CERT_PUB" "$KEY_PUB"; then
-              cp "$candidate" "$LEAF"
-              MATCHED=1
-              break
-            fi
+            if cmp -s "$CERT_PUB" "$KEY_PUB"; then cp "$candidate" "$LEAF"; MATCHED=1; break; fi
           done
           test -n "$MATCHED" || { echo "IOS_CERTIFICATE_PRIVATE_KEY_MISMATCH"; exit 1; }
           openssl x509 -in "$LEAF" -noout -checkend 0 >/dev/null || { echo "IOS_CERTIFICATE_EXPIRED"; exit 1; }
           echo "P12 contains a current certificate matching its private key."
-
       - name: Import usable codesigning identity
         env:
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
@@ -104,11 +82,7 @@ jobs:
           security default-keychain -d user -s "$KEYCHAIN"
           security list-keychains -d user -s "$KEYCHAIN"
           security find-identity -v -p codesigning "$KEYCHAIN" > "$RUNNER_TEMP/codesigning-identities.txt"
-          grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/codesigning-identities.txt" || {
-            echo "IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY"; exit 1;
-          }
-          echo "Usable iOS codesigning identity imported."
-
+          grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/codesigning-identities.txt" || { echo "IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY"; exit 1; }
       - name: Verify provisioning profile
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
@@ -121,16 +95,13 @@ jobs:
           security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8"
           test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8.app.soulcodex.ios"
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
-
       - name: Bootstrap, validate, and resolve
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
@@ -139,7 +110,6 @@ jobs:
           npm run mobile:validate:ios
           cd ios/App
           xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -resolvePackageDependencies
-
       - name: Build and export signed App Store IPA
         run: |
           set -euo pipefail
@@ -153,7 +123,6 @@ jobs:
           test -s "$IPA_PATH"
           shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
           printf '%s\n' "$RC_SHA" > build/export/RELEASE-CANDIDATE-SHA.txt
-
       - name: Upload signed rc2 iOS artifact
         uses: actions/upload-artifact@v4
         with:
@@ -164,7 +133,6 @@ jobs:
             ios/App/build/export/RELEASE-CANDIDATE-SHA.txt
           if-no-files-found: error
           retention-days: 30
-
       - name: Cleanup signing material
         if: always()
         run: |
