@@ -1,4 +1,4 @@
-# rerun-after-ios-certificate-refresh: 2026-08-15T17:38-04:00
+# rerun-after-ios-certificate-refresh: 2026-08-15T18:06-04:00
 name: RC2 Signed iOS Artifact
 on:
   push:
@@ -25,10 +25,10 @@ jobs:
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
         run: |
           set -euo pipefail
-          P12="$RUNNER_TEMP/soulcodex.p12"; CERTS="$RUNNER_TEMP/certs.pem"; KEY="$RUNNER_TEMP/key.pem"; KP="$RUNNER_TEMP/key.der"; CP="$RUNNER_TEMP/cert.der"; LEAF="$RUNNER_TEMP/leaf.pem"
+          P12="$RUNNER_TEMP/soulcodex.p12"; CERTS="$RUNNER_TEMP/certs.pem"; KEY="$RUNNER_TEMP/key.pem"; KP="$RUNNER_TEMP/key.der"; CP="$RUNNER_TEMP/cert.der"; LEAF="$RUNNER_TEMP/leaf.pem"; MODERN_P12="$RUNNER_TEMP/soulcodex-modern.p12"
           printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          openssl pkcs12 -legacy -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
+          openssl pkcs12 -legacy -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
           grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY" || { echo IOS_P12_HAS_NO_PRIVATE_KEY; exit 1; }
           [ "$(grep -c 'BEGIN CERTIFICATE' "$CERTS" || true)" -gt 0 ] || { echo IOS_P12_HAS_NO_CERTIFICATE_ANYWHERE; exit 1; }
           awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
@@ -37,6 +37,9 @@ jobs:
           for c in "$RUNNER_TEMP"/candidate-*.pem; do openssl x509 -in "$c" -pubkey -noout | openssl pkey -pubin -outform DER > "$CP"; if cmp -s "$CP" "$KP"; then cp "$c" "$LEAF"; MATCHED=1; break; fi; done
           test -n "$MATCHED" || { echo IOS_CERTIFICATE_PRIVATE_KEY_MISMATCH; exit 1; }
           openssl x509 -in "$LEAF" -noout -checkend 0 || { echo IOS_CERTIFICATE_EXPIRED; exit 1; }
+          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout "pass:$IOS_CERTIFICATE_PASSWORD"
+          test -s "$MODERN_P12"
+          echo IOS_P12_IDENTITY_VERIFIED
       - name: Import signing identity
         env:
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
@@ -45,15 +48,17 @@ jobs:
           KC="$RUNNER_TEMP/signing.keychain-db"; PW=$(uuidgen)
           security create-keychain -p "$PW" "$KC"
           security unlock-keychain -p "$PW" "$KC"
-          security import "$RUNNER_TEMP/soulcodex.p12" -k "$KC" -f pkcs12 -P "$IOS_CERTIFICATE_PASSWORD" -A
+          security import "$RUNNER_TEMP/soulcodex-modern.p12" -k "$KC" -f pkcs12 -P "$IOS_CERTIFICATE_PASSWORD" -A
           security list-keychains -d user -s "$KC"
           security find-identity -v -p codesigning "$KC" > "$RUNNER_TEMP/ids.txt"
           grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/ids.txt" || { echo IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY; exit 1; }
+          echo IOS_CODESIGNING_IDENTITY_IMPORTED
       - name: Verify provisioning profile
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
           PROFILE="$HOME/Library/MobileDevice/Provisioning Profiles/SoulCodex.mobileprovision"; mkdir -p "$(dirname "$PROFILE")"; printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE"; security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"; test "$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8"; test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8.app.soulcodex.ios"
+          echo IOS_PROVISIONING_PROFILE_VERIFIED
       - uses: actions/setup-node@v4
         with:
           node-version: 22
