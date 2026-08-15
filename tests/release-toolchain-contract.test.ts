@@ -85,9 +85,9 @@ test("native distributable identity matches the canonical V4 release candidate",
   const iosInfo = await text(iosInfoPlistPath);
   const androidGradle = await text(androidBuildGradlePath);
 
-  assert.match(manifest, /releaseVersion:\s*"4\.0\.0-rc\.1"/);
+  assert.match(manifest, /releaseVersion:\s*"4\.0\.0-rc\.2"/);
   assert.match(iosInfo, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.0<\/string>/);
-  assert.match(iosInfo, /<key>CFBundleVersion<\/key>\s*<string>4000001<\/string>/);
-  assert.match(androidGradle, /versionCode\s+4000001/);
-  assert.match(androidGradle, /versionName\s+"4\.0\.0-rc\.1"/);
+  assert.match(iosInfo, /<key>CFBundleVersion<\/key>\s*<string>4000002<\/string>/);
+  assert.match(androidGradle, /versionCode\s+4000002/);
+  assert.match(androidGradle, /versionName\s+"4\.0\.0-rc\.2"/);
 });

@@ -2,10 +2,10 @@
 
 ## Proposed release
 
-**Version:** `4.0.0-rc.1`  
+**Version:** `4.0.0-rc.2`  
 **Release line:** `v4-clarity-first`  
-**Target:** Foundation Web Release Candidate  
-**Native stores:** owner-deferred and not a Foundation Web RC blocker
+**Target:** Foundation Web + native distribution Release Candidate  
+**Previous milestone:** `v4.0.0-rc.1` remains pinned to the earlier Foundation Web RC and is not moved.
 
 This declaration branch may merge only after every workflow named in `V4_RELEASE_MANIFEST.requiredWorkflows` passes on the same exact head SHA. Older green runs remain historical evidence only.
 
@@ -61,8 +61,6 @@ Exact-head PWA evidence from candidate `3a4cfd5db2a41650240b7d0a1767bb544d432cdf
 - Chromium desktop `1440x900`
 - WebKit iPhone `390x844`
 
-The captured routes include Identity, Home, Timeline, Compatibility, specific-person comparison, Pricing, Privacy, Terms, Support, and Settings.
-
 Evidence summary:
 
 - [x] No page errors were reported.
@@ -73,7 +71,7 @@ Evidence summary:
 
 ## Engineering and release gates
 
-The formal `4.0.0-rc.1` declaration requires all of these workflows to pass on one exact release-declaration SHA:
+The formal `4.0.0-rc.2` declaration requires all of these workflows to pass on one exact release-declaration SHA:
 
 - [ ] Ultimate SoulCodex CI
 - [ ] CI Tests
@@ -85,11 +83,14 @@ The formal `4.0.0-rc.1` declaration requires all of these workflows to pass on o
 - [ ] Railway Container Smoke
 - [ ] Live Ephemeris Evidence
 
-The three legacy V4 gates are now wired into pull-request and main-branch exact-head validation so they can no longer rely on evidence from an older commit.
+Native distribution additionally requires:
+
+- [ ] Xcode Cloud archive succeeds on the distributable SHA.
+- [ ] Android signed AAB is produced from the distributable SHA.
+- [ ] iOS/TestFlight delivery is backed by a valid Apple signing identity or Xcode Cloud managed signing.
+- [ ] Real-device/store acceptance receipts remain distinct from simulator/build proof.
 
 ## Rollback contract
-
-A release candidate is not publishable without a rollback path.
 
 1. Keep the last known-good main SHA and release tag recorded before deployment.
 2. If production smoke fails, redeploy the last known-good Railway deployment or deploy that exact prior SHA.
@@ -99,13 +100,14 @@ A release candidate is not publishable without a rollback path.
 
 ## Declaration rule
 
-`4.0.0-rc.1` may be called **Foundation Web Release Candidate** only when:
+`4.0.0-rc.2` may be called **Foundation + native distributable Release Candidate** only when:
 
 - every required workflow above is green on the same exact declaration SHA;
 - the responsive/offline visual evidence remains valid;
 - the release receipt records that exact SHA and workflow run IDs;
+- the native package graph and simulator builds remain green;
 - the declaration branch merges without changing runtime behavior after validation.
 
-Publication is a separate state. **Published** requires a production deployment receipt and post-deploy smoke evidence against the deployed commit.
+Publication is a separate state. **Published** requires a production deployment receipt and post-deploy smoke evidence against the deployed commit. Store distribution requires signed artifact / Xcode Cloud and tester/store receipts.
 
 A release candidate is a tested thing, not a mood.

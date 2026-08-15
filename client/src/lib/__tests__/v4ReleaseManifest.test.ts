@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { V4_RELEASE_MANIFEST, canDeclareV4ReleaseCandidate } from "../v4ReleaseManifest";
 
 describe("V4 release manifest", () => {
-  it("locks the v4.0.0-rc.1 release identity", () => {
-    expect(V4_RELEASE_MANIFEST.releaseVersion).toBe("4.0.0-rc.1");
+  it("locks the v4.0.0-rc.2 release identity", () => {
+    expect(V4_RELEASE_MANIFEST.releaseVersion).toBe("4.0.0-rc.2");
     expect(V4_RELEASE_MANIFEST.classification).toBe("release-candidate");
   });
 
