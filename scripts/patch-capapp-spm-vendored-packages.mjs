@@ -33,8 +33,16 @@ const requiredVendorManifests = [
   "ios/App/Vendor/CapawesomeCapacitorAppleSignIn/Package.swift",
 ];
 
+const requiredVendorSources = [
+  "ios/App/Vendor/CapacitorStatusBar/Sources/StatusBarPlugin/UIColor.swift",
+];
+
 for (const vendorManifest of requiredVendorManifests) {
   if (!existsSync(vendorManifest)) throw new Error(`Vendored Swift package is missing: ${vendorManifest}`);
+}
+
+for (const vendorSource of requiredVendorSources) {
+  if (!existsSync(vendorSource)) throw new Error(`Vendored Swift source is missing: ${vendorSource}`);
 }
 
 let manifest = readFileSync(manifestPath, "utf8");

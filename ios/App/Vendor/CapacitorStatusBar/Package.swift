@@ -1,7 +1,7 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
-// Vendored from @capacitor/status-bar 8.0.2 (MIT) so Xcode Cloud can
+// Vendored from @capacitor/status-bar 8.0.3 (MIT) so Xcode Cloud can
 // resolve this native plugin immediately after cloning the repository.
 let package = Package(
     name: "CapacitorStatusBar",
