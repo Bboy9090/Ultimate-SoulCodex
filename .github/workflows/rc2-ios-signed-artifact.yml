@@ -1,4 +1,4 @@
-# rerun-after-ios-certificate-refresh: 2026-08-15
+# rerun-after-ios-certificate-refresh: 2026-08-15T17:38-04:00
 name: RC2 Signed iOS Artifact
 
 on:
