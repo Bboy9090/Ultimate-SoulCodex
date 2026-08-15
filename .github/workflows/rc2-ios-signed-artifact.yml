@@ -38,6 +38,7 @@ jobs:
           for c in "$RUNNER_TEMP"/candidate-*.pem; do openssl x509 -in "$c" -pubkey -noout | openssl pkey -pubin -outform DER > "$CP"; if cmp -s "$CP" "$KP"; then cp "$c" "$LEAF"; MATCHED=1; break; fi; done
           test -n "$MATCHED" || { echo IOS_CERTIFICATE_PRIVATE_KEY_MISMATCH; exit 1; }
           openssl x509 -in "$LEAF" -noout -checkend 0 || { echo IOS_CERTIFICATE_EXPIRED; exit 1; }
+          openssl x509 -in "$LEAF" -outform DER -out "$RUNNER_TEMP/leaf.der"
           openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout "pass:$IOS_CERTIFICATE_PASSWORD"
           test -s "$MODERN_P12"
           echo IOS_P12_IDENTITY_VERIFIED
@@ -54,7 +55,7 @@ jobs:
           security find-identity -v -p codesigning "$KC" > "$RUNNER_TEMP/ids.txt"
           grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/ids.txt" || { echo IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY; exit 1; }
           echo IOS_CODESIGNING_IDENTITY_IMPORTED
-      - name: Install and verify provisioning profile for Xcode 26
+      - name: Qualify and install App Store provisioning profile
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
@@ -72,9 +73,46 @@ jobs:
 
           echo "Provisioning profile name: $PROFILE_NAME"
           echo "Provisioning profile UUID: $PROFILE_UUID"
-          test "$PROFILE_NAME" = "SoulCodex App Store" || { echo "IOS_PROFILE_NAME_MISMATCH: expected SoulCodex App Store"; exit 1; }
           test "$PROFILE_TEAM" = "86NUJ8M3B8" || { echo IOS_PROFILE_TEAM_MISMATCH; exit 1; }
           test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios" || { echo IOS_PROFILE_APP_ID_MISMATCH; exit 1; }
+
+          python3 - "$PROFILE_PLIST" "$RUNNER_TEMP/leaf.der" <<'PY'
+          import datetime
+          import plistlib
+          import sys
+
+          plist_path, leaf_path = sys.argv[1], sys.argv[2]
+          with open(plist_path, "rb") as f:
+              profile = plistlib.load(f)
+          with open(leaf_path, "rb") as f:
+              leaf = f.read()
+
+          entitlements = profile.get("Entitlements", {})
+          if entitlements.get("get-task-allow") is not False:
+              print("IOS_PROFILE_NOT_APP_STORE: get-task-allow is not false")
+              raise SystemExit(1)
+          if profile.get("ProvisionedDevices"):
+              print("IOS_PROFILE_NOT_APP_STORE: profile contains ProvisionedDevices")
+              raise SystemExit(1)
+          if profile.get("ProvisionsAllDevices"):
+              print("IOS_PROFILE_NOT_APP_STORE: enterprise profile detected")
+              raise SystemExit(1)
+          expiration = profile.get("ExpirationDate")
+          now = datetime.datetime.now(datetime.timezone.utc)
+          if expiration is None:
+              print("IOS_PROFILE_EXPIRATION_MISSING")
+              raise SystemExit(1)
+          if expiration.tzinfo is None:
+              expiration = expiration.replace(tzinfo=datetime.timezone.utc)
+          if expiration <= now:
+              print("IOS_PROVISIONING_PROFILE_EXPIRED")
+              raise SystemExit(1)
+          developer_certs = profile.get("DeveloperCertificates", [])
+          if leaf not in developer_certs:
+              print("IOS_PROFILE_DOES_NOT_INCLUDE_CURRENT_DISTRIBUTION_CERTIFICATE")
+              raise SystemExit(1)
+          print("IOS_APP_STORE_PROFILE_AND_CERTIFICATE_VERIFIED")
+          PY
 
           XCODE_PROFILE_DIR="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
           LEGACY_PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
@@ -82,7 +120,8 @@ jobs:
           cp "$RAW_PROFILE" "$XCODE_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
           cp "$RAW_PROFILE" "$LEGACY_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
           test -s "$XCODE_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
-          test -s "$LEGACY_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+          printf 'IOS_PROFILE_NAME=%s\n' "$PROFILE_NAME" >> "$GITHUB_ENV"
+          printf 'IOS_PROFILE_UUID=%s\n' "$PROFILE_UUID" >> "$GITHUB_ENV"
           echo IOS_PROVISIONING_PROFILE_INSTALLED_AND_VERIFIED
       - uses: actions/setup-node@v4
         with:
@@ -95,14 +134,38 @@ jobs:
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
         run: |
+          set -euo pipefail
           sh ios/App/ci_scripts/ci_post_clone.sh
           npm run mobile:validate:ios
           cd ios/App
           xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -resolvePackageDependencies
           mkdir -p build build/export
-          xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -configuration Release -archivePath build/SoulCodex.xcarchive archive
-          xcodebuild -exportArchive -archivePath build/SoulCodex.xcarchive -exportPath build/export -exportOptionsPlist ExportOptions.plist
-          IPA=$(find build/export -maxdepth 1 -name '*.ipa' -type f -print -quit); test -s "$IPA"; shasum -a 256 "$IPA" > build/export/IPA-SHA256.txt; printf '%s\n' "$RC_SHA" > build/export/RELEASE-CANDIDATE-SHA.txt
+          cat > build/ExportOptions.ci.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>destination</key><string>export</string>
+            <key>method</key><string>app-store</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>teamID</key><string>86NUJ8M3B8</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>app.soulcodex.ios</key><string>$IOS_PROFILE_NAME</string>
+            </dict>
+            <key>stripSwiftSymbols</key><true/>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -workspace App.xcodeproj/project.xcworkspace -scheme "Soul Codex" -configuration Release -archivePath build/SoulCodex.xcarchive archive DEVELOPMENT_TEAM=86NUJ8M3B8 CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME"
+          test -d build/SoulCodex.xcarchive
+          xcodebuild -exportArchive -archivePath build/SoulCodex.xcarchive -exportPath build/export -exportOptionsPlist build/ExportOptions.ci.plist
+          IPA=$(find build/export -maxdepth 1 -name '*.ipa' -type f -print -quit)
+          test -s "$IPA"
+          shasum -a 256 "$IPA" > build/export/IPA-SHA256.txt
+          printf '%s\n' "$RC_SHA" > build/export/RELEASE-CANDIDATE-SHA.txt
       - uses: actions/upload-artifact@v4
         with:
           name: soul-codex-v4-rc2-ios-ipa
