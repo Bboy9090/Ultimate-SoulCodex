@@ -2,12 +2,15 @@
 
 ## Proposed release
 
-**Version:** `4.0.0-rc.1`  
+**Version identity under qualification:** `4.0.0-rc.2`  
 **Release line:** `v4-clarity-first`  
-**Target:** Foundation Web Release Candidate  
-**Native stores:** owner-deferred and not a Foundation Web RC blocker
+**Current earned scope:** Foundation Web Release Candidate  
+**Native scope:** explicitly reopened by the owner on 2026-08-15 and now qualifying for native distribution  
+**Previous milestone:** `v4.0.0-rc.1` remains pinned to the earlier Foundation Web RC and is not moved.
 
 This declaration branch may merge only after every workflow named in `V4_RELEASE_MANIFEST.requiredWorkflows` passes on the same exact head SHA. Older green runs remain historical evidence only.
+
+Merging this branch does **not** by itself declare native-distributable status. The native-distributable classification remains fail-closed until signed artifact receipts exist.
 
 ## Product journey gates
 
@@ -54,26 +57,19 @@ This declaration branch may merge only after every workflow named in `V4_RELEASE
 
 ## Accessibility, responsive, and browser evidence
 
-Exact-head PWA evidence from candidate `3a4cfd5db2a41650240b7d0a1767bb544d432cdf` captured 40 screens across:
+Existing exact-head PWA evidence captured 40 screens across Chromium phone, tablet, desktop, and WebKit iPhone. The rc.2 declaration reruns the browser/offline workflow so version qualification does not borrow a stale green check.
 
-- Chromium phone `390x844`
-- Chromium tablet `834x1194`
-- Chromium desktop `1440x900`
-- WebKit iPhone `390x844`
+Evidence requirements:
 
-The captured routes include Identity, Home, Timeline, Compatibility, specific-person comparison, Pricing, Privacy, Terms, Support, and Settings.
-
-Evidence summary:
-
-- [x] No page errors were reported.
-- [x] No critical console errors were reported.
-- [x] Primary layouts are readable at phone, tablet, and desktop widths.
-- [x] The repaired Compatibility layout does not horizontally overflow at the tablet breakpoint.
+- [x] No page errors in the locked visual receipt.
+- [x] No critical console errors in the locked visual receipt.
+- [x] Primary layouts readable at phone, tablet, and desktop widths.
+- [x] Compatibility does not horizontally overflow at the tablet breakpoint.
 - [x] Main navigation and consumer hierarchy remain coherent across the captured viewport matrix.
 
-## Engineering and release gates
+## Engineering and web release gates
 
-The formal `4.0.0-rc.1` declaration requires all of these workflows to pass on one exact release-declaration SHA:
+The `4.0.0-rc.2` identity may merge only after all of these workflows pass on one exact release-declaration SHA:
 
 - [ ] Ultimate SoulCodex CI
 - [ ] CI Tests
@@ -85,11 +81,29 @@ The formal `4.0.0-rc.1` declaration requires all of these workflows to pass on o
 - [ ] Railway Container Smoke
 - [ ] Live Ephemeris Evidence
 
-The three legacy V4 gates are now wired into pull-request and main-branch exact-head validation so they can no longer rely on evidence from an older commit.
+These gates preserve the already-earned Foundation Web RC and prove that advancing release identity did not regress it.
+
+## Native distribution qualification
+
+Owner authorization to resume native release work is recorded in `governance/FOUNDATION-WEB-RELEASE-v1.md`.
+
+Native-distributable status requires all of the following in addition to the web RC evidence:
+
+- [ ] Xcode Cloud archive succeeds for the distributable SHA.
+- [ ] A signed or Apple-managed-signed iOS artifact exists for that SHA.
+- [ ] A signed Android AAB exists for that SHA.
+
+Current known external credential state before rc.2 qualification completes:
+
+- Android engineering/debug build passes, but the repository signing probe found `ANDROID_KEYSTORE` absent.
+- iOS simulator/build integration passes and Apple-managed Xcode Cloud archive is the preferred signing path.
+- GitHub-hosted iOS P12 material exists and contains a private key, but the macOS keychain import path has not produced a usable codesigning identity receipt.
+
+Therefore simulator/debug success alone must never upgrade this release to native-distributable status.
+
+TestFlight, Play internal testing, real-device validation, and store acceptance remain later distribution/publication receipts and must be named separately when earned.
 
 ## Rollback contract
-
-A release candidate is not publishable without a rollback path.
 
 1. Keep the last known-good main SHA and release tag recorded before deployment.
 2. If production smoke fails, redeploy the last known-good Railway deployment or deploy that exact prior SHA.
@@ -99,13 +113,14 @@ A release candidate is not publishable without a rollback path.
 
 ## Declaration rule
 
-`4.0.0-rc.1` may be called **Foundation Web Release Candidate** only when:
+`4.0.0-rc.2` may be merged as the **next V4 release identity under native qualification** when the same-SHA web/Foundation matrix is green.
 
-- every required workflow above is green on the same exact declaration SHA;
-- the responsive/offline visual evidence remains valid;
-- the release receipt records that exact SHA and workflow run IDs;
-- the declaration branch merges without changing runtime behavior after validation.
+It may be called **native-distributable Release Candidate** only when `canDeclareV4NativeDistributableCandidate(...)` also passes with:
 
-Publication is a separate state. **Published** requires a production deployment receipt and post-deploy smoke evidence against the deployed commit.
+- Xcode Cloud archive receipt;
+- signed iOS artifact receipt;
+- signed Android AAB receipt.
+
+Publication is a separate state. **Published** requires a production deployment receipt and post-deploy smoke evidence against the deployed commit. Store distribution requires tester/store receipts.
 
 A release candidate is a tested thing, not a mood.
