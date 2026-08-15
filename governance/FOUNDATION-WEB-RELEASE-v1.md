@@ -55,14 +55,22 @@ The following outputs must not be promoted merely because an old or approximate 
 
 These may return only an explicit unresolved or calculated-unverified state until their own independent evidence contract passes.
 
-## Owner-deferred platform scope
+## Native platform scope
 
-The owner has paused these lanes until explicit approval to resume:
+Native store work was originally owner-deferred so it could not block the Foundation Web release.
 
-- iOS App Store packaging, submission, and validation
-- Google Play packaging, submission, and validation
+**Owner authorization recorded 2026-08-15:** native distribution work is explicitly reopened for iOS and Android packaging, signing, archive, tester, and store-validation preparation.
 
-A pending or failed native-store check does not block this web release. Native source work must not be restarted merely because an automated platform integration makes noise in the distance, as automated platform integrations are known to do.
+Reopening the native lane does not weaken or retroactively redefine the Foundation Web RC. Native distribution remains a separate evidence ladder:
+
+- simulator/debug builds prove integration only;
+- Xcode Cloud archive proves Apple archive compatibility;
+- signed IPA / managed-signed Apple artifact proves iOS distributability;
+- signed AAB proves Android distributability;
+- TestFlight / Play internal-test receipts prove tester delivery;
+- store acceptance remains a later publication state.
+
+A pending or failed native-store credential or signing check does not invalidate the already-earned Foundation Web RC. It does block any claim that the same candidate is native-distributable.
 
 ## Release gates
 
@@ -144,12 +152,16 @@ Foundation Web v1 is release-candidate complete when all automated gates pass an
 
 Passing this contract means **Foundation Web Release Candidate**.
 
-It does not mean:
+It does not, by itself, mean:
 
 - the native stores are complete;
+- signed native artifacts exist;
+- TestFlight or Google Play internal testing has occurred;
 - every mystical system is verified;
 - every planned premium feature exists;
 - unresolved houses or Human Design may be quietly reintroduced;
 - enterprise layers are production-ready.
+
+Native-distributable status requires its own signed-artifact receipts after the owner-authorized reopening above.
 
 A narrower release that tells the truth is stronger than a larger release assembled from confident placeholders.

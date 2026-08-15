@@ -3,6 +3,14 @@ export const V4_RELEASE_MANIFEST = {
   releaseLine: "v4-clarity-first",
   releaseVersion: "4.0.0-rc.2",
   classification: "release-candidate",
+  releaseScope: "foundation-web",
+  nativeDistribution: {
+    scopeReopenedByOwner: true,
+    scopeReopenedOn: "2026-08-15",
+    requiresXcodeCloudArchive: true,
+    requiresSignedIosArtifact: true,
+    requiresSignedAndroidAab: true,
+  },
   requiredWorkflows: [
     "Ultimate SoulCodex CI",
     "CI Tests",
@@ -53,13 +61,15 @@ export const V4_RELEASE_MANIFEST = {
 
 export type V4ReleaseManifest = typeof V4_RELEASE_MANIFEST;
 
-export function canDeclareV4ReleaseCandidate(evidence: {
+export type V4ReleaseEvidence = {
   successfulWorkflows: readonly string[];
   mobileVisualReceipt: boolean;
   offlineVisualReceipt: boolean;
   deploymentReceipt: boolean;
   rollbackProcedure: boolean;
-}): boolean {
+};
+
+export function canDeclareV4ReleaseCandidate(evidence: V4ReleaseEvidence): boolean {
   const workflowsPass = V4_RELEASE_MANIFEST.requiredWorkflows.every((workflow) =>
     evidence.successfulWorkflows.includes(workflow),
   );
@@ -70,5 +80,21 @@ export function canDeclareV4ReleaseCandidate(evidence: {
     evidence.offlineVisualReceipt &&
     evidence.deploymentReceipt &&
     evidence.rollbackProcedure
+  );
+}
+
+export function canDeclareV4NativeDistributableCandidate(
+  evidence: V4ReleaseEvidence & {
+    xcodeCloudArchive: boolean;
+    signedIosArtifact: boolean;
+    signedAndroidAab: boolean;
+  },
+): boolean {
+  return (
+    V4_RELEASE_MANIFEST.nativeDistribution.scopeReopenedByOwner &&
+    canDeclareV4ReleaseCandidate(evidence) &&
+    evidence.xcodeCloudArchive &&
+    evidence.signedIosArtifact &&
+    evidence.signedAndroidAab
   );
 }
