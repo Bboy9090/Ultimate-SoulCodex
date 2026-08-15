@@ -54,12 +54,36 @@ jobs:
           security find-identity -v -p codesigning "$KC" > "$RUNNER_TEMP/ids.txt"
           grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/ids.txt" || { echo IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY; exit 1; }
           echo IOS_CODESIGNING_IDENTITY_IMPORTED
-      - name: Verify provisioning profile
+      - name: Install and verify provisioning profile for Xcode 26
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
-          PROFILE="$HOME/Library/MobileDevice/Provisioning Profiles/SoulCodex.mobileprovision"; mkdir -p "$(dirname "$PROFILE")"; printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE"; security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"; test "$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8"; test "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")" = "86NUJ8M3B8.app.soulcodex.ios"
-          echo IOS_PROVISIONING_PROFILE_VERIFIED
+          set -euo pipefail
+          RAW_PROFILE="$RUNNER_TEMP/SoulCodex.mobileprovision"
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$RAW_PROFILE"
+          test -s "$RAW_PROFILE" || { echo IOS_PROVISIONING_PROFILE_EMPTY; exit 1; }
+          security cms -D -i "$RAW_PROFILE" > "$PROFILE_PLIST"
+
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$PROFILE_PLIST")
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PROFILE_PLIST")
+          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$PROFILE_PLIST")
+          APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$PROFILE_PLIST")
+
+          echo "Provisioning profile name: $PROFILE_NAME"
+          echo "Provisioning profile UUID: $PROFILE_UUID"
+          test "$PROFILE_NAME" = "SoulCodex App Store" || { echo "IOS_PROFILE_NAME_MISMATCH: expected SoulCodex App Store"; exit 1; }
+          test "$PROFILE_TEAM" = "86NUJ8M3B8" || { echo IOS_PROFILE_TEAM_MISMATCH; exit 1; }
+          test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios" || { echo IOS_PROFILE_APP_ID_MISMATCH; exit 1; }
+
+          XCODE_PROFILE_DIR="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          LEGACY_PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$XCODE_PROFILE_DIR" "$LEGACY_PROFILE_DIR"
+          cp "$RAW_PROFILE" "$XCODE_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+          cp "$RAW_PROFILE" "$LEGACY_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+          test -s "$XCODE_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+          test -s "$LEGACY_PROFILE_DIR/$PROFILE_UUID.mobileprovision"
+          echo IOS_PROVISIONING_PROFILE_INSTALLED_AND_VERIFIED
       - uses: actions/setup-node@v4
         with:
           node-version: 22
