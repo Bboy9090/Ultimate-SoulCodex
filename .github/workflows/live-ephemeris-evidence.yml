@@ -2,6 +2,26 @@ name: Live Ephemeris Evidence
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/live-ephemeris-evidence.yml"
+      - "scripts/run-live-ephemeris-evidence.ts"
+      - "server/services/jpl-horizons-reference.ts"
+      - "server/services/astrology-evidence-matrix.ts"
+      - "server/services/astrology.ts"
+      - "server/services/astrology-verification.ts"
+      - "server/services/astrology-engine-compat.ts"
+      - "server/services/ascendant-verification.ts"
+      - "tests/jpl-horizons-reference.test.ts"
+      - "tests/astrology-evidence-matrix.test.ts"
+      - "packages/astrology/**"
+      - "packages/core/placement/**"
+      - "package.json"
+      - "package-lock.json"
+      - "client/src/lib/v4ReleaseManifest.ts"
+      - "governance/**"
+      - "docs/SOUL_CODEX_V4_RELEASE_READINESS.md"
   schedule:
     - cron: "17 6 * * *"
   push:
@@ -22,9 +42,16 @@ on:
       - "packages/core/placement/**"
       - "package.json"
       - "package-lock.json"
+      - "client/src/lib/v4ReleaseManifest.ts"
+      - "governance/**"
+      - "docs/SOUL_CODEX_V4_RELEASE_READINESS.md"
 
 permissions:
   contents: read
+
+concurrency:
+  group: live-ephemeris-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   generate-live-receipt:
@@ -34,7 +61,16 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact candidate SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          echo "expected_sha=$EXPECTED_SHA"
+          echo "actual_sha=$ACTUAL_SHA"
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -64,7 +100,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ephemeris-live-evidence-receipt
+          name: ephemeris-live-evidence-receipt-${{ github.run_id }}
           path: evidence/ephemeris-live-receipt.json
           if-no-files-found: error
           retention-days: 90
