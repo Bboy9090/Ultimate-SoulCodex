@@ -1,9 +1,11 @@
 export const V4_RELEASE_MANIFEST = {
   product: "Ultimate Soul Codex",
   releaseLine: "v4-clarity-first",
-  releaseVersion: "4.0.0-rc.2",
+  releaseVersion: "4.0.0-rc.3",
   classification: "release-candidate",
   releaseScope: "foundation-web",
+  apiContract: "foundation-v4",
+  compatibilityFormulaVersion: "foundation-compatibility-v2",
   nativeDistribution: {
     scopeReopenedByOwner: true,
     scopeReopenedOn: "2026-08-15",
@@ -28,17 +30,23 @@ export const V4_RELEASE_MANIFEST = {
     "/profile/:id",
     "/reading/:id",
     "/compatibility",
+    "/compatibility/explorer",
     "/compatibility/compare",
     "/timeline",
+    "/settings",
+    "/diagnostics",
   ],
   requiredTrustRules: [
     "verified-over-symbolic",
     "unknown-time-remains-uncertain",
     "deterministic-numerology-labelled",
+    "master-life-paths-preserved",
     "missing-profile-refuses-fabrication",
     "lived-experience-is-correction-layer",
     "local-profile-verification-is-explicit-opt-in",
     "compatibility-minimizes-uploaded-profile-data",
+    "compatibility-has-no-universal-overall-score",
+    "backend-release-identity-is-inspectable",
     "no-simulated-premium-analysis-routes",
   ],
   requiredJourney: [
@@ -47,6 +55,8 @@ export const V4_RELEASE_MANIFEST = {
     "inspect-evidence-and-limitations",
     "open-timeline-without-recreating-profile",
     "open-compatibility-without-recreating-profile",
+    "compare-a-person-with-bounded-inputs",
+    "inspect-release-diagnostics",
     "return-to-full-profile",
     "reload-and-reopen-offline",
   ],
@@ -55,6 +65,7 @@ export const V4_RELEASE_MANIFEST = {
     mobileVisualReceipt: true,
     offlineVisualReceipt: true,
     deploymentReceipt: true,
+    backendContractReceipt: true,
     rollbackProcedure: true,
   },
 } as const;
@@ -66,6 +77,7 @@ export type V4ReleaseEvidence = {
   mobileVisualReceipt: boolean;
   offlineVisualReceipt: boolean;
   deploymentReceipt: boolean;
+  backendContractReceipt: boolean;
   rollbackProcedure: boolean;
 };
 
@@ -79,6 +91,7 @@ export function canDeclareV4ReleaseCandidate(evidence: V4ReleaseEvidence): boole
     evidence.mobileVisualReceipt &&
     evidence.offlineVisualReceipt &&
     evidence.deploymentReceipt &&
+    evidence.backendContractReceipt &&
     evidence.rollbackProcedure
   );
 }
