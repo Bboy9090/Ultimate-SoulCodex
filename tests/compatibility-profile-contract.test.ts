@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  COMPATIBILITY_FORMULA_VERSION,
   buildCompatibilityProfileInput,
   buildMatchResponse,
   buildPersonComparisonResponse,
+  deterministicLifePath,
   symbolicSunSign,
 } from "../routes/compatibility";
 
@@ -56,6 +58,37 @@ describe("compatibility saved-profile contract", () => {
     assert.equal(input.sunSign, "Virgo");
     assert.equal(input.lifePathNumber, 9);
     assert.equal(input.unresolved.astrology.includes("Sun"), false);
+  });
+
+  it("preserves deterministic master Life Paths through the Compatibility route contract", () => {
+    for (const master of [11, 22, 33]) {
+      assert.equal(deterministicLifePath({ numerologyData: { lifePath: master } }), master);
+
+      const explorer = buildMatchResponse({
+        astrologyData: { sunSign: "Virgo" },
+        numerologyData: { lifePath: master },
+      });
+      assert.equal(explorer.available, true);
+      assert.equal(explorer.formula.inputs.lifePathNumber, master);
+      assert.equal(explorer.formula.version, COMPATIBILITY_FORMULA_VERSION);
+
+      const person = buildPersonComparisonResponse(
+        {
+          astrologyData: { sunSign: "Virgo" },
+          numerologyData: { lifePath: master },
+        },
+        { name: "Alex", sunSign: "Pisces" },
+      );
+      assert.equal(person.available, true);
+      assert.equal(person.formula.inputs.lifePathNumber, master);
+      assert.equal(person.formula.version, COMPATIBILITY_FORMULA_VERSION);
+    }
+  });
+
+  it("rejects unsupported Life Path values instead of smuggling malformed numerology into scoring", () => {
+    for (const invalid of [0, 10, 12, 44, -1, 4.5, "not-a-number"]) {
+      assert.equal(deterministicLifePath({ lifePathNumber: invalid }), undefined);
+    }
   });
 
   it("excludes a naked Human Design type from Foundation compatibility", () => {
