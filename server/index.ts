@@ -10,29 +10,13 @@ import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
 import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
 import compatibilityRouter from "./routes/compatibility.js";
+import { resolveReleaseIdentity } from "./lib/release-identity.js";
 import {
   registerBillingRawRoutes,
   registerBillingRoutes,
 } from "./billing.js";
 
 const app: Express = express();
-
-export const FOUNDATION_API_CONTRACT = "foundation-v4";
-export const FOUNDATION_RELEASE_VERSION = process.env.SOUL_CODEX_RELEASE_VERSION || "4.0.0-rc.3";
-
-export function releaseIdentity() {
-  return {
-    status: "ok" as const,
-    appVersion: FOUNDATION_RELEASE_VERSION,
-    releaseSha:
-      process.env.SOUL_CODEX_RELEASE_SHA ||
-      process.env.RAILWAY_GIT_COMMIT_SHA ||
-      process.env.GIT_COMMIT_SHA ||
-      process.env.SOURCE_COMMIT ||
-      "unknown",
-    apiContract: FOUNDATION_API_CONTRACT,
-  };
-}
 
 // Railway terminates TLS before forwarding traffic to the container.
 app.set("trust proxy", 1);
@@ -119,11 +103,10 @@ registerBillingRoutes(app);
 app.use("/api", compatibilityRouter);
 
 // Railway and release smoke use this endpoint for both liveness and immutable
-// client↔backend contract identity. RAILWAY_GIT_COMMIT_SHA is injected by
-// Railway for GitHub-triggered deployments; unknown is intentionally visible
-// rather than being promoted into a false exact-SHA receipt.
+// client↔backend contract identity. An unknown SHA stays visible as unknown so
+// a deployment can never be promoted from liveness alone.
 app.get("/health", (_req, res) => {
-  res.status(200).json(releaseIdentity());
+  res.status(200).json(resolveReleaseIdentity());
 });
 
 (async () => {
@@ -199,7 +182,7 @@ app.get("/health", (_req, res) => {
 
     const port = Number.parseInt(process.env.PORT || "3000", 10);
     server.listen(port, "0.0.0.0", () => {
-      const identity = releaseIdentity();
+      const identity = resolveReleaseIdentity();
       console.log(`Soul Codex server running on port ${port}`);
       console.log(`Health check: http://localhost:${port}/health`);
       console.log(`Release: ${identity.appVersion} ${identity.releaseSha} ${identity.apiContract}`);
