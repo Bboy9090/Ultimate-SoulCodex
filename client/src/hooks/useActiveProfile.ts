@@ -8,13 +8,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  ACTIVE_PROFILE_UPDATED_EVENT,
   loadActiveProfile,
   type ProfileLoadResult,
   type ProfileLoadStatus,
   type StoredProfile,
 } from "../lib/ActiveProfileRepository";
-
-export const ACTIVE_PROFILE_UPDATED_EVENT = "soulcodex:profile-updated";
 
 export interface UseActiveProfileReturn {
   profile: StoredProfile | null;
