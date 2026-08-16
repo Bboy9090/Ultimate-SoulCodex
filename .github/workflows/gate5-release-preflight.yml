@@ -8,6 +8,8 @@ on:
       - ".github/workflows/build-android.yml"
       - ".github/workflows/gate5-release-preflight.yml"
       - "capacitor.config.ts"
+      - "client/src/lib/releaseIdentity.ts"
+      - "client/src/lib/v4ReleaseManifest.ts"
       - "scripts/validate-mobile-release.mjs"
       - "ios/**"
       - "android/**"
@@ -30,6 +32,9 @@ jobs:
     timeout-minutes: 20
     env:
       VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_API_CONTRACT: foundation-v4
 
     steps:
       - name: Checkout exact candidate head
@@ -49,7 +54,7 @@ jobs:
       - name: Record exact candidate SHA
         run: |
           echo "candidate_sha=$(git rev-parse HEAD)"
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$VITE_RELEASE_SHA"
 
       - name: Build canonical workspaces
         run: npm run build:workspaces
@@ -63,7 +68,7 @@ jobs:
       - name: Validate iOS release configuration
         run: npm run mobile:validate:ios
 
-      - name: Build production application
+      - name: Build production application with release identity
         run: npm run build
 
       - name: Production dependency security audit
