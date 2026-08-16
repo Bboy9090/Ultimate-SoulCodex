@@ -9,13 +9,30 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
 import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
-import compatibilityRouter from "../routes/compatibility.js";
+import compatibilityRouter from "./routes/compatibility.js";
 import {
   registerBillingRawRoutes,
   registerBillingRoutes,
 } from "./billing.js";
 
 const app: Express = express();
+
+export const FOUNDATION_API_CONTRACT = "foundation-v4";
+export const FOUNDATION_RELEASE_VERSION = process.env.SOUL_CODEX_RELEASE_VERSION || "4.0.0-rc.3";
+
+export function releaseIdentity() {
+  return {
+    status: "ok" as const,
+    appVersion: FOUNDATION_RELEASE_VERSION,
+    releaseSha:
+      process.env.SOUL_CODEX_RELEASE_SHA ||
+      process.env.RAILWAY_GIT_COMMIT_SHA ||
+      process.env.GIT_COMMIT_SHA ||
+      process.env.SOURCE_COMMIT ||
+      "unknown",
+    apiContract: FOUNDATION_API_CONTRACT,
+  };
+}
 
 // Railway terminates TLS before forwarding traffic to the container.
 app.set("trust proxy", 1);
@@ -96,14 +113,17 @@ registerProfileVerificationRoutes(app);
 // while Stripe's hosted page collects payment information.
 registerBillingRoutes(app);
 
-// Mount the evidence-aware compatibility contract before the canonical route
-// registry. Consumer compatibility sends only the minimum supported Sun
+// Mount the evidence-aware Compatibility contract before the canonical route
+// registry. Consumer Compatibility sends only the minimum supported Sun
 // evidence and Life Path needed for the selected symbolic model.
 app.use("/api", compatibilityRouter);
 
-// Health check endpoint used by Railway.
+// Railway and release smoke use this endpoint for both liveness and immutable
+// client↔backend contract identity. RAILWAY_GIT_COMMIT_SHA is injected by
+// Railway for GitHub-triggered deployments; unknown is intentionally visible
+// rather than being promoted into a false exact-SHA receipt.
 app.get("/health", (_req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json(releaseIdentity());
 });
 
 (async () => {
@@ -179,8 +199,10 @@ app.get("/health", (_req, res) => {
 
     const port = Number.parseInt(process.env.PORT || "3000", 10);
     server.listen(port, "0.0.0.0", () => {
+      const identity = releaseIdentity();
       console.log(`Soul Codex server running on port ${port}`);
       console.log(`Health check: http://localhost:${port}/health`);
+      console.log(`Release: ${identity.appVersion} ${identity.releaseSha} ${identity.apiContract}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
   } catch (error) {
