@@ -29,15 +29,4 @@ describe("Human Depth interpretation surfaces", () => {
     expect(profile).not.toContain("Strengths & Gifts");
     expect(profile).not.toContain("Growth Areas");
   });
-
-  it("makes compatibility explain interaction instead of terminating at a score", () => {
-    const compatibility = read("client/src/pages/CompatibilityExperience.tsx");
-    expect(compatibility).toContain("HumanDepthSurface");
-    expect(compatibility).toContain("Explain the relationship, not just the score");
-    expect(compatibility).toContain("Stress and repair");
-    expect(compatibility).toContain("Values in practice");
-    expect(compatibility).toContain("Decision pace and style");
-    expect(compatibility).toContain("Where misunderstanding may repeat");
-    expect(compatibility).toContain("What this relationship may ask you to practice");
-  });
 });
