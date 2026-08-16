@@ -13,7 +13,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VITE_API_URL: ${{ vars.VITE_API_URL }}
+  VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+  VITE_RELEASE_VERSION: 4.0.0-rc.3
+  VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  VITE_API_CONTRACT: foundation-v4
 
 jobs:
   android-debug:
@@ -27,7 +30,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      # Native Capacitor 8.4.2 requires Node >=22. The legacy server lane remains pinned separately.
       - name: Setup Node.js for Capacitor 8
         uses: actions/setup-node@v4
         with:
@@ -52,7 +54,7 @@ jobs:
       - name: Record exact candidate SHA
         run: |
           echo "candidate_sha=$(git rev-parse HEAD)"
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$VITE_RELEASE_SHA"
 
       - name: Build canonical workspaces
         run: |
@@ -93,7 +95,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      # Native Capacitor 8.4.2 requires Node >=22. The legacy server lane remains pinned separately.
       - name: Setup Node.js for Capacitor 8
         uses: actions/setup-node@v4
         with:
@@ -119,7 +120,7 @@ jobs:
       - name: Record exact candidate SHA
         run: |
           echo "candidate_sha=$(git rev-parse HEAD)"
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$VITE_RELEASE_SHA"
 
       - name: Bootstrap JavaScript and local Swift packages
         env:
