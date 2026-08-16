@@ -14,19 +14,38 @@ jobs:
     timeout-minutes: 10
     env:
       API_BASE: https://soulcodex.up.railway.app
+      EXPECTED_RELEASE_SHA: 2e02d1023ddeb4e453236c34f2d4d2b7f6948957
+      EXPECTED_API_CONTRACT: foundation-v4
     steps:
-      - name: Record frozen application candidate
+      - name: Record audit target
         run: |
-          echo "frozen_rc2_sha=2e02d1023ddeb4e453236c34f2d4d2b7f6948957"
+          echo "expected_release_sha=$EXPECTED_RELEASE_SHA"
+          echo "expected_api_contract=$EXPECTED_API_CONTRACT"
           echo "probe_target=$API_BASE"
 
-      - name: Health probe
+      - name: Health and deployment identity probe
         run: |
           set -euo pipefail
           curl --fail-with-body --silent --show-error --location \
             --connect-timeout 15 --max-time 30 \
             "$API_BASE/health" | tee health.json
-          grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' health.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('health.json','utf8'));
+          if (body.status !== 'ok') throw new Error(`health status not ok: ${JSON.stringify(body)}`);
+          const expectedSha = process.env.EXPECTED_RELEASE_SHA;
+          const expectedContract = process.env.EXPECTED_API_CONTRACT;
+          if (!body.releaseSha || !body.apiContract) {
+            throw new Error(`backend health lacks immutable release identity: ${JSON.stringify(body)}`);
+          }
+          if (body.releaseSha !== expectedSha) {
+            throw new Error(`backend SHA mismatch: expected ${expectedSha}, got ${body.releaseSha}`);
+          }
+          if (body.apiContract !== expectedContract) {
+            throw new Error(`API contract mismatch: expected ${expectedContract}, got ${body.apiContract}`);
+          }
+          console.log('BACKEND_IDENTITY_MATCH');
+          NODE
 
       - name: Compatibility route ping
         run: |
