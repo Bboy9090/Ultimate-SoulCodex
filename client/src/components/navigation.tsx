@@ -10,22 +10,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { loadActiveProfile } from "../lib/ActiveProfileRepository";
-
-function profileHref() {
-  const result = loadActiveProfile();
-  const id = result.profile?.id;
-  return id ? `/profile/${id}` : "/create";
-}
+import { useActiveProfile } from "../hooks/useActiveProfile";
 
 function isActive(pathname: string, href: string) {
   if (href.startsWith("/profile/")) return pathname.startsWith("/profile/");
   if (href === "/compatibility") return pathname.startsWith("/compatibility");
+  if (href === "/settings") return pathname.startsWith("/settings") || pathname.startsWith("/diagnostics");
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function Navigation() {
-  const identityHref = profileHref();
+  const { profile } = useActiveProfile();
+  const identityHref = profile?.id ? `/profile/${profile.id}` : "/create";
   const [pathname] = useLocation();
 
   const primaryLinks = [
@@ -39,7 +35,7 @@ export default function Navigation() {
       className="fixed inset-x-0 top-0 z-50 px-3 pt-[max(.65rem,env(safe-area-inset-top))] sm:px-5"
       aria-label="Primary navigation"
     >
-      <div className="mx-auto max-w-7xl rounded-[1.2rem] border border-white/[0.07] bg-[#0d0a13]/80 shadow-[0_18px_70px_rgba(0,0,0,.32)] backdrop-blur-2xl backdrop-saturate-150">
+      <div className="mx-auto max-w-7xl rounded-[1.2rem] border border-white/[0.07] bg-[var(--sc-ink)]/80 shadow-[0_18px_70px_rgba(0,0,0,.32)] backdrop-blur-2xl backdrop-saturate-150">
         <div className="flex h-[62px] items-center justify-between px-3 sm:px-4">
           <Link
             href="/"
@@ -52,12 +48,8 @@ export default function Navigation() {
               <span className="absolute -right-0.5 top-0 h-1.5 w-1.5 rounded-full bg-[var(--sc-teal)] shadow-[0_0_10px_var(--sc-teal)]" />
             </span>
             <span className="leading-none">
-              <span className="block font-serif text-[1.04rem] font-semibold tracking-[-.015em] sm:text-[1.1rem]">
-                Soul Codex
-              </span>
-              <span className="mt-1 hidden text-[9px] font-semibold uppercase tracking-[.19em] text-[var(--sc-stone)] sm:block">
-                Clarity Engine
-              </span>
+              <span className="block font-serif text-[1.04rem] font-semibold tracking-[-.015em] sm:text-[1.1rem]">Soul Codex</span>
+              <span className="mt-1 hidden text-[9px] font-semibold uppercase tracking-[.19em] text-[var(--sc-stone)] sm:block">Clarity Engine</span>
             </span>
           </Link>
 
@@ -87,7 +79,7 @@ export default function Navigation() {
             <Link
               href="/settings"
               className={`grid h-9 w-9 place-items-center rounded-lg border no-underline transition-colors ${
-                pathname.startsWith("/settings")
+                isActive(pathname, "/settings")
                   ? "border-[rgba(217,182,111,.22)] bg-[rgba(217,182,111,.08)] text-[var(--sc-gold)]"
                   : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"
               }`}
@@ -97,29 +89,20 @@ export default function Navigation() {
             </Link>
 
             <Link href="/create" className="ml-1 no-underline">
-              <Button
-                className="h-9 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105"
-                data-testid="button-new-reading"
-              >
+              <Button className="h-9 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105" data-testid="button-create-profile">
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                New Profile
+                Create profile
               </Button>
             </Link>
           </div>
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] md:hidden"
-                data-testid="button-menu"
-                aria-label="Open navigation menu"
-              >
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] md:hidden" data-testid="button-menu" aria-label="Open navigation menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[min(88vw,360px)] border-l border-white/[0.07] bg-[#0d0a13]/[.98] px-5 text-[var(--sc-ivory)] backdrop-blur-2xl">
+            <SheetContent className="w-[min(88vw,360px)] border-l border-white/[0.07] bg-[var(--sc-ink)]/[.98] px-5 text-[var(--sc-ivory)] backdrop-blur-2xl">
               <div className="mt-[max(2rem,env(safe-area-inset-top))]">
                 <div className="mb-7 flex items-center gap-3 border-b border-white/[0.07] pb-5">
                   <span className="grid h-10 w-10 place-items-center rounded-full border border-[rgba(217,182,111,.25)] bg-[rgba(217,182,111,.06)] text-[var(--sc-gold-bright)]">
@@ -127,7 +110,7 @@ export default function Navigation() {
                   </span>
                   <div>
                     <p className="m-0 font-serif text-lg font-semibold">Soul Codex</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-[.18em] text-[var(--sc-stone)]">Your clarity map</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-[.18em] text-[var(--sc-stone)]">Clarity Engine</p>
                   </div>
                 </div>
 
@@ -150,22 +133,16 @@ export default function Navigation() {
                       </Link>
                     );
                   })}
-                  <Link
-                    href="/settings"
-                    className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline"
-                  >
+                  <Link href="/settings" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
                     <Settings className="h-4.5 w-4.5 text-[var(--sc-stone)]" strokeWidth={1.8} />
-                    Settings & Account
+                    Settings
                   </Link>
                 </div>
 
                 <Link href="/create" className="mt-5 block no-underline">
-                  <Button
-                    className="h-12 w-full rounded-xl border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] font-bold text-[#170f07]"
-                    data-testid="button-new-profile-mobile"
-                  >
+                  <Button className="h-12 w-full rounded-xl border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] font-bold text-[#170f07]" data-testid="button-create-profile-mobile">
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Create New Profile
+                    Create profile
                   </Button>
                 </Link>
 
