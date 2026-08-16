@@ -1,131 +1,86 @@
 import { Link } from "wouter";
-import Navigation from "@/components/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Capacitor } from "@capacitor/core";
 import { Check, Crown, ShieldCheck } from "lucide-react";
+import Navigation from "@/components/navigation";
 
-const freeFeatures = [
+const foundationFeatures = [
   "One local-first profile that reopens offline",
-  "Verified tropical Sun, Moon, and Rising when exact required inputs exist",
-  "Numerology and current-cycle context",
-  "Essential, Complete, and Technical reading modes",
-  "Timeline and compatibility journeys that reuse your saved profile",
-  "Inspectable evidence, uncertainty, and limitations",
+  "Verified astronomy only when the required inputs and evidence contract support it",
+  "Deterministic numerology with symbolic interpretation kept distinct",
+  "Reading, Timeline, and Compatibility that reuse the same Identity",
+  "Inspectable evidence, uncertainty, exclusions, and limitations",
 ];
 
-const premiumFeatures = [
-  "Everything in the Foundation reading",
-  "Downloadable personalized Soul Codex PDF report",
-  "Verified Big Three summary with provenance",
-  "Numerology and archetype synthesis in one report",
-  "Lifetime access to the premium report tools included at purchase",
+const plannedPremiumFeatures = [
+  "Everything in the Foundation experience",
+  "Downloadable personalized Soul Codex report tools",
+  "Evidence-aware Big Three and numerology synthesis",
+  "Additional report/export features only after their release gates pass",
 ];
 
 export default function PricingPage() {
+  const isNative = Capacitor.isNativePlatform();
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="sc-app-shell">
       <Navigation />
-      <main className="pb-12 pt-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center sm:mb-16">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-              Foundation Web
-            </p>
-            <h1 className="mb-4 text-4xl font-bold">Soul Codex Access</h1>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Start with the complete web foundation. Premium, when available,
-              adds downloadable report tools without pretending every planned
-              mystical system has already passed verification.
-            </p>
-          </div>
+      <main className="sc-page max-w-6xl">
+        <header className="mx-auto max-w-4xl text-center">
+          <div className="sc-eyebrow">Access</div>
+          <h1 className="mt-4 font-serif text-[clamp(3rem,8vw,5.5rem)] font-medium leading-[.97] tracking-[-.04em] text-[var(--sc-ivory)]">
+            Start with the Foundation.
+          </h1>
+          <p className="sc-lede mx-auto mt-5 max-w-3xl">
+            The current release keeps the core Identity, Reading, Timeline, and Compatibility journey available without pretending planned premium systems are already complete.
+          </p>
+        </header>
 
-          <div className="mb-16 grid gap-8 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">Foundation Reading</CardTitle>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Create one profile and use the core web journey
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="text-3xl font-bold">Free</div>
-                <FeatureList features={freeFeatures} />
-                <Link href="/create">
-                  <Button variant="outline" className="w-full">
-                    Create Your Profile
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+        <section className="mt-8 grid gap-4 md:grid-cols-2">
+          <article className="sc-panel sc-panel-gold flex flex-col p-6 sm:p-8">
+            <div className="sc-eyebrow">Available now</div>
+            <h2 className="mt-3 font-serif text-3xl font-semibold">Foundation</h2>
+            <div className="mt-4 text-3xl font-semibold text-[var(--sc-gold-bright)]">Free</div>
+            <FeatureList features={foundationFeatures} />
+            <Link href="/create" className="sc-button-primary mt-auto w-full">
+              Create profile
+            </Link>
+          </article>
 
-            <div className="cosmic-border mystical-glow">
-              <Card className="cosmic-border-inner border-0 bg-transparent">
-                <CardHeader>
-                  <div className="mb-2 flex items-center space-x-2">
-                    <CardTitle className="text-2xl">Premium Report Tools</CardTitle>
-                    <Crown className="h-6 w-6 text-accent" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Availability and exact price are confirmed before purchase
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <div className="text-2xl font-bold">
-                      Price shown at secure checkout
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      One-time payment when hosted checkout is enabled
-                    </p>
-                  </div>
-                  <FeatureList features={premiumFeatures} />
-                  <Link href="/create">
-                    <Button className="w-full bg-primary text-primary-foreground">
-                      Create a Profile First
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+          <article className="sc-panel flex flex-col p-6 sm:p-8">
+            <div className="flex items-center gap-2">
+              <div className="sc-eyebrow">Planned expansion</div>
+              <Crown className="h-4 w-4 text-[var(--sc-gold)]" aria-hidden="true" />
             </div>
-          </div>
-
-          <section className="mx-auto max-w-3xl">
-            <h2 className="mb-8 text-center text-2xl font-bold">
-              Frequently Asked Questions
-            </h2>
-            <div className="space-y-4">
-              <Faq
-                question="Is premium a subscription?"
-                answer="The current hosted web checkout is designed as a one-time purchase. The exact price and included report tools are shown before payment."
-              />
-              <Faq
-                question="Where do I enter payment details?"
-                answer="On Stripe's hosted checkout page only. Soul Codex does not collect, transmit, log, or store card numbers, security codes, or expiration dates."
-              />
-              <Faq
-                question="Why might checkout be unavailable?"
-                answer="Checkout stays disabled unless Stripe and persistent database storage are both configured. That prevents a paid entitlement from disappearing after a server restart."
-              />
-              <Faq
-                question="Does premium include every planned system?"
-                answer="No. Houses, Midheaven, nodes, Chiron, planetary house placements, and Human Design interpretation remain outside Foundation v1 until their own verification contracts pass."
-              />
-              <Faq
-                question="Do I need to recreate my profile?"
-                answer="No. Identity, Reading, Timeline, Compatibility, and eligible premium report tools reuse the same saved profile."
-              />
-            </div>
-          </section>
-
-          <section className="mx-auto mt-10 flex max-w-3xl gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
-            <p className="m-0 text-sm leading-relaxed text-muted-foreground">
-              Premium access is activated only after a signature-verified paid
-              checkout event. No fake success screen, no card form disguised as
-              a spiritual experience, and no entitlement stored only in memory.
+            <h2 className="mt-3 font-serif text-3xl font-semibold">Premium report tools</h2>
+            <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">
+              {isNative
+                ? "Purchasing is not enabled in this native release candidate. No external checkout link or card-entry flow is exposed here."
+                : "Premium purchasing is not part of this release candidate. Price and included tools will be shown only when the purchase path itself has passed its release and platform gates."}
             </p>
-          </section>
-        </div>
+            <FeatureList features={plannedPremiumFeatures} />
+            <div className="mt-auto rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-stone)]">
+              Not available for purchase in rc.3
+            </div>
+          </article>
+        </section>
+
+        <section className="sc-panel mt-4 p-6 sm:p-8">
+          <div className="sc-eyebrow">Clear answers</div>
+          <h2 className="mt-2 font-serif text-3xl font-semibold">Access FAQ</h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <Faq question="Do I need to recreate my profile?" answer="No. Identity, Reading, Timeline, and Compatibility reuse the same saved profile." />
+            <Faq question="Does premium include every planned system?" answer="No. A system appears only after its calculation, evidence, privacy, and release contracts pass. Planned work is not sold as implemented work." />
+            <Faq question="Where would card details be entered?" answer="Soul Codex does not contain raw card-number, expiration, CVC, or CVV fields. The server also rejects those fields if they are sent to retired or hosted-checkout boundaries." />
+            <Faq question="Why is purchasing unavailable here?" answer={isNative ? "This native release candidate intentionally exposes no purchase action while distribution and platform-specific purchase requirements are still being qualified." : "The Foundation release is being qualified first. Premium purchase activation is a separate release decision and is not implied by this page."} />
+          </div>
+        </section>
+
+        <section className="mt-4 flex gap-3 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.05)] p-4 text-sm text-[var(--sc-stone)]">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" />
+          <p className="m-0 leading-6">
+            <strong className="text-[var(--sc-ivory-soft)]">Billing boundary:</strong> premium entitlement may only follow a verified paid event through an approved purchase path. A client-side success screen never grants premium by itself.
+          </p>
+        </section>
       </main>
     </div>
   );
@@ -133,11 +88,11 @@ export default function PricingPage() {
 
 function FeatureList({ features }: { features: string[] }) {
   return (
-    <ul className="space-y-3">
+    <ul className="my-6 space-y-3 text-sm text-[var(--sc-stone)]">
       {features.map((feature) => (
-        <li key={feature} className="flex items-start space-x-3">
-          <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
-          <span>{feature}</span>
+        <li key={feature} className="flex items-start gap-3">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" />
+          <span className="leading-6">{feature}</span>
         </li>
       ))}
     </ul>
@@ -146,13 +101,9 @@ function FeatureList({ features }: { features: string[] }) {
 
 function Faq({ question, answer }: { question: string; answer: string }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">{question}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground">{answer}</p>
-      </CardContent>
-    </Card>
+    <article className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
+      <h3 className="m-0 font-serif text-lg font-semibold text-[var(--sc-ivory)]">{question}</h3>
+      <p className="mb-0 mt-2 text-sm leading-6 text-[var(--sc-stone)]">{answer}</p>
+    </article>
   );
 }
