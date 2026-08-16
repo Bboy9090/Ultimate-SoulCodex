@@ -80,14 +80,24 @@ test("Android Play workflow requires signing material and a real AAB", async () 
   assert.match(workflow, /test -f app\/build\/outputs\/bundle\/release\/app-release\.aab|if \[ ! -f "app\/build\/outputs\/bundle\/release\/app-release\.aab" \]/);
 });
 
+test("native release validation requires inspectable client release identity", async () => {
+  const validator = await text(validatorPath);
+  for (const key of ["VITE_RELEASE_VERSION", "VITE_RELEASE_SHA", "VITE_API_CONTRACT"]) {
+    assert.match(validator, new RegExp(key));
+  }
+  assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
+  assert.match(validator, /foundation-v4/);
+});
+
 test("native distributable identity matches the canonical V4 release candidate", async () => {
   const manifest = await text(v4ManifestPath);
   const iosInfo = await text(iosInfoPlistPath);
   const androidGradle = await text(androidBuildGradlePath);
 
-  assert.match(manifest, /releaseVersion:\s*"4\.0\.0-rc\.2"/);
+  assert.match(manifest, /releaseVersion:\s*"4\.0\.0-rc\.3"/);
+  assert.match(manifest, /apiContract:\s*"foundation-v4"/);
   assert.match(iosInfo, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.0<\/string>/);
-  assert.match(iosInfo, /<key>CFBundleVersion<\/key>\s*<string>4000002<\/string>/);
-  assert.match(androidGradle, /versionCode\s+4000002/);
-  assert.match(androidGradle, /versionName\s+"4\.0\.0-rc\.2"/);
+  assert.match(iosInfo, /<key>CFBundleVersion<\/key>\s*<string>4000003<\/string>/);
+  assert.match(androidGradle, /versionCode\s+4000003/);
+  assert.match(androidGradle, /versionName\s+"4\.0\.0-rc\.3"/);
 });
