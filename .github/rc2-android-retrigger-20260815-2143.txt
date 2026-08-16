@@ -1,0 +1,2 @@
+Retrigger rc2 signed Android artifact after signing secrets were configured on 2026-08-15T21:43-04:00.
+Pinned release SHA: 2e02d1023ddeb4e453236c34f2d4d2b7f6948957
