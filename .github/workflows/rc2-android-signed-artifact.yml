@@ -1,0 +1,131 @@
+name: RC2 Signed Android AAB
+
+on:
+  push:
+    branches: [ops/rc2-android-signed-artifact]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rc2-signed-android-artifact
+  cancel-in-progress: true
+
+env:
+  RC_SHA: 2e02d1023ddeb4e453236c34f2d4d2b7f6948957
+  VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+
+jobs:
+  signed-android-aab:
+    name: Signed rc2 Play Store AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact rc2 merge
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RC_SHA }}
+
+      - name: Verify exact candidate
+        run: test "$(git rev-parse HEAD)" = "$RC_SHA"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Verify Android signing secrets
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE" || { echo "MISSING: ANDROID_KEYSTORE"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "MISSING: ANDROID_KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "MISSING: ANDROID_KEY_ALIAS"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "MISSING: ANDROID_KEY_PASSWORD"; exit 1; }
+          echo "Android signing secret names are populated."
+
+      - name: Decode and verify upload keystore
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/soul-codex-release.keystore"
+          printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > "$KEYSTORE"
+          test -s "$KEYSTORE" || { echo "ANDROID_KEYSTORE_DECODE_EMPTY"; exit 1; }
+          keytool -list -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null || {
+            echo "ANDROID_KEYSTORE_ALIAS_OR_PASSWORD_INVALID"
+            exit 1
+          }
+          cp "$KEYSTORE" android/app/soul-codex-release.keystore
+          chmod 600 android/app/soul-codex-release.keystore
+          echo "ANDROID_UPLOAD_KEYSTORE_VERIFIED"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build workspace packages
+        run: |
+          npm run build -w @soulcodex/db
+          npm run build -w @soulcodex/core
+
+      - name: Validate Android release configuration
+        run: npm run mobile:validate:android
+
+      - name: Build web app and sync Android
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: Build signed rc2 AAB
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -PRELEASE_STORE_FILE=soul-codex-release.keystore \
+            -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
+            --stacktrace
+
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB" || { echo "ANDROID_SIGNED_AAB_MISSING"; exit 1; }
+          jarsigner -verify -strict "$AAB" >/dev/null || {
+            echo "ANDROID_AAB_SIGNATURE_VERIFICATION_FAILED"
+            exit 1
+          }
+          sha256sum "$AAB" | tee app/build/outputs/bundle/release/AAB-SHA256.txt
+          printf '%s\n' "$RC_SHA" > app/build/outputs/bundle/release/RELEASE-CANDIDATE-SHA.txt
+          echo "ANDROID_SIGNED_AAB_VERIFIED"
+
+      - name: Upload signed rc2 Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: soul-codex-v4-rc2-android-aab
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/bundle/release/AAB-SHA256.txt
+            android/app/build/outputs/bundle/release/RELEASE-CANDIDATE-SHA.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Cleanup signing material
+        if: always()
+        run: |
+          rm -f android/app/soul-codex-release.keystore "$RUNNER_TEMP/soul-codex-release.keystore"
