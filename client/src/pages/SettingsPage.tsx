@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
@@ -157,7 +158,7 @@ export default function SettingsPage() {
   );
 }
 
-function SectionHeading({ icon, eyebrow, title }: { icon: React.ReactNode; eyebrow: string; title: string }) {
+function SectionHeading({ icon, eyebrow, title }: { icon: ReactNode; eyebrow: string; title: string }) {
   return (
     <div className="flex items-center gap-3">
       <span className="sc-icon-well h-10 w-10 shrink-0">{icon}</span>
@@ -178,7 +179,7 @@ function SettingsLink({
 }: {
   label: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   danger?: boolean;
   onClick: () => void;
 }) {
