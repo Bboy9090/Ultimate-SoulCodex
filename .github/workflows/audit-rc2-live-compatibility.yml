@@ -1,0 +1,88 @@
+name: Audit RC2 Live Compatibility
+
+on:
+  push:
+    branches: [audit/rc2-full-system-compatibility]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-live-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      API_BASE: https://soulcodex.up.railway.app
+    steps:
+      - name: Record frozen application candidate
+        run: |
+          echo "frozen_rc2_sha=2e02d1023ddeb4e453236c34f2d4d2b7f6948957"
+          echo "probe_target=$API_BASE"
+
+      - name: Health probe
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            "$API_BASE/health" | tee health.json
+          grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' health.json
+
+      - name: Compatibility route ping
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            "$API_BASE/api/compatibility/ping" | tee compatibility-ping.json
+          grep -q '"ok"[[:space:]]*:[[:space:]]*true' compatibility-ping.json
+
+      - name: Explorer symbolic compatibility POST
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"lifePathNumber":9,"numerologyData":{"lifePath":9}},"mode":"love"}' \
+            "$API_BASE/api/compatibility/archetype-matches" | tee explorer.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('explorer.json','utf8'));
+          if (body.available !== true) throw new Error(`explorer unavailable: ${JSON.stringify(body)}`);
+          if (!Array.isArray(body.all) || body.all.length !== 12) throw new Error('explorer did not return 12 signs');
+          if (body.formula?.inputs?.sunSign !== 'Virgo') throw new Error('explorer Sun input mismatch');
+          if (body.formula?.inputs?.lifePathNumber !== 9) throw new Error('explorer Life Path mismatch');
+          console.log('EXPLORER_COMPATIBILITY_PASS');
+          NODE
+
+      - name: Person comparison POST
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"lifePathNumber":9,"numerologyData":{"lifePath":9}},"otherPerson":{"name":"Audit Partner","sunSign":"Pisces"}}' \
+            "$API_BASE/api/compatibility/person" | tee person.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('person.json','utf8'));
+          if (body.available !== true) throw new Error(`person compare unavailable: ${JSON.stringify(body)}`);
+          const d = body.dimensions || {};
+          for (const key of ['romantic','chemistry','mentalFriendship','growth']) {
+            if (typeof d[key] !== 'number') throw new Error(`missing numeric dimension ${key}`);
+          }
+          if (Object.prototype.hasOwnProperty.call(body, 'overallScore')) throw new Error('forbidden overall score returned');
+          console.log('PERSON_COMPATIBILITY_PASS');
+          NODE
+
+      - name: Upload probe receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc2-live-compatibility-probe
+          path: |
+            health.json
+            compatibility-ping.json
+            explorer.json
+            person.json
+          if-no-files-found: warn
+          retention-days: 14
