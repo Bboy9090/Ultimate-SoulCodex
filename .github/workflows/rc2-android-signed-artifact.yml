@@ -106,7 +106,12 @@ jobs:
 
           AAB="app/build/outputs/bundle/release/app-release.aab"
           test -s "$AAB" || { echo "ANDROID_SIGNED_AAB_MISSING"; exit 1; }
-          jarsigner -verify -strict "$AAB" >/dev/null || {
+          jarsigner -verify \
+            -keystore app/soul-codex-release.keystore \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            "$AAB" "$ANDROID_KEY_ALIAS" \
+            | tee app/build/outputs/bundle/release/JARSIGNER-VERIFY.txt
+          grep -q "jar verified" app/build/outputs/bundle/release/JARSIGNER-VERIFY.txt || {
             echo "ANDROID_AAB_SIGNATURE_VERIFICATION_FAILED"
             exit 1
           }
@@ -122,6 +127,7 @@ jobs:
             android/app/build/outputs/bundle/release/app-release.aab
             android/app/build/outputs/bundle/release/AAB-SHA256.txt
             android/app/build/outputs/bundle/release/RELEASE-CANDIDATE-SHA.txt
+            android/app/build/outputs/bundle/release/JARSIGNER-VERIFY.txt
           if-no-files-found: error
           retention-days: 30
 
