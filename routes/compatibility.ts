@@ -32,7 +32,14 @@ export function symbolicSunSign(profile: any): string | undefined {
   return (
     validSymbolicSign(profile?.astrologyData?.sunSign) ??
     validSymbolicSign(profile?.astrology?.sunSign) ??
-    validSymbolicSign(profile?.sunSign)
+    validSymbolicSign(profile?.sunSign) ??
+    // Independent verification (e.g. JPL Horizons) may be unavailable even
+    // though the Sun sign was already calculated locally. That candidate is
+    // never eligible for the "verified" tier, but it is exactly what the
+    // "symbolic" evidence tier exists for: a traditional, honestly-labeled
+    // reflection rather than a claim of verified astronomy.
+    validSymbolicSign(profile?.astrologyData?.sun?.internalCandidate?.sign) ??
+    validSymbolicSign(profile?.astrology?.sun?.internalCandidate?.sign)
   );
 }
 
