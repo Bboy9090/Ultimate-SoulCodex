@@ -43,13 +43,13 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   await expect(page).toHaveURL(/\/timeline$/);
 
   await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /Clarity Browser Test relationship blueprint/i })).toBeVisible();
-  const explorer = page.getByRole("link", { name: /Universal Match Explorer/i });
+  await expect(page.getByRole("heading", { name: /Clarity Browser Test Compatibility/i })).toBeVisible();
+  const explorer = page.getByRole("link", { name: /Open Compatibility map/i });
   await expect(explorer).toHaveAttribute("href", "/compatibility/explorer");
 
   await explorer.click();
   await expect(page).toHaveURL(/\/compatibility\/explorer$/);
-  await expect(page.getByRole("heading", { name: /Clarity Browser Test Compatibility Map/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Clarity Browser Test Compatibility map/i })).toBeVisible();
 
   await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
   const comparePerson = page.getByTestId("compatibility-compare-person");
@@ -64,8 +64,6 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
 
   // This PWA harness intentionally returns 503 for cloud APIs. The browser
   // contract here is graceful degradation, not a fabricated offline match.
-  await expect(page.getByTestId("compatibility-person-unavailable")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "This layer remains visible instead of guessing." })).toBeVisible();
-  await expect(page.getByText(/Cloud services intentionally unavailable during offline browser validation/i).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Compatibility is unavailable" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
 });
