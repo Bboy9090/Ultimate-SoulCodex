@@ -66,11 +66,16 @@ jobs:
           echo "actual_sha=$ACTUAL_SHA"
           test "$ACTUAL_SHA" = "$EXPECTED_SHA"
 
-      - name: Build production image
+      - name: Build production image with exact client identity
         shell: bash
         run: |
-          set -o pipefail
-          docker build --progress=plain --tag soulcodex-railway-smoke . 2>&1 | tee docker-build.log
+          set -euo pipefail
+          docker build \
+            --progress=plain \
+            --build-arg RAILWAY_GIT_COMMIT_SHA="$EXPECTED_SHA" \
+            --build-arg SOUL_CODEX_RELEASE_VERSION="$RELEASE_VERSION" \
+            --build-arg VITE_API_CONTRACT="$EXPECTED_API_CONTRACT" \
+            --tag soulcodex-railway-smoke . 2>&1 | tee docker-build.log
 
       - name: Upload Docker build transcript on failure
         if: failure()
@@ -118,7 +123,11 @@ jobs:
           grep --quiet 'manifest.webmanifest' /tmp/index.html
           asset_path=$(sed -n 's/.*src="\(\/assets\/[^\"]*\.js\)".*/\1/p' /tmp/index.html | head -n 1)
           test -n "$asset_path"
-          curl --fail --silent "http://127.0.0.1:3000${asset_path}" > /dev/null
+          curl --fail --silent "http://127.0.0.1:3000${asset_path}" > /tmp/client.js
+          grep --fixed-strings --quiet "$EXPECTED_SHA" /tmp/client.js
+          grep --fixed-strings --quiet "$EXPECTED_API_CONTRACT" /tmp/client.js
+          grep --fixed-strings --quiet "$RELEASE_VERSION" /tmp/client.js
+
           curl --fail --silent http://127.0.0.1:3000/profile/local-container-smoke > /tmp/deep-route.html
           grep --quiet '<div id="root"></div>' /tmp/deep-route.html
 
@@ -165,6 +174,7 @@ jobs:
           name: railway-container-contract-${{ github.run_id }}
           path: |
             /tmp/health.json
+            /tmp/client.js
             /tmp/compat-ping.json
             /tmp/compat-explorer.json
             /tmp/compat-person.json
