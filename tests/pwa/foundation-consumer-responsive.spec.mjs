@@ -150,7 +150,7 @@ async function assertMobileMenuJourney(page, profilePath) {
   await expect(page.getByTestId("link-identity-mobile")).toBeVisible();
   await expect(page.getByTestId("link-timeline-mobile")).toBeVisible();
   await expect(page.getByTestId("link-compatibility-mobile")).toBeVisible();
-  await expect(page.getByTestId("button-new-profile-mobile")).toBeVisible();
+  await expect(page.getByTestId("button-create-profile-mobile")).toBeVisible();
 
   await page.getByTestId("link-timeline-mobile").click();
   await expect(page).toHaveURL(/\/timeline$/);
