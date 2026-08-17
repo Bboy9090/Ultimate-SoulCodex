@@ -331,11 +331,24 @@ export default function CompatibilityExplorerPage() {
                   </div>
                 </section>
 
-                <EvidenceLimitations
-                  evidenceLabel={result.evidenceLabel}
-                  layers={result.formula?.layers}
-                  excluded={result.excludedLayers}
-                />
+                <section className="sce-panel sce-section sce-friction-panel">
+                  <p className="sce-eyebrow sce-friction-eyebrow">Highest symbolic friction</p>
+                  <h2>Where this model expects more effort or tension</h2>
+                  <div className="sce-friction-grid">
+                    {(result.challenging ?? []).map((match) => {
+                      const score = matchScore(match, mode);
+                      const color = ELEMENT_COLORS[match.sign.element] || "var(--sc-gold)";
+                      return (
+                        <article key={match.sign.name}>
+                          <div><SignIcon sign={match.sign.name} color={color} /><strong>{match.sign.name}</strong><b aria-label={`${match.sign.name} symbolic friction score ${score}`}>{score}</b></div>
+                          <p>{pureText(match.tension || match.why)}</p>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <EvidenceLimitations evidenceLabel={result.evidenceLabel} layers={result.formula?.layers} excluded={result.excludedLayers} />
               </>
             )}
           </>
@@ -352,5 +365,6 @@ const styles = `
 .sce-panel{border:1px solid var(--sc-line);border-radius:1.35rem;background:linear-gradient(145deg,rgba(28,21,39,.88),rgba(12,9,18,.94));box-shadow:var(--sc-shadow-soft);padding:1.5rem}.sce-empty{text-align:center}.sce-identity-bar{display:grid;grid-template-columns:auto 1fr;gap:.7rem 1rem;align-items:center}.sce-identity-name{display:flex;align-items:center;gap:.6rem;font-weight:750}.sce-icon-well{display:grid;place-items:center;width:2.2rem;height:2.2rem;border:1px solid var(--sc-line-gold);border-radius:.7rem;color:var(--sc-gold-bright);background:rgba(217,182,111,.08)}.sce-pills{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:flex-end}.sce-pills span{padding:.4rem .72rem;border:1px solid var(--sc-line-gold);border-radius:999px;color:#ead9b9;font-size:.72rem}.sce-identity-bar small{grid-column:1/-1;color:var(--sc-stone)}
 .sce-mode-select{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-top:1.3rem}.sce-mode-select button{min-height:64px;border:1px solid var(--sc-line);border-radius:.9rem;background:rgba(20,16,29,.72);color:var(--sc-stone);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;font:inherit;font-size:.76rem;cursor:pointer}.sce-mode-select button.active{border-color:rgba(217,182,111,.5);background:linear-gradient(145deg,rgba(217,182,111,.16),rgba(154,116,220,.06));color:var(--sc-gold-bright)}.sce-mode-description,.sce-loading{text-align:center;color:var(--sc-stone);font-size:.84rem;margin:.75rem 0}.sce-unavailable{margin-top:1.5rem}.sce-section{margin-top:2.4rem}.sce-section h2{margin:.2rem 0;font-family:var(--font-serif);font-size:1.65rem}.sce-picks-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.8rem}.sce-pick,.sce-foil-frame{padding:1px;border-radius:1.1rem;background:linear-gradient(140deg,rgba(217,182,111,.48),rgba(154,116,220,.2),rgba(255,255,255,.03))}.sce-pick{padding:1rem;border:1px solid var(--sc-line-gold);background:linear-gradient(155deg,rgba(26,20,37,.95),rgba(11,8,16,.98))}.sce-pick>span{display:flex;gap:.35rem;align-items:center;font-size:.67rem;text-transform:uppercase;letter-spacing:.08em}.sce-pick>div{display:flex;align-items:center;gap:.45rem;margin:.75rem 0 .35rem}.sce-pick b{margin-left:auto}.sce-pick p{margin:0;color:var(--sc-stone);font-size:.78rem}
 .sce-bars{display:grid;gap:.65rem;margin-top:1rem}.sce-bar{display:grid;grid-template-columns:28px minmax(110px,1fr) minmax(100px,2fr) 34px;gap:.65rem;align-items:center;font-size:.82rem}.sce-bar>span:nth-child(2){display:flex;gap:.4rem;align-items:center}.sce-bar>i{height:8px;border-radius:999px;background:#050407;overflow:hidden}.sce-bar>i>i{display:block;height:100%;border-radius:999px}.sce-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}.sce-section-head>span{color:var(--sc-stone);font-size:.78rem}.sce-match-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem}.sce-foil-frame{--sce-accent:var(--sc-gold)}.sce-match-card{width:100%;display:flex;gap:.9rem;align-items:center;position:relative;border:0;border-radius:calc(1.1rem - 1px);padding:1rem;background:linear-gradient(155deg,rgba(26,20,37,.96),rgba(11,8,16,.98));color:inherit;text-align:left;cursor:pointer}.sce-rank{position:absolute;right:1rem;top:.65rem;color:var(--sce-accent);font-size:.68rem}.sce-ring{position:relative;width:76px;height:76px;flex:none}.sce-ring strong{position:absolute;inset:0;display:grid;place-items:center;font-size:.95rem}.sce-ring small{font-size:.65em}.sce-match-copy{min-width:0;flex:1}.sce-sign{display:flex;align-items:center;gap:.45rem}.sce-match-copy p{margin:.4rem 0 0;color:var(--sc-ivory-soft);font-size:.84rem;line-height:1.5}.sce-chevron{color:var(--sc-gold)}.sce-match-detail{margin-top:-1px;padding:1rem;border:1px solid var(--sc-line);border-top:0;border-radius:0 0 1rem 1rem;background:rgba(11,8,16,.96);color:var(--sc-ivory-soft);line-height:1.65}.sce-watch{padding:.7rem;border:1px solid var(--sc-line-gold);border-radius:.7rem;background:rgba(217,182,111,.06)}
+.sce-friction-panel{border-color:rgba(232,138,90,.22);background:linear-gradient(145deg,rgba(232,138,90,.05),rgba(12,9,18,.94))}.sce-friction-eyebrow{color:#e8b95a}.sce-friction-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.7rem;margin-top:1rem}.sce-friction-grid article{border:1px solid rgba(232,138,90,.14);border-radius:.9rem;background:rgba(232,138,90,.04);padding:.9rem}.sce-friction-grid article>div{display:flex;align-items:center;gap:.45rem}.sce-friction-grid b{margin-left:auto;color:#e88a8a}.sce-friction-grid p{margin:.55rem 0 0;color:var(--sc-stone);font-size:.8rem;line-height:1.55}
 @media(max-width:820px){.sce-mode-select{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.sce-main{width:min(100% - 22px,1160px);padding-top:6.2rem}.sce-identity-bar{grid-template-columns:1fr}.sce-pills{justify-content:flex-start}.sce-bar{grid-template-columns:24px 110px 1fr 30px}}
 `;
