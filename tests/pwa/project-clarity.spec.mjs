@@ -26,7 +26,7 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
 
   await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /Compatibility starts with one saved identity\./i })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create your Soul Profile" })).toHaveAttribute("href", "/create");
+  await expect(page.getByRole("link", { name: "Create profile" })).toHaveAttribute("href", "/create");
 
   const profilePath = await createProfile(page);
 
