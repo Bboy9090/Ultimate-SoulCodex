@@ -124,7 +124,7 @@ async function assertPrimaryNavigation(page, viewportWidth, routeLabel) {
     await expect(page.getByTestId("link-identity")).toBeVisible();
     await expect(page.getByTestId("link-timeline")).toBeVisible();
     await expect(page.getByTestId("link-compatibility")).toBeVisible();
-    await expect(page.getByTestId("button-new-reading")).toBeVisible();
+    await expect(page.getByTestId("button-create-profile-nav")).toBeVisible();
     await expect(page.getByTestId("button-menu")).toBeHidden();
   }
 }
