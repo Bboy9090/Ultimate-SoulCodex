@@ -30,14 +30,32 @@ describe("Human Depth interpretation surfaces", () => {
     expect(profile).not.toContain("Growth Areas");
   });
 
-  it("makes compatibility explain interaction instead of terminating at a score", () => {
-    const compatibility = read("client/src/pages/CompatibilityExperience.tsx");
-    expect(compatibility).toContain("HumanDepthSurface");
-    expect(compatibility).toContain("Explain the relationship, not just the score");
-    expect(compatibility).toContain("Stress and repair");
-    expect(compatibility).toContain("Values in practice");
-    expect(compatibility).toContain("Decision pace and style");
-    expect(compatibility).toContain("Where misunderstanding may repeat");
-    expect(compatibility).toContain("What this relationship may ask you to practice");
+  it("makes active Compatibility explain interaction instead of terminating at one score", () => {
+    const hub = read("client/src/pages/CompatibilityHubPage.tsx");
+    const person = read("client/src/pages/CompatibilityPersonPage.tsx");
+    const evidence = read("client/src/components/EvidenceLimitations.tsx");
+
+    expect(hub).toContain("Romantic connection");
+    expect(hub).toContain("Chemistry & attraction");
+    expect(hub).toContain("Communication & friendship");
+    expect(hub).toContain("Growth & repair");
+    expect(hub).toContain("instead of one universal verdict");
+    expect(person).toContain("Pattern to inspect");
+    expect(person).toContain("Watch point");
+    expect(person).toContain("EvidenceLimitations");
+    expect(evidence).toContain("Evidence & limitations");
+    expect(person).not.toContain("overallScore");
+  });
+
+  it("quarantines retired Compatibility implementations behind the canonical Hub", () => {
+    for (const path of [
+      "client/src/pages/CompatibilityDashboard.tsx",
+      "client/src/pages/CompatibilityExperience.tsx",
+      "client/src/pages/CompatibilityPage.tsx",
+    ]) {
+      const source = read(path);
+      expect(source).toContain('export { default } from "./CompatibilityHubPage"');
+      expect(source).not.toContain("overallScore:");
+    }
   });
 });

@@ -17,20 +17,25 @@ permissions:
 
 jobs:
   build-ios:
-    # Capacitor 8 requires the Xcode 26 / Swift 6.2 generation.
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.sha }}
+      VITE_API_CONTRACT: foundation-v4
 
     steps:
-      - name: Checkout requested release candidate
+      - name: Checkout exact requested candidate
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
       - name: Record candidate identity
         run: |
           echo "candidate_sha=$(git rev-parse HEAD)"
-          git rev-parse HEAD > release-candidate-sha.txt
+          test "$(git rev-parse HEAD)" = "$VITE_RELEASE_SHA"
+          printf '%s\n' "$VITE_RELEASE_SHA" > release-candidate-sha.txt
 
       - name: Setup Node.js for Capacitor 8
         uses: actions/setup-node@v4
@@ -65,7 +70,6 @@ jobs:
       - name: Resolve Xcode package dependencies
         run: |
           cd ios/App
-          echo "Resolving Swift package dependencies..."
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -resolvePackageDependencies
@@ -76,7 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           cd ios/App
-          echo "Building for iOS Simulator..."
+          mkdir -p build
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Debug \
@@ -86,46 +90,91 @@ jobs:
             build 2>&1 | tee build-development.log
           test -d "build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app"
 
-      - name: Verify signing secrets
+      - name: Verify P12 identity
         if: inputs.build_type == 'app-store'
         env:
           IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
           set -euo pipefail
-          echo "Checking for required signing material..."
-          test -n "$IOS_CERTIFICATE_P12" || { echo "IOS_CERTIFICATE_P12 is not set"; exit 1; }
-          test -n "$IOS_CERTIFICATE_PASSWORD" || { echo "IOS_CERTIFICATE_PASSWORD is not set"; exit 1; }
-          test -n "$IOS_PROVISIONING_PROFILE" || { echo "IOS_PROVISIONING_PROFILE is not set"; exit 1; }
-          echo "Signing material is configured"
+          test -n "$IOS_CERTIFICATE_P12" || { echo IOS_CERTIFICATE_P12_MISSING; exit 1; }
+          test -n "$IOS_CERTIFICATE_PASSWORD" || { echo IOS_CERTIFICATE_PASSWORD_MISSING; exit 1; }
+          P12="$RUNNER_TEMP/soulcodex.p12"
+          CERTS="$RUNNER_TEMP/certs.pem"
+          KEY="$RUNNER_TEMP/key.pem"
+          KEY_PUB="$RUNNER_TEMP/key.der"
+          CERT_PUB="$RUNNER_TEMP/cert.der"
+          LEAF="$RUNNER_TEMP/leaf.pem"
+          MODERN_P12="$RUNNER_TEMP/soulcodex-modern.p12"
+          printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
+          openssl pkcs12 -legacy -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
+          openssl pkcs12 -legacy -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY" || { echo IOS_P12_HAS_NO_PRIVATE_KEY; exit 1; }
+          awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
+          openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
+          MATCHED=""
+          for cert in "$RUNNER_TEMP"/candidate-*.pem; do
+            openssl x509 -in "$cert" -pubkey -noout | openssl pkey -pubin -outform DER > "$CERT_PUB"
+            if cmp -s "$CERT_PUB" "$KEY_PUB"; then cp "$cert" "$LEAF"; MATCHED=1; break; fi
+          done
+          test -n "$MATCHED" || { echo IOS_CERTIFICATE_PRIVATE_KEY_MISMATCH; exit 1; }
+          openssl x509 -in "$LEAF" -noout -checkend 0 || { echo IOS_CERTIFICATE_EXPIRED; exit 1; }
+          openssl x509 -in "$LEAF" -outform DER -out "$RUNNER_TEMP/leaf.der"
+          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout "pass:$IOS_CERTIFICATE_PASSWORD"
+          test -s "$MODERN_P12"
 
-      - name: Import signing certificate
+      - name: Import signing identity
         if: inputs.build_type == 'app-store'
-        uses: apple-actions/import-codesign-certs@v2
-        with:
-          p12-file-base64: ${{ secrets.IOS_CERTIFICATE_P12 }}
-          p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        env:
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/soulcodex-modern.p12" -k "$KEYCHAIN" -f pkcs12 -P "$IOS_CERTIFICATE_PASSWORD" -A
+          security list-keychains -d user -s "$KEYCHAIN"
+          security find-identity -v -p codesigning "$KEYCHAIN" > "$RUNNER_TEMP/ids.txt"
+          grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/ids.txt" || { echo IOS_P12_HAS_NO_VALID_CODESIGNING_IDENTITY; exit 1; }
 
-      - name: Install and inspect provisioning profile
+      - name: Qualify and install App Store provisioning profile
         if: inputs.build_type == 'app-store'
         env:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-        shell: bash
         run: |
           set -euo pipefail
-          PROFILE_PATH="$HOME/Library/MobileDevice/Provisioning Profiles/SoulCodex.mobileprovision"
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE_PATH"
-          test -s "$PROFILE_PATH"
-          security cms -D -i "$PROFILE_PATH" > provisioning-profile.plist
-          /usr/libexec/PlistBuddy -c 'Print :Name' provisioning-profile.plist
-          /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' provisioning-profile.plist
-          /usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' provisioning-profile.plist
-          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' provisioning-profile.plist)
-          test "$PROFILE_TEAM" = "86NUJ8M3B8"
-          APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' provisioning-profile.plist)
-          test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios"
+          test -n "$IOS_PROVISIONING_PROFILE" || { echo IOS_PROVISIONING_PROFILE_MISSING; exit 1; }
+          RAW_PROFILE="$RUNNER_TEMP/SoulCodex.mobileprovision"
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$RAW_PROFILE"
+          security cms -D -i "$RAW_PROFILE" > "$PROFILE_PLIST"
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$PROFILE_PLIST")
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PROFILE_PLIST")
+          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$PROFILE_PLIST")
+          APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$PROFILE_PLIST")
+          test "$PROFILE_TEAM" = "86NUJ8M3B8" || { echo IOS_PROFILE_TEAM_MISMATCH; exit 1; }
+          test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios" || { echo IOS_PROFILE_APP_ID_MISMATCH; exit 1; }
+          python3 - "$PROFILE_PLIST" "$RUNNER_TEMP/leaf.der" <<'PY'
+          import datetime, plistlib, sys
+          plist_path, leaf_path = sys.argv[1], sys.argv[2]
+          with open(plist_path, "rb") as f: profile = plistlib.load(f)
+          with open(leaf_path, "rb") as f: leaf = f.read()
+          entitlements = profile.get("Entitlements", {})
+          if entitlements.get("get-task-allow") is not False: raise SystemExit("IOS_PROFILE_NOT_APP_STORE")
+          if profile.get("ProvisionedDevices"): raise SystemExit("IOS_PROFILE_HAS_DEVICES")
+          if profile.get("ProvisionsAllDevices"): raise SystemExit("IOS_PROFILE_IS_ENTERPRISE")
+          expiration = profile.get("ExpirationDate")
+          now = datetime.datetime.now(datetime.timezone.utc)
+          if expiration is None: raise SystemExit("IOS_PROFILE_EXPIRATION_MISSING")
+          if expiration.tzinfo is None: expiration = expiration.replace(tzinfo=datetime.timezone.utc)
+          if expiration <= now: raise SystemExit("IOS_PROFILE_EXPIRED")
+          if leaf not in profile.get("DeveloperCertificates", []): raise SystemExit("IOS_PROFILE_CERTIFICATE_MISMATCH")
+          PY
+          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RAW_PROFILE" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          cp "$RAW_PROFILE" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          printf 'IOS_PROFILE_NAME=%s\n' "$PROFILE_NAME" >> "$GITHUB_ENV"
 
       - name: Build iOS (App Store)
         if: inputs.build_type == 'app-store'
@@ -134,29 +183,41 @@ jobs:
           set -euo pipefail
           cd ios/App
           mkdir -p build build/export
-
-          echo "Creating App Store archive..."
+          cat > build/ExportOptions.ci.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>destination</key><string>export</string>
+            <key>method</key><string>app-store</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>teamID</key><string>86NUJ8M3B8</string>
+            <key>provisioningProfiles</key><dict><key>app.soulcodex.ios</key><string>$IOS_PROFILE_NAME</string></dict>
+            <key>stripSwiftSymbols</key><true/>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Release \
             -archivePath build/SoulCodex.xcarchive \
-            archive 2>&1 | tee archive.log
-
-          test -d "build/SoulCodex.xcarchive"
-          test -f "build/SoulCodex.xcarchive/Info.plist"
-
-          echo "Exporting archive..."
+            archive \
+            DEVELOPMENT_TEAM=86NUJ8M3B8 \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            2>&1 | tee archive.log
+          test -d build/SoulCodex.xcarchive
           xcodebuild -exportArchive \
             -archivePath build/SoulCodex.xcarchive \
             -exportPath build/export \
-            -exportOptionsPlist ExportOptions.plist \
+            -exportOptionsPlist build/ExportOptions.ci.plist \
             2>&1 | tee export.log
-
           IPA_PATH=$(find build/export -maxdepth 1 -name "*.ipa" -type f -print -quit)
           test -n "$IPA_PATH"
           test -s "$IPA_PATH"
-          echo "ipa_path=$IPA_PATH"
           shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
+          cp ../../release-candidate-sha.txt build/export/RELEASE-CANDIDATE-SHA.txt
 
       - name: Upload build diagnostics
         if: always()
@@ -165,7 +226,6 @@ jobs:
           name: ios-build-diagnostics-${{ github.run_id }}
           path: |
             release-candidate-sha.txt
-            provisioning-profile.plist
             ios/App/build-development.log
             ios/App/archive.log
             ios/App/export.log
@@ -180,7 +240,7 @@ jobs:
           path: |
             ios/App/build/export/*.ipa
             ios/App/build/export/IPA-SHA256.txt
-            release-candidate-sha.txt
+            ios/App/build/export/RELEASE-CANDIDATE-SHA.txt
           if-no-files-found: error
           retention-days: 30
 

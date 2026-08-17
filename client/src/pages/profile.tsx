@@ -5,8 +5,6 @@ import { ArrowLeft, Crown, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { Profile } from "@shared/schema";
 
 const text = (...values: unknown[]) => values.find((value) => typeof value === "string" && value.trim().length > 0) as string | undefined;
@@ -169,40 +167,53 @@ export default function ProfilePage() {
     return result;
   }, [profile]);
 
-  if (isLoading) return <div className="min-h-screen bg-background"><Navigation /><main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-4"><p className="text-muted-foreground">Building the reading from available evidence…</p></main></div>;
+  if (isLoading) return <div className="sc-app-shell"><Navigation /><main className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-4"><p className="text-[var(--sc-stone)]">Building the reading from available evidence…</p></main></div>;
 
-  if (error || !profile) return <div className="min-h-screen bg-background"><Navigation /><main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-4"><Card><CardContent className="p-8 text-center"><Shield className="mx-auto mb-4 h-10 w-10 text-destructive" /><h1 className="mb-2 text-2xl font-bold">Profile not found</h1><p className="mb-5 text-muted-foreground">The requested profile could not be loaded.</p><Link href="/"><Button>Return home</Button></Link></CardContent></Card></main></div>;
+  if (error || !profile) return <div className="sc-app-shell"><Navigation /><main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-4"><div className="sc-panel p-8 text-center"><Shield className="mx-auto mb-4 h-10 w-10 text-[var(--sc-danger)]" /><h1 className="mb-2 font-serif text-2xl font-semibold text-[var(--sc-ivory)]">Profile not found</h1><p className="mb-5 text-[var(--sc-stone)]">The requested profile could not be loaded.</p><Link href="/" className="sc-button-primary">Return home</Link></div></main></div>;
 
   const astrology = (profile.astrologyData ?? {}) as any;
   const numerology = (profile.numerologyData ?? {}) as any;
   const archetype = (profile.archetypeData ?? {}) as any;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="sc-app-shell">
       <Navigation />
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-28 sm:px-6">
-        <Link href="/"><Button variant="ghost" className="mb-6"><ArrowLeft className="mr-2 h-4 w-4" /> Back home</Button></Link>
+        <Link href="/"><Button variant="ghost" className="mb-6 text-[var(--sc-stone)] hover:text-[var(--sc-ivory)]"><ArrowLeft className="mr-2 h-4 w-4" /> Back home</Button></Link>
 
-        <header className="mb-8 rounded-3xl border border-amber-300/25 bg-gradient-to-br from-violet-950/70 to-black/40 p-6 sm:p-9">
-          <div className="mb-4 flex items-center gap-3 text-amber-300"><Crown className="h-6 w-6" /><span className="text-xs font-bold uppercase tracking-[0.2em]">Unified Soul Codex</span></div>
-          <h1 className="font-serif text-4xl sm:text-6xl">{profile.name}</h1>
-          <p className="mt-3 max-w-3xl text-lg leading-8 text-white/70">This page now explains the profile as one connected human story. Labels remain visible, but none of them are allowed to stand alone and pretend they explained you.</p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {astrology.sunSign && <Badge variant="secondary">{astrology.sunSign} Sun</Badge>}
-            {astrology.moonSign && <Badge variant="secondary">{astrology.moonSign} Moon</Badge>}
-            {astrology.risingSign && <Badge variant="secondary">{astrology.risingSign} Rising</Badge>}
-            {numerology.lifePath && <Badge variant="secondary">Life Path {numerology.lifePath}</Badge>}
-            {archetype.title && <Badge variant="secondary">{archetype.title}</Badge>}
+        <header className="sc-panel sc-panel-gold relative mb-8 overflow-hidden p-6 sm:p-9">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-80"
+            aria-hidden="true"
+            style={{ background: "radial-gradient(circle at 92% 5%, rgba(154,116,220,.16), transparent 31%), radial-gradient(circle at 14% 100%, rgba(217,182,111,.06), transparent 25%)" }}
+          />
+          <div className="relative">
+            <div className="sc-eyebrow mb-4"><Crown className="h-3.5 w-3.5" />Unified Soul Codex</div>
+            <h1 className="sc-display sc-display-gradient">{profile.name}</h1>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--sc-stone)] sm:text-lg">This page now explains the profile as one connected human story. Labels remain visible, but none of them are allowed to stand alone and pretend they explained you.</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {astrology.sunSign && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{astrology.sunSign} Sun</span>}
+              {astrology.moonSign && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{astrology.moonSign} Moon</span>}
+              {astrology.risingSign && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{astrology.risingSign} Rising</span>}
+              {numerology.lifePath && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">Life Path {numerology.lifePath}</span>}
+              {archetype.title && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{archetype.title}</span>}
+            </div>
           </div>
         </header>
 
-        <div className="mb-7 rounded-2xl border border-teal-300/15 bg-teal-300/[0.035] p-5">
-          <div className="flex items-start gap-3"><Sparkles className="mt-1 h-5 w-5 text-teal-300" /><div><h2 className="font-semibold text-teal-100">One profile, one explanation standard</h2><p className="mt-1 leading-7 text-white/60">Astrology, numerology, personality, archetype, biography, and guidance are integrated below. Evidence labels stay separate from interpretation, and your feedback corrects the explanation rather than rewriting calculated data.</p></div></div>
+        <div className="mb-7 rounded-[1.35rem] border border-white/[0.065] bg-white/[0.018] p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="sc-icon-well shrink-0"><Sparkles className="h-[18px] w-[18px]" /></span>
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-[var(--sc-ivory)]">One profile, one explanation standard</h2>
+              <p className="mt-1 leading-7 text-[var(--sc-stone)]">Astrology, numerology, personality, archetype, biography, and guidance are integrated below. Evidence labels stay separate from interpretation, and your feedback corrects the explanation rather than rewriting calculated data.</p>
+            </div>
+          </div>
         </div>
 
         <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
 
-        <div className="mt-8 flex justify-center"><Link href={`/profile/${id}/reading`}><Button size="lg">Open full Quick / Standard / Deep Dive reading</Button></Link></div>
+        <div className="mt-8 flex justify-center"><Link href={`/profile/${id}/reading`} className="sc-button-primary">Open full Quick / Standard / Deep Dive reading</Link></div>
       </main>
     </div>
   );

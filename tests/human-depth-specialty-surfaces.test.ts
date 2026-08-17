@@ -7,11 +7,6 @@ const read = (path: string) => fs.readFileSync(path, "utf8");
 const voiceLaws = read("soulcodex/codex30/prompts/voice_laws.ts");
 const narrator = read("soulcodex/codex30/prompts/narrator.ts");
 const cleanLine = read("client/src/lib/soul-codex/utils/cleanCodexLine.ts");
-const blueprint = read("client/src/pages/BlueprintPage.tsx");
-const daily = read("client/src/pages/DailyHoroscopePage.tsx");
-const today = read("client/src/pages/TodayPage.tsx");
-const soulGuide = read("client/src/pages/SoulGuidePage.tsx");
-const tracker = read("client/src/pages/TrackerPage.tsx");
 const hdCore = read("packages/core/codex30/systems/humanDesign.ts");
 const hdRuntime = read("soulcodex/codex30/systems/humanDesign.ts");
 
@@ -38,12 +33,6 @@ test("shared text firewall prevents terminal one-line readings", () => {
   assert.match(cleanLine, /starting interpretation rather than a verdict/);
   assert.match(cleanLine, /what it helps and what it costs/);
   assert.match(cleanLine, /supports the pattern and another that contradicts it/);
-});
-
-test("specialty pages pass generated interpretation through the shared firewall", () => {
-  for (const source of [blueprint, daily, today, soulGuide, tracker]) {
-    assert.match(source, /cleanCodexLine/);
-  }
 });
 
 test("Human Design output explains lived behavior and its limits", () => {

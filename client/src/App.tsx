@@ -21,6 +21,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import SupportPage from "./pages/SupportPage";
 import SettingsPage from "./pages/SettingsPage";
+import DiagnosticsPage from "./pages/DiagnosticsPage";
 import AccountDeletionPage from "./pages/AccountDeletionPage";
 import PricingPage from "./pages/PricingPage";
 
@@ -43,7 +44,7 @@ function ReadingRoute() {
 
 function TimelineRoute() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_50%_-10%,rgba(106,61,170,.16),transparent_34%),#09070f]">
+    <div className="sc-app-shell">
       <Navigation />
       <div className="pt-20">
         <TimelineContinuityHeader />
@@ -58,6 +59,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
+      {/* Backward-compatible alias for older onboarding/deep links. */}
+      <Route path="/start" component={LocalFirstInputForm} />
       <Route path="/compatibility" component={CompatibilityRoute} />
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
       <Route path="/compatibility/compare" component={CompatibilityPersonPage} />
@@ -68,6 +71,7 @@ function Router() {
       <Route path="/terms" component={TermsPage} />
       <Route path="/support" component={SupportPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/diagnostics" component={DiagnosticsPage} />
       <Route path="/delete-account" component={AccountDeletionPage} />
       <Route path="/account-deletion" component={AccountDeletionPage} />
       <Route path="/pricing" component={PricingPage} />

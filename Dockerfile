@@ -8,6 +8,17 @@
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 
+# Railway exposes Git deployment metadata to Dockerfile builds when the
+# corresponding variable is declared as ARG. CI supplies the same argument
+# explicitly, so the browser bundle and backend can prove one candidate SHA.
+ARG RAILWAY_GIT_COMMIT_SHA=unknown
+ARG SOUL_CODEX_RELEASE_VERSION=4.0.0-rc.3
+ARG VITE_API_CONTRACT=foundation-v4
+
+ENV VITE_RELEASE_SHA=$RAILWAY_GIT_COMMIT_SHA
+ENV VITE_RELEASE_VERSION=$SOUL_CODEX_RELEASE_VERSION
+ENV VITE_API_CONTRACT=$VITE_API_CONTRACT
+
 # Copy the full workspace before npm ci. The root package references local
 # workspaces, so installing with only the root package.json is not valid.
 COPY . .

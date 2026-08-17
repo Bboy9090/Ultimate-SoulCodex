@@ -9,7 +9,8 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
 import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
-import compatibilityRouter from "../routes/compatibility.js";
+import compatibilityRouter from "./routes/compatibility.js";
+import { resolveReleaseIdentity } from "./lib/release-identity.js";
 import {
   registerBillingRawRoutes,
   registerBillingRoutes,
@@ -96,14 +97,16 @@ registerProfileVerificationRoutes(app);
 // while Stripe's hosted page collects payment information.
 registerBillingRoutes(app);
 
-// Mount the evidence-aware compatibility contract before the canonical route
-// registry. Consumer compatibility sends only the minimum supported Sun
+// Mount the evidence-aware Compatibility contract before the canonical route
+// registry. Consumer Compatibility sends only the minimum supported Sun
 // evidence and Life Path needed for the selected symbolic model.
 app.use("/api", compatibilityRouter);
 
-// Health check endpoint used by Railway.
+// Railway and release smoke use this endpoint for both liveness and immutable
+// client↔backend contract identity. An unknown SHA stays visible as unknown so
+// a deployment can never be promoted from liveness alone.
 app.get("/health", (_req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json(resolveReleaseIdentity());
 });
 
 (async () => {
@@ -179,8 +182,10 @@ app.get("/health", (_req, res) => {
 
     const port = Number.parseInt(process.env.PORT || "3000", 10);
     server.listen(port, "0.0.0.0", () => {
+      const identity = resolveReleaseIdentity();
       console.log(`Soul Codex server running on port ${port}`);
       console.log(`Health check: http://localhost:${port}/health`);
+      console.log(`Release: ${identity.appVersion} ${identity.releaseSha} ${identity.apiContract}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
   } catch (error) {

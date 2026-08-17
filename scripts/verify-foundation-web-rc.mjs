@@ -22,17 +22,21 @@ const files = {
   astrology: read("server/services/astrology-production.ts"),
   ascendant: read("server/services/ascendant-verification.ts"),
   humanDesign: read("server/services/human-design-trust.ts"),
-  compatibility: read("routes/compatibility.ts"),
+  compatibility: read("server/routes/compatibility.ts"),
+  compatibilityShim: read("routes/compatibility.ts"),
   compatibilityHub: read("client/src/pages/CompatibilityHubPage.tsx"),
   compatibilityExplorer: read("client/src/pages/CompatibilityExplorerPage.tsx"),
   compatibilityPerson: read("client/src/pages/CompatibilityPersonPage.tsx"),
   compatibilityPayload: read("client/src/lib/compatibilityProfilePayload.ts"),
-  reconciliation: read(
-    "client/src/lib/profileVerificationReconciliation.ts",
-  ),
+  activeProfileHook: read("client/src/hooks/useActiveProfile.ts"),
+  activeProfileRepository: read("client/src/lib/ActiveProfileRepository.ts"),
+  releaseIdentity: read("server/lib/release-identity.ts"),
+  diagnostics: read("client/src/pages/DiagnosticsPage.tsx"),
+  reconciliation: read("client/src/lib/profileVerificationReconciliation.ts"),
   ci: read(".github/workflows/ci.yml"),
   doctrineWorkflow: read(".github/workflows/foundation-doctrine-gate.yml"),
   pwaWorkflow: read(".github/workflows/pwa-offline-browser.yml"),
+  railwaySmoke: read(".github/workflows/railway-container-smoke.yml"),
 };
 
 const checks = [];
@@ -55,6 +59,13 @@ check(
     !files.app.includes("AstrocartographyPage") &&
     !files.app.includes('path="/astrocartography/:id"'),
 );
+check(
+  "ARCH-03",
+  "Compatibility has one canonical server route tree and the legacy path is only a shim",
+  files.server.includes('from "./routes/compatibility.js"') &&
+    files.compatibilityShim.includes('from "../server/routes/compatibility"') &&
+    !files.compatibilityShim.includes('router.post("/compatibility/person"'),
+);
 
 check(
   "WEB-HTTP-01",
@@ -75,6 +86,13 @@ check(
   "WEB-HTTP-04",
   "Referrer leakage is disabled",
   files.server.includes('referrerPolicy: { policy: "no-referrer" }'),
+);
+check(
+  "WEB-HTTP-05",
+  "Health exposes inspectable release identity instead of liveness alone",
+  files.server.includes("resolveReleaseIdentity()") &&
+    files.releaseIdentity.includes('apiContract: FOUNDATION_API_CONTRACT') &&
+    files.releaseIdentity.includes('"unknown"'),
 );
 
 check(
@@ -218,15 +236,17 @@ check(
   "Foundation compatibility excludes Human Design even when legacy profile data contains it",
   files.compatibility.includes("Human Design excluded from Foundation compatibility") &&
     files.compatibility.includes("calculateArchetypeMatches(sunSign, verifiedInput.lifePathNumber, undefined") &&
+    files.compatibility.includes("humanDesignType: undefined as string | undefined") &&
     !files.compatibility.includes("verifiedHumanDesignType"),
 );
 
 check(
   "COMPAT-01",
-  "Specific-person compatibility reuses the saved profile and asks only for the other person's data",
+  "Specific-person compatibility reuses the canonical reactive saved profile and asks only for the other person's bounded data",
   files.compatibility.includes('router.post("/compatibility/person"') &&
     files.compatibilityPerson.includes("otherPerson") &&
-    files.compatibilityPerson.includes("loadActiveProfile") &&
+    files.compatibilityPerson.includes("useActiveProfile") &&
+    files.compatibilityPerson.includes("buildCompatibilityProfilePayload") &&
     files.compatibilityPerson.includes("Four dimensions, not one verdict"),
 );
 check(
@@ -242,6 +262,38 @@ check(
     files.compatibilityExplorer.includes("Highest symbolic friction") &&
     files.compatibilityExplorer.includes("not relationship probability") &&
     files.compatibilityExplorer.includes("symbolic score"),
+);
+check(
+  "COMPAT-04",
+  "Foundation Compatibility preserves master Life Paths and never returns a universal overall score",
+  files.compatibility.includes("SUPPORTED_LIFE_PATHS") &&
+    files.compatibility.includes("11, 22, 33") &&
+    !files.compatibility.includes("overallScore"),
+);
+check(
+  "PROFILE-01",
+  "Cross-feature profile consumers have one reactive repository event contract",
+  files.activeProfileRepository.includes("ACTIVE_PROFILE_UPDATED_EVENT") &&
+    files.activeProfileRepository.includes("notifyProfileUpdated()") &&
+    files.activeProfileHook.includes("ACTIVE_PROFILE_UPDATED_EVENT") &&
+    files.activeProfileHook.includes('window.addEventListener("storage", refresh)'),
+);
+check(
+  "RELEASE-01",
+  "Diagnostics can compare client and backend release/API identity without profile data",
+  files.app.includes('path="/diagnostics"') &&
+    files.diagnostics.includes("expectedApiContract") &&
+    files.diagnostics.includes("releaseSha") &&
+    !files.diagnostics.includes("birthDate"),
+);
+check(
+  "RELEASE-02",
+  "Railway container validation proves exact release identity and Compatibility HTTP behavior",
+  files.railwaySmoke.includes("SOUL_CODEX_RELEASE_SHA") &&
+    files.railwaySmoke.includes("EXPECTED_API_CONTRACT") &&
+    files.railwaySmoke.includes("/api/compatibility/ping") &&
+    files.railwaySmoke.includes("/api/compatibility/archetype-matches") &&
+    files.railwaySmoke.includes("/api/compatibility/person"),
 );
 
 check(
@@ -274,7 +326,7 @@ check(
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 7,
+  version: 8,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,

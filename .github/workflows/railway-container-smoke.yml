@@ -48,27 +48,34 @@ jobs:
   container-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPECTED_API_CONTRACT: foundation-v4
+      RELEASE_VERSION: 4.0.0-rc.3
 
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.EXPECTED_SHA }}
 
       - name: Record exact candidate SHA
-        env:
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           ACTUAL_SHA=$(git rev-parse HEAD)
           echo "expected_sha=$EXPECTED_SHA"
           echo "actual_sha=$ACTUAL_SHA"
           test "$ACTUAL_SHA" = "$EXPECTED_SHA"
 
-      - name: Build production image
+      - name: Build production image with exact client identity
         shell: bash
         run: |
-          set -o pipefail
-          docker build --progress=plain --tag soulcodex-railway-smoke . 2>&1 | tee docker-build.log
+          set -euo pipefail
+          docker build \
+            --progress=plain \
+            --build-arg RAILWAY_GIT_COMMIT_SHA="$EXPECTED_SHA" \
+            --build-arg SOUL_CODEX_RELEASE_VERSION="$RELEASE_VERSION" \
+            --build-arg VITE_API_CONTRACT="$EXPECTED_API_CONTRACT" \
+            --tag soulcodex-railway-smoke . 2>&1 | tee docker-build.log
 
       - name: Upload Docker build transcript on failure
         if: failure()
@@ -79,16 +86,18 @@ jobs:
           if-no-files-found: error
           retention-days: 2
 
-      - name: Start production container
+      - name: Start exact production container
         run: |
           docker run --detach \
             --name soulcodex-railway-smoke \
             --publish 3000:3000 \
             --env PORT=3000 \
             --env SESSION_SECRET=container-smoke-secret \
+            --env SOUL_CODEX_RELEASE_SHA="$EXPECTED_SHA" \
+            --env SOUL_CODEX_RELEASE_VERSION="$RELEASE_VERSION" \
             soulcodex-railway-smoke
 
-      - name: Verify health and web application
+      - name: Verify release identity, web app, and Compatibility HTTP contract
         run: |
           set -euo pipefail
           for attempt in $(seq 1 20); do
@@ -99,18 +108,78 @@ jobs:
             fi
             sleep 2
           done
-          grep --quiet '"status":"ok"' /tmp/health.json
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const health = JSON.parse(fs.readFileSync('/tmp/health.json','utf8'));
+          if (health.status !== 'ok') throw new Error(`health status mismatch: ${JSON.stringify(health)}`);
+          if (health.releaseSha !== process.env.EXPECTED_SHA) throw new Error(`release SHA mismatch: ${JSON.stringify(health)}`);
+          if (health.apiContract !== process.env.EXPECTED_API_CONTRACT) throw new Error(`API contract mismatch: ${JSON.stringify(health)}`);
+          if (health.appVersion !== process.env.RELEASE_VERSION) throw new Error(`release version mismatch: ${JSON.stringify(health)}`);
+          NODE
+
           curl --fail --silent http://127.0.0.1:3000/ > /tmp/index.html
           grep --quiet '<div id="root"></div>' /tmp/index.html
           grep --quiet 'manifest.webmanifest' /tmp/index.html
           asset_path=$(sed -n 's/.*src="\(\/assets\/[^\"]*\.js\)".*/\1/p' /tmp/index.html | head -n 1)
           test -n "$asset_path"
-          curl --fail --silent "http://127.0.0.1:3000${asset_path}" > /dev/null
+          curl --fail --silent "http://127.0.0.1:3000${asset_path}" > /tmp/client.js
+          grep --fixed-strings --quiet "$EXPECTED_SHA" /tmp/client.js
+          grep --fixed-strings --quiet "$EXPECTED_API_CONTRACT" /tmp/client.js
+          grep --fixed-strings --quiet "$RELEASE_VERSION" /tmp/client.js
+
           curl --fail --silent http://127.0.0.1:3000/profile/local-container-smoke > /tmp/deep-route.html
           grep --quiet '<div id="root"></div>' /tmp/deep-route.html
+
+          curl --fail --silent http://127.0.0.1:3000/api/compatibility/ping > /tmp/compat-ping.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('/tmp/compat-ping.json','utf8'));
+          if (body.ok !== true || body.apiContract !== process.env.EXPECTED_API_CONTRACT) throw new Error(`Compatibility ping mismatch: ${JSON.stringify(body)}`);
+          NODE
+
+          curl --fail --silent \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"numerologyData":{"lifePath":11}},"mode":"love"}' \
+            http://127.0.0.1:3000/api/compatibility/archetype-matches > /tmp/compat-explorer.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('/tmp/compat-explorer.json','utf8'));
+          if (body.available !== true || body.all?.length !== 12) throw new Error(`Explorer Compatibility failed: ${JSON.stringify(body)}`);
+          if (body.formula?.inputs?.lifePathNumber !== 11) throw new Error('Master Life Path was lost in production container');
+          NODE
+
+          curl --fail --silent \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"numerologyData":{"lifePath":22}},"otherPerson":{"name":"Container Partner","sunSign":"Pisces"}}' \
+            http://127.0.0.1:3000/api/compatibility/person > /tmp/compat-person.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('/tmp/compat-person.json','utf8'));
+          if (body.available !== true) throw new Error(`Person Compatibility failed: ${JSON.stringify(body)}`);
+          for (const key of ['romantic','chemistry','mentalFriendship','growth']) {
+            if (typeof body.dimensions?.[key] !== 'number') throw new Error(`Missing dimension ${key}`);
+          }
+          if (Object.prototype.hasOwnProperty.call(body, 'overallScore')) throw new Error('Forbidden overall relationship score returned');
+          NODE
+
           api_status=$(curl --silent --output /tmp/api-404.json --write-out '%{http_code}' http://127.0.0.1:3000/api/not-a-real-route)
           test "$api_status" = "404"
           grep --quiet 'Route not found' /tmp/api-404.json
+
+      - name: Upload exact container receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: railway-container-contract-${{ github.run_id }}
+          path: |
+            /tmp/health.json
+            /tmp/client.js
+            /tmp/compat-ping.json
+            /tmp/compat-explorer.json
+            /tmp/compat-person.json
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Show container logs on failure
         if: failure()

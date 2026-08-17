@@ -35,7 +35,7 @@ jobs:
       - name: Run Workspace Tests
         run: npm test
 
-      - name: Run Trust And Security Boundary Tests
+      - name: Run Trust, Compatibility, And Security Boundary Tests
         run: >-
           node --import tsx --test
           server/tests/gate1-foundation.test.ts
@@ -54,6 +54,9 @@ jobs:
           tests/active-profile-contract.test.ts
           tests/ui-backend-consistency-contract.test.ts
           tests/compatibility-data-minimization.test.ts
+          tests/compatibility-profile-contract.test.ts
+          tests/compatibility-http-integration.test.ts
+          tests/release-identity.test.ts
           tests/billing-security.test.ts
           tests/local-first-privacy-contract.test.ts
           tests/server-profile-ownership.test.ts

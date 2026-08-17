@@ -31,18 +31,21 @@ jobs:
     timeout-minutes: 45
     env:
       VITE_API_URL: https://soulcodex.up.railway.app
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_API_CONTRACT: foundation-v4
       RESOLVED_FILE: ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
     steps:
       - name: Checkout exact candidate head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.VITE_RELEASE_SHA }}
 
       - name: Record exact candidate SHA
         run: |
           echo "candidate_sha=$(git rev-parse HEAD)"
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$VITE_RELEASE_SHA"
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
