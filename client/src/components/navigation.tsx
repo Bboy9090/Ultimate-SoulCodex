@@ -10,13 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { loadActiveProfile } from "../lib/ActiveProfileRepository";
-
-function profileHref() {
-  const result = loadActiveProfile();
-  const id = result.profile?.id;
-  return id ? `/profile/${id}` : "/create";
-}
+import { useActiveProfile } from "../hooks/useActiveProfile";
 
 function isActive(pathname: string, href: string) {
   if (href.startsWith("/profile/")) return pathname.startsWith("/profile/");
@@ -25,7 +19,8 @@ function isActive(pathname: string, href: string) {
 }
 
 export default function Navigation() {
-  const identityHref = profileHref();
+  const { profile } = useActiveProfile();
+  const identityHref = profile?.id ? `/profile/${profile.id}` : "/create";
   const [pathname] = useLocation();
 
   const primaryLinks = [
@@ -52,12 +47,8 @@ export default function Navigation() {
               <span className="absolute -right-0.5 top-0 h-1.5 w-1.5 rounded-full bg-[var(--sc-teal)] shadow-[0_0_10px_var(--sc-teal)]" />
             </span>
             <span className="leading-none">
-              <span className="block font-serif text-[1.04rem] font-semibold tracking-[-.015em] sm:text-[1.1rem]">
-                Soul Codex
-              </span>
-              <span className="mt-1 hidden text-[9px] font-semibold uppercase tracking-[.19em] text-[var(--sc-stone)] sm:block">
-                Clarity Engine
-              </span>
+              <span className="block font-serif text-[1.04rem] font-semibold tracking-[-.015em] sm:text-[1.1rem]">Soul Codex</span>
+              <span className="mt-1 hidden text-[9px] font-semibold uppercase tracking-[.19em] text-[var(--sc-stone)] sm:block">Clarity Engine</span>
             </span>
           </Link>
 
@@ -71,11 +62,7 @@ export default function Navigation() {
                     href={href}
                     data-testid={`link-${label.toLowerCase()}`}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold no-underline transition-colors ${
-                      active
-                        ? "bg-white/[0.065] text-[var(--sc-ivory)] shadow-[inset_0_0_0_1px_rgba(217,182,111,.1)]"
-                        : "text-[var(--sc-stone)] hover:bg-white/[0.035] hover:text-[var(--sc-ivory)]"
-                    }`}
+                    className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold no-underline transition-colors ${active ? "bg-white/[0.065] text-[var(--sc-ivory)] shadow-[inset_0_0_0_1px_rgba(217,182,111,.1)]" : "text-[var(--sc-stone)] hover:bg-white/[0.035] hover:text-[var(--sc-ivory)]"}`}
                   >
                     <Icon className={`h-3.5 w-3.5 ${active ? "text-[var(--sc-gold)]" : ""}`} strokeWidth={1.8} />
                     {label}
@@ -86,11 +73,7 @@ export default function Navigation() {
 
             <Link
               href="/settings"
-              className={`grid h-9 w-9 place-items-center rounded-lg border no-underline transition-colors ${
-                pathname.startsWith("/settings")
-                  ? "border-[rgba(217,182,111,.22)] bg-[rgba(217,182,111,.08)] text-[var(--sc-gold)]"
-                  : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"
-              }`}
+              className={`grid h-9 w-9 place-items-center rounded-lg border no-underline transition-colors ${pathname.startsWith("/settings") || pathname.startsWith("/diagnostics") ? "border-[rgba(217,182,111,.22)] bg-[rgba(217,182,111,.08)] text-[var(--sc-gold)]" : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"}`}
               aria-label="Settings"
             >
               <Settings className="h-4 w-4" strokeWidth={1.8} />
@@ -99,10 +82,10 @@ export default function Navigation() {
             <Link href="/create" className="ml-1 no-underline">
               <Button
                 className="h-9 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105"
-                data-testid="button-new-reading"
+                data-testid="button-create-profile"
               >
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                New Profile
+                Create profile
               </Button>
             </Link>
           </div>
@@ -139,11 +122,7 @@ export default function Navigation() {
                         key={label}
                         href={href}
                         data-testid={`link-${label.toLowerCase()}-mobile`}
-                        className={`flex min-h-12 items-center gap-3 rounded-xl border px-3.5 text-sm font-semibold no-underline ${
-                          active
-                            ? "border-[rgba(217,182,111,.2)] bg-[rgba(217,182,111,.07)] text-[var(--sc-ivory)]"
-                            : "border-white/[0.055] bg-white/[0.018] text-[var(--sc-ivory-soft)]"
-                        }`}
+                        className={`flex min-h-12 items-center gap-3 rounded-xl border px-3.5 text-sm font-semibold no-underline ${active ? "border-[rgba(217,182,111,.2)] bg-[rgba(217,182,111,.07)] text-[var(--sc-ivory)]" : "border-white/[0.055] bg-white/[0.018] text-[var(--sc-ivory-soft)]"}`}
                       >
                         <Icon className={`h-4.5 w-4.5 ${active ? "text-[var(--sc-gold)]" : "text-[var(--sc-stone)]"}`} strokeWidth={1.8} />
                         {label}
@@ -155,17 +134,17 @@ export default function Navigation() {
                     className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline"
                   >
                     <Settings className="h-4.5 w-4.5 text-[var(--sc-stone)]" strokeWidth={1.8} />
-                    Settings & Account
+                    Settings
                   </Link>
                 </div>
 
                 <Link href="/create" className="mt-5 block no-underline">
                   <Button
                     className="h-12 w-full rounded-xl border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] font-bold text-[#170f07]"
-                    data-testid="button-new-profile-mobile"
+                    data-testid="button-create-profile-mobile"
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Create New Profile
+                    Create profile
                   </Button>
                 </Link>
 
