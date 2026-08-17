@@ -1,7 +1,7 @@
 export const V4_RELEASE_MANIFEST = {
   product: "Ultimate Soul Codex",
   releaseLine: "v4-clarity-first",
-  releaseVersion: "4.0.0-rc.2",
+  releaseVersion: "4.0.0-rc.3",
   classification: "release-candidate",
   releaseScope: "foundation-web",
   nativeDistribution: {
@@ -11,6 +11,8 @@ export const V4_RELEASE_MANIFEST = {
     requiresSignedIosArtifact: true,
     requiresSignedAndroidAab: true,
   },
+  apiContract: "foundation-v4",
+  compatibilityFormula: "foundation-compatibility-v1",
   requiredWorkflows: [
     "Ultimate SoulCodex CI",
     "CI Tests",
@@ -28,8 +30,11 @@ export const V4_RELEASE_MANIFEST = {
     "/profile/:id",
     "/reading/:id",
     "/compatibility",
+    "/compatibility/explorer",
     "/compatibility/compare",
     "/timeline",
+    "/settings",
+    "/diagnostics",
   ],
   requiredTrustRules: [
     "verified-over-symbolic",
@@ -39,6 +44,8 @@ export const V4_RELEASE_MANIFEST = {
     "lived-experience-is-correction-layer",
     "local-profile-verification-is-explicit-opt-in",
     "compatibility-minimizes-uploaded-profile-data",
+    "compatibility-master-numbers-preserved",
+    "client-backend-api-contract-visible",
     "no-simulated-premium-analysis-routes",
   ],
   requiredJourney: [
@@ -47,6 +54,8 @@ export const V4_RELEASE_MANIFEST = {
     "inspect-evidence-and-limitations",
     "open-timeline-without-recreating-profile",
     "open-compatibility-without-recreating-profile",
+    "compare-specific-person-without-recreating-profile",
+    "inspect-release-diagnostics",
     "return-to-full-profile",
     "reload-and-reopen-offline",
   ],
@@ -56,6 +65,7 @@ export const V4_RELEASE_MANIFEST = {
     offlineVisualReceipt: true,
     deploymentReceipt: true,
     rollbackProcedure: true,
+    exactBackendReleaseIdentity: true,
   },
 } as const;
 
@@ -67,6 +77,7 @@ export type V4ReleaseEvidence = {
   offlineVisualReceipt: boolean;
   deploymentReceipt: boolean;
   rollbackProcedure: boolean;
+  exactBackendReleaseIdentity: boolean;
 };
 
 export function canDeclareV4ReleaseCandidate(evidence: V4ReleaseEvidence): boolean {
@@ -79,7 +90,8 @@ export function canDeclareV4ReleaseCandidate(evidence: V4ReleaseEvidence): boole
     evidence.mobileVisualReceipt &&
     evidence.offlineVisualReceipt &&
     evidence.deploymentReceipt &&
-    evidence.rollbackProcedure
+    evidence.rollbackProcedure &&
+    evidence.exactBackendReleaseIdentity
   );
 }
 
