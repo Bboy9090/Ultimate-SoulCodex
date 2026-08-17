@@ -7,11 +7,16 @@ on:
       - ".github/workflows/build-ios.yml"
       - ".github/workflows/build-android.yml"
       - ".github/workflows/gate5-release-preflight.yml"
+      - ".github/workflows/live-release-contract.yml"
       - "capacitor.config.ts"
+      - "client/src/lib/v4ReleaseManifest.ts"
+      - "client/src/lib/releaseIdentity.ts"
+      - "server/lib/release-identity.ts"
       - "scripts/validate-mobile-release.mjs"
       - "ios/**"
       - "android/**"
       - "tests/release-toolchain-contract.test.ts"
+      - "tests/release-identity-contract.test.ts"
       - "package.json"
       - "package-lock.json"
   workflow_dispatch:
@@ -30,6 +35,9 @@ jobs:
     timeout-minutes: 20
     env:
       VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_API_CONTRACT: foundation-v4
 
     steps:
       - name: Checkout exact candidate head
@@ -50,12 +58,15 @@ jobs:
         run: |
           echo "candidate_sha=$(git rev-parse HEAD)"
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$VITE_RELEASE_SHA" = "$(git rev-parse HEAD)"
+          test "$VITE_RELEASE_VERSION" = "4.0.0-rc.3"
+          test "$VITE_API_CONTRACT" = "foundation-v4"
 
       - name: Build canonical workspaces
         run: npm run build:workspaces
 
       - name: Run signed-build workflow contracts
-        run: node --import tsx --test tests/release-toolchain-contract.test.ts
+        run: node --import tsx --test tests/release-toolchain-contract.test.ts tests/release-identity-contract.test.ts
 
       - name: Validate Android release configuration
         run: npm run mobile:validate:android
