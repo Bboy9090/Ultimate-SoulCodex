@@ -1,12 +1,11 @@
 /**
- * useActiveProfile hook
+ * Reactive access to the canonical local-first active profile.
  *
- * Provides reactive access to active profile with hydration lifecycle.
- * Blocks rendering until profile load completes.
- * Provides recovery messaging for missing/corrupted profiles.
+ * Every consumer should observe the same repository state. Profile verification,
+ * reconciliation, another tab, or another page may update the active Identity
+ * while a feature is mounted, so a mount-only snapshot is not sufficient.
  */
-
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   loadActiveProfile,
   type StoredProfile,
@@ -14,47 +13,50 @@ import {
 } from "../lib/ActiveProfileRepository";
 
 export interface UseActiveProfileReturn {
-  // State
   profile: StoredProfile | null;
   isHydrated: boolean;
   status: ProfileLoadStatus;
-
-  // For UI
   isLoading: boolean;
   hasProfile: boolean;
   isEmpty: boolean;
   isCorrupted: boolean;
   needsMigration: boolean;
+  refresh: () => void;
 }
 
-/**
- * Load and provide active profile.
- * Call this once in a layout/root component to hydrate globally.
- */
 export function useActiveProfile(): UseActiveProfileReturn {
   const [profile, setProfile] = useState<StoredProfile | null>(null);
   const [status, setStatus] = useState<ProfileLoadStatus>("missing");
   const [isHydrated, setIsHydrated] = useState(false);
 
-  useEffect(() => {
-    // Load profile on mount
+  const refresh = useCallback(() => {
     const result = loadActiveProfile();
     setProfile(result.profile);
     setStatus(result.status);
     setIsHydrated(true);
   }, []);
 
+  useEffect(() => {
+    refresh();
+    const onStorage = () => refresh();
+    const onProfileUpdated = () => refresh();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("soulcodex:profile-updated", onProfileUpdated);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("soulcodex:profile-updated", onProfileUpdated);
+    };
+  }, [refresh]);
+
   return {
-    // Raw state
     profile,
     isHydrated,
     status,
-
-    // Derived state
     isLoading: !isHydrated,
-    hasProfile: !!profile && isHydrated,
+    hasProfile: Boolean(profile) && isHydrated,
     isEmpty: !profile && status === "missing",
     isCorrupted: status === "corrupted" || status === "wrong-version",
     needsMigration: status === "legacy-found",
+    refresh,
   };
 }
