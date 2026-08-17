@@ -17,11 +17,13 @@ permissions:
 
 jobs:
   build-ios:
-    # Capacitor 8 requires the Xcode 26 / Swift 6.2 generation.
     runs-on: macos-26
     timeout-minutes: 45
     env:
       VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.sha }}
+      VITE_API_CONTRACT: foundation-v4
 
     steps:
       - name: Checkout requested release candidate
@@ -30,7 +32,10 @@ jobs:
       - name: Record candidate identity
         run: |
           echo "candidate_sha=$(git rev-parse HEAD)"
+          test "$VITE_RELEASE_SHA" = "$(git rev-parse HEAD)"
           git rev-parse HEAD > release-candidate-sha.txt
+          printf '%s\n' "$VITE_RELEASE_VERSION" > release-version.txt
+          printf '%s\n' "$VITE_API_CONTRACT" > api-contract.txt
 
       - name: Setup Node.js for Capacitor 8
         uses: actions/setup-node@v4
@@ -65,7 +70,6 @@ jobs:
       - name: Resolve Xcode package dependencies
         run: |
           cd ios/App
-          echo "Resolving Swift package dependencies..."
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -resolvePackageDependencies
@@ -76,7 +80,6 @@ jobs:
         run: |
           set -euo pipefail
           cd ios/App
-          echo "Building for iOS Simulator..."
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Debug \
@@ -94,11 +97,9 @@ jobs:
           IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         run: |
           set -euo pipefail
-          echo "Checking for required signing material..."
           test -n "$IOS_CERTIFICATE_P12" || { echo "IOS_CERTIFICATE_P12 is not set"; exit 1; }
           test -n "$IOS_CERTIFICATE_PASSWORD" || { echo "IOS_CERTIFICATE_PASSWORD is not set"; exit 1; }
           test -n "$IOS_PROVISIONING_PROFILE" || { echo "IOS_PROVISIONING_PROFILE is not set"; exit 1; }
-          echo "Signing material is configured"
 
       - name: Import signing certificate
         if: inputs.build_type == 'app-store'
@@ -119,9 +120,6 @@ jobs:
           printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$PROFILE_PATH"
           test -s "$PROFILE_PATH"
           security cms -D -i "$PROFILE_PATH" > provisioning-profile.plist
-          /usr/libexec/PlistBuddy -c 'Print :Name' provisioning-profile.plist
-          /usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' provisioning-profile.plist
-          /usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' provisioning-profile.plist
           PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' provisioning-profile.plist)
           test "$PROFILE_TEAM" = "86NUJ8M3B8"
           APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' provisioning-profile.plist)
@@ -134,18 +132,16 @@ jobs:
           set -euo pipefail
           cd ios/App
           mkdir -p build build/export
-
-          echo "Creating App Store archive..."
           xcodebuild -workspace App.xcodeproj/project.xcworkspace \
             -scheme "Soul Codex" \
             -configuration Release \
             -archivePath build/SoulCodex.xcarchive \
             archive 2>&1 | tee archive.log
-
           test -d "build/SoulCodex.xcarchive"
           test -f "build/SoulCodex.xcarchive/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' build/SoulCodex.xcarchive/Info.plist | grep -Fx '4.0.0'
+          /usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleVersion' build/SoulCodex.xcarchive/Info.plist | grep -Fx '4000003'
 
-          echo "Exporting archive..."
           xcodebuild -exportArchive \
             -archivePath build/SoulCodex.xcarchive \
             -exportPath build/export \
@@ -155,7 +151,6 @@ jobs:
           IPA_PATH=$(find build/export -maxdepth 1 -name "*.ipa" -type f -print -quit)
           test -n "$IPA_PATH"
           test -s "$IPA_PATH"
-          echo "ipa_path=$IPA_PATH"
           shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
 
       - name: Upload build diagnostics
@@ -165,6 +160,8 @@ jobs:
           name: ios-build-diagnostics-${{ github.run_id }}
           path: |
             release-candidate-sha.txt
+            release-version.txt
+            api-contract.txt
             provisioning-profile.plist
             ios/App/build-development.log
             ios/App/archive.log
@@ -181,6 +178,8 @@ jobs:
             ios/App/build/export/*.ipa
             ios/App/build/export/IPA-SHA256.txt
             release-candidate-sha.txt
+            release-version.txt
+            api-contract.txt
           if-no-files-found: error
           retention-days: 30
 
@@ -192,5 +191,7 @@ jobs:
           path: |
             ios/App/build/Build/Products/Debug-iphonesimulator/Ultimate Soul Codex.app
             release-candidate-sha.txt
+            release-version.txt
+            api-contract.txt
           if-no-files-found: error
           retention-days: 7
