@@ -15,6 +15,8 @@ import {
 import Navigation from "@/components/navigation";
 import AppleSignInButton from "@/components/AppleSignInButton";
 import { clearActiveProfile } from "../lib/ActiveProfileRepository";
+import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
+import { clearOfflineProfiles } from "../lib/offlineProfileStore";
 import { apiRequest, queryClient } from "../lib/queryClient";
 
 type CurrentUser = {
@@ -32,15 +34,31 @@ export default function SettingsPage() {
     refetchOnMount: true,
   });
 
-  const clearLocalData = () => {
+  const clearLocalData = async () => {
     const confirmed = window.confirm(
-      "Clear Soul Codex data from this device?\n\nThis removes the locally saved profile and offline application data from this browser or app. Server-backed account data, if any, is not removed by this action.",
+      "Clear Soul Codex data from this device?\n\nThis removes the locally saved profile, offline profile copies, personalized local state, and cached app data from this browser or app. Server-backed account data, if any, is not removed by this action.",
     );
     if (!confirmed) return;
 
-    clearActiveProfile();
-    localStorage.removeItem("soulTodayCard");
-    window.location.href = "/";
+    try {
+      await clearOfflineProfiles();
+      clearActiveProfile();
+      clearDailyPulseEntries();
+      localStorage.clear();
+      sessionStorage.clear();
+
+      if ("caches" in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+      }
+
+      window.location.href = "/";
+    } catch (error) {
+      console.error("[Settings] Failed to clear local Soul Codex data", error);
+      window.alert(
+        "Soul Codex could not fully clear this device. No server-backed account data was changed. Please retry before treating the local clear as complete.",
+      );
+    }
   };
 
   const logout = async () => {
@@ -130,7 +148,7 @@ export default function SettingsPage() {
             <button
               type="button"
               data-testid="button-clear-local-data"
-              onClick={clearLocalData}
+              onClick={() => void clearLocalData()}
               className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-4 py-3 font-semibold text-red-300 hover:bg-red-400/[0.1]"
             >
               <AlertTriangle className="h-4 w-4" /> Clear data from this device
