@@ -1,60 +1,67 @@
 /**
- * useActiveProfile hook
+ * Canonical reactive active-profile hook.
  *
- * Provides reactive access to active profile with hydration lifecycle.
- * Blocks rendering until profile load completes.
- * Provides recovery messaging for missing/corrupted profiles.
+ * Identity, Reading, Timeline, and Compatibility should consume the same
+ * repository result so a verification, migration, clear, or cross-tab update
+ * cannot leave one feature operating on stale profile state.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  ACTIVE_PROFILE_UPDATED_EVENT,
   loadActiveProfile,
-  type StoredProfile,
+  type ProfileLoadResult,
   type ProfileLoadStatus,
+  type StoredProfile,
 } from "../lib/ActiveProfileRepository";
 
 export interface UseActiveProfileReturn {
-  // State
   profile: StoredProfile | null;
   isHydrated: boolean;
   status: ProfileLoadStatus;
-
-  // For UI
+  reason?: string;
   isLoading: boolean;
   hasProfile: boolean;
   isEmpty: boolean;
   isCorrupted: boolean;
   needsMigration: boolean;
+  refresh: () => void;
 }
 
-/**
- * Load and provide active profile.
- * Call this once in a layout/root component to hydrate globally.
- */
 export function useActiveProfile(): UseActiveProfileReturn {
-  const [profile, setProfile] = useState<StoredProfile | null>(null);
-  const [status, setStatus] = useState<ProfileLoadStatus>("missing");
+  const [result, setResult] = useState<ProfileLoadResult>({
+    status: "missing",
+    profile: null,
+  });
   const [isHydrated, setIsHydrated] = useState(false);
 
-  useEffect(() => {
-    // Load profile on mount
-    const result = loadActiveProfile();
-    setProfile(result.profile);
-    setStatus(result.status);
+  const refresh = useCallback(() => {
+    setResult(loadActiveProfile());
     setIsHydrated(true);
   }, []);
 
-  return {
-    // Raw state
-    profile,
-    isHydrated,
-    status,
+  useEffect(() => {
+    refresh();
+    window.addEventListener(ACTIVE_PROFILE_UPDATED_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(ACTIVE_PROFILE_UPDATED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [refresh]);
 
-    // Derived state
+  return {
+    profile: result.profile,
+    isHydrated,
+    status: result.status,
+    reason: result.reason,
     isLoading: !isHydrated,
-    hasProfile: !!profile && isHydrated,
-    isEmpty: !profile && status === "missing",
-    isCorrupted: status === "corrupted" || status === "wrong-version",
-    needsMigration: status === "legacy-found",
+    hasProfile: Boolean(result.profile) && isHydrated,
+    isEmpty: isHydrated && !result.profile && result.status === "missing",
+    isCorrupted:
+      isHydrated &&
+      (result.status === "corrupted" || result.status === "wrong-version"),
+    needsMigration: isHydrated && result.status === "legacy-found",
+    refresh,
   };
 }

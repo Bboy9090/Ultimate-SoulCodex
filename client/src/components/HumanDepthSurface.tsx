@@ -54,46 +54,49 @@ export default function HumanDepthSurface({ profileId, heading, intro, items }: 
 
   return (
     <section className="space-y-5" aria-label={heading}>
-      <header className="rounded-3xl border border-violet-300/20 bg-violet-300/[0.045] p-5 sm:p-7">
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-200">Human-depth explanation</p>
-        <h2 className="font-serif text-3xl text-white">{heading}</h2>
-        {intro && <p className="mt-3 max-w-3xl leading-7 text-white/65">{intro}</p>}
+      <header className="sc-panel sc-panel-gold p-5 sm:p-7">
+        <p className="sc-eyebrow mb-2">Human-depth explanation</p>
+        <h2 className="font-serif text-3xl font-medium text-[var(--sc-ivory)]">{heading}</h2>
+        {intro && <p className="mt-3 max-w-3xl leading-7 text-[var(--sc-stone)]">{intro}</p>}
       </header>
 
       {items.map((item) => (
-        <article key={item.id} className="rounded-3xl border border-white/10 bg-black/25 p-5 shadow-xl backdrop-blur sm:p-7">
-          <h3 className="font-serif text-2xl text-white">{item.title}</h3>
-          <p className="mt-3 leading-7 text-white/75">{item.observation}</p>
+        <article key={item.id} className="relative rounded-[1.6rem] p-px [background:linear-gradient(140deg,rgba(217,182,111,.4)_0%,rgba(255,255,255,.05)_45%,rgba(255,255,255,.02)_100%)] shadow-[var(--sc-shadow-soft)]">
+          <div className="relative overflow-hidden rounded-[calc(1.6rem-1px)] bg-[linear-gradient(155deg,rgba(28,21,39,.94),rgba(11,8,16,.97))] p-5 backdrop-blur-xl sm:p-7">
+            <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(135deg,rgba(255,255,255,.045),transparent_34%)]" />
+            <h3 className="relative font-serif text-2xl font-medium text-[var(--sc-ivory)]">{item.title}</h3>
+            <p className="relative mt-3 leading-7 text-[var(--sc-ivory-soft)]">{item.observation}</p>
 
-          {item.realLife?.length ? (
-            <section className="mt-5 border-t border-white/10 pt-5">
-              <h4 className="mb-3 text-sm font-bold uppercase tracking-[0.13em] text-teal-200">What this may look like in real life</h4>
-              <ul className="space-y-2 text-white/68">
-                {item.realLife.map((example) => <li key={example} className="flex gap-2 leading-7"><span aria-hidden="true">•</span><span>{example}</span></li>)}
-              </ul>
+            {item.realLife?.length ? (
+              <section className="relative mt-5 border-t border-[var(--sc-line)] pt-5">
+                <h4 className="mb-3 text-sm font-bold uppercase tracking-[0.13em] text-[var(--sc-teal)]">What this may look like in real life</h4>
+                <ul className="space-y-2 text-[var(--sc-ivory-soft)]">
+                  {item.realLife.map((example) => <li key={example} className="flex gap-2 leading-7"><span aria-hidden="true" className="text-[var(--sc-gold)]">•</span><span>{example}</span></li>)}
+                </ul>
+              </section>
+            ) : null}
+
+            {(item.benefit || item.tradeoff) && (
+              <div className="relative mt-5 grid gap-4 md:grid-cols-2">
+                {item.benefit && <section className="rounded-2xl border border-[rgba(114,216,197,.16)] bg-[rgba(114,216,197,.045)] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-teal)]"><CheckCircle2 className="h-4 w-4" /> What this gives you</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.benefit}</p></section>}
+                {item.tradeoff && <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.045)] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-gold-bright)]"><Scale className="h-4 w-4" /> What it may cost</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.tradeoff}</p></section>}
+              </div>
+            )}
+
+            {item.misunderstanding && <section className="relative mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.03] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-ivory-soft)]"><CircleHelp className="h-4 w-4" /> How this may be misunderstood</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.misunderstanding}</p></section>}
+            {item.relationshipView && <section className="relative mt-4 rounded-2xl border border-[rgba(154,116,220,.16)] bg-[rgba(154,116,220,.04)] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-violet)]"><Users className="h-4 w-4" /> In relationships</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.relationshipView}</p></section>}
+            {item.practicalTakeaway && <section className="relative mt-4 rounded-2xl border border-[rgba(114,216,197,.16)] bg-[rgba(114,216,197,.04)] p-4"><h4 className="mb-2 font-semibold text-[var(--sc-teal)]">What to do with this insight</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.practicalTakeaway}</p></section>}
+
+            <section className="relative mt-5 border-t border-[var(--sc-line)] pt-5">
+              <p className="mb-3 text-sm font-semibold text-[var(--sc-ivory-soft)]">Does this fit your experience?</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={`Does ${item.title} fit your experience?`}>
+                {fitOptions.map((option) => <button key={option.value} type="button" onClick={() => recordFit(item.id, option.value)} aria-pressed={fits[item.id] === option.value} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)] ${fits[item.id] === option.value ? "border-[var(--sc-line-gold)] bg-[linear-gradient(145deg,rgba(217,182,111,.18),rgba(154,116,220,.06))] text-[var(--sc-gold-bright)] shadow-[0_8px_24px_rgba(217,182,111,.12)]" : "border-[var(--sc-line)] bg-white/[0.02] text-[var(--sc-stone)] hover:bg-white/[0.05]"}`}>{option.label}</button>)}
+              </div>
+              {fits[item.id] && <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">Saved on this device. Your answer corrects the interpretation layer; it does not rewrite calculated or verified data.</p>}
             </section>
-          ) : null}
 
-          {(item.benefit || item.tradeoff) && (
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {item.benefit && <section className="rounded-2xl border border-teal-300/15 bg-teal-300/[0.04] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-200"><CheckCircle2 className="h-4 w-4" /> What this gives you</h4><p className="leading-7 text-white/68">{item.benefit}</p></section>}
-              {item.tradeoff && <section className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.04] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-amber-200"><Scale className="h-4 w-4" /> What it may cost</h4><p className="leading-7 text-white/68">{item.tradeoff}</p></section>}
-            </div>
-          )}
-
-          {item.misunderstanding && <section className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-white/85"><CircleHelp className="h-4 w-4" /> How this may be misunderstood</h4><p className="leading-7 text-white/68">{item.misunderstanding}</p></section>}
-          {item.relationshipView && <section className="mt-4 rounded-2xl border border-violet-300/15 bg-violet-300/[0.035] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-violet-200"><Users className="h-4 w-4" /> In relationships</h4><p className="leading-7 text-white/68">{item.relationshipView}</p></section>}
-          {item.practicalTakeaway && <section className="mt-4 rounded-2xl border border-teal-300/15 bg-teal-300/[0.035] p-4"><h4 className="mb-2 font-semibold text-teal-200">What to do with this insight</h4><p className="leading-7 text-white/72">{item.practicalTakeaway}</p></section>}
-
-          <section className="mt-5 border-t border-white/10 pt-5">
-            <p className="mb-3 text-sm font-semibold text-white/80">Does this fit your experience?</p>
-            <div className="flex flex-wrap gap-2" role="group" aria-label={`Does ${item.title} fit your experience?`}>
-              {fitOptions.map((option) => <button key={option.value} type="button" onClick={() => recordFit(item.id, option.value)} aria-pressed={fits[item.id] === option.value} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${fits[item.id] === option.value ? "border-violet-300/45 bg-violet-300/15 text-violet-100" : "border-white/10 bg-black/20 text-white/60 hover:bg-white/5"}`}>{option.label}</button>)}
-            </div>
-            {fits[item.id] && <p className="mt-3 text-sm leading-6 text-white/50">Saved on this device. Your answer corrects the interpretation layer; it does not rewrite calculated or verified data.</p>}
-          </section>
-
-          {item.evidence && <details className="group mt-5 rounded-xl border border-white/10 bg-black/20 p-4"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-white/70">Why this appeared in the reading<ChevronDown className="h-4 w-4 transition group-open:rotate-180" /></summary><p className="pt-3 text-sm leading-6 text-white/55">{item.evidence}</p></details>}
+            {item.evidence && <details className="group relative mt-5 rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-[var(--sc-ivory-soft)]">Why this appeared in the reading<ChevronDown className="h-4 w-4 text-[var(--sc-gold)] transition group-open:rotate-180" /></summary><p className="pt-3 text-sm leading-6 text-[var(--sc-stone)]">{item.evidence}</p></details>}
+          </div>
         </article>
       ))}
     </section>

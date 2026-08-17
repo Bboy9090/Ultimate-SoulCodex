@@ -1,16 +1,22 @@
+import type { ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
+import {
+  AlertTriangle,
+  ChevronRight,
+  CircleUserRound,
+  Info,
+  LockKeyhole,
+  ShieldCheck,
+  Smartphone,
+  Stethoscope,
+} from "lucide-react";
 import Navigation from "@/components/navigation";
 import AppleSignInButton from "@/components/AppleSignInButton";
-import {
-  IconAlert,
-  IconChevronRight,
-  IconIdentity,
-  IconInfo,
-  IconLock,
-  IconSparkles,
-} from "../components/Icons";
+import { clearActiveProfile } from "../lib/ActiveProfileRepository";
+import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
+import { clearOfflineProfiles } from "../lib/offlineProfileStore";
 import { apiRequest, queryClient } from "../lib/queryClient";
 
 type CurrentUser = {
@@ -18,13 +24,6 @@ type CurrentUser = {
   username: string;
   email?: string | null;
   authProvider?: string;
-};
-
-const panel: React.CSSProperties = {
-  border: "1px solid rgba(255,255,255,0.09)",
-  borderRadius: 22,
-  background: "linear-gradient(145deg, rgba(24,18,37,.94), rgba(12,9,21,.94))",
-  boxShadow: "0 24px 70px rgba(0,0,0,.28)",
 };
 
 export default function SettingsPage() {
@@ -35,14 +34,31 @@ export default function SettingsPage() {
     refetchOnMount: true,
   });
 
-  const clearLocalData = () => {
+  const clearLocalData = async () => {
     const confirmed = window.confirm(
-      "Clear Soul Codex data from this device?\n\nThis removes the locally saved profile and offline application data from this browser. Server-backed account data, if any, is not removed by this action.",
+      "Clear Soul Codex data from this device?\n\nThis removes the locally saved profile, offline profile copies, personalized local state, and cached app data from this browser or app. Server-backed account data, if any, is not removed by this action.",
     );
-
     if (!confirmed) return;
-    localStorage.clear();
-    window.location.href = "/";
+
+    try {
+      await clearOfflineProfiles();
+      clearActiveProfile();
+      clearDailyPulseEntries();
+      localStorage.clear();
+      sessionStorage.clear();
+
+      if ("caches" in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+      }
+
+      window.location.href = "/";
+    } catch (error) {
+      console.error("[Settings] Failed to clear local Soul Codex data", error);
+      window.alert(
+        "Soul Codex could not fully clear this device. No server-backed account data was changed. Please retry before treating the local clear as complete.",
+      );
+    }
   };
 
   const logout = async () => {
@@ -54,151 +70,155 @@ export default function SettingsPage() {
   const accountLabel = userLoading
     ? "Checking account"
     : currentUser
-      ? currentUser.authProvider === "apple" ? "Apple account connected" : "Account connected"
+      ? currentUser.authProvider === "apple"
+        ? "Apple account connected"
+        : "Account connected"
       : "Local-only profile";
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        color: "#f7f0e4",
-        background:
-          "radial-gradient(circle at 14% 4%,rgba(117,75,181,.24),transparent 30%),radial-gradient(circle at 86% 18%,rgba(36,161,170,.09),transparent 25%),#09070f",
-      }}
-    >
+    <div className="sc-app-shell">
       <Navigation />
-      <main style={{ maxWidth: 980, margin: "0 auto", padding: "112px 18px 88px" }}>
-        <header style={{ display: "grid", gridTemplateColumns: "minmax(0,1.3fr) minmax(260px,.7fr)", gap: 18, alignItems: "stretch", marginBottom: 18 }} className="settings-hero-grid">
-          <section style={{ ...panel, padding: "clamp(24px,5vw,42px)", position: "relative", overflow: "hidden", borderColor: "rgba(212,168,95,.22)" }}>
-            <div aria-hidden="true" style={{ position: "absolute", width: 220, height: 220, borderRadius: "50%", border: "1px solid rgba(212,168,95,.11)", right: -76, top: -76 }} />
-            <div aria-hidden="true" style={{ position: "absolute", width: 150, height: 150, borderRadius: "50%", border: "1px solid rgba(167,139,250,.12)", right: -42, top: -42 }} />
-            <p style={{ margin: "0 0 10px", color: "#D4A85F", textTransform: "uppercase", letterSpacing: ".18em", fontSize: 11, fontWeight: 800 }}>Account & trust</p>
-            <h1 style={{ margin: "0 0 14px", fontFamily: "var(--font-serif)", fontSize: "clamp(2.5rem,7vw,4.7rem)", lineHeight: 1.02 }}>
+      <main className="sc-page max-w-6xl">
+        <header className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,.65fr)]">
+          <section className="sc-panel sc-panel-gold p-7 sm:p-9">
+            <div className="sc-eyebrow">Account & trust</div>
+            <h1 className="mt-4 font-serif text-[clamp(3rem,7vw,5rem)] font-medium leading-[.98] tracking-[-.04em] text-[var(--sc-ivory)]">
               Your Codex,<br />under your control.
             </h1>
-            <p style={{ margin: 0, maxWidth: 620, color: "rgba(247,240,228,.67)", lineHeight: 1.75, fontSize: 16 }}>
-              Manage identity, device storage, privacy, support, and account deletion from one place. Local data and server-backed account data are kept distinct so each control does exactly what it says.
+            <p className="sc-lede mt-5 max-w-3xl">
+              Manage Identity, device storage, privacy, support, deletion, and release diagnostics from one place. Local data and server-backed account data remain separate controls.
             </p>
           </section>
 
-          <section style={{ ...panel, padding: 24, display: "flex", flexDirection: "column", justifyContent: "space-between", background: "linear-gradient(160deg,rgba(212,168,95,.09),rgba(14,11,24,.96))" }}>
-            <div>
-              <div style={{ width: 54, height: 54, borderRadius: 16, display: "grid", placeItems: "center", background: "rgba(212,168,95,.12)", border: "1px solid rgba(212,168,95,.24)", color: "#D4A85F", marginBottom: 18 }}>
-                <IconIdentity size={25} />
-              </div>
-              <p style={{ margin: "0 0 6px", color: "rgba(247,240,228,.45)", textTransform: "uppercase", letterSpacing: ".13em", fontSize: 10 }}>Current state</p>
-              <h2 style={{ margin: "0 0 8px", fontSize: 22 }}>{accountLabel}</h2>
-              <p style={{ margin: 0, color: "rgba(247,240,228,.58)", lineHeight: 1.6, fontSize: 14 }}>
-                {currentUser
-                  ? currentUser.email || "Apple may keep your relay address private."
-                  : "Your saved profile can continue locally without an account."}
-              </p>
-            </div>
-            <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,.08)", color: "rgba(247,240,228,.5)", fontSize: 12, lineHeight: 1.5 }}>
-              {nativeApple ? "Native Apple authentication available on this device." : "Apple authentication is offered inside the iPhone and iPad app."}
+          <section className="sc-panel p-6">
+            <span className="sc-icon-well"><CircleUserRound className="h-5 w-5" /></span>
+            <p className="mb-0 mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-[var(--sc-stone)]">Current state</p>
+            <h2 className="mb-0 mt-2 font-serif text-2xl font-semibold">{accountLabel}</h2>
+            <p className="mb-0 mt-2 text-sm leading-6 text-[var(--sc-stone)]">
+              {currentUser
+                ? currentUser.email || "Apple may keep your relay address private."
+                : "Your saved profile can continue locally without an account."}
+            </p>
+            <div className="mt-5 border-t border-white/[0.07] pt-4 text-xs leading-5 text-[var(--sc-stone)]">
+              {nativeApple
+                ? "Native Apple authentication is available on this device."
+                : "Apple authentication is offered inside the iPhone and iPad app."}
             </div>
           </section>
         </header>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 18 }} className="settings-main-grid">
-          <section style={{ ...panel, padding: 24 }}>
-            <SectionHeading icon={<IconIdentity size={18} />} eyebrow="Identity" title="Account" />
+        <section className="mt-4 grid gap-4 lg:grid-cols-2">
+          <article className="sc-panel p-6">
+            <SectionHeading icon={<CircleUserRound className="h-5 w-5" />} eyebrow="Identity" title="Account" />
             {userLoading ? (
-              <div style={{ marginTop: 18, height: 122, borderRadius: 16, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.07)", display: "grid", placeItems: "center", color: "rgba(247,240,228,.52)" }}>Checking account status…</div>
+              <p className="mt-5 text-sm text-[var(--sc-stone)]">Checking account status…</p>
             ) : currentUser ? (
-              <div style={{ marginTop: 18 }}>
-                <div style={{ padding: 18, borderRadius: 16, background: "rgba(114,214,183,.055)", border: "1px solid rgba(114,214,183,.18)", marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#72d6b7", boxShadow: "0 0 18px rgba(114,214,183,.5)" }} />
+              <div className="mt-5">
+                <div className="rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.055)] p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-[var(--sc-teal)] shadow-[0_0_14px_rgba(114,216,197,.5)]" />
                     <strong>{currentUser.authProvider === "apple" ? "Signed in with Apple" : "Signed in"}</strong>
                   </div>
-                  <p style={{ margin: 0, color: "rgba(247,240,228,.58)", fontSize: 14, lineHeight: 1.55 }}>{currentUser.email || "Private Apple account"}</p>
+                  <p className="mb-0 mt-2 text-sm text-[var(--sc-stone)]">{currentUser.email || "Private Apple account"}</p>
                 </div>
-                <button type="button" data-testid="button-logout" onClick={logout} className="settings-secondary-action">Sign Out</button>
+                <button type="button" data-testid="button-logout" onClick={logout} className="sc-button-secondary mt-4 w-full">
+                  Sign out
+                </button>
               </div>
             ) : (
-              <div style={{ marginTop: 18 }}>
-                <p style={{ margin: "0 0 16px", color: "rgba(247,240,228,.62)", fontSize: 14, lineHeight: 1.7 }}>
-                  Your local profile works without sign-in. On iPhone or iPad, Apple sign-in can attach server-backed data to one account without changing the local-first model.
+              <div className="mt-5">
+                <p className="text-sm leading-6 text-[var(--sc-stone)]">
+                  Your local profile works without sign-in. On iPhone or iPad, Apple sign-in can attach server-backed data to one account without changing the local-first profile model.
                 </p>
                 <AppleSignInButton
                   onSuccess={(user) => queryClient.setQueryData(["/api/auth/user"], { ...user, authProvider: "apple" })}
                 />
               </div>
             )}
-          </section>
+          </article>
 
-          <section style={{ ...panel, padding: 24 }}>
-            <SectionHeading icon={<IconLock size={18} />} eyebrow="Storage boundary" title="This device" />
-            <p style={{ margin: "18px 0", color: "rgba(247,240,228,.62)", fontSize: 14, lineHeight: 1.7 }}>
-              Soul Codex keeps a local-first profile so your reading can reopen offline. Clearing this device removes local profile and cached app data only. It does not delete a separate server-backed account.
+          <article className="sc-panel p-6">
+            <SectionHeading icon={<Smartphone className="h-5 w-5" />} eyebrow="Storage boundary" title="This device" />
+            <p className="mt-5 text-sm leading-6 text-[var(--sc-stone)]">
+              Soul Codex keeps a local-first profile so your reading can reopen offline. Clearing this device removes local profile and cached app state only. It does not delete a separate server-backed account.
             </p>
-            <div style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,.025)", border: "1px solid rgba(255,255,255,.07)", marginBottom: 14 }}>
-              <p style={{ margin: 0, color: "rgba(247,240,228,.52)", fontSize: 12, lineHeight: 1.6 }}>
-                <strong style={{ color: "#f7f0e4" }}>Local clear</strong> and <strong style={{ color: "#f7f0e4" }}>account deletion</strong> are intentionally separate actions. One should never silently impersonate the other.
-              </p>
+            <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-xs leading-5 text-[var(--sc-stone)]">
+              <strong className="text-[var(--sc-ivory-soft)]">Clear this device</strong> and <strong className="text-[var(--sc-ivory-soft)]">delete account</strong> are intentionally separate actions.
             </div>
-            <button type="button" data-testid="button-clear-local-data" onClick={clearLocalData} className="settings-danger-action">
-              <IconAlert size={16} /> Clear Data From This Device
+            <button
+              type="button"
+              data-testid="button-clear-local-data"
+              onClick={() => void clearLocalData()}
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-400/[0.06] px-4 py-3 font-semibold text-red-300 hover:bg-red-400/[0.1]"
+            >
+              <AlertTriangle className="h-4 w-4" /> Clear data from this device
             </button>
-          </section>
+          </article>
+        </section>
 
-          <section style={{ ...panel, padding: 24, gridColumn: "1 / -1" }}>
-            <SectionHeading icon={<IconSparkles size={18} />} eyebrow="Rights & help" title="Privacy, support, and deletion" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 12, marginTop: 18 }} className="settings-link-grid">
-              <SettingsLink label="Privacy Policy" description="What Soul Codex stores, why, and where." icon={<IconLock size={17} />} onClick={() => navigate("/privacy")} />
-              <SettingsLink label="Terms of Service" description="The operating terms for the app and service." icon={<IconInfo size={17} />} onClick={() => navigate("/terms")} />
-              <SettingsLink label="Support & Data Requests" description="Get help or request server-data assistance." icon={<IconInfo size={17} />} onClick={() => navigate("/support")} />
-              <SettingsLink label="Delete Account & Data" description="Permanent server-backed account deletion flow." icon={<IconAlert size={17} />} danger onClick={() => navigate("/delete-account")} />
-            </div>
-          </section>
-        </div>
+        <section className="sc-panel mt-4 p-6">
+          <SectionHeading icon={<ShieldCheck className="h-5 w-5" />} eyebrow="Rights & help" title="Privacy, support, diagnostics, and deletion" />
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <SettingsLink label="Privacy Policy" description="What Soul Codex stores, why, and where." icon={<LockKeyhole className="h-4 w-4" />} onClick={() => navigate("/privacy")} />
+            <SettingsLink label="Terms of Service" description="The operating terms for the app and service." icon={<Info className="h-4 w-4" />} onClick={() => navigate("/terms")} />
+            <SettingsLink label="Support & Data Requests" description="Get help or request server-data assistance." icon={<Info className="h-4 w-4" />} onClick={() => navigate("/support")} />
+            <SettingsLink label="About & Diagnostics" description="Inspect client/backend release identity and Compatibility connectivity." icon={<Stethoscope className="h-4 w-4" />} onClick={() => navigate("/diagnostics")} />
+            <SettingsLink label="Delete Account & Data" description="Permanent server-backed account deletion flow." icon={<AlertTriangle className="h-4 w-4" />} danger onClick={() => navigate("/delete-account")} />
+          </div>
+        </section>
 
-        <footer style={{ textAlign: "center", padding: "28px 12px 0", color: "rgba(247,240,228,.38)", fontSize: 12, lineHeight: 1.7 }}>
-          <div>Soul Codex Foundation Web</div>
+        <footer className="pt-7 text-center text-xs leading-5 text-[var(--sc-stone)]">
+          <div>Soul Codex Foundation</div>
           <div>Evidence-traceable identity and relationship insight</div>
         </footer>
       </main>
-
-      <style>{`
-        .settings-secondary-action,.settings-danger-action{width:100%;min-height:46px;border-radius:13px;font:inherit;font-weight:700;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease}
-        .settings-secondary-action{border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.035);color:#f7f0e4}
-        .settings-danger-action{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(239,68,68,.42);background:rgba(239,68,68,.08);color:#ff9b9b}
-        .settings-secondary-action:hover,.settings-danger-action:hover,.settings-link:hover{transform:translateY(-1px)}
-        .settings-secondary-action:focus-visible,.settings-danger-action:focus-visible,.settings-link:focus-visible{outline:2px solid #D4A85F;outline-offset:3px}
-        .settings-link{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:82px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(255,255,255,.025);color:#f7f0e4;text-align:left;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease}
-        .settings-link:hover{border-color:rgba(212,168,95,.28);background:rgba(212,168,95,.045)}
-        .settings-link-danger:hover{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.045)}
-        @media (max-width:760px){.settings-hero-grid,.settings-main-grid{grid-template-columns:1fr!important}.settings-link-grid{grid-template-columns:1fr!important}}
-        @media (prefers-reduced-motion:reduce){.settings-secondary-action,.settings-danger-action,.settings-link{transition:none}.settings-secondary-action:hover,.settings-danger-action:hover,.settings-link:hover{transform:none}}
-      `}</style>
     </div>
   );
 }
 
-function SectionHeading({ icon, eyebrow, title }: { icon: React.ReactNode; eyebrow: string; title: string }) {
+function SectionHeading({ icon, eyebrow, title }: { icon: ReactNode; eyebrow: string; title: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <span style={{ width: 38, height: 38, borderRadius: 12, display: "grid", placeItems: "center", color: "#D4A85F", background: "rgba(212,168,95,.09)", border: "1px solid rgba(212,168,95,.18)" }}>{icon}</span>
+    <div className="flex items-center gap-3">
+      <span className="sc-icon-well h-10 w-10 shrink-0">{icon}</span>
       <div>
-        <p style={{ margin: "0 0 2px", color: "#D4A85F", textTransform: "uppercase", letterSpacing: ".14em", fontSize: 9, fontWeight: 800 }}>{eyebrow}</p>
-        <h2 style={{ margin: 0, fontSize: 20 }}>{title}</h2>
+        <div className="sc-eyebrow text-[10px]">{eyebrow}</div>
+        <h2 className="m-0 mt-1 font-serif text-2xl font-semibold">{title}</h2>
       </div>
     </div>
   );
 }
 
-function SettingsLink({ label, description, icon, danger = false, onClick }: { label: string; description: string; icon: React.ReactNode; danger?: boolean; onClick: () => void }) {
+function SettingsLink({
+  label,
+  description,
+  icon,
+  danger = false,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  icon: ReactNode;
+  danger?: boolean;
+  onClick: () => void;
+}) {
   return (
-    <button type="button" onClick={onClick} className={`settings-link${danger ? " settings-link-danger" : ""}`}>
-      <span style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
-        <span style={{ color: danger ? "#ff9b9b" : "#D4A85F", flexShrink: 0 }}>{icon}</span>
-        <span style={{ minWidth: 0 }}>
-          <strong style={{ display: "block", fontSize: 14, marginBottom: 3 }}>{label}</strong>
-          <span style={{ display: "block", color: "rgba(247,240,228,.48)", fontSize: 12, lineHeight: 1.45 }}>{description}</span>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-[84px] w-full items-center justify-between gap-3 rounded-2xl border p-4 text-left transition ${
+        danger
+          ? "border-red-400/20 bg-red-400/[0.035] hover:border-red-400/35"
+          : "border-white/[0.07] bg-white/[0.02] hover:border-[rgba(217,182,111,.24)] hover:bg-white/[0.035]"
+      }`}
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className={`shrink-0 ${danger ? "text-red-300" : "text-[var(--sc-gold)]"}`}>{icon}</span>
+        <span className="min-w-0">
+          <strong className="block text-sm text-[var(--sc-ivory)]">{label}</strong>
+          <span className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">{description}</span>
         </span>
       </span>
-      <IconChevronRight size={17} style={{ color: "rgba(247,240,228,.32)", flexShrink: 0 }} />
+      <ChevronRight className="h-4 w-4 shrink-0 text-[var(--sc-stone)]" />
     </button>
   );
 }

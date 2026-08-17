@@ -11,7 +11,7 @@ const routeCases = [
   { path: "/", pattern: /Soul Codex/i },
   { path: "/timeline", pattern: /Timeline|Current Phase|Personal Year/i },
   { path: "/compatibility", pattern: /Compatibility|Relationship|Match/i },
-  { path: "/compatibility/compare", pattern: /Compare one person|Specific person/i },
+  { path: "/compatibility/compare", pattern: /Compare a person|One person\. Four signals/i },
   { path: "/pricing", pattern: /Pricing|Premium|Free/i },
   { path: "/privacy", pattern: /Privacy/i },
   { path: "/terms", pattern: /Terms/i },
@@ -124,7 +124,7 @@ async function assertPrimaryNavigation(page, viewportWidth, routeLabel) {
     await expect(page.getByTestId("link-identity")).toBeVisible();
     await expect(page.getByTestId("link-timeline")).toBeVisible();
     await expect(page.getByTestId("link-compatibility")).toBeVisible();
-    await expect(page.getByTestId("button-new-reading")).toBeVisible();
+    await expect(page.getByTestId("button-create-profile-nav")).toBeVisible();
     await expect(page.getByTestId("button-menu")).toBeHidden();
   }
 }
@@ -150,7 +150,7 @@ async function assertMobileMenuJourney(page, profilePath) {
   await expect(page.getByTestId("link-identity-mobile")).toBeVisible();
   await expect(page.getByTestId("link-timeline-mobile")).toBeVisible();
   await expect(page.getByTestId("link-compatibility-mobile")).toBeVisible();
-  await expect(page.getByTestId("button-new-profile-mobile")).toBeVisible();
+  await expect(page.getByTestId("button-create-profile-mobile")).toBeVisible();
 
   await page.getByTestId("link-timeline-mobile").click();
   await expect(page).toHaveURL(/\/timeline$/);

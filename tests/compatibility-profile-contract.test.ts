@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  COMPATIBILITY_FORMULA_VERSION,
   buildCompatibilityProfileInput,
   buildMatchResponse,
   buildPersonComparisonResponse,
+  deterministicLifePath,
   symbolicSunSign,
 } from "../routes/compatibility";
 
@@ -58,6 +60,37 @@ describe("compatibility saved-profile contract", () => {
     assert.equal(input.unresolved.astrology.includes("Sun"), false);
   });
 
+  it("preserves deterministic master Life Paths through the Compatibility route contract", () => {
+    for (const master of [11, 22, 33]) {
+      assert.equal(deterministicLifePath({ numerologyData: { lifePath: master } }), master);
+
+      const explorer = buildMatchResponse({
+        astrologyData: { sunSign: "Virgo" },
+        numerologyData: { lifePath: master },
+      });
+      assert.equal(explorer.available, true);
+      assert.equal(explorer.formula.inputs.lifePathNumber, master);
+      assert.equal(explorer.formula.version, COMPATIBILITY_FORMULA_VERSION);
+
+      const person = buildPersonComparisonResponse(
+        {
+          astrologyData: { sunSign: "Virgo" },
+          numerologyData: { lifePath: master },
+        },
+        { name: "Alex", sunSign: "Pisces" },
+      );
+      assert.equal(person.available, true);
+      assert.equal(person.formula.inputs.lifePathNumber, master);
+      assert.equal(person.formula.version, COMPATIBILITY_FORMULA_VERSION);
+    }
+  });
+
+  it("rejects unsupported Life Path values instead of smuggling malformed numerology into scoring", () => {
+    for (const invalid of [0, 10, 12, 44, -1, 4.5, "not-a-number"]) {
+      assert.equal(deterministicLifePath({ lifePathNumber: invalid }), undefined);
+    }
+  });
+
   it("excludes a naked Human Design type from Foundation compatibility", () => {
     const input = buildCompatibilityProfileInput({
       astrologyData: {
@@ -106,6 +139,28 @@ describe("compatibility saved-profile contract", () => {
     assert.equal(result.formula.inputs.humanDesignType, null);
     assert.match(result.formula.layers.join(" "), /not verified astronomy/);
     assert.ok(result.excludedLayers.includes("Human Design excluded from Foundation compatibility"));
+  });
+
+  it("uses a locally computed Sun candidate only in the symbolic tier", () => {
+    const profile = {
+      astrologyData: {
+        sun: {
+          verificationStatus: "pending_independent_verification",
+          internalCandidate: { sign: "virgo" },
+        },
+      },
+      numerologyData: { lifePath: 11 },
+    };
+
+    const verified = buildCompatibilityProfileInput(profile);
+    assert.equal(verified.sunSign, undefined);
+    assert.equal(symbolicSunSign(profile), "Virgo");
+
+    const result = buildMatchResponse(profile);
+    assert.equal(result.available, true);
+    assert.equal(result.evidenceMode, "symbolic");
+    assert.equal(result.formula.inputs.sunSign, "Virgo");
+    assert.equal(result.formula.inputs.lifePathNumber, 11);
   });
 
   it("prefers the verified Sun over a conflicting symbolic alias", () => {

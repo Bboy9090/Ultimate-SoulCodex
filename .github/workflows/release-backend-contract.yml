@@ -1,0 +1,125 @@
+name: Release Backend Contract
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Backend base URL, for example https://soulcodex.up.railway.app"
+        required: true
+        type: string
+      expected_release_sha:
+        description: "Exact deployed Git commit SHA"
+        required: true
+        type: string
+      expected_api_contract:
+        description: "Expected API contract identifier"
+        required: true
+        default: "foundation-v4"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  exact-backend-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TARGET_URL: ${{ inputs.target_url }}
+      EXPECTED_RELEASE_SHA: ${{ inputs.expected_release_sha }}
+      EXPECTED_API_CONTRACT: ${{ inputs.expected_api_contract }}
+
+    steps:
+      - name: Validate requested identity
+        run: |
+          set -euo pipefail
+          test -n "$TARGET_URL"
+          test -n "$EXPECTED_RELEASE_SHA"
+          test "$EXPECTED_RELEASE_SHA" != "unknown"
+          test -n "$EXPECTED_API_CONTRACT"
+          case "$TARGET_URL" in
+            https://*) ;;
+            *) echo "target_url must use https"; exit 1 ;;
+          esac
+
+      - name: Prove backend health identity
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            "$TARGET_URL/health" | tee health.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('health.json','utf8'));
+          if (body.status !== 'ok') throw new Error(`health status not ok: ${JSON.stringify(body)}`);
+          if (body.releaseSha !== process.env.EXPECTED_RELEASE_SHA) {
+            throw new Error(`backend SHA mismatch: expected ${process.env.EXPECTED_RELEASE_SHA}, got ${body.releaseSha}`);
+          }
+          if (body.apiContract !== process.env.EXPECTED_API_CONTRACT) {
+            throw new Error(`API contract mismatch: expected ${process.env.EXPECTED_API_CONTRACT}, got ${body.apiContract}`);
+          }
+          console.log('BACKEND_IDENTITY_EXACT');
+          NODE
+
+      - name: Prove Compatibility ping
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            "$TARGET_URL/api/compatibility/ping" | tee compatibility-ping.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('compatibility-ping.json','utf8'));
+          if (body.ok !== true) throw new Error(`Compatibility ping failed: ${JSON.stringify(body)}`);
+          if (body.apiContract !== process.env.EXPECTED_API_CONTRACT) throw new Error('Compatibility API contract mismatch');
+          NODE
+
+      - name: Prove Explorer Compatibility
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"numerologyData":{"lifePath":11}},"mode":"love"}' \
+            "$TARGET_URL/api/compatibility/archetype-matches" | tee explorer.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('explorer.json','utf8'));
+          if (body.available !== true) throw new Error(`Explorer unavailable: ${JSON.stringify(body)}`);
+          if (!Array.isArray(body.all) || body.all.length !== 12) throw new Error('Explorer did not return all 12 signs');
+          if (body.formula?.inputs?.sunSign !== 'Virgo') throw new Error('Explorer Sun input mismatch');
+          if (body.formula?.inputs?.lifePathNumber !== 11) throw new Error('Explorer master Life Path mismatch');
+          if (Object.prototype.hasOwnProperty.call(body, 'overallScore')) throw new Error('Forbidden overall score returned');
+          NODE
+
+      - name: Prove person comparison
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"numerologyData":{"lifePath":22}},"otherPerson":{"name":"Release Contract Partner","sunSign":"Pisces"}}' \
+            "$TARGET_URL/api/compatibility/person" | tee person.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('person.json','utf8'));
+          if (body.available !== true) throw new Error(`Person comparison unavailable: ${JSON.stringify(body)}`);
+          if (body.formula?.inputs?.lifePathNumber !== 22) throw new Error('Person master Life Path mismatch');
+          for (const key of ['romantic','chemistry','mentalFriendship','growth']) {
+            if (typeof body.dimensions?.[key] !== 'number') throw new Error(`Missing numeric dimension ${key}`);
+          }
+          if (Object.prototype.hasOwnProperty.call(body, 'overallScore')) throw new Error('Forbidden overall score returned');
+          NODE
+
+      - name: Upload immutable backend receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-contract-${{ inputs.expected_release_sha }}
+          path: |
+            health.json
+            compatibility-ping.json
+            explorer.json
+            person.json
+          if-no-files-found: warn
+          retention-days: 30
