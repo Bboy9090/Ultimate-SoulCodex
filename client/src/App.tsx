@@ -59,6 +59,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
+      {/* Backward-compatible alias for older onboarding/deep links. */}
+      <Route path="/start" component={LocalFirstInputForm} />
       <Route path="/compatibility" component={CompatibilityRoute} />
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
       <Route path="/compatibility/compare" component={CompatibilityPersonPage} />
