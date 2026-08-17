@@ -141,6 +141,28 @@ describe("compatibility saved-profile contract", () => {
     assert.ok(result.excludedLayers.includes("Human Design excluded from Foundation compatibility"));
   });
 
+  it("uses a locally computed Sun candidate only in the symbolic tier", () => {
+    const profile = {
+      astrologyData: {
+        sun: {
+          verificationStatus: "pending_independent_verification",
+          internalCandidate: { sign: "virgo" },
+        },
+      },
+      numerologyData: { lifePath: 11 },
+    };
+
+    const verified = buildCompatibilityProfileInput(profile);
+    assert.equal(verified.sunSign, undefined);
+    assert.equal(symbolicSunSign(profile), "Virgo");
+
+    const result = buildMatchResponse(profile);
+    assert.equal(result.available, true);
+    assert.equal(result.evidenceMode, "symbolic");
+    assert.equal(result.formula.inputs.sunSign, "Virgo");
+    assert.equal(result.formula.inputs.lifePathNumber, 11);
+  });
+
   it("prefers the verified Sun over a conflicting symbolic alias", () => {
     const result = buildMatchResponse({
       sunSign: "Leo",
