@@ -55,6 +55,7 @@ jobs:
           tests/ui-backend-consistency-contract.test.ts
           tests/compatibility-data-minimization.test.ts
           tests/compatibility-profile-contract.test.ts
+          tests/compatibility-http-contract.test.ts
           tests/release-identity-contract.test.ts
           tests/billing-security.test.ts
           tests/local-first-privacy-contract.test.ts
