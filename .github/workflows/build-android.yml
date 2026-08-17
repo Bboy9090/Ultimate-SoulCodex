@@ -22,10 +22,20 @@ jobs:
     timeout-minutes: 45
     env:
       VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.sha }}
+      VITE_API_CONTRACT: foundation-v4
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Record candidate identity
+        run: |
+          test "$VITE_RELEASE_SHA" = "$(git rev-parse HEAD)"
+          git rev-parse HEAD > release-candidate-sha.txt
+          printf '%s\n' "$VITE_RELEASE_VERSION" > release-version.txt
+          printf '%s\n' "$VITE_API_CONTRACT" > api-contract.txt
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -49,8 +59,6 @@ jobs:
           npm run build -w @soulcodex/core
 
       - name: Validate mobile release configuration
-        env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
         run: npm run mobile:validate:android
 
       - name: Build web app
@@ -64,16 +72,8 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          echo "Building debug APK..."
           ./gradlew assembleDebug --stacktrace -i
-
-          if [ ! -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-            echo "❌ Debug APK build failed!"
-            exit 1
-          fi
-
-          echo "✅ Debug APK built successfully"
-          ls -lah app/build/outputs/apk/debug/app-debug.apk
+          test -f app/build/outputs/apk/debug/app-debug.apk
 
       - name: Verify signing secrets
         if: inputs.build_type != 'debug'
@@ -83,90 +83,64 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "Checking for required secrets..."
-          if [ -z "$ANDROID_KEYSTORE" ]; then
-            echo "❌ Error: ANDROID_KEYSTORE secret is not set"
-            echo "Please configure GitHub Secrets: https://github.com/Bboy9090/Ultimate-SoulCodex/settings/secrets/actions"
-            exit 1
-          fi
-          if [ -z "$ANDROID_KEYSTORE_PASSWORD" ]; then
-            echo "❌ Error: ANDROID_KEYSTORE_PASSWORD secret is not set"
-            exit 1
-          fi
-          if [ -z "$ANDROID_KEY_ALIAS" ]; then
-            echo "❌ Error: ANDROID_KEY_ALIAS secret is not set"
-            exit 1
-          fi
-          if [ -z "$ANDROID_KEY_PASSWORD" ]; then
-            echo "❌ Error: ANDROID_KEY_PASSWORD secret is not set"
-            exit 1
-          fi
-          echo "✅ All signing secrets are configured"
+          test -n "$ANDROID_KEYSTORE" || { echo "ANDROID_KEYSTORE secret is not set"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "ANDROID_KEYSTORE_PASSWORD secret is not set"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "ANDROID_KEY_ALIAS secret is not set"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "ANDROID_KEY_PASSWORD secret is not set"; exit 1; }
 
       - name: Decode keystore
         if: inputs.build_type != 'debug'
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
         run: |
-          echo "Decoding keystore from base64..."
           printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soul-codex-release.keystore
-
-          if [ ! -f "android/app/soul-codex-release.keystore" ]; then
-            echo "❌ Failed to decode keystore"
-            exit 1
-          fi
-
-          echo "✅ Keystore decoded successfully"
-          ls -lah android/app/soul-codex-release.keystore
+          test -s android/app/soul-codex-release.keystore
 
       - name: Build Release APK
         if: inputs.build_type == 'release-apk'
         run: |
           cd android
           chmod +x gradlew
-          echo "Building release APK..."
           ./gradlew assembleRelease \
             -PRELEASE_STORE_FILE=soul-codex-release.keystore \
             -PRELEASE_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
             -PRELEASE_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
             -PRELEASE_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }} \
             --stacktrace -i
-
-          if [ ! -f "app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "❌ Release APK build failed!"
-            exit 1
-          fi
-
-          echo "✅ Release APK built successfully"
-          ls -lah app/build/outputs/apk/release/app-release.apk
+          test -f app/build/outputs/apk/release/app-release.apk
+          jarsigner -verify app/build/outputs/apk/release/app-release.apk >/dev/null
+          sha256sum app/build/outputs/apk/release/app-release.apk | tee app/build/outputs/apk/release/APK-SHA256.txt
 
       - name: Build Release AAB (Play Store)
         if: inputs.build_type == 'release-aab'
         run: |
           cd android
           chmod +x gradlew
-          echo "Building release AAB for Google Play Store..."
           ./gradlew bundleRelease \
             -PRELEASE_STORE_FILE=soul-codex-release.keystore \
             -PRELEASE_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
             -PRELEASE_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }} \
             -PRELEASE_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }} \
             --stacktrace -i
+          test -f app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify app/build/outputs/bundle/release/app-release.aab | tee app/build/outputs/bundle/release/AAB-SIGNATURE.txt
+          grep -q 'jar verified' app/build/outputs/bundle/release/AAB-SIGNATURE.txt
+          sha256sum app/build/outputs/bundle/release/app-release.aab | tee app/build/outputs/bundle/release/AAB-SHA256.txt
 
-          if [ ! -f "app/build/outputs/bundle/release/app-release.aab" ]; then
-            echo "❌ Release AAB build failed!"
-            exit 1
-          fi
-
-          echo "✅ Release AAB built successfully"
-          ls -lah app/build/outputs/bundle/release/app-release.aab
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f android/app/soul-codex-release.keystore
 
       - name: Upload Debug APK
         if: inputs.build_type == 'debug'
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            release-candidate-sha.txt
+            release-version.txt
+            api-contract.txt
           retention-days: 7
 
       - name: Upload Release APK
@@ -174,7 +148,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/release/APK-SHA256.txt
+            release-candidate-sha.txt
+            release-version.txt
+            api-contract.txt
+          if-no-files-found: error
           retention-days: 30
 
       - name: Upload Release AAB
@@ -182,7 +162,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-release-aab
-          path: android/app/build/outputs/bundle/release/*.aab
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/bundle/release/AAB-SHA256.txt
+            android/app/build/outputs/bundle/release/AAB-SIGNATURE.txt
+            release-candidate-sha.txt
+            release-version.txt
+            api-contract.txt
+          if-no-files-found: error
           retention-days: 30
 
       - name: Show build summary
@@ -190,36 +177,6 @@ jobs:
         run: |
           echo "=== Build Summary ==="
           echo "Build type: ${{ inputs.build_type }}"
-          echo ""
-
-          if [ "${{ inputs.build_type }}" == "debug" ]; then
-            echo "=== Debug Build Artifacts ==="
-            if find android/app/build/outputs/apk/debug -name "*.apk" -type f 2>/dev/null; then
-              echo "✅ Debug APK(s) found"
-              du -sh android/app/build/outputs/apk/debug/*.apk 2>/dev/null | awk '{print "   " $0}'
-            else
-              echo "⚠️ No debug APK found"
-            fi
-          elif [ "${{ inputs.build_type }}" == "release-apk" ]; then
-            echo "=== Release APK Build Artifacts ==="
-            if find android/app/build/outputs/apk/release -name "*.apk" -type f 2>/dev/null; then
-              echo "✅ Release APK(s) found"
-              du -sh android/app/build/outputs/apk/release/*.apk 2>/dev/null | awk '{print "   " $0}'
-            else
-              echo "⚠️ No release APK found"
-            fi
-          elif [ "${{ inputs.build_type }}" == "release-aab" ]; then
-            echo "=== Release AAB Build Artifacts ==="
-            if find android/app/build/outputs/bundle/release -name "*.aab" -type f 2>/dev/null; then
-              echo "✅ Release AAB(s) found"
-              du -sh android/app/build/outputs/bundle/release/*.aab 2>/dev/null | awk '{print "   " $0}'
-            else
-              echo "⚠️ No release AAB found"
-            fi
-          fi
-
-      - name: Cleanup signing keystore
-        if: always()
-        run: |
-          rm -f android/app/soul-codex-release.keystore
-          echo "✅ Keystore cleaned up"
+          echo "Release version: $VITE_RELEASE_VERSION"
+          echo "Release SHA: $VITE_RELEASE_SHA"
+          echo "API contract: $VITE_API_CONTRACT"
