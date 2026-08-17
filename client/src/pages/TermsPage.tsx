@@ -5,37 +5,38 @@ import { IconDiamond } from "../components/Icons";
 
 export default function TermsPage() {
   return (
-    <div style={{ minHeight: "100vh" }}>
+    <div className="sc-app-shell">
       <Navigation />
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: "7rem 1.5rem 3rem" }}>
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "7rem 1.5rem 4rem" }}>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="sc-panel sc-panel-gold"
           style={{
-            padding: "2rem 1.5rem",
-            background: "rgba(28, 22, 53, 0.72)",
-            borderRadius: 16,
-            color: "#EAEAF5",
+            padding: "clamp(1.75rem,5vw,2.6rem)",
+            color: "var(--sc-ivory-soft)",
             lineHeight: 1.7,
             fontSize: "0.95rem",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
           }}
         >
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+            <p className="sc-eyebrow" style={{ justifyContent: "center" }}>Legal</p>
             <h1
               style={{
                 fontFamily: "var(--font-serif)",
-                fontSize: "1.8rem",
-                marginBottom: "0.5rem",
+                fontWeight: 500,
+                fontSize: "clamp(1.9rem,5vw,2.6rem)",
+                color: "var(--sc-ivory)",
+                margin: "0.5rem 0",
               }}
             >
               Terms of Service
             </h1>
             <p
               style={{
-                color: "var(--sc-gold)",
+                color: "var(--sc-gold-bright)",
                 fontSize: "0.85rem",
-                opacity: 0.7,
+                opacity: 0.85,
               }}
             >
               Effective: August 4, 2026
@@ -154,10 +155,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         style={{
           fontSize: "1.2rem",
           marginTop: "1.5rem",
-          borderBottom: "1px solid rgba(217,207,184,0.5)",
-          paddingBottom: "0.3rem",
-          color: "var(--sc-gold)",
+          borderBottom: "1px solid var(--sc-line-gold)",
+          paddingBottom: "0.4rem",
+          color: "var(--sc-gold-bright)",
           fontFamily: "var(--font-serif)",
+          fontWeight: 500,
         }}
       >
         {title}
