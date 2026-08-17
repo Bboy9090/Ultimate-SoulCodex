@@ -9,7 +9,8 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
 import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
-import compatibilityRouter from "../routes/compatibility.js";
+import compatibilityRouter from "./routes/compatibility.js";
+import { releaseIdentity } from "./lib/release-identity.js";
 import {
   registerBillingRawRoutes,
   registerBillingRoutes,
@@ -101,9 +102,10 @@ registerBillingRoutes(app);
 // evidence and Life Path needed for the selected symbolic model.
 app.use("/api", compatibilityRouter);
 
-// Health check endpoint used by Railway.
+// Health also carries non-secret release identity so a healthy-but-stale
+// backend cannot masquerade as the client candidate during release validation.
 app.get("/health", (_req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json(releaseIdentity());
 });
 
 (async () => {
