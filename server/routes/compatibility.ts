@@ -38,7 +38,12 @@ export function symbolicSunSign(profile: any): string | undefined {
   return (
     validSymbolicSign(profile?.astrologyData?.sunSign) ??
     validSymbolicSign(profile?.astrology?.sunSign) ??
-    validSymbolicSign(profile?.sunSign)
+    validSymbolicSign(profile?.sunSign) ??
+    // Local calculation may support the explicitly symbolic tier while
+    // independent astronomy verification is still unresolved. Keeping this
+    // fallback here never promotes the candidate into the verified path above.
+    validSymbolicSign(profile?.astrologyData?.sun?.internalCandidate?.sign) ??
+    validSymbolicSign(profile?.astrology?.sun?.internalCandidate?.sign)
   );
 }
 
