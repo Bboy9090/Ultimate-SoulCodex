@@ -1,0 +1,45 @@
+name: Railway Dockerfile Only
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "railway.json"
+      - "railway.toml"
+      - "Procfile"
+      - "nixpacks.toml"
+      - "nixpacks.json"
+      - "railpack.toml"
+      - "railpack.json"
+      - ".railway/**"
+      - "scripts/verify-railway-dockerfile-only.mjs"
+      - ".github/workflows/railway-dockerfile-only.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "railway.json"
+      - "railway.toml"
+      - "Procfile"
+      - "nixpacks.toml"
+      - "nixpacks.json"
+      - "railpack.toml"
+      - "railpack.json"
+      - ".railway/**"
+      - "scripts/verify-railway-dockerfile-only.mjs"
+      - ".github/workflows/railway-dockerfile-only.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dockerfile-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+      - name: Enforce Dockerfile-only Railway contract
+        run: node scripts/verify-railway-dockerfile-only.mjs
