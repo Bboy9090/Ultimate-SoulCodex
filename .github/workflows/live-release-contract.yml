@@ -1,0 +1,145 @@
+name: Live Release Contract
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: HTTPS Soul Codex API base to prove
+        required: true
+        default: https://soulcodex.up.railway.app
+        type: string
+      expected_release_sha:
+        description: Exact deployed server SHA expected from /health
+        required: true
+        type: string
+      expected_version:
+        description: Exact release version expected from /health
+        required: true
+        default: 4.0.0-rc.3
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prove-live-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      API_BASE: ${{ inputs.api_base }}
+      EXPECTED_RELEASE_SHA: ${{ inputs.expected_release_sha }}
+      EXPECTED_VERSION: ${{ inputs.expected_version }}
+      EXPECTED_API_CONTRACT: foundation-v4
+      EXPECTED_COMPATIBILITY_CONTRACT: foundation-compatibility-v1
+
+    steps:
+      - name: Validate immutable expectations
+        run: |
+          set -euo pipefail
+          case "$API_BASE" in https://*) ;; *) echo "api_base must use HTTPS"; exit 1;; esac
+          test -n "$EXPECTED_RELEASE_SHA"
+          test ${#EXPECTED_RELEASE_SHA} -ge 7
+          test "$EXPECTED_VERSION" = "4.0.0-rc.3"
+
+      - name: Prove backend release identity
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            "$API_BASE/health" | tee health.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+          const expectedSha = process.env.EXPECTED_RELEASE_SHA;
+          const expectedVersion = process.env.EXPECTED_VERSION;
+          const expectedContract = process.env.EXPECTED_API_CONTRACT;
+          if (body.status !== 'ok') throw new Error(`health status is ${body.status}`);
+          if (body.releaseSha !== expectedSha) throw new Error(`backend SHA mismatch: expected ${expectedSha}, got ${body.releaseSha}`);
+          if (body.appVersion !== expectedVersion) throw new Error(`backend version mismatch: expected ${expectedVersion}, got ${body.appVersion}`);
+          if (body.apiContract !== expectedContract) throw new Error(`API contract mismatch: expected ${expectedContract}, got ${body.apiContract}`);
+          console.log('BACKEND_RELEASE_IDENTITY_PASS');
+          NODE
+
+      - name: Prove Compatibility route contract
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            "$API_BASE/api/compatibility/ping" | tee compatibility-ping.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('compatibility-ping.json', 'utf8'));
+          if (body.ok !== true) throw new Error('compatibility ping did not return ok=true');
+          if (body.contract !== process.env.EXPECTED_COMPATIBILITY_CONTRACT) {
+            throw new Error(`compatibility contract mismatch: ${body.contract}`);
+          }
+          console.log('COMPATIBILITY_ROUTE_CONTRACT_PASS');
+          NODE
+
+      - name: Prove Explorer over live HTTP
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"lifePathNumber":11,"numerologyData":{"lifePath":11}},"mode":"love"}' \
+            "$API_BASE/api/compatibility/archetype-matches" | tee explorer.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('explorer.json', 'utf8'));
+          if (body.available !== true) throw new Error(`explorer unavailable: ${JSON.stringify(body)}`);
+          if (!Array.isArray(body.all) || body.all.length !== 12) throw new Error('explorer did not return 12 signs');
+          if (body.formula?.id !== 'foundation-compatibility-v1') throw new Error('formula id mismatch');
+          if (body.formula?.inputs?.sunSign !== 'Virgo') throw new Error('Sun input mismatch');
+          if (body.formula?.inputs?.lifePathNumber !== 11) throw new Error('master Life Path 11 was not preserved');
+          if (Object.prototype.hasOwnProperty.call(body, 'overallScore')) throw new Error('forbidden overall score returned');
+          console.log('LIVE_EXPLORER_PASS');
+          NODE
+
+      - name: Prove person comparison over live HTTP
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --connect-timeout 15 --max-time 30 \
+            -H 'Content-Type: application/json' \
+            -d '{"profile":{"astrologyData":{"sunSign":"Virgo"},"lifePathNumber":22,"numerologyData":{"lifePath":22}},"otherPerson":{"name":"Contract Partner","sunSign":"Pisces"}}' \
+            "$API_BASE/api/compatibility/person" | tee person.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('person.json', 'utf8'));
+          if (body.available !== true) throw new Error(`person comparison unavailable: ${JSON.stringify(body)}`);
+          if (body.formula?.id !== 'foundation-compatibility-v1') throw new Error('formula id mismatch');
+          if (body.formula?.inputs?.lifePathNumber !== 22) throw new Error('master Life Path 22 was not preserved');
+          const dimensions = body.dimensions || {};
+          for (const key of ['romantic', 'chemistry', 'mentalFriendship', 'growth']) {
+            if (typeof dimensions[key] !== 'number') throw new Error(`missing numeric dimension ${key}`);
+          }
+          if (Object.prototype.hasOwnProperty.call(body, 'overallScore')) throw new Error('forbidden overall score returned');
+          console.log('LIVE_PERSON_COMPARISON_PASS');
+          NODE
+
+      - name: Write proof receipt
+        if: success()
+        run: |
+          cat > LIVE-RELEASE-CONTRACT-RECEIPT.txt <<EOF
+          release_version=$EXPECTED_VERSION
+          expected_release_sha=$EXPECTED_RELEASE_SHA
+          api_base=$API_BASE
+          api_contract=$EXPECTED_API_CONTRACT
+          compatibility_contract=$EXPECTED_COMPATIBILITY_CONTRACT
+          result=PASS
+          EOF
+
+      - name: Upload proof receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-release-contract-${{ github.run_id }}
+          path: |
+            health.json
+            compatibility-ping.json
+            explorer.json
+            person.json
+            LIVE-RELEASE-CONTRACT-RECEIPT.txt
+          if-no-files-found: warn
+          retention-days: 30
