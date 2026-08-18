@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Crown, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
+import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
 
@@ -213,7 +214,14 @@ export default function ProfilePage() {
 
         <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
 
-        <div className="mt-8 flex justify-center"><Link href={`/profile/${id}/reading`} className="sc-button-primary">Open full Quick / Standard / Deep Dive reading</Link></div>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href={`/reading/${id}`} className="sc-button-primary">Open full Quick / Standard / Deep Dive reading</Link>
+          <NatalReportDownloadButton
+            profileId={String(id)}
+            profileName={profile.name}
+            isPremium={Boolean(profile.isPremium)}
+          />
+        </div>
       </main>
     </div>
   );
