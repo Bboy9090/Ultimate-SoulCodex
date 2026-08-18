@@ -17,6 +17,7 @@ import CompatibilityExplorerPage from "./pages/CompatibilityExplorerPage";
 import CompatibilityPersonPage from "./pages/CompatibilityPersonPage";
 import CompatibilityRoute from "./pages/CompatibilityRoute";
 import TimelinePage from "./pages/TimelinePage";
+import CodexToolsPage from "./pages/CodexToolsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import SupportPage from "./pages/SupportPage";
@@ -65,6 +66,7 @@ function Router() {
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
       <Route path="/compatibility/compare" component={CompatibilityPersonPage} />
       <Route path="/timeline" component={TimelineRoute} />
+      <Route path="/tools" component={CodexToolsPage} />
       <Route path="/reading/:id" component={ReadingRoute} />
       <Route path="/profile/:id" component={ProfileRoute} />
       <Route path="/privacy" component={PrivacyPage} />
