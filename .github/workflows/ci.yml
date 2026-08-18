@@ -60,6 +60,7 @@ jobs:
           tests/billing-security.test.ts
           tests/local-first-privacy-contract.test.ts
           tests/server-profile-ownership.test.ts
+          tests/natal-report-contract.test.ts
           tests/active-consumer-auth.test.ts
           tests/native-api-routing.test.ts
 
