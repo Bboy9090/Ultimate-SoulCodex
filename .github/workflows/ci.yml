@@ -62,6 +62,7 @@ jobs:
           tests/server-profile-ownership.test.ts
           tests/natal-report-contract.test.ts
           tests/codex-tools-production-contract.test.ts
+          tests/soul-guide-production-contract.test.ts
           tests/active-consumer-auth.test.ts
           tests/native-api-routing.test.ts
 
