@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Download, Loader2, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/queryClient";
 
 interface NatalReportDownloadButtonProps {
   profileId: string;
@@ -42,9 +43,8 @@ export default function NatalReportDownloadButton({
     setDownloading(true);
 
     try {
-      const response = await fetch(`/api/pdf/profile/${encodeURIComponent(profileId)}`, {
+      const response = await apiFetch(`/api/pdf/profile/${encodeURIComponent(profileId)}`, {
         method: "GET",
-        credentials: "include",
         headers: { Accept: "application/pdf" },
       });
 
