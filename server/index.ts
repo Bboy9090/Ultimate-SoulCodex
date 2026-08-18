@@ -9,6 +9,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
 import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
+import { registerCodexToolRoutes } from "./routes/codex-tools.js";
 import compatibilityRouter from "./routes/compatibility.js";
 import { resolveReleaseIdentity } from "./lib/release-identity.js";
 import {
@@ -92,6 +93,11 @@ app.use(express.urlencoded({ extended: false, limit: "64kb" }));
 // Local-first users can request astronomy verification without creating a
 // server profile, invoking AI generation, or sending unrelated identity data.
 registerProfileVerificationRoutes(app);
+
+// The restored clarity tools accept only the specific text required by each
+// tool. They do not accept or infer a profile, birth data, Moon/Rising, Human
+// Design, or any other identity payload.
+registerCodexToolRoutes(app);
 
 // Soul Codex never handles card details. Checkout sessions are created here,
 // while Stripe's hosted page collects payment information.

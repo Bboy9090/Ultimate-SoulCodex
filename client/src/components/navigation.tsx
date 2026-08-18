@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
+  Compass,
   Eye,
   HeartHandshake,
   Menu,
@@ -28,6 +29,7 @@ export default function Navigation() {
     { href: identityHref, label: "Identity", icon: UserRound },
     { href: "/timeline", label: "Timeline", icon: Orbit },
     { href: "/compatibility", label: "Compatibility", icon: HeartHandshake },
+    { href: "/tools", label: "Tools", icon: Compass },
   ];
 
   return (
