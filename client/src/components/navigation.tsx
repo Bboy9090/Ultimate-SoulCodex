@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
+  BrainCircuit,
   Compass,
   Eye,
   HeartHandshake,
@@ -30,6 +31,7 @@ export default function Navigation() {
     { href: "/timeline", label: "Timeline", icon: Orbit },
     { href: "/compatibility", label: "Compatibility", icon: HeartHandshake },
     { href: "/tools", label: "Tools", icon: Compass },
+    { href: "/guide", label: "Guide", icon: BrainCircuit },
   ];
 
   return (
@@ -65,7 +67,7 @@ export default function Navigation() {
                     href={href}
                     data-testid={`link-${label.toLowerCase()}`}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold no-underline transition-colors ${
+                    className={`flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold no-underline transition-colors ${
                       active
                         ? "bg-white/[0.065] text-[var(--sc-ivory)] shadow-[inset_0_0_0_1px_rgba(217,182,111,.1)]"
                         : "text-[var(--sc-stone)] hover:bg-white/[0.035] hover:text-[var(--sc-ivory)]"
