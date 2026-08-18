@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { buildNatalReportPdf } from "../server/natalReportPdf.ts";
 import {
   buildNatalReportInput,
   natalReportFilename,
@@ -12,8 +13,8 @@ const verifiedSun = {
   internalCandidate: { longitude: 174.25 },
 };
 
-test("natal PDF promotes only verified astronomy and drops legacy precision", () => {
-  const report = buildNatalReportInput({
+function evidenceProfile() {
+  return {
     name: "Evidence Test",
     birthDate: new Date("1990-09-17T00:00:00.000Z"),
     birthTime: "",
@@ -47,7 +48,11 @@ test("natal PDF promotes only verified astronomy and drops legacy precision", ()
       status: "calculated_unverified",
       candidate: { type: "Reflector", strategy: "Wait a lunar cycle" },
     },
-  });
+  };
+}
+
+test("natal PDF promotes only verified astronomy and drops legacy precision", () => {
+  const report = buildNatalReportInput(evidenceProfile());
 
   const astrology = report.astrology as any;
   assert.equal(astrology.sunSign, "Virgo");
@@ -61,6 +66,12 @@ test("natal PDF promotes only verified astronomy and drops legacy precision", ()
   assert.match(report.aiText.bigThreeMoon, /unresolved/i);
   assert.match(report.aiText.houseEmphasis, /intentionally not claimed/i);
   assert.match(report.aiText.hdInterpretation, /not independently verified/i);
+});
+
+test("truth-safe premium payload renders real PDF bytes", async () => {
+  const pdf = await buildNatalReportPdf(buildNatalReportInput(evidenceProfile()));
+  assert.equal(pdf.subarray(0, 4).toString("latin1"), "%PDF");
+  assert.ok(pdf.length > 5_000, `expected a substantial report, got ${pdf.length} bytes`);
 });
 
 test("verified Human Design exposes only verified core fields", () => {
