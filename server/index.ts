@@ -10,6 +10,7 @@ import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
 import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
 import { registerCodexToolRoutes } from "./routes/codex-tools.js";
+import { registerSoulGuideRoutes } from "./routes/soul-guide.js";
 import compatibilityRouter from "./routes/compatibility.js";
 import { resolveReleaseIdentity } from "./lib/release-identity.js";
 import {
@@ -98,6 +99,11 @@ registerProfileVerificationRoutes(app);
 // tool. They do not accept or infer a profile, birth data, Moon/Rising, Human
 // Design, or any other identity payload.
 registerCodexToolRoutes(app);
+
+// Soul Guide accepts the user's question and, only when the caller names an
+// owned server profile, a narrow evidence adapter built on the server. Caller-
+// supplied profile blobs are rejected by the strict route schema.
+registerSoulGuideRoutes(app);
 
 // Soul Codex never handles card details. Checkout sessions are created here,
 // while Stripe's hosted page collects payment information.
