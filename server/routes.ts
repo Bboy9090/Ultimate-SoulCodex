@@ -23,6 +23,10 @@ import {
 } from "./services/openai-service";
 import { registerGalacticCodeRoutes } from "./routes/galactic-code";
 import { buildNatalReportPdf } from "./natalReportPdf";
+import {
+  buildNatalReportInput,
+  natalReportFilename,
+} from "./lib/natal-report-contract";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -196,27 +200,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pdf/profile/:id", async (req: any, res) => {
     try {
       const profileId = req.params.id;
-      const authToken = req.headers.authorization?.split(" ")[1];
       const profile = await storage.getProfile(profileId);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
-      if (!profile.isPremium) return res.status(403).json({ message: "Premium access required" });
-      if (!authToken || authToken !== profileId) return res.status(401).json({ message: "Unauthorized access to this profile" });
-      const pdfBuffer = await buildNatalReportPdf({
-        name: profile.name,
-        birthDate: profile.birthDate.toISOString().split("T")[0],
-        birthTime: profile.birthTime || "",
-        birthLocation: profile.birthLocation || "",
-        astrology: profile.astrologyData || {},
-        humanDesign: {},
-        aiText: {
-          overview: profile.biography || "Your cosmic profile awaits.",
-          bigThreeSun: "", bigThreeMoon: "", bigThreeRising: "", whatStandsOut: [], workingInterpretation: "", elementEmphasis: "", houseEmphasis: "", bottomLine: profile.dailyGuidance || "", hdInterpretation: "",
-        },
-        isPremium: true,
-      });
+      if (!profile.isPremium) {
+        return res.status(403).json({
+          message: "Premium access required",
+          code: "premium_required",
+        });
+      }
+
+      // Ownership is established by the same user/session policy as the profile
+      // itself. Do not require a second pseudo-secret equal to the profile ID.
+      const pdfBuffer = await buildNatalReportPdf(buildNatalReportInput(profile));
+      const filename = natalReportFilename(profile.name);
+
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${profile.name}-soul-codex.pdf"`);
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.setHeader("Content-Length", pdfBuffer.length);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating PDF:", error);
