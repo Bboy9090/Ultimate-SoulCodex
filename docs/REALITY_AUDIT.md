@@ -1,136 +1,90 @@
 # Soul Codex — Reality Audit
 
-A running, honest ledger of what is actually real vs. what is assumed. Update it
-whenever a subsystem is validated, fixed, or found broken. "Working" means
-observed producing real, correct output — not "the file exists."
+This file is the current evidence ledger. “Working” means the active source path has a test or observed receipt supporting the claim. Historical code, old smoke notes, and files that merely exist do not count as production evidence.
 
-_Last updated: 2026-06-20 (production hardening RC1 pass)_
+_Last updated: 2026-08-18_
 
----
+**Audited `main` baseline:** `2933a6d004500b0cf1ba8075e020c39e851b1200`
 
-## ✅ Confirmed working (validated this pass)
+## Confirmed on current main
 
-| Area | Evidence |
+| Area | Current evidence |
 |---|---|
-| Western natal chart | `calculateAstrology` → 1990-11-08 14:30 NYC = **Sun Scorpio, Moon Leo, Rising Pisces**, houses present. `/api/astro/fullchart` returns all 10 planets with degrees. |
-| Human Design | `/today` renders **Generator / Sacral Authority / 3-6 profile** from real birth data. |
-| Numerology | Personal Day, Life Path, Universal Day compute deterministically. |
-| Daily card | `/api/today/card` → real `moonPhase` ("Waxing Gibbous"), `personalDay`, today's date. |
-| Soul archetype + synthesis | Real archetype, non-empty strengths/shadows/bio/purpose, **no single-letter stubs**, honest `confidence` + `astrologyStatus`. |
-| Unknown-time honesty | No birth time → Rising omitted (not faked), status `partial` with reason. AI Soul Guide explicitly forbidden from inferring rising/houses/ascendant via system prompt + profile-block guards. Verified `scripts/smoke-unknown-time.ts` (**7/7**). |
-| Astrology services | `horoscope`, `vedic`, `asteroids`, `transits`, `progressions`, `daily-context` all pass `scripts/smoke-astrology.ts` (**7/7**). |
-| Profile persistence | Created profile stored in `localStorage` (~57 KB); survives navigation/reload. |
-| Vertical slice | `/start → /today → /codex` renders real per-profile data with no `Unknown`/`undefined`/fetch errors. |
-| API routing | `resolveApiUrl` now: VITE_API_URL > Capacitor-native→prod > browser→same-origin. Localhost no longer hits prod. |
-| Build / typecheck / boot | `build:server`, `build:client`, `npm run check` (incl. `@soulcodex/astrology`) pass; server boots DB-less (MemStorage). |
+| Local-first profile path | Active `/create`, local profile storage, direct local-profile reload, and offline restart are covered by the PWA/lifecycle suites. Online astronomy verification remains explicit rather than automatic. |
+| Unknown-time honesty | Moon/Ascendant evidence contracts fail closed when required evidence is missing. No release claim may fill unknown time-dependent values from a guess. |
+| Astronomy foundation | Sun/Moon/Ascendant promotion is evidence-status gated. Live Ephemeris Evidence, independent-verification, tolerance-policy, production-verification, Ascendant, and golden-profile tests are active CI gates. |
+| Numerology | Core calculations are deterministic workspace logic. Their arithmetic can be resolved exactly from valid inputs; meanings remain symbolic interpretation. |
+| Clarity reading | Canonical UI route is `/reading/:id`, with separate local/server profile handling. Quick / Standard / Deep Dive reading is part of the active client. |
+| Compatibility | Active evidence-aware Explorer and person-comparison routes use the currently approved minimized inputs. Human Design is not silently added to Foundation Compatibility. |
+| Timeline | Active `/timeline` route with lifecycle/offline validation. Timeline observations remain distinct from symbolic system claims. |
+| Privacy / ownership | Server profile reads, mutations, deletion, and premium PDF use current user/session ownership contracts. Gate 4 includes PostgreSQL lifecycle and deletion proof. |
+| Billing boundary | Current source creates hosted Stripe Checkout sessions and does not collect raw card number, expiry, or security-code fields into Soul Codex application memory. Store-policy acceptance of that monetization path is a separate external question. |
+| Elegant Natal Chart PDF | Restored in PR #219 and merged at this audited baseline. Premium/server-owned profiles can request a real PDFKit report. The regression test renders actual bytes, requires a `%PDF` signature and non-trivial size, and blocks legacy unverified Moon/Rising/houses/aspects/nodes/Chiron/Human Design from being promoted as verified report facts. |
+| Native compile smoke | Current-source Android debug and iOS Simulator builds passed on the exact PR #219 head before merge. This is compile/simulator evidence, not physical-device or store-acceptance evidence. |
+| Railway container contract | Repository container smoke passes and repo configuration is Dockerfile-only. `Procfile` was removed and CI blocks Nixpacks/Railpack/Procfile-style competing repo configs. |
+| PWA offline browser | Chromium/WebKit offline restart and direct local-profile reload passed on the exact PR #219 head before merge. |
 
-## 🟡 Partially working
+## Signed artifact reality
 
-| Area | Status |
+The previously signed **rc.2** mobile artifacts remain bound to the frozen application SHA:
+
+`2e02d1023ddeb4e453236c34f2d4d2b7f6948957`
+
+They do **not** automatically contain later `main` changes such as the Dockerfile-only hardening or the restored Natal PDF wiring. A later source merge passing native compile does not retroactively modify an already signed IPA/AAB.
+
+Known signed-artifact receipts:
+
+- iOS IPA SHA-256: `8a8e33beb7931e2c0459129eebecff0e457458867cfdb3b3a39826b8522f0`
+- Android AAB SHA-256: `14a07d97b27eb581471e57d83069f9eb60b4c6d05553b7f077c70dc662052fcd`
+
+## External controls not yet proven here
+
+| Boundary | Honest status |
 |---|---|
-| Codex deep reading (`/api/codex30/generate`) | Returns 200 from localhost; archetype + codename render. Long-form narrative is brief without AI keys (deterministic fallback is minimal). AI keys enhance it. |
-| Compatibility | **Hardened for scoring honesty.** Astrology + numerology synastry are real; missing systems (Human Design when birth time unknown, personality, moral compass, the 15 advanced) are **excluded and re-normalized**, never scored 0 or a constant 70. Response includes a `confidence` badge + `systemsUsed`/`systemsExcluded`/`missingDataWarnings`. Verified via `scripts/smoke-compatibility.ts` (6/6) + live API. The 15 advanced systems remain unbuilt on the onboarding path — marked unavailable and unweighted, not faked. |
-| Narrative richness without AI | Deterministic copy is solid but shorter than AI output. By design: AI enhances, does not rescue. |
+| Railway live service builder override | Repo says Dockerfile-only, but a Railway dashboard-level Railpack/Nixpacks override can supersede repo configuration. Live service closure still requires a fresh build of the intended exact `main` SHA plus `/health` and Compatibility probes. |
+| Google Play ingestion | Signed AAB exists, but this ledger does not claim Play Internal Testing accepted the intended build or that an enrolled tester installed it. |
+| App Store Connect / TestFlight ingestion | Signed IPA exists, but this ledger does not claim App Store Connect processed/accepted the intended build or that an internal tester installed it. |
+| Physical iOS/Android hardware validation | Procedure exists; no release PASS is claimed without store-delivered device evidence. |
+| Store review / production acceptance | Not equivalent to signing, CI, TestFlight processing, or Play internal-test ingestion. No production-store acceptance claim is made here. |
 
-## ❌ Broken / fixed this pass
+## Deliberately unresolved advanced systems
 
-| Issue | Status |
-|---|---|
-| `astronomy-engine` CJS/ESM interop (`Observer is not a constructor`) → all charts "Unknown" | **Fixed** across all importers (`Astro = default ?? namespace` alias). |
-| Synthesis single-letter stubs (`"T."`, `"P."`) | **Fixed** (rewrote `cleanup()` + per-field guards). |
-| `astrologyData: null` returned silently | **Fixed** (normalize shape; return `astrologyStatus {state,reason}`). |
-| Empty `core_strengths` / `shadow_aspects` | **Fixed** (deterministic archetype profile). |
-| Vedic: `Ecliptic(SunPosition())` double-wrap + `.lon`/`.elon` mismatch + plain-object `Observer` | **Fixed** (`services/vedic-astrology.ts`). |
-| `localhost` silently calling production Railway | **Fixed** (`resolveApiUrl`). |
+The following are **not** production facts merely because legacy renderers, services, or old branches contain code for them:
 
-## ❓ Untested (no claim made)
+- full verified house cusps and Midheaven;
+- verified nodes, Chiron, and planetary house placements;
+- authoritative Human Design advanced interpretation or Human Design Compatibility;
+- Palmistry computer-vision analysis;
+- Astrocartography planetary-line calculation and map rendering.
 
-- Compatibility full `analyze` flow now exercised + hardened (see above). Remaining untested: the 15 advanced systems on the onboarding path (intentionally unbuilt).
-- ~~AI Soul Guide with real provider keys~~ — now verified (Gemini live, 4/4 pass).
-- Push notifications (VAPID), PDF generation, email capture.
-- Capacitor native (iOS) runtime; transit endpoints behind auth (function-level smoke only).
+These require their own calculation/reference/uncertainty evidence before production promotion.
 
----
+## `ca17084` intelligence tranche
 
-## Premium / entitlement (audited 2026-06-20, **hardened**)
+A local/external handoff claims commit:
 
-Plumbing was real; the front door was fake — now fixed. Stripe stays intentionally
-removed (App Store compliance); monetization path is **access-code entitlement**.
-Verified via `scripts/smoke-premium.ts` (7/7) + browser redemption.
+`ca17084df64ebfd91aa16b1721bfd7ff1b3ea443`
 
-| Aspect | Status |
-|---|---|
-| Entitlement source of truth (`entitlement-service.ts`) | ✅ Real — override → Stripe → access code → legacy → none; memoized 5 min. |
-| `/api/entitlements` status endpoint | ✅ Real — owner bypass + session + entitlement. |
-| Access-code redemption (`/api/access-codes/validate`) | ✅ Real — validates active/expiry/maxUses, persists redemption + usage increment, flags session + profile. |
-| PDF generation (`server/natalReportPdf.ts`, pdfkit) | ✅ Real — verified real `%PDF` bytes for natal/profile/compatibility. |
-| Single backend guard (`requirePremium`) | ✅ Added — owner → session → entitlement; returns 403. Applied to `/api/natal-report`, `/api/pdf/profile`, `/api/pdf/compatibility`. |
-| `/api/natal-report` gating | ✅ Fixed — now 403 for anon/free; real PDF only when entitled. |
-| "Upgrade" button (`PricingPage`) | ✅ Fixed — real access-code redemption calling `/api/access-codes/validate`, then confirms via `/api/entitlements`. No localStorage grant. |
-| User-facing redemption UI | ✅ Added — code input + Redeem on Pricing page, clear success/error. |
-| Frontend premium pages (Blueprint/Poster/SoulGuide) | ✅ Fixed — backend-authoritative; localStorage is optimistic cache only (cleared when backend says false). |
-| Frontend↔backend premium agreement | ✅ Aligned — no client flag unlocks by itself. |
-| Stripe payment | ⚪ N/A — removed by design (mock checkout, no-op webhooks). Not "broken." |
-| Cancel / restore flow | ⚪ None — access codes don't cancel; re-entering a code restores access. |
-| Test-mode safety | ✅ Safe by removal (no Stripe keys, no charge path); premium now requires a real server-side code. |
+with parent:
 
-Fix order (tracked on `claude/harden-premium`): remove fake unlock → real access-code
-redemption UI → single `requirePremium` guard (incl. `/api/natal-report`) →
-frontend trusts `/api/entitlements` → PDF smoke validation. Stripe stays mocked.
+`142a0ebdb9aa5d1eeb1e041c35784f36afceb821`
 
-## AI Soul Guide (audited 2026-06-20)
+and tree:
 
-| Aspect | Status |
-|---|---|
-| Provider selection (Gemini→Groq→OpenAI cascade) | ✅ Real — `getAvailableProvider()` in `ai-provider.ts`, dummy-key sentinel check, 8s per-provider timeout in `ai-router.ts`. |
-| Deterministic fallback without keys | ✅ Real — `deterministicFallback()` in `services/deterministic-fallback.ts` returns profile-aware behavioral synthesis (sun/moon nuance, HD type, numerology). Not empty. |
-| Premium gating | ✅ Real — `/api/chat/soul-guide` checks session→owner→entitlement. Free: 1-2 questions then 403. Premium: unlimited. |
-| Real profile/chart usage | ✅ Real — `ai-respond.ts` + `chat.ts` inject actual sunSign, moonSign, risingSign, lifePath, HD type into prompt. |
-| Unknown-time honesty | ✅ Real (hardened) — System prompt + profile block explicitly forbid AI from inferring rising/ascendant/houses when birth time unknown. Verified `scripts/smoke-unknown-time.ts` (7/7). |
-| Hallucinated chart facts | ✅ Guarded — CORE_DATA_RULE restricts to 1-3 relevant placements; `finalOutputGuard` rejects low-quality output. |
-| Prompt/system-data leakage | ✅ Secure — Response streams only `{ content }` chunks. System prompt never sent to client. |
-| Sensitive data in logs | ✅ Clean — Only error messages logged, never prompts, birth data, or API keys. Cache uses SHA256 hashes. |
-| Rate limiting | ✅ Real — Session-based chatCount, 1-2 free then 403. No global IP rate limit (acceptable at current scale). |
-| Provider failure fallback | ✅ Real — Cascading Gemini(8s)→Groq(8s)→OpenAI(8s)→deterministic. User never sees raw error. |
-| Real-key provider smoke | ✅ Real — Gemini responds live (1200-1500 chars), unknown-time guard holds with live AI (no rising/house fabrication), rate limit fires 403 after 2 free. Verified `scripts/smoke-ai-live.ts` (4/4). |
+`51b52bf68fc2d99b75a6fd4a5ec7336b72a0ba40`.
 
-## Routes / pages validated this pass
-- API: `/api/health`, `/api/soul-archetype` (known + unknown time), `/api/today/card`, `/api/astro/fullchart`.
-- API routing (VITE_API_URL unset): `/api/codex30/generate`, `/api/astro/horoscope/daily`, `/api/compatibility/archetype-matches` all 200 from `localhost` (zero Railway calls).
-- UI: `/` (landing), `/today`, `/codex`.
-- Service-level (smoke): astrology, horoscope, vedic, asteroids, transits, progressions, daily-context.
+Those exact commit/parent SHAs do not resolve in the authorized GitHub repository, and the claimed patch/diff/manifest bytes were not available to the authorized file surface during the independent audit. Therefore the local reproduction report is **not independently certified by this ledger**. If the patch is supplied or the commit is pushed to an accessible ref, it must still be reconciled onto current `main` and re-run through exact-head doctrine/security/native/container gates.
 
-## Production hardening (hardened 2026-06-20)
+## Pending recovery branch
 
-| Aspect | Status |
-|---|---|
-| Security headers (helmet) | ✅ Real — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-DNS-Prefetch-Control, X-Powered-By hidden. |
-| Global API rate limiting | ✅ Real — 300 req/15min global, 10 req/min AI endpoints, 20 req/15min auth endpoints. `express-rate-limit` with standard headers. |
-| AI endpoint rate limiting | ✅ Real — `/api/chat`, `/api/ai`, `/api/codex30`, `/api/codex-tools` at 10 req/min. |
-| Auth endpoint rate limiting | ✅ Real — `/api/auth`, `/api/access-codes` at 20 req/15min. |
-| Session hardening | ✅ Real — httpOnly, secure (production), sameSite=lax, maxAge=7d, `saveUninitialized: false`. |
-| CORS | ✅ Real — env-driven `ALLOWED_ORIGINS` in production, permissive in dev for localhost/Capacitor. |
-| JSON body size limit | ✅ Real — 1MB limit on `express.json()` and `express.urlencoded()`. |
-| Error response safety | ✅ Real — production returns generic 500 message, no stack traces. Dev mode logs full details. |
-| Startup validation | ✅ Real — `SESSION_SECRET` required at boot, AI key absence logged as warning. |
-| Static asset caching | ✅ Real — hashed `/assets/*` get `max-age=1y, immutable`; other static files get `max-age=1h`. |
-| Verified via `scripts/smoke-production.ts` (7/7). |
+Branch `fix/restore-truth-safe-codex-tools` is a **candidate, not current production** until merged. Its purpose is to recover only three old tool concepts with explicit evidence labels and minimal data:
 
-## Commands run
-```
-npm run build:server
-npm run build:client
-npm run check            # workspaces incl. @soulcodex/astrology
-npx tsx scripts/smoke-astrology.ts       # 7/7
-npx tsx scripts/smoke-compatibility.ts   # 6/6
-npx tsx scripts/smoke-premium.ts         # 7/7
-npx tsx scripts/smoke-unknown-time.ts    # 7/7
-npx tsx scripts/smoke-production.ts      # 7/7
-```
+1. **Before You Act** — text-pattern heuristic only.
+2. **Boundary Script** — editable communication template only.
+3. **Codex Draw** — explicitly symbolic random reflection only.
 
-## How to re-verify
-```
-SESSION_SECRET=dev DEMO_MODE=true npm run dev   # boots without a DB
-npx tsx scripts/smoke-astrology.ts              # must print 7/7, exit 0
-npx tsx scripts/smoke-production.ts             # must print 7/7, exit 0
-```
+The old unmounted Codex Tools route accepted arbitrary profile objects and trusted legacy naked Moon/Rising/Human Design fields. The candidate replacement rejects hidden profile payloads and does not expose the fake weekday-as-“transit” Daily Pull, arbitrary “decision confidence” percentage, or assertive “what you’re ignoring” output.
+
+## Rule for future edits
+
+When a feature changes state, update this ledger only after its supporting evidence changes. Do not promote “file exists,” “branch exists,” “CI started,” “artifact signed,” “store upload started,” or “dashboard says deployed” into a stronger claim than the evidence supports.
