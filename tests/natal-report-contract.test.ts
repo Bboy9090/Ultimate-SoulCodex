@@ -98,7 +98,7 @@ test("verified Human Design exposes only verified core fields", () => {
 test("report filenames cannot inject headers or unsafe path characters", () => {
   assert.equal(
     natalReportFilename(' Bobby\r\nContent-Type: text/html / ../ '),
-    "BobbyContent-Type_text_html_Natal_Chart_Report.pdf",
+    "BobbyContent_Type_texthtml_Natal_Chart_Report.pdf",
   );
 });
 
