@@ -61,8 +61,10 @@ jobs:
           tests/billing-security.test.ts
           tests/local-first-privacy-contract.test.ts
           tests/location-resolution-contract.test.ts
+          tests/system-visibility-contract.test.ts
           tests/server-profile-ownership.test.ts
           tests/natal-report-contract.test.ts
+          tests/pdf-production-path-contract.test.ts
           tests/codex-tools-production-contract.test.ts
           tests/active-consumer-auth.test.ts
           tests/native-api-routing.test.ts
