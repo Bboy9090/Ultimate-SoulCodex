@@ -3,7 +3,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 
-const root = new URL("..", import.meta.url);
 const serverRoutes = readFileSync(new URL("../server/routes.ts", import.meta.url), "utf8");
 const serverIndex = readFileSync(new URL("../server/index.ts", import.meta.url), "utf8");
 const button = readFileSync(new URL("../client/src/components/NatalReportDownloadButton.tsx", import.meta.url), "utf8");
@@ -11,8 +10,7 @@ const truthAdapter = readFileSync(new URL("../server/lib/natal-report-contract.t
 const elegantRenderer = readFileSync(new URL("../server/natalReportPdf.ts", import.meta.url), "utf8");
 
 function filesUnder(relative: string): string[] {
-  const start = new URL(`../${relative}`, import.meta.url);
-  const startPath = start.pathname;
+  const startPath = new URL(`../${relative}`, import.meta.url).pathname;
   const files: string[] = [];
   const walk = (directory: string) => {
     for (const entry of readdirSync(directory)) {
