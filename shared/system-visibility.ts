@@ -113,11 +113,15 @@ export const SOUL_CODEX_SYSTEM_POLICIES = {
 
 export type SoulCodexSystemKey = keyof typeof SOUL_CODEX_SYSTEM_POLICIES;
 
+function policyFor(system: SoulCodexSystemKey): SoulCodexSystemPolicy {
+  return SOUL_CODEX_SYSTEM_POLICIES[system];
+}
+
 export function maySystemInfluenceSynthesis(
   system: SoulCodexSystemKey,
   evidenceState: SoulCodexEvidenceState,
 ): boolean {
-  const policy = SOUL_CODEX_SYSTEM_POLICIES[system];
+  const policy = policyFor(system);
   if (!policy.mayInfluencePrimarySynthesis || policy.visibility === "unavailable") {
     return false;
   }
@@ -139,9 +143,13 @@ export function mayInspectSystem(
   system: SoulCodexSystemKey,
   evidenceState: SoulCodexEvidenceState,
 ): boolean {
-  const policy = SOUL_CODEX_SYSTEM_POLICIES[system];
+  const policy = policyFor(system);
   if (policy.visibility === "unavailable") return false;
-  if (evidenceState === "verified" || evidenceState === "deterministic" || evidenceState === "assessed") {
+  if (
+    evidenceState === "verified" ||
+    evidenceState === "deterministic" ||
+    evidenceState === "assessed"
+  ) {
     return true;
   }
   return policy.inspectableWhenUnverified && evidenceState === "candidate";
