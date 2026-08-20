@@ -11,6 +11,13 @@ export type SoulCodexEvidenceRequirement =
   | "user-assessment"
   | "not-production-ready";
 
+export type SoulCodexEvidenceState =
+  | "verified"
+  | "deterministic"
+  | "assessed"
+  | "candidate"
+  | "unavailable";
+
 export interface SoulCodexSystemPolicy {
   id: string;
   label: string;
@@ -103,6 +110,42 @@ export const SOUL_CODEX_SYSTEM_POLICIES = {
     rule: "No generated palm claims without an actual image-analysis contract and explicit image consent.",
   },
 } as const satisfies Record<string, SoulCodexSystemPolicy>;
+
+export type SoulCodexSystemKey = keyof typeof SOUL_CODEX_SYSTEM_POLICIES;
+
+export function maySystemInfluenceSynthesis(
+  system: SoulCodexSystemKey,
+  evidenceState: SoulCodexEvidenceState,
+): boolean {
+  const policy = SOUL_CODEX_SYSTEM_POLICIES[system];
+  if (!policy.mayInfluencePrimarySynthesis || policy.visibility === "unavailable") {
+    return false;
+  }
+
+  switch (policy.evidenceRequirement) {
+    case "deterministic":
+      return evidenceState === "deterministic" || evidenceState === "verified";
+    case "verified-astronomy":
+    case "verified-system-contract":
+      return evidenceState === "verified";
+    case "user-assessment":
+      return evidenceState === "assessed" || evidenceState === "verified";
+    case "not-production-ready":
+      return false;
+  }
+}
+
+export function mayInspectSystem(
+  system: SoulCodexSystemKey,
+  evidenceState: SoulCodexEvidenceState,
+): boolean {
+  const policy = SOUL_CODEX_SYSTEM_POLICIES[system];
+  if (policy.visibility === "unavailable") return false;
+  if (evidenceState === "verified" || evidenceState === "deterministic" || evidenceState === "assessed") {
+    return true;
+  }
+  return policy.inspectableWhenUnverified && evidenceState === "candidate";
+}
 
 export function systemsAllowedToInfluenceSynthesis(): SoulCodexSystemPolicy[] {
   return Object.values(SOUL_CODEX_SYSTEM_POLICIES).filter(
