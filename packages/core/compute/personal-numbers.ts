@@ -5,6 +5,8 @@
  * Used consistently across Today, Profile, Timeline, and Codex surfaces.
  */
 
+import { parseDateOnly } from './date-only.js';
+
 function reduceToSingleDigit(num: number): number {
   while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
     num = num.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
@@ -21,9 +23,7 @@ function reduceToSingleDigit(num: number): number {
  * calcPersonalDay("1990-08-15", new Date("2026-07-06")) // July 6, 2026 for someone born Aug 15
  */
 export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()): number {
-  const birth = new Date(birthDate);
-  const birthDay = birth.getDate();
-  const birthMonth = birth.getMonth() + 1;
+  const { day: birthDay, month: birthMonth } = parseDateOnly(birthDate);
   const targetDay = targetDate.getDate();
   const targetMonth = targetDate.getMonth() + 1;
   const targetYear = targetDate.getFullYear();
@@ -60,9 +60,9 @@ export function calcPersonalYear(
   // 1. (birthDate: string, targetYear: number)
   // 2. (birthMonth: number, birthDay: number, targetYear: number)
   if (typeof birthDateOrMonth === 'string') {
-    const birth = new Date(birthDateOrMonth);
-    birthMonth = birth.getMonth() + 1;
-    birthDay = birth.getDate();
+    const birth = parseDateOnly(birthDateOrMonth);
+    birthMonth = birth.month;
+    birthDay = birth.day;
     targetYear = targetYearOrDay || new Date().getFullYear();
   } else {
     // Legacy signature: (month, day, year)

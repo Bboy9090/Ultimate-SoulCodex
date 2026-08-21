@@ -12,6 +12,7 @@
  * 5. Recovery messaging (missing, corrupted, wrong version)
  */
 
+import { calcLifePath } from "@soulcodex/core";
 import type { PlacementLike } from './placementVerification';
 
 export interface StoredProfile {
@@ -105,7 +106,9 @@ export function loadActiveProfile(): ProfileLoadResult {
     if (canonical.status === "loaded") {
       const validation = validateProfile(canonical.profile);
       if (validation.valid) {
-        return { status: "loaded", profile: canonical.profile };
+        const repaired = repairStoredLifePath(canonical.profile);
+        if (repaired !== canonical.profile) saveToKey(CANONICAL_KEY, repaired);
+        return { status: "loaded", profile: repaired };
       }
       return {
         status: validation.reason === "wrong-version" ? "wrong-version" : "corrupted",
@@ -288,12 +291,12 @@ function migrateLegacyProfile(profile: StoredProfile): {
   if (!profile.birthDate) return { success: false };
 
   const now = new Date().toISOString();
-  const migrated: StoredProfile = {
+  const migrated: StoredProfile = repairStoredLifePath({
     ...profile,
     schemaVersion: SCHEMA_VERSION,
     createdAt: profile.createdAt ?? now,
     updatedAt: now,
-  };
+  });
 
   saveToKey(CANONICAL_KEY, migrated);
   const readBack = readFromKey(CANONICAL_KEY);
@@ -304,6 +307,40 @@ function migrateLegacyProfile(profile: StoredProfile): {
 
   notifyProfileUpdated();
   return { success: true, profile: readBack.profile };
+}
+
+function repairStoredLifePath(profile: StoredProfile): StoredProfile {
+  const storedNumerology =
+    profile.numerologyData && typeof profile.numerologyData === "object"
+      ? profile.numerologyData
+      : undefined;
+  const hasStoredLifePath =
+    profile.lifePathNumber !== undefined || storedNumerology?.lifePath !== undefined;
+  if (!profile.birthDate || !hasStoredLifePath) return profile;
+
+  let expectedLifePath: number;
+  try {
+    expectedLifePath = calcLifePath(profile.birthDate);
+  } catch {
+    return profile;
+  }
+
+  if (
+    profile.lifePathNumber === expectedLifePath &&
+    (!storedNumerology || storedNumerology.lifePath === expectedLifePath)
+  ) {
+    return profile;
+  }
+
+  return {
+    ...profile,
+    lifePathNumber: expectedLifePath,
+    numerologyData: {
+      ...(storedNumerology ?? {}),
+      lifePath: expectedLifePath,
+    },
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 function validateProfile(
