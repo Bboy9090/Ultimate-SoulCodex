@@ -314,8 +314,9 @@ function repairStoredLifePath(profile: StoredProfile): StoredProfile {
     profile.numerologyData && typeof profile.numerologyData === "object"
       ? profile.numerologyData
       : undefined;
-  const hasStoredLifePath =
-    profile.lifePathNumber !== undefined || storedNumerology?.lifePath !== undefined;
+  const hasFlatLifePath = typeof profile.lifePathNumber === "number";
+  const hasNumericNestedLifePath = typeof storedNumerology?.lifePath === "number";
+  const hasStoredLifePath = hasFlatLifePath || hasNumericNestedLifePath;
   if (!profile.birthDate || !hasStoredLifePath) return profile;
 
   let expectedLifePath: number;
@@ -326,19 +327,18 @@ function repairStoredLifePath(profile: StoredProfile): StoredProfile {
   }
 
   if (
-    profile.lifePathNumber === expectedLifePath &&
-    (!storedNumerology || storedNumerology.lifePath === expectedLifePath)
+    (!hasFlatLifePath || profile.lifePathNumber === expectedLifePath) &&
+    (!hasNumericNestedLifePath || storedNumerology?.lifePath === expectedLifePath)
   ) {
     return profile;
   }
 
   return {
     ...profile,
-    lifePathNumber: expectedLifePath,
-    numerologyData: {
-      ...(storedNumerology ?? {}),
-      lifePath: expectedLifePath,
-    },
+    ...(hasFlatLifePath ? { lifePathNumber: expectedLifePath } : {}),
+    ...(hasNumericNestedLifePath
+      ? { numerologyData: { ...storedNumerology, lifePath: expectedLifePath } }
+      : {}),
     updatedAt: new Date().toISOString(),
   };
 }
