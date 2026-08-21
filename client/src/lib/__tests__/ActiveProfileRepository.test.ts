@@ -47,6 +47,28 @@ describe("ActiveProfileRepository", () => {
   });
 
   describe("Canonical profile lifecycle", () => {
+    it("repairs a timezone-shifted stored Life Path on load", () => {
+      localStorageMock.setItem(
+        "soulcodex.activeProfile.v1",
+        JSON.stringify({
+          birthDate: "1990-09-17",
+          lifePathNumber: 8,
+          numerologyData: { lifePath: 8, expression: 4 },
+          schemaVersion: 1,
+        }),
+      );
+
+      const loadResult = loadActiveProfile();
+
+      expect(loadResult.status).toBe("loaded");
+      expect(loadResult.profile?.lifePathNumber).toBe(9);
+      expect(loadResult.profile?.numerologyData).toEqual({ lifePath: 9, expression: 4 });
+      expect(
+        JSON.parse(localStorageMock.getItem("soulcodex.activeProfile.v1") ?? "{}")
+          .lifePathNumber,
+      ).toBe(9);
+    });
+
     it("should save and load a profile under canonical key", () => {
       const profile: StoredProfile = {
         birthDate: "1990-09-17",
@@ -55,7 +77,7 @@ describe("ActiveProfileRepository", () => {
         sunSign: "Virgo",
         moonSign: "Pisces",
         risingSign: "Scorpio",
-        lifePathNumber: 7,
+        lifePathNumber: 9,
         archetype: "The Analyst",
       };
 
@@ -221,7 +243,7 @@ describe("ActiveProfileRepository", () => {
         sunSign: "Virgo",
         moonSign: "Pisces",
         risingSign: "Scorpio",
-        lifePathNumber: 7,
+        lifePathNumber: 9,
         humanDesignType: "Manifestor",
         archetype: "The Analyst",
       };
@@ -240,7 +262,7 @@ describe("ActiveProfileRepository", () => {
       expect(profile.sunSign).toBe("Virgo");
       expect(profile.moonSign).toBe("Pisces");
       expect(profile.risingSign).toBe("Scorpio");
-      expect(profile.lifePathNumber).toBe(7);
+      expect(profile.lifePathNumber).toBe(9);
       expect(profile.humanDesignType).toBe("Manifestor");
       expect(Object.keys(profile).length).toBeGreaterThan(5);
     });
