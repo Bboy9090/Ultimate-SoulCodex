@@ -1,4 +1,5 @@
 import type { OfflineCodexProfile } from "@soulcodex/core";
+import { repairFoundationOfflineCodexProfile } from "./foundationOfflineCodex";
 
 const DB_NAME = "soulcodex-offline";
 const DB_VERSION = 1;
@@ -78,14 +79,29 @@ export async function saveOfflineProfile(profile: OfflineCodexProfile): Promise<
 }
 
 export async function loadOfflineProfile(id: string): Promise<OfflineCodexProfile | null> {
-  if (!hasIndexedDb()) return loadFallback(id);
+  if (!hasIndexedDb()) {
+    const stored = loadFallback(id);
+    if (!stored) return null;
+    const repaired = repairFoundationOfflineCodexProfile(stored);
+    if (repaired !== stored) saveFallback(repaired);
+    return repaired;
+  }
 
   try {
-    const profile = await withStore<OfflineCodexProfile | undefined>("readonly", (store) => store.get(id));
-    return profile ?? loadFallback(id);
+    const stored =
+      (await withStore<OfflineCodexProfile | undefined>("readonly", (store) => store.get(id))) ??
+      loadFallback(id);
+    if (!stored) return null;
+    const repaired = repairFoundationOfflineCodexProfile(stored);
+    if (repaired !== stored) await saveOfflineProfile(repaired);
+    return repaired;
   } catch (error) {
     console.warn("[offlineProfileStore] IndexedDB read failed; using localStorage fallback", error);
-    return loadFallback(id);
+    const stored = loadFallback(id);
+    if (!stored) return null;
+    const repaired = repairFoundationOfflineCodexProfile(stored);
+    if (repaired !== stored) saveFallback(repaired);
+    return repaired;
   }
 }
 

@@ -1,6 +1,25 @@
 const digitSum = (n: number): number => 
   Math.abs(n).toString().split("").reduce((a, b) => a + Number(b), 0);
 
+const dateOnlyParts = (isoDOB: string) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDOB);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    candidate.getUTCFullYear() !== year ||
+    candidate.getUTCMonth() + 1 !== month ||
+    candidate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+};
+
 const reduceCore = (n: number): number => {
   while (![11, 22, 33].includes(n) && n > 9) {
     n = digitSum(n);
@@ -10,20 +29,23 @@ const reduceCore = (n: number): number => {
 
 export const lifePath = (isoDOB?: string): number | null => {
   if (!isoDOB) return null;
-  const d = new Date(isoDOB);
-  const total = digitSum(d.getFullYear()) + digitSum(d.getMonth() + 1) + digitSum(d.getDate());
+  const d = dateOnlyParts(isoDOB);
+  if (!d) return null;
+  const total = digitSum(d.year) + digitSum(d.month) + digitSum(d.day);
   return reduceCore(reduceCore(total));
 };
 
 export const birthDay = (isoDOB?: string): number | null => {
   if (!isoDOB) return null;
-  return reduceCore(new Date(isoDOB).getDate());
+  const d = dateOnlyParts(isoDOB);
+  return d ? reduceCore(d.day) : null;
 };
 
 export const personalYear = (isoDOB?: string, today = new Date()): number | null => {
   if (!isoDOB) return null;
-  const d = new Date(isoDOB);
-  const total = digitSum(d.getMonth() + 1) + digitSum(d.getDate()) + digitSum(today.getFullYear());
+  const d = dateOnlyParts(isoDOB);
+  if (!d) return null;
+  const total = digitSum(d.month) + digitSum(d.day) + digitSum(today.getFullYear());
   return reduceCore(total);
 };
 

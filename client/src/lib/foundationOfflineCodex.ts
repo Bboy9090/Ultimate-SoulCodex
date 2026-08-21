@@ -264,3 +264,49 @@ export function generateFoundationOfflineCodexProfile(
     updatedAt: generatedAt,
   };
 }
+
+/**
+ * Repair deterministic local synthesis created by the former timezone-sensitive
+ * date parser. Online astronomy evidence is deliberately preserved verbatim.
+ */
+export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfile>(
+  profile: T,
+  options: { repairedAt?: string; currentYear?: number } = {},
+): T {
+  let expectedLifePath: number;
+  try {
+    expectedLifePath = calcLifePath(profile.birthDate);
+  } catch {
+    return profile;
+  }
+
+  if (profile.numerologyData?.lifePath === expectedLifePath) return profile;
+
+  const repairedAt = options.repairedAt ?? new Date().toISOString();
+  const rebuilt = generateFoundationOfflineCodexProfile(
+    {
+      name: profile.name,
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTime ?? "",
+      birthLocation: profile.birthLocation,
+      timezone: profile.timezone,
+      latitude: profile.latitude ?? "",
+      longitude: profile.longitude ?? "",
+    },
+    {
+      id: profile.id,
+      generatedAt: repairedAt,
+      currentYear: options.currentYear,
+    },
+  );
+
+  return {
+    ...profile,
+    numerologyData: rebuilt.numerologyData,
+    archetypeData: rebuilt.archetypeData,
+    biography: rebuilt.biography,
+    dailyGuidance: rebuilt.dailyGuidance,
+    depthInterpretation: rebuilt.depthInterpretation,
+    updatedAt: repairedAt,
+  };
+}

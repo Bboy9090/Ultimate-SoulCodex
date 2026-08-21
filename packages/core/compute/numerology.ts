@@ -1,3 +1,5 @@
+import { parseDateOnly } from './date-only.js';
+
 function reduceToSingleDigit(num: number): number {
   while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
     num = num
@@ -9,12 +11,9 @@ function reduceToSingleDigit(num: number): number {
 }
 
 export function calcLifePath(dateISO: string): number {
-  const date = new Date(dateISO);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
+  const { day, month, year } = parseDateOnly(dateISO);
 
-  let sum = day + month + year;
+  const sum = day + month + year;
   return reduceToSingleDigit(sum);
 }
 

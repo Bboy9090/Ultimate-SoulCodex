@@ -16,16 +16,18 @@ import {
 } from './index.js';
 import { calcPersonalDay, calcPersonalMonth, calcPersonalYear } from '../compute/personal-numbers.js';
 import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality } from '../compute/numerology.js';
+import { parseDateOnly } from '../compute/date-only.js';
 
 type InputState = 'valid' | 'partial' | 'missing' | 'invalid';
 
 function isValidDate(dateStr: string): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return false;
-  // Check format YYYY-MM-DD
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
-  return true;
+  try {
+    parseDateOnly(dateStr);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isValidName(name: string): boolean {
@@ -106,9 +108,7 @@ export function calcPersonalDayWithEvidence(
   }
 
   const personalDay = calcPersonalDay(birthDate, targetDate);
-  const birth = new Date(birthDate);
-  const birthDay = birth.getDate();
-  const birthMonth = birth.getMonth() + 1;
+  const { day: birthDay, month: birthMonth } = parseDateOnly(birthDate);
   const targetDay = targetDate.getDate();
   const targetMonth = targetDate.getMonth() + 1;
   const targetYear = targetDate.getFullYear();
@@ -189,9 +189,7 @@ export function calcPersonalYearWithEvidence(
   }
 
   const personalYear = calcPersonalYear(birthDate, targetYear);
-  const birth = new Date(birthDate);
-  const birthMonth = birth.getMonth() + 1;
-  const birthDay = birth.getDate();
+  const { month: birthMonth, day: birthDay } = parseDateOnly(birthDate);
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -344,10 +342,11 @@ export function calcLifePathWithEvidence(
   }
 
   const lifePathValue = calcLifePath(birthDate);
-  const birth = new Date(birthDate);
-  const birthMonth = birth.getMonth() + 1;
-  const birthDay = birth.getDate();
-  const birthYear = birth.getFullYear();
+  const {
+    month: birthMonth,
+    day: birthDay,
+    year: birthYear,
+  } = parseDateOnly(birthDate);
 
   const evidence = createEvidenceEntry(
     'numerology',
