@@ -9,6 +9,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { registerRoutes } from "./routes.js";
 import { registerProfileVerificationRoutes } from "./routes/profile-verification.js";
+import { registerLocationResolutionRoutes } from "./routes/location-resolution.js";
 import { registerCodexToolRoutes } from "./routes/codex-tools.js";
 import compatibilityRouter from "./routes/compatibility.js";
 import { resolveReleaseIdentity } from "./lib/release-identity.js";
@@ -89,6 +90,10 @@ registerBillingRawRoutes(app);
 
 app.use(express.json({ limit: "256kb", strict: true }));
 app.use(express.urlencoded({ extended: false, limit: "64kb" }));
+
+// Explicit Resolve place requests are handled server-side so the IANA timezone
+// comes from the birth coordinates rather than the timezone of the current device.
+registerLocationResolutionRoutes(app);
 
 // Local-first users can request astronomy verification without creating a
 // server profile, invoking AI generation, or sending unrelated identity data.

@@ -14,6 +14,42 @@ import { normalizeGalacticInput, extractHashableInput } from './normalize';
 import { createGalacticFingerprint } from './fingerprint';
 import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
+import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
+
+function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
+  const astrologyAllowed = maySystemInfluenceSynthesis(
+    'astrologyCore',
+    input.astrology.evidenceState || 'candidate',
+  );
+  const humanDesignAllowed = maySystemInfluenceSynthesis(
+    'humanDesign',
+    input.humanDesign.evidenceState || 'candidate',
+  );
+  const numerologyAllowed = maySystemInfluenceSynthesis(
+    'numerology',
+    input.numerology.evidenceState || 'candidate',
+  );
+  const behaviorAllowed = maySystemInfluenceSynthesis(
+    'personalityAssessments',
+    input.behavior.evidenceState || 'candidate',
+  );
+
+  return {
+    ...input,
+    astrology: astrologyAllowed
+      ? input.astrology
+      : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
+    humanDesign: humanDesignAllowed
+      ? input.humanDesign
+      : { coverage: 'missing', evidenceState: input.humanDesign.evidenceState || 'candidate' },
+    numerology: numerologyAllowed
+      ? input.numerology
+      : { coverage: 'missing', evidenceState: input.numerology.evidenceState || 'candidate' },
+    behavior: behaviorAllowed
+      ? input.behavior
+      : { traits: [], evidenceState: input.behavior.evidenceState || 'candidate' },
+  };
+}
 
 const TEXTURE_WORDS = [
   'Obsidian',
@@ -45,11 +81,13 @@ const FUNCTION_WORDS = [
 ];
 
 export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResult {
+  const eligibleInput = synthesisEligibleInput(input);
+
   // Step 1: Validate minimum system coverage
-  const hasAstrology = input.astrology.coverage !== 'missing' && input.astrology.sun;
-  const hasHD = input.humanDesign.coverage !== 'missing' && input.humanDesign.type;
-  const hasNumerology = input.numerology.coverage !== 'missing' && input.numerology.lifePath;
-  const traitCount = (input.behavior.traits || []).length;
+  const hasAstrology = eligibleInput.astrology.coverage !== 'missing' && eligibleInput.astrology.sun;
+  const hasHD = eligibleInput.humanDesign.coverage !== 'missing' && eligibleInput.humanDesign.type;
+  const hasNumerology = eligibleInput.numerology.coverage !== 'missing' && eligibleInput.numerology.lifePath;
+  const traitCount = (eligibleInput.behavior.traits || []).length;
 
   const systemCount = [hasAstrology, hasHD, hasNumerology].filter(Boolean).length;
 
@@ -58,7 +96,7 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
   }
 
   // Step 2: Normalize
-  const normalized = normalizeGalacticInput(input);
+  const normalized = normalizeGalacticInput(eligibleInput);
 
   // Step 3: Fingerprint
   const hashableInput = extractHashableInput(normalized);
@@ -76,7 +114,7 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
   const primaryFunction = topThreeAxes[0]?.label || 'Architect';
   const secondaryFunction = topThreeAxes[1]?.label || 'Guardian';
   const legacyFunction = determineLegacyFunction(
-    input.numerology.lifePath?.toString(),
+    eligibleInput.numerology.lifePath?.toString(),
     normalized.behavior.builderMode
   );
 
@@ -89,9 +127,9 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
 
   // Step 7: Create frequency
   const frequency = createFrequency(
-    input.birthDate,
-    input.birthTime,
-    input.numerology.lifePath?.toString()
+    eligibleInput.birthDate,
+    eligibleInput.birthTime,
+    eligibleInput.numerology.lifePath?.toString()
   );
 
   // Step 8: Element matrix

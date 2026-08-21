@@ -83,8 +83,10 @@ function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
       profile.timezone &&
       profile.latitude !== null &&
       profile.latitude !== undefined &&
+      String(profile.latitude).trim() &&
       profile.longitude !== null &&
-      profile.longitude !== undefined,
+      profile.longitude !== undefined &&
+      String(profile.longitude).trim(),
   );
 }
 
@@ -164,6 +166,15 @@ export function reconcileOfflineProfile(
   };
 }
 
+/**
+ * A profile still needs astronomy verification when:
+ * - Sun or Moon has not been independently verified; or
+ * - exact timed Ascendant inputs exist and Rising has not actually verified.
+ *
+ * Verification-version bookkeeping must never suppress a retry after a
+ * temporary reference/engine failure. Version 2 means the profile understands
+ * the Ascendant contract; it does not mean the Ascendant itself passed.
+ */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
 ): boolean {
@@ -171,11 +182,8 @@ export function profileNeedsOnlineVerification(
     return true;
   }
 
-  const syncedVersion = profile.remoteSync?.verificationVersion ?? 1;
-  const needsAscendantMigration =
+  return Boolean(
     hasExactAscendantInputs(profile) &&
-    syncedVersion < CURRENT_ASTROLOGY_VERIFICATION_VERSION &&
-    !getVerifiedAstrologySign(profile.verifiedAstrologyData, "rising");
-
-  return needsAscendantMigration;
+      !getVerifiedAstrologySign(profile.verifiedAstrologyData, "rising"),
+  );
 }
