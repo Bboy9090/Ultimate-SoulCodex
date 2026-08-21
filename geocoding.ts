@@ -17,6 +17,7 @@ const LOCATION_DATABASE: { [key: string]: { lat: string; lon: string } } = {
   "manhattan": { lat: "40.7831", lon: "-73.9712" },
   "brooklyn": { lat: "40.6782", lon: "-73.9442" },
   "bronx": { lat: "40.8448", lon: "-73.8648" },
+  "bronx new york": { lat: "40.8448", lon: "-73.8648" },
   "the bronx": { lat: "40.8448", lon: "-73.8648" },
   "queens": { lat: "40.7282", lon: "-73.7949" },
   "staten island": { lat: "40.5795", lon: "-74.1502" },
@@ -169,7 +170,10 @@ export function geocodeLocation(location: string): GeocodeResult | null {
   }
 
   // Normalize the input
-  const normalized = location.toLowerCase().trim();
+  const normalized = location
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
   
   // Try exact match first
   if (LOCATION_DATABASE[normalized]) {

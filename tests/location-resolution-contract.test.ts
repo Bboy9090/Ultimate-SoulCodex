@@ -48,6 +48,11 @@ test("location resolution remains minimal-purpose and non-persistent", () => {
 test("static geocoding rejects substring collisions and ambiguous qualified cities", () => {
   assert.equal(geocodeLocation("Glasgow, Scotland"), null);
   assert.equal(geocodeLocation("Camden, New Jersey"), null);
+  assert.deepEqual(geocodeLocation("Bronx, New York"), {
+    lat: "40.8448",
+    lon: "-73.8648",
+    location: "Bronx, New York",
+  });
   assert.equal(geocodeLocation("Los Angeles, California")?.lat, "34.0522");
   assert.equal(geocodeLocation("LA")?.lat, "34.0522");
 });

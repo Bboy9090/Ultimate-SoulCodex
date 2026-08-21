@@ -49,6 +49,7 @@ const BUILT_IN_LOCATIONS: Record<
   "new york": { lat: "40.7128", lng: "-74.0060", timezone: "America/New_York" },
   manhattan: { lat: "40.7831", lng: "-73.9712", timezone: "America/New_York" },
   bronx: { lat: "40.8448", lng: "-73.8648", timezone: "America/New_York" },
+  "bronx new york": { lat: "40.8448", lng: "-73.8648", timezone: "America/New_York" },
   brooklyn: { lat: "40.6782", lng: "-73.9442", timezone: "America/New_York" },
   philadelphia: { lat: "39.9526", lng: "-75.1652", timezone: "America/New_York" },
   "los angeles": { lat: "34.0522", lng: "-118.2437", timezone: "America/Los_Angeles" },
@@ -63,7 +64,11 @@ const BUILT_IN_LOCATIONS: Record<
 };
 
 function builtInLocation(value: string) {
-  const normalized = value.trim().toLowerCase();
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
   const inputTokens = normalized.split(/[^a-z0-9]+/).filter(Boolean);
   const match = Object.entries(BUILT_IN_LOCATIONS)
     .map(([name, location]) => ({
