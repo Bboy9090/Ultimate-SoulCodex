@@ -19,6 +19,7 @@ const testInput: GalacticCodeInput = {
   birthTime: '05:15',
   birthLocation: 'Detroit, Michigan',
   astrology: {
+    evidenceState: 'verified',
     sun: 'Virgo',
     moon: 'Capricorn',
     rising: 'Scorpio',
@@ -32,6 +33,7 @@ const testInput: GalacticCodeInput = {
     coverage: 'complete',
   },
   humanDesign: {
+    evidenceState: 'verified',
     type: 'Generator',
     strategy: 'To Respond',
     authority: 'Sacral',
@@ -44,6 +46,7 @@ const testInput: GalacticCodeInput = {
     coverage: 'complete',
   },
   numerology: {
+    evidenceState: 'deterministic',
     lifePath: 7,
     birthdayNumber: 5,
     expressionNumber: 8,
@@ -53,6 +56,7 @@ const testInput: GalacticCodeInput = {
     coverage: 'partial',
   },
   behavior: {
+    evidenceState: 'assessed',
     traits: ['analytical', 'reserved', 'methodical', 'strategic'],
     decisionStyle: 'Data-driven',
     stressPattern: 'Over-analysis paralysis',
@@ -140,6 +144,7 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
     const sunOnlyInput: GalacticCodeInput = {
       profileId: 'sun-only',
       astrology: {
+        evidenceState: 'verified',
         sun: 'Virgo',
         coverage: 'complete',
       } as any,
@@ -235,6 +240,7 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
     const changedInput: GalacticCodeInput = {
       ...testInput,
       humanDesign: {
+        evidenceState: 'verified',
         ...testInput.humanDesign,
         authority: 'Emotional',
       },
@@ -248,6 +254,7 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
     const changedInput: GalacticCodeInput = {
       ...testInput,
       numerology: {
+        evidenceState: 'deterministic',
         ...testInput.numerology,
         lifePath: 3,
       },
@@ -337,13 +344,14 @@ test('Normalization: Stability', async (t) => {
 });
 
 test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => {
-  await t.test('complete coverage does not imply verification', () => {
+  await t.test('qualified evidence and coverage remain separate states', () => {
     const completeCoverageInput: GalacticCodeInput = {
       profileId: 'coverage-test',
       birthDate: '1995-06-15',
       birthTime: '10:30',
       birthLocation: 'Portland, Oregon',
       astrology: {
+        evidenceState: 'verified',
         sun: 'Gemini',
         moon: 'Libra',
         rising: 'Aquarius',
@@ -357,6 +365,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
         coverage: 'complete',
       },
       humanDesign: {
+        evidenceState: 'verified',
         type: 'Projector',
         strategy: 'To Be Invited',
         authority: 'Mental',
@@ -369,6 +378,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
         coverage: 'complete',
       },
       numerology: {
+        evidenceState: 'deterministic',
         lifePath: 3,
         birthdayNumber: 6,
         expressionNumber: 9,
@@ -378,6 +388,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
         coverage: 'partial',
       },
       behavior: {
+        evidenceState: 'assessed',
         traits: ['creative', 'communicative', 'analytical', 'collaborative', 'adaptable'],
         decisionStyle: 'Intuitive',
         stressPattern: 'Perfectionism',
@@ -425,5 +436,31 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     assert.throws(() => generateGalacticCode(input), /requires at least 2 of 3 systems/);
 
     // The point: coverage measures data availability, not independent verification status
+  });
+
+  await t.test('unverified Human Design cannot change production synthesis', () => {
+    const candidateA: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: {
+        ...testInput.humanDesign,
+        evidenceState: 'candidate',
+        type: 'Generator',
+        profile: '2/4',
+      },
+    };
+    const candidateB: GalacticCodeInput = {
+      ...candidateA,
+      humanDesign: {
+        ...candidateA.humanDesign,
+        type: 'Reflector',
+        profile: '6/2',
+      },
+    };
+
+    const resultA = generateGalacticCode(candidateA);
+    const resultB = generateGalacticCode(candidateB);
+    assert.strictEqual(resultA.fingerprint, resultB.fingerprint);
+    assert.strictEqual(resultA.sourceCoverage.humanDesign, 'missing');
+    assert.ok(resultA.evidence.every((value) => !value.startsWith('HD ')));
   });
 });

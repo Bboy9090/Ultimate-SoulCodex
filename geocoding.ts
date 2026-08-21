@@ -17,6 +17,7 @@ const LOCATION_DATABASE: { [key: string]: { lat: string; lon: string } } = {
   "manhattan": { lat: "40.7831", lon: "-73.9712" },
   "brooklyn": { lat: "40.6782", lon: "-73.9442" },
   "bronx": { lat: "40.8448", lon: "-73.8648" },
+  "bronx new york": { lat: "40.8448", lon: "-73.8648" },
   "the bronx": { lat: "40.8448", lon: "-73.8648" },
   "queens": { lat: "40.7282", lon: "-73.7949" },
   "staten island": { lat: "40.5795", lon: "-74.1502" },
@@ -169,7 +170,10 @@ export function geocodeLocation(location: string): GeocodeResult | null {
   }
 
   // Normalize the input
-  const normalized = location.toLowerCase().trim();
+  const normalized = location
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
   
   // Try exact match first
   if (LOCATION_DATABASE[normalized]) {
@@ -181,9 +185,20 @@ export function geocodeLocation(location: string): GeocodeResult | null {
     };
   }
 
-  // Try partial matches (e.g., "New York, NY" should match "new york")
+  // Match multi-word city names only on complete, adjacent tokens. Single-word
+  // aliases (especially "la") are exact-only so an unrelated place such as
+  // "Glasgow, Scotland" cannot be silently resolved as Los Angeles. Ambiguous
+  // qualified single-word cities are deliberately deferred to the real
+  // geocoder, which can evaluate the region/country qualifier.
+  const inputTokens = normalized.split(/[^a-z0-9]+/).filter(Boolean);
   for (const [key, coords] of Object.entries(LOCATION_DATABASE)) {
-    if (normalized.includes(key) || key.includes(normalized)) {
+    const keyTokens = key.split(/[^a-z0-9]+/).filter(Boolean);
+    if (keyTokens.length < 2) continue;
+
+    const containsCompletePhrase = inputTokens.some((_, start) =>
+      keyTokens.every((token, offset) => inputTokens[start + offset] === token),
+    );
+    if (containsCompletePhrase) {
       return {
         lat: coords.lat,
         lon: coords.lon,

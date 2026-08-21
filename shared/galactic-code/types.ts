@@ -5,6 +5,8 @@
  * behavioral traits, and symbolic archetypes into a stable identity fingerprint.
  */
 
+import type { SoulCodexEvidenceState } from '../system-visibility';
+
 /**
  * Coverage states represent data completeness, not verification status.
  * Complete data ≠ verified data (Diamond Doctrine principle).
@@ -13,6 +15,7 @@ export type SourceCoverageState = 'complete' | 'partial' | 'missing';
 export type GalacticCoverageState = 'high' | 'partial' | 'insufficient';
 
 export interface GalacticAstrologyInput {
+  evidenceState?: SoulCodexEvidenceState;
   sun?: string;
   moon?: string;
   rising?: string;
@@ -27,6 +30,7 @@ export interface GalacticAstrologyInput {
 }
 
 export interface GalacticHumanDesignInput {
+  evidenceState?: SoulCodexEvidenceState;
   type?: string;
   strategy?: string;
   authority?: string;
@@ -43,6 +47,7 @@ export interface GalacticHumanDesignInput {
 }
 
 export interface GalacticNumerologyInput {
+  evidenceState?: SoulCodexEvidenceState;
   lifePath?: number | string;
   birthdayNumber?: number | string;
   expressionNumber?: number | string;
@@ -53,6 +58,7 @@ export interface GalacticNumerologyInput {
 }
 
 export interface GalacticBehaviorInput {
+  evidenceState?: SoulCodexEvidenceState;
   traits: string[];
   decisionStyle?: string;
   stressPattern?: string;
@@ -130,6 +136,7 @@ export interface NormalizedGalacticInput {
   birthTime: string | null;
   birthLocation: string | null;
   astrology: {
+    evidenceState: SoulCodexEvidenceState;
     sun: string | null;
     moon: string | null;
     rising: string | null;
@@ -143,6 +150,7 @@ export interface NormalizedGalacticInput {
     coverage: SourceCoverageState;
   };
   humanDesign: {
+    evidenceState: SoulCodexEvidenceState;
     type: string | null;
     strategy: string | null;
     authority: string | null;
@@ -156,6 +164,7 @@ export interface NormalizedGalacticInput {
     coverage: SourceCoverageState;
   };
   numerology: {
+    evidenceState: SoulCodexEvidenceState;
     lifePath: string | null;
     birthdayNumber: string | null;
     expressionNumber: string | null;
@@ -165,6 +174,7 @@ export interface NormalizedGalacticInput {
     coverage: SourceCoverageState;
   };
   behavior: {
+    evidenceState: SoulCodexEvidenceState;
     traits: string[];
     decisionStyle: string | null;
     stressPattern: string | null;

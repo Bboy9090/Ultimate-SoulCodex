@@ -21,7 +21,6 @@ import {
   generateBiography,
   generateDailyGuidance,
 } from "./services/openai-service";
-import { registerGalacticCodeRoutes } from "./routes/galactic-code";
 import { buildNatalReportPdf } from "./natalReportPdf";
 import {
   buildNatalReportInput,
@@ -230,6 +229,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // second naked-sign or Human Design compatibility path here: alternate routes
   // become alternate truth policies.
 
-  registerGalacticCodeRoutes(app);
+  // Galactic Code remains an internal deterministic service until a
+  // server-owned evidence adapter can supply verified astrology, deterministic
+  // numerology, assessed behavior, and a verified Human Design trust record.
+  // Do not mount its legacy caller-supplied route as a production synthesis
+  // boundary: clients cannot self-attest that candidate values are verified.
   return createServer(app);
 }
