@@ -10,6 +10,7 @@
  */
 
 import type { GalacticCodeInput, NormalizedGalacticInput, SourceCoverageState } from '../../../shared/galactic-code/types';
+import type { SoulCodexEvidenceState } from '../../../shared/system-visibility';
 
 function normalizeText(value?: string): string | null {
   if (!value) return null;
@@ -32,6 +33,12 @@ function normalizeCoverage(coverage?: SourceCoverageState): SourceCoverageState 
   return coverage;
 }
 
+function normalizeEvidenceState(
+  evidenceState?: SoulCodexEvidenceState,
+): SoulCodexEvidenceState {
+  return evidenceState || 'candidate';
+}
+
 export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGalacticInput {
   return {
     profileId: input.profileId.trim(),
@@ -39,6 +46,7 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
     birthTime: normalizeText(input.birthTime),
     birthLocation: normalizeText(input.birthLocation),
     astrology: {
+      evidenceState: normalizeEvidenceState(input.astrology.evidenceState),
       sun: normalizeText(input.astrology.sun),
       moon: normalizeText(input.astrology.moon),
       rising: normalizeText(input.astrology.rising),
@@ -52,6 +60,7 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
       coverage: normalizeCoverage(input.astrology.coverage),
     },
     humanDesign: {
+      evidenceState: normalizeEvidenceState(input.humanDesign.evidenceState),
       type: normalizeText(input.humanDesign.type),
       strategy: normalizeText(input.humanDesign.strategy),
       authority: normalizeText(input.humanDesign.authority),
@@ -65,6 +74,7 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
       coverage: normalizeCoverage(input.humanDesign.coverage),
     },
     numerology: {
+      evidenceState: normalizeEvidenceState(input.numerology.evidenceState),
       lifePath: normalizeText(String(input.numerology.lifePath ?? '')),
       birthdayNumber: normalizeText(String(input.numerology.birthdayNumber ?? '')),
       expressionNumber: normalizeText(String(input.numerology.expressionNumber ?? '')),
@@ -74,6 +84,7 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
       coverage: normalizeCoverage(input.numerology.coverage),
     },
     behavior: {
+      evidenceState: normalizeEvidenceState(input.behavior.evidenceState),
       traits: normalizeArray(input.behavior.traits),
       decisionStyle: normalizeText(input.behavior.decisionStyle),
       stressPattern: normalizeText(input.behavior.stressPattern),
@@ -96,6 +107,7 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
     profileId: normalized.profileId,
     birthDate: normalized.birthDate,
     astrology: {
+      evidenceState: normalized.astrology.evidenceState,
       sun: normalized.astrology.sun,
       moon: normalized.astrology.moon,
       rising: normalized.astrology.rising,
@@ -106,6 +118,7 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
       dominantModalities: normalized.astrology.dominantModalities,
     },
     humanDesign: {
+      evidenceState: normalized.humanDesign.evidenceState,
       type: normalized.humanDesign.type,
       strategy: normalized.humanDesign.strategy,
       authority: normalized.humanDesign.authority,
@@ -115,11 +128,13 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
       incarnationCross: normalized.humanDesign.incarnationCross,
     },
     numerology: {
+      evidenceState: normalized.numerology.evidenceState,
       lifePath: normalized.numerology.lifePath,
       birthdayNumber: normalized.numerology.birthdayNumber,
       expressionNumber: normalized.numerology.expressionNumber,
     },
     behavior: {
+      evidenceState: normalized.behavior.evidenceState,
       traits: normalized.behavior.traits,
       decisionStyle: normalized.behavior.decisionStyle,
       stressPattern: normalized.behavior.stressPattern,

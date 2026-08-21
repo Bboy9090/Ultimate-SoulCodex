@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation } from "wouter";
-import { birthDataSchema, type BirthData } from "@shared/schema";
+import {
+  birthDataSchema,
+  isCoordinateWithinRange,
+  isValidIanaTimezone,
+  type BirthData,
+} from "@shared/schema";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { generateFoundationOfflineCodexProfile } from "@/lib/foundationOfflineCodex";
 import { apiRequest } from "@/lib/queryClient";
@@ -59,9 +64,20 @@ const BUILT_IN_LOCATIONS: Record<
 
 function builtInLocation(value: string) {
   const normalized = value.trim().toLowerCase();
+  const inputTokens = normalized.split(/[^a-z0-9]+/).filter(Boolean);
   const match = Object.entries(BUILT_IN_LOCATIONS)
     .map(([name, location]) => ({
-      index: normalized.indexOf(name),
+      index:
+        normalized === name
+          ? 0
+          : name.split(/[^a-z0-9]+/).filter(Boolean).length < 2
+            ? -1
+            : inputTokens.findIndex((_, start) =>
+                name
+                  .split(/[^a-z0-9]+/)
+                  .filter(Boolean)
+                  .every((token, offset) => inputTokens[start + offset] === token),
+              ),
       name,
       location,
     }))
@@ -71,10 +87,6 @@ function builtInLocation(value: string) {
         left.index - right.index || right.name.length - left.name.length,
     )[0];
   return match?.location ?? null;
-}
-
-function hasValue(value: unknown): boolean {
-  return value !== undefined && value !== null && String(value).trim().length > 0;
 }
 
 async function requestVerificationWhenOnline(
@@ -151,9 +163,9 @@ export default function LocalFirstInputForm() {
   const longitude = form.watch("longitude");
   const exactChartInputsReady = Boolean(
     birthTime &&
-      timezone &&
-      hasValue(latitude) &&
-      hasValue(longitude),
+      isValidIanaTimezone(timezone) &&
+      isCoordinateWithinRange(latitude, -90, 90) &&
+      isCoordinateWithinRange(longitude, -180, 180),
   );
 
   const resolveLocation = async () => {
@@ -414,6 +426,7 @@ export default function LocalFirstInputForm() {
                     <span className="block text-sm font-semibold text-[var(--sc-ivory)]">Verify supported placements online after creation</span>
                     <span className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">
                       Optional. Soul Codex sends only birth date, optional birth time, timezone, and coordinates to the astronomy verification endpoint. It does not create a server profile or invoke AI generation for this check.
+                      Leave this off to keep profile creation entirely on-device.
                     </span>
                   </span>
                 </label>

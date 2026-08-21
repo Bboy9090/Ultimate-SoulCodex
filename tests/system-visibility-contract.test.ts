@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   SOUL_CODEX_SYSTEM_POLICIES,
@@ -6,6 +7,15 @@ import {
   maySystemInfluenceSynthesis,
   unavailableProductionSystems,
 } from "../shared/system-visibility.ts";
+
+const productionRoutes = readFileSync(
+  new URL("../server/routes.ts", import.meta.url),
+  "utf8",
+);
+const galacticGenerator = readFileSync(
+  new URL("../server/services/galactic-code/generator.ts", import.meta.url),
+  "utf8",
+);
 
 test("unverified astrology candidates are inspectable but cannot influence primary synthesis", () => {
   assert.equal(mayInspectSystem("astrologyCore", "candidate"), true);
@@ -34,4 +44,10 @@ test("unfinished systems cannot leak into production synthesis or inspection as 
     assert.equal(maySystemInfluenceSynthesis(key, "verified"), false);
     assert.equal(mayInspectSystem(key, "candidate"), false);
   }
+});
+
+test("production synthesis cannot accept caller-attested specialist evidence", () => {
+  assert.doesNotMatch(productionRoutes, /registerGalacticCodeRoutes\(app\)/);
+  assert.match(galacticGenerator, /maySystemInfluenceSynthesis/);
+  assert.match(galacticGenerator, /input\.humanDesign\.evidenceState \|\| 'candidate'/);
 });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import * as geoTz from "geo-tz";
+import { geocodeLocation } from "../geocoding.ts";
 
 const createFlow = readFileSync(
   new URL("../client/src/pages/local-first-input-form.tsx", import.meta.url),
@@ -42,4 +43,11 @@ test("location resolution remains minimal-purpose and non-persistent", () => {
   assert.match(routeSource, /birth_location_resolution_only/);
   assert.doesNotMatch(routeSource, /storage\./);
   assert.doesNotMatch(routeSource, /generateBiography|generateDailyGuidance|OpenAI/);
+});
+
+test("static geocoding rejects substring collisions and ambiguous qualified cities", () => {
+  assert.equal(geocodeLocation("Glasgow, Scotland"), null);
+  assert.equal(geocodeLocation("Camden, New Jersey"), null);
+  assert.equal(geocodeLocation("Los Angeles, California")?.lat, "34.0522");
+  assert.equal(geocodeLocation("LA")?.lat, "34.0522");
 });
