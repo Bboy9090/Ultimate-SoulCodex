@@ -1,6 +1,8 @@
 name: Build Android
 
 on:
+  push:
+    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       build_type:
@@ -68,8 +70,18 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Resolve build type
+        id: build-type
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "value=debug" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ inputs.build_type }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build Debug APK
-        if: inputs.build_type == 'debug'
+        if: steps.build-type.outputs.value == 'debug'
         run: |
           cd android
           chmod +x gradlew
@@ -77,7 +89,7 @@ jobs:
           test -f app/build/outputs/apk/debug/app-debug.apk
 
       - name: Verify signing secrets
-        if: inputs.build_type != 'debug'
+        if: steps.build-type.outputs.value != 'debug'
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -91,7 +103,7 @@ jobs:
           test -n "$ANDROID_KEY_PASSWORD" || { echo "MISSING: ANDROID_KEY_PASSWORD"; exit 1; }
 
       - name: Decode and verify upload keystore
-        if: inputs.build_type != 'debug'
+        if: steps.build-type.outputs.value != 'debug'
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -100,14 +112,11 @@ jobs:
           set -euo pipefail
           printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soul-codex-release.keystore
           test -s android/app/soul-codex-release.keystore
-          keytool -list \
-            -keystore android/app/soul-codex-release.keystore \
-            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
-            -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          keytool -list -keystore android/app/soul-codex-release.keystore -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
           chmod 600 android/app/soul-codex-release.keystore
 
       - name: Build Release APK
-        if: inputs.build_type == 'release-apk'
+        if: steps.build-type.outputs.value == 'release-apk'
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -116,17 +125,12 @@ jobs:
           set -euo pipefail
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease \
-            -PRELEASE_STORE_FILE=soul-codex-release.keystore \
-            -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
-            -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
-            -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
-            --stacktrace -i
+          ./gradlew assembleRelease -PRELEASE_STORE_FILE=soul-codex-release.keystore -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS" -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" --stacktrace -i
           test -s app/build/outputs/apk/release/app-release.apk
           sha256sum app/build/outputs/apk/release/app-release.apk | tee app/build/outputs/apk/release/APK-SHA256.txt
 
       - name: Build and verify Release AAB (Play Store)
-        if: inputs.build_type == 'release-aab'
+        if: steps.build-type.outputs.value == 'release-aab'
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -135,24 +139,16 @@ jobs:
           set -euo pipefail
           cd android
           chmod +x gradlew
-          ./gradlew bundleRelease \
-            -PRELEASE_STORE_FILE=soul-codex-release.keystore \
-            -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" \
-            -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS" \
-            -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" \
-            --stacktrace -i
+          ./gradlew bundleRelease -PRELEASE_STORE_FILE=soul-codex-release.keystore -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD" -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS" -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD" --stacktrace -i
           AAB=app/build/outputs/bundle/release/app-release.aab
           test -s "$AAB"
-          jarsigner -verify \
-            -keystore app/soul-codex-release.keystore \
-            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
-            "$AAB" "$ANDROID_KEY_ALIAS" | tee app/build/outputs/bundle/release/JARSIGNER-VERIFY.txt
+          jarsigner -verify -keystore app/soul-codex-release.keystore -storepass "$ANDROID_KEYSTORE_PASSWORD" "$AAB" "$ANDROID_KEY_ALIAS" | tee app/build/outputs/bundle/release/JARSIGNER-VERIFY.txt
           grep -q "jar verified" app/build/outputs/bundle/release/JARSIGNER-VERIFY.txt
           sha256sum "$AAB" | tee app/build/outputs/bundle/release/AAB-SHA256.txt
           cp ../release-candidate-sha.txt app/build/outputs/bundle/release/RELEASE-CANDIDATE-SHA.txt
 
       - name: Upload Debug APK
-        if: inputs.build_type == 'debug'
+        if: steps.build-type.outputs.value == 'debug'
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
@@ -162,7 +158,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Release APK
-        if: inputs.build_type == 'release-apk'
+        if: steps.build-type.outputs.value == 'release-apk'
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
@@ -174,7 +170,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Release AAB
-        if: inputs.build_type == 'release-aab'
+        if: steps.build-type.outputs.value == 'release-aab'
         uses: actions/upload-artifact@v4
         with:
           name: android-release-aab
