@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/apk-build-20260823
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
