@@ -1,0 +1,52 @@
+name: APK Candidate Build
+
+on:
+  push:
+    branches:
+      - codex/apk-build-20260823
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://soulcodex.up.railway.app' }}
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.sha }}
+      VITE_API_CONTRACT: foundation-v4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci --ignore-scripts
+      - run: npm run build -w @soulcodex/db
+      - run: npm run build -w @soulcodex/core
+      - run: npm run mobile:validate:android
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Assemble installable candidate APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk > app/build/outputs/apk/debug/APK-SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SoulCodex-4.0.0-rc.3-debug-apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/APK-SHA256.txt
+          if-no-files-found: error
+          retention-days: 30
