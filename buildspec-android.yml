@@ -1,0 +1,42 @@
+version: 0.2
+
+env:
+  variables:
+    BUILD_TYPE: "debug"
+    VITE_API_URL: "https://soulcodex.up.railway.app"
+    VITE_RELEASE_VERSION: "4.0.0-rc.3"
+    VITE_API_CONTRACT: "foundation-v4"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+      java: corretto21
+    commands:
+      - node --version
+      - java -version
+      - npm --version
+  pre_build:
+    commands:
+      - export VITE_RELEASE_SHA="$(git rev-parse HEAD)"
+  build:
+    commands:
+      - ./scripts/ci/codebuild-android.sh
+
+artifacts:
+  files:
+    - "release-candidate-sha.txt"
+    - "evidence/codebuild/**/*"
+    - "android/app/build/outputs/apk/**/*.apk"
+    - "android/app/build/outputs/apk/**/*SHA256.txt"
+    - "android/app/build/outputs/bundle/**/*.aab"
+    - "android/app/build/outputs/bundle/**/*SHA256.txt"
+    - "android/app/build/outputs/bundle/**/*VERIFY.txt"
+    - "android/app/build/outputs/bundle/**/*RELEASE-CANDIDATE-SHA.txt"
+  name: "soulcodex-android-$BUILD_TYPE-$CODEBUILD_BUILD_NUMBER"
+
+cache:
+  paths:
+    - "/root/.npm/**/*"
+    - "/root/.gradle/caches/**/*"
+    - "/root/.gradle/wrapper/**/*"
