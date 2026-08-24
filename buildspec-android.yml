@@ -21,7 +21,7 @@ phases:
       - export VITE_RELEASE_SHA="$(git rev-parse HEAD)"
   build:
     commands:
-      - ./scripts/ci/codebuild-android.sh
+      - bash scripts/ci/codebuild-android.sh
 
 artifacts:
   files:
