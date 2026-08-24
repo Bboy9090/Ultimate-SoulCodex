@@ -13,7 +13,7 @@ phases:
       - npm --version
   build:
     commands:
-      - ./scripts/ci/codebuild-planetary-evidence.sh
+      - bash scripts/ci/codebuild-planetary-evidence.sh
 
 artifacts:
   files:
