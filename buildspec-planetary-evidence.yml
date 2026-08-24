@@ -1,0 +1,26 @@
+version: 0.2
+
+env:
+  variables:
+    CI: "true"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - node --version
+      - npm --version
+  build:
+    commands:
+      - ./scripts/ci/codebuild-planetary-evidence.sh
+
+artifacts:
+  files:
+    - "evidence/planetary/**/*"
+    - "evidence/codebuild/planetary-*"
+  name: "soulcodex-planetary-evidence-$CODEBUILD_BUILD_NUMBER"
+
+cache:
+  paths:
+    - "/root/.npm/**/*"
