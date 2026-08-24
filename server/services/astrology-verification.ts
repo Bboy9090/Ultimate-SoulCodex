@@ -1,4 +1,14 @@
-export type VerifiableBody = "Sun" | "Moon";
+export type VerifiableBody =
+  | "Sun"
+  | "Moon"
+  | "Mercury"
+  | "Venus"
+  | "Mars"
+  | "Jupiter"
+  | "Saturn"
+  | "Uranus"
+  | "Neptune"
+  | "Pluto";
 
 export interface EphemerisCandidate {
   body: VerifiableBody;

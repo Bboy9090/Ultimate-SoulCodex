@@ -13,6 +13,17 @@ import {
   verifyAscendant,
   type AscendantVerificationPolicy,
 } from "./ascendant-verification";
+import {
+  calculatePlanetaryCandidatePlacements,
+  calculateVerifiedPlanetaryPlacements,
+  PLANETARY_BODIES,
+  PLANETARY_KEY_BY_BODY,
+  type PlanetaryPlacementMap,
+} from "./planetary-verification";
+import {
+  APPROVED_PLANETARY_EVIDENCE,
+  getApprovedPlanetaryPolicy,
+} from "./planetary-tolerance-policy";
 
 export type { AstrologyData, BirthData, PlacementVerification, VerifiedAstrologyOptions };
 export { getTarotBirthCards };
@@ -20,6 +31,8 @@ export { getTarotBirthCards };
 export interface ProductionAstrologyOptions extends VerifiedAstrologyOptions {
   ascendantPolicy?: AscendantVerificationPolicy;
 }
+
+const PLANETARY_BODY_NAMES = new Set<string>(PLANETARY_BODIES);
 
 function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
   if (!birthData.birthTime || !birthData.timezone) {
@@ -191,9 +204,71 @@ function withRisingVerificationSummary(
   };
 }
 
+function withPlanetaryVerificationSummary(
+  astrology: AstrologyData,
+  planets: PlanetaryPlacementMap,
+): AstrologyData {
+  const verifiedPlanetBodies = PLANETARY_BODIES.filter(
+    (body) => planets[PLANETARY_KEY_BY_BODY[body]].verificationStatus === "verified",
+  );
+  const unresolvedPlanetBodies = PLANETARY_BODIES.filter(
+    (body) => planets[PLANETARY_KEY_BY_BODY[body]].verificationStatus !== "verified",
+  );
+  const coreUnresolved = astrology.verification.unresolvedBodies.filter(
+    (body) => !PLANETARY_BODY_NAMES.has(String(body)),
+  );
+  const verifiedBodies = [
+    ...astrology.verification.verifiedBodies,
+    ...verifiedPlanetBodies,
+  ];
+  const unresolvedBodies = [
+    ...coreUnresolved,
+    ...unresolvedPlanetBodies,
+  ];
+  const missingData = astrology.verification.missingData.filter(
+    (item) => item !== "independent_major_planet_verification",
+  );
+  if (unresolvedPlanetBodies.length > 0) {
+    missingData.push("independent_major_planet_verification");
+  }
+
+  return {
+    ...astrology,
+    planets: planets as AstrologyData["planets"],
+    verification: {
+      ...astrology.verification,
+      complete: unresolvedBodies.length === 0,
+      verifiedBodies: [...new Set(verifiedBodies)] as AstrologyData["verification"]["verifiedBodies"],
+      unresolvedBodies,
+      missingData: [...new Set(missingData)],
+      suggestions:
+        unresolvedBodies.length === 0
+          ? "Sun, Moon, Ascendant, and Mercury through Pluto are independently verified."
+          : `Verified chart placements may be interpreted. ${unresolvedBodies.join(", ")} remain paused until their stated requirements pass.`,
+      policyId:
+        verifiedPlanetBodies.length > 0
+          ? `${astrology.verification.policyId ?? "ASTRO-CORE"} + ASTRO-PLANETARY-LONGITUDE-v1`
+          : astrology.verification.policyId,
+      evidenceReceiptId:
+        verifiedPlanetBodies.length > 0
+          ? `${astrology.verification.evidenceReceiptId ?? "ASTRO-CORE"} + planetary-run-${APPROVED_PLANETARY_EVIDENCE.workflowRunId}`
+          : astrology.verification.evidenceReceiptId,
+      lastUpdated: new Date().toISOString(),
+    },
+  };
+}
+
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const base = calculateBaseAstrology(birthData);
   return withRisingVerificationSummary(base, candidateRisingPlacement(birthData));
+}
+
+export function calculateFullChartCandidates(birthData: BirthData): AstrologyData {
+  const core = calculateAstrology(birthData);
+  return {
+    ...core,
+    planets: calculatePlanetaryCandidatePlacements(birthData) as AstrologyData["planets"],
+  };
 }
 
 export async function calculateVerifiedAstrology(
@@ -207,4 +282,17 @@ export async function calculateVerifiedAstrology(
     ascendantPolicy ?? APPROVED_ASCENDANT_POLICY,
   );
   return withRisingVerificationSummary(base, rising);
+}
+
+export async function calculateVerifiedFullChartAstrology(
+  birthData: BirthData,
+  options: ProductionAstrologyOptions = {},
+): Promise<AstrologyData> {
+  const core = await calculateVerifiedAstrology(birthData, options);
+  const planets = await calculateVerifiedPlanetaryPlacements(birthData, {
+    policyForBody: getApprovedPlanetaryPolicy,
+    evidenceReceiptId: `planetary-run-${APPROVED_PLANETARY_EVIDENCE.workflowRunId}`,
+    evidenceArtifactId: APPROVED_PLANETARY_EVIDENCE.artifactId,
+  });
+  return withPlanetaryVerificationSummary(core, planets);
 }

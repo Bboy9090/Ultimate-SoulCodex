@@ -32,6 +32,17 @@ type Placement = {
   };
 };
 
+const MAJOR_PLANETS = [
+  ["Mercury", "mercury"],
+  ["Venus", "venus"],
+  ["Mars", "mars"],
+  ["Jupiter", "jupiter"],
+  ["Saturn", "saturn"],
+  ["Uranus", "uranus"],
+  ["Neptune", "neptune"],
+  ["Pluto", "pluto"],
+] as const;
+
 function textValue(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
@@ -136,6 +147,7 @@ export default function SystemsDetailsPage() {
 
   const astrology = (profile.astrologyData ?? {}) as Record<string, any>;
   const placements = (astrology.placements ?? {}) as Record<string, Placement>;
+  const planets = (astrology.planets ?? {}) as Record<string, Placement>;
   const sunPlacement = (astrology.sun ?? placements.sun) as Placement | undefined;
   const moonPlacement = (astrology.moon ?? placements.moon) as Placement | undefined;
   const risingPlacement = (astrology.rising ?? placements.rising) as Placement | undefined;
@@ -149,6 +161,9 @@ export default function SystemsDetailsPage() {
   const exactTimedInputs = Boolean(
     profile.birthTime && profile.timezone && latitude && longitude,
   );
+  const verifiedPlanetCount = MAJOR_PLANETS.filter(
+    ([, key]) => planets[key]?.verificationStatus === "verified",
+  ).length;
 
   return (
     <div className="sc-app-shell">
@@ -158,7 +173,7 @@ export default function SystemsDetailsPage() {
           <div className="sc-eyebrow mb-4 justify-center"><Eye className="h-3.5 w-3.5" /> Optional inspection layer</div>
           <h1 className="sc-display sc-display-gradient text-4xl sm:text-6xl">See the underlying systems</h1>
           <p className="sc-lede mx-auto mt-5 max-w-3xl">
-            Soul Codex keeps the main experience synthesis-first. This page is for the moment you think, “Wait, what did it calculate for my Moon, Rising, or Life Path?” It shows what was calculated, what was verified, what was withheld, and why.
+            Soul Codex keeps the main experience synthesis-first. This page is for the moment you think, “Wait, what did it calculate for my Moon, Rising, planets, or Life Path?” It shows what was calculated, what was verified, what was withheld, and why.
           </p>
         </header>
 
@@ -168,7 +183,7 @@ export default function SystemsDetailsPage() {
               <div className="sc-icon-well"><MapPin className="h-5 w-5" /></div>
               <div>
                 <p className="font-semibold text-[var(--sc-ivory)]">Birth inputs used by the calculation layer</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">These are inputs, not interpretations. Exact timed inputs make Moon/Rising calculable; verification determines whether a result is promoted as evidence.</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">These are inputs, not interpretations. Exact timed inputs make Moon, Rising, and the major-planet snapshot calculable; verification determines whether a result is promoted as evidence.</p>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -192,8 +207,8 @@ export default function SystemsDetailsPage() {
                 <p className="text-sm font-semibold text-[var(--sc-ivory)]">{exactTimedInputs ? "Timed chart inputs complete" : "Timed chart inputs incomplete"}</p>
                 <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                   {exactTimedInputs
-                    ? "Moon and Ascendant candidates can be calculated from the saved inputs. If either remains unresolved below, the remaining problem is evidence/verification, not missing birth data."
-                    : "Moon/Rising stay unresolved when exact time, birth-place timezone, or coordinates are missing. Soul Codex does not manufacture the missing precision."}
+                    ? "Moon, Ascendant, and major-planet candidates can be calculated from the saved inputs. If a value remains unresolved below, the remaining problem is evidence/verification, not missing birth data."
+                    : "Moon, Rising, and timed full-chart layers stay unresolved when exact time, birth-place timezone, or coordinates are missing. Soul Codex does not manufacture the missing precision."}
                 </p>
               </div>
             </div>
@@ -204,13 +219,28 @@ export default function SystemsDetailsPage() {
               <div className="sc-icon-well"><Sparkles className="h-5 w-5" /></div>
               <div>
                 <p className="font-semibold text-[var(--sc-ivory)]">Astrology evidence</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">A calculated candidate can be shown here without pretending it is independently verified. The main synthesis may use only the evidence tier permitted by its contract.</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">A calculated candidate can be shown here without pretending it is independently verified. Mercury through Pluto are promoted only after agreement with NASA/JPL Horizons under the approved planetary evidence contract.</p>
               </div>
             </div>
             <div className="grid gap-4 lg:grid-cols-3">
               <PlacementRow label="Sun" placement={sunPlacement} legacyValue={profile.sunSign ?? astrology.sunSign} />
               <PlacementRow label="Moon" placement={moonPlacement} legacyValue={profile.moonSign ?? astrology.moonSign} />
               <PlacementRow label="Rising" placement={risingPlacement} legacyValue={profile.risingSign ?? astrology.risingSign} />
+            </div>
+
+            <div className="mt-6 border-t border-[var(--sc-line)] pt-5">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--sc-ivory)]">Major planets</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{verifiedPlanetCount}/8 independently verified in the currently saved astronomy snapshot.</p>
+                </div>
+                <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.025] px-3 py-1 text-[11px] font-semibold text-[var(--sc-stone)]">NASA/JPL evidence contract</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {MAJOR_PLANETS.map(([label, key]) => (
+                  <PlacementRow key={key} label={label} placement={planets[key]} />
+                ))}
+              </div>
             </div>
           </section>
 
@@ -230,7 +260,7 @@ export default function SystemsDetailsPage() {
               <NumberRow label="Personal Year" value={numerology.personalYear} />
             </div>
             <div className="mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 text-xs leading-6 text-[var(--sc-stone)]">
-              <strong className="text-[var(--sc-ivory)]">Why another app might show a different Life Path:</strong> systems can differ in date normalization, reduction order, and treatment of master numbers. Soul Codex preserves 11, 22, and 33 where the current formula defines them instead of silently reducing them.
+              <strong className="text-[var(--sc-ivory)]">Why another app might show a different Life Path:</strong> systems can differ in date normalization, reduction order, and treatment of master numbers. Soul Codex parses the supplied birth date as a calendar date rather than shifting it through the device timezone, and preserves 11, 22, and 33 where the current formula defines them.
             </div>
           </section>
 

@@ -1,6 +1,16 @@
 import type { IndependentEphemerisReference } from "./astrology-verification";
 
-export type SupportedHorizonsBody = "Sun" | "Moon";
+export type SupportedHorizonsBody =
+  | "Sun"
+  | "Moon"
+  | "Mercury"
+  | "Venus"
+  | "Mars"
+  | "Jupiter"
+  | "Saturn"
+  | "Uranus"
+  | "Neptune"
+  | "Pluto";
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 type SleepLike = (milliseconds: number) => Promise<void>;
@@ -20,6 +30,14 @@ const HORIZONS_SOURCE = "NASA/JPL Horizons observer quantity 31: geocentric appa
 const BODY_COMMAND: Record<SupportedHorizonsBody, string> = {
   Sun: "10",
   Moon: "301",
+  Mercury: "199",
+  Venus: "299",
+  Mars: "499",
+  Jupiter: "599",
+  Saturn: "699",
+  Uranus: "799",
+  Neptune: "899",
+  Pluto: "999",
 };
 const TRANSIENT_HTTP_STATUSES = new Set([429, 500, 502, 503, 504]);
 

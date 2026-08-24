@@ -39,12 +39,12 @@ export interface SoulCodexSystemPolicy {
 export const SOUL_CODEX_SYSTEM_POLICIES = {
   astrologyCore: {
     id: "astrology-core",
-    label: "Astrology · Sun / Moon / Rising",
+    label: "Astrology · verified chart placements",
     visibility: "supporting",
     evidenceRequirement: "verified-astronomy",
     mayInfluencePrimarySynthesis: true,
     inspectableWhenUnverified: true,
-    rule: "Verified placements may enrich synthesis. Internal candidates may be inspected with an explicit unverified label but never relabeled as chart facts.",
+    rule: "Verified Sun, Moon, Ascendant, and independently qualified Mercury-through-Pluto placements may enrich synthesis only when they add distinct insight. Internal candidates may be inspected with an explicit unverified label but never relabeled as chart facts. Houses, Midheaven, nodes, Chiron, and planetary-house assignments remain separately gated.",
   },
   numerology: {
     id: "numerology",
