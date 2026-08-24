@@ -53,7 +53,7 @@ node --import tsx --test \
   tests/profile-verification-boundary.test.ts \
   tests/no-simulated-release-routes.test.ts
 
-node scripts/verify-foundation-web-rc.mjs
+node scripts/verify-foundation-codebuild.mjs
 npm audit --omit=dev --audit-level=high
 npm audit --audit-level=high
 npm run build
