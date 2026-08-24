@@ -14,7 +14,7 @@ phases:
       - npm --version
   build:
     commands:
-      - ./scripts/ci/codebuild-core.sh
+      - bash scripts/ci/codebuild-core.sh
 
 artifacts:
   files:
