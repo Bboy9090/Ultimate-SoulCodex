@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
@@ -18,6 +18,19 @@ export default function OfflineProfilePage() {
   const [verificationAttempt, setVerificationAttempt] = useState<VerificationAttempt>("idle");
   const { data: profile, isLoading, error } = useQuery<OfflineCodexProfile>({ queryKey: ["offline-profile", id], enabled: !!id, queryFn: async () => { if (!id) throw new Error("Profile id is missing"); const stored = await loadOfflineProfile(id); if (!stored) throw new Error("Offline profile not found on this device"); return stored; } });
   const reconciledProfile = profile as ReconciledOfflineProfile | undefined;
+
+  useEffect(() => {
+    if (!id || typeof window === "undefined") return;
+
+    const refreshProfile = (event: Event) => {
+      const detail = (event as CustomEvent<{ localId?: string }>).detail;
+      if (detail?.localId && detail.localId !== id) return;
+      void queryClient.invalidateQueries({ queryKey: ["offline-profile", id] });
+    };
+
+    window.addEventListener("soulcodex:profile-updated", refreshProfile);
+    return () => window.removeEventListener("soulcodex:profile-updated", refreshProfile);
+  }, [id, queryClient]);
 
   const requestOnlineVerification = async () => {
     if (!reconciledProfile || verificationAttempt === "running" || !profileNeedsOnlineVerification(reconciledProfile)) return;
@@ -105,7 +118,7 @@ export default function OfflineProfilePage() {
                     disabled={verificationAttempt === "running"}
                     data-testid="button-verify-online-profile"
                   >
-                    {verificationAttempt === "running" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verifying…</> : <><ShieldCheck className="mr-2 h-4 w-4" />Verify online</>}
+                    {verificationAttempt === "running" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Calculating…</> : <><ShieldCheck className="mr-2 h-4 w-4" />Calculate Moon &amp; Rising</>}
                   </button>
                 )}
               </div>

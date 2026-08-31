@@ -9,7 +9,7 @@ test("local profile creation keeps online verification opt-in and off by default
   assert.match(createSource, /const \[verifyOnline, setVerifyOnline\] = useState\(false\)/);
   assert.match(createSource, /data-testid="checkbox-online-verification"/);
   assert.match(createSource, /checked=\{verifyOnline\}/);
-  assert.match(createSource, /if \(verifyOnline\) \{\s*void requestVerificationWhenOnline\(data, profile\);\s*\}/s);
+  assert.match(createSource, /if \(verifyOnline\) \{[\s\S]*await requestVerificationWhenOnline\(data, profile\);\s*\}/s);
   assert.doesNotMatch(createSource, /if \(!verifyOnline\)[\s\S]{0,200}requestVerificationWhenOnline/);
 });
 
@@ -31,10 +31,24 @@ test("local-first creation copy discloses the upload boundary in plain language"
 });
 
 test("opening an offline profile never triggers verification as a background effect", () => {
-  assert.doesNotMatch(profileSource, /useEffect\s*\(\s*\(\)\s*=>[\s\S]*apiFetch\("\/api\/verification\/profile"/);
+  const refreshEffect = profileSource.match(
+    /useEffect\s*\(\s*\(\)\s*=>\s*\{([\s\S]*?)\}, \[id, queryClient\]\);/,
+  )?.[1] ?? "";
+  assert.ok(refreshEffect, "profile refresh effect must remain inspectable");
+  assert.doesNotMatch(refreshEffect, /apiFetch|requestOnlineVerification/);
   assert.match(profileSource, /const requestOnlineVerification = async \(\) =>/);
   assert.match(profileSource, /data-testid="button-verify-online-profile"/);
   assert.match(profileSource, /onClick=\{\(\) => void requestOnlineVerification\(\)\}/);
+});
+
+test("an opted-in creation reconciles verification before opening the profile", () => {
+  const saveIndex = createSource.indexOf("await requestVerificationWhenOnline(data, profile)");
+  const navigateIndex = createSource.indexOf("setLocation(`/profile/${profile.id}`)");
+
+  assert.ok(saveIndex >= 0, "opted-in verification must be awaited");
+  assert.ok(navigateIndex > saveIndex, "profile navigation must happen after reconciliation");
+  assert.match(profileSource, /soulcodex:profile-updated/);
+  assert.match(profileSource, /invalidateQueries\(\{ queryKey: \["offline-profile", id\] \}\)/);
 });
 
 test("offline profile verification sends only calculation inputs and explains the boundary", () => {
