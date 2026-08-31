@@ -267,7 +267,11 @@ export default function LocalFirstInputForm() {
       }
 
       if (verifyOnline) {
-        void requestVerificationWhenOnline(data, profile);
+        // The user explicitly opted in, so finish the evidence reconciliation
+        // before opening the profile. Navigating while this request was still
+        // in flight allowed the profile query to cache the unresolved local
+        // snapshot even though verified Moon/Rising data arrived moments later.
+        await requestVerificationWhenOnline(data, profile);
       }
 
       toast({
