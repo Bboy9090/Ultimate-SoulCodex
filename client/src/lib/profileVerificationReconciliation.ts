@@ -7,7 +7,18 @@ type PlacementRecord = {
   sign?: string | null;
 };
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 2;
+const MAJOR_PLANET_KEYS = [
+  "mercury",
+  "venus",
+  "mars",
+  "jupiter",
+  "saturn",
+  "uranus",
+  "neptune",
+  "pluto",
+] as const;
+
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 3;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -22,6 +33,7 @@ export type RemoteProfileSnapshot = {
     sun?: PlacementRecord;
     moon?: PlacementRecord;
     rising?: PlacementRecord;
+    planets?: Partial<Record<(typeof MAJOR_PLANET_KEYS)[number], PlacementRecord>>;
     sunSign?: string | null;
     moonSign?: string | null;
     risingSign?: string | null;
@@ -77,7 +89,20 @@ export function hasVerifiedBigThree(
   );
 }
 
-function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
+export function hasVerifiedMajorPlanets(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  return MAJOR_PLANET_KEYS.every((key) => {
+    const placement = astrology?.planets?.[key];
+    return Boolean(
+      placement?.verificationStatus === "verified" &&
+        typeof placement.sign === "string" &&
+        placement.sign.trim(),
+    );
+  });
+}
+
+function hasExactTimedInputs(profile: ReconciledOfflineProfile): boolean {
   return Boolean(
     profile.birthTime &&
       profile.timezone &&
@@ -169,11 +194,13 @@ export function reconcileOfflineProfile(
 /**
  * A profile still needs astronomy verification when:
  * - Sun or Moon has not been independently verified; or
- * - exact timed Ascendant inputs exist and Rising has not actually verified.
+ * - exact timed inputs exist and Rising has not actually verified; or
+ * - exact timed inputs exist and one of the currently supported Mercury-through-
+ *   Pluto placements has not independently verified.
  *
- * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 2 means the profile understands
- * the Ascendant contract; it does not mean the Ascendant itself passed.
+ * Verification-version bookkeeping never suppresses a retry after a temporary
+ * reference failure. Version 3 means the profile understands the major-planet
+ * contract; it does not manufacture a successful receipt.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
@@ -182,8 +209,12 @@ export function profileNeedsOnlineVerification(
     return true;
   }
 
+  if (!hasExactTimedInputs(profile)) {
+    return false;
+  }
+
   return Boolean(
-    hasExactAscendantInputs(profile) &&
-      !getVerifiedAstrologySign(profile.verifiedAstrologyData, "rising"),
+    !getVerifiedAstrologySign(profile.verifiedAstrologyData, "rising") ||
+      !hasVerifiedMajorPlanets(profile.verifiedAstrologyData),
   );
 }

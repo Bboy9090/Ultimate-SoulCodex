@@ -31,7 +31,9 @@ const files = {
   diagnostics: read("client/src/pages/DiagnosticsPage.tsx"),
   reconciliation: read("client/src/lib/profileVerificationReconciliation.ts"),
   codebuild: read("scripts/ci/codebuild-core.sh"),
+  planetaryCodebuild: read("scripts/ci/codebuild-planetary-evidence.sh"),
   buildspec: read("buildspec.yml"),
+  planetaryBuildspec: read("buildspec-planetary-evidence.yml"),
 };
 
 const checks = [];
@@ -66,7 +68,8 @@ check("BILLING-06", "Legacy profile upgrade cannot grant premium directly", file
 
 check("ASTRO-01", "Production astrology integrates independent Ascendant verification", files.astrology.includes("verifyAscendant") && files.astrology.includes('rising.verificationStatus === "verified"') && files.astrology.includes("ASTRO-ASCENDANT-v1"));
 check("ASTRO-02", "Ascendant policy retains approved evidence receipt", files.ascendant.includes('status: "approved"') && files.ascendant.includes("ASCENDANT-VERIFICATION-RECEIPT-v1"));
-check("ASTRO-03", "Saved profiles require verified Big Three migration", files.reconciliation.includes("CURRENT_ASTROLOGY_VERIFICATION_VERSION = 2") && files.reconciliation.includes("hasVerifiedBigThree"));
+check("ASTRO-03", "Saved profiles require verified Big Three and major-planet migration", files.reconciliation.includes("CURRENT_ASTROLOGY_VERIFICATION_VERSION = 3") && files.reconciliation.includes("hasVerifiedBigThree") && files.reconciliation.includes("hasVerifiedMajorPlanets"));
+check("ASTRO-04", "External CI enforces planetary verification and production-promotion contracts", files.codebuild.includes("tests/planetary-verification-contract.test.ts") && files.codebuild.includes("tests/planetary-production-promotion.test.ts") && files.planetaryCodebuild.includes("run-live-planetary-evidence.ts") && files.planetaryBuildspec.includes("codebuild-planetary-evidence.sh"));
 
 check("HD-01", "Human Design keeps unresolved/unverified states", files.humanDesign.includes('"unresolved"') && files.humanDesign.includes('"calculated_unverified"'));
 check("HD-02", "Foundation compatibility excludes unverified Human Design", files.compatibility.includes("Human Design excluded from Foundation compatibility") && !files.compatibility.includes("verifiedHumanDesignType"));
@@ -89,6 +92,8 @@ const requiredExternalTests = [
   "tests/foundation-local-astronomy-boundary.test.ts",
   "tests/profile-verification-boundary.test.ts",
   "tests/no-simulated-release-routes.test.ts",
+  "tests/planetary-verification-contract.test.ts",
+  "tests/planetary-production-promotion.test.ts",
 ];
 check("CI-01", "CodeBuild retains required trust/privacy/security tests", requiredExternalTests.every((test) => files.codebuild.includes(test)));
 check("CI-02", "CodeBuild runs locked install, checks, tests, audit, invariant audit, and production build", files.codebuild.includes("npm ci") && files.codebuild.includes("npm run check") && files.codebuild.includes("npm test") && files.codebuild.includes("npm audit --omit=dev --audit-level=high") && files.codebuild.includes("npm run build") && files.buildspec.includes("./scripts/ci/codebuild-core.sh"));
@@ -96,7 +101,7 @@ check("CI-02", "CodeBuild runs locked install, checks, tests, audit, invariant a
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation CodeBuild invariant audit",
-  version: 1,
+  version: 2,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,

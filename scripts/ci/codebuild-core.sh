@@ -32,6 +32,8 @@ node --import tsx --test \
   tests/bobby-big-three-golden.test.ts \
   tests/human-design-trust.test.ts \
   tests/profile-verification-reconciliation.test.ts \
+  tests/planetary-verification-contract.test.ts \
+  tests/planetary-production-promotion.test.ts \
   tests/active-profile-contract.test.ts \
   tests/ui-backend-consistency-contract.test.ts \
   tests/compatibility-data-minimization.test.ts \

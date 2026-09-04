@@ -23,6 +23,17 @@ type ProfileLike = {
   isPremium?: boolean | null;
 };
 
+const MAJOR_PLANET_KEYS = [
+  "mercury",
+  "venus",
+  "mars",
+  "jupiter",
+  "saturn",
+  "uranus",
+  "neptune",
+  "pluto",
+] as const;
+
 function record(value: unknown): Record<string, any> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, any>)
@@ -94,11 +105,14 @@ function reportHighlights(astrology: Record<string, any>, numerology: Record<str
   const sun = verifiedSign(astrology.sun);
   const moon = verifiedSign(astrology.moon);
   const rising = verifiedSign(astrology.rising);
+  const planets = record(astrology.planets);
+  const verifiedMajorPlanets = MAJOR_PLANET_KEYS.filter((key) => Boolean(verifiedPlanet(planets[key])));
   const lifePath = lifePathNumber(numerology);
 
   highlights.push(sun ? `Sun verified: ${sun}.` : `Sun unresolved: ${placementReason(astrology.sun, "verification evidence is incomplete")}`);
   highlights.push(moon ? `Moon verified: ${moon}.` : `Moon unresolved: ${placementReason(astrology.moon, "verified birth-time evidence or independent verification is incomplete")}`);
   highlights.push(rising ? `Ascendant verified: ${rising}.` : `Ascendant unresolved: ${placementReason(astrology.rising, "verified birth time, coordinates, or independent verification is incomplete")}`);
+  highlights.push(`Major planets independently verified: ${verifiedMajorPlanets.length}/8 (Mercury through Pluto).`);
   if (lifePath !== null) highlights.push(`Life Path ${lifePath} is a deterministic numerology calculation; its meaning remains interpretive.`);
   highlights.push(humanDesign.status === "verified"
     ? "Human Design core fields carry a verified trust record and may be displayed."
@@ -118,20 +132,27 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
   const risingSign = verifiedSign(astrology.rising);
   const sunPlanet = verifiedPlanet(astrology.sun);
   const moonPlanet = verifiedPlanet(astrology.moon);
+  const savedPlanets = record(astrology.planets);
   const lifePath = lifePathNumber(numerology);
   const humanDesign = verifiedHumanDesign(humanDesignRecord);
 
   const safePlanets: Record<string, Record<string, number | string>> = {};
   if (sunPlanet) safePlanets.sun = sunPlanet;
   if (moonPlanet) safePlanets.moon = moonPlanet;
+  for (const key of MAJOR_PLANET_KEYS) {
+    const verified = verifiedPlanet(savedPlanets[key]);
+    if (verified) safePlanets[key] = verified;
+  }
+
+  const verifiedMajorPlanetCount = MAJOR_PLANET_KEYS.filter((key) => key in safePlanets).length;
 
   const safeAstrology = {
     sunSign,
     moonSign,
     risingSign,
     planets: safePlanets,
-    // Full houses, aspects, nodes, Chiron, Midheaven, and planetary house
-    // placements are intentionally absent until their release evidence exists.
+    // Houses, aspects, nodes, Chiron, Midheaven, and planetary house placements
+    // remain absent until those distinct calculations earn release evidence.
     houses: [],
     aspects: [],
     numerology: lifePath === null ? {} : { lifePathNumber: lifePath },
@@ -149,6 +170,10 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
     ? "Human Design core fields shown here come from a verified trust record. Their interpretive meaning remains symbolic rather than scientific diagnosis."
     : "Human Design is not independently verified for this profile, so candidate Type, Strategy, Authority, Profile, channels, centers, and advanced values are intentionally omitted rather than presented as facts.";
 
+  const planetaryEvidenceText = verifiedMajorPlanetCount === MAJOR_PLANET_KEYS.length
+    ? "Mercury through Pluto are independently verified against NASA/JPL Horizons and may appear in the placement table. A chart-wide element interpretation is still treated as a separate symbolic synthesis layer rather than an astronomical fact."
+    : `${verifiedMajorPlanetCount}/8 major planets are independently verified in this saved profile. Element emphasis remains withheld rather than filling the missing placements with guesses.`;
+
   return {
     name: profile.name,
     birthDate: profile.birthDate.toISOString().split("T")[0],
@@ -163,7 +188,7 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
       bigThreeRising: describePlacement("Ascendant", astrology.rising, "Ascendant language explores first response, presentation, and how a person enters situations"),
       whatStandsOut: reportHighlights(astrology, numerology, humanDesignRecord),
       workingInterpretation: `${symbolicSummary} Keep any interpretation that improves recognition or decision-making, and reject wording that does not fit lived experience.`,
-      elementEmphasis: "Full element emphasis is withheld in this release because Soul Codex does not yet promote the complete independently verified planetary set required for a defensible chart-wide element balance.",
+      elementEmphasis: planetaryEvidenceText,
       houseEmphasis: "House emphasis, Midheaven, nodes, Chiron, and planetary house placements are intentionally not claimed until those calculations have their own approved verification evidence.",
       bottomLine: typeof profile.dailyGuidance === "string" && profile.dailyGuidance.trim()
         ? profile.dailyGuidance.trim()

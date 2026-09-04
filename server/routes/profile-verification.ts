@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { z } from "zod";
 import {
-  calculateVerifiedAstrology,
+  calculateVerifiedFullChartAstrology,
   type AstrologyData,
 } from "../services/astrology-production";
 
@@ -44,6 +44,9 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
  * This route intentionally does not import storage, account/profile persistence,
  * or AI generation services. A user who asks only for astronomical verification
  * receives only the evidence snapshot needed to reconcile their local profile.
+ *
+ * Exact timed inputs also qualify Mercury through Pluto through the separately
+ * approved NASA/JPL evidence contract. Their raw birth inputs are not persisted.
  */
 export function registerProfileVerificationRoutes(app: Express) {
   app.post("/api/verification/profile", async (req, res) => {
@@ -59,7 +62,7 @@ export function registerProfileVerificationRoutes(app: Express) {
     }
 
     try {
-      const astrologyData = await calculateVerifiedAstrology({
+      const astrologyData = await calculateVerifiedFullChartAstrology({
         birthDate: parsed.data.birthDate,
         birthTime: parsed.data.birthTime?.trim() || undefined,
         timezone: parsed.data.timezone,

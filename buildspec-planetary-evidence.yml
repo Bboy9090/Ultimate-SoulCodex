@@ -3,7 +3,6 @@ version: 0.2
 env:
   variables:
     CI: "true"
-    VITE_API_URL: "https://soulcodex.up.railway.app"
 
 phases:
   install:
@@ -14,13 +13,13 @@ phases:
       - npm --version
   build:
     commands:
-      - bash scripts/ci/codebuild-core.sh
+      - bash scripts/ci/codebuild-planetary-evidence.sh
 
 artifacts:
   files:
-    - "evidence/codebuild/**/*"
-    - "dist/**/*"
-  name: "soulcodex-core-$CODEBUILD_BUILD_NUMBER"
+    - "evidence/planetary/**/*"
+    - "evidence/codebuild/planetary-*"
+  name: "soulcodex-planetary-evidence-$CODEBUILD_BUILD_NUMBER"
 
 cache:
   paths:
