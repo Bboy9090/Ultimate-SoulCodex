@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { randomUUID } from "node:crypto";
 import { storage } from "../storage";
 import { routeAIRequest, routeAIStream } from "../services/ai-router";
 import { entitlementService } from "../services/entitlement-service";
@@ -27,6 +28,16 @@ Ask one narrower question or complete the missing profile information.
 
 **Evidence**
 The runtime clarity validator rejected the generated response. No unresolved placement was promoted into interpretation.`;
+
+const AI_REPORT_CATEGORIES = new Set([
+  "offensive",
+  "sexual",
+  "dangerous",
+  "self-harm",
+  "misleading",
+  "privacy",
+  "other",
+]);
 
 export function enforceDiamondRuntimeOutput(text: string): {
   content: string;
@@ -159,6 +170,35 @@ export function registerChatRoutes(app: Express) {
         return res.status(500).json({ message: "An error occurred while connecting to your Soul Guide" });
       }
     }
+  });
+
+  app.post("/api/ai-content-report", (req, res) => {
+    const { category, excerpt, details, source } = req.body || {};
+    const normalizedCategory = typeof category === "string" ? category.trim() : "";
+    const normalizedExcerpt = typeof excerpt === "string" ? excerpt.trim().slice(0, 2000) : "";
+    const normalizedDetails = typeof details === "string" ? details.trim().slice(0, 1000) : "";
+    const normalizedSource = typeof source === "string" ? source.trim().slice(0, 80) : "soul-guide";
+
+    if (!AI_REPORT_CATEGORIES.has(normalizedCategory)) {
+      return res.status(400).json({ error: "invalid_category" });
+    }
+    if (!normalizedExcerpt) {
+      return res.status(400).json({ error: "excerpt_required" });
+    }
+
+    const reportId = `air_${randomUUID()}`;
+    res.setHeader("Cache-Control", "no-store");
+
+    console.warn("[AI Safety Report]", JSON.stringify({
+      reportId,
+      category: normalizedCategory,
+      source: normalizedSource || "soul-guide",
+      excerpt: normalizedExcerpt,
+      details: normalizedDetails || null,
+      createdAt: new Date().toISOString(),
+    }));
+
+    return res.status(201).json({ ok: true, reportId });
   });
 
   app.get("/api/chat/soul-guide/usage", async (req, res) => {
