@@ -6,6 +6,10 @@ env:
     VITE_API_URL: "https://soulcodex.up.railway.app"
     VITE_RELEASE_VERSION: "4.0.0-rc.4"
     VITE_API_CONTRACT: "foundation-v4"
+    ANDROID_SDK_ROOT: "/opt/android-sdk"
+    ANDROID_HOME: "/opt/android-sdk"
+    ANDROID_CMDLINE_TOOLS_ZIP: "commandlinetools-linux-15859902_latest.zip"
+    ANDROID_CMDLINE_TOOLS_SHA256: "4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583"
 
 phases:
   install:
@@ -16,6 +20,18 @@ phases:
       - node --version
       - java -version
       - npm --version
+      - |
+        if [ ! -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools" /tmp/android-cmdline
+          curl -fsSL "https://dl.google.com/android/repository/$ANDROID_CMDLINE_TOOLS_ZIP" -o "/tmp/$ANDROID_CMDLINE_TOOLS_ZIP"
+          echo "$ANDROID_CMDLINE_TOOLS_SHA256  /tmp/$ANDROID_CMDLINE_TOOLS_ZIP" | sha256sum -c -
+          unzip -q "/tmp/$ANDROID_CMDLINE_TOOLS_ZIP" -d /tmp/android-cmdline
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          mv /tmp/android-cmdline/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+        fi
+      - yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+      - "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --list_installed
   pre_build:
     commands:
       - export VITE_RELEASE_SHA="$(git rev-parse HEAD)"
@@ -40,3 +56,4 @@ cache:
     - "/root/.npm/**/*"
     - "/root/.gradle/caches/**/*"
     - "/root/.gradle/wrapper/**/*"
+    - "/opt/android-sdk/**/*"
