@@ -1,8 +1,8 @@
 # Soul Codex Store Submission Packet
 
-Prepared from the shipped app behavior and repository state on July 17, 2026.
+Prepared from the shipped app behavior and Android Google Play release-candidate state on September 7, 2026.
 
-This is the canonical operator checklist for App Store Connect and Google Play Console. Store answers must be rechecked whenever data collection, third-party services, authentication, payments, or native permissions change.
+This is the canonical operator checklist for App Store Connect and Google Play Console. Store answers must be rechecked whenever data collection, third-party services, authentication, payments, native permissions, AI behavior, or release identity changes.
 
 ## Product Identity
 
@@ -11,7 +11,9 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | App name | Soul Codex |
 | iOS bundle ID | `app.soulcodex.ios` |
 | Android application ID | `app.soulcodex.main` |
-| Version | 1.0.0 |
+| Android version name | `4.0.0-rc.4` |
+| Android version code | `4000004` |
+| Android target SDK | `36` |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
@@ -40,31 +42,33 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 
 Soul Codex maps your personality patterns using astrology, numerology, Human Design, timing, and behavioral analysis — in plain language you can actually use.
 
-Not a pile of disconnected horoscopes. One sharp, integrated reading that explains how you think, react, and relate.
+Not a pile of disconnected horoscopes. One integrated reading that explains how you think, react, and relate while keeping supported facts, symbolic interpretation, and uncertainty distinct.
 
 What you get:
 
-- Your Soul Archetype — one identity synthesis across multiple systems
-- Sun, Moon, and Rising sign analysis
+- Your Soul Archetype — one identity synthesis across supported systems
+- Sun, Moon, and Rising sign analysis when the required birth inputs and verification evidence are available
 - Life Path number and personal-year timing
-- Human Design type, authority, and profile
-- Daily personalized guidance based on your chart and current timing
+- Human Design and other symbolic-system context only where the release contract supports it
+- Daily personalized guidance based on your available profile context
 - Compatibility readings showing where two people naturally match or clash
-- An AI Soul Guide that answers questions using your profile context
+- An AI-assisted Soul Guide that answers questions using your available profile context and evidence boundaries
+- An in-app AI safety report control for generated output that should be reviewed
 
 How it works:
 
 1. Enter your birth data. Date is required; time and location improve precision.
 2. Answer a few questions about decisions, stress, energy, and relationships.
-3. Soul Codex blends the systems into one reading.
-4. Explore your archetype, patterns, daily signal, compatibility, and growth direction.
+3. Soul Codex blends the supported systems into one reading.
+4. Explore your archetype, patterns, timing, compatibility, and growth direction.
 
 What makes it different:
 
 - It clearly labels uncertainty instead of guessing when birth details are missing.
 - It synthesizes multiple systems instead of presenting disconnected results.
 - It uses direct language instead of burying the reading in jargon.
-- It is free to start, with no account required for the initial experience.
+- It is free to start, with no account required for the initial local-first experience.
+- AI-generated output can be reported from inside the app for developer safety review.
 
 Soul Codex is intended for self-reflection and entertainment. It does not provide medical, legal, financial, or other professional advice.
 
@@ -78,34 +82,34 @@ Soul Codex is intended for self-reflection and entertainment. It does not provid
 |---|---|---|
 | App Store icon | `store-assets/app-store-icon-1024.png` | Ready: 1024×1024 RGB PNG, no alpha |
 | Play Store icon | `store-assets/play-store-icon-512.png` | Ready: 512×512 RGB PNG, no alpha |
-| Play feature graphic | `store-assets/play-feature-graphic-1024x500.png` | Ready after RGB normalization: 1024×500 PNG, no alpha |
-| iPhone screenshots | Not captured | Required |
-| Android phone screenshots | Not captured | Required |
+| Play feature graphic | `store-assets/play-feature-graphic-1024x500.png` | Ready: 1024×500 PNG |
+| Screenshot drafts | `store-assets/screenshots/` | Present, but current presentation images use live-web captures |
+| Final Android phone screenshots | Not captured | Required from exact native Android release candidate |
 | iPad screenshots | Not captured | Required only if iPad remains supported |
 
-## Screenshot Capture Plan
+## Android Screenshot Capture Plan
 
-Use real screens from the final native build. Do not place claims in the artwork that the app cannot demonstrate.
+Use real screens from the exact signed/native Android release candidate. Do not place claims in the artwork that the shipped build cannot demonstrate.
 
 | Order | Screen | Caption |
 |---|---|---|
-| 1 | Onboarding / start | Know How You're Wired |
-| 2 | Profile / blueprint | One Blueprint. Every System. |
-| 3 | Today | Your Daily Signal |
+| 1 | Create profile | Know How You're Wired |
+| 2 | Profile / reading | One Blueprint. Every System. |
+| 3 | Timeline | Your Daily Signal |
 | 4 | Compatibility | See Where You Match — and Clash |
-| 5 | Soul Guide | Ask From Your Actual Profile |
+| 5 | Soul Guide / AI safety-capable surface | Ask From Your Actual Profile |
 
-Capture at least five portrait phone screenshots. Avoid real names, email addresses, precise birth details, or private journal content in the demo profile.
+Capture at least five portrait phone screenshots. Avoid real names, email addresses, precise birth details, private journal content, or real AI-safety reports in the demo profile.
 
 ## Google Play Data Safety Draft
 
-This draft reflects the July 17, 2026 source and privacy policy. Confirm production logging and provider contracts before submitting it.
+This draft reflects the September 7, 2026 Android rc.4 source. Confirm production logging, provider contracts, the final merged manifest, and the exact signed AAB before submitting it.
 
 ### High-level answers
 
 | Question | Draft answer |
 |---|---|
-| Does the app collect or share required user-data categories? | Yes, it collects data needed for app functionality. |
+| Does the app collect or share required user-data categories? | Yes, it collects data needed for app functionality and user-requested server-backed features. |
 | Is all user data encrypted in transit? | Yes, production traffic uses HTTPS. |
 | Can users request deletion? | Yes, in Settings and through the public deletion URL. |
 | Is data used for advertising? | No. |
@@ -121,11 +125,19 @@ This draft reflects the July 17, 2026 source and privacy policy. Confirm product
 | User IDs | Yes | No* | Account or anonymous session operation |
 | Approximate location | Yes | No* | User-entered birth location for chart calculation; not live device location |
 | Other personal information | Yes | No* | Birth date/time and behavioral responses used for personalized readings |
-| Other user-generated content | Yes | No* | Journal, profile context, compatibility inputs, and Soul Guide prompts |
+| Other user-generated content | Yes | No* | Profile context, compatibility inputs, Soul Guide prompts, and user-submitted AI safety reports |
 | App interactions | Yes | No | Session/usage history needed to operate and improve app functionality |
-| Diagnostics | Yes | No* | Request logs and error details used for security and troubleshooting |
+| Diagnostics | Yes | No* | Request logs, error details, and operational safety-report records used for security, moderation, and troubleshooting |
 
 `*` Some requested profile context or prompts may be processed by contracted AI or infrastructure service providers solely to deliver app functionality. Confirm that each transfer qualifies for Google Play's service-provider exception before selecting “not shared.”
+
+### AI-generated content safety
+
+- The Android release exposes an in-app `Report AI output` control.
+- Reports are categorized as offensive/hateful, sexual/inappropriate, dangerous/harmful, self-harm concern, misleading/fabricated, privacy concern, or other.
+- A report requires the user to submit the AI response or relevant excerpt and may include optional details.
+- The report endpoint is `/api/ai-content-report` and returns a unique report ID.
+- The release validator fails if the report UI or report endpoint disappears.
 
 ### Not currently collected for the native store app
 
@@ -135,22 +147,13 @@ This draft reflects the July 17, 2026 source and privacy policy. Confirm product
 - Audio files or voice recordings
 - Precise/live device location
 - Health or fitness data
-- SMS, call logs, or device contacts
-- Payment card or bank information
-- In-app purchase history from a native store purchase flow
+- SMS or call logs
+- Payment card or bank information in the native app
+- Native in-app purchase history in rc.4
 
 ## App Store Privacy Draft
 
-The checked-in `PrivacyInfo.xcprivacy` currently declares these linked, non-tracking categories for app functionality:
-
-- Name
-- Email address
-- User ID
-- Coarse location
-- Sensitive information
-- Other user content
-
-The app declares no tracking and no tracking domains. Reconcile this declaration with App Store Connect after the final archive is produced.
+The checked-in `PrivacyInfo.xcprivacy` currently declares linked, non-tracking categories for app functionality. Reconcile the Apple declaration independently from this Android rc.4 packet before the final iOS archive is submitted.
 
 ## Content Rating Draft
 
@@ -160,17 +163,19 @@ The app declares no tracking and no tracking domains. Reconcile this declaration
 - No graphic violence
 - No sexual content or nudity supplied by the app
 - No unrestricted public user-to-user communication
-- AI-generated spiritual and self-reflection content is present
-- Metaphysical themes and horoscope-style material are present
+- AI-generated self-reflection content is present
+- Metaphysical and horoscope-style material is present
 
-Complete the live questionnaires from the final shipped behavior; the stores determine the final rating.
+Complete the live Google Play questionnaire from the final shipped behavior; the store determines the final rating.
 
-## Remaining Gates
+## Remaining Google Play Gates
 
-1. Capture final native screenshots.
-2. Complete physical-device testing.
-3. Add Apple signing credentials and generate the signed IPA when ready.
-4. Enroll in Google Play, create an upload keystore, and generate the signed AAB.
-5. Confirm support and privacy email inboxes receive mail.
-6. Complete privacy/data-safety and content-rating questionnaires.
-7. Run TestFlight and Play internal testing before production submission.
+1. Complete exact-head AWS Android build validation for rc.4.
+2. Produce the production-signed AAB using the governed upload keystore.
+3. Verify the AAB signature, SHA-256, versionName `4.0.0-rc.4`, versionCode `4000004`, target SDK 36, and final merged manifest.
+4. Capture final native Android screenshots from that exact candidate.
+5. Verify the production privacy, support, and account-deletion URLs over public HTTPS.
+6. Complete Play Data Safety and content-rating questionnaires from the exact release binary.
+7. Confirm Google Play developer identity/package-registration status for `app.soulcodex.main`.
+8. Complete any account-specific closed-testing and production-access requirement.
+9. Run the exact release candidate on physical Android devices before production submission.
