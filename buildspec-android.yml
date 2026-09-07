@@ -4,7 +4,7 @@ env:
   variables:
     BUILD_TYPE: "debug"
     VITE_API_URL: "https://soulcodex.up.railway.app"
-    VITE_RELEASE_VERSION: "4.0.0-rc.3"
+    VITE_RELEASE_VERSION: "4.0.0-rc.4"
     VITE_API_CONTRACT: "foundation-v4"
 
 phases:
