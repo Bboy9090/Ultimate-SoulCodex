@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import ProfileClarityLauncher from "@/components/ProfileClarityLauncher";
 import TimelineContinuityHeader from "@/components/TimelineContinuityHeader";
+import AIContentReport from "@/components/AIContentReport";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 import LocalFirstInputForm from "./pages/local-first-input-form";
@@ -87,7 +88,11 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider><Toaster /><Router /></TooltipProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+        <AIContentReport />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
