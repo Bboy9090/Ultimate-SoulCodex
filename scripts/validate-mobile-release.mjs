@@ -66,10 +66,19 @@ if (platform === "ios") {
 }
 
 if (platform === "android") {
+  if (releaseVersion !== "4.0.0-rc.4") {
+    failures.push("Android VITE_RELEASE_VERSION must be 4.0.0-rc.4 for the current Play release candidate.");
+  }
   requireMatch("android/app/build.gradle", /applicationId\s+["']app\.soulcodex\.main["']/, "The Android application ID must remain app.soulcodex.main.");
   requireMatch("android/variables.gradle", /targetSdkVersion\s*=\s*36/, "Android targetSdkVersion must be 36.");
-  requireMatch("android/app/build.gradle", /versionCode\s+4000003/, "The Android versionCode must be 4000003 for rc.3.");
-  requireMatch("android/app/build.gradle", /versionName\s+["']4\.0\.0-rc\.3["']/, "The Android versionName must be 4.0.0-rc.3.");
+  requireMatch("android/app/build.gradle", /versionCode\s+4000004/, "The Android versionCode must be 4000004 for rc.4.");
+  requireMatch("android/app/build.gradle", /versionName\s+["']4\.0\.0-rc\.4["']/, "The Android versionName must be 4.0.0-rc.4.");
+
+  requireFile("client/src/components/AIContentReport.tsx");
+  requireMatch("client/src/App.tsx", /<AIContentReport\s*\/>/, "The Android release must expose the in-app AI content reporting control.");
+  requireMatch("client/src/components/AIContentReport.tsx", /\/api\/ai-content-report/, "The AI content reporting control must submit to the governed report endpoint.");
+  requireMatch("routes/chat.ts", /app\.post\(["']\/api\/ai-content-report["']/, "The AI content report API endpoint must remain registered.");
+  requireMatch("routes/chat.ts", /AI_REPORT_CATEGORIES/, "The AI content report endpoint must validate report categories.");
 }
 
 if (failures.length) {
