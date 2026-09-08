@@ -40,12 +40,10 @@ export function PremiumUpgradeModal({
   const nativeStoreBuild = Capacitor.isNativePlatform();
 
   const handleUpgrade = async () => {
-    // rc.3 does not initiate an external digital-goods checkout from inside an
-    // App Store / Play Store shell. Store-specific purchase architecture must
-    // earn its own policy + entitlement contract before native purchase is
-    // enabled. Existing premium entitlement remains readable in native builds.
+    // Native store builds never initiate external checkout for digital features.
+    // Existing premium entitlements may still be recognized when available.
     if (nativeStoreBuild) {
-      setError("Premium purchasing is not enabled inside this native release candidate. Existing premium access remains available.");
+      setError("Premium purchasing is not offered in this iOS build. Existing premium access remains available when already entitled.");
       return;
     }
 
@@ -118,10 +116,12 @@ export function PremiumUpgradeModal({
 
         <CardContent className="space-y-6">
           <div className="text-center">
-            <div className="font-serif text-2xl font-semibold">One-time premium access</div>
+            <div className="font-serif text-2xl font-semibold">
+              {nativeStoreBuild ? "Premium access" : "One-time premium access"}
+            </div>
             <p className="text-sm text-[var(--sc-stone)]">
               {nativeStoreBuild
-                ? "Purchase initiation is intentionally unavailable in this native release candidate while store billing is validated."
+                ? "Premium purchasing is not offered in this iOS build. The core guest experience remains available without a purchase."
                 : "The exact price is confirmed before payment on secure checkout."}
             </p>
           </div>
@@ -143,9 +143,9 @@ export function PremiumUpgradeModal({
               <div className="flex items-start gap-3">
                 <Smartphone className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--sc-gold)]" />
                 <div>
-                  <h3 className="text-sm font-semibold">Native purchase boundary</h3>
+                  <h3 className="text-sm font-semibold">Premium access on iOS</h3>
                   <p className="mt-1 text-xs leading-relaxed text-[var(--sc-stone)]">
-                    This build does not open an external payment page for new digital-premium purchases. Store-specific billing must pass its own review contract before that control is enabled.
+                    This iOS build does not open external payment pages for digital features. Existing premium entitlements may still be recognized when available.
                   </p>
                 </div>
               </div>
