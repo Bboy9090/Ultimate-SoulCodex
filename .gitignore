@@ -1,3 +1,73 @@
+# Node / package managers
+node_modules/
+npm_cache/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.turbo/
+.vite/
+
+# TypeScript build artifacts (tsc without outDir)
+*.js
+packages/**/**/*.js
+apps/**/**/*.js
+services/**/**/*.js
+server/**/*.js
+shared/**/*.js
+*.js.map
+*.d.ts.map
+
+# Allow JS configs/scripts that are intentionally committed
+!*.config.js
+!*.config.cjs
+!*.config.mjs
+!scripts/**/*.js
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Next.js build artifacts
+.next
+out
+
+# Agent state files
+.agent_state_*.bin
+repl_state.bin
+
+# Build artifacts
+index.js
+index-*.js
+index-*.css
+index.es-*.js
+html2canvas.esm-*.js
+jspdf.es.min-*.js
+purify.es-*.js
+
+# Build markers
+rapid_build_started
+rapid_build_success
+
+# Zip files
+*.zip
+
+# Temporary scripts
+apply_vite_server_fix_and_push.sh
+create_pr_and_files.sh
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Python cache
 __pycache__/
 *.pyc

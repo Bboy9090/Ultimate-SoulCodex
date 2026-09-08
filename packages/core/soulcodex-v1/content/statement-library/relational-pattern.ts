@@ -1,0 +1,31 @@
+export default [
+  {
+    "id": "relational_pattern.clean.1",
+    "category": "relational_pattern",
+    "tone": "clean",
+    "confidence": "high",
+    "text": "You trust slowly and you watch behavior, not promises. Once alignment is real, you commit deeply.",
+    "source_support": [
+      "astrology",
+      "human_design"
+    ],
+    "tags": [
+      "trust",
+      "alignment"
+    ]
+  },
+  {
+    "id": "relational_pattern.clean.2",
+    "category": "relational_pattern",
+    "tone": "clean",
+    "confidence": "medium",
+    "text": "You don\u2019t need constant contact; you need consistency. The relationship works when expectations are explicit.",
+    "source_support": [
+      "numerology"
+    ],
+    "tags": [
+      "consistency",
+      "expectations"
+    ]
+  }
+] as const;

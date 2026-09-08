@@ -1,0 +1,15 @@
+node_modules
+dist
+public/dist
+.git
+.env
+.DS_Store
+ios
+android
+ios-publish
+android-publish
+capacitor.config.ts
+README.md
+walkthrough.md
+implementation_plan.md
+task.md

@@ -1,0 +1,121 @@
+name: Xcode Cloud Dependency Smoke
+
+on:
+  pull_request:
+    branches: ["main", "master"]
+    paths:
+      - "ios/App/ci_scripts/**"
+      - "ios/App/CapApp-SPM/**"
+      - "ios/App/Vendor/**"
+      - "ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+      - "scripts/patch-capapp-spm-vendored-packages.mjs"
+      - "scripts/patch-apple-sign-in-swiftpm.mjs"
+      - "scripts/validate-mobile-release.mjs"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-ios.yml"
+      - ".github/workflows/xcode-cloud-dependency-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xcode-cloud-dependencies-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clone-ready-swift-packages:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      VITE_API_URL: https://soulcodex.up.railway.app
+      VITE_RELEASE_VERSION: 4.0.0-rc.3
+      VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_API_CONTRACT: foundation-v4
+      RESOLVED_FILE: ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+    steps:
+      - name: Checkout exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VITE_RELEASE_SHA }}
+
+      - name: Record exact candidate SHA
+        run: |
+          echo "candidate_sha=$(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$VITE_RELEASE_SHA"
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Verify Xcode 26+
+        run: |
+          xcodebuild -version
+          XCODE_MAJOR=$(xcodebuild -version | awk '/Xcode/{split($2,v,"."); print v[1]}')
+          test "$XCODE_MAJOR" -ge 26
+
+      - name: Verify committed clone-ready graph and lock
+        run: |
+          set -euo pipefail
+          test ! -d node_modules
+          test -f ios/App/CapApp-SPM/Package.swift
+          test -f ios/App/Vendor/CapacitorSplashScreen/Package.swift
+          test -f ios/App/Vendor/CapacitorStatusBar/Package.swift
+          test -f ios/App/Vendor/CapawesomeCapacitorAppleSignIn/Package.swift
+          test -s "$RESOLVED_FILE"
+          ! grep -q 'node_modules/' ios/App/CapApp-SPM/Package.swift
+          grep -q '"identity" : "capacitor-keyboard"' "$RESOLVED_FILE"
+          grep -q '"version" : "8.0.3"' "$RESOLVED_FILE"
+          grep -q '279a3b4daf1c0e0cb63d4a46994ba65ea8a97da6' "$RESOLVED_FILE"
+          grep -q '"identity" : "capacitor-swift-pm"' "$RESOLVED_FILE"
+          grep -q '"version" : "8.4.2"' "$RESOLVED_FILE"
+          grep -q '9b9fb0af76b2b653f6e9b999f658adc132b9ab4c' "$RESOLVED_FILE"
+          shasum -a 256 "$RESOLVED_FILE" | tee "$RUNNER_TEMP/package-resolved-before.txt"
+
+      - name: Resolve strictly before npm exists
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -workspace ios/App/App.xcodeproj/project.xcworkspace \
+            -scheme "Soul Codex" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            -disableAutomaticPackageResolution \
+            -onlyUsePackageVersionsFromResolvedFile
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Run project-local Xcode Cloud post-clone hook
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
+
+      - name: Prove Capacitor sync preserved the locked clone-ready contract
+        run: |
+          set -euo pipefail
+          test -s "$RESOLVED_FILE"
+          ! grep -q 'node_modules/' ios/App/CapApp-SPM/Package.swift
+          grep -q 'capacitor-keyboard.git' ios/App/CapApp-SPM/Package.swift
+          grep -q '../Vendor/CapacitorSplashScreen' ios/App/CapApp-SPM/Package.swift
+          grep -q '../Vendor/CapacitorStatusBar' ios/App/CapApp-SPM/Package.swift
+          grep -q '../Vendor/CapawesomeCapacitorAppleSignIn' ios/App/CapApp-SPM/Package.swift
+          shasum -a 256 "$RESOLVED_FILE" | tee "$RUNNER_TEMP/package-resolved-after.txt"
+          diff -u "$RUNNER_TEMP/package-resolved-before.txt" "$RUNNER_TEMP/package-resolved-after.txt"
+
+      - name: Resolve strictly again after bootstrap
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -workspace ios/App/App.xcodeproj/project.xcworkspace \
+            -scheme "Soul Codex" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            -disableAutomaticPackageResolution \
+            -onlyUsePackageVersionsFromResolvedFile
+
+      - name: Validate native release configuration
+        run: npm run mobile:validate:ios

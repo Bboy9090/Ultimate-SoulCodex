@@ -6,7 +6,6 @@ import json
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
@@ -31,12 +30,20 @@ EXPECTED_CLASSES = {
 
 def verify_engines() -> bool:
     passed = True
-    modules = load_all_engines()
+    try:
+        modules = load_all_engines()
+    except Exception as exc:
+        print(f"FAIL: loader failed to load engines: {exc}")
+        return False
 
     print("Interface verification")
 
     for engine_name, class_name in EXPECTED_CLASSES.items():
-        module = modules[engine_name]
+        module = modules.get(engine_name)
+        if module is None:
+            print(f"FAIL {engine_name}: module not loaded")
+            passed = False
+            continue
 
         cls = getattr(module, class_name, None)
 
@@ -50,15 +57,13 @@ def verify_engines() -> bool:
 
         if not engine_id or not engine_version:
             print(
-                f"FAIL {engine_name}: "
-                "missing engine_id or engine_version"
+                f"FAIL {engine_name}: missing engine_id or engine_version"
             )
             passed = False
             continue
 
         print(
-            f"PASS {engine_name}: "
-            f"id={engine_id}, version={engine_version}"
+            f"PASS {engine_name}: id={engine_id}, version={engine_version}"
         )
 
     return passed

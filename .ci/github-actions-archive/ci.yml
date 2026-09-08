@@ -1,0 +1,79 @@
+name: Ultimate SoulCodex CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build_and_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Workspace Packages
+        run: npm run build:workspaces
+
+      - name: Check Workspace Packages
+        run: npm run check:workspaces
+
+      - name: Run TypeScript Compiler Check
+        run: npm run check
+
+      - name: Run Workspace Tests
+        run: npm test
+
+      - name: Run Trust, Compatibility, And Security Boundary Tests
+        run: >-
+          node --import tsx --test
+          server/tests/gate1-foundation.test.ts
+          server/services/galactic-code/__tests__/galactic-code.test.ts
+          packages/astrology/__tests__/astrology-evidence.test.ts
+          tests/astrology-candidate.test.ts
+          tests/astrology-independent-verification.test.ts
+          tests/jpl-horizons-reference.test.ts
+          tests/astrology-evidence-matrix.test.ts
+          tests/astrology-tolerance-policy.test.ts
+          tests/astrology-production-verification.test.ts
+          tests/ascendant-verification.test.ts
+          tests/ascendant-retry-contract.test.ts
+          tests/bobby-big-three-golden.test.ts
+          tests/human-design-trust.test.ts
+          tests/profile-verification-reconciliation.test.ts
+          tests/active-profile-contract.test.ts
+          tests/ui-backend-consistency-contract.test.ts
+          tests/compatibility-data-minimization.test.ts
+          tests/compatibility-profile-contract.test.ts
+          tests/compatibility-http-integration.test.ts
+          tests/release-identity.test.ts
+          tests/billing-security.test.ts
+          tests/local-first-privacy-contract.test.ts
+          tests/location-resolution-contract.test.ts
+          tests/system-visibility-contract.test.ts
+          tests/server-profile-ownership.test.ts
+          tests/natal-report-contract.test.ts
+          tests/pdf-production-path-contract.test.ts
+          tests/codex-tools-production-contract.test.ts
+          tests/active-consumer-auth.test.ts
+          tests/native-api-routing.test.ts
+
+      - name: Run Foundation Web RC Invariant Audit
+        run: node scripts/verify-foundation-web-rc.mjs
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Verify Build Output Exists
+        run: test -d dist/public && test -f dist/index.js

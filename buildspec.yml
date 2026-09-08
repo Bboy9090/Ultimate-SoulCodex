@@ -1,0 +1,27 @@
+version: 0.2
+
+env:
+  variables:
+    CI: "true"
+    VITE_API_URL: "https://soulcodex.up.railway.app"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - node --version
+      - npm --version
+  build:
+    commands:
+      - ./scripts/ci/codebuild-core.sh
+
+artifacts:
+  files:
+    - "evidence/codebuild/**/*"
+    - "dist/**/*"
+  name: "soulcodex-core-$CODEBUILD_BUILD_NUMBER"
+
+cache:
+  paths:
+    - "/root/.npm/**/*"

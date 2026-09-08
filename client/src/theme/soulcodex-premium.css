@@ -1,0 +1,117 @@
+:root {
+  --background: hsl(278, 38%, 7%);
+  --foreground: hsl(28, 74%, 86%);
+  --accent: hsl(23, 72%, 72%);
+  --accent-foreground: hsl(286, 44%, 12%);
+  --ring: hsl(23, 72%, 72%);
+  --chart-2: hsl(304, 42%, 66%);
+  --cosmic-cyan: #d9a16f;
+  --cosmic-teal: #d7a4d7;
+  --codex-blue: #e5b68c;
+  --glow-primary: 0 0 24px hsla(23, 72%, 72%, 0.26);
+  --glow-accent: 0 0 18px hsla(304, 42%, 66%, 0.20);
+}
+
+html,
+body,
+#root {
+  background: #100713;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 70% 38% at 50% 16%, rgba(149, 64, 177, 0.28) 0%, transparent 68%),
+    linear-gradient(180deg, #16091b 0%, #241033 45%, #0c0711 100%);
+  color: var(--foreground);
+}
+
+body::before {
+  opacity: 0.16;
+  background-image:
+    radial-gradient(circle, rgba(245, 218, 188, 0.58) 1px, transparent 1px),
+    radial-gradient(circle, rgba(226, 183, 232, 0.30) 1px, transparent 1px);
+  background-size: 92px 92px, 148px 148px;
+  background-position: 0 0, 36px 54px;
+}
+
+body::after {
+  background:
+    linear-gradient(rgba(223, 172, 124, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(223, 172, 124, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(19, 8, 24, 0.08), rgba(10, 6, 14, 0.28));
+  background-size: 92px 92px, 92px 92px, auto;
+  mix-blend-mode: normal;
+  opacity: 0.55;
+}
+
+.nebula-bg {
+  position: relative;
+  isolation: isolate;
+  background-image:
+    linear-gradient(180deg, rgba(13, 6, 16, 0.00) 0%, rgba(13, 6, 16, 0.08) 52%, rgba(8, 4, 10, 0.24) 100%),
+    url("../assets/soulcodex-nebula-hero.svg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-color: #100713;
+}
+
+.nebula-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.30;
+  background:
+    linear-gradient(rgba(229, 182, 140, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(229, 182, 140, 0.065) 1px, transparent 1px);
+  background-size: 88px 88px, 88px 88px;
+}
+
+.nebula-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 105% 28% at 18% 0%, rgba(247, 219, 228, 0.62) 0%, rgba(220, 165, 229, 0.45) 32%, rgba(109, 42, 148, 0.26) 58%, transparent 76%),
+    radial-gradient(ellipse 78% 24% at 92% 4%, rgba(156, 79, 194, 0.54) 0%, rgba(84, 33, 120, 0.34) 45%, transparent 78%),
+    radial-gradient(ellipse 54% 30% at 8% 86%, rgba(230, 188, 231, 0.50) 0%, rgba(139, 72, 176, 0.40) 45%, transparent 78%),
+    radial-gradient(ellipse 62% 34% at 92% 84%, rgba(141, 72, 180, 0.50) 0%, rgba(220, 150, 135, 0.18) 42%, transparent 80%),
+    radial-gradient(ellipse 76% 24% at 50% 104%, rgba(226, 181, 221, 0.30) 0%, rgba(35, 16, 50, 0.44) 55%, transparent 84%);
+  filter: blur(10px) saturate(1.12);
+  opacity: 0.96;
+}
+
+.gradient-text,
+.soulcodex-gold-pink-text {
+  background: linear-gradient(135deg, #f4d1ad 0%, #e6b995 32%, #f0a8d2 66%, #d7a4d7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #e6b995;
+}
+
+.mystical-glow {
+  box-shadow: 0 0 30px rgba(218, 154, 105, 0.22), 0 0 14px rgba(215, 164, 215, 0.16);
+}
+
+.cosmic-border {
+  border: 1px solid transparent;
+  background: linear-gradient(#170a1d, #170a1d) padding-box,
+              linear-gradient(135deg, rgba(224, 166, 125, 0.78), rgba(215, 164, 215, 0.58), rgba(126, 57, 167, 0.54)) border-box;
+}
+
+.btn-primary,
+button.btn-primary {
+  background: linear-gradient(135deg, #744098 0%, #a45f9e 42%, #d89b75 100%);
+  color: #170918;
+  box-shadow: 0 10px 28px rgba(216, 155, 117, 0.22), inset 0 1px 0 rgba(255, 239, 224, 0.35);
+}
+
+.btn-primary:hover,
+button.btn-primary:hover {
+  background: linear-gradient(135deg, #8349a8 0%, #b76cad 42%, #e1aa82 100%);
+}
