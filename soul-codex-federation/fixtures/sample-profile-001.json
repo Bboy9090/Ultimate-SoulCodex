@@ -1,0 +1,42 @@
+{
+  "profile_id": "FIXTURE-001",
+  "archetype": "The Pioneer",
+  "birth": {
+    "name": "Test Birth Standard",
+    "date": "1985-03-21",
+    "time": "14:30:00",
+    "timezone": "America/New_York",
+    "location": {
+      "city": "New York",
+      "latitude": 40.7128,
+      "longitude": -74.0060
+    }
+  },
+  "numerology": {
+    "life_path": 4,
+    "expression": 3,
+    "soul_urge": 7,
+    "personality": 5,
+    "birthday": 3,
+    "maturity": 7,
+    "master_numbers": [],
+    "karmic_debt_markers": []
+  },
+  "astrology": {
+    "sun": {"sign": "Aries", "lon": 0.48, "lat": 0.01},
+    "moon": {"sign": "Capricorn", "lon": 287.65, "lat": -2.34},
+    "ascendant": 145.67,
+    "midheaven": 215.34,
+    "house_system": "Placidus"
+  },
+  "evidence_mapping": {
+    "core_identity": [{"claim": "Pioneer archetype", "sources": ["Aries Sun", "Life Path 4"]}],
+    "emotional_processing": [{"claim": "Grounded emotional nature", "sources": ["Capricorn Moon"]}],
+    "mental_style": [{"claim": "Analytical thinker", "sources": ["Mercury in Taurus"]}],
+    "communication_style": [{"claim": "Practical communicator", "sources": ["3rd house Mercury"]}],
+    "love_and_relationships": [{"claim": "Loyal partner", "sources": ["Venus in Taurus"]}],
+    "conflict_and_challenge": [{"claim": "Handles pressure well", "sources": ["Saturn in 10th"]}],
+    "ambition_and_drive": [{"claim": "Steady achievement", "sources": ["Sun in Aries", "Life Path 4"]}],
+    "social_presentation": [{"claim": "Approachable presence", "sources": ["Libra Ascendant", "Personality 5"]}]
+  }
+}

@@ -1,0 +1,12 @@
+# Wave 2 Minimal Core Dependencies
+# Swiss Ephemeris (canonical astrology engine)
+pyswisseph
+
+# Independent validation engine
+ephem
+
+# Date/time handling
+python-dateutil
+
+# Testing
+pytest

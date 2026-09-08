@@ -1,0 +1,12 @@
+{
+  "profile_id": "FIXTURE-UNKNOWN-TIME",
+  "birth": {
+    "name": "Birth with Unknown Time",
+    "date": "1990-06-15",
+    "time": "12:00:00",
+    "time_unknown": true,
+    "timezone": "UTC",
+    "location": {"latitude": 0.0, "longitude": 0.0}
+  },
+  "notes": "When time_unknown=true, houses/ASC/MC must be suppressed or marked uncertain"
+}

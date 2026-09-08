@@ -1,0 +1,15 @@
+{
+  "profile_id": "FIXTURE-HIGH-LATITUDE",
+  "birth": {
+    "name": "High Latitude Birth",
+    "date": "1980-12-01",
+    "time": "18:00:00",
+    "timezone": "UTC",
+    "location": {
+      "city": "Svalbard",
+      "latitude": 78.0,
+      "longitude": 15.0
+    }
+  },
+  "notes": "Latitude 78°N triggers high-latitude edge case detection"
+}
