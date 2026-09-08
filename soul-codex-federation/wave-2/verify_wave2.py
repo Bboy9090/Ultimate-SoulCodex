@@ -73,9 +73,9 @@ def verify_fixtures() -> bool:
     passed = True
 
     fixtures = [
-        ROOT / "fixtures/sample-profile-001.json",
-        ROOT / "fixtures/unknown-time.json",
-        ROOT / "fixtures/high-latitude.json",
+        ROOT.parent / "fixtures/sample-profile-001.json",
+        ROOT.parent / "fixtures/unknown-time.json",
+        ROOT.parent / "fixtures/high-latitude.json",
     ]
 
     print("\nFixture verification")
@@ -86,10 +86,13 @@ def verify_fixtures() -> bool:
                 data = json.load(handle)
 
             print(
-                f"PASS {path.relative_to(ROOT)} keys={list(data.keys())}"
+                f"PASS {path.name}: "
+                f"keys={list(data.keys())}"
             )
         except Exception as exc:
-            print(f"FAIL {path.relative_to(ROOT)}: {exc}")
+            print(
+                f"FAIL {path.name}: {exc}"
+            )
             passed = False
 
     return passed
@@ -113,7 +116,7 @@ def verify_structure() -> bool:
         "W2-CORPUS-002",
     ]
 
-    print("\nStructure verification")
+    print("Structure verification")
 
     for track in track_names:
         track_dir = ROOT / track
