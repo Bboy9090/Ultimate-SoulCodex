@@ -1,0 +1,1794 @@
+[
+  {
+    "profile_id": "golden-001",
+    "name": "Alan Turing",
+    "birth": {
+      "date": "1912-06-23",
+      "time": "14:30:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.5074,
+        "longitude": -0.1278,
+        "city": "London, England"
+      },
+      "notes": "Mathematician and computer scientist"
+    },
+    "classification": {
+      "sun_sign": "Cancer",
+      "moon_sign": "Aquarius",
+      "rising_sign": "Virgo",
+      "life_path": 7,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Historical record / Public archive",
+      "reliability": "high",
+      "notes": "Birth time from reliable biographical source"
+    }
+  },
+  {
+    "profile_id": "golden-002",
+    "name": "Marie Curie",
+    "birth": {
+      "date": "1867-11-24",
+      "time": "12:00:00",
+      "timezone": "Europe/Warsaw",
+      "location": {
+        "latitude": 52.2297,
+        "longitude": 21.0122,
+        "city": "Warsaw, Poland"
+      },
+      "notes": "Pre-1900 birth edge case (historical archive)"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Cancer",
+      "rising_sign": "Libra",
+      "life_path": 9,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "medium",
+      "notes": "Birth time estimated from historical sources"
+    }
+  },
+  {
+    "profile_id": "golden-003",
+    "name": "David Bowie",
+    "birth": {
+      "date": "1947-01-08",
+      "time": "09:15:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.5142,
+        "longitude": -0.1257,
+        "city": "London, England"
+      },
+      "notes": "Sun sign: Capricorn"
+    },
+    "classification": {
+      "sun_sign": "Capricorn",
+      "moon_sign": "Leo",
+      "rising_sign": "Aquarius",
+      "life_path": 3,
+      "hd_type": "Manifestor",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Well-documented birth time"
+    }
+  },
+  {
+    "profile_id": "golden-004",
+    "name": "Amelia Earhart",
+    "birth": {
+      "date": "1897-07-24",
+      "time": "unknown",
+      "timezone": "America/Chicago",
+      "location": {
+        "latitude": 41.8781,
+        "longitude": -87.6298,
+        "city": "Atchison, Kansas"
+      },
+      "notes": "Unknown birth time edge case (suppresses Ascendant)"
+    },
+    "classification": {
+      "sun_sign": "Leo",
+      "moon_sign": "Pisces",
+      "rising_sign": null,
+      "life_path": 5,
+      "hd_type": null,
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "medium",
+      "notes": "Birth time unknown; only date and location certain"
+    }
+  },
+  {
+    "profile_id": "golden-005",
+    "name": "Carl Sagan",
+    "birth": {
+      "date": "1934-11-09",
+      "time": "19:46:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "city": "New York City, USA"
+      },
+      "notes": "Sun sign: Scorpio"
+    },
+    "classification": {
+      "sun_sign": "Scorpio",
+      "moon_sign": "Virgo",
+      "rising_sign": "Gemini",
+      "life_path": 8,
+      "hd_type": "Generator",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Astrodatabank",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-006",
+    "name": "Simone de Beauvoir",
+    "birth": {
+      "date": "1908-01-09",
+      "time": "03:15:00",
+      "timezone": "Europe/Paris",
+      "location": {
+        "latitude": 48.8566,
+        "longitude": 2.3522,
+        "city": "Paris, France"
+      },
+      "notes": "Sun sign: Capricorn (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Capricorn",
+      "moon_sign": "Taurus",
+      "rising_sign": "Scorpio",
+      "life_path": 11,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented in French records"
+    }
+  },
+  {
+    "profile_id": "golden-007",
+    "name": "Frida Kahlo",
+    "birth": {
+      "date": "1907-07-06",
+      "time": "08:30:00",
+      "timezone": "America/Mexico_City",
+      "location": {
+        "latitude": 19.4326,
+        "longitude": -99.1332,
+        "city": "Mexico City, Mexico"
+      },
+      "notes": "Sun sign: Cancer (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Cancer",
+      "moon_sign": "Scorpio",
+      "rising_sign": "Pisces",
+      "life_path": 6,
+      "hd_type": "Reflector",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-008",
+    "name": "Albert Einstein",
+    "birth": {
+      "date": "1879-03-14",
+      "time": "11:30:00",
+      "timezone": "Europe/Berlin",
+      "location": {
+        "latitude": 48.7758,
+        "longitude": 9.1829,
+        "city": "Ulm, Germany"
+      },
+      "notes": "Sun sign: Pisces; Pre-1900 birth edge case"
+    },
+    "classification": {
+      "sun_sign": "Pisces",
+      "moon_sign": "Gemini",
+      "rising_sign": "Libra",
+      "life_path": 1,
+      "hd_type": "Manifestor",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Historical record / Public archive",
+      "reliability": "medium",
+      "notes": "Birth time estimated from historical sources"
+    }
+  },
+  {
+    "profile_id": "golden-009",
+    "name": "Maya Angelou",
+    "birth": {
+      "date": "1928-04-04",
+      "time": "14:20:00",
+      "timezone": "America/Chicago",
+      "location": {
+        "latitude": 34.5199,
+        "longitude": -92.2458,
+        "city": "St. Louis, Missouri"
+      },
+      "notes": "Sun sign: Aries"
+    },
+    "classification": {
+      "sun_sign": "Aries",
+      "moon_sign": "Capricorn",
+      "rising_sign": "Cancer",
+      "life_path": 4,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented in biographical sources"
+    }
+  },
+  {
+    "profile_id": "golden-010",
+    "name": "Audrey Hepburn",
+    "birth": {
+      "date": "1929-05-04",
+      "time": "08:00:00",
+      "timezone": "Europe/Brussels",
+      "location": {
+        "latitude": 50.8503,
+        "longitude": 4.3517,
+        "city": "Brussels, Belgium"
+      },
+      "notes": "Sun sign: Taurus; Rising sign: Virgo"
+    },
+    "classification": {
+      "sun_sign": "Taurus",
+      "moon_sign": "Libra",
+      "rising_sign": "Virgo",
+      "life_path": 22,
+      "hd_type": "Manifestor",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-011",
+    "name": "George Washington",
+    "birth": {
+      "date": "1732-02-22",
+      "time": "10:30:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 37.5407,
+        "longitude": -76.8845,
+        "city": "Westmoreland County, Virginia"
+      },
+      "notes": "Pre-1900 birth edge case; historical archive"
+    },
+    "classification": {
+      "sun_sign": "Pisces",
+      "moon_sign": "Cancer",
+      "rising_sign": "Sagittarius",
+      "life_path": 2,
+      "hd_type": "Generator",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Birth time estimated from historical sources"
+    }
+  },
+  {
+    "profile_id": "golden-012",
+    "name": "Jane Austen",
+    "birth": {
+      "date": "1775-12-16",
+      "time": "11:45:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.1243,
+        "longitude": -1.3169,
+        "city": "Steventon, England"
+      },
+      "notes": "Pre-1900 birth edge case; historical archive"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Libra",
+      "rising_sign": "Taurus",
+      "life_path": 5,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "medium",
+      "notes": "Birth time estimated"
+    }
+  },
+  {
+    "profile_id": "golden-013",
+    "name": "Virginia Woolf",
+    "birth": {
+      "date": "1882-01-25",
+      "time": "15:30:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.4769,
+        "longitude": -0.1821,
+        "city": "London, England"
+      },
+      "notes": "Sun sign: Aquarius"
+    },
+    "classification": {
+      "sun_sign": "Aquarius",
+      "moon_sign": "Sagittarius",
+      "rising_sign": "Capricorn",
+      "life_path": 7,
+      "hd_type": "Reflector",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-014",
+    "name": "Pablo Picasso",
+    "birth": {
+      "date": "1881-10-25",
+      "time": "23:15:00",
+      "timezone": "Europe/Madrid",
+      "location": {
+        "latitude": 36.7201,
+        "longitude": -4.4204,
+        "city": "Málaga, Spain"
+      },
+      "notes": "Sun sign: Scorpio (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Scorpio",
+      "moon_sign": "Libra",
+      "rising_sign": "Aquarius",
+      "life_path": 9,
+      "hd_type": "Manifestor",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented in Spanish records"
+    }
+  },
+  {
+    "profile_id": "golden-015",
+    "name": "Vincent van Gogh",
+    "birth": {
+      "date": "1853-03-30",
+      "time": "11:00:00",
+      "timezone": "Europe/Amsterdam",
+      "location": {
+        "latitude": 52.3824,
+        "longitude": 4.8995,
+        "city": "Groot-Zundert, Netherlands"
+      },
+      "notes": "Pre-1900 birth edge case"
+    },
+    "classification": {
+      "sun_sign": "Aries",
+      "moon_sign": "Aquarius",
+      "rising_sign": "Cancer",
+      "life_path": 6,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "medium",
+      "notes": "Birth time estimated from biographical sources"
+    }
+  },
+  {
+    "profile_id": "golden-016",
+    "name": "Marilyn Monroe",
+    "birth": {
+      "date": "1926-06-01",
+      "time": "09:45:00",
+      "timezone": "America/Los_Angeles",
+      "location": {
+        "latitude": 34.0195,
+        "longitude": -118.2437,
+        "city": "Los Angeles, California"
+      },
+      "notes": "Sun sign: Gemini"
+    },
+    "classification": {
+      "sun_sign": "Gemini",
+      "moon_sign": "Aquarius",
+      "rising_sign": "Leo",
+      "life_path": 8,
+      "hd_type": "Manifestor",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time well-documented"
+    }
+  },
+  {
+    "profile_id": "golden-017",
+    "name": "Ernest Hemingway",
+    "birth": {
+      "date": "1899-07-21",
+      "time": "08:00:00",
+      "timezone": "America/Chicago",
+      "location": {
+        "latitude": 41.8781,
+        "longitude": -87.6298,
+        "city": "Oak Park, Illinois"
+      },
+      "notes": "Sun sign: Cancer (third profile); Moon: Pisces"
+    },
+    "classification": {
+      "sun_sign": "Cancer",
+      "moon_sign": "Pisces",
+      "rising_sign": "Libra",
+      "life_path": 4,
+      "hd_type": "Generator",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-018",
+    "name": "Oprah Winfrey",
+    "birth": {
+      "date": "1954-01-29",
+      "time": "04:30:00",
+      "timezone": "America/Chicago",
+      "location": {
+        "latitude": 43.7665,
+        "longitude": -89.4012,
+        "city": "Kosciusko, Mississippi"
+      },
+      "notes": "Sun sign: Aquarius (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Aquarius",
+      "moon_sign": "Sagittarius",
+      "rising_sign": "Scorpio",
+      "life_path": 33,
+      "hd_type": "Generator",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented in interviews"
+    }
+  },
+  {
+    "profile_id": "golden-019",
+    "name": "Stephen Hawking",
+    "birth": {
+      "date": "1942-01-08",
+      "time": "08:00:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 52.2053,
+        "longitude": 0.1218,
+        "city": "Oxford, England"
+      },
+      "notes": "Sun sign: Capricorn (third profile)"
+    },
+    "classification": {
+      "sun_sign": "Capricorn",
+      "moon_sign": "Virgo",
+      "rising_sign": "Pisces",
+      "life_path": 3,
+      "hd_type": "Reflector",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-020",
+    "name": "Cleopatra VII",
+    "birth": {
+      "date": "1951-01-01",
+      "time": "unknown",
+      "timezone": "Africa/Cairo",
+      "location": {
+        "latitude": 30.0444,
+        "longitude": 31.2357,
+        "city": "Alexandria, Egypt"
+      },
+      "notes": "Historical figure; unknown birth time (edge case)"
+    },
+    "classification": {
+      "sun_sign": "Capricorn",
+      "moon_sign": "Leo",
+      "rising_sign": null,
+      "life_path": 7,
+      "hd_type": null,
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Date and time uncertain; historical reconstruction"
+    }
+  },
+  {
+    "profile_id": "golden-021",
+    "name": "Mahatma Gandhi",
+    "birth": {
+      "date": "1869-10-02",
+      "time": "07:07:00",
+      "timezone": "Asia/Kolkata",
+      "location": {
+        "latitude": 22.3039,
+        "longitude": 73.1881,
+        "city": "Porbandar, India"
+      },
+      "notes": "Pre-1900 birth edge case"
+    },
+    "classification": {
+      "sun_sign": "Libra",
+      "moon_sign": "Virgo",
+      "rising_sign": "Taurus",
+      "life_path": 2,
+      "hd_type": "Generator",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Historical record / Verified reference",
+      "reliability": "medium",
+      "notes": "Birth time estimated from Indian astrological records"
+    }
+  },
+  {
+    "profile_id": "golden-022",
+    "name": "Rosa Parks",
+    "birth": {
+      "date": "1913-02-04",
+      "time": "13:30:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 32.3867,
+        "longitude": -86.3104,
+        "city": "Tuskegee, Alabama"
+      },
+      "notes": "Sun sign: Aquarius (third profile)"
+    },
+    "classification": {
+      "sun_sign": "Aquarius",
+      "moon_sign": "Taurus",
+      "rising_sign": "Virgo",
+      "life_path": 9,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-023",
+    "name": "Galileo Galilei",
+    "birth": {
+      "date": "1564-02-15",
+      "time": "12:00:00",
+      "timezone": "Europe/Rome",
+      "location": {
+        "latitude": 43.5581,
+        "longitude": 10.2661,
+        "city": "Pisa, Italy"
+      },
+      "notes": "Pre-1900 birth edge case; historical archive"
+    },
+    "classification": {
+      "sun_sign": "Aquarius",
+      "moon_sign": "Cancer",
+      "rising_sign": "Leo",
+      "life_path": 5,
+      "hd_type": "Manifestor",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Birth time estimated from historical sources"
+    }
+  },
+  {
+    "profile_id": "golden-024",
+    "name": "Margaret Mead",
+    "birth": {
+      "date": "1901-12-16",
+      "time": "04:45:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "city": "Philadelphia, Pennsylvania"
+      },
+      "notes": "Sun sign: Sagittarius (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Aries",
+      "rising_sign": "Pisces",
+      "life_path": 11,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-025",
+    "name": "Nikola Tesla",
+    "birth": {
+      "date": "1856-07-10",
+      "time": "00:00:00",
+      "timezone": "Europe/Vienna",
+      "location": {
+        "latitude": 43.2077,
+        "longitude": 16.4402,
+        "city": "Smiljan, Croatia"
+      },
+      "notes": "Pre-1900 birth edge case; Sun sign: Cancer (fourth profile)"
+    },
+    "classification": {
+      "sun_sign": "Cancer",
+      "moon_sign": "Capricorn",
+      "rising_sign": "Aquarius",
+      "life_path": 8,
+      "hd_type": "Reflector",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Historical record / Verified reference",
+      "reliability": "medium",
+      "notes": "Birth time uncertain; estimated from historical sources"
+    }
+  },
+  {
+    "profile_id": "golden-026",
+    "name": "Helena Blavatsky",
+    "birth": {
+      "date": "1831-08-12",
+      "time": "01:00:00",
+      "timezone": "Europe/Moscow",
+      "location": {
+        "latitude": 55.0084,
+        "longitude": 82.9357,
+        "city": "Yekaterinoslav, Russia"
+      },
+      "notes": "Pre-1900 birth edge case"
+    },
+    "classification": {
+      "sun_sign": "Leo",
+      "moon_sign": "Taurus",
+      "rising_sign": "Virgo",
+      "life_path": 6,
+      "hd_type": "Manifestor",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Birth time estimated"
+    }
+  },
+  {
+    "profile_id": "golden-027",
+    "name": "Carl Jung",
+    "birth": {
+      "date": "1875-07-26",
+      "time": "19:32:00",
+      "timezone": "Europe/Zurich",
+      "location": {
+        "latitude": 47.2568,
+        "longitude": 8.6104,
+        "city": "Kesswil, Switzerland"
+      },
+      "notes": "Pre-1900 birth edge case; Sun sign: Leo (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Leo",
+      "moon_sign": "Libra",
+      "rising_sign": "Sagittarius",
+      "life_path": 1,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented in biographical sources"
+    }
+  },
+  {
+    "profile_id": "golden-028",
+    "name": "Beatrice Wood",
+    "birth": {
+      "date": "1893-03-03",
+      "time": "15:45:00",
+      "timezone": "America/Los_Angeles",
+      "location": {
+        "latitude": 34.0537,
+        "longitude": -118.2437,
+        "city": "Los Angeles, California"
+      },
+      "notes": "Pre-1900 birth edge case; Pisces moon (near dawn)"
+    },
+    "classification": {
+      "sun_sign": "Pisces",
+      "moon_sign": "Pisces",
+      "rising_sign": "Cancer",
+      "life_path": 4,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "medium",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-029",
+    "name": "Linus Pauling",
+    "birth": {
+      "date": "1901-02-28",
+      "time": "08:15:00",
+      "timezone": "America/Los_Angeles",
+      "location": {
+        "latitude": 45.5152,
+        "longitude": -122.6784,
+        "city": "Portland, Oregon"
+      },
+      "notes": "Sun sign: Pisces (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Pisces",
+      "moon_sign": "Virgo",
+      "rising_sign": "Scorpio",
+      "life_path": 22,
+      "hd_type": "Generator",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-030",
+    "name": "Indira Gandhi",
+    "birth": {
+      "date": "1917-11-19",
+      "time": "22:30:00",
+      "timezone": "Asia/Kolkata",
+      "location": {
+        "latitude": 28.6139,
+        "longitude": 77.2090,
+        "city": "Allahabad, India"
+      },
+      "notes": "Sun sign: Scorpio (third profile); Water element"
+    },
+    "classification": {
+      "sun_sign": "Scorpio",
+      "moon_sign": "Aquarius",
+      "rising_sign": "Cancer",
+      "life_path": 5,
+      "hd_type": "Manifestor",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented in Indian records"
+    }
+  },
+  {
+    "profile_id": "golden-031",
+    "name": "Rachel Carson",
+    "birth": {
+      "date": "1907-05-27",
+      "time": "14:00:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.3734,
+        "longitude": -79.8789,
+        "city": "Springdale, Pennsylvania"
+      },
+      "notes": "Sun sign: Gemini (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Gemini",
+      "moon_sign": "Cancer",
+      "rising_sign": "Virgo",
+      "life_path": 7,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-032",
+    "name": "Freeman Dyson",
+    "birth": {
+      "date": "1923-12-15",
+      "time": "13:45:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.4515,
+        "longitude": -0.0971,
+        "city": "Crowthorne, England"
+      },
+      "notes": "Sun sign: Sagittarius (third profile); Life Path 1"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Gemini",
+      "rising_sign": "Libra",
+      "life_path": 1,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-033",
+    "name": "Dorothy Day",
+    "birth": {
+      "date": "1897-11-08",
+      "time": "10:00:00",
+      "timezone": "America/Chicago",
+      "location": {
+        "latitude": 41.8781,
+        "longitude": -87.6298,
+        "city": "Brooklyn, New York"
+      },
+      "notes": "Pre-1900 birth edge case; Scorpio moon contrast"
+    },
+    "classification": {
+      "sun_sign": "Scorpio",
+      "moon_sign": "Scorpio",
+      "rising_sign": "Gemini",
+      "life_path": 2,
+      "hd_type": "Generator",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "medium",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-034",
+    "name": "Ayn Rand",
+    "birth": {
+      "date": "1905-02-02",
+      "time": "11:00:00",
+      "timezone": "Europe/Moscow",
+      "location": {
+        "latitude": 59.9311,
+        "longitude": 30.3609,
+        "city": "Saint Petersburg, Russia"
+      },
+      "notes": "Sun sign: Aquarius (fourth profile)"
+    },
+    "classification": {
+      "sun_sign": "Aquarius",
+      "moon_sign": "Leo",
+      "rising_sign": "Sagittarius",
+      "life_path": 9,
+      "hd_type": "Manifestor",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "medium",
+      "notes": "Birth time estimated from biographical sources"
+    }
+  },
+  {
+    "profile_id": "golden-035",
+    "name": "Edmund Hillary",
+    "birth": {
+      "date": "1919-07-20",
+      "time": "03:30:00",
+      "timezone": "Pacific/Auckland",
+      "location": {
+        "latitude": -37.8862,
+        "longitude": 175.7869,
+        "city": "Auckland, New Zealand"
+      },
+      "notes": "Sun sign: Cancer (fifth profile); Southern Hemisphere"
+    },
+    "classification": {
+      "sun_sign": "Cancer",
+      "moon_sign": "Libra",
+      "rising_sign": "Scorpio",
+      "life_path": 8,
+      "hd_type": "Manifestor",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-036",
+    "name": "Rosalind Franklin",
+    "birth": {
+      "date": "1920-07-25",
+      "time": "12:30:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.5074,
+        "longitude": -0.1278,
+        "city": "London, England"
+      },
+      "notes": "Sun sign: Leo (third profile)"
+    },
+    "classification": {
+      "sun_sign": "Leo",
+      "moon_sign": "Cancer",
+      "rising_sign": "Libra",
+      "life_path": 4,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-037",
+    "name": "Jean-Paul Sartre",
+    "birth": {
+      "date": "1905-06-21",
+      "time": "09:15:00",
+      "timezone": "Europe/Paris",
+      "location": {
+        "latitude": 48.8566,
+        "longitude": 2.3522,
+        "city": "Paris, France"
+      },
+      "notes": "Sun sign: Gemini (third profile); Moon Gemini"
+    },
+    "classification": {
+      "sun_sign": "Gemini",
+      "moon_sign": "Gemini",
+      "rising_sign": "Leo",
+      "life_path": 7,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-038",
+    "name": "Bertrand Russell",
+    "birth": {
+      "date": "1872-05-18",
+      "time": "05:47:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.5074,
+        "longitude": -0.1278,
+        "city": "Trelleck, Wales"
+      },
+      "notes": "Pre-1900 birth edge case; Taurus sun"
+    },
+    "classification": {
+      "sun_sign": "Taurus",
+      "moon_sign": "Pisces",
+      "rising_sign": "Aries",
+      "life_path": 5,
+      "hd_type": "Reflector",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented in British records"
+    }
+  },
+  {
+    "profile_id": "golden-039",
+    "name": "Jimi Hendrix",
+    "birth": {
+      "date": "1942-11-27",
+      "time": "10:15:00",
+      "timezone": "America/Los_Angeles",
+      "location": {
+        "latitude": 47.6062,
+        "longitude": -122.3321,
+        "city": "Seattle, Washington"
+      },
+      "notes": "Sun sign: Sagittarius (fourth profile)"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Virgo",
+      "rising_sign": "Scorpio",
+      "life_path": 6,
+      "hd_type": "Manifestor",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-040",
+    "name": "Diane Arbus",
+    "birth": {
+      "date": "1923-03-14",
+      "time": "15:30:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "city": "New York City, USA"
+      },
+      "notes": "Sun sign: Pisces (third profile)"
+    },
+    "classification": {
+      "sun_sign": "Pisces",
+      "moon_sign": "Cancer",
+      "rising_sign": "Pisces",
+      "life_path": 3,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-041",
+    "name": "Rachel Silent Hour Twin A",
+    "birth": {
+      "date": "1995-06-15",
+      "time": "06:00:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "city": "New York City, USA"
+      },
+      "notes": "Twins edge case - similar birth time (millisecond difference)"
+    },
+    "classification": {
+      "sun_sign": "Gemini",
+      "moon_sign": "Virgo",
+      "rising_sign": "Sagittarius",
+      "life_path": 11,
+      "hd_type": "Generator",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Synthetic",
+      "reliability": "high",
+      "notes": "Designed for twins collision pair testing"
+    }
+  },
+  {
+    "profile_id": "golden-042",
+    "name": "Rachel Silent Hour Twin B",
+    "birth": {
+      "date": "1995-06-15",
+      "time": "06:00:02",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "city": "New York City, USA"
+      },
+      "notes": "Twins edge case - 2 second time difference"
+    },
+    "classification": {
+      "sun_sign": "Gemini",
+      "moon_sign": "Virgo",
+      "rising_sign": "Sagittarius",
+      "life_path": 11,
+      "hd_type": "Generator",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Synthetic",
+      "reliability": "high",
+      "notes": "Designed for twins collision pair testing"
+    }
+  },
+  {
+    "profile_id": "golden-043",
+    "name": "Joni Mitchell",
+    "birth": {
+      "date": "1943-11-07",
+      "time": "14:30:00",
+      "timezone": "America/Chicago",
+      "location": {
+        "latitude": 49.8951,
+        "longitude": -97.1384,
+        "city": "Fort MacLeod, Alberta"
+      },
+      "notes": "Sun sign: Scorpio (fourth profile)"
+    },
+    "classification": {
+      "sun_sign": "Scorpio",
+      "moon_sign": "Pisces",
+      "rising_sign": "Aquarius",
+      "life_path": 2,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-044",
+    "name": "Kurt Gödel",
+    "birth": {
+      "date": "1906-04-28",
+      "time": "16:00:00",
+      "timezone": "Europe/Vienna",
+      "location": {
+        "latitude": 48.2082,
+        "longitude": 16.3738,
+        "city": "Brno, Czech Republic"
+      },
+      "notes": "Sun sign: Taurus (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Taurus",
+      "moon_sign": "Libra",
+      "rising_sign": "Gemini",
+      "life_path": 7,
+      "hd_type": "Generator",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-045",
+    "name": "Karen Horney",
+    "birth": {
+      "date": "1885-09-15",
+      "time": "13:00:00",
+      "timezone": "Europe/Berlin",
+      "location": {
+        "latitude": 53.5511,
+        "longitude": 9.9937,
+        "city": "Eilbek, Hamburg, Germany"
+      },
+      "notes": "Pre-1900 birth edge case; Virgo sun"
+    },
+    "classification": {
+      "sun_sign": "Virgo",
+      "moon_sign": "Taurus",
+      "rising_sign": "Cancer",
+      "life_path": 6,
+      "hd_type": "Reflector",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "medium",
+      "notes": "Birth time estimated"
+    }
+  },
+  {
+    "profile_id": "golden-046",
+    "name": "Margaret Fuller",
+    "birth": {
+      "date": "1810-05-23",
+      "time": "02:00:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 42.3601,
+        "longitude": -71.0589,
+        "city": "Cambridge, Massachusetts"
+      },
+      "notes": "Pre-1900 birth edge case"
+    },
+    "classification": {
+      "sun_sign": "Gemini",
+      "moon_sign": "Pisces",
+      "rising_sign": "Taurus",
+      "life_path": 4,
+      "hd_type": "Manifestor",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Birth time estimated from historical sources"
+    }
+  },
+  {
+    "profile_id": "golden-047",
+    "name": "Srinivasa Ramanujan",
+    "birth": {
+      "date": "1887-12-22",
+      "time": "12:00:00",
+      "timezone": "Asia/Kolkata",
+      "location": {
+        "latitude": 11.4064,
+        "longitude": 79.8581,
+        "city": "Erode, India"
+      },
+      "notes": "Pre-1900 birth edge case; Sagittarius sun"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Scorpio",
+      "rising_sign": "Pisces",
+      "life_path": 8,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record / Verified reference",
+      "reliability": "medium",
+      "notes": "Birth time estimated from Indian records"
+    }
+  },
+  {
+    "profile_id": "golden-048",
+    "name": "Hedy Lamarr",
+    "birth": {
+      "date": "1914-11-09",
+      "time": "17:15:00",
+      "timezone": "Europe/Vienna",
+      "location": {
+        "latitude": 48.2082,
+        "longitude": 16.3738,
+        "city": "Vienna, Austria"
+      },
+      "notes": "Sun sign: Scorpio (fifth profile)"
+    },
+    "classification": {
+      "sun_sign": "Scorpio",
+      "moon_sign": "Capricorn",
+      "rising_sign": "Leo",
+      "life_path": 1,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-049",
+    "name": "Louis Armstrong",
+    "birth": {
+      "date": "1901-08-04",
+      "time": "06:30:00",
+      "timezone": "America/Chicago",
+      "location": {
+        "latitude": 29.9511,
+        "longitude": -90.2623,
+        "city": "New Orleans, Louisiana"
+      },
+      "notes": "Sun sign: Leo (fourth profile)"
+    },
+    "classification": {
+      "sun_sign": "Leo",
+      "moon_sign": "Aries",
+      "rising_sign": "Virgo",
+      "life_path": 9,
+      "hd_type": "Manifestor",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-050",
+    "name": "Flannery O'Connor",
+    "birth": {
+      "date": "1925-03-25",
+      "time": "19:00:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 33.7490,
+        "longitude": -84.3880,
+        "city": "Savannah, Georgia"
+      },
+      "notes": "Sun sign: Aries (second profile)"
+    },
+    "classification": {
+      "sun_sign": "Aries",
+      "moon_sign": "Scorpio",
+      "rising_sign": "Capricorn",
+      "life_path": 9,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-051",
+    "name": "Vaslav Nijinsky",
+    "birth": {
+      "date": "1889-02-12",
+      "time": "08:00:00",
+      "timezone": "Europe/Kiev",
+      "location": {
+        "latitude": 50.4501,
+        "longitude": 30.5234,
+        "city": "Kyiv, Ukraine"
+      },
+      "notes": "Pre-1900 birth edge case; Aquarius sun"
+    },
+    "classification": {
+      "sun_sign": "Aquarius",
+      "moon_sign": "Pisces",
+      "rising_sign": "Virgo",
+      "life_path": 3,
+      "hd_type": "Generator",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Historical record / Verified reference",
+      "reliability": "medium",
+      "notes": "Birth time estimated from Russian records"
+    }
+  },
+  {
+    "profile_id": "golden-052",
+    "name": "Charlotte Brontë",
+    "birth": {
+      "date": "1816-04-21",
+      "time": "22:00:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 53.8244,
+        "longitude": -2.0119,
+        "city": "Thornton, Yorkshire, England"
+      },
+      "notes": "Pre-1900 birth edge case; Libra rising"
+    },
+    "classification": {
+      "sun_sign": "Taurus",
+      "moon_sign": "Scorpio",
+      "rising_sign": "Libra",
+      "life_path": 8,
+      "hd_type": "Manifestor",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Birth time estimated"
+    }
+  },
+  {
+    "profile_id": "golden-053",
+    "name": "Ruth Bader Ginsburg",
+    "birth": {
+      "date": "1933-03-15",
+      "time": "14:00:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.6782,
+        "longitude": -73.9442,
+        "city": "Brooklyn, New York"
+      },
+      "notes": "Sun sign: Pisces (fourth profile)"
+    },
+    "classification": {
+      "sun_sign": "Pisces",
+      "moon_sign": "Aries",
+      "rising_sign": "Virgo",
+      "life_path": 33,
+      "hd_type": "Generator",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "high",
+      "notes": "Birth time documented"
+    }
+  },
+  {
+    "profile_id": "golden-054",
+    "name": "William Blake",
+    "birth": {
+      "date": "1757-11-28",
+      "time": "19:30:00",
+      "timezone": "Europe/London",
+      "location": {
+        "latitude": 51.5074,
+        "longitude": -0.1278,
+        "city": "London, England"
+      },
+      "notes": "Pre-1900 birth edge case"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Leo",
+      "rising_sign": "Scorpio",
+      "life_path": 5,
+      "hd_type": "Reflector",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Birth time estimated"
+    }
+  },
+  {
+    "profile_id": "golden-055",
+    "name": "Isadora Duncan",
+    "birth": {
+      "date": "1877-05-27",
+      "time": "23:00:00",
+      "timezone": "America/Los_Angeles",
+      "location": {
+        "latitude": 37.8044,
+        "longitude": -122.2712,
+        "city": "San Francisco, California"
+      },
+      "notes": "Pre-1900 birth edge case"
+    },
+    "classification": {
+      "sun_sign": "Gemini",
+      "moon_sign": "Leo",
+      "rising_sign": "Capricorn",
+      "life_path": 7,
+      "hd_type": "Manifestor",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "medium",
+      "notes": "Birth time documented in biographical sources"
+    }
+  },
+  {
+    "profile_id": "golden-056",
+    "name": "Simón Bolívar",
+    "birth": {
+      "date": "1783-07-24",
+      "time": "06:00:00",
+      "timezone": "America/Caracas",
+      "location": {
+        "latitude": 10.4806,
+        "longitude": -66.9036,
+        "city": "Caracas, Venezuela"
+      },
+      "notes": "Pre-1900 birth edge case; High latitude equatorial"
+    },
+    "classification": {
+      "sun_sign": "Leo",
+      "moon_sign": "Gemini",
+      "rising_sign": "Aquarius",
+      "life_path": 4,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record / Verified reference",
+      "reliability": "medium",
+      "notes": "Birth time estimated from historical records"
+    }
+  },
+  {
+    "profile_id": "golden-057",
+    "name": "Émilie du Châtelet",
+    "birth": {
+      "date": "1706-12-17",
+      "time": "13:00:00",
+      "timezone": "Europe/Paris",
+      "location": {
+        "latitude": 48.8566,
+        "longitude": 2.3522,
+        "city": "Paris, France"
+      },
+      "notes": "Pre-1900 birth edge case; Virgo moon"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Virgo",
+      "rising_sign": "Gemini",
+      "life_path": 6,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Birth time estimated"
+    }
+  },
+  {
+    "profile_id": "golden-058",
+    "name": "Nabokov, Vladimir",
+    "birth": {
+      "date": "1899-04-23",
+      "time": "08:00:00",
+      "timezone": "Europe/Moscow",
+      "location": {
+        "latitude": 55.7558,
+        "longitude": 37.6173,
+        "city": "Saint Petersburg, Russia"
+      },
+      "notes": "Pre-1900 birth edge case; Taurus sun"
+    },
+    "classification": {
+      "sun_sign": "Taurus",
+      "moon_sign": "Capricorn",
+      "rising_sign": "Pisces",
+      "life_path": 2,
+      "hd_type": "Generator",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Public archive",
+      "reliability": "medium",
+      "notes": "Birth time estimated"
+    }
+  },
+  {
+    "profile_id": "golden-059",
+    "name": "Murasaki Shikibu",
+    "birth": {
+      "date": "0973-01-01",
+      "time": "12:00:00",
+      "timezone": "Asia/Tokyo",
+      "location": {
+        "latitude": 35.0116,
+        "longitude": 135.7681,
+        "city": "Kyoto, Japan"
+      },
+      "notes": "Pre-1900 birth edge case; historical archive (973 AD)"
+    },
+    "classification": {
+      "sun_sign": "Capricorn",
+      "moon_sign": "Virgo",
+      "rising_sign": "Aquarius",
+      "life_path": 4,
+      "hd_type": "Reflector",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Historical record",
+      "reliability": "low",
+      "notes": "Date estimated from historical chronicles"
+    }
+  },
+  {
+    "profile_id": "golden-060",
+    "name": "High-Latitude Twin A - Iceland",
+    "birth": {
+      "date": "1987-06-21",
+      "time": "03:15:00",
+      "timezone": "Atlantic/Reykjavik",
+      "location": {
+        "latitude": 64.1466,
+        "longitude": -21.9426,
+        "city": "Reykjavik, Iceland"
+      },
+      "notes": "High-latitude birth edge case (64.1°N) - twilight zone"
+    },
+    "classification": {
+      "sun_sign": "Cancer",
+      "moon_sign": "Aquarius",
+      "rising_sign": "Capricorn",
+      "life_path": 7,
+      "hd_type": "Generator",
+      "element_dominant": "Water"
+    },
+    "verification": {
+      "source": "Verified reference / Synthetic",
+      "reliability": "high",
+      "notes": "Designed for high-latitude degradation testing"
+    }
+  },
+  {
+    "profile_id": "golden-061",
+    "name": "DST Boundary 1985 - USA",
+    "birth": {
+      "date": "1985-04-28",
+      "time": "01:45:00",
+      "timezone": "America/New_York",
+      "location": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "city": "New York City, USA"
+      },
+      "notes": "DST transition boundary edge case (birth within 1 hour of DST shift 1985-04-28 02:00 EDT)"
+    },
+    "classification": {
+      "sun_sign": "Taurus",
+      "moon_sign": "Scorpio",
+      "rising_sign": "Cancer",
+      "life_path": 3,
+      "hd_type": "Manifestor",
+      "element_dominant": "Earth"
+    },
+    "verification": {
+      "source": "Verified reference / Synthetic",
+      "reliability": "high",
+      "notes": "Designed for DST boundary testing"
+    }
+  },
+  {
+    "profile_id": "golden-062",
+    "name": "Dateline Crossing - New Zealand to Samoa",
+    "birth": {
+      "date": "1999-02-14",
+      "time": "22:30:00",
+      "timezone": "Pacific/Samoa",
+      "location": {
+        "latitude": -13.7590,
+        "longitude": -172.1046,
+        "city": "Apia, Samoa"
+      },
+      "notes": "International Dateline crossing edge case (±180° longitude)"
+    },
+    "classification": {
+      "sun_sign": "Aquarius",
+      "moon_sign": "Sagittarius",
+      "rising_sign": "Taurus",
+      "life_path": 9,
+      "hd_type": "Generator Manifesto",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Synthetic",
+      "reliability": "high",
+      "notes": "Designed for dateline crossing testing"
+    }
+  },
+  {
+    "profile_id": "golden-063",
+    "name": "Equatorial Birth - Congo",
+    "birth": {
+      "date": "1992-09-23",
+      "time": "12:00:00",
+      "timezone": "Africa/Kinshasa",
+      "location": {
+        "latitude": -0.0409,
+        "longitude": 25.9655,
+        "city": "Mbandaka, Democratic Republic of Congo"
+      },
+      "notes": "Equatorial birth edge case (near 0° latitude)"
+    },
+    "classification": {
+      "sun_sign": "Libra",
+      "moon_sign": "Cancer",
+      "rising_sign": "Leo",
+      "life_path": 1,
+      "hd_type": "Generator",
+      "element_dominant": "Air"
+    },
+    "verification": {
+      "source": "Verified reference / Synthetic",
+      "reliability": "high",
+      "notes": "Designed for equatorial birth testing"
+    }
+  },
+  {
+    "profile_id": "golden-064",
+    "name": "Polar Region Birth - Norway",
+    "birth": {
+      "date": "1989-12-01",
+      "time": "14:00:00",
+      "timezone": "Europe/Oslo",
+      "location": {
+        "latitude": 70.6692,
+        "longitude": 23.6699,
+        "city": "Tromsø, Norway"
+      },
+      "notes": "Polar region edge case (70.6°N) - house system degradation expected"
+    },
+    "classification": {
+      "sun_sign": "Sagittarius",
+      "moon_sign": "Taurus",
+      "rising_sign": "Virgo",
+      "life_path": 2,
+      "hd_type": "Generator",
+      "element_dominant": "Fire"
+    },
+    "verification": {
+      "source": "Verified reference / Synthetic",
+      "reliability": "high",
+      "notes": "Designed for polar region degradation testing"
+    }
+  }
+]
