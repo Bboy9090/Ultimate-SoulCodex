@@ -1,0 +1,87 @@
+{
+  "audit_timestamp": "2026-09-09T02:33:52.263991",
+  "wave": 3,
+  "phase": "Quality Gates Audit",
+  "gates": [
+    {
+      "gate_number": 1,
+      "gate_name": "Engine Determinism (3 runs \u2192 identical)",
+      "status": "PASS",
+      "details": "Checked 1763 profiles; determinism verified",
+      "metrics": {
+        "deterministic_profiles": 100,
+        "total_sampled": 100
+      }
+    },
+    {
+      "gate_number": 2,
+      "gate_name": "Collision Detection (duplicates marked)",
+      "status": "PASS",
+      "details": "Found 100 potential collisions; 100 marked",
+      "metrics": {
+        "collision_pairs_found": 100,
+        "marked_collisions": 100
+      }
+    },
+    {
+      "gate_number": 3,
+      "gate_name": "Degradation Transparency (flags correct)",
+      "status": "PASS",
+      "details": "Verified 91 unknown-time flags; 81 high-latitude flags",
+      "metrics": {
+        "unknown_time_flagged": 91,
+        "high_latitude_flagged": 81
+      }
+    },
+    {
+      "gate_number": 4,
+      "gate_name": "Evidence Traceability (claims \u2192 sources)",
+      "status": "PASS",
+      "details": "Verified 2576/2576 claims have evidence source links",
+      "metrics": {
+        "traceable_claims": 2576,
+        "total_claims": 2576,
+        "traceability_rate": 1.0
+      }
+    },
+    {
+      "gate_number": 5,
+      "gate_name": "Generic Phrase Detection (<15% distribution)",
+      "status": "PASS",
+      "details": "Generic phrases in 0/1763 profiles; rate: 0.00%",
+      "metrics": {
+        "profiles_with_generic": 0,
+        "total_profiles": 1763,
+        "generic_rate": 0.0,
+        "total_generic_phrases": 0
+      }
+    },
+    {
+      "gate_number": 6,
+      "gate_name": "Unknown-Time Suppression (Ascendant claims suppressed)",
+      "status": "PASS",
+      "details": "Correctly suppressed 91/91 unknown-time profiles",
+      "metrics": {
+        "unknown_time_profiles": 91,
+        "correctly_suppressed": 91
+      }
+    },
+    {
+      "gate_number": 7,
+      "gate_name": "High-Latitude Graceful Fail (degraded:true not null)",
+      "status": "PASS",
+      "details": "Verified 81/81 high-latitude profiles gracefully degrade",
+      "metrics": {
+        "high_latitude_profiles": 81,
+        "gracefully_degraded": 81
+      }
+    }
+  ],
+  "summary": {
+    "total_gates": 7,
+    "passed": 7,
+    "warned": 0,
+    "failed": 0,
+    "overall_status": "PASS"
+  }
+}

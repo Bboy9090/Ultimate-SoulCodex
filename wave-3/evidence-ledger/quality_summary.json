@@ -1,0 +1,14 @@
+{
+  "total_profiles": 1763,
+  "total_claims": 9015,
+  "average_claims_per_profile": 5.113442994895065,
+  "total_generic_phrases": 0,
+  "average_uniqueness_ratio": 1.0,
+  "claim_type_totals": {
+    "placement": 4892,
+    "pattern": 1763,
+    "numerology": 2204,
+    "synthesis": 156
+  },
+  "timestamp": "2026-09-09T02:33:12.044589"
+}
