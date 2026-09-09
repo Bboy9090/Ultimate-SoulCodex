@@ -1,0 +1,125 @@
+{
+  "spec_id": "W1-LIFE-PATH-NUMBERS",
+  "version": "1.0.0",
+  "name": "Life Path Numbers Specification",
+  "description": "Foundational definition of numerological life path numbers (1-9 and master numbers 11, 22, 33) with spiritual meanings and personality associations",
+  "domain": "Numerology",
+  "authority": "Pythagorean Numerology",
+
+  "calculation_method": "Pythagorean",
+  "calculation_description": "Sum birth month + day + year digits, reduce to single digit unless master number (11, 22, 33)",
+
+  "life_paths": [
+    {
+      "number": 1,
+      "name": "The Leader",
+      "keywords": ["Independence", "Ambition", "Innovation", "Willpower", "Confidence"],
+      "strengths": ["Determination", "Pioneering spirit", "Ambition", "Originality"],
+      "challenges": ["Arrogance", "Stubbornness", "Impatience", "Insensitivity"],
+      "life_purpose": "To lead, innovate, and pioneer new pathways"
+    },
+    {
+      "number": 2,
+      "name": "The Peacemaker",
+      "keywords": ["Cooperation", "Harmony", "Diplomacy", "Balance", "Sensitivity"],
+      "strengths": ["Diplomacy", "Cooperation", "Sensitivity", "Intuition"],
+      "challenges": ["Passivity", "Dependency", "Indecision", "Oversensitivity"],
+      "life_purpose": "To foster harmony, balance, and cooperation"
+    },
+    {
+      "number": 3,
+      "name": "The Communicator",
+      "keywords": ["Creativity", "Expression", "Communication", "Enthusiasm", "Optimism"],
+      "strengths": ["Creativity", "Communication", "Optimism", "Social grace"],
+      "challenges": ["Superficiality", "Scattered energy", "Lack of focus", "Impulsiveness"],
+      "life_purpose": "To express creativity and inspire through communication"
+    },
+    {
+      "number": 4,
+      "name": "The Builder",
+      "keywords": ["Stability", "Security", "Discipline", "Organization", "Practicality"],
+      "strengths": ["Organization", "Stability", "Discipline", "Reliability"],
+      "challenges": ["Rigidity", "Stubbornness", "Dullness", "Restriction"],
+      "life_purpose": "To build solid foundations and create lasting structures"
+    },
+    {
+      "number": 5,
+      "name": "The Freedom Seeker",
+      "keywords": ["Freedom", "Change", "Adventure", "Adaptability", "Experience"],
+      "strengths": ["Adaptability", "Adventurousness", "Versatility", "Curiosity"],
+      "challenges": ["Restlessness", "Irresponsibility", "Addiction", "Instability"],
+      "life_purpose": "To experience freedom, growth, and dynamic change"
+    },
+    {
+      "number": 6,
+      "name": "The Nurturer",
+      "keywords": ["Responsibility", "Compassion", "Healing", "Harmony", "Service"],
+      "strengths": ["Compassion", "Responsibility", "Nurturing", "Honesty"],
+      "challenges": ["Over-responsibility", "Criticism", "Meddling", "Anxiety"],
+      "life_purpose": "To serve, heal, and nurture others and community"
+    },
+    {
+      "number": 7,
+      "name": "The Seeker",
+      "keywords": ["Spirituality", "Analysis", "Intuition", "Wisdom", "Introspection"],
+      "strengths": ["Intuition", "Analysis", "Spirituality", "Wisdom"],
+      "challenges": ["Isolation", "Cynicism", "Perfectionism", "Escapism"],
+      "life_purpose": "To seek truth, wisdom, and spiritual understanding"
+    },
+    {
+      "number": 8,
+      "name": "The Power Player",
+      "keywords": ["Power", "Abundance", "Authority", "Success", "Material"],
+      "strengths": ["Ambition", "Authority", "Material abundance", "Strength"],
+      "challenges": ["Materialism", "Arrogance", "Greed", "Workaholism"],
+      "life_purpose": "To achieve success, power, and material manifestation"
+    },
+    {
+      "number": 9,
+      "name": "The Humanitarian",
+      "keywords": ["Compassion", "Completion", "Wisdom", "Universal love", "Transformation"],
+      "strengths": ["Compassion", "Universality", "Idealism", "Wisdom"],
+      "challenges": ["Detachment", "Escapism", "Lack of boundaries", "Idealism"],
+      "life_purpose": "To serve humanity with wisdom and compassion"
+    },
+    {
+      "number": 11,
+      "name": "The Master Intuitive",
+      "keywords": ["Intuition", "Spiritual insight", "Inspiration", "Master teacher", "Idealism"],
+      "strengths": ["Intuition", "Spiritual insight", "Idealism", "Inspiration"],
+      "challenges": ["Anxiety", "Imbalance", "Over-sensitivity", "Overwhelm"],
+      "life_purpose": "To inspire and illuminate through intuitive spiritual wisdom",
+      "master_number": true,
+      "spiritual_significance": "Master number with heightened intuition and teaching ability"
+    },
+    {
+      "number": 22,
+      "name": "The Master Builder",
+      "keywords": ["Manifestation", "Large-scale projects", "Power", "Mastery", "Vision"],
+      "strengths": ["Manifestation", "Large-scale vision", "Mastery", "Authority"],
+      "challenges": ["Overwhelm", "Powerlessness", "Perfectionism", "Materialism"],
+      "life_purpose": "To manifest large-scale visions and build lasting impact",
+      "master_number": true,
+      "spiritual_significance": "Master number with potential for major material and spiritual achievement"
+    },
+    {
+      "number": 33,
+      "name": "The Master Teacher",
+      "keywords": ["Compassion", "Wisdom", "Healing", "Teaching", "Unconditional love"],
+      "strengths": ["Compassion", "Teaching", "Healing", "Unconditional love"],
+      "challenges": ["Martyrdom", "Self-sacrifice", "Overwhelm", "Codependency"],
+      "life_purpose": "To teach and heal with unconditional love and wisdom",
+      "master_number": true,
+      "spiritual_significance": "Master number representing highest compassion and spiritual service"
+    }
+  ],
+
+  "master_numbers": [11, 22, 33],
+  "master_number_significance": "Master numbers carry heightened spiritual and karmic significance; often not reduced to single digit",
+
+  "karmic_debt_numbers": [13, 14, 16, 19],
+  "karmic_debt_description": "Numbers representing soul lessons and karmic adjustments",
+
+  "release_date": "2026-01-01",
+  "authority_source": "Pythagorean Numerology / Modern Numerological Interpretation"
+}

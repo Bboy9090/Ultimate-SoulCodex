@@ -1,0 +1,109 @@
+{
+  "spec_id": "W1-ASPECTS-ORBS",
+  "version": "1.0.0",
+  "name": "Aspects and Orbs Specification",
+  "description": "Foundational definition of astrological aspects (angular relationships between planets) with orb tolerances and interpretive meanings",
+  "domain": "Astrology",
+  "authority": "Traditional Western Astrology",
+
+  "major_aspects": [
+    {
+      "aspect_name": "Conjunction",
+      "symbol": "☌",
+      "angle": 0,
+      "orb_degrees": 8,
+      "orb_minutes": 0,
+      "interpretation": "Blending, merger, intensification of planetary energies",
+      "energy": "neutral to amplifying",
+      "difficulty": "Depends on planets involved"
+    },
+    {
+      "aspect_name": "Sextile",
+      "symbol": "⚹",
+      "angle": 60,
+      "orb_degrees": 6,
+      "orb_minutes": 0,
+      "interpretation": "Harmonious opportunity, ease, natural talent",
+      "energy": "positive",
+      "difficulty": "Easy"
+    },
+    {
+      "aspect_name": "Square",
+      "symbol": "◻",
+      "angle": 90,
+      "orb_degrees": 8,
+      "orb_minutes": 0,
+      "interpretation": "Tension, challenge, growth through friction",
+      "energy": "challenging",
+      "difficulty": "Moderate to Difficult"
+    },
+    {
+      "aspect_name": "Trine",
+      "symbol": "△",
+      "angle": 120,
+      "orb_degrees": 8,
+      "orb_minutes": 0,
+      "interpretation": "Harmony, flow, natural ease and support",
+      "energy": "positive",
+      "difficulty": "Easy"
+    },
+    {
+      "aspect_name": "Opposition",
+      "symbol": "☍",
+      "angle": 180,
+      "orb_degrees": 8,
+      "orb_minutes": 0,
+      "interpretation": "Polarity, tension requiring integration, awareness",
+      "energy": "challenging",
+      "difficulty": "Moderate to Difficult"
+    }
+  ],
+
+  "minor_aspects": [
+    {
+      "aspect_name": "Semi-Sextile",
+      "angle": 30,
+      "orb_degrees": 2,
+      "interpretation": "Mild tension, minor adjustment needed"
+    },
+    {
+      "aspect_name": "Quincunx",
+      "angle": 150,
+      "orb_degrees": 2,
+      "interpretation": "Adjustment required, irritation, learning curve"
+    },
+    {
+      "aspect_name": "Semi-Square",
+      "angle": 45,
+      "orb_degrees": 2,
+      "interpretation": "Minor frustration, small obstacles"
+    },
+    {
+      "aspect_name": "Sesquiquadrate",
+      "angle": 135,
+      "orb_degrees": 2,
+      "interpretation": "Minor tension, building frustration"
+    }
+  ],
+
+  "aspect_orb_rules": {
+    "sun_moon_conjunction": 12,
+    "sun_moon_other_aspects": 10,
+    "other_planets_conjunction": 8,
+    "other_planets_aspects": 6,
+    "lunar_nodes": 4,
+    "chiron": 4,
+    "outer_planets": 2
+  },
+
+  "orb_application": {
+    "personal_planets": ["Sun", "Moon", "Mercury", "Venus", "Mars"],
+    "social_planets": ["Jupiter", "Saturn"],
+    "outer_planets": ["Uranus", "Neptune", "Pluto"],
+    "lunar_nodes": ["North Node", "South Node"],
+    "angles": ["Ascendant", "Midheaven"]
+  },
+
+  "release_date": "2026-01-01",
+  "authority_source": "Traditional Western Astrology / Modern Psychological Astrology"
+}

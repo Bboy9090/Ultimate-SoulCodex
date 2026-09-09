@@ -1,0 +1,149 @@
+{
+  "spec_id": "W1-HOUSE-SYSTEMS",
+  "version": "1.0.0",
+  "name": "House Systems Specification",
+  "description": "Foundational definition of astrological house systems and their interpretive meanings across life domains",
+  "domain": "Astrology",
+  "authority": "Traditional Western Astrology",
+
+  "house_systems": [
+    {
+      "system_name": "Placidus",
+      "abbreviation": "Plac",
+      "method": "Time-based division using planetary positions",
+      "reliability_high_latitude": "Degrades above 66.5° latitude",
+      "prevalence": "Most widely used in Western astrology"
+    },
+    {
+      "system_name": "Whole Sign",
+      "abbreviation": "WS",
+      "method": "Entire zodiac sign is one house",
+      "reliability_high_latitude": "Reliable at all latitudes",
+      "prevalence": "Increasing popularity in modern astrology"
+    },
+    {
+      "system_name": "Equal House",
+      "abbreviation": "EH",
+      "method": "Equal division of 12 zodiac signs",
+      "reliability_high_latitude": "Reliable at all latitudes",
+      "prevalence": "Used historically and by some modern astrologers"
+    }
+  ],
+
+  "houses": [
+    {
+      "house_number": 1,
+      "traditional_meaning": "Self, personality, appearance, life direction",
+      "house_ruler": "Ascendant",
+      "element_association": "Self-presentation",
+      "keywords": ["Identity", "First impressions", "Initiative"]
+    },
+    {
+      "house_number": 2,
+      "traditional_meaning": "Money, values, possessions, self-worth",
+      "house_ruler": "Material resources",
+      "element_association": "Tangible wealth",
+      "keywords": ["Resources", "Values", "Security"]
+    },
+    {
+      "house_number": 3,
+      "traditional_meaning": "Communication, siblings, short journeys, learning",
+      "house_ruler": "Mercury",
+      "element_association": "Mental activity",
+      "keywords": ["Communication", "Siblings", "Intellect"]
+    },
+    {
+      "house_number": 4,
+      "traditional_meaning": "Home, family, roots, foundation, private self",
+      "house_ruler": "Moon",
+      "element_association": "Emotional foundation",
+      "keywords": ["Home", "Family", "Foundation"]
+    },
+    {
+      "house_number": 5,
+      "traditional_meaning": "Creativity, romance, children, self-expression",
+      "house_ruler": "Sun",
+      "element_association": "Creative expression",
+      "keywords": ["Creativity", "Romance", "Play"]
+    },
+    {
+      "house_number": 6,
+      "traditional_meaning": "Work, health, service, daily routines",
+      "house_ruler": "Mercury/Virgo",
+      "element_association": "Service and health",
+      "keywords": ["Work", "Health", "Service"]
+    },
+    {
+      "house_number": 7,
+      "traditional_meaning": "Partnerships, marriage, contracts, open enemies",
+      "house_ruler": "Venus",
+      "element_association": "Relationships",
+      "keywords": ["Partnership", "Marriage", "Balance"]
+    },
+    {
+      "house_number": 8,
+      "traditional_meaning": "Intimacy, death, transformation, shared resources",
+      "house_ruler": "Pluto/Scorpio",
+      "element_association": "Depth and transformation",
+      "keywords": ["Intimacy", "Death", "Transformation"]
+    },
+    {
+      "house_number": 9,
+      "traditional_meaning": "Philosophy, travel, higher learning, spirituality",
+      "house_ruler": "Jupiter/Sagittarius",
+      "element_association": "Expansion and growth",
+      "keywords": ["Philosophy", "Travel", "Spirituality"]
+    },
+    {
+      "house_number": 10,
+      "traditional_meaning": "Career, public image, authority, ambition",
+      "house_ruler": "Saturn/Capricorn",
+      "element_association": "Public achievement",
+      "keywords": ["Career", "Public image", "Ambition"]
+    },
+    {
+      "house_number": 11,
+      "traditional_meaning": "Friendships, groups, hopes, aspirations",
+      "house_ruler": "Uranus/Aquarius",
+      "element_association": "Community and ideals",
+      "keywords": ["Friends", "Groups", "Ideals"]
+    },
+    {
+      "house_number": 12,
+      "traditional_meaning": "Spirituality, unconscious, hidden things, karmic debt",
+      "house_ruler": "Neptune/Pisces",
+      "element_association": "Spiritual dissolution",
+      "keywords": ["Spirituality", "Unconscious", "Karma"]
+    }
+  ],
+
+  "angles": [
+    {
+      "angle_name": "Ascendant",
+      "symbol": "ASC",
+      "house": 1,
+      "meaning": "Rising sign at birth; personality mask, first impression"
+    },
+    {
+      "angle_name": "Midheaven",
+      "symbol": "MC",
+      "house": 10,
+      "meaning": "Public image, career, authority, highest aspiration"
+    },
+    {
+      "angle_name": "Descendant",
+      "symbol": "DESC",
+      "house": 7,
+      "meaning": "Opposite of Ascendant; projection onto others, partnerships"
+    },
+    {
+      "angle_name": "Imum Coeli",
+      "symbol": "IC",
+      "house": 4,
+      "meaning": "Lowest point of chart; private self, family roots, foundation"
+    }
+  ],
+
+  "release_date": "2026-01-01",
+  "authority_source": "Traditional Western Astrology / Modern Psychological Astrology"
+}

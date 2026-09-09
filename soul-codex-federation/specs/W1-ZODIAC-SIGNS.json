@@ -1,0 +1,208 @@
+{
+  "spec_id": "W1-ZODIAC-SIGNS",
+  "version": "1.0.0",
+  "name": "Zodiac Signs Specification",
+  "description": "Foundational definition of 12 zodiac signs with astrological properties, ruling planets, elements, modalities, and associated characteristics",
+  "domain": "Astrology",
+  "authority": "Traditional Western Astrology",
+
+  "zodiac_signs": [
+    {
+      "sign_number": 1,
+      "name": "Aries",
+      "symbol": "♈",
+      "element": "Fire",
+      "modality": "Cardinal",
+      "ruling_planet": "Mars",
+      "date_range": "March 21 - April 19",
+      "house_correspondence": 1,
+      "keywords": ["initiative", "courage", "passion", "leadership", "impulsiveness"],
+      "polarity": "Masculine",
+      "tarot_correspondence": "The Emperor"
+    },
+    {
+      "sign_number": 2,
+      "name": "Taurus",
+      "symbol": "♉",
+      "element": "Earth",
+      "modality": "Fixed",
+      "ruling_planet": "Venus",
+      "date_range": "April 20 - May 20",
+      "house_correspondence": 2,
+      "keywords": ["stability", "materialism", "sensuality", "loyalty", "stubbornness"],
+      "polarity": "Feminine",
+      "tarot_correspondence": "The High Priestess"
+    },
+    {
+      "sign_number": 3,
+      "name": "Gemini",
+      "symbol": "♊",
+      "element": "Air",
+      "modality": "Mutable",
+      "ruling_planet": "Mercury",
+      "date_range": "May 21 - June 20",
+      "house_correspondence": 3,
+      "keywords": ["communication", "curiosity", "adaptability", "intellect", "inconsistency"],
+      "polarity": "Masculine",
+      "tarot_correspondence": "The Magician"
+    },
+    {
+      "sign_number": 4,
+      "name": "Cancer",
+      "symbol": "♋",
+      "element": "Water",
+      "modality": "Cardinal",
+      "ruling_planet": "Moon",
+      "date_range": "June 21 - July 22",
+      "house_correspondence": 4,
+      "keywords": ["emotion", "nurturing", "sensitivity", "family", "moodiness"],
+      "polarity": "Feminine",
+      "tarot_correspondence": "The Chariot"
+    },
+    {
+      "sign_number": 5,
+      "name": "Leo",
+      "symbol": "♌",
+      "element": "Fire",
+      "modality": "Fixed",
+      "ruling_planet": "Sun",
+      "date_range": "July 23 - August 22",
+      "house_correspondence": 5,
+      "keywords": ["creativity", "pride", "generosity", "authority", "arrogance"],
+      "polarity": "Masculine",
+      "tarot_correspondence": "Strength"
+    },
+    {
+      "sign_number": 6,
+      "name": "Virgo",
+      "symbol": "♍",
+      "element": "Earth",
+      "modality": "Mutable",
+      "ruling_planet": "Mercury",
+      "date_range": "August 23 - September 22",
+      "house_correspondence": 6,
+      "keywords": ["analysis", "service", "practicality", "perfectionism", "criticism"],
+      "polarity": "Feminine",
+      "tarot_correspondence": "The Hermit"
+    },
+    {
+      "sign_number": 7,
+      "name": "Libra",
+      "symbol": "♎",
+      "element": "Air",
+      "modality": "Cardinal",
+      "ruling_planet": "Venus",
+      "date_range": "September 23 - October 22",
+      "house_correspondence": 7,
+      "keywords": ["balance", "diplomacy", "relationship", "aesthetics", "indecision"],
+      "polarity": "Masculine",
+      "tarot_correspondence": "Justice"
+    },
+    {
+      "sign_number": 8,
+      "name": "Scorpio",
+      "symbol": "♏",
+      "element": "Water",
+      "modality": "Fixed",
+      "ruling_planet": "Pluto",
+      "date_range": "October 23 - November 21",
+      "house_correspondence": 8,
+      "keywords": ["intensity", "transformation", "mystery", "power", "obsession"],
+      "polarity": "Feminine",
+      "tarot_correspondence": "Death"
+    },
+    {
+      "sign_number": 9,
+      "name": "Sagittarius",
+      "symbol": "♐",
+      "element": "Fire",
+      "modality": "Mutable",
+      "ruling_planet": "Jupiter",
+      "date_range": "November 22 - December 21",
+      "house_correspondence": 9,
+      "keywords": ["expansion", "optimism", "exploration", "philosophy", "excess"],
+      "polarity": "Masculine",
+      "tarot_correspondence": "The Wheel of Fortune"
+    },
+    {
+      "sign_number": 10,
+      "name": "Capricorn",
+      "symbol": "♑",
+      "element": "Earth",
+      "modality": "Cardinal",
+      "ruling_planet": "Saturn",
+      "date_range": "December 22 - January 19",
+      "house_correspondence": 10,
+      "keywords": ["responsibility", "ambition", "discipline", "status", "coldness"],
+      "polarity": "Feminine",
+      "tarot_correspondence": "The Hermit"
+    },
+    {
+      "sign_number": 11,
+      "name": "Aquarius",
+      "symbol": "♒",
+      "element": "Air",
+      "modality": "Fixed",
+      "ruling_planet": "Uranus",
+      "date_range": "January 20 - February 18",
+      "house_correspondence": 11,
+      "keywords": ["innovation", "independence", "humanitarianism", "idealism", "detachment"],
+      "polarity": "Masculine",
+      "tarot_correspondence": "The Star"
+    },
+    {
+      "sign_number": 12,
+      "name": "Pisces",
+      "symbol": "♓",
+      "element": "Water",
+      "modality": "Mutable",
+      "ruling_planet": "Neptune",
+      "date_range": "February 19 - March 20",
+      "house_correspondence": 12,
+      "keywords": ["intuition", "compassion", "imagination", "spirituality", "escapism"],
+      "polarity": "Feminine",
+      "tarot_correspondence": "The Moon"
+    }
+  ],
+
+  "element_associations": {
+    "Fire": {
+      "signs": ["Aries", "Leo", "Sagittarius"],
+      "quality": "passion, energy, will, enthusiasm",
+      "ruling_elements": ["Mars", "Sun", "Jupiter"]
+    },
+    "Earth": {
+      "signs": ["Taurus", "Virgo", "Capricorn"],
+      "quality": "stability, practicality, material, grounding",
+      "ruling_elements": ["Venus", "Mercury", "Saturn"]
+    },
+    "Air": {
+      "signs": ["Gemini", "Libra", "Aquarius"],
+      "quality": "intellect, communication, ideation, social",
+      "ruling_elements": ["Mercury", "Venus", "Uranus"]
+    },
+    "Water": {
+      "signs": ["Cancer", "Scorpio", "Pisces"],
+      "quality": "emotion, intuition, depth, spiritual",
+      "ruling_elements": ["Moon", "Pluto", "Neptune"]
+    }
+  },
+
+  "modality_associations": {
+    "Cardinal": {
+      "signs": ["Aries", "Cancer", "Libra", "Capricorn"],
+      "quality": "initiative, leadership, action-oriented"
+    },
+    "Fixed": {
+      "signs": ["Taurus", "Leo", "Scorpio", "Aquarius"],
+      "quality": "stability, persistence, determination"
+    },
+    "Mutable": {
+      "signs": ["Gemini", "Virgo", "Sagittarius", "Pisces"],
+      "quality": "adaptability, flexibility, communication"
+    }
+  },
+
+  "release_date": "2026-01-01",
+  "authority_source": "Traditional Western Astrology / Modern Psychological Astrology"
+}

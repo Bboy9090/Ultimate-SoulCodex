@@ -1,0 +1,165 @@
+{
+  "spec_id": "W1-PLANETS-LUMINARIES",
+  "version": "1.0.0",
+  "name": "Planets and Luminaries Specification",
+  "description": "Foundational definition of 10 classical planets and luminaries used in Western astrology with their meanings, rulerships, and characteristics",
+  "domain": "Astrology",
+  "authority": "Traditional Western Astrology",
+
+  "luminaries": [
+    {
+      "body_number": 1,
+      "name": "Sun",
+      "symbol": "☉",
+      "meaning": "Core identity, ego, life force, will, conscious self",
+      "house_rulership": [5],
+      "sign_rulership": ["Leo"],
+      "exaltation": "Aries",
+      "detriment": "Libra",
+      "fall": "Libra",
+      "keywords": ["Identity", "Ego", "Will", "Power", "Authority"],
+      "glyph_representation": "Circle with dot (eye of God)"
+    },
+    {
+      "body_number": 2,
+      "name": "Moon",
+      "symbol": "☽",
+      "meaning": "Emotions, subconscious, instincts, nurturing, sensitivity",
+      "house_rulership": [4],
+      "sign_rulership": ["Cancer"],
+      "exaltation": "Taurus",
+      "detriment": "Capricorn",
+      "fall": "Scorpio",
+      "keywords": ["Emotion", "Intuition", "Nurture", "Family", "Security"],
+      "glyph_representation": "Crescent moon"
+    }
+  ],
+
+  "personal_planets": [
+    {
+      "body_number": 3,
+      "name": "Mercury",
+      "symbol": "☿",
+      "meaning": "Communication, intellect, thought, perception, adaptation",
+      "house_rulership": [3, 6],
+      "sign_rulership": ["Gemini", "Virgo"],
+      "exaltation": "Virgo",
+      "detriment": "Sagittarius",
+      "fall": "Pisces",
+      "keywords": ["Communication", "Intellect", "Commerce", "Logic", "Adaptation"],
+      "glyph_representation": "Circle with cross and crescent above"
+    },
+    {
+      "body_number": 4,
+      "name": "Venus",
+      "symbol": "♀",
+      "meaning": "Love, attraction, values, beauty, pleasure, relationships",
+      "house_rulership": [2, 7],
+      "sign_rulership": ["Taurus", "Libra"],
+      "exaltation": "Pisces",
+      "detriment": "Scorpio",
+      "fall": "Virgo",
+      "keywords": ["Love", "Beauty", "Attraction", "Value", "Pleasure"],
+      "glyph_representation": "Mirror symbol (hand mirror)"
+    },
+    {
+      "body_number": 5,
+      "name": "Mars",
+      "symbol": "♂",
+      "meaning": "Action, aggression, passion, energy, desire, assertiveness",
+      "house_rulership": [1, 8],
+      "sign_rulership": ["Aries", "Scorpio"],
+      "exaltation": "Capricorn",
+      "detriment": "Libra",
+      "fall": "Cancer",
+      "keywords": ["Action", "Aggression", "Passion", "Energy", "War"],
+      "glyph_representation": "Arrow and circle (male symbol)"
+    }
+  ],
+
+  "social_planets": [
+    {
+      "body_number": 6,
+      "name": "Jupiter",
+      "symbol": "♃",
+      "meaning": "Expansion, optimism, luck, growth, abundance, philosophy",
+      "house_rulership": [9],
+      "sign_rulership": ["Sagittarius"],
+      "exaltation": "Cancer",
+      "detriment": "Gemini",
+      "fall": "Capricorn",
+      "keywords": ["Expansion", "Luck", "Growth", "Abundance", "Philosophy"],
+      "glyph_representation": "Eagle's head or lightning bolt"
+    },
+    {
+      "body_number": 7,
+      "name": "Saturn",
+      "symbol": "♄",
+      "meaning": "Limitation, structure, discipline, time, boundaries, karma",
+      "house_rulership": [10],
+      "sign_rulership": ["Capricorn"],
+      "exaltation": "Libra",
+      "detriment": "Cancer",
+      "fall": "Aries",
+      "keywords": ["Limitation", "Structure", "Discipline", "Time", "Karma"],
+      "glyph_representation": "Sickle or cross above semicircle"
+    }
+  ],
+
+  "outer_planets": [
+    {
+      "body_number": 8,
+      "name": "Uranus",
+      "symbol": "♅",
+      "meaning": "Revolution, innovation, rebellion, electricity, sudden change",
+      "house_rulership": [11],
+      "sign_rulership": ["Aquarius"],
+      "exaltation": "Scorpio",
+      "keywords": ["Revolution", "Innovation", "Rebellion", "Electricity", "Change"],
+      "discovered": "1781",
+      "glyph_representation": "H rotated"
+    },
+    {
+      "body_number": 9,
+      "name": "Neptune",
+      "symbol": "♆",
+      "meaning": "Spirituality, illusion, dreams, imagination, dissolution",
+      "house_rulership": [12],
+      "sign_rulership": ["Pisces"],
+      "exaltation": "Leo",
+      "keywords": ["Spirituality", "Illusion", "Dreams", "Imagination", "Mysticism"],
+      "discovered": "1846",
+      "glyph_representation": "Trident"
+    },
+    {
+      "body_number": 10,
+      "name": "Pluto",
+      "symbol": "♇",
+      "meaning": "Transformation, power, death, rebirth, hidden forces, underworld",
+      "house_rulership": [8],
+      "sign_rulership": ["Scorpio"],
+      "exaltation": "Pisces",
+      "keywords": ["Transformation", "Power", "Death", "Rebirth", "Underworld"],
+      "discovered": "1930",
+      "classification_note": "Dwarf planet; retained in classical astrology"
+    }
+  ],
+
+  "planet_speeds": {
+    "Sun": "~1° per day",
+    "Moon": "~13° per day",
+    "Mercury": "~1° per day (varies)",
+    "Venus": "~1° per day (varies)",
+    "Mars": "~31' per day",
+    "Jupiter": "~5' per day",
+    "Saturn": "~2' per day",
+    "Uranus": "~4' per year",
+    "Neptune": "~3' per year",
+    "Pluto": "~3' per year"
+  },
+
+  "retrograde_significance": "When a planet appears to move backward from Earth's perspective; indicates internal reflection or karmic reworking of that planet's themes",
+
+  "release_date": "2026-01-01",
+  "authority_source": "Traditional Western Astrology / Modern Psychological Astrology"
+}

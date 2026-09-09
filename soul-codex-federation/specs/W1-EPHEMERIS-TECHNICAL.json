@@ -1,0 +1,173 @@
+{
+  "spec_id": "W1-EPHEMERIS-TECHNICAL",
+  "version": "1.0.0",
+  "name": "Ephemeris and Technical Specifications",
+  "description": "Foundational technical specifications for ephemeris data, timezone handling, and astrological calculation methods",
+  "domain": "Astrology / Technical",
+  "authority": "Swiss Ephemeris / NASA Jet Propulsion Laboratory",
+
+  "ephemeris_definition": {
+    "description": "Ephemeris tables containing precise positions of celestial bodies at specific dates/times",
+    "purpose": "Foundation for all astrological calculations",
+    "source": "Swiss Ephemeris (DLL), NASA JPL Ephemeris",
+    "accuracy": "±0.001° typical for classical planets"
+  },
+
+  "coordinate_systems": {
+    "ecliptic_longitude": {
+      "definition": "Position along Earth's orbital plane (ecliptic)",
+      "range": "0° to 360°",
+      "precision": "Degrees, minutes, seconds (0.01° = ~1 km at Earth's distance)"
+    },
+    "ecliptic_latitude": {
+      "definition": "Position above/below ecliptic plane",
+      "range": "-5° to +5° (planets typically within 5°)",
+      "significance": "Indicates deviation from ecliptic plane"
+    },
+    "right_ascension": {
+      "definition": "Celestial longitude measured from vernal equinox",
+      "range": "0h to 24h",
+      "used_for": "House system calculations"
+    },
+    "declination": {
+      "definition": "Celestial latitude",
+      "range": "-90° to +90°",
+      "used_for": "Parallel and contra-parallel aspects"
+    }
+  },
+
+  "birth_time_requirements": {
+    "accuracy_needed": "±1 minute for standard interpretation",
+    "common_sources": [
+      "Birth certificate (most reliable)",
+      "Hospital records (reliable)",
+      "Family recollection (unreliable, ±15-30 minutes)",
+      "Rectification technique (time calculated from known events)"
+    ],
+    "unknown_time_handling": {
+      "standard": "Use noon (12:00) as default",
+      "effect": "Ascendant, MC, houses become unreliable",
+      "sun_moon_still_accurate": true,
+      "note": "Eliminates Ascendant-dependent interpretations"
+    }
+  },
+
+  "timezone_handling": {
+    "critical_for": "Converting local birth time to UTC/GMT",
+    "complexities": [
+      "Daylight Saving Time (DST) transitions",
+      "Historical timezone changes",
+      "Regional/non-standard timezones",
+      "Decimal hour vs. hour:minute:second format"
+    ],
+    "dst_considerations": {
+      "description": "DST shifts create 1-hour gaps in local time",
+      "verification": "Confirm DST status for birth date and location",
+      "common_error": "Incorrect assumption about DST applicability"
+    }
+  },
+
+  "geographic_coordinates": {
+    "latitude": {
+      "range": "-90° (South Pole) to +90° (North Pole)",
+      "precision": "0.01° = ~1.1 km",
+      "critical_for": "House system calculations, especially high-latitude births"
+    },
+    "longitude": {
+      "range": "-180° (West) to +180° (East)",
+      "precision": "0.01° = ~0.7 km at equator",
+      "critical_for": "Timezone conversion, international dateline"
+    },
+    "high_latitude_challenges": {
+      "definition": "Births at 66.5°N or beyond (Arctic Circle)",
+      "effect": "Placidus house system breaks down (some houses become extremely large or non-existent)",
+      "solutions": ["Use Whole Sign houses", "Use Equal House system", "Flag house reliability as degraded"]
+    }
+  },
+
+  "calculation_methods": {
+    "planet_positions": {
+      "method": "Swiss Ephemeris algorithm",
+      "accuracy": "±0.001° for classical planets (Sun through Neptune)",
+      "calculation_time": "<1ms per planet for modern computers",
+      "verification": "Cross-check against multiple ephemeris sources"
+    },
+    "house_systems": {
+      "placidus": {
+        "description": "Time-based division; most popular",
+        "reliability_limit": "66.5° latitude (Arctic Circle)",
+        "accuracy": "±0.1° typical"
+      },
+      "whole_sign": {
+        "description": "Entire zodiac sign = one house",
+        "reliability": "All latitudes",
+        "accuracy": "Exact by definition"
+      },
+      "equal_house": {
+        "description": "12 equal divisions of ecliptic",
+        "reliability": "All latitudes",
+        "accuracy": "±0.1° typical"
+      }
+    },
+    "aspects": {
+      "method": "Angular difference calculation",
+      "orb_application": "±X degrees depending on aspect type and planets involved",
+      "calculation_time": "<1ms for all aspects between 10 bodies"
+    }
+  },
+
+  "data_quality_flags": {
+    "unknown_birth_time": {
+      "symbol": "UT?",
+      "effect": "Suppresses Ascendant, MC, house calculations",
+      "interpretation_guideline": "Avoid Ascendant-dependent claims"
+    },
+    "approximate_birth_time": {
+      "symbol": "~",
+      "accuracy_range": "±15-30 minutes",
+      "effect": "House placements uncertain; Ascendant unreliable",
+      "interpretation_guideline": "Treat Ascendant as illustrative only"
+    },
+    "high_latitude_birth": {
+      "definition": "≥60°N or ≥60°S latitude",
+      "effect": "Placidus house system may degrade or fail",
+      "solution": "Use Whole Sign or Equal House; flag reliability as degraded"
+    },
+    "ephemeris_age": {
+      "historical": "Pre-1900 (ephemeris accuracy ±1-2°)",
+      "aged": "1900-1950 (ephemeris accuracy ±0.5°)",
+      "modern": "Post-1950 (ephemeris accuracy ±0.001°)"
+    }
+  },
+
+  "verification_procedures": {
+    "determinism_check": "Run calculation 3× with identical inputs; results must be identical to ±0.001°",
+    "cross_check": "Verify results against independent ephemeris sources",
+    "tolerance_compliance": "Check that all calculations fall within published tolerances"
+  },
+
+  "ephemeris_sources": {
+    "swiss_ephemeris": {
+      "creator": "Astrodienst",
+      "reliability": "High",
+      "coverage": "1900-2100+ (with reasonable accuracy)",
+      "accuracy": "±0.001° for classical planets"
+    },
+    "nasa_jpl": {
+      "creator": "NASA Jet Propulsion Laboratory",
+      "reliability": "Very High",
+      "coverage": "1800-2150+",
+      "accuracy": "±0.0001° for classical planets"
+    }
+  },
+
+  "retrograde_calculation": {
+    "definition": "Planet appears to move backward when Earth passes it in orbit",
+    "calculation": "Compare planet position on sequential dates; when longitude decreases, planet is retrograde",
+    "significance": "Astrological interpretation focuses on internal/karmic reworking",
+    "accuracy": "Can be calculated to ±0.1° with ephemeris data"
+  },
+
+  "release_date": "2026-01-01",
+  "authority_source": "Swiss Ephemeris / NASA JPL / SOLEX / Traditional Astrological Methods"
+}

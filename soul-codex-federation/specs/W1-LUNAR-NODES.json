@@ -1,0 +1,130 @@
+{
+  "spec_id": "W1-LUNAR-NODES",
+  "version": "1.0.0",
+  "name": "Lunar Nodes Specification",
+  "description": "Foundational definition of lunar nodes (North Node and South Node) with karmic and spiritual significance",
+  "domain": "Astrology",
+  "authority": "Karmic Astrology / Evolutionary Astrology",
+
+  "lunar_nodes_overview": {
+    "definition": "Lunar nodes are the points where the Moon's orbit intersects the ecliptic (Earth's orbital plane)",
+    "meaning": "Represent karmic soul lessons and evolutionary development",
+    "movement": "Retrograde (backward), approximately 1.9° per month",
+    "cycle": "Approximately 18.6 years per complete nodal cycle"
+  },
+
+  "north_node": {
+    "name": "North Node",
+    "symbol": "☊",
+    "alternative_name": "Dragon's Head",
+    "meaning": "Soul's evolutionary direction, future growth, gifts to develop, life purpose",
+    "house_meanings": [
+      {"house": 1, "meaning": "Develop authentic self-expression and independence"},
+      {"house": 2, "meaning": "Develop healthy values, stability, and self-worth"},
+      {"house": 3, "meaning": "Develop communication skills, curiosity, and learning"},
+      {"house": 4, "meaning": "Develop emotional roots, family connection, and security"},
+      {"house": 5, "meaning": "Develop creativity, confidence, and joy"},
+      {"house": 6, "meaning": "Develop service, organization, and health practices"},
+      {"house": 7, "meaning": "Develop partnership skills, balance, and diplomacy"},
+      {"house": 8, "meaning": "Develop depth, intimacy, transformation abilities"},
+      {"house": 9, "meaning": "Develop faith, wisdom, and spiritual understanding"},
+      {"house": 10, "meaning": "Develop authority, career purpose, and public contribution"},
+      {"house": 11, "meaning": "Develop community connection, ideals, and group participation"},
+      {"house": 12, "meaning": "Develop spirituality, compassion, and inner wisdom"}
+    ],
+    "keywords": ["Growth", "Future", "Purpose", "Development", "Destiny"]
+  },
+
+  "south_node": {
+    "name": "South Node",
+    "symbol": "☋",
+    "alternative_name": "Dragon's Tail",
+    "meaning": "Past life talents, inherited gifts, comfort zone, karmic patterns to transcend",
+    "house_meanings": [
+      {"house": 1, "meaning": "Past self-reliance; growth toward partnership"},
+      {"house": 2, "meaning": "Past material focus; growth toward non-material values"},
+      {"house": 3, "meaning": "Past scattered learning; growth toward focused wisdom"},
+      {"house": 4, "meaning": "Past family dependence; growth toward independent foundation"},
+      {"house": 5, "meaning": "Past creative indulgence; growth toward purposeful expression"},
+      {"house": 6, "meaning": "Past perfectionism; growth toward compassion in service"},
+      {"house": 7, "meaning": "Past co-dependency; growth toward balanced autonomy"},
+      {"house": 8, "meaning": "Past avoidance of depth; growth toward transformation"},
+      {"house": 9, "meaning": "Past blind faith; growth toward discernment"},
+      {"house": 10, "meaning": "Past career focus; growth toward personal meaning"},
+      {"house": 11, "meaning": "Past group conformity; growth toward authentic ideals"},
+      {"house": 12, "meaning": "Past spiritual escapism; growth toward grounded spirituality"}
+    ],
+    "keywords": ["Comfort", "Past", "Talents", "Patterns", "Release"]
+  },
+
+  "node_axis_interpretation": {
+    "description": "The North and South nodes form an axis; understanding both points reveals complete karmic picture",
+    "principle": "South Node comfort must be released to develop North Node growth"
+  },
+
+  "nodal_signs_interpretation": [
+    {
+      "south_node_sign": "Aries",
+      "north_node_sign": "Libra",
+      "karmic_lesson": "Release independence/self-focus; develop partnership/diplomacy"
+    },
+    {
+      "south_node_sign": "Taurus",
+      "north_node_sign": "Scorpio",
+      "karmic_lesson": "Release material security; develop emotional depth/transformation"
+    },
+    {
+      "south_node_sign": "Gemini",
+      "north_node_sign": "Sagittarius",
+      "karmic_lesson": "Release scattered learning; develop faith/wisdom"
+    },
+    {
+      "south_node_sign": "Cancer",
+      "north_node_sign": "Capricorn",
+      "karmic_lesson": "Release emotional dependence; develop responsibility/authority"
+    },
+    {
+      "south_node_sign": "Leo",
+      "north_node_sign": "Aquarius",
+      "karmic_lesson": "Release ego focus; develop group consciousness/idealism"
+    },
+    {
+      "south_node_sign": "Virgo",
+      "north_node_sign": "Pisces",
+      "karmic_lesson": "Release perfectionism; develop compassion/spirituality"
+    },
+    {
+      "south_node_sign": "Libra",
+      "north_node_sign": "Aries",
+      "karmic_lesson": "Release people-pleasing; develop authentic self/courage"
+    },
+    {
+      "south_node_sign": "Scorpio",
+      "north_node_sign": "Taurus",
+      "karmic_lesson": "Release power struggles; develop stability/simplicity"
+    },
+    {
+      "south_node_sign": "Sagittarius",
+      "north_node_sign": "Gemini",
+      "karmic_lesson": "Release blind faith; develop discernment/communication"
+    },
+    {
+      "south_node_sign": "Capricorn",
+      "north_node_sign": "Cancer",
+      "karmic_lesson": "Release rigid control; develop emotional authenticity/nurturing"
+    },
+    {
+      "south_node_sign": "Aquarius",
+      "north_node_sign": "Leo",
+      "karmic_lesson": "Release detachment; develop creative self-expression/courage"
+    },
+    {
+      "south_node_sign": "Pisces",
+      "north_node_sign": "Virgo",
+      "karmic_lesson": "Release escapism; develop practical service/discernment"
+    }
+  ],
+
+  "release_date": "2026-01-01",
+  "authority_source": "Karmic Astrology / Evolutionary Astrology (Pluto School)"
+}
