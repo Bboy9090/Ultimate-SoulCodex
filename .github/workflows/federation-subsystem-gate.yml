@@ -1,0 +1,35 @@
+name: Federation Subsystem Gate
+
+on:
+  pull_request:
+    branches:
+      - release/ios-4.0.0-federation-integrated
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Canonical numerology regression
+        run: node --import tsx --test packages/core/__tests__/numerology-date-only.test.ts
+      - name: Moon/Rising golden regression
+        run: node --import tsx --test tests/bobby-big-three-golden.test.ts tests/ascendant-retry-contract.test.ts
+      - name: Privacy and local-first regression
+        run: node --import tsx --test tests/local-first-privacy-contract.test.ts tests/profile-verification-reconciliation.test.ts
