@@ -1,2 +1,7 @@
 /build/*
 !/build/.npmkeep
+
+# Never commit Android signing material
+*.jks
+*.keystore
+soul-codex-release.keystore
