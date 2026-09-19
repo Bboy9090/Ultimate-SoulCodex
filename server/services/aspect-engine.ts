@@ -36,6 +36,23 @@ export interface CalculatedAspect {
   policyId: string;
 }
 
+const BODY_ORDER: readonly VerifiableBody[] = Object.freeze([
+  "Sun",
+  "Moon",
+  "Mercury",
+  "Venus",
+  "Mars",
+  "Jupiter",
+  "Saturn",
+  "Uranus",
+  "Neptune",
+  "Pluto",
+] as const);
+
+const BODY_ORDER_INDEX = new Map(
+  BODY_ORDER.map((body, index) => [body, index] as const),
+);
+
 export const LEGACY_COMPAT_MAJOR_ASPECT_POLICY_V1: AspectPolicy = Object.freeze({
   policyId: "ASTRO-ASPECT-MAJOR-v1",
   status: "approved",
@@ -133,8 +150,10 @@ export function calculateMajorAspects(
   assertPolicy(policy);
   assertVerifiedPlacements(placements);
 
-  const sorted = [...placements].sort((left, right) =>
-    left.body.localeCompare(right.body),
+  const sorted = [...placements].sort(
+    (left, right) =>
+      (BODY_ORDER_INDEX.get(left.body) ?? Number.MAX_SAFE_INTEGER) -
+      (BODY_ORDER_INDEX.get(right.body) ?? Number.MAX_SAFE_INTEGER),
   );
   const aspects: CalculatedAspect[] = [];
 
