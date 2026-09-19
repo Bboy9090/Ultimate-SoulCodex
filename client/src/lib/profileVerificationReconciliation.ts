@@ -7,7 +7,12 @@ type PlacementRecord = {
   sign?: string | null;
 };
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 2;
+const FULL_NATAL_PLANET_KEYS = [
+  "sun", "moon", "mercury", "venus", "mars",
+  "jupiter", "saturn", "uranus", "neptune", "pluto",
+] as const;
+
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 3;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -22,6 +27,28 @@ export type RemoteProfileSnapshot = {
     sun?: PlacementRecord;
     moon?: PlacementRecord;
     rising?: PlacementRecord;
+    planets?: Partial<Record<(typeof FULL_NATAL_PLANET_KEYS)[number], PlacementRecord>>;
+    houseSystem?: string;
+    houses?: Array<{
+      house?: number;
+      verificationStatus?: string;
+      sign?: string;
+      degree?: number;
+      longitude?: number;
+    }>;
+    midheaven?: PlacementRecord & {
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+    };
+    planetaryHouses?: Partial<Record<(typeof FULL_NATAL_PLANET_KEYS)[number], number>>;
+    aspects?: Array<{
+      planet1?: string;
+      planet2?: string;
+      aspect?: string;
+      orb?: number;
+      policyId?: string;
+    }>;
     sunSign?: string | null;
     moonSign?: string | null;
     risingSign?: string | null;
@@ -75,6 +102,50 @@ export function hasVerifiedBigThree(
     hasVerifiedSunAndMoon(astrology) &&
       getVerifiedAstrologySign(astrology, "rising"),
   );
+}
+
+export function hasVerifiedFullNatalChart(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  if (!astrology || !hasVerifiedBigThree(astrology)) return false;
+  if (astrology.houseSystem !== "equal") return false;
+  if (astrology.midheaven?.verificationStatus !== "verified") return false;
+
+  const houses = astrology.houses;
+  if (
+    !Array.isArray(houses) ||
+    houses.length !== 12 ||
+    houses.some(
+      (house, index) =>
+        house.verificationStatus !== "verified" ||
+        house.house !== index + 1,
+    )
+  ) {
+    return false;
+  }
+
+  const planets = astrology.planets;
+  if (
+    !planets ||
+    FULL_NATAL_PLANET_KEYS.some(
+      (key) => planets[key]?.verificationStatus !== "verified",
+    )
+  ) {
+    return false;
+  }
+
+  const planetaryHouses = astrology.planetaryHouses;
+  if (
+    !planetaryHouses ||
+    FULL_NATAL_PLANET_KEYS.some((key) => {
+      const house = planetaryHouses[key];
+      return typeof house !== "number" || house < 1 || house > 12;
+    })
+  ) {
+    return false;
+  }
+
+  return Array.isArray(astrology.aspects);
 }
 
 function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
@@ -169,11 +240,12 @@ export function reconcileOfflineProfile(
 /**
  * A profile still needs astronomy verification when:
  * - Sun or Moon has not been independently verified; or
- * - exact timed Ascendant inputs exist and Rising has not actually verified.
+ * - exact timed chart inputs exist and the full supported natal chart has not
+ *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 2 means the profile understands
- * the Ascendant contract; it does not mean the Ascendant itself passed.
+ * temporary reference/engine failure. Version 3 means the profile understands
+ * the full-natal chart contract; it does not mean every placement passed.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
@@ -184,6 +256,6 @@ export function profileNeedsOnlineVerification(
 
   return Boolean(
     hasExactAscendantInputs(profile) &&
-      !getVerifiedAstrologySign(profile.verifiedAstrologyData, "rising"),
+      !hasVerifiedFullNatalChart(profile.verifiedAstrologyData),
   );
 }
