@@ -127,7 +127,7 @@ test("an explicitly approved independent policy can promote every planetary cand
   }
 });
 
-test("production policy refuses unapproved planets before independent network lookup", async () => {
+test("production policy independently promotes all qualified natal planets with governed provenance", async () => {
   const candidates = calculateAstrology(birthData);
   assert.ok(candidates.planets);
 
@@ -146,21 +146,27 @@ test("production policy refuses unapproved planets before independent network lo
     return {
       body,
       sign: placement.internalCandidate.sign,
-      longitude: placement.internalCandidate.longitude,
-      source: "Independent fixture ephemeris",
-      engine: "independent-fixture-engine@1",
-      calculatedAt: "2026-09-19T00:00:00.000Z",
+      longitude: (placement.internalCandidate.longitude + 0.003) % 360,
+      source: "NASA/JPL Horizons observer quantity 31 fixture",
+      engine: "nasa-jpl-horizons-api@1.3-test",
+      calculatedAt: "2026-09-19T14:36:05.000Z",
       inputTimestamp,
     };
   };
 
   const result = await calculateVerifiedAstrology(birthData, { referenceFetcher });
-  assert.deepEqual(calls.sort(), ["Moon", "Sun"]);
+  assert.deepEqual(new Set(calls), new Set([
+    "Sun", "Moon", "Mercury", "Venus", "Mars",
+    "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+  ]));
 
   for (const key of PLANET_KEYS) {
     const placement = result.planets![key];
-    assert.equal(placement.verificationStatus, "pending_independent_verification");
-    assert.equal(placement.sign, null);
-    assert.equal(placement.verificationFailure?.reason, "body_not_approved_for_longitude_verification");
+    assert.equal(placement.verificationStatus, "verified");
+    assert.ok(placement.sign);
+    assert.equal(placement.evidence?.policyId, "ASTRO-PLANET-LONGITUDE-v1");
+    assert.equal(placement.evidence?.evidenceReceiptId, "35449041012");
+    assert.equal(placement.evidence?.evidenceArtifactId, "10586208293");
+    assert.ok((placement.evidence?.longitudeDeltaDegrees ?? 99) <= 0.005);
   }
 });
