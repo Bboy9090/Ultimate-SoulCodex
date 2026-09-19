@@ -27,6 +27,10 @@ import {
   type VerifiedLongitudePlacement,
 } from "./aspect-engine";
 import type { VerifiableBody } from "./astrology-verification";
+import {
+  verifyMeanNodes,
+  type MeanNodeProductionPolicy,
+} from "./lunar-node-production";
 
 export type { AstrologyData, BirthData, PlacementVerification, VerifiedAstrologyOptions };
 export { getTarotBirthCards };
@@ -35,6 +39,7 @@ export interface ProductionAstrologyOptions extends VerifiedAstrologyOptions {
   ascendantPolicy?: AscendantVerificationPolicy;
   housePolicy?: EqualHouseProductionPolicy;
   aspectPolicy?: AspectPolicy;
+  meanNodePolicy?: MeanNodeProductionPolicy;
 }
 
 function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
@@ -397,6 +402,106 @@ function withVerifiedDerivedChart(
   };
 }
 
+function withVerifiedMeanNodes(
+  astrology: AstrologyData,
+  options: ProductionAstrologyOptions,
+): AstrologyData {
+  const timestamp = astrology.moon.internalCandidate?.inputTimestamp;
+  if (
+    !timestamp ||
+    astrology.houseSystem !== "equal" ||
+    !astrology.houses ||
+    astrology.houses.length !== 12
+  ) {
+    return astrology;
+  }
+
+  const result = verifyMeanNodes(
+    { inputTimestamp: timestamp },
+    options.meanNodePolicy,
+  );
+  if (result.status !== "verified") {
+    return {
+      ...astrology,
+      northNode: undefined,
+      southNode: undefined,
+      verification: {
+        ...astrology.verification,
+        complete: false,
+        unresolvedBodies: [
+          ...new Set([
+            ...astrology.verification.unresolvedBodies,
+            "MeanNorthNode",
+            "MeanSouthNode",
+          ]),
+        ],
+        missingData: [
+          ...new Set([
+            ...astrology.verification.missingData,
+            `mean_node_verification:${result.reason}`,
+          ]),
+        ],
+      },
+    };
+  }
+
+  const cuspGeometry = astrology.houses.map((house) => ({
+    house: house.house,
+    longitudeDegrees: house.longitude,
+    sign: house.sign,
+    degreeInSign: house.degree,
+  }));
+
+  const northHouse = calculateHousePosition(
+    result.northNode.longitudeDegrees,
+    cuspGeometry,
+  );
+  const southHouse = calculateHousePosition(
+    result.southNode.longitudeDegrees,
+    cuspGeometry,
+  );
+
+  return {
+    ...astrology,
+    northNode: {
+      mode: "mean",
+      sign: result.northNode.sign,
+      house: northHouse,
+      degree: result.northNode.degreeInSign,
+      longitude: result.northNode.longitudeDegrees,
+      verificationStatus: "verified",
+      policyId: result.northNode.policyId,
+      evidenceArtifactId: result.northNode.evidenceArtifactId,
+    },
+    southNode: {
+      mode: "mean",
+      sign: result.southNode.sign,
+      house: southHouse,
+      degree: result.southNode.degreeInSign,
+      longitude: result.southNode.longitudeDegrees,
+      verificationStatus: "verified",
+      policyId: result.southNode.policyId,
+      evidenceArtifactId: result.southNode.evidenceArtifactId,
+    },
+    verification: {
+      ...astrology.verification,
+      policyId: appendVerificationIdentity(
+        astrology.verification.policyId,
+        result.northNode.policyId,
+      ),
+      evidenceReceiptId: appendVerificationIdentity(
+        astrology.verification.evidenceReceiptId,
+        result.evidence.runId,
+      ),
+      suggestions:
+        astrology.verification.complete
+          ? "All currently supported natal planets, Ascendant, Midheaven, Equal House cusps, planetary house assignments, major aspects, and Mean Lunar Nodes are verified or deterministically derived from verified inputs."
+          : astrology.verification.suggestions,
+      lastUpdated: new Date().toISOString(),
+    },
+  };
+}
+
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const base = calculateBaseAstrology(birthData);
   return withRisingVerificationSummary(base, candidateRisingPlacement(birthData));
@@ -406,17 +511,25 @@ export async function calculateVerifiedAstrology(
   birthData: BirthData,
   options: ProductionAstrologyOptions = {},
 ): Promise<AstrologyData> {
-  const { ascendantPolicy, housePolicy, aspectPolicy, ...baseOptions } = options;
+  const { ascendantPolicy, housePolicy, aspectPolicy, meanNodePolicy, ...baseOptions } = options;
   const base = await calculateBaseVerifiedAstrology(birthData, baseOptions);
   const rising = verifiedRisingPlacement(
     birthData,
     ascendantPolicy ?? APPROVED_ASCENDANT_POLICY,
   );
   const withRising = withRisingVerificationSummary(base, rising);
-  return withVerifiedDerivedChart(withRising, birthData, {
+  const withDerivedChart = withVerifiedDerivedChart(withRising, birthData, {
     ...options,
     ascendantPolicy,
     housePolicy,
     aspectPolicy,
+    meanNodePolicy,
+  });
+  return withVerifiedMeanNodes(withDerivedChart, {
+    ...options,
+    ascendantPolicy,
+    housePolicy,
+    aspectPolicy,
+    meanNodePolicy,
   });
 }
