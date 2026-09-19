@@ -34,6 +34,6 @@ jobs:
       - name: Canonical numerology regression
         run: node --import tsx --test packages/core/__tests__/numerology-date-only.test.ts
       - name: Moon/Rising and planetary regression
-        run: node --import tsx --test tests/bobby-big-three-golden.test.ts tests/ascendant-retry-contract.test.ts tests/astrology-planetary-candidates.test.ts tests/astrology-production-verification.test.ts
+        run: node --import tsx --test tests/bobby-big-three-golden.test.ts tests/ascendant-retry-contract.test.ts tests/astrology-planetary-candidates.test.ts tests/astrology-production-verification.test.ts tests/full-chart-production-wiring.test.ts tests/house-production.test.ts tests/aspect-engine.test.ts
       - name: Privacy and local-first regression
         run: node --import tsx --test tests/local-first-privacy-contract.test.ts tests/profile-verification-reconciliation.test.ts

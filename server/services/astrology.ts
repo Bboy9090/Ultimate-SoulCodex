@@ -68,8 +68,39 @@ export interface AstrologyData {
     neptune: PlacementVerification;
     pluto: PlacementVerification;
   };
-  houses?: Array<{ sign?: string; degree?: number }>;
-  aspects?: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
+  houseSystem?: "equal";
+  houses?: Array<{
+    house: number;
+    sign: string;
+    degree: number;
+    longitude: number;
+    verificationStatus: "verified";
+    policyId: string;
+    evidenceArtifactId: string;
+  }>;
+  midheaven?: {
+    sign: string;
+    degree: number;
+    longitude: number;
+    verificationStatus: "verified";
+    policyId: string;
+    longitudeDeltaDegrees: number;
+    evidenceArtifactId: string;
+  };
+  planetaryHouses?: Partial<Record<
+    "sun" | "moon" | "mercury" | "venus" | "mars" |
+    "jupiter" | "saturn" | "uranus" | "neptune" | "pluto",
+    number
+  >>;
+  aspects?: Array<{
+    planet1: string;
+    planet2: string;
+    aspect: string;
+    orb: number;
+    separationDegrees?: number;
+    targetAngleDegrees?: number;
+    policyId?: string;
+  }>;
   northNode?: { sign?: string; house?: number; degree?: number };
   southNode?: { sign?: string; house?: number; degree?: number };
   chiron?: { sign?: string; house?: number; degree?: number };
@@ -518,7 +549,10 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     moon,
     rising,
     planets,
+    houseSystem: undefined,
     houses: undefined,
+    midheaven: undefined,
+    planetaryHouses: undefined,
     aspects: undefined,
     northNode: undefined,
     southNode: undefined,
