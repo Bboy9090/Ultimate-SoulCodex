@@ -17,7 +17,7 @@ import {
   type VerifiableBody,
 } from "./astrology-verification";
 import {
-  APPROVED_LONGITUDE_TOLERANCE_EVIDENCE,
+  getApprovedLongitudeToleranceEvidence,
   getApprovedLongitudeTolerancePolicy,
 } from "./astrology-tolerance-policy";
 
@@ -317,6 +317,15 @@ function verifiedPlacement(
 ): PlacementVerification {
   const source = `${candidate.source}; independently confirmed by ${reference.source}`;
   const engine = `${candidate.engine} + ${reference.engine}`;
+  let governedEvidence: ReturnType<typeof getApprovedLongitudeToleranceEvidence> | null = null;
+  try {
+    const productionPolicy = getApprovedLongitudeTolerancePolicy(candidate.body);
+    if (productionPolicy.policyId === result.policyId) {
+      governedEvidence = getApprovedLongitudeToleranceEvidence(candidate.body);
+    }
+  } catch {
+    governedEvidence = null;
+  }
 
   return {
     sign: result.sign,
@@ -333,8 +342,12 @@ function verifiedPlacement(
       referenceEngine: reference.engine,
       referenceCalculatedAt: reference.calculatedAt,
       policyId: result.policyId,
-      evidenceReceiptId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.receiptRunId,
-      evidenceArtifactId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.artifactId,
+      ...(governedEvidence
+        ? {
+            evidenceReceiptId: governedEvidence.receiptRunId,
+            evidenceArtifactId: governedEvidence.artifactId,
+          }
+        : {}),
       longitudeDeltaDegrees: result.longitudeDeltaDegrees,
       confidence: 1,
     },
