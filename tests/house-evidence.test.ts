@@ -71,6 +71,23 @@ test("Equal House cusps stay exactly 30 degrees apart and track Swiss Ascendant 
   }
 });
 
+test("Equal House keeps MC as a separate angle instead of relabeling the tenth cusp", () => {
+  const fixture = SWISS_EQUAL_HOUSE_FIXTURES[0];
+  const evidence = calculateEqualHouseEvidence({
+    inputTimestamp: fixture.inputTimestamp,
+    latitude: fixture.latitude,
+    longitude: fixture.longitude,
+  });
+  const tenthCusp = evidence.cusps[9].longitudeDegrees;
+  assert.ok(
+    circularDegreesDelta(evidence.midheavenCandidate.longitudeDegrees, tenthCusp) > 0.1,
+    "MC must remain an independent angle in Equal House",
+  );
+  assert.ok(
+    circularDegreesDelta(evidence.midheavenCandidate.longitudeDegrees, fixture.expectedMidheavenLongitude) <= 0.01,
+  );
+});
+
 test("house assignment handles the 0-degree wrap without silent fallback", () => {
   const cusps = calculateEqualHouseCuspsFromAscendant(350);
   assert.equal(calculateHousePosition(355, cusps), 1);
