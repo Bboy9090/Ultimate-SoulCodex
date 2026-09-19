@@ -551,7 +551,13 @@ export async function runLiveEphemerisEvidenceMatrix(
         throw new Error(`candidate_missing:${fixture.id}:${body}`);
       }
 
-      const reference = await fetchHorizonsReference(body, candidate.inputTimestamp);
+      let reference;
+      try {
+        reference = await fetchHorizonsReference(body, candidate.inputTimestamp);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "unknown_reference_error";
+        throw new Error(`reference_failed:${fixture.id}:${body}:${reason}`);
+      }
       if (reference.inputTimestamp !== candidate.inputTimestamp) {
         throw new Error(`timestamp_mismatch:${fixture.id}:${body}`);
       }
