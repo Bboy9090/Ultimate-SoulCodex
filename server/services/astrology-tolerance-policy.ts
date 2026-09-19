@@ -21,10 +21,17 @@ export interface TolerancePolicyProposal {
   rationale: string;
 }
 
-export interface ApprovedToleranceEvidence extends EphemerisEvidenceSummary {
+export interface ApprovedToleranceEvidence {
   receiptRunId: string;
   artifactId: string;
   artifactSha256: string;
+  candidateSha?: string;
+  totalRows: number;
+  signDisagreements: number;
+  maximumLongitudeDeltaDegrees: number;
+  sunMaximumDeltaDegrees?: number;
+  moonMaximumDeltaDegrees?: number;
+  bodyMaximumDeltaDegrees?: Partial<Record<VerifiableBody, number>>;
   approvedAt: string;
   approvedBy: string;
   approvedBodies: readonly VerifiableBody[];
@@ -34,7 +41,19 @@ export interface ApprovedToleranceEvidence extends EphemerisEvidenceSummary {
 const MINIMUM_EVIDENCE_ROWS = 40;
 const SAFETY_MULTIPLIER = 1.25;
 const ROUNDING_INCREMENT_DEGREES = 0.001;
-const APPROVED_TOLERANCE_DEGREES = 0.001;
+const SUN_MOON_TOLERANCE_DEGREES = 0.001;
+const PLANETARY_TOLERANCE_DEGREES = 0.005;
+
+const PLANETARY_BODIES = Object.freeze([
+  "Mercury",
+  "Venus",
+  "Mars",
+  "Jupiter",
+  "Saturn",
+  "Uranus",
+  "Neptune",
+  "Pluto",
+] as const satisfies readonly VerifiableBody[]);
 
 export const APPROVED_LONGITUDE_TOLERANCE_EVIDENCE: ApprovedToleranceEvidence = Object.freeze({
   receiptRunId: "30803626991",
@@ -52,11 +71,43 @@ export const APPROVED_LONGITUDE_TOLERANCE_EVIDENCE: ApprovedToleranceEvidence = 
     "Astronomy Engine geocentric true-ecliptic-of-date longitude compared with NASA/JPL Horizons geocentric apparent ecliptic-of-date observer quantity 31 at the exact same UTC timestamp.",
 });
 
+export const APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE: ApprovedToleranceEvidence =
+  Object.freeze({
+    receiptRunId: "35449041012",
+    artifactId: "10586208293",
+    artifactSha256: "45f5294e2498555ea3491eaadf9a15b110b9005c035e788c90135e4f515dfbac",
+    candidateSha: "e6ee3bc2919aee8c29c137d09ac3d2364b7fbbc6",
+    totalRows: 200,
+    signDisagreements: 0,
+    maximumLongitudeDeltaDegrees: 0.003351773269912428,
+    bodyMaximumDeltaDegrees: Object.freeze({
+      Sun: 0.00027293851550780346,
+      Moon: 0.0008717338064343494,
+      Mercury: 0.0017285373195612408,
+      Venus: 0.0007320591801089904,
+      Mars: 0.0010895629015408304,
+      Jupiter: 0.0015015139203029548,
+      Saturn: 0.0030349310078534586,
+      Uranus: 0.0031340335349909765,
+      Neptune: 0.003351773269912428,
+      Pluto: 0.0010113966908704697,
+    }),
+    approvedAt: "2026-09-19T14:40:27.000Z",
+    approvedBy: "Bboy9090",
+    approvedBodies: PLANETARY_BODIES,
+    coordinateContract:
+      "Astronomy Engine geocentric true-ecliptic-of-date longitude compared with NASA/JPL Horizons geocentric apparent ecliptic-of-date observer quantity 31 at the exact same UTC timestamp across 20 adversarial fixtures and all ten supported natal bodies.",
+  });
+
 function roundUpToIncrement(value: number, increment: number): number {
   return Math.ceil(value / increment) * increment;
 }
 
-function assertApprovedEvidence(evidence: ApprovedToleranceEvidence): void {
+function assertApprovedEvidence(
+  evidence: ApprovedToleranceEvidence,
+  maximumPolicyToleranceDegrees: number,
+  requiredBodies: readonly VerifiableBody[],
+): void {
   if (!evidence.receiptRunId.trim() || !evidence.artifactId.trim() || !evidence.artifactSha256.trim()) {
     throw new Error("approved_policy_evidence_identity_missing");
   }
@@ -69,7 +120,7 @@ function assertApprovedEvidence(evidence: ApprovedToleranceEvidence): void {
   if (
     !Number.isFinite(evidence.maximumLongitudeDeltaDegrees) ||
     evidence.maximumLongitudeDeltaDegrees < 0 ||
-    evidence.maximumLongitudeDeltaDegrees > APPROVED_TOLERANCE_DEGREES
+    evidence.maximumLongitudeDeltaDegrees > maximumPolicyToleranceDegrees
   ) {
     throw new Error("approved_policy_observed_delta_invalid");
   }
@@ -79,16 +130,39 @@ function assertApprovedEvidence(evidence: ApprovedToleranceEvidence): void {
   if (!evidence.approvedBy.trim()) {
     throw new Error("approved_policy_approver_missing");
   }
-  if (!evidence.approvedBodies.includes("Sun") || !evidence.approvedBodies.includes("Moon")) {
+  if (requiredBodies.some((body) => !evidence.approvedBodies.includes(body))) {
     throw new Error("approved_policy_body_scope_invalid");
   }
+}
+
+export function getApprovedLongitudeToleranceEvidence(
+  body: VerifiableBody,
+): ApprovedToleranceEvidence {
+  if (body === "Sun" || body === "Moon") {
+    assertApprovedEvidence(
+      APPROVED_LONGITUDE_TOLERANCE_EVIDENCE,
+      SUN_MOON_TOLERANCE_DEGREES,
+      ["Sun", "Moon"],
+    );
+    return APPROVED_LONGITUDE_TOLERANCE_EVIDENCE;
+  }
+
+  assertApprovedEvidence(
+    APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE,
+    PLANETARY_TOLERANCE_DEGREES,
+    PLANETARY_BODIES,
+  );
+  if (!APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE.approvedBodies.includes(body)) {
+    throw new Error("body_not_approved_for_longitude_verification");
+  }
+  return APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE;
 }
 
 export function getApprovedLongitudeTolerancePolicy(
   body: VerifiableBody,
 ): VerificationPolicy {
-  const evidence = APPROVED_LONGITUDE_TOLERANCE_EVIDENCE;
-  assertApprovedEvidence(evidence);
+  const evidence = getApprovedLongitudeToleranceEvidence(body);
+  const isCoreLuminary = body === "Sun" || body === "Moon";
 
   if (!evidence.approvedBodies.includes(body)) {
     throw new Error("body_not_approved_for_longitude_verification");
@@ -96,8 +170,9 @@ export function getApprovedLongitudeTolerancePolicy(
 
   return {
     status: "approved",
-    policyId: "ASTRO-LONGITUDE-v1",
-    maximumLongitudeDeltaDegrees: APPROVED_TOLERANCE_DEGREES,
+    policyId: isCoreLuminary ? "ASTRO-LONGITUDE-v1" : "ASTRO-PLANET-LONGITUDE-v1",
+    maximumLongitudeDeltaDegrees:
+      isCoreLuminary ? SUN_MOON_TOLERANCE_DEGREES : PLANETARY_TOLERANCE_DEGREES,
     approvedAt: evidence.approvedAt,
   };
 }

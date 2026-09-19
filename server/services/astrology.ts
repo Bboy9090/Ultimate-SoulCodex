@@ -17,7 +17,7 @@ import {
   type VerifiableBody,
 } from "./astrology-verification";
 import {
-  APPROVED_LONGITUDE_TOLERANCE_EVIDENCE,
+  getApprovedLongitudeToleranceEvidence,
   getApprovedLongitudeTolerancePolicy,
 } from "./astrology-tolerance-policy";
 
@@ -317,6 +317,15 @@ function verifiedPlacement(
 ): PlacementVerification {
   const source = `${candidate.source}; independently confirmed by ${reference.source}`;
   const engine = `${candidate.engine} + ${reference.engine}`;
+  let governedEvidence: ReturnType<typeof getApprovedLongitudeToleranceEvidence> | null = null;
+  try {
+    const productionPolicy = getApprovedLongitudeTolerancePolicy(candidate.body);
+    if (productionPolicy.policyId === result.policyId) {
+      governedEvidence = getApprovedLongitudeToleranceEvidence(candidate.body);
+    }
+  } catch {
+    governedEvidence = null;
+  }
 
   return {
     sign: result.sign,
@@ -333,8 +342,12 @@ function verifiedPlacement(
       referenceEngine: reference.engine,
       referenceCalculatedAt: reference.calculatedAt,
       policyId: result.policyId,
-      evidenceReceiptId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.receiptRunId,
-      evidenceArtifactId: APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.artifactId,
+      ...(governedEvidence
+        ? {
+            evidenceReceiptId: governedEvidence.receiptRunId,
+            evidenceArtifactId: governedEvidence.artifactId,
+          }
+        : {}),
       longitudeDeltaDegrees: result.longitudeDeltaDegrees,
       confidence: 1,
     },
@@ -394,17 +407,36 @@ function buildVerificationSummary(
   sun: PlacementVerification,
   moon: PlacementVerification,
   rising: PlacementVerification,
+  planets: AstrologyData["planets"],
   birthData: BirthData,
 ): AstrologyData["verification"] {
-  const verifiedBodies: VerifiableBody[] = [];
-  if (sun.verificationStatus === "verified") verifiedBodies.push("Sun");
-  if (moon.verificationStatus === "verified") verifiedBodies.push("Moon");
+  const bodyPlacements: Array<[VerifiableBody, PlacementVerification]> = [
+    ["Sun", sun],
+    ["Moon", moon],
+    ...(planets
+      ? ([
+          ["Mercury", planets.mercury],
+          ["Venus", planets.venus],
+          ["Mars", planets.mars],
+          ["Jupiter", planets.jupiter],
+          ["Saturn", planets.saturn],
+          ["Uranus", planets.uranus],
+          ["Neptune", planets.neptune],
+          ["Pluto", planets.pluto],
+        ] as Array<[VerifiableBody, PlacementVerification]>)
+      : []),
+  ];
+
+  const verifiedBodies = bodyPlacements
+    .filter(([, placement]) => placement.verificationStatus === "verified")
+    .map(([body]) => body);
 
   const unresolvedBodies = [
-    sun.verificationStatus !== "verified" ? "Sun" : null,
-    moon.verificationStatus !== "verified" ? "Moon" : null,
-    rising.verificationStatus !== "verified" ? "Ascendant" : null,
-  ].filter((value): value is string => Boolean(value));
+    ...bodyPlacements
+      .filter(([, placement]) => placement.verificationStatus !== "verified")
+      .map(([body]) => body),
+    ...(rising.verificationStatus !== "verified" ? ["Ascendant"] : []),
+  ];
 
   const missingData: string[] = [];
   if (!birthData.birthTime) missingData.push("verified_birth_time");
@@ -412,9 +444,32 @@ function buildVerificationSummary(
   if (birthData.latitude === undefined || birthData.longitude === undefined) {
     missingData.push("precise_location");
   }
-  if (sun.verificationStatus !== "verified") missingData.push("independent_sun_verification");
-  if (moon.verificationStatus !== "verified") missingData.push("independent_moon_verification");
-  if (rising.verificationStatus !== "verified") missingData.push("validated_ascendant_engine");
+  for (const [body, placement] of bodyPlacements) {
+    if (placement.verificationStatus !== "verified") {
+      missingData.push(`independent_${body.toLowerCase()}_verification`);
+    }
+  }
+  if (rising.verificationStatus !== "verified") {
+    missingData.push("validated_ascendant_engine");
+  }
+
+  const verifiedPlacements = bodyPlacements
+    .map(([, placement]) => placement)
+    .filter((placement) => placement.verificationStatus === "verified");
+  const policyIds = [
+    ...new Set(
+      verifiedPlacements
+        .map((placement) => placement.evidence?.policyId)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ];
+  const evidenceReceiptIds = [
+    ...new Set(
+      verifiedPlacements
+        .map((placement) => placement.evidence?.evidenceReceiptId)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ];
 
   return {
     complete: unresolvedBodies.length === 0,
@@ -425,12 +480,9 @@ function buildVerificationSummary(
       unresolvedBodies.length === 0
         ? "All currently supported placements are verified."
         : `Verified placements may be interpreted. ${unresolvedBodies.join(", ")} remain paused until their stated requirements pass.`,
-    policyId:
-      verifiedBodies.length > 0 ? "ASTRO-LONGITUDE-v1" : null,
+    policyId: policyIds.length > 0 ? policyIds.join(" + ") : null,
     evidenceReceiptId:
-      verifiedBodies.length > 0
-        ? APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.receiptRunId
-        : null,
+      evidenceReceiptIds.length > 0 ? evidenceReceiptIds.join(" + ") : null,
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -448,28 +500,30 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const neptune = getTimedPlanetPlacement("Neptune", birthData);
   const pluto = getTimedPlanetPlacement("Pluto", birthData);
 
+  const planets = {
+    sun,
+    moon,
+    mercury,
+    venus,
+    mars,
+    jupiter,
+    saturn,
+    uranus,
+    neptune,
+    pluto,
+  };
+
   return {
     sun,
     moon,
     rising,
-    planets: {
-      sun,
-      moon,
-      mercury,
-      venus,
-      mars,
-      jupiter,
-      saturn,
-      uranus,
-      neptune,
-      pluto,
-    },
+    planets,
     houses: undefined,
     aspects: undefined,
     northNode: undefined,
     southNode: undefined,
     chiron: undefined,
-    verification: buildVerificationSummary(sun, moon, rising, birthData),
+    verification: buildVerificationSummary(sun, moon, rising, planets, birthData),
   };
 }
 
@@ -532,24 +586,26 @@ export async function calculateVerifiedAstrology(
   ]);
   const rising = candidateData.rising;
 
+  const planets = {
+    sun,
+    moon,
+    mercury,
+    venus,
+    mars,
+    jupiter,
+    saturn,
+    uranus,
+    neptune,
+    pluto,
+  };
+
   return {
     ...candidateData,
     sun,
     moon,
     rising,
-    planets: {
-      sun,
-      moon,
-      mercury,
-      venus,
-      mars,
-      jupiter,
-      saturn,
-      uranus,
-      neptune,
-      pluto,
-    },
-    verification: buildVerificationSummary(sun, moon, rising, birthData),
+    planets,
+    verification: buildVerificationSummary(sun, moon, rising, planets, birthData),
   };
 }
 

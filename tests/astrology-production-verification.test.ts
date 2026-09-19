@@ -9,6 +9,7 @@ import {
 import type { IndependentReferenceFetcher } from "../server/services/astrology";
 import {
   APPROVED_LONGITUDE_TOLERANCE_EVIDENCE,
+  APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE,
   getApprovedLongitudeTolerancePolicy,
 } from "../server/services/astrology-tolerance-policy";
 import { APPROVED_ASCENDANT_POLICY } from "../server/services/ascendant-verification";
@@ -30,8 +31,11 @@ function matchingReferenceFetcher(delta = 0.0005): IndependentReferenceFetcher {
   const candidates = calculateAstrology(birthData);
 
   return async (body, inputTimestamp): Promise<IndependentEphemerisReference> => {
-    const placement = body === "Sun" ? candidates.sun : candidates.moon;
-    assert.ok(placement.internalCandidate, `${body} candidate must exist for the test`);
+    const placement =
+      body === "Sun" ? candidates.sun :
+      body === "Moon" ? candidates.moon :
+      candidates.planets?.[body.toLowerCase() as keyof NonNullable<typeof candidates.planets>];
+    assert.ok(placement?.internalCandidate, `${body} candidate must exist for the test`);
     assert.equal(inputTimestamp, placement.internalCandidate.inputTimestamp);
 
     return {
@@ -47,7 +51,7 @@ function matchingReferenceFetcher(delta = 0.0005): IndependentReferenceFetcher {
   };
 }
 
-test("the governed policy is approved only for Sun and Moon at 0.001 degrees", () => {
+test("governed longitude policies preserve tighter luminary tolerance and separately approve natal planets", () => {
   const sunPolicy = getApprovedLongitudeTolerancePolicy("Sun");
   const moonPolicy = getApprovedLongitudeTolerancePolicy("Moon");
 
@@ -61,6 +65,26 @@ test("the governed policy is approved only for Sun and Moon at 0.001 degrees", (
   assert.ok(
     APPROVED_LONGITUDE_TOLERANCE_EVIDENCE.maximumLongitudeDeltaDegrees <=
       sunPolicy.maximumLongitudeDeltaDegrees,
+  );
+
+  for (const body of [
+    "Mercury", "Venus", "Mars", "Jupiter",
+    "Saturn", "Uranus", "Neptune", "Pluto",
+  ] as const) {
+    const policy = getApprovedLongitudeTolerancePolicy(body);
+    assert.equal(policy.status, "approved");
+    assert.equal(policy.policyId, "ASTRO-PLANET-LONGITUDE-v1");
+    assert.equal(policy.maximumLongitudeDeltaDegrees, 0.005);
+    assert.equal(policy.approvedAt, "2026-09-19T14:40:27.000Z");
+  }
+  assert.equal(APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE.totalRows, 200);
+  assert.equal(APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE.signDisagreements, 0);
+  assert.equal(
+    APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE.candidateSha,
+    "e6ee3bc2919aee8c29c137d09ac3d2364b7fbbc6",
+  );
+  assert.ok(
+    APPROVED_PLANETARY_LONGITUDE_TOLERANCE_EVIDENCE.maximumLongitudeDeltaDegrees <= 0.005,
   );
 });
 
@@ -111,6 +135,16 @@ test("matching independent references promote Sun, Moon, and Ascendant with comp
   assert.ok(result.verification.verifiedBodies.includes("Sun"));
   assert.ok(result.verification.verifiedBodies.includes("Moon"));
   assert.ok((result.verification.verifiedBodies as string[]).includes("Ascendant"));
+  for (const body of [
+    "Sun", "Moon", "Mercury", "Venus", "Mars",
+    "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+  ] as const) {
+    assert.ok(result.verification.verifiedBodies.includes(body), `${body} missing from verified summary`);
+  }
+  assert.match(result.verification.policyId ?? "", /ASTRO-LONGITUDE-v1/);
+  assert.match(result.verification.policyId ?? "", /ASTRO-PLANET-LONGITUDE-v1/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /30803626991/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /35449041012/);
 });
 
 test("a sign disagreement leaves the candidate withheld while independent matches may still verify", async () => {
@@ -134,8 +168,11 @@ test("a sign disagreement leaves the candidate withheld while independent matche
     body,
     inputTimestamp,
   ) => {
-    const placement = body === "Sun" ? candidates.sun : candidates.moon;
-    assert.ok(placement.internalCandidate);
+    const placement =
+      body === "Sun" ? candidates.sun :
+      body === "Moon" ? candidates.moon :
+      candidates.planets?.[body.toLowerCase() as keyof NonNullable<typeof candidates.planets>];
+    assert.ok(placement?.internalCandidate);
     const candidate = placement.internalCandidate;
     const sign =
       body === "Sun"
