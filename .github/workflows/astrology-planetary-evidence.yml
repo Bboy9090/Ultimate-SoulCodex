@@ -1,0 +1,56 @@
+name: Astrology Planetary Evidence
+
+on:
+  push:
+    branches:
+      - fed-astrology-planet-evidence-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact evidence candidate
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build workspaces
+        run: npm run build:workspaces
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Evidence matrix unit contract
+        run: node --import tsx --test tests/astrology-evidence-matrix.test.ts tests/astrology-planetary-candidates.test.ts
+
+      - name: Run live NASA JPL planetary evidence matrix
+        run: node --import tsx scripts/run-astrology-planetary-evidence.ts artifacts/astrology-planetary-evidence-v1.json
+
+      - name: Hash evidence receipt
+        run: sha256sum artifacts/astrology-planetary-evidence-v1.json | tee artifacts/astrology-planetary-evidence-v1.sha256
+
+      - name: Record exact source SHA
+        run: git rev-parse HEAD | tee artifacts/ASTROLOGY-PLANETARY-EVIDENCE-SHA.txt
+
+      - name: Upload evidence receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: astrology-planetary-evidence-v1
+          path: |
+            artifacts/astrology-planetary-evidence-v1.json
+            artifacts/astrology-planetary-evidence-v1.sha256
+            artifacts/ASTROLOGY-PLANETARY-EVIDENCE-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
