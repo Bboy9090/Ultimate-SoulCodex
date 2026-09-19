@@ -168,5 +168,11 @@ test("production policy independently promotes all qualified natal planets with 
     assert.equal(placement.evidence?.evidenceReceiptId, "35449041012");
     assert.equal(placement.evidence?.evidenceArtifactId, "10586208293");
     assert.ok((placement.evidence?.longitudeDeltaDegrees ?? 99) <= 0.005);
+    assert.ok(result.verification.verifiedBodies.includes(BODY_BY_KEY[key]));
   }
+
+  assert.match(result.verification.policyId ?? "", /ASTRO-LONGITUDE-v1/);
+  assert.match(result.verification.policyId ?? "", /ASTRO-PLANET-LONGITUDE-v1/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /30803626991/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /35449041012/);
 });
