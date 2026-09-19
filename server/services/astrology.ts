@@ -57,9 +57,16 @@ export interface AstrologyData {
   moon: PlacementVerification;
   rising: PlacementVerification;
   planets?: {
-    sun?: { sign?: string; house?: number; degree?: number };
-    moon?: { sign?: string; house?: number; degree?: number };
-    [key: string]: unknown;
+    sun: PlacementVerification;
+    moon: PlacementVerification;
+    mercury: PlacementVerification;
+    venus: PlacementVerification;
+    mars: PlacementVerification;
+    jupiter: PlacementVerification;
+    saturn: PlacementVerification;
+    uranus: PlacementVerification;
+    neptune: PlacementVerification;
+    pluto: PlacementVerification;
   };
   houses?: Array<{ sign?: string; degree?: number }>;
   aspects?: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
@@ -223,6 +230,50 @@ function getMoonPlacement(birthData: BirthData): PlacementVerification {
   }
 }
 
+
+function getTimedPlanetPlacement(
+  body: Exclude<VerifiableBody, "Sun" | "Moon">,
+  birthData: BirthData,
+): PlacementVerification {
+  if (!birthData.birthTime || !birthData.timezone) {
+    return {
+      sign: null,
+      verificationStatus: "requires_verified_birth_time",
+      reason: `Exact birth time and timezone required for ${body} natal longitude verification`,
+    };
+  }
+
+  const timestamp = buildUtcBirthTimestamp(birthData, true);
+  if (!timestamp) {
+    return {
+      sign: null,
+      verificationStatus: "pending_ephemeris",
+      reason: "Birth date, time, or timezone could not be converted safely",
+    };
+  }
+
+  const bodyMap: Record<Exclude<VerifiableBody, "Sun" | "Moon">, Body> = {
+    Mercury: Body.Mercury as any,
+    Venus: Body.Venus as any,
+    Mars: Body.Mars as any,
+    Jupiter: Body.Jupiter as any,
+    Saturn: Body.Saturn as any,
+    Uranus: Body.Uranus as any,
+    Neptune: Body.Neptune as any,
+    Pluto: Body.Pluto as any,
+  };
+
+  try {
+    return pendingCandidatePlacement(calculateCandidate(bodyMap[body], timestamp));
+  } catch {
+    return {
+      sign: null,
+      verificationStatus: "pending_ephemeris",
+      reason: `Ephemeris calculation failed safely for ${body}; no placement was promoted`,
+    };
+  }
+}
+
 function getRisingPlacement(birthData: BirthData): PlacementVerification {
   if (!birthData.birthTime || !birthData.timezone) {
     return {
@@ -309,8 +360,8 @@ async function verifyPlacement(
   if (!candidate) return placement;
 
   try {
-    const reference = await options.referenceFetcher(body, candidate.inputTimestamp);
     const policy = options.policyForBody(body);
+    const reference = await options.referenceFetcher(body, candidate.inputTimestamp);
     const result = verifyAgainstIndependentReference(candidate, reference, policy);
 
     if (result.status === "verified") {
@@ -388,12 +439,31 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const sun = getSunPlacement(birthData);
   const moon = getMoonPlacement(birthData);
   const rising = getRisingPlacement(birthData);
+  const mercury = getTimedPlanetPlacement("Mercury", birthData);
+  const venus = getTimedPlanetPlacement("Venus", birthData);
+  const mars = getTimedPlanetPlacement("Mars", birthData);
+  const jupiter = getTimedPlanetPlacement("Jupiter", birthData);
+  const saturn = getTimedPlanetPlacement("Saturn", birthData);
+  const uranus = getTimedPlanetPlacement("Uranus", birthData);
+  const neptune = getTimedPlanetPlacement("Neptune", birthData);
+  const pluto = getTimedPlanetPlacement("Pluto", birthData);
 
   return {
     sun,
     moon,
     rising,
-    planets: undefined,
+    planets: {
+      sun,
+      moon,
+      mercury,
+      venus,
+      mars,
+      jupiter,
+      saturn,
+      uranus,
+      neptune,
+      pluto,
+    },
     houses: undefined,
     aspects: undefined,
     northNode: undefined,
@@ -434,9 +504,31 @@ export async function calculateVerifiedAstrology(
       suppliedOptions.policyForBody ?? getApprovedLongitudeTolerancePolicy,
   };
 
-  const [sun, moon] = await Promise.all([
+  const planetCandidates = candidateData.planets;
+  if (!planetCandidates) throw new Error("planetary_candidates_missing");
+
+  const [
+    sun,
+    moon,
+    mercury,
+    venus,
+    mars,
+    jupiter,
+    saturn,
+    uranus,
+    neptune,
+    pluto,
+  ] = await Promise.all([
     verifyPlacement("Sun", candidateData.sun, options),
     verifyPlacement("Moon", candidateData.moon, options),
+    verifyPlacement("Mercury", planetCandidates.mercury, options),
+    verifyPlacement("Venus", planetCandidates.venus, options),
+    verifyPlacement("Mars", planetCandidates.mars, options),
+    verifyPlacement("Jupiter", planetCandidates.jupiter, options),
+    verifyPlacement("Saturn", planetCandidates.saturn, options),
+    verifyPlacement("Uranus", planetCandidates.uranus, options),
+    verifyPlacement("Neptune", planetCandidates.neptune, options),
+    verifyPlacement("Pluto", planetCandidates.pluto, options),
   ]);
   const rising = candidateData.rising;
 
@@ -445,6 +537,18 @@ export async function calculateVerifiedAstrology(
     sun,
     moon,
     rising,
+    planets: {
+      sun,
+      moon,
+      mercury,
+      venus,
+      mars,
+      jupiter,
+      saturn,
+      uranus,
+      neptune,
+      pluto,
+    },
     verification: buildVerificationSummary(sun, moon, rising, birthData),
   };
 }
