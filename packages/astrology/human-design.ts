@@ -855,7 +855,7 @@ function trueLunarNodeLongitude(date: Date): number {
   const astroTime = new (HdAstro as any).AstroTime(date);
   const jde =
     typeof astroTime.tt === 'number'
-      ? astroTime.tt
+      ? 2_451_545.0 + astroTime.tt
       : julianDayUtc(date);
   const t = (jde - 2_451_545.0) / 36_525;
   const rad = Math.PI / 180;
