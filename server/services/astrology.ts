@@ -101,8 +101,26 @@ export interface AstrologyData {
     targetAngleDegrees?: number;
     policyId?: string;
   }>;
-  northNode?: { sign?: string; house?: number; degree?: number };
-  southNode?: { sign?: string; house?: number; degree?: number };
+  northNode?: {
+    mode: "mean";
+    sign: string;
+    house: number;
+    degree: number;
+    longitude: number;
+    verificationStatus: "verified";
+    policyId: string;
+    evidenceArtifactId: string;
+  };
+  southNode?: {
+    mode: "mean";
+    sign: string;
+    house: number;
+    degree: number;
+    longitude: number;
+    verificationStatus: "verified";
+    policyId: string;
+    evidenceArtifactId: string;
+  };
   chiron?: { sign?: string; house?: number; degree?: number };
   verification: {
     complete: boolean;
