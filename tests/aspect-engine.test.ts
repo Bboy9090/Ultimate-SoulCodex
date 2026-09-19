@@ -70,6 +70,15 @@ test("orb boundaries include the exact limit and reject the next value outside",
   assert.equal(calculateMajorAspects([p("Sun", 0), p("Moon", 98.0001)]).length, 0);
 });
 
+test("no major aspect is invented when verified separation falls outside every governed orb", () => {
+  const aspects = calculateMajorAspects([
+    p("Sun", 0),
+    p("Moon", 30),
+    p("Mercury", 150),
+  ]);
+  assert.deepEqual(aspects, []);
+});
+
 test("unverified, duplicate, and invalid inputs fail closed", () => {
   assert.throws(
     () => calculateMajorAspects([
