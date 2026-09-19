@@ -98,6 +98,18 @@ test("verified full natal chart completes the exact-input verification requireme
       pluto: 12,
     },
     aspects: [],
+    northNode: {
+      verificationStatus: "verified",
+      mode: "mean",
+      sign: "Aquarius",
+      house: 3,
+    },
+    southNode: {
+      verificationStatus: "verified",
+      mode: "mean",
+      sign: "Leo",
+      house: 9,
+    },
     verification: {
       verifiedBodies: [
         "Sun", "Moon", "Mercury", "Venus", "Mars",
