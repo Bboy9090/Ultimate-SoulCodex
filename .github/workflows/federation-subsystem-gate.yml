@@ -29,7 +29,7 @@ jobs:
         run: npm run check
       - name: Canonical numerology regression
         run: node --import tsx --test packages/core/__tests__/numerology-date-only.test.ts
-      - name: Moon/Rising golden regression
-        run: node --import tsx --test tests/bobby-big-three-golden.test.ts tests/ascendant-retry-contract.test.ts
+      - name: Moon/Rising and planetary regression
+        run: node --import tsx --test tests/bobby-big-three-golden.test.ts tests/ascendant-retry-contract.test.ts tests/astrology-planetary-candidates.test.ts
       - name: Privacy and local-first regression
         run: node --import tsx --test tests/local-first-privacy-contract.test.ts tests/profile-verification-reconciliation.test.ts
