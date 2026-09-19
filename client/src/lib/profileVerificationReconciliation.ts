@@ -12,7 +12,7 @@ const FULL_NATAL_PLANET_KEYS = [
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 3;
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 4;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -49,6 +49,20 @@ export type RemoteProfileSnapshot = {
       orb?: number;
       policyId?: string;
     }>;
+    northNode?: PlacementRecord & {
+      mode?: string;
+      house?: number;
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+    };
+    southNode?: PlacementRecord & {
+      mode?: string;
+      house?: number;
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+    };
     sunSign?: string | null;
     moonSign?: string | null;
     risingSign?: string | null;
@@ -145,7 +159,21 @@ export function hasVerifiedFullNatalChart(
     return false;
   }
 
-  return Array.isArray(astrology.aspects);
+  if (!Array.isArray(astrology.aspects)) return false;
+
+  for (const node of [astrology.northNode, astrology.southNode]) {
+    if (
+      node?.verificationStatus !== "verified" ||
+      node.mode !== "mean" ||
+      typeof node.house !== "number" ||
+      node.house < 1 ||
+      node.house > 12
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
@@ -244,8 +272,9 @@ export function reconcileOfflineProfile(
  *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 3 means the profile understands
- * the full-natal chart contract; it does not mean every placement passed.
+ * temporary reference/engine failure. Version 4 means the profile understands
+ * the full-natal chart plus Mean Node contract; it does not mean every
+ * placement passed.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
