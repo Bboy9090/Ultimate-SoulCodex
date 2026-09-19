@@ -1,0 +1,39 @@
+name: Federation Equal House Production
+
+on:
+  push:
+    branches:
+      - fed-equal-house-production-policy
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verified-house-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: House production policy regression
+        run: node --import tsx --test tests/house-evidence.test.ts tests/house-production.test.ts
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > EQUAL-HOUSE-PRODUCTION-SHA.txt
+      - name: Upload qualification receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: equal-house-production-qualification
+          path: EQUAL-HOUSE-PRODUCTION-SHA.txt
+          retention-days: 90
