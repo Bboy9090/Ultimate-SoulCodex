@@ -162,7 +162,7 @@ export default function OfflineProfilePage() {
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {Object.entries(verifiedPlanets).map(([key, placement]) => {
-                  const house = verifiedAstrology?.planetaryHouses?.[key as keyof NonNullable<typeof verifiedAstrology.planetaryHouses>];
+                  const house = (verifiedAstrology?.planetaryHouses as Record<string, number> | undefined)?.[key];
                   return (
                     <div key={key} className="flex items-center justify-between rounded-xl border border-[var(--sc-line)] bg-white/[0.025] px-3 py-2.5">
                       <span className="text-sm capitalize text-[var(--sc-stone)]">{key}</span>
@@ -212,7 +212,7 @@ export default function OfflineProfilePage() {
         </section>
 
         <div className="mb-6 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.04)] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" /><div><p className="font-semibold text-[var(--sc-ivory)]">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{verifiedFullNatal
-                ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, and major aspects are now evidence-qualified or deterministically derived from verified inputs. Nodes and Chiron remain unresolved until their own independent verification contracts pass."
+                ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, and major aspects are now evidence-qualified or deterministically derived from verified inputs. Nodes and Chiron remain unresolved until their own independent verification contracts pass."
                 : hasVerifiedCore
                   ? "Sun and Moon are independently verified. Exact-input profiles can now request the full qualified natal chart; any still-unverified planets, Rising, Midheaven, houses, aspects, nodes, and Chiron remain withheld."
                   : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, Midheaven, houses, aspects, nodes, Chiron, and chart geometry remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>
