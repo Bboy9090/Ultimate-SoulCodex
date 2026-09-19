@@ -1,5 +1,5 @@
-import { calculateAstrology } from './astrology';
-import { fromZonedTime, toZonedTime } from 'date-fns-tz';
+import * as Astronomy from 'astronomy-engine';
+import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core/evidence-ledger';
 
@@ -781,6 +781,119 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
   return { error: 'timezone_resolution_failed' };
 }
 
+const HdAstro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
+
+type HdPosition = {
+  longitude: number;
+  sign: string;
+  degree: number;
+};
+
+type HdAstroSnapshot = {
+  planets: {
+    sun: HdPosition;
+    moon: HdPosition;
+    mercury: HdPosition;
+    venus: HdPosition;
+    mars: HdPosition;
+    jupiter: HdPosition;
+    saturn: HdPosition;
+    uranus: HdPosition;
+    neptune: HdPosition;
+    pluto: HdPosition;
+  };
+  northNode: HdPosition;
+  southNode: HdPosition;
+};
+
+const HD_SIGNS = [
+  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
+] as const;
+
+function normalizeHdLongitude(value: number): number {
+  return ((value % 360) + 360) % 360;
+}
+
+function hdPosition(longitude: number): HdPosition {
+  const normalized = normalizeHdLongitude(longitude);
+  return {
+    longitude: normalized,
+    sign: HD_SIGNS[Math.floor(normalized / 30)],
+    degree: normalized % 30,
+  };
+}
+
+function geocentricHdLongitude(body: Astronomy.Body, date: Date): number {
+  if (body === HdAstro.Body.Moon) {
+    return normalizeHdLongitude(HdAstro.EclipticGeoMoon(date).lon);
+  }
+  const vector = HdAstro.GeoVector(body, date, true);
+  return normalizeHdLongitude(HdAstro.Ecliptic(vector).elon);
+}
+
+function moonUnitVectorEcliptic(date: Date): [number, number, number] {
+  const moon = HdAstro.EclipticGeoMoon(date);
+  const lon = moon.lon * Math.PI / 180;
+  const lat = moon.lat * Math.PI / 180;
+  const cosLat = Math.cos(lat);
+  return [
+    cosLat * Math.cos(lon),
+    cosLat * Math.sin(lon),
+    Math.sin(lat),
+  ];
+}
+
+/**
+ * Instantaneous/true ascending lunar node from the Moon's geocentric
+ * ecliptic orbital plane. A centered finite difference supplies the tangent;
+ * k × (r × v) is the ascending-node direction for the Moon's prograde orbit.
+ */
+function trueLunarNodeLongitude(date: Date): number {
+  const stepMs = 10 * 60 * 1000;
+  const before = moonUnitVectorEcliptic(new Date(date.getTime() - stepMs));
+  const center = moonUnitVectorEcliptic(date);
+  const after = moonUnitVectorEcliptic(new Date(date.getTime() + stepMs));
+  const velocity: [number, number, number] = [
+    after[0] - before[0],
+    after[1] - before[1],
+    after[2] - before[2],
+  ];
+
+  const h: [number, number, number] = [
+    center[1] * velocity[2] - center[2] * velocity[1],
+    center[2] * velocity[0] - center[0] * velocity[2],
+    center[0] * velocity[1] - center[1] * velocity[0],
+  ];
+  const nodeX = -h[1];
+  const nodeY = h[0];
+  if (!Number.isFinite(nodeX) || !Number.isFinite(nodeY) || Math.hypot(nodeX, nodeY) < 1e-12) {
+    throw new Error('human_design_true_node_unresolved');
+  }
+  return normalizeHdLongitude(Math.atan2(nodeY, nodeX) * 180 / Math.PI);
+}
+
+function calculateHdAstroAtUtc(date: Date): HdAstroSnapshot {
+  const sun = hdPosition(geocentricHdLongitude(HdAstro.Body.Sun, date));
+  const moon = hdPosition(geocentricHdLongitude(HdAstro.Body.Moon, date));
+  const mercury = hdPosition(geocentricHdLongitude(HdAstro.Body.Mercury, date));
+  const venus = hdPosition(geocentricHdLongitude(HdAstro.Body.Venus, date));
+  const mars = hdPosition(geocentricHdLongitude(HdAstro.Body.Mars, date));
+  const jupiter = hdPosition(geocentricHdLongitude(HdAstro.Body.Jupiter, date));
+  const saturn = hdPosition(geocentricHdLongitude(HdAstro.Body.Saturn, date));
+  const uranus = hdPosition(geocentricHdLongitude(HdAstro.Body.Uranus, date));
+  const neptune = hdPosition(geocentricHdLongitude(HdAstro.Body.Neptune, date));
+  const pluto = hdPosition(geocentricHdLongitude(HdAstro.Body.Pluto, date));
+  const northNode = hdPosition(trueLunarNodeLongitude(date));
+  const southNode = hdPosition(northNode.longitude + 180);
+
+  return {
+    planets: { sun, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune, pluto },
+    northNode,
+    southNode,
+  };
+}
+
 function calculateHumanDesignInternal(birthData: {
   name: string;
   birthDate: string;
@@ -874,90 +987,53 @@ function calculateHumanDesignInternal(birthData: {
   const resolvedTimezone = timezoneResolution.timezone;
   const timezoneResolutionSource = timezoneResolution.source;
 
-  // Get astrological data (conscious/personality)
-  const astroData = calculateAstrology(birthData);
-
-  // Calculate 88° of solar arc before birth for unconscious/design data
-  // Human Design uses exactly 88° of solar arc, not a fixed number of days
-  // Note: Empirically calibrated to match official calculators (Jovian Archive, mybodygraph, etc.)
-  const DESIGN_SOLAR_ARC = 88.0;
-
-  // Calculate birth Sun's absolute longitude
-  const birthSunLongitude = calculateAbsoluteLongitude(astroData.planets.sun.sign, astroData.planets.sun.degree);
-
-  // Calculate target longitude (88° before birth)
-  let targetLongitude = birthSunLongitude - DESIGN_SOLAR_ARC;
-  if (targetLongitude < 0) targetLongitude += 360;
-
-  // Create birth time in the correct timezone (timezone already validated and resolved)
+  // Resolve the exact birth instant once and keep all activation astronomy in UTC.
   const [year, month, day] = birthData.birthDate.split('-').map(Number);
   const [hours, minutes] = birthData.birthTime.split(':').map(Number);
-  const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+  const localTimeString =
+    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T` +
+    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+  const birthTimeUTC = fromZonedTime(localTimeString, resolvedTimezone);
+  if (Number.isNaN(birthTimeUTC.getTime())) {
+    return { result: { status: 'unresolved', reason: 'timezone_resolution_failed' } };
+  }
 
-  const birthTimeUTC = fromZonedTime(new Date(localTimeString), resolvedTimezone);
+  const astroData = calculateHdAstroAtUtc(birthTimeUTC);
+  const DESIGN_SOLAR_ARC = 88.0;
+  const birthSunLongitude = astroData.planets.sun.longitude;
+  const targetLongitude = normalizeHdLongitude(birthSunLongitude - DESIGN_SOLAR_ARC);
 
-  // Find the date when Sun was at target longitude using bisection
-  // The Sun moves forward, so we search backwards from birth
-  let minDays = 80;  // Minimum days to search (Sun at faster speed)
-  let maxDays = 95;  // Maximum days to search (Sun at slower speed)
+  // Bracket 80–95 days before birth, then solve the 88° solar-arc crossing
+  // directly in UTC. No local-time minute round-trip is allowed here.
+  let minDays = 80;
+  let maxDays = 95;
   let iteration = 0;
-  const maxIterations = 20;
-  let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - (88 * 24 * 60 * 60 * 1000));
+  const maxIterations = 50;
+  let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - 88 * 86_400_000);
 
-  while (iteration < maxIterations && (maxDays - minDays) > 0.01) {
+  while (iteration < maxIterations && (maxDays - minDays) > 1e-7) {
     const midDays = (minDays + maxDays) / 2;
-    const testTimeUTC = new Date(birthTimeUTC.getTime() - (midDays * 24 * 60 * 60 * 1000));
-    const testTimeLocal = toZonedTime(testTimeUTC, resolvedTimezone);
+    const testTimeUTC = new Date(birthTimeUTC.getTime() - midDays * 86_400_000);
+    const testSunLongitude = calculateHdAstroAtUtc(testTimeUTC).planets.sun.longitude;
 
-    const testYear = testTimeLocal.getFullYear();
-    const testMonth = String(testTimeLocal.getMonth() + 1).padStart(2, '0');
-    const testDay = String(testTimeLocal.getDate()).padStart(2, '0');
-    const testHours = String(testTimeLocal.getHours()).padStart(2, '0');
-    const testMinutes = String(testTimeLocal.getMinutes()).padStart(2, '0');
-
-    const testAstro = calculateAstrology({
-      ...birthData,
-      birthDate: `${testYear}-${testMonth}-${testDay}`,
-      birthTime: `${testHours}:${testMinutes}`
-    });
-
-    const testSunLongitude = calculateAbsoluteLongitude(testAstro.planets.sun.sign, testAstro.planets.sun.degree);
-
-    // Calculate angular distance (accounting for 360° wrap)
     let diff = testSunLongitude - targetLongitude;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
 
-    // If test Sun is ahead of target, we need to go back more days
-    if (diff > 0) {
-      minDays = midDays;
-    } else {
-      maxDays = midDays;
-    }
+    if (diff > 0) minDays = midDays;
+    else maxDays = midDays;
 
     unconsciousTimeUTC = testTimeUTC;
-    iteration++;
+    iteration += 1;
   }
 
-  // Capture final solar arc forensics for evidence
   const finalSearchWindowDays = maxDays - minDays;
-  const finalToleranceDays = (maxDays - minDays) / 2;
-
-  const unconsciousTimeLocal = toZonedTime(unconsciousTimeUTC, resolvedTimezone);
-  const unconsciousYear = unconsciousTimeLocal.getFullYear();
-  const unconsciousMonth = String(unconsciousTimeLocal.getMonth() + 1).padStart(2, '0');
-  const unconsciousDay = String(unconsciousTimeLocal.getDate()).padStart(2, '0');
-  const unconsciousHours = String(unconsciousTimeLocal.getHours()).padStart(2, '0');
-  const unconsciousMinutes = String(unconsciousTimeLocal.getMinutes()).padStart(2, '0');
-
-  const unconsciousAstroData = calculateAstrology({
-    ...birthData,
-    birthDate: `${unconsciousYear}-${unconsciousMonth}-${unconsciousDay}`,
-    birthTime: `${unconsciousHours}:${unconsciousMinutes}`
-  });
-
-  const unconsciousSunLongitude = calculateAbsoluteLongitude(unconsciousAstroData.planets.sun.sign, unconsciousAstroData.planets.sun.degree);
-  const actualArc = (birthSunLongitude - unconsciousSunLongitude + 360) % 360;
+  const finalToleranceDays = finalSearchWindowDays / 2;
+  const unconsciousAstroData = calculateHdAstroAtUtc(unconsciousTimeUTC);
+  const unconsciousSunLongitude = unconsciousAstroData.planets.sun.longitude;
+  const actualArc = normalizeHdLongitude(
+    birthSunLongitude - unconsciousSunLongitude,
+  );
 
   // Store solar arc forensics for evidence receipt
   const solarArcForensics = {
