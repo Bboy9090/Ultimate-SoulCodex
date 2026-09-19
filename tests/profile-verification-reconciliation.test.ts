@@ -79,6 +79,24 @@ const verifiedRemote = {
       pluto: 12,
     },
     aspects: [],
+    northNode: {
+      verificationStatus: "verified",
+      mode: "mean",
+      sign: "Aquarius",
+      house: 3,
+      longitude: 304.71,
+      degree: 4.71,
+      policyId: "ASTRO-MEAN-NODE-v1",
+    },
+    southNode: {
+      verificationStatus: "verified",
+      mode: "mean",
+      sign: "Leo",
+      house: 9,
+      longitude: 124.71,
+      degree: 4.71,
+      policyId: "ASTRO-MEAN-NODE-v1",
+    },
     // Legacy aliases cannot bypass the nested verification state.
     sunSign: "Aries",
     moonSign: "Gemini",
@@ -89,7 +107,7 @@ const verifiedRemote = {
         "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "Ascendant",
       ],
       policyId:
-        "ASTRO-LONGITUDE-v1 + ASTRO-PLANET-LONGITUDE-v1 + ASTRO-ASCENDANT-v1 + ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1",
+        "ASTRO-LONGITUDE-v1 + ASTRO-PLANET-LONGITUDE-v1 + ASTRO-ASCENDANT-v1 + ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1 + ASTRO-MEAN-NODE-v1",
     },
   },
   numerologyData: local.numerologyData,
@@ -225,7 +243,35 @@ test("a Big Three-only snapshot refreshes when exact inputs can support the full
     "2026-09-19T15:06:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 3);
+  assert.equal(migrated.remoteSync?.verificationVersion, 4);
+  assert.equal(profileNeedsOnlineVerification(migrated), false);
+});
+
+test("a v3 full natal snapshot without Mean Nodes refreshes once for the v4 contract", () => {
+  const { northNode: _northNode, southNode: _southNode, ...withoutNodes } =
+    verifiedRemote.astrologyData;
+  const legacyHydrated = {
+    ...local,
+    verifiedAstrologyData: withoutNodes,
+    remoteSync: {
+      remoteId: "remote-robert",
+      syncedAt: "2026-09-19T18:00:00.000Z",
+      status: "verified-online" as const,
+      verificationVersion: 3,
+    },
+  } satisfies ReconciledOfflineProfile;
+
+  assert.equal(hasVerifiedBigThree(legacyHydrated.verifiedAstrologyData), true);
+  assert.equal(hasVerifiedFullNatalChart(legacyHydrated.verifiedAstrologyData), false);
+  assert.equal(profileNeedsOnlineVerification(legacyHydrated), true);
+
+  const migrated = reconcileOfflineProfile(
+    legacyHydrated,
+    verifiedRemote,
+    "2026-09-19T19:20:00.000Z",
+  );
+  assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
+  assert.equal(migrated.remoteSync?.verificationVersion, 4);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
