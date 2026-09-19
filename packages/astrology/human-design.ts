@@ -84,6 +84,13 @@ const HD_CENTERS = {
   "Root": { color: "#D2691E", description: "Stress, pressure, and fuel" }
 };
 
+const HD_ICHING_MAP = [
+  55, 37, 63, 22, 36, 25, 17, 21, 51, 42, 3, 27, 24, 2, 23, 8,
+  20, 16, 35, 45, 12, 15, 52, 39, 53, 62, 56, 31, 33, 7, 4, 29,
+  59, 40, 64, 47, 6, 46, 18, 48, 57, 32, 50, 28, 44, 1, 43, 14,
+  34, 9, 5, 26, 11, 10, 58, 38, 54, 61, 60, 41, 19, 13, 49, 30,
+] as const;
+
 // Correct zodiac-to-gate mapping based on official Human Design standards
 // Each gate has a start degree (absolute longitude) and spans 5.625 degrees
 const GATE_ZODIAC_MAP = [
@@ -174,6 +181,7 @@ const HD_CHANNELS = [
   { gates: [18, 58], name: "Channel of Judgment", description: "A design of insatiability", connects: ["Spleen", "Root"] },
   { gates: [19, 49], name: "Channel of Synthesis", description: "A design of being sensitive to needs", connects: ["Root", "Solar Plexus"] },
   { gates: [20, 34], name: "Channel of Charisma", description: "A design of being present", connects: ["Throat", "Sacral"] },
+  { gates: [20, 57], name: "Channel of the Brainwave", description: "A design of intuitive awareness in the now", connects: ["Throat", "Spleen"] },
   { gates: [21, 45], name: "Channel of Money", description: "A design of a material being", connects: ["Heart", "Throat"] },
   { gates: [23, 43], name: "Channel of Structuring", description: "A design of individual knowing", connects: ["Throat", "Ajna"] },
   { gates: [24, 61], name: "Channel of Awareness", description: "A design of a thinker", connects: ["Ajna", "Head"] },
@@ -184,6 +192,7 @@ const HD_CHANNELS = [
   { gates: [29, 46], name: "Channel of Discovery", description: "A design of succeeding where others fail", connects: ["Sacral", "G"] },
   { gates: [30, 41], name: "Channel of Recognition", description: "A design of focused energy", connects: ["Solar Plexus", "Root"] },
   { gates: [32, 54], name: "Channel of Transformation", description: "A design of being driven", connects: ["Spleen", "Root"] },
+  { gates: [34, 57], name: "Channel of Power", description: "A design of archetypal power", connects: ["Sacral", "Spleen"] },
   { gates: [35, 36], name: "Channel of Transitoriness", description: "A design of a 'jack of all trades'", connects: ["Throat", "Solar Plexus"] },
   { gates: [37, 40], name: "Channel of Community", description: "A design of part of the whole", connects: ["Solar Plexus", "Heart"] },
   { gates: [39, 55], name: "Channel of Emoting", description: "A design of moodiness", connects: ["Root", "Solar Plexus"] },
@@ -397,39 +406,26 @@ function calculateAbsoluteLongitude(sign: string, degreeInSign: number): number 
 
 // Convert zodiac degrees to Human Design gate and line
 function degreeToGateAndLine(degree: number): { gate: number; line: number } {
-  // Normalize degree to 0-360 range
-  degree = ((degree % 360) + 360) % 360;
-  
-  // Find the gate that contains this degree
-  let gateInfo = GATE_ZODIAC_MAP[0]; // default to first gate
-  
-  for (let i = 0; i < GATE_ZODIAC_MAP.length; i++) {
-    const current = GATE_ZODIAC_MAP[i];
-    const next = GATE_ZODIAC_MAP[(i + 1) % GATE_ZODIAC_MAP.length];
-    
-    // Handle wrap-around at 360/0 degrees
-    if (current.start > next.start) {
-      // This is the wrap point (Gate 36 -> Gate 25)
-      if (degree >= current.start || degree < next.start) {
-        gateInfo = current;
-        break;
-      }
-    } else {
-      // Normal case
-      if (degree >= current.start && degree < next.start) {
-        gateInfo = current;
-        break;
-      }
-    }
-  }
-  
-  // Calculate line within the gate (each gate spans 5.625 degrees, each line 0.9375 degrees)
-  let positionInGate = degree - gateInfo.start;
-  if (positionInGate < 0) positionInGate += 360; // handle wrap-around
-  
-  const line = Math.floor(positionInGate / 0.9375) + 1;
-  
-  return { gate: gateInfo.gate, line: Math.min(line, 6) };
+  const normalized = ((degree % 360) + 360) % 360;
+  const radiansPosition = normalized * Math.PI / 180;
+  const circle = Math.PI * 2;
+  const hexWidth = circle / 64;
+  const lineWidth = hexWidth / 6;
+  const colorWidth = lineWidth / 6;
+  const toneWidth = colorWidth / 6;
+  const baseWidth = toneWidth / 5;
+
+  // Canonical Human Design / Gene Keys mandala offset. This replaces the
+  // hand-authored absolute-degree boundary table, which drifted at line edges.
+  const offset = 2 * lineWidth - colorWidth - toneWidth + 3 * baseWidth;
+  const offsetCalc = (circle / 64) * 5 + offset;
+  const fractal = (((radiansPosition + offsetCalc) / circle) * 64) % 64;
+  const bin = Math.floor(fractal);
+  const gate = HD_ICHING_MAP[bin];
+  const remainder = fractal - bin;
+  const line = Math.floor(remainder / (1 / 6)) + 1;
+
+  return { gate, line };
 }
 
 // Calculate Earth position (180 degrees opposite)
@@ -444,20 +440,52 @@ function isMotorCenter(centerName: string): boolean {
 }
 
 // Check if throat is connected to a motor through defined channels
-function hasMotorToThroatConnection(channels: any[], centers: any): boolean {
-  if (!centers.Throat.defined) return false;
-  
-  const definedChannels = channels.filter(ch => ch.defined);
-  
+function centersReach(
+  startCenters: string[],
+  targetCenter: string,
+  channels: any[],
+  centers: any,
+): boolean {
+  if (!centers[targetCenter]?.defined) return false;
+
+  const definedChannels = channels.filter((channel) => channel.defined);
+  const adjacency = new Map<string, Set<string>>();
+
+  for (const [name, center] of Object.entries(centers)) {
+    if ((center as any).defined) adjacency.set(name, new Set());
+  }
+
   for (const channel of definedChannels) {
-    const connectsCenters = channel.connects;
-    if (connectsCenters.includes("Throat") && 
-        connectsCenters.some((c: string) => isMotorCenter(c) && centers[c]?.defined)) {
-      return true;
+    const [left, right] = channel.connects;
+    if (adjacency.has(left) && adjacency.has(right)) {
+      adjacency.get(left)!.add(right);
+      adjacency.get(right)!.add(left);
     }
   }
-  
+
+  const queue = startCenters.filter((name) => adjacency.has(name));
+  const visited = new Set(queue);
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current === targetCenter) return true;
+    for (const next of adjacency.get(current) ?? []) {
+      if (!visited.has(next)) {
+        visited.add(next);
+        queue.push(next);
+      }
+    }
+  }
+
   return false;
+}
+
+function hasMotorToThroatConnection(channels: any[], centers: any): boolean {
+  const motors = ["Sacral", "Solar Plexus", "Heart", "Root"];
+  return centersReach(motors, "Throat", channels, centers);
+}
+
+function hasGToThroatConnection(channels: any[], centers: any): boolean {
+  return centersReach(["G"], "Throat", channels, centers);
 }
 
 // Determine Human Design type based on defined centers and channels
@@ -475,17 +503,9 @@ function calculateType(centers: any, channels: any[]): string {
 
   // Generator types - sacral defined
   if (sacralDefined) {
-    // Check for direct sacral-throat connection for Manifesting Generator
-    const hasSacralThroatConnection = channels.some(ch => 
-      ch.defined && 
-      ch.connects.includes("Sacral") && 
-      ch.connects.includes("Throat")
-    );
-    
-    if (hasSacralThroatConnection) {
-      return "Manifesting Generator";
-    }
-    return "Generator";
+    return hasMotorToThroatConnection(channels, centers)
+      ? "Manifesting Generator"
+      : "Generator";
   }
 
   // Manifestor - throat connected to motor (but not sacral since we checked that above)
@@ -516,7 +536,7 @@ function getStrategy(type: string): string {
 }
 
 // Calculate authority based on defined centers (hierarchical)
-function calculateAuthority(centers: any): string {
+function calculateAuthority(centers: any, channelsForAuthority: any[]): string {
   // Solar Plexus authority has highest priority
   if (centers["Solar Plexus"].defined) {
     return "Emotional Authority";
@@ -535,7 +555,11 @@ function calculateAuthority(centers: any): string {
     return "Ego Authority";
   }
   // Self-Projected (G center to Throat)
-  if (centers.G.defined && centers.Throat.defined) {
+  if (
+    centers.G.defined &&
+    centers.Throat.defined &&
+    hasGToThroatConnection(channelsForAuthority, centers)
+  ) {
     return "Self-Projected Authority";
   }
   // Mental/Environmental authority (Projectors with defined Ajna)
@@ -856,7 +880,7 @@ function calculateHumanDesignInternal(birthData: {
   // Calculate 88° of solar arc before birth for unconscious/design data
   // Human Design uses exactly 88° of solar arc, not a fixed number of days
   // Note: Empirically calibrated to match official calculators (Jovian Archive, mybodygraph, etc.)
-  const DESIGN_SOLAR_ARC = 87.975;
+  const DESIGN_SOLAR_ARC = 88.0;
 
   // Calculate birth Sun's absolute longitude
   const birthSunLongitude = calculateAbsoluteLongitude(astroData.planets.sun.sign, astroData.planets.sun.degree);
@@ -1066,7 +1090,7 @@ function calculateHumanDesignInternal(birthData: {
   // Calculate type, strategy, authority, profile, definition
   const type = calculateType(centers, channels);
   const strategy = getStrategy(type);
-  const authority = calculateAuthority(centers);
+  const authority = calculateAuthority(centers, channels);
   const profile = calculateProfile(activations.conscious.sun.line, activations.unconscious.sun.line);
   const definition = calculateDefinition(centers, channels);
 
