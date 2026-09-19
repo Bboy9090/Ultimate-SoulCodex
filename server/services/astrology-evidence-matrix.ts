@@ -37,7 +37,7 @@ export interface EphemerisEvidenceRow {
 }
 
 export interface EphemerisEvidenceReceipt {
-  schemaVersion: "1.0.0";
+  schemaVersion: "1.1.0";
   generatedAt: string;
   policyStatus: "evidence_only_no_tolerance_approved";
   fixtures: EphemerisEvidenceFixture[];
@@ -48,10 +48,22 @@ export interface EphemerisEvidenceReceipt {
     maximumLongitudeDeltaDegrees: number | null;
     sunMaximumDeltaDegrees: number | null;
     moonMaximumDeltaDegrees: number | null;
+    bodyMaximumDeltaDegrees: Record<SupportedHorizonsBody, number | null>;
   };
 }
 
-const BOTH_BODIES: SupportedHorizonsBody[] = ["Sun", "Moon"];
+export const ALL_PLANETARY_BODIES: SupportedHorizonsBody[] = [
+  "Sun",
+  "Moon",
+  "Mercury",
+  "Venus",
+  "Mars",
+  "Jupiter",
+  "Saturn",
+  "Uranus",
+  "Neptune",
+  "Pluto",
+];
 
 export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
   {
@@ -62,7 +74,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "America/New_York",
     latitude: 40.8448,
     longitude: -73.8648,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Golden profile fixture; no expected sign is hardcoded.",
   },
   {
@@ -73,7 +85,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "America/Puerto_Rico",
     latitude: 18.4655,
     longitude: -66.1057,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Caribbean no-DST profile fixture with a controlled noon time.",
   },
   {
@@ -84,7 +96,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 0,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Near the Pisces-Aries tropical boundary; agreement must be measured, not assumed.",
   },
   {
@@ -95,7 +107,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 51.4769,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Near the Gemini-Cancer tropical boundary.",
   },
   {
@@ -106,7 +118,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 0,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Near the Virgo-Libra tropical boundary.",
   },
   {
@@ -117,7 +129,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 51.4769,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Near the Sagittarius-Capricorn tropical boundary.",
   },
   {
@@ -128,7 +140,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "America/New_York",
     latitude: 40.7128,
     longitude: -74.006,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Post-spring-forward local time checks UTC conversion consistency.",
   },
   {
@@ -139,7 +151,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "America/New_York",
     latitude: 40.7128,
     longitude: -74.006,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Post-fall-back local time avoids ambiguous 01:xx while testing offset transition handling.",
   },
   {
@@ -150,7 +162,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "Europe/London",
     latitude: 51.5074,
     longitude: -0.1278,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Post-UK spring transition fixture.",
   },
   {
@@ -161,7 +173,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "Europe/London",
     latitude: 51.5074,
     longitude: -0.1278,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Post-UK fall transition fixture avoids the repeated 01:xx hour.",
   },
   {
@@ -172,7 +184,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "Australia/Sydney",
     latitude: -33.8688,
     longitude: 151.2093,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Southern-hemisphere spring-forward fixture.",
   },
   {
@@ -183,7 +195,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "Australia/Sydney",
     latitude: -33.8688,
     longitude: 151.2093,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Southern-hemisphere fall-back fixture after the repeated hour.",
   },
   {
@@ -194,7 +206,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 0,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Century leap-year fixture.",
   },
   {
@@ -205,7 +217,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "America/New_York",
     latitude: 40.7128,
     longitude: -74.006,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Modern leap-day fixture near local-day rollover.",
   },
   {
@@ -216,7 +228,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "Pacific/Kiritimati",
     latitude: 1.8721,
     longitude: -157.4278,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "UTC+14 date-line fixture checks previous-UTC-day conversion.",
   },
   {
@@ -227,7 +239,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "Pacific/Pago_Pago",
     latitude: -14.2756,
     longitude: -170.702,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "UTC-11 date-line fixture checks next-UTC-day conversion.",
   },
   {
@@ -238,7 +250,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "Asia/Kathmandu",
     latitude: 27.7172,
     longitude: 85.324,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "UTC+05:45 fixture rejects assumptions that offsets are whole hours.",
   },
   {
@@ -249,7 +261,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "America/St_Johns",
     latitude: 47.5615,
     longitude: -52.7126,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Negative half-hour offset fixture.",
   },
   {
@@ -260,7 +272,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 51.4769,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Historical-range comparison fixture.",
   },
   {
@@ -271,7 +283,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 51.4769,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_PLANETARY_BODIES,
     note: "Mid-century historical comparison fixture.",
   },
 ];
@@ -285,6 +297,25 @@ function maximum(values: number[]): number | null {
   return values.length > 0 ? Math.max(...values) : null;
 }
 
+function placementForBody(
+  astrology: ReturnType<typeof calculateAstrology>,
+  body: SupportedHorizonsBody,
+) {
+  if (body === "Sun") return astrology.sun;
+  if (body === "Moon") return astrology.moon;
+
+  const key = body.toLowerCase() as
+    | "mercury"
+    | "venus"
+    | "mars"
+    | "jupiter"
+    | "saturn"
+    | "uranus"
+    | "neptune"
+    | "pluto";
+  return astrology.planets?.[key];
+}
+
 export async function runLiveEphemerisEvidenceMatrix(
   fixtures: EphemerisEvidenceFixture[] = EPHEMERIS_EVIDENCE_FIXTURES,
 ): Promise<EphemerisEvidenceReceipt> {
@@ -294,8 +325,8 @@ export async function runLiveEphemerisEvidenceMatrix(
     const astrology = calculateAstrology(fixture);
 
     for (const body of fixture.bodies) {
-      const placement = body === "Sun" ? astrology.sun : astrology.moon;
-      const candidate = placement.internalCandidate;
+      const placement = placementForBody(astrology, body);
+      const candidate = placement?.internalCandidate;
       if (!candidate) {
         throw new Error(`candidate_missing:${fixture.id}:${body}`);
       }
@@ -322,11 +353,19 @@ export async function runLiveEphemerisEvidenceMatrix(
     }
   }
 
-  const sunRows = rows.filter((row) => row.body === "Sun");
-  const moonRows = rows.filter((row) => row.body === "Moon");
+  const bodyMaximumDeltaDegrees = Object.fromEntries(
+    ALL_PLANETARY_BODIES.map((body) => [
+      body,
+      maximum(
+        rows
+          .filter((row) => row.body === body)
+          .map((row) => row.longitudeDeltaDegrees),
+      ),
+    ]),
+  ) as Record<SupportedHorizonsBody, number | null>;
 
   return {
-    schemaVersion: "1.0.0",
+    schemaVersion: "1.1.0",
     generatedAt: new Date().toISOString(),
     policyStatus: "evidence_only_no_tolerance_approved",
     fixtures,
@@ -335,8 +374,9 @@ export async function runLiveEphemerisEvidenceMatrix(
       totalRows: rows.length,
       signDisagreements: rows.filter((row) => !row.signAgreement).length,
       maximumLongitudeDeltaDegrees: maximum(rows.map((row) => row.longitudeDeltaDegrees)),
-      sunMaximumDeltaDegrees: maximum(sunRows.map((row) => row.longitudeDeltaDegrees)),
-      moonMaximumDeltaDegrees: maximum(moonRows.map((row) => row.longitudeDeltaDegrees)),
+      sunMaximumDeltaDegrees: bodyMaximumDeltaDegrees.Sun,
+      moonMaximumDeltaDegrees: bodyMaximumDeltaDegrees.Moon,
+      bodyMaximumDeltaDegrees,
     },
   };
 }
