@@ -51,11 +51,11 @@ test("exact major aspects are deterministic and evidence-derived", () => {
   assert.deepEqual(
     sunAspects.map((aspect) => [aspect.bodyB, aspect.aspect, aspect.orbDegrees]),
     [
-      ["Mars", "opposition", 0],
-      ["Mercury", "square", 0],
       ["Moon", "sextile", 0],
+      ["Mercury", "square", 0],
       ["Venus", "trine", 0],
-    ].sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+      ["Mars", "opposition", 0],
+    ],
   );
 });
 
