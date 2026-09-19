@@ -74,7 +74,7 @@ test("no major aspect is invented when verified separation falls outside every g
   const aspects = calculateMajorAspects([
     p("Sun", 0),
     p("Moon", 30),
-    p("Mercury", 150),
+    p("Mercury", 45),
   ]);
   assert.deepEqual(aspects, []);
 });
