@@ -146,7 +146,10 @@ test("production policy independently promotes all qualified natal planets with 
     return {
       body,
       sign: placement.internalCandidate.sign,
-      longitude: (placement.internalCandidate.longitude + 0.003) % 360,
+      longitude: (
+        placement.internalCandidate.longitude +
+        (body === "Sun" || body === "Moon" ? 0.0005 : 0.003)
+      ) % 360,
       source: "NASA/JPL Horizons observer quantity 31 fixture",
       engine: "nasa-jpl-horizons-api@1.3-test",
       calculatedAt: "2026-09-19T14:36:05.000Z",
