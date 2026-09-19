@@ -135,6 +135,16 @@ test("matching independent references promote Sun, Moon, and Ascendant with comp
   assert.ok(result.verification.verifiedBodies.includes("Sun"));
   assert.ok(result.verification.verifiedBodies.includes("Moon"));
   assert.ok((result.verification.verifiedBodies as string[]).includes("Ascendant"));
+  for (const body of [
+    "Sun", "Moon", "Mercury", "Venus", "Mars",
+    "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+  ] as const) {
+    assert.ok(result.verification.verifiedBodies.includes(body), `${body} missing from verified summary`);
+  }
+  assert.match(result.verification.policyId ?? "", /ASTRO-LONGITUDE-v1/);
+  assert.match(result.verification.policyId ?? "", /ASTRO-PLANET-LONGITUDE-v1/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /30803626991/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /35449041012/);
 });
 
 test("a sign disagreement leaves the candidate withheld while independent matches may still verify", async () => {
