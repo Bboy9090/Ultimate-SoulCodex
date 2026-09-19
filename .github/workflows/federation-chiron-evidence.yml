@@ -35,7 +35,13 @@ jobs:
           curl --fail --location --retry 3 \
             https://raw.githubusercontent.com/aloistr/swisseph/master/ephe/seas_18.se1 \
             --output .swisseph/seas_18.se1
-          sha256sum .swisseph/seas_18.se1 | tee SWISS-CHIRON-EPHEMERIS-SHA256.txt
+          curl --fail --location --retry 3 \
+            https://raw.githubusercontent.com/aloistr/swisseph/master/ephe/sepl_18.se1 \
+            --output .swisseph/sepl_18.se1
+          {
+            sha256sum .swisseph/seas_18.se1
+            sha256sum .swisseph/sepl_18.se1
+          } | tee SWISS-CHIRON-EPHEMERIS-SHA256.txt
       - name: Build workspaces
         run: npm run build:workspaces
       - name: Typecheck
