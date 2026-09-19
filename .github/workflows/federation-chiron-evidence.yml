@@ -56,5 +56,6 @@ jobs:
             chiron-swiss-reference.json
             chiron-cross-engine-receipt.json
             CHIRON-EVIDENCE-SHA.txt
+            SWISS-CHIRON-EPHEMERIS-SHA256.txt
           if-no-files-found: error
           retention-days: 90
