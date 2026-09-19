@@ -145,6 +145,18 @@ function verifiedRisingPlacement(
   };
 }
 
+function appendVerificationIdentity(
+  current: string | null,
+  next: string | null | undefined,
+): string | null {
+  const parts = (current ?? "")
+    .split(" + ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (next && !parts.includes(next)) parts.push(next);
+  return parts.length > 0 ? parts.join(" + ") : null;
+}
+
 function withRisingVerificationSummary(
   astrology: AstrologyData,
   rising: PlacementVerification,
@@ -176,15 +188,21 @@ function withRisingVerificationSummary(
       missingData: [...new Set(missingData)],
       suggestions:
         unresolvedBodies.length === 0
-          ? "Sun, Moon, and Ascendant are independently verified."
+          ? "All currently supported natal placements are independently verified."
           : `Verified placements may be interpreted. ${unresolvedBodies.join(", ")} remain paused until their stated requirements pass.`,
       policyId:
         rising.verificationStatus === "verified"
-          ? "ASTRO-LONGITUDE-v1 + ASTRO-ASCENDANT-v1"
+          ? appendVerificationIdentity(
+              astrology.verification.policyId,
+              rising.evidence?.policyId,
+            )
           : astrology.verification.policyId,
       evidenceReceiptId:
         rising.verificationStatus === "verified"
-          ? `${astrology.verification.evidenceReceiptId ?? "ASTRO-LONGITUDE-v1"} + ASCENDANT-VERIFICATION-RECEIPT-v1`
+          ? appendVerificationIdentity(
+              astrology.verification.evidenceReceiptId,
+              rising.evidence?.evidenceReceiptId,
+            )
           : astrology.verification.evidenceReceiptId,
       lastUpdated: new Date().toISOString(),
     },
