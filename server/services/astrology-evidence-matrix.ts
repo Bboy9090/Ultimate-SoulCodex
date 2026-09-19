@@ -285,7 +285,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     longitude: 0,
     bodies: ALL_PLANETARY_BODIES,
     note: "Mid-century historical comparison fixture.",
-  },,
+  },
   {
     id: "tokyo-profile-1988",
     category: "golden_profile",
