@@ -832,45 +832,83 @@ function geocentricHdLongitude(body: Astronomy.Body, date: Date): number {
   return normalizeHdLongitude(HdAstro.Ecliptic(vector).elon);
 }
 
-function moonUnitVectorEcliptic(date: Date): [number, number, number] {
-  const moon = HdAstro.EclipticGeoMoon(date);
-  const lon = moon.lon * Math.PI / 180;
-  const lat = moon.lat * Math.PI / 180;
-  const cosLat = Math.cos(lat);
-  return [
-    cosLat * Math.cos(lon),
-    cosLat * Math.sin(lon),
-    Math.sin(lat),
-  ];
+function julianDayUtc(date: Date): number {
+  return date.getTime() / 86_400_000 + 2_440_587.5;
+}
+
+function horner(t: number, ...coefficients: number[]): number {
+  let result = coefficients[coefficients.length - 1];
+  for (let index = coefficients.length - 2; index >= 0; index -= 1) {
+    result = result * t + coefficients[index];
+  }
+  return result;
 }
 
 /**
- * Instantaneous/true ascending lunar node from the Moon's geocentric
- * ecliptic orbital plane. A centered finite difference supplies the tangent;
- * k × (r × v) is the ascending-node direction for the Moon's prograde orbit.
+ * Meeus true ascending lunar node (instantaneous lunar orbit).
+ * The periodic correction is evaluated from the standard D, M, M', F
+ * arguments. This replaces the previous finite-difference plane estimate.
  */
 function trueLunarNodeLongitude(date: Date): number {
-  const stepMs = 10 * 60 * 1000;
-  const before = moonUnitVectorEcliptic(new Date(date.getTime() - stepMs));
-  const center = moonUnitVectorEcliptic(date);
-  const after = moonUnitVectorEcliptic(new Date(date.getTime() + stepMs));
-  const velocity: [number, number, number] = [
-    after[0] - before[0],
-    after[1] - before[1],
-    after[2] - before[2],
-  ];
+  // Astronomy Engine exposes TT on AstroTime; fall back to UTC JD only if the
+  // runtime shape changes. TT matters at sub-line boundary precision.
+  const astroTime = new (HdAstro as any).AstroTime(date);
+  const jde =
+    typeof astroTime.tt === 'number'
+      ? astroTime.tt
+      : julianDayUtc(date);
+  const t = (jde - 2_451_545.0) / 36_525;
+  const rad = Math.PI / 180;
 
-  const h: [number, number, number] = [
-    center[1] * velocity[2] - center[2] * velocity[1],
-    center[2] * velocity[0] - center[0] * velocity[2],
-    center[0] * velocity[1] - center[1] * velocity[0],
-  ];
-  const nodeX = -h[1];
-  const nodeY = h[0];
-  if (!Number.isFinite(nodeX) || !Number.isFinite(nodeY) || Math.hypot(nodeX, nodeY) < 1e-12) {
-    throw new Error('human_design_true_node_unresolved');
-  }
-  return normalizeHdLongitude(Math.atan2(nodeY, nodeX) * 180 / Math.PI);
+  const D = horner(
+    t,
+    297.8501921,
+    445267.1114034,
+    -0.0018819,
+    1 / 545868,
+    -1 / 113065000,
+  ) * rad;
+  const M = horner(
+    t,
+    357.5291092,
+    35999.0502909,
+    -0.0001535,
+    1 / 24490000,
+  ) * rad;
+  const Mp = horner(
+    t,
+    134.9633964,
+    477198.8675055,
+    0.0087414,
+    1 / 69699,
+    -1 / 14712000,
+  ) * rad;
+  const F = horner(
+    t,
+    93.272095,
+    483202.0175233,
+    -0.0036539,
+    -1 / 3526000,
+    1 / 863310000,
+  ) * rad;
+
+  const meanNode = horner(
+    t,
+    125.0445479,
+    -1934.1362891,
+    0.0020754,
+    1 / 467441,
+    -1 / 60616000,
+  );
+
+  const correction =
+    -1.4979 * Math.sin(2 * (D - F)) -
+    0.15 * Math.sin(M) -
+    0.1226 * Math.sin(2 * D) +
+    0.1176 * Math.sin(2 * F) -
+    0.0801 * Math.sin(2 * (Mp - F));
+
+  return normalizeHdLongitude(meanNode + correction);
 }
 
 function calculateHdAstroAtUtc(date: Date): HdAstroSnapshot {
