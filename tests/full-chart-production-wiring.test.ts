@@ -98,8 +98,17 @@ test("verified production chart wires ten planets, Rising, MC, Equal House cusps
   assert.match(result.verification.policyId ?? "", /ASTRO-ASPECT-MAJOR-v1/);
   assert.match(result.verification.evidenceReceiptId ?? "", /35449945640/);
 
-  assert.equal(result.northNode, undefined);
-  assert.equal(result.southNode, undefined);
+  assert.equal(result.northNode?.verificationStatus, "verified");
+  assert.equal(result.northNode?.mode, "mean");
+  assert.equal(result.northNode?.sign, "Aquarius");
+  assert.equal(result.northNode?.house, 3);
+  assert.equal(result.northNode?.policyId, "ASTRO-MEAN-NODE-v1");
+  assert.equal(result.southNode?.verificationStatus, "verified");
+  assert.equal(result.southNode?.mode, "mean");
+  assert.equal(result.southNode?.sign, "Leo");
+  assert.equal(result.southNode?.house, 9);
+  assert.match(result.verification.policyId ?? "", /ASTRO-MEAN-NODE-v1/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /35463886745/);
   assert.equal(result.chiron, undefined);
 });
 
@@ -113,6 +122,8 @@ test("an unverified planet is excluded from derived house assignments and aspect
   assert.equal(result.houseSystem, "equal");
   assert.equal(result.houses?.length, 12);
   assert.equal(result.midheaven?.verificationStatus, "verified");
+  assert.equal(result.northNode?.verificationStatus, "verified");
+  assert.equal(result.southNode?.verificationStatus, "verified");
 
   assert.equal(result.planetaryHouses?.mars, undefined);
   assert.ok(Object.keys(result.planetaryHouses ?? {}).length === 9);
@@ -144,4 +155,6 @@ test("missing coordinates withhold Rising, MC, houses and planetary house assign
   assert.equal(result.midheaven, undefined);
   assert.equal(result.planetaryHouses, undefined);
   assert.equal(result.aspects, undefined);
+  assert.equal(result.northNode, undefined);
+  assert.equal(result.southNode, undefined);
 });
