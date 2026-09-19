@@ -29,10 +29,13 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Install pinned Swiss Ephemeris runtime
         run: python -m pip install --disable-pip-version-check pyswisseph==2.10.3.2
-      - name: Download Swiss main-asteroid ephemeris
+      - name: Download and fingerprint Swiss Chiron ephemeris
         run: |
           mkdir -p .swisseph
-          curl --fail --location --retry 3             https://www.astro.com/ftp/swisseph/ephe/seas_18.se1             --output .swisseph/seas_18.se1
+          curl --fail --location --retry 3 \
+            https://raw.githubusercontent.com/aloistr/swisseph/master/ephe/seas_18.se1 \
+            --output .swisseph/seas_18.se1
+          sha256sum .swisseph/seas_18.se1 | tee SWISS-CHIRON-EPHEMERIS-SHA256.txt
       - name: Build workspaces
         run: npm run build:workspaces
       - name: Typecheck
