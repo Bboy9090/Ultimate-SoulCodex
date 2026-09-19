@@ -110,6 +110,12 @@ test("verified full natal chart completes the exact-input verification requireme
       sign: "Leo",
       house: 9,
     },
+    chiron: {
+      verificationStatus: "verified",
+      sign: "Cancer",
+      house: 9,
+      qualificationMethod: "live-jpl-qualified-against-swiss",
+    },
     verification: {
       verifiedBodies: [
         "Sun", "Moon", "Mercury", "Venus", "Mars",
