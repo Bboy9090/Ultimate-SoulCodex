@@ -1,0 +1,44 @@
+name: Federation Planetary Evidence
+
+on:
+  push:
+    branches:
+      - fed-planetary-independent-evidence
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-jpl-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Planetary evidence unit contract
+        run: node --import tsx --test tests/astrology-planetary-evidence-matrix.test.ts
+      - name: Generate live NASA JPL evidence receipt
+        run: node --import tsx scripts/generate-planetary-evidence.ts planetary-evidence-receipt.json
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > PLANETARY-EVIDENCE-SHA.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: planetary-evidence-receipt
+          path: |
+            planetary-evidence-receipt.json
+            PLANETARY-EVIDENCE-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
