@@ -20,15 +20,17 @@ export interface AspectPolicy {
   rationale: string;
 }
 
+export type AspectBody = VerifiableBody | "Chiron";
+
 export interface VerifiedLongitudePlacement {
-  body: VerifiableBody;
+  body: AspectBody;
   longitudeDegrees: number;
   verificationStatus: "verified";
 }
 
 export interface CalculatedAspect {
-  bodyA: VerifiableBody;
-  bodyB: VerifiableBody;
+  bodyA: AspectBody;
+  bodyB: AspectBody;
   aspect: MajorAspectKind;
   targetAngleDegrees: number;
   separationDegrees: number;
@@ -36,7 +38,7 @@ export interface CalculatedAspect {
   policyId: string;
 }
 
-const BODY_ORDER: readonly VerifiableBody[] = Object.freeze([
+const BODY_ORDER: readonly AspectBody[] = Object.freeze([
   "Sun",
   "Moon",
   "Mercury",
@@ -47,6 +49,7 @@ const BODY_ORDER: readonly VerifiableBody[] = Object.freeze([
   "Uranus",
   "Neptune",
   "Pluto",
+  "Chiron",
 ] as const);
 
 const BODY_ORDER_INDEX = new Map(
@@ -104,7 +107,7 @@ function assertPolicy(policy: AspectPolicy): void {
 function assertVerifiedPlacements(
   placements: readonly VerifiedLongitudePlacement[],
 ): void {
-  const bodies = new Set<VerifiableBody>();
+  const bodies = new Set<AspectBody>();
   for (const placement of placements) {
     if (placement.verificationStatus !== "verified") {
       throw new Error("unverified_aspect_input");
