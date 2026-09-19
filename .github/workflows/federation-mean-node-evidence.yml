@@ -1,0 +1,44 @@
+name: Federation Mean Node Evidence
+
+on:
+  push:
+    branches:
+      - fed-mean-node-evidence
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  swiss-mean-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Mean node evidence regression
+        run: node --import tsx --test tests/lunar-node-evidence.test.ts
+      - name: Generate mean node evidence receipt
+        run: node --import tsx scripts/generate-mean-node-evidence.ts mean-node-evidence-receipt.json
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > MEAN-NODE-EVIDENCE-SHA.txt
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mean-node-evidence-receipt
+          path: |
+            mean-node-evidence-receipt.json
+            MEAN-NODE-EVIDENCE-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
