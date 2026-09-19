@@ -1,0 +1,46 @@
+name: Federation Human Design Repair Audit
+
+on:
+  push:
+    branches:
+      - fed-human-design-mechanics-repair
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  differential-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Soul Codex dependencies
+        run: npm ci --ignore-scripts
+      - name: Install pinned independent Human Design verifier
+        run: npm install --no-save --ignore-scripts free-human-design@1.0.1
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Human Design safety contract
+        run: node --import tsx --test tests/human-design-differential-contract.test.ts
+      - name: Run repaired differential audit
+        run: node --import tsx scripts/audit-human-design-differential.ts human-design-repair-audit.json
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > HUMAN-DESIGN-REPAIR-SHA.txt
+      - name: Upload repair evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: human-design-repair-audit
+          path: |
+            human-design-repair-audit.json
+            HUMAN-DESIGN-REPAIR-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
