@@ -85,6 +85,7 @@ export default function OfflineProfilePage() {
   const verifiedAspects = verifiedAstrology?.aspects;
   const verifiedNorthNode = verifiedAstrology?.northNode;
   const verifiedSouthNode = verifiedAstrology?.southNode;
+  const verifiedChiron = verifiedAstrology?.chiron;
 
   if (isLoading) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center"><div className="text-center"><Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--sc-gold)]" /><p className="text-[var(--sc-stone)]">Opening your Codex...</p></div></div></div>;
   if (error || !profile || !reconciledProfile) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center px-4"><div className="sc-panel max-w-md p-8 text-center"><CloudOff className="mx-auto mb-4 h-10 w-10 text-[var(--sc-danger)]" /><h2 className="font-serif text-2xl font-medium text-[var(--sc-ivory)]">Local profile unavailable</h2><p className="my-4 text-sm leading-6 text-[var(--sc-stone)]">This profile was not found in this browser or device storage.</p><Link href="/create" className="sc-button-primary">Create a new Codex</Link></div></div></div>;
@@ -197,6 +198,10 @@ export default function OfflineProfilePage() {
                   <span className="flex items-center gap-2 text-sm font-semibold text-[var(--sc-ivory)]">{verifiedSouthNode?.sign ?? "Unresolved"}{typeof verifiedSouthNode?.house === "number" ? ` · H${verifiedSouthNode.house}` : ""}{verifiedSouthNode?.verificationStatus === "verified" && <Check className="h-3.5 w-3.5 text-[var(--sc-teal)]" />}</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-[var(--sc-line)] pb-3">
+                  <span className="text-sm text-[var(--sc-stone)]">Chiron</span>
+                  <span className="flex items-center gap-2 text-sm font-semibold text-[var(--sc-ivory)]">{verifiedChiron?.sign ?? "Unresolved"}{typeof verifiedChiron?.house === "number" ? ` · H${verifiedChiron.house}` : ""}{verifiedChiron?.verificationStatus === "verified" && <Check className="h-3.5 w-3.5 text-[var(--sc-teal)]" />}</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-[var(--sc-line)] pb-3">
                   <span className="text-sm text-[var(--sc-stone)]">House cusps</span>
                   <span className="text-sm font-semibold text-[var(--sc-ivory)]">{verifiedHouses.length}/12 verified</span>
                 </div>
@@ -222,7 +227,7 @@ export default function OfflineProfilePage() {
         </section>
 
         <div className="mb-6 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.04)] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" /><div><p className="font-semibold text-[var(--sc-ivory)]">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{verifiedFullNatal
-                ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, major aspects, and Mean North/South Nodes are now evidence-qualified or deterministically derived from verified inputs. Chiron remains unresolved until a real ephemeris-backed verification contract passes."
+                ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, major aspects, Mean North/South Nodes, and Chiron are evidence-qualified or deterministically derived from verified inputs. Chiron uses live JPL Horizons qualified against Swiss Ephemeris; no approximation fallback is used."
                 : hasVerifiedCore
                   ? "Sun and Moon are independently verified. Exact-input profiles can now request the full qualified natal chart; any still-unverified planets, Rising, Midheaven, houses, aspects, nodes, and Chiron remain withheld."
                   : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, Midheaven, houses, aspects, nodes, Chiron, and chart geometry remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>

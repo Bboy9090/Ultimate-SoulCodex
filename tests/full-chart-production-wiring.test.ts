@@ -32,6 +32,16 @@ const BODY_KEYS: Array<[VerifiableBody, "sun" | "moon" | "mercury" | "venus" | "
   ["Pluto", "pluto"],
 ];
 
+const chironReferenceFetcher = async (inputTimestamp: string) => ({
+  body: "Chiron" as const,
+  longitude: 115.3498,
+  sign: "Cancer",
+  source: "NASA/JPL Horizons Chiron test fixture",
+  engine: "nasa-jpl-horizons-api@1.3-test",
+  calculatedAt: "2026-09-19T22:49:00.000Z",
+  inputTimestamp,
+});
+
 function referenceFetcher(rejectBody?: VerifiableBody): IndependentReferenceFetcher {
   const candidates = calculateAstrology(BIRTH);
   assert.ok(candidates.planets);
@@ -62,6 +72,7 @@ function referenceFetcher(rejectBody?: VerifiableBody): IndependentReferenceFetc
 test("verified production chart wires ten planets, Rising, MC, Equal House cusps, houses and major aspects", async () => {
   const result = await calculateVerifiedAstrology(BIRTH, {
     referenceFetcher: referenceFetcher(),
+    chironReferenceFetcher,
   });
 
   assert.equal(result.verification.complete, true);
@@ -109,12 +120,27 @@ test("verified production chart wires ten planets, Rising, MC, Equal House cusps
   assert.equal(result.southNode?.house, 9);
   assert.match(result.verification.policyId ?? "", /ASTRO-MEAN-NODE-v1/);
   assert.match(result.verification.evidenceReceiptId ?? "", /35463886745/);
-  assert.equal(result.chiron, undefined);
+  assert.equal(result.chiron?.verificationStatus, "verified");
+  assert.equal(result.chiron?.sign, "Cancer");
+  assert.equal(result.chiron?.house, 9);
+  assert.equal(result.chiron?.policyId, "ASTRO-CHIRON-v1");
+  assert.equal(
+    result.chiron?.qualificationMethod,
+    "live-jpl-qualified-against-swiss",
+  );
+  assert.match(result.verification.policyId ?? "", /ASTRO-CHIRON-v1/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /35474358663/);
+  assert.ok(
+    (result.aspects ?? []).some(
+      (aspect) => aspect.planet1 === "chiron" || aspect.planet2 === "chiron",
+    ),
+  );
 });
 
 test("an unverified planet is excluded from derived house assignments and aspects", async () => {
   const result = await calculateVerifiedAstrology(BIRTH, {
     referenceFetcher: referenceFetcher("Mars"),
+    chironReferenceFetcher,
   });
 
   assert.equal(result.planets?.mars.verificationStatus, "pending_independent_verification");
@@ -124,6 +150,7 @@ test("an unverified planet is excluded from derived house assignments and aspect
   assert.equal(result.midheaven?.verificationStatus, "verified");
   assert.equal(result.northNode?.verificationStatus, "verified");
   assert.equal(result.southNode?.verificationStatus, "verified");
+  assert.equal(result.chiron?.verificationStatus, "verified");
 
   assert.equal(result.planetaryHouses?.mars, undefined);
   assert.ok(Object.keys(result.planetaryHouses ?? {}).length === 9);
@@ -147,6 +174,7 @@ test("missing coordinates withhold Rising, MC, houses and planetary house assign
   };
   const result = await calculateVerifiedAstrology(noLocation, {
     referenceFetcher: referenceFetcher(),
+    chironReferenceFetcher,
   });
 
   assert.notEqual(result.rising.verificationStatus, "verified");
@@ -157,4 +185,5 @@ test("missing coordinates withhold Rising, MC, houses and planetary house assign
   assert.equal(result.aspects, undefined);
   assert.equal(result.northNode, undefined);
   assert.equal(result.southNode, undefined);
+  assert.equal(result.chiron, undefined);
 });

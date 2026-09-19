@@ -31,6 +31,11 @@ import {
   verifyMeanNodes,
   type MeanNodeProductionPolicy,
 } from "./lunar-node-production";
+import {
+  verifyChiron,
+  type ChironProductionPolicy,
+  type ChironReferenceFetcher,
+} from "./chiron-production";
 
 export type { AstrologyData, BirthData, PlacementVerification, VerifiedAstrologyOptions };
 export { getTarotBirthCards };
@@ -40,6 +45,8 @@ export interface ProductionAstrologyOptions extends VerifiedAstrologyOptions {
   housePolicy?: EqualHouseProductionPolicy;
   aspectPolicy?: AspectPolicy;
   meanNodePolicy?: MeanNodeProductionPolicy;
+  chironPolicy?: ChironProductionPolicy;
+  chironReferenceFetcher?: ChironReferenceFetcher;
 }
 
 function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
@@ -502,6 +509,133 @@ function withVerifiedMeanNodes(
   };
 }
 
+async function withVerifiedChiron(
+  astrology: AstrologyData,
+  options: ProductionAstrologyOptions,
+): Promise<AstrologyData> {
+  const timestamp = astrology.moon.internalCandidate?.inputTimestamp;
+  if (
+    !timestamp ||
+    astrology.houseSystem !== "equal" ||
+    !astrology.houses ||
+    astrology.houses.length !== 12 ||
+    !astrology.planets
+  ) {
+    return astrology;
+  }
+
+  const result = await verifyChiron(timestamp, {
+    ...(options.chironPolicy ? { policy: options.chironPolicy } : {}),
+    ...(options.chironReferenceFetcher
+      ? { referenceFetcher: options.chironReferenceFetcher }
+      : {}),
+  });
+
+  if (result.status !== "verified") {
+    return {
+      ...astrology,
+      chiron: undefined,
+      verification: {
+        ...astrology.verification,
+        complete: false,
+        unresolvedBodies: [
+          ...new Set([...astrology.verification.unresolvedBodies, "Chiron"]),
+        ],
+        missingData: [
+          ...new Set([
+            ...astrology.verification.missingData,
+            `chiron_verification:${result.reason}`,
+          ]),
+        ],
+        suggestions:
+          "The verified natal chart remains available, but Chiron stays unresolved because its live JPL verification did not complete.",
+      },
+    };
+  }
+
+  const cuspGeometry = astrology.houses.map((house) => ({
+    house: house.house,
+    longitudeDegrees: house.longitude,
+    sign: house.sign,
+    degreeInSign: house.degree,
+  }));
+  const chironHouse = calculateHousePosition(
+    result.chiron.longitudeDegrees,
+    cuspGeometry,
+  );
+
+  const aspectPlacements: VerifiedLongitudePlacement[] = [];
+  for (const [body, key] of PLANET_ENTRIES) {
+    const placement = astrology.planets[key];
+    if (
+      placement.verificationStatus === "verified" &&
+      placement.internalCandidate &&
+      Number.isFinite(placement.internalCandidate.longitude)
+    ) {
+      aspectPlacements.push({
+        body,
+        longitudeDegrees: placement.internalCandidate.longitude,
+        verificationStatus: "verified",
+      });
+    }
+  }
+  aspectPlacements.push({
+    body: "Chiron",
+    longitudeDegrees: result.chiron.longitudeDegrees,
+    verificationStatus: "verified",
+  });
+  const aspects = calculateMajorAspects(aspectPlacements, options.aspectPolicy);
+
+  const unresolvedWithoutChiron = astrology.verification.unresolvedBodies.filter(
+    (body) => body !== "Chiron",
+  );
+  const missingWithoutChiron = astrology.verification.missingData.filter(
+    (item) => !item.startsWith("chiron_verification:"),
+  );
+
+  return {
+    ...astrology,
+    chiron: {
+      sign: result.chiron.sign,
+      house: chironHouse,
+      degree: result.chiron.degreeInSign,
+      longitude: result.chiron.longitudeDegrees,
+      verificationStatus: "verified",
+      policyId: result.chiron.policyId,
+      evidenceArtifactId: result.chiron.evidenceArtifactId,
+      qualificationMethod: result.chiron.qualificationMethod,
+    },
+    aspects: aspects.map((aspect) => ({
+      planet1: aspect.bodyA.toLowerCase(),
+      planet2: aspect.bodyB.toLowerCase(),
+      aspect: aspect.aspect,
+      orb: aspect.orbDegrees,
+      separationDegrees: aspect.separationDegrees,
+      targetAngleDegrees: aspect.targetAngleDegrees,
+      policyId: aspect.policyId,
+    })),
+    verification: {
+      ...astrology.verification,
+      complete: unresolvedWithoutChiron.length === 0,
+      unresolvedBodies: unresolvedWithoutChiron,
+      missingData: missingWithoutChiron,
+      suggestions:
+        unresolvedWithoutChiron.length === 0
+          ? "All currently supported natal planets, Ascendant, Midheaven, Equal House cusps, planetary house assignments, major aspects, Mean Lunar Nodes, and Chiron are verified or deterministically derived from verified inputs."
+          : astrology.verification.suggestions,
+      policyId: appendVerificationIdentity(
+        astrology.verification.policyId,
+        result.chiron.policyId,
+      ),
+      evidenceReceiptId: appendVerificationIdentity(
+        astrology.verification.evidenceReceiptId,
+        result.evidence.runId,
+      ),
+      lastUpdated: new Date().toISOString(),
+    },
+  };
+}
+
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const base = calculateBaseAstrology(birthData);
   return withRisingVerificationSummary(base, candidateRisingPlacement(birthData));
@@ -511,7 +645,15 @@ export async function calculateVerifiedAstrology(
   birthData: BirthData,
   options: ProductionAstrologyOptions = {},
 ): Promise<AstrologyData> {
-  const { ascendantPolicy, housePolicy, aspectPolicy, meanNodePolicy, ...baseOptions } = options;
+  const {
+    ascendantPolicy,
+    housePolicy,
+    aspectPolicy,
+    meanNodePolicy,
+    chironPolicy,
+    chironReferenceFetcher,
+    ...baseOptions
+  } = options;
   const base = await calculateBaseVerifiedAstrology(birthData, baseOptions);
   const rising = verifiedRisingPlacement(
     birthData,
@@ -525,11 +667,22 @@ export async function calculateVerifiedAstrology(
     aspectPolicy,
     meanNodePolicy,
   });
-  return withVerifiedMeanNodes(withDerivedChart, {
+  const withNodes = withVerifiedMeanNodes(withDerivedChart, {
     ...options,
     ascendantPolicy,
     housePolicy,
     aspectPolicy,
     meanNodePolicy,
+    chironPolicy,
+    chironReferenceFetcher,
+  });
+  return withVerifiedChiron(withNodes, {
+    ...options,
+    ascendantPolicy,
+    housePolicy,
+    aspectPolicy,
+    meanNodePolicy,
+    chironPolicy,
+    chironReferenceFetcher,
   });
 }

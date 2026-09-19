@@ -121,7 +121,16 @@ export interface AstrologyData {
     policyId: string;
     evidenceArtifactId: string;
   };
-  chiron?: { sign?: string; house?: number; degree?: number };
+  chiron?: {
+    sign: string;
+    house: number;
+    degree: number;
+    longitude: number;
+    verificationStatus: "verified";
+    policyId: string;
+    evidenceArtifactId: string;
+    qualificationMethod: "live-jpl-qualified-against-swiss";
+  };
   verification: {
     complete: boolean;
     verifiedBodies: VerifiableBody[];

@@ -12,7 +12,7 @@ const FULL_NATAL_PLANET_KEYS = [
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 4;
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 5;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -62,6 +62,13 @@ export type RemoteProfileSnapshot = {
       longitude?: number;
       degree?: number;
       policyId?: string;
+    };
+    chiron?: PlacementRecord & {
+      house?: number;
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+      qualificationMethod?: string;
     };
     sunSign?: string | null;
     moonSign?: string | null;
@@ -173,6 +180,17 @@ export function hasVerifiedFullNatalChart(
     }
   }
 
+  const chiron = astrology.chiron;
+  if (
+    chiron?.verificationStatus !== "verified" ||
+    typeof chiron.house !== "number" ||
+    chiron.house < 1 ||
+    chiron.house > 12 ||
+    chiron.qualificationMethod !== "live-jpl-qualified-against-swiss"
+  ) {
+    return false;
+  }
+
   return true;
 }
 
@@ -272,9 +290,9 @@ export function reconcileOfflineProfile(
  *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 4 means the profile understands
- * the full-natal chart plus Mean Node contract; it does not mean every
- * placement passed.
+ * temporary reference/engine failure. Version 5 means the profile understands
+ * the full-natal chart, Mean Node, and live-qualified Chiron contracts; it does
+ * not mean every placement passed.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
