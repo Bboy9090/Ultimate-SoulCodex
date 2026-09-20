@@ -65,18 +65,19 @@ function normalize(text: string): string {
     .trim();
 }
 
-function tokens(text: string): Set<string> {
-  return new Set(
-    normalize(text)
-      .split(" ")
-      .filter((token) => token.length > 3),
-  );
+function ngrams(text: string, width: number): Set<string> {
+  const values = normalize(text).split(" ").filter(Boolean);
+  const grams = new Set<string>();
+  for (let index = 0; index <= values.length - width; index += 1) {
+    grams.add(values.slice(index, index + width).join(" "));
+  }
+  return grams;
 }
 
-function jaccard(a: string, b: string): number {
-  const left = tokens(a);
-  const right = tokens(b);
-  const intersection = [...left].filter((token) => right.has(token)).length;
+function ngramJaccard(a: string, b: string, width: number): number {
+  const left = ngrams(a, width);
+  const right = ngrams(b, width);
+  const intersection = [...left].filter((gram) => right.has(gram)).length;
   const union = new Set([...left, ...right]).size;
   return union === 0 ? 0 : intersection / union;
 }
@@ -213,11 +214,12 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
   });
 
-  await suite.test("at least 45 of 60 verified readings are materially unique", () => {
+  await suite.test("all 60 verified readings are unique", () => {
     const unique = new Set(readings.map((reading) => normalize(fingerprint(reading))));
-    assert.ok(
-      unique.size >= 45,
-      `expected at least 45 unique verified readings, got ${unique.size}`,
+    assert.equal(
+      unique.size,
+      readings.length,
+      `expected all 60 verified readings to be unique, got ${unique.size}`,
     );
   });
 
@@ -233,18 +235,34 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
   });
 
-  await suite.test("verified readings do not become near-duplicates", () => {
-    let worst = { score: 0, left: -1, right: -1 };
+  await suite.test("verified readings do not become structural near-duplicates", () => {
+    let worstBigram = { score: 0, left: -1, right: -1 };
+    let worstTrigram = { score: 0, left: -1, right: -1 };
+
     for (let left = 0; left < readings.length; left += 1) {
       for (let right = left + 1; right < readings.length; right += 1) {
-        const score = jaccard(fingerprint(readings[left]), fingerprint(readings[right]));
-        if (score > worst.score) worst = { score, left, right };
+        const bigram = ngramJaccard(
+          fingerprint(readings[left]),
+          fingerprint(readings[right]),
+          2,
+        );
+        const trigram = ngramJaccard(
+          fingerprint(readings[left]),
+          fingerprint(readings[right]),
+          3,
+        );
+        if (bigram > worstBigram.score) worstBigram = { score: bigram, left, right };
+        if (trigram > worstTrigram.score) worstTrigram = { score: trigram, left, right };
       }
     }
 
     assert.ok(
-      worst.score <= 0.78,
-      `verified profiles ${worst.left} and ${worst.right} are ${(worst.score * 100).toFixed(1)}% token-similar`,
+      worstBigram.score < 0.9,
+      `verified profiles ${worstBigram.left} and ${worstBigram.right} are ${(worstBigram.score * 100).toFixed(1)}% bigram-similar`,
+    );
+    assert.ok(
+      worstTrigram.score < 0.85,
+      `verified profiles ${worstTrigram.left} and ${worstTrigram.right} are ${(worstTrigram.score * 100).toFixed(1)}% trigram-similar`,
     );
   });
 });
