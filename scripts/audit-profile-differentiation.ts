@@ -192,3 +192,7 @@ console.log(JSON.stringify({output, ...summary}, null, 2));
 
 if (rows.length !== 120) process.exitCode = 2;
 if (rows.some((row) => row.qualityErrors.length > 0)) process.exitCode = 3;
+if (crossSignatureDuplicates.length > 0) process.exitCode = 4;
+if (fingerprintGroups.size !== rows.length) process.exitCode = 5;
+if (rows.filter((row) => row.qualityPass).length !== rows.length) process.exitCode = 6;
+if (Math.min(...rows.map((row) => row.qualityScore)) < 90) process.exitCode = 7;
