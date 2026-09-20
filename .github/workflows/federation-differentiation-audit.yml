@@ -32,8 +32,10 @@ jobs:
       - name: Run 120-profile differentiation audit
         run: node --import tsx scripts/audit-profile-differentiation.ts profile-differentiation-audit.json
       - name: Preserve exact candidate SHA
+        if: always()
         run: printf '%s\n' "$GITHUB_SHA" > DIFFERENTIATION-AUDIT-SHA.txt
       - name: Upload differentiation evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: profile-differentiation-audit
