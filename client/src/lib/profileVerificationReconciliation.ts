@@ -1,5 +1,9 @@
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
+import {
+  synthesizeVerifiedFoundationProfile,
+  type VerifiedAstrologyForSynthesis,
+} from "./foundationOfflineCodex";
 
 type PlacementRecord = {
   status?: string;
@@ -261,17 +265,41 @@ export function reconcileOfflineProfile(
   syncedAt = new Date().toISOString(),
 ): ReconciledOfflineProfile {
   const remoteId = remote.id ?? local.id;
+  const numerologyData =
+    (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??
+    local.numerologyData;
+  const mergedLocal: OfflineCodexProfile = {
+    ...local,
+    numerologyData,
+  };
+
+  const verifiedNarrative =
+    remote.astrologyData && hasVerifiedFullNatalChart(remote.astrologyData)
+      ? synthesizeVerifiedFoundationProfile(
+          mergedLocal,
+          remote.astrologyData as VerifiedAstrologyForSynthesis,
+          syncedAt,
+        )
+      : null;
 
   return {
     ...local,
-    numerologyData:
-      (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??
-      local.numerologyData,
+    numerologyData,
     archetypeData:
+      verifiedNarrative?.archetypeData ??
       (remote.archetypeData as OfflineCodexProfile["archetypeData"] | undefined) ??
       local.archetypeData,
-    biography: remote.biography ?? local.biography,
-    dailyGuidance: remote.dailyGuidance ?? local.dailyGuidance,
+    biography:
+      verifiedNarrative?.biography ??
+      remote.biography ??
+      local.biography,
+    dailyGuidance:
+      verifiedNarrative?.dailyGuidance ??
+      remote.dailyGuidance ??
+      local.dailyGuidance,
+    depthInterpretation:
+      verifiedNarrative?.depthInterpretation ??
+      local.depthInterpretation,
     verifiedAstrologyData: remote.astrologyData,
     remoteSync: {
       remoteId,
