@@ -85,7 +85,7 @@ test("Offline Codex runtime", async (suite) => {
       },
     );
 
-    assert.ok(profile.depthInterpretation.missingData.some((item) => item.includes("Exact birth time is required")));
+    assert.ok(profile.depthInterpretation.missingData.some((item) => item.includes("Exact birth time is unknown")));
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.astrology.rising"), false);
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.astrology.moon"), false);
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.expression"), true);

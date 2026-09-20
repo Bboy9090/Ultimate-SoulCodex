@@ -1037,7 +1037,7 @@ function calculateHumanDesignInternal(birthData: {
   }
 
   const astroData = calculateHdAstroAtUtc(birthTimeUTC);
-  const DESIGN_SOLAR_ARC = 88.0;
+  const DESIGN_SOLAR_ARC = 87.975;
   const birthSunLongitude = astroData.planets.sun.longitude;
   const targetLongitude = normalizeHdLongitude(birthSunLongitude - DESIGN_SOLAR_ARC);
 
