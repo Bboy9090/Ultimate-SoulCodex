@@ -511,6 +511,61 @@ function verifiedAggregateSeeds(
   astrology: VerifiedAstrologyForSynthesis,
 ): DepthSynthesisSeed[] {
   const seeds: DepthSynthesisSeed[] = [];
+
+  const risingSign =
+    astrology.rising?.verificationStatus === "verified" &&
+    typeof astrology.rising.sign === "string"
+      ? astrology.rising.sign
+      : null;
+  const midheavenSign =
+    astrology.midheaven?.verificationStatus === "verified" &&
+    typeof astrology.midheaven.sign === "string"
+      ? astrology.midheaven.sign
+      : null;
+  const sunHouse = astrology.planetaryHouses?.sun;
+  const moonHouse = astrology.planetaryHouses?.moon;
+
+  if (
+    risingSign &&
+    midheavenSign &&
+    typeof sunHouse === "number" &&
+    typeof moonHouse === "number"
+  ) {
+    const sunHouseLanguage = HOUSE_THEMES[sunHouse];
+    const moonHouseLanguage = HOUSE_THEMES[moonHouse];
+    const risingLanguage = SIGN_PATTERNS[risingSign] ?? SIGN_PATTERNS.Virgo;
+    const mcLanguage = SIGN_PATTERNS[midheavenSign] ?? SIGN_PATTERNS.Virgo;
+
+    seeds.push({
+      evidence: verifiedAggregateEvidence(
+        "verified.astrology.aggregate.chart-geometry",
+        "chartGeometrySignature",
+        `Ascendant ${risingSign}; MC ${midheavenSign}; Sun H${sunHouse}; Moon H${moonHouse}`,
+        [
+          "Chart geometry signature uses only verified Ascendant, Midheaven, and Equal House assignments.",
+        ],
+      ),
+      label: `Verified geometry: ${risingSign} Rising, ${midheavenSign} MC, Sun H${sunHouse}, Moon H${moonHouse}`,
+      priority: 126,
+      claimKind: "derived",
+      facets: {
+        claritySummary:
+          `Verified chart geometry combines ${risingSign} Rising with a ${midheavenSign} Midheaven, while the Sun falls in House ${sunHouse} and Moon in House ${moonHouse}.`,
+        visiblePattern:
+          `The ${risingSign} Ascendant may make ${risingLanguage.gift} more visible, while the ${midheavenSign} Midheaven adds public-direction symbolism around ${mcLanguage.drive}.`,
+        hiddenNeed:
+          `Moon in House ${moonHouse} places extra symbolic weight on ${moonHouseLanguage.theme}, while Sun in House ${sunHouse} keeps returning attention to ${sunHouseLanguage.theme}.`,
+        decisionImpact:
+          `When priorities compete, this chart geometry suggests checking both House ${sunHouse} themes—${sunHouseLanguage.theme}—and House ${moonHouse} themes—${moonHouseLanguage.theme}—instead of treating them as interchangeable.`,
+        boundaryOrRepair:
+          `Use the verified House ${sunHouse}/House ${moonHouse} split as a reflection prompt: identify which life area is asking for action and which is asking for emotional processing before combining them.`,
+      },
+      tensionAxes: [...risingLanguage.axes, ...mcLanguage.axes],
+      limitations: [
+        "The chart geometry is verified astronomical data; the psychological and life-area language remains symbolic interpretation.",
+      ],
+    });
+  }
   const element = dominantVerifiedElement(astrology);
   if (element) {
     const language = ELEMENT_LANGUAGE[element.element];
