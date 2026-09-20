@@ -348,7 +348,14 @@ function verifiedPlacementSeed(input: {
     label: `${input.bodyLabel} in ${input.sign}${houseText}`,
     priority: input.priority,
     claimKind: "derived",
-    facets: input.facets,
+    facets: Object.fromEntries(
+      Object.entries(input.facets).map(([facet, value]) => [
+        facet,
+        typeof value === "string" && typeof input.house === "number"
+          ? `${value} House ${input.house} adds emphasis on ${HOUSE_THEMES[input.house]?.theme ?? "this life area"}.`
+          : value,
+      ]),
+    ) as DepthSynthesisSeed["facets"],
     tensionAxes: input.axes ?? signPattern.axes,
     limitations: [
       "The astronomical placement is verified; the interpretation is symbolic and should be tested against lived experience.",
@@ -515,7 +522,7 @@ function verifiedAggregateSeeds(
         ["Element concentration is counted from verified Sun-through-Pluto signs."],
       ),
       label: `${element.element} concentration (${element.count} of ${element.total} verified planets)`,
-      priority: 145,
+      priority: 110,
       claimKind: "derived",
       facets: {
         claritySummary: `Across the verified planets, ${element.element} is the strongest element concentration, emphasizing ${language.emphasis}.`,
@@ -538,7 +545,7 @@ function verifiedAggregateSeeds(
         ["House concentration is counted from verified planetary Equal House assignments."],
       ),
       label: `House ${house.house} concentration (${house.count} verified planets)`,
-      priority: 144,
+      priority: 109,
       claimKind: "derived",
       facets: {
         visiblePattern: `The strongest house concentration falls in House ${house.house}, putting extra symbolic weight on ${houseLanguage.theme}.`,
@@ -564,7 +571,7 @@ function verifiedAggregateSeeds(
         ["The strongest aspect is the smallest-orb verified major aspect in the supplied chart."],
       ),
       label: `Strongest aspect: ${strongest.planet1} ${strongest.aspect} ${strongest.planet2}`,
-      priority: 143,
+      priority: 108,
       claimKind: "inferred",
       facets: {
         innerExperience: dynamic.summary,
@@ -628,9 +635,6 @@ export function synthesizeVerifiedFoundationProfile(
       priority: 130,
       facets: {
         claritySummary: `The verified Sun layer emphasizes ${sunPattern.drive}.`,
-        gift: `Its constructive expression may look like ${sunPattern.gift}.`,
-        shadow: `When overused, the same pattern may become ${sunPattern.shadow}.`,
-        action: sunPattern.action,
       },
     }),
     verifiedPlacementSeed({
