@@ -154,7 +154,7 @@ function layerFromFacet(
   const labels = selected.map((seed) => seed.label);
   const explanation =
     selected.length === 1
-      ? `This layer is supported by ${labels[0]}. It describes the supplied pattern without treating it as fixed identity.`
+      ? `This layer is supported by ${labels[0]}. It describes the supplied pattern as reflective context rather than a permanent fact about the person.`
       : `This layer combines ${labels[0]} with ${labels[1]}. Their overlap is supporting context, not independent proof.`;
 
   return {
