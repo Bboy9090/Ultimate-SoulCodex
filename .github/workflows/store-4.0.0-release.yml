@@ -3,8 +3,10 @@ name: Soul Codex 4.0.0 Store Candidate
 on:
   push:
     branches:
+      - main
       - release/store-4.0.0-federation-final
       - release/store-4.0.0-federation-final-main-sync
+      - release/4.0.0-store-signing-final
   workflow_dispatch:
 
 permissions:
