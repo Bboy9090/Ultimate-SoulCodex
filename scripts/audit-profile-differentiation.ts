@@ -160,7 +160,7 @@ const summary = {
   qualityPassCount: rows.filter((row) => row.qualityPass).length,
   minimumQualityScore: Math.min(...rows.map((row) => row.qualityScore)),
   averageCrossSignatureTokenSimilarity: pairCount ? similarityTotal / pairCount : 0,
-  maximumCrossSignatureTokenSimilarity,
+  maximumCrossSignatureTokenSimilarity: maximumCrossSignatureSimilarity,
   maximumSimilarityPair: maximumPair,
 };
 
