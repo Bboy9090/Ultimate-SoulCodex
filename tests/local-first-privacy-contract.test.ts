@@ -13,7 +13,7 @@ test("local profile creation keeps online verification opt-in and off by default
   assert.doesNotMatch(createSource, /if \(!verifyOnline\)[\s\S]{0,200}requestVerificationWhenOnline/);
 });
 
-test("local-first creation uses the minimal astronomy-only verification endpoint", () => {
+test("local-first creation uses the minimal evidence-only verification endpoint", () => {
   assert.match(createSource, /"\/api\/verification\/profile"/);
   assert.doesNotMatch(createSource, /apiRequest\("POST", "\/api\/profiles"/);
   assert.match(createSource, /birthDate: data\.birthDate/);
