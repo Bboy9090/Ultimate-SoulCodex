@@ -4,6 +4,12 @@ import {
   calculateVerifiedAstrology,
   type AstrologyData,
 } from "../services/astrology-production";
+import { calculateHumanDesign } from "@soulcodex/astrology";
+import { fromZonedTime } from "date-fns-tz";
+import {
+  createHumanDesignTrustRecord,
+  createVerifiedHumanDesignTrustRecord,
+} from "../services/human-design-trust";
 
 const numericCoordinate = z
   .union([z.number(), z.string().min(1)])
@@ -38,6 +44,79 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   };
 }
 
+function calculateVerifiedHumanDesignSnapshot(input: {
+  birthDate: string;
+  birthTime?: string;
+  timezone: string;
+  latitude?: number;
+  longitude?: number;
+}) {
+  const hasExactInputs = Boolean(
+    input.birthTime &&
+      input.timezone &&
+      input.latitude !== undefined &&
+      input.longitude !== undefined,
+  );
+
+  if (!hasExactInputs) {
+    return {
+      status: "unresolved" as const,
+      reason: "requires_exact_birth_time_and_coordinates",
+      trust: createHumanDesignTrustRecord({ birthTimeKnown: false }),
+    };
+  }
+
+  const result = calculateHumanDesign({
+    name: "Local verified profile",
+    birthDate: input.birthDate,
+    birthTime: input.birthTime!,
+    birthLocation: "Verification input",
+    latitude: String(input.latitude),
+    longitude: String(input.longitude),
+    timezone: input.timezone,
+  });
+
+  const localTimestamp = `${input.birthDate}T${input.birthTime}:00`;
+  const utc = fromZonedTime(localTimestamp, input.timezone);
+  const inputTimestampUtc = utc.toISOString();
+
+  if (result.status !== "resolved") {
+    return {
+      status: "unresolved" as const,
+      reason: result.reason,
+      trust: createHumanDesignTrustRecord({
+        birthTimeKnown: true,
+        inputTimestampUtc,
+      }),
+    };
+  }
+
+  const trust = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc,
+    candidate: {
+      type: result.type,
+      strategy: result.strategy,
+      authority: result.authority,
+      profile: result.profile,
+    },
+  });
+
+  return {
+    status: "verified" as const,
+    type: result.type,
+    strategy: result.strategy,
+    authority: result.authority,
+    profile: result.profile,
+    definition: result.definition,
+    centers: result.centers,
+    channels: result.channels,
+    activations: result.activations,
+    activatedGates: result.activatedGates,
+    trust,
+  };
+}
+
 /**
  * Minimal online evidence endpoint for a local-first profile.
  *
@@ -66,15 +145,23 @@ export function registerProfileVerificationRoutes(app: Express) {
         latitude: parsed.data.latitude,
         longitude: parsed.data.longitude,
       });
+      const humanDesignData = calculateVerifiedHumanDesignSnapshot({
+        birthDate: parsed.data.birthDate,
+        birthTime: parsed.data.birthTime?.trim() || undefined,
+        timezone: parsed.data.timezone,
+        latitude: parsed.data.latitude,
+        longitude: parsed.data.longitude,
+      });
       const updatedAt = new Date().toISOString();
 
       return res.json({
         astrologyData: withVerifiedLegacyAliases(astrologyData),
+        humanDesignData,
         updatedAt,
         processing: {
           persistedProfile: false,
           aiGeneration: false,
-          purpose: "astronomy_verification_only",
+          purpose: "profile_evidence_verification_only",
         },
       });
     } catch (error) {
