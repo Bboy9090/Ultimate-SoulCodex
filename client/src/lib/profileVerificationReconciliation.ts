@@ -12,7 +12,7 @@ const FULL_NATAL_PLANET_KEYS = [
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 5;
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 6;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -76,6 +76,39 @@ export type RemoteProfileSnapshot = {
     verification?: unknown;
     [key: string]: unknown;
   };
+  humanDesignData?: {
+    status?: "verified" | "unresolved";
+    type?: string;
+    strategy?: string;
+    authority?: string;
+    profile?: string;
+    definition?: string;
+    centers?: Record<string, { defined?: boolean; gates?: number[]; description?: string }>;
+    channels?: Array<{
+      gates?: number[];
+      name?: string;
+      description?: string;
+      defined?: boolean;
+    }>;
+    activations?: unknown;
+    activatedGates?: number[];
+    trust?: {
+      status?: string;
+      engine?: string | null;
+      source?: string | null;
+      verificationReceiptId?: string;
+      independentSource?: string;
+      verifiedAt?: string;
+      candidate?: {
+        type?: string;
+        strategy?: string;
+        authority?: string;
+        profile?: string;
+      };
+      limitations?: readonly string[];
+    };
+    reason?: string;
+  };
   numerologyData?: Record<string, unknown>;
   archetypeData?: {
     title?: string;
@@ -88,6 +121,7 @@ export type RemoteProfileSnapshot = {
 
 export type ReconciledOfflineProfile = OfflineCodexProfile & {
   verifiedAstrologyData?: RemoteProfileSnapshot["astrologyData"];
+  verifiedHumanDesignData?: RemoteProfileSnapshot["humanDesignData"];
   remoteSync?: {
     remoteId: string;
     syncedAt: string;
@@ -194,6 +228,25 @@ export function hasVerifiedFullNatalChart(
   return true;
 }
 
+export function hasVerifiedHumanDesignCore(
+  humanDesign: RemoteProfileSnapshot["humanDesignData"] | undefined,
+): boolean {
+  return Boolean(
+    humanDesign?.status === "verified" &&
+      humanDesign.trust?.status === "verified" &&
+      humanDesign.trust.verificationReceiptId ===
+        "35474994858:human-design-repair-audit" &&
+      typeof humanDesign.type === "string" &&
+      humanDesign.type.trim() &&
+      typeof humanDesign.strategy === "string" &&
+      humanDesign.strategy.trim() &&
+      typeof humanDesign.authority === "string" &&
+      humanDesign.authority.trim() &&
+      typeof humanDesign.profile === "string" &&
+      humanDesign.profile.trim(),
+  );
+}
+
 function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
   return Boolean(
     profile.birthTime &&
@@ -248,6 +301,7 @@ export function reconcileActiveProfile(
         ? local.confidence
         : {}),
       astrologyVerification: astrology?.verification ?? null,
+      humanDesignVerification: remote.humanDesignData?.trust ?? null,
       astrologyVerificationVersion: CURRENT_ASTROLOGY_VERIFICATION_VERSION,
       remoteSyncedAt: syncedAt,
     },
@@ -273,6 +327,7 @@ export function reconcileOfflineProfile(
     biography: remote.biography ?? local.biography,
     dailyGuidance: remote.dailyGuidance ?? local.dailyGuidance,
     verifiedAstrologyData: remote.astrologyData,
+    verifiedHumanDesignData: remote.humanDesignData,
     remoteSync: {
       remoteId,
       syncedAt,
@@ -290,9 +345,9 @@ export function reconcileOfflineProfile(
  *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 5 means the profile understands
- * the full-natal chart, Mean Node, and live-qualified Chiron contracts; it does
- * not mean every placement passed.
+ * temporary reference/engine failure. Version 6 means the profile understands
+ * the full-natal chart, Mean Node, live-qualified Chiron, and verified Human
+ * Design core contracts; it does not mean every subsystem passed.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
@@ -303,6 +358,9 @@ export function profileNeedsOnlineVerification(
 
   return Boolean(
     hasExactAscendantInputs(profile) &&
-      !hasVerifiedFullNatalChart(profile.verifiedAstrologyData),
+      (
+        !hasVerifiedFullNatalChart(profile.verifiedAstrologyData) ||
+        !hasVerifiedHumanDesignCore(profile.verifiedHumanDesignData)
+      ),
   );
 }
