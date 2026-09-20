@@ -3,7 +3,7 @@ name: Federation Verified Differentiation
 on:
   push:
     branches:
-      - fed-differentiation-truth-boundary
+      - fed-differentiation-structural-v2
   workflow_dispatch:
 
 permissions:
