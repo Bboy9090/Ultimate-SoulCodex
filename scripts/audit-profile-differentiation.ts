@@ -151,6 +151,16 @@ for (let i = 0; i < profiles.length; i += 1) {
   }
 }
 
+const qualityErrorCounts = new Map<string, number>();
+for (const row of rows) {
+  for (const code of row.qualityErrors) {
+    qualityErrorCounts.set(code, (qualityErrorCounts.get(code) ?? 0) + 1);
+  }
+}
+const qualityErrorSummary = Object.fromEntries(
+  [...qualityErrorCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+);
+
 const summary = {
   profileCount: rows.length,
   uniqueSourceSignatures: sourceGroups.size,
@@ -162,6 +172,7 @@ const summary = {
   averageCrossSignatureTokenSimilarity: pairCount ? similarityTotal / pairCount : 0,
   maximumCrossSignatureTokenSimilarity: maximumCrossSignatureSimilarity,
   maximumSimilarityPair: maximumPair,
+  qualityErrorSummary,
 };
 
 const receipt = {
