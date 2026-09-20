@@ -544,8 +544,8 @@ export function synthesizeVerifiedFoundationProfile(
       priority: 108 - index,
       claimKind: "inferred",
       facets: {
-        coreContradiction: `The verified ${label} aspect may describe two chart functions that need coordination rather than a single fixed trait.`,
-        decisionImpact: `When these two functions pull differently, it may help to name both before choosing a response.`,
+        decisionImpact: `The verified ${label} aspect may describe two chart functions that need coordination rather than a single fixed trait.`,
+        commonMisreading: `When these two functions pull differently, reducing the aspect to one fixed personality label may miss the interaction.`,
       },
       tensionAxes: [],
       limitations: [
