@@ -472,6 +472,7 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
   const depthInterpretation = buildDepthInterpretation(input, astrologyData, numerologyData, archetypeData, generatedAt);
   const sign = SIGN_TRAITS[astrologyData.sunSign];
   const path = LIFE_PATH_TRAITS[numerologyData.lifePath] ?? LIFE_PATH_TRAITS[9];
+  const personalYear = LIFE_PATH_TRAITS[numerologyData.personalYear] ?? LIFE_PATH_TRAITS[1];
   return {
     id: options.id ?? makeId(), userId: null, sessionId: null,
     name: input.name.trim(), birthDate: input.birthDate, birthTime: input.birthTime || null,
