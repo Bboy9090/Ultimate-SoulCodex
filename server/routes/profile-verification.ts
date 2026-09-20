@@ -119,8 +119,9 @@ function verifiedHumanDesignCore(input: {
  * Minimal online evidence endpoint for a local-first profile.
  *
  * This route intentionally does not import storage, account/profile persistence,
- * or AI generation services. A user who asks only for astronomical verification
- * receives only the evidence snapshot needed to reconcile their local profile.
+ * or AI generation services. A user who explicitly requests verification receives
+ * only the astronomy and qualified Human Design core evidence needed to reconcile
+ * their local profile.
  */
 export function registerProfileVerificationRoutes(app: Express) {
   app.post("/api/verification/profile", async (req, res) => {
@@ -161,13 +162,13 @@ export function registerProfileVerificationRoutes(app: Express) {
         processing: {
           persistedProfile: false,
           aiGeneration: false,
-          purpose: "astronomy_verification_only",
+          purpose: "astronomy_and_human_design_core_verification_only",
         },
       });
     } catch (error) {
       console.error("[ProfileVerification] Verification failed safely:", error);
       return res.status(503).json({
-        message: "Independent astronomy verification is temporarily unavailable",
+        message: "Independent profile verification is temporarily unavailable",
         code: "verification_unavailable",
       });
     }
