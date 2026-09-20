@@ -34,6 +34,16 @@ const GOLDEN_EPHEMERIS_REFERENCE: Record<
   Pluto: { sign: "Scorpio", longitude: 225.7598442 },
 };
 
+const chironReferenceFetcher = async (inputTimestamp: string) => ({
+  body: "Chiron" as const,
+  longitude: 115.3498,
+  sign: "Cancer",
+  source: "NASA/JPL Horizons Chiron golden fixture",
+  engine: "nasa-jpl-horizons-api@1.3-golden",
+  calculatedAt: "2026-09-19T22:49:00.000Z",
+  inputTimestamp,
+});
+
 const referenceFetcher: IndependentReferenceFetcher = async (
   body,
   inputTimestamp,
@@ -51,6 +61,7 @@ const referenceFetcher: IndependentReferenceFetcher = async (
 test("Bobby's raw birth inputs verify as Virgo Sun, Virgo Moon, and Scorpio Rising", async () => {
   const result = await calculateVerifiedAstrology(BOBBY_RAW_BIRTH_INPUT, {
     referenceFetcher,
+    chironReferenceFetcher,
   });
 
   assert.equal(result.sun.verificationStatus, "verified");
@@ -85,4 +96,8 @@ test("Bobby's raw birth inputs verify as Virgo Sun, Virgo Moon, and Scorpio Risi
   }
   assert.match(result.verification.policyId ?? "", /ASTRO-PLANET-LONGITUDE-v1/);
   assert.match(result.verification.evidenceReceiptId ?? "", /35449041012/);
+  assert.equal(result.chiron?.verificationStatus, "verified");
+  assert.equal(result.chiron?.sign, "Cancer");
+  assert.equal(result.chiron?.policyId, "ASTRO-CHIRON-v1");
+  assert.match(result.verification.policyId ?? "", /ASTRO-CHIRON-v1/);
 });
