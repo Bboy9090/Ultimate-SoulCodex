@@ -150,6 +150,34 @@ function parsedNumber(value: unknown): number | undefined {
   return Number.isInteger(parsed) ? parsed : undefined;
 }
 
+function verifiedAstrologySign(verified: AnyRecord, body: "sun" | "moon" | "rising"): string | undefined {
+  const placement = verified?.[body];
+  if (placement?.verificationStatus !== "verified") return undefined;
+  return firstSupportedText(placement.sign);
+}
+
+function verifiedHumanDesignCore(humanDesign: AnyRecord): {
+  type?: string;
+  strategy?: string;
+  authority?: string;
+  profile?: string;
+} | null {
+  if (
+    humanDesign?.status !== "verified" ||
+    humanDesign?.trust?.status !== "verified" ||
+    humanDesign?.trust?.verificationReceiptId !==
+      "35474994858:human-design-repair-audit"
+  ) {
+    return null;
+  }
+  return {
+    type: firstSupportedText(humanDesign.type),
+    strategy: firstSupportedText(humanDesign.strategy),
+    authority: firstSupportedText(humanDesign.authority),
+    profile: firstSupportedText(humanDesign.profile),
+  };
+}
+
 function appendTheme(base: string, sentence?: string): string {
   if (!sentence) return base;
   return `${base} ${sentence}`;
@@ -166,6 +194,8 @@ function numerologyTension(expression: number | undefined, soulUrge: number | un
 export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingModel {
   const astrology = (profile.astrologyData ?? {}) as AnyRecord;
   const verified = (profile.verifiedAstrologyData ?? {}) as AnyRecord;
+  const verifiedHumanDesign = (profile.verifiedHumanDesignData ?? {}) as AnyRecord;
+  const hdCore = verifiedHumanDesignCore(verifiedHumanDesign);
   const numerology = (profile.numerologyData ?? {}) as AnyRecord;
   const personality = (profile.personalityData ?? {}) as AnyRecord;
   const archetype = (profile.archetypeData ?? {}) as AnyRecord;
@@ -182,12 +212,32 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     archetype.name,
   ) ?? "Your evolving pattern";
 
-  const summary = firstSupportedText(
+  const baseSummary = firstSupportedText(
     depth.summary,
     sectionText(depth.claritySummary),
     profile.biography,
     archetype.description,
-  ) ?? "The available profile contains calculated and symbolic signals that should be tested against lived experience rather than treated as fixed identity.";
+  ) ?? "The available profile contains calculated and symbolic signals that should be tested against lived experience rather than treated as permanent fact.";
+
+  const verifiedFacts = [
+    verifiedAstrologySign(verified, "sun")
+      ? `${verifiedAstrologySign(verified, "sun")} Sun`
+      : undefined,
+    verifiedAstrologySign(verified, "moon")
+      ? `${verifiedAstrologySign(verified, "moon")} Moon`
+      : undefined,
+    verifiedAstrologySign(verified, "rising")
+      ? `${verifiedAstrologySign(verified, "rising")} Rising`
+      : undefined,
+    hdCore?.type ? `Human Design Type ${hdCore.type}` : undefined,
+    hdCore?.authority ? hdCore.authority : undefined,
+    hdCore?.profile ? `Profile ${hdCore.profile}` : undefined,
+  ].filter(Boolean);
+
+  const summary =
+    verifiedFacts.length > 0
+      ? `${baseSummary} Verified context: ${verifiedFacts.join(", ")}.`
+      : baseSummary;
 
   const baseVisible = firstSupportedText(
     sectionText(depth.visiblePattern),
@@ -257,9 +307,14 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   });
 
   const signals: ClaritySignal[] = [];
-  addSignal(signals, "sun", "Sun", verified.sun?.sign ?? verified.sunSign, "verified", "independent astronomy");
-  addSignal(signals, "moon", "Moon", verified.moon?.sign ?? verified.moonSign, "verified", "independent astronomy");
-  addSignal(signals, "rising", "Rising", verified.rising?.sign ?? verified.risingSign, "verified", "independent astronomy");
+  addSignal(signals, "sun", "Sun", verifiedAstrologySign(verified, "sun"), "verified", "independent astronomy");
+  addSignal(signals, "moon", "Moon", verifiedAstrologySign(verified, "moon"), "verified", "independent astronomy");
+  addSignal(signals, "rising", "Rising", verifiedAstrologySign(verified, "rising"), "verified", "independent astronomy");
+  if (hdCore) {
+    addSignal(signals, "hd-type", "Human Design Type", hdCore.type, "verified", "HUMAN-DESIGN-CORE-v1");
+    addSignal(signals, "hd-authority", "Human Design Authority", hdCore.authority, "verified", "HUMAN-DESIGN-CORE-v1");
+    addSignal(signals, "hd-profile", "Human Design Profile", hdCore.profile, "verified", "HUMAN-DESIGN-CORE-v1");
+  }
   if (!signals.some((signal) => signal.id === "sun")) {
     addSignal(signals, "sun-symbolic", "Sun", astrology.sunSign, "supported", "saved symbolic profile");
   }
@@ -272,7 +327,8 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   const limitations = [
     "Symbolic overlap is supporting context, not independent proof.",
     "Numerology values are deterministic calculations from supplied birth/name data; their personality meanings remain symbolic interpretation.",
-    "Unknown or approximate birth time must not be promoted into verified Moon, Rising, house, or timing claims.",
+    "Unknown or approximate birth time must not be promoted into verified Moon, Rising, house, Human Design, or timing claims.",
+    "Human Design Variables and Incarnation Cross naming remain outside the verified HUMAN-DESIGN-CORE-v1 boundary.",
     "Lived experience is the final correction layer.",
   ];
   if (!signals.some((signal) => signal.confidence === "verified")) {
