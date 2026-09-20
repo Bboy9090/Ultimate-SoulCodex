@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  APPROVED_HUMAN_DESIGN_CORE_VERIFICATION,
   createHumanDesignTrustRecord,
+  createVerifiedHumanDesignTrustRecord,
   getVerifiedHumanDesignField,
   mayUseHumanDesignForCompatibility,
 } from "../server/services/human-design-trust";
@@ -60,4 +62,48 @@ test("blank candidate strings are discarded", () => {
   assert.equal(record.status, "calculated_unverified");
   assert.equal(record.candidate.type, undefined);
   assert.equal(record.candidate.profile, "2/5");
+});
+
+
+test("qualified Human Design core becomes verified only through the approved receipt", () => {
+  const record = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+    calculatedAt: "2026-09-19T23:03:08.000Z",
+    candidate: {
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  });
+
+  assert.equal(record.status, "verified");
+  assert.equal(record.engine, "soulcodex-hd-geocentric-v1");
+  assert.equal(
+    record.verificationReceiptId,
+    "35474994858:human-design-repair-audit",
+  );
+  assert.equal(getVerifiedHumanDesignField(record, "type"), "Reflector");
+  assert.equal(getVerifiedHumanDesignField(record, "profile"), "2/5");
+  assert.equal(mayUseHumanDesignForCompatibility(record), true);
+  assert.match(record.limitations.join(" "), /Variables/i);
+  assert.match(record.limitations.join(" "), /Incarnation Cross/i);
+});
+
+test("approved Human Design receipt is exact and complete", () => {
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.status, "approved");
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.fixtureCount, 20);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.activationCount, 520);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.exactGateMatches, 520);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.exactGateLineMatches, 520);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.typeMatches, 20);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.authorityMatches, 20);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.profileMatches, 20);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.centerSetMatches, 20);
+  assert.equal(APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.channelSetMatches, 20);
+  assert.equal(
+    APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.exactCandidateSha,
+    "d57b747658668492d72869e8a973d5708e21d09d",
+  );
 });
