@@ -6,6 +6,7 @@ import {
   getVerifiedAstrologySign,
   hasVerifiedBigThree,
   hasVerifiedFullNatalChart,
+  hasVerifiedHumanDesignCore,
   hasVerifiedSunAndMoon,
   profileNeedsOnlineVerification,
   reconcileActiveProfile,
@@ -119,6 +120,27 @@ const verifiedRemote = {
         "ASTRO-LONGITUDE-v1 + ASTRO-PLANET-LONGITUDE-v1 + ASTRO-ASCENDANT-v1 + ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1",
     },
   },
+  humanDesignData: {
+    status: "verified" as const,
+    type: "Reflector",
+    strategy: "To Wait a Lunar Cycle",
+    authority: "Lunar Authority",
+    profile: "2/5",
+    definition: "No Definition",
+    activatedGates: [6, 18, 25, 32, 46],
+    trust: {
+      status: "verified",
+      engine: "soulcodex-hd-geocentric-v1",
+      verificationReceiptId: "35474994858:human-design-repair-audit",
+      independentSource: "free-human-design@1.0.1 differential verifier",
+      candidate: {
+        type: "Reflector",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    },
+  },
   numerologyData: local.numerologyData,
   archetypeData: {
     ...local.archetypeData,
@@ -227,6 +249,8 @@ test("offline profile keeps its local symbolic chart while carrying a separate v
   assert.equal(hydrated.archetypeData.title, "Evidence-Cleared Guardian");
   assert.equal(hasVerifiedBigThree(hydrated.verifiedAstrologyData), true);
   assert.equal(hasVerifiedFullNatalChart(hydrated.verifiedAstrologyData), true);
+  assert.equal(hasVerifiedHumanDesignCore(hydrated.verifiedHumanDesignData), true);
+  assert.equal(hydrated.verifiedHumanDesignData?.type, "Reflector");
   assert.equal(profileNeedsOnlineVerification(hydrated), false);
 });
 
@@ -252,7 +276,7 @@ test("a Big Three-only snapshot refreshes when exact inputs can support the full
     "2026-09-19T15:06:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, 6);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -280,7 +304,7 @@ test("a v3 full natal snapshot without Mean Nodes refreshes once for the v4 cont
     "2026-09-19T19:20:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, 6);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -307,7 +331,34 @@ test("a v4 full natal snapshot without Chiron refreshes once for the v5 contract
     "2026-09-19T22:55:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, 6);
+  assert.equal(profileNeedsOnlineVerification(migrated), false);
+});
+
+test("a v5 full natal snapshot without Human Design refreshes once for the v6 contract", () => {
+  const legacyHydrated = {
+    ...local,
+    verifiedAstrologyData: verifiedRemote.astrologyData,
+    verifiedHumanDesignData: undefined,
+    remoteSync: {
+      remoteId: "remote-robert",
+      syncedAt: "2026-09-19T23:30:00.000Z",
+      status: "verified-online" as const,
+      verificationVersion: 5,
+    },
+  } satisfies ReconciledOfflineProfile;
+
+  assert.equal(hasVerifiedFullNatalChart(legacyHydrated.verifiedAstrologyData), true);
+  assert.equal(hasVerifiedHumanDesignCore(legacyHydrated.verifiedHumanDesignData), false);
+  assert.equal(profileNeedsOnlineVerification(legacyHydrated), true);
+
+  const migrated = reconcileOfflineProfile(
+    legacyHydrated,
+    verifiedRemote,
+    "2026-09-20T00:20:00.000Z",
+  );
+  assert.equal(hasVerifiedHumanDesignCore(migrated.verifiedHumanDesignData), true);
+  assert.equal(migrated.remoteSync?.verificationVersion, 6);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
