@@ -266,12 +266,24 @@ export function reconcileActiveProfile(
     risingSign,
     astrologyData: astrology ?? local.astrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
+    humanDesignType:
+      hasVerifiedHumanDesignCore(remote.humanDesignData)
+        ? remote.humanDesignData.type
+        : local.humanDesignType,
+    humanDesignData:
+      hasVerifiedHumanDesignCore(remote.humanDesignData)
+        ? remote.humanDesignData
+        : local.humanDesignData,
     archetype: remote.archetypeData?.title ?? local.archetype,
     confidence: {
       ...(local.confidence && typeof local.confidence === "object"
         ? local.confidence
         : {}),
       astrologyVerification: astrology?.verification ?? null,
+      humanDesignVerification:
+        hasVerifiedHumanDesignCore(remote.humanDesignData)
+          ? remote.humanDesignData.trust
+          : null,
       astrologyVerificationVersion: CURRENT_ASTROLOGY_VERIFICATION_VERSION,
       remoteSyncedAt: syncedAt,
     },
