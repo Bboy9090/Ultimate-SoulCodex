@@ -58,6 +58,13 @@ jobs:
       - name: Validate final iOS release metadata
         run: npm run mobile:validate:ios
 
+      - name: Verify signing and final 4.0.0 release contracts after bootstrap
+        run: |
+          node --import tsx --test \
+            tests/xcode-cloud-scheme-contract.test.ts \
+            tests/release-identity.test.ts \
+            tests/store-release-candidate-contract.test.ts
+
       - name: Resolve Swift package graph after bootstrap
         run: |
           xcodebuild \
