@@ -573,7 +573,6 @@ export function synthesizeVerifiedFoundationProfile(
   }
 
   const planetSummary = bodyConfig
-    .slice(0, 4)
     .map((config) => {
       const placement = astrology.planets?.[config.key];
       if (placement?.verificationStatus !== "verified" || !placement.sign) return null;
@@ -582,14 +581,29 @@ export function synthesizeVerifiedFoundationProfile(
     })
     .filter((value): value is string => Boolean(value));
 
+  const aspectSummary = strongestAspects
+    .slice(0, 3)
+    .map((aspect) =>
+      `${aspect.planet1} ${aspect.aspect} ${aspect.planet2} (${aspect.orb?.toFixed(2)}°)`
+    );
+
   const biography =
-    `${local.name}'s verified Codex is now anchored by a ${sun} Sun, ${moon} Moon, and ${rising} Rising` +
-    `${planetSummary.length ? `; ${planetSummary.join(", ")}` : ""}. ` +
+    `${local.name}'s verified Codex is now anchored by a ${sun} Sun` +
+    `${typeof astrology.planetaryHouses?.sun === "number" ? ` in House ${astrology.planetaryHouses.sun}` : ""}, ` +
+    `${moon} Moon` +
+    `${typeof astrology.planetaryHouses?.moon === "number" ? ` in House ${astrology.planetaryHouses.moon}` : ""}, ` +
+    `and ${rising} Rising. ` +
+    `${planetSummary.length ? `Verified planetary pattern: ${planetSummary.join("; ")}. ` : ""}` +
+    `Midheaven ${astrology.midheaven?.sign ?? "unresolved"}; ` +
     `Mean North Node ${astrology.northNode?.sign ?? "unresolved"}` +
-    `${typeof astrology.northNode?.house === "number" ? ` in House ${astrology.northNode.house}` : ""}, ` +
+    `${typeof astrology.northNode?.house === "number" ? ` in House ${astrology.northNode.house}` : ""}; ` +
+    `Mean South Node ${astrology.southNode?.sign ?? "unresolved"}` +
+    `${typeof astrology.southNode?.house === "number" ? ` in House ${astrology.southNode.house}` : ""}; ` +
     `Chiron ${astrology.chiron?.sign ?? "unresolved"}` +
-    `${typeof astrology.chiron?.house === "number" ? ` in House ${astrology.chiron.house}` : ""}, ` +
-    `and Life Path ${lifePath} add distinct supporting layers. These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
+    `${typeof astrology.chiron?.house === "number" ? ` in House ${astrology.chiron.house}` : ""}. ` +
+    `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
+    `Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} add deterministic numerology layers. ` +
+    `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
 
   const enrichedArchetype = {
     ...local.archetypeData,
