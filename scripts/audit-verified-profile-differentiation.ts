@@ -4,7 +4,7 @@ import {
   differentiationMetrics,
 } from "../tests/fixtures/verified-differentiation-corpus";
 
-const readings = buildVerifiedDifferentiationCorpus(48);
+const readings = buildVerifiedDifferentiationCorpus(96);
 const metrics = differentiationMetrics(readings);
 const receipt = {
   schemaVersion: "1.0.0",
