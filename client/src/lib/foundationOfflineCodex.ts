@@ -872,7 +872,7 @@ export function synthesizeVerifiedFoundationProfile(
     : null;
   const emphasisSummary = [
     dominantElement
-      ? `${dominantElement.element} leads the verified elemental balance (${dominantElement.count}/${dominantElement.total})`
+      ? `${dominantElement.element} leads the verified elemental distribution (${dominantElement.count}/${dominantElement.total})`
       : null,
     houseConcentration
       ? `House ${houseConcentration.house} is the most populated verified house (${houseConcentration.count} planets)`
@@ -880,12 +880,25 @@ export function synthesizeVerifiedFoundationProfile(
     strongestAspectText,
   ].filter((value): value is string => Boolean(value)).join(". ");
 
+  const geometrySignature = [
+    `${rising}-Rising`,
+    typeof astrology.planetaryHouses?.sun === "number"
+      ? `${sun}-Sun-H${astrology.planetaryHouses.sun}`
+      : `${sun}-Sun`,
+    typeof astrology.planetaryHouses?.moon === "number"
+      ? `${moon}-Moon-H${astrology.planetaryHouses.moon}`
+      : `${moon}-Moon`,
+    astrology.midheaven?.sign
+      ? `${astrology.midheaven.sign}-MC`
+      : "MC-unresolved",
+  ].join(" / ");
+
   const biography =
     `${local.name}'s verified Codex is now anchored by a ${sun} Sun` +
     `${typeof astrology.planetaryHouses?.sun === "number" ? ` in House ${astrology.planetaryHouses.sun}` : ""}, ` +
     `${moon} Moon` +
     `${typeof astrology.planetaryHouses?.moon === "number" ? ` in House ${astrology.planetaryHouses.moon}` : ""}, ` +
-    `and ${rising} Rising. ` +
+    `and ${rising} Rising. Geometry signature: ${geometrySignature}. ` +
     `${planetSummary.length ? `Verified planetary pattern: ${planetSummary.join("; ")}. ` : ""}` +
     `Midheaven ${astrology.midheaven?.sign ?? "unresolved"}; ` +
     `Mean North Node ${astrology.northNode?.sign ?? "unresolved"}` +
