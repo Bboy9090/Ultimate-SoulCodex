@@ -32,10 +32,10 @@ describe("release identity contract", () => {
 
   it("allows release version injection without changing the API contract", () => {
     const identity = resolveReleaseIdentity({
-      SOUL_CODEX_RELEASE_VERSION: "4.0.0-rc.3+staging",
+      SOUL_CODEX_RELEASE_VERSION: "4.0.0+staging",
       SOUL_CODEX_RELEASE_SHA: "abc123",
     });
-    assert.equal(identity.appVersion, "4.0.0-rc.3+staging");
+    assert.equal(identity.appVersion, "4.0.0+staging");
     assert.equal(identity.apiContract, "foundation-v4");
   });
 });
