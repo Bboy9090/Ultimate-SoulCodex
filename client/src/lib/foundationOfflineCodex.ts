@@ -348,7 +348,14 @@ function verifiedPlacementSeed(input: {
     label: `${input.bodyLabel} in ${input.sign}${houseText}`,
     priority: input.priority,
     claimKind: "derived",
-    facets: input.facets,
+    facets: Object.fromEntries(
+      Object.entries(input.facets).map(([facet, value]) => [
+        facet,
+        typeof value === "string" && typeof input.house === "number"
+          ? `${value} House ${input.house} adds emphasis on ${HOUSE_THEMES[input.house]?.theme ?? "this life area"}.`
+          : value,
+      ]),
+    ) as DepthSynthesisSeed["facets"],
     tensionAxes: input.axes ?? signPattern.axes,
     limitations: [
       "The astronomical placement is verified; the interpretation is symbolic and should be tested against lived experience.",
@@ -361,6 +368,223 @@ function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "mo
   return placement?.verificationStatus === "verified" && typeof placement.sign === "string"
     ? placement.sign
     : null;
+}
+
+const HOUSE_THEMES: Record<number, { theme: string; action: string }> = {
+  1: { theme: "identity, initiation, and direct self-definition", action: "Choose one action that makes your position visible without over-explaining it." },
+  2: { theme: "resources, values, and material steadiness", action: "Name the resource or value you are protecting before deciding what to spend, keep, or build." },
+  3: { theme: "learning, language, and everyday exchange", action: "Write the message in one clear sentence before adding more detail." },
+  4: { theme: "home, roots, and private foundations", action: "Strengthen one private foundation before asking the public layer to carry more weight." },
+  5: { theme: "creative risk, play, and visible self-expression", action: "Make one creative choice that is specific enough to be seen and tested." },
+  6: { theme: "craft, routines, service, and maintenance", action: "Improve one repeatable routine instead of trying to repair the whole system at once." },
+  7: { theme: "partnership, agreements, and reflected needs", action: "Clarify one agreement out loud rather than assuming mutual understanding." },
+  8: { theme: "shared stakes, trust, and transformation", action: "Separate what is yours to carry from what is shared before making the next commitment." },
+  9: { theme: "meaning, worldview, study, and expansion", action: "Test one belief against a concrete experience or source before building on it." },
+  10: { theme: "public direction, responsibility, and visible contribution", action: "Choose the next public responsibility by impact, not by appearance alone." },
+  11: { theme: "networks, future plans, and collective contribution", action: "Identify which group or long-range goal deserves your next unit of attention." },
+  12: { theme: "closure, retreat, imagination, and hidden processing", action: "Create protected space to finish or release one unfinished internal cycle." },
+};
+
+const ELEMENT_LANGUAGE: Record<string, { emphasis: string; gift: string; shadow: string }> = {
+  Fire: {
+    emphasis: "initiative, visibility, and momentum",
+    gift: "decisive movement and the courage to make energy visible",
+    shadow: "acting before enough context or recovery is available",
+  },
+  Earth: {
+    emphasis: "stability, usefulness, and durable execution",
+    gift: "turning intention into repeatable structure",
+    shadow: "staying with a method after the conditions have changed",
+  },
+  Air: {
+    emphasis: "ideas, comparison, language, and perspective",
+    gift: "seeing connections quickly and translating them for others",
+    shadow: "remaining in analysis after the useful decision point has passed",
+  },
+  Water: {
+    emphasis: "sensitivity, bonding, memory, and emotional context",
+    gift: "noticing relational or emotional information that others may miss",
+    shadow: "carrying emotional material without first checking whether it belongs to you",
+  },
+};
+
+function verifiedAggregateEvidence(
+  id: string,
+  field: string,
+  value: string,
+  notes: string[],
+): InterpretationEvidenceRef {
+  return {
+    id,
+    system: "astrology",
+    field,
+    value,
+    confidence: "high",
+    provenanceStatus: "partially-verified",
+    timeSensitivity: "birth-time-required",
+    notes: [
+      "This aggregate is deterministically derived from individually verified chart placements.",
+      ...notes,
+    ],
+  };
+}
+
+function dominantVerifiedElement(
+  astrology: VerifiedAstrologyForSynthesis,
+): { element: string; count: number; total: number } | null {
+  const counts = new Map<string, number>();
+  let total = 0;
+  for (const placement of Object.values(astrology.planets ?? {})) {
+    if (placement?.verificationStatus !== "verified" || !placement.sign) continue;
+    const element = elementForSign(placement.sign);
+    counts.set(element, (counts.get(element) ?? 0) + 1);
+    total += 1;
+  }
+  if (total === 0) return null;
+  const ordered = ["Fire", "Earth", "Air", "Water"];
+  const element = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || ordered.indexOf(a[0]) - ordered.indexOf(b[0]))[0]?.[0];
+  if (!element) return null;
+  return { element, count: counts.get(element) ?? 0, total };
+}
+
+function strongestVerifiedHouse(
+  astrology: VerifiedAstrologyForSynthesis,
+): { house: number; count: number } | null {
+  const counts = new Map<number, number>();
+  for (const house of Object.values(astrology.planetaryHouses ?? {})) {
+    if (typeof house !== "number" || house < 1 || house > 12) continue;
+    counts.set(house, (counts.get(house) ?? 0) + 1);
+  }
+  const winner = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+  return winner ? { house: winner[0], count: winner[1] } : null;
+}
+
+function aspectDynamicText(aspect: NonNullable<VerifiedAstrologyForSynthesis["aspects"]>[number]): {
+  summary: string;
+  relationship: string;
+  repair: string;
+} {
+  const pair = `${aspect.planet1}–${aspect.planet2}`;
+  const orb = typeof aspect.orb === "number" ? ` at ${aspect.orb.toFixed(2)}°` : "";
+  switch (aspect.aspect) {
+    case "conjunction":
+      return {
+        summary: `${pair} conjunction${orb} concentrates two verified functions into the same symbolic lane.`,
+        relationship: `The ${pair} conjunction may make those two functions arrive together rather than taking turns.`,
+        repair: "When both impulses activate at once, name which one is setting the pace before acting.",
+      };
+    case "opposition":
+      return {
+        summary: `${pair} opposition${orb} places two verified functions across a polarity that may need active balancing.`,
+        relationship: `The ${pair} opposition may become most visible when another person or situation carries the opposite side of the polarity.`,
+        repair: "State both sides of the tradeoff before choosing which one leads this decision.",
+      };
+    case "square":
+      return {
+        summary: `${pair} square${orb} marks a verified friction angle that may demand adjustment rather than passive blending.`,
+        relationship: `The ${pair} square may show up as pressure to solve two valid demands at the same time.`,
+        repair: "Choose one concrete compromise that reduces friction without pretending the two demands are identical.",
+      };
+    case "trine":
+      return {
+        summary: `${pair} trine${orb} links two verified functions through an easier flow that may become automatic.`,
+        relationship: `The ${pair} trine may make this combination feel natural enough that its strengths are easy to overlook.`,
+        repair: "Use the easy coordination deliberately instead of assuming it will carry every situation by itself.",
+      };
+    case "sextile":
+      return {
+        summary: `${pair} sextile${orb} marks a verified opportunity angle that tends to need participation to become useful.`,
+        relationship: `The ${pair} sextile may work best when there is an active invitation, experiment, or exchange.`,
+        repair: "Create one small opportunity to use both functions together instead of waiting for the pattern to activate itself.",
+      };
+    default:
+      return {
+        summary: `${pair} ${aspect.aspect ?? "aspect"}${orb} is verified geometry that adds a specific interaction to the chart.`,
+        relationship: `The ${pair} interaction may be more useful as a coordination question than as a fixed personality label.`,
+        repair: "Observe when both functions appear together and record what actually helps them coordinate.",
+      };
+  }
+}
+
+function verifiedAggregateSeeds(
+  astrology: VerifiedAstrologyForSynthesis,
+): DepthSynthesisSeed[] {
+  const seeds: DepthSynthesisSeed[] = [];
+  const element = dominantVerifiedElement(astrology);
+  if (element) {
+    const language = ELEMENT_LANGUAGE[element.element];
+    seeds.push({
+      evidence: verifiedAggregateEvidence(
+        "verified.astrology.aggregate.element",
+        "dominantElement",
+        `${element.element} ${element.count}/${element.total}`,
+        ["Element concentration is counted from verified Sun-through-Pluto signs."],
+      ),
+      label: `${element.element} concentration (${element.count} of ${element.total} verified planets)`,
+      priority: 110,
+      claimKind: "derived",
+      facets: {
+        claritySummary: `Across the verified planets, ${element.element} is the strongest element concentration, emphasizing ${language.emphasis}.`,
+        gift: `This ${element.element} concentration may support ${language.gift}.`,
+        shadow: `When the same emphasis is overused, the cost may look like ${language.shadow}.`,
+      },
+      tensionAxes: [],
+      limitations: ["Element concentration is a symbolic aggregation of verified placements, not a scientific personality measurement."],
+    });
+  }
+
+  const house = strongestVerifiedHouse(astrology);
+  if (house) {
+    const houseLanguage = HOUSE_THEMES[house.house];
+    seeds.push({
+      evidence: verifiedAggregateEvidence(
+        "verified.astrology.aggregate.house",
+        "houseConcentration",
+        `House ${house.house}: ${house.count} verified planets`,
+        ["House concentration is counted from verified planetary Equal House assignments."],
+      ),
+      label: `House ${house.house} concentration (${house.count} verified planets)`,
+      priority: 109,
+      claimKind: "derived",
+      facets: {
+        visiblePattern: `The strongest house concentration falls in House ${house.house}, putting extra symbolic weight on ${houseLanguage.theme}.`,
+        hiddenNeed: `A repeated House ${house.house} emphasis may keep pulling attention back toward ${houseLanguage.theme}.`,
+        decisionImpact: `When choices compete, House ${house.house} themes—${houseLanguage.theme}—may deserve explicit consideration rather than being treated as background.`,
+        action: houseLanguage.action,
+      },
+      tensionAxes: [],
+      limitations: ["House concentration is a deterministic summary of verified Equal House positions; interpretation remains symbolic."],
+    });
+  }
+
+  const strongest = [...(astrology.aspects ?? [])]
+    .filter((aspect) => aspect.planet1 && aspect.planet2 && aspect.aspect && typeof aspect.orb === "number")
+    .sort((a, b) => (a.orb ?? 99) - (b.orb ?? 99))[0];
+  if (strongest) {
+    const dynamic = aspectDynamicText(strongest);
+    seeds.push({
+      evidence: verifiedAggregateEvidence(
+        "verified.astrology.aggregate.strongest-aspect",
+        "strongestAspect",
+        `${strongest.planet1} ${strongest.aspect} ${strongest.planet2} ${strongest.orb?.toFixed(2)}°`,
+        ["The strongest aspect is the smallest-orb verified major aspect in the supplied chart."],
+      ),
+      label: `Strongest aspect: ${strongest.planet1} ${strongest.aspect} ${strongest.planet2}`,
+      priority: 108,
+      claimKind: "inferred",
+      facets: {
+        innerExperience: dynamic.summary,
+        relationshipImpact: dynamic.relationship,
+        commonMisreading: "A strong aspect describes interaction between chart functions; reducing it to one adjective can erase the actual tension or cooperation.",
+        boundaryOrRepair: dynamic.repair,
+      },
+      tensionAxes: [],
+      limitations: ["Aspect geometry is verified; the interaction language is symbolic and should be tested against lived experience."],
+    });
+  }
+
+  return seeds;
 }
 
 /**
@@ -398,6 +622,7 @@ export function synthesizeVerifiedFoundationProfile(
   const risingPattern = SIGN_PATTERNS[rising] ?? SIGN_PATTERNS.Virgo;
 
   const seeds: DepthSynthesisSeed[] = [
+    ...verifiedAggregateSeeds(astrology),
     makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100),
     makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, LIFE_PATHS[expression] ?? LIFE_PATHS[1], 96),
     makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, LIFE_PATHS[soulUrge] ?? LIFE_PATHS[6], 95),
@@ -410,9 +635,6 @@ export function synthesizeVerifiedFoundationProfile(
       priority: 130,
       facets: {
         claritySummary: `The verified Sun layer emphasizes ${sunPattern.drive}.`,
-        gift: `Its constructive expression may look like ${sunPattern.gift}.`,
-        shadow: `When overused, the same pattern may become ${sunPattern.shadow}.`,
-        action: sunPattern.action,
       },
     }),
     verifiedPlacementSeed({
@@ -587,6 +809,22 @@ export function synthesizeVerifiedFoundationProfile(
       `${aspect.planet1} ${aspect.aspect} ${aspect.planet2} (${aspect.orb?.toFixed(2)}°)`
     );
 
+  const dominantElement = dominantVerifiedElement(astrology);
+  const houseConcentration = strongestVerifiedHouse(astrology);
+  const strongestAspect = strongestAspects[0];
+  const strongestAspectText = strongestAspect
+    ? aspectDynamicText(strongestAspect).summary
+    : null;
+  const emphasisSummary = [
+    dominantElement
+      ? `${dominantElement.element} leads the verified elemental balance (${dominantElement.count}/${dominantElement.total})`
+      : null,
+    houseConcentration
+      ? `House ${houseConcentration.house} is the most populated verified house (${houseConcentration.count} planets)`
+      : null,
+    strongestAspectText,
+  ].filter((value): value is string => Boolean(value)).join(". ");
+
   const biography =
     `${local.name}'s verified Codex is now anchored by a ${sun} Sun` +
     `${typeof astrology.planetaryHouses?.sun === "number" ? ` in House ${astrology.planetaryHouses.sun}` : ""}, ` +
@@ -602,6 +840,7 @@ export function synthesizeVerifiedFoundationProfile(
     `Chiron ${astrology.chiron?.sign ?? "unresolved"}` +
     `${typeof astrology.chiron?.house === "number" ? ` in House ${astrology.chiron.house}` : ""}. ` +
     `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
+    `${emphasisSummary ? `Chart emphasis: ${emphasisSummary}. ` : ""}` +
     `Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} add deterministic numerology layers. ` +
     `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
 
@@ -619,7 +858,12 @@ export function synthesizeVerifiedFoundationProfile(
 
   return {
     biography,
-    dailyGuidance: `${pathPattern.action} ${sunPattern.action}`,
+    dailyGuidance: [
+      houseConcentration ? HOUSE_THEMES[houseConcentration.house].action : null,
+      strongestAspect ? aspectDynamicText(strongestAspect).repair : null,
+      dominantElement ? `Use the ${dominantElement.element} emphasis deliberately: ${ELEMENT_LANGUAGE[dominantElement.element].gift}.` : null,
+      pathPattern.action,
+    ].filter((value): value is string => Boolean(value)).join(" "),
     depthInterpretation,
     archetypeData: enrichedArchetype,
   };
