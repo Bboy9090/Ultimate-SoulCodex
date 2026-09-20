@@ -1,7 +1,7 @@
 export const V4_RELEASE_MANIFEST = {
   product: "Ultimate Soul Codex",
   releaseLine: "v4-clarity-first",
-  releaseVersion: "4.0.0-rc.3",
+  releaseVersion: "4.0.0",
   classification: "release-candidate",
   releaseScope: "foundation-web",
   apiContract: "foundation-v4",
