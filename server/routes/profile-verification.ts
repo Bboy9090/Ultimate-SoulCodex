@@ -4,11 +4,7 @@ import {
   calculateVerifiedAstrology,
   type AstrologyData,
 } from "../services/astrology-production";
-import { calculateHumanDesign } from "@soulcodex/astrology";
-import {
-  APPROVED_HUMAN_DESIGN_CORE_VERIFICATION,
-  createVerifiedHumanDesignTrustRecord,
-} from "../services/human-design-trust";
+import { calculateVerifiedHumanDesignCore } from "../services/human-design-core-verification";
 
 const numericCoordinate = z
   .union([z.number(), z.string().min(1)])
@@ -43,78 +39,6 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   };
 }
 
-function verifiedHumanDesignCore(input: {
-  birthDate: string;
-  birthTime?: string;
-  timezone: string;
-  latitude?: number;
-  longitude?: number;
-  inputTimestampUtc?: string | null;
-}) {
-  if (
-    !input.birthTime ||
-    input.latitude === undefined ||
-    input.longitude === undefined ||
-    !input.inputTimestampUtc
-  ) {
-    return null;
-  }
-
-  const result = calculateHumanDesign({
-    name: "Verification profile",
-    birthDate: input.birthDate,
-    birthTime: input.birthTime,
-    birthLocation: "Verified coordinates",
-    timezone: input.timezone,
-    latitude: String(input.latitude),
-    longitude: String(input.longitude),
-  });
-
-  if (result.status !== "resolved") return null;
-
-  const definedCenters = Object.entries(result.centers)
-    .filter(([, center]) => center.defined)
-    .map(([name]) => name)
-    .sort();
-
-  const definedChannels = result.channels
-    .filter((channel) => channel.defined)
-    .map((channel) => [...channel.gates].sort((a, b) => a - b))
-    .sort((left, right) =>
-      left[0] - right[0] || left[1] - right[1],
-    );
-
-  const trust = createVerifiedHumanDesignTrustRecord({
-    birthTimeKnown: true,
-    inputTimestampUtc: input.inputTimestampUtc,
-    candidate: {
-      type: result.type,
-      strategy: result.strategy,
-      authority: result.authority,
-      profile: result.profile,
-    },
-  });
-
-  if (trust.status !== "verified") return null;
-
-  return {
-    status: "verified" as const,
-    policyId: APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.policyId,
-    type: result.type,
-    strategy: result.strategy,
-    authority: result.authority,
-    profile: result.profile,
-    definedCenters,
-    definedChannels,
-    activations: result.activations,
-    trust,
-    limitations: [
-      "Verified core excludes Variables and Incarnation Cross naming.",
-      "Human Design interpretation remains a symbolic framework rather than scientific personality measurement.",
-    ],
-  };
-}
-
 /**
  * Minimal online evidence endpoint for a local-first profile.
  *
@@ -145,7 +69,7 @@ export function registerProfileVerificationRoutes(app: Express) {
         longitude: parsed.data.longitude,
       });
       const updatedAt = new Date().toISOString();
-      const humanDesignData = verifiedHumanDesignCore({
+      const humanDesignData = calculateVerifiedHumanDesignCore({
         birthDate: parsed.data.birthDate,
         birthTime: parsed.data.birthTime?.trim() || undefined,
         timezone: parsed.data.timezone,
