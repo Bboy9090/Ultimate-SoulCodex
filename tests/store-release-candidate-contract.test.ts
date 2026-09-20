@@ -11,6 +11,11 @@ test("Soul Codex 4.0.0 native identities are aligned", async () => {
   const info = await text("ios/App/App/Info.plist");
   const project = await text("ios/App/App.xcodeproj/project.pbxproj");
   const manifest = await text("client/src/lib/v4ReleaseManifest.ts");
+  const dockerfile = await text("Dockerfile");
+  const serverIdentity = await text("server/lib/release-identity.ts");
+  const clientIdentity = await text("client/src/lib/releaseIdentity.ts");
+  const androidBuildspec = await text("buildspec-android.yml");
+  const envExample = await text(".env.example");
 
   assert.match(android, /versionCode\s+4000004/);
   assert.match(android, /versionName\s+"4\.0\.0"/);
@@ -20,6 +25,22 @@ test("Soul Codex 4.0.0 native identities are aligned", async () => {
   assert.match(project, /MARKETING_VERSION = 4\.0\.0;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
   assert.match(manifest, /releaseVersion:\s*"4\.0\.0"/);
+  assert.match(dockerfile, /SOUL_CODEX_RELEASE_VERSION=4\.0\.0/);
+  assert.match(serverIdentity, /DEFAULT_FOUNDATION_RELEASE_VERSION = "4\.0\.0"/);
+  assert.match(clientIdentity, /DEFAULT_CLIENT_RELEASE_VERSION = "4\.0\.0"/);
+  assert.match(androidBuildspec, /VITE_RELEASE_VERSION: "4\.0\.0"/);
+  assert.match(envExample, /VITE_RELEASE_VERSION=4\.0\.0/);
+  assert.match(envExample, /SOUL_CODEX_RELEASE_VERSION=4\.0\.0/);
+
+  for (const [name, source] of [
+    ["Dockerfile", dockerfile],
+    ["server release identity", serverIdentity],
+    ["client release identity", clientIdentity],
+    ["Android CodeBuild", androidBuildspec],
+    ["environment example", envExample],
+  ] as const) {
+    assert.doesNotMatch(source, /4\.0\.0-rc\.3/, `${name} must not retain the RC3 runtime identity`);
+  }
 });
 
 test("store workflow binds exact release branch and Play production upload", async () => {

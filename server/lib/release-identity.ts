@@ -1,5 +1,5 @@
 export const FOUNDATION_API_CONTRACT = "foundation-v4";
-export const DEFAULT_FOUNDATION_RELEASE_VERSION = "4.0.0-rc.3";
+export const DEFAULT_FOUNDATION_RELEASE_VERSION = "4.0.0";
 
 export type ReleaseIdentity = {
   status: "ok";
