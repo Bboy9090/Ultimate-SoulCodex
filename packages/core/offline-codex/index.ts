@@ -311,7 +311,14 @@ function calculateTarotCards(birthDate: string): OfflineArchetypeData["tarotCard
 }
 
 function synthesizeArchetype(astrology: OfflineAstrologyData, numerology: OfflineNumerologyData, birthDate: string): OfflineArchetypeData {
-  const keywords = [astrology.sunSign.toLowerCase(), astrology.moonSign.toLowerCase(), astrology.risingSign.toLowerCase(), elementForSign(astrology.sunSign), String(numerology.lifePath)];
+  // Offline Moon/Rising values are compatibility placeholders only and are
+  // intentionally excluded from interpretation until verified astronomy is
+  // reconciled into the profile.
+  const keywords = [
+    astrology.sunSign.toLowerCase(),
+    elementForSign(astrology.sunSign),
+    String(numerology.lifePath),
+  ];
   let best: ArchetypeTemplate = ARCHETYPES[0];
   let bestScore = -1;
   for (const candidate of ARCHETYPES) {
@@ -350,7 +357,8 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
         claritySummary: `A central pattern emphasizes ${sign.drive}.`, visiblePattern: `Others may first notice ${sign.gift}.`,
         hiddenNeed: `The pattern may be trying to preserve conditions for ${sign.drive}.`, gift: `The constructive expression is ${sign.gift}.`,
         shadow: `When overused, the same pattern can become ${sign.shadow}.`, relationshipImpact: `In relationships, the symbolic pattern ${sign.relationship}.`,
-        boundaryOrRepair: sign.action, action: sign.action,
+        boundaryOrRepair: sign.action,
+        action: `Choose one situation to test this pattern this week. ${sign.action}`,
       },
       tensionAxes: sign.axes,
       limitations: ["Sun-sign symbolism is interpretive and does not establish fixed personality."],
@@ -401,8 +409,6 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       tensionAxes: [...sign.axes, ...path.axes],
       limitations: ["The archetype combines symbolic sources; overlap is supporting context, not independent proof."],
     },
-    timeSensitiveSeed("moon", astrology.moonSign, 55),
-    timeSensitiveSeed("rising", astrology.risingSign, 50),
   ];
   const interpretation = synthesizeDepthInterpretationV1({
     version: 1,
@@ -411,8 +417,8 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
     seeds,
     missingData: [
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
-      "Human Design is not calculated by this offline compatibility runtime.",
-      "Moon, Rising, houses, and planetary placements remain legacy-grade approximations until the ephemeris engine is connected.",
+      "Human Design core is withheld from this offline profile until its qualified engine result is explicitly reconciled.",
+      "Moon, Rising, houses, planetary placements, nodes, aspects, and Chiron are withheld from local interpretation until verified astronomy is explicitly reconciled.",
     ],
   });
   const validation = validateDepthInterpretationV1(interpretation, { birthTimeStatus });
@@ -420,30 +426,6 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
     throw new Error(`Offline depth interpretation failed validation: ${validation.findings.map((finding) => finding.code).join(", ")}`);
   }
   return interpretation;
-}
-
-function timeSensitiveSeed(kind: "moon" | "rising", signName: string, priority: number): DepthSynthesisSeed {
-  const sign = SIGN_TRAITS[signName];
-  const isMoon = kind === "moon";
-  return {
-    evidence: makeEvidence({
-      id: `offline.astrology.${kind}`,
-      system: "astrology",
-      field: `${kind}Sign`,
-      value: signName,
-      confidence: "low",
-      timeSensitivity: "birth-time-required",
-      notes: [`The current offline ${kind} calculation preserves legacy application behavior and is not ephemeris-grade.`],
-    }),
-    label: `${signName} ${isMoon ? "Moon" : "Rising"} approximation`,
-    priority,
-    claimKind: "inferred",
-    facets: isMoon
-      ? { innerExperience: `A low-confidence Moon approximation adds ${sign.drive}.`, relationshipImpact: `This approximation may color emotional needs and ${sign.relationship}.` }
-      : { visiblePattern: `A low-confidence Rising approximation may present as ${sign.gift}.`, commonMisreading: `That presentation may be mistaken for ${sign.shadow}.` },
-    tensionAxes: sign.axes,
-    limitations: [`This ${isMoon ? "Moon" : "Rising"} sign is a local approximation and may change after a verified astronomical calculation.`],
-  };
 }
 
 function makeId(): string {

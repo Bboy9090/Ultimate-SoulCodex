@@ -1,0 +1,44 @@
+name: Federation Verified Differentiation
+
+on:
+  push:
+    branches:
+      - fed-differentiation-truth-boundary
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verified-differentiation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Verified narrative reconciliation regression
+        run: node --import tsx --test tests/profile-verification-reconciliation.test.ts tests/verified-profile-differentiation.test.ts
+      - name: Generate differentiation receipt
+        run: node --import tsx scripts/audit-verified-profile-differentiation.ts verified-profile-differentiation-receipt.json
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > DIFFERENTIATION-SHA.txt
+      - name: Upload differentiation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-profile-differentiation
+          path: |
+            verified-profile-differentiation-receipt.json
+            DIFFERENTIATION-SHA.txt
+          if-no-files-found: error
+          retention-days: 90

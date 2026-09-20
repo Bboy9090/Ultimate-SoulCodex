@@ -1,0 +1,70 @@
+name: Federation Chiron Cross Engine Evidence
+
+on:
+  push:
+    branches:
+      - fed-chiron-cross-engine-evidence
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chiron-cross-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts
+      - name: Install pinned Swiss Ephemeris runtime
+        run: python -m pip install --disable-pip-version-check pyswisseph==2.10.3.2
+      - name: Download and fingerprint Swiss Chiron ephemeris
+        run: |
+          mkdir -p .swisseph
+          curl --fail --location --retry 3 \
+            https://raw.githubusercontent.com/aloistr/swisseph/master/ephe/seas_18.se1 \
+            --output .swisseph/seas_18.se1
+          curl --fail --location --retry 3 \
+            https://raw.githubusercontent.com/aloistr/swisseph/master/ephe/sepl_18.se1 \
+            --output .swisseph/sepl_18.se1
+          {
+            sha256sum .swisseph/seas_18.se1
+            sha256sum .swisseph/sepl_18.se1
+          } | tee SWISS-CHIRON-EPHEMERIS-SHA256.txt
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Chiron Horizons unit contract
+        run: node --import tsx --test tests/chiron-horizons-reference.test.ts
+      - name: Generate Swiss Chiron reference
+        env:
+          SWISSEPH_EPHE_PATH: .swisseph
+          CHIRON_SWISS_OUTPUT: chiron-swiss-reference.json
+        run: python scripts/generate-swiss-chiron-reference.py
+      - name: Compare live JPL Horizons to Swiss Ephemeris
+        run: node --import tsx scripts/generate-chiron-cross-engine-evidence.ts chiron-swiss-reference.json chiron-cross-engine-receipt.json
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > CHIRON-EVIDENCE-SHA.txt
+      - name: Upload Chiron evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: chiron-cross-engine-evidence
+          path: |
+            chiron-swiss-reference.json
+            chiron-cross-engine-receipt.json
+            CHIRON-EVIDENCE-SHA.txt
+            SWISS-CHIRON-EPHEMERIS-SHA256.txt
+          if-no-files-found: error
+          retention-days: 90

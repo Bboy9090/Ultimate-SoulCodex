@@ -1,5 +1,9 @@
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
+import {
+  synthesizeVerifiedFoundationProfile,
+  type VerifiedAstrologyForSynthesis,
+} from "./foundationOfflineCodex";
 
 type PlacementRecord = {
   status?: string;
@@ -7,7 +11,12 @@ type PlacementRecord = {
   sign?: string | null;
 };
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 2;
+const FULL_NATAL_PLANET_KEYS = [
+  "sun", "moon", "mercury", "venus", "mars",
+  "jupiter", "saturn", "uranus", "neptune", "pluto",
+] as const;
+
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 5;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -22,6 +31,49 @@ export type RemoteProfileSnapshot = {
     sun?: PlacementRecord;
     moon?: PlacementRecord;
     rising?: PlacementRecord;
+    planets?: Partial<Record<(typeof FULL_NATAL_PLANET_KEYS)[number], PlacementRecord>>;
+    houseSystem?: string;
+    houses?: Array<{
+      house?: number;
+      verificationStatus?: string;
+      sign?: string;
+      degree?: number;
+      longitude?: number;
+    }>;
+    midheaven?: PlacementRecord & {
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+    };
+    planetaryHouses?: Partial<Record<(typeof FULL_NATAL_PLANET_KEYS)[number], number>>;
+    aspects?: Array<{
+      planet1?: string;
+      planet2?: string;
+      aspect?: string;
+      orb?: number;
+      policyId?: string;
+    }>;
+    northNode?: PlacementRecord & {
+      mode?: string;
+      house?: number;
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+    };
+    southNode?: PlacementRecord & {
+      mode?: string;
+      house?: number;
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+    };
+    chiron?: PlacementRecord & {
+      house?: number;
+      longitude?: number;
+      degree?: number;
+      policyId?: string;
+      qualificationMethod?: string;
+    };
     sunSign?: string | null;
     moonSign?: string | null;
     risingSign?: string | null;
@@ -75,6 +127,75 @@ export function hasVerifiedBigThree(
     hasVerifiedSunAndMoon(astrology) &&
       getVerifiedAstrologySign(astrology, "rising"),
   );
+}
+
+export function hasVerifiedFullNatalChart(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  if (!astrology || !hasVerifiedBigThree(astrology)) return false;
+  if (astrology.houseSystem !== "equal") return false;
+  if (astrology.midheaven?.verificationStatus !== "verified") return false;
+
+  const houses = astrology.houses;
+  if (
+    !Array.isArray(houses) ||
+    houses.length !== 12 ||
+    houses.some(
+      (house, index) =>
+        house.verificationStatus !== "verified" ||
+        house.house !== index + 1,
+    )
+  ) {
+    return false;
+  }
+
+  const planets = astrology.planets;
+  if (
+    !planets ||
+    FULL_NATAL_PLANET_KEYS.some(
+      (key) => planets[key]?.verificationStatus !== "verified",
+    )
+  ) {
+    return false;
+  }
+
+  const planetaryHouses = astrology.planetaryHouses;
+  if (
+    !planetaryHouses ||
+    FULL_NATAL_PLANET_KEYS.some((key) => {
+      const house = planetaryHouses[key];
+      return typeof house !== "number" || house < 1 || house > 12;
+    })
+  ) {
+    return false;
+  }
+
+  if (!Array.isArray(astrology.aspects)) return false;
+
+  for (const node of [astrology.northNode, astrology.southNode]) {
+    if (
+      node?.verificationStatus !== "verified" ||
+      node.mode !== "mean" ||
+      typeof node.house !== "number" ||
+      node.house < 1 ||
+      node.house > 12
+    ) {
+      return false;
+    }
+  }
+
+  const chiron = astrology.chiron;
+  if (
+    chiron?.verificationStatus !== "verified" ||
+    typeof chiron.house !== "number" ||
+    chiron.house < 1 ||
+    chiron.house > 12 ||
+    chiron.qualificationMethod !== "live-jpl-qualified-against-swiss"
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
@@ -144,17 +265,41 @@ export function reconcileOfflineProfile(
   syncedAt = new Date().toISOString(),
 ): ReconciledOfflineProfile {
   const remoteId = remote.id ?? local.id;
+  const numerologyData =
+    (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??
+    local.numerologyData;
+  const mergedLocal: OfflineCodexProfile = {
+    ...local,
+    numerologyData,
+  };
+
+  const verifiedNarrative =
+    remote.astrologyData && hasVerifiedFullNatalChart(remote.astrologyData)
+      ? synthesizeVerifiedFoundationProfile(
+          mergedLocal,
+          remote.astrologyData as VerifiedAstrologyForSynthesis,
+          syncedAt,
+        )
+      : null;
 
   return {
     ...local,
-    numerologyData:
-      (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??
-      local.numerologyData,
+    numerologyData,
     archetypeData:
+      verifiedNarrative?.archetypeData ??
       (remote.archetypeData as OfflineCodexProfile["archetypeData"] | undefined) ??
       local.archetypeData,
-    biography: remote.biography ?? local.biography,
-    dailyGuidance: remote.dailyGuidance ?? local.dailyGuidance,
+    biography:
+      verifiedNarrative?.biography ??
+      remote.biography ??
+      local.biography,
+    dailyGuidance:
+      verifiedNarrative?.dailyGuidance ??
+      remote.dailyGuidance ??
+      local.dailyGuidance,
+    depthInterpretation:
+      verifiedNarrative?.depthInterpretation ??
+      local.depthInterpretation,
     verifiedAstrologyData: remote.astrologyData,
     remoteSync: {
       remoteId,
@@ -169,11 +314,13 @@ export function reconcileOfflineProfile(
 /**
  * A profile still needs astronomy verification when:
  * - Sun or Moon has not been independently verified; or
- * - exact timed Ascendant inputs exist and Rising has not actually verified.
+ * - exact timed chart inputs exist and the full supported natal chart has not
+ *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 2 means the profile understands
- * the Ascendant contract; it does not mean the Ascendant itself passed.
+ * temporary reference/engine failure. Version 5 means the profile understands
+ * the full-natal chart, Mean Node, and live-qualified Chiron contracts; it does
+ * not mean every placement passed.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
@@ -184,6 +331,6 @@ export function profileNeedsOnlineVerification(
 
   return Boolean(
     hasExactAscendantInputs(profile) &&
-      !getVerifiedAstrologySign(profile.verifiedAstrologyData, "rising"),
+      !hasVerifiedFullNatalChart(profile.verifiedAstrologyData),
   );
 }

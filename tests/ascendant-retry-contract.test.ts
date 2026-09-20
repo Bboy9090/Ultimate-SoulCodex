@@ -50,11 +50,79 @@ test("current verification version does not hide retry while exact-input Rising 
   assert.equal(profileNeedsOnlineVerification(profile), true);
 });
 
-test("verified Rising completes the exact-input verification requirement", () => {
+test("verified Rising alone still refreshes when the full natal contract is available", () => {
   const profile = exactProfile();
   profile.verifiedAstrologyData = {
     ...profile.verifiedAstrologyData,
     rising: { verificationStatus: "verified", sign: "Scorpio" },
+  };
+  assert.equal(profileNeedsOnlineVerification(profile), true);
+});
+
+test("verified full natal chart completes the exact-input verification requirement", () => {
+  const profile = exactProfile();
+  const verified = (sign: string) => ({ verificationStatus: "verified", sign });
+  profile.verifiedAstrologyData = {
+    sun: verified("Virgo"),
+    moon: verified("Virgo"),
+    rising: verified("Scorpio"),
+    planets: {
+      sun: verified("Virgo"),
+      moon: verified("Virgo"),
+      mercury: verified("Virgo"),
+      venus: verified("Virgo"),
+      mars: verified("Gemini"),
+      jupiter: verified("Leo"),
+      saturn: verified("Capricorn"),
+      uranus: verified("Capricorn"),
+      neptune: verified("Capricorn"),
+      pluto: verified("Scorpio"),
+    },
+    houseSystem: "equal",
+    houses: Array.from({ length: 12 }, (_, index) => ({
+      house: index + 1,
+      sign: "Scorpio",
+      verificationStatus: "verified",
+    })),
+    midheaven: { verificationStatus: "verified", sign: "Leo" },
+    planetaryHouses: {
+      sun: 11,
+      moon: 10,
+      mercury: 10,
+      venus: 10,
+      mars: 7,
+      jupiter: 9,
+      saturn: 3,
+      uranus: 2,
+      neptune: 2,
+      pluto: 12,
+    },
+    aspects: [],
+    northNode: {
+      verificationStatus: "verified",
+      mode: "mean",
+      sign: "Aquarius",
+      house: 3,
+    },
+    southNode: {
+      verificationStatus: "verified",
+      mode: "mean",
+      sign: "Leo",
+      house: 9,
+    },
+    chiron: {
+      verificationStatus: "verified",
+      sign: "Cancer",
+      house: 9,
+      qualificationMethod: "live-jpl-qualified-against-swiss",
+    },
+    verification: {
+      verifiedBodies: [
+        "Sun", "Moon", "Mercury", "Venus", "Mars",
+        "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "Ascendant",
+      ],
+      unresolvedBodies: [],
+    },
   };
   assert.equal(profileNeedsOnlineVerification(profile), false);
 });

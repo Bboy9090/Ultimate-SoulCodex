@@ -1,0 +1,216 @@
+name: Soul Codex 4.0.0 Store Candidate
+
+on:
+  push:
+    branches:
+      - release/store-4.0.0-federation-final
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: soulcodex-store-4-0-0
+  cancel-in-progress: true
+
+env:
+  VITE_API_URL: https://soulcodex.up.railway.app
+  VITE_RELEASE_VERSION: 4.0.0
+  VITE_API_CONTRACT: foundation-v4
+
+jobs:
+  release-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Qualified astrology, differentiation, privacy, and Human Design gates
+        run: |
+          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/verified-profile-differentiation.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts
+      - name: Build production Capacitor payload
+        env:
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: npm run build:capacitor
+      - name: Validate Android release metadata
+        env:
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: npm run mobile:validate:android
+      - name: Validate iOS release metadata
+        env:
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: npm run mobile:validate:ios
+      - name: Generate release receipt
+        run: |
+          cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
+          Soul Codex 4.0.0
+          SHA=${GITHUB_SHA}
+          Android applicationId=app.soulcodex.main
+          Android versionCode=4000004
+          iOS bundleId=app.soulcodex.ios
+          iOS build=4000004
+          API=https://soulcodex.up.railway.app
+          API contract=foundation-v4
+          EOF
+      - name: Upload release-gate receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.0-release-gate
+          path: STORE-CANDIDATE-RECEIPT.txt
+          retention-days: 90
+
+  android-store:
+    needs: release-gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build and sync Android
+        env:
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          npm run build:capacitor
+          npx cap sync android
+          npm run mobile:validate:android
+      - name: Detect Android signing credentials
+        id: signing
+        shell: bash
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE" && -n "$ANDROID_KEYSTORE_PASSWORD" && -n "$ANDROID_KEY_ALIAS" && -n "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Decode Android release keystore
+        if: steps.signing.outputs.available == 'true'
+        shell: bash
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soulcodex-release.keystore
+          test -s android/app/soulcodex-release.keystore
+      - name: Build signed Play AAB
+        if: steps.signing.outputs.available == 'true'
+        working-directory: android
+        run: |
+          ./gradlew --no-daemon bundleRelease             -PRELEASE_STORE_FILE=soulcodex-release.keystore             -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
+      - name: Build unsigned qualification AAB when signing is unavailable
+        if: steps.signing.outputs.available != 'true'
+        working-directory: android
+        run: ./gradlew --no-daemon bundleRelease
+      - name: Build debug APK smoke artifact
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+      - name: Record Android credential state
+        shell: bash
+        run: |
+          {
+            echo "SHA=${GITHUB_SHA}"
+            echo "versionName=4.0.0"
+            echo "versionCode=4000004"
+            echo "signing_available=${{ steps.signing.outputs.available }}"
+            if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
+              echo "play_credentials_available=true"
+            else
+              echo "play_credentials_available=false"
+            fi
+          } > android-store-state.txt
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.0-android
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/debug/*.apk
+            android-store-state.txt
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish signed AAB to Google Play production
+        if: steps.signing.outputs.available == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        uses: r0adkll/upload-google-play@v1.1.3
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: app.soulcodex.main
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: production
+          status: completed
+      - name: Block false Google Play deployment claims
+        if: steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == ''
+        run: |
+          echo "Google Play production upload is blocked by missing private signing and/or Play service-account credentials."
+          exit 2
+
+  ios-store-validation:
+    needs: release-gates
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build and sync iOS
+        env:
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          npm run build:capacitor
+          npx cap sync ios
+          npm run mobile:patch:ios
+          npm run mobile:validate:ios
+      - name: Verify Xcode schemes
+        run: xcodebuild -project ios/App/App.xcodeproj -list
+      - name: Build iOS Simulator release
+        run: |
+          xcodebuild             -project ios/App/App.xcodeproj             -scheme "Ultimate Soul Codex"             -configuration Release             -sdk iphonesimulator             -destination 'generic/platform=iOS Simulator'             CODE_SIGNING_ALLOWED=NO             build
+      - name: Create unsigned archive qualification
+        run: |
+          xcodebuild             -project ios/App/App.xcodeproj             -scheme "Ultimate Soul Codex"             -configuration Release             -destination 'generic/platform=iOS'             -archivePath "$RUNNER_TEMP/SoulCodex.xcarchive"             CODE_SIGNING_ALLOWED=NO             archive
+      - name: Record iOS qualification state
+        run: |
+          {
+            echo "SHA=${GITHUB_SHA}"
+            echo "marketingVersion=4.0.0"
+            echo "buildNumber=4000004"
+            echo "bundleId=app.soulcodex.ios"
+            echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
+          } > ios-store-state.txt
+      - name: Upload iOS qualification receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.0-ios-qualification
+          path: ios-store-state.txt
+          retention-days: 90

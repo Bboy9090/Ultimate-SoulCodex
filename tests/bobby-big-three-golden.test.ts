@@ -18,37 +18,50 @@ const BOBBY_RAW_BIRTH_INPUT: BirthData = {
   longitude: -73.8648,
 };
 
-const SWISS_EPHEMERIS_REFERENCE: Record<
+const GOLDEN_EPHEMERIS_REFERENCE: Record<
   VerifiableBody,
-  { sign: "Virgo"; longitude: number }
+  { sign: string; longitude: number }
 > = {
-  Sun: {
-    sign: "Virgo",
-    longitude: 174.4712502800783,
-  },
-  Moon: {
-    sign: "Virgo",
-    longitude: 157.6363960284451,
-  },
+  Sun: { sign: "Virgo", longitude: 174.4712414 },
+  Moon: { sign: "Virgo", longitude: 157.6364328 },
+  Mercury: { sign: "Virgo", longitude: 159.5916156 },
+  Venus: { sign: "Virgo", longitude: 162.7370284 },
+  Mars: { sign: "Gemini", longitude: 67.6092377 },
+  Jupiter: { sign: "Leo", longitude: 126.0213619 },
+  Saturn: { sign: "Capricorn", longitude: 288.7300928 },
+  Uranus: { sign: "Capricorn", longitude: 275.6039647 },
+  Neptune: { sign: "Capricorn", longitude: 281.8081157 },
+  Pluto: { sign: "Scorpio", longitude: 225.7598442 },
 };
+
+const chironReferenceFetcher = async (inputTimestamp: string) => ({
+  body: "Chiron" as const,
+  longitude: 115.3498,
+  sign: "Cancer",
+  source: "NASA/JPL Horizons Chiron golden fixture",
+  engine: "nasa-jpl-horizons-api@1.3-golden",
+  calculatedAt: "2026-09-19T22:49:00.000Z",
+  inputTimestamp,
+});
 
 const referenceFetcher: IndependentReferenceFetcher = async (
   body,
   inputTimestamp,
 ): Promise<IndependentEphemerisReference> => ({
   body,
-  sign: SWISS_EPHEMERIS_REFERENCE[body].sign,
-  longitude: SWISS_EPHEMERIS_REFERENCE[body].longitude,
+  sign: GOLDEN_EPHEMERIS_REFERENCE[body].sign,
+  longitude: GOLDEN_EPHEMERIS_REFERENCE[body].longitude,
   source:
-    "Swiss Ephemeris 2.10.03 geocentric tropical longitude golden fixture",
-  engine: "swisseph@2.10.03",
-  calculatedAt: "2026-08-04T04:35:00.000Z",
+    "NASA/JPL Horizons geocentric apparent ecliptic-of-date golden receipt",
+  engine: "nasa-jpl-horizons-api@1.3-golden",
+  calculatedAt: "2026-09-19T14:36:05.000Z",
   inputTimestamp,
 });
 
 test("Bobby's raw birth inputs verify as Virgo Sun, Virgo Moon, and Scorpio Rising", async () => {
   const result = await calculateVerifiedAstrology(BOBBY_RAW_BIRTH_INPUT, {
     referenceFetcher,
+    chironReferenceFetcher,
   });
 
   assert.equal(result.sun.verificationStatus, "verified");
@@ -75,4 +88,16 @@ test("Bobby's raw birth inputs verify as Virgo Sun, Virgo Moon, and Scorpio Risi
 
   assert.equal(result.verification.complete, true);
   assert.deepEqual(result.verification.unresolvedBodies, []);
+  for (const body of [
+    "Sun", "Moon", "Mercury", "Venus", "Mars",
+    "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+  ] as const) {
+    assert.ok(result.verification.verifiedBodies.includes(body), `${body} should be verified`);
+  }
+  assert.match(result.verification.policyId ?? "", /ASTRO-PLANET-LONGITUDE-v1/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /35449041012/);
+  assert.equal(result.chiron?.verificationStatus, "verified");
+  assert.equal(result.chiron?.sign, "Cancer");
+  assert.equal(result.chiron?.policyId, "ASTRO-CHIRON-v1");
+  assert.match(result.verification.policyId ?? "", /ASTRO-CHIRON-v1/);
 });

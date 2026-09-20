@@ -13,12 +13,40 @@ import {
   verifyAscendant,
   type AscendantVerificationPolicy,
 } from "./ascendant-verification";
+import {
+  verifyEqualHouse,
+  type EqualHouseProductionPolicy,
+} from "./house-production";
+import {
+  calculateHousePosition,
+  type HouseInput,
+} from "./house-verification";
+import {
+  calculateMajorAspects,
+  type AspectPolicy,
+  type VerifiedLongitudePlacement,
+} from "./aspect-engine";
+import type { VerifiableBody } from "./astrology-verification";
+import {
+  verifyMeanNodes,
+  type MeanNodeProductionPolicy,
+} from "./lunar-node-production";
+import {
+  verifyChiron,
+  type ChironProductionPolicy,
+  type ChironReferenceFetcher,
+} from "./chiron-production";
 
 export type { AstrologyData, BirthData, PlacementVerification, VerifiedAstrologyOptions };
 export { getTarotBirthCards };
 
 export interface ProductionAstrologyOptions extends VerifiedAstrologyOptions {
   ascendantPolicy?: AscendantVerificationPolicy;
+  housePolicy?: EqualHouseProductionPolicy;
+  aspectPolicy?: AspectPolicy;
+  meanNodePolicy?: MeanNodeProductionPolicy;
+  chironPolicy?: ChironProductionPolicy;
+  chironReferenceFetcher?: ChironReferenceFetcher;
 }
 
 function candidateRisingPlacement(birthData: BirthData): PlacementVerification {
@@ -145,6 +173,18 @@ function verifiedRisingPlacement(
   };
 }
 
+function appendVerificationIdentity(
+  current: string | null,
+  next: string | null | undefined,
+): string | null {
+  const parts = (current ?? "")
+    .split(" + ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (next && !parts.includes(next)) parts.push(next);
+  return parts.length > 0 ? parts.join(" + ") : null;
+}
+
 function withRisingVerificationSummary(
   astrology: AstrologyData,
   rising: PlacementVerification,
@@ -176,16 +216,421 @@ function withRisingVerificationSummary(
       missingData: [...new Set(missingData)],
       suggestions:
         unresolvedBodies.length === 0
-          ? "Sun, Moon, and Ascendant are independently verified."
+          ? "All currently supported natal placements are independently verified."
           : `Verified placements may be interpreted. ${unresolvedBodies.join(", ")} remain paused until their stated requirements pass.`,
       policyId:
         rising.verificationStatus === "verified"
-          ? "ASTRO-LONGITUDE-v1 + ASTRO-ASCENDANT-v1"
+          ? appendVerificationIdentity(
+              astrology.verification.policyId,
+              rising.evidence?.policyId,
+            )
           : astrology.verification.policyId,
       evidenceReceiptId:
         rising.verificationStatus === "verified"
-          ? `${astrology.verification.evidenceReceiptId ?? "ASTRO-LONGITUDE-v1"} + ASCENDANT-VERIFICATION-RECEIPT-v1`
+          ? appendVerificationIdentity(
+              astrology.verification.evidenceReceiptId,
+              rising.evidence?.evidenceReceiptId,
+            )
           : astrology.verification.evidenceReceiptId,
+      lastUpdated: new Date().toISOString(),
+    },
+  };
+}
+
+const PLANET_ENTRIES = [
+  ["Sun", "sun"],
+  ["Moon", "moon"],
+  ["Mercury", "mercury"],
+  ["Venus", "venus"],
+  ["Mars", "mars"],
+  ["Jupiter", "jupiter"],
+  ["Saturn", "saturn"],
+  ["Uranus", "uranus"],
+  ["Neptune", "neptune"],
+  ["Pluto", "pluto"],
+] as const satisfies readonly [VerifiableBody, keyof NonNullable<AstrologyData["planets"]>][];
+
+/**
+ * Add derived chart geometry only from already-verified astronomical facts.
+ * Equal House/MC have their own governed policy; aspects consume verified
+ * longitudes only. Any unresolved prerequisite stays withheld.
+ */
+function withVerifiedDerivedChart(
+  astrology: AstrologyData,
+  birthData: BirthData,
+  options: ProductionAstrologyOptions,
+): AstrologyData {
+  if (
+    !birthData.birthTime ||
+    !birthData.timezone ||
+    birthData.latitude === undefined ||
+    birthData.longitude === undefined ||
+    astrology.rising.verificationStatus !== "verified" ||
+    !astrology.planets
+  ) {
+    return {
+      ...astrology,
+      houseSystem: undefined,
+      houses: undefined,
+      midheaven: undefined,
+      planetaryHouses: undefined,
+      aspects: undefined,
+    };
+  }
+
+  const timestamp = astrology.moon.internalCandidate?.inputTimestamp;
+  if (!timestamp) return astrology;
+
+  const houseInput: HouseInput = {
+    inputTimestamp: timestamp,
+    latitude: birthData.latitude,
+    longitude: birthData.longitude,
+  };
+  const houses = verifyEqualHouse(houseInput, {
+    ...(options.housePolicy ? { policy: options.housePolicy } : {}),
+    ...(options.ascendantPolicy ? { ascendantPolicy: options.ascendantPolicy } : {}),
+  });
+  if (houses.status !== "verified") {
+    return {
+      ...astrology,
+      houseSystem: undefined,
+      houses: undefined,
+      midheaven: undefined,
+      planetaryHouses: undefined,
+      aspects: undefined,
+      verification: {
+        ...astrology.verification,
+        complete: false,
+        unresolvedBodies: [
+          ...new Set([...astrology.verification.unresolvedBodies, "Midheaven", "Houses"]),
+        ],
+        missingData: [
+          ...new Set([...astrology.verification.missingData, `equal_house_verification:${houses.reason}`]),
+        ],
+        suggestions:
+          "Verified planetary placements remain available, but MC and house-derived interpretation stay paused until the house verification contract passes.",
+      },
+    };
+  }
+
+  const planetLongitudes: VerifiedLongitudePlacement[] = [];
+  const planetaryHouses: NonNullable<AstrologyData["planetaryHouses"]> = {};
+
+  for (const [body, key] of PLANET_ENTRIES) {
+    const placement = astrology.planets[key];
+    if (
+      placement.verificationStatus !== "verified" ||
+      !placement.internalCandidate ||
+      !Number.isFinite(placement.internalCandidate.longitude)
+    ) {
+      continue;
+    }
+    planetLongitudes.push({
+      body,
+      longitudeDegrees: placement.internalCandidate.longitude,
+      verificationStatus: "verified",
+    });
+    planetaryHouses[key] = calculateHousePosition(
+      placement.internalCandidate.longitude,
+      houses.cusps,
+    );
+  }
+
+  const aspects =
+    planetLongitudes.length >= 2
+      ? calculateMajorAspects(planetLongitudes, options.aspectPolicy)
+      : [];
+
+  const unresolvedDerived: string[] = [];
+  if (planetLongitudes.length !== PLANET_ENTRIES.length) {
+    unresolvedDerived.push("PlanetaryHouseAssignments", "Aspects");
+  }
+
+  return {
+    ...astrology,
+    houseSystem: "equal",
+    houses: houses.cusps.map((cusp) => ({
+      house: cusp.house,
+      sign: cusp.sign,
+      degree: cusp.degreeInSign,
+      longitude: cusp.longitudeDegrees,
+      verificationStatus: "verified" as const,
+      policyId: cusp.policyId,
+      evidenceArtifactId: cusp.evidenceArtifactId,
+    })),
+    midheaven: {
+      sign: houses.midheaven.sign,
+      degree: houses.midheaven.degreeInSign,
+      longitude: houses.midheaven.longitudeDegrees,
+      verificationStatus: "verified",
+      policyId: houses.midheaven.policyId,
+      longitudeDeltaDegrees: houses.midheaven.longitudeDeltaDegrees,
+      evidenceArtifactId: houses.evidence.artifactId,
+    },
+    planetaryHouses,
+    aspects: aspects.map((aspect) => ({
+      planet1: aspect.bodyA.toLowerCase(),
+      planet2: aspect.bodyB.toLowerCase(),
+      aspect: aspect.aspect,
+      orb: aspect.orbDegrees,
+      separationDegrees: aspect.separationDegrees,
+      targetAngleDegrees: aspect.targetAngleDegrees,
+      policyId: aspect.policyId,
+    })),
+    verification: {
+      ...astrology.verification,
+      complete:
+        astrology.verification.unresolvedBodies.length === 0 &&
+        unresolvedDerived.length === 0,
+      unresolvedBodies: [
+        ...new Set([...astrology.verification.unresolvedBodies, ...unresolvedDerived]),
+      ],
+      missingData: [
+        ...new Set([
+          ...astrology.verification.missingData,
+          ...(unresolvedDerived.length > 0 ? ["verified_longitudes_for_all_derived_chart_facts"] : []),
+        ]),
+      ],
+      suggestions:
+        astrology.verification.unresolvedBodies.length === 0 &&
+        unresolvedDerived.length === 0
+          ? "All currently supported natal planets, Ascendant, Midheaven, Equal House cusps, planetary house assignments, and major aspects are verified or deterministically derived from verified inputs."
+          : astrology.verification.suggestions,
+      policyId: appendVerificationIdentity(
+        appendVerificationIdentity(astrology.verification.policyId, houses.midheaven.policyId),
+        aspects[0]?.policyId,
+      ),
+      evidenceReceiptId: appendVerificationIdentity(
+        astrology.verification.evidenceReceiptId,
+        houses.evidence.runId,
+      ),
+      lastUpdated: new Date().toISOString(),
+    },
+  };
+}
+
+function withVerifiedMeanNodes(
+  astrology: AstrologyData,
+  options: ProductionAstrologyOptions,
+): AstrologyData {
+  const timestamp = astrology.moon.internalCandidate?.inputTimestamp;
+  if (
+    !timestamp ||
+    astrology.houseSystem !== "equal" ||
+    !astrology.houses ||
+    astrology.houses.length !== 12
+  ) {
+    return astrology;
+  }
+
+  const result = verifyMeanNodes(
+    { inputTimestamp: timestamp },
+    options.meanNodePolicy,
+  );
+  if (result.status !== "verified") {
+    return {
+      ...astrology,
+      northNode: undefined,
+      southNode: undefined,
+      verification: {
+        ...astrology.verification,
+        complete: false,
+        unresolvedBodies: [
+          ...new Set([
+            ...astrology.verification.unresolvedBodies,
+            "MeanNorthNode",
+            "MeanSouthNode",
+          ]),
+        ],
+        missingData: [
+          ...new Set([
+            ...astrology.verification.missingData,
+            `mean_node_verification:${result.reason}`,
+          ]),
+        ],
+      },
+    };
+  }
+
+  const cuspGeometry = astrology.houses.map((house) => ({
+    house: house.house,
+    longitudeDegrees: house.longitude,
+    sign: house.sign,
+    degreeInSign: house.degree,
+  }));
+
+  const northHouse = calculateHousePosition(
+    result.northNode.longitudeDegrees,
+    cuspGeometry,
+  );
+  const southHouse = calculateHousePosition(
+    result.southNode.longitudeDegrees,
+    cuspGeometry,
+  );
+
+  return {
+    ...astrology,
+    northNode: {
+      mode: "mean",
+      sign: result.northNode.sign,
+      house: northHouse,
+      degree: result.northNode.degreeInSign,
+      longitude: result.northNode.longitudeDegrees,
+      verificationStatus: "verified",
+      policyId: result.northNode.policyId,
+      evidenceArtifactId: result.northNode.evidenceArtifactId,
+    },
+    southNode: {
+      mode: "mean",
+      sign: result.southNode.sign,
+      house: southHouse,
+      degree: result.southNode.degreeInSign,
+      longitude: result.southNode.longitudeDegrees,
+      verificationStatus: "verified",
+      policyId: result.southNode.policyId,
+      evidenceArtifactId: result.southNode.evidenceArtifactId,
+    },
+    verification: {
+      ...astrology.verification,
+      policyId: appendVerificationIdentity(
+        astrology.verification.policyId,
+        result.northNode.policyId,
+      ),
+      evidenceReceiptId: appendVerificationIdentity(
+        astrology.verification.evidenceReceiptId,
+        result.evidence.runId,
+      ),
+      suggestions:
+        astrology.verification.complete
+          ? "All currently supported natal planets, Ascendant, Midheaven, Equal House cusps, planetary house assignments, major aspects, and Mean Lunar Nodes are verified or deterministically derived from verified inputs."
+          : astrology.verification.suggestions,
+      lastUpdated: new Date().toISOString(),
+    },
+  };
+}
+
+async function withVerifiedChiron(
+  astrology: AstrologyData,
+  options: ProductionAstrologyOptions,
+): Promise<AstrologyData> {
+  const timestamp = astrology.moon.internalCandidate?.inputTimestamp;
+  if (
+    !timestamp ||
+    astrology.houseSystem !== "equal" ||
+    !astrology.houses ||
+    astrology.houses.length !== 12 ||
+    !astrology.planets
+  ) {
+    return astrology;
+  }
+
+  const result = await verifyChiron(timestamp, {
+    ...(options.chironPolicy ? { policy: options.chironPolicy } : {}),
+    ...(options.chironReferenceFetcher
+      ? { referenceFetcher: options.chironReferenceFetcher }
+      : {}),
+  });
+
+  if (result.status !== "verified") {
+    return {
+      ...astrology,
+      chiron: undefined,
+      verification: {
+        ...astrology.verification,
+        complete: false,
+        unresolvedBodies: [
+          ...new Set([...astrology.verification.unresolvedBodies, "Chiron"]),
+        ],
+        missingData: [
+          ...new Set([
+            ...astrology.verification.missingData,
+            `chiron_verification:${result.reason}`,
+          ]),
+        ],
+        suggestions:
+          "The verified natal chart remains available, but Chiron stays unresolved because its live JPL verification did not complete.",
+      },
+    };
+  }
+
+  const cuspGeometry = astrology.houses.map((house) => ({
+    house: house.house,
+    longitudeDegrees: house.longitude,
+    sign: house.sign,
+    degreeInSign: house.degree,
+  }));
+  const chironHouse = calculateHousePosition(
+    result.chiron.longitudeDegrees,
+    cuspGeometry,
+  );
+
+  const aspectPlacements: VerifiedLongitudePlacement[] = [];
+  for (const [body, key] of PLANET_ENTRIES) {
+    const placement = astrology.planets[key];
+    if (
+      placement.verificationStatus === "verified" &&
+      placement.internalCandidate &&
+      Number.isFinite(placement.internalCandidate.longitude)
+    ) {
+      aspectPlacements.push({
+        body,
+        longitudeDegrees: placement.internalCandidate.longitude,
+        verificationStatus: "verified",
+      });
+    }
+  }
+  aspectPlacements.push({
+    body: "Chiron",
+    longitudeDegrees: result.chiron.longitudeDegrees,
+    verificationStatus: "verified",
+  });
+  const aspects = calculateMajorAspects(aspectPlacements, options.aspectPolicy);
+
+  const unresolvedWithoutChiron = astrology.verification.unresolvedBodies.filter(
+    (body) => body !== "Chiron",
+  );
+  const missingWithoutChiron = astrology.verification.missingData.filter(
+    (item) => !item.startsWith("chiron_verification:"),
+  );
+
+  return {
+    ...astrology,
+    chiron: {
+      sign: result.chiron.sign,
+      house: chironHouse,
+      degree: result.chiron.degreeInSign,
+      longitude: result.chiron.longitudeDegrees,
+      verificationStatus: "verified",
+      policyId: result.chiron.policyId,
+      evidenceArtifactId: result.chiron.evidenceArtifactId,
+      qualificationMethod: result.chiron.qualificationMethod,
+    },
+    aspects: aspects.map((aspect) => ({
+      planet1: aspect.bodyA.toLowerCase(),
+      planet2: aspect.bodyB.toLowerCase(),
+      aspect: aspect.aspect,
+      orb: aspect.orbDegrees,
+      separationDegrees: aspect.separationDegrees,
+      targetAngleDegrees: aspect.targetAngleDegrees,
+      policyId: aspect.policyId,
+    })),
+    verification: {
+      ...astrology.verification,
+      complete: unresolvedWithoutChiron.length === 0,
+      unresolvedBodies: unresolvedWithoutChiron,
+      missingData: missingWithoutChiron,
+      suggestions:
+        unresolvedWithoutChiron.length === 0
+          ? "All currently supported natal planets, Ascendant, Midheaven, Equal House cusps, planetary house assignments, major aspects, Mean Lunar Nodes, and Chiron are verified or deterministically derived from verified inputs."
+          : astrology.verification.suggestions,
+      policyId: appendVerificationIdentity(
+        astrology.verification.policyId,
+        result.chiron.policyId,
+      ),
+      evidenceReceiptId: appendVerificationIdentity(
+        astrology.verification.evidenceReceiptId,
+        result.evidence.runId,
+      ),
       lastUpdated: new Date().toISOString(),
     },
   };
@@ -200,11 +645,44 @@ export async function calculateVerifiedAstrology(
   birthData: BirthData,
   options: ProductionAstrologyOptions = {},
 ): Promise<AstrologyData> {
-  const { ascendantPolicy, ...baseOptions } = options;
+  const {
+    ascendantPolicy,
+    housePolicy,
+    aspectPolicy,
+    meanNodePolicy,
+    chironPolicy,
+    chironReferenceFetcher,
+    ...baseOptions
+  } = options;
   const base = await calculateBaseVerifiedAstrology(birthData, baseOptions);
   const rising = verifiedRisingPlacement(
     birthData,
     ascendantPolicy ?? APPROVED_ASCENDANT_POLICY,
   );
-  return withRisingVerificationSummary(base, rising);
+  const withRising = withRisingVerificationSummary(base, rising);
+  const withDerivedChart = withVerifiedDerivedChart(withRising, birthData, {
+    ...options,
+    ascendantPolicy,
+    housePolicy,
+    aspectPolicy,
+    meanNodePolicy,
+  });
+  const withNodes = withVerifiedMeanNodes(withDerivedChart, {
+    ...options,
+    ascendantPolicy,
+    housePolicy,
+    aspectPolicy,
+    meanNodePolicy,
+    chironPolicy,
+    chironReferenceFetcher,
+  });
+  return withVerifiedChiron(withNodes, {
+    ...options,
+    ascendantPolicy,
+    housePolicy,
+    aspectPolicy,
+    meanNodePolicy,
+    chironPolicy,
+    chironReferenceFetcher,
+  });
 }

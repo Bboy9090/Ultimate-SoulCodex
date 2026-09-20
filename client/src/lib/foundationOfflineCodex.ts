@@ -265,6 +265,366 @@ export function generateFoundationOfflineCodexProfile(
   };
 }
 
+
+type VerifiedPlacementForSynthesis = {
+  verificationStatus?: string;
+  sign?: string | null;
+};
+
+export type VerifiedAstrologyForSynthesis = {
+  sun?: VerifiedPlacementForSynthesis;
+  moon?: VerifiedPlacementForSynthesis;
+  rising?: VerifiedPlacementForSynthesis;
+  planets?: Partial<Record<
+    "sun" | "moon" | "mercury" | "venus" | "mars" |
+    "jupiter" | "saturn" | "uranus" | "neptune" | "pluto",
+    VerifiedPlacementForSynthesis
+  >>;
+  planetaryHouses?: Partial<Record<
+    "sun" | "moon" | "mercury" | "venus" | "mars" |
+    "jupiter" | "saturn" | "uranus" | "neptune" | "pluto",
+    number
+  >>;
+  midheaven?: VerifiedPlacementForSynthesis;
+  northNode?: VerifiedPlacementForSynthesis & { house?: number; mode?: string };
+  southNode?: VerifiedPlacementForSynthesis & { house?: number; mode?: string };
+  chiron?: VerifiedPlacementForSynthesis & {
+    house?: number;
+    qualificationMethod?: string;
+  };
+  aspects?: Array<{
+    planet1?: string;
+    planet2?: string;
+    aspect?: string;
+    orb?: number;
+  }>;
+};
+
+function verifiedEvidence(
+  id: string,
+  field: string,
+  value: string | number,
+  notes: string[] = [],
+): InterpretationEvidenceRef {
+  return {
+    id,
+    system: "astrology",
+    field,
+    value,
+    confidence: "high",
+    provenanceStatus: "externally-verified",
+    timeSensitivity: "birth-time-required",
+    notes: [
+      "Astronomical placement passed the active Soul Codex verification policy.",
+      ...notes,
+    ],
+  };
+}
+
+function verifiedPlacementSeed(input: {
+  id: string;
+  field: string;
+  bodyLabel: string;
+  sign: string;
+  house?: number;
+  priority: number;
+  facets: Partial<Record<
+    "claritySummary" | "visiblePattern" | "innerExperience" | "hiddenNeed" |
+    "protectiveFunction" | "gift" | "shadow" | "commonMisreading" |
+    "relationshipImpact" | "decisionImpact" | "boundaryOrRepair" | "action",
+    string
+  >>;
+  axes?: DepthTensionAxis[];
+}): DepthSynthesisSeed {
+  const signPattern = SIGN_PATTERNS[input.sign] ?? SIGN_PATTERNS.Virgo;
+  const houseText = typeof input.house === "number" ? ` in House ${input.house}` : "";
+  return {
+    evidence: verifiedEvidence(
+      input.id,
+      input.field,
+      `${input.sign}${houseText}`,
+      [`${input.bodyLabel} sign${houseText} is verified chart evidence; its psychological meaning remains symbolic interpretation.`],
+    ),
+    label: `${input.bodyLabel} in ${input.sign}${houseText}`,
+    priority: input.priority,
+    claimKind: "derived",
+    facets: input.facets,
+    tensionAxes: input.axes ?? signPattern.axes,
+    limitations: [
+      "The astronomical placement is verified; the interpretation is symbolic and should be tested against lived experience.",
+    ],
+  };
+}
+
+function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "moon" | "rising"): string | null {
+  const placement = astrology[key];
+  return placement?.verificationStatus === "verified" && typeof placement.sign === "string"
+    ? placement.sign
+    : null;
+}
+
+/**
+ * Rebuild narrative synthesis only after the full astronomy verification
+ * contract has passed. This prevents the richer chart from being stored merely
+ * as rows while biography/depth prose remains frozen at the local Sun-only
+ * synthesis.
+ */
+export function synthesizeVerifiedFoundationProfile(
+  local: OfflineCodexProfile,
+  astrology: VerifiedAstrologyForSynthesis,
+  generatedAt = new Date().toISOString(),
+): Pick<
+  OfflineCodexProfile,
+  "biography" | "dailyGuidance" | "depthInterpretation" | "archetypeData"
+> {
+  const sun = verifiedSign(astrology, "sun");
+  const moon = verifiedSign(astrology, "moon");
+  const rising = verifiedSign(astrology, "rising");
+  if (!sun || !moon || !rising || !astrology.planets) {
+    return {
+      biography: local.biography,
+      dailyGuidance: local.dailyGuidance,
+      depthInterpretation: local.depthInterpretation,
+      archetypeData: local.archetypeData,
+    };
+  }
+
+  const lifePath = local.numerologyData.lifePath;
+  const expression = local.numerologyData.expression;
+  const soulUrge = local.numerologyData.soulUrge;
+  const pathPattern = LIFE_PATHS[lifePath] ?? LIFE_PATHS[9];
+  const sunPattern = SIGN_PATTERNS[sun] ?? SIGN_PATTERNS.Virgo;
+  const moonPattern = SIGN_PATTERNS[moon] ?? SIGN_PATTERNS.Virgo;
+  const risingPattern = SIGN_PATTERNS[rising] ?? SIGN_PATTERNS.Virgo;
+
+  const seeds: DepthSynthesisSeed[] = [
+    makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100),
+    makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, LIFE_PATHS[expression] ?? LIFE_PATHS[1], 96),
+    makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, LIFE_PATHS[soulUrge] ?? LIFE_PATHS[6], 95),
+    verifiedPlacementSeed({
+      id: "verified.astrology.sun",
+      field: "sun",
+      bodyLabel: "Sun",
+      sign: sun,
+      house: astrology.planetaryHouses?.sun,
+      priority: 130,
+      facets: {
+        claritySummary: `The verified Sun layer emphasizes ${sunPattern.drive}.`,
+        gift: `Its constructive expression may look like ${sunPattern.gift}.`,
+        shadow: `When overused, the same pattern may become ${sunPattern.shadow}.`,
+        action: sunPattern.action,
+      },
+    }),
+    verifiedPlacementSeed({
+      id: "verified.astrology.moon",
+      field: "moon",
+      bodyLabel: "Moon",
+      sign: moon,
+      house: astrology.planetaryHouses?.moon,
+      priority: 128,
+      facets: {
+        innerExperience: `The verified Moon layer may describe an inner pull toward ${moonPattern.drive}.`,
+        hiddenNeed: `Emotionally, the pattern may seek conditions that support ${moonPattern.drive}.`,
+        relationshipImpact: `In close relationships, it ${moonPattern.relationship}.`,
+      },
+    }),
+    verifiedPlacementSeed({
+      id: "verified.astrology.rising",
+      field: "rising",
+      bodyLabel: "Rising",
+      sign: rising,
+      priority: 127,
+      facets: {
+        visiblePattern: `The verified Rising layer may present through ${risingPattern.gift}.`,
+        commonMisreading: `That outward style may be mistaken for ${risingPattern.shadow} when context is ignored.`,
+      },
+    }),
+  ];
+
+  const bodyConfig: Array<{
+    key: keyof NonNullable<VerifiedAstrologyForSynthesis["planets"]>;
+    label: string;
+    priority: number;
+    facet: keyof NonNullable<DepthSynthesisSeed["facets"]>;
+    prefix: string;
+  }> = [
+    { key: "mercury", label: "Mercury", priority: 122, facet: "claritySummary", prefix: "Communication and mental sorting may emphasize" },
+    { key: "venus", label: "Venus", priority: 121, facet: "relationshipImpact", prefix: "Relational preferences may emphasize" },
+    { key: "mars", label: "Mars", priority: 120, facet: "action", prefix: "Action and assertion may emphasize" },
+    { key: "jupiter", label: "Jupiter", priority: 116, facet: "gift", prefix: "Growth and confidence may expand through" },
+    { key: "saturn", label: "Saturn", priority: 119, facet: "protectiveFunction", prefix: "Structure and restraint may organize around" },
+    { key: "uranus", label: "Uranus", priority: 112, facet: "commonMisreading", prefix: "Change and nonconformity may be expressed through" },
+    { key: "neptune", label: "Neptune", priority: 111, facet: "innerExperience", prefix: "Imagination and sensitivity may color" },
+    { key: "pluto", label: "Pluto", priority: 118, facet: "shadow", prefix: "Pressure for transformation may intensify" },
+  ];
+
+  for (const config of bodyConfig) {
+    const placement = astrology.planets[config.key];
+    if (placement?.verificationStatus !== "verified" || !placement.sign) continue;
+    const patternValue = SIGN_PATTERNS[placement.sign] ?? SIGN_PATTERNS.Virgo;
+    seeds.push(verifiedPlacementSeed({
+      id: `verified.astrology.${config.key}`,
+      field: config.key,
+      bodyLabel: config.label,
+      sign: placement.sign,
+      house: astrology.planetaryHouses?.[config.key],
+      priority: config.priority,
+      facets: {
+        [config.facet]: `${config.prefix} ${patternValue.drive}.`,
+      },
+      axes: patternValue.axes,
+    }));
+  }
+
+  if (astrology.midheaven?.verificationStatus === "verified" && astrology.midheaven.sign) {
+    const mcPattern = SIGN_PATTERNS[astrology.midheaven.sign] ?? SIGN_PATTERNS.Virgo;
+    seeds.push(verifiedPlacementSeed({
+      id: "verified.astrology.midheaven",
+      field: "midheaven",
+      bodyLabel: "Midheaven",
+      sign: astrology.midheaven.sign,
+      priority: 117,
+      facets: {
+        visiblePattern: `Public-direction symbolism may emphasize ${mcPattern.drive}.`,
+        decisionImpact: `Visible commitments may become clearer when they support ${mcPattern.gift} without repeating ${mcPattern.shadow}.`,
+      },
+    }));
+  }
+
+  for (const [key, label] of [["northNode", "Mean North Node"], ["southNode", "Mean South Node"]] as const) {
+    const node = astrology[key];
+    if (node?.verificationStatus !== "verified" || !node.sign) continue;
+    const nodePattern = SIGN_PATTERNS[node.sign] ?? SIGN_PATTERNS.Virgo;
+    seeds.push(verifiedPlacementSeed({
+      id: `verified.astrology.${key}`,
+      field: key,
+      bodyLabel: label,
+      sign: node.sign,
+      house: node.house,
+      priority: key === "northNode" ? 114 : 109,
+      facets: key === "northNode"
+        ? { decisionImpact: `Developmental-direction symbolism may invite more ${nodePattern.drive}.` }
+        : { protectiveFunction: `Familiar-pattern symbolism may fall back toward ${nodePattern.drive}.` },
+    }));
+  }
+
+  if (
+    astrology.chiron?.verificationStatus === "verified" &&
+    astrology.chiron.sign &&
+    astrology.chiron.qualificationMethod === "live-jpl-qualified-against-swiss"
+  ) {
+    const chironPattern = SIGN_PATTERNS[astrology.chiron.sign] ?? SIGN_PATTERNS.Virgo;
+    seeds.push(verifiedPlacementSeed({
+      id: "verified.astrology.chiron",
+      field: "chiron",
+      bodyLabel: "Chiron",
+      sign: astrology.chiron.sign,
+      house: astrology.chiron.house,
+      priority: 115,
+      facets: {
+        boundaryOrRepair: `Repair-oriented symbolism may call for ${chironPattern.action.toLowerCase()}`,
+        action: chironPattern.action,
+      },
+    }));
+  }
+
+  const strongestAspects = [...(astrology.aspects ?? [])]
+    .filter((aspect) => aspect.planet1 && aspect.planet2 && aspect.aspect && typeof aspect.orb === "number")
+    .sort((left, right) => (left.orb ?? 99) - (right.orb ?? 99))
+    .slice(0, 6);
+  for (const [index, aspect] of strongestAspects.entries()) {
+    const label = `${aspect.planet1} ${aspect.aspect} ${aspect.planet2}`;
+    seeds.push({
+      evidence: verifiedEvidence(
+        `verified.astrology.aspect.${index}`,
+        "aspect",
+        `${label} orb ${aspect.orb?.toFixed(2)}°`,
+      ),
+      label,
+      priority: 108 - index,
+      claimKind: "inferred",
+      facets: {
+        decisionImpact: `The verified ${label} aspect may describe two chart functions that need coordination rather than a single fixed trait.`,
+        commonMisreading: `When these two functions pull differently, reducing the aspect to one fixed personality label may miss the interaction.`,
+      },
+      tensionAxes: [],
+      limitations: [
+        "Aspect geometry is verified; this interpretive meaning is symbolic and non-diagnostic.",
+      ],
+    });
+  }
+
+  const depthInterpretation = synthesizeDepthInterpretationV1({
+    version: 1,
+    generatedAt,
+    birthTimeStatus: "known",
+    seeds,
+    missingData: [
+      "Human Design core can only be included when its separately verified snapshot is present on the profile.",
+      "Mirror behavioral answers are not yet available in the active create-profile flow.",
+      "Variables and Incarnation Cross naming remain outside the verified Human Design core.",
+    ],
+  });
+  const validation = validateDepthInterpretationV1(depthInterpretation, {
+    birthTimeStatus: "known",
+  });
+  if (!validation.valid) {
+    throw new Error(`Verified depth synthesis failed validation: ${validation.findings.map((finding) => finding.code).join(", ")}`);
+  }
+
+  const planetSummary = bodyConfig
+    .map((config) => {
+      const placement = astrology.planets?.[config.key];
+      if (placement?.verificationStatus !== "verified" || !placement.sign) return null;
+      const house = astrology.planetaryHouses?.[config.key];
+      return `${config.label} in ${placement.sign}${typeof house === "number" ? ` (House ${house})` : ""}`;
+    })
+    .filter((value): value is string => Boolean(value));
+
+  const aspectSummary = strongestAspects
+    .slice(0, 3)
+    .map((aspect) =>
+      `${aspect.planet1} ${aspect.aspect} ${aspect.planet2} (${aspect.orb?.toFixed(2)}°)`
+    );
+
+  const biography =
+    `${local.name}'s verified Codex is now anchored by a ${sun} Sun` +
+    `${typeof astrology.planetaryHouses?.sun === "number" ? ` in House ${astrology.planetaryHouses.sun}` : ""}, ` +
+    `${moon} Moon` +
+    `${typeof astrology.planetaryHouses?.moon === "number" ? ` in House ${astrology.planetaryHouses.moon}` : ""}, ` +
+    `and ${rising} Rising. ` +
+    `${planetSummary.length ? `Verified planetary pattern: ${planetSummary.join("; ")}. ` : ""}` +
+    `Midheaven ${astrology.midheaven?.sign ?? "unresolved"}; ` +
+    `Mean North Node ${astrology.northNode?.sign ?? "unresolved"}` +
+    `${typeof astrology.northNode?.house === "number" ? ` in House ${astrology.northNode.house}` : ""}; ` +
+    `Mean South Node ${astrology.southNode?.sign ?? "unresolved"}` +
+    `${typeof astrology.southNode?.house === "number" ? ` in House ${astrology.southNode.house}` : ""}; ` +
+    `Chiron ${astrology.chiron?.sign ?? "unresolved"}` +
+    `${typeof astrology.chiron?.house === "number" ? ` in House ${astrology.chiron.house}` : ""}. ` +
+    `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
+    `Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} add deterministic numerology layers. ` +
+    `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
+
+  const enrichedArchetype = {
+    ...local.archetypeData,
+    description:
+      `${local.archetypeData.description} Verified ${moon} Moon and ${rising} Rising now add time-sensitive chart context.`,
+    themes: Array.from(new Set([
+      ...local.archetypeData.themes,
+      `${moon} Moon`,
+      `${rising} Rising`,
+      `${astrology.midheaven?.sign ?? "Unresolved"} Midheaven`,
+    ])),
+  };
+
+  return {
+    biography,
+    dailyGuidance: `${pathPattern.action} ${sunPattern.action}`,
+    depthInterpretation,
+    archetypeData: enrichedArchetype,
+  };
+}
+
 /**
  * Repair deterministic local synthesis created by the former timezone-sensitive
  * date parser. Online astronomy evidence is deliberately preserved verbatim.

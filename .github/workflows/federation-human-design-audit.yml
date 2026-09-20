@@ -1,0 +1,46 @@
+name: Federation Human Design Differential Audit
+
+on:
+  push:
+    branches:
+      - fed-human-design-differential-audit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  differential-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Soul Codex dependencies
+        run: npm ci --ignore-scripts
+      - name: Install pinned independent Human Design verifier
+        run: npm install --no-save --ignore-scripts free-human-design@1.0.1
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Local Human Design safety contract
+        run: node --import tsx --test tests/human-design-differential-contract.test.ts
+      - name: Run 20-profile Human Design differential audit
+        run: node --import tsx scripts/audit-human-design-differential.ts human-design-differential-audit.json
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > HUMAN-DESIGN-AUDIT-SHA.txt
+      - name: Upload differential evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: human-design-differential-audit
+          path: |
+            human-design-differential-audit.json
+            HUMAN-DESIGN-AUDIT-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
