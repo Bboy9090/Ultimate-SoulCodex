@@ -168,8 +168,14 @@ jobs:
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           track: production
           status: completed
-      - name: Block false Google Play deployment claims
-        if: steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == ''
+      - name: Record Google Play credential blocker on qualification branches
+        if: github.ref != 'refs/heads/main' && (steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == '')
+        run: |
+          echo "Google Play production upload remains blocked by missing private signing and/or Play service-account credentials."
+          echo "Qualification continues, but no deployment claim is permitted."
+
+      - name: Block false Google Play deployment claims on main
+        if: github.ref == 'refs/heads/main' && (steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == '')
         run: |
           echo "Google Play production upload is blocked by missing private signing and/or Play service-account credentials."
           exit 2
