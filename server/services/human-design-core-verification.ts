@@ -1,4 +1,4 @@
-import { calculateHumanDesign } from "@soulcodex/astrology";
+import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import {
   APPROVED_HUMAN_DESIGN_CORE_VERIFICATION,
   createVerifiedHumanDesignTrustRecord,
