@@ -17,3 +17,13 @@ test("Xcode Cloud archive scheme is shared and targets the production app", () =
     /504EC3031FED79650016851F \/\* Ultimate Soul Codex \*\/ = \{\s*isa = PBXNativeTarget;/,
   );
 });
+
+
+test("Xcode Cloud release signing is cloud-managed and not pinned to a local profile", () => {
+  assert.match(
+    project,
+    /504EC3181FED79650016851F \/\* Release \*\/ = \{[\s\S]*?CODE_SIGN_STYLE = Automatic;[\s\S]*?DEVELOPMENT_TEAM = 86NUJ8M3B8;[\s\S]*?PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/,
+  );
+  assert.doesNotMatch(project, /CODE_SIGN_STYLE = Manual;/);
+  assert.doesNotMatch(project, /PROVISIONING_PROFILE_SPECIFIER = "SoulCodex App Store";/);
+});
