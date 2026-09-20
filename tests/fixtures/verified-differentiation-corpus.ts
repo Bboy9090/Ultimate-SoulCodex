@@ -212,6 +212,53 @@ export function ngramJaccard(left: string, right: string, width: number): number
   return union === 0 ? 1 : intersection / union;
 }
 
+function signatureDistance(leftSignature: string, rightSignature: string): number {
+  const left = JSON.parse(leftSignature) as any;
+  const right = JSON.parse(rightSignature) as any;
+  let distance = 0;
+
+  if (left.moon !== right.moon) distance += 2;
+  if (left.rising !== right.rising) distance += 2;
+
+  for (const key of [
+    "sun", "moon", "mercury", "venus", "mars",
+    "jupiter", "saturn", "uranus", "neptune", "pluto",
+  ]) {
+    if (left.planets?.[key]?.sign !== right.planets?.[key]?.sign) distance += 1;
+    if (left.houses?.[key] !== right.houses?.[key]) distance += 1;
+  }
+
+  for (const key of ["northNode", "chiron"]) {
+    if (left[key]?.sign !== right[key]?.sign) distance += 1;
+    if (left[key]?.house !== right[key]?.house) distance += 1;
+  }
+
+  const leftAspects = left.aspects ?? [];
+  const rightAspects = right.aspects ?? [];
+  const length = Math.max(leftAspects.length, rightAspects.length);
+  for (let index = 0; index < length; index += 1) {
+    const a = leftAspects[index];
+    const b = rightAspects[index];
+    if (!a || !b) {
+      distance += 2;
+      continue;
+    }
+    if (a.aspect !== b.aspect) distance += 2;
+    if (a.planet1 !== b.planet1 || a.planet2 !== b.planet2) distance += 1;
+    if (
+      typeof a.orb === "number" &&
+      typeof b.orb === "number" &&
+      Math.abs(a.orb - b.orb) >= 1
+    ) {
+      distance += 1;
+    }
+  }
+
+  return distance;
+}
+
+const MATERIAL_CHART_DISTANCE = 8;
+
 export function differentiationMetrics(readings: DifferentiationReading[]) {
   const narratives = readings.map((reading) => reading.narrative);
   const uniqueNarratives = new Set(narratives).size;
@@ -220,10 +267,17 @@ export function differentiationMetrics(readings: DifferentiationReading[]) {
   let maximumPairwiseBigramJaccard = 0;
   let maximumPairwiseTrigramJaccard = 0;
   let maximumIdenticalLayerSummaries = 0;
+  let maximumMaterialBigramJaccard = 0;
+  let maximumMaterialTrigramJaccard = 0;
+  let maximumMaterialIdenticalLayerSummaries = 0;
+  let materialPairCount = 0;
   let mostSimilarPair: [string, string] | null = null;
   let mostSimilarBigramPair: [string, string] | null = null;
   let mostSimilarTrigramPair: [string, string] | null = null;
   let mostLayerDuplicatePair: [string, string] | null = null;
+  let mostSimilarMaterialBigramPair: [string, string] | null = null;
+  let mostSimilarMaterialTrigramPair: [string, string] | null = null;
+  let mostMaterialLayerDuplicatePair: [string, string] | null = null;
 
   for (let left = 0; left < readings.length; left += 1) {
     for (let right = left + 1; right < readings.length; right += 1) {
@@ -246,6 +300,10 @@ export function differentiationMetrics(readings: DifferentiationReading[]) {
           count + Number(Boolean(summary) && summary === readings[right].layerSummaries[index]),
         0,
       );
+      const chartDistance = signatureDistance(
+        readings[left].signature,
+        readings[right].signature,
+      );
 
       if (tokenSimilarity > maximumPairwiseTokenJaccard) {
         maximumPairwiseTokenJaccard = tokenSimilarity;
@@ -263,6 +321,22 @@ export function differentiationMetrics(readings: DifferentiationReading[]) {
         maximumIdenticalLayerSummaries = identicalLayerSummaries;
         mostLayerDuplicatePair = [readings[left].id, readings[right].id];
       }
+
+      if (chartDistance >= MATERIAL_CHART_DISTANCE) {
+        materialPairCount += 1;
+        if (bigramSimilarity > maximumMaterialBigramJaccard) {
+          maximumMaterialBigramJaccard = bigramSimilarity;
+          mostSimilarMaterialBigramPair = [readings[left].id, readings[right].id];
+        }
+        if (trigramSimilarity > maximumMaterialTrigramJaccard) {
+          maximumMaterialTrigramJaccard = trigramSimilarity;
+          mostSimilarMaterialTrigramPair = [readings[left].id, readings[right].id];
+        }
+        if (identicalLayerSummaries > maximumMaterialIdenticalLayerSummaries) {
+          maximumMaterialIdenticalLayerSummaries = identicalLayerSummaries;
+          mostMaterialLayerDuplicatePair = [readings[left].id, readings[right].id];
+        }
+      }
     }
   }
 
@@ -274,11 +348,19 @@ export function differentiationMetrics(readings: DifferentiationReading[]) {
     maximumPairwiseBigramJaccard,
     maximumPairwiseTrigramJaccard,
     maximumIdenticalLayerSummaries,
+    materialChartDistanceThreshold: MATERIAL_CHART_DISTANCE,
+    materialPairCount,
+    maximumMaterialBigramJaccard,
+    maximumMaterialTrigramJaccard,
+    maximumMaterialIdenticalLayerSummaries,
     layerCount: readings[0]?.layerSummaries.length ?? 0,
     mostSimilarPair,
     mostSimilarBigramPair,
     mostSimilarTrigramPair,
     mostLayerDuplicatePair,
+    mostSimilarMaterialBigramPair,
+    mostSimilarMaterialTrigramPair,
+    mostMaterialLayerDuplicatePair,
     minimumVerifiedEvidenceCount: Math.min(
       ...readings.map((reading) => reading.verifiedEvidenceCount),
     ),
