@@ -11,6 +11,11 @@ test("Soul Codex 4.0.0 native identities are aligned", async () => {
   const info = await text("ios/App/App/Info.plist");
   const project = await text("ios/App/App.xcodeproj/project.pbxproj");
   const manifest = await text("client/src/lib/v4ReleaseManifest.ts");
+  const dockerfile = await text("Dockerfile");
+  const serverIdentity = await text("server/lib/release-identity.ts");
+  const clientIdentity = await text("client/src/lib/releaseIdentity.ts");
+  const androidBuildspec = await text("buildspec-android.yml");
+  const envExample = await text(".env.example");
 
   assert.match(android, /versionCode\s+4000004/);
   assert.match(android, /versionName\s+"4\.0\.0"/);
