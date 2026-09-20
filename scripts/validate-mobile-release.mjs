@@ -62,14 +62,14 @@ if (platform === "ios") {
   requireMatch(exportOptionsPath, /<key>teamID<\/key>\s*<string>86NUJ8M3B8<\/string>/, "The iOS export Team ID is missing or incorrect in ios/App/ExportOptions.plist.");
   requireMatch(exportOptionsPath, /<key>method<\/key>\s*<string>(app-store|app-store-connect)<\/string>/, "The iOS export method must target App Store distribution.");
   requireMatch("ios/App/App.xcodeproj/project.pbxproj", /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/, "The iOS bundle identifier must remain app.soulcodex.ios.");
-  requireMatch("ios/App/App/Info.plist", /<key>CFBundleVersion<\/key>\s*<string>4000003<\/string>/, "The iOS build number must be 4000003 for rc.3.");
+  requireMatch("ios/App/App/Info.plist", /<key>CFBundleVersion<\/key>\s*<string>4000004<\/string>/, "The iOS build number must be 4000004 for the 4.0.0 store release.");
 }
 
 if (platform === "android") {
   requireMatch("android/app/build.gradle", /applicationId\s+["']app\.soulcodex\.main["']/, "The Android application ID must remain app.soulcodex.main.");
   requireMatch("android/variables.gradle", /targetSdkVersion\s*=\s*36/, "Android targetSdkVersion must be 36.");
-  requireMatch("android/app/build.gradle", /versionCode\s+4000003/, "The Android versionCode must be 4000003 for rc.3.");
-  requireMatch("android/app/build.gradle", /versionName\s+["']4\.0\.0-rc\.3["']/, "The Android versionName must be 4.0.0-rc.3.");
+  requireMatch("android/app/build.gradle", /versionCode\s+4000004/, "The Android versionCode must be 4000004 for 4.0.0 final.");
+  requireMatch("android/app/build.gradle", /versionName\s+["']4\.0\.0["']/, "The Android versionName must be 4.0.0-4.0.0 final.");
 }
 
 if (failures.length) {
