@@ -27,6 +27,16 @@ const birthData: BirthData = {
   longitude: -73.8648,
 };
 
+const chironReferenceFetcher = async (inputTimestamp: string) => ({
+  body: "Chiron" as const,
+  longitude: 115.3498,
+  sign: "Cancer",
+  source: "NASA/JPL Horizons Chiron test fixture",
+  engine: "nasa-jpl-horizons-api@1.3-test",
+  calculatedAt: "2026-09-19T22:49:00.000Z",
+  inputTimestamp,
+});
+
 function matchingReferenceFetcher(delta = 0.0005): IndependentReferenceFetcher {
   const candidates = calculateAstrology(birthData);
 
@@ -91,6 +101,7 @@ test("governed longitude policies preserve tighter luminary tolerance and separa
 test("matching independent references promote Sun, Moon, and Ascendant with complete provenance", async () => {
   const result = await calculateVerifiedAstrology(birthData, {
     referenceFetcher: matchingReferenceFetcher(),
+    chironReferenceFetcher,
   });
 
   for (const [body, placement] of [
@@ -145,6 +156,10 @@ test("matching independent references promote Sun, Moon, and Ascendant with comp
   assert.match(result.verification.policyId ?? "", /ASTRO-PLANET-LONGITUDE-v1/);
   assert.match(result.verification.evidenceReceiptId ?? "", /30803626991/);
   assert.match(result.verification.evidenceReceiptId ?? "", /35449041012/);
+  assert.equal(result.chiron?.verificationStatus, "verified");
+  assert.equal(result.chiron?.policyId, "ASTRO-CHIRON-v1");
+  assert.match(result.verification.policyId ?? "", /ASTRO-CHIRON-v1/);
+  assert.match(result.verification.evidenceReceiptId ?? "", /35474358663/);
 });
 
 test("a sign disagreement leaves the candidate withheld while independent matches may still verify", async () => {
