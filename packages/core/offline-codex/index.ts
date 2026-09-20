@@ -349,6 +349,8 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
   const path = LIFE_PATH_TRAITS[numerology.lifePath] ?? LIFE_PATH_TRAITS[9];
   const expression = LIFE_PATH_TRAITS[numerology.expression] ?? LIFE_PATH_TRAITS[1];
   const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge] ?? LIFE_PATH_TRAITS[6];
+  const personality = LIFE_PATH_TRAITS[numerology.personality] ?? LIFE_PATH_TRAITS[3];
+  const personalYear = LIFE_PATH_TRAITS[numerology.personalYear] ?? LIFE_PATH_TRAITS[1];
   const seeds: DepthSynthesisSeed[] = [
     {
       evidence: makeEvidence({ id: "offline.astrology.sun", system: "astrology", field: "sunSign", value: astrology.sunSign, confidence: "moderate", timeSensitivity: "none", notes: ["Sun-sign boundary calculation is local and deterministic."] }),
@@ -397,6 +399,31 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       },
       tensionAxes: soulUrge.axes,
       limitations: ["The Soul Urge number is deterministic from the supplied name; its motivation meaning remains symbolic interpretation."],
+    },
+    {
+      evidence: makeEvidence({ id: "offline.numerology.personality", system: "numerology", field: "personality", value: numerology.personality, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from consonants in the supplied name."] }),
+      label: `Personality ${numerology.personality} ${NUMBER_LABELS[numerology.personality] ?? personality.theme}`,
+      priority: 104,
+      claimKind: "derived",
+      facets: {
+        visiblePattern: `Personality ${numerology.personality} adds ${personality.drive} as a symbolic first-impression theme.`,
+        commonMisreading: `The Personality number may make ${personality.drive} more visible without proving that the outward impression is the whole person.`,
+        relationshipImpact: `In social contact, this layer may emphasize ${personality.drive}.`,
+      },
+      tensionAxes: personality.axes,
+      limitations: ["The Personality number is deterministic from the supplied name; its social meaning remains symbolic interpretation."],
+    },
+    {
+      evidence: makeEvidence({ id: "offline.numerology.personal-year", system: "numerology", field: "personalYear", value: numerology.personalYear, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from birth month/day and the selected calendar year."] }),
+      label: `Personal Year ${numerology.personalYear} ${NUMBER_LABELS[numerology.personalYear] ?? personalYear.theme}`,
+      priority: 88,
+      claimKind: "derived",
+      facets: {
+        decisionImpact: `Personal Year ${numerology.personalYear} adds a temporary symbolic emphasis on ${personalYear.drive} for this calendar year.`,
+        action: personalYear.action,
+      },
+      tensionAxes: personalYear.axes,
+      limitations: ["Personal Year is a time-bounded numerology theme, not a prediction of events or outcomes."],
     },
     {
       evidence: makeEvidence({ id: "offline.archetype.primary", system: "system", field: "archetype", value: archetypeData.title, confidence: "moderate", timeSensitivity: "none", notes: ["Synthesized from the local astrology and numerology layers."] }),
@@ -452,8 +479,8 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
     latitude: input.latitude === undefined ? null : String(input.latitude),
     longitude: input.longitude === undefined ? null : String(input.longitude),
     isPremium: false, astrologyData, numerologyData, personalityData: {}, archetypeData,
-    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism, Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}, Soul Urge ${numerologyData.soulUrge}, and the ${archetypeData.title} synthesis. The strongest supported themes are ${sign.drive} and ${path.drive}. These are reflective frameworks, not fixed identity or guaranteed biography.`,
-    dailyGuidance: `${path.action} ${sign.action}`,
+    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism, Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}, Soul Urge ${numerologyData.soulUrge}, Personality ${numerologyData.personality}, Personal Year ${numerologyData.personalYear}, and the ${archetypeData.title} synthesis. The strongest supported themes are ${sign.drive} and ${path.drive}. These are reflective frameworks, not fixed identity or guaranteed biography.`,
+    dailyGuidance: `${path.action} ${personalYear.action} ${sign.action}`,
     depthInterpretation, localOnly: true, syncStatus: "local-only",
     createdAt: generatedAt, updatedAt: generatedAt,
   };
