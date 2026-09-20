@@ -7,11 +7,11 @@ import {
 const readings = buildVerifiedDifferentiationCorpus(96);
 const metrics = differentiationMetrics(readings);
 const receipt = {
-  schemaVersion: "1.0.0",
+  schemaVersion: "2.0.0",
   generatedAt: new Date().toISOString(),
   policyStatus: "release-gate",
   corpus: {
-    profileCount: 48,
+    profileCount: 96,
     controlledLocalBaseline: true,
     variedVerifiedNatalEvidence: true,
   },
@@ -32,7 +32,10 @@ console.log(JSON.stringify({ outputPath, ...metrics }, null, 2));
 if (
   metrics.exactDuplicateCount !== 0 ||
   metrics.uniqueNarratives !== metrics.profileCount ||
-  metrics.maximumPairwiseTokenJaccard >= 0.995 ||
+  metrics.materialPairCount <= 1000 ||
+  metrics.maximumMaterialBigramJaccard >= 0.9 ||
+  metrics.maximumMaterialTrigramJaccard >= 0.85 ||
+  metrics.maximumMaterialIdenticalLayerSummaries > 5 ||
   metrics.minimumVerifiedEvidenceCount < 10
 ) {
   process.exitCode = 2;
