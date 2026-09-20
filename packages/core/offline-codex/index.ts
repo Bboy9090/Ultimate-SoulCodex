@@ -351,7 +351,55 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
   const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge] ?? LIFE_PATH_TRAITS[6];
   const personality = LIFE_PATH_TRAITS[numerology.personality] ?? LIFE_PATH_TRAITS[3];
   const personalYear = LIFE_PATH_TRAITS[numerology.personalYear] ?? LIFE_PATH_TRAITS[1];
+  const nameNumberInteraction: DepthSynthesisSeed = {
+    evidence: makeEvidence({
+      id: "offline.numerology.name-number-interaction",
+      system: "numerology",
+      field: "expressionSoulUrgePersonality",
+      value: `E${numerology.expression}/S${numerology.soulUrge}/P${numerology.personality}`,
+      confidence: "moderate",
+      timeSensitivity: "none",
+      notes: [
+        "Composite uses three deterministic name-number calculations from the same supplied name.",
+        "These correlated values are one symbolic evidence family and are not counted as independent proof.",
+      ],
+    }),
+    label: `Name-number interaction E${numerology.expression}/S${numerology.soulUrge}/P${numerology.personality}`,
+    priority: 112,
+    claimKind: "inferred",
+    facets: {
+      claritySummary:
+        `The name-number pattern combines outward ${expression.drive}, inner ${soulUrge.drive}, and first-impression ${personality.drive}.`,
+      visiblePattern:
+        `The outward Expression theme favors ${expression.drive}, while the Personality layer may make ${personality.drive} more immediately visible.`,
+      innerExperience:
+        `The Soul Urge layer may pull inward toward ${soulUrge.drive}, even when the visible pattern emphasizes ${personality.drive}.`,
+      hiddenNeed:
+        `A recurring symbolic need may be room for ${soulUrge.drive} without abandoning ${expression.drive}.`,
+      gift:
+        `A constructive combination can pair ${expression.drive} with ${personality.drive} while preserving ${soulUrge.drive}.`,
+      shadow:
+        `Under pressure, this combination may repeat ${expression.shadow}; the outward layer can also drift toward ${personality.shadow}.`,
+      relationshipImpact:
+        `In relationships, the inner theme ${soulUrge.relationship}, while the visible layer ${personality.relationship}.`,
+      decisionImpact:
+        `Choices may be easier to test when they support ${expression.drive} without violating the inner pull toward ${soulUrge.drive}.`,
+      boundaryOrRepair:
+        `${personality.action} Then check whether the result still leaves room for ${soulUrge.drive}.`,
+      action:
+        `${expression.action} ${soulUrge.action}`,
+    },
+    tensionAxes: Array.from(new Set([
+      ...expression.axes,
+      ...soulUrge.axes,
+      ...personality.axes,
+    ])),
+    limitations: [
+      "Expression, Soul Urge, and Personality are correlated name-derived numerology values; this interaction is symbolic synthesis, not three independent measurements.",
+    ],
+  };
   const seeds: DepthSynthesisSeed[] = [
+    nameNumberInteraction,
     {
       evidence: makeEvidence({ id: "offline.astrology.sun", system: "astrology", field: "sunSign", value: astrology.sunSign, confidence: "moderate", timeSensitivity: "none", notes: ["Sun-sign boundary calculation is local and deterministic."] }),
       label: `${astrology.sunSign} Sun symbolism`, priority: 100, claimKind: "derived",
@@ -480,7 +528,7 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
     latitude: input.latitude === undefined ? null : String(input.latitude),
     longitude: input.longitude === undefined ? null : String(input.longitude),
     isPremium: false, astrologyData, numerologyData, personalityData: {}, archetypeData,
-    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism, Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}, Soul Urge ${numerologyData.soulUrge}, Personality ${numerologyData.personality}, Personal Year ${numerologyData.personalYear}, and the ${archetypeData.title} synthesis. The strongest supported themes are ${sign.drive} and ${path.drive}. These are reflective frameworks, not fixed identity or guaranteed biography.`,
+    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism and deterministic numerology: Life Path ${numerologyData.lifePath} (${path.drive}); Expression ${numerologyData.expression} (${expression.drive}); Soul Urge ${numerologyData.soulUrge} (${soulUrge.drive}); Personality ${numerologyData.personality} (${personality.drive}); and Personal Year ${numerologyData.personalYear} (${personalYear.drive}). The ${archetypeData.title} synthesis reflects those symbolic ingredients without treating them as fixed identity or guaranteed biography.`,
     dailyGuidance: `${path.action} ${personalYear.action} ${sign.action}`,
     depthInterpretation, localOnly: true, syncStatus: "local-only",
     createdAt: generatedAt, updatedAt: generatedAt,
