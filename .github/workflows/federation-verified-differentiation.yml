@@ -3,11 +3,15 @@ name: Federation Verified Differentiation
 on:
   push:
     branches:
-      - fed-differentiation-truth-boundary
+      - fed-differentiation-structural-v2
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: federation-differentiation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verified-differentiation:
