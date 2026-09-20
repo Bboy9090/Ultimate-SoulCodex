@@ -9,8 +9,8 @@ describe("clarityReadingModel", () => {
   it("prefers independently verified astronomy over symbolic fallback", () => {
     const model = buildClarityReadingModel({
       verifiedAstrologyData: {
-        sun: { sign: "Virgo" },
-        moon: { sign: "Scorpio" },
+        sun: { verificationStatus: "verified", sign: "Virgo" },
+        moon: { verificationStatus: "verified", sign: "Scorpio" },
       },
       astrologyData: {
         sunSign: "Leo",
@@ -147,3 +147,56 @@ describe("clarityReadingModel", () => {
     );
   });
 });
+
+
+  it("surfaces Human Design only when the exact verified core receipt is present", () => {
+    const model = buildClarityReadingModel({
+      verifiedAstrologyData: {
+        sun: { verificationStatus: "verified", sign: "Virgo" },
+        moon: { verificationStatus: "verified", sign: "Virgo" },
+        rising: { verificationStatus: "verified", sign: "Scorpio" },
+      },
+      verifiedHumanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+        trust: {
+          status: "verified",
+          verificationReceiptId: "35474994858:human-design-repair-audit",
+        },
+      },
+      astrologyData: { sunSign: "Virgo" },
+      numerologyData: { lifePath: 9, expression: 4, soulUrge: 5 },
+      biography: "A deterministic local reading.",
+    });
+
+    expect(model.signals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "hd-type", value: "Reflector", confidence: "verified" }),
+        expect.objectContaining({ id: "hd-authority", value: "Lunar Authority", confidence: "verified" }),
+        expect.objectContaining({ id: "hd-profile", value: "2/5", confidence: "verified" }),
+      ]),
+    );
+    expect(model.summary).toContain("Virgo Sun");
+    expect(model.summary).toContain("Scorpio Rising");
+    expect(model.summary).toContain("Human Design Type Reflector");
+  });
+
+  it("does not promote Human Design from an unverified or wrong receipt", () => {
+    const model = buildClarityReadingModel({
+      verifiedHumanDesignData: {
+        status: "verified",
+        type: "Generator",
+        authority: "Sacral Authority",
+        profile: "4/6",
+        trust: {
+          status: "verified",
+          verificationReceiptId: "wrong-receipt",
+        },
+      },
+    });
+
+    expect(model.signals.some((signal) => signal.id.startsWith("hd-"))).toBe(false);
+  });
