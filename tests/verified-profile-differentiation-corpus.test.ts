@@ -156,7 +156,11 @@ function fingerprint(
   reading: Awaited<ReturnType<typeof fullVerifiedReading>>,
 ): string {
   const depth = reading.narrative.depthInterpretation;
+  const redactedBiography = reading.narrative.biography
+    .split(reading.birth.name)
+    .join("<name>");
   return [
+    redactedBiography,
     reading.narrative.archetypeData.title,
     reading.narrative.archetypeData.description,
     reading.narrative.archetypeData.strengths.join(" "),
