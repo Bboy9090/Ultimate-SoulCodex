@@ -131,7 +131,7 @@ export default function OfflineProfilePage() {
                     disabled={verificationAttempt === "running"}
                     data-testid="button-verify-online-profile"
                   >
-                    {verificationAttempt === "running" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Calculating…</> : <><ShieldCheck className="mr-2 h-4 w-4" />Verify full natal chart</>}
+                    {verificationAttempt === "running" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Calculating…</> : <><ShieldCheck className="mr-2 h-4 w-4" />Verify natal chart + HD core</>}
                   </button>
                 )}
               </div>
@@ -143,7 +143,7 @@ export default function OfflineProfilePage() {
           </div>
         </section>
 
-        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested astronomy verification. Soul Codex is checking only the calculation inputs needed for that evidence while your local reading remains available.</span></div>}
+        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested online verification. Soul Codex is checking only the birth calculation inputs needed for verified astronomy and Human Design core evidence while your local reading remains available.</span></div>}
         {verificationAttempt === "deferred" && !verifiedFullNatal && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">The requested online verification could not complete. Local symbolic layers remain visible; any unsupported planets, Rising, MC, houses, aspects, nodes, and Chiron stay unresolved rather than guessed.</div>}
         {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.04)] p-4 text-sm text-[var(--sc-stone)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
@@ -230,7 +230,7 @@ export default function OfflineProfilePage() {
                 ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, major aspects, Mean North/South Nodes, and Chiron are evidence-qualified or deterministically derived from verified inputs. Chiron uses live JPL Horizons qualified against Swiss Ephemeris; no approximation fallback is used."
                 : hasVerifiedCore
                   ? "Sun and Moon are independently verified. Exact-input profiles can now request the full qualified natal chart; any still-unverified planets, Rising, Midheaven, houses, aspects, nodes, and Chiron remain withheld."
-                  : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, Midheaven, houses, aspects, nodes, Chiron, and chart geometry remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>
+                  : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, Midheaven, houses, aspects, nodes, Chiron, chart geometry, and Human Design core remain unresolved until you explicitly request online verification and it succeeds."}</p></div></div></div>
 
         <DepthSoulGuide interpretation={profile.depthInterpretation} defaultOpenGroupIds={["behavior", "relationships-decisions"]} />
       </main>
