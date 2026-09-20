@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fed-human-design-mechanics-repair
+      - fed-human-design-qualified-rebased
   workflow_dispatch:
 
 permissions:
