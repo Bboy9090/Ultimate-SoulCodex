@@ -13,17 +13,18 @@ test("96 distinct verified chart signatures remain structurally differentiated",
   assert.equal(metrics.uniqueNarratives, 96);
   assert.equal(metrics.exactDuplicateCount, 0);
   assert.ok(
-    metrics.maximumPairwiseBigramJaccard < 0.9,
-    `maximum pairwise bigram overlap was ${metrics.maximumPairwiseBigramJaccard} for ${metrics.mostSimilarBigramPair?.join(" vs ")}`,
+    metrics.maximumMaterialBigramJaccard < 0.9,
+    `maximum material-pair bigram overlap was ${metrics.maximumMaterialBigramJaccard} for ${metrics.mostSimilarMaterialBigramPair?.join(" vs ")}`,
   );
   assert.ok(
-    metrics.maximumPairwiseTrigramJaccard < 0.85,
-    `maximum pairwise trigram overlap was ${metrics.maximumPairwiseTrigramJaccard} for ${metrics.mostSimilarTrigramPair?.join(" vs ")}`,
+    metrics.maximumMaterialTrigramJaccard < 0.85,
+    `maximum material-pair trigram overlap was ${metrics.maximumMaterialTrigramJaccard} for ${metrics.mostSimilarMaterialTrigramPair?.join(" vs ")}`,
   );
   assert.ok(
-    metrics.maximumIdenticalLayerSummaries <= 5,
-    `${metrics.maximumIdenticalLayerSummaries}/${metrics.layerCount} layer summaries were identical for ${metrics.mostLayerDuplicatePair?.join(" vs ")}`,
+    metrics.maximumMaterialIdenticalLayerSummaries <= 5,
+    `${metrics.maximumMaterialIdenticalLayerSummaries}/${metrics.layerCount} material-pair layer summaries were identical for ${metrics.mostMaterialLayerDuplicatePair?.join(" vs ")}`,
   );
+  assert.ok(metrics.materialPairCount > 1000);
   assert.ok(metrics.minimumVerifiedEvidenceCount >= 10);
   assert.ok(metrics.minimumTotalEvidenceCount >= 13);
 });
