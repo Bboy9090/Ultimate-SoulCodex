@@ -36,7 +36,11 @@ const releaseVersion = process.env.VITE_RELEASE_VERSION?.trim();
 const releaseSha = process.env.VITE_RELEASE_SHA?.trim();
 const apiContract = process.env.VITE_API_CONTRACT?.trim();
 
-if (!releaseVersion) failures.push("VITE_RELEASE_VERSION is required for a native release build.");
+if (!releaseVersion) {
+  failures.push("VITE_RELEASE_VERSION is required for a native release build.");
+} else if (releaseVersion !== "4.0.0") {
+  failures.push("VITE_RELEASE_VERSION must be exactly 4.0.0 for this store candidate.");
+}
 if (!releaseSha) {
   failures.push("VITE_RELEASE_SHA is required for a native release build.");
 } else if (releaseSha === "unknown") {
@@ -62,14 +66,17 @@ if (platform === "ios") {
   requireMatch(exportOptionsPath, /<key>teamID<\/key>\s*<string>86NUJ8M3B8<\/string>/, "The iOS export Team ID is missing or incorrect in ios/App/ExportOptions.plist.");
   requireMatch(exportOptionsPath, /<key>method<\/key>\s*<string>(app-store|app-store-connect)<\/string>/, "The iOS export method must target App Store distribution.");
   requireMatch("ios/App/App.xcodeproj/project.pbxproj", /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/, "The iOS bundle identifier must remain app.soulcodex.ios.");
+  requireMatch("ios/App/App.xcodeproj/project.pbxproj", /CURRENT_PROJECT_VERSION = 4000004;/, "The iOS Xcode build number must be 4000004.");
+  requireMatch("ios/App/App.xcodeproj/project.pbxproj", /MARKETING_VERSION = 4\.0\.0;/, "The iOS Xcode marketing version must be 4.0.0.");
+  requireMatch("ios/App/App/Info.plist", /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.0<\/string>/, "The iOS short version must be 4.0.0.");
   requireMatch("ios/App/App/Info.plist", /<key>CFBundleVersion<\/key>\s*<string>4000004<\/string>/, "The iOS build number must be 4000004 for the 4.0.0 store release.");
 }
 
 if (platform === "android") {
   requireMatch("android/app/build.gradle", /applicationId\s+["']app\.soulcodex\.main["']/, "The Android application ID must remain app.soulcodex.main.");
   requireMatch("android/variables.gradle", /targetSdkVersion\s*=\s*36/, "Android targetSdkVersion must be 36.");
-  requireMatch("android/app/build.gradle", /versionCode\s+4000004/, "The Android versionCode must be 4000004 for 4.0.0 final.");
-  requireMatch("android/app/build.gradle", /versionName\s+["']4\.0\.0["']/, "The Android versionName must be 4.0.0-4.0.0 final.");
+  requireMatch("android/app/build.gradle", /versionCode\s+4000004/, "The Android versionCode must be 4000004 for the 4.0.0 store release.");
+  requireMatch("android/app/build.gradle", /versionName\s+["']4\.0\.0["']/, "The Android versionName must be 4.0.0 for the store release.");
 }
 
 if (failures.length) {
