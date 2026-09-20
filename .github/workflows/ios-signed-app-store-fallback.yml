@@ -72,8 +72,8 @@ jobs:
           LEAF="$RUNNER_TEMP/leaf.pem"
           MODERN_P12="$RUNNER_TEMP/soulcodex-modern.p12"
           printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
-          openssl pkcs12 -legacy -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
-          openssl pkcs12 -legacy -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
           grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY" || { echo IOS_P12_HAS_NO_PRIVATE_KEY; exit 1; }
           awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
           openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
