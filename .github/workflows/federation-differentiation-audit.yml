@@ -1,0 +1,44 @@
+name: Federation Profile Differentiation Audit
+
+on:
+  push:
+    branches:
+      - fed-synthesis-differentiation-hardening
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  differentiation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Offline evidence-boundary contract
+        run: node --import tsx --test tests/offline-synthesis-evidence-boundary.test.ts
+      - name: Run 120-profile differentiation audit
+        run: node --import tsx scripts/audit-profile-differentiation.ts profile-differentiation-audit.json
+      - name: Preserve exact candidate SHA
+        run: printf '%s\n' "$GITHUB_SHA" > DIFFERENTIATION-AUDIT-SHA.txt
+      - name: Upload differentiation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: profile-differentiation-audit
+          path: |
+            profile-differentiation-audit.json
+            DIFFERENTIATION-AUDIT-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
