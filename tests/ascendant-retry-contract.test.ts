@@ -124,6 +124,21 @@ test("verified full natal chart completes the exact-input verification requireme
       unresolvedBodies: [],
     },
   };
+  profile.verifiedHumanDesignData = {
+    status: "verified",
+    policyId: "HUMAN-DESIGN-CORE-v1",
+    type: "Reflector",
+    strategy: "Wait a lunar cycle",
+    authority: "Lunar Authority",
+    profile: "2/5",
+    definedCenters: [],
+    definedChannels: [],
+    trust: {
+      status: "verified",
+      verificationReceiptId: "35474994858:human-design-repair-audit",
+      independentSource: "free-human-design@1.0.1 differential verifier",
+    },
+  };
   assert.equal(profileNeedsOnlineVerification(profile), false);
 });
 
