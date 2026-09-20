@@ -37,6 +37,8 @@ jobs:
         run: node --import tsx --test tests/bobby-big-three-golden.test.ts tests/ascendant-retry-contract.test.ts tests/astrology-planetary-candidates.test.ts tests/astrology-production-verification.test.ts tests/full-chart-production-wiring.test.ts tests/house-production.test.ts tests/aspect-engine.test.ts tests/lunar-node-evidence.test.ts tests/lunar-node-production.test.ts tests/chiron-horizons-reference.test.ts tests/chiron-production.test.ts
       - name: Privacy and local-first regression
         run: node --import tsx --test tests/local-first-privacy-contract.test.ts tests/profile-verification-reconciliation.test.ts
+      - name: Truth-bound differentiation regression
+        run: node --import tsx --test packages/core/offline-codex/__tests__/truth-bound-differentiation.test.ts
       - name: Verified narrative differentiation regression
         run: node --import tsx --test tests/verified-profile-differentiation.test.ts
       - name: Human Design verified-core trust contract
