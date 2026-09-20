@@ -5,16 +5,24 @@ import {
   differentiationMetrics,
 } from "./fixtures/verified-differentiation-corpus";
 
-test("48 distinct verified chart signatures never collapse to token-identical readings", () => {
-  const readings = buildVerifiedDifferentiationCorpus(48);
+test("96 distinct verified chart signatures remain structurally differentiated", () => {
+  const readings = buildVerifiedDifferentiationCorpus(96);
   const metrics = differentiationMetrics(readings);
 
-  assert.equal(metrics.profileCount, 48);
-  assert.equal(metrics.uniqueNarratives, 48);
+  assert.equal(metrics.profileCount, 96);
+  assert.equal(metrics.uniqueNarratives, 96);
   assert.equal(metrics.exactDuplicateCount, 0);
   assert.ok(
-    metrics.maximumPairwiseTokenJaccard < 0.995,
-    `maximum pairwise token overlap was ${metrics.maximumPairwiseTokenJaccard} for ${metrics.mostSimilarPair?.join(" vs ")}`,
+    metrics.maximumPairwiseBigramJaccard < 0.9,
+    `maximum pairwise bigram overlap was ${metrics.maximumPairwiseBigramJaccard} for ${metrics.mostSimilarBigramPair?.join(" vs ")}`,
+  );
+  assert.ok(
+    metrics.maximumPairwiseTrigramJaccard < 0.85,
+    `maximum pairwise trigram overlap was ${metrics.maximumPairwiseTrigramJaccard} for ${metrics.mostSimilarTrigramPair?.join(" vs ")}`,
+  );
+  assert.ok(
+    metrics.maximumIdenticalLayerSummaries <= 5,
+    `${metrics.maximumIdenticalLayerSummaries}/${metrics.layerCount} layer summaries were identical for ${metrics.mostLayerDuplicatePair?.join(" vs ")}`,
   );
   assert.ok(metrics.minimumVerifiedEvidenceCount >= 10);
   assert.ok(metrics.minimumTotalEvidenceCount >= 13);
