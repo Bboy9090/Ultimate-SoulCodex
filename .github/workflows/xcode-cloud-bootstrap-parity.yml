@@ -1,0 +1,105 @@
+name: Xcode Cloud Bootstrap Parity
+
+on:
+  push:
+    branches:
+      - release/4.0.0-runtime-identity-finalization
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "ios/**"
+      - "client/**"
+      - "server/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/xcode-cloud-bootstrap-parity.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xcode-cloud-bootstrap-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VITE_API_URL: https://soulcodex.up.railway.app
+  VITE_RELEASE_VERSION: 4.0.0
+  VITE_API_CONTRACT: foundation-v4
+  VITE_RELEASE_SHA: ${{ github.sha }}
+
+jobs:
+  xcode-cloud-bootstrap-parity:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Record Xcode environment
+        run: |
+          xcodebuild -version
+          xcrun swift --version
+          node --version
+          npm --version
+
+      - name: Run real Xcode Cloud post-clone bootstrap
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
+
+      - name: Validate final iOS release metadata
+        run: npm run mobile:validate:ios
+
+      - name: Resolve Swift package graph after bootstrap
+        run: |
+          xcodebuild \
+            -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex"
+
+      - name: Verify archive scheme
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex" \
+            -showBuildSettings \
+            -configuration Release > "$RUNNER_TEMP/build-settings.txt"
+          grep -E "PRODUCT_BUNDLE_IDENTIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION|CODE_SIGN_ENTITLEMENTS" "$RUNNER_TEMP/build-settings.txt"
+
+      - name: Create unsigned device archive after bootstrap
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/SoulCodex-XcodeCloud-Parity.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Record parity receipt
+        if: always()
+        run: |
+          {
+            echo "SHA=${GITHUB_SHA}"
+            echo "release=4.0.0"
+            echo "scheme=Ultimate Soul Codex"
+            echo "bootstrap=ios/App/ci_scripts/ci_post_clone.sh"
+            echo "purpose=separate repository/bootstrap failures from Apple-managed signing failures"
+          } > xcode-cloud-parity-receipt.txt
+
+      - name: Upload parity receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.0-xcode-cloud-parity
+          path: xcode-cloud-parity-receipt.txt
+          retention-days: 90
