@@ -17,6 +17,7 @@ export interface DifferentiationReading {
   narrative: string;
   verifiedEvidenceCount: number;
   totalEvidenceCount: number;
+  layerSummaries: string[];
 }
 
 function sign(index: number): string {
@@ -181,6 +182,7 @@ export function buildVerifiedDifferentiationCorpus(count = 48): DifferentiationR
       narrative,
       verifiedEvidenceCount,
       totalEvidenceCount: synthesis.depthInterpretation.evidence.length,
+      layerSummaries: layers.map((layer) => normalizedNarrative([layer.summary])),
     };
   });
 }
@@ -193,22 +195,73 @@ export function tokenJaccard(left: string, right: string): number {
   return union === 0 ? 1 : intersection / union;
 }
 
+function ngramSet(value: string, width: number): Set<string> {
+  const tokens = value.split(" ").filter(Boolean);
+  const grams = new Set<string>();
+  for (let index = 0; index <= tokens.length - width; index += 1) {
+    grams.add(tokens.slice(index, index + width).join(" "));
+  }
+  return grams;
+}
+
+export function ngramJaccard(left: string, right: string, width: number): number {
+  const a = ngramSet(left, width);
+  const b = ngramSet(right, width);
+  const intersection = [...a].filter((gram) => b.has(gram)).length;
+  const union = new Set([...a, ...b]).size;
+  return union === 0 ? 1 : intersection / union;
+}
+
 export function differentiationMetrics(readings: DifferentiationReading[]) {
   const narratives = readings.map((reading) => reading.narrative);
   const uniqueNarratives = new Set(narratives).size;
   const exactDuplicateCount = narratives.length - uniqueNarratives;
   let maximumPairwiseTokenJaccard = 0;
+  let maximumPairwiseBigramJaccard = 0;
+  let maximumPairwiseTrigramJaccard = 0;
+  let maximumIdenticalLayerSummaries = 0;
   let mostSimilarPair: [string, string] | null = null;
+  let mostSimilarBigramPair: [string, string] | null = null;
+  let mostSimilarTrigramPair: [string, string] | null = null;
+  let mostLayerDuplicatePair: [string, string] | null = null;
 
   for (let left = 0; left < readings.length; left += 1) {
     for (let right = left + 1; right < readings.length; right += 1) {
-      const similarity = tokenJaccard(
+      const tokenSimilarity = tokenJaccard(
         readings[left].narrative,
         readings[right].narrative,
       );
-      if (similarity > maximumPairwiseTokenJaccard) {
-        maximumPairwiseTokenJaccard = similarity;
+      const bigramSimilarity = ngramJaccard(
+        readings[left].narrative,
+        readings[right].narrative,
+        2,
+      );
+      const trigramSimilarity = ngramJaccard(
+        readings[left].narrative,
+        readings[right].narrative,
+        3,
+      );
+      const identicalLayerSummaries = readings[left].layerSummaries.reduce(
+        (count, summary, index) =>
+          count + Number(Boolean(summary) && summary === readings[right].layerSummaries[index]),
+        0,
+      );
+
+      if (tokenSimilarity > maximumPairwiseTokenJaccard) {
+        maximumPairwiseTokenJaccard = tokenSimilarity;
         mostSimilarPair = [readings[left].id, readings[right].id];
+      }
+      if (bigramSimilarity > maximumPairwiseBigramJaccard) {
+        maximumPairwiseBigramJaccard = bigramSimilarity;
+        mostSimilarBigramPair = [readings[left].id, readings[right].id];
+      }
+      if (trigramSimilarity > maximumPairwiseTrigramJaccard) {
+        maximumPairwiseTrigramJaccard = trigramSimilarity;
+        mostSimilarTrigramPair = [readings[left].id, readings[right].id];
+      }
+      if (identicalLayerSummaries > maximumIdenticalLayerSummaries) {
+        maximumIdenticalLayerSummaries = identicalLayerSummaries;
+        mostLayerDuplicatePair = [readings[left].id, readings[right].id];
       }
     }
   }
@@ -218,7 +271,14 @@ export function differentiationMetrics(readings: DifferentiationReading[]) {
     uniqueNarratives,
     exactDuplicateCount,
     maximumPairwiseTokenJaccard,
+    maximumPairwiseBigramJaccard,
+    maximumPairwiseTrigramJaccard,
+    maximumIdenticalLayerSummaries,
+    layerCount: readings[0]?.layerSummaries.length ?? 0,
     mostSimilarPair,
+    mostSimilarBigramPair,
+    mostSimilarTrigramPair,
+    mostLayerDuplicatePair,
     minimumVerifiedEvidenceCount: Math.min(
       ...readings.map((reading) => reading.verifiedEvidenceCount),
     ),
