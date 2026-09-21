@@ -13,6 +13,8 @@ Build 179 and its release branch are unchanged.
 - Each result is explicitly a calculated possibility, not independently verified. A quarter-degree proximity to a sign boundary includes a neighboring candidate. This is a conservative educational sample, not an exhaustive continuous-time proof or a probability distribution.
 - Date exploration does not write storage, request the backend, create houses/angles, supply Human Design, or change primary synthesis.
 - House-system explanations distinguish a cusp sign from a planet in a house and explain why Equal-house MC need not be the tenth cusp.
+- Verified Equal-house profiles receive a personal Atlas containing verified planetary sign/house placements, all twelve verified cusp signs, Midheaven, mean Nodes, and independently qualified Chiron. Partial, legacy, unverified, or differently governed chart structures fail closed.
+- House/MC policy is promoted from unavailable to inspectable when verified. It remains unable to influence primary synthesis.
 
 ## Reference observations
 
@@ -34,7 +36,7 @@ No official unknown-time fallback was verified in that source. Do not claim Coâ€
 
 ## Validation and release status
 
-Node 22.23.2: TypeScript check, 19 focused tests, and production build passed. Tests include all 144 combinations, unknown-time disclosure, invalid civil dates, DST, existing primary-synthesis exclusion, existing 60-profile differentiation, and 24 Swiss-qualified house fixtures. Full Federation/security/privacy/billing/96-profile gates and browser/device acceptance are not claimed for this slice.
+Node 22.23.2: TypeScript check, 24 focused tests, the 60-profile corpus, the 96-profile structural audit, and production build passed. Tests include all 144 combinations, unknown-time disclosure, invalid civil dates, DST, personal Atlas fail-closed behavior, existing primary-synthesis exclusion, and 24 Swiss-qualified house fixtures. Full Federation/security/privacy/billing gates and browser/device acceptance are not claimed for this slice.
 
 Receipt: evidence/atlas/node22-validation.log
 State: development implementation with local validation, not release-ready.
