@@ -174,7 +174,10 @@ export async function fetchHorizonsReference(
       }
 
       const payload = await response.json() as HorizonsPayload;
-      if (payload.error) throw new Error("horizons_api_error");
+      if (payload.error) {
+        const detail = payload.error.replace(/\\s+/g, " ").trim().slice(0, 240);
+        throw new Error(`horizons_api_error:${detail}`);
+      }
       if (!payload.signature?.source?.toLowerCase().includes("jpl")) {
         throw new Error("horizons_signature_invalid");
       }
