@@ -227,16 +227,18 @@ test("offline profile keeps its local symbolic chart while carrying a separate v
   assert.notEqual(hydrated.biography, local.biography);
   assert.match(hydrated.biography, /Virgo Moon/);
   assert.match(hydrated.biography, /Scorpio Rising/);
-  assert.match(hydrated.biography, /Mercury in Virgo \(House 10\)/);
+  assert.match(hydrated.biography, /Mercury in Virgo/);
+  assert.doesNotMatch(hydrated.biography, /House 10/);
   assert.ok(
     hydrated.depthInterpretation.evidence.some(
       (item) => item.id === "verified.astrology.moon" && item.provenanceStatus === "externally-verified",
     ),
   );
-  assert.ok(
+  assert.equal(
     hydrated.depthInterpretation.evidence.some(
-      (item) => item.id === "verified.astrology.chiron" && item.provenanceStatus === "externally-verified",
+      (item) => item.id === "verified.astrology.chiron",
     ),
+    false,
   );
   assert.equal(
     hydrated.depthInterpretation.evidence.some(

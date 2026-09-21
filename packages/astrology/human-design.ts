@@ -1049,7 +1049,7 @@ function calculateHumanDesignInternal(birthData: {
   const maxIterations = 50;
   let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - 88 * 86_400_000);
 
-  while (iteration < maxIterations && (maxDays - minDays) > 1e-7) {
+  while (iteration < maxIterations && (maxDays - minDays) > 1e-4) {
     const midDays = (minDays + maxDays) / 2;
     const testTimeUTC = new Date(birthTimeUTC.getTime() - midDays * 86_400_000);
     const testSunLongitude = calculateHdAstroAtUtc(testTimeUTC).planets.sun.longitude;

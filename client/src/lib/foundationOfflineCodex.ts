@@ -11,6 +11,7 @@ import {
   type OfflineCodexProfile,
 } from "@soulcodex/core";
 import type { BirthData } from "@shared/schema";
+import { maySystemInfluenceSynthesis } from "@shared/system-visibility";
 
 type Pattern = {
   drive: string;
@@ -509,14 +510,86 @@ function aspectDynamicText(aspect: NonNullable<VerifiedAstrologyForSynthesis["as
 
 function verifiedAggregateSeeds(
   astrology: VerifiedAstrologyForSynthesis,
+  eligibility: { housesMidheaven: boolean },
 ): DepthSynthesisSeed[] {
   const seeds: DepthSynthesisSeed[] = [];
+
+  const verifiedPlanetSign = (
+    key: keyof NonNullable<VerifiedAstrologyForSynthesis["planets"]>,
+  ): string | null => {
+    const placement = astrology.planets?.[key];
+    return placement?.verificationStatus === "verified" && typeof placement.sign === "string"
+      ? placement.sign
+      : null;
+  };
+  const sunSign = verifiedPlanetSign("sun");
+  const moonSign = verifiedPlanetSign("moon");
+  const mercurySign = verifiedPlanetSign("mercury");
+  const venusSign = verifiedPlanetSign("venus");
+  const marsSign = verifiedPlanetSign("mars");
+  const jupiterSign = verifiedPlanetSign("jupiter");
+  const saturnSign = verifiedPlanetSign("saturn");
+  const neptuneSign = verifiedPlanetSign("neptune");
+  const plutoSign = verifiedPlanetSign("pluto");
 
   const risingSign =
     astrology.rising?.verificationStatus === "verified" &&
     typeof astrology.rising.sign === "string"
       ? astrology.rising.sign
       : null;
+
+  if (
+    sunSign &&
+    moonSign &&
+    risingSign &&
+    mercurySign &&
+    venusSign &&
+    marsSign &&
+    jupiterSign &&
+    saturnSign &&
+    neptuneSign &&
+    plutoSign
+  ) {
+    seeds.push({
+      evidence: verifiedAggregateEvidence(
+        "verified.astrology.aggregate.placement-signature",
+        "placementSignature",
+        [
+          `Sun ${sunSign}`,
+          `Moon ${moonSign}`,
+          `Rising ${risingSign}`,
+          `Mercury ${mercurySign}`,
+          `Venus ${venusSign}`,
+          `Mars ${marsSign}`,
+          `Jupiter ${jupiterSign}`,
+          `Saturn ${saturnSign}`,
+          `Neptune ${neptuneSign}`,
+          `Pluto ${plutoSign}`,
+        ].join("; "),
+        ["Placement signature uses verified zodiac signs only; houses and other withheld systems are excluded."],
+      ),
+      label: `Verified sign pattern: ${sunSign} Sun, ${moonSign} Moon, ${risingSign} Rising, Mercury ${mercurySign}, Venus ${venusSign}, Mars ${marsSign}`,
+      priority: 132,
+      claimKind: "derived",
+      facets: {
+        claritySummary: `The verified sign pattern combines a ${sunSign} Sun, ${moonSign} Moon, and ${risingSign} Rising with Mercury in ${mercurySign}.`,
+        visiblePattern: `${risingSign} Rising meets Mars in ${marsSign}, blending outward style with a distinct action signature.`,
+        innerExperience: `${moonSign} Moon, Saturn in ${saturnSign}, and Neptune in ${neptuneSign} form the verified emotional, structural, and imaginative context.`,
+        protectiveFunction: `${moonSign} Moon and Saturn in ${saturnSign} describe a distinct symbolic pairing between emotional regulation and self-protection.`,
+        gift: `${sunSign} Sun and Jupiter in ${jupiterSign} combine the core identity pattern with a specific style of growth and contribution.`,
+        commonMisreading: `${risingSign} Rising can make Mercury in ${mercurySign} appear more one-dimensional from the outside than the full verified pattern supports.`,
+        relationshipImpact: `${moonSign} Moon and Venus in ${venusSign} create a specific symbolic pairing between emotional needs and relational preference.`,
+        decisionImpact: `${moonSign} Moon and ${risingSign} Rising contextualize how Mercury in ${mercurySign}, Mars in ${marsSign}, and Jupiter in ${jupiterSign} may interact symbolically.`,
+        boundaryOrRepair: `${moonSign} Moon and ${risingSign} Rising contextualize how Saturn in ${saturnSign} and Pluto in ${plutoSign} handle structure, pressure, and change.`,
+        action: `Let ${risingSign} Rising set the visible pace while Mars in ${marsSign} supplies deliberate follow-through; check the choice against the needs of a ${moonSign} Moon.`,
+      },
+      tensionAxes: [],
+      limitations: [
+        "The placements are verified astronomical data; the combined psychological language remains symbolic interpretation.",
+      ],
+    });
+  }
+
   const midheavenSign =
     astrology.midheaven?.verificationStatus === "verified" &&
     typeof astrology.midheaven.sign === "string"
@@ -526,6 +599,7 @@ function verifiedAggregateSeeds(
   const moonHouse = astrology.planetaryHouses?.moon;
 
   if (
+    eligibility.housesMidheaven &&
     risingSign &&
     midheavenSign &&
     typeof sunHouse === "number" &&
@@ -589,7 +663,9 @@ function verifiedAggregateSeeds(
     });
   }
 
-  const house = strongestVerifiedHouse(astrology);
+  const house = eligibility.housesMidheaven
+    ? strongestVerifiedHouse(astrology)
+    : null;
   if (house) {
     const houseLanguage = HOUSE_THEMES[house.house];
     seeds.push({
@@ -675,9 +751,13 @@ export function synthesizeVerifiedFoundationProfile(
   const sunPattern = SIGN_PATTERNS[sun] ?? SIGN_PATTERNS.Virgo;
   const moonPattern = SIGN_PATTERNS[moon] ?? SIGN_PATTERNS.Virgo;
   const risingPattern = SIGN_PATTERNS[rising] ?? SIGN_PATTERNS.Virgo;
+  const eligibility = {
+    housesMidheaven: maySystemInfluenceSynthesis("housesMidheaven", "verified"),
+    nodesChiron: maySystemInfluenceSynthesis("nodesChiron", "verified"),
+  };
 
   const seeds: DepthSynthesisSeed[] = [
-    ...verifiedAggregateSeeds(astrology),
+    ...verifiedAggregateSeeds(astrology, eligibility),
     makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100),
     makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, LIFE_PATHS[expression] ?? LIFE_PATHS[1], 96),
     makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, LIFE_PATHS[soulUrge] ?? LIFE_PATHS[6], 95),
@@ -686,7 +766,7 @@ export function synthesizeVerifiedFoundationProfile(
       field: "sun",
       bodyLabel: "Sun",
       sign: sun,
-      house: astrology.planetaryHouses?.sun,
+      house: eligibility.housesMidheaven ? astrology.planetaryHouses?.sun : undefined,
       priority: 130,
       facets: {
         claritySummary: `The verified Sun layer emphasizes ${sunPattern.drive}.`,
@@ -697,7 +777,7 @@ export function synthesizeVerifiedFoundationProfile(
       field: "moon",
       bodyLabel: "Moon",
       sign: moon,
-      house: astrology.planetaryHouses?.moon,
+      house: eligibility.housesMidheaven ? astrology.planetaryHouses?.moon : undefined,
       priority: 128,
       facets: {
         innerExperience: `The verified Moon layer may describe an inner pull toward ${moonPattern.drive}.`,
@@ -744,7 +824,7 @@ export function synthesizeVerifiedFoundationProfile(
       field: config.key,
       bodyLabel: config.label,
       sign: placement.sign,
-      house: astrology.planetaryHouses?.[config.key],
+      house: eligibility.housesMidheaven ? astrology.planetaryHouses?.[config.key] : undefined,
       priority: config.priority,
       facets: {
         [config.facet]: `${config.prefix} ${patternValue.drive}.`,
@@ -753,7 +833,11 @@ export function synthesizeVerifiedFoundationProfile(
     }));
   }
 
-  if (astrology.midheaven?.verificationStatus === "verified" && astrology.midheaven.sign) {
+  if (
+    eligibility.housesMidheaven &&
+    astrology.midheaven?.verificationStatus === "verified" &&
+    astrology.midheaven.sign
+  ) {
     const mcPattern = SIGN_PATTERNS[astrology.midheaven.sign] ?? SIGN_PATTERNS.Virgo;
     seeds.push(verifiedPlacementSeed({
       id: "verified.astrology.midheaven",
@@ -768,24 +852,27 @@ export function synthesizeVerifiedFoundationProfile(
     }));
   }
 
-  for (const [key, label] of [["northNode", "Mean North Node"], ["southNode", "Mean South Node"]] as const) {
-    const node = astrology[key];
-    if (node?.verificationStatus !== "verified" || !node.sign) continue;
-    const nodePattern = SIGN_PATTERNS[node.sign] ?? SIGN_PATTERNS.Virgo;
-    seeds.push(verifiedPlacementSeed({
-      id: `verified.astrology.${key}`,
-      field: key,
-      bodyLabel: label,
-      sign: node.sign,
-      house: node.house,
-      priority: key === "northNode" ? 114 : 109,
-      facets: key === "northNode"
-        ? { decisionImpact: `Developmental-direction symbolism may invite more ${nodePattern.drive}.` }
-        : { protectiveFunction: `Familiar-pattern symbolism may fall back toward ${nodePattern.drive}.` },
-    }));
+  if (eligibility.nodesChiron) {
+    for (const [key, label] of [["northNode", "Mean North Node"], ["southNode", "Mean South Node"]] as const) {
+      const node = astrology[key];
+      if (node?.verificationStatus !== "verified" || !node.sign) continue;
+      const nodePattern = SIGN_PATTERNS[node.sign] ?? SIGN_PATTERNS.Virgo;
+      seeds.push(verifiedPlacementSeed({
+        id: `verified.astrology.${key}`,
+        field: key,
+        bodyLabel: label,
+        sign: node.sign,
+        house: node.house,
+        priority: key === "northNode" ? 114 : 109,
+        facets: key === "northNode"
+          ? { decisionImpact: `Developmental-direction symbolism may invite more ${nodePattern.drive}.` }
+          : { protectiveFunction: `Familiar-pattern symbolism may fall back toward ${nodePattern.drive}.` },
+      }));
+    }
   }
 
   if (
+    eligibility.nodesChiron &&
     astrology.chiron?.verificationStatus === "verified" &&
     astrology.chiron.sign &&
     astrology.chiron.qualificationMethod === "live-jpl-qualified-against-swiss"
@@ -840,6 +927,7 @@ export function synthesizeVerifiedFoundationProfile(
       "Human Design core can only be included when its separately verified snapshot is present on the profile.",
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
       "Variables and Incarnation Cross naming remain outside the verified Human Design core.",
+      "Houses, Midheaven, nodes, Chiron, and planetary-house interpretation remain withheld from primary synthesis by the active release policy.",
     ],
   });
   const validation = validateDepthInterpretationV1(depthInterpretation, {
@@ -853,7 +941,9 @@ export function synthesizeVerifiedFoundationProfile(
     .map((config) => {
       const placement = astrology.planets?.[config.key];
       if (placement?.verificationStatus !== "verified" || !placement.sign) return null;
-      const house = astrology.planetaryHouses?.[config.key];
+      const house = eligibility.housesMidheaven
+        ? astrology.planetaryHouses?.[config.key]
+        : undefined;
       return `${config.label} in ${placement.sign}${typeof house === "number" ? ` (House ${house})` : ""}`;
     })
     .filter((value): value is string => Boolean(value));
@@ -865,7 +955,9 @@ export function synthesizeVerifiedFoundationProfile(
     );
 
   const dominantElement = dominantVerifiedElement(astrology);
-  const houseConcentration = strongestVerifiedHouse(astrology);
+  const houseConcentration = eligibility.housesMidheaven
+    ? strongestVerifiedHouse(astrology)
+    : null;
   const strongestAspect = strongestAspects[0];
   const strongestAspectText = strongestAspect
     ? aspectDynamicText(strongestAspect).summary
@@ -880,33 +972,27 @@ export function synthesizeVerifiedFoundationProfile(
     strongestAspectText,
   ].filter((value): value is string => Boolean(value)).join(". ");
 
-  const geometrySignature = [
-    `${rising}-Rising`,
-    typeof astrology.planetaryHouses?.sun === "number"
-      ? `${sun}-Sun-H${astrology.planetaryHouses.sun}`
-      : `${sun}-Sun`,
-    typeof astrology.planetaryHouses?.moon === "number"
-      ? `${moon}-Moon-H${astrology.planetaryHouses.moon}`
-      : `${moon}-Moon`,
-    astrology.midheaven?.sign
-      ? `${astrology.midheaven.sign}-MC`
-      : "MC-unresolved",
-  ].join(" / ");
+  const chartSignature = `${sun}-Sun / ${moon}-Moon / ${rising}-Rising`;
+  const governedSystemSummary = [
+    eligibility.housesMidheaven && astrology.midheaven?.sign
+      ? `Midheaven ${astrology.midheaven.sign}`
+      : null,
+    eligibility.nodesChiron && astrology.northNode?.sign
+      ? `Mean North Node ${astrology.northNode.sign}`
+      : null,
+    eligibility.nodesChiron && astrology.southNode?.sign
+      ? `Mean South Node ${astrology.southNode.sign}`
+      : null,
+    eligibility.nodesChiron && astrology.chiron?.sign
+      ? `Chiron ${astrology.chiron.sign}`
+      : null,
+  ].filter((value): value is string => Boolean(value));
 
   const biography =
-    `${local.name}'s verified Codex is now anchored by a ${sun} Sun` +
-    `${typeof astrology.planetaryHouses?.sun === "number" ? ` in House ${astrology.planetaryHouses.sun}` : ""}, ` +
-    `${moon} Moon` +
-    `${typeof astrology.planetaryHouses?.moon === "number" ? ` in House ${astrology.planetaryHouses.moon}` : ""}, ` +
-    `and ${rising} Rising. Geometry signature: ${geometrySignature}. ` +
+    `${local.name}'s verified Codex is now anchored by a ${sun} Sun, ${moon} Moon, and ${rising} Rising. ` +
+    `Verified chart signature: ${chartSignature}. ` +
     `${planetSummary.length ? `Verified planetary pattern: ${planetSummary.join("; ")}. ` : ""}` +
-    `Midheaven ${astrology.midheaven?.sign ?? "unresolved"}; ` +
-    `Mean North Node ${astrology.northNode?.sign ?? "unresolved"}` +
-    `${typeof astrology.northNode?.house === "number" ? ` in House ${astrology.northNode.house}` : ""}; ` +
-    `Mean South Node ${astrology.southNode?.sign ?? "unresolved"}` +
-    `${typeof astrology.southNode?.house === "number" ? ` in House ${astrology.southNode.house}` : ""}; ` +
-    `Chiron ${astrology.chiron?.sign ?? "unresolved"}` +
-    `${typeof astrology.chiron?.house === "number" ? ` in House ${astrology.chiron.house}` : ""}. ` +
+    `${governedSystemSummary.length ? `${governedSystemSummary.join("; ")}. ` : ""}` +
     `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
     `${emphasisSummary ? `Chart emphasis: ${emphasisSummary}. ` : ""}` +
     `Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} add deterministic numerology layers. ` +
@@ -920,7 +1006,9 @@ export function synthesizeVerifiedFoundationProfile(
       ...local.archetypeData.themes,
       `${moon} Moon`,
       `${rising} Rising`,
-      `${astrology.midheaven?.sign ?? "Unresolved"} Midheaven`,
+      ...(eligibility.housesMidheaven && astrology.midheaven?.sign
+        ? [`${astrology.midheaven.sign} Midheaven`]
+        : []),
     ])),
   };
 

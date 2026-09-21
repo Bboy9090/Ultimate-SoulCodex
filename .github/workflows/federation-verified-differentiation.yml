@@ -32,7 +32,7 @@ jobs:
       - name: Typecheck
         run: npm run check
       - name: Verified narrative reconciliation regression
-        run: node --import tsx --test tests/profile-verification-reconciliation.test.ts tests/verified-profile-differentiation.test.ts
+        run: node --import tsx --test tests/profile-verification-reconciliation.test.ts tests/primary-synthesis-system-policy.test.ts tests/verified-profile-differentiation.test.ts
       - name: Generate differentiation receipt
         run: node --import tsx scripts/audit-verified-profile-differentiation.ts verified-profile-differentiation-receipt.json
       - name: Preserve exact candidate SHA

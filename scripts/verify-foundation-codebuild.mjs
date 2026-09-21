@@ -64,9 +64,9 @@ check("BILLING-04", "Raw payment fields are rejected", files.billing.includes("r
 check("BILLING-05", "Legacy direct-card endpoint is retired before JSON parsing", files.server.indexOf("registerBillingRawRoutes(app)") < files.server.indexOf("express.json"));
 check("BILLING-06", "Legacy profile upgrade cannot grant premium directly", files.serverRoutes.includes("direct_card_upgrade_retired") && !/updateProfile\([^)]*\{\s*isPremium:\s*true\s*\}/.test(files.serverRoutes));
 
-check("ASTRO-01", "Production astrology integrates independent Ascendant verification", files.astrology.includes("verifyAscendant") && files.astrology.includes('rising.verificationStatus === "verified"') && files.astrology.includes("ASTRO-ASCENDANT-v1"));
+check("ASTRO-01", "Production astrology integrates independent Ascendant verification", files.astrology.includes("verifyAscendant") && files.astrology.includes('rising.verificationStatus === "verified"') && files.astrology.includes("ASCENDANT-VERIFICATION-RECEIPT-v1"));
 check("ASTRO-02", "Ascendant policy retains approved evidence receipt", files.ascendant.includes('status: "approved"') && files.ascendant.includes("ASCENDANT-VERIFICATION-RECEIPT-v1"));
-check("ASTRO-03", "Saved profiles require verified Big Three migration", files.reconciliation.includes("CURRENT_ASTROLOGY_VERIFICATION_VERSION = 2") && files.reconciliation.includes("hasVerifiedBigThree"));
+check("ASTRO-03", "Saved profiles require the current verified full-natal migration", files.reconciliation.includes("CURRENT_ASTROLOGY_VERIFICATION_VERSION = 5") && files.reconciliation.includes("hasVerifiedFullNatalChart"));
 
 check("HD-01", "Human Design keeps unresolved/unverified states", files.humanDesign.includes('"unresolved"') && files.humanDesign.includes('"calculated_unverified"'));
 check("HD-02", "Foundation compatibility excludes unverified Human Design", files.compatibility.includes("Human Design excluded from Foundation compatibility") && !files.compatibility.includes("verifiedHumanDesignType"));
@@ -104,7 +104,7 @@ const receipt = {
   failedChecks: failures.length,
   checks,
   deferredByOwner: ["iOS App Store submission and validation", "Google Play submission and validation"],
-  deliberatelyUnresolved: ["Astrological houses and Midheaven", "Nodes, Chiron, and planetary house placements", "Human Design compatibility and authoritative interpretation", "Palmistry computer-vision analysis", "Astrocartography planetary-line calculation and mapping"],
+  deliberatelyUnresolved: ["Human Design Variables and Incarnation Cross", "Human Design compatibility interpretation", "Palmistry computer-vision analysis", "Astrocartography planetary-line calculation and mapping"],
 };
 
 console.log(JSON.stringify(receipt, null, 2));
