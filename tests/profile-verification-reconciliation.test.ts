@@ -236,7 +236,8 @@ test("offline profile keeps its local symbolic chart while carrying a separate v
   assert.match(hydrated.biography, /Virgo Moon/);
   assert.match(hydrated.biography, /Scorpio Rising/);
   assert.match(hydrated.biography, /Mercury in Virgo/);
-  assert.doesNotMatch(hydrated.biography, /House 10/);
+  assert.match(hydrated.biography, /House 10/);
+  assert.match(hydrated.biography, /Verified Human Design core: Reflector/);
   assert.ok(
     hydrated.depthInterpretation.evidence.some(
       (item) => item.id === "verified.astrology.moon" && item.provenanceStatus === "externally-verified",
@@ -246,7 +247,13 @@ test("offline profile keeps its local symbolic chart while carrying a separate v
     hydrated.depthInterpretation.evidence.some(
       (item) => item.id === "verified.astrology.chiron",
     ),
-    false,
+    true,
+  );
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some(
+      (item) => item.id === "verified.human-design.core",
+    ),
+    true,
   );
   assert.equal(
     hydrated.depthInterpretation.evidence.some(
@@ -281,7 +288,7 @@ test("a Big Three-only snapshot refreshes when exact inputs can support the full
     "2026-09-19T15:06:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 6);
+  assert.equal(migrated.remoteSync?.verificationVersion, CURRENT_ASTROLOGY_VERIFICATION_VERSION);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -309,7 +316,7 @@ test("a v3 full natal snapshot without Mean Nodes refreshes once for the v4 cont
     "2026-09-19T19:20:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 6);
+  assert.equal(migrated.remoteSync?.verificationVersion, CURRENT_ASTROLOGY_VERIFICATION_VERSION);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -336,7 +343,7 @@ test("a v4 full natal snapshot without Chiron refreshes once for the v5 contract
     "2026-09-19T22:55:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 6);
+  assert.equal(migrated.remoteSync?.verificationVersion, CURRENT_ASTROLOGY_VERIFICATION_VERSION);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 

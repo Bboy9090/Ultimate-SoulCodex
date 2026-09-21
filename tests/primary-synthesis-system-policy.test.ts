@@ -78,7 +78,7 @@ function chart(variant: "first" | "second"): VerifiedAstrologyForSynthesis {
   };
 }
 
-test("withheld systems cannot alter primary verified synthesis", () => {
+test("verified house, angle, Node, and Chiron contracts alter supporting synthesis", () => {
   const first = synthesizeVerifiedFoundationProfile(
     local,
     chart("first"),
@@ -90,7 +90,7 @@ test("withheld systems cannot alter primary verified synthesis", () => {
     "2026-09-20T20:00:00.000Z",
   );
 
-  assert.deepEqual(first, second);
+  assert.notDeepEqual(first, second);
 
   const primaryOutput = JSON.stringify({
     biography: first.biography,
@@ -102,17 +102,17 @@ test("withheld systems cannot alter primary verified synthesis", () => {
     ),
     evidence: first.depthInterpretation.evidence,
   });
-  assert.doesNotMatch(primaryOutput, /House [1-9]|House 1[0-2]/);
-  assert.doesNotMatch(primaryOutput, /Midheaven|North Node|South Node|Chiron/);
+  assert.match(primaryOutput, /House [1-9]|House 1[0-2]/);
+  assert.match(primaryOutput, /Midheaven|North Node|South Node|Chiron/);
   assert.equal(
     first.depthInterpretation.evidence.some((entry) =>
       /midheaven|node|chiron|house/i.test(`${entry.id} ${entry.field}`),
     ),
-    false,
+    true,
   );
-  assert.match(
+  assert.doesNotMatch(
     first.depthInterpretation.missingData.join(" "),
-    /remain withheld from primary synthesis/i,
+    /Houses, Midheaven, and planetary-house interpretation remain withheld/i,
   );
 });
 
@@ -127,6 +127,10 @@ test("verified Human Design core fills supported reading layers", () => {
       strategy: "Wait a lunar cycle",
       authority: "Lunar Authority",
       profile: "2/5",
+      definition: "Single Definition",
+      centers: { defined: ["Head", "Ajna"], undefined: ["Root"] },
+      channels: ["64-47"],
+      activatedGates: [64, 47],
     },
   );
 
@@ -142,7 +146,7 @@ test("verified Human Design core fills supported reading layers", () => {
   );
   assert.match(
     JSON.stringify(result.depthInterpretation),
-    /Reflector|Lunar Authority|Wait a lunar cycle/,
+    /Reflector|Lunar Authority|Wait a lunar cycle|Single Definition|64-47/,
   );
 });
 

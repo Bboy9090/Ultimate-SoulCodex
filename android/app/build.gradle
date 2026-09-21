@@ -7,7 +7,7 @@ android {
         applicationId "app.soulcodex.main"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4000007
+        versionCode 4000008
         versionName "4.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
