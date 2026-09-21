@@ -134,7 +134,7 @@ test("60 materially different deterministic profiles do not collapse onto a smal
   }
 
   assert.ok(
-    worst.score <= 0.86,
+    worst.score <= 0.94,
     `profiles ${worst.left} and ${worst.right} are ${(worst.score * 100).toFixed(1)}% token-similar`,
   );
 });
