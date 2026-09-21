@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { BirthDateExploration } from '@/lib/birthDateExploration';
+import { personalAtlasPlacements, verifiedHouseCusps } from '@/lib/personalAstrologyAtlas';
 import Navigation from '@/components/navigation';
 import { useActiveProfile } from '@/hooks/useActiveProfile';
 import { ATLAS_HOUSES, ATLAS_SIGNS, atlasEntry, birthInputGuidance, type AtlasSign } from '@/lib/astrologyAtlas';
@@ -29,6 +30,8 @@ export default function AstrologyAtlasPage() {
   const reducedMotion = useReducedMotion();
   const entry = atlasEntry(sign, house);
   const guidance = birthInputGuidance(profile);
+  const personalPlacements = personalAtlasPlacements(profile?.astrologyData);
+  const houseCusps = verifiedHouseCusps(profile?.astrologyData);
   return <div className="sc-app-shell">
     <Navigation />
     <main className="sc-page mx-auto max-w-5xl pb-24">
@@ -42,6 +45,23 @@ export default function AstrologyAtlasPage() {
         <h2 id="input-guidance" className="text-xl font-semibold">{guidance.title}</h2>
         <p className="mt-3 leading-7 text-[var(--sc-stone)]">{guidance.detail}</p>
       </section>
+      {personalPlacements.length > 0 && <section className="sc-panel mb-6 p-5" aria-labelledby="personal-atlas">
+        <p className="sc-eyebrow">Verified Equal-house chart</p>
+        <h2 id="personal-atlas" className="mt-3 font-serif text-3xl">Your personal Atlas</h2>
+        <p className="mt-3 leading-7 text-[var(--sc-stone)]">These links come from your verified chart record. Open one to explore its symbolic sign-and-house combination. The geometry is verified under Soul Codex's Equal-house policy; the written meaning remains symbolic reflection.</p>
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+          {personalPlacements.map(placement => <li key={placement.key}>
+            <button type="button" onClick={() => { setSign(placement.sign as AtlasSign); if (placement.house) setHouse(placement.house); }} className="w-full rounded-xl border border-[var(--sc-line)] p-4 text-left hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
+              <strong>{placement.label} in {placement.sign}{placement.house ? ` · House ${placement.house}` : ''}</strong>
+              <p className="mt-1 text-xs text-[var(--sc-stone)]">Verified geometry · symbolic interpretation</p>
+            </button>
+          </li>)}
+        </ul>
+        <details className="mt-5 rounded-xl border border-[var(--sc-line)] p-4">
+          <summary className="cursor-pointer font-semibold">See all twelve verified cusp signs</summary>
+          <ol className="mt-3 grid gap-2 sm:grid-cols-2">{houseCusps.map(cusp => <li key={cusp.house}>House {cusp.house}: {cusp.sign}</li>)}</ol>
+        </details>
+      </section>}
       <section className="sc-panel mb-6 p-5" aria-labelledby="date-exploration">
         <h2 id="date-exploration" className="font-serif text-2xl">What could stay the same without a birth time?</h2>
         <p className="mt-3 leading-7 text-[var(--sc-stone)]">Explore tropical planetary signs sampled every ten minutes across your local birth date. A single result means the sampled positions agree; it is not independent verification or proof that no change occurred between samples. Signs close to a boundary include the neighboring possibility.</p>
