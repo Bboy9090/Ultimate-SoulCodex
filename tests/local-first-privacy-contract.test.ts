@@ -13,7 +13,7 @@ test("local profile creation keeps online verification opt-in and off by default
   assert.doesNotMatch(createSource, /if \(!verifyOnline\)[\s\S]{0,200}requestVerificationWhenOnline/);
 });
 
-test("local-first creation uses the minimal astronomy-only verification endpoint", () => {
+test("local-first creation uses the minimal evidence-only verification endpoint", () => {
   assert.match(createSource, /"\/api\/verification\/profile"/);
   assert.doesNotMatch(createSource, /apiRequest\("POST", "\/api\/profiles"/);
   assert.match(createSource, /birthDate: data\.birthDate/);
@@ -23,7 +23,7 @@ test("local-first creation uses the minimal astronomy-only verification endpoint
 });
 
 test("local-first creation copy discloses the upload boundary in plain language", () => {
-  assert.match(createSource, /Online astronomy verification happens only when you explicitly choose it\./);
+  assert.match(createSource, /Online astronomy and verified Human Design core calculation happen only when you explicitly choose them\./);
   assert.match(createSource, /does not create a server profile or invoke AI generation for this check\./);
   assert.match(createSource, /Leave this off to keep profile creation entirely on-device\./);
   assert.match(createSource, /No profile data was uploaded for verification\./);
@@ -59,5 +59,5 @@ test("offline profile verification sends only calculation inputs and explains th
   assert.doesNotMatch(profileSource, /birthLocation: currentProfile\.birthLocation/);
   assert.match(profileSource, /It does not create a server profile or invoke AI generation\./);
   assert.match(profileSource, /Merely opening this local profile does not upload it\./);
-  assert.match(profileSource, /until you explicitly request independent astronomical verification and it succeeds\./);
+  assert.match(profileSource, /until you explicitly request online verification and it succeeds\./);
 });

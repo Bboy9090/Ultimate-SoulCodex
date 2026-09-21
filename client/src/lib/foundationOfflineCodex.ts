@@ -300,6 +300,185 @@ export type VerifiedAstrologyForSynthesis = {
   }>;
 };
 
+export type VerifiedHumanDesignCoreForSynthesis = {
+  status: "verified";
+  policyId?: string;
+  type: string;
+  strategy: string;
+  authority: string;
+  profile: string;
+  definedCenters: string[];
+  definedChannels: number[][];
+  activations?: {
+    conscious?: Record<string, { gate: number; line: number } | undefined>;
+    unconscious?: Record<string, { gate: number; line: number } | undefined>;
+  };
+  trust?: {
+    status?: string;
+    verificationReceiptId?: string;
+    independentSource?: string;
+    limitations?: readonly string[];
+  };
+};
+
+
+const HD_TYPE_LANGUAGE: Record<string, { summary: string; gift: string; shadow: string }> = {
+  Manifestor: {
+    summary: "Human Design frames this Type around initiating movement and managing impact.",
+    gift: "clear initiation when action is genuinely self-directed",
+    shadow: "forcing movement without enough communication about the impact",
+  },
+  Generator: {
+    summary: "Human Design frames this Type around sustained response and engagement.",
+    gift: "deep sustainable effort when there is something concrete to respond to",
+    shadow: "committing energy before there is a real response to work with",
+  },
+  "Manifesting Generator": {
+    summary: "Human Design frames this Type around response followed by rapid multi-step execution.",
+    gift: "fast adaptive building once there is a real response",
+    shadow: "skipping the response step because speed feels available",
+  },
+  Projector: {
+    summary: "Human Design frames this Type around guidance, recognition, and selective engagement.",
+    gift: "seeing systems and people with focused attention",
+    shadow: "trying to force recognition or sustain energy that is not reliably available",
+  },
+  Reflector: {
+    summary: "Human Design frames this Type around sampling environments and reflecting collective conditions.",
+    gift: "noticing what changes across people, places, and time",
+    shadow: "treating a temporary sampled state as a permanent identity",
+  },
+};
+
+function hdEvidence(
+  id: string,
+  field: string,
+  value: string,
+  notes: string[] = [],
+): InterpretationEvidenceRef {
+  return {
+    id,
+    system: "human-design",
+    field,
+    value,
+    confidence: "high",
+    provenanceStatus: "externally-verified",
+    timeSensitivity: "birth-time-required",
+    notes: [
+      "Human Design core field passed HUMAN-DESIGN-CORE-v1 differential verification.",
+      "Human Design remains a symbolic framework rather than a scientific personality measurement.",
+      ...notes,
+    ],
+  };
+}
+
+function humanDesignSeeds(
+  humanDesign: VerifiedHumanDesignCoreForSynthesis | undefined,
+): DepthSynthesisSeed[] {
+  if (!humanDesign || humanDesign.status !== "verified") return [];
+
+  const typeLanguage =
+    HD_TYPE_LANGUAGE[humanDesign.type] ??
+    {
+      summary: `Human Design identifies the verified Type as ${humanDesign.type}.`,
+      gift: "using the verified Strategy deliberately",
+      shadow: "treating a symbolic Type label as a fixed identity",
+    };
+
+  const channelSignature = humanDesign.definedChannels
+    .map((pair) => [...pair].sort((a, b) => a - b).join("-"))
+    .sort()
+    .join(", ");
+  const centerSignature = [...humanDesign.definedCenters].sort().join(", ");
+
+  return [
+    {
+      evidence: hdEvidence(
+        "verified.human-design.type",
+        "type",
+        humanDesign.type,
+      ),
+      label: `Verified Human Design Type: ${humanDesign.type}`,
+      priority: 129,
+      claimKind: "derived",
+      facets: {
+        claritySummary: `${typeLanguage.summary} The verified Strategy is "${humanDesign.strategy}".`,
+        gift: `Within the Human Design framework, a constructive expression may involve ${typeLanguage.gift}.`,
+        shadow: `A useful caution inside the same framework is ${typeLanguage.shadow}.`,
+      },
+      tensionAxes: [],
+      limitations: [
+        "Type and Strategy are verified against an independent Human Design implementation; interpretation remains symbolic.",
+      ],
+    },
+    {
+      evidence: hdEvidence(
+        "verified.human-design.authority",
+        "authority",
+        humanDesign.authority,
+      ),
+      label: `Verified Human Design Authority: ${humanDesign.authority}`,
+      priority: 125,
+      claimKind: "derived",
+      facets: {
+        decisionImpact:
+          `The verified Human Design Authority is ${humanDesign.authority}; within that framework, decisions are meant to be filtered through that authority rather than through a generic one-size-fits-all rule.`,
+        action:
+          `For one meaningful decision, test the verified ${humanDesign.authority} process before adding another external opinion.`,
+      },
+      tensionAxes: [],
+      limitations: [
+        "Authority is verified as a Human Design calculation; decision guidance is framework-specific and not medical, legal, or financial advice.",
+      ],
+    },
+    {
+      evidence: hdEvidence(
+        "verified.human-design.profile",
+        "profile",
+        humanDesign.profile,
+      ),
+      label: `Verified Human Design Profile: ${humanDesign.profile}`,
+      priority: 123,
+      claimKind: "derived",
+      facets: {
+        visiblePattern:
+          `Human Design assigns Profile ${humanDesign.profile}; this adds a distinct role-pattern lens to how the chart is read.`,
+        commonMisreading:
+          `Profile ${humanDesign.profile} is one symbolic role framework and should not be treated as a complete biography.`,
+      },
+      tensionAxes: [],
+      limitations: [
+        "Profile line calculation is independently verified; role interpretation remains symbolic.",
+      ],
+    },
+    {
+      evidence: hdEvidence(
+        "verified.human-design.bodygraph",
+        "bodygraphSignature",
+        `Centers: ${centerSignature || "none"}; Channels: ${channelSignature || "none"}`,
+        [
+          "Center and channel sets matched the independent verifier across the qualification corpus.",
+        ],
+      ),
+      label: "Verified Human Design bodygraph signature",
+      priority: 113,
+      claimKind: "derived",
+      facets: {
+        hiddenNeed:
+          `The verified bodygraph defines ${humanDesign.definedCenters.length} centers and ${humanDesign.definedChannels.length} channels; this creates a chart-specific structural signature rather than a generic Type-only reading.`,
+        relationshipImpact:
+          channelSignature
+            ? `The verified channel set is ${channelSignature}; Human Design uses these connections as part of its relational and energetic symbolism.`
+            : "No defined channels appear in the verified bodygraph, so Human Design treats environmental sampling as especially central to the chart structure.",
+      },
+      tensionAxes: [],
+      limitations: [
+        "Defined centers/channels are verified structural outputs; their psychological interpretation remains framework-specific.",
+      ],
+    },
+  ];
+}
+
 function verifiedEvidence(
   id: string,
   field: string,
@@ -652,6 +831,7 @@ export function synthesizeVerifiedFoundationProfile(
   local: OfflineCodexProfile,
   astrology: VerifiedAstrologyForSynthesis,
   generatedAt = new Date().toISOString(),
+  humanDesign?: VerifiedHumanDesignCoreForSynthesis,
 ): Pick<
   OfflineCodexProfile,
   "biography" | "dailyGuidance" | "depthInterpretation" | "archetypeData"
@@ -678,6 +858,7 @@ export function synthesizeVerifiedFoundationProfile(
 
   const seeds: DepthSynthesisSeed[] = [
     ...verifiedAggregateSeeds(astrology),
+    ...humanDesignSeeds(humanDesign),
     makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100),
     makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, LIFE_PATHS[expression] ?? LIFE_PATHS[1], 96),
     makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, LIFE_PATHS[soulUrge] ?? LIFE_PATHS[6], 95),
@@ -837,9 +1018,10 @@ export function synthesizeVerifiedFoundationProfile(
     birthTimeStatus: "known",
     seeds,
     missingData: [
-      "Human Design core can only be included when its separately verified snapshot is present on the profile.",
+      ...(humanDesign?.status === "verified"
+        ? ["Variables and Incarnation Cross naming remain outside the verified Human Design core."]
+        : ["Human Design core can only be included when its separately verified snapshot is present on the profile."]),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
-      "Variables and Incarnation Cross naming remain outside the verified Human Design core.",
     ],
   });
   const validation = validateDepthInterpretationV1(depthInterpretation, {
@@ -893,6 +1075,11 @@ export function synthesizeVerifiedFoundationProfile(
       : "MC-unresolved",
   ].join(" / ");
 
+  const humanDesignSummary =
+    humanDesign?.status === "verified"
+      ? `Human Design core: ${humanDesign.type}; Strategy ${humanDesign.strategy}; Authority ${humanDesign.authority}; Profile ${humanDesign.profile}; defined centers ${[...humanDesign.definedCenters].sort().join(", ") || "none"}; defined channels ${humanDesign.definedChannels.map((pair) => [...pair].sort((a,b)=>a-b).join("-")).sort().join(", ") || "none"}. `
+      : "";
+
   const biography =
     `${local.name}'s verified Codex is now anchored by a ${sun} Sun` +
     `${typeof astrology.planetaryHouses?.sun === "number" ? ` in House ${astrology.planetaryHouses.sun}` : ""}, ` +
@@ -909,6 +1096,7 @@ export function synthesizeVerifiedFoundationProfile(
     `${typeof astrology.chiron?.house === "number" ? ` in House ${astrology.chiron.house}` : ""}. ` +
     `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
     `${emphasisSummary ? `Chart emphasis: ${emphasisSummary}. ` : ""}` +
+    humanDesignSummary +
     `Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} add deterministic numerology layers. ` +
     `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
 
@@ -930,6 +1118,9 @@ export function synthesizeVerifiedFoundationProfile(
       houseConcentration ? HOUSE_THEMES[houseConcentration.house].action : null,
       strongestAspect ? aspectDynamicText(strongestAspect).repair : null,
       dominantElement ? `Use the ${dominantElement.element} emphasis deliberately: ${ELEMENT_LANGUAGE[dominantElement.element].gift}.` : null,
+      humanDesign?.status === "verified"
+        ? `For the Human Design layer, test Strategy "${humanDesign.strategy}" with Authority "${humanDesign.authority}" on one real decision.`
+        : null,
       pathPattern.action,
     ].filter((value): value is string => Boolean(value)).join(" "),
     depthInterpretation,

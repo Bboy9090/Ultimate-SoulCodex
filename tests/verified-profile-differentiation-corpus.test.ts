@@ -15,6 +15,7 @@ import type {
 } from "../server/services/astrology-verification";
 import type { IndependentReferenceFetcher } from "../server/services/astrology";
 import type { VerifiedAstrologyForSynthesis } from "../client/src/lib/foundationOfflineCodex";
+import { calculateVerifiedHumanDesignCore } from "../server/services/human-design-core-verification";
 
 const names = [
   "Avery Cole", "Bianca Stone", "Caleb Hart", "Dalia Reed", "Elias North",
@@ -144,13 +145,25 @@ async function fullVerifiedReading(index: number) {
 
   assert.equal(astrology.verification.complete, true, `fixture ${index} failed verification`);
 
+  const humanDesign = calculateVerifiedHumanDesignCore({
+    birthDate: birth.birthDate,
+    birthTime: birth.birthTime,
+    timezone: birth.timezone,
+    latitude: birth.latitude,
+    longitude: birth.longitude,
+    inputTimestampUtc:
+      astrology.moon.internalCandidate?.inputTimestamp ?? null,
+  });
+  assert.ok(humanDesign, `fixture ${index} failed Human Design verification`);
+
   const narrative = synthesizeVerifiedFoundationProfile(
     local,
     astrology as VerifiedAstrologyForSynthesis,
     "2026-09-20T00:15:00.000Z",
+    humanDesign,
   );
 
-  return { birth, local, astrology, narrative };
+  return { birth, local, astrology, humanDesign, narrative };
 }
 
 function fingerprint(
@@ -197,6 +210,17 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
       assert.equal(reading.astrology.houseSystem, "equal");
       assert.equal(reading.astrology.houses?.length, 12);
       assert.equal(reading.astrology.chiron?.verificationStatus, "verified");
+      assert.equal(reading.humanDesign?.status, "verified");
+      assert.equal(reading.humanDesign?.policyId, "HUMAN-DESIGN-CORE-v1");
+      assert.equal("variables" in (reading.humanDesign ?? {}), false);
+      assert.equal("incarnationCross" in (reading.humanDesign ?? {}), false);
+      assert.ok(
+        reading.narrative.depthInterpretation.evidence.some(
+          (evidence) =>
+            evidence.id === "verified.human-design.type" &&
+            evidence.provenanceStatus === "externally-verified",
+        ),
+      );
     }
   });
 
@@ -212,6 +236,25 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
         `verified fixtures ${index} and ${index + 15} stayed identical`,
       );
     }
+  });
+
+  await suite.test("Human Design produces multiple independently verified bodygraph signatures", () => {
+    const signatures = new Set(
+      readings.map((reading) => [
+        reading.humanDesign?.type,
+        reading.humanDesign?.authority,
+        reading.humanDesign?.profile,
+        [...(reading.humanDesign?.definedCenters ?? [])].sort().join(","),
+        (reading.humanDesign?.definedChannels ?? [])
+          .map((pair) => [...pair].sort((a, b) => a - b).join("-"))
+          .sort()
+          .join(","),
+      ].join("|")),
+    );
+    assert.ok(
+      signatures.size >= 12,
+      `expected at least 12 distinct verified HD signatures, got ${signatures.size}`,
+    );
   });
 
   await suite.test("all 60 verified readings are unique", () => {

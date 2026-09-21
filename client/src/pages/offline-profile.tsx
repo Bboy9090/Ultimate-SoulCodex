@@ -7,7 +7,7 @@ import DepthSoulGuide from "@/components/DepthSoulGuide";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
-import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
+import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDesignCore, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
 import { apiFetch } from "@/lib/queryClient";
 
 type VerificationAttempt = "idle" | "running" | "complete" | "deferred";
@@ -86,6 +86,11 @@ export default function OfflineProfilePage() {
   const verifiedNorthNode = verifiedAstrology?.northNode;
   const verifiedSouthNode = verifiedAstrology?.southNode;
   const verifiedChiron = verifiedAstrology?.chiron;
+  const verifiedHumanDesign = reconciledProfile?.verifiedHumanDesignData;
+  const verifiedHdCore = useMemo(
+    () => hasVerifiedHumanDesignCore(verifiedHumanDesign),
+    [verifiedHumanDesign],
+  );
 
   if (isLoading) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center"><div className="text-center"><Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--sc-gold)]" /><p className="text-[var(--sc-stone)]">Opening your Codex...</p></div></div></div>;
   if (error || !profile || !reconciledProfile) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center px-4"><div className="sc-panel max-w-md p-8 text-center"><CloudOff className="mx-auto mb-4 h-10 w-10 text-[var(--sc-danger)]" /><h2 className="font-serif text-2xl font-medium text-[var(--sc-ivory)]">Local profile unavailable</h2><p className="my-4 text-sm leading-6 text-[var(--sc-stone)]">This profile was not found in this browser or device storage.</p><Link href="/create" className="sc-button-primary">Create a new Codex</Link></div></div></div>;
@@ -113,9 +118,11 @@ export default function OfflineProfilePage() {
             <div>
               <div className="mb-4 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-[var(--sc-stone)]"><CloudOff className="h-3.5 w-3.5" /> stored locally</span>
-                {verifiedFullNatal
-                  ? <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> natal chart verified</span>
-                  : hasVerifiedCore && <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> core verified</span>}
+                {verifiedFullNatal && verifiedHdCore
+                  ? <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> natal + HD core verified</span>
+                  : verifiedFullNatal
+                    ? <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> natal chart verified</span>
+                    : hasVerifiedCore && <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> core verified</span>}
               </div>
               <p className="sc-eyebrow mb-3">Identity · Soul Codex</p>
               <h1 className="sc-display sc-display-gradient text-4xl sm:text-6xl">{profile.name}</h1>
@@ -131,7 +138,7 @@ export default function OfflineProfilePage() {
                     disabled={verificationAttempt === "running"}
                     data-testid="button-verify-online-profile"
                   >
-                    {verificationAttempt === "running" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Calculating…</> : <><ShieldCheck className="mr-2 h-4 w-4" />Verify full natal chart</>}
+                    {verificationAttempt === "running" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Calculating…</> : <><ShieldCheck className="mr-2 h-4 w-4" />Verify natal chart + HD core</>}
                   </button>
                 )}
               </div>
@@ -143,8 +150,8 @@ export default function OfflineProfilePage() {
           </div>
         </section>
 
-        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested astronomy verification. Soul Codex is checking only the calculation inputs needed for that evidence while your local reading remains available.</span></div>}
-        {verificationAttempt === "deferred" && !verifiedFullNatal && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">The requested online verification could not complete. Local symbolic layers remain visible; any unsupported planets, Rising, MC, houses, aspects, nodes, and Chiron stay unresolved rather than guessed.</div>}
+        {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested online verification. Soul Codex is checking only the birth calculation inputs needed for verified astronomy and Human Design core evidence while your local reading remains available.</span></div>}
+        {verificationAttempt === "deferred" && needsOnlineVerification && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">The requested online verification could not complete. Local symbolic layers remain visible; any unsupported planets, Rising, MC, houses, aspects, nodes, and Chiron stay unresolved rather than guessed.</div>}
         {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.04)] p-4 text-sm text-[var(--sc-stone)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
@@ -152,6 +159,38 @@ export default function OfflineProfilePage() {
           <div className="sc-panel p-5"><div className="mb-5 flex items-center gap-3"><div className="sc-icon-well"><Infinity className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Core numbers</p><p className="text-xs text-[var(--sc-stone)]">numerology layer</p></div></div><div className="grid grid-cols-2 gap-3">{[["Life Path", numerology.lifePath], ["Expression", numerology.expression], ["Soul Urge", numerology.soulUrge], ["Personal Year", numerology.personalYear]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3"><p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p><p className="mt-1 font-serif text-2xl font-medium text-[var(--sc-gold-bright)]">{String(value)}</p></div>)}</div></div>
           <div className="sc-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="sc-icon-well"><Compass className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div></div><p className="text-sm leading-7 text-[var(--sc-ivory-soft)]">{profile.dailyGuidance}</p><div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div></div>
         </section>
+
+        {verifiedHdCore && verifiedHumanDesign && (
+          <section className="sc-panel mb-6 p-6" data-testid="verified-human-design-panel">
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="sc-eyebrow">Verified Human Design core</p>
+                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">
+                  {verifiedHumanDesign.type} · Profile {verifiedHumanDesign.profile}
+                </h2>
+              </div>
+              <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> HUMAN-DESIGN-CORE-v1</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ["Strategy", verifiedHumanDesign.strategy],
+                ["Authority", verifiedHumanDesign.authority],
+                ["Profile", verifiedHumanDesign.profile],
+                ["Defined centers", String(verifiedHumanDesign.definedCenters.length)],
+                ["Defined channels", String(verifiedHumanDesign.definedChannels.length)],
+                ["Core audit", "520/520 activations"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3">
+                  <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{label}</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--sc-ivory)]">{value}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs leading-5 text-[var(--sc-stone)]">
+              Type, Strategy, Authority, Profile, activations, centers, and channels passed the independent core audit. Variables and Incarnation Cross naming are intentionally excluded from verified output.
+            </p>
+          </section>
+        )}
 
         {verifiedFullNatal && verifiedPlanets && verifiedHouses && verifiedMidheaven && (
           <section className="mb-6 grid gap-4 lg:grid-cols-[1.25fr_.75fr]" data-testid="verified-full-natal-panel">
@@ -226,11 +265,13 @@ export default function OfflineProfilePage() {
           <div className="sc-panel p-6 sm:p-8"><p className="sc-eyebrow mb-3">Local biography</p><h2 className="mb-4 font-serif text-3xl font-medium text-[var(--sc-ivory)]">The story this profile currently tells.</h2><p className="text-base leading-8 text-[var(--sc-ivory-soft)]">{profile.biography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
         </section>
 
-        <div className="mb-6 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.04)] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" /><div><p className="font-semibold text-[var(--sc-ivory)]">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{verifiedFullNatal
-                ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, major aspects, Mean North/South Nodes, and Chiron are evidence-qualified or deterministically derived from verified inputs. Chiron uses live JPL Horizons qualified against Swiss Ephemeris; no approximation fallback is used."
-                : hasVerifiedCore
+        <div className="mb-6 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.04)] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" /><div><p className="font-semibold text-[var(--sc-ivory)]">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{verifiedFullNatal && verifiedHdCore
+                ? "The full natal chart and qualified Human Design core are reconciled. Astrology includes Sun through Pluto, Rising, Midheaven, Equal House geometry, aspects, Mean Nodes, and live-JPL-qualified Chiron. Human Design includes only the independently audited core: activations, Type, Strategy, Authority, Profile, centers, and channels. Variables and Incarnation Cross naming remain intentionally unverified."
+                : verifiedFullNatal
+                  ? "The full natal chart is verified. Human Design core is still pending; Variables and Incarnation Cross naming are not promoted as verified facts."
+                  : hasVerifiedCore
                   ? "Sun and Moon are independently verified. Exact-input profiles can now request the full qualified natal chart; any still-unverified planets, Rising, Midheaven, houses, aspects, nodes, and Chiron remain withheld."
-                  : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, Midheaven, houses, aspects, nodes, Chiron, and chart geometry remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>
+                  : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, Midheaven, houses, aspects, nodes, Chiron, chart geometry, and Human Design core remain unresolved until you explicitly request online verification and it succeeds."}</p></div></div></div>
 
         <DepthSoulGuide interpretation={profile.depthInterpretation} defaultOpenGroupIds={["behavior", "relationships-decisions"]} />
       </main>

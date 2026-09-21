@@ -113,7 +113,7 @@ check(
 check(
   "PRIVACY-03",
   "Local-first UI explains the online verification boundary",
-  files.localFirst.includes("Online astronomy verification happens only when you explicitly choose it.") &&
+  files.localFirst.includes("Online astronomy and verified Human Design core calculation happen only when you explicitly choose them.") &&
     files.localFirst.includes("Leave this off to keep profile creation entirely on-device.") &&
     files.localFirst.includes("No profile data was uploaded for verification."),
 );

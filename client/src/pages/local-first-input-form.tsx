@@ -270,16 +270,16 @@ export default function LocalFirstInputForm() {
         // The user explicitly opted in, so finish the evidence reconciliation
         // before opening the profile. Navigating while this request was still
         // in flight allowed the profile query to cache the unresolved local
-        // snapshot even though verified Moon/Rising data arrived moments later.
+        // snapshot even though verified astrology/Human Design data arrived moments later.
         await requestVerificationWhenOnline(data, profile);
       }
 
       toast({
         title: "Soul Codex created on this device",
         description: verifyOnline
-          ? "Your local reading is ready. Astronomy verification was requested; supported placements will merge back into this same local profile when the evidence check finishes."
+          ? "Your local reading is ready. Verified astronomy and Human Design core calculation were requested; supported evidence will merge back into this same local profile when the checks finish."
           : exactChartInputsReady
-            ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
+            ? "Your exact birth inputs are saved locally. Soul Codex will not promote time-sensitive astrology or Human Design core results as verified facts until you choose Verify online."
             : "Your local reading is ready. No profile data was uploaded for verification.",
       });
       setLocation(`/profile/${profile.id}`);
@@ -313,7 +313,7 @@ export default function LocalFirstInputForm() {
             Start with the facts.<br />Then go deeper.
           </h1>
           <p className="sc-lede mx-auto mt-5 max-w-2xl">
-            Your birth information anchors the Codex. The first reading is created locally on this device. Online astronomy verification happens only when you explicitly choose it.
+            Your birth information anchors the Codex. The first reading is created locally on this device. Online astronomy and verified Human Design core calculation happen only when you explicitly choose them.
           </p>
         </section>
 
@@ -415,8 +415,8 @@ export default function LocalFirstInputForm() {
                       </p>
                       <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                         {exactChartInputsReady
-                          ? "You supplied birth time, birth-place timezone, latitude, and longitude. Soul Codex can calculate Moon and Rising candidates. Independent online verification is the only remaining step before those values are promoted as chart facts."
-                          : "Moon and Rising require an exact birth time plus the birth location's timezone and coordinates. Missing pieces stay unresolved rather than being guessed."}
+                          ? "You supplied birth time, birth-place timezone, latitude, and longitude. Soul Codex can calculate the time-sensitive natal chart and Human Design core. Online verification is the remaining step before those results are promoted as verified evidence."
+                          : "Time-sensitive natal astrology and Human Design core require an exact birth time plus the birth location's timezone and coordinates. Missing pieces stay unresolved rather than being guessed."}
                       </p>
                     </div>
                   </div>
