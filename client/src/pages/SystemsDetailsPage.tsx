@@ -127,6 +127,7 @@ export default function SystemsDetailsPage() {
               Create or restore a profile first. The systems inspector reads the same local active profile used by Soul Codex; it does not create another identity record.
             </p>
             <Link href="/create" className="sc-button-primary mt-6 inline-flex">Create profile</Link>
+            <Link href="/systems/atlas" className="mt-4 block underline">Explore the Astrology Atlas without a profile</Link>
             <p className="mt-4 text-xs text-[var(--sc-stone)]">Repository status: {status}</p>
           </div>
         </main>
@@ -163,6 +164,10 @@ export default function SystemsDetailsPage() {
         </header>
 
         <div className="mx-auto max-w-5xl space-y-5">
+          <Link href="/systems/atlas" className="sc-panel block p-5">
+            <h2 className="font-serif text-2xl">Explore the Astrology Atlas</h2>
+            <p className="mt-2">All 144 sign-and-house combinations, with meanings, reflection prompts, and clear guidance when your birth time is unknown.</p>
+          </Link>
           <section className="sc-panel p-5 sm:p-7">
             <div className="mb-5 flex items-start gap-3">
               <div className="sc-icon-well"><MapPin className="h-5 w-5" /></div>
