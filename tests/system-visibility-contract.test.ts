@@ -34,13 +34,18 @@ test("Human Design candidate stays inspectable-only until its trust record verif
   assert.equal(maySystemInfluenceSynthesis("humanDesign", "verified"), true);
 });
 
-test("unfinished systems cannot leak into production synthesis or inspection as fake results", () => {
+test("only promoted verified systems can influence production synthesis", () => {
   for (const policy of unavailableProductionSystems()) {
     assert.equal(policy.mayInfluencePrimarySynthesis, false, policy.id);
     assert.equal(policy.inspectableWhenUnverified, false, policy.id);
   }
 
-  for (const key of ["housesMidheaven", "nodesChiron", "astrocartography", "palmistry"] as const) {
+  for (const key of ["housesMidheaven", "nodesChiron"] as const) {
+    assert.equal(maySystemInfluenceSynthesis(key, "verified"), true);
+    assert.equal(maySystemInfluenceSynthesis(key, "candidate"), false);
+    assert.equal(mayInspectSystem(key, "candidate"), false);
+  }
+  for (const key of ["astrocartography", "palmistry"] as const) {
     assert.equal(maySystemInfluenceSynthesis(key, "verified"), false);
     assert.equal(mayInspectSystem(key, "candidate"), false);
   }

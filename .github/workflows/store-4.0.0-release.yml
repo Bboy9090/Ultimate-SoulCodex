@@ -10,6 +10,7 @@ on:
       - release/store-4.0.0-federation-final-main-sync
       - release/4.0.0-store-signing-final
       - fix/complete-timed-profile-systems
+      - fix/full-system-consumer-integration
   workflow_dispatch:
 
 permissions:
@@ -65,9 +66,9 @@ jobs:
           Soul Codex 4.0.1
           SHA=${GITHUB_SHA}
           Android applicationId=app.soulcodex.main
-          Android versionCode=4000007
+          Android versionCode=4000008
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000007
+          iOS build=4000008
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
@@ -144,7 +145,7 @@ jobs:
           {
             echo "SHA=${GITHUB_SHA}"
             echo "versionName=4.0.1"
-            echo "versionCode=4000007"
+            echo "versionCode=4000008"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
               echo "play_credentials_available=true"
@@ -218,7 +219,7 @@ jobs:
           {
             echo "SHA=${GITHUB_SHA}"
             echo "marketingVersion=4.0.1"
-            echo "buildNumber=4000007"
+            echo "buildNumber=4000008"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt

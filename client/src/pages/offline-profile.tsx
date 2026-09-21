@@ -173,6 +173,19 @@ export default function OfflineProfilePage() {
                 </div>
               ))}
             </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
+                <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">Definition &amp; centers</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--sc-ivory)]">{String(verifiedHumanDesign.definition ?? "Unresolved")}</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Defined: {Array.isArray((verifiedHumanDesign.centers as any)?.defined) ? (verifiedHumanDesign.centers as any).defined.join(", ") : "Unresolved"}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Open/undefined: {Array.isArray((verifiedHumanDesign.centers as any)?.undefined) ? (verifiedHumanDesign.centers as any).undefined.join(", ") : "Unresolved"}</p>
+              </div>
+              <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
+                <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">Channels &amp; gates</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Channels: {Array.isArray(verifiedHumanDesign.channels) && verifiedHumanDesign.channels.length ? verifiedHumanDesign.channels.join(", ") : "None resolved"}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Activated gates: {Array.isArray(verifiedHumanDesign.activatedGates) && verifiedHumanDesign.activatedGates.length ? verifiedHumanDesign.activatedGates.join(", ") : "None resolved"}</p>
+              </div>
+            </div>
           </section>
         )}
 
@@ -208,6 +221,17 @@ export default function OfflineProfilePage() {
                   <span className="text-sm text-[var(--sc-stone)]">House system</span>
                   <span className="text-sm font-semibold text-[var(--sc-ivory)]">Equal House</span>
                 </div>
+                <div>
+                  <p className="mb-2 text-sm text-[var(--sc-stone)]">Verified house cusps</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {verifiedHouses.map((house) => (
+                      <div key={house.house} className="flex items-center justify-between rounded-lg border border-[var(--sc-line)] bg-white/[0.02] px-2.5 py-2 text-xs">
+                        <span className="text-[var(--sc-stone)]">H{house.house}</span>
+                        <span className="font-semibold text-[var(--sc-ivory)]">{house.sign}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex items-center justify-between border-b border-[var(--sc-line)] pb-3">
                   <span className="text-sm text-[var(--sc-stone)]">Midheaven</span>
                   <span className="flex items-center gap-2 text-sm font-semibold text-[var(--sc-ivory)]">{verifiedMidheaven.sign}<Check className="h-3.5 w-3.5 text-[var(--sc-teal)]" /></span>
@@ -238,14 +262,26 @@ export default function OfflineProfilePage() {
         )}
 
         <section className="mb-6 grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div className="sc-panel flex min-h-[300px] items-center justify-center p-6" data-testid="local-astronomy-unresolved-panel">
-            <div className="max-w-[280px] text-center">
-              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] text-[var(--sc-gold-bright)]"><Compass className="h-7 w-7" /></div>
-              <p className="sc-eyebrow mt-5 justify-center">Natal wheel</p>
-              <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Unavailable locally without verified placements.</h2>
-              <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">Soul Codex does not draw sample planets, random aspects, approximate houses, or an invented wheel. Exact chart geometry appears only after the required astronomy evidence exists.</p>
+          {verifiedFullNatal ? (
+            <div className="sc-panel flex min-h-[300px] items-center justify-center p-6" data-testid="verified-astrology-atlas-panel">
+              <div className="max-w-[290px] text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] text-[var(--sc-gold-bright)]"><Compass className="h-7 w-7" /></div>
+                <p className="sc-eyebrow mt-5 justify-center">Personal Astrology Atlas</p>
+                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Explore every verified sign-and-house placement.</h2>
+                <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">Your verified planets and points open into detailed meanings, gifts, tensions, questions, and practices without turning symbolic interpretation into fact.</p>
+                <Link href="/systems/atlas" className="sc-button-secondary mt-5 inline-flex">Open your Atlas</Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="sc-panel flex min-h-[300px] items-center justify-center p-6" data-testid="local-astronomy-unresolved-panel">
+              <div className="max-w-[280px] text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] text-[var(--sc-gold-bright)]"><Compass className="h-7 w-7" /></div>
+                <p className="sc-eyebrow mt-5 justify-center">Natal wheel</p>
+                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Unavailable locally without verified placements.</h2>
+                <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">Soul Codex does not draw sample planets, random aspects, approximate houses, or an invented wheel. Exact chart geometry appears only after the required astronomy evidence exists.</p>
+              </div>
+            </div>
+          )}
           <div className="sc-panel p-6 sm:p-8"><p className="sc-eyebrow mb-3">Local biography</p><h2 className="mb-4 font-serif text-3xl font-medium text-[var(--sc-ivory)]">The story this profile currently tells.</h2><p className="text-base leading-8 text-[var(--sc-ivory-soft)]">{profile.biography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
         </section>
 

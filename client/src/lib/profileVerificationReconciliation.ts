@@ -16,7 +16,7 @@ const FULL_NATAL_PLANET_KEYS = [
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 6;
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 7;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -327,9 +327,10 @@ export function reconcileOfflineProfile(
  *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 6 adds the verified Human Design
- * core contract to the full-natal, Mean Node, and live-qualified Chiron
- * contracts; it does not mean every system passed.
+ * temporary reference/engine failure. Version 7 rebuilds complete timed
+ * profiles through the promoted supporting-synthesis contract so verified
+ * houses, angles, Nodes, qualified Chiron, and Human Design details reach all
+ * profile consumers instead of remaining isolated rows.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
@@ -339,6 +340,13 @@ export function profileNeedsOnlineVerification(
   }
 
   if (!hasExactAscendantInputs(profile)) return false;
+
+  if (
+    (profile.remoteSync?.verificationVersion ?? 0) <
+    CURRENT_ASTROLOGY_VERIFICATION_VERSION
+  ) {
+    return true;
+  }
 
   if (!hasVerifiedFullNatalChart(profile.verifiedAstrologyData)) return true;
 

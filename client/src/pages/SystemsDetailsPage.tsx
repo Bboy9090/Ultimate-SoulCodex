@@ -248,11 +248,18 @@ export default function SystemsDetailsPage() {
               </div>
             </div>
             {humanDesignVerified ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
-                <NumberRow label="Strategy" value={humanDesign.strategy} />
-                <NumberRow label="Authority" value={humanDesign.authority} />
-                <NumberRow label="Profile" value={humanDesign.profile} />
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
+                  <NumberRow label="Strategy" value={humanDesign.strategy} />
+                  <NumberRow label="Authority" value={humanDesign.authority} />
+                  <NumberRow label="Profile" value={humanDesign.profile} />
+                  <NumberRow label="Definition" value={humanDesign.definition} />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {Array.isArray(humanDesign.centers?.defined) ? humanDesign.centers.defined.join(", ") : "Unresolved"}<br />Open/undefined: {Array.isArray(humanDesign.centers?.undefined) ? humanDesign.centers.undefined.join(", ") : "Unresolved"}</div>
+                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {Array.isArray(humanDesign.channels) && humanDesign.channels.length ? humanDesign.channels.join(", ") : "None resolved"}<br />Activated gates: {Array.isArray(humanDesign.activatedGates) && humanDesign.activatedGates.length ? humanDesign.activatedGates.join(", ") : "None resolved"}</div>
+                </div>
               </div>
             ) : (
               <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[0.035] p-4">
@@ -274,7 +281,7 @@ export default function SystemsDetailsPage() {
                   The main reading should use systems as supporting evidence only when they add a distinct, defensible insight. Repeated labels, weakly verified layers, and systems that merely restate the same theme stay out of the foreground. This inspector exists so nothing has to be hidden from a curious user just to keep the main experience clear.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-[var(--sc-stone)]">
-                  Houses, Midheaven, nodes, Chiron, planetary house placements, palmistry computer vision, and astrocartography lines remain unavailable until their evidence contracts are production-grade. “Not ready” is preferable to decorative precision.
+                  Verified Equal House geometry, Midheaven, planetary-house assignments, Mean Nodes, qualified Chiron, and verified Human Design now support the written Codex while remaining visibly symbolic interpretation. Palmistry computer vision and astrocartography lines remain unavailable until their own evidence contracts are production-grade. “Not ready” is preferable to decorative precision.
                 </p>
               </div>
             </div>

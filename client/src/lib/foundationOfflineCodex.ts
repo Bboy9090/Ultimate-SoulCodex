@@ -807,13 +807,26 @@ export function synthesizeVerifiedFoundationProfile(
     const strategy = typeof humanDesign?.strategy === "string" ? humanDesign.strategy : null;
     const authority = typeof humanDesign?.authority === "string" ? humanDesign.authority : null;
     const profile = typeof humanDesign?.profile === "string" ? humanDesign.profile : null;
+    const definition = typeof humanDesign?.definition === "string" ? humanDesign.definition : null;
+    const centers = humanDesign?.centers && typeof humanDesign.centers === "object"
+      ? humanDesign.centers as { defined?: unknown; undefined?: unknown }
+      : null;
+    const definedCenters = Array.isArray(centers?.defined)
+      ? centers.defined.filter((value): value is string => typeof value === "string")
+      : [];
+    const channels = Array.isArray(humanDesign?.channels)
+      ? humanDesign.channels.filter((value): value is string => typeof value === "string")
+      : [];
+    const activatedGates = Array.isArray(humanDesign?.activatedGates)
+      ? humanDesign.activatedGates.filter((value): value is number | string => typeof value === "number" || typeof value === "string")
+      : [];
     if (type && strategy && authority && profile) {
       seeds.push({
         evidence: {
           id: "verified.human-design.core",
           system: "human-design",
           field: "core",
-          value: `${type} · ${strategy} · ${authority} · ${profile}`,
+          value: [type, strategy, authority, `Profile ${profile}`, definition, definedCenters.length ? `${definedCenters.length} defined centers` : null, channels.length ? `${channels.length} channels` : null, activatedGates.length ? `${activatedGates.length} gates` : null].filter(Boolean).join(" · "),
           confidence: "high",
           provenanceStatus: "externally-verified",
           timeSensitivity: "birth-time-required",
@@ -826,12 +839,14 @@ export function synthesizeVerifiedFoundationProfile(
         priority: 124,
         claimKind: "derived",
         facets: {
-          innerExperience: `${type} symbolism frames how energy and attention may be experienced; the verified strategy is ${strategy}.`,
+          claritySummary: `${type} with ${authority} and a ${profile} profile adds a verified Human Design decision-making lens to the chart and numerology synthesis.`,
+          innerExperience: `${type} symbolism frames how energy and attention may be experienced; the verified strategy is ${strategy}.${definition ? ` The calculated definition is ${definition}.` : ""}`,
           hiddenNeed: `Decision-making may work best when there is room to follow ${strategy} and consult ${authority}.`,
           protectiveFunction: `Under pressure, this pattern may protect itself by moving away from ${strategy} or overriding ${authority}; use that as a reflection prompt, not a diagnosis.`,
           decisionImpact: `For important decisions, test the choice through ${authority} rather than treating immediate mental certainty as final.`,
-          relationshipImpact: `Profile ${profile} may add a symbolic lens for how learning, projection, and relationships interact.`,
-          action: `Before the next significant commitment, pause and apply ${strategy} with ${authority}.`,
+          relationshipImpact: `Profile ${profile} may add a symbolic lens for how learning, projection, and relationships interact.${definedCenters.length ? ` Defined centers (${definedCenters.join(", ")}) describe the consistently activated parts of this symbolic bodygraph.` : ""}`,
+          gift: channels.length ? `The verified bodygraph contains ${channels.length} defined channel${channels.length === 1 ? "" : "s"}: ${channels.slice(0, 4).join(", ")}${channels.length > 4 ? ", and more" : ""}.` : undefined,
+          action: `Before the next significant commitment, pause and apply ${strategy} with ${authority}.${activatedGates.length ? ` Treat the ${activatedGates.length} activated gates as detailed reflection prompts, not standalone verdicts.` : ""}`,
         },
         tensionAxes: ["independence", "partnership"],
         limitations: [
@@ -973,7 +988,12 @@ export function synthesizeVerifiedFoundationProfile(
         : []),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
       "Variables and Incarnation Cross naming remain outside the verified Human Design core.",
-      "Houses, Midheaven, nodes, Chiron, and planetary-house interpretation remain withheld from primary synthesis by the active release policy.",
+      ...(!eligibility.housesMidheaven
+        ? ["Houses, Midheaven, and planetary-house interpretation remain withheld unless their verified Equal House contract passes."]
+        : []),
+      ...(!eligibility.nodesChiron
+        ? ["Nodes and Chiron remain withheld unless their separate verification contracts pass."]
+        : []),
     ],
   });
   const validation = validateDepthInterpretationV1(depthInterpretation, {
@@ -1034,6 +1054,16 @@ export function synthesizeVerifiedFoundationProfile(
       : null,
   ].filter((value): value is string => Boolean(value));
 
+  const humanDesignSummary = eligibility.humanDesign
+    ? [
+        typeof humanDesign?.type === "string" ? humanDesign.type : null,
+        typeof humanDesign?.strategy === "string" ? `Strategy ${humanDesign.strategy}` : null,
+        typeof humanDesign?.authority === "string" ? `Authority ${humanDesign.authority}` : null,
+        typeof humanDesign?.profile === "string" ? `Profile ${humanDesign.profile}` : null,
+        typeof humanDesign?.definition === "string" ? humanDesign.definition : null,
+      ].filter((value): value is string => Boolean(value)).join("; ")
+    : "";
+
   const biography =
     `${local.name}'s verified Codex is now anchored by a ${sun} Sun, ${moon} Moon, and ${rising} Rising. ` +
     `Verified chart signature: ${chartSignature}. ` +
@@ -1041,6 +1071,7 @@ export function synthesizeVerifiedFoundationProfile(
     `${governedSystemSummary.length ? `${governedSystemSummary.join("; ")}. ` : ""}` +
     `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
     `${emphasisSummary ? `Chart emphasis: ${emphasisSummary}. ` : ""}` +
+    `${humanDesignSummary ? `Verified Human Design core: ${humanDesignSummary}. ` : ""}` +
     `Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} add deterministic numerology layers. ` +
     `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
 
@@ -1054,6 +1085,9 @@ export function synthesizeVerifiedFoundationProfile(
       `${rising} Rising`,
       ...(eligibility.housesMidheaven && astrology.midheaven?.sign
         ? [`${astrology.midheaven.sign} Midheaven`]
+        : []),
+      ...(eligibility.humanDesign && typeof humanDesign?.type === "string"
+        ? [`${humanDesign.type} Human Design`]
         : []),
     ])),
   };
