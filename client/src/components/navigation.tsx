@@ -9,6 +9,7 @@ import {
   Settings,
   Sparkles,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -17,6 +18,7 @@ import { useActiveProfile } from "../hooks/useActiveProfile";
 function isActive(pathname: string, href: string) {
   if (href.startsWith("/profile/")) return pathname.startsWith("/profile/");
   if (href === "/compatibility") return pathname.startsWith("/compatibility");
+  if (href === "/connections") return pathname.startsWith("/connections");
   if (href === "/settings") return pathname.startsWith("/settings") || pathname.startsWith("/diagnostics");
   if (href === "/systems") return pathname.startsWith("/systems");
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -31,6 +33,7 @@ export default function Navigation() {
     { href: identityHref, label: "Identity", icon: UserRound },
     { href: "/timeline", label: "Timeline", icon: Orbit },
     { href: "/compatibility", label: "Compatibility", icon: HeartHandshake },
+    { href: "/connections", label: "People", icon: UsersRound },
     { href: "/tools", label: "Tools", icon: Compass },
   ];
 
