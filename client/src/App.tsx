@@ -27,6 +27,7 @@ import SettingsPage from "./pages/SettingsPage";
 import DiagnosticsPage from "./pages/DiagnosticsPage";
 import AccountDeletionPage from "./pages/AccountDeletionPage";
 import PricingPage from "./pages/PricingPage";
+import ConnectionsPage from "./pages/ConnectionsPage";
 
 function ProfileRoute() {
   const { id } = useParams();
@@ -67,6 +68,7 @@ function Router() {
       <Route path="/compatibility" component={CompatibilityRoute} />
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
       <Route path="/compatibility/compare" component={CompatibilityPersonPage} />
+      <Route path="/connections" component={ConnectionsPage} />
       <Route path="/timeline" component={TimelineRoute} />
       <Route path="/tools" component={CodexToolsPage} />
       <Route path="/systems/atlas" component={AstrologyAtlasPage} />
