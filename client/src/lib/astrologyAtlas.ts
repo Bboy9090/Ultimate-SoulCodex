@@ -1,6 +1,21 @@
 /** Original educational content. Browsing a combination never establishes a natal placement. */
 export const ATLAS_SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'] as const;
 export type AtlasSign = typeof ATLAS_SIGNS[number];
+export const PLANET_FUNCTIONS: Record<string, { function: string; question: string }> = {
+  sun: { function: 'identity, vitality, and the direction of conscious growth', question: 'What am I learning to stand behind?' },
+  moon: { function: 'emotional needs, instinctive responses, and ways of restoring safety', question: 'What helps me settle and feel held?' },
+  mercury: { function: 'perception, language, learning, and the exchange of information', question: 'How do I make sense of what I notice?' },
+  venus: { function: 'attraction, values, affection, pleasure, and relational taste', question: 'What do I value and how do I invite closeness?' },
+  mars: { function: 'assertion, pursuit, desire, conflict, and the use of effort', question: 'How do I go after what matters and protect a boundary?' },
+  jupiter: { function: 'growth, confidence, meaning, opportunity, and expanded perspective', question: 'Where do I grow by trusting a larger possibility?' },
+  saturn: { function: 'limits, responsibility, discipline, fear, and earned authority', question: 'What becomes stronger through patience and accountability?' },
+  uranus: { function: 'independence, disruption, experimentation, and awakening', question: 'Where must I make room for a truer form of freedom?' },
+  neptune: { function: 'imagination, ideals, sensitivity, longing, and blurred boundaries', question: 'Where do inspiration and projection need to be distinguished?' },
+  pluto: { function: 'power, compulsion, loss, renewal, and deep transformation', question: 'Where am I asked to face what control cannot solve?' },
+  northNode: { function: 'a symbolic direction of unfamiliar development', question: 'Which stretch may broaden my familiar way of operating?' },
+  southNode: { function: 'a symbolic pattern of familiarity and practiced instinct', question: 'Which strength can support me without running the whole life?' },
+  chiron: { function: 'a symbolic theme of sensitivity, repair, and hard-won understanding', question: 'Where might care grow from meeting a tender edge honestly?' },
+};
 const styles: Record<AtlasSign, { approach: string; gift: string; tension: string; practice: string }> = {
   Aries: { approach: 'direct action, initiative, and a willingness to begin', gift: 'courage to act before every answer is available', tension: 'urgency can crowd out listening', practice: 'pause long enough to ask who else is affected' },
   Taurus: { approach: 'steadiness, sensory awareness, and gradual investment', gift: 'patience that turns a promise into something dependable', tension: 'protecting stability can become resistance to needed change', practice: 'choose one small adjustment that preserves what matters' },
@@ -39,6 +54,26 @@ export function atlasEntry(sign: AtlasSign, house: number) {
     tension: `A question to explore in this area: ${style.tension}. This is a reflection prompt, not a prediction or a diagnosis.`,
     practice: `When considering “${area.question}”, ${style.practice}. ${area.action}`,
   };
+}
+export function personalPlacementMeaning(body: string, sign: AtlasSign, house: number) {
+  const planet = PLANET_FUNCTIONS[body];
+  if (!planet) throw new RangeError('Choose a supported planet or point.');
+  const entry = atlasEntry(sign, house);
+  const area = ATLAS_HOUSES[house - 1];
+  return {
+    what: `${planet.function}.`,
+    how: `${sign} describes a style of ${styles[sign].approach}.`,
+    where: `House ${house} brings attention to ${area.domain}.`,
+    synthesis: `Symbolically, ${titleBody(body)} in ${sign} in House ${house} explores ${planet.function} through ${styles[sign].approach}, within ${area.domain}.`,
+    question: `${planet.question} ${area.question}`,
+    practice: entry.practice,
+  };
+}
+
+function titleBody(value: string): string {
+  if (value === 'northNode') return 'North Node';
+  if (value === 'southNode') return 'South Node';
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 export function birthInputGuidance(profile: { birthDate?: string; birthTime?: string; birthTimeStatus?: string; timezone?: string } | null) {
   if (!profile?.birthDate) return { title: 'Explore before you know your chart', detail: 'All 144 combinations are available as a learning guide. Add your birth date to begin a personal profile; nothing selected here is saved as your natal placement.' };
