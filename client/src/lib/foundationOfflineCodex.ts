@@ -728,6 +728,7 @@ export function synthesizeVerifiedFoundationProfile(
   local: OfflineCodexProfile,
   astrology: VerifiedAstrologyForSynthesis,
   generatedAt = new Date().toISOString(),
+  humanDesign?: Record<string, unknown>,
 ): Pick<
   OfflineCodexProfile,
   "biography" | "dailyGuidance" | "depthInterpretation" | "archetypeData"
@@ -754,6 +755,9 @@ export function synthesizeVerifiedFoundationProfile(
   const eligibility = {
     housesMidheaven: maySystemInfluenceSynthesis("housesMidheaven", "verified"),
     nodesChiron: maySystemInfluenceSynthesis("nodesChiron", "verified"),
+    humanDesign:
+      humanDesign?.status === "verified" &&
+      maySystemInfluenceSynthesis("humanDesign", "verified"),
   };
 
   const seeds: DepthSynthesisSeed[] = [
@@ -797,6 +801,46 @@ export function synthesizeVerifiedFoundationProfile(
       },
     }),
   ];
+
+  if (eligibility.humanDesign) {
+    const type = typeof humanDesign?.type === "string" ? humanDesign.type : null;
+    const strategy = typeof humanDesign?.strategy === "string" ? humanDesign.strategy : null;
+    const authority = typeof humanDesign?.authority === "string" ? humanDesign.authority : null;
+    const profile = typeof humanDesign?.profile === "string" ? humanDesign.profile : null;
+    if (type && strategy && authority && profile) {
+      seeds.push({
+        evidence: {
+          id: "verified.human-design.core",
+          system: "human-design",
+          field: "core",
+          value: `${type} · ${strategy} · ${authority} · ${profile}`,
+          confidence: "high",
+          provenanceStatus: "externally-verified",
+          timeSensitivity: "birth-time-required",
+          notes: [
+            "Core Human Design output passed the approved HUMAN-DESIGN-CORE-v1 differential verification contract.",
+            "Its interpretation is symbolic and non-diagnostic.",
+          ],
+        },
+        label: `${type} · Profile ${profile}`,
+        priority: 124,
+        claimKind: "derived",
+        facets: {
+          innerExperience: `${type} symbolism frames how energy and attention may be experienced; the verified strategy is ${strategy}.`,
+          hiddenNeed: `Decision-making may work best when there is room to follow ${strategy} and consult ${authority}.`,
+          protectiveFunction: `Under pressure, this pattern may protect itself by moving away from ${strategy} or overriding ${authority}; use that as a reflection prompt, not a diagnosis.`,
+          decisionImpact: `For important decisions, test the choice through ${authority} rather than treating immediate mental certainty as final.`,
+          relationshipImpact: `Profile ${profile} may add a symbolic lens for how learning, projection, and relationships interact.`,
+          action: `Before the next significant commitment, pause and apply ${strategy} with ${authority}.`,
+        },
+        tensionAxes: ["independence", "partnership"],
+        limitations: [
+          "Human Design is a symbolic system, not scientific or medical fact.",
+          "Variables and Incarnation Cross naming are outside the approved core verification receipt.",
+        ],
+      });
+    }
+  }
 
   const bodyConfig: Array<{
     key: keyof NonNullable<VerifiedAstrologyForSynthesis["planets"]>;
@@ -924,7 +968,9 @@ export function synthesizeVerifiedFoundationProfile(
     birthTimeStatus: "known",
     seeds,
     missingData: [
-      "Human Design core can only be included when its separately verified snapshot is present on the profile.",
+      ...(!eligibility.humanDesign
+        ? ["Human Design core can only be included when its separately verified snapshot is present on the profile."]
+        : []),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
       "Variables and Incarnation Cross naming remain outside the verified Human Design core.",
       "Houses, Midheaven, nodes, Chiron, and planetary-house interpretation remain withheld from primary synthesis by the active release policy.",

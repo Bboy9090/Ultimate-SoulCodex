@@ -116,3 +116,54 @@ test("withheld systems cannot alter primary verified synthesis", () => {
   );
 });
 
+test("verified Human Design core fills supported reading layers", () => {
+  const result = synthesizeVerifiedFoundationProfile(
+    local,
+    chart("first"),
+    "2026-09-20T20:00:00.000Z",
+    {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  );
+
+  assert.equal(
+    result.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.human-design.core",
+    ),
+    true,
+  );
+  assert.doesNotMatch(
+    result.depthInterpretation.missingData.join(" "),
+    /Human Design core can only be included/i,
+  );
+  assert.match(
+    JSON.stringify(result.depthInterpretation),
+    /Reflector|Lunar Authority|Wait a lunar cycle/,
+  );
+});
+
+test("unverified Human Design never changes primary synthesis", () => {
+  const baseline = synthesizeVerifiedFoundationProfile(
+    local,
+    chart("first"),
+    "2026-09-20T20:00:00.000Z",
+  );
+  const candidate = synthesizeVerifiedFoundationProfile(
+    local,
+    chart("first"),
+    "2026-09-20T20:00:00.000Z",
+    {
+      status: "calculated_unverified",
+      type: "Manifestor",
+      strategy: "Inform",
+      authority: "Ego Authority",
+      profile: "1/3",
+    },
+  );
+
+  assert.deepEqual(candidate, baseline);
+});
