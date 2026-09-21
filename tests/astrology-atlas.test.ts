@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ATLAS_SIGNS, atlasEntry, birthInputGuidance } from '../client/src/lib/astrologyAtlas';
+import { ATLAS_SIGNS, atlasEntry, birthInputGuidance, personalPlacementMeaning } from '../client/src/lib/astrologyAtlas';
 test('all 144 combinations have distinct domain-aware content', () => {
   const entries = ATLAS_SIGNS.flatMap(sign => Array.from({length:12}, (_,i) => atlasEntry(sign,i+1)));
   assert.equal(new Set(entries.map(x => x.meaning)).size,144);
@@ -9,6 +9,14 @@ test('all 144 combinations have distinct domain-aware content', () => {
   assert.throws(() => atlasEntry('Aries',1.5),RangeError);
   assert.throws(() => atlasEntry('Aries',0),RangeError);
   assert.throws(() => atlasEntry('Aries',13),RangeError);
+});
+test('planet-sign-house explanations keep what, how, and where distinct', () => {
+  const meaning = personalPlacementMeaning('moon','Virgo',10);
+  assert.match(meaning.what,/emotional needs/);
+  assert.match(meaning.how,/Virgo/);
+  assert.match(meaning.where,/House 10/);
+  assert.match(meaning.synthesis,/Moon in Virgo in House 10/);
+  assert.throws(() => personalPlacementMeaning('fortune','Virgo',10),RangeError);
 });
 test('unknown time overrides a stored default and never blocks educational exploration', () => {
   const profile = {birthDate:'1990-09-17',birthTime:'12:00',birthTimeStatus:'unknown'};
