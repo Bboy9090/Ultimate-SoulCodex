@@ -16,7 +16,7 @@ const FULL_NATAL_PLANET_KEYS = [
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 5;
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 6;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -81,6 +81,7 @@ export type RemoteProfileSnapshot = {
     [key: string]: unknown;
   };
   numerologyData?: Record<string, unknown>;
+  humanDesignData?: Record<string, unknown> | null;
   archetypeData?: {
     title?: string;
     [key: string]: unknown;
@@ -246,6 +247,11 @@ export function reconcileActiveProfile(
     risingSign,
     astrologyData: astrology ?? local.astrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
+    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignType:
+      typeof remote.humanDesignData?.type === "string"
+        ? remote.humanDesignData.type
+        : local.humanDesignType,
     archetype: remote.archetypeData?.title ?? local.archetype,
     confidence: {
       ...(local.confidence && typeof local.confidence === "object"
@@ -271,6 +277,7 @@ export function reconcileOfflineProfile(
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
+    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
   };
 
   const verifiedNarrative =
@@ -279,12 +286,14 @@ export function reconcileOfflineProfile(
           mergedLocal,
           remote.astrologyData as VerifiedAstrologyForSynthesis,
           syncedAt,
+          remote.humanDesignData ?? undefined,
         )
       : null;
 
   return {
     ...local,
     numerologyData,
+    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
     archetypeData:
       verifiedNarrative?.archetypeData ??
       (remote.archetypeData as OfflineCodexProfile["archetypeData"] | undefined) ??
@@ -318,9 +327,9 @@ export function reconcileOfflineProfile(
  *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 5 means the profile understands
- * the full-natal chart, Mean Node, and live-qualified Chiron contracts; it does
- * not mean every placement passed.
+ * temporary reference/engine failure. Version 6 adds the verified Human Design
+ * core contract to the full-natal, Mean Node, and live-qualified Chiron
+ * contracts; it does not mean every system passed.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
@@ -329,8 +338,9 @@ export function profileNeedsOnlineVerification(
     return true;
   }
 
-  return Boolean(
-    hasExactAscendantInputs(profile) &&
-      !hasVerifiedFullNatalChart(profile.verifiedAstrologyData),
-  );
+  if (!hasExactAscendantInputs(profile)) return false;
+
+  if (!hasVerifiedFullNatalChart(profile.verifiedAstrologyData)) return true;
+
+  return profile.humanDesignData?.status !== "verified";
 }

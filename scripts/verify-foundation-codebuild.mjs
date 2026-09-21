@@ -66,7 +66,7 @@ check("BILLING-06", "Legacy profile upgrade cannot grant premium directly", file
 
 check("ASTRO-01", "Production astrology integrates independent Ascendant verification", files.astrology.includes("verifyAscendant") && files.astrology.includes('rising.verificationStatus === "verified"') && files.astrology.includes("ASCENDANT-VERIFICATION-RECEIPT-v1"));
 check("ASTRO-02", "Ascendant policy retains approved evidence receipt", files.ascendant.includes('status: "approved"') && files.ascendant.includes("ASCENDANT-VERIFICATION-RECEIPT-v1"));
-check("ASTRO-03", "Saved profiles require the current verified full-natal migration", files.reconciliation.includes("CURRENT_ASTROLOGY_VERIFICATION_VERSION = 5") && files.reconciliation.includes("hasVerifiedFullNatalChart"));
+check("ASTRO-03", "Saved profiles require the current verified full-natal and Human Design migration", files.reconciliation.includes("CURRENT_ASTROLOGY_VERIFICATION_VERSION = 6") && files.reconciliation.includes("hasVerifiedFullNatalChart") && files.reconciliation.includes('humanDesignData?.status !== "verified"'));
 
 check("HD-01", "Human Design keeps unresolved/unverified states", files.humanDesign.includes('"unresolved"') && files.humanDesign.includes('"calculated_unverified"'));
 check("HD-02", "Foundation compatibility excludes unverified Human Design", files.compatibility.includes("Human Design excluded from Foundation compatibility") && !files.compatibility.includes("verifiedHumanDesignType"));

@@ -46,6 +46,14 @@ const verifiedPlanets = {
 const verifiedRemote = {
   id: "remote-robert",
   name: "Robert Example",
+  humanDesignData: {
+    status: "verified",
+    type: "Reflector",
+    strategy: "Wait a lunar cycle",
+    authority: "Lunar Authority",
+    profile: "2/5",
+    verificationReceiptId: "35474994858:human-design-repair-audit",
+  },
   astrologyData: {
     sun: { verificationStatus: "verified", sign: "Virgo" },
     moon: { verificationStatus: "verified", sign: "Virgo" },
@@ -273,7 +281,7 @@ test("a Big Three-only snapshot refreshes when exact inputs can support the full
     "2026-09-19T15:06:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, 6);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -301,7 +309,7 @@ test("a v3 full natal snapshot without Mean Nodes refreshes once for the v4 cont
     "2026-09-19T19:20:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, 6);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -328,7 +336,7 @@ test("a v4 full natal snapshot without Chiron refreshes once for the v5 contract
     "2026-09-19T22:55:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, 6);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -377,4 +385,39 @@ test("missing exact Ascendant inputs do not create an endless migration loop", (
 
   assert.equal(hasVerifiedSunAndMoon(legacyWithoutCoordinates.verifiedAstrologyData), true);
   assert.equal(profileNeedsOnlineVerification(legacyWithoutCoordinates), false);
+});
+
+test("verified Human Design is reconciled into active and offline profiles", () => {
+  const remoteWithHumanDesign = {
+    ...verifiedRemote,
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      verificationReceiptId: "35474994858:human-design-repair-audit",
+    },
+  };
+
+  const active = reconcileActiveProfile(
+    { id: local.id, name: local.name },
+    remoteWithHumanDesign,
+    "2026-09-21T01:00:00.000Z",
+  );
+  assert.equal(active.humanDesignType, "Reflector");
+  assert.equal(active.humanDesignData?.status, "verified");
+
+  const offline = reconcileOfflineProfile(
+    local,
+    remoteWithHumanDesign,
+    "2026-09-21T01:00:00.000Z",
+  );
+  assert.equal(offline.humanDesignData?.type, "Reflector");
+  assert.equal(
+    offline.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.human-design.core",
+    ),
+    true,
+  );
 });

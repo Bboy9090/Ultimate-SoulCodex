@@ -59,7 +59,7 @@ test("verified Rising alone still refreshes when the full natal contract is avai
   assert.equal(profileNeedsOnlineVerification(profile), true);
 });
 
-test("verified full natal chart completes the exact-input verification requirement", () => {
+test("verified full natal chart and Human Design complete the exact-input verification requirement", () => {
   const profile = exactProfile();
   const verified = (sign: string) => ({ verificationStatus: "verified", sign });
   profile.verifiedAstrologyData = {
@@ -123,6 +123,13 @@ test("verified full natal chart completes the exact-input verification requireme
       ],
       unresolvedBodies: [],
     },
+  };
+  profile.humanDesignData = {
+    status: "verified",
+    type: "Generator",
+    strategy: "To Respond",
+    authority: "Sacral",
+    profile: "4/6",
   };
   assert.equal(profileNeedsOnlineVerification(profile), false);
 });

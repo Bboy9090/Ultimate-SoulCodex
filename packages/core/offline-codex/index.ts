@@ -63,6 +63,7 @@ export interface OfflineCodexProfile {
   isPremium: false;
   astrologyData: OfflineAstrologyData;
   numerologyData: OfflineNumerologyData;
+  humanDesignData?: Record<string, unknown> | null;
   personalityData: Record<string, never>;
   archetypeData: OfflineArchetypeData;
   biography: string;
