@@ -15,6 +15,7 @@ Build 179 and its release branch are unchanged.
 - House-system explanations distinguish a cusp sign from a planet in a house and explain why Equal-house MC need not be the tenth cusp.
 - Verified Equal-house profiles receive a personal Atlas containing verified planetary sign/house placements, all twelve verified cusp signs, Midheaven, mean Nodes, and independently qualified Chiron. Partial, legacy, unverified, or differently governed chart structures fail closed.
 - House/MC policy is promoted from unavailable to inspectable when verified. It remains unable to influence primary synthesis.
+- Connections adds a private, versioned device list for names/nicknames and user-selected Sun signs. Saved people open directly in Compatibility. It does not upload contacts, imply membership/consent, or expose another person's birth data.
 
 ## Reference observations
 
@@ -30,7 +31,7 @@ No official unknown-time fallback was verified in that source. Do not claim Coâ€
 1. Independent interval evidence: evaluate complete local date/time windows with transition detection and independent ephemeris comparison. Promote only genuinely supported sign results. Support approximate user-supplied time ranges, with explicit uncertainty.
 2. Primary synthesis: chart geometry is already governed by an Equal House calculation policy. That does not automatically approve interpretation. Review every system's source, timestamp, uncertainty, and distinct contribution; preserve the 60/96 profile tests and prevent duplicate themes. Never change the withheld-system gate merely to produce longer prose.
 3. Personal Atlas: bind cards to verified profile placements, show the selected house convention, evidence and input version. Add planet-sign-house and aspect-specific content with editorial review. Current 144 entries are compositional educational content, not 144 independently authored personal readings.
-4. Friends: durable authenticated storage; explicit invitations and acceptance; private defaults; separate consent for chart sharing; block/remove/revoke; deletion cascade; server-side authorization against cross-user reads; evidence-aware chart comparisons. A local saved-person list is not a social graph. No contact upload or public birth details by default.
+4. Social friends: the device-private Connections list is implemented. A future opt-in network graph still requires durable authenticated storage, explicit invitations and acceptance, private defaults, separate consent for chart sharing, block/remove/revoke, deletion cascade, and server-side authorization against cross-user reads. No contact upload or public birth details by default.
 5. Visual acceptance: phone/WebKit and physical-device review, 320px layout, focus, screen-reader output, reduced motion, no time-consuming main-thread calculation on older phones. Current date exploration is synchronous after its lazy import; move to a worker if device profiling requires it.
 6. Monetization: later StoreKit lane; no purchase or premium entitlement changes here.
 
