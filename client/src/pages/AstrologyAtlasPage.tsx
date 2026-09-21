@@ -5,12 +5,13 @@ import type { BirthDateExploration } from '@/lib/birthDateExploration';
 import { personalAtlasPlacements, verifiedHouseCusps } from '@/lib/personalAstrologyAtlas';
 import Navigation from '@/components/navigation';
 import { useActiveProfile } from '@/hooks/useActiveProfile';
-import { ATLAS_HOUSES, ATLAS_SIGNS, atlasEntry, birthInputGuidance, type AtlasSign } from '@/lib/astrologyAtlas';
+import { ATLAS_HOUSES, ATLAS_SIGNS, atlasEntry, birthInputGuidance, personalPlacementMeaning, type AtlasSign } from '@/lib/astrologyAtlas';
 
 export default function AstrologyAtlasPage() {
   const { profile } = useActiveProfile();
   const [sign, setSign] = useState<AtlasSign>('Aries');
   const [house, setHouse] = useState(1);
+  const [selectedPersonalKey, setSelectedPersonalKey] = useState<string | null>(null);
   const [exploration, setExploration] = useState<BirthDateExploration | null>(null);
   const [explorationError, setExplorationError] = useState('');
   const [exploring, setExploring] = useState(false);
@@ -32,6 +33,10 @@ export default function AstrologyAtlasPage() {
   const guidance = birthInputGuidance(profile);
   const personalPlacements = personalAtlasPlacements(profile?.astrologyData);
   const houseCusps = verifiedHouseCusps(profile?.astrologyData);
+  const selectedPersonal = personalPlacements.find(row => row.key === selectedPersonalKey && row.house);
+  const selectedMeaning = selectedPersonal?.house
+    ? personalPlacementMeaning(selectedPersonal.key, selectedPersonal.sign as AtlasSign, selectedPersonal.house)
+    : null;
   return <div className="sc-app-shell">
     <Navigation />
     <main className="sc-page mx-auto max-w-5xl pb-24">
@@ -51,12 +56,23 @@ export default function AstrologyAtlasPage() {
         <p className="mt-3 leading-7 text-[var(--sc-stone)]">These links come from your verified chart record. Open one to explore its symbolic sign-and-house combination. The geometry is verified under Soul Codex's Equal-house policy; the written meaning remains symbolic reflection.</p>
         <ul className="mt-5 grid gap-3 sm:grid-cols-2">
           {personalPlacements.map(placement => <li key={placement.key}>
-            <button type="button" onClick={() => { setSign(placement.sign as AtlasSign); if (placement.house) setHouse(placement.house); }} className="w-full rounded-xl border border-[var(--sc-line)] p-4 text-left hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
+            <button type="button" aria-pressed={selectedPersonalKey === placement.key} onClick={() => { setSelectedPersonalKey(placement.key); setSign(placement.sign as AtlasSign); if (placement.house) setHouse(placement.house); }} className="w-full rounded-xl border border-[var(--sc-line)] p-4 text-left hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
               <strong>{placement.label} in {placement.sign}{placement.house ? ` · House ${placement.house}` : ''}</strong>
               <p className="mt-1 text-xs text-[var(--sc-stone)]">Verified geometry · symbolic interpretation</p>
             </button>
           </li>)}
         </ul>
+        {selectedPersonal && selectedMeaning && <article className="mt-5 rounded-2xl border border-[rgba(217,182,111,.22)] bg-white/[0.025] p-5" aria-live="polite">
+          <h3 className="font-serif text-2xl">{selectedPersonal.label} in {selectedPersonal.sign} · House {selectedPersonal.house}</h3>
+          <p className="mt-4 leading-7">{selectedMeaning.synthesis}</p>
+          <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+            <div><dt className="font-semibold">What · {selectedPersonal.label}</dt><dd className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{selectedMeaning.what}</dd></div>
+            <div><dt className="font-semibold">How · {selectedPersonal.sign}</dt><dd className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{selectedMeaning.how}</dd></div>
+            <div><dt className="font-semibold">Where · House {selectedPersonal.house}</dt><dd className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{selectedMeaning.where}</dd></div>
+          </dl>
+          <h4 className="mt-5 font-semibold">Reflection question</h4><p className="mt-2 text-[var(--sc-stone)]">{selectedMeaning.question}</p>
+          <h4 className="mt-5 font-semibold">Grounded practice</h4><p className="mt-2 text-[var(--sc-stone)]">{selectedMeaning.practice}</p>
+        </article>}
         <details className="mt-5 rounded-xl border border-[var(--sc-line)] p-4">
           <summary className="cursor-pointer font-semibold">See all twelve verified cusp signs</summary>
           <ol className="mt-3 grid gap-2 sm:grid-cols-2">{houseCusps.map(cusp => <li key={cusp.house}>House {cusp.house}: {cusp.sign}</li>)}</ol>
