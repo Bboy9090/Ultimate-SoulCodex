@@ -12,7 +12,7 @@ WORKDIR /app
 # corresponding variable is declared as ARG. CI supplies the same argument
 # explicitly, so the browser bundle and backend can prove one candidate SHA.
 ARG RAILWAY_GIT_COMMIT_SHA=unknown
-ARG SOUL_CODEX_RELEASE_VERSION=4.0.0
+ARG SOUL_CODEX_RELEASE_VERSION=4.0.1
 ARG VITE_API_CONTRACT=foundation-v4
 
 ENV VITE_RELEASE_SHA=$RAILWAY_GIT_COMMIT_SHA
