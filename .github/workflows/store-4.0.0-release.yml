@@ -1,9 +1,10 @@
-name: Soul Codex 4.0.0 Store Candidate
+name: Soul Codex 4.0.1 Store Candidate
 
 on:
   push:
     branches:
       - main
+      - release/ios-4.0.0-final-truth-fix
       - release/store-4.0.0-federation-final
       - release/store-4.0.0-federation-final-main-sync
       - release/4.0.0-store-signing-final
@@ -18,7 +19,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.0.0
+  VITE_RELEASE_VERSION: 4.0.1
   VITE_API_CONTRACT: foundation-v4
 
 jobs:
@@ -59,7 +60,7 @@ jobs:
       - name: Generate release receipt
         run: |
           cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
-          Soul Codex 4.0.0
+          Soul Codex 4.0.1
           SHA=${GITHUB_SHA}
           Android applicationId=app.soulcodex.main
           Android versionCode=4000005
@@ -71,7 +72,7 @@ jobs:
       - name: Upload release-gate receipt
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.0-release-gate
+          name: soulcodex-4.0.1-release-gate
           path: STORE-CANDIDATE-RECEIPT.txt
           retention-days: 90
 
@@ -140,7 +141,7 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "versionName=4.0.0"
+            echo "versionName=4.0.1"
             echo "versionCode=4000005"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
@@ -152,7 +153,7 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.0-android
+          name: soulcodex-4.0.1-android
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/debug/*.apk
@@ -214,7 +215,7 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "marketingVersion=4.0.0"
+            echo "marketingVersion=4.0.1"
             echo "buildNumber=4000005"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
@@ -222,6 +223,6 @@ jobs:
       - name: Upload iOS qualification receipt
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.0-ios-qualification
+          name: soulcodex-4.0.1-ios-qualification
           path: ios-store-state.txt
           retention-days: 90
