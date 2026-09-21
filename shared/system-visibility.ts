@@ -76,11 +76,11 @@ export const SOUL_CODEX_SYSTEM_POLICIES = {
   housesMidheaven: {
     id: "houses-midheaven",
     label: "Houses / Midheaven",
-    visibility: "unavailable",
-    evidenceRequirement: "not-production-ready",
+    visibility: "inspectable",
+    evidenceRequirement: "verified-system-contract",
     mayInfluencePrimarySynthesis: false,
     inspectableWhenUnverified: false,
-    rule: "Withheld until the house/MC calculation and independent verification contract is release-grade.",
+    rule: "Verified house geometry and Midheaven may be inspected with their named house system. They remain excluded from primary synthesis until the interpretation contract is separately promoted.",
   },
   nodesChiron: {
     id: "nodes-chiron",
