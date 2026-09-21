@@ -1,0 +1,194 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+(node:18) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ultimate-soulcodex@4.0.1 check
+> tsc
+
+(node:39) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:46) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: all 144 combinations have distinct domain-aware content
+ok 1 - all 144 combinations have distinct domain-aware content
+  ---
+  duration_ms: 1.562312
+  type: 'test'
+  ...
+# Subtest: unknown time overrides a stored default and never blocks educational exploration
+ok 2 - unknown time overrides a stored default and never blocks educational exploration
+  ---
+  duration_ms: 0.272753
+  type: 'test'
+  ...
+# Subtest: valid time needs a birthplace timezone and house conventions remain explicit
+ok 3 - valid time needs a birthplace timezone and house conventions remain explicit
+  ---
+  duration_ms: 0.140072
+  type: 'test'
+  ...
+# (node:46) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:47) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: civil-day windows follow birthplace DST instead of assuming 24 hours
+ok 4 - civil-day windows follow birthplace DST instead of assuming 24 hours
+  ---
+  duration_ms: 3.749629
+  type: 'test'
+  ...
+# Subtest: invalid input and skipped historical dates fail closed
+ok 5 - invalid input and skipped historical dates fail closed
+  ---
+  duration_ms: 0.990498
+  type: 'test'
+  ...
+# Subtest: unknown-time date exploration returns possibilities, never houses or a saved identity
+ok 6 - unknown-time date exploration returns possibilities, never houses or a saved identity
+  ---
+  duration_ms: 62.032663
+  type: 'test'
+  ...
+# (node:47) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:48) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: approved Equal House policy is bound to the exact Swiss evidence artifact
+ok 7 - approved Equal House policy is bound to the exact Swiss evidence artifact
+  ---
+  duration_ms: 0.812859
+  type: 'test'
+  ...
+# Subtest: all 24 Swiss-qualified fixtures verify MC and 12 Equal House cusps
+ok 8 - all 24 Swiss-qualified fixtures verify MC and 12 Equal House cusps
+  ---
+  duration_ms: 5.8729
+  type: 'test'
+  ...
+# Subtest: Bobby golden fixture preserves Scorpio Ascendant and verified Equal House geometry
+ok 9 - Bobby golden fixture preserves Scorpio Ascendant and verified Equal House geometry
+  ---
+  duration_ms: 0.326774
+  type: 'test'
+  ...
+# Subtest: draft house policy cannot promote MC or cusps
+ok 10 - draft house policy cannot promote MC or cusps
+  ---
+  duration_ms: 0.214695
+  type: 'test'
+  ...
+# Subtest: non-independent MC reference is rejected
+ok 11 - non-independent MC reference is rejected
+  ---
+  duration_ms: 0.25138
+  type: 'test'
+  ...
+# Subtest: MC outside governed tolerance fails closed
+ok 12 - MC outside governed tolerance fails closed
+  ---
+  duration_ms: 0.29052
+  type: 'test'
+  ...
+# (node:48) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:55) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: withheld systems cannot alter primary verified synthesis
+ok 13 - withheld systems cannot alter primary verified synthesis
+  ---
+  duration_ms: 5.564915
+  type: 'test'
+  ...
+# (node:55) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:60) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: verified profile differentiation corpus
+    # Subtest: all 60 readings use complete verified chart evidence
+    ok 1 - all 60 readings use complete verified chart evidence
+      ---
+      duration_ms: 0.742813
+      type: 'test'
+      ...
+    # Subtest: repeated name/date pairs differentiate when supported verified placements differ
+    ok 2 - repeated name/date pairs differentiate when supported verified placements differ
+      ---
+      duration_ms: 2.226256
+      type: 'test'
+      ...
+    # Subtest: all 60 verified readings are unique
+    ok 3 - all 60 verified readings are unique
+      ---
+      duration_ms: 5.500246
+      type: 'test'
+      ...
+    # Subtest: generic umbrella language does not dominate the verified population
+    ok 4 - generic umbrella language does not dominate the verified population
+      ---
+      duration_ms: 3.763921
+      type: 'test'
+      ...
+    # Subtest: verified readings do not become structural near-duplicates
+    ok 5 - verified readings do not become structural near-duplicates
+      ---
+      duration_ms: 1146.377027
+      type: 'test'
+      ...
+    1..5
+ok 14 - verified profile differentiation corpus
+  ---
+  duration_ms: 1393.096263
+  type: 'test'
+  ...
+# (node:60) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+1..14
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1974.582109
+(node:158) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ultimate-soulcodex@4.0.1 build
+> vite build && node scripts/generate-pwa-service-worker.mjs && node scripts/validate-pwa-output.mjs && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+(node:171) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+vite v8.2.0 building client environment for production...
+[2Ktransforming...✓ 2649 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/public/index.html                                   2.83 kB │ gzip:   1.02 kB
+dist/public/assets/soulcodex-nebula-hero-D2zAr1hJ.svg    5.36 kB │ gzip:   1.70 kB
+dist/public/assets/style-Bs0p6OZX.css                  114.58 kB │ gzip:  20.85 kB
+dist/public/assets/rolldown-runtime-B0Z9INg1.js          0.90 kB │ gzip:   0.51 kB
+dist/public/assets/web-BYOSqNpS.js                       1.32 kB │ gzip:   0.76 kB
+dist/public/assets/birthDateExploration-CeIXjEOm.js     76.72 kB │ gzip:  29.25 kB
+dist/public/assets/vendor-ui-82CjRwe-.js               121.91 kB │ gzip:  40.62 kB
+dist/public/assets/vendor-react-vPOYzaPY.js            166.45 kB │ gzip:  55.49 kB
+dist/public/assets/index-DqU7s3ok.js                   683.39 kB │ gzip: 189.27 kB
+
+✓ built in 1.67s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+(node:208) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Generated PWA service worker fb134c865c2fc6a2 with 23 precached URLs.
+(node:220) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Validated PWA manifest and 23 service-worker precache entries.
+
+  dist/index.js  274.8kb
+
+⚡ Done in 10ms
