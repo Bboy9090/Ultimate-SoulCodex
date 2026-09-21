@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - release/ios-4.0.0-final-truth-fix
+      - feature/profile-atlas-and-connections
       - release/store-4.0.0-federation-final
       - release/store-4.0.0-federation-final-main-sync
       - release/4.0.0-store-signing-final
@@ -42,7 +43,7 @@ jobs:
         run: npm run check
       - name: Qualified astrology, differentiation, privacy, and Human Design gates
         run: |
-          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/primary-synthesis-system-policy.test.ts             tests/verified-profile-differentiation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/verified-profile-differentiation-corpus.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts
+          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/primary-synthesis-system-policy.test.ts             tests/verified-profile-differentiation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/verified-profile-differentiation-corpus.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts             tests/astrology-atlas.test.ts             tests/birth-date-exploration.test.ts             tests/personal-astrology-atlas.test.ts             tests/connection-repository.test.ts
       - name: Store release candidate contract
         run: node --import tsx --test tests/store-release-candidate-contract.test.ts
       - name: Build production Capacitor payload
@@ -63,9 +64,9 @@ jobs:
           Soul Codex 4.0.1
           SHA=${GITHUB_SHA}
           Android applicationId=app.soulcodex.main
-          Android versionCode=4000005
+          Android versionCode=4000006
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000005
+          iOS build=4000006
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
@@ -142,7 +143,7 @@ jobs:
           {
             echo "SHA=${GITHUB_SHA}"
             echo "versionName=4.0.1"
-            echo "versionCode=4000005"
+            echo "versionCode=4000006"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
               echo "play_credentials_available=true"
@@ -216,7 +217,7 @@ jobs:
           {
             echo "SHA=${GITHUB_SHA}"
             echo "marketingVersion=4.0.1"
-            echo "buildNumber=4000005"
+            echo "buildNumber=4000006"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
