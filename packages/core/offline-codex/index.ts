@@ -381,7 +381,7 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       shadow:
         `Under pressure, this combination may repeat ${expression.shadow}; the outward layer can also drift toward ${personality.shadow}.`,
       relationshipImpact:
-        `In relationships, the inner theme ${soulUrge.relationship}, while the visible layer ${personality.relationship}.`,
+        `In relationships, the inner theme may favor ${soulUrge.theme}, while the visible layer suggests ${personality.theme}.`,
       decisionImpact:
         `Choices may be easier to test when they support ${expression.drive} without violating the inner pull toward ${soulUrge.drive}.`,
       boundaryOrRepair:
@@ -521,6 +521,9 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
   const sign = SIGN_TRAITS[astrologyData.sunSign];
   const path = LIFE_PATH_TRAITS[numerologyData.lifePath] ?? LIFE_PATH_TRAITS[9];
   const personalYear = LIFE_PATH_TRAITS[numerologyData.personalYear] ?? LIFE_PATH_TRAITS[1];
+  const expression = LIFE_PATH_TRAITS[numerologyData.expression] ?? LIFE_PATH_TRAITS[9];
+  const soulUrge = LIFE_PATH_TRAITS[numerologyData.soulUrge] ?? LIFE_PATH_TRAITS[9];
+  const personality = LIFE_PATH_TRAITS[numerologyData.personality] ?? LIFE_PATH_TRAITS[9];
   return {
     id: options.id ?? makeId(), userId: null, sessionId: null,
     name: input.name.trim(), birthDate: input.birthDate, birthTime: input.birthTime || null,
