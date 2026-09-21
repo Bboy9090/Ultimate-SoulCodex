@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - release/ios-4.0.0-final-truth-fix
+      - feature/profile-atlas-and-connections
       - release/store-4.0.0-federation-final
       - release/store-4.0.0-federation-final-main-sync
       - release/4.0.0-store-signing-final
