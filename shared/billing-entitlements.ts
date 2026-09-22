@@ -18,6 +18,15 @@ export interface NativeProductCatalogEntry {
   productId: string;
 }
 
+export interface NativeVerificationRequest {
+  provider: Exclude<BillingProvider, "stripe_checkout">;
+  environment: BillingEnvironment;
+  productId: string;
+  externalTransactionId: string;
+  originalTransactionId: string | null;
+  signedPayload: string;
+}
+
 const APPLE_PRODUCT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{2,254}$/;
 const GOOGLE_PRODUCT_ID = /^[a-z][a-z0-9._]{2,254}$/;
 
@@ -44,6 +53,55 @@ export function resolveNativeProductCatalog(
   }
 
   return catalog;
+}
+
+/**
+ * Normalize the client hand-off without treating client claims as verified.
+ * Cryptographic verification must happen server-side before this request can
+ * be written to the entitlement tables.
+ */
+export function parseNativeVerificationRequest(
+  input: unknown,
+  catalog: NativeProductCatalogEntry[],
+): NativeVerificationRequest {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new Error("native_billing_request_invalid");
+  }
+  const value = input as Record<string, unknown>;
+  const provider = value.provider;
+  const environment = value.environment;
+  const productId = typeof value.productId === "string" ? value.productId.trim() : "";
+  const externalTransactionId = typeof value.externalTransactionId === "string"
+    ? value.externalTransactionId.trim()
+    : "";
+  const originalTransactionId = value.originalTransactionId == null
+    ? null
+    : typeof value.originalTransactionId === "string"
+      ? value.originalTransactionId.trim() || null
+      : "invalid";
+  const signedPayload = typeof value.signedPayload === "string" ? value.signedPayload.trim() : "";
+  if (
+    (provider !== "apple_app_store" && provider !== "google_play") ||
+    (environment !== "sandbox" && environment !== "production") ||
+    !productId || !externalTransactionId || !signedPayload || originalTransactionId === "invalid"
+  ) {
+    throw new Error("native_billing_request_invalid");
+  }
+  const allowed = catalog.some((entry) => entry.provider === provider && entry.productId === productId);
+  if (!allowed) throw new Error("native_billing_product_not_configured");
+  return {
+    provider,
+    environment,
+    productId,
+    externalTransactionId,
+    originalTransactionId,
+    signedPayload,
+  };
+}
+
+export function nativeBillingVerificationEnabled(values: Record<string, string | undefined>): boolean {
+  return values.NATIVE_BILLING_VERIFICATION_ENABLED === "true" &&
+    Boolean(values.APPLE_PREMIUM_LIFETIME_PRODUCT_ID?.trim() || values.GOOGLE_PREMIUM_LIFETIME_PRODUCT_ID?.trim());
 }
 
 export function entitlementIsActive(
