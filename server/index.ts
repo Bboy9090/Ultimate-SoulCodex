@@ -13,6 +13,7 @@ import { registerLocationResolutionRoutes } from "./routes/location-resolution.j
 import { registerCodexToolRoutes } from "./routes/codex-tools.js";
 import compatibilityRouter from "./routes/compatibility.js";
 import { resolveReleaseIdentity } from "./lib/release-identity.js";
+import { setupSession } from "./session.js";
 import {
   registerBillingRawRoutes,
   registerBillingRoutes,
@@ -90,6 +91,9 @@ registerBillingRawRoutes(app);
 
 app.use(express.json({ limit: "256kb", strict: true }));
 app.use(express.urlencoded({ extended: false, limit: "64kb" }));
+
+// Sessions must exist before authenticated billing checkout routes are mounted.
+setupSession(app);
 
 // Explicit Resolve place requests are handled server-side so the IANA timezone
 // comes from the birth coordinates rather than the timezone of the current device.

@@ -2,7 +2,10 @@ import express, { type Express, type Request } from "express";
 import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import { storage } from "./storage";
+import { profileBelongsToActor } from "./lib/profile-ownership";
+import { PREMIUM_LIFETIME_CAPABILITY } from "@shared/billing-entitlements";
 
 const checkoutRequestSchema = z
   .object({
@@ -48,7 +51,10 @@ function configuredPublicAppUrl(): string | null {
 }
 
 function persistentStorageConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL?.trim());
+  return Boolean(
+    process.env.DATABASE_URL?.trim() &&
+      process.env.BILLING_ENTITLEMENTS_V1_ENABLED === "true",
+  );
 }
 
 export function getBillingStatus(): BillingStatus {
@@ -87,34 +93,35 @@ export function containsRawPaymentFields(input: unknown): boolean {
   return RAW_PAYMENT_FIELD_NAMES.some((field) => keys.has(field));
 }
 
-export function isProfileCapabilityAuthorized(
-  authorizationHeader: string | undefined,
-  profileId: string,
-): boolean {
-  return authorizationHeader === `Bearer ${profileId}`;
-}
-
-function requestAuthorization(req: Request): string | undefined {
-  const value = req.headers.authorization;
-  return Array.isArray(value) ? value[0] : value;
-}
-
 async function grantPremiumFromCheckoutSession(
   session: Stripe.Checkout.Session,
+  event: Stripe.Event,
+  payloadDigest: string,
 ): Promise<void> {
   if (session.payment_status !== "paid") return;
 
-  const profileId = session.metadata?.profileId ?? session.client_reference_id;
-  if (!profileId) {
-    throw new Error("stripe_checkout_profile_id_missing");
+  const userId = session.metadata?.userId;
+  const productId = session.metadata?.productId;
+  const capability = session.metadata?.capability;
+  if (!userId || !productId || capability !== PREMIUM_LIFETIME_CAPABILITY) {
+    throw new Error("stripe_checkout_entitlement_metadata_missing");
   }
-
-  const profile = await storage.getProfile(profileId);
-  if (!profile) {
-    throw new Error("stripe_checkout_profile_not_found");
-  }
-
-  await storage.updateProfile(profileId, { isPremium: true });
+  await storage.recordVerifiedEntitlement({
+    userId,
+    provider: "stripe_checkout",
+    environment: event.livemode ? "production" : "sandbox",
+    externalTransactionId: session.id,
+    originalTransactionId:
+      typeof session.payment_intent === "string" ? session.payment_intent : null,
+    productId,
+    providerEventId: event.id,
+    eventType: event.type,
+    capability,
+    purchasedAt: new Date(session.created * 1000),
+    expiresAt: null,
+    payloadDigest,
+    verifier: "stripe-webhook-signature-v1",
+  });
 }
 
 /**
@@ -175,6 +182,8 @@ export function registerBillingRawRoutes(app: Express): void {
         ) {
           await grantPremiumFromCheckoutSession(
             event.data.object as Stripe.Checkout.Session,
+            event,
+            createHash("sha256").update(req.body as Buffer).digest("hex"),
           );
         }
 
@@ -229,10 +238,11 @@ export function registerBillingRoutes(app: Express): void {
     }
 
     const { profileId } = parsed.data;
-    if (!isProfileCapabilityAuthorized(requestAuthorization(req), profileId)) {
+    const userId = (req.session as { userId?: string } | undefined)?.userId;
+    if (!userId) {
       return res.status(401).json({
-        message: "Profile authorization is required",
-        code: "profile_authorization_required",
+        message: "Sign in is required before purchasing premium access",
+        code: "billing_account_required",
       });
     }
 
@@ -254,6 +264,10 @@ export function registerBillingRoutes(app: Express): void {
       });
     }
 
+    if (!profileBelongsToActor(profile, { userId, sessionId: req.sessionID })) {
+      return res.status(404).json({ message: "Profile not found", code: "profile_not_found" });
+    }
+
     if (profile.isPremium) {
       return res.status(200).json({ alreadyPremium: true });
     }
@@ -267,7 +281,12 @@ export function registerBillingRoutes(app: Express): void {
         mode: "payment",
         line_items: [{ price: priceId, quantity: 1 }],
         client_reference_id: profileId,
-        metadata: { profileId },
+        metadata: {
+          profileId,
+          userId,
+          productId: priceId,
+          capability: PREMIUM_LIFETIME_CAPABILITY,
+        },
         success_url: `${appUrl}/profile/${encodeURIComponent(profileId)}?checkout=success`,
         cancel_url: `${appUrl}/profile/${encodeURIComponent(profileId)}?checkout=cancelled`,
         allow_promotion_codes: true,

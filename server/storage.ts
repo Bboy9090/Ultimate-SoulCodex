@@ -6,13 +6,35 @@ import {
   assessmentResponses,
   accessCodeRedemptions,
   localUsers,
+  billingSubjects,
+  storeTransactionEvents,
+  entitlementGrants,
+  billingVerificationReceipts,
   type User,
   type InsertUser,
   type Profile,
   type InsertProfile,
   type Assessment,
   type InsertAssessment,
+  type BillingSubject,
+  type EntitlementGrant,
 } from "@shared/schema";
+
+export interface VerifiedEntitlementInput {
+  userId: string;
+  provider: "apple_app_store" | "google_play" | "stripe_checkout";
+  environment: "sandbox" | "production";
+  externalTransactionId: string;
+  originalTransactionId?: string | null;
+  productId: string;
+  providerEventId: string;
+  eventType: string;
+  capability: string;
+  purchasedAt: Date;
+  expiresAt?: Date | null;
+  payloadDigest: string;
+  verifier: string;
+}
 
 function appleUsername(subject: string) {
   return `apple:${subject}`;
@@ -30,6 +52,8 @@ export interface IStorage {
   updateProfile(id: string, updates: Partial<Profile>): Promise<Profile>;
   getAssessment(profileId: string, type: string): Promise<Assessment | undefined>;
   createAssessment(assessment: InsertAssessment): Promise<Assessment>;
+  recordVerifiedEntitlement(input: VerifiedEntitlementInput): Promise<EntitlementGrant>;
+  getEntitlementForUser(userId: string, capability: string): Promise<EntitlementGrant | undefined>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
 }
@@ -38,6 +62,15 @@ export class MemStorage implements IStorage {
   private users = new Map<string, User>();
   private profiles = new Map<string, Profile>();
   private assessments = new Map<string, Assessment>();
+  private billingSubjects = new Map<string, BillingSubject>();
+  private storeEvents = new Map<string, {
+    id: string;
+    billingSubjectId: string;
+    productId: string;
+    payloadDigest: string;
+  }>();
+  private entitlements = new Map<string, EntitlementGrant>();
+  private providerEventIds = new Map<string, string>();
 
   async getUser(id: string) { return this.users.get(id); }
   async getUserByUsername(username: string) {
@@ -165,6 +198,68 @@ export class MemStorage implements IStorage {
     this.assessments.set(assessment.id, assessment);
     return assessment;
   }
+  async recordVerifiedEntitlement(input: VerifiedEntitlementInput): Promise<EntitlementGrant> {
+    let subject = this.billingSubjects.get(input.userId);
+    if (!subject) {
+      const now = new Date();
+      subject = {
+        id: randomUUID(),
+        userId: input.userId,
+        status: "active",
+        anonymizedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.billingSubjects.set(input.userId, subject);
+    }
+
+    const transactionKey = `${input.provider}:${input.environment}:${input.externalTransactionId}`;
+    const priorProviderEvent = this.providerEventIds.get(input.providerEventId);
+    if (priorProviderEvent && priorProviderEvent !== transactionKey) {
+      throw new Error("provider_event_replay_mismatch");
+    }
+
+    const existingEvent = this.storeEvents.get(transactionKey);
+    if (existingEvent && (
+      existingEvent.billingSubjectId !== subject.id ||
+      existingEvent.productId !== input.productId ||
+      existingEvent.payloadDigest !== input.payloadDigest
+    )) {
+      throw new Error("store_transaction_replay_mismatch");
+    }
+
+    const event = existingEvent ?? {
+      id: randomUUID(),
+      billingSubjectId: subject.id,
+      productId: input.productId,
+      payloadDigest: input.payloadDigest,
+    };
+    this.storeEvents.set(transactionKey, event);
+    this.providerEventIds.set(input.providerEventId, transactionKey);
+
+    const now = new Date();
+    const entitlementKey = `${subject.id}:${input.capability}`;
+    const previous = this.entitlements.get(entitlementKey);
+    const entitlement: EntitlementGrant = {
+      id: previous?.id ?? randomUUID(),
+      billingSubjectId: subject.id,
+      capability: input.capability,
+      sourceEventId: event.id,
+      status: "active",
+      startsAt: input.purchasedAt,
+      endsAt: input.expiresAt ?? null,
+      revokedAt: null,
+      lastVerifiedAt: now,
+      createdAt: previous?.createdAt ?? now,
+      updatedAt: now,
+    };
+    this.entitlements.set(entitlementKey, entitlement);
+    return entitlement;
+  }
+  async getEntitlementForUser(userId: string, capability: string): Promise<EntitlementGrant | undefined> {
+    const subject = this.billingSubjects.get(userId);
+    return subject ? this.entitlements.get(`${subject.id}:${capability}`) : undefined;
+  }
   async deleteSessionData(sessionId: string): Promise<void> {
     const profileIds = [...this.profiles.values()]
       .filter((profile) => profile.sessionId === sessionId)
@@ -185,6 +280,17 @@ export class MemStorage implements IStorage {
     }
     for (const [id, profile] of this.profiles) {
       if (profile.userId === userId) this.profiles.delete(id);
+    }
+    const billingSubject = this.billingSubjects.get(userId);
+    if (billingSubject) {
+      this.billingSubjects.delete(userId);
+      this.billingSubjects.set(`anonymized:${billingSubject.id}`, {
+        ...billingSubject,
+        userId: null,
+        status: "anonymized",
+        anonymizedAt: new Date(),
+        updatedAt: new Date(),
+      });
     }
     this.users.delete(userId);
   }
@@ -260,6 +366,105 @@ class PostgresStorage implements IStorage {
     const db = await this.db();
     return (await db.insert(assessmentResponses).values(insertAssessment).returning())[0];
   }
+  async recordVerifiedEntitlement(input: VerifiedEntitlementInput): Promise<EntitlementGrant> {
+    const db = await this.db();
+    return db.transaction(async (tx) => {
+      const now = new Date();
+      const insertedSubject = await tx.insert(billingSubjects).values({
+        userId: input.userId,
+        status: "active",
+      }).onConflictDoNothing({ target: billingSubjects.userId }).returning();
+      const subject = insertedSubject[0] ?? (await tx.select().from(billingSubjects)
+        .where(eq(billingSubjects.userId, input.userId)).limit(1))[0];
+      if (!subject || subject.status !== "active") {
+        throw new Error("billing_subject_unavailable");
+      }
+
+      const insertedEvent = await tx.insert(storeTransactionEvents).values({
+        billingSubjectId: subject.id,
+        provider: input.provider,
+        environment: input.environment,
+        externalTransactionId: input.externalTransactionId,
+        originalTransactionId: input.originalTransactionId ?? null,
+        productId: input.productId,
+        eventType: input.eventType,
+        purchaseStatus: "verified_paid",
+        purchasedAt: input.purchasedAt,
+        expiresAt: input.expiresAt ?? null,
+        revokedAt: null,
+        payloadDigest: input.payloadDigest,
+      }).onConflictDoNothing({
+        target: [
+          storeTransactionEvents.provider,
+          storeTransactionEvents.environment,
+          storeTransactionEvents.externalTransactionId,
+        ],
+      }).returning();
+      const event = insertedEvent[0] ?? (await tx.select().from(storeTransactionEvents).where(and(
+        eq(storeTransactionEvents.provider, input.provider),
+        eq(storeTransactionEvents.environment, input.environment),
+        eq(storeTransactionEvents.externalTransactionId, input.externalTransactionId),
+      )).limit(1))[0];
+      if (!event ||
+        event.billingSubjectId !== subject.id ||
+        event.productId !== input.productId ||
+        event.payloadDigest !== input.payloadDigest
+      ) {
+        throw new Error("store_transaction_replay_mismatch");
+      }
+
+      const priorReceipt = (await tx.select().from(billingVerificationReceipts)
+        .where(eq(billingVerificationReceipts.providerEventId, input.providerEventId)).limit(1))[0];
+      if (priorReceipt && (
+        priorReceipt.storeEventId !== event.id ||
+        priorReceipt.payloadDigest !== input.payloadDigest
+      )) {
+        throw new Error("provider_event_replay_mismatch");
+      }
+      if (!priorReceipt) {
+        await tx.insert(billingVerificationReceipts).values({
+          storeEventId: event.id,
+          providerEventId: input.providerEventId,
+          verifier: input.verifier,
+          outcome: "verified",
+          reasonCode: "signature_verified_paid_event",
+          payloadDigest: input.payloadDigest,
+        });
+      }
+
+      return (await tx.insert(entitlementGrants).values({
+        billingSubjectId: subject.id,
+        capability: input.capability,
+        sourceEventId: event.id,
+        status: "active",
+        startsAt: input.purchasedAt,
+        endsAt: input.expiresAt ?? null,
+        revokedAt: null,
+        lastVerifiedAt: now,
+      }).onConflictDoUpdate({
+        target: [entitlementGrants.billingSubjectId, entitlementGrants.capability],
+        set: {
+          sourceEventId: event.id,
+          status: "active",
+          startsAt: input.purchasedAt,
+          endsAt: input.expiresAt ?? null,
+          revokedAt: null,
+          lastVerifiedAt: now,
+          updatedAt: now,
+        },
+      }).returning())[0];
+    });
+  }
+  async getEntitlementForUser(userId: string, capability: string): Promise<EntitlementGrant | undefined> {
+    const db = await this.db();
+    return (await db.select({ grant: entitlementGrants }).from(entitlementGrants)
+      .innerJoin(billingSubjects, eq(entitlementGrants.billingSubjectId, billingSubjects.id))
+      .where(and(
+        eq(billingSubjects.userId, userId),
+        eq(billingSubjects.status, "active"),
+        eq(entitlementGrants.capability, capability),
+      )).limit(1))[0]?.grant;
+  }
   async deleteSessionData(sessionId: string): Promise<void> {
     const db = await this.db();
     const ownedProfiles = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.sessionId, sessionId));
@@ -275,6 +480,12 @@ class PostgresStorage implements IStorage {
     if (ids.length) await db.delete(assessmentResponses).where(inArray(assessmentResponses.profileId, ids));
     await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
     await db.delete(profiles).where(eq(profiles.userId, userId));
+    await db.update(billingSubjects).set({
+      userId: null,
+      status: "anonymized",
+      anonymizedAt: new Date(),
+      updatedAt: new Date(),
+    }).where(eq(billingSubjects.userId, userId));
     await db.delete(localUsers).where(eq(localUsers.id, userId));
     await db.delete(users).where(eq(users.id, userId));
   }
