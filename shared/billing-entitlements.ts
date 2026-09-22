@@ -47,7 +47,7 @@ export function resolveNativeProductCatalog(
 }
 
 export function entitlementIsActive(
-  entitlement: EntitlementState | null | undefined,
+  entitlement: (Omit<EntitlementState, "status"> & { status: string }) | null | undefined,
   now = new Date(),
 ): boolean {
   if (!entitlement || entitlement.status !== "active" || entitlement.revokedAt) return false;

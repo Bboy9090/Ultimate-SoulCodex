@@ -5,7 +5,10 @@ import { z } from "zod";
 import { createHash } from "node:crypto";
 import { storage } from "./storage";
 import { profileBelongsToActor } from "./lib/profile-ownership";
-import { PREMIUM_LIFETIME_CAPABILITY } from "@shared/billing-entitlements";
+import {
+  entitlementIsActive,
+  PREMIUM_LIFETIME_CAPABILITY,
+} from "@shared/billing-entitlements";
 
 const checkoutRequestSchema = z
   .object({
@@ -232,7 +235,7 @@ export function registerBillingRoutes(app: Express): void {
     }
     const entitlement = await storage.getEntitlementForUser(userId, PREMIUM_LIFETIME_CAPABILITY);
     return res.status(200).json({
-      active: entitlement?.status === "active" && !entitlement.revokedAt,
+      active: entitlementIsActive(entitlement),
       capability: PREMIUM_LIFETIME_CAPABILITY,
       verifiedAt: entitlement?.lastVerifiedAt ?? null,
     });
