@@ -7,6 +7,7 @@ import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthS
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
+import { apiFetch } from "@/lib/queryClient";
 
 const text = (...values: unknown[]) => values.find((value) => typeof value === "string" && value.trim().length > 0) as string | undefined;
 
@@ -52,6 +53,16 @@ export default function ProfilePage() {
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: Boolean(id),
+  });
+  const { data: entitlement } = useQuery<{ active: boolean }>({
+    queryKey: ["/api/billing/entitlement", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const response = await apiFetch(`/api/billing/entitlement/${encodeURIComponent(String(id))}`);
+      if (response.status === 401) return { active: false };
+      if (!response.ok) throw new Error("Premium status unavailable");
+      return (await response.json()) as { active: boolean };
+    },
   });
 
   const items = useMemo<HumanDepthItem[]>(() => {
@@ -219,7 +230,7 @@ export default function ProfilePage() {
           <NatalReportDownloadButton
             profileId={String(id)}
             profileName={profile.name}
-            isPremium={Boolean(profile.isPremium)}
+            isPremium={Boolean(profile.isPremium || entitlement?.active)}
           />
         </div>
       </main>

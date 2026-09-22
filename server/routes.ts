@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupSession } from "./session";
 import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
 import { profileBelongsToActor } from "./lib/profile-ownership";
 import {
@@ -55,7 +54,6 @@ function profileNotFound(res: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  setupSession(app);
   registerConsumerAuthRoutes(app);
 
   app.delete("/api/auth/account", async (req: any, res) => {

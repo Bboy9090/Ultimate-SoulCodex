@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, jsonb, boolean, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -20,6 +20,69 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
+
+export const billingSubjects = pgTable("billing_subjects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  status: text("status").notNull().default("active"),
+  anonymizedAt: timestamp("anonymized_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  userIdUnique: uniqueIndex("billing_subjects_user_id_uidx").on(table.userId),
+}));
+
+export const storeTransactionEvents = pgTable("store_transaction_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  billingSubjectId: varchar("billing_subject_id").notNull().references(() => billingSubjects.id, { onDelete: "restrict" }),
+  provider: text("provider").notNull(),
+  environment: text("environment").notNull(),
+  externalTransactionId: text("external_transaction_id").notNull(),
+  originalTransactionId: text("original_transaction_id"),
+  productId: text("product_id").notNull(),
+  eventType: text("event_type").notNull(),
+  purchaseStatus: text("purchase_status").notNull(),
+  purchasedAt: timestamp("purchased_at"),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  payloadDigest: text("payload_digest").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => ({
+  providerTransactionUnique: uniqueIndex("store_events_provider_transaction_uidx").on(table.provider, table.environment, table.externalTransactionId),
+  subjectIndex: index("store_events_subject_idx").on(table.billingSubjectId),
+  originalTransactionIndex: index("store_events_original_transaction_idx").on(table.originalTransactionId),
+}));
+
+export const entitlementGrants = pgTable("entitlement_grants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  billingSubjectId: varchar("billing_subject_id").notNull().references(() => billingSubjects.id, { onDelete: "restrict" }),
+  capability: text("capability").notNull(),
+  sourceEventId: varchar("source_event_id").notNull().references(() => storeTransactionEvents.id, { onDelete: "restrict" }),
+  status: text("status").notNull(),
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at"),
+  revokedAt: timestamp("revoked_at"),
+  lastVerifiedAt: timestamp("last_verified_at").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  subjectCapabilityUnique: uniqueIndex("entitlement_grants_subject_capability_uidx").on(table.billingSubjectId, table.capability),
+  sourceEventIndex: index("entitlement_grants_source_event_idx").on(table.sourceEventId),
+}));
+
+export const billingVerificationReceipts = pgTable("billing_verification_receipts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storeEventId: varchar("store_event_id").notNull().references(() => storeTransactionEvents.id, { onDelete: "restrict" }),
+  providerEventId: text("provider_event_id").notNull(),
+  verifier: text("verifier").notNull(),
+  outcome: text("outcome").notNull(),
+  reasonCode: text("reason_code"),
+  payloadDigest: text("payload_digest").notNull(),
+  verifiedAt: timestamp("verified_at").notNull().default(sql`now()`),
+}, (table) => ({
+  providerEventUnique: uniqueIndex("billing_receipts_provider_event_uidx").on(table.providerEventId),
+  storeEventIndex: index("billing_receipts_store_event_idx").on(table.storeEventId),
+}));
 
 export const profiles = pgTable("soul_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -75,6 +138,10 @@ export const insertAssessmentSchema = createInsertSchema(assessmentResponses);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type BillingSubject = typeof billingSubjects.$inferSelect;
+export type StoreTransactionEvent = typeof storeTransactionEvents.$inferSelect;
+export type EntitlementGrant = typeof entitlementGrants.$inferSelect;
+export type BillingVerificationReceipt = typeof billingVerificationReceipts.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Profile = typeof profiles.$inferSelect;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;

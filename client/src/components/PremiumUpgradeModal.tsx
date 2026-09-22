@@ -57,7 +57,6 @@ export function PremiumUpgradeModal({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${profileId}`,
         },
         credentials: "include",
         body: JSON.stringify({ profileId }),

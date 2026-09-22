@@ -4,12 +4,11 @@ import test from "node:test";
 import {
   containsRawPaymentFields,
   getBillingStatus,
-  isProfileCapabilityAuthorized,
   parseCheckoutRequest,
 } from "../server/billing.ts";
 
 const profileId = "profile-12345678";
-const serverRoutesSource = readFileSync("server/routes.ts", "utf8");
+const serverRoutesSource = readFileSync("server/billing.ts", "utf8");
 
 test("checkout accepts only the profile capability request shape", () => {
   assert.deepEqual(parseCheckoutRequest({ profileId }), { profileId });
@@ -33,22 +32,18 @@ test("raw payment fields are rejected before checkout session creation", () => {
 });
 
 test("legacy profile upgrade route can never collect raw card fields or grant premium directly", () => {
-  assert.match(serverRoutesSource, /direct_card_upgrade_retired/);
-  assert.match(serverRoutesSource, /Direct card upgrades are retired/);
+  assert.match(serverRoutesSource, /direct_card_collection_retired/);
+  assert.match(serverRoutesSource, /Direct card entry has been retired/);
   assert.doesNotMatch(serverRoutesSource, /const\s*\{\s*cardNumber\s*,\s*expiryDate\s*,\s*cvv\s*\}\s*=\s*req\.body/);
   assert.doesNotMatch(serverRoutesSource, /updateProfile\([^)]*\{\s*isPremium:\s*true\s*\}/);
 });
 
-test("profile billing actions require the existing bearer capability", () => {
-  assert.equal(
-    isProfileCapabilityAuthorized(`Bearer ${profileId}`, profileId),
-    true,
-  );
-  assert.equal(isProfileCapabilityAuthorized(undefined, profileId), false);
-  assert.equal(
-    isProfileCapabilityAuthorized("Bearer another-profile", profileId),
-    false,
-  );
+test("billing checkout uses authenticated ownership rather than profile-id bearer secrets", () => {
+  assert.match(serverRoutesSource, /profileBelongsToActor/);
+  assert.match(serverRoutesSource, /billing_account_required/);
+  assert.match(serverRoutesSource, /entitlement\/:profileId/);
+  assert.doesNotMatch(serverRoutesSource, /Bearer \$\{profileId\}/);
+  assert.doesNotMatch(serverRoutesSource, /updateProfile\([^)]*isPremium/);
 });
 
 test("billing remains disabled unless checkout and persistent entitlement storage are complete", () => {
@@ -58,6 +53,7 @@ test("billing remains disabled unless checkout and persistent entitlement storag
     webhook: process.env.STRIPE_WEBHOOK_SECRET,
     appUrl: process.env.PUBLIC_APP_URL,
     databaseUrl: process.env.DATABASE_URL,
+    entitlements: process.env.BILLING_ENTITLEMENTS_V1_ENABLED,
   };
 
   try {
@@ -66,6 +62,7 @@ test("billing remains disabled unless checkout and persistent entitlement storag
     delete process.env.STRIPE_WEBHOOK_SECRET;
     delete process.env.PUBLIC_APP_URL;
     delete process.env.DATABASE_URL;
+    delete process.env.BILLING_ENTITLEMENTS_V1_ENABLED;
 
     assert.deepEqual(getBillingStatus(), {
       enabled: false,
@@ -89,6 +86,7 @@ test("billing remains disabled unless checkout and persistent entitlement storag
     });
 
     process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/soulcodex";
+    process.env.BILLING_ENTITLEMENTS_V1_ENABLED = "true";
     assert.deepEqual(getBillingStatus(), {
       enabled: true,
       provider: "stripe_checkout",
@@ -113,5 +111,8 @@ test("billing remains disabled unless checkout and persistent entitlement storag
 
     if (previous.databaseUrl === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = previous.databaseUrl;
+
+    if (previous.entitlements === undefined) delete process.env.BILLING_ENTITLEMENTS_V1_ENABLED;
+    else process.env.BILLING_ENTITLEMENTS_V1_ENABLED = previous.entitlements;
   }
 });
