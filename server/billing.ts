@@ -220,6 +220,24 @@ export function registerBillingRoutes(app: Express): void {
     res.status(200).json(getBillingStatus());
   });
 
+  // The durable grant, not the legacy profile flag, is the source of truth
+  // for premium features. This endpoint deliberately fails closed for guests
+  // and never reveals whether another user's profile exists.
+  app.get("/api/billing/entitlement/:profileId", async (req, res) => {
+    const userId = (req.session as { userId?: string } | undefined)?.userId;
+    if (!userId) return res.status(200).json({ active: false, capability: PREMIUM_LIFETIME_CAPABILITY });
+    const profile = await storage.getProfile(req.params.profileId);
+    if (!profileBelongsToActor(profile, { userId, sessionId: req.sessionID })) {
+      return res.status(200).json({ active: false, capability: PREMIUM_LIFETIME_CAPABILITY });
+    }
+    const entitlement = await storage.getEntitlementForUser(userId, PREMIUM_LIFETIME_CAPABILITY);
+    return res.status(200).json({
+      active: entitlement?.status === "active" && !entitlement.revokedAt,
+      capability: PREMIUM_LIFETIME_CAPABILITY,
+      verifiedAt: entitlement?.lastVerifiedAt ?? null,
+    });
+  });
+
   app.post("/api/billing/checkout", checkoutLimiter, async (req, res) => {
     if (containsRawPaymentFields(req.body)) {
       return res.status(400).json({

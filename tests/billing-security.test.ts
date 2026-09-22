@@ -41,6 +41,7 @@ test("legacy profile upgrade route can never collect raw card fields or grant pr
 test("billing checkout uses authenticated ownership rather than profile-id bearer secrets", () => {
   assert.match(serverRoutesSource, /profileBelongsToActor/);
   assert.match(serverRoutesSource, /billing_account_required/);
+  assert.match(serverRoutesSource, /entitlement\/:profileId/);
   assert.doesNotMatch(serverRoutesSource, /Bearer \$\{profileId\}/);
   assert.doesNotMatch(serverRoutesSource, /updateProfile\([^)]*isPremium/);
 });
