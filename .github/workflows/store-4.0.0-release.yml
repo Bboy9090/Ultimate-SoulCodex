@@ -11,6 +11,10 @@ on:
       - release/4.0.0-store-signing-final
       - fix/complete-timed-profile-systems
       - fix/full-system-consumer-integration
+  pull_request:
+    branches:
+      - main
+      - release/ios-4.0.0-final-truth-fix
   workflow_dispatch:
 
 permissions:

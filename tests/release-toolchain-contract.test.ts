@@ -62,6 +62,7 @@ test("iOS export remains App Store scoped with the canonical team", async () => 
 
 test("store workflow constructs and validates both Capacitor native payloads", async () => {
   const workflow = await text(storeWorkflowPath);
+  assert.match(workflow, /pull_request:[\s\S]*release\/ios-4\.0\.0-final-truth-fix/);
   assert.match(workflow, /npm run build:capacitor/);
   assert.match(workflow, /npm run mobile:validate:android/);
   assert.match(workflow, /npm run mobile:validate:ios/);
