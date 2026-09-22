@@ -51,6 +51,58 @@ test("Chiron remains unresolved when live JPL reference is unavailable", async (
   assert.equal(result.reason, "reference_unavailable");
 });
 
+test("Chiron rejects references for the wrong body", async () => {
+  const result = await verifyChiron("1990-09-17T15:11:00.000Z", {
+    referenceFetcher: async (inputTimestamp) => ({
+      body: "Mars",
+      longitude: 115.3498,
+      sign: "Cancer",
+      source: "wrong-body fixture",
+      engine: "fixture",
+      calculatedAt: "2026-09-19T22:49:00.000Z",
+      inputTimestamp,
+    } as never),
+  });
+
+  assert.deepEqual(result, { status: "unresolved", reason: "reference_identity_mismatch" });
+});
+
+test("Chiron rejects references for a different timestamp", async () => {
+  const result = await verifyChiron("1990-09-17T15:11:00.000Z", {
+    referenceFetcher: async () => ({
+      body: "Chiron",
+      longitude: 115.3498,
+      sign: "Cancer",
+      source: "timestamp-mismatch fixture",
+      engine: "fixture",
+      calculatedAt: "2026-09-19T22:49:00.000Z",
+      inputTimestamp: "1990-09-17T15:12:00.000Z",
+    }),
+  });
+
+  assert.deepEqual(result, { status: "unresolved", reason: "reference_timestamp_mismatch" });
+});
+
+test("Chiron rejects non-finite longitudes and sign-longitude disagreement", async () => {
+  for (const reference of [
+    { longitude: Number.NaN, sign: "Cancer" },
+    { longitude: 115.3498, sign: "Leo" },
+  ]) {
+    const result = await verifyChiron("1990-09-17T15:11:00.000Z", {
+      referenceFetcher: async (inputTimestamp) => ({
+        body: "Chiron",
+        ...reference,
+        source: "invalid-reference fixture",
+        engine: "fixture",
+        calculatedAt: "2026-09-19T22:49:00.000Z",
+        inputTimestamp,
+      }),
+    });
+
+    assert.deepEqual(result, { status: "unresolved", reason: "reference_invalid" });
+  }
+});
+
 test("draft Chiron policy cannot promote output", async () => {
   const result = await verifyChiron("1990-09-17T15:11:00.000Z", {
     policy: { ...APPROVED_CHIRON_POLICY, status: "draft", approvedAt: undefined },

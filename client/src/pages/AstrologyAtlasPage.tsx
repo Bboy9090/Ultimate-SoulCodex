@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { BirthDateExploration } from '@/lib/birthDateExploration';
-import { personalAtlasPlacements, verifiedHouseCusps } from '@/lib/personalAstrologyAtlas';
+import { PERSONAL_ATLAS_HOUSE_CONTRACT, personalAtlasPlacements, verifiedHouseCusps } from '@/lib/personalAstrologyAtlas';
 import Navigation from '@/components/navigation';
 import { useActiveProfile } from '@/hooks/useActiveProfile';
 import { ATLAS_HOUSES, ATLAS_SIGNS, atlasEntry, birthInputGuidance, personalPlacementMeaning, type AtlasSign } from '@/lib/astrologyAtlas';
@@ -35,7 +35,7 @@ export default function AstrologyAtlasPage() {
   const houseCusps = verifiedHouseCusps(profile?.astrologyData);
   const selectedPersonal = personalPlacements.find(row => row.key === selectedPersonalKey && row.house);
   const selectedMeaning = selectedPersonal?.house
-    ? personalPlacementMeaning(selectedPersonal.key, selectedPersonal.sign as AtlasSign, selectedPersonal.house)
+    ? personalPlacementMeaning(selectedPersonal.key, selectedPersonal.sign, selectedPersonal.house)
     : null;
   return <div className="sc-app-shell">
     <Navigation />
@@ -51,15 +51,21 @@ export default function AstrologyAtlasPage() {
         <p className="mt-3 leading-7 text-[var(--sc-stone)]">{guidance.detail}</p>
       </section>
       {personalPlacements.length > 0 && <section className="sc-panel mb-6 p-5" aria-labelledby="personal-atlas">
-        <p className="sc-eyebrow">Verified Equal-house chart</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="sc-eyebrow">Verified Equal House chart</p>
+          <span className="sc-trust-chip">{PERSONAL_ATLAS_HOUSE_CONTRACT} · verified geometry</span>
+        </div>
         <h2 id="personal-atlas" className="mt-3 font-serif text-3xl">Your personal Atlas</h2>
         <p className="mt-3 leading-7 text-[var(--sc-stone)]">These links come from your verified chart record. Open one to explore its symbolic sign-and-house combination. The geometry is verified under Soul Codex's Equal-house policy; the written meaning remains symbolic reflection.</p>
         <ul className="mt-5 grid gap-3 sm:grid-cols-2">
           {personalPlacements.map(placement => <li key={placement.key}>
-            <button type="button" aria-pressed={selectedPersonalKey === placement.key} onClick={() => { setSelectedPersonalKey(placement.key); setSign(placement.sign as AtlasSign); if (placement.house) setHouse(placement.house); }} className="w-full rounded-xl border border-[var(--sc-line)] p-4 text-left hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
-              <strong>{placement.label} in {placement.sign}{placement.house ? ` · House ${placement.house}` : ''}</strong>
-              <p className="mt-1 text-xs text-[var(--sc-stone)]">Verified geometry · symbolic interpretation</p>
-            </button>
+            {placement.house ? <button type="button" aria-pressed={selectedPersonalKey === placement.key} onClick={() => { setSelectedPersonalKey(placement.key); setSign(placement.sign); setHouse(placement.house!); }} className="w-full rounded-xl border border-[var(--sc-line)] p-4 text-left hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
+              <strong>{placement.label} in {placement.sign} · House {placement.house}</strong>
+              <p className="mt-1 text-xs text-[var(--sc-stone)]">Verified Equal House geometry · symbolic interpretation</p>
+            </button> : <div className="w-full rounded-xl border border-[var(--sc-line)] p-4 text-left">
+              <strong>{placement.label} in {placement.sign}</strong>
+              <p className="mt-1 text-xs text-[var(--sc-stone)]">Verified angle · not a house placement or selectable sign-and-house card</p>
+            </div>}
           </li>)}
         </ul>
         {selectedPersonal && selectedMeaning && <article className="mt-5 rounded-2xl border border-[rgba(217,182,111,.22)] bg-white/[0.025] p-5" aria-live="polite">

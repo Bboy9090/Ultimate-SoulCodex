@@ -127,11 +127,24 @@ jobs:
         run: |
           printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soulcodex-release.keystore
           test -s android/app/soulcodex-release.keystore
+          keytool -list \
+            -keystore android/app/soulcodex-release.keystore \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" >/dev/null
       - name: Build signed Play AAB
         if: steps.signing.outputs.available == 'true'
         working-directory: android
         run: |
           ./gradlew --no-daemon bundleRelease             -PRELEASE_STORE_FILE=soulcodex-release.keystore             -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
+      - name: Verify signed Play AAB
+        if: steps.signing.outputs.available == 'true'
+        shell: bash
+        run: |
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify "$AAB"
+          sha256sum "$AAB" > AAB-SHA256.txt
+          printf '%s\n' "$GITHUB_SHA" > RELEASE-CANDIDATE-SHA.txt
       - name: Build unsigned qualification AAB when signing is unavailable
         if: steps.signing.outputs.available != 'true'
         working-directory: android
@@ -161,10 +174,12 @@ jobs:
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/debug/*.apk
             android-store-state.txt
+            AAB-SHA256.txt
+            RELEASE-CANDIDATE-SHA.txt
           if-no-files-found: error
           retention-days: 90
       - name: Publish signed AAB to Google Play production
-        if: steps.signing.outputs.available == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: github.ref == 'refs/heads/main' && steps.signing.outputs.available == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -173,10 +188,9 @@ jobs:
           track: production
           status: completed
       - name: Record Google Play credential blocker on qualification branches
-        if: github.ref != 'refs/heads/main' && (steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == '')
+        if: github.ref != 'refs/heads/main'
         run: |
-          echo "Google Play production upload remains blocked by missing private signing and/or Play service-account credentials."
-          echo "Qualification continues, but no deployment claim is permitted."
+          echo "Qualification completed without a Google Play production upload; production publishing is main-only."
 
       - name: Block false Google Play deployment claims on main
         if: github.ref == 'refs/heads/main' && (steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == '')

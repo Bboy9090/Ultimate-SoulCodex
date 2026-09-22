@@ -37,7 +37,7 @@ export interface TimelineIntelligenceSummary {
   sampleSize: number; // number of Daily Pulse entries analyzed
   confidence: TimelineConfidenceLevel;
 
-  // What systems predicted
+  // Deterministic system signals used for comparison
   systemSignals: SystemSignal[];
 
   // What user logged

@@ -62,6 +62,10 @@ test("verified Rising alone still refreshes when the full natal contract is avai
 test("verified full natal chart and Human Design complete the exact-input verification requirement", () => {
   const profile = exactProfile();
   const verified = (sign: string) => ({ verificationStatus: "verified", sign });
+  const signs = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+  ] as const;
   profile.verifiedAstrologyData = {
     sun: verified("Virgo"),
     moon: verified("Virgo"),
@@ -79,12 +83,26 @@ test("verified full natal chart and Human Design complete the exact-input verifi
       pluto: verified("Scorpio"),
     },
     houseSystem: "equal",
-    houses: Array.from({ length: 12 }, (_, index) => ({
-      house: index + 1,
-      sign: "Scorpio",
+    houses: Array.from({ length: 12 }, (_, index) => {
+      const longitude = (227.3 + index * 30) % 360;
+      return {
+        house: index + 1,
+        sign: signs[Math.floor(longitude / 30)],
+        longitude,
+        degree: longitude % 30,
+        verificationStatus: "verified",
+        policyId: "ASTRO-EQUAL-HOUSE-v1",
+        evidenceArtifactId: "equal-house-fixture",
+      };
+    }),
+    midheaven: {
       verificationStatus: "verified",
-    })),
-    midheaven: { verificationStatus: "verified", sign: "Leo" },
+      sign: "Leo",
+      longitude: 148,
+      degree: 28,
+      policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-fixture",
+    },
     planetaryHouses: {
       sun: 11,
       moon: 10,
@@ -103,17 +121,29 @@ test("verified full natal chart and Human Design complete the exact-input verifi
       mode: "mean",
       sign: "Aquarius",
       house: 3,
+      longitude: 304.71,
+      degree: 4.71,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     southNode: {
       verificationStatus: "verified",
       mode: "mean",
       sign: "Leo",
       house: 9,
+      longitude: 124.71,
+      degree: 4.71,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     chiron: {
       verificationStatus: "verified",
       sign: "Cancer",
       house: 9,
+      longitude: 115.35,
+      degree: 25.35,
+      policyId: "ASTRO-CHIRON-v1",
+      evidenceArtifactId: "chiron-fixture",
       qualificationMethod: "live-jpl-qualified-against-swiss",
     },
     verification: {
@@ -122,6 +152,8 @@ test("verified full natal chart and Human Design complete the exact-input verifi
         "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "Ascendant",
       ],
       unresolvedBodies: [],
+      policyId:
+        "ASTRO-LONGITUDE-v1 + ASTRO-PLANET-LONGITUDE-v1 + ASTRO-ASCENDANT-v1 + ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1",
     },
   };
   profile.humanDesignData = {

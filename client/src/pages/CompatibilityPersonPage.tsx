@@ -6,6 +6,7 @@ import EvidenceLimitations from "../components/EvidenceLimitations";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import { buildCompatibilityProfilePayload } from "../lib/compatibilityProfilePayload";
+import { findConnectionById, loadConnections } from "../lib/connectionRepository";
 import { apiFetch } from "../lib/queryClient";
 
 const SIGNS = [
@@ -61,9 +62,9 @@ export default function CompatibilityPersonPage() {
   const { profile, isLoading: profileLoading, isCorrupted, reason: profileError } = useActiveProfile();
   const compatibilityProfile = useMemo(() => buildCompatibilityProfilePayload(profile), [profile]);
   const initial = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
-  const initialSign = initial.get("sunSign");
-  const [name, setName] = useState(() => initial.get("name")?.slice(0,80) ?? "");
-  const [sunSign, setSunSign] = useState(() => SIGNS.includes(initialSign ?? "") ? initialSign! : "");
+  const initialConnection = findConnectionById(loadConnections(), initial.get("connection"));
+  const [name, setName] = useState(() => initialConnection?.name ?? "");
+  const [sunSign, setSunSign] = useState(() => initialConnection?.sunSign ?? "");
   const [result, setResult] = useState<PersonComparisonResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
