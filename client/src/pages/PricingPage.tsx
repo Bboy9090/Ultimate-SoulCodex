@@ -59,7 +59,7 @@ export default function PricingPage() {
             </p>
             <FeatureList features={plannedPremiumFeatures} />
             <div className="mt-auto rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-stone)]">
-              Not available for purchase in rc.3
+              Coming after native purchase certification
             </div>
           </article>
         </section>

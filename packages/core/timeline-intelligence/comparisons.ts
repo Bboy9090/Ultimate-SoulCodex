@@ -52,20 +52,20 @@ function describeMatch(signal: SystemSignal, lived: LivedSignal[], alignment: nu
 
   if (signal.system === "personal-day") {
     if (energyLived) {
-      return `${signal.label} predicted steady energy. Logged energy averaged ${energyLived.value}. (${alignmentPct}% alignment)`;
+      return `${signal.label} suggested steady energy. Logged energy averaged ${energyLived.value}. (${alignmentPct}% alignment)`;
     }
   }
 
   if (signal.system === "moon-phase") {
     if (signal.label.includes("Full Moon")) {
-      return `Full Moon phase predicted high energy. Logged ${energyLived?.value || "variable"} energy. (${alignmentPct}% alignment)`;
+      return `Full Moon phase suggested high energy. Logged ${energyLived?.value || "variable"} energy. (${alignmentPct}% alignment)`;
     }
     if (signal.label.includes("New Moon")) {
-      return `New Moon phase predicted introspection. Logged ${alignmentLived?.value || "varied"} alignment. (${alignmentPct}% alignment)`;
+      return `New Moon phase suggested introspection. Logged ${alignmentLived?.value || "varied"} alignment. (${alignmentPct}% alignment)`;
     }
   }
 
-  return `System prediction matched lived data at ${alignmentPct}% alignment.`;
+  return `The system signal corresponded with lived data at ${alignmentPct}% alignment.`;
 }
 
 function describeDivergence(signal: SystemSignal, lived: LivedSignal[]): string {
@@ -80,7 +80,7 @@ function describeDivergence(signal: SystemSignal, lived: LivedSignal[]): string 
     return `${signal.label} phase did not match logged experience: ${alignmentLived?.value || "alignment was different"}.`;
   }
 
-  return `System prediction diverged from lived data.`;
+  return `The system signal differed from the lived data.`;
 }
 
 function generateExpectationVsActual(signal: SystemSignal, lived: LivedSignal[]): string {

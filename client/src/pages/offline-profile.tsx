@@ -8,9 +8,8 @@ import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
 import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
+import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
-
-type VerificationAttempt = "idle" | "running" | "complete" | "deferred";
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
@@ -64,7 +63,7 @@ export default function OfflineProfilePage() {
         if (!saved.success) throw new Error(saved.error || "active_profile_reconciliation_failed");
       }
       queryClient.setQueryData(["offline-profile", id], hydrated);
-      setVerificationAttempt("complete");
+      setVerificationAttempt(verificationOutcome(profileNeedsOnlineVerification(hydrated)));
     } catch (cause) {
       console.warn("[offline-profile] Requested online verification could not complete", cause);
       setVerificationAttempt("deferred");
@@ -125,7 +124,7 @@ export default function OfflineProfilePage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href={readingHref} className="sc-button-primary">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 <Link href="/compatibility" className="sc-button-secondary">Explore compatibility</Link>
-                {needsOnlineVerification && verificationAttempt !== "complete" && (
+                {shouldOfferVerification(needsOnlineVerification, verificationAttempt) && (
                   <button
                     type="button"
                     className="flex h-11 items-center rounded-xl border border-[rgba(114,216,197,.25)] bg-[rgba(114,216,197,.04)] px-5 text-sm font-semibold text-[#bdeee0] transition hover:bg-[rgba(114,216,197,.08)] disabled:opacity-60"
@@ -147,6 +146,7 @@ export default function OfflineProfilePage() {
 
         {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested profile-system verification. Soul Codex is calculating the qualified natal chart and governed Human Design core while your local reading remains available.</span></div>}
         {verificationAttempt === "deferred" && !verifiedFullNatal && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">The requested online verification could not complete. Local symbolic layers remain visible; any unsupported planets, Rising, MC, houses, aspects, nodes, and Chiron stay unresolved rather than guessed.</div>}
+        {verificationAttempt === "partial" && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Online verification returned some supported evidence, but this timed profile still has unresolved chart fields. The verified results were saved; you can retry without losing them.</div>}
         {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.04)] p-4 text-sm text-[var(--sc-stone)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
         <section className="mb-6 grid gap-4 lg:grid-cols-3">

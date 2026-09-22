@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { generateTimelineIntelligence, type TimelineIntelligenceSummary, type SystemSignal, type LivedSignal } from "@soulcodex/core";
 import { getRecentDailyPulseEntries } from "../lib/dailyPulseStorage";
+import { buildTimelineLivedSignals, TIMELINE_LOOKBACK_ENTRIES, trackingDepth } from "../lib/timelineIntelligenceViewModel";
 import { IconCheck } from "./Icons";
 
 interface TimelineIntelligenceProps {
@@ -12,53 +13,13 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
   const [showLocked, setShowLocked] = useState(false);
 
   useEffect(() => {
-    const pulseEntries = getRecentDailyPulseEntries(30);
+    const pulseEntries = getRecentDailyPulseEntries(TIMELINE_LOOKBACK_ENTRIES);
     if (pulseEntries.length < 7) {
       setShowLocked(true);
       return;
     }
 
-    // Convert Daily Pulse entries to LivedSignals
-    const livedSignals: LivedSignal[] = [];
-
-    // Energy signals
-    const avgEnergy = pulseEntries.reduce((sum, e) => sum + e.energy, 0) / pulseEntries.length;
-    livedSignals.push({
-      dateRange: {
-        start: pulseEntries[pulseEntries.length - 1].date,
-        end: pulseEntries[0].date,
-      },
-      metric: "energy",
-      value: Math.round(avgEnergy * 10) / 10,
-    });
-
-    // Alignment signals
-    const avgAlignment = pulseEntries.reduce((sum, e) => sum + e.alignment, 0) / pulseEntries.length;
-    livedSignals.push({
-      dateRange: {
-        start: pulseEntries[pulseEntries.length - 1].date,
-        end: pulseEntries[0].date,
-      },
-      metric: "alignment",
-      value: Math.round(avgAlignment * 10) / 10,
-    });
-
-    // Mood signal
-    const moodCounts: Record<string, number> = {};
-    pulseEntries.forEach((e) => {
-      moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
-    });
-    const dominantMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (dominantMood) {
-      livedSignals.push({
-        dateRange: {
-          start: pulseEntries[pulseEntries.length - 1].date,
-          end: pulseEntries[0].date,
-        },
-        metric: "mood",
-        value: dominantMood,
-      });
-    }
+    const livedSignals: LivedSignal[] = buildTimelineLivedSignals(pulseEntries);
 
     const intelligence = generateTimelineIntelligence(systemSignals, livedSignals, {
       sampleSize: pulseEntries.length,
@@ -80,7 +41,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
           Timeline Intelligence unlocks after 7 Daily Pulse entries.
         </p>
         <p style={{ color: "var(--sc-stone)", fontSize: "0.9rem", fontStyle: "italic" }}>
-          Every check-in teaches Soul Codex how your lived experience compares with its predictions.
+          Every check-in adds lived evidence that can be compared with the system signals shown in your Timeline.
         </p>
       </div>
     );
@@ -124,7 +85,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
           ))}
         </div>
         <div style={{ fontSize: "0.8rem", color: "var(--sc-stone)", textTransform: "uppercase" }}>
-          Confidence: <span style={{ color: "var(--sc-gold)" }}>{summary.confidence}</span>
+          Tracking depth: <span style={{ color: "var(--sc-gold)" }}>{summary.confidence}</span>
         </div>
       </div>
 
@@ -137,7 +98,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
       }}>
         <h3 style={{ fontSize: "0.95rem", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "1rem", marginTop: 0 }}>Your Reality</h3>
         <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", marginBottom: "1rem" }}>
-          Last 7 Soul Pulse entries
+          Most recent {summary.sampleSize} Soul Pulse {summary.sampleSize === 1 ? "entry" : "entries"} (up to {TIMELINE_LOOKBACK_ENTRIES})
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
           <div>
@@ -159,9 +120,9 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
             </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Consistency</div>
+            <div style={{ fontSize: "0.75rem", color: "var(--sc-stone)", textTransform: "uppercase", marginBottom: "0.5rem" }}>Dominant State Share</div>
             <div style={{ fontSize: "1rem", fontWeight: 600, color: "var(--sc-ivory)" }}>
-              83%
+              {summary.livedSignals.find(s => s.metric === "mood")?.percentage ?? 0}%
             </div>
           </div>
         </div>
@@ -207,7 +168,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
                 {divergence.description}
               </p>
               <div style={{ fontSize: "0.8rem", color: "var(--sc-stone)", marginBottom: "1rem" }}>
-                Confidence: <span style={{ color: "var(--sc-gold)" }}>{summary.confidence}</span>
+                Tracking depth: <span style={{ color: "var(--sc-gold)" }}>{summary.confidence}</span>
               </div>
               <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", fontStyle: "italic" }}>
                 Recommendation: Continue tracking. More entries increase confidence.
@@ -217,7 +178,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
         </div>
       )}
 
-      {/* Card 5: Confidence Gauge */}
+      {/* Card 5: Tracking depth */}
       <div style={{
         padding: "1.5rem",
         background: "rgba(255,255,255,0.04)",
@@ -225,7 +186,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
         border: "1px solid rgba(212,168,95,0.2)",
         textAlign: "center",
       }}>
-        <h3 style={{ fontSize: "0.95rem", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "1.5rem", marginTop: 0 }}>Timeline Confidence</h3>
+        <h3 style={{ fontSize: "0.95rem", textTransform: "uppercase", color: "var(--sc-gold)", marginBottom: "1.5rem", marginTop: 0 }}>Tracking Depth</h3>
 
         <div style={{
           display: "flex",
@@ -238,7 +199,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
             width: "120px",
             height: "120px",
             borderRadius: "50%",
-            background: `conic-gradient(var(--sc-gold) 0deg ${(summary.sampleSize / 100) * 360}deg, rgba(212,168,95,0.1) ${(summary.sampleSize / 100) * 360}deg 360deg)`,
+            background: `conic-gradient(var(--sc-gold) 0deg ${trackingDepth(summary.sampleSize) * 360}deg, rgba(212,168,95,0.1) ${trackingDepth(summary.sampleSize) * 360}deg 360deg)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -255,7 +216,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
               justifyContent: "center",
             }}>
               <div style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--sc-gold)" }}>
-                {Math.round((summary.sampleSize / 100) * 100)}%
+                {summary.sampleSize}/{TIMELINE_LOOKBACK_ENTRIES}
               </div>
             </div>
           </div>
@@ -269,7 +230,7 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
         </p>
 
         <p style={{ fontSize: "0.8rem", color: "var(--sc-stone)", fontStyle: "italic", lineHeight: "1.5" }}>
-          Higher confidence comes from more observations, not stronger beliefs.
+          This ring shows how much of the 30-entry analysis window contains your check-ins. It is not an accuracy score.
         </p>
       </div>
 

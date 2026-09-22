@@ -1,6 +1,6 @@
 # Profile depth, Astrology Atlas, and connections
 
-Development branch: feature/profile-atlas-and-connections
+Development branch: develop/4.0.1-atlas-connections
 Base: 4608cdb4853f187f2e37b68b2996fb9061e13c95 (4.0.1 build 179 source).
 Build 179 and its release branch are unchanged.
 
@@ -14,7 +14,7 @@ Build 179 and its release branch are unchanged.
 - Date exploration does not write storage, request the backend, create houses/angles, supply Human Design, or change primary synthesis.
 - House-system explanations distinguish a cusp sign from a planet in a house and explain why Equal-house MC need not be the tenth cusp.
 - Verified Equal-house profiles receive a personal Atlas containing verified planetary sign/house placements, all twelve verified cusp signs, Midheaven, mean Nodes, and independently qualified Chiron. Partial, legacy, unverified, or differently governed chart structures fail closed.
-- House/MC policy is promoted from unavailable to inspectable when verified. It remains unable to influence primary synthesis.
+- Verified Equal House geometry, Midheaven, mean Nodes, qualified Chiron, and planetary-house assignments may support symbolic synthesis under their approved evidence contracts. Candidates and unverified structures remain excluded.
 - Connections adds a private, versioned device list for names/nicknames and user-selected Sun signs. Saved people open directly in Compatibility. It does not upload contacts, imply membership/consent, or expose another person's birth data.
 
 ## Reference observations
@@ -29,7 +29,7 @@ No official unknown-time fallback was verified in that source. Do not claim Coâ€
 ## Remaining work and acceptance gates
 
 1. Independent interval evidence: evaluate complete local date/time windows with transition detection and independent ephemeris comparison. Promote only genuinely supported sign results. Support approximate user-supplied time ranges, with explicit uncertainty.
-2. Primary synthesis: chart geometry is already governed by an Equal House calculation policy. That does not automatically approve interpretation. Review every system's source, timestamp, uncertainty, and distinct contribution; preserve the 60/96 profile tests and prevent duplicate themes. Never change the withheld-system gate merely to produce longer prose.
+2. Primary synthesis: chart geometry is governed by the approved ASTRO-EQUAL-HOUSE-v1 contract, and verified supporting interpretation is now enabled by policy. Continue reviewing every system's source, timestamp, uncertainty, and distinct contribution; preserve the 60/96 profile tests and prevent duplicate themes. Never admit candidates or add prose merely to make a reading longer.
 3. Personal Atlas: bind cards to verified profile placements, show the selected house convention, evidence and input version. Add planet-sign-house and aspect-specific content with editorial review. Current 144 entries are compositional educational content, not 144 independently authored personal readings.
 4. Social friends: the device-private Connections list is implemented. A future opt-in network graph still requires durable authenticated storage, explicit invitations and acceptance, private defaults, separate consent for chart sharing, block/remove/revoke, deletion cascade, and server-side authorization against cross-user reads. No contact upload or public birth details by default.
 5. Visual acceptance: phone/WebKit and physical-device review, 320px layout, focus, screen-reader output, reduced motion, no time-consuming main-thread calculation on older phones. Current date exploration is synchronous after its lazy import; move to a worker if device profiling requires it.

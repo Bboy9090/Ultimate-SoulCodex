@@ -51,7 +51,12 @@ export function removeConnection(id: string): SavedConnection[] {
   return next;
 }
 
-export function compatibilityLink(connection: Pick<SavedConnection,"name"|"sunSign">): string {
-  const params = new URLSearchParams({ name: connection.name, sunSign: connection.sunSign });
+export function findConnectionById(connections: SavedConnection[], id: string | null): SavedConnection | null {
+  if (!id) return null;
+  return connections.find(connection => connection.id === id) ?? null;
+}
+
+export function compatibilityLink(connection: Pick<SavedConnection,"id">): string {
+  const params = new URLSearchParams({ connection: connection.id });
   return `/compatibility/compare?${params.toString()}`;
 }

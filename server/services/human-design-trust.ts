@@ -6,6 +6,7 @@ export type HumanDesignVerificationStatus =
 export type HumanDesignCoreField = "type" | "strategy" | "authority" | "profile";
 
 type HumanDesignCandidateFields = Partial<Record<HumanDesignCoreField, string>>;
+type CompleteHumanDesignCandidateFields = Record<HumanDesignCoreField, string>;
 
 interface HumanDesignEvidenceBase {
   limitations: readonly string[];
@@ -28,7 +29,7 @@ export interface HumanDesignVerifiedEvidence extends HumanDesignEvidenceBase {
   calculatedAt: string;
   inputTimestampUtc: string;
   birthTimeKnown: true;
-  candidate: HumanDesignCandidateFields;
+  candidate: CompleteHumanDesignCandidateFields;
   verificationReceiptId: string;
   independentSource: string;
   verifiedAt: string;
@@ -80,6 +81,52 @@ export const APPROVED_HUMAN_DESIGN_CORE_VERIFICATION = Object.freeze({
 
 function isValidIsoTimestamp(value: string): boolean {
   return Boolean(value.trim()) && !Number.isNaN(new Date(value).getTime());
+}
+
+const HUMAN_DESIGN_STRATEGY_BY_TYPE = Object.freeze({
+  Manifestor: "To Inform",
+  Generator: "To Respond",
+  "Manifesting Generator": "To Respond & Inform",
+  Projector: "To Wait for Invitation",
+  Reflector: "To Wait a Lunar Cycle",
+} as const);
+
+const HUMAN_DESIGN_AUTHORITIES_BY_TYPE: Readonly<
+  Record<keyof typeof HUMAN_DESIGN_STRATEGY_BY_TYPE, readonly string[]>
+> = Object.freeze({
+  Manifestor: Object.freeze(["Emotional Authority", "Splenic Authority", "Ego Authority"]),
+  Generator: Object.freeze(["Emotional Authority", "Sacral Authority"]),
+  "Manifesting Generator": Object.freeze(["Emotional Authority", "Sacral Authority"]),
+  Projector: Object.freeze([
+    "Emotional Authority",
+    "Splenic Authority",
+    "Ego Authority",
+    "Self-Projected Authority",
+    "Mental Authority",
+  ]),
+  Reflector: Object.freeze(["Lunar Authority"]),
+});
+
+function completeVerifiedCandidate(
+  candidate: HumanDesignCandidateFields | null | undefined,
+): CompleteHumanDesignCandidateFields | null {
+  const normalized = Object.fromEntries(
+    Object.entries(candidate ?? {}).map(([key, value]) => [
+      key,
+      typeof value === "string" ? value.trim() : value,
+    ]),
+  ) as HumanDesignCandidateFields;
+
+  const { type, strategy, authority, profile } = normalized;
+  if (!type || !strategy || !authority || !profile) return null;
+  if (!(type in HUMAN_DESIGN_STRATEGY_BY_TYPE)) return null;
+
+  const supportedType = type as keyof typeof HUMAN_DESIGN_STRATEGY_BY_TYPE;
+  if (strategy !== HUMAN_DESIGN_STRATEGY_BY_TYPE[supportedType]) return null;
+  if (!HUMAN_DESIGN_AUTHORITIES_BY_TYPE[supportedType].includes(authority)) return null;
+  if (!/^[1-6]\/[1-6]$/.test(profile)) return null;
+
+  return { type, strategy, authority, profile };
 }
 
 export function createHumanDesignTrustRecord(input: {
@@ -151,11 +198,13 @@ export function createVerifiedHumanDesignTrustRecord(input: {
     throw new Error("human_design_calculation_timestamp_invalid");
   }
 
-  const candidate = Object.fromEntries(
-    Object.entries(input.candidate ?? {}).filter(
-      ([, value]) => typeof value === "string" && value.trim().length > 0,
-    ),
-  ) as HumanDesignCandidateFields;
+  const candidate = completeVerifiedCandidate(input.candidate);
+  if (!candidate) {
+    return createHumanDesignTrustRecord({
+      ...input,
+      calculatedAt,
+    });
+  }
 
   return {
     status: "verified",

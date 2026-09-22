@@ -43,6 +43,11 @@ const verifiedPlanets = {
   pluto: { verificationStatus: "verified", sign: "Scorpio" },
 };
 
+const zodiacSigns = [
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+] as const;
+
 const verifiedRemote = {
   id: "remote-robert",
   name: "Robert Example",
@@ -61,11 +66,18 @@ const verifiedRemote = {
     planets: verifiedPlanets,
     houseSystem: "equal",
     houses: Array.from({ length: 12 }, (_, index) => ({
+      ...(() => {
+        const longitude = (227.3 + index * 30) % 360;
+        return {
+          sign: zodiacSigns[Math.floor(longitude / 30)],
+          degree: longitude % 30,
+          longitude,
+        };
+      })(),
       house: index + 1,
-      sign: "Scorpio",
       verificationStatus: "verified",
-      degree: 17.3,
-      longitude: (227.3 + index * 30) % 360,
+      policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-fixture",
     })),
     midheaven: {
       verificationStatus: "verified",
@@ -73,6 +85,7 @@ const verifiedRemote = {
       longitude: 148,
       degree: 28,
       policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-fixture",
     },
     planetaryHouses: {
       sun: 11,
@@ -95,6 +108,7 @@ const verifiedRemote = {
       longitude: 304.71,
       degree: 4.71,
       policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     southNode: {
       verificationStatus: "verified",
@@ -104,6 +118,7 @@ const verifiedRemote = {
       longitude: 124.71,
       degree: 4.71,
       policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     chiron: {
       verificationStatus: "verified",
@@ -113,6 +128,7 @@ const verifiedRemote = {
       degree: 25.35,
       policyId: "ASTRO-CHIRON-v1",
       qualificationMethod: "live-jpl-qualified-against-swiss",
+      evidenceArtifactId: "chiron-fixture",
     },
     // Legacy aliases cannot bypass the nested verification state.
     sunSign: "Aries",

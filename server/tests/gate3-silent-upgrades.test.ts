@@ -14,8 +14,8 @@ describe("Gate 3: No Silent Data Upgrades", () => {
 
         assert.strictEqual(result.sun.sign, null);
         assert.strictEqual(result.sun.verificationStatus, "pending_ephemeris");
-        assert.strictEqual(result.sun.confidence, null);
-        assert.strictEqual(result.sun.source, null);
+        assert.strictEqual(result.sun.confidence, undefined);
+        assert.strictEqual(result.sun.source, undefined);
         assert.ok(result.sun.reason);
       });
 
@@ -28,7 +28,7 @@ describe("Gate 3: No Silent Data Upgrades", () => {
 
         assert.strictEqual(result.moon.sign, null);
         assert.strictEqual(result.moon.verificationStatus, "requires_verified_birth_time");
-        assert.strictEqual(result.moon.confidence, null);
+        assert.strictEqual(result.moon.confidence, undefined);
         assert.match(result.moon.reason || "", /Birth time required/);
       });
 
@@ -68,8 +68,8 @@ describe("Gate 3: No Silent Data Upgrades", () => {
           const result = calculateAstrology(birthData);
 
           assert.strictEqual(result.sun.sign, null);
-          assert.strictEqual(result.sun.verificationStatus, "pending_ephemeris");
-          assert.match(result.sun.reason || "", /does not|failed|no placement/i);
+          assert.strictEqual(result.sun.verificationStatus, "pending_independent_verification");
+          assert.match(result.sun.reason || "", /independent comparison is still required/i);
         });
       });
 

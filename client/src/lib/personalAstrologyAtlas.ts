@@ -1,9 +1,13 @@
+import { ATLAS_SIGNS, type AtlasSign } from "./astrologyAtlas";
+
+export const PERSONAL_ATLAS_HOUSE_CONTRACT = "ASTRO-EQUAL-HOUSE-v1";
+
 type Placement = { verificationStatus?: string; sign?: string | null; house?: number; degree?: number; longitude?: number };
 
 export type PersonalAtlasPlacement = {
   key: string;
   label: string;
-  sign: string;
+  sign: AtlasSign;
   house?: number;
   kind: "planet" | "angle" | "node" | "chiron";
 };
@@ -18,17 +22,21 @@ function validHouse(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
 }
 
-function verifiedSign(value: Placement | undefined): string | null {
-  return value?.verificationStatus === "verified" && typeof value.sign === "string" && value.sign.trim()
-    ? value.sign.trim()
+function atlasSign(value: unknown): AtlasSign | null {
+  return typeof value === "string" && ATLAS_SIGNS.includes(value.trim() as AtlasSign)
+    ? value.trim() as AtlasSign
     : null;
+}
+
+function verifiedSign(value: Placement | undefined): AtlasSign | null {
+  return value?.verificationStatus === "verified" ? atlasSign(value.sign) : null;
 }
 
 /** Returns only evidence-bearing chart placements. It never falls back to legacy aliases. */
 export function personalAtlasPlacements(astrology: any): PersonalAtlasPlacement[] {
   if (!astrology || astrology.houseSystem !== "equal") return [];
   if (!Array.isArray(astrology.houses) || astrology.houses.length !== 12) return [];
-  if (astrology.houses.some((row: any, index: number) => row?.verificationStatus !== "verified" || row?.house !== index + 1)) return [];
+  if (astrology.houses.some((row: any, index: number) => row?.verificationStatus !== "verified" || row?.house !== index + 1 || !atlasSign(row?.sign))) return [];
 
   const results: PersonalAtlasPlacement[] = [];
   for (const key of PLANETS) {
@@ -55,9 +63,9 @@ export function personalAtlasPlacements(astrology: any): PersonalAtlasPlacement[
   return results;
 }
 
-export function verifiedHouseCusps(astrology: any): Array<{ house: number; sign: string }> {
+export function verifiedHouseCusps(astrology: any): Array<{ house: number; sign: AtlasSign }> {
   if (!astrology || astrology.houseSystem !== "equal" || !Array.isArray(astrology.houses) || astrology.houses.length !== 12) return [];
-  return astrology.houses.every((row: any, index: number) => row?.verificationStatus === "verified" && row?.house === index + 1 && typeof row?.sign === "string")
-    ? astrology.houses.map((row: any) => ({ house: row.house, sign: row.sign }))
+  return astrology.houses.every((row: any, index: number) => row?.verificationStatus === "verified" && row?.house === index + 1 && atlasSign(row?.sign))
+    ? astrology.houses.map((row: any) => ({ house: row.house, sign: atlasSign(row.sign)! }))
     : [];
 }

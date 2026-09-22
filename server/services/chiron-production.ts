@@ -74,12 +74,25 @@ export type ChironVerificationResult =
         | "policy_not_approved"
         | "policy_invalid"
         | "evidence_identity_missing"
+        | "reference_identity_mismatch"
+        | "reference_timestamp_mismatch"
+        | "reference_invalid"
         | "reference_unavailable";
     };
 
 export type ChironReferenceFetcher = (
   inputTimestamp: string,
 ) => Promise<ChironReference>;
+
+const ZODIAC_SIGNS = [
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+] as const;
+
+function signFromLongitude(value: number): string {
+  const normalized = ((value % 360) + 360) % 360;
+  return ZODIAC_SIGNS[Math.floor(normalized / 30)];
+}
 
 function validatePolicy(
   policy: ChironProductionPolicy,
@@ -128,7 +141,28 @@ export async function verifyChiron(
       ((timestamp) => fetchChironHorizonsReference(timestamp, { timeoutMs: 10_000 }))
     )(inputTimestamp);
 
+    if (reference.body !== "Chiron") {
+      return { status: "unresolved", reason: "reference_identity_mismatch" };
+    }
+
+    const requestedTime = new Date(inputTimestamp).getTime();
+    const referenceTime = new Date(reference.inputTimestamp).getTime();
+    if (
+      !Number.isFinite(requestedTime) ||
+      !Number.isFinite(referenceTime) ||
+      requestedTime !== referenceTime
+    ) {
+      return { status: "unresolved", reason: "reference_timestamp_mismatch" };
+    }
+
+    if (!Number.isFinite(reference.longitude)) {
+      return { status: "unresolved", reason: "reference_invalid" };
+    }
+
     const longitudeDegrees = ((reference.longitude % 360) + 360) % 360;
+    if (reference.sign !== signFromLongitude(longitudeDegrees)) {
+      return { status: "unresolved", reason: "reference_invalid" };
+    }
     return {
       status: "verified",
       chiron: {
