@@ -1,7 +1,7 @@
 import * as Astronomy from 'astronomy-engine';
 import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
-import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core/evidence-ledger';
+import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
 
 // Human Design Gates mapped to their correct centers and meanings
 export const HD_GATES = {
