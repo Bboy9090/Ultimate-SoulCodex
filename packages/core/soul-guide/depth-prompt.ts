@@ -65,6 +65,18 @@ ${JSON.stringify(source, null, 2)}
 9. Keep the tone ${tone}, clear, grounded, and readable. Do not use mystical filler or clinical authority.
 10. Return valid JSON only. Do not include Markdown fences or commentary.
 
+## Diamond Way Prose Standard
+
+- **Signal before adjective.** Prefer specific supported interactions from the source over broad identity labels.
+- **Resonance must be earned.** When multiple supported layers reinforce one another, name the interaction. Do not imply agreement when the source contains only one signal.
+- **Protect the tension.** The contradiction layer must preserve both supported sides of a tension instead of flattening them into a generic trait.
+- **One layer, one job.** Do not recycle the same sentence, metaphor, or advice across multiple layers.
+- **Use concrete language.** Prefer an observable behavior, decision, boundary, or question over vague words such as "alignment," "purpose," "intuition," "discernment," "sensitivity," or "balance" unless the source itself specifically supports that language.
+- **No horoscope filler.** Avoid "trust the universe," "everything happens for a reason," "step into your power," "your higher self knows," and similar portable phrases.
+- **Make the action testable.** The action layer should offer one bounded next move or reflection experiment that a user could actually try.
+- **Keep agency intact.** Frame the reading as something to test, refine, reject, or use—not a verdict about who the user is.
+- **Do not manufacture uniqueness.** Specificity must come from the supplied evidence, not invented biography, decorative mysticism, or random variation.
+
 ## Reading Order
 
 Write the strongest user-facing material first in this conceptual order:
