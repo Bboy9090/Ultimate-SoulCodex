@@ -282,7 +282,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const astrology = (profile?.verifiedAstrologyData ?? profile?.astrologyData ?? {}) as AnyRecord;
   const numerology = (profile?.numerologyData ?? {}) as AnyRecord;
   const hd = (profile?.humanDesignData ?? {}) as AnyRecord;
-  const personality = (profile?.personalityData ?? {}) as AnyRecord;
+  const personalityData = (profile?.personalityData ?? {}) as AnyRecord;
 
   const placements: UltimateCodexPlacement[] = [];
   for (const key of PLANETS) {
@@ -513,7 +513,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   ]);
 
   const personalityEvidenceState =
-    typeof personality.evidenceState === "string" ? personality.evidenceState : null;
+    typeof personalityData.evidenceState === "string" ? personalityData.evidenceState : null;
   const personalityAssessed =
     personalityEvidenceState === "assessed" || personalityEvidenceState === "verified";
 
