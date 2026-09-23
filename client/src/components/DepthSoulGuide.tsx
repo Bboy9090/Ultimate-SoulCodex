@@ -180,6 +180,14 @@ export default function DepthSoulGuide({
   const [showTrace, setShowTrace] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(defaultEvidenceOpen);
 
+  const supportedPrimaryCount = model.primary.filter((layer) => !layer.unavailable).length;
+  const contradictionAvailable = model.primary.some(
+    (layer) => layer.key === "coreContradiction" && !layer.unavailable,
+  );
+  const actionAvailable = model.primary.some(
+    (layer) => layer.key === "action" && !layer.unavailable,
+  );
+
   const toggleGroup = (id: string) => {
     setOpenGroups((current) => {
       const next = new Set(current);
@@ -199,13 +207,13 @@ export default function DepthSoulGuide({
               <IconSparkles size={21} />
             </div>
             <div>
-              <p className="depth-guide-kicker">Clarity first · depth on demand</p>
-              <h2 id="depth-guide-title">Soul Guide</h2>
+              <p className="depth-guide-kicker">Signal · resonance · tension · choice</p>
+              <h2 id="depth-guide-title">Diamond Synthesis</h2>
             </div>
           </div>
           <p className="depth-guide-hero-lede">
-            One readable path through the strongest supported pattern, the tension inside it,
-            and the grounded move available now. Deeper interpretation stays one tap away.
+            Your strongest supported signals are refracted into one clear pattern: what reinforces,
+            what conflicts, what remains unknown, and what you can test in real life now.
           </p>
           <div className="depth-guide-hero-actions">
             <SupportPill confidence={model.overallConfidence} />
@@ -222,7 +230,8 @@ export default function DepthSoulGuide({
         </div>
 
         <div className="depth-guide-orbital-panel" aria-hidden="true">
-          <div className="depth-guide-orbital-core">
+          <div className="depth-guide-diamond-halo" />
+          <div className="depth-guide-orbital-core depth-guide-diamond-core">
             <IconSparkles size={26} />
           </div>
           <span className="depth-guide-ring depth-guide-ring-one" />
@@ -245,7 +254,35 @@ export default function DepthSoulGuide({
         </p>
       </div>
 
-      <div className="depth-guide-primary-grid" aria-label="Soul Guide clarity summary">
+      <div className="depth-guide-facet-rail" aria-label="Diamond synthesis status">
+        <div className="depth-guide-facet">
+          <span>Signal</span>
+          <strong>{model.evidence.totalEvidence}</strong>
+          <small>evidence items</small>
+        </div>
+        <div className="depth-guide-facet">
+          <span>Pattern</span>
+          <strong>{supportedPrimaryCount}/3</strong>
+          <small>core layers supported</small>
+        </div>
+        <div className="depth-guide-facet">
+          <span>Tension</span>
+          <strong>{contradictionAvailable ? "Mapped" : "Open"}</strong>
+          <small>{contradictionAvailable ? "supported contradiction" : "not enough support yet"}</small>
+        </div>
+        <div className="depth-guide-facet">
+          <span>Choice</span>
+          <strong>{actionAvailable ? "Ready" : "Open"}</strong>
+          <small>{actionAvailable ? "grounded action available" : "needs more support"}</small>
+        </div>
+        <div className="depth-guide-facet">
+          <span>Unknown</span>
+          <strong>{model.missingData.length}</strong>
+          <small>items withheld</small>
+        </div>
+      </div>
+
+      <div className="depth-guide-primary-grid" aria-label="Diamond Synthesis clarity summary">
         {model.primary.map((layer, index) => (
           <LayerCard
             key={layer.key}
@@ -408,6 +445,9 @@ export default function DepthSoulGuide({
         .depth-guide-secondary-button:focus-visible,.depth-guide-disclosure-button:focus-visible { outline:2px solid #d4a85f; outline-offset:3px; }
         .depth-guide-orbital-panel { position:relative; min-height:210px; display:flex; align-items:center; justify-content:center; }
         .depth-guide-orbital-core { position:relative; z-index:3; display:flex; align-items:center; justify-content:center; width:78px; height:78px; border-radius:50%; color:#e6bf77; background:radial-gradient(circle,rgba(212,168,95,.23),rgba(47,30,70,.58)); border:1px solid rgba(212,168,95,.42); box-shadow:0 0 45px rgba(212,168,95,.13); }
+        .depth-guide-diamond-core { width:72px; height:72px; border-radius:18px; transform:rotate(45deg); background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(212,168,95,.2) 35%,rgba(108,82,177,.24) 68%,rgba(61,169,181,.16)); box-shadow:0 0 52px rgba(190,160,255,.16),inset 0 0 24px rgba(255,255,255,.07); }
+        .depth-guide-diamond-core > * { transform:rotate(-45deg); }
+        .depth-guide-diamond-halo { position:absolute; width:116px; height:116px; transform:rotate(45deg); border:1px solid rgba(212,168,95,.16); border-radius:26px; box-shadow:0 0 70px rgba(128,96,200,.08); }
         .depth-guide-ring { position:absolute; border-radius:50%; border:1px solid rgba(168,145,255,.2); }
         .depth-guide-ring-one { width:142px; height:142px; }
         .depth-guide-ring-two { width:198px; height:198px; border-color:rgba(89,190,198,.16); }
@@ -419,6 +459,12 @@ export default function DepthSoulGuide({
         .depth-guide-orbit-label strong { color:#f3e6ce; font-size:.76rem; }
         .depth-guide-principle,.depth-guide-footer { display:flex; align-items:flex-start; gap:.55rem; padding:.82rem 1rem; border-radius:12px; color:#aaa4b8; background:rgba(255,255,255,.025); border:1px dashed rgba(255,255,255,.11); }
         .depth-guide-principle p,.depth-guide-footer p { margin:0; font-size:.77rem; line-height:1.6; }
+        .depth-guide-facet-rail { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.55rem; }
+        .depth-guide-facet { position:relative; overflow:hidden; min-height:92px; padding:.8rem .85rem; border:1px solid rgba(255,255,255,.085); border-radius:14px; background:linear-gradient(145deg,rgba(29,23,43,.86),rgba(13,10,22,.92)); }
+        .depth-guide-facet::after { content:""; position:absolute; width:52px; height:52px; right:-26px; top:-26px; transform:rotate(45deg); border:1px solid rgba(212,168,95,.14); background:rgba(168,145,255,.035); }
+        .depth-guide-facet span { display:block; color:#d4a85f; font-size:.61rem; font-weight:780; letter-spacing:.12em; text-transform:uppercase; }
+        .depth-guide-facet strong { display:block; margin-top:.38rem; color:#f4f1ff; font-family:var(--font-serif); font-size:1.08rem; line-height:1.05; }
+        .depth-guide-facet small { display:block; margin-top:.28rem; color:#8f899c; font-size:.62rem; line-height:1.3; }
         .depth-guide-primary-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.9rem; }
         .depth-guide-layer-card { position:relative; min-width:0; padding:1.15rem; border-radius:16px; border:1px solid rgba(255,255,255,.09); background:linear-gradient(145deg,rgba(25,20,38,.9),rgba(14,11,23,.9)); box-shadow:0 16px 42px rgba(0,0,0,.16); }
         .depth-guide-layer-card-0 { border-color:rgba(212,168,95,.34); background:linear-gradient(145deg,rgba(53,40,28,.42),rgba(15,12,22,.92)); }
@@ -470,6 +516,8 @@ export default function DepthSoulGuide({
           .depth-guide-hero { grid-template-columns:1fr; }
           .depth-guide-orbital-panel { min-height:180px; }
           .depth-guide-primary-grid,.depth-guide-disclosure-panel,.depth-guide-evidence-list { grid-template-columns:1fr; }
+          .depth-guide-facet-rail { grid-template-columns:repeat(2,minmax(0,1fr)); }
+          .depth-guide-facet:last-child { grid-column:1/-1; }
           .depth-guide-evidence-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
           .depth-guide-trace-grid { grid-template-columns:1fr; }
         }
