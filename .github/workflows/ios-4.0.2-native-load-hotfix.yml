@@ -52,6 +52,19 @@ jobs:
           npm run mobile:patch:ios
           npm run mobile:validate:ios
 
+      - name: Inspect native web payload
+        run: |
+          set -euo pipefail
+          {
+            echo "=== dist/public ==="
+            du -sh dist/public
+            find dist/public -maxdepth 2 -type f -print0 | xargs -0 du -h | sort -h | tail -n 80
+            echo "=== built index ==="
+            sed -n '1,220p' dist/public/index.html
+            echo "=== module scripts ==="
+            grep -oE '<script[^>]+src="[^"]+"' dist/public/index.html || true
+          } | tee native-web-payload.txt
+
       - name: Build simulator app
         run: |
           set -euo pipefail
@@ -248,6 +261,7 @@ jobs:
             simulator-probe.log
             installed-app-container.txt
             simulator-app-path.txt
+            native-web-payload.txt
             IOS-4.0.2-HOTFIX-RECEIPT.txt
           if-no-files-found: warn
           retention-days: 90
