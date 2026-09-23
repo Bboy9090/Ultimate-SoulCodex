@@ -1,5 +1,5 @@
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
-import { personalPlacementMeaning } from "@/lib/astrologyAtlas";
+import { atlasEntry, personalPlacementMeaning } from "@/lib/astrologyAtlas";
 import type { AtlasSign } from "@/lib/astrologyAtlas";
 
 const GLYPH: Record<string, string> = {
@@ -188,16 +188,26 @@ export default function VerifiedNatalChart({
           </details>
 
           <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
-            <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">All 12 verified house cusps</summary>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {synthesis.houseCusps.map((house) => (
-                <div key={house.house} className="flex justify-between text-sm">
-                  <span className="text-[var(--sc-stone)]">House {house.house}</span>
-                  <span className="font-semibold text-[var(--sc-ivory)]">
-                    {house.sign}{house.degree !== null ? " " + house.degree.toFixed(2) + "°" : ""}
-                  </span>
-                </div>
-              ))}
+            <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">All 12 verified house cusps · sign-on-house meanings</summary>
+            <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
+              A cusp sign describes the symbolic style of a house. It is not the same thing as a planet occupying that house.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {synthesis.houseCusps.map((house) => {
+                const meaning = atlasEntry(house.sign as AtlasSign, house.house);
+                return (
+                  <article key={house.house} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <strong className="text-[var(--sc-ivory)]">House {house.house} · {house.sign}</strong>
+                      <span className="text-xs text-[var(--sc-gold-bright)]">{house.degree !== null ? house.degree.toFixed(2) + "°" : ""}</span>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">{meaning.meaning}</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Possible strength:</strong> {meaning.gift}</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Tension:</strong> {meaning.tension}</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Practice:</strong> {meaning.practice}</p>
+                  </article>
+                );
+              })}
             </div>
           </details>
 
