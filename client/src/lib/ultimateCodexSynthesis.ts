@@ -128,9 +128,9 @@ export interface UltimateCodexStellium {
 export interface UltimateCodexSynthesis {
   version: "ultimate-codex-v1";
   coverage: UltimateCodexCoverage;
-  codexNumber: string;
-  codexId: string;
-  fingerprint: string;
+  codexNumber: string | null;
+  codexId: string | null;
+  fingerprint: string | null;
   identitySignature: string;
   derivedArchetype: string | null;
   dominantElement: string | null;
@@ -421,7 +421,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ...hdActivationSignature,
   ].filter((value): value is string => Boolean(value)).sort();
 
-  const { fingerprint, codexNumber, codexId } = identityHash(evidenceSignature);
+  const hashedIdentity = identityHash(evidenceSignature);
 
   const unresolved: string[] = [];
   if (placements.length < PLANETS.length) unresolved.push(`${PLANETS.length - placements.length} natal planet placement(s) are not verified and are excluded.`);
@@ -451,6 +451,10 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
         ? "partial"
         : "insufficient";
 
+  const fingerprint = coverage === "insufficient" ? null : hashedIdentity.fingerprint;
+  const codexNumber = coverage === "insufficient" ? null : hashedIdentity.codexNumber;
+  const codexId = coverage === "insufficient" ? null : hashedIdentity.codexId;
+
   const primaryStellium = stelliums[0] ?? null;
   const leadSign = primaryStellium?.kind === "sign"
     ? primaryStellium.key
@@ -470,7 +474,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const derivedArchetype =
     coverage === "insufficient" || identityParts.length < 2
       ? null
-      : `${identityParts.slice(0, 3).join(" × ")} · ${fingerprint.slice(0, 4).toUpperCase()}`;
+      : `${identityParts.slice(0, 3).join(" × ")} · ${(fingerprint ?? hashedIdentity.fingerprint).slice(0, 4).toUpperCase()}`;
 
   const resonances: string[] = [];
   if (dominantElement && lifePath && LIFE_PATH_AXIS[lifePath]) {
