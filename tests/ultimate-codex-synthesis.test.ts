@@ -72,6 +72,10 @@ test("Ultimate Codex detects verified stellium-style clusters and contradictions
   assert.match(result.codexNumber, /^\d{12}$/);
   assert.match(result.codexId, /^GCX-/);
   assert.ok(result.derivedArchetype);
+  assert.ok(result.systemSummary.some((row) => row.system === "Numerology" && /deterministic stable core/.test(row.status)));
+  assert.ok(result.systemSummary.some((row) => row.system === "Astrocartography" && /unavailable \/ excluded/.test(row.status)));
+  assert.ok(result.systemSummary.some((row) => row.system === "Palmistry" && /unavailable \/ excluded/.test(row.status)));
+  assert.ok(result.systemSummary.some((row) => row.system === "Personality assessments" && /not assessed \/ excluded/.test(row.status)));
 });
 
 test("Ultimate Codex fingerprint changes when governed chart evidence changes", () => {
