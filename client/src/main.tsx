@@ -23,3 +23,5 @@ void import("./appEntry")
     document.documentElement.dataset.soulcodexModule = "failed";
     window.__SOULCODEX_SHOW_BOOT_FAILURE__?.("app-module-load");
   });
+
+export {};
