@@ -18,7 +18,7 @@ type SymbolicPattern = {
 };
 
 const unresolvedArchetype: ArchetypeData = {
-  title: "Pattern Witness",
+  title: "Archetype unresolved",
   description:
     "Your Soul Codex is still assembling the governed layers needed for a responsible synthesis. No substitute archetype is assigned while those layers are unresolved.",
   strengths: ["Self-observation", "Curiosity", "Patience with uncertainty"],
