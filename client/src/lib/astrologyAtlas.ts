@@ -72,6 +72,52 @@ export function personalPlacementMeaning(body: string, sign: AtlasSign, house: n
   };
 }
 
+const MAJOR_ASPECT_MEANINGS: Record<string, { relation: string; integration: string }> = {
+  conjunction: {
+    relation: "two symbolic functions operating in close conjunction, often making them harder to separate in lived experience",
+    integration: "Name what each function wants before deciding whether they need to act together in this situation.",
+  },
+  opposition: {
+    relation: "two symbolic functions facing each other across a polarity, which can feel like alternating priorities or projection across relationships",
+    integration: "Give each side a legitimate job and look for a sequence or agreement that prevents one side from erasing the other.",
+  },
+  trine: {
+    relation: "two symbolic functions linked through an easier traditional flow, which can make a capacity feel natural enough to be overlooked",
+    integration: "Use the ease deliberately and add a concrete aim so familiarity becomes skill rather than autopilot.",
+  },
+  square: {
+    relation: "two symbolic functions in a traditional friction aspect, which can create pressure to act, choose, or develop a new coordination",
+    integration: "Identify the non-negotiable need on each side, then choose a behavior that serves the current context instead of forcing a permanent winner.",
+  },
+  sextile: {
+    relation: "two symbolic functions connected through a traditional opportunity aspect that tends to become useful when consciously engaged",
+    integration: "Choose one small action that lets both functions participate instead of assuming the potential will activate by itself.",
+  },
+};
+
+export function majorAspectMeaning(
+  planet1: string,
+  aspect: string,
+  planet2: string,
+  orb: number,
+) {
+  const first = PLANET_FUNCTIONS[planet1];
+  const second = PLANET_FUNCTIONS[planet2];
+  const relation = MAJOR_ASPECT_MEANINGS[aspect.toLowerCase()];
+  if (!first || !second || !relation || !Number.isFinite(orb) || orb < 0) {
+    throw new RangeError("Choose two supported planetary functions and a governed major aspect.");
+  }
+  const firstName = titleBody(planet1);
+  const secondName = titleBody(planet2);
+  return {
+    title: `${firstName} ${aspect.toLowerCase()} ${secondName}`,
+    geometry: `${aspect.toLowerCase()} · ${orb.toFixed(2)}° orb`,
+    synthesis: `Symbolically, ${firstName} (${first.function}) and ${secondName} (${second.function}) are shown as ${relation.relation}.`,
+    question: `When ${firstName} and ${secondName} both matter, what does each function need from the other instead of from avoidance or overuse?`,
+    practice: relation.integration,
+  };
+}
+
 export function personalAngleMeaning(body: "rising" | "midheaven", sign: AtlasSign) {
   const point = PLANET_FUNCTIONS[body];
   if (!point) throw new RangeError('Choose a supported angle.');
