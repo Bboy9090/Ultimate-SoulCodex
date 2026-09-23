@@ -32,9 +32,11 @@ export interface OfflineAstrologyData {
 
 export interface OfflineNumerologyData {
   lifePath: number;
+  birthday: number;
   expression: number;
   soulUrge: number;
   personality: number;
+  maturity: number;
   personalYear: number;
   interpretations: Record<string, string>;
 }
@@ -255,17 +257,21 @@ function calculateAstrology(input: OfflineBirthInput): OfflineAstrologyData {
 function calculateNumerology(input: OfflineBirthInput, currentYear: number): OfflineNumerologyData {
   const { year, month, day } = parseDate(input.birthDate);
   const lifePath = reduceNumber(day + month + year);
+  const birthday = reduceNumber(day);
   const expression = nameNumber(input.name, "all");
   const soulUrge = nameNumber(input.name, "vowels");
   const personality = nameNumber(input.name, "consonants");
+  const maturity = reduceNumber(lifePath + expression);
   const personalYear = reduceNumber(day + month + currentYear);
   return {
-    lifePath, expression, soulUrge, personality, personalYear,
+    lifePath, birthday, expression, soulUrge, personality, maturity, personalYear,
     interpretations: {
       lifePath: `Life Path ${lifePath}: ${LIFE_PATH_TRAITS[lifePath]?.theme ?? "an individual growth pattern"}.`,
+      birthday: `Birthday ${birthday}: deterministic reduction of the calendar day, used here only as symbolic reflection.`,
       expression: `Expression ${expression}: a symbolic description of how talents may be directed.`,
       soulUrge: `Soul Urge ${soulUrge}: a symbolic description of inner motivation.`,
       personality: `Personality ${personality}: a symbolic description of first impressions.`,
+      maturity: `Maturity ${maturity}: deterministic combination of Life Path and Expression, used here only as symbolic reflection.`,
       personalYear: `Personal Year ${personalYear}: a reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
   };
