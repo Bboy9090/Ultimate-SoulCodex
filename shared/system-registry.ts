@@ -108,9 +108,9 @@ export const SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY: readonly SoulCodexRegistryEn
     label: "Personality assessments · MBTI / Enneagram / similar",
     family: "Assessment",
     state: "user-assessed",
-    mayInfluenceUltimateCodex: true,
-    evidenceContract: "explicit user assessment state",
-    rule: "May support reflection only when the user actually completed or supplied the assessment; never infer a type from birth data.",
+    mayInfluenceUltimateCodex: false,
+    evidenceContract: "explicit user assessment state + normalized assessment schema not yet promoted",
+    rule: "May be inspected as user-supplied supporting context, but does not enter the stable Codex fingerprint until a normalized assessment-evidence contract is promoted. Never infer a type from birth data.",
   },
   {
     id: "moral-compass",
