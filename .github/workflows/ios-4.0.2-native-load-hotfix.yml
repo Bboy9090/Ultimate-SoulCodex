@@ -119,16 +119,11 @@ jobs:
               print(boot.stdout)
               print(boot.stderr, file=sys.stderr)
 
-          booted = False
-          for _ in range(45):
-              state = run(["xcrun", "simctl", "list", "devices"], timeout=10, check=False)
-              line = next((line for line in state.stdout.splitlines() if udid in line), "")
-              if "(Booted)" in line:
-                  booted = True
-                  break
-              time.sleep(2)
-          if not booted:
-              raise SystemExit("SIMULATOR_BOOT_TIMEOUT_90S")
+          try:
+              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=120, check=True)
+              print(bootstatus.stdout)
+          except SystemExit as exc:
+              raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
 
           app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
           if not pathlib.Path(app_path).is_dir():
