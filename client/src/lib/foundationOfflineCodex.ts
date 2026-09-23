@@ -1214,9 +1214,18 @@ export function synthesizeVerifiedFoundationProfile(
   };
 }
 
+const LEGACY_FOUNDATION_ARCHETYPE_TITLES = new Set([
+  "Ember Initiator",
+  "Grounded Builder",
+  "Pattern Messenger",
+  "Depth Navigator",
+]);
+
 /**
  * Repair deterministic local synthesis created by the former timezone-sensitive
- * date parser. Online astronomy evidence is deliberately preserved verbatim.
+ * date parser and migrate the former four-title preliminary archetype scheme.
+ * Online astronomy evidence is deliberately preserved verbatim and, when
+ * available, is re-applied to the rebuilt local foundation.
  */
 export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfile>(
   profile: T,
@@ -1229,7 +1238,9 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
     return profile;
   }
 
-  if (profile.numerologyData?.lifePath === expectedLifePath) return profile;
+  const lifePathNeedsRepair = profile.numerologyData?.lifePath !== expectedLifePath;
+  const archetypeNeedsRepair = LEGACY_FOUNDATION_ARCHETYPE_TITLES.has(profile.archetypeData?.title ?? "");
+  if (!lifePathNeedsRepair && !archetypeNeedsRepair) return profile;
 
   const repairedAt = options.repairedAt ?? new Date().toISOString();
   const rebuilt = generateFoundationOfflineCodexProfile(
@@ -1249,13 +1260,33 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
     },
   );
 
-  return {
-    ...profile,
-    numerologyData: rebuilt.numerologyData,
+  const verifiedAstrologyData = (profile as T & { verifiedAstrologyData?: VerifiedAstrologyForSynthesis }).verifiedAstrologyData;
+  let repairedNarrative = {
     archetypeData: rebuilt.archetypeData,
     biography: rebuilt.biography,
     dailyGuidance: rebuilt.dailyGuidance,
     depthInterpretation: rebuilt.depthInterpretation,
+  };
+
+  if (verifiedAstrologyData) {
+    try {
+      repairedNarrative = synthesizeVerifiedFoundationProfile(
+        rebuilt,
+        verifiedAstrologyData,
+        repairedAt,
+        profile.humanDesignData ?? undefined,
+      );
+    } catch {
+      // Do not discard verified evidence or corrupt a stored profile when a
+      // legacy snapshot cannot be safely re-synthesized.
+      return profile;
+    }
+  }
+
+  return {
+    ...profile,
+    numerologyData: rebuilt.numerologyData,
+    ...repairedNarrative,
     updatedAt: repairedAt,
   };
 }
