@@ -112,7 +112,22 @@ function numerologyPatternFor(value: number | null | undefined): Pattern | null 
   return LIFE_PATHS[value] ?? null;
 }
 
-function archetypeFor(sign: string, lifePath: number) {
+function preliminarySignatureCode(values: Array<string | number | null | undefined>): string {
+  const canonical = values.map((value) => String(value ?? "")).join("|");
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < canonical.length; index += 1) {
+    hash ^= canonical.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0").slice(0, 6).toUpperCase();
+}
+
+function archetypeFor(
+  sign: string,
+  lifePath: number,
+  expression?: number | null,
+  soulUrge?: number | null,
+) {
   const element = elementForSign(sign);
   const signPattern = signPatternFor(sign);
   if (!element || !signPattern) {
@@ -120,36 +135,54 @@ function archetypeFor(sign: string, lifePath: number) {
   }
 
   const path = numerologyPatternFor(lifePath);
-  const titles: Record<"Fire" | "Earth" | "Air" | "Water", string> = {
-    Fire: "Ember Initiator",
-    Earth: "Grounded Builder",
-    Air: "Pattern Messenger",
-    Water: "Depth Navigator",
-  };
+  const expressionPattern = numerologyPatternFor(expression);
+  const soulUrgePattern = numerologyPatternFor(soulUrge);
+  const code = preliminarySignatureCode([
+    sign,
+    lifePath,
+    expressionPattern ? expression : null,
+    soulUrgePattern ? soulUrge : null,
+  ]);
+  const supportedNumberLabels = [
+    path ? `Life Path ${lifePath}` : null,
+    expressionPattern ? `Expression ${expression}` : null,
+    soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
+  ].filter((value): value is string => Boolean(value));
 
-  if (!path) {
-    return {
-      title: titles[element],
-      description: `${element}-sign symbolism is supported here. Numerology value ${lifePath} is preserved as data but excluded from interpretive synthesis because it is outside the governed Life Path set.`,
-      strengths: [signPattern.gift],
-      shadows: [signPattern.shadow],
-      themes: [element, "Numerology interpretation unavailable", "Local symbolic synthesis"],
-      guidance: signPattern.action,
-      tarotCards: {
-        card1: "Unresolved locally",
-        card2: "Unresolved locally",
-        interpretation: "Tarot birth-card interpretation is not used as evidence in the Foundation local profile.",
-      },
-    };
-  }
+  const strengths = Array.from(new Set([
+    signPattern.gift,
+    path?.gift,
+    expressionPattern?.gift,
+    soulUrgePattern?.gift,
+  ].filter((value): value is string => Boolean(value))));
+  const shadows = Array.from(new Set([
+    signPattern.shadow,
+    path?.shadow,
+    expressionPattern?.shadow,
+    soulUrgePattern?.shadow,
+  ].filter((value): value is string => Boolean(value))));
+  const guidance = [
+    path?.action,
+    expressionPattern?.action,
+    soulUrgePattern?.action,
+    signPattern.action,
+  ].filter((value): value is string => Boolean(value)).slice(0, 3).join(" ");
 
   return {
-    title: titles[element],
-    description: `${element}-sign symbolism and Life Path ${lifePath} are the supported local ingredients in this synthesis. It is a reflective pattern, not a verified personality diagnosis.`,
-    strengths: [signPattern.gift, path.gift],
-    shadows: [signPattern.shadow, path.shadow],
-    themes: [element, `Life Path ${lifePath}`, "Local symbolic synthesis"],
-    guidance: `${path.action} ${signPattern.action}`,
+    title: `Foundation Signature · ${sign} / ${supportedNumberLabels.join(" / ") || "numerology unresolved"} · ${code}`,
+    description:
+      `This preliminary signature uses only supported local evidence: ${sign} Sun symbolism` +
+      (supportedNumberLabels.length ? ` plus ${supportedNumberLabels.join(", ")}.` : ".") +
+      ` It is deliberately not a final archetype; Moon, Rising, houses, aspects, Human Design, and other verified systems may materially change the combined Codex.`,
+    strengths,
+    shadows,
+    themes: [
+      `${sign} Sun`,
+      element,
+      ...supportedNumberLabels,
+      "Preliminary local symbolic synthesis",
+    ],
+    guidance,
     tarotCards: {
       card1: "Unresolved locally",
       card2: "Unresolved locally",
@@ -224,7 +257,7 @@ export function generateFoundationOfflineCodexProfile(
   if (!pathPattern) {
     throw new Error(`Calculated Life Path ${lifePath} is outside the governed numerology set.`);
   }
-  const archetypeData = archetypeFor(sunSign, lifePath);
+  const archetypeData = archetypeFor(sunSign, lifePath, expression, soulUrge);
 
   const numerologyData = {
     lifePath,
@@ -1150,7 +1183,7 @@ export function synthesizeVerifiedFoundationProfile(
     `${supportedNumerologySummary.length ? `${supportedNumerologySummary.join(", ")} add governed deterministic numerology layers. ` : "Unsupported numerology values are retained as data but excluded from interpretive synthesis. "}` +
     `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
 
-  const cleanArchetype = archetypeFor(sun, lifePath);
+  const cleanArchetype = archetypeFor(sun, lifePath, expression, soulUrge);
   const enrichedArchetype = {
     ...cleanArchetype,
     description:
