@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: soulcodex-ios-4-0-2-hotfix
+  group: soulcodex-ios-4-0-2-hotfix-${{ github.sha }}
   cancel-in-progress: true
 
 env:
