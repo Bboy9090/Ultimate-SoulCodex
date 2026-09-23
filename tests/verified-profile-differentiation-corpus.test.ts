@@ -55,6 +55,9 @@ const genericTerms = [
   "balance",
   "boundaries",
   "sensitivity",
+  "alignment",
+  "purpose",
+  "intuitive",
 ];
 
 function normalize(text: string): string {
@@ -256,8 +259,8 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
       const hits = texts.filter((text) => text.includes(term)).length;
       const ratio = hits / texts.length;
       assert.ok(
-        ratio <= 0.45,
-        `${term} appears in ${(ratio * 100).toFixed(1)}% of verified profiles`,
+        ratio <= 0.35,
+        `${term} appears in ${(ratio * 100).toFixed(1)}% of verified profiles; Diamond Way budget is 35%`,
       );
     }
   });
