@@ -24,7 +24,10 @@ function profile(moonSign = "Virgo") {
       planets,
       planetaryHouses,
       rising: { verificationStatus: "verified", sign: "Scorpio", internalCandidate: { longitude: 222 } },
-      midheaven: { verificationStatus: "verified", sign: "Leo", longitude: 130 },
+      midheaven: { verificationStatus: "verified", sign: "Leo", longitude: 130, degree: 10 },
+      northNode: { verificationStatus: "verified", sign: "Taurus", longitude: 48, degree: 18, house: 7 },
+      southNode: { verificationStatus: "verified", sign: "Scorpio", longitude: 228, degree: 18, house: 1 },
+      chiron: { verificationStatus: "verified", sign: "Cancer", longitude: 105, degree: 15, house: 4 },
       houses: Array.from({ length: 12 }, (_, index) => ({
         verificationStatus: "verified",
         house: index + 1,
@@ -56,6 +59,9 @@ test("Ultimate Codex detects verified stellium-style clusters and contradictions
   const result = buildUltimateCodexSynthesis(profile());
   assert.equal(result.placements.length, 10);
   assert.equal(result.houseCusps.length, 12);
+  assert.equal(result.supportingPoints.length, 5);
+  assert.equal(result.coverage, "complete");
+  assert.ok(result.evidenceSignature.some((value) => value.startsWith("point:northNode:Taurus")));
   assert.ok(result.stelliums.some((cluster) => cluster.kind === "sign" && cluster.key === "Virgo"));
   assert.ok(result.stelliums.some((cluster) => cluster.kind === "house" && cluster.key === "10"));
   assert.ok(result.tensions.some((value) => /square/i.test(value)));
@@ -81,4 +87,17 @@ test("Ultimate Codex fails closed instead of manufacturing unsupported systems",
   assert.equal(result.coverage, "insufficient");
   assert.equal(result.derivedArchetype, null);
   assert.ok(result.unresolved.some((value) => /Human Design/i.test(value)));
+});
+
+
+test("verified supporting points alter the Codex fingerprint", () => {
+  const first = profile();
+  const second = profile();
+  second.verifiedAstrologyData.northNode.sign = "Gemini";
+  second.verifiedAstrologyData.northNode.longitude = 72;
+  second.verifiedAstrologyData.northNode.degree = 12;
+  const a = buildUltimateCodexSynthesis(first);
+  const b = buildUltimateCodexSynthesis(second);
+  assert.notEqual(a.fingerprint, b.fingerprint);
+  assert.notEqual(a.codexNumber, b.codexNumber);
 });
