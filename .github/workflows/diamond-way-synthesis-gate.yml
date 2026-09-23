@@ -59,7 +59,7 @@ jobs:
             packages/core/soul-guide/__tests__/depth-ui-source-contract.test.ts \
             tests/reflection-lens.test.ts \
             packages/core/soul-guide/__tests__/depth-soul-guide.test.ts \
-            tests/depth-engine.test.ts
+            tests/diamond-depth-engine.test.ts
 
       - name: Typecheck
         run: npm run check
