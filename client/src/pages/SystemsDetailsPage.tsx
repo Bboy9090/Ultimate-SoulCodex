@@ -227,13 +227,16 @@ export default function SystemsDetailsPage() {
                 <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">The arithmetic is deterministic under Soul Codex&apos;s documented reduction rules. The spiritual or psychological meaning remains symbolic.</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <NumberRow label="Life Path" value={profile.lifePathNumber ?? numerology.lifePath} />
+              <NumberRow label="Birthday" value={numerology.birthday} />
               <NumberRow label="Expression" value={numerology.expression} />
               <NumberRow label="Soul Urge" value={numerology.soulUrge} />
               <NumberRow label="Personality" value={numerology.personality} />
+              <NumberRow label="Maturity" value={numerology.maturity} />
               <NumberRow label="Personal Year" value={numerology.personalYear} />
             </div>
+            <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path, Birthday, Expression, Soul Urge, Personality, and Maturity are stable deterministic inputs for the governed identity layer. Personal Year is a changing cycle and is kept out of the permanent Codex fingerprint.</p>
             <div className="mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 text-xs leading-6 text-[var(--sc-stone)]">
               <strong className="text-[var(--sc-ivory)]">Why another app might show a different Life Path:</strong> systems can differ in date normalization, reduction order, and treatment of master numbers. Soul Codex preserves 11, 22, and 33 where the current formula defines them instead of silently reducing them.
             </div>
