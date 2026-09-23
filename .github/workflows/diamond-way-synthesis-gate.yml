@@ -48,6 +48,12 @@ jobs:
             echo "Hidden Virgo fallback detected."
             exit 1
           fi
+          for forbidden in "|| 'Architect'" "|| 'Guardian'" "|| 'Observer'" "Legacy: Progressive Impact" "['Act', 'Learn', 'Adapt']"; do
+            if grep -Fq "$forbidden" server/services/galactic-code/generator.ts; then
+              echo "Legacy Galactic Code fallback detected: $forbidden"
+              exit 1
+            fi
+          done
 
       - name: Diamond Way regression suite
         run: |
@@ -59,7 +65,9 @@ jobs:
             packages/core/soul-guide/__tests__/depth-ui-source-contract.test.ts \
             tests/reflection-lens.test.ts \
             packages/core/soul-guide/__tests__/depth-soul-guide.test.ts \
-            tests/diamond-depth-engine.test.ts
+            tests/diamond-depth-engine.test.ts \
+            tests/ultimate-codex-synthesis.test.ts \
+            tests/ultimate-codex-ui-contract.test.ts
 
       - name: Typecheck
         run: npm run check
@@ -74,6 +82,8 @@ jobs:
             echo "SHA=$GITHUB_SHA"
             echo "policy=no-hidden-life-path-9-fallback"
             echo "policy=no-hidden-virgo-fallback"
+            echo "policy=no-legacy-galactic-archetype-fallbacks"
+            echo "policy=full-natal-hd-ultimate-codex-contract"
             echo "goal=materially-distinct-evidence-bound-synthesis"
           } > DIAMOND-WAY-SYNTHESIS-RECEIPT.txt
 
