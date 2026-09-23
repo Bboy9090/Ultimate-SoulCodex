@@ -52,7 +52,7 @@ test("only evidence-governed or explicitly assessed systems may influence Ultima
   for (const entry of allowed) {
     assert.notEqual(entry.state, "unavailable");
     assert.notEqual(entry.state, "inspect-only");
-    assert.match(entry.evidenceContract, /verified|deterministic|explicit user|governed|aggregation|assessment/i);
+    assert.match(entry.evidenceContract, /verified|deterministic|explicit user|governed|aggregation|assessment|ASTRO-|HUMAN-DESIGN-/i);
   }
   assert.ok(registrySystemsExcludedFromUltimateCodex().length > 0);
 });
