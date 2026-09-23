@@ -33,9 +33,11 @@ export type MirrorProfile = {
 
 export type NumerologyProfile = {
   lifePath: number;
+  birthday?: number;
   expression?: number;
   soulUrge?: number;
   personality?: number;
+  maturity?: number;
   personalYear?: number;
 };
 
