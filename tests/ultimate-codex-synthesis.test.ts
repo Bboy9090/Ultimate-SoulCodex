@@ -1,0 +1,84 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { buildUltimateCodexSynthesis } from "../client/src/lib/ultimateCodexSynthesis.ts";
+
+function profile(moonSign = "Virgo") {
+  const signs: Record<string, string> = {
+    sun: "Virgo", moon: moonSign, mercury: "Virgo", venus: "Libra", mars: "Scorpio",
+    jupiter: "Capricorn", saturn: "Aquarius", uranus: "Capricorn", neptune: "Capricorn", pluto: "Scorpio",
+  };
+  const signStart: Record<string, number> = {
+    Aries:0,Taurus:30,Gemini:60,Cancer:90,Leo:120,Virgo:150,Libra:180,Scorpio:210,Sagittarius:240,Capricorn:270,Aquarius:300,Pisces:330,
+  };
+  const planets: Record<string, any> = {};
+  const planetaryHouses: Record<string, number> = {};
+  Object.keys(signs).forEach((key, index) => {
+    const sign = signs[key];
+    planets[key] = { verificationStatus: "verified", sign, internalCandidate: { longitude: signStart[sign] + 3 + index } };
+    planetaryHouses[key] = key === "sun" || key === "moon" || key === "mercury" ? 10 : ((index + 2) % 12) + 1;
+  });
+
+  const zodiac = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+  return {
+    verifiedAstrologyData: {
+      planets,
+      planetaryHouses,
+      rising: { verificationStatus: "verified", sign: "Scorpio", internalCandidate: { longitude: 222 } },
+      midheaven: { verificationStatus: "verified", sign: "Leo", longitude: 130 },
+      houses: Array.from({ length: 12 }, (_, index) => ({
+        verificationStatus: "verified",
+        house: index + 1,
+        sign: zodiac[index],
+        degree: 12,
+        longitude: index * 30 + 12,
+      })),
+      aspects: [
+        { planet1: "sun", planet2: "mars", aspect: "square", orb: 2.1 },
+        { planet1: "moon", planet2: "venus", aspect: "trine", orb: 1.2 },
+      ],
+    },
+    numerologyData: { lifePath: 9, expression: 5, soulUrge: 2, personality: 7 },
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      definition: "No Definition",
+      centers: { defined: [], undefined: ["Head","Ajna","Throat","G","Heart","Spleen","Solar Plexus","Sacral","Root"] },
+      channels: [],
+      activatedGates: [18, 28, 41],
+    },
+  };
+}
+
+test("Ultimate Codex detects verified stellium-style clusters and contradictions", () => {
+  const result = buildUltimateCodexSynthesis(profile());
+  assert.equal(result.placements.length, 10);
+  assert.equal(result.houseCusps.length, 12);
+  assert.ok(result.stelliums.some((cluster) => cluster.kind === "sign" && cluster.key === "Virgo"));
+  assert.ok(result.stelliums.some((cluster) => cluster.kind === "house" && cluster.key === "10"));
+  assert.ok(result.tensions.some((value) => /square/i.test(value)));
+  assert.ok(result.tensions.some((value) => /Expression 5/i.test(value)));
+  assert.match(result.codexNumber, /^\d{12}$/);
+  assert.match(result.codexId, /^GCX-/);
+  assert.ok(result.derivedArchetype);
+});
+
+test("Ultimate Codex fingerprint changes when governed chart evidence changes", () => {
+  const a = buildUltimateCodexSynthesis(profile("Virgo"));
+  const b = buildUltimateCodexSynthesis(profile("Libra"));
+  assert.notEqual(a.fingerprint, b.fingerprint);
+  assert.notEqual(a.codexNumber, b.codexNumber);
+});
+
+test("Ultimate Codex fails closed instead of manufacturing unsupported systems", () => {
+  const result = buildUltimateCodexSynthesis({
+    astrologyData: {},
+    numerologyData: { lifePath: 9 },
+    humanDesignData: { status: "calculated_unverified", type: "Reflector" },
+  });
+  assert.equal(result.coverage, "insufficient");
+  assert.equal(result.derivedArchetype, null);
+  assert.ok(result.unresolved.some((value) => /Human Design/i.test(value)));
+});
