@@ -4,7 +4,7 @@ import * as geoTz from 'geo-tz';
 import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core/evidence-ledger';
 
 // Human Design Gates mapped to their correct centers and meanings
-const HD_GATES = {
+export const HD_GATES = {
   1: { name: "The Creative", center: "G", keywords: ["Self-expression", "Creativity", "Leadership"] },
   2: { name: "The Receptive", center: "G", keywords: ["Direction", "Higher knowing", "Love of self"] },
   3: { name: "Ordering", center: "Sacral", keywords: ["Innovation", "Change", "New order"] },
@@ -72,7 +72,7 @@ const HD_GATES = {
 };
 
 // Human Design Centers
-const HD_CENTERS = {
+export const HD_CENTERS = {
   "Head": { color: "#FFE4B5", description: "Mental pressure and inspiration" },
   "Ajna": { color: "#90EE90", description: "Mental awareness and concepts" },
   "Throat": { color: "#DDA0DD", description: "Communication and manifestation" },
