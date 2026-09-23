@@ -6,6 +6,7 @@ import {
   type InterpretationClaimKind,
   type InterpretationConfidence,
 } from "@soulcodex/core";
+import { REFLECTION_LENS_COPY, readReflectionLens } from "@/lib/reflectionLens";
 import {
   IconChevronDown,
   IconChevronRight,
@@ -179,6 +180,8 @@ export default function DepthSoulGuide({
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(defaultOpenGroupIds));
   const [showTrace, setShowTrace] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(defaultEvidenceOpen);
+  const [reflectionLens] = useState(() => readReflectionLens());
+  const lensCopy = REFLECTION_LENS_COPY[reflectionLens];
 
   const supportedPrimaryCount = model.primary.filter((layer) => !layer.unavailable).length;
   const contradictionAvailable = model.primary.some(
@@ -207,16 +210,14 @@ export default function DepthSoulGuide({
               <IconSparkles size={21} />
             </div>
             <div>
-              <p className="depth-guide-kicker">Signal · resonance · tension · choice</p>
+              <p className="depth-guide-kicker">{lensCopy.kicker}</p>
               <h2 id="depth-guide-title">Diamond Synthesis</h2>
             </div>
           </div>
-          <p className="depth-guide-hero-lede">
-            Your strongest supported signals are refracted into one clear pattern: what reinforces,
-            what conflicts, what remains unknown, and what you can test in real life now.
-          </p>
+          <p className="depth-guide-hero-lede">{lensCopy.lede}</p>
           <div className="depth-guide-hero-actions">
             <SupportPill confidence={model.overallConfidence} />
+            <span className="depth-guide-lens-pill">{lensCopy.label} lens</span>
             <button
               type="button"
               className="depth-guide-secondary-button"
@@ -248,10 +249,7 @@ export default function DepthSoulGuide({
 
       <div className="depth-guide-principle">
         <IconInfo size={15} aria-hidden="true" />
-        <p>
-          Interpretations are symbolic and evidence-traced. Support describes the quality and
-          consistency of source material, not scientific proof or a fixed verdict about you.
-        </p>
+        <p>{lensCopy.principle}</p>
       </div>
 
       <div className="depth-guide-facet-rail" aria-label="Diamond synthesis status">
@@ -433,7 +431,8 @@ export default function DepthSoulGuide({
         .depth-guide-hero h2 { margin:0; font-family:var(--font-serif); font-size:clamp(1.65rem,4vw,2.45rem); line-height:1; }
         .depth-guide-hero-lede { max-width:720px; margin:1rem 0 1.1rem; color:rgba(247,240,228,.7); font-size:.95rem; line-height:1.72; }
         .depth-guide-hero-actions { flex-wrap:wrap; }
-        .depth-guide-support-pill,.depth-guide-claim-pill { display:inline-flex; align-items:center; border:1px solid; border-radius:999px; padding:.28rem .62rem; font-size:.66rem; font-weight:750; letter-spacing:.035em; white-space:nowrap; }
+        .depth-guide-support-pill,.depth-guide-claim-pill,.depth-guide-lens-pill { display:inline-flex; align-items:center; border:1px solid; border-radius:999px; padding:.28rem .62rem; font-size:.66rem; font-weight:750; letter-spacing:.035em; white-space:nowrap; }
+        .depth-guide-lens-pill { color:#e9dcff; border-color:rgba(168,145,255,.28); background:rgba(168,145,255,.08); }
         .depth-guide-claim-pill { border-color:rgba(255,255,255,.14); color:#aaa4b8; background:rgba(255,255,255,.04); }
         .depth-guide-claim-observed { color:#72d6b7; border-color:rgba(114,214,183,.34); }
         .depth-guide-claim-derived { color:#7fd6f2; border-color:rgba(127,214,242,.34); }
