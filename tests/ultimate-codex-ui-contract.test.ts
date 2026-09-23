@@ -19,6 +19,9 @@ test("natal chart exposes planets houses degrees cusps and aspects without sampl
   assert.match(natal, /All 12 verified house cusps/);
   assert.match(natal, /verified major aspect/);
   assert.match(natal, /degree unavailable/);
+  assert.match(natal, /Placement meanings · planet \+ sign \+ house/);
+  assert.match(natal, /Reflection:/);
+  assert.match(natal, /Practice:/);
   assert.doesNotMatch(natal, /sample planet|random aspect/i);
 });
 
@@ -27,6 +30,8 @@ test("Human Design chart exposes verified centers channels gates and activations
   assert.match(bodygraph, /Defined channels/);
   assert.match(bodygraph, /Activated gates/);
   assert.match(bodygraph, /Conscious and unconscious activations/);
+  assert.match(bodygraph, /What each center represents/);
+  assert.match(bodygraph, /names, centers, and keywords/);
   assert.match(bodygraph, /Variables and Incarnation Cross naming remain outside the verified core/);
 });
 
@@ -35,6 +40,7 @@ test("combined Codex explains resonance tension coping stelliums and unresolved 
   assert.match(panel, /What works against or pulls differently/);
   assert.match(panel, /How to cope when the systems pull in different directions/);
   assert.match(panel, /Stellium \/ concentration ledger/);
+  assert.match(panel, /Verified angles, Nodes &amp; Chiron/);
   assert.match(panel, /Unresolved ledger/);
   assert.match(panel, /not scientific measurements of a soul/i);
 });
