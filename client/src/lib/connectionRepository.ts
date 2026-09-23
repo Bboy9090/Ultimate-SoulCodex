@@ -20,7 +20,8 @@ export type ConnectionPlacement = { key: ConnectionPlacementKey; sign: AtlasSign
 export type SavedConnection = {
   id: string;
   name: string;
-  sunSign: AtlasSign;
+  phone?: string;
+  sunSign?: AtlasSign;
   placements?: ConnectionPlacement[];
   createdAt: string;
   updatedAt: string;
@@ -35,6 +36,18 @@ function isPlacementKey(value: unknown): value is ConnectionPlacementKey {
 
 function isHouse(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
+}
+
+function cleanPhone(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const safe = trimmed.replace(/[^\d()+\-\s.]/g, "").replace(/\s+/g, " ").slice(0, 32).trim();
+  return safe || undefined;
+}
+
+function phoneDigits(value: string | undefined): string {
+  return value?.replace(/\D/g, "") ?? "";
 }
 
 export function placementLabel(key: ConnectionPlacementKey): string {
@@ -69,14 +82,17 @@ export function parseConnections(raw: string | null): SavedConnection[] {
       if (
         typeof row?.id !== "string" || row.id.length === 0 ||
         typeof row?.name !== "string" || row.name.trim().length === 0 || row.name.trim().length > 80 ||
-        !ATLAS_SIGNS.includes(row?.sunSign) ||
         typeof row?.createdAt !== "string" || typeof row?.updatedAt !== "string"
       ) return [];
+      const hasSunSign = row.sunSign !== undefined && row.sunSign !== null && row.sunSign !== "";
+      if (hasSunSign && !ATLAS_SIGNS.includes(row.sunSign)) return [];
       const placements = sanitizeConnectionPlacements(row.placements);
+      const phone = cleanPhone(row.phone);
       return [{
         id: row.id,
         name: row.name.trim(),
-        sunSign: row.sunSign,
+        ...(phone ? { phone } : {}),
+        ...(hasSunSign ? { sunSign: row.sunSign as AtlasSign } : {}),
         ...(placements.length > 0 ? { placements } : {}),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -93,12 +109,13 @@ export function loadConnections(): SavedConnection[] {
   return parseConnections(storage()?.getItem(KEY) ?? null);
 }
 
-export function saveConnection(input: { name: string; sunSign: AtlasSign; placements?: ConnectionPlacement[] }): SavedConnection[] {
+export function saveConnection(input: { name: string; phone?: string; sunSign?: AtlasSign | ""; placements?: ConnectionPlacement[] }): SavedConnection[] {
   const target = storage();
   if (!target) throw new Error("Connections are available on this device only.");
   const name = input.name.trim();
+  const phone = cleanPhone(input.phone);
   if (!name || name.length > 80) throw new Error("Enter a name between 1 and 80 characters.");
-  if (!ATLAS_SIGNS.includes(input.sunSign)) throw new Error("Choose a valid Sun sign.");
+  if (input.sunSign && !ATLAS_SIGNS.includes(input.sunSign)) throw new Error("Choose a valid Sun sign.");
   const current = loadConnections();
   if (current.length >= LIMIT) throw new Error(`This device can store up to ${LIMIT} connections.`);
   const timestamp = new Date().toISOString();
@@ -106,7 +123,8 @@ export function saveConnection(input: { name: string; sunSign: AtlasSign; placem
   const connection: SavedConnection = {
     id: crypto.randomUUID(),
     name,
-    sunSign: input.sunSign,
+    ...(phone ? { phone } : {}),
+    ...(input.sunSign ? { sunSign: input.sunSign } : {}),
     ...(placements.length > 0 ? { placements } : {}),
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -142,6 +160,26 @@ export function removeConnection(id: string): SavedConnection[] {
 export function findConnectionById(connections: SavedConnection[], id: string | null): SavedConnection | null {
   if (!id) return null;
   return connections.find(connection => connection.id === id) ?? null;
+}
+
+export function searchConnections(connections: SavedConnection[], query: string): SavedConnection[] {
+  const normalized = query.trim().toLowerCase();
+  const digits = query.replace(/\D/g, "");
+  if (!normalized && !digits) return connections;
+  return connections.filter(connection =>
+    connection.name.toLowerCase().includes(normalized) ||
+    (connection.sunSign ?? "").toLowerCase().includes(normalized) ||
+    (normalized.length > 0 && (connection.phone ?? "").toLowerCase().includes(normalized)) ||
+    (digits.length > 0 && phoneDigits(connection.phone).includes(digits))
+  );
+}
+
+export function connectionComparableSunSign(connection: Pick<SavedConnection, "sunSign" | "placements">): AtlasSign | undefined {
+  return connection.sunSign ?? connection.placements?.find(placement => placement.key === "sun")?.sign;
+}
+
+export function hasComparableConnectionData(connection: Pick<SavedConnection, "sunSign" | "placements">): boolean {
+  return Boolean(connectionComparableSunSign(connection));
 }
 
 export function compatibilityLink(connection: Pick<SavedConnection,"id">): string {
