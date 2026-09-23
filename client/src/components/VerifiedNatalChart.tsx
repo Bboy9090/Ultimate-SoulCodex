@@ -1,4 +1,6 @@
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
+import { personalPlacementMeaning } from "@/lib/astrologyAtlas";
+import type { AtlasSign } from "@/lib/astrologyAtlas";
 
 const GLYPH: Record<string, string> = {
   sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
@@ -152,6 +154,38 @@ export default function VerifiedNatalChart({
               );
             })}
           </div>
+
+          <details open className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+            <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">
+              Placement meanings · planet + sign + house
+            </summary>
+            <div className="mt-3 space-y-3">
+              {synthesis.placements.map((placement) => {
+                if (!placement.house) {
+                  return (
+                    <div key={placement.key} className="rounded-xl border border-[var(--sc-line)] p-3">
+                      <strong className="text-sm text-[var(--sc-ivory)]">{placement.label} in {placement.sign}</strong>
+                      <p className="mt-1 text-xs text-[var(--sc-stone)]">House interpretation withheld because a verified house assignment is unavailable.</p>
+                    </div>
+                  );
+                }
+                const meaning = personalPlacementMeaning(placement.key, placement.sign as AtlasSign, placement.house);
+                return (
+                  <article key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4">
+                    <h3 className="font-serif text-lg text-[var(--sc-ivory)]">{placement.label} in {placement.sign} · House {placement.house}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.synthesis}</p>
+                    <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div><dt className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">What</dt><dd className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.what}</dd></div>
+                      <div><dt className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">How</dt><dd className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.how}</dd></div>
+                      <div><dt className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">Where</dt><dd className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.where}</dd></div>
+                    </dl>
+                    <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Reflection:</strong> {meaning.question}</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Practice:</strong> {meaning.practice}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </details>
 
           <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">All 12 verified house cusps</summary>
