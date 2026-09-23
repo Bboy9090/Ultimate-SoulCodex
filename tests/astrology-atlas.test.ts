@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ATLAS_SIGNS, PLANET_FUNCTIONS, atlasEntry, birthInputGuidance, personalPlacementMeaning } from '../client/src/lib/astrologyAtlas';
+import { ATLAS_SIGNS, PLANET_FUNCTIONS, atlasEntry, birthInputGuidance, personalAngleMeaning, personalPlacementMeaning } from '../client/src/lib/astrologyAtlas';
 test('all 144 combinations have distinct domain-aware content', () => {
   const entries = ATLAS_SIGNS.flatMap(sign => Array.from({length:12}, (_,i) => atlasEntry(sign,i+1)));
   assert.equal(new Set(entries.map(x => x.meaning)).size,144);
@@ -19,7 +19,7 @@ test('planet-sign-house explanations keep what, how, and where distinct', () => 
   assert.throws(() => personalPlacementMeaning('fortune','Virgo',10),RangeError);
 });
 test('every supported planet or point can explain every sign-house placement', () => {
-  for (const body of Object.keys(PLANET_FUNCTIONS)) {
+  for (const body of Object.keys(PLANET_FUNCTIONS).filter(body => body !== 'rising' && body !== 'midheaven')) {
     for (const sign of ATLAS_SIGNS) {
       for (let house = 1; house <= 12; house += 1) {
         const meaning = personalPlacementMeaning(body, sign, house);
@@ -31,6 +31,19 @@ test('every supported planet or point can explain every sign-house placement', (
     }
   }
 });
+test('verified angles have dedicated sign meanings and never masquerade as house placements', () => {
+  for (const body of ['rising','midheaven'] as const) {
+    for (const sign of ATLAS_SIGNS) {
+      const meaning = personalAngleMeaning(body, sign);
+      assert.match(meaning.how, new RegExp(sign));
+      assert.match(meaning.where, /angle/i);
+      assert.doesNotMatch(meaning.where, /House \d+/);
+      assert.match(meaning.synthesis, /angle interpretation|Ascendant|Midheaven/i);
+      assert.ok(meaning.practice.length > 20);
+    }
+  }
+});
+
 test('different chart signatures do not collapse into the same placement profile', () => {
   const virgoSignature = [
     personalPlacementMeaning('sun','Virgo',1).synthesis,
