@@ -102,6 +102,9 @@ test("Ultimate Codex fails closed instead of manufacturing unsupported systems",
   });
   assert.equal(result.coverage, "insufficient");
   assert.equal(result.derivedArchetype, null);
+  assert.equal(result.fingerprint, null);
+  assert.equal(result.codexNumber, null);
+  assert.equal(result.codexId, null);
   assert.ok(result.unresolved.some((value) => /Human Design/i.test(value)));
 });
 
