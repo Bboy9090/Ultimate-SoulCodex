@@ -88,7 +88,17 @@ jobs:
           )
           echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl shutdown all 2>/dev/null || true
-          xcrun simctl boot "$UDID"
+          python3 - "$UDID" <<'PY'
+          import subprocess, sys
+          udid = sys.argv[1]
+          try:
+              result = subprocess.run(["xcrun", "simctl", "boot", udid], timeout=30, capture_output=True, text=True)
+              if result.returncode not in (0, 149):
+                  print(result.stdout)
+                  print(result.stderr, file=sys.stderr)
+          except subprocess.TimeoutExpired:
+              print("simctl boot command exceeded 30 seconds; checking device state directly")
+          PY
           BOOTED=""
           for attempt in $(seq 1 45); do
             if xcrun simctl list devices | grep -F "$UDID" | grep -q "(Booted)"; then
