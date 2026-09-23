@@ -13,6 +13,8 @@ import {
   ChevronRight,
   CircleDot,
   Diamond,
+  Fingerprint,
+  House,
   Moon,
   ShieldCheck,
   Sparkles,
@@ -84,6 +86,30 @@ export default function TimelinePage() {
   const nextYear = personalYear ? getNextYearNum(personalYear) : null;
   const phase = personalYear ? YEAR_PHASES[personalYear] : null;
   const transition = getCycleTransitionState(month);
+
+  const profileContext = useMemo(() => {
+    const astrology = (profile?.astrologyData ?? {}) as Record<string, any>;
+    const humanDesign = (profile?.humanDesignData ?? {}) as Record<string, any>;
+    const houses = Object.values(astrology.planetaryHouses ?? {})
+      .filter((value): value is number => Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12);
+    const houseCounts = houses.reduce<Record<number, number>>((counts, house) => {
+      counts[house] = (counts[house] ?? 0) + 1;
+      return counts;
+    }, {});
+    const dominantHouse = Object.entries(houseCounts)
+      .sort((left, right) => right[1] - left[1] || Number(left[0]) - Number(right[0]))[0];
+    return {
+      rising: astrology.rising?.verificationStatus === "verified" ? astrology.rising.sign as string : null,
+      midheaven: astrology.midheaven?.verificationStatus === "verified" ? astrology.midheaven.sign as string : null,
+      dominantHouse: dominantHouse ? Number(dominantHouse[0]) : null,
+      dominantHouseCount: dominantHouse ? dominantHouse[1] : 0,
+      hdVerified: humanDesign.status === "verified",
+      hdType: humanDesign.type as string | undefined,
+      hdStrategy: humanDesign.strategy as string | undefined,
+      hdAuthority: humanDesign.authority as string | undefined,
+      hdProfile: humanDesign.profile as string | undefined,
+    };
+  }, [profile]);
 
   const dateLabel = now.toLocaleDateString("en-US", {
     weekday: "long",
@@ -177,6 +203,23 @@ export default function TimelinePage() {
             <p className="mb-0 mt-4 text-sm text-[var(--sc-stone)]">
               {typeof profile.archetype === "string" ? profile.archetype : (profile.archetype as any)?.name || "Your archetype"} moving through a Year {personalYear} phase
             </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {(profileContext.hdVerified || profileContext.rising || profileContext.midheaven || profileContext.dominantHouse) ? (
+        <section className="mt-4 grid gap-4 lg:grid-cols-2" aria-label="Verified profile context for this timeline">
+          {profileContext.hdVerified ? (
+            <article className="sc-panel p-6">
+              <div className="flex items-center gap-3"><span className="sc-icon-well"><Fingerprint className="h-5 w-5" /></span><div><div className="sc-eyebrow">Decision context</div><h2 className="mt-1 font-serif text-2xl font-semibold">{profileContext.hdType} · Profile {profileContext.hdProfile}</h2></div></div>
+              <p className="mt-4 text-sm leading-7 text-[var(--sc-stone)]">As this {phase?.label ?? "current"} cycle unfolds, use the verified Human Design strategy <strong className="text-[var(--sc-ivory)]">{profileContext.hdStrategy}</strong> and authority <strong className="text-[var(--sc-ivory)]">{profileContext.hdAuthority}</strong> as symbolic decision prompts. They shape how to test the timing theme; they do not predict what will happen.</p>
+            </article>
+          ) : null}
+          {(profileContext.rising || profileContext.midheaven || profileContext.dominantHouse) ? (
+            <article className="sc-panel p-6">
+              <div className="flex items-center gap-3"><span className="sc-icon-well"><House className="h-5 w-5" /></span><div><div className="sc-eyebrow">Chart context</div><h2 className="mt-1 font-serif text-2xl font-semibold">Where this phase meets your chart</h2></div></div>
+              <p className="mt-4 text-sm leading-7 text-[var(--sc-stone)]">{profileContext.rising ? `${profileContext.rising} Rising describes the verified outward frame. ` : ""}{profileContext.midheaven ? `${profileContext.midheaven} Midheaven adds public-direction context. ` : ""}{profileContext.dominantHouse ? `House ${profileContext.dominantHouse} contains the strongest verified planetary concentration (${profileContext.dominantHouseCount}), so its life area is a useful place to observe the current cycle in practice.` : ""}</p>
+            </article>
           ) : null}
         </section>
       ) : null}

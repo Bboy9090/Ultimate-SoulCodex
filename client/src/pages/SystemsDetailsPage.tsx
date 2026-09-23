@@ -127,6 +127,7 @@ export default function SystemsDetailsPage() {
               Create or restore a profile first. The systems inspector reads the same local active profile used by Soul Codex; it does not create another identity record.
             </p>
             <Link href="/create" className="sc-button-primary mt-6 inline-flex">Create profile</Link>
+            <Link href="/systems/atlas" className="mt-4 block underline">Explore the Astrology Atlas without a profile</Link>
             <p className="mt-4 text-xs text-[var(--sc-stone)]">Repository status: {status}</p>
           </div>
         </main>
@@ -163,6 +164,10 @@ export default function SystemsDetailsPage() {
         </header>
 
         <div className="mx-auto max-w-5xl space-y-5">
+          <Link href="/systems/atlas" className="sc-panel block p-5">
+            <h2 className="font-serif text-2xl">Explore the Astrology Atlas</h2>
+            <p className="mt-2">All 144 sign-and-house combinations, with meanings, reflection prompts, and clear guidance when your birth time is unknown.</p>
+          </Link>
           <section className="sc-panel p-5 sm:p-7">
             <div className="mb-5 flex items-start gap-3">
               <div className="sc-icon-well"><MapPin className="h-5 w-5" /></div>
@@ -222,13 +227,16 @@ export default function SystemsDetailsPage() {
                 <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">The arithmetic is deterministic under Soul Codex&apos;s documented reduction rules. The spiritual or psychological meaning remains symbolic.</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <NumberRow label="Life Path" value={profile.lifePathNumber ?? numerology.lifePath} />
+              <NumberRow label="Birthday" value={numerology.birthday} />
               <NumberRow label="Expression" value={numerology.expression} />
               <NumberRow label="Soul Urge" value={numerology.soulUrge} />
               <NumberRow label="Personality" value={numerology.personality} />
+              <NumberRow label="Maturity" value={numerology.maturity} />
               <NumberRow label="Personal Year" value={numerology.personalYear} />
             </div>
+            <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path, Birthday, Expression, Soul Urge, Personality, and Maturity are stable deterministic inputs for the governed identity layer. Personal Year is a changing cycle and is kept out of the permanent Codex fingerprint.</p>
             <div className="mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 text-xs leading-6 text-[var(--sc-stone)]">
               <strong className="text-[var(--sc-ivory)]">Why another app might show a different Life Path:</strong> systems can differ in date normalization, reduction order, and treatment of master numbers. Soul Codex preserves 11, 22, and 33 where the current formula defines them instead of silently reducing them.
             </div>
@@ -243,11 +251,18 @@ export default function SystemsDetailsPage() {
               </div>
             </div>
             {humanDesignVerified ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
-                <NumberRow label="Strategy" value={humanDesign.strategy} />
-                <NumberRow label="Authority" value={humanDesign.authority} />
-                <NumberRow label="Profile" value={humanDesign.profile} />
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
+                  <NumberRow label="Strategy" value={humanDesign.strategy} />
+                  <NumberRow label="Authority" value={humanDesign.authority} />
+                  <NumberRow label="Profile" value={humanDesign.profile} />
+                  <NumberRow label="Definition" value={humanDesign.definition} />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {Array.isArray(humanDesign.centers?.defined) ? humanDesign.centers.defined.join(", ") : "Unresolved"}<br />Open/undefined: {Array.isArray(humanDesign.centers?.undefined) ? humanDesign.centers.undefined.join(", ") : "Unresolved"}</div>
+                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {Array.isArray(humanDesign.channels) && humanDesign.channels.length ? humanDesign.channels.join(", ") : "None resolved"}<br />Activated gates: {Array.isArray(humanDesign.activatedGates) && humanDesign.activatedGates.length ? humanDesign.activatedGates.join(", ") : "None resolved"}</div>
+                </div>
               </div>
             ) : (
               <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[0.035] p-4">
@@ -269,7 +284,7 @@ export default function SystemsDetailsPage() {
                   The main reading should use systems as supporting evidence only when they add a distinct, defensible insight. Repeated labels, weakly verified layers, and systems that merely restate the same theme stay out of the foreground. This inspector exists so nothing has to be hidden from a curious user just to keep the main experience clear.
                 </p>
                 <p className="mt-3 text-sm leading-7 text-[var(--sc-stone)]">
-                  Houses, Midheaven, nodes, Chiron, planetary house placements, palmistry computer vision, and astrocartography lines remain unavailable until their evidence contracts are production-grade. “Not ready” is preferable to decorative precision.
+                  Verified Equal House geometry, Midheaven, planetary-house assignments, Mean Nodes, qualified Chiron, and verified Human Design now support the written Codex while remaining visibly symbolic interpretation. Palmistry computer vision and astrocartography lines remain unavailable until their own evidence contracts are production-grade. “Not ready” is preferable to decorative precision.
                 </p>
               </div>
             </div>

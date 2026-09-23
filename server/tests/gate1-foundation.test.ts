@@ -159,7 +159,7 @@ describe("Gate 1: Foundation Regression Suite", () => {
       assert.strictEqual(result2.sun.degree, result3.sun.degree);
     });
 
-    it("converts DST fall back (2023-11-05 01:30 ambiguous) to EDT first-occurrence policy: 05:30 UTC", () => {
+    it("converts DST fall back (2023-11-05 01:30 ambiguous) with the pinned library's deterministic EDT occurrence: 05:30 UTC", () => {
       const dstFallBack: BirthData = {
         birthDate: "2023-11-05",
         birthTime: "01:30", // Ambiguous: occurs twice (EDT at 05:30 UTC, then EST at 06:30 UTC after transition)
@@ -168,12 +168,14 @@ describe("Gate 1: Foundation Regression Suite", () => {
         longitude: -74.006,
       };
 
-      // EXACT ASSERTION: Lock Soul Codex's explicit DST fall-back ambiguity policy
+      // EXACT ASSERTION: Lock the active date-fns-tz fall-back ambiguity policy.
       // When 01:30 local time occurs twice on 2023-11-05 (due to DST transition at 02:00),
-      // date-fns-tz chooses EDT (first occurrence, pre-transition) = UTC-4, yielding 05:30 UTC.
-      // This is Soul Codex's committed behavior for ambiguous times.
+      // Pinned date-fns-tz 3.2.0 chooses EDT (first occurrence, pre-transition) = UTC-4,
+      // yielding 05:30 UTC.
+      // The important release contract is deterministic handling rather than an undocumented,
+      // version-stale assertion that contradicts the actual conversion dependency.
       const utcTime = fromZonedTime("2023-11-05T01:30:00", "America/New_York");
-      assert.strictEqual(utcTime.getUTCHours(), 5, "Fall-back ambiguous 01:30: Soul Codex chooses EDT first-occurrence policy (05:30 UTC)");
+      assert.strictEqual(utcTime.getUTCHours(), 5, "Fall-back ambiguous 01:30 follows the pinned EDT occurrence policy (05:30 UTC)");
       assert.strictEqual(utcTime.getUTCMinutes(), 30);
       assert.strictEqual(utcTime.getUTCDate(), 5, "Date should remain November 5");
 

@@ -42,6 +42,7 @@ node --import tsx --test \
   tests/local-first-privacy-contract.test.ts \
   tests/location-resolution-contract.test.ts \
   tests/system-visibility-contract.test.ts \
+  tests/primary-synthesis-system-policy.test.ts \
   tests/server-profile-ownership.test.ts \
   tests/natal-report-contract.test.ts \
   tests/pdf-production-path-contract.test.ts \

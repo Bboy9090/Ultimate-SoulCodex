@@ -1,0 +1,95 @@
+name: Diamond Way Synthesis Gate
+
+on:
+  push:
+    branches:
+      - feature/diamond-way-differentiation
+  pull_request:
+    branches:
+      - main
+      - feature/sign-house-atlas-connections
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diamond-way-synthesis-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  identity-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build workspaces
+        run: npm run build:workspaces
+
+      - name: Reject hidden identity fallbacks
+        shell: bash
+        run: |
+          if grep -Fq 'LIFE_PATHS[9]' client/src/lib/foundationOfflineCodex.ts; then
+            echo "Hidden Life Path 9 fallback detected."
+            exit 1
+          fi
+          if grep -Fq '?? SIGN_PATTERNS.Virgo' client/src/lib/foundationOfflineCodex.ts; then
+            echo "Hidden Virgo fallback detected."
+            exit 1
+          fi
+          for forbidden in "|| 'Architect'" "|| 'Guardian'" "|| 'Observer'" "Legacy: Progressive Impact" "['Act', 'Learn', 'Adapt']"; do
+            if grep -Fq "$forbidden" server/services/galactic-code/generator.ts; then
+              echo "Legacy Galactic Code fallback detected: $forbidden"
+              exit 1
+            fi
+          done
+
+      - name: Diamond Way regression suite
+        run: |
+          node --import tsx --test \
+            tests/primary-synthesis-system-policy.test.ts \
+            tests/offline-synthesis-evidence-boundary.test.ts \
+            tests/verified-profile-differentiation.test.ts \
+            tests/verified-profile-differentiation-corpus.test.ts \
+            packages/core/soul-guide/__tests__/depth-ui-source-contract.test.ts \
+            tests/reflection-lens.test.ts \
+            packages/core/soul-guide/__tests__/depth-soul-guide.test.ts \
+            tests/diamond-depth-engine.test.ts \
+            tests/ultimate-codex-synthesis.test.ts \
+            tests/ultimate-codex-ui-contract.test.ts
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
+
+      - name: Write exact-candidate receipt
+        shell: bash
+        run: |
+          {
+            echo "SHA=$GITHUB_SHA"
+            echo "policy=no-hidden-life-path-9-fallback"
+            echo "policy=no-hidden-virgo-fallback"
+            echo "policy=no-legacy-galactic-archetype-fallbacks"
+            echo "policy=full-natal-hd-ultimate-codex-contract"
+            echo "goal=materially-distinct-evidence-bound-synthesis"
+          } > DIAMOND-WAY-SYNTHESIS-RECEIPT.txt
+
+      - name: Upload synthesis receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: diamond-way-synthesis-receipt
+          path: DIAMOND-WAY-SYNTHESIS-RECEIPT.txt
+          retention-days: 90

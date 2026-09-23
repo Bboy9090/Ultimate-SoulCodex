@@ -28,6 +28,10 @@ export interface ClarityReadingModel {
 }
 
 type AnyRecord = Record<string, any>;
+const ZODIAC_SIGNS = new Set([
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]);
 type ProgressiveSections = Pick<
   ClarityReadingModel,
   "visiblePattern" | "protectiveFunction" | "gift" | "cost" | "relationshipImpact"
@@ -150,6 +154,41 @@ function parsedNumber(value: unknown): number | undefined {
   return Number.isInteger(parsed) ? parsed : undefined;
 }
 
+function verifiedPlacement(value: unknown): AnyRecord | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const placement = value as AnyRecord;
+  return placement.verificationStatus === "verified" &&
+    typeof placement.sign === "string" && ZODIAC_SIGNS.has(placement.sign)
+    ? placement
+    : undefined;
+}
+
+function validHouse(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
+}
+
+function verifiedEqualHouses(astrology: AnyRecord): boolean {
+  return astrology.houseSystem === "equal" &&
+    typeof astrology.verification?.policyId === "string" &&
+    astrology.verification.policyId.includes("ASTRO-EQUAL-HOUSE-v1") &&
+    Array.isArray(astrology.houses) &&
+    astrology.houses.length === 12 &&
+    astrology.houses.every((row: AnyRecord, index: number) =>
+      row?.verificationStatus === "verified" &&
+      row?.policyId === "ASTRO-EQUAL-HOUSE-v1" &&
+      row?.house === index + 1 &&
+      ZODIAC_SIGNS.has(row?.sign) &&
+      Number.isFinite(row?.longitude) &&
+      Number.isFinite(row?.degree),
+    );
+}
+
+function verifiedHumanDesignCore(value: AnyRecord): boolean {
+  return value.status === "verified" &&
+    [value.type, value.strategy, value.authority, value.profile]
+      .every((field) => typeof field === "string" && field.trim().length > 0);
+}
+
 function appendTheme(base: string, sentence?: string): string {
   if (!sentence) return base;
   return `${base} ${sentence}`;
@@ -165,8 +204,9 @@ function numerologyTension(expression: number | undefined, soulUrge: number | un
 
 export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingModel {
   const astrology = (profile.astrologyData ?? {}) as AnyRecord;
-  const verified = (profile.verifiedAstrologyData ?? {}) as AnyRecord;
+  const verified = (profile.verifiedAstrologyData ?? profile.astrologyData ?? {}) as AnyRecord;
   const numerology = (profile.numerologyData ?? {}) as AnyRecord;
+  const humanDesign = (profile.humanDesignData ?? {}) as AnyRecord;
   const personality = (profile.personalityData ?? {}) as AnyRecord;
   const archetype = (profile.archetypeData ?? {}) as AnyRecord;
   const depth = (profile.depthInterpretation ?? {}) as AnyRecord;
@@ -257,22 +297,70 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   });
 
   const signals: ClaritySignal[] = [];
-  addSignal(signals, "sun", "Sun", verified.sun?.sign ?? verified.sunSign, "verified", "independent astronomy");
-  addSignal(signals, "moon", "Moon", verified.moon?.sign ?? verified.moonSign, "verified", "independent astronomy");
-  addSignal(signals, "rising", "Rising", verified.rising?.sign ?? verified.risingSign, "verified", "independent astronomy");
+  const verifiedSign = (key: "sun" | "moon" | "rising") => {
+    return verifiedPlacement(verified[key])?.sign;
+  };
+  addSignal(signals, "sun", "Sun", verifiedSign("sun"), "verified", "independent astronomy");
+  addSignal(signals, "moon", "Moon", verifiedSign("moon"), "verified", "independent astronomy");
+  addSignal(signals, "rising", "Rising", verifiedSign("rising"), "verified", "independent astronomy");
   if (!signals.some((signal) => signal.id === "sun")) {
     addSignal(signals, "sun-symbolic", "Sun", astrology.sunSign, "supported", "saved symbolic profile");
   }
   addSignal(signals, "life-path", "Life Path", numerology.lifePath, "deterministic", "birth-date calculation");
   addSignal(signals, "expression", "Expression", expression, "deterministic", "name calculation");
   addSignal(signals, "soul-urge", "Soul Urge", soulUrge, "deterministic", "name-vowel calculation");
+  const equalHousesVerified = verifiedEqualHouses(verified);
+  const midheaven = verifiedPlacement(verified.midheaven);
+  if (equalHousesVerified && midheaven?.policyId === "ASTRO-EQUAL-HOUSE-v1") {
+    addSignal(signals, "midheaven", "Midheaven", midheaven.sign, "verified", "verified Equal House geometry");
+  }
+  if (equalHousesVerified) {
+    addSignal(signals, "houses", "House system", "12 verified Equal House cusps", "verified", "ASTRO-EQUAL-HOUSE-v1");
+  }
+  const planetaryHouses = (verified.planetaryHouses ?? {}) as AnyRecord;
+  for (const body of ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"]) {
+    const placement = verifiedPlacement(verified.planets?.[body] ?? verified[body]);
+    const house = planetaryHouses[body];
+    if (equalHousesVerified && placement && validHouse(house)) {
+      addSignal(signals, `placement-${body}`, body.charAt(0).toUpperCase() + body.slice(1), `${placement.sign} · House ${house}`, "verified", "verified natal placement and house assignment");
+    }
+  }
+  const northNode = verifiedPlacement(verified.northNode);
+  if (northNode?.mode === "mean" && northNode.policyId === "ASTRO-MEAN-NODE-v1" && validHouse(northNode.house)) {
+    addSignal(signals, "north-node", "Mean North Node", `${verified.northNode.sign}${verified.northNode.house ? ` · House ${verified.northNode.house}` : ""}`, "verified", "verified mean-node contract");
+  }
+  const southNode = verifiedPlacement(verified.southNode);
+  if (southNode?.mode === "mean" && southNode.policyId === "ASTRO-MEAN-NODE-v1" && validHouse(southNode.house)) {
+    addSignal(signals, "south-node", "Mean South Node", `${verified.southNode.sign}${verified.southNode.house ? ` · House ${verified.southNode.house}` : ""}`, "verified", "verified mean-node contract");
+  }
+  const chiron = verifiedPlacement(verified.chiron);
+  if (chiron?.policyId === "ASTRO-CHIRON-v1" && chiron?.qualificationMethod === "live-jpl-qualified-against-swiss" && validHouse(chiron.house)) {
+    addSignal(signals, "chiron", "Chiron", `${verified.chiron.sign}${verified.chiron.house ? ` · House ${verified.chiron.house}` : ""}`, "verified", "live JPL qualified against Swiss Ephemeris");
+  }
+  if (verifiedHumanDesignCore(humanDesign)) {
+    addSignal(signals, "hd-type", "Human Design type", humanDesign.type, "verified", "HUMAN-DESIGN-CORE-v1");
+    addSignal(signals, "hd-strategy", "Strategy", humanDesign.strategy, "verified", "HUMAN-DESIGN-CORE-v1");
+    addSignal(signals, "hd-authority", "Authority", humanDesign.authority, "verified", "HUMAN-DESIGN-CORE-v1");
+    addSignal(signals, "hd-profile", "Profile", humanDesign.profile, "verified", "HUMAN-DESIGN-CORE-v1");
+    addSignal(signals, "hd-definition", "Definition", humanDesign.definition, "verified", "verified bodygraph calculation");
+    if (Array.isArray(humanDesign.centers?.defined)) {
+      addSignal(signals, "hd-centers", "Defined centers", humanDesign.centers.defined.join(", "), "verified", "verified bodygraph calculation");
+    }
+    if (Array.isArray(humanDesign.channels)) {
+      addSignal(signals, "hd-channels", "Defined channels", humanDesign.channels.join(", "), "verified", "verified bodygraph calculation");
+    }
+    if (Array.isArray(humanDesign.activatedGates)) {
+      addSignal(signals, "hd-gates", "Activated gates", humanDesign.activatedGates.join(", "), "verified", "verified bodygraph calculation");
+    }
+  }
   addSignal(signals, "enneagram", "Enneagram", personality.enneagram?.type, "supported", "user assessment");
   addSignal(signals, "mbti", "MBTI", personality.mbti?.type, "supported", "user assessment");
 
   const limitations = [
     "Symbolic overlap is supporting context, not independent proof.",
     "Numerology values are deterministic calculations from supplied birth/name data; their personality meanings remain symbolic interpretation.",
-    "Unknown or approximate birth time must not be promoted into verified Moon, Rising, house, or timing claims.",
+    "Unknown or approximate birth time must not be promoted into verified Moon, Rising, house, Human Design, or timing claims.",
+    "Verified geometry and Human Design calculations can support reflection; their psychological meanings remain symbolic rather than scientific diagnoses.",
     "Lived experience is the final correction layer.",
   ];
   if (!signals.some((signal) => signal.confidence === "verified")) {

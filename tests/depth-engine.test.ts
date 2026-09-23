@@ -50,6 +50,41 @@ describe("Depth Engine", () => {
     const source = fs.readFileSync("client/src/lib/depthEngine.ts", "utf8");
     expect(source).not.toContain("When used consciously, this pattern can become");
     expect(source).not.toContain("A strength can keep its honorable name long after it has stopped helping");
+    expect(source).not.toContain("Discernment becomes valuable when");
+    expect(source).not.toContain("Protection becomes expensive when");
+    expect(source).not.toContain("Competence attracts work");
+    expect(source).not.toContain("The clearest cost is expansion without an exit condition");
+  });
+
+  it("changes chapter substance when the profile model changes", () => {
+    const other: ClarityReadingModel = {
+      ...model,
+      title: "The expressive explorer",
+      summary: "A second test reading.",
+      coreContradiction: "A pull toward rapid experimentation can collide with a need for emotional reciprocity.",
+      visiblePattern: "You may move quickly toward novelty when a situation starts to feel repetitive.",
+      protectiveFunction: "Keeping options open may preserve a sense of freedom when commitment feels narrowing.",
+      gift: "Adaptability can make you quick to discover alternatives and communicate possibility.",
+      cost: "Constant movement can make consistency harder to sustain after the first wave of interest.",
+      relationshipImpact: "Other people may experience the need for space differently from the way you experience it internally.",
+      groundedAction: "Choose one commitment worth deepening and define one form of freedom that can exist inside it.",
+      signals: [
+        { id: "expression", label: "Expression", value: "5", confidence: "deterministic", source: "name calculation" },
+        { id: "soul-urge", label: "Soul Urge", value: "2", confidence: "deterministic", source: "name-vowel calculation" },
+      ],
+    };
+
+    const first = buildDepthChapters(model);
+    const second = buildDepthChapters(other);
+    const firstText = first.map((chapter) => [chapter.translation, chapter.strength, chapter.cost, chapter.relationshipView].join(" ")).join(" ");
+    const secondText = second.map((chapter) => [chapter.translation, chapter.strength, chapter.cost, chapter.relationshipView].join(" ")).join(" ");
+
+    expect(secondText).not.toBe(firstText);
+    expect(secondText).toContain(other.visiblePattern);
+    expect(secondText).toContain(other.coreContradiction);
+    expect(secondText).toContain("Expression: 5");
+    expect(secondText).toContain("Soul Urge: 2");
+    expect(secondText).not.toContain(model.visiblePattern);
   });
 
   it("uses lived feedback to recalibrate the current and subsequent chapters", () => {

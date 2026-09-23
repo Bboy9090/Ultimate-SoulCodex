@@ -6,7 +6,7 @@ async function text(path: string): Promise<string> {
   return readFile(path, "utf8");
 }
 
-test("Soul Codex 4.0.0 native identities are aligned", async () => {
+test("Soul Codex 4.0.1 native identities are aligned", async () => {
   const android = await text("android/app/build.gradle");
   const info = await text("ios/App/App/Info.plist");
   const project = await text("ios/App/App.xcodeproj/project.pbxproj");
@@ -17,20 +17,20 @@ test("Soul Codex 4.0.0 native identities are aligned", async () => {
   const androidBuildspec = await text("buildspec-android.yml");
   const envExample = await text(".env.example");
 
-  assert.match(android, /versionCode\s+4000004/);
-  assert.match(android, /versionName\s+"4\.0\.0"/);
-  assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.0<\/string>/);
-  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000004<\/string>/);
-  assert.match(project, /CURRENT_PROJECT_VERSION = 4000004;/);
-  assert.match(project, /MARKETING_VERSION = 4\.0\.0;/);
+  assert.match(android, /versionCode\s+4000008/);
+  assert.match(android, /versionName\s+"4\.0\.1"/);
+  assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.1<\/string>/);
+  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000008<\/string>/);
+  assert.match(project, /CURRENT_PROJECT_VERSION = 4000008;/);
+  assert.match(project, /MARKETING_VERSION = 4\.0\.1;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
-  assert.match(manifest, /releaseVersion:\s*"4\.0\.0"/);
-  assert.match(dockerfile, /SOUL_CODEX_RELEASE_VERSION=4\.0\.0/);
-  assert.match(serverIdentity, /DEFAULT_FOUNDATION_RELEASE_VERSION = "4\.0\.0"/);
-  assert.match(clientIdentity, /DEFAULT_CLIENT_RELEASE_VERSION = "4\.0\.0"/);
-  assert.match(androidBuildspec, /VITE_RELEASE_VERSION: "4\.0\.0"/);
-  assert.match(envExample, /VITE_RELEASE_VERSION=4\.0\.0/);
-  assert.match(envExample, /SOUL_CODEX_RELEASE_VERSION=4\.0\.0/);
+  assert.match(manifest, /releaseVersion:\s*"4\.0\.1"/);
+  assert.match(dockerfile, /SOUL_CODEX_RELEASE_VERSION=4\.0\.1/);
+  assert.match(serverIdentity, /DEFAULT_FOUNDATION_RELEASE_VERSION = "4\.0\.1"/);
+  assert.match(clientIdentity, /DEFAULT_CLIENT_RELEASE_VERSION = "4\.0\.1"/);
+  assert.match(androidBuildspec, /VITE_RELEASE_VERSION: "4\.0\.1"/);
+  assert.match(envExample, /VITE_RELEASE_VERSION=4\.0\.1/);
+  assert.match(envExample, /SOUL_CODEX_RELEASE_VERSION=4\.0\.1/);
 
   for (const [name, source] of [
     ["Dockerfile", dockerfile],
@@ -64,9 +64,9 @@ test("store workflow binds exact release branch and Play production upload", asy
 
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
   const validator = await text("scripts/validate-mobile-release.mjs");
-  assert.match(validator, /releaseVersion !== "4\.0\.0"/);
-  assert.match(validator, /versionCode\\s\+4000004/);
-  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000004/);
+  assert.match(validator, /releaseVersion !== "4\.0\.1"/);
+  assert.match(validator, /versionCode\\s\+4000008/);
+  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000008/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
 });

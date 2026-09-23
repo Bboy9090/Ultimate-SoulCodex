@@ -3,9 +3,11 @@ import assert from 'node:assert';
 import { calculateNumerology } from '../services/numerology';
 import {
   calcLifePath,
+  calcBirthday,
   calcExpression,
   calcSoulUrge,
   calcPersonality,
+  calcMaturity,
 } from '@soulcodex/core/compute/numerology';
 import { calcPersonalYear } from '@soulcodex/core/compute/personal-numbers';
 
@@ -27,7 +29,9 @@ describe('Server/Core Numerology Contract', () => {
 
       assert.strictEqual(serverResult.status, 'resolved');
       assert.ok(typeof serverResult.lifePath === 'number');
+      assert.ok(typeof serverResult.birthday === 'number');
       assert.ok(typeof serverResult.expression === 'number');
+      assert.ok(typeof serverResult.maturity === 'number');
       assert.ok(typeof serverResult.soulUrge === 'number');
       assert.ok(typeof serverResult.personality === 'number');
       assert.ok(typeof serverResult.personalYear === 'number');
@@ -43,6 +47,14 @@ describe('Server/Core Numerology Contract', () => {
         coreResult,
         `Server lifePath ${serverResult.lifePath} should match core ${coreResult}`
       );
+    });
+
+    it('should match core birthday and maturity calculations', () => {
+      const serverResult = calculateNumerology(fullName, birthDate);
+      assert.strictEqual(serverResult.status, 'resolved');
+
+      assert.strictEqual(serverResult.birthday, calcBirthday(birthDate));
+      assert.strictEqual(serverResult.maturity, calcMaturity(birthDate, fullName));
     });
 
     it('should match core expression calculation', () => {
@@ -371,40 +383,48 @@ describe('Server/Core Numerology Contract', () => {
       assert.strictEqual(serverResult.status, 'resolved');
       const coreValues = {
         lifePath: calcLifePath(birthDate),
+        birthday: calcBirthday(birthDate),
         expression: calcExpression(fullName),
         soulUrge: calcSoulUrge(fullName),
         personality: calcPersonality(fullName),
+        maturity: calcMaturity(birthDate, fullName),
         personalYear: calcPersonalYear(birthDate),
       };
 
       assert.strictEqual(serverResult.lifePath, coreValues.lifePath);
+      assert.strictEqual(serverResult.birthday, coreValues.birthday);
       assert.strictEqual(serverResult.expression, coreValues.expression);
       assert.strictEqual(serverResult.soulUrge, coreValues.soulUrge);
       assert.strictEqual(serverResult.personality, coreValues.personality);
+      assert.strictEqual(serverResult.maturity, coreValues.maturity);
       assert.strictEqual(serverResult.personalYear, coreValues.personalYear);
     });
   });
 
-  describe('Contract Guarantee: Resolved Results Have 5 Values', () => {
-    it('should return all 5 numerology values when resolved', () => {
+  describe('Contract Guarantee: Resolved Results Have 7 Values', () => {
+    it('should return all 7 numerology values when resolved', () => {
       const result = calculateNumerology('Jane Doe', '1990-08-15');
 
       assert.strictEqual(result.status, 'resolved');
       assert.ok(typeof result.lifePath === 'number');
+      assert.ok(typeof result.birthday === 'number');
       assert.ok(typeof result.expression === 'number');
       assert.ok(typeof result.soulUrge === 'number');
       assert.ok(typeof result.personality === 'number');
+      assert.ok(typeof result.maturity === 'number');
       assert.ok(typeof result.personalYear === 'number');
     });
 
-    it('should return all 5 interpretation texts when resolved', () => {
+    it('should return all 7 interpretation texts when resolved', () => {
       const result = calculateNumerology('Jane Doe', '1990-08-15');
 
       assert.strictEqual(result.status, 'resolved');
       assert.ok(typeof result.interpretations.lifePath === 'string');
+      assert.ok(typeof result.interpretations.birthday === 'string');
       assert.ok(typeof result.interpretations.expression === 'string');
       assert.ok(typeof result.interpretations.soulUrge === 'string');
       assert.ok(typeof result.interpretations.personality === 'string');
+      assert.ok(typeof result.interpretations.maturity === 'string');
       assert.ok(typeof result.interpretations.personalYear === 'string');
     });
 

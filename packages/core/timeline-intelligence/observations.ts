@@ -17,15 +17,15 @@ export function generateObservations(
   const alignmentPct = Math.round(alignmentScore * 100);
   if (alignmentScore >= 0.7) {
     observations.push(
-      `System predictions and lived data aligned on ${matches.length} of ${matches.length + divergences.length} signals (${alignmentPct}%).`
+      `System signals and lived data aligned on ${matches.length} of ${matches.length + divergences.length} comparisons (${alignmentPct}%).`
     );
   } else if (alignmentScore >= 0.5) {
     observations.push(
-      `Moderate alignment: system predictions matched ${alignmentPct}% of logged experience.`
+      `Moderate alignment: system signals corresponded with ${alignmentPct}% of the comparisons.`
     );
   } else {
     observations.push(
-      `System predictions diverged from lived data on ${divergences.length} of ${matches.length + divergences.length} signals.`
+      `System signals differed from lived data on ${divergences.length} of ${matches.length + divergences.length} comparisons.`
     );
   }
 
@@ -45,11 +45,11 @@ export function generateObservations(
     });
   }
 
-  // Confidence caveat
+  // Observation-window caveat
   if (sampleSize < 14) {
     observations.push("Note: Early data collection. Patterns become clearer with 14+ entries.");
   } else if (sampleSize >= 30) {
-    observations.push("High confidence in these patterns — 30+ entries provide reliable signal.");
+    observations.push("The 30-entry analysis window is filled. This increases coverage; it does not establish correctness or causation.");
   }
 
   return observations;
@@ -71,7 +71,7 @@ export function generateNextSuggestion(
 
   if (divergences.length > 0) {
     const firstDivergence = divergences[0];
-    return `Track closely: ${firstDivergence.systemSignal.label} predicted differently than your actual experience. Watch this over the next 14 days.`;
+    return `Track closely: ${firstDivergence.systemSignal.label} differed from your logged experience. Watch this over the next 14 days.`;
   }
 
   return "Continue logging to build stronger signal. Patterns need consistent data to confirm.";

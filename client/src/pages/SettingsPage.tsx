@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
@@ -10,6 +10,7 @@ import {
   LockKeyhole,
   ShieldCheck,
   Smartphone,
+  Sparkles,
   Stethoscope,
 } from "lucide-react";
 import Navigation from "@/components/navigation";
@@ -18,6 +19,12 @@ import { clearActiveProfile } from "../lib/ActiveProfileRepository";
 import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
 import { clearOfflineProfiles } from "../lib/offlineProfileStore";
 import { apiRequest, queryClient } from "../lib/queryClient";
+import {
+  REFLECTION_LENS_COPY,
+  readReflectionLens,
+  writeReflectionLens,
+  type ReflectionLens,
+} from "../lib/reflectionLens";
 
 type CurrentUser = {
   id: string;
@@ -29,6 +36,7 @@ type CurrentUser = {
 export default function SettingsPage() {
   const [, navigate] = useLocation();
   const nativeApple = Capacitor.isNativePlatform();
+  const [reflectionLens, setReflectionLens] = useState<ReflectionLens>(() => readReflectionLens());
   const { data: currentUser, isLoading: userLoading } = useQuery<CurrentUser | null>({
     queryKey: ["/api/auth/user"],
     refetchOnMount: true,
@@ -65,6 +73,11 @@ export default function SettingsPage() {
     await apiRequest("POST", "/api/auth/logout");
     queryClient.setQueryData(["/api/auth/user"], null);
     queryClient.setQueryData(["/api/user"], null);
+  };
+
+  const selectReflectionLens = (value: ReflectionLens) => {
+    setReflectionLens(value);
+    writeReflectionLens(value);
   };
 
   const accountLabel = userLoading
@@ -154,6 +167,47 @@ export default function SettingsPage() {
               <AlertTriangle className="h-4 w-4" /> Clear data from this device
             </button>
           </article>
+        </section>
+
+        <section className="sc-panel mt-4 p-6">
+          <SectionHeading icon={<Sparkles className="h-5 w-5" />} eyebrow="Diamond Way" title="Reflection language" />
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+            Choose how Soul Codex speaks about the same underlying evidence. This changes the meaning-making frame only; it never changes your chart, numerology, confidence, or missing-data rules.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3" role="radiogroup" aria-label="Reflection language">
+            {(["grounded", "cosmic", "sacred"] as const).map((lens) => {
+              const selected = reflectionLens === lens;
+              const copy = REFLECTION_LENS_COPY[lens];
+              return (
+                <button
+                  key={lens}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  data-testid={`reflection-lens-${lens}`}
+                  onClick={() => selectReflectionLens(lens)}
+                  className={`min-h-[132px] rounded-2xl border p-4 text-left transition ${
+                    selected
+                      ? "border-[rgba(217,182,111,.5)] bg-[rgba(217,182,111,.08)] shadow-[0_0_34px_rgba(168,145,255,.08)]"
+                      : "border-white/[0.07] bg-white/[0.02] hover:border-[rgba(217,182,111,.24)] hover:bg-white/[0.035]"
+                  }`}
+                >
+                  <span className="block text-[10px] font-bold uppercase tracking-[.16em] text-[var(--sc-gold)]">
+                    {copy.label}
+                  </span>
+                  <strong className="mt-3 block font-serif text-xl text-[var(--sc-ivory)]">
+                    {lens === "grounded" ? "Clarity" : lens === "cosmic" ? "Galactic Code" : "Sacred Blueprint"}
+                  </strong>
+                  <span className="mt-2 block text-xs leading-5 text-[var(--sc-stone)]">
+                    {copy.shortDescription}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 rounded-2xl border border-[rgba(168,145,255,.16)] bg-[rgba(168,145,255,.04)] p-4 text-xs leading-5 text-[var(--sc-stone)]">
+            <strong className="text-[var(--sc-ivory-soft)]">Free will stays central.</strong> Cosmic and sacred language are optional interpretive lenses, not proof that a spiritual claim is objectively true.
+          </div>
         </section>
 
         <section className="sc-panel mt-4 p-6">

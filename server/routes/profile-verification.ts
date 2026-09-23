@@ -4,6 +4,9 @@ import {
   calculateVerifiedAstrology,
   type AstrologyData,
 } from "../services/astrology-production";
+import { calculateHumanDesign } from "../../packages/astrology/human-design";
+import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
+import { fromZonedTime } from "date-fns-tz";
 
 const numericCoordinate = z
   .union([z.number(), z.string().min(1)])
@@ -67,14 +70,74 @@ export function registerProfileVerificationRoutes(app: Express) {
         longitude: parsed.data.longitude,
       });
       const updatedAt = new Date().toISOString();
+      let humanDesignData: Record<string, unknown> | null = null;
+
+      if (
+        parsed.data.birthTime?.trim() &&
+        parsed.data.latitude !== undefined &&
+        parsed.data.longitude !== undefined
+      ) {
+        const humanDesign = calculateHumanDesign({
+          name: "Private profile",
+          birthDate: parsed.data.birthDate,
+          birthTime: parsed.data.birthTime,
+          birthLocation: "Resolved birthplace",
+          timezone: parsed.data.timezone,
+          latitude: String(parsed.data.latitude),
+          longitude: String(parsed.data.longitude),
+        });
+
+        if (humanDesign.status === "resolved") {
+          const inputTimestampUtc = fromZonedTime(
+            `${parsed.data.birthDate}T${parsed.data.birthTime}:00`,
+            parsed.data.timezone,
+          ).toISOString();
+          const trust = createVerifiedHumanDesignTrustRecord({
+            birthTimeKnown: true,
+            inputTimestampUtc,
+            calculatedAt: updatedAt,
+            candidate: {
+              type: humanDesign.type,
+              strategy: humanDesign.strategy,
+              authority: humanDesign.authority,
+              profile: humanDesign.profile,
+            },
+          });
+          if (trust.status !== "verified") {
+            throw new Error("human_design_verified_contract_not_produced");
+          }
+
+          humanDesignData = {
+            status: trust.status,
+            type: humanDesign.type,
+            strategy: humanDesign.strategy,
+            authority: humanDesign.authority,
+            profile: humanDesign.profile,
+            definition: humanDesign.definition,
+            centers: humanDesign.centers,
+            channels: humanDesign.channels,
+            activations: humanDesign.activations,
+            activatedGates: humanDesign.activatedGates,
+            engine: trust.engine,
+            source: trust.source,
+            calculatedAt: trust.calculatedAt,
+            inputTimestampUtc: trust.inputTimestampUtc,
+            verificationReceiptId: trust.verificationReceiptId,
+            independentSource: trust.independentSource,
+            verifiedAt: trust.verifiedAt,
+            limitations: trust.limitations,
+          };
+        }
+      }
 
       return res.json({
         astrologyData: withVerifiedLegacyAliases(astrologyData),
+        humanDesignData,
         updatedAt,
         processing: {
           persistedProfile: false,
           aiGeneration: false,
-          purpose: "astronomy_verification_only",
+          purpose: "profile_system_verification_only",
         },
       });
     } catch (error) {

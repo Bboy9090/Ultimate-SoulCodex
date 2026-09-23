@@ -1,12 +1,20 @@
-name: Soul Codex 4.0.0 Store Candidate
+name: Soul Codex 4.0.1 Store Candidate
 
 on:
   push:
     branches:
       - main
+      - release/ios-4.0.0-final-truth-fix
+      - feature/profile-atlas-and-connections
       - release/store-4.0.0-federation-final
       - release/store-4.0.0-federation-final-main-sync
       - release/4.0.0-store-signing-final
+      - fix/complete-timed-profile-systems
+      - fix/full-system-consumer-integration
+  pull_request:
+    branches:
+      - main
+      - release/ios-4.0.0-final-truth-fix
   workflow_dispatch:
 
 permissions:
@@ -18,7 +26,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.0.0
+  VITE_RELEASE_VERSION: 4.0.1
   VITE_API_CONTRACT: foundation-v4
 
 jobs:
@@ -41,7 +49,7 @@ jobs:
         run: npm run check
       - name: Qualified astrology, differentiation, privacy, and Human Design gates
         run: |
-          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/verified-profile-differentiation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/verified-profile-differentiation-corpus.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts
+          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/primary-synthesis-system-policy.test.ts             tests/verified-profile-differentiation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/verified-profile-differentiation-corpus.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts             tests/astrology-atlas.test.ts             tests/birth-date-exploration.test.ts             tests/personal-astrology-atlas.test.ts             tests/connection-repository.test.ts
       - name: Store release candidate contract
         run: node --import tsx --test tests/store-release-candidate-contract.test.ts
       - name: Build production Capacitor payload
@@ -59,19 +67,19 @@ jobs:
       - name: Generate release receipt
         run: |
           cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
-          Soul Codex 4.0.0
+          Soul Codex 4.0.1
           SHA=${GITHUB_SHA}
           Android applicationId=app.soulcodex.main
-          Android versionCode=4000004
+          Android versionCode=4000008
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000004
+          iOS build=4000008
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
       - name: Upload release-gate receipt
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.0-release-gate
+          name: soulcodex-4.0.1-release-gate
           path: STORE-CANDIDATE-RECEIPT.txt
           retention-days: 90
 
@@ -123,11 +131,24 @@ jobs:
         run: |
           printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > android/app/soulcodex-release.keystore
           test -s android/app/soulcodex-release.keystore
+          keytool -list \
+            -keystore android/app/soulcodex-release.keystore \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" >/dev/null
       - name: Build signed Play AAB
         if: steps.signing.outputs.available == 'true'
         working-directory: android
         run: |
           ./gradlew --no-daemon bundleRelease             -PRELEASE_STORE_FILE=soulcodex-release.keystore             -PRELEASE_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"             -PRELEASE_KEY_ALIAS="$ANDROID_KEY_ALIAS"             -PRELEASE_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
+      - name: Verify signed Play AAB
+        if: steps.signing.outputs.available == 'true'
+        shell: bash
+        run: |
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify "$AAB"
+          sha256sum "$AAB" > AAB-SHA256.txt
+          printf '%s\n' "$GITHUB_SHA" > RELEASE-CANDIDATE-SHA.txt
       - name: Build unsigned qualification AAB when signing is unavailable
         if: steps.signing.outputs.available != 'true'
         working-directory: android
@@ -140,8 +161,8 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "versionName=4.0.0"
-            echo "versionCode=4000004"
+            echo "versionName=4.0.1"
+            echo "versionCode=4000008"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
               echo "play_credentials_available=true"
@@ -152,15 +173,17 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.0-android
+          name: soulcodex-4.0.1-android
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/debug/*.apk
             android-store-state.txt
+            AAB-SHA256.txt
+            RELEASE-CANDIDATE-SHA.txt
           if-no-files-found: error
           retention-days: 90
       - name: Publish signed AAB to Google Play production
-        if: steps.signing.outputs.available == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: github.ref == 'refs/heads/main' && steps.signing.outputs.available == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -169,10 +192,9 @@ jobs:
           track: production
           status: completed
       - name: Record Google Play credential blocker on qualification branches
-        if: github.ref != 'refs/heads/main' && (steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == '')
+        if: github.ref != 'refs/heads/main'
         run: |
-          echo "Google Play production upload remains blocked by missing private signing and/or Play service-account credentials."
-          echo "Qualification continues, but no deployment claim is permitted."
+          echo "Qualification completed without a Google Play production upload; production publishing is main-only."
 
       - name: Block false Google Play deployment claims on main
         if: github.ref == 'refs/heads/main' && (steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == '')
@@ -214,14 +236,14 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "marketingVersion=4.0.0"
-            echo "buildNumber=4000004"
+            echo "marketingVersion=4.0.1"
+            echo "buildNumber=4000008"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
       - name: Upload iOS qualification receipt
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.0-ios-qualification
+          name: soulcodex-4.0.1-ios-qualification
           path: ios-store-state.txt
           retention-days: 90

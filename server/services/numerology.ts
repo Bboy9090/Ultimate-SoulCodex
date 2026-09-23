@@ -1,23 +1,29 @@
 import {
   calcLifePath,
+  calcBirthday,
   calcExpression,
   calcSoulUrge,
   calcPersonality,
+  calcMaturity,
   calcPersonalYear,
 } from '@soulcodex/core';
 
 interface ResolvedNumerologyData {
   status: 'resolved';
   lifePath: number;
+  birthday: number;
   expression: number;
   soulUrge: number;
   personality: number;
+  maturity: number;
   personalYear: number;
   interpretations: {
     lifePath: string;
+    birthday: string;
     expression: string;
     soulUrge: string;
     personality: string;
+    maturity: string;
     personalYear: string;
   };
 }
@@ -26,9 +32,11 @@ interface UnresolvedNumerologyData {
   status: 'unresolved';
   reason: string;
   lifePath?: undefined;
+  birthday?: undefined;
   expression?: undefined;
   soulUrge?: undefined;
   personality?: undefined;
+  maturity?: undefined;
   personalYear?: undefined;
   interpretations?: undefined;
 }
@@ -99,23 +107,29 @@ export function calculateNumerology(fullName: string, birthDate: string): Numero
 
   // Only calculate if inputs are valid
   const lifePath = calcLifePath(birthDate);
+  const birthday = calcBirthday(birthDate);
   const expression = calcExpression(fullName);
   const soulUrge = calcSoulUrge(fullName);
   const personality = calcPersonality(fullName);
+  const maturity = calcMaturity(birthDate, fullName);
   const personalYear = calcPersonalYear(birthDate);
 
   return {
     status: 'resolved',
     lifePath,
+    birthday,
     expression,
     soulUrge,
     personality,
+    maturity,
     personalYear,
     interpretations: {
       lifePath: interpretations.lifePath[lifePath as keyof typeof interpretations.lifePath] || "Unique path of spiritual growth",
+      birthday: `Birthday Number ${birthday}: a deterministic reduction of the calendar day of birth used as symbolic reflection.`,
       expression: `Expression Number ${expression}: Your talents and abilities shine through creative manifestation.`,
       soulUrge: `Soul Urge ${soulUrge}: Your heart's deepest desires drive you toward meaningful experiences.`,
       personality: `Personality Number ${personality}: Others perceive you as someone with distinctive character traits.`,
+      maturity: `Maturity Number ${maturity}: a deterministic combination of Life Path and Expression used as symbolic reflection.`,
       personalYear: `Personal Year ${personalYear}: This year brings opportunities aligned with your current growth cycle.`
     }
   };

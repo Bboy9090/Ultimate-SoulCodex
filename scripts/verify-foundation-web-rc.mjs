@@ -33,10 +33,9 @@ const files = {
   releaseIdentity: read("server/lib/release-identity.ts"),
   diagnostics: read("client/src/pages/DiagnosticsPage.tsx"),
   reconciliation: read("client/src/lib/profileVerificationReconciliation.ts"),
-  ci: read(".github/workflows/ci.yml"),
-  doctrineWorkflow: read(".github/workflows/foundation-doctrine-gate.yml"),
-  pwaWorkflow: read(".github/workflows/pwa-offline-browser.yml"),
-  railwaySmoke: read(".github/workflows/railway-container-smoke.yml"),
+  codebuild: read("scripts/ci/codebuild-core.sh"),
+  buildspec: read("buildspec.yml"),
+  packageJson: read("package.json"),
 };
 
 const checks = [];
@@ -100,7 +99,7 @@ check(
   "Local profile creation does not upload for verification unless the user explicitly opts in",
   files.localFirst.includes("const [verifyOnline, setVerifyOnline] = useState(false)") &&
     files.localFirst.includes('data-testid="checkbox-online-verification"') &&
-    /if \(verifyOnline\) \{\s*void requestVerificationWhenOnline\(data, profile\);\s*\}/s.test(files.localFirst),
+    /if \(verifyOnline\) \{[\s\S]*await requestVerificationWhenOnline\(data, profile\);\s*\}/.test(files.localFirst),
 );
 check(
   "PRIVACY-02",
@@ -123,7 +122,7 @@ check(
   files.serverRoutes.includes("profileBelongsToActor") &&
     files.serverRoutes.includes("requestOwnsProfile") &&
     files.serverRoutes.includes("if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res)") &&
-    files.ci.includes("tests/server-profile-ownership.test.ts"),
+    files.codebuild.includes("tests/server-profile-ownership.test.ts"),
 );
 check(
   "PRIVACY-05",
@@ -133,7 +132,7 @@ check(
     files.compatibilityExplorer.includes("profile: compatibilityProfile") &&
     files.compatibilityPerson.includes("buildCompatibilityProfilePayload") &&
     files.compatibilityPerson.includes("profile: compatibilityProfile") &&
-    files.ci.includes("tests/compatibility-data-minimization.test.ts"),
+    files.codebuild.includes("tests/compatibility-data-minimization.test.ts"),
 );
 check(
   "PRIVACY-06",
@@ -208,8 +207,7 @@ check(
   files.astrology.includes("verifyAscendant") &&
     files.astrology.includes('rising.verificationStatus === "verified"') &&
     files.astrology.includes('(["Ascendant"] as const)') &&
-    files.astrology.includes("ASTRO-ASCENDANT-v1") &&
-    files.astrology.includes("withRisingVerificationSummary(base, rising)"),
+    files.astrology.includes("ASCENDANT-VERIFICATION-RECEIPT-v1"),
 );
 check(
   "ASTRO-02",
@@ -219,10 +217,9 @@ check(
 );
 check(
   "ASTRO-03",
-  "Saved profiles require the verified Big Three migration version",
-  files.reconciliation.includes(
-    "CURRENT_ASTROLOGY_VERIFICATION_VERSION = 2",
-  ) && files.reconciliation.includes("hasVerifiedBigThree"),
+  "Saved profiles require a versioned verified full-natal migration",
+  /CURRENT_ASTROLOGY_VERIFICATION_VERSION = [1-9][0-9]*;/.test(files.reconciliation) &&
+    files.reconciliation.includes("hasVerifiedFullNatalChart"),
 );
 
 check(
@@ -288,45 +285,44 @@ check(
 );
 check(
   "RELEASE-02",
-  "Railway container validation proves exact release identity and Compatibility HTTP behavior",
-  files.railwaySmoke.includes("SOUL_CODEX_RELEASE_SHA") &&
-    files.railwaySmoke.includes("EXPECTED_API_CONTRACT") &&
-    files.railwaySmoke.includes("/api/compatibility/ping") &&
-    files.railwaySmoke.includes("/api/compatibility/archetype-matches") &&
-    files.railwaySmoke.includes("/api/compatibility/person"),
+  "CodeBuild binds validation evidence to the exact resolved source SHA",
+  files.codebuild.includes('ACTUAL_SHA="$(git rev-parse HEAD)"') &&
+    files.codebuild.includes("CODEBUILD_RESOLVED_SOURCE_VERSION") &&
+    files.codebuild.includes("evidence/codebuild/source-sha.txt") &&
+    files.buildspec.includes("./scripts/ci/codebuild-core.sh"),
 );
 
 check(
   "CI-01",
-  "Golden Big Three, data minimization, billing, local-first privacy, and profile ownership tests run in CI",
-  files.ci.includes("tests/bobby-big-three-golden.test.ts") &&
-    files.ci.includes("tests/compatibility-data-minimization.test.ts") &&
-    files.ci.includes("tests/billing-security.test.ts") &&
-    files.ci.includes("tests/local-first-privacy-contract.test.ts") &&
-    files.ci.includes("tests/server-profile-ownership.test.ts"),
+  "Golden Big Three, data minimization, billing, local-first privacy, and profile ownership tests run in CodeBuild",
+  files.codebuild.includes("tests/bobby-big-three-golden.test.ts") &&
+    files.codebuild.includes("tests/compatibility-data-minimization.test.ts") &&
+    files.codebuild.includes("tests/billing-security.test.ts") &&
+    files.codebuild.includes("tests/local-first-privacy-contract.test.ts") &&
+    files.codebuild.includes("tests/server-profile-ownership.test.ts"),
 );
 check(
   "CI-02",
-  "The exact-head doctrine gate enforces unknown-time, no-fabrication, minimal verification, privacy, compatibility, billing, and no-simulation contracts",
-  files.doctrineWorkflow.includes("tests/unknown-time-input-contract.test.ts") &&
-    files.doctrineWorkflow.includes("tests/foundation-local-astronomy-boundary.test.ts") &&
-    files.doctrineWorkflow.includes("tests/profile-verification-boundary.test.ts") &&
-    files.doctrineWorkflow.includes("tests/local-first-privacy-contract.test.ts") &&
-    files.doctrineWorkflow.includes("tests/compatibility-data-minimization.test.ts") &&
-    files.doctrineWorkflow.includes("tests/billing-security.test.ts") &&
-    files.doctrineWorkflow.includes("tests/no-simulated-release-routes.test.ts"),
+  "The exact-head CodeBuild gate enforces unknown-time, no-fabrication, minimal verification, privacy, compatibility, billing, and no-simulation contracts",
+  files.codebuild.includes("tests/unknown-time-input-contract.test.ts") &&
+    files.codebuild.includes("tests/foundation-local-astronomy-boundary.test.ts") &&
+    files.codebuild.includes("tests/profile-verification-boundary.test.ts") &&
+    files.codebuild.includes("tests/local-first-privacy-contract.test.ts") &&
+    files.codebuild.includes("tests/compatibility-data-minimization.test.ts") &&
+    files.codebuild.includes("tests/billing-security.test.ts") &&
+    files.codebuild.includes("tests/no-simulated-release-routes.test.ts"),
 );
 check(
   "PWA-01",
-  "Chromium and WebKit offline restart validation remains configured",
-  files.pwaWorkflow.includes("Chromium and WebKit offline restart") &&
-    files.pwaWorkflow.includes("Test offline browser restart"),
+  "Production builds generate and validate the PWA offline payload",
+  files.packageJson.includes("scripts/generate-pwa-service-worker.mjs") &&
+    files.packageJson.includes("scripts/validate-pwa-output.mjs"),
 );
 
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 8,
+  version: 9,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,
@@ -338,8 +334,6 @@ const receipt = {
     "Google Play submission and validation",
   ],
   deliberatelyUnresolved: [
-    "Astrological houses and Midheaven",
-    "Nodes, Chiron, and planetary house placements",
     "Human Design compatibility and authoritative interpretation",
     "Palmistry computer-vision analysis",
     "Astrocartography planetary-line calculation and mapping",

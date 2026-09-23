@@ -172,9 +172,6 @@ export function buildVerifiedDifferentiationCorpus(count = 48): DifferentiationR
         moon: chart.moon?.sign,
         rising: chart.rising?.sign,
         planets: chart.planets,
-        houses: chart.planetaryHouses,
-        northNode: chart.northNode,
-        chiron: chart.chiron,
         aspects: chart.aspects,
       }),
       biography: synthesis.biography,
@@ -225,12 +222,6 @@ function signatureDistance(leftSignature: string, rightSignature: string): numbe
     "jupiter", "saturn", "uranus", "neptune", "pluto",
   ]) {
     if (left.planets?.[key]?.sign !== right.planets?.[key]?.sign) distance += 1;
-    if (left.houses?.[key] !== right.houses?.[key]) distance += 1;
-  }
-
-  for (const key of ["northNode", "chiron"]) {
-    if (left[key]?.sign !== right[key]?.sign) distance += 1;
-    if (left[key]?.house !== right[key]?.house) distance += 1;
   }
 
   const leftAspects = left.aspects ?? [];

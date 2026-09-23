@@ -3,10 +3,11 @@ name: Xcode Cloud Bootstrap Parity
 on:
   push:
     branches:
-      - release/4.0.0-runtime-identity-finalization
+      - release/4.0.1-runtime-identity-finalization
   pull_request:
     branches:
       - main
+      - release/ios-4.0.0-final-truth-fix
     paths:
       - "ios/**"
       - "client/**"
@@ -25,7 +26,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.0.0
+  VITE_RELEASE_VERSION: 4.0.1
   VITE_API_CONTRACT: foundation-v4
   VITE_RELEASE_SHA: ${{ github.sha }}
 
@@ -58,7 +59,7 @@ jobs:
       - name: Validate final iOS release metadata
         run: npm run mobile:validate:ios
 
-      - name: Verify signing and final 4.0.0 release contracts after bootstrap
+      - name: Verify signing and final 4.0.1 release contracts after bootstrap
         run: |
           node --import tsx --test \
             tests/xcode-cloud-scheme-contract.test.ts \
@@ -97,7 +98,7 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "release=4.0.0"
+            echo "release=4.0.1"
             echo "scheme=Ultimate Soul Codex"
             echo "bootstrap=ios/App/ci_scripts/ci_post_clone.sh"
             echo "purpose=separate repository/bootstrap failures from Apple-managed signing failures"
@@ -107,6 +108,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.0-xcode-cloud-parity
+          name: soulcodex-4.0.1-xcode-cloud-parity
           path: xcode-cloud-parity-receipt.txt
           retention-days: 90

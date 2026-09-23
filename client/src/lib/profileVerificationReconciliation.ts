@@ -9,14 +9,27 @@ type PlacementRecord = {
   status?: string;
   verificationStatus?: string;
   sign?: string | null;
+  internalCandidate?: {
+    longitude?: number;
+    inputTimestamp?: string;
+  };
 };
+
+const ZODIAC_SIGNS = [
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+] as const;
+
+const MAJOR_ASPECTS = new Set([
+  "conjunction", "opposition", "trine", "square", "sextile",
+]);
 
 const FULL_NATAL_PLANET_KEYS = [
   "sun", "moon", "mercury", "venus", "mars",
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
 
-export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 5;
+export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 7;
 
 export type RemoteProfileSnapshot = {
   id?: string;
@@ -39,11 +52,14 @@ export type RemoteProfileSnapshot = {
       sign?: string;
       degree?: number;
       longitude?: number;
+      policyId?: string;
+      evidenceArtifactId?: string;
     }>;
     midheaven?: PlacementRecord & {
       longitude?: number;
       degree?: number;
       policyId?: string;
+      evidenceArtifactId?: string;
     };
     planetaryHouses?: Partial<Record<(typeof FULL_NATAL_PLANET_KEYS)[number], number>>;
     aspects?: Array<{
@@ -52,6 +68,7 @@ export type RemoteProfileSnapshot = {
       aspect?: string;
       orb?: number;
       policyId?: string;
+      evidenceArtifactId?: string;
     }>;
     northNode?: PlacementRecord & {
       mode?: string;
@@ -59,6 +76,7 @@ export type RemoteProfileSnapshot = {
       longitude?: number;
       degree?: number;
       policyId?: string;
+      evidenceArtifactId?: string;
     };
     southNode?: PlacementRecord & {
       mode?: string;
@@ -66,6 +84,7 @@ export type RemoteProfileSnapshot = {
       longitude?: number;
       degree?: number;
       policyId?: string;
+      evidenceArtifactId?: string;
     };
     chiron?: PlacementRecord & {
       house?: number;
@@ -73,6 +92,7 @@ export type RemoteProfileSnapshot = {
       degree?: number;
       policyId?: string;
       qualificationMethod?: string;
+      evidenceArtifactId?: string;
     };
     sunSign?: string | null;
     moonSign?: string | null;
@@ -81,6 +101,7 @@ export type RemoteProfileSnapshot = {
     [key: string]: unknown;
   };
   numerologyData?: Record<string, unknown>;
+  humanDesignData?: Record<string, unknown> | null;
   archetypeData?: {
     title?: string;
     [key: string]: unknown;
@@ -100,15 +121,53 @@ export type ReconciledOfflineProfile = OfflineCodexProfile & {
   };
 };
 
+function validZodiacSign(value: unknown): value is (typeof ZODIAC_SIGNS)[number] {
+  return typeof value === "string" &&
+    ZODIAC_SIGNS.includes(value.trim() as (typeof ZODIAC_SIGNS)[number]);
+}
+
 export function getVerifiedAstrologySign(
   astrology: RemoteProfileSnapshot["astrologyData"],
   body: "sun" | "moon" | "rising",
 ): string | null {
   const placement = astrology?.[body];
   if (placement?.verificationStatus !== "verified") return null;
-  return typeof placement.sign === "string" && placement.sign.trim()
-    ? placement.sign
+  return validZodiacSign(placement.sign)
+    ? placement.sign.trim()
     : null;
+}
+
+function normalizeLongitude(value: number): number {
+  return ((value % 360) + 360) % 360;
+}
+
+function signFromLongitude(value: number): (typeof ZODIAC_SIGNS)[number] {
+  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(value) / 30)];
+}
+
+function validHouseNumber(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
+}
+
+function validVerifiedPoint(
+  point: PlacementRecord & {
+    longitude?: number;
+    degree?: number;
+    policyId?: string;
+    evidenceArtifactId?: string;
+  } | undefined,
+  policyId: string,
+): boolean {
+  return point?.verificationStatus === "verified" &&
+    validZodiacSign(point.sign) &&
+    Number.isFinite(point.longitude) &&
+    Number(point.longitude) >= 0 && Number(point.longitude) < 360 &&
+    signFromLongitude(Number(point.longitude)) === point.sign &&
+    Number.isFinite(point.degree) &&
+    Math.abs(Number(point.degree) - (Number(point.longitude) % 30)) < 0.01 &&
+    point.policyId === policyId &&
+    typeof point.evidenceArtifactId === "string" &&
+    point.evidenceArtifactId.trim().length > 0;
 }
 
 export function hasVerifiedSunAndMoon(
@@ -134,7 +193,12 @@ export function hasVerifiedFullNatalChart(
 ): boolean {
   if (!astrology || !hasVerifiedBigThree(astrology)) return false;
   if (astrology.houseSystem !== "equal") return false;
-  if (astrology.midheaven?.verificationStatus !== "verified") return false;
+  const verification = astrology.verification as { policyId?: unknown } | undefined;
+  const policyIdentity = typeof verification?.policyId === "string" ? verification.policyId : "";
+  for (const policy of ["ASTRO-EQUAL-HOUSE-v1", "ASTRO-MEAN-NODE-v1", "ASTRO-CHIRON-v1"]) {
+    if (!policyIdentity.includes(policy)) return false;
+  }
+  if (!validVerifiedPoint(astrology.midheaven, "ASTRO-EQUAL-HOUSE-v1")) return false;
 
   const houses = astrology.houses;
   if (
@@ -143,7 +207,15 @@ export function hasVerifiedFullNatalChart(
     houses.some(
       (house, index) =>
         house.verificationStatus !== "verified" ||
-        house.house !== index + 1,
+        house.house !== index + 1 ||
+        house.policyId !== "ASTRO-EQUAL-HOUSE-v1" ||
+        typeof house.evidenceArtifactId !== "string" ||
+        !house.evidenceArtifactId.trim() ||
+        !Number.isFinite(house.longitude) ||
+        Number(house.longitude) < 0 || Number(house.longitude) >= 360 ||
+        signFromLongitude(Number(house.longitude)) !== house.sign ||
+        !Number.isFinite(house.degree) ||
+        Math.abs(Number(house.degree) - (Number(house.longitude) % 30)) >= 0.01,
     )
   ) {
     return false;
@@ -153,7 +225,7 @@ export function hasVerifiedFullNatalChart(
   if (
     !planets ||
     FULL_NATAL_PLANET_KEYS.some(
-      (key) => planets[key]?.verificationStatus !== "verified",
+      (key) => planets[key]?.verificationStatus !== "verified" || !validZodiacSign(planets[key]?.sign),
     )
   ) {
     return false;
@@ -164,21 +236,27 @@ export function hasVerifiedFullNatalChart(
     !planetaryHouses ||
     FULL_NATAL_PLANET_KEYS.some((key) => {
       const house = planetaryHouses[key];
-      return typeof house !== "number" || house < 1 || house > 12;
+      return !validHouseNumber(house);
     })
   ) {
     return false;
   }
 
-  if (!Array.isArray(astrology.aspects)) return false;
+  if (!Array.isArray(astrology.aspects) || astrology.aspects.some((aspect) =>
+    typeof aspect.planet1 !== "string" ||
+    typeof aspect.planet2 !== "string" ||
+    !MAJOR_ASPECTS.has(String(aspect.aspect).toLowerCase()) ||
+    !Number.isFinite(aspect.orb) ||
+    Number(aspect.orb) < 0 ||
+    aspect.policyId !== "ASTRO-ASPECT-MAJOR-v1"
+  )) return false;
 
   for (const node of [astrology.northNode, astrology.southNode]) {
     if (
-      node?.verificationStatus !== "verified" ||
+      !node ||
+      !validVerifiedPoint(node, "ASTRO-MEAN-NODE-v1") ||
       node.mode !== "mean" ||
-      typeof node.house !== "number" ||
-      node.house < 1 ||
-      node.house > 12
+      !validHouseNumber(node.house)
     ) {
       return false;
     }
@@ -186,12 +264,18 @@ export function hasVerifiedFullNatalChart(
 
   const chiron = astrology.chiron;
   if (
-    chiron?.verificationStatus !== "verified" ||
-    typeof chiron.house !== "number" ||
-    chiron.house < 1 ||
-    chiron.house > 12 ||
+    !chiron ||
+    !validVerifiedPoint(chiron, "ASTRO-CHIRON-v1") ||
+    !validHouseNumber(chiron.house) ||
     chiron.qualificationMethod !== "live-jpl-qualified-against-swiss"
   ) {
+    return false;
+  }
+
+  const northLongitude = Number(astrology.northNode?.longitude);
+  const southLongitude = Number(astrology.southNode?.longitude);
+  const nodeOpposition = Math.abs(normalizeLongitude(northLongitude - southLongitude));
+  if (Math.min(nodeOpposition, 360 - nodeOpposition) < 179.99 || Math.min(nodeOpposition, 360 - nodeOpposition) > 180.01) {
     return false;
   }
 
@@ -246,6 +330,11 @@ export function reconcileActiveProfile(
     risingSign,
     astrologyData: astrology ?? local.astrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
+    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignType:
+      typeof remote.humanDesignData?.type === "string"
+        ? remote.humanDesignData.type
+        : local.humanDesignType,
     archetype: remote.archetypeData?.title ?? local.archetype,
     confidence: {
       ...(local.confidence && typeof local.confidence === "object"
@@ -271,6 +360,7 @@ export function reconcileOfflineProfile(
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
+    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
   };
 
   const verifiedNarrative =
@@ -279,12 +369,14 @@ export function reconcileOfflineProfile(
           mergedLocal,
           remote.astrologyData as VerifiedAstrologyForSynthesis,
           syncedAt,
+          remote.humanDesignData ?? undefined,
         )
       : null;
 
   return {
     ...local,
     numerologyData,
+    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
     archetypeData:
       verifiedNarrative?.archetypeData ??
       (remote.archetypeData as OfflineCodexProfile["archetypeData"] | undefined) ??
@@ -318,9 +410,10 @@ export function reconcileOfflineProfile(
  *   completed its independent verification/derived-geometry contract.
  *
  * Verification-version bookkeeping must never suppress a retry after a
- * temporary reference/engine failure. Version 5 means the profile understands
- * the full-natal chart, Mean Node, and live-qualified Chiron contracts; it does
- * not mean every placement passed.
+ * temporary reference/engine failure. Version 7 rebuilds complete timed
+ * profiles through the promoted supporting-synthesis contract so verified
+ * houses, angles, Nodes, qualified Chiron, and Human Design details reach all
+ * profile consumers instead of remaining isolated rows.
  */
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
@@ -329,8 +422,16 @@ export function profileNeedsOnlineVerification(
     return true;
   }
 
-  return Boolean(
-    hasExactAscendantInputs(profile) &&
-      !hasVerifiedFullNatalChart(profile.verifiedAstrologyData),
-  );
+  if (!hasExactAscendantInputs(profile)) return false;
+
+  if (
+    (profile.remoteSync?.verificationVersion ?? 0) <
+    CURRENT_ASTROLOGY_VERIFICATION_VERSION
+  ) {
+    return true;
+  }
+
+  if (!hasVerifiedFullNatalChart(profile.verifiedAstrologyData)) return true;
+
+  return profile.humanDesignData?.status !== "verified";
 }

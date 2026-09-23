@@ -57,6 +57,43 @@ describe("clarityReadingModel", () => {
     expect(model.signals.some((signal) => signal.id === "rising")).toBe(false);
   });
 
+  it("exposes verified houses, governed points, and Human Design bodygraph evidence", () => {
+    const model = buildClarityReadingModel({
+      verifiedAstrologyData: {
+        houseSystem: "equal",
+        houses: Array.from({ length: 12 }, (_, index) => ({ house: index + 1, sign: "Virgo", verificationStatus: "verified" })),
+        planets: { sun: { sign: "Virgo", verificationStatus: "verified" } },
+        planetaryHouses: { sun: 10 },
+        midheaven: { sign: "Leo", verificationStatus: "verified" },
+        northNode: { sign: "Aquarius", house: 4, verificationStatus: "verified" },
+        southNode: { sign: "Leo", house: 10, verificationStatus: "verified" },
+        chiron: { sign: "Cancer", house: 8, verificationStatus: "verified", qualificationMethod: "live-jpl-qualified-against-swiss" },
+      },
+      humanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        strategy: "Wait a lunar cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+        definition: "No Definition",
+        centers: { defined: [], undefined: ["Head", "Ajna"] },
+        channels: [],
+        activatedGates: [1, 2],
+      },
+    });
+
+    expect(model.signals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "houses", confidence: "verified" }),
+      expect.objectContaining({ id: "placement-sun", value: "Virgo · House 10" }),
+      expect.objectContaining({ id: "midheaven", value: "Leo" }),
+      expect.objectContaining({ id: "north-node", value: "Aquarius · House 4" }),
+      expect.objectContaining({ id: "chiron", value: "Cancer · House 8" }),
+      expect.objectContaining({ id: "hd-type", value: "Reflector" }),
+      expect.objectContaining({ id: "hd-authority", value: "Lunar Authority" }),
+      expect.objectContaining({ id: "hd-gates", value: "1, 2" }),
+    ]));
+  });
+
   it("uses direct depth interpretation before generic fallbacks", () => {
     const model = buildClarityReadingModel({
       depthInterpretation: {

@@ -25,7 +25,7 @@ test("calculated values remain candidates rather than authoritative facts", () =
     calculatedAt: "2026-08-03T16:00:00.000Z",
     candidate: {
       type: "Reflector",
-      strategy: "Wait a lunar cycle",
+      strategy: "To Wait a Lunar Cycle",
       authority: "Lunar Authority",
       profile: "2/5",
     },
@@ -72,7 +72,7 @@ test("qualified Human Design core becomes verified only through the approved rec
     calculatedAt: "2026-09-19T23:03:08.000Z",
     candidate: {
       type: "Reflector",
-      strategy: "Wait a lunar cycle",
+      strategy: "To Wait a Lunar Cycle",
       authority: "Lunar Authority",
       profile: "2/5",
     },
@@ -89,6 +89,58 @@ test("qualified Human Design core becomes verified only through the approved rec
   assert.equal(mayUseHumanDesignForCompatibility(record), true);
   assert.match(record.limitations.join(" "), /Variables/i);
   assert.match(record.limitations.join(" "), /Incarnation Cross/i);
+});
+
+test("incomplete Human Design candidates cannot receive verified promotion", () => {
+  for (const candidate of [
+    {},
+    { type: "Generator" },
+    {
+      type: "Generator",
+      strategy: "To Respond",
+      authority: "Sacral Authority",
+    },
+  ]) {
+    const record = createVerifiedHumanDesignTrustRecord({
+      birthTimeKnown: true,
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      candidate,
+    });
+
+    assert.equal(record.status, "calculated_unverified");
+    assert.equal(mayUseHumanDesignForCompatibility(record), false);
+  }
+});
+
+test("structurally inconsistent Human Design candidates cannot receive verified promotion", () => {
+  for (const candidate of [
+    {
+      type: "Generator",
+      strategy: "To Inform",
+      authority: "Sacral Authority",
+      profile: "2/5",
+    },
+    {
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Sacral Authority",
+      profile: "2/5",
+    },
+    {
+      type: "Generator",
+      strategy: "To Respond",
+      authority: "Sacral Authority",
+      profile: "0/7",
+    },
+  ]) {
+    const record = createVerifiedHumanDesignTrustRecord({
+      birthTimeKnown: true,
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      candidate,
+    });
+
+    assert.equal(record.status, "calculated_unverified");
+  }
 });
 
 test("approved Human Design receipt is exact and complete", () => {

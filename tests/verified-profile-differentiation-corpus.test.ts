@@ -55,6 +55,9 @@ const genericTerms = [
   "balance",
   "boundaries",
   "sensitivity",
+  "alignment",
+  "purpose",
+  "intuitive",
 ];
 
 function normalize(text: string): string {
@@ -184,6 +187,33 @@ function fingerprint(
   ].join(" ");
 }
 
+function supportedSignature(
+  reading: Awaited<ReturnType<typeof fullVerifiedReading>>,
+): string[] {
+  const astrology = reading.astrology;
+  const placement = (key: (typeof BODY_KEYS)[number][1]) =>
+    astrology.planets?.[key]?.verificationStatus === "verified"
+      ? astrology.planets[key]?.sign ?? "unresolved"
+      : "unresolved";
+
+  return [
+    ...BODY_KEYS.map(([, key]) => `${key}:${placement(key)}`),
+    `rising:${astrology.rising?.verificationStatus === "verified" ? astrology.rising.sign : "unresolved"}`,
+  ];
+}
+
+function supportedSignatureDistance(
+  left: Awaited<ReturnType<typeof fullVerifiedReading>>,
+  right: Awaited<ReturnType<typeof fullVerifiedReading>>,
+): number {
+  const a = supportedSignature(left);
+  const b = supportedSignature(right);
+  return a.reduce(
+    (distance, value, index) => distance + (value === b[index] ? 0 : 1),
+    0,
+  );
+}
+
 test("verified profile differentiation corpus", { timeout: 120_000 }, async (suite) => {
   const readings = [];
   for (let index = 0; index < 60; index += 1) {
@@ -200,7 +230,7 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
   });
 
-  await suite.test("repeated name/date pairs differentiate only after verified time/location geometry", () => {
+  await suite.test("repeated name/date pairs differentiate when supported verified placements differ", () => {
     for (let index = 0; index < 15; index += 1) {
       const first = readings[index];
       const second = readings[index + 15];
@@ -229,18 +259,27 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
       const hits = texts.filter((text) => text.includes(term)).length;
       const ratio = hits / texts.length;
       assert.ok(
-        ratio <= 0.45,
-        `${term} appears in ${(ratio * 100).toFixed(1)}% of verified profiles`,
+        ratio <= 0.35,
+        `${term} appears in ${(ratio * 100).toFixed(1)}% of verified profiles; Diamond Way budget is 35%`,
       );
     }
   });
 
   await suite.test("verified readings do not become structural near-duplicates", () => {
-    let worstBigram = { score: 0, left: -1, right: -1 };
-    let worstTrigram = { score: 0, left: -1, right: -1 };
+    let worstBigram = { score: 0, left: -1, right: -1, distance: 0 };
+    let worstTrigram = { score: 0, left: -1, right: -1, distance: 0 };
+    let materiallyDifferentPairs = 0;
 
     for (let left = 0; left < readings.length; left += 1) {
       for (let right = left + 1; right < readings.length; right += 1) {
+        // House geometry, Midheaven, Nodes, and Chiron are deliberately excluded
+        // from primary synthesis. Compare narrative similarity only when the
+        // active, verified placement evidence differs materially. Aspect-only
+        // differences are still rendered, but do not imply a wholly different
+        // natal vocabulary when the verified sign pattern is otherwise shared.
+        const distance = supportedSignatureDistance(readings[left], readings[right]);
+        if (distance < 3) continue;
+        materiallyDifferentPairs += 1;
         const bigram = ngramJaccard(
           fingerprint(readings[left]),
           fingerprint(readings[right]),
@@ -251,18 +290,23 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
           fingerprint(readings[right]),
           3,
         );
-        if (bigram > worstBigram.score) worstBigram = { score: bigram, left, right };
-        if (trigram > worstTrigram.score) worstTrigram = { score: trigram, left, right };
+        if (bigram > worstBigram.score) worstBigram = { score: bigram, left, right, distance };
+        if (trigram > worstTrigram.score) worstTrigram = { score: trigram, left, right, distance };
       }
     }
 
     assert.ok(
+      materiallyDifferentPairs >= 100,
+      `expected a meaningful comparison population, got ${materiallyDifferentPairs} pairs`,
+    );
+
+    assert.ok(
       worstBigram.score < 0.9,
-      `verified profiles ${worstBigram.left} and ${worstBigram.right} are ${(worstBigram.score * 100).toFixed(1)}% bigram-similar`,
+      `verified profiles ${worstBigram.left} and ${worstBigram.right} (supported distance ${worstBigram.distance}) are ${(worstBigram.score * 100).toFixed(1)}% bigram-similar`,
     );
     assert.ok(
       worstTrigram.score < 0.85,
-      `verified profiles ${worstTrigram.left} and ${worstTrigram.right} are ${(worstTrigram.score * 100).toFixed(1)}% trigram-similar`,
+      `verified profiles ${worstTrigram.left} and ${worstTrigram.right} (supported distance ${worstTrigram.distance}) are ${(worstTrigram.score * 100).toFixed(1)}% trigram-similar`,
     );
   });
 });

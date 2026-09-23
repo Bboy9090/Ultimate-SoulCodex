@@ -35,8 +35,8 @@ export function isTerminalOneLiner(value: string): boolean {
   return value.trim().length < 140 || sentenceCount(value) < 2;
 }
 
-function clean(value: string): string {
-  return value.trim().replace(/\s+/g, " ");
+function clean(value: string | null | undefined): string {
+  return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
 }
 
 function priorFeedbackNote(priorFits: ReadingFit[]): string {
@@ -110,97 +110,142 @@ function chapter(seed: ChapterSeed, action: string): DepthChapter {
   };
 }
 
+function signalThread(
+  model: ClarityReadingModel,
+  preferredIds: string[] = [],
+  limit = 3,
+): string {
+  const preferred = preferredIds
+    .map((id) => model.signals.find((signal) => signal.id === id))
+    .filter((signal): signal is ClarityReadingModel["signals"][number] => Boolean(signal));
+  const remaining = model.signals.filter(
+    (signal) => !preferred.some((candidate) => candidate.id === signal.id),
+  );
+  const selected = [...preferred, ...remaining].slice(0, limit);
+
+  if (selected.length === 0) {
+    return "No additional evidence signal is needed to make this useful; keep the interpretation provisional and test it against lived experience.";
+  }
+
+  return `For context, the evidence ledger currently includes ${selected
+    .map((signal) => `${signal.label}: ${signal.value} [${signal.confidence}]`)
+    .join("; ")}. Those signals provide context for reflection; they do not prove the behavioral interpretation by themselves.`;
+}
+
+function sourceTension(model: ClarityReadingModel): string {
+  return model.coreContradiction?.trim()
+    ? `The strongest supplied contradiction is: ${model.coreContradiction.trim()}`
+    : `The working tension is between the developed possibility — ${model.gift} — and the stated cost — ${model.cost}`;
+}
+
+function buildChapterSeeds(model: ClarityReadingModel): ChapterSeed[] {
+  const tension = sourceTension(model);
+  const visibleSignals = signalThread(model, ["sun", "moon", "rising", "expression"]);
+  const protectionSignals = signalThread(model, ["soul-urge", "hd-authority", "moon"]);
+  const giftSignals = signalThread(model, ["expression", "hd-type", "hd-strategy", "life-path"]);
+  const costSignals = signalThread(model, ["expression", "soul-urge", "hd-authority"]);
+  const relationshipSignals = signalThread(model, [
+    "moon",
+    "placement-venus",
+    "placement-mars",
+    "soul-urge",
+    "hd-authority",
+  ]);
+
+  return [
+    {
+      id: "visible-pattern",
+      eyebrow: "What may show first",
+      title: "The visible pattern",
+      observation: model.visiblePattern,
+      translation: `${model.visiblePattern} ${tension} The Diamond Way does not treat the first visible behavior as the whole person. Read it as a surface move that may change with context, stakes, and choice. ${visibleSignals}`,
+      strength: `${model.gift} If the visible pattern is accurate, this is the developed capacity worth protecting. The useful test is whether the behavior helps that capacity become clearer and more deliberate rather than simply more automatic.`,
+      cost: `${model.cost} Compare that stated cost with the visible behavior instead of assuming the two are identical. A pattern becomes expensive when the observable result starts moving toward this cost even while the behavior still feels reasonable from the inside.`,
+      misunderstanding: `Another person may only see the outward move described here — ${model.visiblePattern} — without access to the protection, tradeoff, or intention underneath it. Treat their reaction as relationship data, not as proof that either reading is complete.`,
+      relationshipView: `${model.relationshipImpact} Use that relationship layer to check whether the visible pattern becomes easier to understand when expectations are spoken instead of inferred.`,
+      stressView: `Under pressure, watch whether the visible pattern accelerates the stated cost — ${model.cost} — or whether the contradiction can be sequenced instead of forced into one answer: ${tension}`,
+      practicalTakeaway: `Use one recent situation as the experiment. Mark what happened immediately before the visible pattern appeared, what you did next, and whether the result moved toward the stated gift or the stated cost. Then use the grounded action: ${model.groundedAction}`,
+      reflection: "What did you actually do the last time this visible pattern showed up, and did the result look more like the gift or more like the cost?",
+      decisionExample: `Decision check: when this pattern appears around a choice, separate the observable move — ${model.visiblePattern} — from the story you tell yourself about why it happened.`,
+      relationshipExample: `Relationship check: compare the visible move with the supplied relationship impact — ${model.relationshipImpact}`,
+      workExample: `Execution check: test whether this pattern is helping the supplied gift become usable — ${model.gift} — or extending the supplied cost — ${model.cost}`,
+    },
+    {
+      id: "protective-function",
+      eyebrow: "What it may be protecting",
+      title: "The protective function",
+      observation: model.protectiveFunction,
+      translation: `${model.protectiveFunction} Protection is a hypothesis about function, not a diagnosis or invented backstory. Compare it with the visible pattern: ${model.visiblePattern} If both descriptions fit, the deeper question is what the behavior preserves, prevents, or makes easier in the present situation. ${protectionSignals}`,
+      strength: `The protective function can be useful when it creates enough room for the stated gift to operate deliberately: ${model.gift} A useful protection increases choice; it does not need to explain every part of the personality.`,
+      cost: `The same strategy should be questioned when it starts producing the supplied cost: ${model.cost} That comparison gives you a practical boundary between protection that is serving the present and protection that may be running after its usefulness has changed.`,
+      misunderstanding: `If the protective reading fits internally but the visible behavior looks different externally, other people may respond to ${model.visiblePattern} without knowing that ${model.protectiveFunction} is the function you recognize underneath it.`,
+      relationshipView: `${model.relationshipImpact} If protection is part of the exchange, make the need or boundary explicit enough that another person can respond to it rather than forcing both people to guess.`,
+      stressView: `Stress can make a protective strategy feel automatically necessary. Compare the present facts with the stated cost — ${model.cost} — before increasing the intensity of the same protection.`,
+      practicalTakeaway: `Name one thing the pattern genuinely protects and one thing it may unnecessarily restrict. Keep the first distinction separate from the second. Then test this supplied action: ${model.groundedAction}`,
+      reflection: "What is this pattern protecting in the present situation, and what evidence would show that the protection is no longer needed at the same intensity?",
+      decisionExample: `Decision check: ask whether ${model.protectiveFunction} is responding to current evidence or simply appearing whenever the choice feels consequential.`,
+      relationshipExample: `Relationship check: state the protected need plainly, then compare the response with this supplied relationship pattern — ${model.relationshipImpact}`,
+      workExample: `Execution check: notice whether protection gives the gift room to work — ${model.gift} — or pushes the process toward the stated cost — ${model.cost}`,
+    },
+    {
+      id: "gift",
+      eyebrow: "What may become skill",
+      title: "The developed gift",
+      observation: model.gift,
+      translation: `${model.gift} The gift is most useful when it can be separated from the automatic pattern that may accompany it. Compare the gift with the visible pattern — ${model.visiblePattern} — and the protective function — ${model.protectiveFunction} The point is to keep the capability without requiring the same defense or overuse every time. ${giftSignals}`,
+      strength: `${model.gift} Treat this as a capability to test in behavior. A developed gift should produce something observable: a cleaner decision, a clearer conversation, more useful work, a stronger boundary, or another result you can name afterward.`,
+      cost: `${model.cost} The Diamond Way check is whether the gift is still creating value once this cost begins to rise. Being capable of doing more is not the same as more being required.`,
+      misunderstanding: `People may respond to the visible pattern — ${model.visiblePattern} — and miss the developed capacity named here: ${model.gift} That gap is worth noticing without assuming that either perspective is automatically the correct one.`,
+      relationshipView: `${model.relationshipImpact} Ask whether the gift helps the relationship become more reciprocal and legible, or whether it turns into work you perform on behalf of the entire connection.`,
+      stressView: `A developed gift can become overused under pressure. The stress test is whether ${model.gift} is still producing its intended value or has started reproducing the stated cost — ${model.cost}`,
+      practicalTakeaway: `Choose one place where this gift can create a measurable improvement without taking over the whole problem. Define what "enough" looks like before you begin. Then apply: ${model.groundedAction}`,
+      reflection: "Where does this gift feel chosen and effective, and where does using it begin to feel compulsory or responsible for everybody else's outcome?",
+      decisionExample: `Decision check: use the gift — ${model.gift} — to improve the choice, then stop once the decision has enough support to move.`,
+      relationshipExample: `Relationship check: compare the gift with the actual exchange described here — ${model.relationshipImpact}`,
+      workExample: `Execution check: define the result this gift is meant to improve, so capability does not silently expand the assignment.`,
+    },
+    {
+      id: "cost",
+      eyebrow: "Where the pattern may overreach",
+      title: "The tradeoff",
+      observation: model.cost,
+      translation: `${model.cost} A cost is useful only if it can be recognized in actual outcomes. Compare it with the visible pattern — ${model.visiblePattern} — and the gift — ${model.gift} The same behavior can be constructive in one context and too expensive in another; the difference is what it produces, not whether the behavior has a respectable name. ${costSignals}`,
+      strength: `Seeing the cost clearly lets you keep what is useful in the gift — ${model.gift} — without treating the entire pattern as a flaw. The strength is the ability to change dose, timing, or context instead of choosing between total identification and total rejection.`,
+      cost: `${model.cost} Use this sentence as the warning condition. If the pattern repeatedly produces that outcome, more effort in the same direction is information, not automatically a solution.`,
+      misunderstanding: `A person can look highly capable while privately paying the cost described here. Conversely, somebody else may see a cost where you do not. The app should not decide that disagreement for you; compare both views with observable results.`,
+      relationshipView: `${model.relationshipImpact} In relationships, watch whether the stated cost is shared, repaired, or repeatedly absorbed by one person while the surface pattern continues unchanged.`,
+      stressView: `When pressure rises, use the cost itself as the warning signal: ${model.cost} If that outcome is increasing, changing dose, sequence, or support is more informative than simply trying harder.`,
+      practicalTakeaway: `Give the pattern an exit condition. Decide what result would tell you to continue, adjust, ask for help, or stop. Pair that condition with the supplied grounded action: ${model.groundedAction}`,
+      reflection: "What observable result would tell you that this pattern has crossed from useful effort into the cost named here?",
+      decisionExample: `Decision check: before investing another round of effort, compare the expected benefit with this stated cost — ${model.cost}`,
+      relationshipExample: `Relationship check: look for reciprocity around the supplied relationship pattern — ${model.relationshipImpact}`,
+      workExample: `Execution check: preserve the gift — ${model.gift} — while adding a stopping rule for the cost.`,
+    },
+    {
+      id: "relationships",
+      eyebrow: "How the pattern meets another person",
+      title: "Relationship dynamics",
+      observation: model.relationshipImpact,
+      translation: `${model.relationshipImpact} Relationship interpretation should describe an exchange, not assign destiny or compatibility from one person's symbols. Bring the visible pattern — ${model.visiblePattern} — and the protective function — ${model.protectiveFunction} — into the same frame, then ask what another person can actually observe, respond to, or misunderstand. ${relationshipSignals}`,
+      strength: `${model.gift} In connection, that gift matters most when it improves mutual understanding or action without erasing another person's agency, needs, or version of events.`,
+      cost: `${model.cost} In a relationship, the cost deserves attention when one person repeatedly has to absorb, translate, compensate for, or guess around the pattern while the underlying need remains unspoken.`,
+      misunderstanding: `The supplied visible pattern — ${model.visiblePattern} — may be interpreted differently by another person. Instead of choosing whose interpretation wins, compare both accounts with the actual sequence of events and what each person was trying to protect or request.`,
+      relationshipView: `${model.relationshipImpact} Treat this as the starting hypothesis for a conversation, then let the other person's lived account add information the chart or symbolic model cannot know.`,
+      stressView: `Under relationship stress, separate what you observed from what you inferred. Hold the supplied impact — ${model.relationshipImpact} — beside the contradiction — ${tension} — and ask which part is actually active in this exchange.`,
+      practicalTakeaway: `Turn one unspoken expectation into a concrete request that permits a real yes, no, or counteroffer. Then test the broader grounded action: ${model.groundedAction}`,
+      reflection: "What relationship need is currently being communicated indirectly through behavior, and what would it sound like as a clear request rather than a test?",
+      decisionExample: `Decision check: before deciding for the relationship, separate your own pattern from the other person's stated needs and choices.`,
+      relationshipExample: `Relationship check: use this supplied pattern as a hypothesis to discuss — ${model.relationshipImpact} — not as a verdict about the bond.`,
+      workExample: `Team check: notice whether the relationship pattern improves coordination or creates hidden labor that nobody has explicitly agreed to carry.`,
+    },
+  ];
+}
+
 export function buildDepthChapters(
   model: ClarityReadingModel,
   fits: ReadingFitMap = {},
 ): DepthChapter[] {
-  const seeds: ChapterSeed[] = [
-    {
-      id: "visible-pattern",
-      eyebrow: "What people may notice",
-      title: "The visible pattern",
-      observation: model.visiblePattern,
-      translation: `${model.visiblePattern} The useful question is not whether this describes you forever, but what your attention does first when stakes rise. A visible habit can be skilled and intentional in one setting, then become a reflex in another. Look for the moment when careful observation stops gathering useful information and starts postponing a choice you already understand well enough to make.`,
-      strength: "Discernment becomes valuable when it produces a cleaner decision, a more useful explanation, or a result that survives contact with reality. People may trust this side of you because you notice weak links before they become expensive problems and because you are willing to improve the work instead of merely defending it.",
-      cost: "The same sensitivity can create an ever-moving finish line. Once every improvement reveals another possible improvement, quality stops being a standard and becomes a reason not to release, decide, or rest. The cost is not simply overthinking; it is allowing analysis to consume the moment when information should become action.",
-      misunderstanding: "Other people may read careful processing as hesitation, emotional distance, or a need to control the outcome. They may not realize you are trying to reduce avoidable mistakes before you commit.",
-      relationshipView: "People close to you may experience the pause before your answer more strongly than the reasoning happening inside it. If they cannot see the evaluation process, they may fill the silence with their own explanation. A short sentence such as 'I am checking what I actually think before I answer' can preserve both your processing time and the relationship's sense of contact.",
-      stressView: "Under pressure, discernment can become a hunt for the one missing fact that would finally remove uncertainty. That fact often does not exist. The warning sign is not thinking itself; it is collecting information after the next safe, reversible step is already visible.",
-      practicalTakeaway: "Choose one current decision and define the evidence threshold before gathering anything else. When that threshold is met, move. This protects the quality of your judgment without making certainty the price of action.",
-      reflection: "Where are you still gathering information because it is useful, and where are you gathering it because deciding would make the situation real?",
-      decisionExample: "In decisions, you may gather more context than other people expect because acting without understanding feels less responsible than waiting a little longer.",
-      relationshipExample: "In conflict, you may become quieter or more explanatory while you sort out what is true, even when the other person interprets that pause as withdrawal.",
-      workExample: "In work or creativity, you may notice weak links, inconsistencies, and unfinished details before others do, which can improve the result but also make completion harder.",
-    },
-    {
-      id: "protective-function",
-      eyebrow: "What may be underneath",
-      title: "The protective function",
-      observation: model.protectiveFunction,
-      translation: `${model.protectiveFunction} Protection is different from personality. A strategy can develop because it once reduced exposure to disappointment, chaos, dependence, or being trapped without options. The important distinction is whether today's caution is responding to present evidence or to an older lesson that still expects the same danger. Safety becomes healthier when it gives you room to choose rather than requiring you to predict every possible failure in advance.`,
-      strength: "Preparation can preserve freedom. Backups, clear expectations, reversible choices, and careful trust-building can keep one bad outcome from controlling the entire situation. At its best, this is not fearfulness; it is the ability to create enough structure that honesty and vulnerability do not require recklessness.",
-      cost: "Protection becomes expensive when every relationship needs another test, every plan needs another contingency, or every commitment needs an escape route before it can feel safe. The strategy then prevents surprise by also preventing surrender, spontaneity, and the experience of learning that another person can carry part of the risk with you.",
-      misunderstanding: "Someone may call the behavior guarded, stubborn, or overly cautious when the deeper issue is often a wish to avoid being exposed without support or trapped without options.",
-      relationshipView: "A partner or friend can respect caution more easily when they know what earns trust. Silent testing leaves them guessing about rules they were never told existed. Naming the actual condition, such as consistency, follow-through, privacy, or time, turns protection from a hidden exam into a boundary another person can consciously meet or decline.",
-      stressView: "When safety feels threatened, the mind can widen the threat model until everything becomes evidence for staying guarded. Watch for the shift from 'I need one clear boundary' to 'I need to control every variable.' That expansion is usually the point where protection starts creating the isolation it was trying to prevent.",
-      practicalTakeaway: "Identify one protection you genuinely need and one precaution you are maintaining mostly from habit. Keep the boundary that protects dignity; loosen the extra layer that only promises impossible certainty.",
-      reflection: "What would make this situation meaningfully safer, and which additional precautions would merely make it feel more controllable?",
-      decisionExample: "Before agreeing, you may check whether you can reverse the decision, whether the other person is dependable, and what happens if the plan fails.",
-      relationshipExample: "You may reveal yourself in stages, watching how someone handles smaller truths before trusting them with the more vulnerable ones.",
-      workExample: "You may build backups, contingency plans, or extra structure because being unprepared feels more dangerous than doing additional work.",
-    },
-    {
-      id: "gift",
-      eyebrow: "The developed strength",
-      title: "What this pattern can become",
-      observation: model.gift,
-      translation: `${model.gift} A developed strength is not the same thing as the habit that produced it. The mature version keeps the useful perception while dropping the compulsion to prove worth through constant fixing. What matters is whether your attention can move from noticing a problem to selecting the right level of response, then stop once the response has done its job.`,
-      strength: "This can become practical intelligence: seeing patterns across messy information, translating them into something another person can use, and building a solution that works outside theory. The distinctive value is not perfection. It is the combination of observation, correction, and usefulness, especially when other people can feel that the result became clearer because you touched it.",
-      cost: "Competence attracts work. Once people learn that you can repair the broken process, remember the overlooked detail, or carry the complicated part, usefulness can quietly become a job you never agreed to. The danger is measuring your value by how much difficulty you can absorb before anyone else has to notice it.",
-      misunderstanding: "People may see the result and assume it comes easily. They may miss the private effort, observation, restraint, and repeated correction behind what looks like natural ability.",
-      relationshipView: "Care expressed through solving can be deeply valuable, but not everyone experiences a solution as closeness. Sometimes the needed response is repair; sometimes it is presence; sometimes it is letting the other person own the problem. Asking which kind of help is wanted protects your gift from turning into uninvited management.",
-      stressView: "When identity gets tied to competence, asking for help can feel more threatening than doing twice the work. A useful warning sign is resentment toward people who never had a chance to know you needed support. That usually means the strength has crossed from contribution into over-functioning.",
-      practicalTakeaway: "Before fixing the next problem, decide whether it is yours, whether help was requested, and what 'enough' looks like. Use your capability where it creates leverage, not merely where it can prevent somebody else from being uncomfortable.",
-      reflection: "Which parts of your usefulness feel chosen and energizing, and which parts have become obligations you maintain because being needed feels safer than being supported?",
-      decisionExample: "You may be strongest when a situation is messy enough to require pattern recognition but real enough that the answer must work outside theory.",
-      relationshipExample: "You may show care through fixing, researching, remembering details, or building something useful rather than relying only on emotional language.",
-      workExample: "You can connect ideas across subjects and turn them into systems, stories, tools, or explanations that did not exist in that form before.",
-    },
-    {
-      id: "cost",
-      eyebrow: "The tradeoff",
-      title: "When the strength turns against you",
-      observation: model.cost,
-      translation: `${model.cost} The tradeoff matters because strengths rarely announce the moment they become liabilities. They usually keep the same respectable name: quality, loyalty, responsibility, patience. The shift is visible in the result. If the strategy is producing less movement, less reciprocity, or less room to recover while demanding more effort, the original virtue may still be real but the current dose is wrong.`,
-      strength: "Recognizing the overuse pattern creates a form of choice that raw discipline cannot. You can keep standards without endless revision, keep loyalty without financing one-sided relationships, and keep responsibility without volunteering for every unclaimed burden. The strength here is learning that completion and boundaries can protect quality rather than betray it.",
-      cost: "The clearest cost is expansion without an exit condition. A task grows because you can imagine improvements; a bond continues because history makes leaving feel like failure; a responsibility grows because nobody else picked it up. Eventually the standard becomes larger than the life it was supposed to serve.",
-      misunderstanding: "From the outside, this may look inconsistent: highly capable in one moment and stalled in another. The missing context is often that the internal standard has grown larger than the task itself.",
-      relationshipView: "People can become accustomed to the version of you who compensates for missing effort. When you finally stop, they may experience the boundary as a sudden change even though the imbalance has been growing for a long time. Earlier, smaller boundaries usually create less damage than one exhausted final boundary.",
-      stressView: "Stress makes sunk costs persuasive. The more time, care, money, or identity invested, the harder it becomes to ask whether continuing still makes sense. Watch for arguments based entirely on how much has already been spent rather than what the next investment is likely to produce.",
-      practicalTakeaway: "Give one current commitment an explicit stopping rule. Define what progress, reciprocity, or usefulness must be present for another round of effort to make sense. If the condition is absent, finishing may mean stopping rather than improving.",
-      reflection: "What are you continuing mainly because stopping would force you to admit that earlier effort cannot guarantee the outcome you wanted?",
-      decisionExample: "You may delay releasing something because you can already see the next five improvements, even though the current version is useful and ready to be tested.",
-      relationshipExample: "You may keep repairing a bond because leaving feels like failure, even after the relationship has stopped meeting you with the same effort.",
-      workExample: "You may absorb extra roles because you can see how to do them, then become resentful that everyone assumes you will continue carrying the weight.",
-    },
-    {
-      id: "relationships",
-      eyebrow: "Connection",
-      title: "How it may affect relationships",
-      observation: model.relationshipImpact,
-      translation: `${model.relationshipImpact} Relationship patterns become useful only when they describe an exchange between two people rather than turning one person's preferences into destiny. Reliability, space, truth, repair, affection, and independence can all matter at once. The task is to make those needs legible enough that another person can respond to them instead of being judged against expectations they never heard.`,
-      strength: "Loyalty can become a durable relational skill when it includes truth. Remembering details, showing up, noticing what is unsaid, and taking repair seriously can create uncommon stability. The developed version also leaves enough room for both people to have limits, separate identities, and the right to change their minds without making every difference a threat to the bond.",
-      cost: "Connection becomes costly when care turns into mind-reading, silent testing, or carrying the relationship for two people. History can then receive more loyalty than the current reality. Staying because a bond once mattered is different from staying because both people are still participating in what it is now.",
-      misunderstanding: "A need for space may be mistaken for rejection, while intense loyalty may be mistaken for unlimited tolerance. Both readings miss the need for closeness without loss of self.",
-      relationshipView: "The strongest version of this pattern makes expectations explicit before resentment has to speak for them. It lets closeness coexist with a self that does not disappear into the relationship. Repair becomes something both people do, not a service one person performs whenever the connection becomes unstable.",
-      stressView: "When a bond feels uncertain, you may be tempted either to over-function or to retreat until the other person proves they will come after you. Both moves create information, but neither is as clean as asking directly for the behavior you need and observing the answer.",
-      practicalTakeaway: "Choose one relationship need that has been living mostly as an expectation. State it as a concrete request with room for a real yes or no. The response gives you better information than another round of guessing, testing, or compensating.",
-      reflection: "Where are you relating to the person in front of you, and where are you still relating to the history, potential, or role you hoped the bond would fulfill?",
-      decisionExample: "You may take longer to decide whether someone is truly safe, but once you decide they belong in your inner circle, you may invest deeply.",
-      relationshipExample: "You may tolerate more than people realize before walking away because ending the bond can feel like abandoning the meaning, effort, and history attached to it.",
-      workExample: "In teams, you may become the translator, stabilizer, or person who quietly notices what everyone else is avoiding, even when that labor is not formally recognized.",
-    },
-  ];
+  const seeds = buildChapterSeeds(model);
 
   return seeds.map((seed, index) => {
     const built = chapter(seed, model.groundedAction);

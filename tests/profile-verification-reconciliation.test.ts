@@ -43,9 +43,22 @@ const verifiedPlanets = {
   pluto: { verificationStatus: "verified", sign: "Scorpio" },
 };
 
+const zodiacSigns = [
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+] as const;
+
 const verifiedRemote = {
   id: "remote-robert",
   name: "Robert Example",
+  humanDesignData: {
+    status: "verified",
+    type: "Reflector",
+    strategy: "Wait a lunar cycle",
+    authority: "Lunar Authority",
+    profile: "2/5",
+    verificationReceiptId: "35474994858:human-design-repair-audit",
+  },
   astrologyData: {
     sun: { verificationStatus: "verified", sign: "Virgo" },
     moon: { verificationStatus: "verified", sign: "Virgo" },
@@ -53,11 +66,18 @@ const verifiedRemote = {
     planets: verifiedPlanets,
     houseSystem: "equal",
     houses: Array.from({ length: 12 }, (_, index) => ({
+      ...(() => {
+        const longitude = (227.3 + index * 30) % 360;
+        return {
+          sign: zodiacSigns[Math.floor(longitude / 30)],
+          degree: longitude % 30,
+          longitude,
+        };
+      })(),
       house: index + 1,
-      sign: "Scorpio",
       verificationStatus: "verified",
-      degree: 17.3,
-      longitude: (227.3 + index * 30) % 360,
+      policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-fixture",
     })),
     midheaven: {
       verificationStatus: "verified",
@@ -65,6 +85,7 @@ const verifiedRemote = {
       longitude: 148,
       degree: 28,
       policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-fixture",
     },
     planetaryHouses: {
       sun: 11,
@@ -87,6 +108,7 @@ const verifiedRemote = {
       longitude: 304.71,
       degree: 4.71,
       policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     southNode: {
       verificationStatus: "verified",
@@ -96,6 +118,7 @@ const verifiedRemote = {
       longitude: 124.71,
       degree: 4.71,
       policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     chiron: {
       verificationStatus: "verified",
@@ -105,6 +128,7 @@ const verifiedRemote = {
       degree: 25.35,
       policyId: "ASTRO-CHIRON-v1",
       qualificationMethod: "live-jpl-qualified-against-swiss",
+      evidenceArtifactId: "chiron-fixture",
     },
     // Legacy aliases cannot bypass the nested verification state.
     sunSign: "Aries",
@@ -227,16 +251,25 @@ test("offline profile keeps its local symbolic chart while carrying a separate v
   assert.notEqual(hydrated.biography, local.biography);
   assert.match(hydrated.biography, /Virgo Moon/);
   assert.match(hydrated.biography, /Scorpio Rising/);
-  assert.match(hydrated.biography, /Mercury in Virgo \(House 10\)/);
+  assert.match(hydrated.biography, /Mercury in Virgo/);
+  assert.match(hydrated.biography, /House 10/);
+  assert.match(hydrated.biography, /Verified Human Design core: Reflector/);
   assert.ok(
     hydrated.depthInterpretation.evidence.some(
       (item) => item.id === "verified.astrology.moon" && item.provenanceStatus === "externally-verified",
     ),
   );
-  assert.ok(
+  assert.equal(
     hydrated.depthInterpretation.evidence.some(
-      (item) => item.id === "verified.astrology.chiron" && item.provenanceStatus === "externally-verified",
+      (item) => item.id === "verified.astrology.chiron",
     ),
+    true,
+  );
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some(
+      (item) => item.id === "verified.human-design.core",
+    ),
+    true,
   );
   assert.equal(
     hydrated.depthInterpretation.evidence.some(
@@ -271,7 +304,7 @@ test("a Big Three-only snapshot refreshes when exact inputs can support the full
     "2026-09-19T15:06:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, CURRENT_ASTROLOGY_VERIFICATION_VERSION);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -299,7 +332,7 @@ test("a v3 full natal snapshot without Mean Nodes refreshes once for the v4 cont
     "2026-09-19T19:20:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, CURRENT_ASTROLOGY_VERIFICATION_VERSION);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -326,7 +359,7 @@ test("a v4 full natal snapshot without Chiron refreshes once for the v5 contract
     "2026-09-19T22:55:00.000Z",
   );
   assert.equal(hasVerifiedFullNatalChart(migrated.verifiedAstrologyData), true);
-  assert.equal(migrated.remoteSync?.verificationVersion, 5);
+  assert.equal(migrated.remoteSync?.verificationVersion, CURRENT_ASTROLOGY_VERIFICATION_VERSION);
   assert.equal(profileNeedsOnlineVerification(migrated), false);
 });
 
@@ -375,4 +408,39 @@ test("missing exact Ascendant inputs do not create an endless migration loop", (
 
   assert.equal(hasVerifiedSunAndMoon(legacyWithoutCoordinates.verifiedAstrologyData), true);
   assert.equal(profileNeedsOnlineVerification(legacyWithoutCoordinates), false);
+});
+
+test("verified Human Design is reconciled into active and offline profiles", () => {
+  const remoteWithHumanDesign = {
+    ...verifiedRemote,
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      verificationReceiptId: "35474994858:human-design-repair-audit",
+    },
+  };
+
+  const active = reconcileActiveProfile(
+    { id: local.id, name: local.name },
+    remoteWithHumanDesign,
+    "2026-09-21T01:00:00.000Z",
+  );
+  assert.equal(active.humanDesignType, "Reflector");
+  assert.equal(active.humanDesignData?.status, "verified");
+
+  const offline = reconcileOfflineProfile(
+    local,
+    remoteWithHumanDesign,
+    "2026-09-21T01:00:00.000Z",
+  );
+  assert.equal(offline.humanDesignData?.type, "Reflector");
+  assert.equal(
+    offline.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.human-design.core",
+    ),
+    true,
+  );
 });

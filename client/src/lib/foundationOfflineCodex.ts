@@ -1,6 +1,8 @@
 import {
+  calcBirthday,
   calcExpression,
   calcLifePath,
+  calcMaturity,
   calcPersonality,
   calcSoulUrge,
   synthesizeDepthInterpretationV1,
@@ -11,6 +13,7 @@ import {
   type OfflineCodexProfile,
 } from "@soulcodex/core";
 import type { BirthData } from "@shared/schema";
+import { maySystemInfluenceSynthesis } from "@shared/system-visibility";
 
 type Pattern = {
   drive: string;
@@ -92,29 +95,102 @@ function personalYear(dateISO: string, year: number) {
   return reduceNumber(date.day + date.month + year);
 }
 
-function elementForSign(sign: string) {
+function elementForSign(sign: string): "Fire" | "Earth" | "Air" | "Water" | null {
   if (["Aries", "Leo", "Sagittarius"].includes(sign)) return "Fire";
   if (["Taurus", "Virgo", "Capricorn"].includes(sign)) return "Earth";
   if (["Gemini", "Libra", "Aquarius"].includes(sign)) return "Air";
-  return "Water";
+  if (["Cancer", "Scorpio", "Pisces"].includes(sign)) return "Water";
+  return null;
 }
 
-function archetypeFor(sign: string, lifePath: number) {
+function signPatternFor(sign: string | null | undefined): Pattern | null {
+  if (!sign || !Object.prototype.hasOwnProperty.call(SIGN_PATTERNS, sign)) return null;
+  return SIGN_PATTERNS[sign] ?? null;
+}
+
+function numerologyPatternFor(value: number | null | undefined): Pattern | null {
+  if (typeof value !== "number" || !Number.isInteger(value)) return null;
+  if (!Object.prototype.hasOwnProperty.call(LIFE_PATHS, value)) return null;
+  return LIFE_PATHS[value] ?? null;
+}
+
+function preliminarySignatureCode(values: Array<string | number | null | undefined>): string {
+  const canonical = values.map((value) => String(value ?? "")).join("|");
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < canonical.length; index += 1) {
+    hash ^= canonical.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0").slice(0, 6).toUpperCase();
+}
+
+function archetypeFor(
+  sign: string,
+  lifePath: number,
+  expression?: number | null,
+  soulUrge?: number | null,
+) {
   const element = elementForSign(sign);
-  const path = LIFE_PATHS[lifePath] ?? LIFE_PATHS[9];
-  const titles: Record<string, string> = {
-    Fire: "Ember Initiator",
-    Earth: "Grounded Builder",
-    Air: "Pattern Messenger",
-    Water: "Depth Navigator",
-  };
+  const signPattern = signPatternFor(sign);
+  if (!element || !signPattern) {
+    throw new Error(`Unsupported sign cannot influence archetype synthesis: ${sign}`);
+  }
+
+  const path = numerologyPatternFor(lifePath);
+  const expressionPattern = numerologyPatternFor(expression);
+  const soulUrgePattern = numerologyPatternFor(soulUrge);
+  const code = preliminarySignatureCode([
+    sign,
+    lifePath,
+    expressionPattern ? expression : null,
+    soulUrgePattern ? soulUrge : null,
+  ]);
+  const supportedNumberLabels = [
+    path ? `Life Path ${lifePath}` : null,
+    expressionPattern ? `Expression ${expression}` : null,
+    soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
+  ].filter((value): value is string => Boolean(value));
+  const unsupportedNumberLabels = [
+    !path ? `Life Path ${lifePath}` : null,
+    expression !== null && expression !== undefined && !expressionPattern ? `Expression ${expression}` : null,
+    soulUrge !== null && soulUrge !== undefined && !soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
+  ].filter((value): value is string => Boolean(value));
+
+  const strengths = Array.from(new Set([
+    signPattern.gift,
+    path?.gift,
+    expressionPattern?.gift,
+    soulUrgePattern?.gift,
+  ].filter((value): value is string => Boolean(value))));
+  const shadows = Array.from(new Set([
+    signPattern.shadow,
+    path?.shadow,
+    expressionPattern?.shadow,
+    soulUrgePattern?.shadow,
+  ].filter((value): value is string => Boolean(value))));
+  const guidance = [
+    path?.action,
+    expressionPattern?.action,
+    soulUrgePattern?.action,
+    signPattern.action,
+  ].filter((value): value is string => Boolean(value)).slice(0, 3).join(" ");
+
   return {
-    title: titles[element],
-    description: `${element}-sign symbolism and Life Path ${lifePath} are the supported local ingredients in this synthesis. It is a reflective pattern, not a verified personality diagnosis.`,
-    strengths: [SIGN_PATTERNS[sign].gift, path.gift],
-    shadows: [SIGN_PATTERNS[sign].shadow, path.shadow],
-    themes: [element, `Life Path ${lifePath}`, "Local symbolic synthesis"],
-    guidance: `${path.action} ${SIGN_PATTERNS[sign].action}`,
+    title: `Foundation Signature · ${sign} / ${supportedNumberLabels.join(" / ") || "numerology unresolved"} · ${code}`,
+    description:
+      `This preliminary signature uses only supported local evidence: ${sign} Sun symbolism` +
+      (supportedNumberLabels.length ? ` plus ${supportedNumberLabels.join(", ")}.` : ".") +
+      (unsupportedNumberLabels.length ? ` Unsupported numerology values (${unsupportedNumberLabels.join(", ")}) are retained as data but excluded from interpretive synthesis.` : "") +
+      ` It is deliberately not a final archetype; Moon, Rising, houses, aspects, Human Design, and other verified systems may materially change the combined Codex.`,
+    strengths,
+    shadows,
+    themes: [
+      `${sign} Sun`,
+      element,
+      ...supportedNumberLabels,
+      "Preliminary local symbolic synthesis",
+    ],
+    guidance,
     tarotCards: {
       card1: "Unresolved locally",
       card2: "Unresolved locally",
@@ -179,24 +255,35 @@ export function generateFoundationOfflineCodexProfile(
   const sunSign = sunSignForDate(input.birthDate);
   const signPattern = SIGN_PATTERNS[sunSign];
   const lifePath = calcLifePath(input.birthDate);
+  const birthday = calcBirthday(input.birthDate);
   const expression = calcExpression(input.name);
   const soulUrge = calcSoulUrge(input.name);
   const personality = calcPersonality(input.name);
+  const maturity = calcMaturity(input.birthDate, input.name);
   const yearNumber = personalYear(input.birthDate, currentYear);
-  const pathPattern = LIFE_PATHS[lifePath] ?? LIFE_PATHS[9];
-  const archetypeData = archetypeFor(sunSign, lifePath);
+  const pathPattern = numerologyPatternFor(lifePath);
+  const expressionPattern = numerologyPatternFor(expression);
+  const soulUrgePattern = numerologyPatternFor(soulUrge);
+  if (!pathPattern) {
+    throw new Error(`Calculated Life Path ${lifePath} is outside the governed numerology set.`);
+  }
+  const archetypeData = archetypeFor(sunSign, lifePath, expression, soulUrge);
 
   const numerologyData = {
     lifePath,
+    birthday,
     expression,
     soulUrge,
     personality,
+    maturity,
     personalYear: yearNumber,
     interpretations: {
       lifePath: `Life Path ${lifePath}: deterministic number, symbolic interpretation.`,
+      birthday: `Birthday ${birthday}: deterministic day-of-birth reduction, symbolic interpretation.`,
       expression: `Expression ${expression}: deterministic name number, symbolic interpretation.`,
       soulUrge: `Soul Urge ${soulUrge}: deterministic vowel-number calculation, symbolic interpretation.`,
       personality: `Personality ${personality}: deterministic consonant-number calculation, symbolic interpretation.`,
+      maturity: `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
       personalYear: `Personal Year ${yearNumber}: reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
   };
@@ -208,8 +295,12 @@ export function generateFoundationOfflineCodexProfile(
     seeds: [
       makeSeed("offline.astrology.sun", "astrology", "sunSign", sunSign, `${sunSign} Sun symbolism`, signPattern, 100),
       makeSeed("offline.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 95),
-      makeSeed("offline.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, LIFE_PATHS[expression] ?? LIFE_PATHS[1], 92),
-      makeSeed("offline.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, LIFE_PATHS[soulUrge] ?? LIFE_PATHS[6], 91),
+      ...(expressionPattern
+        ? [makeSeed("offline.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 92)]
+        : []),
+      ...(soulUrgePattern
+        ? [makeSeed("offline.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 91)]
+        : []),
     ],
     missingData: [
       "Moon sign is unavailable in local mode until independently verified astronomy is requested.",
@@ -336,7 +427,10 @@ function verifiedPlacementSeed(input: {
   >>;
   axes?: DepthTensionAxis[];
 }): DepthSynthesisSeed {
-  const signPattern = SIGN_PATTERNS[input.sign] ?? SIGN_PATTERNS.Virgo;
+  const signPattern = signPatternFor(input.sign);
+  if (!signPattern) {
+    throw new Error(`Unsupported verified sign cannot influence synthesis: ${input.sign}`);
+  }
   const houseText = typeof input.house === "number" ? ` in House ${input.house}` : "";
   return {
     evidence: verifiedEvidence(
@@ -365,9 +459,8 @@ function verifiedPlacementSeed(input: {
 
 function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "moon" | "rising"): string | null {
   const placement = astrology[key];
-  return placement?.verificationStatus === "verified" && typeof placement.sign === "string"
-    ? placement.sign
-    : null;
+  if (placement?.verificationStatus !== "verified" || typeof placement.sign !== "string") return null;
+  return signPatternFor(placement.sign) ? placement.sign : null;
 }
 
 const HOUSE_THEMES: Record<number, { theme: string; action: string }> = {
@@ -437,6 +530,7 @@ function dominantVerifiedElement(
   for (const placement of Object.values(astrology.planets ?? {})) {
     if (placement?.verificationStatus !== "verified" || !placement.sign) continue;
     const element = elementForSign(placement.sign);
+    if (!element) continue;
     counts.set(element, (counts.get(element) ?? 0) + 1);
     total += 1;
   }
@@ -509,23 +603,97 @@ function aspectDynamicText(aspect: NonNullable<VerifiedAstrologyForSynthesis["as
 
 function verifiedAggregateSeeds(
   astrology: VerifiedAstrologyForSynthesis,
+  eligibility: { housesMidheaven: boolean },
 ): DepthSynthesisSeed[] {
   const seeds: DepthSynthesisSeed[] = [];
+
+  const verifiedPlanetSign = (
+    key: keyof NonNullable<VerifiedAstrologyForSynthesis["planets"]>,
+  ): string | null => {
+    const placement = astrology.planets?.[key];
+    return placement?.verificationStatus === "verified" && typeof placement.sign === "string"
+      ? placement.sign
+      : null;
+  };
+  const sunSign = verifiedPlanetSign("sun");
+  const moonSign = verifiedPlanetSign("moon");
+  const mercurySign = verifiedPlanetSign("mercury");
+  const venusSign = verifiedPlanetSign("venus");
+  const marsSign = verifiedPlanetSign("mars");
+  const jupiterSign = verifiedPlanetSign("jupiter");
+  const saturnSign = verifiedPlanetSign("saturn");
+  const neptuneSign = verifiedPlanetSign("neptune");
+  const plutoSign = verifiedPlanetSign("pluto");
 
   const risingSign =
     astrology.rising?.verificationStatus === "verified" &&
     typeof astrology.rising.sign === "string"
       ? astrology.rising.sign
       : null;
+
+  if (
+    sunSign &&
+    moonSign &&
+    risingSign &&
+    mercurySign &&
+    venusSign &&
+    marsSign &&
+    jupiterSign &&
+    saturnSign &&
+    neptuneSign &&
+    plutoSign
+  ) {
+    seeds.push({
+      evidence: verifiedAggregateEvidence(
+        "verified.astrology.aggregate.placement-signature",
+        "placementSignature",
+        [
+          `Sun ${sunSign}`,
+          `Moon ${moonSign}`,
+          `Rising ${risingSign}`,
+          `Mercury ${mercurySign}`,
+          `Venus ${venusSign}`,
+          `Mars ${marsSign}`,
+          `Jupiter ${jupiterSign}`,
+          `Saturn ${saturnSign}`,
+          `Neptune ${neptuneSign}`,
+          `Pluto ${plutoSign}`,
+        ].join("; "),
+        ["Placement signature uses verified zodiac signs only; houses and other withheld systems are excluded."],
+      ),
+      label: `Verified sign pattern: ${sunSign} Sun, ${moonSign} Moon, ${risingSign} Rising, Mercury ${mercurySign}, Venus ${venusSign}, Mars ${marsSign}`,
+      priority: 132,
+      claimKind: "derived",
+      facets: {
+        claritySummary: `The verified sign pattern combines a ${sunSign} Sun, ${moonSign} Moon, and ${risingSign} Rising with Mercury in ${mercurySign}.`,
+        visiblePattern: `${risingSign} Rising meets Mars in ${marsSign}, blending outward style with a distinct action signature.`,
+        innerExperience: `${moonSign} Moon, Saturn in ${saturnSign}, and Neptune in ${neptuneSign} form the verified emotional, structural, and imaginative context.`,
+        protectiveFunction: `${moonSign} Moon and Saturn in ${saturnSign} describe a distinct symbolic pairing between emotional regulation and self-protection.`,
+        gift: `${sunSign} Sun and Jupiter in ${jupiterSign} combine the core identity pattern with a specific style of growth and contribution.`,
+        commonMisreading: `${risingSign} Rising can make Mercury in ${mercurySign} appear more one-dimensional from the outside than the full verified pattern supports.`,
+        relationshipImpact: `${moonSign} Moon and Venus in ${venusSign} create a specific symbolic pairing between emotional needs and relational preference.`,
+        decisionImpact: `${moonSign} Moon and ${risingSign} Rising contextualize how Mercury in ${mercurySign}, Mars in ${marsSign}, and Jupiter in ${jupiterSign} may interact symbolically.`,
+        boundaryOrRepair: `${moonSign} Moon and ${risingSign} Rising contextualize how Saturn in ${saturnSign} and Pluto in ${plutoSign} handle structure, pressure, and change.`,
+        action: `Let ${risingSign} Rising set the visible pace while Mars in ${marsSign} supplies deliberate follow-through; check the choice against the needs of a ${moonSign} Moon.`,
+      },
+      tensionAxes: [],
+      limitations: [
+        "The placements are verified astronomical data; the combined psychological language remains symbolic interpretation.",
+      ],
+    });
+  }
+
   const midheavenSign =
     astrology.midheaven?.verificationStatus === "verified" &&
-    typeof astrology.midheaven.sign === "string"
+    typeof astrology.midheaven.sign === "string" &&
+    signPatternFor(astrology.midheaven.sign)
       ? astrology.midheaven.sign
       : null;
   const sunHouse = astrology.planetaryHouses?.sun;
   const moonHouse = astrology.planetaryHouses?.moon;
 
   if (
+    eligibility.housesMidheaven &&
     risingSign &&
     midheavenSign &&
     typeof sunHouse === "number" &&
@@ -533,8 +701,11 @@ function verifiedAggregateSeeds(
   ) {
     const sunHouseLanguage = HOUSE_THEMES[sunHouse];
     const moonHouseLanguage = HOUSE_THEMES[moonHouse];
-    const risingLanguage = SIGN_PATTERNS[risingSign] ?? SIGN_PATTERNS.Virgo;
-    const mcLanguage = SIGN_PATTERNS[midheavenSign] ?? SIGN_PATTERNS.Virgo;
+    const risingLanguage = signPatternFor(risingSign);
+    const mcLanguage = signPatternFor(midheavenSign);
+    if (!risingLanguage || !mcLanguage) {
+      throw new Error("Verified chart geometry contained an unsupported sign.");
+    }
 
     seeds.push({
       evidence: verifiedAggregateEvidence(
@@ -589,7 +760,9 @@ function verifiedAggregateSeeds(
     });
   }
 
-  const house = strongestVerifiedHouse(astrology);
+  const house = eligibility.housesMidheaven
+    ? strongestVerifiedHouse(astrology)
+    : null;
   if (house) {
     const houseLanguage = HOUSE_THEMES[house.house];
     seeds.push({
@@ -652,6 +825,7 @@ export function synthesizeVerifiedFoundationProfile(
   local: OfflineCodexProfile,
   astrology: VerifiedAstrologyForSynthesis,
   generatedAt = new Date().toISOString(),
+  humanDesign?: Record<string, unknown>,
 ): Pick<
   OfflineCodexProfile,
   "biography" | "dailyGuidance" | "depthInterpretation" | "archetypeData"
@@ -671,22 +845,40 @@ export function synthesizeVerifiedFoundationProfile(
   const lifePath = local.numerologyData.lifePath;
   const expression = local.numerologyData.expression;
   const soulUrge = local.numerologyData.soulUrge;
-  const pathPattern = LIFE_PATHS[lifePath] ?? LIFE_PATHS[9];
-  const sunPattern = SIGN_PATTERNS[sun] ?? SIGN_PATTERNS.Virgo;
-  const moonPattern = SIGN_PATTERNS[moon] ?? SIGN_PATTERNS.Virgo;
-  const risingPattern = SIGN_PATTERNS[rising] ?? SIGN_PATTERNS.Virgo;
+  const pathPattern = numerologyPatternFor(lifePath);
+  const expressionPattern = numerologyPatternFor(expression);
+  const soulUrgePattern = numerologyPatternFor(soulUrge);
+  const sunPattern = signPatternFor(sun);
+  const moonPattern = signPatternFor(moon);
+  const risingPattern = signPatternFor(rising);
+  if (!sunPattern || !moonPattern || !risingPattern) {
+    throw new Error("Verified Big Three contained an unsupported sign.");
+  }
+  const eligibility = {
+    housesMidheaven: maySystemInfluenceSynthesis("housesMidheaven", "verified"),
+    nodesChiron: maySystemInfluenceSynthesis("nodesChiron", "verified"),
+    humanDesign:
+      humanDesign?.status === "verified" &&
+      maySystemInfluenceSynthesis("humanDesign", "verified"),
+  };
 
   const seeds: DepthSynthesisSeed[] = [
-    ...verifiedAggregateSeeds(astrology),
-    makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100),
-    makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, LIFE_PATHS[expression] ?? LIFE_PATHS[1], 96),
-    makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, LIFE_PATHS[soulUrge] ?? LIFE_PATHS[6], 95),
+    ...verifiedAggregateSeeds(astrology, eligibility),
+    ...(pathPattern
+      ? [makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100)]
+      : []),
+    ...(expressionPattern
+      ? [makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 96)]
+      : []),
+    ...(soulUrgePattern
+      ? [makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 95)]
+      : []),
     verifiedPlacementSeed({
       id: "verified.astrology.sun",
       field: "sun",
       bodyLabel: "Sun",
       sign: sun,
-      house: astrology.planetaryHouses?.sun,
+      house: eligibility.housesMidheaven ? astrology.planetaryHouses?.sun : undefined,
       priority: 130,
       facets: {
         claritySummary: `The verified Sun layer emphasizes ${sunPattern.drive}.`,
@@ -697,7 +889,7 @@ export function synthesizeVerifiedFoundationProfile(
       field: "moon",
       bodyLabel: "Moon",
       sign: moon,
-      house: astrology.planetaryHouses?.moon,
+      house: eligibility.housesMidheaven ? astrology.planetaryHouses?.moon : undefined,
       priority: 128,
       facets: {
         innerExperience: `The verified Moon layer may describe an inner pull toward ${moonPattern.drive}.`,
@@ -717,6 +909,61 @@ export function synthesizeVerifiedFoundationProfile(
       },
     }),
   ];
+
+  if (eligibility.humanDesign) {
+    const type = typeof humanDesign?.type === "string" ? humanDesign.type : null;
+    const strategy = typeof humanDesign?.strategy === "string" ? humanDesign.strategy : null;
+    const authority = typeof humanDesign?.authority === "string" ? humanDesign.authority : null;
+    const profile = typeof humanDesign?.profile === "string" ? humanDesign.profile : null;
+    const definition = typeof humanDesign?.definition === "string" ? humanDesign.definition : null;
+    const centers = humanDesign?.centers && typeof humanDesign.centers === "object"
+      ? humanDesign.centers as { defined?: unknown; undefined?: unknown }
+      : null;
+    const definedCenters = Array.isArray(centers?.defined)
+      ? centers.defined.filter((value): value is string => typeof value === "string")
+      : [];
+    const channels = Array.isArray(humanDesign?.channels)
+      ? humanDesign.channels.filter((value): value is string => typeof value === "string")
+      : [];
+    const activatedGates = Array.isArray(humanDesign?.activatedGates)
+      ? humanDesign.activatedGates.filter((value): value is number | string => typeof value === "number" || typeof value === "string")
+      : [];
+    if (type && strategy && authority && profile) {
+      seeds.push({
+        evidence: {
+          id: "verified.human-design.core",
+          system: "human-design",
+          field: "core",
+          value: [type, strategy, authority, `Profile ${profile}`, definition, definedCenters.length ? `${definedCenters.length} defined centers` : null, channels.length ? `${channels.length} channels` : null, activatedGates.length ? `${activatedGates.length} gates` : null].filter(Boolean).join(" · "),
+          confidence: "high",
+          provenanceStatus: "externally-verified",
+          timeSensitivity: "birth-time-required",
+          notes: [
+            "Core Human Design output passed the approved HUMAN-DESIGN-CORE-v1 differential verification contract.",
+            "Its interpretation is symbolic and non-diagnostic.",
+          ],
+        },
+        label: `${type} · Profile ${profile}`,
+        priority: 124,
+        claimKind: "derived",
+        facets: {
+          claritySummary: `${type} with ${authority} and a ${profile} profile adds a verified Human Design decision-making lens to the chart and numerology synthesis.`,
+          innerExperience: `${type} symbolism frames how energy and attention may be experienced; the verified strategy is ${strategy}.${definition ? ` The calculated definition is ${definition}.` : ""}`,
+          hiddenNeed: `Decision-making may work best when there is room to follow ${strategy} and consult ${authority}.`,
+          protectiveFunction: `Under pressure, this pattern may protect itself by moving away from ${strategy} or overriding ${authority}; use that as a reflection prompt, not a diagnosis.`,
+          decisionImpact: `For important decisions, test the choice through ${authority} rather than treating immediate mental certainty as final.`,
+          relationshipImpact: `Profile ${profile} may add a symbolic lens for how learning, projection, and relationships interact.${definedCenters.length ? ` Defined centers (${definedCenters.join(", ")}) describe the consistently activated parts of this symbolic bodygraph.` : ""}`,
+          gift: channels.length ? `The verified bodygraph contains ${channels.length} defined channel${channels.length === 1 ? "" : "s"}: ${channels.slice(0, 4).join(", ")}${channels.length > 4 ? ", and more" : ""}.` : undefined,
+          action: `Before the next significant commitment, pause and apply ${strategy} with ${authority}.${activatedGates.length ? ` Treat the ${activatedGates.length} activated gates as detailed reflection prompts, not standalone verdicts.` : ""}`,
+        },
+        tensionAxes: ["independence", "partnership"],
+        limitations: [
+          "Human Design is a symbolic system, not scientific or medical fact.",
+          "Variables and Incarnation Cross naming are outside the approved core verification receipt.",
+        ],
+      });
+    }
+  }
 
   const bodyConfig: Array<{
     key: keyof NonNullable<VerifiedAstrologyForSynthesis["planets"]>;
@@ -738,13 +985,14 @@ export function synthesizeVerifiedFoundationProfile(
   for (const config of bodyConfig) {
     const placement = astrology.planets[config.key];
     if (placement?.verificationStatus !== "verified" || !placement.sign) continue;
-    const patternValue = SIGN_PATTERNS[placement.sign] ?? SIGN_PATTERNS.Virgo;
+    const patternValue = signPatternFor(placement.sign);
+    if (!patternValue) continue;
     seeds.push(verifiedPlacementSeed({
       id: `verified.astrology.${config.key}`,
       field: config.key,
       bodyLabel: config.label,
       sign: placement.sign,
-      house: astrology.planetaryHouses?.[config.key],
+      house: eligibility.housesMidheaven ? astrology.planetaryHouses?.[config.key] : undefined,
       priority: config.priority,
       facets: {
         [config.facet]: `${config.prefix} ${patternValue.drive}.`,
@@ -753,8 +1001,15 @@ export function synthesizeVerifiedFoundationProfile(
     }));
   }
 
-  if (astrology.midheaven?.verificationStatus === "verified" && astrology.midheaven.sign) {
-    const mcPattern = SIGN_PATTERNS[astrology.midheaven.sign] ?? SIGN_PATTERNS.Virgo;
+  if (
+    eligibility.housesMidheaven &&
+    astrology.midheaven?.verificationStatus === "verified" &&
+    astrology.midheaven.sign
+  ) {
+    const mcPattern = signPatternFor(astrology.midheaven.sign);
+    if (!mcPattern) {
+      throw new Error("Verified Midheaven contained an unsupported sign.");
+    }
     seeds.push(verifiedPlacementSeed({
       id: "verified.astrology.midheaven",
       field: "midheaven",
@@ -768,29 +1023,36 @@ export function synthesizeVerifiedFoundationProfile(
     }));
   }
 
-  for (const [key, label] of [["northNode", "Mean North Node"], ["southNode", "Mean South Node"]] as const) {
-    const node = astrology[key];
-    if (node?.verificationStatus !== "verified" || !node.sign) continue;
-    const nodePattern = SIGN_PATTERNS[node.sign] ?? SIGN_PATTERNS.Virgo;
-    seeds.push(verifiedPlacementSeed({
-      id: `verified.astrology.${key}`,
-      field: key,
-      bodyLabel: label,
-      sign: node.sign,
-      house: node.house,
-      priority: key === "northNode" ? 114 : 109,
-      facets: key === "northNode"
-        ? { decisionImpact: `Developmental-direction symbolism may invite more ${nodePattern.drive}.` }
-        : { protectiveFunction: `Familiar-pattern symbolism may fall back toward ${nodePattern.drive}.` },
-    }));
+  if (eligibility.nodesChiron) {
+    for (const [key, label] of [["northNode", "Mean North Node"], ["southNode", "Mean South Node"]] as const) {
+      const node = astrology[key];
+      if (node?.verificationStatus !== "verified" || !node.sign) continue;
+      const nodePattern = signPatternFor(node.sign);
+      if (!nodePattern) continue;
+      seeds.push(verifiedPlacementSeed({
+        id: `verified.astrology.${key}`,
+        field: key,
+        bodyLabel: label,
+        sign: node.sign,
+        house: node.house,
+        priority: key === "northNode" ? 114 : 109,
+        facets: key === "northNode"
+          ? { decisionImpact: `Developmental-direction symbolism may invite more ${nodePattern.drive}.` }
+          : { protectiveFunction: `Familiar-pattern symbolism may fall back toward ${nodePattern.drive}.` },
+      }));
+    }
   }
 
   if (
+    eligibility.nodesChiron &&
     astrology.chiron?.verificationStatus === "verified" &&
     astrology.chiron.sign &&
     astrology.chiron.qualificationMethod === "live-jpl-qualified-against-swiss"
   ) {
-    const chironPattern = SIGN_PATTERNS[astrology.chiron.sign] ?? SIGN_PATTERNS.Virgo;
+    const chironPattern = signPatternFor(astrology.chiron.sign);
+    if (!chironPattern) {
+      throw new Error("Verified Chiron contained an unsupported sign.");
+    }
     seeds.push(verifiedPlacementSeed({
       id: "verified.astrology.chiron",
       field: "chiron",
@@ -837,9 +1099,17 @@ export function synthesizeVerifiedFoundationProfile(
     birthTimeStatus: "known",
     seeds,
     missingData: [
-      "Human Design core can only be included when its separately verified snapshot is present on the profile.",
+      ...(!eligibility.humanDesign
+        ? ["Human Design core can only be included when its separately verified snapshot is present on the profile."]
+        : []),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
       "Variables and Incarnation Cross naming remain outside the verified Human Design core.",
+      ...(!eligibility.housesMidheaven
+        ? ["Houses, Midheaven, and planetary-house interpretation remain withheld unless their verified Equal House contract passes."]
+        : []),
+      ...(!eligibility.nodesChiron
+        ? ["Nodes and Chiron remain withheld unless their separate verification contracts pass."]
+        : []),
     ],
   });
   const validation = validateDepthInterpretationV1(depthInterpretation, {
@@ -853,7 +1123,9 @@ export function synthesizeVerifiedFoundationProfile(
     .map((config) => {
       const placement = astrology.planets?.[config.key];
       if (placement?.verificationStatus !== "verified" || !placement.sign) return null;
-      const house = astrology.planetaryHouses?.[config.key];
+      const house = eligibility.housesMidheaven
+        ? astrology.planetaryHouses?.[config.key]
+        : undefined;
       return `${config.label} in ${placement.sign}${typeof house === "number" ? ` (House ${house})` : ""}`;
     })
     .filter((value): value is string => Boolean(value));
@@ -865,7 +1137,9 @@ export function synthesizeVerifiedFoundationProfile(
     );
 
   const dominantElement = dominantVerifiedElement(astrology);
-  const houseConcentration = strongestVerifiedHouse(astrology);
+  const houseConcentration = eligibility.housesMidheaven
+    ? strongestVerifiedHouse(astrology)
+    : null;
   const strongestAspect = strongestAspects[0];
   const strongestAspectText = strongestAspect
     ? aspectDynamicText(strongestAspect).summary
@@ -880,47 +1154,64 @@ export function synthesizeVerifiedFoundationProfile(
     strongestAspectText,
   ].filter((value): value is string => Boolean(value)).join(". ");
 
-  const geometrySignature = [
-    `${rising}-Rising`,
-    typeof astrology.planetaryHouses?.sun === "number"
-      ? `${sun}-Sun-H${astrology.planetaryHouses.sun}`
-      : `${sun}-Sun`,
-    typeof astrology.planetaryHouses?.moon === "number"
-      ? `${moon}-Moon-H${astrology.planetaryHouses.moon}`
-      : `${moon}-Moon`,
-    astrology.midheaven?.sign
-      ? `${astrology.midheaven.sign}-MC`
-      : "MC-unresolved",
-  ].join(" / ");
+  const chartSignature = `${sun}-Sun / ${moon}-Moon / ${rising}-Rising`;
+  const governedSystemSummary = [
+    eligibility.housesMidheaven && astrology.midheaven?.sign
+      ? `Midheaven ${astrology.midheaven.sign}`
+      : null,
+    eligibility.nodesChiron && astrology.northNode?.sign
+      ? `Mean North Node ${astrology.northNode.sign}`
+      : null,
+    eligibility.nodesChiron && astrology.southNode?.sign
+      ? `Mean South Node ${astrology.southNode.sign}`
+      : null,
+    eligibility.nodesChiron && astrology.chiron?.sign
+      ? `Chiron ${astrology.chiron.sign}`
+      : null,
+  ].filter((value): value is string => Boolean(value));
+
+  const humanDesignSummary = eligibility.humanDesign
+    ? [
+        typeof humanDesign?.type === "string" ? humanDesign.type : null,
+        typeof humanDesign?.strategy === "string" ? `Strategy ${humanDesign.strategy}` : null,
+        typeof humanDesign?.authority === "string" ? `Authority ${humanDesign.authority}` : null,
+        typeof humanDesign?.profile === "string" ? `Profile ${humanDesign.profile}` : null,
+        typeof humanDesign?.definition === "string" ? humanDesign.definition : null,
+      ].filter((value): value is string => Boolean(value)).join("; ")
+    : "";
+
+  const supportedNumerologySummary = [
+    pathPattern ? `Life Path ${lifePath}` : null,
+    expressionPattern ? `Expression ${expression}` : null,
+    soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
+  ].filter((value): value is string => Boolean(value));
 
   const biography =
-    `${local.name}'s verified Codex is now anchored by a ${sun} Sun` +
-    `${typeof astrology.planetaryHouses?.sun === "number" ? ` in House ${astrology.planetaryHouses.sun}` : ""}, ` +
-    `${moon} Moon` +
-    `${typeof astrology.planetaryHouses?.moon === "number" ? ` in House ${astrology.planetaryHouses.moon}` : ""}, ` +
-    `and ${rising} Rising. Geometry signature: ${geometrySignature}. ` +
+    `${local.name}'s verified Codex is now anchored by a ${sun} Sun, ${moon} Moon, and ${rising} Rising. ` +
+    `Verified chart signature: ${chartSignature}. ` +
     `${planetSummary.length ? `Verified planetary pattern: ${planetSummary.join("; ")}. ` : ""}` +
-    `Midheaven ${astrology.midheaven?.sign ?? "unresolved"}; ` +
-    `Mean North Node ${astrology.northNode?.sign ?? "unresolved"}` +
-    `${typeof astrology.northNode?.house === "number" ? ` in House ${astrology.northNode.house}` : ""}; ` +
-    `Mean South Node ${astrology.southNode?.sign ?? "unresolved"}` +
-    `${typeof astrology.southNode?.house === "number" ? ` in House ${astrology.southNode.house}` : ""}; ` +
-    `Chiron ${astrology.chiron?.sign ?? "unresolved"}` +
-    `${typeof astrology.chiron?.house === "number" ? ` in House ${astrology.chiron.house}` : ""}. ` +
+    `${governedSystemSummary.length ? `${governedSystemSummary.join("; ")}. ` : ""}` +
     `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
     `${emphasisSummary ? `Chart emphasis: ${emphasisSummary}. ` : ""}` +
-    `Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} add deterministic numerology layers. ` +
+    `${humanDesignSummary ? `Verified Human Design core: ${humanDesignSummary}. ` : ""}` +
+    `${supportedNumerologySummary.length ? `${supportedNumerologySummary.join(", ")} add governed deterministic numerology layers. ` : "Unsupported numerology values are retained as data but excluded from interpretive synthesis. "}` +
     `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
 
+  const cleanArchetype = archetypeFor(sun, lifePath, expression, soulUrge);
   const enrichedArchetype = {
-    ...local.archetypeData,
+    ...cleanArchetype,
     description:
-      `${local.archetypeData.description} Verified ${moon} Moon and ${rising} Rising now add time-sensitive chart context.`,
+      `${cleanArchetype.description} Verified ${moon} Moon and ${rising} Rising now add time-sensitive chart context.`,
     themes: Array.from(new Set([
-      ...local.archetypeData.themes,
+      ...cleanArchetype.themes,
       `${moon} Moon`,
       `${rising} Rising`,
-      `${astrology.midheaven?.sign ?? "Unresolved"} Midheaven`,
+      ...(eligibility.housesMidheaven && astrology.midheaven?.sign
+        ? [`${astrology.midheaven.sign} Midheaven`]
+        : []),
+      ...(eligibility.humanDesign && typeof humanDesign?.type === "string"
+        ? [`${humanDesign.type} Human Design`]
+        : []),
     ])),
   };
 
@@ -930,16 +1221,25 @@ export function synthesizeVerifiedFoundationProfile(
       houseConcentration ? HOUSE_THEMES[houseConcentration.house].action : null,
       strongestAspect ? aspectDynamicText(strongestAspect).repair : null,
       dominantElement ? `Use the ${dominantElement.element} emphasis deliberately: ${ELEMENT_LANGUAGE[dominantElement.element].gift}.` : null,
-      pathPattern.action,
+      pathPattern?.action ?? null,
     ].filter((value): value is string => Boolean(value)).join(" "),
     depthInterpretation,
     archetypeData: enrichedArchetype,
   };
 }
 
+const LEGACY_FOUNDATION_ARCHETYPE_TITLES = new Set([
+  "Ember Initiator",
+  "Grounded Builder",
+  "Pattern Messenger",
+  "Depth Navigator",
+]);
+
 /**
  * Repair deterministic local synthesis created by the former timezone-sensitive
- * date parser. Online astronomy evidence is deliberately preserved verbatim.
+ * date parser and migrate the former four-title preliminary archetype scheme.
+ * Online astronomy evidence is deliberately preserved verbatim and, when
+ * available, is re-applied to the rebuilt local foundation.
  */
 export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfile>(
   profile: T,
@@ -952,7 +1252,9 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
     return profile;
   }
 
-  if (profile.numerologyData?.lifePath === expectedLifePath) return profile;
+  const lifePathNeedsRepair = profile.numerologyData?.lifePath !== expectedLifePath;
+  const archetypeNeedsRepair = LEGACY_FOUNDATION_ARCHETYPE_TITLES.has(profile.archetypeData?.title ?? "");
+  if (!lifePathNeedsRepair && !archetypeNeedsRepair) return profile;
 
   const repairedAt = options.repairedAt ?? new Date().toISOString();
   const rebuilt = generateFoundationOfflineCodexProfile(
@@ -972,13 +1274,33 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
     },
   );
 
-  return {
-    ...profile,
-    numerologyData: rebuilt.numerologyData,
+  const verifiedAstrologyData = (profile as T & { verifiedAstrologyData?: VerifiedAstrologyForSynthesis }).verifiedAstrologyData;
+  let repairedNarrative = {
     archetypeData: rebuilt.archetypeData,
     biography: rebuilt.biography,
     dailyGuidance: rebuilt.dailyGuidance,
     depthInterpretation: rebuilt.depthInterpretation,
+  };
+
+  if (verifiedAstrologyData) {
+    try {
+      repairedNarrative = synthesizeVerifiedFoundationProfile(
+        rebuilt,
+        verifiedAstrologyData,
+        repairedAt,
+        profile.humanDesignData ?? undefined,
+      );
+    } catch {
+      // Do not discard verified evidence or corrupt a stored profile when a
+      // legacy snapshot cannot be safely re-synthesized.
+      return profile;
+    }
+  }
+
+  return {
+    ...profile,
+    numerologyData: rebuilt.numerologyData,
+    ...repairedNarrative,
     updatedAt: repairedAt,
   };
 }

@@ -4,7 +4,7 @@ import * as geoTz from 'geo-tz';
 import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core/evidence-ledger';
 
 // Human Design Gates mapped to their correct centers and meanings
-const HD_GATES = {
+export const HD_GATES = {
   1: { name: "The Creative", center: "G", keywords: ["Self-expression", "Creativity", "Leadership"] },
   2: { name: "The Receptive", center: "G", keywords: ["Direction", "Higher knowing", "Love of self"] },
   3: { name: "Ordering", center: "Sacral", keywords: ["Innovation", "Change", "New order"] },
@@ -72,7 +72,7 @@ const HD_GATES = {
 };
 
 // Human Design Centers
-const HD_CENTERS = {
+export const HD_CENTERS = {
   "Head": { color: "#FFE4B5", description: "Mental pressure and inspiration" },
   "Ajna": { color: "#90EE90", description: "Mental awareness and concepts" },
   "Throat": { color: "#DDA0DD", description: "Communication and manifestation" },
@@ -1037,7 +1037,7 @@ function calculateHumanDesignInternal(birthData: {
   }
 
   const astroData = calculateHdAstroAtUtc(birthTimeUTC);
-  const DESIGN_SOLAR_ARC = 88.0;
+  const DESIGN_SOLAR_ARC = 87.975;
   const birthSunLongitude = astroData.planets.sun.longitude;
   const targetLongitude = normalizeHdLongitude(birthSunLongitude - DESIGN_SOLAR_ARC);
 
@@ -1049,7 +1049,7 @@ function calculateHumanDesignInternal(birthData: {
   const maxIterations = 50;
   let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - 88 * 86_400_000);
 
-  while (iteration < maxIterations && (maxDays - minDays) > 1e-7) {
+  while (iteration < maxIterations && (maxDays - minDays) > 1e-4) {
     const midDays = (minDays + maxDays) / 2;
     const testTimeUTC = new Date(birthTimeUTC.getTime() - midDays * 86_400_000);
     const testSunLongitude = calculateHdAstroAtUtc(testTimeUTC).planets.sun.longitude;

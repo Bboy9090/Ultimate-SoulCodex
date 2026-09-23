@@ -42,4 +42,4 @@ jobs:
       - name: Human Design verified-core trust contract
         run: node --import tsx --test tests/human-design-differential-contract.test.ts tests/human-design-trust.test.ts
       - name: Verified profile differentiation corpus
-        run: node --import tsx --test tests/offline-synthesis-evidence-boundary.test.ts tests/verified-profile-differentiation-corpus.test.ts
+        run: node --import tsx --test tests/offline-synthesis-evidence-boundary.test.ts tests/primary-synthesis-system-policy.test.ts tests/verified-profile-differentiation-corpus.test.ts
