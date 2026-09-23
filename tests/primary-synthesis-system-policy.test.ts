@@ -171,3 +171,70 @@ test("unverified Human Design never changes primary synthesis", () => {
 
   assert.deepEqual(candidate, baseline);
 });
+
+
+test("malformed legacy numerology never masquerades as Life Path 9", () => {
+  const legacy = {
+    ...local,
+    numerologyData: {
+      ...local.numerologyData,
+      lifePath: 0,
+      expression: 0,
+      soulUrge: 0,
+    },
+    archetypeData: {
+      ...local.archetypeData,
+      description: "Legacy contaminated archetype.",
+      strengths: ["humanitarian perspective"],
+      shadows: ["overextending for the larger mission"],
+      themes: ["Life Path 9", "completion and legacy"],
+      guidance: "Finish one cycle before volunteering for another.",
+    },
+  };
+
+  const result = synthesizeVerifiedFoundationProfile(
+    legacy,
+    chart("first"),
+    "2026-09-20T20:00:00.000Z",
+  );
+
+  const primaryOutput = JSON.stringify({
+    biography: result.biography,
+    dailyGuidance: result.dailyGuidance,
+    archetypeData: result.archetypeData,
+    depthInterpretation: result.depthInterpretation,
+  });
+
+  assert.doesNotMatch(
+    primaryOutput,
+    /Life Path 9|completion and legacy|humanitarian perspective|overextending for the larger mission|Finish one cycle before volunteering for another/i,
+  );
+  assert.equal(
+    result.depthInterpretation.evidence.some((entry) =>
+      entry.id.startsWith("verified.numerology."),
+    ),
+    false,
+  );
+  assert.match(
+    result.archetypeData.description,
+    /excluded from interpretive synthesis/i,
+  );
+});
+
+test("unsupported verified signs fail closed instead of inheriting Virgo language", () => {
+  const invalid = chart("first");
+  invalid.moon = { verificationStatus: "verified", sign: "Ophiuchus" };
+
+  const result = synthesizeVerifiedFoundationProfile(
+    local,
+    invalid,
+    "2026-09-20T20:00:00.000Z",
+  );
+
+  assert.deepEqual(result, {
+    biography: local.biography,
+    dailyGuidance: local.dailyGuidance,
+    depthInterpretation: local.depthInterpretation,
+    archetypeData: local.archetypeData,
+  });
+});
