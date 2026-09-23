@@ -25,6 +25,17 @@
     </div>
     <script>
       window.__SOULCODEX_BOOT_READY__ = false;
+      window.__SOULCODEX_NATIVE_DIALOGS__ = null;
+      if (window.location.protocol === "capacitor:") {
+        window.__SOULCODEX_NATIVE_DIALOGS__ = {
+          alert: window.alert,
+          confirm: window.confirm,
+          prompt: window.prompt
+        };
+        window.alert = function () {};
+        window.confirm = function () { return false; };
+        window.prompt = function () { return null; };
+      }
       window.__SOULCODEX_SHOW_BOOT_FAILURE__ = function (reason) {
         if (window.__SOULCODEX_BOOT_READY__) return;
         var root = document.getElementById("root");
