@@ -483,6 +483,7 @@ function dominantVerifiedElement(
   for (const placement of Object.values(astrology.planets ?? {})) {
     if (placement?.verificationStatus !== "verified" || !placement.sign) continue;
     const element = elementForSign(placement.sign);
+    if (!element) continue;
     counts.set(element, (counts.get(element) ?? 0) + 1);
     total += 1;
   }
