@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/diamond-way-differentiation
+      - feature/diamond-way-completeness-audit
   pull_request:
     branches:
       - main
@@ -67,7 +68,10 @@ jobs:
             packages/core/soul-guide/__tests__/depth-soul-guide.test.ts \
             tests/diamond-depth-engine.test.ts \
             tests/ultimate-codex-synthesis.test.ts \
-            tests/ultimate-codex-ui-contract.test.ts
+            tests/ultimate-codex-ui-contract.test.ts \
+            tests/astrology-atlas.test.ts \
+            tests/personal-astrology-atlas.test.ts \
+            tests/system-registry-contract.test.ts
 
       - name: Typecheck
         run: npm run check
@@ -84,6 +88,8 @@ jobs:
             echo "policy=no-hidden-virgo-fallback"
             echo "policy=no-legacy-galactic-archetype-fallbacks"
             echo "policy=full-natal-hd-ultimate-codex-contract"
+            echo "policy=living-system-registry-no-legacy-placeholder-influence"
+            echo "policy=verified-angle-interpretation-without-fake-houses"
             echo "goal=materially-distinct-evidence-bound-synthesis"
           } > DIAMOND-WAY-SYNTHESIS-RECEIPT.txt
 
