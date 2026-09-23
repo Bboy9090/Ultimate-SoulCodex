@@ -106,6 +106,15 @@ export interface UltimateCodexPlacement {
   modality: string | null;
 }
 
+export interface UltimateCodexPoint {
+  key: "rising" | "midheaven" | "northNode" | "southNode" | "chiron";
+  label: string;
+  sign: string;
+  house: number | null;
+  degree: number | null;
+  longitude: number | null;
+}
+
 export interface UltimateCodexStellium {
   kind: "sign" | "house";
   key: string;
@@ -125,6 +134,7 @@ export interface UltimateCodexSynthesis {
   dominantElement: string | null;
   dominantModality: string | null;
   placements: UltimateCodexPlacement[];
+  supportingPoints: UltimateCodexPoint[];
   houseCusps: Array<{ house: number; sign: string; degree: number | null; longitude: number | null }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
   stelliums: UltimateCodexStellium[];
@@ -302,6 +312,26 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
         .sort((a: { house: number }, b: { house: number }) => a.house - b.house)
     : [];
 
+  const supportingPoints: UltimateCodexPoint[] = [];
+  const pointSpecs = [
+    ["rising", "Rising", astrology?.rising, null],
+    ["midheaven", "Midheaven", astrology?.midheaven, null],
+    ["northNode", "North Node", astrology?.northNode, validHouse(astrology?.northNode?.house)],
+    ["southNode", "South Node", astrology?.southNode, validHouse(astrology?.southNode?.house)],
+    ["chiron", "Chiron", astrology?.chiron, validHouse(astrology?.chiron?.house)],
+  ] as const;
+  for (const [key, label, point, house] of pointSpecs) {
+    if (point?.verificationStatus !== "verified" || !validSign(point?.sign)) continue;
+    supportingPoints.push({
+      key,
+      label,
+      sign: point.sign,
+      house,
+      degree: placementDegree(point),
+      longitude: placementLongitude(point),
+    });
+  }
+
   const aspects = Array.isArray(astrology?.aspects)
     ? astrology.aspects
         .filter((row: AnyRecord) =>
@@ -348,6 +378,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const evidenceSignature = [
     ...placements.map((p) => `astro:${p.key}:${p.sign}:${p.degree ?? "?"}:H${p.house ?? "?"}`),
     ...houseCusps.map((h) => `house:${h.house}:${h.sign}:${h.degree ?? "?"}`),
+    ...supportingPoints.map((p) => `point:${p.key}:${p.sign}:${p.degree ?? "?"}:H${p.house ?? "angle"}`),
     ...aspects.map((a) => `aspect:${a.planet1}:${a.aspect}:${a.planet2}:${a.orb.toFixed(2)}`),
     ...stelliums.map((s) => `cluster:${s.kind}:${s.key}:${s.planetKeys.join(",")}`),
     lifePath ? `num:lp:${lifePath}` : null,
@@ -369,20 +400,24 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const unresolved: string[] = [];
   if (placements.length < PLANETS.length) unresolved.push(`${PLANETS.length - placements.length} natal planet placement(s) are not verified and are excluded.`);
   if (houseCusps.length < 12) unresolved.push(`${12 - houseCusps.length} house cusp(s) are not verified and are excluded.`);
-  if (!validSign(astrology?.rising?.sign) || astrology?.rising?.verificationStatus !== "verified") unresolved.push("Rising sign is unresolved.");
-  if (!validSign(astrology?.midheaven?.sign) || astrology?.midheaven?.verificationStatus !== "verified") unresolved.push("Midheaven is unresolved.");
+  for (const [key, label] of [["rising","Rising"],["midheaven","Midheaven"],["northNode","North Node"],["southNode","South Node"],["chiron","Chiron"]] as const) {
+    if (!supportingPoints.some((point) => point.key === key)) unresolved.push(`${label} is unresolved or not verified and is excluded.`);
+  }
   if (!verifiedHd) unresolved.push("Human Design core is unresolved or not verified and does not influence combined identity synthesis.");
   if (!lifePath) unresolved.push("Life Path is unavailable to the combined synthesis.");
   if (!expression) unresolved.push("Expression number is unavailable to the combined synthesis.");
   if (!soulUrge) unresolved.push("Soul Urge number is unavailable to the combined synthesis.");
+  if (!personality) unresolved.push("Personality number is unavailable to the combined synthesis.");
 
   const systemsPresent = [
     placements.length >= 3 || houseCusps.length === 12,
     Boolean(lifePath || expression || soulUrge),
     Boolean(verifiedHd && hdType && hdAuthority),
   ].filter(Boolean).length;
+  const completeNumerology = Boolean(lifePath && expression && soulUrge && personality);
+  const completeSupportingPoints = supportingPoints.length === 5;
   const coverage: UltimateCodexCoverage =
-    systemsPresent >= 3 && placements.length === 10 && houseCusps.length === 12 && verifiedHd
+    systemsPresent >= 3 && placements.length === 10 && houseCusps.length === 12 && completeSupportingPoints && verifiedHd && completeNumerology
       ? "complete"
       : systemsPresent >= 2
         ? "partial"
@@ -392,8 +427,10 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const leadSign = primaryStellium?.kind === "sign"
     ? primaryStellium.key
     : placements.find((p) => p.key === "sun")?.sign ?? placements[0]?.sign ?? null;
+  const risingPoint = supportingPoints.find((point) => point.key === "rising");
   const identityParts = unique([
     leadSign && validSign(leadSign) ? `${leadSign} ${SIGN_META[leadSign].word}` : null,
+    risingPoint ? `${risingPoint.sign} Rising` : null,
     primaryStellium ? primaryStellium.label.replace(" · ", " / ") : null,
     hdType && HD_WORD[hdType] ? `${hdType} ${HD_WORD[hdType]}${hdProfile ? ` ${hdProfile}` : ""}` : null,
     lifePath && LIFE_PATH_WORD[lifePath] ? `Life Path ${lifePath} ${LIFE_PATH_WORD[lifePath]}` : null,
@@ -470,8 +507,8 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const systemSummary = [
     {
       system: "Natal astrology",
-      status: placements.length === 10 && houseCusps.length === 12 ? "complete verified chart" : placements.length ? "partial verified chart" : "unresolved",
-      detail: `${placements.length}/10 planets · ${houseCusps.length}/12 cusps · ${aspects.length} major aspect(s) · ${stelliums.length} concentration(s)`,
+      status: placements.length === 10 && houseCusps.length === 12 && supportingPoints.length === 5 ? "complete verified chart" : placements.length ? "partial verified chart" : "unresolved",
+      detail: `${placements.length}/10 planets · ${houseCusps.length}/12 cusps · ${supportingPoints.length}/5 angles/Nodes/Chiron · ${aspects.length} major aspect(s) · ${stelliums.length} concentration(s)`,
     },
     {
       system: "Human Design",
@@ -503,6 +540,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     dominantElement,
     dominantModality,
     placements,
+    supportingPoints,
     houseCusps,
     aspects,
     stelliums,
