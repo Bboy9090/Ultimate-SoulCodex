@@ -282,6 +282,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const astrology = (profile?.verifiedAstrologyData ?? profile?.astrologyData ?? {}) as AnyRecord;
   const numerology = (profile?.numerologyData ?? {}) as AnyRecord;
   const hd = (profile?.humanDesignData ?? {}) as AnyRecord;
+  const personality = (profile?.personalityData ?? {}) as AnyRecord;
 
   const placements: UltimateCodexPlacement[] = [];
   for (const key of PLANETS) {
@@ -511,22 +512,35 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     "When systems disagree, prefer observed lived experience over symbolic interpretation. Keep the evidence, revise the meaning.",
   ]);
 
+  const personalityEvidenceState =
+    typeof personality.evidenceState === "string" ? personality.evidenceState : null;
+  const personalityAssessed =
+    personalityEvidenceState === "assessed" || personalityEvidenceState === "verified";
+
   const systemSummary = [
     {
-      system: "Natal astrology",
-      status: placements.length === 10 && houseCusps.length === 12 && supportingPoints.length === 5 ? "complete verified chart" : placements.length ? "partial verified chart" : "unresolved",
-      detail: `${placements.length}/10 planets · ${houseCusps.length}/12 cusps · ${supportingPoints.length}/5 angles/Nodes/Chiron · ${aspects.length} major aspect(s) · ${stelliums.length} concentration(s)`,
+      system: "Natal planets / Big Three",
+      status: placements.length === 10 && supportingPoints.some((point) => point.key === "rising") ? "verified" : placements.length ? "partial verified" : "unresolved",
+      detail: `${placements.length}/10 verified natal planets · Rising ${supportingPoints.some((point) => point.key === "rising") ? "verified" : "unresolved"}`,
     },
     {
-      system: "Human Design",
-      status: verifiedHd ? "verified core" : "unresolved",
-      detail: verifiedHd
-        ? unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")
-        : "Excluded from synthesis until verified.",
+      system: "Houses / Midheaven",
+      status: houseCusps.length === 12 && supportingPoints.some((point) => point.key === "midheaven") ? "verified governed geometry" : "unresolved",
+      detail: `${houseCusps.length}/12 Equal House cusps · Midheaven ${supportingPoints.some((point) => point.key === "midheaven") ? "verified" : "unresolved"}`,
+    },
+    {
+      system: "Major aspects",
+      status: placements.length === 10 ? "governed from verified longitudes" : "partial / unresolved",
+      detail: `${aspects.length} governed major aspect(s) · ${hardAspects.length} square/opposition tension aspect(s)`,
+    },
+    {
+      system: "Nodes / Chiron",
+      status: ["northNode", "southNode", "chiron"].every((key) => supportingPoints.some((point) => point.key === key)) ? "verified governed points" : "unresolved",
+      detail: `${["northNode", "southNode", "chiron"].filter((key) => supportingPoints.some((point) => point.key === key)).length}/3 supported points`,
     },
     {
       system: "Numerology",
-      status: completeNumerology ? "deterministic core" : lifePath ? "partial deterministic core" : "unresolved",
+      status: completeNumerology ? "deterministic stable core" : lifePath ? "partial deterministic core" : "unresolved",
       detail: unique([
         lifePath ? `LP ${lifePath}` : null,
         birthday ? `Birthday ${birthday}` : null,
@@ -536,6 +550,30 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
         maturity ? `Maturity ${maturity}` : null,
         personalYear ? `Personal Year ${personalYear} (current cycle; excluded from stable fingerprint)` : null,
       ]).join(" · ") || "No governed number available.",
+    },
+    {
+      system: "Human Design",
+      status: verifiedHd ? "verified core" : "unresolved",
+      detail: verifiedHd
+        ? unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")
+        : "Excluded from synthesis until HUMAN-DESIGN-CORE-v1 passes.",
+    },
+    {
+      system: "Personality assessments",
+      status: personalityAssessed ? "user-assessed supporting evidence" : "not assessed / excluded",
+      detail: personalityAssessed
+        ? "Explicit user assessment may support reflection but is not diagnostic evidence."
+        : "No explicit governed assessment state is present, so personality labels do not influence the combined Codex.",
+    },
+    {
+      system: "Astrocartography",
+      status: "unavailable / excluded",
+      detail: "No production-grade line calculation and mapping contract; no decorative power-place claims are allowed.",
+    },
+    {
+      system: "Palmistry",
+      status: "unavailable / excluded",
+      detail: "No governed image-analysis contract and explicit image-consent path; no generated palm claims are allowed.",
     },
   ];
 
