@@ -1,6 +1,8 @@
 import {
+  calcBirthday,
   calcExpression,
   calcLifePath,
+  calcMaturity,
   calcPersonality,
   calcSoulUrge,
   synthesizeDepthInterpretationV1,
@@ -253,9 +255,11 @@ export function generateFoundationOfflineCodexProfile(
   const sunSign = sunSignForDate(input.birthDate);
   const signPattern = SIGN_PATTERNS[sunSign];
   const lifePath = calcLifePath(input.birthDate);
+  const birthday = calcBirthday(input.birthDate);
   const expression = calcExpression(input.name);
   const soulUrge = calcSoulUrge(input.name);
   const personality = calcPersonality(input.name);
+  const maturity = calcMaturity(input.birthDate, input.name);
   const yearNumber = personalYear(input.birthDate, currentYear);
   const pathPattern = numerologyPatternFor(lifePath);
   const expressionPattern = numerologyPatternFor(expression);
@@ -267,15 +271,19 @@ export function generateFoundationOfflineCodexProfile(
 
   const numerologyData = {
     lifePath,
+    birthday,
     expression,
     soulUrge,
     personality,
+    maturity,
     personalYear: yearNumber,
     interpretations: {
       lifePath: `Life Path ${lifePath}: deterministic number, symbolic interpretation.`,
+      birthday: `Birthday ${birthday}: deterministic day-of-birth reduction, symbolic interpretation.`,
       expression: `Expression ${expression}: deterministic name number, symbolic interpretation.`,
       soulUrge: `Soul Urge ${soulUrge}: deterministic vowel-number calculation, symbolic interpretation.`,
       personality: `Personality ${personality}: deterministic consonant-number calculation, symbolic interpretation.`,
+      maturity: `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
       personalYear: `Personal Year ${yearNumber}: reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
   };
