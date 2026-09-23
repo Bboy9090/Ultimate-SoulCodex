@@ -21,6 +21,7 @@ export type SavedConnection = {
   id: string;
   name: string;
   phone?: string;
+  birthDate?: string;
   sunSign?: AtlasSign;
   placements?: ConnectionPlacement[];
   createdAt: string;
@@ -48,6 +49,32 @@ function cleanPhone(value: unknown): string | undefined {
 
 function phoneDigits(value: string | undefined): string {
   return value?.replace(/\D/g, "") ?? "";
+}
+
+function cleanBirthDate(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return undefined;
+  const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return undefined;
+  return value.trim();
+}
+
+export function deriveConnectionSunSignFromBirthDate(birthDate: string): AtlasSign {
+  const safeBirthDate = cleanBirthDate(birthDate);
+  if (!safeBirthDate) throw new RangeError("Birth date must use YYYY-MM-DD.");
+  const [, monthText, dayText] = safeBirthDate.split("-");
+  const month = Number(monthText), day = Number(dayText);
+  const boundaries: Array<[number, number, AtlasSign]> = [
+    [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"], [4, 20, "Taurus"],
+    [5, 21, "Gemini"], [6, 21, "Cancer"], [7, 23, "Leo"], [8, 23, "Virgo"],
+    [9, 23, "Libra"], [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
+  ];
+  const current = boundaries.find(([candidate]) => candidate === month);
+  const next = current?.[2] ?? "Capricorn";
+  const previous = ATLAS_SIGNS[(ATLAS_SIGNS.indexOf(next) + 11) % 12];
+  return day >= (current?.[1] ?? 22) ? next : previous;
 }
 
 export function placementLabel(key: ConnectionPlacementKey): string {
@@ -88,11 +115,14 @@ export function parseConnections(raw: string | null): SavedConnection[] {
       if (hasSunSign && !ATLAS_SIGNS.includes(row.sunSign)) return [];
       const placements = sanitizeConnectionPlacements(row.placements);
       const phone = cleanPhone(row.phone);
+      const birthDate = cleanBirthDate(row.birthDate);
+      const derivedSunSign = birthDate ? deriveConnectionSunSignFromBirthDate(birthDate) : undefined;
       return [{
         id: row.id,
         name: row.name.trim(),
         ...(phone ? { phone } : {}),
-        ...(hasSunSign ? { sunSign: row.sunSign as AtlasSign } : {}),
+        ...(birthDate ? { birthDate } : {}),
+        ...(derivedSunSign || hasSunSign ? { sunSign: derivedSunSign ?? row.sunSign as AtlasSign } : {}),
         ...(placements.length > 0 ? { placements } : {}),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -109,11 +139,14 @@ export function loadConnections(): SavedConnection[] {
   return parseConnections(storage()?.getItem(KEY) ?? null);
 }
 
-export function saveConnection(input: { name: string; phone?: string; sunSign?: AtlasSign | ""; placements?: ConnectionPlacement[] }): SavedConnection[] {
+export function saveConnection(input: { name: string; phone?: string; birthDate?: string; sunSign?: AtlasSign | ""; placements?: ConnectionPlacement[] }): SavedConnection[] {
   const target = storage();
   if (!target) throw new Error("Connections are available on this device only.");
   const name = input.name.trim();
   const phone = cleanPhone(input.phone);
+  const birthDate = cleanBirthDate(input.birthDate);
+  if (input.birthDate && !birthDate) throw new Error("Birth date must be a real date in YYYY-MM-DD format.");
+  const derivedSunSign = birthDate ? deriveConnectionSunSignFromBirthDate(birthDate) : undefined;
   if (!name || name.length > 80) throw new Error("Enter a name between 1 and 80 characters.");
   if (input.sunSign && !ATLAS_SIGNS.includes(input.sunSign)) throw new Error("Choose a valid Sun sign.");
   const current = loadConnections();
@@ -124,7 +157,8 @@ export function saveConnection(input: { name: string; phone?: string; sunSign?: 
     id: crypto.randomUUID(),
     name,
     ...(phone ? { phone } : {}),
-    ...(input.sunSign ? { sunSign: input.sunSign } : {}),
+    ...(birthDate ? { birthDate } : {}),
+    ...(derivedSunSign || input.sunSign ? { sunSign: derivedSunSign ?? input.sunSign as AtlasSign } : {}),
     ...(placements.length > 0 ? { placements } : {}),
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -168,6 +202,7 @@ export function searchConnections(connections: SavedConnection[], query: string)
   if (!normalized && !digits) return connections;
   return connections.filter(connection =>
     connection.name.toLowerCase().includes(normalized) ||
+    (connection.birthDate ?? "").includes(normalized) ||
     (connection.sunSign ?? "").toLowerCase().includes(normalized) ||
     (normalized.length > 0 && (connection.phone ?? "").toLowerCase().includes(normalized)) ||
     (digits.length > 0 && phoneDigits(connection.phone).includes(digits))
