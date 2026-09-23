@@ -73,56 +73,106 @@ jobs:
       - name: Boot simulator install and launch app
         run: |
           set -euo pipefail
-          UDID=$(python3 - <<'PY'
-          import json, subprocess
-          payload=json.loads(subprocess.check_output(["xcrun","simctl","list","devices","available","-j"]))
-          for runtime, devices in payload.get("devices", {}).items():
-              if "iOS" not in runtime:
-                  continue
-              for device in devices:
-                  if "iPhone" in device.get("name","") and device.get("isAvailable", True):
-                      print(device["udid"])
-                      raise SystemExit
-          raise SystemExit("NO_AVAILABLE_IPHONE_SIMULATOR")
-          PY
-          )
-          echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
-          xcrun simctl shutdown all 2>/dev/null || true
-          python3 - "$UDID" <<'PY'
-          import subprocess, sys
-          udid = sys.argv[1]
-          try:
-              result = subprocess.run(["xcrun", "simctl", "boot", udid], timeout=30, capture_output=True, text=True)
-              if result.returncode not in (0, 149):
+          python3 - <<'PY'
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import sys
+          import time
+
+          def run(args, timeout=30, check=True):
+              try:
+                  result = subprocess.run(args, timeout=timeout, capture_output=True, text=True)
+              except subprocess.TimeoutExpired as exc:
+                  raise SystemExit(f"COMMAND_TIMEOUT after {timeout}s: {' '.join(args)}") from exc
+              if check and result.returncode != 0:
                   print(result.stdout)
                   print(result.stderr, file=sys.stderr)
-          except subprocess.TimeoutExpired:
-              print("simctl boot command exceeded 30 seconds; checking device state directly")
+                  raise SystemExit(f"COMMAND_FAILED({result.returncode}): {' '.join(args)}")
+              return result
+
+          devices = json.loads(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=15).stdout)
+          candidate = None
+          for runtime, rows in devices.get("devices", {}).items():
+              if "iOS" not in runtime:
+                  continue
+              for row in rows:
+                  if "iPhone" in row.get("name", "") and row.get("isAvailable", True):
+                      candidate = row
+                      break
+              if candidate:
+                  break
+          if not candidate:
+              raise SystemExit("NO_AVAILABLE_IPHONE_SIMULATOR")
+
+          udid = candidate["udid"]
+          print(f"Using simulator: {candidate.get('name')} {udid}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"SIMULATOR_UDID={udid}\n")
+
+          run(["xcrun", "simctl", "shutdown", "all"], timeout=20, check=False)
+
+          boot = run(["xcrun", "simctl", "boot", udid], timeout=30, check=False)
+          if boot.returncode not in (0, 149):
+              print(boot.stdout)
+              print(boot.stderr, file=sys.stderr)
+
+          booted = False
+          for _ in range(45):
+              state = run(["xcrun", "simctl", "list", "devices"], timeout=10, check=False)
+              line = next((line for line in state.stdout.splitlines() if udid in line), "")
+              if "(Booted)" in line:
+                  booted = True
+                  break
+              time.sleep(2)
+          if not booted:
+              raise SystemExit("SIMULATOR_BOOT_TIMEOUT_90S")
+
+          app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
+          if not pathlib.Path(app_path).is_dir():
+              raise SystemExit("SIMULATOR_APP_PATH_MISSING")
+
+          run(["xcrun", "simctl", "install", udid, app_path], timeout=45)
+
+          container = run(
+              ["xcrun", "simctl", "get_app_container", udid, "app.soulcodex.ios", "app"],
+              timeout=20,
+          )
+          pathlib.Path("installed-app-container.txt").write_text(container.stdout, encoding="utf-8")
+
+          launch = run(
+              ["xcrun", "simctl", "launch", "--terminate-running-process", udid, "app.soulcodex.ios"],
+              timeout=30,
+          )
+          pathlib.Path("simulator-launch.txt").write_text(launch.stdout + launch.stderr, encoding="utf-8")
+          if not re.search(r"app\.soulcodex\.ios:\s*\d+", launch.stdout):
+              raise SystemExit("SIMULATOR_LAUNCH_DID_NOT_RETURN_PID")
+
+          time.sleep(12)
+
+          screenshot = pathlib.Path("ios-4.0.2-launch.png")
+          run(["xcrun", "simctl", "io", udid, "screenshot", str(screenshot)], timeout=30)
+          if not screenshot.exists() or screenshot.stat().st_size < 10000:
+              raise SystemExit("SIMULATOR_SCREENSHOT_MISSING_OR_EMPTY")
+
+          logs = run(
+              [
+                  "xcrun", "simctl", "spawn", udid,
+                  "log", "show", "--style", "compact", "--last", "5m",
+                  "--predicate", 'process == "Ultimate Soul Codex" OR subsystem CONTAINS "capacitor"',
+              ],
+              timeout=45,
+              check=False,
+          )
+          runtime_log = logs.stdout + logs.stderr
+          pathlib.Path("ios-4.0.2-runtime.log").write_text(runtime_log, encoding="utf-8")
+          if re.search(r"Terminated due to|uncaught exception|fatal error|SIGABRT|dyld.*Library not loaded", runtime_log, re.I):
+              raise SystemExit("FATAL_NATIVE_LAUNCH_SIGNATURE_DETECTED")
+
+          print("Simulator install, launch, survival window, screenshot, and fatal-log scan passed.")
           PY
-          BOOTED=""
-          for attempt in $(seq 1 45); do
-            if xcrun simctl list devices | grep -F "$UDID" | grep -q "(Booted)"; then
-              BOOTED=1
-              break
-            fi
-            sleep 2
-          done
-          test -n "$BOOTED" || { echo "Simulator failed to reach Booted state within 90 seconds"; xcrun simctl list devices; exit 1; }
-          APP_PATH=$(cat simulator-app-path.txt)
-          xcrun simctl install "$UDID" "$APP_PATH"
-          xcrun simctl get_app_container "$UDID" app.soulcodex.ios app > installed-app-container.txt
-          xcrun simctl launch --terminate-running-process "$UDID" app.soulcodex.ios | tee simulator-launch.txt
-          sleep 12
-          xcrun simctl io "$UDID" screenshot ios-4.0.2-launch.png
-          test -s ios-4.0.2-launch.png
-          xcrun simctl spawn "$UDID" log show --style compact --last 5m \
-            --predicate 'process == "Ultimate Soul Codex" OR subsystem CONTAINS "capacitor"' \
-            > ios-4.0.2-runtime.log 2>&1 || true
-          if grep -Eiq 'Terminated due to|uncaught exception|fatal error|SIGABRT|dyld.*Library not loaded' ios-4.0.2-runtime.log; then
-            echo "Fatal native launch signature detected."
-            cat ios-4.0.2-runtime.log
-            exit 1
-          fi
 
       - name: Verify bundled hotfix identity
         run: |
