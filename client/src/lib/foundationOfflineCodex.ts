@@ -148,6 +148,11 @@ function archetypeFor(
     expressionPattern ? `Expression ${expression}` : null,
     soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
   ].filter((value): value is string => Boolean(value));
+  const unsupportedNumberLabels = [
+    !path ? `Life Path ${lifePath}` : null,
+    expression !== null && expression !== undefined && !expressionPattern ? `Expression ${expression}` : null,
+    soulUrge !== null && soulUrge !== undefined && !soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
+  ].filter((value): value is string => Boolean(value));
 
   const strengths = Array.from(new Set([
     signPattern.gift,
@@ -173,6 +178,7 @@ function archetypeFor(
     description:
       `This preliminary signature uses only supported local evidence: ${sign} Sun symbolism` +
       (supportedNumberLabels.length ? ` plus ${supportedNumberLabels.join(", ")}.` : ".") +
+      (unsupportedNumberLabels.length ? ` Unsupported numerology values (${unsupportedNumberLabels.join(", ")}) are retained as data but excluded from interpretive synthesis.` : "") +
       ` It is deliberately not a final archetype; Moon, Rising, houses, aspects, Human Design, and other verified systems may materially change the combined Codex.`,
     strengths,
     shadows,
