@@ -119,6 +119,12 @@ test("Layered Soul Guide", async (suite) => {
     assert.ok(prompt.includes("attachment styles"));
     assert.ok(prompt.includes("diagnoses"));
     assert.ok(prompt.includes("Do not predict the future"));
+    assert.ok(prompt.includes("Diamond Way Prose Standard"));
+    assert.ok(prompt.includes("Signal before adjective"));
+    assert.ok(prompt.includes("Protect the tension"));
+    assert.ok(prompt.includes("No horoscope filler"));
+    assert.ok(prompt.includes("Make the action testable"));
+    assert.ok(prompt.includes("Do not manufacture uniqueness"));
   });
 
   await suite.test("parser accepts safe prose and preserves locked metadata", () => {
