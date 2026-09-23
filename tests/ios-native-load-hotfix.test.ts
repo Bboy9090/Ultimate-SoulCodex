@@ -32,7 +32,7 @@ test("iOS hotfix metadata is a fresh App Store version/build", async () => {
 test("pre-paint native dialogs are suppressed and restored after React mounts", async () => {
   const [html, main] = await Promise.all([
     readFile("client/index.html", "utf8"),
-    readFile("client/src/main.tsx", "utf8"),
+    readFile("client/src/appEntry.tsx", "utf8"),
   ]);
 
   assert.match(html, /location\.protocol === "capacitor:"/);
@@ -42,4 +42,22 @@ test("pre-paint native dialogs are suppressed and restored after React mounts", 
   assert.match(main, /window\.alert = nativeDialogs\.alert/);
   assert.match(main, /window\.confirm = nativeDialogs\.confirm/);
   assert.match(main, /window\.prompt = nativeDialogs\.prompt/);
+});
+
+
+test("tiny bootstrap dynamically loads the React application before the heavy graph", async () => {
+  const source = await readFile("client/src/main.tsx", "utf8");
+  assert.doesNotMatch(source, /from "react"/);
+  assert.doesNotMatch(source, /from "\.\/App"/);
+  assert.match(source, /import\("\.\/appEntry"\)/);
+  assert.match(source, /soulcodexModule = "bootstrap"/);
+  assert.match(source, /app-module-load/);
+});
+
+test("secondary routes are lazy so home first paint does not evaluate the whole product", async () => {
+  const source = await readFile("client/src/App.tsx", "utf8");
+  assert.match(source, /lazy\(\(\) => import\("\.\/pages\/offline-profile"\)\)/);
+  assert.match(source, /lazy\(\(\) => import\("\.\/pages\/AstrologyAtlasPage"\)\)/);
+  assert.match(source, /lazy\(\(\) => import\("\.\/pages\/CompatibilityRoute"\)\)/);
+  assert.match(source, /<Suspense fallback=/);
 });
