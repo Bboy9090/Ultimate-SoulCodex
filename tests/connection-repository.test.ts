@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { compatibilityLink, findConnectionById, parseConnections, placementLabel, sanitizeConnectionPlacements } from "../client/src/lib/connectionRepository";
+import { compatibilityLink, connectionComparableSunSign, deriveConnectionSunSignFromBirthDate, findConnectionById, hasComparableConnectionData, parseConnections, placementLabel, sanitizeConnectionPlacements, searchConnections } from "../client/src/lib/connectionRepository";
 
 test("connections parser rejects malformed or overlong private records", () => {
   assert.deepEqual(parseConnections("bad"),[]);
@@ -8,6 +8,66 @@ test("connections parser rejects malformed or overlong private records", () => {
   const valid={id:"1",name:"Amy",sunSign:"Scorpio",createdAt:"now",updatedAt:"now"};
   const invalid={...valid,id:"2",sunSign:"Not a sign"};
   assert.deepEqual(parseConnections(JSON.stringify({version:1,connections:[valid,invalid]})),[valid]);
+});
+
+test("connections parser preserves sanitized local phone numbers", () => {
+  const raw = {
+    version: 1,
+    connections: [{
+      id: "1",
+      name: "Amy",
+      phone: "+1 (718) 555-1212 ext<script>",
+      sunSign: "Scorpio",
+      createdAt: "now",
+      updatedAt: "now",
+    }],
+  };
+  assert.deepEqual(parseConnections(JSON.stringify(raw)), [{
+    id: "1",
+    name: "Amy",
+    phone: "+1 (718) 555-1212",
+    sunSign: "Scorpio",
+    createdAt: "now",
+    updatedAt: "now",
+  }]);
+});
+
+test("birthday derives concrete Sun sign data for saved people", () => {
+  const raw = {
+    version: 1,
+    connections: [{
+      id: "1",
+      name: "Bobby",
+      birthDate: "1990-09-17",
+      sunSign: "Aries",
+      createdAt: "now",
+      updatedAt: "now",
+    }],
+  };
+  const [person] = parseConnections(JSON.stringify(raw));
+  assert.equal(person.birthDate, "1990-09-17");
+  assert.equal(person.sunSign, "Virgo");
+  assert.equal(connectionComparableSunSign(person), "Virgo");
+  assert.equal(hasComparableConnectionData(person), true);
+  assert.equal(deriveConnectionSunSignFromBirthDate("1987-01-19"), "Capricorn");
+  assert.throws(() => deriveConnectionSunSignFromBirthDate("1990-02-31"), RangeError);
+});
+
+test("connections can save contact-only records without pretending a Sun sign is known", () => {
+  const raw = {
+    version: 1,
+    connections: [{
+      id: "contact-only",
+      name: "Jordan",
+      phone: "718-555-1212",
+      createdAt: "now",
+      updatedAt: "now",
+    }],
+  };
+  const [person] = parseConnections(JSON.stringify(raw));
+  assert.equal(person.sunSign, undefined);
+  assert.equal(connectionComparableSunSign(person), undefined);
+  assert.equal(hasComparableConnectionData(person), false);
 });
 
 test("connection parser keeps only supported friend chart placements", () => {
@@ -57,14 +117,44 @@ test("placement sanitizer supports every governed body without accepting invente
 });
 
 test("compatibility links contain only a local connection id", () => {
-  const connection={id:"person-123",name:"Amy & Bobby",sunSign:"Scorpio" as const,createdAt:"now",updatedAt:"now"};
+  const connection={id:"person-123",name:"Amy & Bobby",phone:"+1 718 555 1212",sunSign:"Scorpio" as const,createdAt:"now",updatedAt:"now"};
   const link=compatibilityLink(connection);
   assert.equal(link,"/compatibility/compare?connection=person-123");
-  assert.doesNotMatch(link,/Amy|Scorpio|name|sunSign/);
+  assert.doesNotMatch(link,/Amy|Scorpio|718|phone|name|sunSign/);
+});
+
+test("a saved Sun placement can supply concrete comparison data without a top-level Sun sign", () => {
+  const [person] = parseConnections(JSON.stringify({
+    version: 1,
+    connections: [{
+      id: "1",
+      name: "Sam",
+      createdAt: "now",
+      updatedAt: "now",
+      placements: [{ key: "sun", sign: "Gemini", house: 3 }],
+    }],
+  }));
+  assert.equal(connectionComparableSunSign(person), "Gemini");
+  assert.equal(hasComparableConnectionData(person), true);
 });
 
 test("a local connection id resolves without exposing the name in the URL", () => {
   const amy={id:"person-123",name:"Amy & Bobby",sunSign:"Scorpio" as const,createdAt:"now",updatedAt:"now"};
   assert.equal(findConnectionById([amy],"person-123"),amy);
   assert.equal(findConnectionById([amy],"missing"),null);
+});
+
+test("saved people can be searched by name phone number or sun sign", () => {
+  const people = parseConnections(JSON.stringify({
+    version: 1,
+    connections: [
+      { id: "1", name: "Amy", phone: "+1 (718) 555-1212", sunSign: "Scorpio", createdAt: "now", updatedAt: "now" },
+      { id: "2", name: "Sam", phone: "917.555.9900", birthDate: "1993-06-01", createdAt: "now", updatedAt: "now" },
+    ],
+  }));
+  assert.deepEqual(searchConnections(people, "amy").map(person => person.id), ["1"]);
+  assert.deepEqual(searchConnections(people, "5559900").map(person => person.id), ["2"]);
+  assert.deepEqual(searchConnections(people, "gem").map(person => person.id), ["2"]);
+  assert.deepEqual(searchConnections(people, "1993-06").map(person => person.id), ["2"]);
+  assert.deepEqual(searchConnections(people, "").map(person => person.id), ["1","2"]);
 });
