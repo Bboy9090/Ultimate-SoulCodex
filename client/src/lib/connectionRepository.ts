@@ -217,6 +217,26 @@ export function hasComparableConnectionData(connection: Pick<SavedConnection, "s
   return Boolean(connectionComparableSunSign(connection));
 }
 
+export function connectionProfileSummary(connection: Pick<SavedConnection, "name" | "birthDate" | "sunSign" | "placements">): string {
+  const name = connection.name.trim() || "This person";
+  const comparableSun = connectionComparableSunSign(connection);
+  const placements = sanitizeConnectionPlacements(connection.placements);
+  const evidence: string[] = [];
+  if (connection.birthDate && comparableSun) evidence.push(`${comparableSun} Sun from birthday ${connection.birthDate}`);
+  else if (comparableSun) evidence.push(`${comparableSun} Sun from a saved chart field`);
+  if (placements.length > 0) {
+    evidence.push(...placements.slice(0, 4).map(row => `${placementLabel(row.key)} in ${row.sign}, House ${row.house}`));
+    if (placements.length > 4) evidence.push(`${placements.length - 4} more saved placements`);
+  }
+  if (evidence.length === 0) {
+    return `${name} is saved as a contact only. Add a birthday or a known Sun placement before Soul Codex compares charts for this person.`;
+  }
+  const missing = placements.length > 0
+    ? "Only the saved placements listed here are used; unsaved bodies and time-sensitive systems stay unavailable."
+    : "Moon, Rising, houses, Human Design, and other time-sensitive systems stay unavailable until exact supporting data is added.";
+  return `${name}: ${evidence.join("; ")}. ${missing}`;
+}
+
 export function compatibilityLink(connection: Pick<SavedConnection,"id">): string {
   const params = new URLSearchParams({ connection: connection.id });
   return `/compatibility/compare?${params.toString()}`;
