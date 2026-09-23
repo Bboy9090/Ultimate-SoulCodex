@@ -361,13 +361,16 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const dominantModality = topKey(modalityCounts);
   const stelliums = findStelliums(placements);
 
-  const lifePath = numericValue(numerology.lifePath);
-  const birthday = numericValue(numerology.birthday);
-  const expression = numericValue(numerology.expression);
-  const soulUrge = numericValue(numerology.soulUrge);
-  const personality = numericValue(numerology.personality);
-  const maturity = numericValue(numerology.maturity);
-  const personalYear = numericValue(numerology.personalYear);
+  // Normalize only documented producer aliases. Alias handling prevents the same
+  // deterministic number from changing coverage or fingerprint merely because
+  // a legacy producer used a different field name.
+  const lifePath = numericValue(numerology.lifePath ?? numerology.lifePathNumber);
+  const birthday = numericValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
+  const expression = numericValue(numerology.expression ?? numerology.expressionNumber);
+  const soulUrge = numericValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
+  const personality = numericValue(numerology.personality ?? numerology.personalityNumber);
+  const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
+  const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
 
   const verifiedHd = hd?.status === "verified";
   const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
@@ -380,6 +383,20 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     typeof value === "string" ? value : JSON.stringify(value)
   ) : [];
   const hdGates = verifiedHd && Array.isArray(hd.activatedGates) ? hd.activatedGates.map(String) : [];
+  const hdActivationSignature: string[] = [];
+  if (verifiedHd) {
+    for (const side of ["conscious", "unconscious"] as const) {
+      const rows = hd?.activations?.[side];
+      if (!rows || typeof rows !== "object") continue;
+      for (const [body, value] of Object.entries(rows as AnyRecord).sort(([a], [b]) => a.localeCompare(b))) {
+        const gate = Number((value as AnyRecord)?.gate);
+        const line = Number((value as AnyRecord)?.line);
+        if (!Number.isInteger(gate) || gate < 1 || gate > 64) continue;
+        if (!Number.isFinite(line) || line < 1 || line > 6) continue;
+        hdActivationSignature.push(`hd:activation:${side}:${body}:${gate}.${line}`);
+      }
+    }
+  }
 
   const evidenceSignature = [
     ...placements.map((p) => `astro:${p.key}:${p.sign}:${p.degree ?? "?"}:H${p.house ?? "?"}`),
@@ -401,6 +418,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ...hdCenters.defined.map((center) => `hd:center:${center}`),
     ...hdChannels.map((channel) => `hd:channel:${channel}`),
     ...hdGates.map((gate) => `hd:gate:${gate}`),
+    ...hdActivationSignature,
   ].filter((value): value is string => Boolean(value)).sort();
 
   const { fingerprint, codexNumber, codexId } = identityHash(evidenceSignature);
