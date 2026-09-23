@@ -1,3 +1,5 @@
+import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
+
 type AnyRecord = Record<string, any>;
 
 const PLANETS = [
@@ -576,6 +578,35 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
       detail: "No governed image-analysis contract and explicit image-consent path; no generated palm claims are allowed.",
     },
   ];
+
+  const representedRegistryIds = new Set([
+    "natal-astrology",
+    "houses-midheaven",
+    "major-aspects",
+    "nodes-chiron",
+    "numerology-core",
+    "human-design-core",
+    "personality-assessments",
+    "astrocartography",
+    "palmistry",
+  ]);
+  for (const entry of SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY) {
+    if (representedRegistryIds.has(entry.id)) continue;
+    systemSummary.push({
+      system: entry.label,
+      status:
+        entry.state === "unavailable"
+          ? "unavailable / excluded"
+          : entry.state === "inspect-only"
+            ? "inspect-only / excluded"
+            : entry.state === "user-assessed"
+              ? "requires explicit user assessment / excluded"
+              : entry.mayInfluenceUltimateCodex
+                ? "governed supporting system"
+                : "governed / excluded from stable identity fingerprint",
+      detail: `${entry.evidenceContract}. ${entry.rule}`,
+    });
+  }
 
   return {
     version: "ultimate-codex-v1",
