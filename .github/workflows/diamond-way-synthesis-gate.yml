@@ -57,7 +57,8 @@ jobs:
             tests/verified-profile-differentiation.test.ts \
             tests/verified-profile-differentiation-corpus.test.ts \
             packages/core/soul-guide/__tests__/depth-ui-source-contract.test.ts \
-            tests/reflection-lens.test.ts
+            tests/reflection-lens.test.ts \
+            packages/core/soul-guide/__tests__/depth-soul-guide.test.ts
 
       - name: Typecheck
         run: npm run check
