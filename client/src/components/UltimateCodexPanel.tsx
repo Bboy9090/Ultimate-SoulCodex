@@ -70,6 +70,22 @@ export default function UltimateCodexPanel({ synthesis }: { synthesis: UltimateC
         </div>
       </div>
 
+      <article className="mt-6 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-5">
+        <p className="sc-eyebrow">Verified angles, Nodes &amp; Chiron</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {synthesis.supportingPoints.length ? synthesis.supportingPoints.map((point) => (
+            <div key={point.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-stone)]">{point.label}</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--sc-ivory)]">{point.sign}</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
+                {point.degree !== null ? point.degree.toFixed(2) + "°" : "degree unavailable"}
+                {point.house ? " · House " + point.house : " · angle"}
+              </p>
+            </div>
+          )) : <p className="text-sm text-[var(--sc-stone)]">No supporting point has passed the governed verification boundary.</p>}
+        </div>
+      </article>
+
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.035)] p-5">
           <div className="flex items-center gap-2">
