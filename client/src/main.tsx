@@ -1,3 +1,5 @@
+export {};
+
 declare global {
   interface Window {
     __SOULCODEX_BOOT_READY__?: boolean;
