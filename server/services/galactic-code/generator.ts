@@ -51,34 +51,35 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   };
 }
 
-const TEXTURE_WORDS = [
-  'Obsidian',
-  'Velvet',
-  'Silver',
-  'Iron',
-  'Lunar',
-  'Ember',
-  'Tide',
-  'Quiet',
-  'Prism',
-  'Storm',
-  'Golden',
-  'Shadow',
-];
+const SIGN_TEXTURE: Record<string, string> = {
+  aries: 'Ember',
+  taurus: 'Stone',
+  gemini: 'Mercury',
+  cancer: 'Tide',
+  leo: 'Solar',
+  virgo: 'Prism',
+  libra: 'Aerial',
+  scorpio: 'Obsidian',
+  sagittarius: 'Comet',
+  capricorn: 'Summit',
+  aquarius: 'Signal',
+  pisces: 'Oceanic',
+};
 
-const FUNCTION_WORDS = [
-  'Architect',
-  'Guardian',
-  'Oracle',
-  'Strategist',
-  'Catalyst',
-  'Builder',
-  'Navigator',
-  'Witness',
-  'Diplomat',
-  'Reformer',
-  'Sentinel',
-];
+const LIFE_PATH_LEGACY: Record<string, string> = {
+  '1': 'Independent Initiation',
+  '2': 'Cooperative Connection',
+  '3': 'Creative Expression',
+  '4': 'Durable Structure',
+  '5': 'Adaptive Exploration',
+  '6': 'Responsible Stewardship',
+  '7': 'Investigation & Understanding',
+  '8': 'Material Leadership',
+  '9': 'Integration & Completion',
+  '11': 'Visionary Translation',
+  '22': 'Master Building',
+  '33': 'Teaching Through Service',
+};
 
 export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResult {
   const eligibleInput = synthesisEligibleInput(input);
@@ -108,19 +109,26 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
 
   // Step 5: Score axes
   const allAxes = scoreAxes(normalized);
-  const topThreeAxes = getTopAxes(allAxes, 3);
+  const supportedAxes = allAxes.filter((axis) => axis.score > 0 && axis.evidence.length > 0);
+  const topThreeAxes = getTopAxes(supportedAxes, 3);
 
-  // Step 6: Select functions and codename
-  const primaryFunction = topThreeAxes[0]?.label || 'Architect';
-  const secondaryFunction = topThreeAxes[1]?.label || 'Guardian';
+  if (topThreeAxes.length < 2) {
+    throw new Error('Galactic Code cannot derive two identity axes from the governed evidence; no fallback archetype is permitted');
+  }
+
+  // Step 6: Derive functions and codename only from supported evidence
+  const primaryFunction = topThreeAxes[0].label;
+  const secondaryFunction = topThreeAxes[1].label;
   const legacyFunction = determineLegacyFunction(
-    eligibleInput.numerology.lifePath?.toString(),
-    normalized.behavior.builderMode
+    normalized.numerology.lifePath,
+    normalized.behavior.builderMode,
+    primaryFunction,
   );
 
   const codename = selectCodename(
     normalized.astrology.moon || normalized.astrology.rising,
-    primaryFunction
+    primaryFunction,
+    fingerprint,
   );
   const designation = createDesignation(primaryFunction, secondaryFunction);
   const tagline = createTagline(topThreeAxes);
@@ -143,7 +151,7 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
     codename,
     primaryFunction,
     secondaryFunction,
-    topThreeAxes[0]?.label || 'Observer',
+    topThreeAxes[0].label,
     [
       normalized.astrology.sun && `Sun ${normalized.astrology.sun}`,
       normalized.humanDesign.type && `HD ${normalized.humanDesign.type}`,
@@ -254,54 +262,48 @@ function calculateCoverage(sourceCoverage: SourceCoverageResult, systemCount: nu
   return 'insufficient';
 }
 
-function determineLegacyFunction(lifePathStr?: string, builderMode?: string | null): string {
-  if (builderMode) {
-    return `Legacy: ${builderMode}`;
+function determineLegacyFunction(
+  lifePathStr: string | null,
+  builderMode: string | null,
+  primaryFunction: string,
+): string {
+  if (builderMode) return `Legacy: ${builderMode}`;
+  if (lifePathStr && LIFE_PATH_LEGACY[lifePathStr]) {
+    return `Legacy: ${LIFE_PATH_LEGACY[lifePathStr]}`;
   }
-  if (lifePathStr === '9') {
-    return 'Legacy: Integration & Teaching';
-  }
-  if (lifePathStr === '22') {
-    return 'Legacy: Master Building';
-  }
-  return 'Legacy: Progressive Impact';
+  return `Legacy axis: ${primaryFunction} (derived from supported evidence)`;
 }
 
-function selectCodename(moonOrRising?: string | null, primaryFunction?: string): string {
-  const textureIndex =
-    (moonOrRising?.charCodeAt(0) ?? 0) % TEXTURE_WORDS.length;
-  const texture = TEXTURE_WORDS[textureIndex];
-
-  const functionIndex = (primaryFunction?.charCodeAt(0) ?? 0) % FUNCTION_WORDS.length;
-  const func = FUNCTION_WORDS[functionIndex];
-
-  return `${texture} ${func}`;
+function selectCodename(
+  moonOrRising: string | null,
+  primaryFunction: string,
+  fingerprint: string,
+): string {
+  const texture = moonOrRising ? SIGN_TEXTURE[moonOrRising] : null;
+  const identityStem = texture ? `${texture} ${primaryFunction}` : primaryFunction;
+  return `${identityStem} · ${fingerprint.slice(0, 4).toUpperCase()}`;
 }
 
 function createDesignation(primary: string, secondary: string): string {
-  return `The ${primary} ${secondary}`;
+  return `The ${primary} × ${secondary}`;
 }
 
-function createTagline(topAxes: any[]): string {
-  const primary = topAxes[0]?.label || 'Observer';
-  const secondary = topAxes[1]?.label || 'Builder';
-  return `Fusing ${primary} and ${secondary} into coherent systems.`;
+function createTagline(topAxes: Array<{ label: string; score: number }>): string {
+  const [primary, secondary] = topAxes;
+  if (!primary || !secondary) {
+    throw new Error('Galactic Code tagline requires two supported axes');
+  }
+  return `${primary.label} (${primary.score}) and ${secondary.label} (${secondary.score}) are the two strongest governed synthesis axes.`;
 }
 
 function createFrequency(birthDate?: string, birthTime?: string, lifePathStr?: string): string {
-  if (!birthDate) {
-    return 'Frequency data incomplete';
-  }
+  if (!birthDate) return 'Frequency unavailable: birth date missing';
 
-  const [year, month, day] = birthDate.split('-');
-  const monthDay = `${month}${day}`;
-
-  if (birthTime) {
-    const [hours, minutes] = birthTime.split(':');
-    return `${monthDay}-${hours}${minutes}-LP${lifePathStr || '?'}`;
-  }
-
-  return `${monthDay}--LP${lifePathStr || '?'}`;
+  const [, month, day] = birthDate.split('-');
+  const dateStem = `${month}${day}`;
+  const timeStem = birthTime ? `-${birthTime.replace(':', '')}` : '';
+  const lifePathStem = lifePathStr ? `-LP${lifePathStr}` : '';
+  return `${dateStem}${timeStem}${lifePathStem}`;
 }
 
 function createElementMatrix(dominantElements?: string[]): Record<string, number> {
@@ -340,12 +342,19 @@ function createBehavioralSequence(topAxes: any[]): string[] {
     Stabilizer: ['Stabilize', 'Ground', 'Sustain'],
   };
 
+  const unsupported = axisLabels.filter((label) => !sequenceMap[label]);
+  if (unsupported.length > 0) {
+    throw new Error(`No governed behavioral sequence exists for axis: ${unsupported.join(', ')}`);
+  }
+
   const sequences = axisLabels
-    .map(label => sequenceMap[label] || ['Act', 'Learn', 'Adapt'])
-    .flat()
+    .flatMap((label) => sequenceMap[label])
     .slice(0, 5);
 
-  return sequences.length > 0 ? sequences : ['Observe', 'Decode', 'Refine', 'Build', 'Teach'];
+  if (sequences.length < 5) {
+    throw new Error('Galactic Code needs enough supported axes to derive a five-step behavioral sequence');
+  }
+  return sequences;
 }
 
 function collectEvidence(allAxes: any[]): string[] {
