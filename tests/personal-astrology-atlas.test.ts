@@ -6,13 +6,14 @@ function chart() {
   const houses = Array.from({ length: 12 }, (_, index) => ({ house: index + 1, sign: "Aries", verificationStatus: "verified" }));
   const planets = Object.fromEntries(["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"].map(key => [key, { sign: "Virgo", verificationStatus: "verified" }]));
   const planetaryHouses = Object.fromEntries(Object.keys(planets).map((key, index) => [key, index + 1]));
-  return { houseSystem: "equal", houses, planets, planetaryHouses, midheaven: { sign: "Leo", verificationStatus: "verified" }, northNode: { sign: "Aquarius", house: 4, verificationStatus: "verified" }, southNode: { sign: "Leo", house: 10, verificationStatus: "verified" }, chiron: { sign: "Cancer", house: 9, verificationStatus: "verified", qualificationMethod: "live-jpl-qualified-against-swiss" } };
+  return { houseSystem: "equal", houses, planets, planetaryHouses, rising: { sign: "Scorpio", verificationStatus: "verified" }, midheaven: { sign: "Leo", verificationStatus: "verified" }, northNode: { sign: "Aquarius", house: 4, verificationStatus: "verified" }, southNode: { sign: "Leo", house: 10, verificationStatus: "verified" }, chiron: { sign: "Cancer", house: 9, verificationStatus: "verified", qualificationMethod: "live-jpl-qualified-against-swiss" } };
 }
 
 test("verified Equal-house records populate a personal atlas", () => {
   const placements = personalAtlasPlacements(chart());
-  assert.equal(placements.length, 14);
+  assert.equal(placements.length, 15);
   assert.deepEqual(placements[0], { key: "sun", label: "Sun", sign: "Virgo", house: 1, kind: "planet" });
+  assert.deepEqual(placements.find(row => row.key === "rising"), { key: "rising", label: "Ascendant / Rising", sign: "Scorpio", kind: "angle" });
   assert.deepEqual(placements.find(row => row.key === "midheaven"), { key: "midheaven", label: "Midheaven", sign: "Leo", kind: "angle" });
   assert.equal(PERSONAL_ATLAS_HOUSE_CONTRACT, "ASTRO-EQUAL-HOUSE-v1");
   assert.equal(verifiedHouseCusps(chart()).length, 12);
