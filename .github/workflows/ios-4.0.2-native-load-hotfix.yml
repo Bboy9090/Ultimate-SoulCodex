@@ -129,7 +129,8 @@ jobs:
           if not pathlib.Path(app_path).is_dir():
               raise SystemExit("SIMULATOR_APP_PATH_MISSING")
 
-          run(["xcrun", "simctl", "install", udid, app_path], timeout=45)
+          run(["xcrun", "simctl", "uninstall", udid, "app.soulcodex.ios"], timeout=30, check=False)
+          run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
 
           container = run(
               ["xcrun", "simctl", "get_app_container", udid, "app.soulcodex.ios", "app"],
