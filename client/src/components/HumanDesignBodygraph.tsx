@@ -1,3 +1,5 @@
+import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology";
+
 type AnyRecord = Record<string, any>;
 
 const CENTER_POSITIONS: Record<string, { x: number; y: number; shape: "triangle-up" | "triangle-down" | "diamond" | "square" }> = {
@@ -67,6 +69,14 @@ function channelLabel(value: unknown): string {
   const row = value as AnyRecord;
   const gates = Array.isArray(row.gates) ? row.gates.join("-") : "";
   return [gates, row.name].filter(Boolean).join(" · ") || JSON.stringify(value);
+}
+
+function gateMeta(gate: string | number) {
+  return (HD_GATES as Record<number, { name: string; center: string; keywords: string[] }>)[Number(gate)] ?? null;
+}
+
+function centerDescription(name: string): string {
+  return (HD_CENTERS as Record<string, { description?: string }>)[name]?.description ?? "No governed center description is available.";
 }
 
 function activationRows(hd: AnyRecord) {
@@ -169,6 +179,20 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
               <p className="mt-1 leading-5 text-[var(--sc-stone)]">{[...centers.undefined].join(", ") || "None resolved"}</p>
             </div>
           </div>
+          <details className="mt-3 rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-3">
+            <summary className="cursor-pointer text-xs font-semibold text-[var(--sc-ivory)]">What each center represents</summary>
+            <div className="mt-3 space-y-2">
+              {Object.keys(CENTER_POSITIONS).map((name) => (
+                <div key={name} className="rounded-lg border border-[var(--sc-line)] px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <strong className="text-xs text-[var(--sc-ivory)]">{name}</strong>
+                    <span className="text-[10px] uppercase tracking-[.08em] text-[var(--sc-gold)]">{centers.defined.has(name) ? "defined" : "open / undefined"}</span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--sc-stone)]">{centerDescription(name)}</p>
+                </div>
+              ))}
+            </div>
+          </details>
         </div>
 
         <div className="space-y-4">
@@ -195,9 +219,26 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
             </ul>
           </details>
 
-          <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
-            <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">Activated gates</summary>
-            <p className="mt-3 text-sm leading-7 text-[var(--sc-stone)]">{gates.length ? gates.join(" · ") : "No verified activated gates were stored."}</p>
+          <details open className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+            <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">Activated gates · names, centers, and keywords</summary>
+            {gates.length ? (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {gates.map((gate) => {
+                  const meta = gateMeta(gate);
+                  return (
+                    <div key={gate} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <strong className="text-sm text-[var(--sc-ivory)]">Gate {gate}{meta ? " · " + meta.name : ""}</strong>
+                        {meta && <span className="text-[10px] uppercase tracking-[.08em] text-[var(--sc-gold)]">{meta.center}</span>}
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
+                        {meta ? meta.keywords.join(" · ") : "Verified activation; descriptive metadata unavailable."}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : <p className="mt-3 text-sm text-[var(--sc-stone)]">No verified activated gates were stored.</p>}
           </details>
 
           <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
@@ -205,9 +246,12 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
             {activations.length ? (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {activations.map((row, index) => (
-                  <div key={row.side + "-" + row.body + "-" + index} className="flex items-center justify-between rounded-lg border border-[var(--sc-line)] px-3 py-2 text-xs">
-                    <span className="capitalize text-[var(--sc-stone)]">{row.side} · {row.body}</span>
-                    <strong className="text-[var(--sc-ivory)]">Gate {row.gate}.{row.line}</strong>
+                  <div key={row.side + "-" + row.body + "-" + index} className="rounded-lg border border-[var(--sc-line)] px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="capitalize text-[var(--sc-stone)]">{row.side} · {row.body}</span>
+                      <strong className="text-[var(--sc-ivory)]">Gate {row.gate}.{row.line}</strong>
+                    </div>
+                    {gateMeta(row.gate) && <p className="mt-1 text-[11px] leading-5 text-[var(--sc-stone)]">{gateMeta(row.gate)?.name} · {gateMeta(row.gate)?.center} · {gateMeta(row.gate)?.keywords.join(" · ")}</p>}
                   </div>
                 ))}
               </div>
