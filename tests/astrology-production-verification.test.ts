@@ -316,7 +316,8 @@ test("legacy astrology labels cannot steer archetype synthesis without verified 
     {},
   );
 
-  assert.equal(archetype.title, "Pattern Witness");
+  assert.equal(archetype.title, "Archetype unresolved");
+  assert.match(archetype.description, /No substitute archetype is assigned/i);
 });
 
 test("verified astrology may contribute to archetype synthesis", () => {
@@ -338,5 +339,7 @@ test("verified astrology may contribute to archetype synthesis", () => {
     {},
   );
 
-  assert.equal(archetype.title, "Sacred Guardian");
+  assert.equal(archetype.title, "Virgo Refiner");
+  assert.match(archetype.description, /Verified Sun symbolism emphasizes practical improvement/i);
+  assert.doesNotMatch(archetype.title, /Sacred Guardian|Pattern Witness/);
 });
