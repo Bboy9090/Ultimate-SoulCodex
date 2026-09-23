@@ -4,12 +4,16 @@ import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CloudOff, Compass, Crown, Infinity, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import DepthSoulGuide from "@/components/DepthSoulGuide";
+import HumanDesignBodygraph from "@/components/HumanDesignBodygraph";
+import UltimateCodexPanel from "@/components/UltimateCodexPanel";
+import VerifiedNatalChart from "@/components/VerifiedNatalChart";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
 import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
+import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
@@ -87,6 +91,10 @@ export default function OfflineProfilePage() {
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, unknown>;
   const verifiedHumanDesign = humanDesign.status === "verified" ? humanDesign : null;
+  const ultimateCodex = useMemo(
+    () => buildUltimateCodexSynthesis(reconciledProfile ?? {}),
+    [reconciledProfile],
+  );
 
   if (isLoading) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center"><div className="text-center"><Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--sc-gold)]" /><p className="text-[var(--sc-stone)]">Opening your Codex...</p></div></div></div>;
   if (error || !profile || !reconciledProfile) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center px-4"><div className="sc-panel max-w-md p-8 text-center"><CloudOff className="mx-auto mb-4 h-10 w-10 text-[var(--sc-danger)]" /><h2 className="font-serif text-2xl font-medium text-[var(--sc-ivory)]">Local profile unavailable</h2><p className="my-4 text-sm leading-6 text-[var(--sc-stone)]">This profile was not found in this browser or device storage.</p><Link href="/create" className="sc-button-primary">Create a new Codex</Link></div></div></div>;
@@ -97,6 +105,11 @@ export default function OfflineProfilePage() {
   const hasVerifiedCore = Boolean(verifiedSun && verifiedMoon);
   const needsOnlineVerification = profileNeedsOnlineVerification(reconciledProfile);
   const readingHref = `/reading/${profile.id}`;
+  const identityTitle =
+    ultimateCodex.derivedArchetype ??
+    (ultimateCodex.coverage !== "insufficient"
+      ? ultimateCodex.identitySignature
+      : "Identity synthesis pending governed evidence");
 
   return (
     <div className="sc-app-shell">
@@ -120,7 +133,7 @@ export default function OfflineProfilePage() {
               </div>
               <p className="sc-eyebrow mb-3">Identity · Soul Codex</p>
               <h1 className="sc-display sc-display-gradient text-4xl sm:text-6xl">{profile.name}</h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--sc-stone)]">{archetype.description}</p>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--sc-stone)]">{ultimateCodex.identitySignature}</p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href={readingHref} className="sc-button-primary">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 <Link href="/compatibility" className="sc-button-secondary">Explore compatibility</Link>
@@ -140,7 +153,7 @@ export default function OfflineProfilePage() {
                 <p className="mt-3 max-w-2xl text-xs leading-5 text-[var(--sc-stone)]">Optional. Choosing Verify online sends only the birth date, exact time, birthplace timezone, and coordinates needed to verify the natal chart and governed Human Design core. It does not send your name or birthplace label. It does not create a server profile or invoke AI generation. Merely opening this local profile does not upload it.</p>
               )}
             </div>
-            <div className="relative mx-auto flex aspect-square w-full max-w-[260px] items-center justify-center rounded-full border border-[var(--sc-line-gold)] bg-black/20 shadow-[inset_0_0_60px_rgba(123,97,255,.08)]"><div className="absolute inset-4 rounded-full border border-dashed border-[rgba(154,116,220,.25)]" /><Crown className="h-12 w-12 text-[var(--sc-gold-bright)]" /><div className="absolute bottom-8 text-center"><p className="sc-eyebrow justify-center">archetype</p><p className="mt-1 max-w-[180px] text-sm font-semibold text-[var(--sc-ivory)]">{archetype.title}</p></div></div>
+            <div className="relative mx-auto flex aspect-square w-full max-w-[260px] items-center justify-center rounded-full border border-[var(--sc-line-gold)] bg-black/20 shadow-[inset_0_0_60px_rgba(123,97,255,.08)]"><div className="absolute inset-4 rounded-full border border-dashed border-[rgba(154,116,220,.25)]" /><Crown className="h-12 w-12 text-[var(--sc-gold-bright)]" /><div className="absolute bottom-8 text-center"><p className="sc-eyebrow justify-center">governed identity</p><p className="mt-1 max-w-[210px] text-sm font-semibold text-[var(--sc-ivory)]">{identityTitle}</p></div></div>
           </div>
         </section>
 
@@ -154,6 +167,8 @@ export default function OfflineProfilePage() {
           <div className="sc-panel p-5"><div className="mb-5 flex items-center gap-3"><div className="sc-icon-well"><Infinity className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Core numbers</p><p className="text-xs text-[var(--sc-stone)]">numerology layer</p></div></div><div className="grid grid-cols-2 gap-3">{[["Life Path", numerology.lifePath], ["Expression", numerology.expression], ["Soul Urge", numerology.soulUrge], ["Personal Year", numerology.personalYear]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3"><p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p><p className="mt-1 font-serif text-2xl font-medium text-[var(--sc-gold-bright)]">{String(value)}</p></div>)}</div></div>
           <div className="sc-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="sc-icon-well"><Compass className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div></div><p className="text-sm leading-7 text-[var(--sc-ivory-soft)]">{profile.dailyGuidance}</p><div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div></div>
         </section>
+
+        <UltimateCodexPanel synthesis={ultimateCodex} />
 
         {verifiedHumanDesign && (
           <section className="sc-panel mb-6 p-6" data-testid="verified-human-design-panel">
@@ -188,6 +203,10 @@ export default function OfflineProfilePage() {
             </div>
           </section>
         )}
+
+        {verifiedHumanDesign && <HumanDesignBodygraph data={verifiedHumanDesign as Record<string, any>} />}
+
+        {verifiedFullNatal && verifiedAstrology && <div className="mb-6"><VerifiedNatalChart astrology={verifiedAstrology as Record<string, any>} synthesis={ultimateCodex} /></div>}
 
         {verifiedFullNatal && verifiedPlanets && verifiedHouses && verifiedMidheaven && (
           <section className="mb-6 grid gap-4 lg:grid-cols-[1.25fr_.75fr]" data-testid="verified-full-natal-panel">
