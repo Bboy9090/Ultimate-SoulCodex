@@ -165,9 +165,56 @@ jobs:
           pathlib.Path("ios-4.0.2-runtime.log").write_text(runtime_log, encoding="utf-8")
           if re.search(r"Terminated due to|uncaught exception|fatal error|SIGABRT|dyld.*Library not loaded", runtime_log, re.I):
               raise SystemExit("FATAL_NATIVE_LAUNCH_SIGNATURE_DETECTED")
+          if re.search(r"Making the view blank because of a JS prompt before the first paint", runtime_log, re.I):
+              raise SystemExit("WEBVIEW_BLANKED_BY_PREPAINT_JS_PROMPT")
 
           print("Simulator install, launch, survival window, screenshot, and fatal-log scan passed.")
           PY
+
+      - name: Reject blank or purple-only first paint
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/verify-first-paint.swift" <<'SWIFT'
+          import Foundation
+          import ImageIO
+          import CoreGraphics
+
+          let url = URL(fileURLWithPath: "ios-4.0.2-launch.png") as CFURL
+          guard let source = CGImageSourceCreateWithURL(url, nil),
+                let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+                let provider = image.dataProvider,
+                let cfData = provider.data,
+                let bytes = CFDataGetBytePtr(cfData) else {
+            fatalError("FIRST_PAINT_SCREENSHOT_DECODE_FAILED")
+          }
+
+          let width = image.width
+          let height = image.height
+          let bytesPerPixel = max(1, image.bitsPerPixel / 8)
+          let rowBytes = image.bytesPerRow
+          let dataLength = CFDataGetLength(cfData)
+          var bright = 0
+          var samples = 0
+
+          for y in stride(from: max(170, height / 8), to: max(171, height - 100), by: 4) {
+            for x in stride(from: 30, to: max(31, width - 30), by: 4) {
+              let offset = y * rowBytes + x * bytesPerPixel
+              guard offset + 2 < dataLength else { continue }
+              let c0 = Int(bytes[offset])
+              let c1 = Int(bytes[offset + 1])
+              let c2 = Int(bytes[offset + 2])
+              samples += 1
+              if c0 > 175 && c1 > 175 && c2 > 165 { bright += 1 }
+            }
+          }
+
+          print("FIRST_PAINT bright=\(bright) samples=\(samples)")
+          if bright < 80 {
+            fputs("FIRST_PAINT_REJECTED: screenshot still resembles the purple native shell with no rendered interface.\n", stderr)
+            exit(2)
+          }
+          SWIFT
+          xcrun swift "$RUNNER_TEMP/verify-first-paint.swift"
 
       - name: Verify bundled hotfix identity
         run: |
