@@ -56,7 +56,8 @@ jobs:
             tests/offline-synthesis-evidence-boundary.test.ts \
             tests/verified-profile-differentiation.test.ts \
             tests/verified-profile-differentiation-corpus.test.ts \
-            packages/core/soul-guide/__tests__/depth-ui-source-contract.test.ts
+            packages/core/soul-guide/__tests__/depth-ui-source-contract.test.ts \
+            tests/reflection-lens.test.ts
 
       - name: Typecheck
         run: npm run check
