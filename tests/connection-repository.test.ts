@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { compatibilityLink, connectionComparableSunSign, deriveConnectionSunSignFromBirthDate, findConnectionById, hasComparableConnectionData, parseConnections, placementLabel, sanitizeConnectionPlacements, searchConnections } from "../client/src/lib/connectionRepository";
+import { compatibilityLink, connectionComparableSunSign, connectionProfileSummary, deriveConnectionSunSignFromBirthDate, findConnectionById, hasComparableConnectionData, parseConnections, placementLabel, sanitizeConnectionPlacements, searchConnections } from "../client/src/lib/connectionRepository";
 
 test("connections parser rejects malformed or overlong private records", () => {
   assert.deepEqual(parseConnections("bad"),[]);
@@ -157,4 +157,34 @@ test("saved people can be searched by name phone number or sun sign", () => {
   assert.deepEqual(searchConnections(people, "gem").map(person => person.id), ["2"]);
   assert.deepEqual(searchConnections(people, "1993-06").map(person => person.id), ["2"]);
   assert.deepEqual(searchConnections(people, "").map(person => person.id), ["1","2"]);
+});
+
+test("people profile summaries stay evidence-bound instead of generic", () => {
+  const [bobby, sam, contactOnly] = parseConnections(JSON.stringify({
+    version: 1,
+    connections: [
+      { id: "1", name: "Bobby", birthDate: "1990-09-17", createdAt: "now", updatedAt: "now", placements: [{ key: "mars", sign: "Capricorn", house: 10 }] },
+      { id: "2", name: "Sam", birthDate: "1993-06-01", createdAt: "now", updatedAt: "now", placements: [{ key: "moon", sign: "Virgo", house: 7 }] },
+      { id: "3", name: "Jordan", phone: "718-555-1212", createdAt: "now", updatedAt: "now" },
+    ],
+  }));
+  const bobbySummary = connectionProfileSummary(bobby);
+  const samSummary = connectionProfileSummary(sam);
+  const contactSummary = connectionProfileSummary(contactOnly);
+  assert.match(bobbySummary, /Bobby: Virgo Sun from birthday 1990-09-17; Mars in Capricorn, House 10/);
+  assert.match(samSummary, /Sam: Gemini Sun from birthday 1993-06-01; Moon in Virgo, House 7/);
+  assert.notEqual(bobbySummary, samSummary);
+  assert.match(contactSummary, /saved as a contact only/);
+  assert.match(contactSummary, /Add a birthday or a known Sun placement/);
+});
+
+test("people profile summaries do not invent missing time-sensitive systems", () => {
+  const [person] = parseConnections(JSON.stringify({
+    version: 1,
+    connections: [{ id: "1", name: "Date Only", birthDate: "1987-01-19", createdAt: "now", updatedAt: "now" }],
+  }));
+  const summary = connectionProfileSummary(person);
+  assert.match(summary, /Capricorn Sun from birthday 1987-01-19/);
+  assert.match(summary, /Moon, Rising, houses, Human Design, and other time-sensitive systems stay unavailable/);
+  assert.doesNotMatch(summary, /deeply intuitive|old soul|unique individual|the universe|destined|scientifically proves/i);
 });
