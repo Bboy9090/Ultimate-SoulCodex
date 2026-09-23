@@ -359,9 +359,12 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const stelliums = findStelliums(placements);
 
   const lifePath = numericValue(numerology.lifePath);
+  const birthday = numericValue(numerology.birthday);
   const expression = numericValue(numerology.expression);
   const soulUrge = numericValue(numerology.soulUrge);
   const personality = numericValue(numerology.personality);
+  const maturity = numericValue(numerology.maturity);
+  const personalYear = numericValue(numerology.personalYear);
 
   const verifiedHd = hd?.status === "verified";
   const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
@@ -382,9 +385,11 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ...aspects.map((a) => `aspect:${a.planet1}:${a.aspect}:${a.planet2}:${a.orb.toFixed(2)}`),
     ...stelliums.map((s) => `cluster:${s.kind}:${s.key}:${s.planetKeys.join(",")}`),
     lifePath ? `num:lp:${lifePath}` : null,
+    birthday ? `num:birthday:${birthday}` : null,
     expression ? `num:expression:${expression}` : null,
     soulUrge ? `num:soul:${soulUrge}` : null,
     personality ? `num:personality:${personality}` : null,
+    maturity ? `num:maturity:${maturity}` : null,
     hdType ? `hd:type:${hdType}` : null,
     hdStrategy ? `hd:strategy:${hdStrategy}` : null,
     hdAuthority ? `hd:authority:${hdAuthority}` : null,
@@ -405,16 +410,18 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   }
   if (!verifiedHd) unresolved.push("Human Design core is unresolved or not verified and does not influence combined identity synthesis.");
   if (!lifePath) unresolved.push("Life Path is unavailable to the combined synthesis.");
+  if (!birthday) unresolved.push("Birthday number is unavailable to the combined synthesis.");
   if (!expression) unresolved.push("Expression number is unavailable to the combined synthesis.");
   if (!soulUrge) unresolved.push("Soul Urge number is unavailable to the combined synthesis.");
   if (!personality) unresolved.push("Personality number is unavailable to the combined synthesis.");
+  if (!maturity) unresolved.push("Maturity number is unavailable to the combined synthesis.");
 
   const systemsPresent = [
     placements.length >= 3 || houseCusps.length === 12,
     Boolean(lifePath || expression || soulUrge),
     Boolean(verifiedHd && hdType && hdAuthority),
   ].filter(Boolean).length;
-  const completeNumerology = Boolean(lifePath && expression && soulUrge && personality);
+  const completeNumerology = Boolean(lifePath && birthday && expression && soulUrge && personality && maturity);
   const completeSupportingPoints = supportingPoints.length === 5;
   const coverage: UltimateCodexCoverage =
     systemsPresent >= 3 && placements.length === 10 && houseCusps.length === 12 && completeSupportingPoints && verifiedHd && completeNumerology
@@ -519,12 +526,15 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     },
     {
       system: "Numerology",
-      status: lifePath && expression && soulUrge ? "deterministic core" : lifePath ? "partial deterministic core" : "unresolved",
+      status: completeNumerology ? "deterministic core" : lifePath ? "partial deterministic core" : "unresolved",
       detail: unique([
         lifePath ? `LP ${lifePath}` : null,
+        birthday ? `Birthday ${birthday}` : null,
         expression ? `Expression ${expression}` : null,
         soulUrge ? `Soul Urge ${soulUrge}` : null,
         personality ? `Personality ${personality}` : null,
+        maturity ? `Maturity ${maturity}` : null,
+        personalYear ? `Personal Year ${personalYear} (current cycle; excluded from stable fingerprint)` : null,
       ]).join(" · ") || "No governed number available.",
     },
   ];
