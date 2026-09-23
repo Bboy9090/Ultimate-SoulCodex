@@ -36,18 +36,24 @@ export default function UltimateCodexPanel({ synthesis }: { synthesis: UltimateC
             )}
           </div>
 
+          {synthesis.coverage === "insufficient" && (
+            <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-5 text-amber-100/80">
+              Codex identifiers are withheld until at least two governed system families support the fusion. A single symbolic system is not enough to claim a unique imprint.
+            </div>
+          )}
+
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Codex Number</p>
-              <p className="mt-2 font-mono text-xl font-semibold tracking-[.08em] text-[var(--sc-gold-bright)]">{synthesis.codexNumber}</p>
+              <p className="mt-2 font-mono text-xl font-semibold tracking-[.08em] text-[var(--sc-gold-bright)]">{synthesis.codexNumber ?? "WITHHELD"}</p>
             </div>
             <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Codex ID</p>
-              <p className="mt-2 font-mono text-sm font-semibold text-[var(--sc-ivory)]">{synthesis.codexId}</p>
+              <p className="mt-2 font-mono text-sm font-semibold text-[var(--sc-ivory)]">{synthesis.codexId ?? "Withheld until governed fusion is sufficient"}</p>
             </div>
             <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Fingerprint</p>
-              <p className="mt-2 break-all font-mono text-xs font-semibold text-[var(--sc-ivory)]">{synthesis.fingerprint}</p>
+              <p className="mt-2 break-all font-mono text-xs font-semibold text-[var(--sc-ivory)]">{synthesis.fingerprint ?? "No stable fingerprint issued"}</p>
             </div>
           </div>
         </div>
