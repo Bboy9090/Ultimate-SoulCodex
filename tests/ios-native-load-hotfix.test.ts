@@ -27,3 +27,19 @@ test("iOS hotfix metadata is a fresh App Store version/build", async () => {
   assert.match(project, /CURRENT_PROJECT_VERSION = 4000009;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
 });
+
+
+test("pre-paint native dialogs are suppressed and restored after React mounts", async () => {
+  const [html, main] = await Promise.all([
+    readFile("client/index.html", "utf8"),
+    readFile("client/src/main.tsx", "utf8"),
+  ]);
+
+  assert.match(html, /location\.protocol === "capacitor:"/);
+  assert.match(html, /window\.alert = function \(\) \{\};/);
+  assert.match(html, /window\.confirm = function \(\) \{ return false; \};/);
+  assert.match(html, /window\.prompt = function \(\) \{ return null; \};/);
+  assert.match(main, /window\.alert = nativeDialogs\.alert/);
+  assert.match(main, /window\.confirm = nativeDialogs\.confirm/);
+  assert.match(main, /window\.prompt = nativeDialogs\.prompt/);
+});
