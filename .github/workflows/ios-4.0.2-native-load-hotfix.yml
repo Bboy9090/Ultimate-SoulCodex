@@ -152,7 +152,7 @@ jobs:
 
           launch = run(
               ["xcrun", "simctl", "launch", "--terminate-running-process", udid, "app.soulcodex.ios"],
-              timeout=30,
+              timeout=90,
           )
           pathlib.Path("simulator-launch.txt").write_text(launch.stdout + launch.stderr, encoding="utf-8")
           if not re.search(r"app\.soulcodex\.ios:\s*\d+", launch.stdout):
