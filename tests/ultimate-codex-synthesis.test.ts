@@ -40,7 +40,7 @@ function profile(moonSign = "Virgo") {
         { planet1: "moon", planet2: "venus", aspect: "trine", orb: 1.2 },
       ],
     },
-    numerologyData: { lifePath: 9, expression: 5, soulUrge: 2, personality: 7 },
+    numerologyData: { lifePath: 9, birthday: 8, expression: 5, soulUrge: 2, personality: 7, maturity: 5, personalYear: 9 },
     humanDesignData: {
       status: "verified",
       type: "Reflector",
@@ -62,6 +62,9 @@ test("Ultimate Codex detects verified stellium-style clusters and contradictions
   assert.equal(result.supportingPoints.length, 5);
   assert.equal(result.coverage, "complete");
   assert.ok(result.evidenceSignature.some((value) => value.startsWith("point:northNode:Taurus")));
+  assert.ok(result.evidenceSignature.includes("num:birthday:8"));
+  assert.ok(result.evidenceSignature.includes("num:maturity:5"));
+  assert.ok(!result.evidenceSignature.some((value) => value.startsWith("num:personalYear:")));
   assert.ok(result.stelliums.some((cluster) => cluster.kind === "sign" && cluster.key === "Virgo"));
   assert.ok(result.stelliums.some((cluster) => cluster.kind === "house" && cluster.key === "10"));
   assert.ok(result.tensions.some((value) => /square/i.test(value)));
