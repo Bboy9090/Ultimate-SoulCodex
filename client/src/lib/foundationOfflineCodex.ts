@@ -1146,7 +1146,7 @@ export function synthesizeVerifiedFoundationProfile(
     `${aspectSummary.length ? `Strongest verified major aspects: ${aspectSummary.join("; ")}. ` : ""}` +
     `${emphasisSummary ? `Chart emphasis: ${emphasisSummary}. ` : ""}` +
     `${humanDesignSummary ? `Verified Human Design core: ${humanDesignSummary}. ` : ""}` +
-    `${supportedNumerologySummary.length ? `${supportedNumerologySummary.join(", ")} add governed deterministic numerology layers. ` : "Unsupported numerology values are retained as data but excluded from interpretive synthesis. `}` +
+    `${supportedNumerologySummary.length ? `${supportedNumerologySummary.join(", ")} add governed deterministic numerology layers. ` : "Unsupported numerology values are retained as data but excluded from interpretive synthesis. "}` +
     `These are evidence-backed calculations feeding symbolic interpretation, not a fixed identity diagnosis.`;
 
   const cleanArchetype = archetypeFor(sun, lifePath);
