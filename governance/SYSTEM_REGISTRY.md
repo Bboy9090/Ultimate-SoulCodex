@@ -21,7 +21,7 @@ A system may alter the **Ultimate Galactic Codex** only when the executable regi
 | Numerology current cycles | Governed deterministic | No | Time-varying guidance only; excluded from stable fingerprint |
 | Human Design core bodygraph | Governed | Yes | `HUMAN-DESIGN-CORE-v1` |
 | Human Design Variables / Incarnation Cross naming | Inspect-only | No | No approved independent verification contract |
-| Personality assessments | User-assessed | Conditional | Explicit user assessment only |
+| Personality assessments | User-assessed supporting context | No, until normalized assessment schema is promoted | Explicit user assessment only |
 | Moral Compass | User-assessed | No by default | Explicit responses required |
 
 ## Legacy and unavailable systems
