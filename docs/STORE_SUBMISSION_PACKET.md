@@ -1,6 +1,6 @@
 # Soul Codex Store Submission Packet
 
-Prepared from the shipped app behavior and repository state on July 17, 2026.
+Updated September 7, 2026 from the current shipped app behavior and repository state.
 
 This is the canonical operator checklist for App Store Connect and Google Play Console. Store answers must be rechecked whenever data collection, third-party services, authentication, payments, or native permissions change.
 
@@ -11,7 +11,8 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | App name | Soul Codex |
 | iOS bundle ID | `app.soulcodex.ios` |
 | Android application ID | `app.soulcodex.main` |
-| Version | 1.0.0 |
+| iOS version | 4.0.0 |
+| iOS build | 4000003 |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
@@ -21,6 +22,21 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | Account deletion | https://soulcodex.up.railway.app/account-deletion |
 | Contact email | `support@soulcodex.app` |
 | Privacy email | `privacy@soulcodex.app` |
+
+## App Review Access Contract
+
+- The core guest experience does **not** require account registration or sign-in.
+- Optional account functionality exists for account-based persistence and related server-backed features. Do not tell App Review that Soul Codex has no account system.
+- A reviewer can launch the app, create a local profile, and access the primary guest experience without credentials.
+- Online astronomy verification is optional. When selected, the app may transmit the birth date, birth time, and user-entered birth location required for chart/timezone calculation.
+- Birth location is user-entered chart data, not live device GPS location.
+- The production backend is hosted on Railway.
+- User-requested AI functionality may use configured AI service providers. Current production configuration supports Gemini and Groq, with application fallback behavior where applicable.
+- Sign in with Apple is optional and is not required for the core guest experience.
+- The submitted iOS build does not initiate an external checkout for digital premium features. Existing server-side premium entitlements may be recognized when available.
+- If App Review needs to inspect an entitlement-only feature, provide an appropriate review entitlement/account instead of directing the reviewer to external purchase.
+
+See `docs/APP_STORE_REVIEW_NOTES_2026-09-07.md` for the current review-response template.
 
 ## Final Store Copy
 
@@ -64,7 +80,7 @@ What makes it different:
 - It clearly labels uncertainty instead of guessing when birth details are missing.
 - It synthesizes multiple systems instead of presenting disconnected results.
 - It uses direct language instead of burying the reading in jargon.
-- It is free to start, with no account required for the initial experience.
+- It is free to start, with no account required for the core guest experience.
 
 Soul Codex is intended for self-reflection and entertainment. It does not provide medical, legal, financial, or other professional advice.
 
@@ -79,9 +95,9 @@ Soul Codex is intended for self-reflection and entertainment. It does not provid
 | App Store icon | `store-assets/app-store-icon-1024.png` | Ready: 1024×1024 RGB PNG, no alpha |
 | Play Store icon | `store-assets/play-store-icon-512.png` | Ready: 512×512 RGB PNG, no alpha |
 | Play feature graphic | `store-assets/play-feature-graphic-1024x500.png` | Ready after RGB normalization: 1024×500 PNG, no alpha |
-| iPhone screenshots | Not captured | Required |
-| Android phone screenshots | Not captured | Required |
-| iPad screenshots | Not captured | Required only if iPad remains supported |
+| iPhone screenshots | Verify against final submitted build | Required |
+| Android phone screenshots | Verify against final submitted build | Required |
+| iPad screenshots | Required only if iPad remains supported | Conditional |
 
 ## Screenshot Capture Plan
 
@@ -99,7 +115,7 @@ Capture at least five portrait phone screenshots. Avoid real names, email addres
 
 ## Google Play Data Safety Draft
 
-This draft reflects the July 17, 2026 source and privacy policy. Confirm production logging and provider contracts before submitting it.
+Confirm production logging and provider contracts before submitting or changing these answers.
 
 ### High-level answers
 
@@ -125,7 +141,7 @@ This draft reflects the July 17, 2026 source and privacy policy. Confirm product
 | App interactions | Yes | No | Session/usage history needed to operate and improve app functionality |
 | Diagnostics | Yes | No* | Request logs and error details used for security and troubleshooting |
 
-`*` Some requested profile context or prompts may be processed by contracted AI or infrastructure service providers solely to deliver app functionality. Confirm that each transfer qualifies for Google Play's service-provider exception before selecting “not shared.”
+`*` Some requested profile context or prompts may be processed by contracted AI or infrastructure service providers solely to deliver app functionality. Confirm that each transfer qualifies for the applicable store service-provider treatment before selecting “not shared.”
 
 ### Not currently collected for the native store app
 
@@ -150,7 +166,7 @@ The checked-in `PrivacyInfo.xcprivacy` currently declares these linked, non-trac
 - Sensitive information
 - Other user content
 
-The app declares no tracking and no tracking domains. Reconcile this declaration with App Store Connect after the final archive is produced.
+The app declares no tracking and no tracking domains. Reconcile this declaration with App Store Connect after the final archive is produced and whenever collection behavior changes.
 
 ## Content Rating Draft
 
@@ -167,10 +183,10 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 
 ## Remaining Gates
 
-1. Capture final native screenshots.
-2. Complete physical-device testing.
-3. Add Apple signing credentials and generate the signed IPA when ready.
-4. Enroll in Google Play, create an upload keystore, and generate the signed AAB.
-5. Confirm support and privacy email inboxes receive mail.
-6. Complete privacy/data-safety and content-rating questionnaires.
-7. Run TestFlight and Play internal testing before production submission.
+1. Confirm the physical-device walkthrough uses the exact submitted TestFlight build.
+2. Confirm the screen recording satisfies App Review's requested OS/device requirement.
+3. Re-test optional Sign in with Apple against the production backend.
+4. Re-test Compatibility, Moon/Rising online verification, Soul Guide, support, privacy, and account-deletion paths.
+5. Reconcile App Store Connect privacy answers against the current iOS privacy manifest.
+6. Keep unfinished or unverified deep-system features unavailable rather than presenting simulated results.
+7. Do not upload a new binary during an active information-request review unless a binary-level defect requires it.
