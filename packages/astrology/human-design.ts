@@ -1,7 +1,11 @@
 import * as Astronomy from 'astronomy-engine';
-import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
-import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
+import {
+  createEvidenceEntry,
+  resolveUniqueZonedBirthTime,
+  type EvidenceEntry,
+  type ZonedBirthTimeFailureReason,
+} from '@soulcodex/core';
 
 // Human Design Gates mapped to their correct centers and meanings
 export const HD_GATES = {
@@ -784,35 +788,23 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
 }
 
 
-type UniqueLocalTimeResult =
-  | { date: Date }
-  | { error: 'nonexistent_local_time' | 'ambiguous_local_time' | 'timezone_resolution_failed' };
-
-function resolveUniqueLocalTime(
-  localTimeString: string,
-  timezone: string,
-): UniqueLocalTimeResult {
-  try {
-    const candidate = fromZonedTime(localTimeString, timezone);
-    if (Number.isNaN(candidate.getTime())) {
-      return { error: 'timezone_resolution_failed' };
-    }
-
-    const format = "yyyy-MM-dd'T'HH:mm:ss";
-    if (formatInTimeZone(candidate, timezone, format) !== localTimeString) {
-      return { error: 'nonexistent_local_time' };
-    }
-
-    for (const minutes of [-120, -90, -60, -30, 30, 60, 90, 120]) {
-      const alternate = new Date(candidate.getTime() + minutes * 60_000);
-      if (formatInTimeZone(alternate, timezone, format) === localTimeString) {
-        return { error: 'ambiguous_local_time' };
-      }
-    }
-
-    return { date: candidate };
-  } catch {
-    return { error: 'timezone_resolution_failed' };
+function mapBirthTimeFailure(
+  reason: ZonedBirthTimeFailureReason,
+): HumanDesignUnresolvedReason {
+  switch (reason) {
+    case 'invalid_date':
+      return 'invalid_birth_date';
+    case 'invalid_time':
+      return 'malformed_birth_time';
+    case 'invalid_timezone':
+      return 'invalid_timezone';
+    case 'nonexistent_local_time':
+      return 'nonexistent_local_time';
+    case 'ambiguous_local_time':
+      return 'ambiguous_local_time';
+    case 'timezone_resolution_failed':
+    default:
+      return 'timezone_resolution_failed';
   }
 }
 
@@ -1060,15 +1052,20 @@ function calculateHumanDesignInternal(birthData: {
   const resolvedTimezone = timezoneResolution.timezone;
   const timezoneResolutionSource = timezoneResolution.source;
 
-  // Resolve the exact birth instant once and keep all activation astronomy in UTC.
-  const [year, month, day] = birthData.birthDate.split('-').map(Number);
-  const [hours, minutes] = birthData.birthTime.split(':').map(Number);
-  const localTimeString =
-    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T` +
-    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-  const resolvedBirthTime = resolveUniqueLocalTime(localTimeString, resolvedTimezone);
-  if ('error' in resolvedBirthTime) {
-    return { result: { status: 'unresolved', reason: resolvedBirthTime.error } };
+  // Resolve the exact birth instant once using the same canonical civil-time
+  // resolver used by the natal astronomy engine.
+  const resolvedBirthTime = resolveUniqueZonedBirthTime({
+    birthDate: birthData.birthDate,
+    birthTime: birthData.birthTime,
+    timezone: resolvedTimezone,
+  });
+  if (resolvedBirthTime.status !== 'resolved') {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: mapBirthTimeFailure(resolvedBirthTime.reason),
+      },
+    };
   }
   const birthTimeUTC = resolvedBirthTime.date;
 
