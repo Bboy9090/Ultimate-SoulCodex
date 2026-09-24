@@ -144,16 +144,6 @@ jobs:
 
           run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
 
-          container = run(
-              ["xcrun", "simctl", "get_app_container", udid, "app.soulcodex.ios", "app"],
-              timeout=20,
-              check=False,
-          )
-          pathlib.Path("installed-app-container.txt").write_text(
-              container.stdout + container.stderr,
-              encoding="utf-8",
-          )
-
           launch = run(
               ["xcrun", "simctl", "launch", "--terminate-running-process", udid, "app.soulcodex.ios"],
               timeout=90,
@@ -263,7 +253,6 @@ jobs:
             simulator-launch.txt
             simulator-build.log
             simulator-probe.log
-            installed-app-container.txt
             simulator-app-path.txt
             native-web-payload.txt
             IOS-4.0.2-HOTFIX-RECEIPT.txt
