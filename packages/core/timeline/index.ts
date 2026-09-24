@@ -2,6 +2,8 @@ export * from "./rules.js";
 export * from "./score.js";
 export * from "./resolve.js";
 import { resolveTimelinePhase } from "./resolve.js";
+import { parseDateOnly } from "../compute/date-only.js";
+import { calcPersonalYear } from "../compute/personal-numbers.js";
 
 export type TimelineOutput = {
   phase: import("./rules.js").Phase;
@@ -66,11 +68,13 @@ export function generateTimeline(input: {
   const birthDate = input.profile?.birthDate;
   const cycles: string[] = [];
   if (birthDate) {
-    const birth = new Date(birthDate);
+    const birth = parseDateOnly(birthDate);
     const now = new Date(input.currentDateISO);
-    let age = now.getFullYear() - birth.getFullYear();
-    const m = now.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age -= 1;
+    const nowYear = now.getUTCFullYear();
+    const nowMonth = now.getUTCMonth() + 1;
+    const nowDay = now.getUTCDate();
+    let age = nowYear - birth.year;
+    if (nowMonth < birth.month || (nowMonth === birth.month && nowDay < birth.day)) age -= 1;
     const mod12 = ((age % 12) + 12) % 12;
     if (age >= 27 && age <= 31) cycles.push("saturn_return");
     if (age >= 56 && age <= 61) cycles.push("saturn_return");
@@ -82,14 +86,8 @@ export function generateTimeline(input: {
   // Personal year: standard numerology.
   const personalYear = (() => {
     if (!birthDate) return 1;
-    const b = new Date(birthDate);
     const now = new Date(input.currentDateISO);
-    const sum = (n: number) => String(Math.abs(n)).split("").reduce((a, d) => a + Number(d), 0);
-    const reduce = (n: number) => {
-      while (n > 9) n = sum(n);
-      return n || 9;
-    };
-    return reduce(sum(b.getMonth() + 1) + sum(b.getDate()) + sum(now.getFullYear()));
+    return calcPersonalYear(birthDate, now.getUTCFullYear());
   })();
 
   const resolved = resolveTimelinePhase({

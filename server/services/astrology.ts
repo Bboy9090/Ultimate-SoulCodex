@@ -1,7 +1,8 @@
 import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
 import { fromZonedTime } from "date-fns-tz";
-import type {
-  VerificationState,
+import {
+  parseDateOnly,
+  type VerificationState,
   PlacementEvidence,
   PlacementLike,
 } from "@soulcodex/core";
@@ -673,8 +674,8 @@ export async function calculateVerifiedAstrology(
 export function getTarotBirthCards(
   birthDate: string,
 ): { card1: string; card2: string; interpretation: string } {
-  const date = new Date(birthDate);
-  const sum = date.getDate() + (date.getMonth() + 1) + date.getFullYear();
+  const { day, month, year } = parseDateOnly(birthDate);
+  const sum = day + month + year;
   const digitalRoot = sum
     .toString()
     .split("")
