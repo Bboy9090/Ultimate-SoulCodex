@@ -12,7 +12,7 @@ import {
   getAspectInterpretation
 } from "./interpretations";
 import * as Astronomy from 'astronomy-engine';
-const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
+const Astro: typeof Astronomy = Astronomy;
 import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 
