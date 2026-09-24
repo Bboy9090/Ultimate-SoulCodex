@@ -6,7 +6,11 @@ import {
 } from "../services/astrology-production";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
-import { fromZonedTime } from "date-fns-tz";
+import {
+  isValidDateOnly,
+  isValidIanaTimezone,
+  isValidTime24,
+} from "../../shared/schema";
 
 const numericCoordinate = z
   .union([z.number(), z.string().min(1)])
@@ -15,14 +19,27 @@ const numericCoordinate = z
 
 export const profileVerificationRequestSchema = z
   .object({
-    birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Birth date must use YYYY-MM-DD"),
+    birthDate: z
+      .string()
+      .refine(
+        isValidDateOnly,
+        "Birth date must be a real calendar date in YYYY-MM-DD format",
+      ),
     birthTime: z
       .union([
         z.literal(""),
-        z.string().regex(/^\d{2}:\d{2}$/, "Birth time must use HH:MM when provided"),
+        z
+          .string()
+          .refine(
+            isValidTime24,
+            "Birth time must be a real 24-hour HH:MM time",
+          ),
       ])
       .optional(),
-    timezone: z.string().min(1, "Timezone is required"),
+    timezone: z
+      .string()
+      .min(1, "Timezone is required")
+      .refine(isValidIanaTimezone, "Timezone must be a valid IANA timezone"),
     latitude: numericCoordinate
       .refine((value) => value >= -90 && value <= 90, "Latitude must be between -90 and 90")
       .optional(),
@@ -30,7 +47,18 @@ export const profileVerificationRequestSchema = z
       .refine((value) => value >= -180 && value <= 180, "Longitude must be between -180 and 180")
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, context) => {
+    const hasLatitude = data.latitude !== undefined;
+    const hasLongitude = data.longitude !== undefined;
+    if (hasLatitude !== hasLongitude) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: hasLatitude ? ["longitude"] : ["latitude"],
+        message: "Latitude and longitude must be supplied together",
+      });
+    }
+  });
 
 function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   return {
@@ -70,12 +98,15 @@ export function registerProfileVerificationRoutes(app: Express) {
         longitude: parsed.data.longitude,
       });
       const updatedAt = new Date().toISOString();
+      const resolvedBirthTimestampUtc =
+        astrologyData.moon.internalCandidate?.inputTimestamp ?? null;
       let humanDesignData: Record<string, unknown> | null = null;
 
       if (
         parsed.data.birthTime?.trim() &&
         parsed.data.latitude !== undefined &&
-        parsed.data.longitude !== undefined
+        parsed.data.longitude !== undefined &&
+        resolvedBirthTimestampUtc
       ) {
         const humanDesign = calculateHumanDesign({
           name: "Private profile",
@@ -88,10 +119,7 @@ export function registerProfileVerificationRoutes(app: Express) {
         });
 
         if (humanDesign.status === "resolved") {
-          const inputTimestampUtc = fromZonedTime(
-            `${parsed.data.birthDate}T${parsed.data.birthTime}:00`,
-            parsed.data.timezone,
-          ).toISOString();
+          const inputTimestampUtc = resolvedBirthTimestampUtc;
           const trust = createVerifiedHumanDesignTrustRecord({
             birthTimeKnown: true,
             inputTimestampUtc,

@@ -72,3 +72,54 @@ test("invalid dates fail closed", () => {
   assert.equal(result.sun.internalCandidate, undefined);
   assert.equal(result.verification.complete, false);
 });
+
+
+test("impossible calendar dates never become ephemeris candidates", () => {
+  const result = calculateAstrology({
+    ...completeBirthData,
+    birthDate: "1990-02-30",
+  });
+
+  assert.equal(result.sun.internalCandidate, undefined);
+  assert.equal(result.moon.internalCandidate, undefined);
+  assert.equal(result.sun.verificationStatus, "pending_ephemeris");
+  assert.equal(result.moon.verificationStatus, "pending_ephemeris");
+});
+
+test("invalid clock times and invalid IANA timezones fail closed", () => {
+  const badTime = calculateAstrology({
+    ...completeBirthData,
+    birthTime: "24:00",
+  });
+  assert.equal(badTime.moon.internalCandidate, undefined);
+  assert.equal(badTime.moon.verificationStatus, "pending_ephemeris");
+
+  const badTimezone = calculateAstrology({
+    ...completeBirthData,
+    timezone: "Mars/Olympus",
+  });
+  assert.equal(badTimezone.sun.internalCandidate, undefined);
+  assert.equal(badTimezone.moon.internalCandidate, undefined);
+});
+
+test("DST gap and overlap wall times are withheld when UTC is not uniquely determined", () => {
+  const springGap = calculateAstrology({
+    birthDate: "2026-03-08",
+    birthTime: "02:30",
+    latitude: 40.7128,
+    longitude: -74.006,
+    timezone: "America/New_York",
+  });
+  assert.equal(springGap.moon.internalCandidate, undefined);
+  assert.equal(springGap.moon.verificationStatus, "pending_ephemeris");
+
+  const fallOverlap = calculateAstrology({
+    birthDate: "2026-11-01",
+    birthTime: "01:30",
+    latitude: 40.7128,
+    longitude: -74.006,
+    timezone: "America/New_York",
+  });
+  assert.equal(fallOverlap.moon.internalCandidate, undefined);
+  assert.equal(fallOverlap.moon.verificationStatus, "pending_ephemeris");
+});

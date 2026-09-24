@@ -1,5 +1,5 @@
 import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
-import { fromZonedTime } from "date-fns-tz";
+import { parseDateOnly, resolveUniqueZonedBirthTime } from "@soulcodex/core";
 import type {
   VerificationState,
   PlacementEvidence,
@@ -180,23 +180,30 @@ function signFromLongitude(longitude: number): string {
 }
 
 function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthData.birthDate)) return null;
-
-  const birthTime = birthData.birthTime?.trim();
-  if (requiresTime && !birthTime) return null;
-
-  const time = birthTime && /^\d{2}:\d{2}$/.test(birthTime) ? birthTime : "12:00";
-  const localTimestamp = `${birthData.birthDate}T${time}:00`;
-
-  if (birthData.timezone) {
-    const zoned = fromZonedTime(localTimestamp, birthData.timezone);
-    return Number.isNaN(zoned.getTime()) ? null : zoned;
+  try {
+    parseDateOnly(birthData.birthDate);
+  } catch {
+    return null;
   }
 
-  // Date-only Sun candidates remain useful for evidence collection, but the
-  // production verifier will not promote them without an explicit time zone.
+  const birthTime = birthData.birthTime?.trim();
+
+  if (birthTime) {
+    if (!birthData.timezone?.trim()) return null;
+    const resolved = resolveUniqueZonedBirthTime({
+      birthDate: birthData.birthDate,
+      birthTime,
+      timezone: birthData.timezone,
+    });
+    return resolved.status === "resolved" ? resolved.date : null;
+  }
+
   if (requiresTime) return null;
-  const utc = new Date(`${localTimestamp}Z`);
+
+  // Date-only Sun candidates are explicitly non-authoritative and use a
+  // stable noon-UTC anchor only for evidence collection. They are never
+  // promoted without the user's exact birth time and timezone.
+  const utc = new Date(`${birthData.birthDate}T12:00:00Z`);
   return Number.isNaN(utc.getTime()) ? null : utc;
 }
 
@@ -673,8 +680,8 @@ export async function calculateVerifiedAstrology(
 export function getTarotBirthCards(
   birthDate: string,
 ): { card1: string; card2: string; interpretation: string } {
-  const date = new Date(birthDate);
-  const sum = date.getDate() + (date.getMonth() + 1) + date.getFullYear();
+  const { year, month, day } = parseDateOnly(birthDate);
+  const sum = day + month + year;
   const digitalRoot = sum
     .toString()
     .split("")

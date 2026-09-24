@@ -1,7 +1,11 @@
 import * as Astronomy from 'astronomy-engine';
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
-import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
+import {
+  createEvidenceEntry,
+  resolveUniqueZonedBirthTime,
+  type EvidenceEntry,
+  type ZonedBirthTimeFailureReason,
+} from '@soulcodex/core';
 
 // Human Design Gates mapped to their correct centers and meanings
 export const HD_GATES = {
@@ -294,6 +298,8 @@ export type HumanDesignUnresolvedReason =
   | 'malformed_birth_time'
   | 'invalid_timezone'
   | 'timezone_resolution_failed'
+  | 'nonexistent_local_time'
+  | 'ambiguous_local_time'
   | 'invalid_coordinates'
   | 'missing_birth_date'
   | 'missing_birth_time'
@@ -781,6 +787,27 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
   return { error: 'timezone_resolution_failed' };
 }
 
+
+function mapBirthTimeFailure(
+  reason: ZonedBirthTimeFailureReason,
+): HumanDesignUnresolvedReason {
+  switch (reason) {
+    case 'invalid_date':
+      return 'invalid_birth_date';
+    case 'invalid_time':
+      return 'malformed_birth_time';
+    case 'invalid_timezone':
+      return 'invalid_timezone';
+    case 'nonexistent_local_time':
+      return 'nonexistent_local_time';
+    case 'ambiguous_local_time':
+      return 'ambiguous_local_time';
+    case 'timezone_resolution_failed':
+    default:
+      return 'timezone_resolution_failed';
+  }
+}
+
 const HdAstro: typeof Astronomy = Astronomy;
 
 type HdPosition = {
@@ -1025,16 +1052,22 @@ function calculateHumanDesignInternal(birthData: {
   const resolvedTimezone = timezoneResolution.timezone;
   const timezoneResolutionSource = timezoneResolution.source;
 
-  // Resolve the exact birth instant once and keep all activation astronomy in UTC.
-  const [year, month, day] = birthData.birthDate.split('-').map(Number);
-  const [hours, minutes] = birthData.birthTime.split(':').map(Number);
-  const localTimeString =
-    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T` +
-    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-  const birthTimeUTC = fromZonedTime(localTimeString, resolvedTimezone);
-  if (Number.isNaN(birthTimeUTC.getTime())) {
-    return { result: { status: 'unresolved', reason: 'timezone_resolution_failed' } };
+  // Resolve the exact birth instant once using the same canonical civil-time
+  // resolver used by the natal astronomy engine.
+  const resolvedBirthTime = resolveUniqueZonedBirthTime({
+    birthDate: birthData.birthDate,
+    birthTime: birthData.birthTime,
+    timezone: resolvedTimezone,
+  });
+  if (resolvedBirthTime.status !== 'resolved') {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: mapBirthTimeFailure(resolvedBirthTime.reason),
+      },
+    };
   }
+  const birthTimeUTC = resolvedBirthTime.date;
 
   const astroData = calculateHdAstroAtUtc(birthTimeUTC);
   const DESIGN_SOLAR_ARC = 87.975;
