@@ -83,5 +83,7 @@ test("verification route is isolated from profile persistence and AI generation"
   assert.match(source, /aiGeneration: false/);
   assert.doesNotMatch(source, /from "\.\.\/storage/);
   assert.doesNotMatch(source, /generateBiography|generateDailyGuidance|openai/i);
+  assert.doesNotMatch(source, /fromZonedTime/);
+  assert.match(source, /moon\.internalCandidate\?\.inputTimestamp/);
   assert.match(server, /registerProfileVerificationRoutes\(app\)/);
 });
