@@ -6,7 +6,7 @@ async function text(path: string): Promise<string> {
   return readFile(path, "utf8");
 }
 
-test("Soul Codex 4.0.1 native identities are aligned", async () => {
+test("Soul Codex platform release identities are aligned", async () => {
   const android = await text("android/app/build.gradle");
   const info = await text("ios/App/App/Info.plist");
   const project = await text("ios/App/App.xcodeproj/project.pbxproj");
@@ -59,7 +59,7 @@ test("store workflow binds exact release branch and Play production upload", asy
   assert.match(workflow, /packageName:\s*app\.soulcodex\.main/);
   assert.match(workflow, /track:\s*production/);
   assert.match(workflow, /status:\s*completed/);
-  assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
+  assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.0\.2/);\n  assert.match(workflow, /iOS marketingVersion=4\.0\.2/);\n  assert.match(workflow, /iOS build=4000009/);\n  assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
 });
 
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
