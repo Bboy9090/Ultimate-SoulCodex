@@ -33,3 +33,28 @@ test("current resolved chart exposes 26 activation slots for differential audit"
   assert.equal(Object.keys(result.activations.conscious).length,13);
   assert.equal(Object.keys(result.activations.unconscious).length,13);
 });
+
+
+test("Human Design rejects nonexistent DST wall times", () => {
+  const result = calculateHumanDesign({
+    ...input,
+    birthDate: "2026-03-08",
+    birthTime: "02:30",
+  });
+  assert.equal(result.status, "unresolved");
+  if (result.status === "unresolved") {
+    assert.equal(result.reason, "nonexistent_local_time");
+  }
+});
+
+test("Human Design rejects ambiguous repeated DST wall times", () => {
+  const result = calculateHumanDesign({
+    ...input,
+    birthDate: "2026-11-01",
+    birthTime: "01:30",
+  });
+  assert.equal(result.status, "unresolved");
+  if (result.status === "unresolved") {
+    assert.equal(result.reason, "ambiguous_local_time");
+  }
+});
