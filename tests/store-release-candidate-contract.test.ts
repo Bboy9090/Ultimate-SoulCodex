@@ -88,7 +88,4 @@ test("store metadata points at the verified production domain and exact release 
   }
 
   assert.match(packet, /4\.0\.1 \/ versionCode 4000008/);
-  assert.match(packet, /4\.0\.2 \/ build 4000009/);
-  assert.match(packet, /10785817586/);
-  assert.match(packet, /52cddc3a1e216fa84d346d2c69ca1b508d6fbee1ab72d7d90fac942c6a4702cf/);
-});
+  assert.match(packet, /4\.0\.2 \/ build 4000009/);\n  assert.match(packet, /do not hard-code them into the source tree/);\n});
