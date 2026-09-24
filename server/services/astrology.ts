@@ -1,5 +1,6 @@
 import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
-import { fromZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+import { parseDateOnly } from "@soulcodex/core";
 import type {
   VerificationState,
   PlacementEvidence,
@@ -179,18 +180,67 @@ function signFromLongitude(longitude: number): string {
   return ZODIAC_SIGNS[Math.floor(normalizeLongitude(longitude) / 30)];
 }
 
+function validIanaTimezone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function validTime24(value: string): boolean {
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
+}
+
+function uniqueUtcInstantForLocalTime(
+  localTimestamp: string,
+  timezone: string,
+): Date | null {
+  if (!validIanaTimezone(timezone)) return null;
+
+  try {
+    const zoned = fromZonedTime(localTimestamp, timezone);
+    if (Number.isNaN(zoned.getTime())) return null;
+
+    const format = "yyyy-MM-dd'T'HH:mm:ss";
+    if (formatInTimeZone(zoned, timezone, format) !== localTimestamp) {
+      // Nonexistent local wall time, such as a spring-forward DST gap.
+      return null;
+    }
+
+    // A birth record containing only local clock time + zone cannot identify
+    // which occurrence of a repeated DST wall time was intended. Fail closed
+    // rather than silently choosing the earlier/later UTC instant.
+    for (const minutes of [-120, -90, -60, -30, 30, 60, 90, 120]) {
+      const alternate = new Date(zoned.getTime() + minutes * 60_000);
+      if (formatInTimeZone(alternate, timezone, format) === localTimestamp) {
+        return null;
+      }
+    }
+
+    return zoned;
+  } catch {
+    return null;
+  }
+}
+
 function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthData.birthDate)) return null;
+  try {
+    parseDateOnly(birthData.birthDate);
+  } catch {
+    return null;
+  }
 
   const birthTime = birthData.birthTime?.trim();
   if (requiresTime && !birthTime) return null;
+  if (birthTime && !validTime24(birthTime)) return null;
 
-  const time = birthTime && /^\d{2}:\d{2}$/.test(birthTime) ? birthTime : "12:00";
+  const time = birthTime || "12:00";
   const localTimestamp = `${birthData.birthDate}T${time}:00`;
 
   if (birthData.timezone) {
-    const zoned = fromZonedTime(localTimestamp, birthData.timezone);
-    return Number.isNaN(zoned.getTime()) ? null : zoned;
+    return uniqueUtcInstantForLocalTime(localTimestamp, birthData.timezone.trim());
   }
 
   // Date-only Sun candidates remain useful for evidence collection, but the
