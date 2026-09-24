@@ -1,0 +1,231 @@
+name: Soul Codex iOS 4.0.2 Signed App Store IPA
+
+on:
+  push:
+    branches:
+      - hotfix/ios-4.0.2-native-load
+    paths:
+      - ".github/workflows/ios-4.0.2-signed-ipa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: soulcodex-ios-4-0-2-signing
+  cancel-in-progress: true
+
+env:
+  VITE_API_URL: https://soulcodex.up.railway.app
+  VITE_RELEASE_VERSION: 4.0.2
+  VITE_API_CONTRACT: foundation-v4
+
+jobs:
+  signed-app-store-ipa:
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Prove exact candidate
+        run: |
+          printf '%s\n' "$GITHUB_SHA" > release-candidate-sha.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bootstrap exact native tree
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          sh ios/App/ci_scripts/ci_post_clone.sh
+          npm run mobile:validate:ios
+          node --import tsx --test tests/ios-native-load-hotfix.test.ts
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild \
+            -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex"
+
+      - name: Verify P12 identity
+        env:
+          IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$IOS_CERTIFICATE_P12" || { echo IOS_CERTIFICATE_P12_MISSING; exit 1; }
+          test -n "$IOS_CERTIFICATE_PASSWORD" || { echo IOS_CERTIFICATE_PASSWORD_MISSING; exit 1; }
+          P12="$RUNNER_TEMP/soulcodex.p12"
+          CERTS="$RUNNER_TEMP/certs.pem"
+          KEY="$RUNNER_TEMP/key.pem"
+          KEY_PUB="$RUNNER_TEMP/key.der"
+          CERT_PUB="$RUNNER_TEMP/cert.der"
+          LEAF="$RUNNER_TEMP/leaf.pem"
+          MODERN_P12="$RUNNER_TEMP/soulcodex-modern.p12"
+          printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY"
+          awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
+          openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
+          MATCHED=""
+          for cert in "$RUNNER_TEMP"/candidate-*.pem; do
+            openssl x509 -in "$cert" -pubkey -noout | openssl pkey -pubin -outform DER > "$CERT_PUB"
+            if cmp -s "$CERT_PUB" "$KEY_PUB"; then cp "$cert" "$LEAF"; MATCHED=1; break; fi
+          done
+          test -n "$MATCHED"
+          openssl x509 -in "$LEAF" -noout -checkend 0
+          openssl x509 -in "$LEAF" -outform DER -out "$RUNNER_TEMP/leaf.der"
+          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout "pass:$IOS_CERTIFICATE_PASSWORD"
+
+      - name: Import signing identity
+        env:
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/soulcodex-modern.p12" -k "$KEYCHAIN" -f pkcs12 -P "$IOS_CERTIFICATE_PASSWORD" -A
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN"
+          security find-identity -v -p codesigning "$KEYCHAIN" | tee "$RUNNER_TEMP/ids.txt"
+          grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/ids.txt"
+
+      - name: Qualify App Store provisioning profile
+        env:
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          test -n "$IOS_PROVISIONING_PROFILE" || { echo IOS_PROVISIONING_PROFILE_MISSING; exit 1; }
+          RAW_PROFILE="$RUNNER_TEMP/SoulCodex.mobileprovision"
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$RAW_PROFILE"
+          security cms -D -i "$RAW_PROFILE" > "$PROFILE_PLIST"
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$PROFILE_PLIST")
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PROFILE_PLIST")
+          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$PROFILE_PLIST")
+          APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$PROFILE_PLIST")
+          test "$PROFILE_TEAM" = "86NUJ8M3B8"
+          test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios"
+          python3 - "$PROFILE_PLIST" "$RUNNER_TEMP/leaf.der" <<'PY'
+          import datetime, plistlib, sys
+          plist_path, leaf_path = sys.argv[1], sys.argv[2]
+          with open(plist_path, "rb") as f: profile = plistlib.load(f)
+          with open(leaf_path, "rb") as f: leaf = f.read()
+          entitlements = profile.get("Entitlements", {})
+          if entitlements.get("get-task-allow") is not False: raise SystemExit("IOS_PROFILE_NOT_APP_STORE")
+          if profile.get("ProvisionedDevices"): raise SystemExit("IOS_PROFILE_HAS_DEVICES")
+          if profile.get("ProvisionsAllDevices"): raise SystemExit("IOS_PROFILE_IS_ENTERPRISE")
+          expiration = profile.get("ExpirationDate")
+          now = datetime.datetime.now(datetime.timezone.utc)
+          if expiration is None: raise SystemExit("IOS_PROFILE_EXPIRATION_MISSING")
+          if expiration.tzinfo is None: expiration = expiration.replace(tzinfo=datetime.timezone.utc)
+          if expiration <= now: raise SystemExit("IOS_PROFILE_EXPIRED")
+          if leaf not in profile.get("DeveloperCertificates", []): raise SystemExit("IOS_PROFILE_CERTIFICATE_MISMATCH")
+          PY
+          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RAW_PROFILE" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          cp "$RAW_PROFILE" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          printf 'IOS_PROFILE_NAME=%s\n' "$PROFILE_NAME" >> "$GITHUB_ENV"
+
+      - name: Archive and export signed App Store IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/export
+          cat > build/ExportOptions.ci.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>destination</key><string>export</string>
+            <key>method</key><string>app-store</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>teamID</key><string>86NUJ8M3B8</string>
+            <key>provisioningProfiles</key><dict><key>app.soulcodex.ios</key><string>$IOS_PROFILE_NAME</string></dict>
+            <key>stripSwiftSymbols</key><true/>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/SoulCodex.xcarchive \
+            DEVELOPMENT_TEAM=86NUJ8M3B8 \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            archive 2>&1 | tee archive.log
+          test -d build/SoulCodex.xcarchive
+          xcodebuild -exportArchive \
+            -archivePath build/SoulCodex.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.ci.plist \
+            2>&1 | tee export.log
+          IPA_PATH=$(find build/export -maxdepth 1 -name "*.ipa" -type f -print -quit)
+          test -n "$IPA_PATH"
+          test -s "$IPA_PATH"
+          shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
+          cp release-candidate-sha.txt build/export/RELEASE-CANDIDATE-SHA.txt
+
+      - name: Verify exported IPA identity and signature
+        run: |
+          set -euo pipefail
+          IPA_PATH=$(find build/export -maxdepth 1 -name "*.ipa" -type f -print -quit)
+          rm -rf "$RUNNER_TEMP/ipa-check"
+          mkdir -p "$RUNNER_TEMP/ipa-check"
+          unzip -q "$IPA_PATH" -d "$RUNNER_TEMP/ipa-check"
+          APP_PATH=$(find "$RUNNER_TEMP/ipa-check/Payload" -maxdepth 1 -name "*.app" -type d -print -quit)
+          test -n "$APP_PATH"
+          codesign --verify --deep --strict "$APP_PATH"
+          PLIST="$APP_PATH/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.0.2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000009"
+          test -s "$APP_PATH/public/index.html"
+          test -d "$APP_PATH/public/assets"
+          {
+            echo "SHA=${GITHUB_SHA}"
+            echo "bundleId=app.soulcodex.ios"
+            echo "marketingVersion=4.0.2"
+            echo "buildNumber=4000009"
+            echo "signature=verified"
+            echo "app_store_profile=verified"
+            echo "native_launch_gate=passed"
+          } > build/export/IOS-4.0.2-SIGNED-RECEIPT.txt
+
+      - name: Upload signed IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.2-signed-app-store-ipa
+          path: |
+            build/export/*.ipa
+            build/export/IPA-SHA256.txt
+            build/export/RELEASE-CANDIDATE-SHA.txt
+            build/export/IOS-4.0.2-SIGNED-RECEIPT.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload signing diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.2-signing-diagnostics
+          path: |
+            release-candidate-sha.txt
+            archive.log
+            export.log
+          if-no-files-found: ignore
+          retention-days: 30
