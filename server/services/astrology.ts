@@ -723,8 +723,8 @@ export async function calculateVerifiedAstrology(
 export function getTarotBirthCards(
   birthDate: string,
 ): { card1: string; card2: string; interpretation: string } {
-  const date = new Date(birthDate);
-  const sum = date.getDate() + (date.getMonth() + 1) + date.getFullYear();
+  const { year, month, day } = parseDateOnly(birthDate);
+  const sum = day + month + year;
   const digitalRoot = sum
     .toString()
     .split("")
