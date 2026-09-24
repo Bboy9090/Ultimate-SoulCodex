@@ -6,7 +6,6 @@ import {
 } from "../services/astrology-production";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
-import { fromZonedTime } from "date-fns-tz";
 import {
   isValidDateOnly,
   isValidIanaTimezone,
@@ -99,12 +98,15 @@ export function registerProfileVerificationRoutes(app: Express) {
         longitude: parsed.data.longitude,
       });
       const updatedAt = new Date().toISOString();
+      const resolvedBirthTimestampUtc =
+        astrologyData.moon.internalCandidate?.inputTimestamp ?? null;
       let humanDesignData: Record<string, unknown> | null = null;
 
       if (
         parsed.data.birthTime?.trim() &&
         parsed.data.latitude !== undefined &&
-        parsed.data.longitude !== undefined
+        parsed.data.longitude !== undefined &&
+        resolvedBirthTimestampUtc
       ) {
         const humanDesign = calculateHumanDesign({
           name: "Private profile",
@@ -117,10 +119,7 @@ export function registerProfileVerificationRoutes(app: Express) {
         });
 
         if (humanDesign.status === "resolved") {
-          const inputTimestampUtc = fromZonedTime(
-            `${parsed.data.birthDate}T${parsed.data.birthTime}:00`,
-            parsed.data.timezone,
-          ).toISOString();
+          const inputTimestampUtc = resolvedBirthTimestampUtc;
           const trust = createVerifiedHumanDesignTrustRecord({
             birthTimeKnown: true,
             inputTimestampUtc,
