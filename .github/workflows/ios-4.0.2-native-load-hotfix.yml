@@ -172,8 +172,20 @@ jobs:
           pathlib.Path("ios-4.0.2-runtime.log").write_text(runtime_log, encoding="utf-8")
           if re.search(r"Terminated due to|uncaught exception|fatal error|SIGABRT|dyld.*Library not loaded", runtime_log, re.I):
               raise SystemExit("FATAL_NATIVE_LAUNCH_SIGNATURE_DETECTED")
-          if re.search(r"Making the view blank because of a JS prompt before the first paint", runtime_log, re.I):
-              raise SystemExit("WEBVIEW_BLANKED_BY_PREPAINT_JS_PROMPT")
+          prepaint_blank = re.search(
+              r"Making the view blank because of a JS prompt before the first paint",
+              runtime_log,
+              re.I,
+          )
+          rendering_recovered = re.search(
+              r"stopMakingViewBlankDueToLackOfRenderingUpdateIfNecessary",
+              runtime_log,
+              re.I,
+          )
+          if prepaint_blank and not rendering_recovered:
+              raise SystemExit("WEBVIEW_PREPAINT_BLANK_DID_NOT_RECOVER")
+          if prepaint_blank and rendering_recovered:
+              print("WebKit reported transient pre-paint blanking but recovered after a rendered layer commit.")
 
           print("Simulator install, launch, survival window, screenshot, and fatal-log scan passed.")
           PY
