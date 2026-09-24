@@ -380,31 +380,36 @@ export default function LocalFirstInputForm() {
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <FormControl><Input {...field} className={inputClass} placeholder="City, state/province, country" data-testid="input-birth-location" /></FormControl>
                         <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.06)] px-5 text-sm font-semibold text-[var(--sc-gold-bright)] transition hover:bg-[rgba(217,182,111,.12)] disabled:opacity-60" onClick={resolveLocation} disabled={isLocating} data-testid="button-location-lookup">
-                          {isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}Resolve place
+                          {isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}Use birthplace
                         </button>
                       </div>
                       <FormMessage />
                       <p className="text-xs leading-5 text-[var(--sc-stone)]">
-                        Built-in cities resolve on-device. Otherwise, pressing Resolve place sends only the entered place text to Soul Codex&apos;s location resolver; coordinates determine the birth location&apos;s IANA timezone. Your current device timezone is never substituted for a remote birthplace.
+                        Tap Use birthplace and Soul Codex will determine the coordinates and timezone needed for the chart. If automatic lookup is unavailable, Advanced accuracy details lets you enter them manually.
                       </p>
                     </FormItem>
                   )}
                 />
 
-                <div className="rounded-2xl border border-[var(--sc-line)] bg-black/15 p-4 sm:p-5">
-                  <div className="mb-4 flex items-center justify-between gap-4">
+                <details className="group rounded-2xl border border-[var(--sc-line)] bg-black/15 p-4 sm:p-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-[var(--sc-ivory)]">Calculation coordinates</p>
-                      <p className="mt-1 text-xs text-[var(--sc-stone)]">Resolve the birth place or enter these manually. They stay inspectable.</p>
+                      <p className="text-sm font-semibold text-[var(--sc-ivory)]">Advanced accuracy details</p>
+                      <p className="mt-1 text-xs text-[var(--sc-stone)]">Usually filled automatically when you resolve the birthplace.</p>
                     </div>
-                    <span className="flex items-center gap-1.5 rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-[var(--sc-stone)]"><Database className="h-3.5 w-3.5" /> inspectable</span>
+                    <span className="flex items-center gap-1.5 rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-[var(--sc-stone)]"><Database className="h-3.5 w-3.5" /> optional</span>
+                  </summary>
+                  <div className="mt-5 border-t border-[var(--sc-line)] pt-5">
+                    <p className="mb-4 text-xs leading-5 text-[var(--sc-stone)]">
+                      Use these only if automatic birthplace resolution is unavailable or you want to inspect the exact coordinates and timezone used for calculation.
+                    </p>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem><FormLabel className="text-xs text-[var(--sc-stone)]">Latitude</FormLabel><FormControl><Input {...field} className={inputClass} placeholder="40.7128" /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem><FormLabel className="text-xs text-[var(--sc-stone)]">Longitude</FormLabel><FormControl><Input {...field} className={inputClass} placeholder="-74.0060" /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="timezone" render={({ field }) => (<FormItem><FormLabel className="text-xs text-[var(--sc-stone)]">Birth-place timezone</FormLabel><FormControl><Input {...field} className={inputClass} placeholder="America/New_York" /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem><FormLabel className="text-xs text-[var(--sc-stone)]">Latitude</FormLabel><FormControl><Input {...field} className={inputClass} placeholder="40.7128" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem><FormLabel className="text-xs text-[var(--sc-stone)]">Longitude</FormLabel><FormControl><Input {...field} className={inputClass} placeholder="-74.0060" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="timezone" render={({ field }) => (<FormItem><FormLabel className="text-xs text-[var(--sc-stone)]">Birth-place timezone</FormLabel><FormControl><Input {...field} className={inputClass} placeholder="America/New_York" /></FormControl><FormMessage /></FormItem>)} />
-                  </div>
-                </div>
+                </details>
 
                 <div className={`rounded-2xl border p-4 ${exactChartInputsReady ? "border-[rgba(114,216,197,.28)] bg-[rgba(114,216,197,.05)]" : "border-[var(--sc-line)] bg-white/[0.02]"}`} data-testid="chart-input-readiness">
                   <div className="flex gap-3">
