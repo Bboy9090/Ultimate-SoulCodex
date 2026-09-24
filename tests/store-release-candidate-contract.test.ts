@@ -73,3 +73,22 @@ test("release validator refuses stale rc metadata and unknown SHAs", async () =>
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
 });
+
+
+test("store metadata points at the verified production domain and exact release identities", async () => {
+  const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
+  const listing = await text("store-assets/STORE_LISTING.md");
+  const appStore = await text("app_store_metadata.md");
+
+  for (const source of [packet, listing, appStore]) {
+    assert.match(source, /https:\/\/soulcodex\.up\.railway\.app\/privacy/);
+    assert.match(source, /https:\/\/soulcodex\.up\.railway\.app\/support/);
+    assert.match(source, /https:\/\/soulcodex\.up\.railway\.app\/account-deletion/);
+    assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
+  }
+
+  assert.match(packet, /4\.0\.1 \/ versionCode 4000008/);
+  assert.match(packet, /4\.0\.2 \/ build 4000009/);
+  assert.match(packet, /10785817586/);
+  assert.match(packet, /52cddc3a1e216fa84d346d2c69ca1b508d6fbee1ab72d7d90fac942c6a4702cf/);
+});
