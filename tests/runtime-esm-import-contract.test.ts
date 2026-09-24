@@ -18,3 +18,16 @@ test("release workflow rejects the production-breaking evidence-ledger directory
   assert.match(workflow, /@soulcodex\/core\/evidence-ledger/);
   assert.match(workflow, /dist\/index\.js/);
 });
+
+
+test("astronomy-engine consumers use the ESM namespace directly", () => {
+  for (const path of [
+    "packages/astrology/astrology.ts",
+    "packages/astrology/human-design.ts",
+    "packages/astrology/vedic-astrology.ts",
+  ]) {
+    const source = readFileSync(path, "utf8");
+    assert.doesNotMatch(source, /Astronomy(?: as any)?\)\.default|Astronomy\.default/);
+    assert.match(source, /import \* as Astronomy from ['"]astronomy-engine['"]/);
+  }
+});

@@ -781,7 +781,7 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
   return { error: 'timezone_resolution_failed' };
 }
 
-const HdAstro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
+const HdAstro: typeof Astronomy = Astronomy;
 
 type HdPosition = {
   longitude: number;

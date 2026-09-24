@@ -1,5 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
-const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
+const Astro: typeof Astronomy = Astronomy;
 import { fromZonedTime } from 'date-fns-tz';
 
 // Lahiri Ayanamsa for sidereal zodiac conversion (approximate for current era)
