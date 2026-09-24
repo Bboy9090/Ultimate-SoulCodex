@@ -17,6 +17,8 @@ test("Identity wires the full governed chart surfaces", () => {
 test("natal chart exposes planets houses degrees cusps and aspects without sample geometry", () => {
   assert.match(natal, /verified longitudes/i);
   assert.match(natal, /All 12 verified house cusps/);
+  assert.match(natal, /sign-on-house meanings/);
+  assert.match(natal, /A cusp sign describes the symbolic style of a house/);
   assert.match(natal, /verified major aspect/);
   assert.match(natal, /degree unavailable/);
   assert.match(natal, /Placement meanings · planet \+ sign \+ house/);
@@ -41,6 +43,7 @@ test("combined Codex explains resonance tension coping stelliums and unresolved 
   assert.match(panel, /How to cope when the systems pull in different directions/);
   assert.match(panel, /Stellium \/ concentration ledger/);
   assert.match(panel, /Verified angles, Nodes &amp; Chiron/);
+  assert.match(panel, /Excluded \/ inspect-only system ledger/);
   assert.match(panel, /Unresolved ledger/);
   assert.match(panel, /not scientific measurements of a soul/i);
 });

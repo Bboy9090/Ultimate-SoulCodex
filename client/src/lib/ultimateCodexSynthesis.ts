@@ -1,3 +1,5 @@
+import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
+
 type AnyRecord = Record<string, any>;
 
 const PLANETS = [
@@ -126,9 +128,9 @@ export interface UltimateCodexStellium {
 export interface UltimateCodexSynthesis {
   version: "ultimate-codex-v1";
   coverage: UltimateCodexCoverage;
-  codexNumber: string;
-  codexId: string;
-  fingerprint: string;
+  codexNumber: string | null;
+  codexId: string | null;
+  fingerprint: string | null;
   identitySignature: string;
   derivedArchetype: string | null;
   dominantElement: string | null;
@@ -359,13 +361,16 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const dominantModality = topKey(modalityCounts);
   const stelliums = findStelliums(placements);
 
-  const lifePath = numericValue(numerology.lifePath);
-  const birthday = numericValue(numerology.birthday);
-  const expression = numericValue(numerology.expression);
-  const soulUrge = numericValue(numerology.soulUrge);
-  const personality = numericValue(numerology.personality);
-  const maturity = numericValue(numerology.maturity);
-  const personalYear = numericValue(numerology.personalYear);
+  // Normalize only documented producer aliases. Alias handling prevents the same
+  // deterministic number from changing coverage or fingerprint merely because
+  // a legacy producer used a different field name.
+  const lifePath = numericValue(numerology.lifePath ?? numerology.lifePathNumber);
+  const birthday = numericValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
+  const expression = numericValue(numerology.expression ?? numerology.expressionNumber);
+  const soulUrge = numericValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
+  const personality = numericValue(numerology.personality ?? numerology.personalityNumber);
+  const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
+  const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
 
   const verifiedHd = hd?.status === "verified";
   const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
@@ -378,6 +383,20 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     typeof value === "string" ? value : JSON.stringify(value)
   ) : [];
   const hdGates = verifiedHd && Array.isArray(hd.activatedGates) ? hd.activatedGates.map(String) : [];
+  const hdActivationSignature: string[] = [];
+  if (verifiedHd) {
+    for (const side of ["conscious", "unconscious"] as const) {
+      const rows = hd?.activations?.[side];
+      if (!rows || typeof rows !== "object") continue;
+      for (const [body, value] of Object.entries(rows as AnyRecord).sort(([a], [b]) => a.localeCompare(b))) {
+        const gate = Number((value as AnyRecord)?.gate);
+        const line = Number((value as AnyRecord)?.line);
+        if (!Number.isInteger(gate) || gate < 1 || gate > 64) continue;
+        if (!Number.isFinite(line) || line < 1 || line > 6) continue;
+        hdActivationSignature.push(`hd:activation:${side}:${body}:${gate}.${line}`);
+      }
+    }
+  }
 
   const evidenceSignature = [
     ...placements.map((p) => `astro:${p.key}:${p.sign}:${p.degree ?? "?"}:H${p.house ?? "?"}`),
@@ -399,9 +418,10 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ...hdCenters.defined.map((center) => `hd:center:${center}`),
     ...hdChannels.map((channel) => `hd:channel:${channel}`),
     ...hdGates.map((gate) => `hd:gate:${gate}`),
+    ...hdActivationSignature,
   ].filter((value): value is string => Boolean(value)).sort();
 
-  const { fingerprint, codexNumber, codexId } = identityHash(evidenceSignature);
+  const hashedIdentity = identityHash(evidenceSignature);
 
   const unresolved: string[] = [];
   if (placements.length < PLANETS.length) unresolved.push(`${PLANETS.length - placements.length} natal planet placement(s) are not verified and are excluded.`);
@@ -431,6 +451,10 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
         ? "partial"
         : "insufficient";
 
+  const fingerprint = coverage === "insufficient" ? null : hashedIdentity.fingerprint;
+  const codexNumber = coverage === "insufficient" ? null : hashedIdentity.codexNumber;
+  const codexId = coverage === "insufficient" ? null : hashedIdentity.codexId;
+
   const primaryStellium = stelliums[0] ?? null;
   const leadSign = primaryStellium?.kind === "sign"
     ? primaryStellium.key
@@ -450,7 +474,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const derivedArchetype =
     coverage === "insufficient" || identityParts.length < 2
       ? null
-      : `${identityParts.slice(0, 3).join(" × ")} · ${fingerprint.slice(0, 4).toUpperCase()}`;
+      : `${identityParts.slice(0, 3).join(" × ")} · ${(fingerprint ?? hashedIdentity.fingerprint).slice(0, 4).toUpperCase()}`;
 
   const resonances: string[] = [];
   if (dominantElement && lifePath && LIFE_PATH_AXIS[lifePath]) {
@@ -576,6 +600,35 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
       detail: "No governed image-analysis contract and explicit image-consent path; no generated palm claims are allowed.",
     },
   ];
+
+  const representedRegistryIds = new Set([
+    "natal-astrology",
+    "houses-midheaven",
+    "major-aspects",
+    "nodes-chiron",
+    "numerology-core",
+    "human-design-core",
+    "personality-assessments",
+    "astrocartography",
+    "palmistry",
+  ]);
+  for (const entry of SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY) {
+    if (representedRegistryIds.has(entry.id)) continue;
+    systemSummary.push({
+      system: entry.label,
+      status:
+        entry.state === "unavailable"
+          ? "unavailable / excluded"
+          : entry.state === "inspect-only"
+            ? "inspect-only / excluded"
+            : entry.state === "user-assessed"
+              ? "requires explicit user assessment / excluded"
+              : entry.mayInfluenceUltimateCodex
+                ? "governed supporting system"
+                : "governed / excluded from stable identity fingerprint",
+      detail: `${entry.evidenceContract}. ${entry.rule}`,
+    });
+  }
 
   return {
     version: "ultimate-codex-v1",

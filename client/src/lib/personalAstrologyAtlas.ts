@@ -46,6 +46,9 @@ export function personalAtlasPlacements(astrology: any): PersonalAtlasPlacement[
     if (sign && validHouse(house)) results.push({ key, label: title(key), sign, house, kind: "planet" });
   }
 
+  const rising = verifiedSign(astrology.rising);
+  if (rising) results.push({ key: "rising", label: "Ascendant / Rising", sign: rising, kind: "angle" });
+
   const midheaven = verifiedSign(astrology.midheaven);
   if (midheaven) results.push({ key: "midheaven", label: "Midheaven", sign: midheaven, kind: "angle" });
 

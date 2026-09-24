@@ -15,6 +15,8 @@ export const PLANET_FUNCTIONS: Record<string, { function: string; question: stri
   northNode: { function: 'a symbolic direction of unfamiliar development', question: 'Which stretch may broaden my familiar way of operating?' },
   southNode: { function: 'a symbolic pattern of familiarity and practiced instinct', question: 'Which strength can support me without running the whole life?' },
   chiron: { function: 'a symbolic theme of sensitivity, repair, and hard-won understanding', question: 'Where might care grow from meeting a tender edge honestly?' },
+  rising: { function: 'the Ascendant angle: symbolic style of approach, embodiment, and how a person meets a new environment', question: 'How do I enter a situation before I have time to overthink it?' },
+  midheaven: { function: 'the Midheaven angle: symbolic public direction, visibility, and the role a person may be seen developing toward', question: 'What kind of contribution do I want my public choices to point toward?' },
 };
 const styles: Record<AtlasSign, { approach: string; gift: string; tension: string; practice: string }> = {
   Aries: { approach: 'direct action, initiative, and a willingness to begin', gift: 'courage to act before every answer is available', tension: 'urgency can crowd out listening', practice: 'pause long enough to ask who else is affected' },
@@ -67,6 +69,23 @@ export function personalPlacementMeaning(body: string, sign: AtlasSign, house: n
     synthesis: `Symbolically, ${titleBody(body)} in ${sign} in House ${house} explores ${planet.function} through ${styles[sign].approach}, within ${area.domain}.`,
     question: `${planet.question} ${area.question}`,
     practice: entry.practice,
+  };
+}
+
+export function personalAngleMeaning(body: "rising" | "midheaven", sign: AtlasSign) {
+  const point = PLANET_FUNCTIONS[body];
+  if (!point) throw new RangeError('Choose a supported angle.');
+  const angleName = body === "rising" ? "Ascendant / Rising" : "Midheaven";
+  const angleContext = body === "rising"
+    ? "the eastern horizon angle and the symbolic manner of meeting the immediate world"
+    : "the upper-meridian angle and the symbolic direction of public role and visible contribution";
+  return {
+    what: `${point.function}.`,
+    how: `${sign} describes a style of ${styles[sign].approach}.`,
+    where: `${angleName} is an angle, not a planet-in-house placement. Here it describes ${angleContext}.`,
+    synthesis: `Symbolically, ${angleName} in ${sign} explores ${point.function} through ${styles[sign].approach}. This is an angle interpretation, not a house-placement claim.`,
+    question: point.question,
+    practice: `Use one recent entrance or public-role moment as the test: ${styles[sign].practice}.`,
   };
 }
 

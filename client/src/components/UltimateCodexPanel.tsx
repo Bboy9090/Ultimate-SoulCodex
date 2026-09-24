@@ -7,6 +7,9 @@ function CoverageChip({ coverage }: { coverage: UltimateCodexSynthesis["coverage
 }
 
 export default function UltimateCodexPanel({ synthesis }: { synthesis: UltimateCodexSynthesis }) {
+  const activeSystems = synthesis.systemSummary.filter((row) => !/excluded/i.test(row.status));
+  const excludedSystems = synthesis.systemSummary.filter((row) => /excluded/i.test(row.status));
+
   return (
     <section className="sc-panel sc-panel-gold mb-6 overflow-hidden p-5 sm:p-7" data-testid="ultimate-galactic-codex-panel">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,.8fr)]">
@@ -33,18 +36,24 @@ export default function UltimateCodexPanel({ synthesis }: { synthesis: UltimateC
             )}
           </div>
 
+          {synthesis.coverage === "insufficient" && (
+            <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs leading-5 text-amber-100/80">
+              Codex identifiers are withheld until at least two governed system families support the fusion. A single symbolic system is not enough to claim a unique imprint.
+            </div>
+          )}
+
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Codex Number</p>
-              <p className="mt-2 font-mono text-xl font-semibold tracking-[.08em] text-[var(--sc-gold-bright)]">{synthesis.codexNumber}</p>
+              <p className="mt-2 font-mono text-xl font-semibold tracking-[.08em] text-[var(--sc-gold-bright)]">{synthesis.codexNumber ?? "WITHHELD"}</p>
             </div>
             <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Codex ID</p>
-              <p className="mt-2 font-mono text-sm font-semibold text-[var(--sc-ivory)]">{synthesis.codexId}</p>
+              <p className="mt-2 font-mono text-sm font-semibold text-[var(--sc-ivory)]">{synthesis.codexId ?? "Withheld until governed fusion is sufficient"}</p>
             </div>
             <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
               <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Fingerprint</p>
-              <p className="mt-2 break-all font-mono text-xs font-semibold text-[var(--sc-ivory)]">{synthesis.fingerprint}</p>
+              <p className="mt-2 break-all font-mono text-xs font-semibold text-[var(--sc-ivory)]">{synthesis.fingerprint ?? "No stable fingerprint issued"}</p>
             </div>
           </div>
         </div>
@@ -52,7 +61,7 @@ export default function UltimateCodexPanel({ synthesis }: { synthesis: UltimateC
         <div className="rounded-2xl border border-[rgba(168,145,255,.2)] bg-[radial-gradient(circle_at_50%_20%,rgba(168,145,255,.12),transparent_45%),rgba(10,7,18,.45)] p-5">
           <p className="sc-eyebrow">System coverage</p>
           <div className="mt-4 space-y-3">
-            {synthesis.systemSummary.map((row) => (
+            {activeSystems.map((row) => (
               <div key={row.system} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3">
                 <div className="flex items-center justify-between gap-3">
                   <strong className="text-sm text-[var(--sc-ivory)]">{row.system}</strong>
@@ -62,6 +71,22 @@ export default function UltimateCodexPanel({ synthesis }: { synthesis: UltimateC
               </div>
             ))}
           </div>
+          <details className="mt-4 rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
+            <summary className="cursor-pointer text-xs font-semibold text-[var(--sc-ivory)]">
+              Excluded / inspect-only system ledger · {excludedSystems.length}
+            </summary>
+            <div className="mt-3 space-y-2">
+              {excludedSystems.map((row) => (
+                <div key={row.system} className="rounded-lg border border-[var(--sc-line)] bg-white/[0.02] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <strong className="text-xs text-[var(--sc-ivory-soft)]">{row.system}</strong>
+                    <span className="text-[9px] uppercase tracking-[.08em] text-[var(--sc-stone)]">{row.status}</span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--sc-stone)]">{row.detail}</p>
+                </div>
+              ))}
+            </div>
+          </details>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
             {synthesis.dominantElement && <span className="rounded-full border border-[var(--sc-line)] px-3 py-1 text-[var(--sc-stone)]">{synthesis.dominantElement} emphasis</span>}
             {synthesis.dominantModality && <span className="rounded-full border border-[var(--sc-line)] px-3 py-1 text-[var(--sc-stone)]">{synthesis.dominantModality} emphasis</span>}

@@ -51,6 +51,15 @@ function profile(moonSign = "Virgo") {
       centers: { defined: [], undefined: ["Head","Ajna","Throat","G","Heart","Spleen","Solar Plexus","Sacral","Root"] },
       channels: [],
       activatedGates: [18, 28, 41],
+      activations: {
+        conscious: {
+          sun: { gate: 18, line: 2 },
+          moon: { gate: 28, line: 4 },
+        },
+        unconscious: {
+          sun: { gate: 41, line: 5 },
+        },
+      },
     },
   };
 }
@@ -93,9 +102,44 @@ test("Ultimate Codex fails closed instead of manufacturing unsupported systems",
   });
   assert.equal(result.coverage, "insufficient");
   assert.equal(result.derivedArchetype, null);
+  assert.equal(result.fingerprint, null);
+  assert.equal(result.codexNumber, null);
+  assert.equal(result.codexId, null);
   assert.ok(result.unresolved.some((value) => /Human Design/i.test(value)));
 });
 
+
+test("verified Human Design gate-line activations alter the stable Codex fingerprint", () => {
+  const first = profile();
+  const second = profile();
+  second.humanDesignData.activations.conscious.sun.line = 3;
+  const a = buildUltimateCodexSynthesis(first);
+  const b = buildUltimateCodexSynthesis(second);
+  assert.ok(a.evidenceSignature.includes("hd:activation:conscious:sun:18.2"));
+  assert.ok(b.evidenceSignature.includes("hd:activation:conscious:sun:18.3"));
+  assert.notEqual(a.fingerprint, b.fingerprint);
+  assert.notEqual(a.codexNumber, b.codexNumber);
+});
+
+test("documented numerology aliases produce the same stable Codex identity", () => {
+  const canonical = profile();
+  const aliased = profile();
+  aliased.numerologyData = {
+    lifePathNumber: aliased.numerologyData.lifePath,
+    birthDay: aliased.numerologyData.birthday,
+    expressionNumber: aliased.numerologyData.expression,
+    soulUrgeNumber: aliased.numerologyData.soulUrge,
+    personalityNumber: aliased.numerologyData.personality,
+    maturityNumber: aliased.numerologyData.maturity,
+    personalYearNumber: aliased.numerologyData.personalYear,
+  };
+  const a = buildUltimateCodexSynthesis(canonical);
+  const b = buildUltimateCodexSynthesis(aliased);
+  assert.equal(a.coverage, "complete");
+  assert.equal(b.coverage, "complete");
+  assert.equal(a.fingerprint, b.fingerprint);
+  assert.equal(a.codexNumber, b.codexNumber);
+});
 
 test("verified supporting points alter the Codex fingerprint", () => {
   const first = profile();
