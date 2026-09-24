@@ -40,6 +40,41 @@ test("astronomy verification supports unknown birth time without inventing one",
   }).birthTime, undefined);
 });
 
+
+test("astronomy verification rejects impossible calendar and clock values", () => {
+  for (const birthDate of ["1990-02-30", "1990-13-01", "not-a-date"]) {
+    assert.equal(
+      profileVerificationRequestSchema.safeParse({ ...minimal, birthDate }).success,
+      false,
+      birthDate,
+    );
+  }
+
+  for (const birthTime of ["24:00", "11:60", "9:30", "99:99"]) {
+    assert.equal(
+      profileVerificationRequestSchema.safeParse({ ...minimal, birthTime }).success,
+      false,
+      birthTime,
+    );
+  }
+});
+
+test("astronomy verification rejects bogus timezones and incomplete coordinate pairs", () => {
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...minimal,
+      timezone: "Mars/Olympus",
+    }).success,
+    false,
+  );
+
+  const { longitude: _longitude, ...latitudeOnly } = minimal;
+  assert.equal(profileVerificationRequestSchema.safeParse(latitudeOnly).success, false);
+
+  const { latitude: _latitude, ...longitudeOnly } = minimal;
+  assert.equal(profileVerificationRequestSchema.safeParse(longitudeOnly).success, false);
+});
+
 test("verification route is isolated from profile persistence and AI generation", () => {
   const source = readFileSync("server/routes/profile-verification.ts", "utf8");
   const server = readFileSync("server/index.ts", "utf8");
