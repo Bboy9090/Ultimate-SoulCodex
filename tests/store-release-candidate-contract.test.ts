@@ -69,7 +69,6 @@ test("release validator refuses stale rc metadata and unknown SHAs", async () =>
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /releaseVersion !== "4\.0\.1"/);
   assert.match(validator, /versionCode\\s\+4000008/);
-  assert.match(validator, /versionCode\\s\+4000008/);
   assert.match(validator, /CURRENT_PROJECT_VERSION = 4000009/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
