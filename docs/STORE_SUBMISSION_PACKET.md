@@ -1,6 +1,8 @@
 # Soul Codex Store Submission Packet
 
-Prepared from the shipped app behavior and repository state on July 17, 2026.
+Prepared from the shipped app behavior and final release authority on September 23, 2026.
+
+Release authority: `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`.
 
 This is the canonical operator checklist for App Store Connect and Google Play Console. Store answers must be rechecked whenever data collection, third-party services, authentication, payments, or native permissions change.
 
@@ -11,7 +13,8 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | App name | Soul Codex |
 | iOS bundle ID | `app.soulcodex.ios` |
 | Android application ID | `app.soulcodex.main` |
-| Version | 1.0.0 |
+| Android release | 4.0.1 / versionCode 4000008 |
+| iOS release | 4.0.2 / build 4000009 |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
@@ -99,7 +102,7 @@ Capture at least five portrait phone screenshots. Avoid real names, email addres
 
 ## Google Play Data Safety Draft
 
-This draft reflects the July 17, 2026 source and privacy policy. Confirm production logging and provider contracts before submitting it.
+This draft reflects the final release line and the checked-in privacy policy. Confirm the live Play Console wording against current production behavior before submitting it.
 
 ### High-level answers
 
@@ -165,12 +168,26 @@ The app declares no tracking and no tracking domains. Reconcile this declaration
 
 Complete the live questionnaires from the final shipped behavior; the stores determine the final rating.
 
-## Remaining Gates
+## Current Release Evidence
 
-1. Capture final native screenshots.
-2. Complete physical-device testing.
-3. Add Apple signing credentials and generate the signed IPA when ready.
-4. Enroll in Google Play, create an upload keystore, and generate the signed AAB.
-5. Confirm support and privacy email inboxes receive mail.
-6. Complete privacy/data-safety and content-rating questionnaires.
-7. Run TestFlight and Play internal testing before production submission.
+- Final main SHA: `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`
+- Railway production deployment: exact same SHA, status SUCCESS
+- Railway public domain: `soulcodex.up.railway.app`
+- Android signed AAB: built and `jarsigner -verify` passed
+- Android release artifact ID: `10785817586`
+- Android AAB SHA-256: `52cddc3a1e216fa84d346d2c69ca1b508d6fbee1ab72d7d90fac942c6a4702cf`
+- Android manifest native permission surface: `android.permission.INTERNET` only
+- iOS simulator Release and generic-device archive qualification: passed
+- Google Play developer account: active at `harebugz23@gmail.com`
+- Automated Google Play publishing remains optional; the missing `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` blocks only the CI upload path, not manual Play Console AAB upload
+
+## Remaining Store-Owner Gates
+
+1. Capture final Android phone screenshots from the actual final build.
+2. Complete physical-device Android smoke testing.
+3. In Play Console, select/create Soul Codex for package `app.soulcodex.main`.
+4. Upload the exact-current signed `app-release.aab` from artifact `10785817586`.
+5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
+6. Use the verified Railway URLs for privacy, support, and account deletion unless a custom domain is attached and verified first.
+7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
+8. For Apple, obtain a fresh signed 4.0.2 (4000009) build from the same final main SHA before submission.
