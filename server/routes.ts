@@ -82,8 +82,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles", async (req: any, res) => {
+    const parsedBirthData = birthDataSchema.safeParse(req.body);
+    if (!parsedBirthData.success) {
+      return res.status(400).json({
+        message: "Birth data is invalid",
+        issues: parsedBirthData.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+        })),
+      });
+    }
+
     try {
-      const birthData = birthDataSchema.parse(req.body);
+      const birthData = parsedBirthData.data;
       const verifiedAstrologyData = await calculateVerifiedAstrology({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
