@@ -19,10 +19,10 @@ test("Soul Codex platform release identities are aligned", async () => {
 
   assert.match(android, /versionCode\s+4000008/);
   assert.match(android, /versionName\s+"4\.0\.1"/);
-  assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.1<\/string>/);
-  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000008<\/string>/);
-  assert.match(project, /CURRENT_PROJECT_VERSION = 4000008;/);
-  assert.match(project, /MARKETING_VERSION = 4\.0\.1;/);
+  assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.2<\/string>/);
+  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000009<\/string>/);
+  assert.match(project, /CURRENT_PROJECT_VERSION = 4000009;/);
+  assert.match(project, /MARKETING_VERSION = 4\.0\.2;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
   assert.match(manifest, /releaseVersion:\s*"4\.0\.1"/);
   assert.match(dockerfile, /SOUL_CODEX_RELEASE_VERSION=4\.0\.1/);
@@ -59,14 +59,18 @@ test("store workflow binds exact release branch and Play production upload", asy
   assert.match(workflow, /packageName:\s*app\.soulcodex\.main/);
   assert.match(workflow, /track:\s*production/);
   assert.match(workflow, /status:\s*completed/);
-  assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.0\.2/);\n  assert.match(workflow, /iOS marketingVersion=4\.0\.2/);\n  assert.match(workflow, /iOS build=4000009/);\n  assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
+  assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.0\.2/);
+  assert.match(workflow, /iOS marketingVersion=4\.0\.2/);
+  assert.match(workflow, /iOS build=4000009/);
+  assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
 });
 
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /releaseVersion !== "4\.0\.1"/);
   assert.match(validator, /versionCode\\s\+4000008/);
-  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000008/);
+  assert.match(validator, /versionCode\\s\+4000008/);
+  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000009/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
 });
