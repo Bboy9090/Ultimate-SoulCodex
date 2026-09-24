@@ -115,7 +115,7 @@ export default function Navigation() {
             </Link>
 
             <Link href={profile ? readingHref : "/create"} className="ml-1 no-underline">
-              <Button className="h-9 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105" data-testid="button-primary-nav">
+              <Button className="h-9 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105" data-testid="button-create-profile-nav">
                 {profile ? <BookOpen className="mr-1.5 h-3.5 w-3.5" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
                 {profile ? "My Codex" : "Create profile"}
               </Button>
@@ -172,7 +172,7 @@ export default function Navigation() {
                 </div>
 
                 <Link href={profile ? readingHref : "/create"} className="mt-5 block no-underline">
-                  <Button className="h-12 w-full rounded-xl border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] font-bold text-[#170f07]" data-testid="button-primary-mobile">
+                  <Button className="h-12 w-full rounded-xl border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] font-bold text-[#170f07]" data-testid="button-create-profile-mobile">
                     {profile ? <BookOpen className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     {profile ? "Open My Codex" : "Create profile"}
                   </Button>
