@@ -29,13 +29,14 @@ test("iOS hotfix metadata is a fresh App Store version/build", async () => {
 });
 
 
-test("pre-paint native dialogs are suppressed and restored after React mounts", async () => {
+test("pre-paint dialogs are scheme-independent and restored after React mounts", async () => {
   const [html, main] = await Promise.all([
     readFile("client/index.html", "utf8"),
     readFile("client/src/appEntry.tsx", "utf8"),
   ]);
 
-  assert.match(html, /location\.protocol === "capacitor:"/);
+  assert.doesNotMatch(html, /location\.protocol === "capacitor:"/);
+  assert.match(html, /window\.__SOULCODEX_NATIVE_DIALOGS__ = \{/);
   assert.match(html, /window\.alert = function \(\) \{\};/);
   assert.match(html, /window\.confirm = function \(\) \{ return false; \};/);
   assert.match(html, /window\.prompt = function \(\) \{ return null; \};/);
