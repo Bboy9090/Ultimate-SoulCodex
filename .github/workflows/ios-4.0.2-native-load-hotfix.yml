@@ -1,0 +1,482 @@
+name: Soul Codex iOS 4.0.2 Native Load Hotfix
+
+on:
+  push:
+    branches:
+      - hotfix/ios-4.0.2-native-load
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: soulcodex-ios-4-0-2-hotfix
+  cancel-in-progress: true
+
+env:
+  VITE_API_URL: https://soulcodex.up.railway.app
+  VITE_RELEASE_VERSION: 4.0.2
+  VITE_API_CONTRACT: foundation-v4
+
+jobs:
+  simulator-launch:
+    runs-on: macos-15
+    timeout-minutes: 65
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build workspaces
+        run: npm run build:workspaces
+
+      - name: Native load and identity contracts
+        run: |
+          node --import tsx --test tests/ios-native-load-hotfix.test.ts
+          npm run check
+
+      - name: Build and sync exact iOS payload
+        env:
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          npm run build:capacitor
+          npx cap sync ios
+          npm run mobile:patch:ios
+          npm run mobile:validate:ios
+
+      - name: Inspect native web payload
+        run: |
+          set -euo pipefail
+          {
+            echo "=== dist/public ==="
+            du -sh dist/public
+            find dist/public -maxdepth 2 -type f -print0 | xargs -0 du -h | sort -h | tail -n 80
+            echo "=== built index ==="
+            sed -n '1,220p' dist/public/index.html
+            echo "=== module scripts ==="
+            grep -oE '<script[^>]+src="[^"]+"' dist/public/index.html || true
+          } | tee native-web-payload.txt
+
+      - name: Build simulator app
+        run: |
+          set -euo pipefail
+          rm -rf build/DerivedData
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee simulator-build.log
+          APP_PATH=$(find build/DerivedData/Build/Products -path '*Release-iphonesimulator/*.app' -type d -maxdepth 3 -print -quit)
+          test -n "$APP_PATH"
+          test -d "$APP_PATH"
+          printf '%s\n' "$APP_PATH" > simulator-app-path.txt
+
+      - name: Boot simulator install and launch app
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' 2>&1 | tee simulator-probe.log
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+          import sys
+          import time
+
+          def run(args, timeout=30, check=True):
+              try:
+                  result = subprocess.run(args, timeout=timeout, capture_output=True, text=True)
+              except subprocess.TimeoutExpired as exc:
+                  raise SystemExit(f"COMMAND_TIMEOUT after {timeout}s: {' '.join(args)}") from exc
+              if check and result.returncode != 0:
+                  print(result.stdout)
+                  print(result.stderr, file=sys.stderr)
+                  raise SystemExit(f"COMMAND_FAILED({result.returncode}): {' '.join(args)}")
+              return result
+
+          devices = json.loads(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=15).stdout)
+          candidate = None
+          for runtime, rows in devices.get("devices", {}).items():
+              if "iOS" not in runtime:
+                  continue
+              for row in rows:
+                  if "iPhone" in row.get("name", "") and row.get("isAvailable", True):
+                      candidate = row
+                      break
+              if candidate:
+                  break
+          if not candidate:
+              raise SystemExit("NO_AVAILABLE_IPHONE_SIMULATOR")
+
+          udid = candidate["udid"]
+          print(f"Using simulator: {candidate.get('name')} {udid}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"SIMULATOR_UDID={udid}\n")
+
+          run(["xcrun", "simctl", "shutdown", "all"], timeout=20, check=False)
+
+          boot = run(["xcrun", "simctl", "boot", udid], timeout=30, check=False)
+          if boot.returncode not in (0, 149):
+              print(boot.stdout)
+              print(boot.stderr, file=sys.stderr)
+
+          try:
+              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=120, check=True)
+              print(bootstatus.stdout)
+          except SystemExit as exc:
+              raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
+
+          app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
+          if not pathlib.Path(app_path).is_dir():
+              raise SystemExit("SIMULATOR_APP_PATH_MISSING")
+
+          run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
+
+          launch = run(
+              ["xcrun", "simctl", "launch", "--terminate-running-process", udid, "app.soulcodex.ios"],
+              timeout=90,
+          )
+          pathlib.Path("simulator-launch.txt").write_text(launch.stdout + launch.stderr, encoding="utf-8")
+          if not re.search(r"app\.soulcodex\.ios:\s*\d+", launch.stdout):
+              raise SystemExit("SIMULATOR_LAUNCH_DID_NOT_RETURN_PID")
+
+          time.sleep(12)
+
+          screenshot = pathlib.Path("ios-4.0.2-launch.png")
+          run(["xcrun", "simctl", "io", udid, "screenshot", str(screenshot)], timeout=30)
+          if not screenshot.exists() or screenshot.stat().st_size < 10000:
+              raise SystemExit("SIMULATOR_SCREENSHOT_MISSING_OR_EMPTY")
+
+          logs = run(
+              [
+                  "xcrun", "simctl", "spawn", udid,
+                  "log", "show", "--style", "compact", "--last", "5m",
+                  "--predicate", 'process == "Ultimate Soul Codex" OR subsystem CONTAINS "capacitor"',
+              ],
+              timeout=45,
+              check=False,
+          )
+          runtime_log = logs.stdout + logs.stderr
+          pathlib.Path("ios-4.0.2-runtime.log").write_text(runtime_log, encoding="utf-8")
+          if re.search(r"Terminated due to|uncaught exception|fatal error|SIGABRT|dyld.*Library not loaded", runtime_log, re.I):
+              raise SystemExit("FATAL_NATIVE_LAUNCH_SIGNATURE_DETECTED")
+          prepaint_blank = re.search(
+              r"Making the view blank because of a JS prompt before the first paint",
+              runtime_log,
+              re.I,
+          )
+          rendering_recovered = re.search(
+              r"stopMakingViewBlankDueToLackOfRenderingUpdateIfNecessary",
+              runtime_log,
+              re.I,
+          )
+          if prepaint_blank and not rendering_recovered:
+              raise SystemExit("WEBVIEW_PREPAINT_BLANK_DID_NOT_RECOVER")
+          if prepaint_blank and rendering_recovered:
+              print("WebKit reported transient pre-paint blanking but recovered after a rendered layer commit.")
+
+          print("Simulator install, launch, survival window, screenshot, and fatal-log scan passed.")
+          PY
+
+      - name: Reject blank or purple-only first paint
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/verify-first-paint.swift" <<'SWIFT'
+          import Foundation
+          import ImageIO
+          import CoreGraphics
+
+          let url = URL(fileURLWithPath: "ios-4.0.2-launch.png") as CFURL
+          guard let source = CGImageSourceCreateWithURL(url, nil),
+                let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+                let provider = image.dataProvider,
+                let cfData = provider.data,
+                let bytes = CFDataGetBytePtr(cfData) else {
+            fatalError("FIRST_PAINT_SCREENSHOT_DECODE_FAILED")
+          }
+
+          let width = image.width
+          let height = image.height
+          let bytesPerPixel = max(1, image.bitsPerPixel / 8)
+          let rowBytes = image.bytesPerRow
+          let dataLength = CFDataGetLength(cfData)
+          var bright = 0
+          var samples = 0
+
+          for y in stride(from: max(170, height / 8), to: max(171, height - 100), by: 4) {
+            for x in stride(from: 30, to: max(31, width - 30), by: 4) {
+              let offset = y * rowBytes + x * bytesPerPixel
+              guard offset + 2 < dataLength else { continue }
+              let c0 = Int(bytes[offset])
+              let c1 = Int(bytes[offset + 1])
+              let c2 = Int(bytes[offset + 2])
+              samples += 1
+              if c0 > 175 && c1 > 175 && c2 > 165 { bright += 1 }
+            }
+          }
+
+          print("FIRST_PAINT bright=\(bright) samples=\(samples)")
+          if bright < 80 {
+            fputs("FIRST_PAINT_REJECTED: screenshot still resembles the purple native shell with no rendered interface.\n", stderr)
+            exit(2)
+          }
+          SWIFT
+          xcrun swift "$RUNNER_TEMP/verify-first-paint.swift"
+
+      - name: Verify bundled hotfix identity
+        run: |
+          set -euo pipefail
+          APP_PATH=$(cat simulator-app-path.txt)
+          PLIST="$APP_PATH/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.0.2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000009"
+          test -s "$APP_PATH/public/index.html"
+          test -d "$APP_PATH/public/assets"
+          {
+            echo "SHA=${GITHUB_SHA}"
+            echo "bundleId=app.soulcodex.ios"
+            echo "marketingVersion=4.0.2"
+            echo "buildNumber=4000009"
+            echo "native_pwa_service_worker_registration=disabled"
+            echo "simulator_launch=passed"
+          } > IOS-4.0.2-HOTFIX-RECEIPT.txt
+
+      - name: Upload launch proof and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.2-ios-launch-proof
+          path: |
+            ios-4.0.2-launch.png
+            ios-4.0.2-runtime.log
+            simulator-launch.txt
+            simulator-build.log
+            simulator-probe.log
+            simulator-app-path.txt
+            native-web-payload.txt
+            IOS-4.0.2-HOTFIX-RECEIPT.txt
+          if-no-files-found: warn
+          retention-days: 90
+
+  signed-app-store-ipa:
+    needs: simulator-launch
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Prove exact candidate
+        run: |
+          printf '%s\n' "$GITHUB_SHA" > release-candidate-sha.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bootstrap exact native tree
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+          VITE_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          sh ios/App/ci_scripts/ci_post_clone.sh
+          npm run mobile:validate:ios
+          node --import tsx --test tests/ios-native-load-hotfix.test.ts
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild \
+            -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex"
+
+      - name: Verify P12 identity
+        env:
+          IOS_CERTIFICATE_P12: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$IOS_CERTIFICATE_P12" || { echo IOS_CERTIFICATE_P12_MISSING; exit 1; }
+          test -n "$IOS_CERTIFICATE_PASSWORD" || { echo IOS_CERTIFICATE_PASSWORD_MISSING; exit 1; }
+          P12="$RUNNER_TEMP/soulcodex.p12"
+          CERTS="$RUNNER_TEMP/certs.pem"
+          KEY="$RUNNER_TEMP/key.pem"
+          KEY_PUB="$RUNNER_TEMP/key.der"
+          CERT_PUB="$RUNNER_TEMP/cert.der"
+          LEAF="$RUNNER_TEMP/leaf.pem"
+          MODERN_P12="$RUNNER_TEMP/soulcodex-modern.p12"
+          printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
+          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY"
+          awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
+          openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
+          MATCHED=""
+          for cert in "$RUNNER_TEMP"/candidate-*.pem; do
+            openssl x509 -in "$cert" -pubkey -noout | openssl pkey -pubin -outform DER > "$CERT_PUB"
+            if cmp -s "$CERT_PUB" "$KEY_PUB"; then cp "$cert" "$LEAF"; MATCHED=1; break; fi
+          done
+          test -n "$MATCHED"
+          openssl x509 -in "$LEAF" -noout -checkend 0
+          openssl x509 -in "$LEAF" -outform DER -out "$RUNNER_TEMP/leaf.der"
+          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout "pass:$IOS_CERTIFICATE_PASSWORD"
+
+      - name: Import signing identity
+        env:
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/soulcodex-modern.p12" -k "$KEYCHAIN" -f pkcs12 -P "$IOS_CERTIFICATE_PASSWORD" -A
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN"
+          security find-identity -v -p codesigning "$KEYCHAIN" | tee "$RUNNER_TEMP/ids.txt"
+          grep -Eq '[0-9]+\) [0-9A-F]{40} ".+"' "$RUNNER_TEMP/ids.txt"
+
+      - name: Qualify App Store provisioning profile
+        env:
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          test -n "$IOS_PROVISIONING_PROFILE" || { echo IOS_PROVISIONING_PROFILE_MISSING; exit 1; }
+          RAW_PROFILE="$RUNNER_TEMP/SoulCodex.mobileprovision"
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
+          printf '%s' "$IOS_PROVISIONING_PROFILE" | base64 -D > "$RAW_PROFILE"
+          security cms -D -i "$RAW_PROFILE" > "$PROFILE_PLIST"
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$PROFILE_PLIST")
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PROFILE_PLIST")
+          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$PROFILE_PLIST")
+          APP_IDENTIFIER=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$PROFILE_PLIST")
+          test "$PROFILE_TEAM" = "86NUJ8M3B8"
+          test "$APP_IDENTIFIER" = "86NUJ8M3B8.app.soulcodex.ios"
+          python3 - "$PROFILE_PLIST" "$RUNNER_TEMP/leaf.der" <<'PY'
+          import datetime, plistlib, sys
+          plist_path, leaf_path = sys.argv[1], sys.argv[2]
+          with open(plist_path, "rb") as f: profile = plistlib.load(f)
+          with open(leaf_path, "rb") as f: leaf = f.read()
+          entitlements = profile.get("Entitlements", {})
+          if entitlements.get("get-task-allow") is not False: raise SystemExit("IOS_PROFILE_NOT_APP_STORE")
+          if profile.get("ProvisionedDevices"): raise SystemExit("IOS_PROFILE_HAS_DEVICES")
+          if profile.get("ProvisionsAllDevices"): raise SystemExit("IOS_PROFILE_IS_ENTERPRISE")
+          expiration = profile.get("ExpirationDate")
+          now = datetime.datetime.now(datetime.timezone.utc)
+          if expiration is None: raise SystemExit("IOS_PROFILE_EXPIRATION_MISSING")
+          if expiration.tzinfo is None: expiration = expiration.replace(tzinfo=datetime.timezone.utc)
+          if expiration <= now: raise SystemExit("IOS_PROFILE_EXPIRED")
+          if leaf not in profile.get("DeveloperCertificates", []): raise SystemExit("IOS_PROFILE_CERTIFICATE_MISMATCH")
+          PY
+          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RAW_PROFILE" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          cp "$RAW_PROFILE" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          printf 'IOS_PROFILE_NAME=%s\n' "$PROFILE_NAME" >> "$GITHUB_ENV"
+
+      - name: Archive and export signed App Store IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/export
+          cat > build/ExportOptions.ci.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>destination</key><string>export</string>
+            <key>method</key><string>app-store</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>teamID</key><string>86NUJ8M3B8</string>
+            <key>provisioningProfiles</key><dict><key>app.soulcodex.ios</key><string>$IOS_PROFILE_NAME</string></dict>
+            <key>stripSwiftSymbols</key><true/>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme "Ultimate Soul Codex" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/SoulCodex.xcarchive \
+            DEVELOPMENT_TEAM=86NUJ8M3B8 \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROFILE_NAME" \
+            archive 2>&1 | tee archive.log
+          test -d build/SoulCodex.xcarchive
+          xcodebuild -exportArchive \
+            -archivePath build/SoulCodex.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.ci.plist \
+            2>&1 | tee export.log
+          IPA_PATH=$(find build/export -maxdepth 1 -name "*.ipa" -type f -print -quit)
+          test -n "$IPA_PATH"
+          test -s "$IPA_PATH"
+          shasum -a 256 "$IPA_PATH" | tee build/export/IPA-SHA256.txt
+          cp release-candidate-sha.txt build/export/RELEASE-CANDIDATE-SHA.txt
+
+      - name: Verify exported IPA identity and signature
+        run: |
+          set -euo pipefail
+          IPA_PATH=$(find build/export -maxdepth 1 -name "*.ipa" -type f -print -quit)
+          rm -rf "$RUNNER_TEMP/ipa-check"
+          mkdir -p "$RUNNER_TEMP/ipa-check"
+          unzip -q "$IPA_PATH" -d "$RUNNER_TEMP/ipa-check"
+          APP_PATH=$(find "$RUNNER_TEMP/ipa-check/Payload" -maxdepth 1 -name "*.app" -type d -print -quit)
+          test -n "$APP_PATH"
+          codesign --verify --deep --strict "$APP_PATH"
+          PLIST="$APP_PATH/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.0.2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000009"
+          test -s "$APP_PATH/public/index.html"
+          test -d "$APP_PATH/public/assets"
+          {
+            echo "SHA=${GITHUB_SHA}"
+            echo "bundleId=app.soulcodex.ios"
+            echo "marketingVersion=4.0.2"
+            echo "buildNumber=4000009"
+            echo "signature=verified"
+            echo "app_store_profile=verified"
+            echo "native_launch_gate=passed"
+          } > build/export/IOS-4.0.2-SIGNED-RECEIPT.txt
+
+      - name: Upload signed IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.2-signed-app-store-ipa
+          path: |
+            build/export/*.ipa
+            build/export/IPA-SHA256.txt
+            build/export/RELEASE-CANDIDATE-SHA.txt
+            build/export/IOS-4.0.2-SIGNED-RECEIPT.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload signing diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.0.2-signing-diagnostics
+          path: |
+            release-candidate-sha.txt
+            archive.log
+            export.log
+          if-no-files-found: ignore
+          retention-days: 30

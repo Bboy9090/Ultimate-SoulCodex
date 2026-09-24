@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route, useParams } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,26 +9,39 @@ import ProfileClarityLauncher from "@/components/ProfileClarityLauncher";
 import TimelineContinuityHeader from "@/components/TimelineContinuityHeader";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
-import LocalFirstInputForm from "./pages/local-first-input-form";
-import Profile from "./pages/profile";
-import OfflineProfilePage from "./pages/offline-profile";
-import ClarityReadingPage from "./pages/ClarityReadingPage";
-import OfflineClarityReadingPage from "./pages/OfflineClarityReadingPage";
-import CompatibilityExplorerPage from "./pages/CompatibilityExplorerPage";
-import CompatibilityPersonPage from "./pages/CompatibilityPersonPage";
-import CompatibilityRoute from "./pages/CompatibilityRoute";
-import TimelinePage from "./pages/TimelinePage";
-import CodexToolsPage from "./pages/CodexToolsPage";
-import AstrologyAtlasPage from "./pages/AstrologyAtlasPage";
-import SystemsDetailsPage from "./pages/SystemsDetailsPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import TermsPage from "./pages/TermsPage";
-import SupportPage from "./pages/SupportPage";
-import SettingsPage from "./pages/SettingsPage";
-import DiagnosticsPage from "./pages/DiagnosticsPage";
-import AccountDeletionPage from "./pages/AccountDeletionPage";
-import PricingPage from "./pages/PricingPage";
-import ConnectionsPage from "./pages/ConnectionsPage";
+
+const LocalFirstInputForm = lazy(() => import("./pages/local-first-input-form"));
+const Profile = lazy(() => import("./pages/profile"));
+const OfflineProfilePage = lazy(() => import("./pages/offline-profile"));
+const ClarityReadingPage = lazy(() => import("./pages/ClarityReadingPage"));
+const OfflineClarityReadingPage = lazy(() => import("./pages/OfflineClarityReadingPage"));
+const CompatibilityExplorerPage = lazy(() => import("./pages/CompatibilityExplorerPage"));
+const CompatibilityPersonPage = lazy(() => import("./pages/CompatibilityPersonPage"));
+const CompatibilityRoute = lazy(() => import("./pages/CompatibilityRoute"));
+const TimelinePage = lazy(() => import("./pages/TimelinePage"));
+const CodexToolsPage = lazy(() => import("./pages/CodexToolsPage"));
+const AstrologyAtlasPage = lazy(() => import("./pages/AstrologyAtlasPage"));
+const SystemsDetailsPage = lazy(() => import("./pages/SystemsDetailsPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const SupportPage = lazy(() => import("./pages/SupportPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const DiagnosticsPage = lazy(() => import("./pages/DiagnosticsPage"));
+const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
+const ConnectionsPage = lazy(() => import("./pages/ConnectionsPage"));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#08060d] text-[#f5ead7] grid place-items-center px-6">
+      <div className="text-center">
+        <div className="font-serif text-xl font-semibold">Soul Codex</div>
+        <div className="mt-2 text-sm opacity-60">Opening…</div>
+      </div>
+    </div>
+  );
+}
+
 
 function ProfileRoute() {
   const { id } = useParams();
@@ -60,7 +74,8 @@ function TimelineRoute() {
 
 function Router() {
   return (
-    <Switch>
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <Switch>
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
       {/* Backward-compatible alias for older onboarding/deep links. */}
@@ -84,7 +99,8 @@ function Router() {
       <Route path="/account-deletion" component={AccountDeletionPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
-    </Switch>
+      </Switch>
+    </Suspense>
   );
 }
 
