@@ -1561,6 +1561,4 @@ export function calculateHumanDesignWithEvidence(birthData: {
   );
 
   return { result: resolvedResult, evidence: entries };
-
-  return { result, evidence: entries };
 }
