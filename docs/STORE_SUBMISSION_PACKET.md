@@ -174,8 +174,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 - Railway production deployment: exact same SHA, status SUCCESS
 - Railway public domain: `soulcodex.up.railway.app`
 - Android signed AAB: built and `jarsigner -verify` passed
-- Android release artifact ID: `10785817586`
-- Android AAB SHA-256: `52cddc3a1e216fa84d346d2c69ca1b508d6fbee1ab72d7d90fac942c6a4702cf`
+- Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
 - Android manifest native permission surface: `android.permission.INTERNET` only
 - iOS simulator Release and generic-device archive qualification: passed
 - Google Play developer account: active at `harebugz23@gmail.com`
@@ -186,7 +185,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 1. Capture final Android phone screenshots from the actual final build.
 2. Complete physical-device Android smoke testing.
 3. In Play Console, select/create Soul Codex for package `app.soulcodex.main`.
-4. Upload the exact-current signed `app-release.aab` from artifact `10785817586`.
+4. Upload the exact-current signed `app-release.aab` from the latest exact-head Android store artifact; verify its `RELEASE-CANDIDATE-SHA.txt` matches current release authority before upload.
 5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
 6. Use the verified Railway URLs for privacy, support, and account deletion unless a custom domain is attached and verified first.
 7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
