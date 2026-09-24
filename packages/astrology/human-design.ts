@@ -1166,16 +1166,15 @@ function calculateHumanDesignInternal(birthData: {
     };
   });
 
-  // First, add ALL gates to their respective centers
-  Object.entries(HD_GATES).forEach(([gateNum, gateInfo]) => {
-    const gate = parseInt(gateNum);
-    const centerName = gateInfo.center;
-    if (centers[centerName]) {
-      centers[centerName].gates.push(gate);
+  // A center's gate list represents this chart's activated gates, not every
+  // gate that can theoretically belong to the center.
+  for (const gate of Array.from(new Set(allGates))) {
+    const gateInfo = HD_GATES[gate as keyof typeof HD_GATES];
+    if (gateInfo && centers[gateInfo.center]) {
+      centers[gateInfo.center].gates.push(gate);
     }
-  });
+  }
 
-  // Sort gates numerically for each center
   Object.keys(centers).forEach(centerName => {
     centers[centerName].gates.sort((a: number, b: number) => a - b);
   });
@@ -1208,15 +1207,21 @@ function calculateHumanDesignInternal(birthData: {
   const profile = calculateProfile(activations.conscious.sun.line, activations.unconscious.sun.line);
   const definition = calculateDefinition(centers, channels);
 
-  // Calculate incarnation cross
-  const incarnationCross = `Right Angle Cross of ${HD_GATES[activations.conscious.sun.gate as keyof typeof HD_GATES].name}`;
+  // The four gate positions are calculated, but official Incarnation Cross
+  // naming requires a governed cross table and angle/profile rules that are not
+  // implemented in this engine. Preserve the exact gate quartet without
+  // inventing a traditional name.
+  const incarnationCross =
+    `Gate quartet ${activations.conscious.sun.gate}/${activations.conscious.earth.gate} | ` +
+    `${activations.unconscious.sun.gate}/${activations.unconscious.earth.gate} (traditional name unresolved)`;
 
-  // Calculate variables based on line positions
+  // Variables require color/tone/base substructure. Line numbers alone are
+  // insufficient, so these values remain explicitly unresolved.
   const variables = {
-    cognition: activations.conscious.sun.line <= 3 ? "Focused" : "Peripheral",
-    environment: activations.conscious.earth.line <= 3 ? "Markets" : "Caves",
-    motivation: activations.unconscious.sun.line <= 3 ? "Fear" : "Hope",
-    perspective: activations.unconscious.earth.line <= 3 ? "Personal" : "Transpersonal"
+    cognition: "Unresolved — color/tone/base calculation not implemented",
+    environment: "Unresolved — color/tone/base calculation not implemented",
+    motivation: "Unresolved — color/tone/base calculation not implemented",
+    perspective: "Unresolved — color/tone/base calculation not implemented"
   };
 
   return {
@@ -1469,21 +1474,21 @@ export function calculateHumanDesignWithEvidence(birthData: {
 
     createEvidenceEntry(
       'human-design',
-      'Human Design Incarnation Cross',
+      'Human Design Gate Quartet (traditional cross name unresolved)',
       resolvedResult.incarnationCross,
-      85,
-      'high',
+      60,
+      'moderate',
       {
         inputsUsed: [
           `conscious_sun_gate_${resolvedResult.activations!.conscious!.sun!.gate}`,
         ],
         reasoning: [
-          `Incarnation cross named after conscious Sun gate ${resolvedResult.activations!.conscious!.sun!.gate}`,
-          `Gate name: ${HD_GATES[resolvedResult.activations!.conscious!.sun!.gate as keyof typeof HD_GATES].name}`,
-          'Represents life purpose and overarching life theme',
+          `Conscious Sun/Earth gates: ${resolvedResult.activations!.conscious!.sun!.gate}/${resolvedResult.activations!.conscious!.earth!.gate}`,
+          `Design Sun/Earth gates: ${resolvedResult.activations!.unconscious!.sun!.gate}/${resolvedResult.activations!.unconscious!.earth!.gate}`,
+          'Traditional Incarnation Cross naming is intentionally withheld until a governed naming table is implemented',
         ],
         limitations: [
-          'Incarnation cross is symbolic representation of life purpose theme',
+          'This records the calculated four-gate cross only; it does not claim an official traditional cross name',
         ],
         formulaId: 'human-design.incarnation-cross',
         formulaVersion: '1.0.0',
