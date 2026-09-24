@@ -497,7 +497,7 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       }
     });
 
-    it('should have all centers with gates lists', () => {
+    it('should expose only actually activated gates on each center', () => {
       const result = calculateHumanDesign(birthData);
 
       assert.strictEqual(result.status, 'resolved');
@@ -509,19 +509,21 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
         assert.ok(result.centers[centerName]);
         assert.ok(typeof result.centers[centerName].defined === 'boolean');
         assert.ok(Array.isArray(result.centers[centerName].gates));
+        for (const gate of result.centers[centerName].gates) {
+          assert.ok(result.activatedGates.includes(gate), `Center ${centerName} exposed non-activated gate ${gate}`);
+        }
       }
     });
 
-    it('should have valid variables with cognition, environment, motivation, perspective', () => {
+    it('should withhold Variables until color/tone/base math is implemented', () => {
       const result = calculateHumanDesign(birthData);
 
       assert.strictEqual(result.status, 'resolved');
       if (result.status !== 'resolved') throw new Error('Not resolved');
 
-      assert.ok(['Focused', 'Peripheral'].includes(result.variables.cognition));
-      assert.ok(['Markets', 'Caves'].includes(result.variables.environment));
-      assert.ok(['Fear', 'Hope'].includes(result.variables.motivation));
-      assert.ok(['Personal', 'Transpersonal'].includes(result.variables.perspective));
+      for (const value of Object.values(result.variables)) {
+        assert.match(value, /^Unresolved — color\/tone\/base calculation not implemented$/);
+      }
     });
   });
 
@@ -557,11 +559,17 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       assert.ok(claims.includes('Human Design Definition'));
     });
 
-    it('should mark all evidence entries with high confidence for valid inputs', () => {
+    it('should keep verified-core evidence strong while withholding unsupported cross naming', () => {
       const { evidence } = calculateHumanDesignWithEvidence(birthData);
+      const gateQuartet = evidence.find((entry) =>
+        entry.name === 'Human Design Gate Quartet (traditional cross name unresolved)'
+      );
+      assert.ok(gateQuartet);
+      assert.strictEqual(gateQuartet.confidence, 60);
+      assert.strictEqual(gateQuartet.confidenceLabel, 'moderate');
 
-      for (const entry of evidence) {
-        assert.ok(entry.confidence >= 85, `Evidence entry has confidence ${entry.confidence}, expected >= 85`);
+      for (const entry of evidence.filter((candidate) => candidate !== gateQuartet)) {
+        assert.ok(entry.confidence >= 85, `Core evidence entry has confidence ${entry.confidence}, expected >= 85`);
         assert.ok(['high', 'verified'].includes(entry.confidenceLabel));
       }
     });
