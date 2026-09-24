@@ -65,13 +65,13 @@ Secondary: Entertainment
 Intended audience: ages 13 and older. Complete each store's rating questionnaire from the shipped app behavior; do not infer the final rating from this document.
 
 ## Privacy Policy URL
-https://soulcodex.app/privacy
+https://soulcodex.up.railway.app/privacy
 
 ## Support URL
-https://soulcodex.app/support
+https://soulcodex.up.railway.app/support
 
 ## Account Deletion URL
-https://soulcodex.app/account-deletion
+https://soulcodex.up.railway.app/account-deletion
 
 ---
 
@@ -86,14 +86,14 @@ https://soulcodex.app/account-deletion
 - [x] Apple Developer account ($99/year)
 
 ### Android (Google Play Console)
-- [ ] App icon: 512x512 PNG
+- [x] App icon: `play-store-icon-512.png` — 512x512 RGB PNG, no alpha
 - [x] Feature graphic: `play-feature-graphic-1024x500.png` (1024x500 PNG)
 - [ ] Screenshots: phone (min 2, 320-3840px per side), tablet (optional)
 - [x] Privacy policy URL
-- [ ] Google Play Developer account ($25 one-time)
+- [x] Google Play Developer account active (`harebugz23@gmail.com`)
 
 ### Both Stores
 - [ ] Final 1024x1024 icon at `assets/icon-master.png`
 - [ ] Run `npm run cap:icons` to generate all sizes
-- [ ] Run `npm run cap:build` to sync web build
+- [x] Final release payload built and synced from main `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`
 - [ ] Test on physical devices before submission
