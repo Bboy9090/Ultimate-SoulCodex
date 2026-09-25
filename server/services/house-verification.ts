@@ -62,8 +62,8 @@ function validInput(input: HouseInput): boolean {
   return (
     !Number.isNaN(new Date(input.inputTimestamp).getTime()) &&
     Number.isFinite(input.latitude) &&
-    input.latitude >= -90 &&
-    input.latitude <= 90 &&
+    input.latitude > -90 &&
+    input.latitude < 90 &&
     Number.isFinite(input.longitude) &&
     input.longitude >= -180 &&
     input.longitude <= 180
