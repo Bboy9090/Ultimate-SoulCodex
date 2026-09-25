@@ -14,7 +14,7 @@ import {
   type EvidenceEntry,
   type EvidenceConfidenceLevel,
 } from './index.js';
-import { calcPersonalDay, calcPersonalMonth, calcPersonalYear, isPersonalNumerologyValue, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
+import { calcPersonalDay, calcPersonalMonth, calcPersonalYear, dateOnlyFromLocalDate, isPersonalNumerologyValue, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
 import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality, normalizeNumerologyName, NUMEROLOGY_POLICY } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
@@ -69,7 +69,7 @@ function confidenceForInputState(inputState: InputState): {
 
 export function calcPersonalDayWithEvidence(
   birthDate: string,
-  targetDate: Date = new Date()
+  targetDate: Date | string = new Date()
 ): {
   value?: number;
   evidence: EvidenceEntry;
@@ -106,11 +106,11 @@ export function calcPersonalDayWithEvidence(
     return { evidence };
   }
 
-  const personalDay = calcPersonalDay(birthDate, targetDate);
+  const targetDateISO =
+    typeof targetDate === 'string' ? targetDate : dateOnlyFromLocalDate(targetDate);
+  const personalDay = calcPersonalDay(birthDate, targetDateISO);
   const { day: birthDay, month: birthMonth } = parseDateOnly(birthDate);
-  const targetDay = targetDate.getDate();
-  const targetMonth = targetDate.getMonth() + 1;
-  const targetYear = targetDate.getFullYear();
+  const { day: targetDay, month: targetMonth, year: targetYear } = parseDateOnly(targetDateISO);
 
   const evidence = createEvidenceEntry(
     'numerology',
