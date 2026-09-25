@@ -204,6 +204,36 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
         assert.strictEqual(result.reason, 'malformed_birth_time');
       });
 
+      it('should reject spring-forward time that never existed', () => {
+        const result = calculateHumanDesign({
+          name: 'DST Gap',
+          birthDate: '2024-03-10',
+          birthTime: '02:30',
+          birthLocation: 'New York, NY',
+          latitude: '40.7128',
+          longitude: '-74.0060',
+          timezone: 'America/New_York',
+        });
+
+        assert.strictEqual(result.status, 'unresolved');
+        assert.strictEqual(result.reason, 'nonexistent_local_time');
+      });
+
+      it('should reject fall-back repeated hour without an explicit offset', () => {
+        const result = calculateHumanDesign({
+          name: 'DST Repeat',
+          birthDate: '2024-11-03',
+          birthTime: '01:30',
+          birthLocation: 'New York, NY',
+          latitude: '40.7128',
+          longitude: '-74.0060',
+          timezone: 'America/New_York',
+        });
+
+        assert.strictEqual(result.status, 'unresolved');
+        assert.strictEqual(result.reason, 'ambiguous_local_time');
+      });
+
       it('should accept valid time 00:00', () => {
         const result = calculateHumanDesign({
           name: 'Test Person',

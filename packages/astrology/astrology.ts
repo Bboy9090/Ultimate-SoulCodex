@@ -13,8 +13,8 @@ import {
 } from "./interpretations";
 import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = Astronomy;
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
+import { parseDateOnly, resolveExactCivilTime } from '@soulcodex/core';
 
 interface PlanetData {
   sign: string;
@@ -131,15 +131,22 @@ function createBirthTime(birthData: BirthData): Date {
     const time = birthData.birthTime || "12:00";
     const [hours, minutes] = time.split(':').map(Number);
     
-    const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-    
     const resolvedTimezone = resolveTimezone(
       birthData.timezone || "UTC",
       parseFloat(String(birthData.latitude ?? 0)),
       parseFloat(String(birthData.longitude ?? 0))
     );
-    
-    return fromZonedTime(new Date(localTimeString), resolvedTimezone);
+
+    const resolution = resolveExactCivilTime(
+      `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+      `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
+      resolvedTimezone,
+    );
+    if (resolution.status !== 'resolved') {
+      throw new Error(`Birth civil time could not be resolved exactly: ${resolution.reason}`);
+    }
+
+    return resolution.instant;
   } catch (error) {
     console.error('Error creating precise birth time:', error);
     throw error;
@@ -589,10 +596,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
 
 export function getTarotBirthCards(birthDate: string): { card1: string; card2: string; interpretation: string } {
   // Correct tarot birth card calculation: sum all digits and reduce to 1-22
-  const date = new Date(birthDate);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
+  const { day, month, year } = parseDateOnly(birthDate);
   
   // Sum all individual digits (e.g., 15/03/1990 = 1+5+0+3+1+9+9+0 = 28)
   const sumAllDigits = (num: number) => {

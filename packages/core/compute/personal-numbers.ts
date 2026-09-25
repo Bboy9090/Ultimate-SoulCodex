@@ -22,11 +22,16 @@ function reduceToSingleDigit(num: number): number {
  * @example
  * calcPersonalDay("1990-08-15", new Date("2026-07-06")) // July 6, 2026 for someone born Aug 15
  */
-export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()): number {
+export function calcPersonalDayForDate(
+  birthDate: string,
+  targetDateISO: string,
+): number {
   const { day: birthDay, month: birthMonth } = parseDateOnly(birthDate);
-  const targetDay = targetDate.getDate();
-  const targetMonth = targetDate.getMonth() + 1;
-  const targetYear = targetDate.getFullYear();
+  const {
+    day: targetDay,
+    month: targetMonth,
+    year: targetYear,
+  } = parseDateOnly(targetDateISO);
 
   const sum =
     reduceToSingleDigit(birthDay) +
@@ -39,8 +44,27 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
 }
 
 /**
+ * Backward-compatible Date wrapper.
+ * The Date's host-local calendar fields are intentionally preserved for legacy
+ * callers. Governed/user-facing surfaces should prefer calcPersonalDayForDate
+ * with an explicit calendar date resolved in the user's timezone.
+ */
+export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()): number {
+  if (!(targetDate instanceof Date) || Number.isNaN(targetDate.getTime())) {
+    throw new Error('Personal Day requires a valid target Date');
+  }
+  const targetDateISO = [
+    targetDate.getFullYear().toString().padStart(4, '0'),
+    (targetDate.getMonth() + 1).toString().padStart(2, '0'),
+    targetDate.getDate().toString().padStart(2, '0'),
+  ].join('-');
+  return calcPersonalDayForDate(birthDate, targetDateISO);
+}
+
+/**
  * Calculates Personal Year Number based on birth month/day and target year.
- * Personal Year is annual and changes on each birthday.
+ * Repository convention: Personal Year is a calendar-year symbolic cycle.
+ * It changes when targetYear changes, not on the birthday.
  * Calculated from: reduced(birth month) + reduced(birth day) + reduced(target year)
  *
  * @example
@@ -63,12 +87,22 @@ export function calcPersonalYear(
     const birth = parseDateOnly(birthDateOrMonth);
     birthMonth = birth.month;
     birthDay = birth.day;
-    targetYear = targetYearOrDay || new Date().getFullYear();
+    targetYear = targetYearOrDay ?? new Date().getFullYear();
   } else {
     // Legacy signature: (month, day, year)
     birthMonth = birthDateOrMonth;
-    birthDay = targetYearOrDay || 1;
-    targetYear = targetYearIfThreeArgs || new Date().getFullYear();
+    birthDay = targetYearOrDay ?? 1;
+    targetYear = targetYearIfThreeArgs ?? new Date().getFullYear();
+  }
+
+  if (!Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12) {
+    throw new Error('Personal Year birth month must be an integer from 1 to 12');
+  }
+  if (!Number.isInteger(birthDay) || birthDay < 1 || birthDay > 31) {
+    throw new Error('Personal Year birth day must be an integer from 1 to 31');
+  }
+  if (!Number.isInteger(targetYear) || targetYear < 1 || targetYear > 9999) {
+    throw new Error('Personal Year target year must be an integer from 1 to 9999');
   }
 
   const sum =
@@ -81,13 +115,19 @@ export function calcPersonalYear(
 
 /**
  * Calculates Personal Month Number based on Personal Year and target month.
- * Personal Month is monthly and cycles 1-9 within the Personal Year.
+ * Personal Month is monthly and preserves 11/22/33 when the governed reduction reaches them.
  * Calculated from: reduced(personal year) + reduced(target month)
  *
  * @example
  * calcPersonalMonth(6, 7) // Personal Month during July if Personal Year is 6
  */
 export function calcPersonalMonth(personalYear: number, targetMonth: number): number {
+  if (![1,2,3,4,5,6,7,8,9,11,22,33].includes(personalYear)) {
+    throw new Error('Personal Month requires Personal Year 1-9 or 11/22/33');
+  }
+  if (!Number.isInteger(targetMonth) || targetMonth < 1 || targetMonth > 12) {
+    throw new Error('Personal Month target month must be an integer from 1 to 12');
+  }
   const sum = reduceToSingleDigit(personalYear) + reduceToSingleDigit(targetMonth);
   return reduceToSingleDigit(sum);
 }

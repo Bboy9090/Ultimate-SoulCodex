@@ -339,6 +339,34 @@ describe("Gate 1: Foundation Regression Suite", () => {
       assert.ok(result.verification.unresolvedBodies.includes("Ascendant"));
     });
 
+    it("DST gap birth time fails closed instead of choosing a UTC instant", () => {
+      const result = calculateAstrology({
+        birthDate: "2024-03-10",
+        birthTime: "02:30",
+        timezone: "America/New_York",
+        latitude: 40.7128,
+        longitude: -74.006,
+      });
+      assert.strictEqual(result.moon.sign, null);
+      assert.notStrictEqual(result.moon.verificationStatus, "verified");
+      assert.strictEqual(result.rising.sign, null);
+      assert.notStrictEqual(result.rising.verificationStatus, "verified");
+    });
+
+    it("DST repeated hour fails closed without explicit offset disambiguation", () => {
+      const result = calculateAstrology({
+        birthDate: "2024-11-03",
+        birthTime: "01:30",
+        timezone: "America/New_York",
+        latitude: 40.7128,
+        longitude: -74.006,
+      });
+      assert.strictEqual(result.moon.sign, null);
+      assert.notStrictEqual(result.moon.verificationStatus, "verified");
+      assert.strictEqual(result.rising.sign, null);
+      assert.notStrictEqual(result.rising.verificationStatus, "verified");
+    });
+
     it("missing location does not fabricate Rising sign", () => {
       const noLocation: BirthData = {
         birthDate: "1990-08-15",

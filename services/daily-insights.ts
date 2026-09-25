@@ -115,7 +115,7 @@ export function generateDailyInsights(
   profile: Profile,
   lastUsedTemplateIds: string[] = []
 ): { data: DailyInsightData; templateIds: string[]; contentHash: string } {
-  const dailyContext = getDailyContext(profile.birthDate);
+  const dailyContext = getDailyContext(profile.birthDate, new Date(), profile.timezone);
   const profileSummary = extractProfileSummary(profile);
   
   const { selectedTemplates, templateIds } = selectTemplates(

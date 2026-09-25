@@ -6,7 +6,7 @@ import {
 } from "../services/astrology-production";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
-import { fromZonedTime } from "date-fns-tz";
+import { resolveExactCivilTime } from "@soulcodex/core";
 
 const numericCoordinate = z
   .union([z.number(), z.string().min(1)])
@@ -88,10 +88,17 @@ export function registerProfileVerificationRoutes(app: Express) {
         });
 
         if (humanDesign.status === "resolved") {
-          const inputTimestampUtc = fromZonedTime(
-            `${parsed.data.birthDate}T${parsed.data.birthTime}:00`,
+          const civilTime = resolveExactCivilTime(
+            parsed.data.birthDate,
+            parsed.data.birthTime,
             parsed.data.timezone,
-          ).toISOString();
+          );
+          if (civilTime.status !== "resolved") {
+            throw new Error(
+              `human_design_civil_time_not_exact:${civilTime.reason}`,
+            );
+          }
+          const inputTimestampUtc = civilTime.instant.toISOString();
           const trust = createVerifiedHumanDesignTrustRecord({
             birthTimeKnown: true,
             inputTimestampUtc,

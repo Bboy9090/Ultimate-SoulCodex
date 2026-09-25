@@ -52,6 +52,12 @@ test('Birthday number preserves master-number birthdays', () => {
   assert.equal(calcBirthday('1990-09-22'), 22);
 });
 
+test('Life Path follows documented component reduction with master numbers preserved', () => {
+  assert.equal(calcLifePath('1900-01-18'), 11);
+  assert.equal(calcLifePath('1900-08-31'), 4);
+  assert.equal(calcLifePath('1964-02-29'), 6);
+});
+
 test('name normalization is stable across accents and punctuation', () => {
   assert.equal(normalizeNumerologyName('José González'), 'JOSEGONZALEZ');
   assert.equal(calcExpression('José González'), calcExpression('Jose Gonzalez'));
@@ -96,7 +102,7 @@ test('core numerology snapshot is deterministic and versioned', () => {
   assert.deepEqual(first, second);
   assert.equal(first.engineVersion, NUMEROLOGY_ENGINE_VERSION);
   assert.deepEqual(first, {
-    engineVersion: 'pythagorean-v2',
+    engineVersion: 'pythagorean-v3',
     lifePath: 9,
     birthday: 8,
     expression: 4,

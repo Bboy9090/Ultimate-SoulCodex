@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
+  BookOpen,
   Compass,
   Database,
   Eye,
@@ -27,9 +28,11 @@ function isActive(pathname: string, href: string) {
 export default function Navigation() {
   const { profile } = useActiveProfile();
   const identityHref = profile?.id ? `/profile/${profile.id}` : "/create";
+  const readingHref = profile?.id ? `/reading/${profile.id}` : "/create";
   const [pathname] = useLocation();
 
   const primaryLinks = [
+    ...(profile ? [{ href: readingHref, label: "Reading", icon: BookOpen }] : []),
     { href: identityHref, label: "Identity", icon: UserRound },
     { href: "/timeline", label: "Timeline", icon: Orbit },
     { href: "/compatibility", label: "Compatibility", icon: HeartHandshake },
@@ -111,10 +114,10 @@ export default function Navigation() {
               <Settings className="h-4 w-4" strokeWidth={1.8} />
             </Link>
 
-            <Link href="/create" className="ml-1 no-underline">
+            <Link href={profile ? readingHref : "/create"} className="ml-1 no-underline">
               <Button className="h-9 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105" data-testid="button-create-profile-nav">
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Create profile
+                {profile ? <BookOpen className="mr-1.5 h-3.5 w-3.5" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+                {profile ? "My Codex" : "Create profile"}
               </Button>
             </Link>
           </div>
@@ -168,10 +171,10 @@ export default function Navigation() {
                   </Link>
                 </div>
 
-                <Link href="/create" className="mt-5 block no-underline">
+                <Link href={profile ? readingHref : "/create"} className="mt-5 block no-underline">
                   <Button className="h-12 w-full rounded-xl border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] font-bold text-[#170f07]" data-testid="button-create-profile-mobile">
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Create profile
+                    {profile ? <BookOpen className="mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    {profile ? "Open My Codex" : "Create profile"}
                   </Button>
                 </Link>
 

@@ -1,23 +1,8 @@
+import { calcPersonalYear } from "@soulcodex/core";
 import type { PhaseSignal, TimelinePhase } from "./types";
 
-const digitSum = (n: number): number =>
-  Math.abs(n)
-    .toString()
-    .split("")
-    .reduce((a, b) => a + Number(b), 0);
-
-const reduce = (n: number): number => {
-  while (n > 9) n = digitSum(n);
-  return n;
-};
-
 export function personalYear(birthDate: string, currentDate: Date): number {
-  const d = new Date(birthDate);
-  const total =
-    digitSum(d.getMonth() + 1) +
-    digitSum(d.getDate()) +
-    digitSum(currentDate.getFullYear());
-  return reduce(total) || 9;
+  return calcPersonalYear(birthDate, currentDate.getFullYear());
 }
 
 // Map personal year (1-9) to a primary phase signal

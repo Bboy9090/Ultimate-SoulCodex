@@ -15,7 +15,7 @@ import {
   type EvidenceConfidenceLevel,
 } from './index.js';
 import { calcPersonalDay, calcPersonalMonth, calcPersonalYear } from '../compute/personal-numbers.js';
-import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality } from '../compute/numerology.js';
+import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality, normalizeNumerologyName, NUMEROLOGY_POLICY } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
 type InputState = 'valid' | 'partial' | 'missing' | 'invalid';
@@ -32,8 +32,7 @@ function isValidDate(dateStr: string): boolean {
 
 function isValidName(name: string): boolean {
   if (!name || typeof name !== 'string') return false;
-  const letters = name.replace(/[^A-Za-z]/g, '');
-  return letters.length > 0;
+  return normalizeNumerologyName(name).length > 0;
 }
 
 function deriveInputStateForDate(dateStr: string): InputState {
@@ -75,7 +74,11 @@ export function calcPersonalDayWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForDate(birthDate);
+  const birthInputState = deriveInputStateForDate(birthDate);
+  const targetDateValid =
+    targetDate instanceof Date && !Number.isNaN(targetDate.getTime());
+  const derivedInputState: InputState =
+    birthInputState === 'valid' && !targetDateValid ? 'invalid' : birthInputState;
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   // Fail-closed: only calculate if input is valid
@@ -89,8 +92,9 @@ export function calcPersonalDayWithEvidence(
       {
         inputsUsed: [`birth_date_${birthDate || 'missing'}`],
         reasoning: [
-          derivedInputState === 'missing' ? 'Birth date not provided' :
-          derivedInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          birthInputState === 'missing' ? 'Birth date not provided' :
+          birthInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          !targetDateValid ? 'Target date is not a valid Date instant' :
           'Birth date could not be processed',
         ],
         limitations: [
@@ -129,7 +133,7 @@ export function calcPersonalDayWithEvidence(
       ],
       reasoning: [
         `Birth day ${birthDay} + birth month ${birthMonth} + current day ${targetDay} + current month ${targetMonth} + current year ${targetYear}`,
-        'All values reduced to single digits',
+        'Values are reduced with master numbers 11/22/33 preserved',
         `Sum reduced to single digit = Day ${personalDay}`,
       ],
       limitations: [
@@ -154,7 +158,11 @@ export function calcPersonalYearWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForDate(birthDate);
+  const birthInputState = deriveInputStateForDate(birthDate);
+  const targetYearValid =
+    Number.isInteger(targetYear) && targetYear >= 1 && targetYear <= 9999;
+  const derivedInputState: InputState =
+    birthInputState === 'valid' && !targetYearValid ? 'invalid' : birthInputState;
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   if (derivedInputState !== 'valid') {
@@ -170,12 +178,13 @@ export function calcPersonalYearWithEvidence(
           `target_year_${targetYear}`,
         ],
         reasoning: [
-          derivedInputState === 'missing' ? 'Birth date not provided' :
-          derivedInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          birthInputState === 'missing' ? 'Birth date not provided' :
+          birthInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          !targetYearValid ? `Target year ${targetYear} must be an integer from 1 to 9999` :
           'Birth date could not be processed',
         ],
         limitations: [
-          'Personal Year cycles annually, changes on birthday',
+          'Repository convention: Personal Year is a calendar-year symbolic cycle',
           'Calculation does not account for birth time',
         ],
         formulaId: 'numerology.personal-year',
@@ -205,11 +214,11 @@ export function calcPersonalYearWithEvidence(
       ],
       reasoning: [
         `Birth month ${birthMonth} + birth day ${birthDay} + target year ${targetYear}`,
-        'All values reduced to single digits',
+        'Values are reduced with master numbers 11/22/33 preserved',
         `Sum reduced to single digit = Year ${personalYear}`,
       ],
       limitations: [
-        'Personal Year cycles annually, changes on birthday',
+        'Repository convention: Personal Year is a calendar-year symbolic cycle',
         'Calculation does not account for birth time',
       ],
       formulaId: 'numerology.personal-year',
@@ -230,7 +239,7 @@ export function calcPersonalMonthWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const yearValid = typeof personalYear === 'number' && personalYear >= 1 && personalYear <= 9;
+  const yearValid = typeof personalYear === 'number' && [1,2,3,4,5,6,7,8,9,11,22,33].includes(personalYear);
   const monthValid = typeof targetMonth === 'number' && targetMonth >= 1 && targetMonth <= 12;
 
   let derivedInputState: InputState = 'valid';
@@ -253,7 +262,7 @@ export function calcPersonalMonthWithEvidence(
           `calendar_month_${targetMonth}`,
         ],
         reasoning: [
-          !yearValid ? `Personal Year ${personalYear} must be 1-9` : '',
+          !yearValid ? `Personal Year ${personalYear} must be 1-9 or a preserved master number (11/22/33)` : '',
           !monthValid ? `Calendar month ${targetMonth} must be 1-12` : '',
         ].filter(Boolean),
         limitations: [
@@ -285,7 +294,7 @@ export function calcPersonalMonthWithEvidence(
       ],
       reasoning: [
         `Personal Year ${personalYear} + calendar month ${targetMonth}`,
-        'Both reduced to single digits',
+        'Values are reduced with master numbers 11/22/33 preserved',
         `Sum reduced to single digit = Month ${personalMonth}`,
       ],
       limitations: [
@@ -332,7 +341,7 @@ export function calcLifePathWithEvidence(
           'Life Path is constant throughout life',
         ],
         formulaId: 'numerology.life-path',
-        formulaVersion: '1.0.0',
+        formulaVersion: '2.0.0',
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -361,8 +370,8 @@ export function calcLifePathWithEvidence(
         `birth_year_${birthYear}`,
       ],
       reasoning: [
-        `All digits of birth date summed: ${birthMonth} + ${birthDay} + ${birthYear}`,
-        'Sum reduced to single digit',
+        `Birth month ${birthMonth}, birth day ${birthDay}, and birth year ${birthYear} are reduced independently with 11/22/33 preserved`,
+        'Reduced components are added and the total is reduced with 11/22/33 preserved',
         `Life Path Number = ${lifePathValue}`,
       ],
       limitations: [
@@ -371,7 +380,7 @@ export function calcLifePathWithEvidence(
         'Life Path is constant throughout life',
       ],
       formulaId: 'numerology.life-path',
-      formulaVersion: '1.0.0',
+      formulaVersion: '2.0.0',
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -420,7 +429,8 @@ export function calcExpressionWithEvidence(
   }
 
   const expressionValue = calcExpression(fullName);
-  const letterCount = fullName.replace(/[^A-Za-z]/g, '').length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const letterCount = normalizedName.length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -491,7 +501,8 @@ export function calcSoulUrgeWithEvidence(
   }
 
   const soulUrgeValue = calcSoulUrge(fullName);
-  const vowelCount = (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const vowelCount = [...normalizedName].filter((letter) => NUMEROLOGY_POLICY.vowels.includes(letter)).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -563,9 +574,10 @@ export function calcPersonalityWithEvidence(
   }
 
   const personalityValue = calcPersonality(fullName);
-  const consonantCount =
-    fullName.replace(/[^A-Za-z]/g, '').length -
-    (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const consonantCount = [...normalizedName].filter(
+    (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter),
+  ).length;
 
   const evidence = createEvidenceEntry(
     'numerology',

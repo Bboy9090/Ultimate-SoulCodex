@@ -1,5 +1,6 @@
 import * as Astronomy from 'astronomy-engine';
-import { calcPersonalDay } from '@soulcodex/core';
+import { calcPersonalDay, calcPersonalDayForDate, parseDateOnly } from '@soulcodex/core';
+import { formatInTimeZone } from 'date-fns-tz';
 
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
@@ -26,14 +27,27 @@ function reduceToSingleDigit(num: number): number {
  * Calculates Personal Day Number using the shared core module.
  * This ensures consistency across all surfaces (Today, Timeline, Codex, Profile).
  */
-export function calculatePersonalDayNumber(birthDate: string, currentDate: Date = new Date()): number {
-  return calcPersonalDay(birthDate, currentDate);
+export function calculatePersonalDayNumber(
+  birthDate: string,
+  currentDate: Date = new Date(),
+  timezone?: string,
+): number {
+  if (!timezone) return calcPersonalDay(birthDate, currentDate);
+  const targetDateISO = formatInTimeZone(currentDate, timezone, 'yyyy-MM-dd');
+  return calcPersonalDayForDate(birthDate, targetDateISO);
 }
 
-export function calculateUniversalDayNumber(currentDate: Date = new Date()): number {
-  const day = currentDate.getDate();
-  const month = currentDate.getMonth() + 1;
-  const year = currentDate.getFullYear();
+export function calculateUniversalDayNumber(
+  currentDate: Date = new Date(),
+  timezone?: string,
+): number {
+  const { day, month, year } = timezone
+    ? parseDateOnly(formatInTimeZone(currentDate, timezone, 'yyyy-MM-dd'))
+    : {
+        day: currentDate.getDate(),
+        month: currentDate.getMonth() + 1,
+        year: currentDate.getFullYear(),
+      };
   
   const reducedDay = reduceToSingleDigit(day);
   const reducedMonth = reduceToSingleDigit(month);
@@ -124,14 +138,21 @@ function getPlanetaryHour(date: Date): string {
   return planets[hourIndex];
 }
 
-export function getDailyContext(birthDate: string, currentDate: Date = new Date()): DailyContext {
+export function getDailyContext(
+  birthDate: string,
+  currentDate: Date = new Date(),
+  timezone?: string,
+): DailyContext {
   const moonPhaseData = getMoonPhase(currentDate);
   const hdGateData = getCurrentHDGate(currentDate);
+  const calendarDate = timezone
+    ? formatInTimeZone(currentDate, timezone, 'yyyy-MM-dd')
+    : currentDate.toISOString().split('T')[0];
   
   return {
-    date: currentDate.toISOString().split('T')[0],
-    personalDayNumber: calculatePersonalDayNumber(birthDate, currentDate),
-    universalDayNumber: calculateUniversalDayNumber(currentDate),
+    date: calendarDate,
+    personalDayNumber: calculatePersonalDayNumber(birthDate, currentDate, timezone),
+    universalDayNumber: calculateUniversalDayNumber(currentDate, timezone),
     moonSign: getMoonSign(currentDate),
     moonPhase: moonPhaseData.phase,
     moonPhasePercentage: moonPhaseData.percentage,
