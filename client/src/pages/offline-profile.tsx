@@ -10,7 +10,7 @@ import VerifiedNatalChart from "@/components/VerifiedNatalChart";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
-import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
+import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, requiresBirthTimeUncertaintyReview, requiresHistoricalTimeReview, requiresManualTimeReview, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
@@ -51,6 +51,13 @@ export default function OfflineProfilePage() {
         body: JSON.stringify({
           birthDate: currentProfile.birthDate,
           ...(currentProfile.birthTime ? { birthTime: currentProfile.birthTime } : {}),
+          ...(currentProfile.birthTimeAccuracy
+            ? { birthTimeAccuracy: currentProfile.birthTimeAccuracy }
+            : {}),
+          ...(currentProfile.birthTimeUncertaintyMinutes !== undefined &&
+          currentProfile.birthTimeUncertaintyMinutes !== null
+            ? { birthTimeUncertaintyMinutes: currentProfile.birthTimeUncertaintyMinutes }
+            : {}),
           timezone: currentProfile.timezone,
           latitude: currentProfile.latitude ?? undefined,
           longitude: currentProfile.longitude ?? undefined,
@@ -80,6 +87,18 @@ export default function OfflineProfilePage() {
   const verifiedRising = useMemo(() => getVerifiedAstrologySign(verifiedAstrology, "rising"), [verifiedAstrology]);
   const verifiedFullNatal = useMemo(
     () => hasVerifiedFullNatalChart(verifiedAstrology),
+    [verifiedAstrology],
+  );
+  const manualTimeReview = useMemo(
+    () => requiresManualTimeReview(verifiedAstrology),
+    [verifiedAstrology],
+  );
+  const historicalTimeReview = useMemo(
+    () => requiresHistoricalTimeReview(verifiedAstrology),
+    [verifiedAstrology],
+  );
+  const uncertaintyTimeReview = useMemo(
+    () => requiresBirthTimeUncertaintyReview(verifiedAstrology),
     [verifiedAstrology],
   );
   const verifiedPlanets = verifiedAstrology?.planets;
@@ -157,6 +176,16 @@ export default function OfflineProfilePage() {
           </div>
         </section>
 
+        {manualTimeReview && (
+          <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm leading-6 text-[var(--sc-stone)]" data-testid="time-provenance-review">
+            <strong className="text-[var(--sc-ivory)]">Timed systems are being held back.</strong>{" "}
+            {historicalTimeReview
+              ? "This birth predates the modern timezone provenance boundary, so the local-to-UTC reconstruction needs an independently sourced historical time standard before Moon, Rising, houses, or Human Design can be treated as verified."
+              : uncertaintyTimeReview
+                ? `This birth time is marked approximate${profile.birthTimeUncertaintyMinutes ? ` (about ±${profile.birthTimeUncertaintyMinutes} minutes)` : ""}. Timed placements remain candidates until a more precise time or an uncertainty-window analysis supports them.`
+                : "The birth-time evidence needs review before timed placements can be promoted."}
+          </div>
+        )}
         {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested profile-system verification. Soul Codex is calculating the qualified natal chart and governed Human Design core while your local reading remains available.</span></div>}
         {verificationAttempt === "deferred" && !verifiedFullNatal && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">The requested online verification could not complete. Local symbolic layers remain visible; any unsupported planets, Rising, MC, houses, aspects, nodes, and Chiron stay unresolved rather than guessed.</div>}
         {verificationAttempt === "partial" && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Online verification returned some supported evidence, but this timed profile still has unresolved chart fields. The verified results were saved; you can retry without losing them.</div>}
