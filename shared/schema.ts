@@ -144,8 +144,15 @@ const birthTimeSchema = z.union([
 
 export function isValidIanaTimezone(value: unknown): value is string {
   if (typeof value !== "string" || !value.trim()) return false;
+  const timezone = value.trim();
+
+  // Accept UTC explicitly. Birthplace timezones otherwise need a location-style
+  // IANA identifier; legacy abbreviations such as EST/PST are fixed/ambiguous
+  // aliases and are not acceptable for DST- or history-sensitive birth math.
+  if (timezone !== "UTC" && !timezone.includes("/")) return false;
+
   try {
-    new Intl.DateTimeFormat("en-US", { timeZone: value.trim() }).format(new Date());
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(new Date());
     return true;
   } catch {
     return false;
