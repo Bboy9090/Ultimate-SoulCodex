@@ -36,6 +36,7 @@ export const profileVerificationRequestSchema = z
       .refine((value) => value >= -180 && value <= 180, "Longitude must be between -180 and 180")
       .optional(),
   })
+  .strict()
   .superRefine((data, context) => {
     const latitudePresent = data.latitude !== undefined;
     const longitudePresent = data.longitude !== undefined;
@@ -46,8 +47,7 @@ export const profileVerificationRequestSchema = z
         message: "Latitude and longitude must be supplied together",
       });
     }
-  })
-  .strict();
+  });
 
 function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   return {
