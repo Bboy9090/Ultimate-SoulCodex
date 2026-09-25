@@ -8,10 +8,30 @@ export type CivilTimeResolution = {
   localTimestamp: string;
   timezone: string;
   candidates: string[];
+  candidateUtcOffsetsMinutes: number[];
+  conversionMethod: 'iana-tzdb';
+  runtimeTzdbVersion: string | null;
   reason: string | null;
 };
 
 const LOCAL_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
+function runtimeTzdbVersion(): string | null {
+  const version = (globalThis as any)?.process?.versions?.tz;
+  return typeof version === 'string' && version.trim() ? version : null;
+}
+
+function candidateOffsetsMinutes(timezone: string, candidates: Date[]): number[] {
+  return candidates.map((candidate) => getTimezoneOffset(timezone, candidate) / 60_000);
+}
+
+function baseResolutionMetadata(timezone: string) {
+  return {
+    timezone,
+    conversionMethod: 'iana-tzdb' as const,
+    runtimeTzdbVersion: runtimeTzdbVersion(),
+  };
+}
 
 function normalizeLocalTimestamp(date: string, time: string): string | null {
   const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
@@ -72,8 +92,9 @@ export function resolveCivilTimeStrict(
       status: 'invalid',
       utc: null,
       localTimestamp: localTimestamp ?? `${birthDate}T${birthTime}`,
-      timezone,
+      ...baseResolutionMetadata(timezone),
       candidates: [],
+      candidateUtcOffsetsMinutes: [],
       reason: 'invalid_local_date_time_or_timezone',
     };
   }
@@ -87,8 +108,9 @@ export function resolveCivilTimeStrict(
       status: 'invalid',
       utc: null,
       localTimestamp,
-      timezone,
+      ...baseResolutionMetadata(timezone),
       candidates: [],
+      candidateUtcOffsetsMinutes: [],
       reason: 'timezone_resolution_failed',
     };
   }
@@ -99,8 +121,9 @@ export function resolveCivilTimeStrict(
       status: 'nonexistent',
       utc: null,
       localTimestamp,
-      timezone,
+      ...baseResolutionMetadata(timezone),
       candidates: [primary.toISOString()],
+      candidateUtcOffsetsMinutes: candidateOffsetsMinutes(timezone, [primary]),
       reason: 'local_time_does_not_exist_in_timezone',
     };
   }
@@ -132,8 +155,12 @@ export function resolveCivilTimeStrict(
       status: 'ambiguous',
       utc: null,
       localTimestamp,
-      timezone,
+      ...baseResolutionMetadata(timezone),
       candidates,
+      candidateUtcOffsetsMinutes: candidateOffsetsMinutes(
+        timezone,
+        [...matches.values()].sort((left, right) => left.getTime() - right.getTime()),
+      ),
       reason: 'local_time_occurs_more_than_once_in_timezone',
     };
   }
@@ -142,8 +169,9 @@ export function resolveCivilTimeStrict(
     status: 'valid',
     utc: primary,
     localTimestamp,
-    timezone,
+    ...baseResolutionMetadata(timezone),
     candidates,
+    candidateUtcOffsetsMinutes: candidateOffsetsMinutes(timezone, [primary]),
     reason: null,
   };
 }
