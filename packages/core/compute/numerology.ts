@@ -1,6 +1,6 @@
 import { parseDateOnly } from './date-only.js';
 
-export const NUMEROLOGY_ENGINE_VERSION = 'pythagorean-v2';
+export const NUMEROLOGY_ENGINE_VERSION = 'pythagorean-v3';
 
 export const NUMEROLOGY_POLICY = Object.freeze({
   system: 'Pythagorean',
@@ -8,7 +8,7 @@ export const NUMEROLOGY_POLICY = Object.freeze({
   karmicDebtNumbers: [13, 14, 16, 19] as const,
   vowels: 'AEIOU',
   yPolicy: 'consonant' as const,
-  lifePathFormula: 'birth month + birth day + birth year, then digit-reduce while preserving 11/22/33',
+  lifePathFormula: 'reduce birth month, birth day, and birth year independently with 11/22/33 preserved; add the reduced components; reduce the total with 11/22/33 preserved',
   nameNormalization: 'Unicode NFKD transliteration to A-Z before Pythagorean letter mapping',
 });
 
@@ -59,7 +59,10 @@ function reduceToSingleDigit(num: number): number {
  */
 export function calcLifePath(dateISO: string): number {
   const { day, month, year } = parseDateOnly(dateISO);
-  return reduceToSingleDigit(day + month + year);
+  const reducedMonth = reduceToSingleDigit(month);
+  const reducedDay = reduceToSingleDigit(day);
+  const reducedYear = reduceToSingleDigit(year);
+  return reduceToSingleDigit(reducedMonth + reducedDay + reducedYear);
 }
 
 /** Birthday Number: the entered day of month, reduced with master numbers preserved. */
