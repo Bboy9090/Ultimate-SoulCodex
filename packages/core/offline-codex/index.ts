@@ -61,6 +61,8 @@ export interface OfflineCodexProfile {
   name: string;
   birthDate: string;
   birthTime: string | null;
+  birthTimeAccuracy?: "recorded" | "recalled" | "estimated" | "unknown";
+  birthTimeUncertaintyMinutes?: number | null;
   birthLocation: string;
   timezone: string;
   latitude: string | null;
