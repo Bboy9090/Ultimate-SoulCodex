@@ -8,7 +8,9 @@ import {
   hasVerifiedFullNatalChart,
   hasVerifiedSunAndMoon,
   profileNeedsOnlineVerification,
+  requiresBirthTimeUncertaintyReview,
   requiresHistoricalTimeReview,
+  requiresManualTimeReview,
   reconcileActiveProfile,
   reconcileOfflineProfile,
   type ReconciledOfflineProfile,
@@ -524,4 +526,67 @@ test("modern timed provenance preserves the verified full-natal path", () => {
     "2026-09-25T04:46:00.000Z",
   );
   assert.equal(profileNeedsOnlineVerification(hydrated), false);
+});
+
+
+test("estimated timed astrology stays inspectable but cannot enter verified synthesis", () => {
+  const estimatedRemote = {
+    ...verifiedRemote,
+    astrologyData: {
+      ...verifiedRemote.astrologyData,
+      verification: {
+        ...verifiedRemote.astrologyData.verification,
+        inputTimeProvenance: {
+          provenanceStatus: "modern_tzdb",
+          historicalTimeRequiresIndependentSource: false,
+          timezone: "America/New_York",
+          runtimeTzdbVersion: "2026b",
+          birthTimeAccuracy: "estimated",
+          birthTimeUncertaintyMinutes: 30,
+          birthTimeQualityRequiresReview: true,
+        },
+      },
+    },
+    humanDesignData: {
+      status: "calculated_unverified",
+      candidate: {
+        type: "Reflector",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    },
+  };
+
+  assert.equal(requiresBirthTimeUncertaintyReview(estimatedRemote.astrologyData), true);
+  assert.equal(requiresManualTimeReview(estimatedRemote.astrologyData), true);
+  assert.equal(getVerifiedAstrologySign(estimatedRemote.astrologyData, "moon"), null);
+  assert.equal(getVerifiedAstrologySign(estimatedRemote.astrologyData, "rising"), null);
+  assert.equal(hasVerifiedFullNatalChart(estimatedRemote.astrologyData), false);
+
+  const estimatedLocal = {
+    ...local,
+    birthTimeAccuracy: "estimated" as const,
+    birthTimeUncertaintyMinutes: 30,
+  };
+  const hydrated = reconcileOfflineProfile(
+    estimatedLocal,
+    estimatedRemote,
+    "2026-09-25T05:05:00.000Z",
+  );
+
+  assert.equal(profileNeedsOnlineVerification(hydrated), false);
+  assert.equal(hydrated.humanDesignData?.status, "calculated_unverified");
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.astrology.moon",
+    ),
+    false,
+  );
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.human-design.core",
+    ),
+    false,
+  );
 });
