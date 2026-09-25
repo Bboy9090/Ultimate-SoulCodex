@@ -39,7 +39,26 @@ export const profileVerificationRequestSchema = z
       .refine((value) => value >= -180 && value <= 180, "Longitude must be between -180 and 180")
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, context) => {
+    if (!data.birthTime?.trim() && data.birthTimeAccuracy && data.birthTimeAccuracy !== "unknown") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["birthTimeAccuracy"],
+        message: "Birth-time accuracy cannot be set when birth time is unknown",
+      });
+    }
+    if (
+      data.birthTimeAccuracy === "estimated" &&
+      data.birthTimeUncertaintyMinutes === undefined
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["birthTimeUncertaintyMinutes"],
+        message: "Approximate birth time requires an uncertainty window",
+      });
+    }
+  });
 
 type InputTimeProvenance = {
   provenanceStatus: "modern_tzdb" | "historical_tzdb_unverified";
