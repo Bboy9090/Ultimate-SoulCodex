@@ -115,9 +115,31 @@ export const insertAssessmentSchema = createInsertSchema(assessmentResponses).om
   createdAt: true,
 });
 
+export function isValidDateOnly(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year < 1 || year > 9999 || month < 1 || month > 12) return false;
+
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [
+    31, leap ? 29 : 28, 31, 30, 31, 30,
+    31, 31, 30, 31, 30, 31,
+  ];
+  return day >= 1 && day <= daysInMonth[month - 1];
+}
+
+export function isValidClockTime(value: unknown): value is string {
+  return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.trim());
+}
+
 const birthTimeSchema = z.union([
   z.literal(""),
-  z.string().regex(/^\d{2}:\d{2}$/, "Birth time must use HH:MM when provided"),
+  z.string().refine(isValidClockTime, "Birth time must use a real 24-hour HH:MM value"),
 ]);
 
 export function isValidIanaTimezone(value: unknown): value is string {
@@ -142,7 +164,10 @@ export function isCoordinateWithinRange(
 
 export const birthDataSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  birthDate: z.string().min(1, "Birth date is required"),
+  birthDate: z
+    .string()
+    .min(1, "Birth date is required")
+    .refine(isValidDateOnly, "Birth date must be a real YYYY-MM-DD calendar date"),
   // Empty string is an explicit unknown-time state. Never force the user to
   // invent a clock time just to satisfy validation.
   birthTime: birthTimeSchema,
@@ -208,6 +233,18 @@ export const birthDataSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["longitude"],
       message: "Longitude must be a finite number between -180 and 180",
+    });
+  }
+
+  const latitudePresent =
+    data.latitude !== undefined && String(data.latitude).trim() !== "";
+  const longitudePresent =
+    data.longitude !== undefined && String(data.longitude).trim() !== "";
+  if (latitudePresent !== longitudePresent) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: latitudePresent ? ["longitude"] : ["latitude"],
+      message: "Latitude and longitude must be supplied together",
     });
   }
 });
