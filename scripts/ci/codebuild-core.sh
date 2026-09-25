@@ -53,7 +53,8 @@ node --import tsx --test \
   tests/foundation-local-astronomy-boundary.test.ts \
   tests/profile-verification-boundary.test.ts \
   tests/no-simulated-release-routes.test.ts \
-  tests/production-route-quarantine.test.ts
+  tests/production-route-quarantine.test.ts \
+  tests/generative-evidence-boundary.test.ts
 
 node scripts/verify-foundation-codebuild.mjs
 npm audit --omit=dev --audit-level=high
