@@ -28,7 +28,6 @@ test("compatibility payload keeps supported Sun evidence and Life Path while dro
 
   assert.deepEqual(payload, {
     astrologyData: {
-      sun: { sign: "Virgo", verificationStatus: "verified", evidence },
       sunSign: "Virgo",
     },
     lifePathNumber: 9,
@@ -47,6 +46,9 @@ test("compatibility payload keeps supported Sun evidence and Life Path while dro
     "humanDesign",
     "expression",
     "soulUrge",
+    "verificationStatus",
+    "independent ephemeris comparison",
+    "engine-a+engine-b",
   ]) {
     assert.equal(serialized.includes(forbidden), false, `${forbidden} leaked into compatibility payload`);
   }
