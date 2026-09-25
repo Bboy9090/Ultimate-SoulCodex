@@ -9,6 +9,7 @@ import {
 } from "../depth-interpretation/index.js";
 import { calcCoreNumerology } from "../compute/numerology.js";
 import { calcPersonalYear } from "../compute/personal-numbers.js";
+import { resolveOfflineSun } from "../compute/offline-sun.js";
 
 export interface OfflineBirthInput {
   name: string;
@@ -205,15 +206,13 @@ function stableHash(value: string): number {
 }
 
 function calculateAstrology(input: OfflineBirthInput): OfflineAstrologyData {
-  const { month, day } = parseDate(input.birthDate);
-  const sunSign = calculateSunSign(month, day);
+  const sun = resolveOfflineSun(input.birthDate, input.birthTime, input.timezone);
 
-  // Fail closed in offline mode. This legacy generator has no governed local
-  // contract for Moon, Ascendant, planetary longitudes, houses, aspects,
-  // Nodes, or Chiron. Returning invented geometry here would contaminate
-  // downstream synthesis and compatibility calculations.
+  // Fail closed in offline mode. The Sun is retained only when real ephemeris
+  // math resolves it exactly or proves the sign stable across the local day.
+  // Every time-sensitive or otherwise ungoverned placement stays unresolved.
   return {
-    sunSign,
+    sunSign: sun.status === "resolved" ? sun.sign : "",
     moonSign: "",
     risingSign: "",
     planets: {},
