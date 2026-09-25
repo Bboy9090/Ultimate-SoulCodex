@@ -12,6 +12,8 @@ import {
   PERSONAL_DAY_LABELS,
   PERSONAL_YEAR_LABELS,
   PERSONAL_MONTH_LABELS,
+  isPersonalNumerologyValue,
+  PERSONAL_YEAR_BOUNDARY_POLICY,
 } from '../compute/personal-numbers.js';
 
 test('calcPersonalDay - Daily Number Consistency', async (t) => {
@@ -24,7 +26,7 @@ test('calcPersonalDay - Daily Number Consistency', async (t) => {
 
     assert.strictEqual(day1, day2);
     assert.ok(day1 >= 1);
-    assert.ok(day1 <= 9);
+    assert.ok(isPersonalNumerologyValue(day1));
   });
 
   await t.test('should return different days for different dates', () => {
@@ -55,14 +57,14 @@ test('calcPersonalYear - Annual Number Consistency', async (t) => {
 
     assert.strictEqual(year1, year2);
     assert.ok(year1 >= 1);
-    assert.ok(year1 <= 9);
+    assert.ok(isPersonalNumerologyValue(year1));
   });
 
   await t.test('should work with legacy signature (month, day, year)', () => {
     const year = calcPersonalYear(8, 15, 2026);
 
     assert.ok(year >= 1);
-    assert.ok(year <= 9);
+    assert.ok(isPersonalNumerologyValue(year));
   });
 
   await t.test('should produce same result for same birth/year regardless of signature', () => {
@@ -73,6 +75,15 @@ test('calcPersonalYear - Annual Number Consistency', async (t) => {
     const year2 = calcPersonalYear(8, 15, targetYear);
 
     assert.strictEqual(year1, year2);
+  });
+
+  await t.test('uses the explicit calendar-year boundary policy', () => {
+    assert.strictEqual(PERSONAL_YEAR_BOUNDARY_POLICY, 'calendar-year');
+  });
+
+  await t.test('preserves master-number Personal Years when reached', () => {
+    assert.strictEqual(calcPersonalYear('1990-01-09', 2026), 11);
+    assert.strictEqual(calcPersonalYear('1990-11-11', 2027), 33);
   });
 
   await t.test('should return different years for different target years', () => {
@@ -96,10 +107,15 @@ test('calcPersonalMonth - Monthly Number Consistency', async (t) => {
 
     assert.strictEqual(month1, month2);
     assert.ok(month1 >= 1);
-    assert.ok(month1 <= 9);
+    assert.ok(isPersonalNumerologyValue(month1));
   });
 
-  await t.test('should progress through months 1-9 within a year', () => {
+  await t.test('accepts a master-number Personal Year as the monthly parent cycle', () => {
+    assert.strictEqual(calcPersonalMonth(11, 1), 3);
+    assert.strictEqual(calcPersonalMonth(22, 11), 33);
+  });
+
+  await t.test('should progress through valid canonical values within a year', () => {
     const personalYear = 1;
     const months = Array.from({ length: 12 }, (_, i) =>
       calcPersonalMonth(personalYear, i + 1)
@@ -107,7 +123,7 @@ test('calcPersonalMonth - Monthly Number Consistency', async (t) => {
 
     months.forEach(month => {
       assert.ok(month >= 1);
-      assert.ok(month <= 9);
+      assert.ok(isPersonalNumerologyValue(month));
     });
   });
 });
@@ -193,15 +209,15 @@ test('Cross-Surface Consistency Test Cases', async (t) => {
     const personalMonth = calcPersonalMonth(personalYear, targetMonth);
 
     assert.ok(personalDay >= 1);
-    assert.ok(personalDay <= 9);
+    assert.ok(isPersonalNumerologyValue(personalDay));
     assert.ok(dayLabel !== undefined);
 
     assert.ok(personalYear >= 1);
-    assert.ok(personalYear <= 9);
+    assert.ok(isPersonalNumerologyValue(personalYear));
     assert.ok(yearLabel !== undefined);
 
     assert.ok(personalMonth >= 1);
-    assert.ok(personalMonth <= 9);
+    assert.ok(isPersonalNumerologyValue(personalMonth));
 
     const formattedDay = formatPersonalDay(personalDay);
     assert.ok(formattedDay.includes(`Day ${personalDay}`));
