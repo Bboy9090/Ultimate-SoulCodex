@@ -118,33 +118,43 @@ export function registerProfileVerificationRoutes(app: Express) {
               utcOffsetMinutes,
               conversionMethod: civilTime.conversionMethod,
               runtimeTzdbVersion: civilTime.runtimeTzdbVersion,
+              provenanceStatus: civilTime.provenanceStatus,
+              historicalTimeRequiresIndependentSource:
+                civilTime.historicalTimeRequiresIndependentSource,
             },
           });
-          if (trust.status !== "verified") {
-            throw new Error("human_design_verified_contract_not_produced");
-          }
-
-          humanDesignData = {
-            status: trust.status,
-            type: humanDesign.type,
-            strategy: humanDesign.strategy,
-            authority: humanDesign.authority,
-            profile: humanDesign.profile,
-            definition: humanDesign.definition,
-            centers: humanDesign.centers,
-            channels: humanDesign.channels,
-            activations: humanDesign.activations,
-            activatedGates: humanDesign.activatedGates,
-            engine: trust.engine,
-            source: trust.source,
-            calculatedAt: trust.calculatedAt,
-            inputTimestampUtc: trust.inputTimestampUtc,
-            verificationReceiptId: trust.verificationReceiptId,
-            independentSource: trust.independentSource,
-            verifiedAt: trust.verifiedAt,
-            limitations: trust.limitations,
-            timeConversion: trust.timeConversion,
-          };
+          humanDesignData = trust.status === "verified"
+            ? {
+                status: trust.status,
+                type: humanDesign.type,
+                strategy: humanDesign.strategy,
+                authority: humanDesign.authority,
+                profile: humanDesign.profile,
+                definition: humanDesign.definition,
+                centers: humanDesign.centers,
+                channels: humanDesign.channels,
+                activations: humanDesign.activations,
+                activatedGates: humanDesign.activatedGates,
+                engine: trust.engine,
+                source: trust.source,
+                calculatedAt: trust.calculatedAt,
+                inputTimestampUtc: trust.inputTimestampUtc,
+                verificationReceiptId: trust.verificationReceiptId,
+                independentSource: trust.independentSource,
+                verifiedAt: trust.verifiedAt,
+                limitations: trust.limitations,
+                timeConversion: trust.timeConversion,
+              }
+            : {
+                status: trust.status,
+                candidate: trust.candidate,
+                engine: trust.engine,
+                source: trust.source,
+                calculatedAt: trust.calculatedAt,
+                inputTimestampUtc: trust.inputTimestampUtc,
+                limitations: trust.limitations,
+                timeConversion: trust.timeConversion,
+              };
         }
       }
 
