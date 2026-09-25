@@ -32,6 +32,9 @@ export const SWISS_EQUAL_HOUSE_FIXTURES: readonly SwissEqualHouseFixture[] = [
   ["berlin-1900","1900-01-01T11:00:00Z",52.52,13.405,22.110473283725938,278.3088044367247],
   ["cairo-1850","1850-05-15T07:24:51Z",30.0444,31.2357,115.93471319730247,16.409851712105286],
   ["los-angeles-2100","2100-01-01T05:45:00Z",34.0522,-118.2437,162.3196379825262,70.5790378964382],
+  ["arctic-circle-66-6","2024-06-21T12:00:00Z",66.6,25,193.66644295279318,113.32889150455723],
+  ["high-arctic-80","2024-06-21T12:00:00Z",80,0,180.05543079064213,90.1613856533723],
+  ["near-north-pole-89","2024-06-21T12:00:00Z",89,0,180.00742024332314,90.1613856533723],
 ].map(([id,inputTimestamp,latitude,longitude,expectedAscendantLongitude,expectedMidheavenLongitude]) => ({
   id: id as string,
   inputTimestamp: inputTimestamp as string,
