@@ -1,10 +1,11 @@
 import type { PhaseSignal } from "./types";
+import { parseDateOnly } from "@soulcodex/core";
 
 function ageAt(birthDate: string, currentDate: Date): number {
-  const d = new Date(birthDate);
-  let age = currentDate.getFullYear() - d.getFullYear();
-  const m = currentDate.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && currentDate.getDate() < d.getDate())) age -= 1;
+  const birth = parseDateOnly(birthDate);
+  let age = currentDate.getFullYear() - birth.year;
+  const monthDelta = currentDate.getMonth() + 1 - birth.month;
+  if (monthDelta < 0 || (monthDelta === 0 && currentDate.getDate() < birth.day)) age -= 1;
   return age;
 }
 
