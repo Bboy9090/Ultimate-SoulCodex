@@ -379,7 +379,7 @@ export interface TimezoneResolution {
  * Captures structured provenance for reconstructing the calculation.
  */
 export interface SolarArcForensics {
-  configuredSolarArc: number;           // 87.975 constant
+  configuredSolarArc: number;           // exact 88.0 degree design solar arc
   actualSolarArc: number;               // computed from bisection
   iterationCount: number;               // bisection loop count
   finalSearchWindowDays: number;        // maxDays - minDays final value
@@ -406,7 +406,7 @@ function calculateAbsoluteLongitude(sign: string, degreeInSign: number): number 
 }
 
 // Convert zodiac degrees to Human Design gate and line
-function degreeToGateAndLine(degree: number): { gate: number; line: number } {
+export function degreeToGateAndLine(degree: number): { gate: number; line: number } {
   const normalized = ((degree % 360) + 360) % 360;
   const radiansPosition = normalized * Math.PI / 180;
   const circle = Math.PI * 2;
@@ -1051,7 +1051,7 @@ function calculateHumanDesignInternal(birthData: {
   const birthTimeUTC = civilTime.utc;
 
   const astroData = calculateHdAstroAtUtc(birthTimeUTC);
-  const DESIGN_SOLAR_ARC = 87.975;
+  const DESIGN_SOLAR_ARC = 88.0;
   const birthSunLongitude = astroData.planets.sun.longitude;
   const targetLongitude = normalizeHdLongitude(birthSunLongitude - DESIGN_SOLAR_ARC);
 
