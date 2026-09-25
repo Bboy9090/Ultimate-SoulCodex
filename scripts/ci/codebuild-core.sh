@@ -27,6 +27,8 @@ node --import tsx --test \
   tests/astrology-evidence-matrix.test.ts \
   tests/astrology-tolerance-policy.test.ts \
   tests/astrology-production-verification.test.ts \
+  tests/strict-civil-time.test.ts \
+  tests/timeline-cycle-reduction.test.ts \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
   tests/bobby-big-three-golden.test.ts \
