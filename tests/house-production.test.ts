@@ -10,6 +10,7 @@ import {
 } from "../server/services/house-verification";
 import {
   SWISS_EQUAL_HOUSE_FIXTURES,
+  SWISS_EQUAL_HOUSE_POLAR_EDGE_FIXTURES,
 } from "./fixtures/swiss-equal-house-fixtures";
 
 test("approved Equal House policy is bound to the exact Swiss evidence artifact", () => {
@@ -110,4 +111,24 @@ test("MC outside governed tolerance fails closed", () => {
   });
   assert.equal(result.status, "unresolved");
   assert.equal(result.reason, "midheaven_outside_tolerance");
+});
+
+
+test("high-latitude Equal House remains usable until evidence touches a sign boundary", () => {
+  const arctic = SWISS_EQUAL_HOUSE_POLAR_EDGE_FIXTURES.find((row) => row.id === "arctic-circle-66-6");
+  const highArctic = SWISS_EQUAL_HOUSE_POLAR_EDGE_FIXTURES.find((row) => row.id === "high-arctic-80");
+  const nearPole = SWISS_EQUAL_HOUSE_POLAR_EDGE_FIXTURES.find((row) => row.id === "near-north-pole-89");
+  assert.ok(arctic && highArctic && nearPole);
+
+  for (const fixture of [arctic, highArctic]) {
+    const result = verifyEqualHouse(fixture);
+    assert.equal(result.status, "verified", fixture.id);
+  }
+
+  const nearPoleResult = verifyEqualHouse(nearPole);
+  assert.equal(nearPoleResult.status, "unresolved");
+  if (nearPoleResult.status === "unresolved") {
+    assert.equal(nearPoleResult.reason, "ascendant_unverified");
+    assert.equal(nearPoleResult.ascendantReason, "sign_boundary_within_tolerance");
+  }
 });
