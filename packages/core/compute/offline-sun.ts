@@ -10,7 +10,7 @@ export type OfflineSunResolution =
   | {
       status: 'resolved';
       sign: (typeof SIGNS)[number];
-      longitudeDegrees: number;
+      longitudeDegrees: number | null;
       policy: 'exact-local-time' | 'stable-across-local-day';
       inputTimestamps: string[];
       engine: 'astronomy-engine@2.1.19';
@@ -88,16 +88,13 @@ function stableLocalDay(
       };
     }
 
-    // Use local noon only to expose a representative longitude after proving
-    // that the sign itself is stable for the full local calendar day.
-    const noon = resolveCivilTimeStrict(birthDate, '12:00', timezone);
-    const representative =
-      noon.status === 'valid' && noon.utc ? sunAt(noon.utc) : first;
-
+    // The sign is stable across the entire local day, but without an exact
+    // birth time no single longitude is justified. Preserve the sign and
+    // deliberately withhold degree-level precision.
     return {
       status: 'resolved',
       sign: first.sign,
-      longitudeDegrees: representative.longitudeDegrees,
+      longitudeDegrees: null,
       policy: 'stable-across-local-day',
       inputTimestamps,
       engine: 'astronomy-engine@2.1.19',
