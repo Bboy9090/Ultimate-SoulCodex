@@ -1,9 +1,10 @@
 import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
 import { fromZonedTime } from "date-fns-tz";
-import type {
-  VerificationState,
-  PlacementEvidence,
-  PlacementLike,
+import {
+  resolveCivilTimeStrict,
+  type VerificationState,
+  type PlacementEvidence,
+  type PlacementLike,
 } from "@soulcodex/core";
 import {
   fetchHorizonsReference,
@@ -189,6 +190,15 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
   const localTimestamp = `${birthData.birthDate}T${time}:00`;
 
   if (birthData.timezone) {
+    if (birthTime) {
+      const resolution = resolveCivilTimeStrict(
+        birthData.birthDate,
+        time,
+        birthData.timezone,
+      );
+      return resolution.status === "valid" ? resolution.utc : null;
+    }
+
     const zoned = fromZonedTime(localTimestamp, birthData.timezone);
     return Number.isNaN(zoned.getTime()) ? null : zoned;
   }
