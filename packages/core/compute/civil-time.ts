@@ -128,16 +128,32 @@ export function resolveCivilTimeStrict(
     };
   }
 
-  // Detect a repeated wall-clock time by using the transition's actual offset
-  // delta rather than assuming DST always changes by exactly one hour.
-  const beforeOffset = getTimezoneOffset(timezone, new Date(primary.getTime() - 12 * 60 * 60 * 1000));
-  const afterOffset = getTimezoneOffset(timezone, new Date(primary.getTime() + 12 * 60 * 60 * 1000));
-  const transitionDelta = Math.abs(afterOffset - beforeOffset);
+  // Detect repeated wall-clock times without assuming a modern one-hour DST
+  // transition. Historical tzdb contains 30-minute, multi-hour, and date-line
+  // changes. Sample a bounded neighborhood, derive every observed offset
+  // difference, and accept an alternate only when it round-trips to the exact
+  // same local wall clock.
+  const HOUR_MS = 60 * 60 * 1000;
+  const neighborhoodHours = [-72, -36, -24, -12, -6, 0, 6, 12, 24, 36, 72];
+  const observedOffsets = [
+    ...new Set(
+      neighborhoodHours.map((hours) =>
+        getTimezoneOffset(timezone, new Date(primary.getTime() + hours * HOUR_MS)),
+      ),
+    ),
+  ];
+  const transitionDeltas = new Set<number>();
+  for (let left = 0; left < observedOffsets.length; left += 1) {
+    for (let right = left + 1; right < observedOffsets.length; right += 1) {
+      const delta = Math.abs(observedOffsets[left] - observedOffsets[right]);
+      if (delta > 0) transitionDeltas.add(delta);
+    }
+  }
 
   const matches = new Map<number, Date>();
   matches.set(primary.getTime(), primary);
 
-  if (transitionDelta > 0) {
+  for (const transitionDelta of transitionDeltas) {
     for (const direction of [-1, 1] as const) {
       const alternate = new Date(primary.getTime() + direction * transitionDelta);
       if (sameWallClock(alternate, timezone, localTimestamp)) {
