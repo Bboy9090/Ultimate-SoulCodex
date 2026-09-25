@@ -7,6 +7,29 @@
 
 import { parseDateOnly } from './date-only.js';
 
+export const PERSONAL_NUMEROLOGY_POLICY = Object.freeze({
+  engineVersion: 'personal-numerology-v2',
+  personalYearConvention: 'calendar-year' as const,
+  personalYearRollover: 'January 1 of target calendar year' as const,
+  masterNumbers: [11, 22, 33] as const,
+});
+
+type CalendarDateInput = string | Date;
+
+function targetCalendarParts(targetDate: CalendarDateInput): { year: number; month: number; day: number } {
+  if (typeof targetDate === 'string') {
+    return parseDateOnly(targetDate);
+  }
+  if (!(targetDate instanceof Date) || Number.isNaN(targetDate.getTime())) {
+    throw new RangeError('Target date must be a valid Date or YYYY-MM-DD string');
+  }
+  return {
+    year: targetDate.getFullYear(),
+    month: targetDate.getMonth() + 1,
+    day: targetDate.getDate(),
+  };
+}
+
 export const PERSONAL_NUMEROLOGY_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33] as const;
 export type PersonalNumerologyValue = (typeof PERSONAL_NUMEROLOGY_VALUES)[number];
 export const PERSONAL_YEAR_BOUNDARY_POLICY = 'calendar-year' as const;
