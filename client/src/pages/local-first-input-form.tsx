@@ -105,21 +105,51 @@ function builtInLocation(value: string) {
   return match?.location ?? null;
 }
 
+type VerificationAttempt =
+  | { status: "verified" }
+  | { status: "offline"; message: string }
+  | { status: "failed"; message: string };
+
 async function requestVerificationWhenOnline(
   data: BirthData,
   localProfile: OfflineCodexProfile,
-): Promise<void> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) return;
+): Promise<VerificationAttempt> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return {
+      status: "offline",
+      message: "You are offline, so astronomy verification was not attempted.",
+    };
+  }
 
   try {
-    const response = await apiRequest("POST", "/api/verification/profile", {
+    const payload = {
       birthDate: data.birthDate,
       ...(data.birthTime ? { birthTime: data.birthTime } : {}),
       timezone: data.timezone,
-      latitude: data.latitude,
-      longitude: data.longitude,
+      ...(String(data.latitude ?? "").trim() !== ""
+        ? { latitude: data.latitude }
+        : {}),
+      ...(String(data.longitude ?? "").trim() !== ""
+        ? { longitude: data.longitude }
+        : {}),
+    };
+
+    const response = await apiFetch("/api/verification/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    const verification = await response.json();
+    const verification = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        status: "failed",
+        message:
+          verification?.message ||
+          "Astronomy verification could not be completed safely.",
+      };
+    }
+
     const syncedAt = verification.updatedAt || new Date().toISOString();
 
     const currentActive = loadActiveProfile().profile;
@@ -145,11 +175,20 @@ async function requestVerificationWhenOnline(
         }),
       );
     }
+
+    return { status: "verified" };
   } catch (error) {
     console.warn(
       "[local-first-create] Requested online verification could not complete; local profile remains available",
       error,
     );
+    return {
+      status: "failed",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Astronomy verification could not be completed safely.",
+    };
   }
 }
 
@@ -303,21 +342,32 @@ export default function LocalFirstInputForm() {
         );
       }
 
+      let verificationAttempt: VerificationAttempt | null = null;
       if (verifyOnline) {
-        // The user explicitly opted in, so finish the evidence reconciliation
-        // before opening the profile. Navigating while this request was still
-        // in flight allowed the profile query to cache the unresolved local
-        // snapshot even though verified Moon/Rising data arrived moments later.
-        await requestVerificationWhenOnline(data, profile);
+        // Finish reconciliation before opening the profile so the next screen
+        // cannot cache a stale unresolved snapshot.
+        verificationAttempt = await requestVerificationWhenOnline(data, profile);
       }
 
       toast({
-        title: "Soul Codex created on this device",
-        description: verifyOnline
-          ? "Your local reading is ready. Astronomy verification was requested; supported placements will merge back into this same local profile when the evidence check finishes."
-          : exactChartInputsReady
-            ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
-            : "Your local reading is ready. No profile data was uploaded for verification.",
+        title:
+          verificationAttempt?.status === "failed"
+            ? "Codex saved; verification needs attention"
+            : verificationAttempt?.status === "offline"
+              ? "Codex saved locally"
+              : "Soul Codex created on this device",
+        description:
+          verificationAttempt?.status === "verified"
+            ? "Your local reading is ready and the supported astronomy evidence was verified and merged into this profile."
+            : verificationAttempt?.status === "failed"
+              ? `Your local reading is safe on this device. ${verificationAttempt.message}`
+              : verificationAttempt?.status === "offline"
+                ? `Your local reading is safe on this device. ${verificationAttempt.message}`
+                : exactChartInputsReady
+                  ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
+                  : "Your local reading is ready. No profile data was uploaded for verification.",
+        variant:
+          verificationAttempt?.status === "failed" ? "destructive" : "default",
       });
       setLocation(`/profile/${profile.id}`);
     } catch (error) {
