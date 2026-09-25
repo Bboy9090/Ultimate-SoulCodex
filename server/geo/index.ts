@@ -8,6 +8,24 @@ function isAmbiguityError(error: unknown): boolean {
   return error instanceof Error && error.message.startsWith("Ambiguous geocoding results for:");
 }
 
+const SAFE_STATIC_FALLBACK_ALIASES = new Set([
+  "nyc",
+  "new york city",
+  "manhattan",
+  "brooklyn",
+  "bronx",
+  "bronx new york",
+  "the bronx",
+  "queens",
+  "staten island",
+  "harlem",
+  "washington dc",
+]);
+
+function normalizedPlaceKey(place: string): string {
+  return place.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 export async function resolveGeo(place: string): Promise<GeoResult | null> {
   if (!place) return null;
 
@@ -39,18 +57,20 @@ export async function resolveGeo(place: string): Promise<GeoResult | null> {
     console.warn(`[GeoCache] Nominatim unavailable for "${place}"; checking static fallback`, err);
   }
 
-  const staticResult = geocodeLocation(place);
-  if (staticResult) {
-    const result: GeoResult = {
-      normalizedPlace: staticResult.location,
-      lat: parseFloat(staticResult.lat),
-      lon: parseFloat(staticResult.lon),
-      provider: "static",
-    };
-    setGeoCached(place, result);
-    console.log(`[GeoCache] MISS → static fallback: ${place}`);
-    return result;
+  if (!SAFE_STATIC_FALLBACK_ALIASES.has(normalizedPlaceKey(place))) {
+    return null;
   }
 
-  return null;
+  const staticResult = geocodeLocation(place);
+  if (!staticResult) return null;
+
+  const result: GeoResult = {
+    normalizedPlace: staticResult.location,
+    lat: parseFloat(staticResult.lat),
+    lon: parseFloat(staticResult.lon),
+    provider: "static",
+  };
+  setGeoCached(place, result);
+  console.log(`[GeoCache] MISS → curated static fallback: ${place}`);
+  return result;
 }
