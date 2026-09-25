@@ -51,6 +51,9 @@ interface PalmistryReading {
  * Generate palm reading based on birth date and numerology
  */
 export function generatePalmReading(birthDate: string, lifePath: number): PalmistryReading {
+  void birthDate;
+  void lifePath;
+  throw new Error("palmistry_unavailable:palm_observation_or_image_required");
   // Validate birthDate to prevent NaN issues
   const date = new Date(birthDate);
   if (isNaN(date.getTime())) {
