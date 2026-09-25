@@ -40,7 +40,8 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
 
 /**
  * Calculates Personal Year Number based on birth month/day and target year.
- * Personal Year is annual and changes on each birthday.
+ * Repository convention: Personal Year is a calendar-year symbolic cycle.
+ * It changes when targetYear changes, not on the birthday.
  * Calculated from: reduced(birth month) + reduced(birth day) + reduced(target year)
  *
  * @example
