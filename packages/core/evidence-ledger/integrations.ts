@@ -257,7 +257,7 @@ export function calcPersonalMonthWithEvidence(
         ].filter(Boolean),
         limitations: [
           'Derived from Personal Year; dependent on year accuracy',
-          'Calendar month only; does not account for birth date transition',
+          `Calendar month follows the ${PERSONAL_YEAR_BOUNDARY_POLICY} Personal Year convention`,
         ],
         formulaId: 'numerology.personal-month',
         formulaVersion: '1.0.0',
@@ -289,7 +289,7 @@ export function calcPersonalMonthWithEvidence(
       ],
       limitations: [
         'Derived from Personal Year; dependent on year accuracy',
-        'Calendar month only; does not account for birth date transition',
+        `Calendar month follows the ${PERSONAL_YEAR_BOUNDARY_POLICY} Personal Year convention`,
       ],
       formulaId: 'numerology.personal-month',
       formulaVersion: '1.0.0',
