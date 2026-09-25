@@ -8,6 +8,9 @@ const read = (relativePath) => readFileSync(path.join(root, relativePath), "utf8
 const files = {
   server: read("server/index.ts"),
   serverRoutes: read("server/routes.ts"),
+  storage: read("server/storage.ts"),
+  consumerAuth: read("server/routes/consumer-auth.ts"),
+  activeProfile: read("client/src/lib/ActiveProfileRepository.ts"),
   app: read("client/src/App.tsx"),
   localFirst: read("client/src/pages/local-first-input-form.tsx"),
   offlineProfile: read("client/src/pages/offline-profile.tsx"),
@@ -53,6 +56,11 @@ check("PRIVACY-03", "Local-first UI explains verification boundary", files.local
 check("PRIVACY-04", "Profile ownership tests remain in external CI", files.serverRoutes.includes("profileBelongsToActor") && files.serverRoutes.includes("requestOwnsProfile") && files.codebuild.includes("tests/server-profile-ownership.test.ts"));
 check("PRIVACY-05", "Compatibility uploads are minimized", files.compatibilityPayload.includes("minimum server payload required by Foundation compatibility") && files.codebuild.includes("tests/compatibility-data-minimization.test.ts"));
 check("PRIVACY-06", "Astronomy verification is evidence-only", files.verificationRoute.includes('app.post("/api/verification/profile"') && files.verificationRoute.includes("persistedProfile: false") && files.verificationRoute.includes("aiGeneration: false") && !/^import .*storage/im.test(files.verificationRoute) && !/^import .*openai/im.test(files.verificationRoute));
+
+check("PERSIST-01", "Server storage exposes durability instead of treating memory as persistence", files.storage.includes("readonly durable = false") && files.storage.includes("readonly durable = true") && files.storage.includes("durableServerPersistenceAvailable"));
+check("PERSIST-02", "Production server-profile routes fail closed without durable storage", files.serverRoutes.includes("productionProfilePersistenceUnavailable") && files.serverRoutes.includes("durable_storage_required") && files.serverRoutes.includes("Local Soul Codex profiles on this device are unaffected"));
+check("PERSIST-03", "Production Apple sign-in cannot create volatile accounts", files.consumerAuth.includes("productionPersistenceUnavailable") && files.consumerAuth.includes("durable_storage_required") && files.consumerAuth.includes("Local Soul Codex profiles remain available on this device"));
+check("DATE-ONLY-01", "Active profile repository canonicalizes birth dates before persistence", files.activeProfile.includes("canonicalBirthDate") && files.activeProfile.includes("parseDateOnly") && files.activeProfile.includes("T00:00:00") && !files.activeProfile.includes("new Date(profile.birthDate)"));
 
 check("TRUTH-01", "Local generation does not fabricate time-dependent astronomy", files.foundationOffline.includes('moonSign: ""') && files.foundationOffline.includes('risingSign: ""') && files.foundationOffline.includes("planets: {}") && files.foundationOffline.includes("houses: []") && files.foundationOffline.includes("aspects: []"));
 check("TRUTH-02", "Unknown birth time remains explicit", files.schema.includes('z.literal("")') && files.schema.includes("birthTime: birthTimeSchema") && files.localFirst.includes("Unknown time is better than invented precision."));
