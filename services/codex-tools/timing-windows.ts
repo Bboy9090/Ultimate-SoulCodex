@@ -5,6 +5,7 @@
 
 import type { CodexToolResult, ProfileInput } from "./types";
 import { extractCore } from "./types";
+import { calcPersonalDay } from "../../packages/core/compute/personal-numbers.js";
 
 type Clarity = "low" | "building" | "clear" | "declining";
 
@@ -16,20 +17,21 @@ interface DayWindow {
 
 function getPersonalDayNumber(birthDate: Date | string | null, targetDate: Date): number {
   if (!birthDate) return targetDate.getDate() % 9 || 9;
-  const bd = new Date(birthDate);
-  if (isNaN(bd.getTime())) return targetDate.getDate() % 9 || 9;
 
-  const bDay = bd.getDate();
-  const bMonth = bd.getMonth() + 1;
-  const tDay = targetDate.getDate();
-  const tMonth = targetDate.getMonth() + 1;
-  const tYear = targetDate.getFullYear();
+  const birthDateISO =
+    birthDate instanceof Date
+      ? [
+          birthDate.getFullYear(),
+          String(birthDate.getMonth() + 1).padStart(2, "0"),
+          String(birthDate.getDate()).padStart(2, "0"),
+        ].join("-")
+      : birthDate.slice(0, 10);
 
-  let sum = bDay + bMonth + tDay + tMonth + tYear;
-  while (sum > 9 && sum !== 11 && sum !== 22 && sum !== 33) {
-    sum = String(sum).split("").reduce((a, b) => a + Number(b), 0);
+  try {
+    return calcPersonalDay(birthDateISO, targetDate);
+  } catch {
+    return targetDate.getDate() % 9 || 9;
   }
-  return sum;
 }
 
 const DAY_CLARITY: Record<number, Clarity> = {
