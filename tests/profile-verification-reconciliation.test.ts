@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { birthDataSchema } from "../shared/schema.ts";
+import { profileVerificationRequestSchema } from "../server/routes/profile-verification.ts";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
@@ -442,5 +444,84 @@ test("verified Human Design is reconciled into active and offline profiles", () 
       (entry) => entry.id === "verified.human-design.core",
     ),
     true,
+  );
+});
+
+
+test("birth input schemas reject impossible calendar and clock values before calculation", () => {
+  const base = {
+    name: "Input Boundary",
+    birthDate: "2000-02-29",
+    birthTime: "23:59",
+    birthLocation: "New York, NY",
+    timezone: "America/New_York",
+    latitude: "40.7128",
+    longitude: "-74.0060",
+  };
+
+  assert.equal(birthDataSchema.safeParse(base).success, true);
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthDate: "2001-02-29" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthDate: "2000-04-31" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthTime: "24:00" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthTime: "14:60" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, timezone: "EST" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, longitude: undefined }).success,
+    false,
+  );
+});
+
+test("minimal verification schema shares the same strict birth input domain", () => {
+  const base = {
+    birthDate: "2000-02-29",
+    birthTime: "23:59",
+    timezone: "America/New_York",
+    latitude: 40.7128,
+    longitude: -74.006,
+  };
+
+  assert.equal(profileVerificationRequestSchema.safeParse(base).success, true);
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      birthDate: "2000-02-30",
+    }).success,
+    false,
+  );
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      birthTime: "99:99",
+    }).success,
+    false,
+  );
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      timezone: "New York",
+    }).success,
+    false,
+  );
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      longitude: undefined,
+    }).success,
+    false,
   );
 });
