@@ -40,7 +40,8 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
 
 /**
  * Calculates Personal Year Number based on birth month/day and target year.
- * Personal Year is annual and changes on each birthday.
+ * Soul Codex policy: Personal Year is a calendar-year symbolic cycle for the target year.
+ * The engine does not silently switch the cycle on the birthday.
  * Calculated from: reduced(birth month) + reduced(birth day) + reduced(target year)
  *
  * @example
