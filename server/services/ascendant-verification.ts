@@ -69,6 +69,7 @@ export type AscendantVerificationResult =
         | "coordinate_mismatch"
         | "sign_disagreement"
         | "longitude_outside_tolerance"
+        | "sign_boundary_within_tolerance"
         | "calculation_failed";
     };
 
@@ -119,6 +120,11 @@ function normalizeDegrees(value: number): number {
 function circularDelta(left: number, right: number): number {
   const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
   return Math.min(raw, 360 - raw);
+}
+
+function distanceToNearestSignBoundary(longitude: number): number {
+  const withinSign = normalizeDegrees(longitude) % 30;
+  return Math.min(withinSign, 30 - withinSign);
 }
 
 function signFromLongitude(longitude: number): AscendantSign {
@@ -450,6 +456,23 @@ export function verifyAscendant(
       candidate,
       reference,
       reason: "longitude_outside_tolerance",
+    };
+  }
+
+  const boundaryDistance = Math.min(
+    distanceToNearestSignBoundary(candidate.longitudeDegrees),
+    distanceToNearestSignBoundary(reference.longitudeDegrees),
+  );
+  if (boundaryDistance <= policy.maximumLongitudeDeltaDegrees) {
+    return {
+      status: "rejected",
+      sign: null,
+      longitudeDegrees: null,
+      degreeInSign: null,
+      longitudeDeltaDegrees,
+      candidate,
+      reference,
+      reason: "sign_boundary_within_tolerance",
     };
   }
 
