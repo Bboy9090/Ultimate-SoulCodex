@@ -119,3 +119,19 @@ test('personal numerology core rejects invalid direct-call domains', () => {
   assert.throws(() => calcPersonalMonth(12, 5), /Personal Year 1-9, 11, 22, or 33/);
   assert.throws(() => calcPersonalMonth(9, 13), /calendar month 1-12/);
 });
+
+
+test('unsupported alphabetic scripts fail closed instead of being silently deleted', () => {
+  assert.throws(
+    () => normalizeNumerologyName('Алексей Иванов'),
+    /outside the supported Latin transliteration policy/i,
+  );
+  assert.throws(
+    () => calcExpression('Γεώργιος'),
+    /outside the supported Latin transliteration policy/i,
+  );
+});
+
+test('supported Latin diacritics and punctuation remain deterministic', () => {
+  assert.equal(normalizeNumerologyName("Renée O'Connor-Straße"), 'RENEEOCONNORSTRASSE');
+});
