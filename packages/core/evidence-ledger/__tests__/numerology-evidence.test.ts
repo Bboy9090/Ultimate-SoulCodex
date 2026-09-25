@@ -184,7 +184,7 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result1.value));
       assert.strictEqual(result1.evidence.formulaId, 'numerology.life-path');
-      assert.strictEqual(result1.evidence.formulaVersion, 'calendar-cycle-v1');
+      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
     });
 
     it('should fail closed for missing birth date', () => {
