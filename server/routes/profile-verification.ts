@@ -23,6 +23,15 @@ export const profileVerificationRequestSchema = z
       ])
       .optional(),
     timezone: z.string().min(1, "Timezone is required"),
+    birthTimeAccuracy: z
+      .enum(["recorded", "recalled", "estimated", "unknown"])
+      .optional(),
+    birthTimeUncertaintyMinutes: z
+      .number()
+      .int()
+      .min(0)
+      .max(720)
+      .optional(),
     latitude: numericCoordinate
       .refine((value) => value >= -90 && value <= 90, "Latitude must be between -90 and 90")
       .optional(),
@@ -37,6 +46,9 @@ type InputTimeProvenance = {
   historicalTimeRequiresIndependentSource: boolean;
   timezone: string;
   runtimeTzdbVersion: string | null;
+  birthTimeAccuracy: "recorded" | "recalled" | "estimated" | "unknown";
+  birthTimeUncertaintyMinutes: number | null;
+  estimatedTimeRequiresUncertaintyReview: boolean;
 };
 
 function withVerifiedLegacyAliases(
@@ -103,6 +115,13 @@ export function registerProfileVerificationRoutes(app: Express) {
                 timedCivilTime.historicalTimeRequiresIndependentSource,
               timezone: timedCivilTime.timezone,
               runtimeTzdbVersion: timedCivilTime.runtimeTzdbVersion,
+              birthTimeAccuracy:
+                parsed.data.birthTimeAccuracy ??
+                (parsed.data.birthTime?.trim() ? "recalled" : "unknown"),
+              birthTimeUncertaintyMinutes:
+                parsed.data.birthTimeUncertaintyMinutes ?? null,
+              estimatedTimeRequiresUncertaintyReview:
+                parsed.data.birthTimeAccuracy === "estimated",
             }
           : null;
 
