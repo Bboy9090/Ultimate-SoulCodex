@@ -270,6 +270,21 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(validName.evidence.confidence, 90);
       assert.strictEqual(validName.evidence.confidenceLabel, 'high');
     });
+
+    it('keeps calculation and evidence aligned for accented Latin names', () => {
+      const accented = calcExpressionWithEvidence('José González');
+      const ascii = calcExpressionWithEvidence('Jose Gonzalez');
+
+      assert.strictEqual(accented.value, ascii.value);
+      assert.strictEqual(accented.evidence.inputState, 'valid');
+      assert.strictEqual(accented.evidence.inputsUsed[0], ascii.evidence.inputsUsed[0]);
+    });
+
+    it('counts canonical transliteration expansions in evidence', () => {
+      const result = calcExpressionWithEvidence('Ægir Øst');
+      assert.strictEqual(result.evidence.inputState, 'valid');
+      assert.ok(result.evidence.reasoning.some((value) => value.includes('8 letters')));
+    });
   });
 
   describe('Soul Urge Evidence', () => {
