@@ -274,55 +274,62 @@ function calculateTarotCards(birthDate: string): OfflineArchetypeData["tarotCard
 }
 
 function synthesizeArchetype(astrology: OfflineAstrologyData, numerology: OfflineNumerologyData, birthDate: string): OfflineArchetypeData {
-  const sign = SIGN_TRAITS[astrology.sunSign];
+  const sign = astrology.sunSign ? SIGN_TRAITS[astrology.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerology.lifePath];
-  if (!sign || !path) {
-    throw new Error("Supported Sun and Life Path are required for local archetype synthesis.");
+  if (!path) {
+    throw new Error("Supported Life Path is required for local archetype synthesis.");
   }
 
   const expression = LIFE_PATH_TRAITS[numerology.expression];
   const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge];
   const fingerprint = stableHash([
-    astrology.sunSign,
+    astrology.sunSign || "sun-unresolved",
     numerology.lifePath,
     numerology.expression,
     numerology.soulUrge,
     numerology.personality,
   ].join("|")).toString(16).padStart(8, "0").slice(0, 6).toUpperCase();
 
-  const title = astrology.sunSign + " × Life Path " + numerology.lifePath + " · " + fingerprint;
+  const title = (astrology.sunSign ? astrology.sunSign + " × " : "") +
+    "Life Path " + numerology.lifePath + " · " + fingerprint;
   const strengths = [...new Set([
-    sign.gift,
+    sign?.gift,
     path.drive,
     expression?.drive,
     soulUrge?.drive,
   ].filter((value): value is string => Boolean(value)))];
   const shadows = [...new Set([
-    sign.shadow,
+    sign?.shadow,
     path.shadow,
     expression?.shadow,
     soulUrge?.shadow,
   ].filter((value): value is string => Boolean(value)))];
   const themes = [
-    astrology.sunSign,
-    elementForSign(astrology.sunSign),
+    ...(astrology.sunSign ? [
+      astrology.sunSign,
+      elementForSign(astrology.sunSign),
+    ] : []),
     "Life Path " + numerology.lifePath,
     ...(expression ? ["Expression " + numerology.expression] : []),
     ...(soulUrge ? ["Soul Urge " + numerology.soulUrge] : []),
-  ];
+  ].filter((value): value is string => Boolean(value));
 
   return {
     title,
     description:
-      "Local symbolic synthesis combines " + astrology.sunSign + " Sun themes with Life Path " +
-      numerology.lifePath +
+      "Local symbolic synthesis uses " +
+      (astrology.sunSign ? astrology.sunSign + " Sun themes plus " : "") +
+      "Life Path " + numerology.lifePath +
       (expression ? ", Expression " + numerology.expression : "") +
       (soulUrge ? ", and Soul Urge " + numerology.soulUrge : "") +
-      ". No preset archetype template is substituted for unsupported inputs.",
+      (astrology.sunSign
+        ? ". The Sun placement is a local ephemeris calculation and has not been independently verified."
+        : ". Sun-sign interpretation is withheld because the local birth day crosses a solar-sign boundary or cannot be resolved safely.") +
+      " No preset archetype template is substituted for unsupported inputs.",
     strengths,
     shadows,
     themes,
-    guidance: [sign.action, path.action, expression?.action, soulUrge?.action]
+    guidance: [sign?.action, path.action, expression?.action, soulUrge?.action]
       .filter((value): value is string => Boolean(value))
       .slice(0, 3)
       .join(" "),
