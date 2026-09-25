@@ -159,3 +159,54 @@ test("approved Human Design receipt is exact and complete", () => {
     "d57b747658668492d72869e8a973d5708e21d09d",
   );
 });
+
+
+test("historical tzdb conversions remain calculated but cannot receive verified promotion", () => {
+  const record = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc: "1879-03-14T10:36:32.000Z",
+    calculatedAt: "2026-09-25T04:30:00.000Z",
+    candidate: {
+      type: "Generator",
+      strategy: "To Respond",
+      authority: "Sacral Authority",
+      profile: "1/3",
+    },
+    timeConversion: {
+      timezone: "Europe/Berlin",
+      utcOffsetMinutes: 53.4666666667,
+      conversionMethod: "standard-iana-tzdb",
+      runtimeTzdbVersion: "2026b",
+      provenanceStatus: "historical_tzdb_unverified",
+      historicalTimeRequiresIndependentSource: true,
+    },
+  });
+
+  assert.equal(record.status, "calculated_unverified");
+  assert.equal(mayUseHumanDesignForCompatibility(record), false);
+  assert.match(record.limitations.join(" "), /historical civil-time conversion/i);
+});
+
+test("modern tzdb conversions may still receive verified promotion", () => {
+  const record = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+    calculatedAt: "2026-09-25T04:30:00.000Z",
+    candidate: {
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+    timeConversion: {
+      timezone: "America/New_York",
+      utcOffsetMinutes: -240,
+      conversionMethod: "standard-iana-tzdb",
+      runtimeTzdbVersion: "2026b",
+      provenanceStatus: "modern_tzdb",
+      historicalTimeRequiresIndependentSource: false,
+    },
+  });
+
+  assert.equal(record.status, "verified");
+});
