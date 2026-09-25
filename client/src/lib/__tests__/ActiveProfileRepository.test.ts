@@ -113,6 +113,39 @@ describe("ActiveProfileRepository", () => {
       const saveResult = saveActiveProfile(profile);
       expect(saveResult.success).toBe(true);
     });
+    it("canonicalizes UTC-midnight server transport to date-only before storage", () => {
+      const saveResult = saveActiveProfile({
+        birthDate: "1990-09-17T00:00:00.000Z",
+        lifePathNumber: 9,
+      });
+
+      expect(saveResult.success).toBe(true);
+      const stored = JSON.parse(
+        localStorageMock.getItem("soulcodex.activeProfile.v1") ?? "{}",
+      );
+      expect(stored.birthDate).toBe("1990-09-17");
+      expect(loadActiveProfile().profile?.birthDate).toBe("1990-09-17");
+    });
+
+    it("repairs an already-stored UTC-midnight server birth date on load", () => {
+      localStorageMock.setItem(
+        "soulcodex.activeProfile.v1",
+        JSON.stringify({
+          birthDate: "1990-09-17T00:00:00Z",
+          lifePathNumber: 9,
+          schemaVersion: 1,
+        }),
+      );
+
+      const loadResult = loadActiveProfile();
+      expect(loadResult.status).toBe("loaded");
+      expect(loadResult.profile?.birthDate).toBe("1990-09-17");
+
+      const rewritten = JSON.parse(
+        localStorageMock.getItem("soulcodex.activeProfile.v1") ?? "{}",
+      );
+      expect(rewritten.birthDate).toBe("1990-09-17");
+    });
   });
 
   describe("Profile validation", () => {
@@ -124,6 +157,46 @@ describe("ActiveProfileRepository", () => {
       const saveResult = saveActiveProfile(profile);
       expect(saveResult.success).toBe(false);
       expect(saveResult.error).toContain("birthDate");
+    });
+    it("rejects non-midnight timestamps instead of guessing a calendar date", () => {
+      const saveResult = saveActiveProfile({
+        birthDate: "1990-09-17T04:00:00.000Z",
+      });
+
+      expect(saveResult.success).toBe(false);
+      expect(localStorageMock.getItem("soulcodex.activeProfile.v1")).toBeNull();
+    });
+
+    it("rejects offset timestamps instead of translating them implicitly", () => {
+      const saveResult = saveActiveProfile({
+        birthDate: "1990-09-17T00:00:00-04:00",
+      });
+
+      expect(saveResult.success).toBe(false);
+      expect(localStorageMock.getItem("soulcodex.activeProfile.v1")).toBeNull();
+    });
+
+    it("rejects impossible calendar dates before writing", () => {
+      const saveResult = saveActiveProfile({
+        birthDate: "1990-02-30",
+      });
+
+      expect(saveResult.success).toBe(false);
+      expect(localStorageMock.getItem("soulcodex.activeProfile.v1")).toBeNull();
+    });
+
+    it("marks malformed canonical birth dates as corrupted on load", () => {
+      localStorageMock.setItem(
+        "soulcodex.activeProfile.v1",
+        JSON.stringify({
+          birthDate: "1990-09-17T04:00:00.000Z",
+          schemaVersion: 1,
+        }),
+      );
+
+      const loadResult = loadActiveProfile();
+      expect(loadResult.status).toBe("corrupted");
+      expect(loadResult.profile).toBeNull();
     });
 
     it("should detect wrong schema version", () => {
