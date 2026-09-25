@@ -7,7 +7,6 @@
 
 import type { Express } from 'express';
 import type { GalacticCodeInput } from '../../shared/galactic-code/types';
-import { generateGalacticCode } from '../services/galactic-code/generator';
 
 export function registerGalacticCodeRoutes(app: Express): void {
   // Generate or regenerate Galactic Code
@@ -26,10 +25,17 @@ export function registerGalacticCodeRoutes(app: Express): void {
         });
       }
 
-      // Generate Galactic Code
-      const result = generateGalacticCode(input);
-
-      res.json(result);
+      // Evidence states are trust assertions. A public request body is not an
+      // attestation source and must never be allowed to self-promote candidate
+      // astrology, Human Design, numerology, or behavior into primary synthesis.
+      //
+      // Until this route is wired to server-owned profile evidence/trust records,
+      // fail closed rather than generating a fingerprint from caller-asserted
+      // "verified" or "deterministic" flags.
+      return res.status(409).json({
+        error: 'Galactic Code generation requires server-attested evidence and is not available from raw client-submitted system data.',
+        code: 'server_attested_evidence_required',
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('[GalacticCode] Generation error:', message);
