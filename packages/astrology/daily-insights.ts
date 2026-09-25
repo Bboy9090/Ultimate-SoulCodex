@@ -13,7 +13,7 @@ export interface DailyInsightData {
   moonPhasePercentage: number;
   currentHDGate: number;
   currentHDLine: number;
-  planetaryHour: string;
+  planetaryHour: string | null;
   insights: string[];
   affirmations: Affirmation[];
   profile: {
