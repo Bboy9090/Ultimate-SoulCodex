@@ -130,8 +130,8 @@ function isValidInput(input: AscendantInput): boolean {
   return (
     !Number.isNaN(timestamp.getTime()) &&
     Number.isFinite(input.latitude) &&
-    input.latitude >= -90 &&
-    input.latitude <= 90 &&
+    input.latitude > -90 &&
+    input.latitude < 90 &&
     Number.isFinite(input.longitude) &&
     input.longitude >= -180 &&
     input.longitude <= 180
