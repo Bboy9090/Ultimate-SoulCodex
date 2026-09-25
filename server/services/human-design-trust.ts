@@ -8,8 +8,16 @@ export type HumanDesignCoreField = "type" | "strategy" | "authority" | "profile"
 type HumanDesignCandidateFields = Partial<Record<HumanDesignCoreField, string>>;
 type CompleteHumanDesignCandidateFields = Record<HumanDesignCoreField, string>;
 
+export interface HumanDesignTimeConversionEvidence {
+  timezone: string;
+  utcOffsetMinutes: number;
+  conversionMethod: "iana-tzdb";
+  runtimeTzdbVersion: string | null;
+}
+
 interface HumanDesignEvidenceBase {
   limitations: readonly string[];
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }
 
 export interface HumanDesignCandidateEvidence extends HumanDesignEvidenceBase {
@@ -134,6 +142,7 @@ export function createHumanDesignTrustRecord(input: {
   inputTimestampUtc?: string | null;
   calculatedAt?: string;
   candidate?: HumanDesignCandidateFields | null;
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }): HumanDesignTrustRecord {
   if (!input.birthTimeKnown || !input.inputTimestampUtc) {
     return {
@@ -174,6 +183,7 @@ export function createHumanDesignTrustRecord(input: {
     inputTimestampUtc: input.inputTimestampUtc,
     birthTimeKnown: true,
     candidate,
+    ...(input.timeConversion ? { timeConversion: input.timeConversion } : {}),
     limitations: UNVERIFIED_LIMITATIONS,
   };
 }
@@ -184,6 +194,7 @@ export function createVerifiedHumanDesignTrustRecord(input: {
   inputTimestampUtc?: string | null;
   calculatedAt?: string;
   candidate?: HumanDesignCandidateFields | null;
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }): HumanDesignTrustRecord {
   if (!input.birthTimeKnown || !input.inputTimestampUtc) {
     return createHumanDesignTrustRecord(input);
@@ -214,6 +225,7 @@ export function createVerifiedHumanDesignTrustRecord(input: {
     inputTimestampUtc: input.inputTimestampUtc,
     birthTimeKnown: true,
     candidate,
+    ...(input.timeConversion ? { timeConversion: input.timeConversion } : {}),
     verificationReceiptId:
       APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.verificationReceiptId,
     independentSource:
