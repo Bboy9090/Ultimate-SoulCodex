@@ -116,6 +116,8 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
       mars: normalized.astrology.mars,
       dominantElements: normalized.astrology.dominantElements,
       dominantModalities: normalized.astrology.dominantModalities,
+      houseEmphasis: normalized.astrology.houseEmphasis,
+      majorAspects: normalized.astrology.majorAspects,
     },
     humanDesign: {
       evidenceState: normalized.humanDesign.evidenceState,
@@ -123,8 +125,11 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
       strategy: normalized.humanDesign.strategy,
       authority: normalized.humanDesign.authority,
       profile: normalized.humanDesign.profile,
+      definition: normalized.humanDesign.definition,
       definedCenters: normalized.humanDesign.definedCenters,
+      undefinedCenters: normalized.humanDesign.undefinedCenters,
       channels: normalized.humanDesign.channels,
+      gates: normalized.humanDesign.gates,
       incarnationCross: normalized.humanDesign.incarnationCross,
     },
     numerology: {
@@ -132,13 +137,18 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
       lifePath: normalized.numerology.lifePath,
       birthdayNumber: normalized.numerology.birthdayNumber,
       expressionNumber: normalized.numerology.expressionNumber,
+      soulUrgeNumber: normalized.numerology.soulUrgeNumber,
+      personalityNumber: normalized.numerology.personalityNumber,
+      maturityNumber: normalized.numerology.maturityNumber,
     },
     behavior: {
       evidenceState: normalized.behavior.evidenceState,
       traits: normalized.behavior.traits,
       decisionStyle: normalized.behavior.decisionStyle,
       stressPattern: normalized.behavior.stressPattern,
+      relationalPattern: normalized.behavior.relationalPattern,
       builderMode: normalized.behavior.builderMode,
+      moralCompass: normalized.behavior.moralCompass,
     },
   };
 }
