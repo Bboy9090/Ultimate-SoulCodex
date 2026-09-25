@@ -150,3 +150,20 @@ test('reachable root astrology still calculates with exact supported inputs', ()
   assert.equal(typeof result.moonSign, 'string');
   assert.equal(typeof result.risingSign, 'string');
 });
+
+
+test('reachable root astrology rejects a nonexistent DST-gap wall clock', () => {
+  assert.throws(
+    () =>
+      calculateRootAstrology({
+        name: 'DST gap',
+        birthDate: '2023-03-12',
+        birthTime: '02:30',
+        birthLocation: 'New York, NY',
+        timezone: 'America/New_York',
+        latitude: '40.7128',
+        longitude: '-74.0060',
+      } as any),
+    /cannot be resolved exactly|does not exist|nonexistent/i,
+  );
+});
