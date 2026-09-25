@@ -22,7 +22,7 @@ function reduceToSingleDigit(num: number): number {
   return num;
 }
 
-export function calculatePersonalDayNumber(birthDate: string, currentDate: Date = new Date()): number {
+export function calculatePersonalDayNumber(birthDate: string, currentDate: Date | string = new Date()): number {
   return calcPersonalDay(birthDate, currentDate);
 }
 
