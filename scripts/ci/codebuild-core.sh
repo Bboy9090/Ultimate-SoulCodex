@@ -44,6 +44,7 @@ node --import tsx --test \
   tests/local-first-privacy-contract.test.ts \
   tests/location-resolution-contract.test.ts \
   tests/geocoding-ambiguity.test.ts \
+  tests/birth-location-consistency.test.ts \
   tests/system-visibility-contract.test.ts \
   tests/primary-synthesis-system-policy.test.ts \
   tests/server-profile-ownership.test.ts \
