@@ -48,4 +48,7 @@ export const DAY_LABELS: Record<number, { label: string; theme: string }> = {
   7: { label: "Reflect", theme: "an inner phase for study, solitude, and trusting the pattern" },
   8: { label: "Command", theme: "a power phase for bold calls, boundaries, and leverage" },
   9: { label: "Release", theme: "a completion phase for closing chapters, giving, and letting go" },
+  11: { label: "Illuminate", theme: "a master-number reflection phase for insight, sensitivity, and translating inspiration into grounded action" },
+  22: { label: "Build Big", theme: "a master-number reflection phase for structure, scale, and disciplined execution" },
+  33: { label: "Serve", theme: "a master-number reflection phase for teaching, care, integration, and bounded service" },
 };
