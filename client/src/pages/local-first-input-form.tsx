@@ -106,7 +106,8 @@ function builtInLocation(value: string) {
 }
 
 type VerificationAttempt =
-  | { status: "verified" }
+  | { status: "verified"; message: string }
+  | { status: "unresolved"; message: string }
   | { status: "offline"; message: string }
   | { status: "failed"; message: string };
 
@@ -150,6 +151,25 @@ async function requestVerificationWhenOnline(
       };
     }
 
+    const evidenceSummary = verification?.evidenceSummary;
+    const verifiedAstrologyBodies = Array.isArray(
+      evidenceSummary?.verifiedAstrologyBodies,
+    )
+      ? evidenceSummary.verifiedAstrologyBodies
+      : [];
+    const humanDesignVerified = evidenceSummary?.humanDesignVerified === true;
+    const hasVerifiedEvidence =
+      evidenceSummary?.status === "verified_evidence_available" &&
+      (verifiedAstrologyBodies.length > 0 || humanDesignVerified);
+
+    if (!hasVerifiedEvidence) {
+      return {
+        status: "unresolved",
+        message:
+          "The evidence check completed, but no supported placement reached verified status. Unresolved values were left unresolved.",
+      };
+    }
+
     const syncedAt = verification.updatedAt || new Date().toISOString();
 
     const currentActive = loadActiveProfile().profile;
@@ -176,7 +196,15 @@ async function requestVerificationWhenOnline(
       );
     }
 
-    return { status: "verified" };
+    const verifiedLabels = [
+      ...verifiedAstrologyBodies,
+      ...(humanDesignVerified ? ["Human Design core"] : []),
+    ];
+
+    return {
+      status: "verified",
+      message: `Verified evidence merged: ${verifiedLabels.join(", ")}.`,
+    };
   } catch (error) {
     console.warn(
       "[local-first-create] Requested online verification could not complete; local profile remains available",
@@ -353,19 +381,23 @@ export default function LocalFirstInputForm() {
         title:
           verificationAttempt?.status === "failed"
             ? "Codex saved; verification needs attention"
-            : verificationAttempt?.status === "offline"
-              ? "Codex saved locally"
-              : "Soul Codex created on this device",
+            : verificationAttempt?.status === "unresolved"
+              ? "Codex saved; evidence remains unresolved"
+              : verificationAttempt?.status === "offline"
+                ? "Codex saved locally"
+                : "Soul Codex created on this device",
         description:
           verificationAttempt?.status === "verified"
-            ? "Your local reading is ready and the supported astronomy evidence was verified and merged into this profile."
-            : verificationAttempt?.status === "failed"
+            ? `Your local reading is ready. ${verificationAttempt.message}`
+            : verificationAttempt?.status === "unresolved"
               ? `Your local reading is safe on this device. ${verificationAttempt.message}`
-              : verificationAttempt?.status === "offline"
+              : verificationAttempt?.status === "failed"
                 ? `Your local reading is safe on this device. ${verificationAttempt.message}`
-                : exactChartInputsReady
-                  ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
-                  : "Your local reading is ready. No profile data was uploaded for verification.",
+                : verificationAttempt?.status === "offline"
+                  ? `Your local reading is safe on this device. ${verificationAttempt.message}`
+                  : exactChartInputsReady
+                    ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
+                    : "Your local reading is ready. No profile data was uploaded for verification.",
         variant:
           verificationAttempt?.status === "failed" ? "destructive" : "default",
       });
