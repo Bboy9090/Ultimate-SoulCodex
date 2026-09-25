@@ -137,6 +137,26 @@ test('calcPersonalMonth - Monthly Number Consistency', async (t) => {
   });
 });
 
+test('Governed cycle input validation', async (t) => {
+  await t.test('rejects invalid Date objects for Personal Day', () => {
+    assert.throws(
+      () => calcPersonalDay('1990-09-17', new Date(Number.NaN)),
+      /valid target Date/,
+    );
+  });
+
+  await t.test('rejects impossible legacy Personal Year components', () => {
+    assert.throws(() => calcPersonalYear(13, 17, 2026), /birth month/);
+    assert.throws(() => calcPersonalYear(9, 32, 2026), /birth day/);
+    assert.throws(() => calcPersonalYear(9, 17, 0), /target year/);
+  });
+
+  await t.test('rejects unsupported Personal Month inputs', () => {
+    assert.throws(() => calcPersonalMonth(10, 7), /Personal Year/);
+    assert.throws(() => calcPersonalMonth(11, 13), /target month/);
+  });
+});
+
 test('Label Functions - Display Consistency', async (t) => {
   await t.test('should have labels for all valid Personal Day numbers', () => {
     for (let i = 1; i <= 9; i++) {
