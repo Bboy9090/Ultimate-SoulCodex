@@ -175,7 +175,7 @@ export function getVerifiedAstrologySign(
   astrology: RemoteProfileSnapshot["astrologyData"],
   body: "sun" | "moon" | "rising",
 ): string | null {
-  if (requiresHistoricalTimeReview(astrology)) return null;
+  if (requiresManualTimeReview(astrology)) return null;
   const placement = astrology?.[body];
   if (placement?.verificationStatus !== "verified") return null;
   return validZodiacSign(placement.sign)
