@@ -1,5 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
-import { calcPersonalDay } from '@soulcodex/core';
+import { calcPersonalDay, dateOnlyFromLocalDate } from '@soulcodex/core';
 
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
@@ -129,7 +129,7 @@ export function getDailyContext(birthDate: string, currentDate: Date = new Date(
   const hdGateData = getCurrentHDGate(currentDate);
   
   return {
-    date: currentDate.toISOString().split('T')[0],
+    date: dateOnlyFromLocalDate(currentDate),
     personalDayNumber: calculatePersonalDayNumber(birthDate, currentDate),
     universalDayNumber: calculateUniversalDayNumber(currentDate),
     moonSign: getMoonSign(currentDate),
