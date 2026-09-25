@@ -1,0 +1,29 @@
+name: Temporary Precision Layer Validation
+
+on:
+  push:
+    branches:
+      - accuracy/precision-layer-2-current
+
+permissions:
+  contents: read
+
+jobs:
+  precision-layer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Typecheck
+        run: npm run check
+      - name: Precision regressions
+        run: |
+          node --import tsx --test             tests/offline-ephemeris-accuracy.test.ts             tests/polar-angle-accuracy.test.ts             tests/synastry-input-validation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/foundation-local-astronomy-boundary.test.ts             tests/house-evidence.test.ts             tests/ascendant-verification.test.ts
