@@ -119,12 +119,12 @@ export function calcPersonalYear(
     const birth = parseDateOnly(birthDateOrMonth);
     birthMonth = birth.month;
     birthDay = birth.day;
-    targetYear = targetYearOrDay || new Date().getFullYear();
+    targetYear = targetYearOrDay ?? new Date().getFullYear();
   } else {
     // Legacy signature: (month, day, year)
     birthMonth = birthDateOrMonth;
-    birthDay = targetYearOrDay || 1;
-    targetYear = targetYearIfThreeArgs || new Date().getFullYear();
+    birthDay = targetYearOrDay ?? 1;
+    targetYear = targetYearIfThreeArgs ?? new Date().getFullYear();
   }
 
   if (
