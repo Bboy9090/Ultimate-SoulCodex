@@ -237,6 +237,22 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.ok(result.evidence.reasoning.some((r) => r.includes('letter')));
     });
 
+    it('uses the same canonical transliteration for calculation and evidence', () => {
+      const accented = calcExpressionWithEvidence('José González');
+      const ascii = calcExpressionWithEvidence('Jose Gonzalez');
+
+      assert.strictEqual(accented.value, ascii.value);
+      assert.strictEqual(accented.evidence.inputState, 'valid');
+      assert.strictEqual(accented.evidence.inputsUsed[0], ascii.evidence.inputsUsed[0]);
+    });
+
+    it('counts supported transliterated letters instead of raw ASCII only', () => {
+      const result = calcExpressionWithEvidence('Ægir Øst');
+
+      assert.strictEqual(result.evidence.inputState, 'valid');
+      assert.ok(result.evidence.reasoning.some((r) => r.includes('8 letters')));
+    });
+
     it('should have high confidence for valid name', () => {
       const validName = calcExpressionWithEvidence('Albert Einstein');
 
