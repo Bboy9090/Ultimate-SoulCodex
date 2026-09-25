@@ -9,7 +9,7 @@ export type CivilTimeResolution = {
   timezone: string;
   candidates: string[];
   candidateUtcOffsetsMinutes: number[];
-  conversionMethod: 'iana-tzdb';
+  conversionMethod: 'standard-iana-tzdb';
   runtimeTzdbVersion: string | null;
   reason: string | null;
 };
@@ -28,7 +28,7 @@ function candidateOffsetsMinutes(timezone: string, candidates: Date[]): number[]
 function baseResolutionMetadata(timezone: string) {
   return {
     timezone,
-    conversionMethod: 'iana-tzdb' as const,
+    conversionMethod: 'standard-iana-tzdb' as const,
     runtimeTzdbVersion: runtimeTzdbVersion(),
   };
 }
