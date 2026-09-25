@@ -397,8 +397,18 @@ function calculateChironPosition(birthTime: Date): { longitude: number; sign: st
 
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const birthTime = createBirthTime(birthData);
-  const latitude = normalizeCoordinate((birthData as any).latitude, 0);
-  const longitude = normalizeCoordinate((birthData as any).longitude, 0);
+  const latitude = normalizeCoordinate((birthData as any).latitude);
+  const longitude = normalizeCoordinate((birthData as any).longitude);
+  if (
+    latitude === null ||
+    longitude === null ||
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    throw new Error("Precise birth coordinates are required for Ascendant and house calculation");
+  }
   
   // Calculate geocentric planet positions using equinox-of-date
   const sunPos = calculateCelestialPosition((Astro as any).Body.Sun, birthTime);
