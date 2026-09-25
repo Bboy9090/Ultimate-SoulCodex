@@ -183,19 +183,6 @@ function reduceNumber(input: number): number {
   return value;
 }
 
-function calculateSunSign(month: number, day: number): string {
-  const boundaries: Array<[number, number, string]> = [
-    [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"],
-    [4, 20, "Taurus"], [5, 21, "Gemini"], [6, 21, "Cancer"],
-    [7, 23, "Leo"], [8, 23, "Virgo"], [9, 23, "Libra"],
-    [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
-  ];
-  const current = boundaries.find(([boundaryMonth]) => boundaryMonth === month);
-  const nextSign = current?.[2] ?? "Capricorn";
-  const previousSign = SIGNS[(SIGNS.indexOf(nextSign as (typeof SIGNS)[number]) + 11) % 12];
-  return day >= (current?.[1] ?? 22) ? nextSign : previousSign;
-}
-
 function stableHash(value: string): number {
   let hash = 2166136261;
   for (const character of value) {
