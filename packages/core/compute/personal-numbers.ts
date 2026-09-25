@@ -22,11 +22,16 @@ function reduceToSingleDigit(num: number): number {
  * @example
  * calcPersonalDay("1990-08-15", new Date("2026-07-06")) // July 6, 2026 for someone born Aug 15
  */
-export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()): number {
+export function calcPersonalDayForDate(
+  birthDate: string,
+  targetDateISO: string,
+): number {
   const { day: birthDay, month: birthMonth } = parseDateOnly(birthDate);
-  const targetDay = targetDate.getDate();
-  const targetMonth = targetDate.getMonth() + 1;
-  const targetYear = targetDate.getFullYear();
+  const {
+    day: targetDay,
+    month: targetMonth,
+    year: targetYear,
+  } = parseDateOnly(targetDateISO);
 
   const sum =
     reduceToSingleDigit(birthDay) +
@@ -36,6 +41,21 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
     reduceToSingleDigit(targetYear);
 
   return reduceToSingleDigit(sum);
+}
+
+/**
+ * Backward-compatible Date wrapper.
+ * The Date's host-local calendar fields are intentionally preserved for legacy
+ * callers. Governed/user-facing surfaces should prefer calcPersonalDayForDate
+ * with an explicit calendar date resolved in the user's timezone.
+ */
+export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()): number {
+  const targetDateISO = [
+    targetDate.getFullYear().toString().padStart(4, '0'),
+    (targetDate.getMonth() + 1).toString().padStart(2, '0'),
+    targetDate.getDate().toString().padStart(2, '0'),
+  ].join('-');
+  return calcPersonalDayForDate(birthDate, targetDateISO);
 }
 
 /**
