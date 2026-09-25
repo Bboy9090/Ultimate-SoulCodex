@@ -134,6 +134,15 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-month');
     });
 
+    it('should accept master-number Personal Years emitted by the governed cycle engine', () => {
+      const masterYear = calcPersonalYearWithEvidence('1990-01-01', 2025);
+      assert.strictEqual(masterYear.value, 11);
+
+      const month = calcPersonalMonthWithEvidence(masterYear.value!, 1);
+      assert.strictEqual(month.evidence.calculationStatus, 'resolved');
+      assert.strictEqual(typeof month.value, 'number');
+    });
+
     it('should fail closed for invalid personal year', () => {
       const result = calcPersonalMonthWithEvidence(15, 7);
 
@@ -167,7 +176,7 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result1.value));
       assert.strictEqual(result1.evidence.formulaId, 'numerology.life-path');
-      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
+      assert.strictEqual(result1.evidence.formulaVersion, '2.0.0');
     });
 
     it('should fail closed for missing birth date', () => {
@@ -193,6 +202,13 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.ok(
         result.evidence.reasoning.some((r) => r.includes('digit') || r.includes('reduced'))
       );
+    });
+
+    it('should describe component reduction and master-number preservation', () => {
+      const result = calcLifePathWithEvidence('1900-01-18');
+      assert.strictEqual(result.value, 11);
+      assert.ok(result.evidence.reasoning.some((r) => r.includes('independently')));
+      assert.ok(result.evidence.reasoning.some((r) => r.includes('11/22/33')));
     });
 
     it('should have evidence engine = numerology', () => {
