@@ -614,7 +614,10 @@ function calculateVedicCompatibility(profile1: any, profile2: any): { score: num
 }
 
 // Chinese Astrology Compatibility
-function calculateChineseCompatibility(profile1: any, profile2: any): {
+function calculateChineseCompatibility(
+  profile1: any,
+  profile2: any,
+): { score: number; description: string } {
   void profile1;
   void profile2;
   return {
