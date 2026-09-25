@@ -175,7 +175,7 @@ export function calcPersonalYearWithEvidence(
           'Birth date could not be processed',
         ],
         limitations: [
-          'Personal Year cycles annually, changes on birthday',
+          'Soul Codex Personal Year is a calendar-year symbolic cycle under the documented formula',
           'Calculation does not account for birth time',
         ],
         formulaId: 'numerology.personal-year',
@@ -258,7 +258,7 @@ export function calcPersonalMonthWithEvidence(
         ].filter(Boolean),
         limitations: [
           'Derived from Personal Year; dependent on year accuracy',
-          'Calendar month only; does not account for birth date transition',
+          'Calendar-month symbolic cycle; no hidden birthday-boundary transition is applied',
         ],
         formulaId: 'numerology.personal-month',
         formulaVersion: '1.0.0',
