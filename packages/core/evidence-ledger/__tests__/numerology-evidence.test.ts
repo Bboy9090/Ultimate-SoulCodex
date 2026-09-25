@@ -253,6 +253,13 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.ok(result.evidence.reasoning.some((r) => r.includes('letter')));
     });
 
+    it('should count normalized Unicode letters exactly as the calculator does', () => {
+      const result = calcExpressionWithEvidence('José Núñez');
+      assert.strictEqual(result.evidence.inputState, 'valid');
+      assert.strictEqual(result.evidence.inputsUsed[0], 'full_name_9_letters');
+      assert.strictEqual(typeof result.value, 'number');
+    });
+
     it('should have high confidence for valid name', () => {
       const validName = calcExpressionWithEvidence('Albert Einstein');
 
