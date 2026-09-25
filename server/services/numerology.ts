@@ -6,6 +6,7 @@ import {
   calcPersonality,
   calcMaturity,
   calcPersonalYear,
+  normalizeNumerologyName,
 } from '@soulcodex/core';
 
 interface ResolvedNumerologyData {
@@ -67,9 +68,11 @@ function isValidDate(dateStr: string): boolean {
 }
 
 function isValidName(name: string): boolean {
-  if (!name || typeof name !== 'string') return false;
-  const letters = name.replace(/[^A-Za-z]/g, '');
-  return letters.length > 0;
+  return (
+    typeof name === 'string' &&
+    name.trim().length > 0 &&
+    normalizeNumerologyName(name).length > 0
+  );
 }
 
 const interpretations = {
