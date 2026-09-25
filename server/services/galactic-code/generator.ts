@@ -16,6 +16,7 @@ import { createGalacticFingerprint } from './fingerprint';
 import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
 import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
+import { isValidClockTime, isValidDateOnly } from '../../../shared/schema';
 
 function verifiedAstrologyField(
   input: GalacticCodeInput['astrology'],
@@ -212,6 +213,20 @@ export function generateGalacticCode(
 ): GalacticCodeResult {
   if (!options.trustedEvidenceContext) {
     throw new Error('trusted_evidence_context_required');
+  }
+
+  if (input.birthDate !== undefined && !isValidDateOnly(input.birthDate)) {
+    throw new Error('galactic_birth_date_invalid');
+  }
+  if (
+    input.birthTime !== undefined &&
+    input.birthTime.trim() !== '' &&
+    !isValidClockTime(input.birthTime)
+  ) {
+    throw new Error('galactic_birth_time_invalid');
+  }
+  if (input.birthTime?.trim() && !input.birthDate) {
+    throw new Error('galactic_birth_time_requires_birth_date');
   }
 
   const eligibleInput = synthesisEligibleInput(input);
