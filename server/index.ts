@@ -122,6 +122,12 @@ app.get("/health", (_req, res) => {
 
 (async () => {
   try {
+    if (process.env.DATABASE_URL) {
+      const { assertDatabaseSchemaCompatible } = await import("./db.js");
+      await assertDatabaseSchemaCompatible();
+      console.log("[DatabaseSchema] Compatibility check passed");
+    }
+
     const server = await registerRoutes(app);
 
     // Serve the Vite/PWA output from the same Railway service as the API.
