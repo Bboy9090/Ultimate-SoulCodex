@@ -58,5 +58,8 @@ export function extractCore(profile: ProfileInput) {
     tarotCard1: archData?.tarotCards?.card1 || "",
     tarotCard2: archData?.tarotCards?.card2 || "",
     birthDate: profile?.birthDate || null,
+    timezone: typeof profile?.timezone === "string" && profile.timezone.trim()
+      ? profile.timezone.trim()
+      : null,
   };
 }
