@@ -32,11 +32,23 @@ function reduceToSingleDigit(num: number): number {
  * @example
  * calcPersonalDay("1990-08-15", new Date("2026-07-06")) // July 6, 2026 for someone born Aug 15
  */
-export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()): number {
+export function dateOnlyFromLocalDate(date: Date): string {
+  if (Number.isNaN(date.getTime())) {
+    throw new RangeError('Target date must be valid');
+  }
+  return [
+    String(date.getFullYear()).padStart(4, '0'),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+export function calcPersonalDayForDateISO(
+  birthDate: string,
+  targetDateISO: string,
+): number {
   const { day: birthDay, month: birthMonth } = parseDateOnly(birthDate);
-  const targetDay = targetDate.getDate();
-  const targetMonth = targetDate.getMonth() + 1;
-  const targetYear = targetDate.getFullYear();
+  const { day: targetDay, month: targetMonth, year: targetYear } = parseDateOnly(targetDateISO);
 
   const sum =
     reduceToSingleDigit(birthDay) +
@@ -46,6 +58,15 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
     reduceToSingleDigit(targetYear);
 
   return reduceToSingleDigit(sum);
+}
+
+export function calcPersonalDay(
+  birthDate: string,
+  targetDate: Date | string = new Date(),
+): number {
+  const targetDateISO =
+    typeof targetDate === 'string' ? targetDate : dateOnlyFromLocalDate(targetDate);
+  return calcPersonalDayForDateISO(birthDate, targetDateISO);
 }
 
 /**
