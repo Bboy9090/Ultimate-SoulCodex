@@ -129,7 +129,7 @@ export function calcPersonalDayWithEvidence(
       ],
       reasoning: [
         `Birth day ${birthDay} + birth month ${birthMonth} + current day ${targetDay} + current month ${targetMonth} + current year ${targetYear}`,
-        'All values reduced to single digits',
+        'Values are reduced with master numbers 11/22/33 preserved',
         `Sum reduced to single digit = Day ${personalDay}`,
       ],
       limitations: [
@@ -175,7 +175,7 @@ export function calcPersonalYearWithEvidence(
           'Birth date could not be processed',
         ],
         limitations: [
-          'Personal Year cycles annually, changes on birthday',
+          'Repository convention: Personal Year is a calendar-year symbolic cycle',
           'Calculation does not account for birth time',
         ],
         formulaId: 'numerology.personal-year',
@@ -205,11 +205,11 @@ export function calcPersonalYearWithEvidence(
       ],
       reasoning: [
         `Birth month ${birthMonth} + birth day ${birthDay} + target year ${targetYear}`,
-        'All values reduced to single digits',
+        'Values are reduced with master numbers 11/22/33 preserved',
         `Sum reduced to single digit = Year ${personalYear}`,
       ],
       limitations: [
-        'Personal Year cycles annually, changes on birthday',
+        'Repository convention: Personal Year is a calendar-year symbolic cycle',
         'Calculation does not account for birth time',
       ],
       formulaId: 'numerology.personal-year',
@@ -230,7 +230,7 @@ export function calcPersonalMonthWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const yearValid = typeof personalYear === 'number' && personalYear >= 1 && personalYear <= 9;
+  const yearValid = typeof personalYear === 'number' && [1,2,3,4,5,6,7,8,9,11,22,33].includes(personalYear);
   const monthValid = typeof targetMonth === 'number' && targetMonth >= 1 && targetMonth <= 12;
 
   let derivedInputState: InputState = 'valid';
@@ -253,7 +253,7 @@ export function calcPersonalMonthWithEvidence(
           `calendar_month_${targetMonth}`,
         ],
         reasoning: [
-          !yearValid ? `Personal Year ${personalYear} must be 1-9` : '',
+          !yearValid ? `Personal Year ${personalYear} must be 1-9 or a preserved master number (11/22/33)` : '',
           !monthValid ? `Calendar month ${targetMonth} must be 1-12` : '',
         ].filter(Boolean),
         limitations: [
@@ -285,7 +285,7 @@ export function calcPersonalMonthWithEvidence(
       ],
       reasoning: [
         `Personal Year ${personalYear} + calendar month ${targetMonth}`,
-        'Both reduced to single digits',
+        'Values are reduced with master numbers 11/22/33 preserved',
         `Sum reduced to single digit = Month ${personalMonth}`,
       ],
       limitations: [
@@ -332,7 +332,7 @@ export function calcLifePathWithEvidence(
           'Life Path is constant throughout life',
         ],
         formulaId: 'numerology.life-path',
-        formulaVersion: '1.0.0',
+        formulaVersion: '2.0.0',
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -361,8 +361,8 @@ export function calcLifePathWithEvidence(
         `birth_year_${birthYear}`,
       ],
       reasoning: [
-        `All digits of birth date summed: ${birthMonth} + ${birthDay} + ${birthYear}`,
-        'Sum reduced to single digit',
+        `Birth month ${birthMonth}, birth day ${birthDay}, and birth year ${birthYear} are reduced independently with 11/22/33 preserved`,
+        'Reduced components are added and the total is reduced with 11/22/33 preserved',
         `Life Path Number = ${lifePathValue}`,
       ],
       limitations: [
@@ -371,7 +371,7 @@ export function calcLifePathWithEvidence(
         'Life Path is constant throughout life',
       ],
       formulaId: 'numerology.life-path',
-      formulaVersion: '1.0.0',
+      formulaVersion: '2.0.0',
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
