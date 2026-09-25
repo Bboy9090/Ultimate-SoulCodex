@@ -184,6 +184,13 @@ export function registerProfileVerificationRoutes(app: Express) {
               provenanceStatus: civilTime.provenanceStatus,
               historicalTimeRequiresIndependentSource:
                 civilTime.historicalTimeRequiresIndependentSource,
+              birthTimeAccuracy:
+                parsed.data.birthTimeAccuracy ??
+                (parsed.data.birthTime?.trim() ? "recalled" : "unknown"),
+              birthTimeUncertaintyMinutes:
+                parsed.data.birthTimeUncertaintyMinutes ?? null,
+              estimatedTimeRequiresUncertaintyReview:
+                parsed.data.birthTimeAccuracy === "estimated",
             },
           });
           humanDesignData = trust.status === "verified"
