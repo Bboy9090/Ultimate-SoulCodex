@@ -100,7 +100,14 @@ function getLetterValue(letter: string): number {
 }
 
 function sumNameLetters(fullName: string, include: (letter: string) => boolean): number {
-  return [...normalizeNumerologyName(fullName)]
+  const normalized = normalizeNumerologyName(fullName);
+  if (!normalized) {
+    throw new RangeError(
+      'Name numerology requires at least one canonical A-Z letter after Latin transliteration',
+    );
+  }
+
+  return [...normalized]
     .filter(include)
     .reduce((total, letter) => total + getLetterValue(letter), 0);
 }
