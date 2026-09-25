@@ -1,3 +1,4 @@
+import type { CivilTimeProvenanceStatus } from "@soulcodex/core";
 export type HumanDesignVerificationStatus =
   | "unresolved"
   | "calculated_unverified"
@@ -13,6 +14,8 @@ export interface HumanDesignTimeConversionEvidence {
   utcOffsetMinutes: number;
   conversionMethod: "standard-iana-tzdb";
   runtimeTzdbVersion: string | null;
+  provenanceStatus: CivilTimeProvenanceStatus;
+  historicalTimeRequiresIndependentSource: boolean;
 }
 
 interface HumanDesignEvidenceBase {
@@ -175,6 +178,13 @@ export function createHumanDesignTrustRecord(input: {
     ),
   ) as HumanDesignCandidateFields;
 
+  const historicalLimitations =
+    input.timeConversion?.historicalTimeRequiresIndependentSource
+      ? [
+          "Historical civil-time conversion is deterministic from the runtime tzdb but has not been independently audited against the time standard in force at the birthplace and date.",
+        ]
+      : [];
+
   return {
     status: "calculated_unverified",
     engine: "soulcodex-hd-candidate-v0",
@@ -184,7 +194,7 @@ export function createHumanDesignTrustRecord(input: {
     birthTimeKnown: true,
     candidate,
     ...(input.timeConversion ? { timeConversion: input.timeConversion } : {}),
-    limitations: UNVERIFIED_LIMITATIONS,
+    limitations: Object.freeze([...UNVERIFIED_LIMITATIONS, ...historicalLimitations]),
   };
 }
 
@@ -207,6 +217,13 @@ export function createVerifiedHumanDesignTrustRecord(input: {
   const calculatedAt = input.calculatedAt ?? new Date().toISOString();
   if (!isValidIsoTimestamp(calculatedAt)) {
     throw new Error("human_design_calculation_timestamp_invalid");
+  }
+
+  if (input.timeConversion?.historicalTimeRequiresIndependentSource) {
+    return createHumanDesignTrustRecord({
+      ...input,
+      calculatedAt,
+    });
   }
 
   const candidate = completeVerifiedCandidate(input.candidate);
