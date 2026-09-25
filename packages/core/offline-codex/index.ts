@@ -351,25 +351,45 @@ function makeEvidence(input: Omit<InterpretationEvidenceRef, "provenanceStatus" 
 
 function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAstrologyData, numerology: OfflineNumerologyData, archetypeData: OfflineArchetypeData, generatedAt: string): DepthInterpretationV1 {
   const birthTimeStatus: BirthTimeStatus = parseTime(input.birthTime).known ? "known" : "unknown";
-  const sign = SIGN_TRAITS[astrology.sunSign];
+  const sign = astrology.sunSign ? SIGN_TRAITS[astrology.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerology.lifePath];
   if (!path) throw new Error("Unsupported Life Path cannot influence offline synthesis.");
   const expression = LIFE_PATH_TRAITS[numerology.expression] ?? null;
   const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge] ?? null;
+
   const seeds: DepthSynthesisSeed[] = [
-    {
-      evidence: makeEvidence({ id: "offline.astrology.sun", system: "astrology", field: "sunSign", value: astrology.sunSign, confidence: "moderate", timeSensitivity: "none", notes: ["Sun-sign boundary calculation is local and deterministic."] }),
-      label: `${astrology.sunSign} Sun symbolism`, priority: 100, claimKind: "derived",
+    ...(sign ? [{
+      evidence: makeEvidence({
+        id: "offline.astrology.sun",
+        system: "astrology",
+        field: "sunSign",
+        value: astrology.sunSign,
+        confidence: "moderate",
+        timeSensitivity: "none",
+        notes: [
+          "Calculated locally with astronomy-engine.",
+          "The placement is not independently verified in offline mode.",
+        ],
+      }),
+      label: `${astrology.sunSign} Sun symbolism`,
+      priority: 100,
+      claimKind: "derived" as const,
       facets: {
-        claritySummary: `A central pattern emphasizes ${sign.drive}.`, visiblePattern: `Others may first notice ${sign.gift}.`,
-        hiddenNeed: `The pattern may be trying to preserve conditions for ${sign.drive}.`, gift: `The constructive expression is ${sign.gift}.`,
-        shadow: `When overused, the same pattern can become ${sign.shadow}.`, relationshipImpact: `In relationships, the symbolic pattern ${sign.relationship}.`,
+        claritySummary: `A central pattern emphasizes ${sign.drive}.`,
+        visiblePattern: `Others may first notice ${sign.gift}.`,
+        hiddenNeed: `The pattern may be trying to preserve conditions for ${sign.drive}.`,
+        gift: `The constructive expression is ${sign.gift}.`,
+        shadow: `When overused, the same pattern can become ${sign.shadow}.`,
+        relationshipImpact: `In relationships, the symbolic pattern ${sign.relationship}.`,
         boundaryOrRepair: sign.action,
         action: `Choose one situation to test this pattern this week. ${sign.action}`,
       },
       tensionAxes: sign.axes,
-      limitations: ["Sun-sign symbolism is interpretive and does not establish fixed personality."],
-    },
+      limitations: [
+        "Sun longitude is locally calculated but not independently verified.",
+        "Sun-sign symbolism is interpretive and does not establish fixed personality.",
+      ],
+    }] : []),
     {
       evidence: makeEvidence({ id: "offline.numerology.life-path", system: "numerology", field: "lifePath", value: numerology.lifePath, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated locally from the entered calendar date."] }),
       label: `Life Path ${numerology.lifePath} symbolism`, priority: 95, claimKind: "derived",
@@ -406,23 +426,25 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       limitations: ["The Soul Urge number is deterministic from the supplied name; its motivation meaning remains symbolic interpretation."],
     }] : []),
     {
-      evidence: makeEvidence({ id: "offline.archetype.primary", system: "system", field: "archetype", value: archetypeData.title, confidence: "moderate", timeSensitivity: "none", notes: ["Synthesized from the local astrology and numerology layers."] }),
+      evidence: makeEvidence({ id: "offline.archetype.primary", system: "system", field: "archetype", value: archetypeData.title, confidence: "moderate", timeSensitivity: "none", notes: ["Synthesized only from locally supported inputs."] }),
       label: `${archetypeData.title} synthesis`, priority: 85, claimKind: "inferred",
       facets: {
         visiblePattern: archetypeData.description, gift: archetypeData.strengths.join(", "),
         commonMisreading: `The strengths of ${archetypeData.title} may be judged only by their shadow form: ${archetypeData.shadows.join(", ")}.`,
         boundaryOrRepair: archetypeData.guidance,
       },
-      tensionAxes: [...sign.axes, ...path.axes],
+      tensionAxes: [...(sign?.axes ?? []), ...path.axes],
       limitations: ["The archetype combines symbolic sources; overlap is supporting context, not independent proof."],
     },
   ];
+
   const interpretation = synthesizeDepthInterpretationV1({
     version: 1,
     generatedAt,
     birthTimeStatus,
     seeds,
     missingData: [
+      ...(!sign ? ["Sun sign is unresolved locally because the birth day crosses a solar-sign boundary or the local time cannot be resolved safely."] : []),
       ...(birthTimeStatus === "unknown" ? ["Exact birth time is unknown; Rising sign, houses, angles, Moon degree, and time-sensitive Human Design claims are unavailable."] : []),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
       "Human Design core is withheld from this offline profile until its qualified engine result is explicitly reconciled.",
@@ -451,7 +473,7 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
   const numerologyData = calculateNumerology(input, currentYear);
   const archetypeData = synthesizeArchetype(astrologyData, numerologyData, input.birthDate);
   const depthInterpretation = buildDepthInterpretation(input, astrologyData, numerologyData, archetypeData, generatedAt);
-  const sign = SIGN_TRAITS[astrologyData.sunSign];
+  const sign = astrologyData.sunSign ? SIGN_TRAITS[astrologyData.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerologyData.lifePath];
   if (!path) throw new Error("Unsupported Life Path cannot influence offline profile prose.");
   return {
@@ -461,8 +483,8 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
     latitude: input.latitude === undefined ? null : String(input.latitude),
     longitude: input.longitude === undefined ? null : String(input.longitude),
     isPremium: false, astrologyData, numerologyData, personalityData: {}, archetypeData,
-    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism, Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}, Soul Urge ${numerologyData.soulUrge}, and the ${archetypeData.title} synthesis. The strongest supported themes are ${sign.drive} and ${path.drive}. These are reflective frameworks, not fixed identity or guaranteed biography.`,
-    dailyGuidance: `${path.action} ${sign.action}`,
+    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign ? astrologyData.sunSign + " Sun symbolism, " : ""}Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}, Soul Urge ${numerologyData.soulUrge}, and the ${archetypeData.title} synthesis. ${sign ? "Supported Sun and numerology themes include " + sign.drive + " and " + path.drive + "." : "The Sun layer is withheld because it cannot be resolved safely from the available local birth data; numerology remains available."} These are reflective frameworks, not fixed identity or guaranteed biography.`,
+    dailyGuidance: [path.action, sign?.action].filter(Boolean).join(" "),
     depthInterpretation, localOnly: true, syncStatus: "local-only",
     createdAt: generatedAt, updatedAt: generatedAt,
   };
