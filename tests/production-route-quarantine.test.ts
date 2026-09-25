@@ -43,3 +43,17 @@ test("Foundation compatibility keeps unverified time-sensitive systems excluded"
   assert.match(compatibilityRoute, /Moon and Rising are not used in Foundation Compatibility/);
   assert.match(compatibilityRoute, /evidenceMode/);
 });
+
+
+test("production archetype synthesis stays on evidence-aware server service", () => {
+  assert.match(
+    activeServerRoutes,
+    /from "\.\/services\/archetype"/,
+    "active server routes must use server/services/archetype.ts",
+  );
+  assert.doesNotMatch(
+    serverIndex,
+    /from "\.\.\/services\/archetype|from "\.\/\.\.\/services\/archetype/,
+    "production entry must not import the legacy root archetype service",
+  );
+});
