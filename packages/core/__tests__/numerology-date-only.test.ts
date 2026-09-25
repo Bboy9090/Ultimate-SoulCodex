@@ -64,6 +64,19 @@ test('name normalization is stable across accents and punctuation', () => {
   );
 });
 
+test('canonical name normalization handles supported special Latin letters', () => {
+  assert.equal(normalizeNumerologyName('Ægir Øst Łukasz'), 'AEGIROSTLUKASZ');
+  assert.doesNotThrow(() => calcExpression('Ægir Øst Łukasz'));
+});
+
+test('unsupported scripts do not collapse into a fake numerology zero', () => {
+  assert.equal(normalizeNumerologyName('Мария'), '');
+  assert.throws(
+    () => calcExpression('Мария'),
+    /requires at least one canonical A-Z letter/,
+  );
+});
+
 test('canonical Pythagorean name mapping preserves master numbers', () => {
   assert.equal(calcExpression('José González'), 11);
 });
