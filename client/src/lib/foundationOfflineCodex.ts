@@ -5,6 +5,8 @@ import {
   calcMaturity,
   calcPersonality,
   calcSoulUrge,
+  calcPersonalYear,
+  resolveOfflineSun,
   synthesizeDepthInterpretationV1,
   validateDepthInterpretationV1,
   type DepthSynthesisSeed,
@@ -69,30 +71,12 @@ function parseDate(dateISO: string) {
   return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
 }
 
-function sunSignForDate(dateISO: string): string {
-  const { month, day } = parseDate(dateISO);
-  const boundaries: Array<[number, number, string]> = [
-    [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"], [4, 20, "Taurus"],
-    [5, 21, "Gemini"], [6, 21, "Cancer"], [7, 23, "Leo"], [8, 23, "Virgo"],
-    [9, 23, "Libra"], [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
-  ];
-  const current = boundaries.find(([candidate]) => candidate === month);
-  const next = current?.[2] ?? "Capricorn";
-  const previous = SIGNS[(SIGNS.indexOf(next as (typeof SIGNS)[number]) + 11) % 12];
-  return day >= (current?.[1] ?? 22) ? next : previous;
-}
-
 function reduceNumber(input: number): number {
   let value = Math.abs(Math.trunc(input));
   while (value > 9 && value !== 11 && value !== 22 && value !== 33) {
     value = String(value).split("").reduce((sum, digit) => sum + Number(digit), 0);
   }
   return value;
-}
-
-function personalYear(dateISO: string, year: number) {
-  const date = parseDate(dateISO);
-  return reduceNumber(date.day + date.month + year);
 }
 
 function elementForSign(sign: string): "Fire" | "Earth" | "Air" | "Water" | null {
@@ -125,16 +109,13 @@ function preliminarySignatureCode(values: Array<string | number | null | undefin
 }
 
 function archetypeFor(
-  sign: string,
+  sign: string | null,
   lifePath: number,
   expression?: number | null,
   soulUrge?: number | null,
 ) {
-  const element = elementForSign(sign);
+  const element = sign ? elementForSign(sign) : null;
   const signPattern = signPatternFor(sign);
-  if (!element || !signPattern) {
-    throw new Error(`Unsupported sign cannot influence archetype synthesis: ${sign}`);
-  }
 
   const path = numerologyPatternFor(lifePath);
   const expressionPattern = numerologyPatternFor(expression);
@@ -157,13 +138,13 @@ function archetypeFor(
   ].filter((value): value is string => Boolean(value));
 
   const strengths = Array.from(new Set([
-    signPattern.gift,
+    signPattern?.gift,
     path?.gift,
     expressionPattern?.gift,
     soulUrgePattern?.gift,
   ].filter((value): value is string => Boolean(value))));
   const shadows = Array.from(new Set([
-    signPattern.shadow,
+    signPattern?.shadow,
     path?.shadow,
     expressionPattern?.shadow,
     soulUrgePattern?.shadow,
@@ -172,21 +153,23 @@ function archetypeFor(
     path?.action,
     expressionPattern?.action,
     soulUrgePattern?.action,
-    signPattern.action,
+    signPattern?.action,
   ].filter((value): value is string => Boolean(value)).slice(0, 3).join(" ");
 
   return {
-    title: `Foundation Signature · ${sign} / ${supportedNumberLabels.join(" / ") || "numerology unresolved"} · ${code}`,
+    title: `Foundation Signature · ${sign ? sign + " / " : ""}${supportedNumberLabels.join(" / ") || "numerology unresolved"} · ${code}`,
     description:
-      `This preliminary signature uses only supported local evidence: ${sign} Sun symbolism` +
-      (supportedNumberLabels.length ? ` plus ${supportedNumberLabels.join(", ")}.` : ".") +
+      `This preliminary signature uses only supported local evidence: ` +
+      (sign ? `${sign} Sun symbolism${supportedNumberLabels.length ? " plus " : "."}` : "") +
+      (supportedNumberLabels.length ? `${supportedNumberLabels.join(", ")}.` : "") +
       (unsupportedNumberLabels.length ? ` Unsupported numerology values (${unsupportedNumberLabels.join(", ")}) are retained as data but excluded from interpretive synthesis.` : "") +
+      (!sign ? ` Sun interpretation is withheld because the local ephemeris cannot resolve the sign safely from the supplied time information.` : "") +
       ` It is deliberately not a final archetype; Moon, Rising, houses, aspects, Human Design, and other verified systems may materially change the combined Codex.`,
     strengths,
     shadows,
     themes: [
-      `${sign} Sun`,
-      element,
+      ...(sign ? [`${sign} Sun`] : []),
+      ...(element ? [element] : []),
       ...supportedNumberLabels,
       "Preliminary local symbolic synthesis",
     ],
@@ -252,15 +235,16 @@ export function generateFoundationOfflineCodexProfile(
 ): OfflineCodexProfile {
   const generatedAt = options.generatedAt ?? new Date().toISOString();
   const currentYear = options.currentYear ?? new Date(generatedAt).getUTCFullYear();
-  const sunSign = sunSignForDate(input.birthDate);
-  const signPattern = SIGN_PATTERNS[sunSign];
+  const sunResolution = resolveOfflineSun(input.birthDate, input.birthTime, input.timezone);
+  const sunSign = sunResolution.status === "resolved" ? sunResolution.sign : null;
+  const signPattern = signPatternFor(sunSign);
   const lifePath = calcLifePath(input.birthDate);
   const birthday = calcBirthday(input.birthDate);
   const expression = calcExpression(input.name);
   const soulUrge = calcSoulUrge(input.name);
   const personality = calcPersonality(input.name);
   const maturity = calcMaturity(input.birthDate, input.name);
-  const yearNumber = personalYear(input.birthDate, currentYear);
+  const yearNumber = calcPersonalYear(input.birthDate, currentYear);
   const pathPattern = numerologyPatternFor(lifePath);
   const expressionPattern = numerologyPatternFor(expression);
   const soulUrgePattern = numerologyPatternFor(soulUrge);
@@ -293,7 +277,9 @@ export function generateFoundationOfflineCodexProfile(
     generatedAt,
     birthTimeStatus: input.birthTime ? "known" : "unknown",
     seeds: [
-      makeSeed("offline.astrology.sun", "astrology", "sunSign", sunSign, `${sunSign} Sun symbolism`, signPattern, 100),
+      ...(sunSign && signPattern
+        ? [makeSeed("offline.astrology.sun", "astrology", "sunSign", sunSign, `${sunSign} Sun symbolism`, signPattern, 100)]
+        : []),
       makeSeed("offline.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 95),
       ...(expressionPattern
         ? [makeSeed("offline.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 92)]
@@ -303,6 +289,7 @@ export function generateFoundationOfflineCodexProfile(
         : []),
     ],
     missingData: [
+      ...(!sunSign ? ["Sun sign is unresolved locally because the ephemeris result changes within the local birth day or the civil time cannot be resolved safely."] : []),
       "Moon sign is unavailable in local mode until independently verified astronomy is requested.",
       "Rising sign is unavailable in local mode until exact birth time, coordinates, timezone, and independent astronomy verification are available.",
       "Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable in local mode.",
@@ -319,7 +306,7 @@ export function generateFoundationOfflineCodexProfile(
   }
 
   const unresolvedAstrology = {
-    sunSign,
+    sunSign: sunSign ?? "",
     moonSign: "",
     risingSign: "",
     planets: {},
@@ -346,8 +333,8 @@ export function generateFoundationOfflineCodexProfile(
     numerologyData,
     personalityData: {},
     archetypeData,
-    biography: `${input.name.trim()}'s local Codex uses only ${sunSign} Sun symbolism and deterministic numerology in this first-pass synthesis. Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} are calculated from entered date/name data; their meanings remain symbolic. Moon, Rising, planets, houses, aspects, nodes, and Chiron are deliberately absent rather than approximated.`,
-    dailyGuidance: `${pathPattern.action} ${signPattern.action}`,
+    biography: `${input.name.trim()}'s local Codex uses ${sunSign ? sunSign + " Sun symbolism and " : ""}deterministic numerology in this first-pass synthesis. Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} are calculated from entered date/name data; their meanings remain symbolic. ${sunSign ? "The Sun sign was calculated locally with astronomy-engine but is not independently verified. " : "The Sun sign is withheld because it cannot be resolved safely from the available local birth-time information. "}Moon, Rising, planets, houses, aspects, nodes, and Chiron are deliberately absent rather than approximated.`,
+    dailyGuidance: [pathPattern.action, signPattern?.action].filter(Boolean).join(" "),
     depthInterpretation,
     localOnly: true,
     syncStatus: "local-only",
