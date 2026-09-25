@@ -1,3 +1,5 @@
+import { parseDateOnly } from "../packages/core/compute/date-only.js";
+
 // Sacred Geometry - Platonic Solids, Flower of Life, Golden Ratio
 
 interface PlatonicSolid {
@@ -62,9 +64,7 @@ export function calculateSacredGeometry(
   lifePath: number,
   name: string
 ): SacredGeometryProfile {
-  const date = new Date(birthDate);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
+  const { day, month } = parseDateOnly(birthDate);
   
   // Birth solid from day
   const birthSolidIndex = (day - 1) % 5;
