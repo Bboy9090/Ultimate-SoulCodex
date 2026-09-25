@@ -59,7 +59,7 @@ export function getMoonSign(date: Date): string {
 
 export function getMoonPhase(date: Date): { phase: string; percentage: number } {
   const illumination = Astro.Illumination(Astro.Body.Moon, date);
-  const phaseAngle = illumination.phase_angle;
+  const phaseAngle = Astro.MoonPhase(date);
   const percentage = Math.round(illumination.phase_fraction * 100);
   
   let phase: string;
