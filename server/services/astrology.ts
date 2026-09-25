@@ -1,9 +1,9 @@
 import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
-import { fromZonedTime } from "date-fns-tz";
-import type {
-  VerificationState,
-  PlacementEvidence,
-  PlacementLike,
+import {
+  resolveExactCivilTime,
+  type VerificationState,
+  type PlacementEvidence,
+  type PlacementLike,
 } from "@soulcodex/core";
 import {
   fetchHorizonsReference,
@@ -186,17 +186,20 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
   if (requiresTime && !birthTime) return null;
 
   const time = birthTime && /^\d{2}:\d{2}$/.test(birthTime) ? birthTime : "12:00";
-  const localTimestamp = `${birthData.birthDate}T${time}:00`;
 
   if (birthData.timezone) {
-    const zoned = fromZonedTime(localTimestamp, birthData.timezone);
-    return Number.isNaN(zoned.getTime()) ? null : zoned;
+    const resolution = resolveExactCivilTime(
+      birthData.birthDate,
+      time,
+      birthData.timezone,
+    );
+    return resolution.status === "resolved" ? resolution.instant : null;
   }
 
   // Date-only Sun candidates remain useful for evidence collection, but the
   // production verifier will not promote them without an explicit time zone.
   if (requiresTime) return null;
-  const utc = new Date(`${localTimestamp}Z`);
+  const utc = new Date(`${birthData.birthDate}T${time}:00Z`);
   return Number.isNaN(utc.getTime()) ? null : utc;
 }
 
