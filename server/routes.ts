@@ -5,6 +5,7 @@ import { setupSession } from "./session";
 import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
 import { profileBelongsToActor } from "./lib/profile-ownership";
 import { serializeProfileForJson } from "./lib/profile-json";
+import { verifyBirthTimezoneCoordinates } from "./lib/birth-location-consistency";
 import {
   birthDataSchema,
   enneagramAssessmentSchema,
@@ -100,12 +101,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const birthData = birthDataSchema.parse(req.body);
+      const parsedBirthData = birthDataSchema.safeParse(req.body);
+      if (!parsedBirthData.success) {
+        return res.status(400).json({
+          message: "Profile birth data is invalid",
+          code: "invalid_birth_data",
+          issues: parsedBirthData.error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+          })),
+        });
+      }
+
+      const birthData = parsedBirthData.data;
+      const latitude = finiteCoordinate(birthData.latitude);
+      const longitude = finiteCoordinate(birthData.longitude);
+
+      if (latitude !== undefined && longitude !== undefined) {
+        const locationConsistency = verifyBirthTimezoneCoordinates({
+          latitude,
+          longitude,
+          timezone: birthData.timezone,
+        });
+        if (locationConsistency.status !== "matched") {
+          return res.status(422).json({
+            message:
+              locationConsistency.reason === "timezone_coordinate_mismatch"
+                ? "Birthplace timezone does not match the supplied coordinates."
+                : "Birthplace timezone and coordinates could not be verified safely.",
+            code: locationConsistency.reason,
+            timezone: locationConsistency.timezone,
+            timezoneCandidates: locationConsistency.candidates,
+          });
+        }
+      }
+
       const verifiedAstrologyData = await calculateVerifiedAstrology({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
-        latitude: finiteCoordinate(birthData.latitude),
-        longitude: finiteCoordinate(birthData.longitude),
+        latitude,
+        longitude,
         timezone: birthData.timezone,
       });
       const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
@@ -138,8 +173,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         birthTime: birthData.birthTime,
         birthLocation: birthData.birthLocation,
         timezone: birthData.timezone,
-        latitude: birthData.latitude === undefined ? null : String(birthData.latitude),
-        longitude: birthData.longitude === undefined ? null : String(birthData.longitude),
+        latitude: latitude === undefined ? null : String(latitude),
+        longitude: longitude === undefined ? null : String(longitude),
         isPremium: false,
         astrologyData,
         numerologyData,
