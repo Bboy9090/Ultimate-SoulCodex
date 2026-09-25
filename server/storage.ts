@@ -19,6 +19,7 @@ function appleUsername(subject: string) {
 }
 
 export interface IStorage {
+  readonly durable: boolean;
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -35,6 +36,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  readonly durable = false;
   private users = new Map<string, User>();
   private profiles = new Map<string, Profile>();
   private assessments = new Map<string, Assessment>();
@@ -191,6 +193,7 @@ export class MemStorage implements IStorage {
 }
 
 class PostgresStorage implements IStorage {
+  readonly durable = true;
   private async db() {
     return (await import("./db")).db;
   }
@@ -282,4 +285,9 @@ class PostgresStorage implements IStorage {
 
 const usePostgres = Boolean(process.env.DATABASE_URL) && process.env.DEMO_MODE !== "true";
 export const storage: IStorage = usePostgres ? new PostgresStorage() : new MemStorage();
+
+export function durableServerPersistenceAvailable(): boolean {
+  return storage.durable;
+}
+
 console.log(`[ServerStorage] Using ${usePostgres ? "PostgresStorage" : "MemStorage"}`);
