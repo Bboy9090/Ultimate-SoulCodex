@@ -29,13 +29,39 @@ const GOVERNED_SIGNS = new Set([
   'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
 ]);
 
-const GOVERNED_HD_TYPES = new Set([
-  'manifestor',
-  'generator',
-  'manifesting generator',
-  'projector',
-  'reflector',
-]);
+const GOVERNED_HD_CORE = {
+  manifestor: {
+    type: 'Manifestor',
+    strategy: 'To Inform',
+    authorities: ['Emotional Authority', 'Splenic Authority', 'Ego Authority'],
+  },
+  generator: {
+    type: 'Generator',
+    strategy: 'To Respond',
+    authorities: ['Emotional Authority', 'Sacral Authority'],
+  },
+  'manifesting generator': {
+    type: 'Manifesting Generator',
+    strategy: 'To Respond & Inform',
+    authorities: ['Emotional Authority', 'Sacral Authority'],
+  },
+  projector: {
+    type: 'Projector',
+    strategy: 'To Wait for Invitation',
+    authorities: [
+      'Emotional Authority',
+      'Splenic Authority',
+      'Ego Authority',
+      'Self-Projected Authority',
+      'Mental Authority',
+    ],
+  },
+  reflector: {
+    type: 'Reflector',
+    strategy: 'To Wait a Lunar Cycle',
+    authorities: ['Lunar Authority'],
+  },
+} as const;
 
 const GOVERNED_NUMEROLOGY_VALUES = new Set([
   '1', '2', '3', '4', '5', '6', '7', '8', '9', '11', '22', '33',
@@ -47,10 +73,34 @@ function governedSign(value: string | undefined): string | undefined {
   return GOVERNED_SIGNS.has(normalized) ? value : undefined;
 }
 
-function governedHumanDesignType(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  const normalized = value.trim().toLowerCase();
-  return GOVERNED_HD_TYPES.has(normalized) ? value : undefined;
+function governedHumanDesignCore(
+  input: GalacticCodeInput['humanDesign'],
+): Pick<GalacticCodeInput['humanDesign'], 'type' | 'strategy' | 'authority' | 'profile'> | null {
+  const typeKey = input.type?.trim().toLowerCase() as keyof typeof GOVERNED_HD_CORE | undefined;
+  if (!typeKey) return null;
+
+  const policy = GOVERNED_HD_CORE[typeKey];
+  if (!policy) return null;
+
+  const strategy = input.strategy?.trim();
+  const authority = input.authority?.trim();
+  const profile = input.profile?.trim();
+
+  if (!strategy || strategy.toLowerCase() !== policy.strategy.toLowerCase()) return null;
+  if (!authority) return null;
+
+  const canonicalAuthority = policy.authorities.find(
+    (value) => value.toLowerCase() === authority.toLowerCase(),
+  );
+  if (!canonicalAuthority) return null;
+  if (!profile || !/^[1-6]\/([1-6])$/.test(profile)) return null;
+
+  return {
+    type: policy.type,
+    strategy: policy.strategy,
+    authority: canonicalAuthority,
+    profile,
+  };
 }
 
 function governedNumerologyValue(
@@ -59,11 +109,6 @@ function governedNumerologyValue(
   if (value === undefined || value === null) return undefined;
   const normalized = String(value).trim();
   return GOVERNED_NUMEROLOGY_VALUES.has(normalized) ? value : undefined;
-}
-
-function governedProfile(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  return /^[1-6]\/[1-6]$/.test(value.trim()) ? value : undefined;
 }
 
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
@@ -83,6 +128,9 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
     'personalityAssessments',
     input.behavior.evidenceState || 'candidate',
   );
+  const humanDesignCore = humanDesignAllowed
+    ? governedHumanDesignCore(input.humanDesign)
+    : null;
 
   return {
     ...input,
@@ -101,11 +149,10 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
           majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects') ? input.astrology.majorAspects : undefined,
         }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
-    humanDesign: humanDesignAllowed
+    humanDesign: humanDesignCore
       ? {
           ...input.humanDesign,
-          type: governedHumanDesignType(input.humanDesign.type),
-          profile: governedProfile(input.humanDesign.profile),
+          ...humanDesignCore,
         }
       : { coverage: 'missing', evidenceState: input.humanDesign.evidenceState || 'candidate' },
     numerology: numerologyAllowed
