@@ -41,6 +41,19 @@ export const SWISS_EQUAL_HOUSE_FIXTURES: readonly SwissEqualHouseFixture[] = [
   expectedMidheavenLongitude: expectedMidheavenLongitude as number,
 }));
 
+export const SWISS_EQUAL_HOUSE_POLAR_EDGE_FIXTURES: readonly SwissEqualHouseFixture[] = [
+  ["arctic-circle-66-6","2024-06-21T12:00:00Z",66.6,25,193.66644295279318,113.32889150455723],
+  ["high-arctic-80","2024-06-21T12:00:00Z",80,0,180.05543079064213,90.1613856533723],
+  ["near-north-pole-89","2024-06-21T12:00:00Z",89,0,180.00742024332314,90.1613856533723],
+].map(([id,inputTimestamp,latitude,longitude,expectedAscendantLongitude,expectedMidheavenLongitude]) => ({
+  id: id as string,
+  inputTimestamp: inputTimestamp as string,
+  latitude: latitude as number,
+  longitude: longitude as number,
+  expectedAscendantLongitude: expectedAscendantLongitude as number,
+  expectedMidheavenLongitude: expectedMidheavenLongitude as number,
+}));
+
 export const SWISS_EQUAL_HOUSE_REFERENCE = Object.freeze({
   engine: "Swiss Ephemeris 2.10.03 / pyswisseph 20230604",
   function: "swe_houses_ex",
