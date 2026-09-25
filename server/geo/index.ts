@@ -4,6 +4,10 @@ import { getGeoCached, setGeoCached, type GeoResult } from "./cache";
 
 export type { GeoResult };
 
+function isAmbiguityError(error: unknown): boolean {
+  return error instanceof Error && error.message.startsWith("Ambiguous geocoding results for:");
+}
+
 export async function resolveGeo(place: string): Promise<GeoResult | null> {
   if (!place) return null;
 
@@ -11,6 +15,28 @@ export async function resolveGeo(place: string): Promise<GeoResult | null> {
   if (cached) {
     console.log(`[GeoCache] HIT: ${place}`);
     return cached;
+  }
+
+  // Prefer the live ranked geocoder because birthplace accuracy matters more
+  // than avoiding a network call. The static table is a resilience fallback,
+  // not an authority for potentially ambiguous place names.
+  try {
+    const nominatimResult = await geocodeNominatim(place);
+    const result: GeoResult = {
+      ...nominatimResult,
+      provider: "nominatim",
+    };
+    setGeoCached(place, result);
+    console.log(
+      `[GeoCache] MISS → Nominatim: ${place} → (${result.lat}, ${result.lon})`,
+    );
+    return result;
+  } catch (err) {
+    if (isAmbiguityError(err)) {
+      console.warn(`[GeoCache] Ambiguous birthplace "${place}" requires more detail`);
+      return null;
+    }
+    console.warn(`[GeoCache] Nominatim unavailable for "${place}"; checking static fallback`, err);
   }
 
   const staticResult = geocodeLocation(place);
@@ -22,21 +48,9 @@ export async function resolveGeo(place: string): Promise<GeoResult | null> {
       provider: "static",
     };
     setGeoCached(place, result);
-    console.log(`[GeoCache] MISS → static DB: ${place}`);
+    console.log(`[GeoCache] MISS → static fallback: ${place}`);
     return result;
   }
 
-  try {
-    const nominatimResult = await geocodeNominatim(place);
-    const result: GeoResult = {
-      ...nominatimResult,
-      provider: "nominatim",
-    };
-    setGeoCached(place, result);
-    console.log(`[GeoCache] MISS → Nominatim: ${place} → (${result.lat}, ${result.lon})`);
-    return result;
-  } catch (err) {
-    console.warn(`[GeoCache] Nominatim fallback failed for "${place}":`, err);
-    return null;
-  }
+  return null;
 }
