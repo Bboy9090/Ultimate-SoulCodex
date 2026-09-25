@@ -10,6 +10,7 @@ export * from './compute/archetype.js';
 export * from './compute/numerology.js';
 export * from './compute/date-only.js';
 export * from './compute/civil-time.js';
+export * from './compute/offline-sun.js';
 export * from './compute/elements.js';
 export * from './compute/moral.js';
 export * from './compute/confidence.js';
