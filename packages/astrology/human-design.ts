@@ -1,7 +1,6 @@
 import * as Astronomy from 'astronomy-engine';
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
-import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
+import { resolveExactCivilTime, createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
 
 // Human Design Gates mapped to their correct centers and meanings
 export const HD_GATES = {
@@ -294,6 +293,8 @@ export type HumanDesignUnresolvedReason =
   | 'malformed_birth_time'
   | 'invalid_timezone'
   | 'timezone_resolution_failed'
+  | 'nonexistent_local_time'
+  | 'ambiguous_local_time'
   | 'invalid_coordinates'
   | 'missing_birth_date'
   | 'missing_birth_time'
@@ -1026,15 +1027,22 @@ function calculateHumanDesignInternal(birthData: {
   const timezoneResolutionSource = timezoneResolution.source;
 
   // Resolve the exact birth instant once and keep all activation astronomy in UTC.
-  const [year, month, day] = birthData.birthDate.split('-').map(Number);
-  const [hours, minutes] = birthData.birthTime.split(':').map(Number);
-  const localTimeString =
-    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T` +
-    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-  const birthTimeUTC = fromZonedTime(localTimeString, resolvedTimezone);
-  if (Number.isNaN(birthTimeUTC.getTime())) {
-    return { result: { status: 'unresolved', reason: 'timezone_resolution_failed' } };
+  // Repeated fall-back hours and spring-forward gaps are not exact instants, so
+  // fail closed instead of allowing the timezone library to choose silently.
+  const civilTime = resolveExactCivilTime(
+    birthData.birthDate,
+    birthData.birthTime,
+    resolvedTimezone,
+  );
+  if (civilTime.status !== 'resolved') {
+    const reason =
+      civilTime.reason === 'ambiguous_local_time' ||
+      civilTime.reason === 'nonexistent_local_time'
+        ? civilTime.reason
+        : 'timezone_resolution_failed';
+    return { result: { status: 'unresolved', reason } };
   }
+  const birthTimeUTC = civilTime.instant;
 
   const astroData = calculateHdAstroAtUtc(birthTimeUTC);
   const DESIGN_SOLAR_ARC = 87.975;
