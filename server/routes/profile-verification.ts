@@ -48,7 +48,7 @@ type InputTimeProvenance = {
   runtimeTzdbVersion: string | null;
   birthTimeAccuracy: "recorded" | "recalled" | "estimated" | "unknown";
   birthTimeUncertaintyMinutes: number | null;
-  estimatedTimeRequiresUncertaintyReview: boolean;
+  birthTimeQualityRequiresReview: boolean;
 };
 
 function withVerifiedLegacyAliases(
@@ -120,8 +120,9 @@ export function registerProfileVerificationRoutes(app: Express) {
                 (parsed.data.birthTime?.trim() ? "recalled" : "unknown"),
               birthTimeUncertaintyMinutes:
                 parsed.data.birthTimeUncertaintyMinutes ?? null,
-              estimatedTimeRequiresUncertaintyReview:
-                parsed.data.birthTimeAccuracy === "estimated",
+              birthTimeQualityRequiresReview:
+                parsed.data.birthTimeAccuracy === "estimated" ||
+                parsed.data.birthTimeAccuracy === "unknown",
             }
           : null;
 
@@ -189,8 +190,9 @@ export function registerProfileVerificationRoutes(app: Express) {
                 (parsed.data.birthTime?.trim() ? "recalled" : "unknown"),
               birthTimeUncertaintyMinutes:
                 parsed.data.birthTimeUncertaintyMinutes ?? null,
-              estimatedTimeRequiresUncertaintyReview:
-                parsed.data.birthTimeAccuracy === "estimated",
+              birthTimeQualityRequiresReview:
+                parsed.data.birthTimeAccuracy === "estimated" ||
+                parsed.data.birthTimeAccuracy === "unknown",
             },
           });
           humanDesignData = trust.status === "verified"
