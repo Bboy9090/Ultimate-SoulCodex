@@ -14,7 +14,7 @@ import {
 import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = Astronomy;
 import * as geoTz from 'geo-tz';
-import { resolveExactCivilTime } from '@soulcodex/core';
+import { parseDateOnly, resolveExactCivilTime } from '@soulcodex/core';
 
 interface PlanetData {
   sign: string;
@@ -596,10 +596,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
 
 export function getTarotBirthCards(birthDate: string): { card1: string; card2: string; interpretation: string } {
   // Correct tarot birth card calculation: sum all digits and reduce to 1-22
-  const date = new Date(birthDate);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
+  const { day, month, year } = parseDateOnly(birthDate);
   
   // Sum all individual digits (e.g., 15/03/1990 = 1+5+0+3+1+9+9+0 = 28)
   const sumAllDigits = (num: number) => {
