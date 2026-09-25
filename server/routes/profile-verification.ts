@@ -188,10 +188,23 @@ export function registerProfileVerificationRoutes(app: Express) {
         }
       }
 
+      const verifiedAstrologyBodies =
+        astrologyData.verification?.verifiedBodies ?? [];
+      const humanDesignVerified = humanDesignData?.status === "verified";
+      const verifiedEvidenceAvailable =
+        verifiedAstrologyBodies.length > 0 || humanDesignVerified;
+
       return res.json({
         astrologyData: withVerifiedLegacyAliases(astrologyData),
         humanDesignData,
         updatedAt,
+        evidenceSummary: {
+          status: verifiedEvidenceAvailable
+            ? "verified_evidence_available"
+            : "unresolved",
+          verifiedAstrologyBodies,
+          humanDesignVerified,
+        },
         processing: {
           persistedProfile: false,
           aiGeneration: false,
