@@ -54,6 +54,18 @@ function profileNotFound(res: any) {
   return res.status(404).json({ message: "Profile not found" });
 }
 
+function productionProfilePersistenceUnavailable(): boolean {
+  return process.env.NODE_ENV === "production" && !storage.durable;
+}
+
+function durableProfileStorageRequired(res: any) {
+  return res.status(503).json({
+    message:
+      "Server-saved profiles are temporarily unavailable because durable storage is not configured. Local Soul Codex profiles on this device are unaffected.",
+    code: "durable_storage_required",
+  });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
@@ -82,6 +94,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const birthData = birthDataSchema.parse(req.body);
       const verifiedAstrologyData = await calculateVerifiedAstrology({
@@ -140,6 +156,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/profiles/:id", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const profile = await storage.getProfile(req.params.id);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
@@ -151,6 +171,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles/:id/enneagram", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const assessment = enneagramAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
@@ -169,6 +193,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles/:id/mbti", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const assessment = mbtiAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
@@ -197,6 +225,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/pdf/profile/:id", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const profileId = req.params.id;
       const profile = await storage.getProfile(profileId);
