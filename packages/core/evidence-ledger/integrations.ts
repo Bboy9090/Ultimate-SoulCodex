@@ -74,7 +74,11 @@ export function calcPersonalDayWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForDate(birthDate);
+  const birthInputState = deriveInputStateForDate(birthDate);
+  const targetDateValid =
+    targetDate instanceof Date && !Number.isNaN(targetDate.getTime());
+  const derivedInputState: InputState =
+    birthInputState === 'valid' && !targetDateValid ? 'invalid' : birthInputState;
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   // Fail-closed: only calculate if input is valid
@@ -88,8 +92,9 @@ export function calcPersonalDayWithEvidence(
       {
         inputsUsed: [`birth_date_${birthDate || 'missing'}`],
         reasoning: [
-          derivedInputState === 'missing' ? 'Birth date not provided' :
-          derivedInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          birthInputState === 'missing' ? 'Birth date not provided' :
+          birthInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          !targetDateValid ? 'Target date is not a valid Date instant' :
           'Birth date could not be processed',
         ],
         limitations: [
@@ -153,7 +158,11 @@ export function calcPersonalYearWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForDate(birthDate);
+  const birthInputState = deriveInputStateForDate(birthDate);
+  const targetYearValid =
+    Number.isInteger(targetYear) && targetYear >= 1 && targetYear <= 9999;
+  const derivedInputState: InputState =
+    birthInputState === 'valid' && !targetYearValid ? 'invalid' : birthInputState;
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   if (derivedInputState !== 'valid') {
@@ -169,8 +178,9 @@ export function calcPersonalYearWithEvidence(
           `target_year_${targetYear}`,
         ],
         reasoning: [
-          derivedInputState === 'missing' ? 'Birth date not provided' :
-          derivedInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          birthInputState === 'missing' ? 'Birth date not provided' :
+          birthInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          !targetYearValid ? `Target year ${targetYear} must be an integer from 1 to 9999` :
           'Birth date could not be processed',
         ],
         limitations: [
