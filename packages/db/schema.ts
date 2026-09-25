@@ -91,6 +91,15 @@ export const birthDataSchema = z.object({
   birthDate: z.string().min(1, "Birth date is required"),
   // Empty string represents an explicitly unknown birth time.
   birthTime: birthTimeSchema,
+  birthTimeAccuracy: z
+    .enum(["recorded", "recalled", "estimated", "unknown"])
+    .optional(),
+  birthTimeUncertaintyMinutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(720)
+    .optional(),
   birthLocation: z.string().min(1, "Birth location is required"),
   timezone: z.string().min(1, "Timezone is required"),
   latitude: z.union([z.string(), z.number()]).optional(),
