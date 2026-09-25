@@ -13,7 +13,7 @@ export interface DailyContext {
   moonPhasePercentage: number;
   currentHDGate: number;
   currentHDLine: number;
-  planetaryHour: string;
+  planetaryHour: string | null;
 }
 
 function reduceToSingleDigit(num: number): number {
@@ -89,22 +89,6 @@ export function getCurrentHDGate(date: Date): { gate: number; line: number } {
   return degreeToGateAndLine(sunPos.elon);
 }
 
-function getPlanetaryHour(date: Date): string {
-  const planets = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon'];
-  const dayOfWeek = date.getDay();
-  const hour = date.getHours();
-  
-  const planetaryDayRulers = [
-    'Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'
-  ];
-  
-  const dayRuler = planetaryDayRulers[dayOfWeek];
-  const dayRulerIndex = planets.indexOf(dayRuler);
-  
-  const hourIndex = (dayRulerIndex + hour) % 7;
-  return planets[hourIndex];
-}
-
 export function getDailyContext(birthDate: string, currentDate: Date = new Date()): DailyContext {
   const moonPhaseData = getMoonPhase(currentDate);
   const hdGateData = getCurrentHDGate(currentDate);
@@ -118,6 +102,6 @@ export function getDailyContext(birthDate: string, currentDate: Date = new Date(
     moonPhasePercentage: moonPhaseData.percentage,
     currentHDGate: hdGateData.gate,
     currentHDLine: hdGateData.line,
-    planetaryHour: getPlanetaryHour(currentDate),
+    planetaryHour: null,
   };
 }
