@@ -7,6 +7,15 @@
 
 import { parseDateOnly } from './date-only.js';
 
+export const PERSONAL_NUMEROLOGY_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33] as const;
+export type PersonalNumerologyValue = (typeof PERSONAL_NUMEROLOGY_VALUES)[number];
+export const PERSONAL_YEAR_BOUNDARY_POLICY = 'calendar-year' as const;
+
+export function isPersonalNumerologyValue(value: number): value is PersonalNumerologyValue {
+  return PERSONAL_NUMEROLOGY_VALUES.includes(value as PersonalNumerologyValue);
+}
+
+
 function reduceToSingleDigit(num: number): number {
   while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
     num = num.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
@@ -16,8 +25,9 @@ function reduceToSingleDigit(num: number): number {
 
 /**
  * Calculates Personal Day Number based on birth date and target date.
- * Personal Day changes daily and is calculated from:
- * reduced(birth day) + reduced(birth month) + reduced(current day) + reduced(current month) + reduced(current year)
+ * Personal Day changes daily and is calculated from the entered birth month/day
+ * plus the target calendar date. Soul Codex preserves 11, 22, and 33 whenever
+ * the declared reduction policy reaches them.
  *
  * @example
  * calcPersonalDay("1990-08-15", new Date("2026-07-06")) // July 6, 2026 for someone born Aug 15
@@ -40,8 +50,10 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
 
 /**
  * Calculates Personal Year Number based on birth month/day and target year.
- * Personal Year is annual and changes on each birthday.
- * Calculated from: reduced(birth month) + reduced(birth day) + reduced(target year)
+ * Soul Codex uses the explicit calendar-year convention: the target year's
+ * Personal Year applies from January 1 through December 31. It is calculated
+ * from reduced birth month + reduced birth day + reduced target year, with
+ * master numbers 11, 22, and 33 preserved when reached.
  *
  * @example
  * calcPersonalYear("1990-08-15", 2026) // 2026 year cycle for someone born Aug 15
@@ -81,7 +93,8 @@ export function calcPersonalYear(
 
 /**
  * Calculates Personal Month Number based on Personal Year and target month.
- * Personal Month is monthly and cycles 1-9 within the Personal Year.
+ * Personal Month is monthly within the Personal Year and follows the same
+ * reduction policy, including preservation of 11, 22, and 33 when reached.
  * Calculated from: reduced(personal year) + reduced(target month)
  *
  * @example
