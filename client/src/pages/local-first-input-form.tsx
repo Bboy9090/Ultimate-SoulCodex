@@ -10,7 +10,7 @@ import {
 } from "@shared/schema";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { generateFoundationOfflineCodexProfile } from "@/lib/foundationOfflineCodex";
-import { apiRequest } from "@/lib/queryClient";
+import { apiFetch, apiRequest } from "@/lib/queryClient";
 import { saveOfflineProfile } from "@/lib/offlineProfileStore";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import {
@@ -63,6 +63,18 @@ const BUILT_IN_LOCATIONS: Record<
   tokyo: { lat: "35.6762", lng: "139.6503", timezone: "Asia/Tokyo" },
 };
 
+const SAFE_OFFLINE_LOCATION_KEYS = new Set([
+  "new york city",
+  "nyc",
+  "manhattan",
+  "brooklyn",
+  "bronx",
+  "bronx new york",
+  "queens",
+  "staten island",
+  "harlem",
+]);
+
 function builtInLocation(value: string) {
   const normalized = value
     .trim()
@@ -86,7 +98,7 @@ function builtInLocation(value: string) {
       name,
       location,
     }))
-    .filter(({ index }) => index >= 0)
+    .filter(({ index, name }) => index >= 0 && SAFE_OFFLINE_LOCATION_KEYS.has(name))
     .sort(
       (left, right) =>
         left.index - right.index || right.name.length - left.name.length,
@@ -186,28 +198,54 @@ export default function LocalFirstInputForm() {
 
     setIsLocating(true);
     try {
-      let result = builtInLocation(location);
+      const offline =
+        typeof navigator !== "undefined" && !navigator.onLine;
+      let result = offline ? builtInLocation(location) : null;
 
-      if (!result) {
-        if (typeof navigator !== "undefined" && !navigator.onLine) {
-          toast({
-            title: "Location not found offline",
-            description:
-              "Enter latitude, longitude, and the birth location's IANA timezone manually. The reading can still be generated on this device.",
-            variant: "destructive",
-          });
-          return;
+      if (offline && !result) {
+        toast({
+          title: "Location not found offline",
+          description:
+            "Enter latitude, longitude, and the birth location's IANA timezone manually. The reading can still be generated on this device.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!offline) {
+        const response = await apiFetch("/api/location/resolve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ place: location.trim() }),
+        });
+        const resolved = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (resolved?.code === "location_ambiguous") {
+            toast({
+              title: "Which place do you mean?",
+              description:
+                resolved?.message ||
+                "Add a state, region, or country to the birthplace and try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          throw new Error(
+            resolved?.message || "Birth location could not be resolved.",
+          );
         }
 
-        const response = await apiRequest("POST", "/api/location/resolve", {
-          place: location.trim(),
-        });
-        const resolved = await response.json();
         result = {
           lat: String(resolved.latitude),
           lng: String(resolved.longitude),
           timezone: String(resolved.timezone),
         };
+      }
+
+      if (!result) {
+        throw new Error("Birth location could not be resolved.");
       }
 
       form.setValue("latitude", result.lat, { shouldValidate: true });
