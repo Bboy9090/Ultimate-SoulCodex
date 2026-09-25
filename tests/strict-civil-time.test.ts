@@ -81,3 +81,38 @@ test('an exact recorded noon birth time is not treated as unknown', () => {
   assert.equal(result.placements?.moon?.verificationStatus, 'calculated');
   assert.equal(result.placements?.rising?.verificationStatus, 'calculated');
 });
+
+
+test('shared astrology refuses timed calculation without timezone or resolvable coordinates', () => {
+  assert.throws(
+    () =>
+      calculatePackageAstrology({
+        birthDate: '1990-09-17',
+        birthTime: '11:11',
+      }),
+    /valid IANA timezone|resolvable birth coordinates|precise birth time/i,
+  );
+});
+
+test('shared astrology may resolve an IANA zone from exact birth coordinates without coarse longitude guessing', () => {
+  const result = calculatePackageAstrology({
+    birthDate: '1990-09-17',
+    birthTime: '11:11',
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+
+  assert.equal(result.placements?.moon?.verificationStatus, 'calculated');
+  assert.equal(result.placements?.rising?.verificationStatus, 'calculated');
+});
+
+test('historical IANA timezone resolution preserves pre-standard local mean time', () => {
+  const resolved = resolveCivilTimeStrict(
+    '1850-05-15',
+    '09:30',
+    'Africa/Cairo',
+  );
+
+  assert.equal(resolved.status, 'valid');
+  assert.equal(resolved.utc?.toISOString(), '1850-05-15T07:24:51.000Z');
+});
