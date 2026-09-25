@@ -7,6 +7,8 @@ import {
   type DepthTensionAxis,
   type InterpretationEvidenceRef,
 } from "../depth-interpretation/index.js";
+import { calcCoreNumerology } from "../compute/numerology.js";
+import { calcPersonalYear } from "../compute/personal-numbers.js";
 
 export interface OfflineBirthInput {
   name: string;
@@ -25,9 +27,9 @@ export interface OfflineAstrologyData {
   planets: Record<string, { sign: string; house: number; degree: number }>;
   houses: Array<{ sign: string; degree: number }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: { sign: string; house: number; degree: number };
-  southNode: { sign: string; house: number; degree: number };
-  chiron: { sign: string; house: number; degree: number };
+  northNode: { sign: string; house: number; degree: number } | null;
+  southNode: { sign: string; house: number; degree: number } | null;
+  chiron: { sign: string; house: number; degree: number } | null;
 }
 
 export interface OfflineNumerologyData {
@@ -180,20 +182,6 @@ function reduceNumber(input: number): number {
   return value;
 }
 
-function nameNumber(name: string, mode: "all" | "vowels" | "consonants"): number {
-  const vowels = new Set(["A", "E", "I", "O", "U"]);
-  const total = name.toUpperCase().split("").reduce((sum, character) => {
-    const code = character.charCodeAt(0) - 64;
-    if (code < 1 || code > 26) return sum;
-    const value = ((code - 1) % 9) + 1;
-    const isVowel = vowels.has(character);
-    if (mode === "vowels" && !isVowel) return sum;
-    if (mode === "consonants" && isVowel) return sum;
-    return sum + value;
-  }, 0);
-  return reduceNumber(total);
-}
-
 function calculateSunSign(month: number, day: number): string {
   const boundaries: Array<[number, number, string]> = [
     [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"],
@@ -217,54 +205,39 @@ function stableHash(value: string): number {
 }
 
 function calculateAstrology(input: OfflineBirthInput): OfflineAstrologyData {
-  const date = parseDate(input.birthDate);
-  const time = parseTime(input.birthTime);
-  const latitude = Number(input.latitude ?? 0);
-  const sunSign = calculateSunSign(date.month, date.day);
-  const dayIndex = Math.floor((Date.UTC(date.year, date.month - 1, date.day) - Date.UTC(date.year, 0, 0)) / 86_400_000);
-  const moonSign = SIGNS[(dayIndex + time.hours) % 12];
-  const risingSign = SIGNS[(Math.floor((time.hours * 60 + time.minutes) / 120) + Math.floor(latitude / 10) + 24) % 12];
-  const sunIndex = SIGNS.indexOf(sunSign as (typeof SIGNS)[number]);
-  const risingIndex = SIGNS.indexOf(risingSign);
-  const seed = stableHash(`${input.birthDate}|${input.birthTime ?? "unknown"}|${latitude}|${input.longitude ?? 0}`);
-  const planet = (offset: number, house: number, degree: number) => ({ sign: SIGNS[(sunIndex + offset) % 12], house, degree });
-  const planets = {
-    sun: { sign: sunSign, house: 1, degree: 15.5 },
-    moon: { sign: moonSign, house: 4, degree: 23.2 },
-    mercury: planet(1, 3, 8.7), venus: planet(2, 2, 19.3), mars: planet(3, 6, 12.8),
-    jupiter: planet(4, 9, 26.1), saturn: planet(5, 10, 4.9), uranus: planet(6, 11, 18.4),
-    neptune: planet(7, 12, 21.7), pluto: planet(8, 8, 14.2),
-  };
-  const houses = Array.from({ length: 12 }, (_, index) => ({
-    sign: SIGNS[(risingIndex + index) % 12],
-    degree: Number((((seed % 3000) / 100 + index * 30) % 360).toFixed(2)),
-  }));
-  const moonIndex = SIGNS.indexOf(moonSign);
-  const northNode = { sign: SIGNS[(moonIndex + 6) % 12], house: 5, degree: 11.3 };
+  const { month, day } = parseDate(input.birthDate);
+  const sunSign = calculateSunSign(month, day);
+
+  // Fail closed in offline mode. This legacy generator has no governed local
+  // contract for Moon, Ascendant, planetary longitudes, houses, aspects,
+  // Nodes, or Chiron. Returning invented geometry here would contaminate
+  // downstream synthesis and compatibility calculations.
   return {
-    sunSign, moonSign, risingSign, planets, houses,
-    aspects: [
-      { planet1: "sun", planet2: "moon", aspect: "sextile", orb: 2.3 },
-      { planet1: "venus", planet2: "mars", aspect: "trine", orb: 1.8 },
-      { planet1: "jupiter", planet2: "saturn", aspect: "square", orb: 3.1 },
-    ],
-    northNode,
-    southNode: { sign: SIGNS[(SIGNS.indexOf(northNode.sign) + 6) % 12], house: 11, degree: 11.3 },
-    chiron: { sign: SIGNS[(sunIndex + 9) % 12], house: 7, degree: 16.8 },
+    sunSign,
+    moonSign: "",
+    risingSign: "",
+    planets: {},
+    houses: [],
+    aspects: [],
+    northNode: null,
+    southNode: null,
+    chiron: null,
   };
 }
 
 function calculateNumerology(input: OfflineBirthInput, currentYear: number): OfflineNumerologyData {
-  const { year, month, day } = parseDate(input.birthDate);
-  const lifePath = reduceNumber(day + month + year);
-  const birthday = reduceNumber(day);
-  const expression = nameNumber(input.name, "all");
-  const soulUrge = nameNumber(input.name, "vowels");
-  const personality = nameNumber(input.name, "consonants");
-  const maturity = reduceNumber(lifePath + expression);
-  const personalYear = reduceNumber(day + month + currentYear);
+  const core = calcCoreNumerology(input.birthDate, input.name);
+  const personalYear = calcPersonalYear(input.birthDate, currentYear);
+  const { lifePath, birthday, expression, soulUrge, personality, maturity } = core;
+
   return {
-    lifePath, birthday, expression, soulUrge, personality, maturity, personalYear,
+    lifePath,
+    birthday,
+    expression,
+    soulUrge,
+    personality,
+    maturity,
+    personalYear,
     interpretations: {
       lifePath: `Life Path ${lifePath}: ${LIFE_PATH_TRAITS[lifePath]?.theme ?? "an individual growth pattern"}.`,
       birthday: `Birthday ${birthday}: deterministic reduction of the calendar day, used here only as symbolic reflection.`,
