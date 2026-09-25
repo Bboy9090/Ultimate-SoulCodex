@@ -53,7 +53,7 @@ describe("compatibility saved-profile contract", () => {
         },
       },
       numerologyData: { lifePath: 9 },
-    });
+    }, { trustedEvidenceContext: true });
 
     assert.equal(input.sunSign, "Virgo");
     assert.equal(input.lifePathNumber, 9);
@@ -125,6 +125,24 @@ describe("compatibility saved-profile contract", () => {
     assert.deepEqual(input.unresolved.humanDesign, ["Human Design excluded from Foundation compatibility"]);
   });
 
+  it("never trusts caller-supplied verification metadata without a trusted evidence context", () => {
+    const profile = {
+      astrologyData: {
+        sunSign: "Leo",
+        sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+      },
+      numerologyData: { lifePath: 9 },
+    };
+
+    const untrusted = buildMatchResponse(profile);
+    assert.equal(untrusted.evidenceMode, "symbolic");
+    assert.equal(untrusted.formula.inputs.sunSign, "Leo");
+
+    const trusted = buildMatchResponse(profile, "love", { trustedEvidenceContext: true });
+    assert.equal(trusted.evidenceMode, "verified");
+    assert.equal(trusted.formula.inputs.sunSign, "Virgo");
+  });
+
   it("allows a supported symbolic Sun without promoting it into verified astrology", () => {
     const result = buildMatchResponse({
       astrologyData: { sunSign: "virgo" },
@@ -170,7 +188,7 @@ describe("compatibility saved-profile contract", () => {
         sunSign: "Leo",
         sun: { sign: "Virgo", verificationStatus: "verified", evidence },
       },
-    });
+    }, "love", { trustedEvidenceContext: true });
 
     assert.equal(result.available, true);
     assert.equal(result.evidenceMode, "verified");
@@ -196,6 +214,7 @@ describe("compatibility saved-profile contract", () => {
         humanDesignType: "Reflector",
       },
       { name: "Alex", sunSign: "pisces" },
+      { trustedEvidenceContext: true },
     );
 
     assert.equal(result.available, true);
