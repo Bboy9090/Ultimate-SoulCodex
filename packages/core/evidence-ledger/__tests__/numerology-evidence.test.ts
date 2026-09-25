@@ -94,6 +94,18 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
     });
 
+    it('documents the calendar-year boundary policy', () => {
+      const result = calcPersonalYearWithEvidence('1990-08-15', 2026);
+      assert.ok(result.evidence.limitations.some((value) => value.includes('calendar-year')));
+    });
+
+    it('preserves a master-number Personal Year in evidence', () => {
+      const result = calcPersonalYearWithEvidence('1990-01-09', 2026);
+      assert.strictEqual(result.value, 11);
+      assert.strictEqual(result.evidence.value, 11);
+      assert.strictEqual(result.evidence.calculationStatus, 'resolved');
+    });
+
     it('should produce different years for different target years', () => {
       const birthDate = '1990-08-15';
 
@@ -132,6 +144,15 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok(result1.value >= 1 && result1.value <= 9);
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-month');
+    });
+
+    it('accepts master-number Personal Years as valid parent cycles', () => {
+      const year11 = calcPersonalMonthWithEvidence(11, 1);
+      const year22 = calcPersonalMonthWithEvidence(22, 11);
+
+      assert.strictEqual(year11.evidence.calculationStatus, 'resolved');
+      assert.strictEqual(year22.evidence.calculationStatus, 'resolved');
+      assert.strictEqual(year22.value, 33);
     });
 
     it('should fail closed for invalid personal year', () => {
@@ -213,6 +234,12 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok(result1.value >= 1 && result1.value <= 9);
       assert.strictEqual(result1.evidence.formulaId, 'numerology.expression');
+    });
+
+    it('uses the same normalized Latin stream as the calculation engine', () => {
+      const accented = calcExpressionWithEvidence('ÉÉ');
+      assert.strictEqual(accented.evidence.calculationStatus, 'resolved');
+      assert.strictEqual(accented.evidence.inputState, 'valid');
     });
 
     it('should fail closed for missing name', () => {
