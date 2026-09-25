@@ -1,9 +1,10 @@
 import {
   parseDateOnly,
+  resolveCivilTimeStrict,
   type BirthData,
   type VerificationState,
   type PlacementEvidence,
-  type PlacementLike
+  type PlacementLike,
 } from "@soulcodex/core";
 import {
   getPlanetSignInterpretation,
@@ -14,7 +15,6 @@ import {
 } from "./interpretations";
 import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = Astronomy;
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 
 interface PlanetData {
@@ -128,19 +128,29 @@ function getDegreesInSign(longitude: number): number {
 
 function createBirthTime(birthData: BirthData): Date {
   try {
-    const [year, month, day] = birthData.birthDate.split('-').map(Number);
-    const time = birthData.birthTime || "12:00";
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-    
+    const time = birthData.birthTime?.trim();
+    if (!time) {
+      throw new Error('Exact birth time is required for timed astrology calculations');
+    }
+
+    const latitude = Number(birthData.latitude);
+    const longitude = Number(birthData.longitude);
     const resolvedTimezone = resolveTimezone(
-      birthData.timezone || "UTC",
-      parseFloat(String(birthData.latitude ?? 0)),
-      parseFloat(String(birthData.longitude ?? 0))
+      birthData.timezone?.trim() ?? '',
+      latitude,
+      longitude,
     );
-    
-    return fromZonedTime(new Date(localTimeString), resolvedTimezone);
+
+    const civilTime = resolveCivilTimeStrict(
+      birthData.birthDate,
+      time,
+      resolvedTimezone,
+    );
+    if (civilTime.status !== 'valid' || !civilTime.utc) {
+      throw new Error(`Birth time cannot be resolved exactly: ${civilTime.reason ?? civilTime.status}`);
+    }
+
+    return civilTime.utc;
   } catch (error) {
     console.error('Error creating precise birth time:', error);
     throw error;
@@ -180,36 +190,22 @@ function resolveTimezone(inputTimezone: string, latitude: number, longitude: num
   if (mapped) {
     return mapped;
   }
-  
-  return estimateTimezoneFromCoordinates(latitude, longitude);
-}
 
-function estimateTimezoneFromCoordinates(latitude: number, longitude: number): string {
-  if (longitude >= -180 && longitude < -30) {
-    if (longitude >= -75) return 'America/New_York';
-    if (longitude >= -90) return 'America/Chicago';
-    if (longitude >= -105) return 'America/Denver';
-    if (longitude >= -125) return 'America/Los_Angeles';
-    return 'America/Anchorage';
-  }
-  
-  if (longitude >= -30 && longitude < 60) {
-    if (latitude > 35) {
-      if (longitude < 15) return 'Europe/London';
-      if (longitude < 30) return 'Europe/Paris';
-      return 'Europe/Moscow';
+  if (
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  ) {
+    const timezones = geoTz.find(latitude, longitude);
+    if (timezones && timezones.length > 0) {
+      return timezones[0];
     }
-    return 'Africa/Cairo';
   }
-  
-  if (longitude >= 60 && longitude <= 180) {
-    if (longitude < 90) return 'Asia/Kolkata';
-    if (longitude < 120) return 'Asia/Shanghai';
-    if (longitude < 150) return 'Asia/Tokyo';
-    return 'Pacific/Auckland';
-  }
-  
-  return 'UTC';
+
+  throw new Error('A valid IANA timezone or resolvable birth coordinates are required');
 }
 
 function calculateCelestialPosition(body: Astronomy.Body, birthTime: Date, observer: Astronomy.Observer): { longitude: number; sign: string; degree: number } {
