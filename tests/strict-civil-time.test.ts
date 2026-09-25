@@ -81,3 +81,29 @@ test('an exact recorded noon birth time is not treated as unknown', () => {
   assert.equal(result.placements?.moon?.verificationStatus, 'calculated');
   assert.equal(result.placements?.rising?.verificationStatus, 'calculated');
 });
+
+
+test('strict civil time detects Lord Howe 30-minute repeated interval', () => {
+  const resolved = resolveCivilTimeStrict(
+    '2023-04-02',
+    '01:45',
+    'Australia/Lord_Howe',
+  );
+
+  assert.equal(resolved.status, 'ambiguous');
+  assert.equal(resolved.utc, null);
+  assert.equal(resolved.candidates.length, 2);
+  const offsets = [...resolved.candidateUtcOffsetsMinutes].sort((a, b) => a - b);
+  assert.deepEqual(offsets, [630, 660]);
+});
+
+test('strict civil time rejects Samoa skipped civil date', () => {
+  const resolved = resolveCivilTimeStrict(
+    '2011-12-30',
+    '12:00',
+    'Pacific/Apia',
+  );
+
+  assert.equal(resolved.status, 'nonexistent');
+  assert.equal(resolved.utc, null);
+});
