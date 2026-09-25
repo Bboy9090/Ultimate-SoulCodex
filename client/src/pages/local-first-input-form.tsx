@@ -104,6 +104,10 @@ async function requestVerificationWhenOnline(
     const response = await apiRequest("POST", "/api/verification/profile", {
       birthDate: data.birthDate,
       ...(data.birthTime ? { birthTime: data.birthTime } : {}),
+      ...(data.birthTimeAccuracy ? { birthTimeAccuracy: data.birthTimeAccuracy } : {}),
+      ...(data.birthTimeUncertaintyMinutes !== undefined
+        ? { birthTimeUncertaintyMinutes: data.birthTimeUncertaintyMinutes }
+        : {}),
       timezone: data.timezone,
       latitude: data.latitude,
       longitude: data.longitude,
@@ -155,6 +159,7 @@ export default function LocalFirstInputForm() {
       name: "",
       birthDate: "",
       birthTime: "",
+      birthTimeAccuracy: "unknown",
       birthLocation: "",
       timezone: "",
       latitude: "",
@@ -163,11 +168,13 @@ export default function LocalFirstInputForm() {
   });
 
   const birthTime = form.watch("birthTime");
+  const birthTimeAccuracy = form.watch("birthTimeAccuracy");
   const timezone = form.watch("timezone");
   const latitude = form.watch("latitude");
   const longitude = form.watch("longitude");
   const exactChartInputsReady = Boolean(
     birthTime &&
+      (birthTimeAccuracy === "recorded" || birthTimeAccuracy === "recalled") &&
       isValidIanaTimezone(timezone) &&
       isCoordinateWithinRange(latitude, -90, 90) &&
       isCoordinateWithinRange(longitude, -180, 180),
@@ -363,13 +370,87 @@ export default function LocalFirstInputForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><Clock className="h-4 w-4" /> Birth time <span className="ml-auto text-[11px] font-normal text-[var(--sc-stone)]">optional when unknown</span></FormLabel>
-                        <FormControl><Input {...field} className={inputClass} type="time" data-testid="input-birth-time" /></FormControl>
+                        <FormControl><Input {...field} className={inputClass} type="time" data-testid="input-birth-time" onChange={(event) => {
+                          field.onChange(event);
+                          const value = event.target.value;
+                          const currentAccuracy = form.getValues("birthTimeAccuracy");
+                          if (value && (!currentAccuracy || currentAccuracy === "unknown")) {
+                            form.setValue("birthTimeAccuracy", "recalled", { shouldValidate: true });
+                          }
+                          if (!value) {
+                            form.setValue("birthTimeAccuracy", "unknown", { shouldValidate: true });
+                            form.setValue("birthTimeUncertaintyMinutes", undefined, { shouldValidate: true });
+                          }
+                        }} /></FormControl>
                         <FormMessage />
                         <p className="text-xs leading-5 text-[var(--sc-stone)]">Leave this blank if you do not know it. Exact time unlocks time-sensitive calculation candidates; it is never invented.</p>
                       </FormItem>
                     )}
                   />
                 </div>
+
+                {birthTime && (
+                  <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 sm:p-5">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="birthTimeAccuracy"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[var(--sc-ivory-soft)]">How do you know this time?</FormLabel>
+                            <FormControl>
+                              <select
+                                {...field}
+                                className={inputClass}
+                                data-testid="select-birth-time-accuracy"
+                              >
+                                <option value="recorded">From a birth certificate or record</option>
+                                <option value="recalled">Remembered or told to me</option>
+                                <option value="estimated">Approximate time</option>
+                                <option value="unknown">I don&apos;t know the source</option>
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {birthTimeAccuracy === "estimated" && (
+                        <FormField
+                          control={form.control}
+                          name="birthTimeUncertaintyMinutes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[var(--sc-ivory-soft)]">Could be off by about</FormLabel>
+                              <FormControl>
+                                <Input
+                                  className={inputClass}
+                                  type="number"
+                                  min={1}
+                                  max={720}
+                                  step={1}
+                                  placeholder="30"
+                                  value={field.value ?? ""}
+                                  onChange={(event) =>
+                                    field.onChange(
+                                      event.target.value === ""
+                                        ? undefined
+                                        : Number(event.target.value),
+                                    )
+                                  }
+                                  data-testid="input-birth-time-uncertainty"
+                                />
+                              </FormControl>
+                              <p className="text-xs leading-5 text-[var(--sc-stone)]">
+                                Minutes. Approximate times can generate candidates, but timed results stay unverified until the uncertainty is resolved.
+                              </p>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}
@@ -415,7 +496,7 @@ export default function LocalFirstInputForm() {
                       </p>
                       <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                         {exactChartInputsReady
-                          ? "You supplied birth time, birth-place timezone, latitude, and longitude. Soul Codex can calculate Moon and Rising candidates. Independent online verification is the only remaining step before those values are promoted as chart facts."
+                          ? "You supplied a usable birth time plus birth-place timezone and coordinates. Soul Codex can calculate timed candidates; online comparison can then verify the calculation for the entered time."
                           : "Moon and Rising require an exact birth time plus the birth location's timezone and coordinates. Missing pieces stay unresolved rather than being guessed."}
                       </p>
                     </div>
