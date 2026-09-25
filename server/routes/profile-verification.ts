@@ -98,6 +98,11 @@ export function registerProfileVerificationRoutes(app: Express) {
           }
 
           const inputTimestampUtc = civilTime.utc.toISOString();
+          const utcOffsetMinutes = civilTime.candidateUtcOffsetsMinutes[0];
+          if (!Number.isFinite(utcOffsetMinutes)) {
+            throw new Error("human_design_timezone_offset_missing");
+          }
+
           const trust = createVerifiedHumanDesignTrustRecord({
             birthTimeKnown: true,
             inputTimestampUtc,
@@ -110,7 +115,7 @@ export function registerProfileVerificationRoutes(app: Express) {
             },
             timeConversion: {
               timezone: civilTime.timezone,
-              utcOffsetMinutes: civilTime.candidateUtcOffsetsMinutes[0] ?? 0,
+              utcOffsetMinutes,
               conversionMethod: civilTime.conversionMethod,
               runtimeTzdbVersion: civilTime.runtimeTzdbVersion,
             },
