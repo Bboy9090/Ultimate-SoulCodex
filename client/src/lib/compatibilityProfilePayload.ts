@@ -15,16 +15,18 @@ function firstDefined(...values: unknown[]) {
 export function buildCompatibilityProfilePayload(profile: UnknownRecord | null | undefined) {
   const astrologyData = profile?.astrologyData ?? {};
   const astrology = profile?.astrology ?? {};
-  const verifiedSun = firstDefined(
+  const suppliedSunPlacement = firstDefined(
     astrologyData?.sun,
     astrology?.sun,
     profile?.natalChart?.sun,
     profile?.chart?.sun,
-  );
+  ) as UnknownRecord | undefined;
   const symbolicSun = firstDefined(
     astrologyData?.sunSign,
     astrology?.sunSign,
     profile?.sunSign,
+    suppliedSunPlacement?.sign,
+    suppliedSunPlacement?.internalCandidate?.sign,
   );
   const lifePath = firstDefined(
     profile?.lifePathNumber,
@@ -35,7 +37,10 @@ export function buildCompatibilityProfilePayload(profile: UnknownRecord | null |
 
   return {
     astrologyData: {
-      ...(verifiedSun ? { sun: verifiedSun } : {}),
+      // The compatibility API receives client-owned data, so it must never
+      // receive or trust caller-attested verification metadata. A Sun value
+      // crossing this boundary is symbolic unless the server reconstructs it
+      // from its own evidence store.
       ...(symbolicSun ? { sunSign: symbolicSun } : {}),
     },
     ...(lifePath !== undefined
