@@ -11,7 +11,7 @@ type CompleteHumanDesignCandidateFields = Record<HumanDesignCoreField, string>;
 export interface HumanDesignTimeConversionEvidence {
   timezone: string;
   utcOffsetMinutes: number;
-  conversionMethod: "iana-tzdb";
+  conversionMethod: "standard-iana-tzdb";
   runtimeTzdbVersion: string | null;
 }
 
