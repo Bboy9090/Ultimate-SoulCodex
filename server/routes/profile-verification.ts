@@ -7,6 +7,7 @@ import {
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
 import { resolveCivilTimeStrict } from "@soulcodex/core";
+import { verifyBirthTimezoneCoordinates } from "../lib/birth-location-consistency";
 import { isValidClockTime, isValidDateOnly, isValidIanaTimezone } from "@shared/schema";
 
 const numericCoordinate = z
@@ -79,6 +80,28 @@ export function registerProfileVerificationRoutes(app: Express) {
     }
 
     try {
+      if (
+        parsed.data.latitude !== undefined &&
+        parsed.data.longitude !== undefined
+      ) {
+        const locationConsistency = verifyBirthTimezoneCoordinates({
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
+          timezone: parsed.data.timezone,
+        });
+        if (locationConsistency.status !== "matched") {
+          return res.status(422).json({
+            message:
+              locationConsistency.reason === "timezone_coordinate_mismatch"
+                ? "Birthplace timezone does not match the supplied coordinates."
+                : "Birthplace timezone and coordinates could not be verified safely.",
+            code: locationConsistency.reason,
+            timezone: locationConsistency.timezone,
+            timezoneCandidates: locationConsistency.candidates,
+          });
+        }
+      }
+
       const astrologyData = await calculateVerifiedAstrology({
         birthDate: parsed.data.birthDate,
         birthTime: parsed.data.birthTime?.trim() || undefined,
