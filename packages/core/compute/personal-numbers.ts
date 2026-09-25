@@ -104,6 +104,14 @@ export function calcPersonalYear(
     targetYear = targetYearIfThreeArgs || new Date().getFullYear();
   }
 
+  if (
+    !Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12 ||
+    !Number.isInteger(birthDay) || birthDay < 1 || birthDay > 31 ||
+    !Number.isInteger(targetYear) || targetYear < 1 || targetYear > 9999
+  ) {
+    throw new RangeError('Personal Year requires a valid birth month/day and target year');
+  }
+
   const sum =
     reduceToSingleDigit(birthMonth) +
     reduceToSingleDigit(birthDay) +
@@ -122,6 +130,13 @@ export function calcPersonalYear(
  * calcPersonalMonth(6, 7) // Personal Month during July if Personal Year is 6
  */
 export function calcPersonalMonth(personalYear: number, targetMonth: number): number {
+  if (!isPersonalNumerologyValue(personalYear)) {
+    throw new RangeError('Personal Month requires Personal Year 1-9, 11, 22, or 33');
+  }
+  if (!Number.isInteger(targetMonth) || targetMonth < 1 || targetMonth > 12) {
+    throw new RangeError('Personal Month requires calendar month 1-12');
+  }
+
   const sum = reduceToSingleDigit(personalYear) + reduceToSingleDigit(targetMonth);
   return reduceToSingleDigit(sum);
 }
