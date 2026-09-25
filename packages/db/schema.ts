@@ -107,6 +107,29 @@ const birthTimeSchema = z.union([
   z.string().refine(isValidClockTime, "Birth time must use a real 24-hour HH:MM value"),
 ]);
 
+export function isValidIanaTimezone(value: unknown): value is string {
+  if (typeof value !== "string" || !value.trim()) return false;
+  const timezone = value.trim();
+  if (timezone !== "UTC" && !timezone.includes("/")) return false;
+
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isCoordinateWithinRange(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+): boolean {
+  if (value === undefined || value === null || String(value).trim() === "") return false;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= minimum && numeric <= maximum;
+}
+
 // Additional schemas for API requests
 export const birthDataSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -117,7 +140,10 @@ export const birthDataSchema = z.object({
   // Empty string represents an explicitly unknown birth time.
   birthTime: birthTimeSchema,
   birthLocation: z.string().min(1, "Birth location is required"),
-  timezone: z.string().min(1, "Timezone is required"),
+  timezone: z
+    .string()
+    .min(1, "Timezone is required")
+    .refine(isValidIanaTimezone, "Timezone must be a valid location-style IANA timezone"),
   latitude: z.union([z.string(), z.number()]).optional(),
   longitude: z.union([z.string(), z.number()]).optional(),
   fatherSign: z.string().optional(),
@@ -127,6 +153,41 @@ export const birthDataSchema = z.object({
     neighborhoodType: z.enum(["close-knit", "diverse", "individualistic", "supportive"]).optional(),
     conflictResolution: z.enum(["direct", "diplomatic", "avoidant", "collaborative"]).optional(),
   }).optional(),
+}).superRefine((data, context) => {
+  if (
+    data.latitude !== undefined &&
+    String(data.latitude).trim() !== "" &&
+    !isCoordinateWithinRange(data.latitude, -90, 90)
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["latitude"],
+      message: "Latitude must be a finite number between -90 and 90",
+    });
+  }
+  if (
+    data.longitude !== undefined &&
+    String(data.longitude).trim() !== "" &&
+    !isCoordinateWithinRange(data.longitude, -180, 180)
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["longitude"],
+      message: "Longitude must be a finite number between -180 and 180",
+    });
+  }
+
+  const latitudePresent =
+    data.latitude !== undefined && String(data.latitude).trim() !== "";
+  const longitudePresent =
+    data.longitude !== undefined && String(data.longitude).trim() !== "";
+  if (latitudePresent !== longitudePresent) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: latitudePresent ? ["longitude"] : ["latitude"],
+      message: "Latitude and longitude must be supplied together",
+    });
+  }
 });
 
 export const signupSchema = z.object({
