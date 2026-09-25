@@ -323,14 +323,14 @@ test('Galactic Code: Edge Cases', async (t) => {
       numerology: { coverage: 'missing' } as any,
     };
 
-    const result = generateGalacticCode(noNumInput);
+    const result = generateGalacticCode(noNumInput, TRUSTED);
     assert(result.fingerprint);
     assert(result.sourceCoverage.numerology === 'missing');
   });
 
   await t.test('handles missing optional symbolic input', () => {
     const { symbolic, ...inputWithoutSymbolic } = testInput;
-    const result = generateGalacticCode(inputWithoutSymbolic);
+    const result = generateGalacticCode(inputWithoutSymbolic, TRUSTED);
     assert(result.fingerprint);
   });
 });
@@ -438,7 +438,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
       },
     };
 
-    const result = generateGalacticCode(completeCoverageInput);
+    const result = generateGalacticCode(completeCoverageInput, TRUSTED);
 
     // Coverage is high (2+ complete systems + behavioral traits)
     assert.strictEqual(result.coverage, 'high', 'complete coverage should produce high coverage state');
@@ -473,7 +473,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     };
 
     // ... the code still throws because only 1 system is present
-    assert.throws(() => generateGalacticCode(input), /requires at least 2 of 3 systems/);
+    assert.throws(() => generateGalacticCode(input, TRUSTED), /requires at least 2 of 3 systems/);
 
     // The point: coverage measures data availability, not independent verification status
   });
@@ -497,8 +497,8 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
       },
     };
 
-    const resultA = generateGalacticCode(candidateA);
-    const resultB = generateGalacticCode(candidateB);
+    const resultA = generateGalacticCode(candidateA, TRUSTED);
+    const resultB = generateGalacticCode(candidateB, TRUSTED);
     assert.strictEqual(resultA.fingerprint, resultB.fingerprint);
     assert.strictEqual(resultA.sourceCoverage.humanDesign, 'missing');
     assert.ok(resultA.evidence.every((value) => !value.startsWith('HD ')));
