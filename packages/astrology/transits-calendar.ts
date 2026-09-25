@@ -7,6 +7,7 @@
 
 import { calculateActiveTransits, extractNatalPositions, type ActiveTransits, type Transit } from '../transits';
 import type { Profile } from '../shared/schema';
+import { getMoonPhase as getCanonicalMoonPhase, getMoonSign as getCanonicalMoonSign } from './daily-context';
 
 export interface CalendarDay {
   date: Date;
@@ -75,8 +76,8 @@ export function generateTransitsCalendar(
       overallIntensity: activeTransits.overallIntensity,
       significantTransits,
       recommendations,
-      moonPhase: getMoonPhase(currentDate),
-      moonSign: getMoonSign(currentDate)
+      moonPhase: getCanonicalMoonPhase(currentDate).phase,
+      moonSign: getCanonicalMoonSign(currentDate)
     });
 
     // Move to next day
@@ -147,38 +148,6 @@ function generateRecommendations(transits: Transit[], dominantTheme: string): st
 
   // Remove duplicates and limit to 5
   return [...new Set(recommendations)].slice(0, 5);
-}
-
-/**
- * Get moon phase for a date (simplified)
- */
-function getMoonPhase(date: Date): string {
-  // Simplified moon phase calculation
-  // In production, use a proper astronomy library
-  const dayOfMonth = date.getDate();
-  const phase = (dayOfMonth % 29.5) / 29.5;
-  
-  if (phase < 0.03 || phase > 0.97) return 'New Moon';
-  if (phase < 0.22) return 'Waxing Crescent';
-  if (phase < 0.28) return 'First Quarter';
-  if (phase < 0.47) return 'Waxing Gibbous';
-  if (phase < 0.53) return 'Full Moon';
-  if (phase < 0.72) return 'Waning Gibbous';
-  if (phase < 0.78) return 'Last Quarter';
-  return 'Waning Crescent';
-}
-
-/**
- * Get moon sign for a date (simplified)
- */
-function getMoonSign(date: Date): string {
-  // Simplified - in production use proper calculation
-  const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
-                 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-  // Moon changes signs approximately every 2.5 days
-  const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24));
-  const signIndex = Math.floor((daysSinceEpoch / 2.5) % 12);
-  return SIGNS[signIndex];
 }
 
 /**
