@@ -1,3 +1,5 @@
+import { parseDateOnly } from '@soulcodex/core';
+
 // Elder Futhark Runes - Norse/Germanic Divination
 
 const RUNES = [
@@ -66,9 +68,7 @@ function nameToRunes(name: string): Array<typeof RUNES[0]> {
 }
 
 export function calculateRunes(name: string, birthDate: string, lifePath: number): RunicProfile {
-  const date = new Date(birthDate);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
+  const { day, month } = parseDateOnly(birthDate);
   
   // Birth rune from day
   const birthRune = getRuneFromNumber(day - 1);
