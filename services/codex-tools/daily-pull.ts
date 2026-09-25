@@ -5,6 +5,7 @@
 
 import type { CodexToolResult, ProfileInput } from "./types";
 import { extractCore } from "./types";
+import { parseDateOnly } from "../../packages/core/compute/date-only.js";
 
 const MAJOR_ARCANA = [
   { name: "The Fool", theme: "new beginnings", behavior: "starting something without overthinking", shadow: "recklessness" },
@@ -37,9 +38,17 @@ function getDailyCardIndex(birthDate: string | Date | null, date: Date = new Dat
   const y = date.getFullYear();
   let seed = d + m + y;
   if (birthDate) {
-    const bd = new Date(birthDate);
-    if (!isNaN(bd.getTime())) {
-      seed += bd.getDate() + (bd.getMonth() + 1);
+    if (birthDate instanceof Date) {
+      if (!Number.isNaN(birthDate.getTime())) {
+        seed += birthDate.getDate() + (birthDate.getMonth() + 1);
+      }
+    } else {
+      try {
+        const { day, month } = parseDateOnly(birthDate.slice(0, 10));
+        seed += day + month;
+      } catch {
+        // Invalid date-only input contributes no birth-date seed.
+      }
     }
   }
   return seed % MAJOR_ARCANA.length;
