@@ -105,3 +105,15 @@ test('shared astrology may resolve an IANA zone from exact birth coordinates wit
   assert.equal(result.placements?.moon?.verificationStatus, 'calculated');
   assert.equal(result.placements?.rising?.verificationStatus, 'calculated');
 });
+
+
+test('historical IANA timezone resolution preserves pre-standard local mean time', () => {
+  const resolved = resolveCivilTimeStrict(
+    '1850-05-15',
+    '09:30',
+    'Africa/Cairo',
+  );
+
+  assert.equal(resolved.status, 'valid');
+  assert.equal(resolved.utc?.toISOString(), '1850-05-15T07:24:51.000Z');
+});
