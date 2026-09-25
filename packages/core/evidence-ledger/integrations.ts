@@ -15,7 +15,7 @@ import {
   type EvidenceConfidenceLevel,
 } from './index.js';
 import { calcPersonalDay, calcPersonalMonth, calcPersonalYear } from '../compute/personal-numbers.js';
-import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality } from '../compute/numerology.js';
+import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality, normalizeNumerologyName, NUMEROLOGY_POLICY } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
 type InputState = 'valid' | 'partial' | 'missing' | 'invalid';
@@ -32,8 +32,7 @@ function isValidDate(dateStr: string): boolean {
 
 function isValidName(name: string): boolean {
   if (!name || typeof name !== 'string') return false;
-  const letters = name.replace(/[^A-Za-z]/g, '');
-  return letters.length > 0;
+  return normalizeNumerologyName(name).length > 0;
 }
 
 function deriveInputStateForDate(dateStr: string): InputState {
@@ -420,7 +419,8 @@ export function calcExpressionWithEvidence(
   }
 
   const expressionValue = calcExpression(fullName);
-  const letterCount = fullName.replace(/[^A-Za-z]/g, '').length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const letterCount = normalizedName.length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -491,7 +491,8 @@ export function calcSoulUrgeWithEvidence(
   }
 
   const soulUrgeValue = calcSoulUrge(fullName);
-  const vowelCount = (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const vowelCount = [...normalizedName].filter((letter) => NUMEROLOGY_POLICY.vowels.includes(letter)).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -563,9 +564,10 @@ export function calcPersonalityWithEvidence(
   }
 
   const personalityValue = calcPersonality(fullName);
-  const consonantCount =
-    fullName.replace(/[^A-Za-z]/g, '').length -
-    (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const consonantCount = [...normalizedName].filter(
+    (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter),
+  ).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
