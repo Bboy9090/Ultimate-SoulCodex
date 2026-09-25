@@ -214,6 +214,9 @@ export function generateGalacticCode(
   if (!options.trustedEvidenceContext) {
     throw new Error('trusted_evidence_context_required');
   }
+  if (!input.profileId?.trim()) {
+    throw new Error('galactic_profile_id_required');
+  }
 
   if (input.birthDate !== undefined && !isValidDateOnly(input.birthDate)) {
     throw new Error('galactic_birth_date_invalid');
