@@ -70,6 +70,24 @@ test("orb boundaries include the exact limit and reject the next value outside",
   assert.equal(calculateMajorAspects([p("Sun", 0), p("Moon", 98.0001)]).length, 0);
 });
 
+test("trine and opposition exact orb edges are inclusive and zodiac-wrap safe", () => {
+  const trineAtLimit = calculateMajorAspects([p("Sun", 355), p("Moon", 123)]);
+  assert.equal(trineAtLimit.length, 1);
+  assert.equal(trineAtLimit[0].aspect, "trine");
+  assert.equal(trineAtLimit[0].orbDegrees, 8);
+
+  const trineOutside = calculateMajorAspects([p("Sun", 355), p("Moon", 123.0001)]);
+  assert.equal(trineOutside.length, 0);
+
+  const oppositionAtLimit = calculateMajorAspects([p("Sun", 350), p("Moon", 180)]);
+  assert.equal(oppositionAtLimit.length, 1);
+  assert.equal(oppositionAtLimit[0].aspect, "opposition");
+  assert.equal(oppositionAtLimit[0].orbDegrees, 10);
+
+  const oppositionOutside = calculateMajorAspects([p("Sun", 350), p("Moon", 179.9999)]);
+  assert.equal(oppositionOutside.length, 0);
+});
+
 test("no major aspect is invented when verified separation falls outside every governed orb", () => {
   const aspects = calculateMajorAspects([
     p("Sun", 0),
