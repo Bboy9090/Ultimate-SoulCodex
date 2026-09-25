@@ -614,49 +614,12 @@ function calculateVedicCompatibility(profile1: any, profile2: any): { score: num
 }
 
 // Chinese Astrology Compatibility
-function calculateChineseCompatibility(profile1: any, profile2: any): { score: number; description: string } {
-  const chinese1 = profile1.chineseAstrologyData as any;
-  const chinese2 = profile2.chineseAstrologyData as any;
-  
-  if (!chinese1 || !chinese2) {
-    return { score: 70, description: 'Chinese astrology data unavailable.' };
-  }
-  
-  // Chinese zodiac compatibility matrix (simplified)
-  const compatiblePairs = [
-    ['Rat', 'Ox'], ['Rat', 'Dragon'], ['Rat', 'Monkey'],
-    ['Ox', 'Snake'], ['Ox', 'Rooster'],
-    ['Tiger', 'Horse'], ['Tiger', 'Dog'],
-    ['Rabbit', 'Goat'], ['Rabbit', 'Pig'],
-    ['Dragon', 'Monkey'], ['Dragon', 'Rooster'],
-    ['Snake', 'Rooster'],
-    ['Horse', 'Dog'], ['Horse', 'Tiger'],
-    ['Goat', 'Pig'],
-    ['Monkey', 'Rat'],
-    ['Rooster', 'Ox'],
-    ['Dog', 'Tiger'],
-    ['Pig', 'Rabbit']
-  ];
-  
-  const year1 = chinese1.yearAnimal?.name;
-  const year2 = chinese2.yearAnimal?.name;
-  
-  let score = 70;
-  const isCompatible = compatiblePairs.some(pair => 
-    (pair[0] === year1 && pair[1] === year2) || (pair[1] === year1 && pair[0] === year2)
-  );
-  
-  if (year1 === year2) score = 85; // Same animal
-  else if (isCompatible) score = 90;
-  
-  // Element compatibility
-  if (chinese1.element === chinese2.element) score += 5;
-  
+function calculateChineseCompatibility(profile1: any, profile2: any): {
+  void profile1;
+  void profile2;
   return {
-    score: Math.min(100, score),
-    description: score >= 85
-      ? `${year1} and ${year2} share natural harmony in Chinese astrology.`
-      : `${year1} and ${year2} bring different energies that can balance each other.`
+    score: 0,
+    description: 'Chinese astrology unavailable — Soul Codex has no governed BaZi/Four Pillars engine yet.'
   };
 }
 
