@@ -108,6 +108,12 @@ export function registerProfileVerificationRoutes(app: Express) {
               authority: humanDesign.authority,
               profile: humanDesign.profile,
             },
+            timeConversion: {
+              timezone: civilTime.timezone,
+              utcOffsetMinutes: civilTime.candidateUtcOffsetsMinutes[0] ?? 0,
+              conversionMethod: civilTime.conversionMethod,
+              runtimeTzdbVersion: civilTime.runtimeTzdbVersion,
+            },
           });
           if (trust.status !== "verified") {
             throw new Error("human_design_verified_contract_not_produced");
@@ -132,6 +138,7 @@ export function registerProfileVerificationRoutes(app: Express) {
             independentSource: trust.independentSource,
             verifiedAt: trust.verifiedAt,
             limitations: trust.limitations,
+            timeConversion: trust.timeConversion,
           };
         }
       }
