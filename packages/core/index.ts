@@ -8,6 +8,7 @@ export * from './accuracy/index.js';
 export * from './compute/synthesis.js';
 export * from './compute/archetype.js';
 export * from './compute/numerology.js';
+export * from './compute/tarot-birth-cards.js';
 export * from './compute/date-only.js';
 export * from './compute/civil-time.js';
 export * from './compute/offline-sun.js';
