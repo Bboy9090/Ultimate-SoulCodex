@@ -12,7 +12,7 @@
  * 5. Recovery messaging (missing, corrupted, wrong version)
  */
 
-import { calcLifePath } from "@soulcodex/core";
+import { calcLifePath, parseDateOnly } from "@soulcodex/core";
 import type { PlacementLike } from './placementVerification';
 
 export interface StoredProfile {
@@ -91,6 +91,32 @@ type StorageReadResult =
   | { status: "loaded"; profile: StoredProfile }
   | { status: "corrupted"; profile: null; reason: string };
 
+function canonicalBirthDate(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+
+  let dateOnly = trimmed;
+  const utcMidnightTransport = /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.0{1,3})?Z$/.exec(trimmed);
+  if (utcMidnightTransport) {
+    dateOnly = utcMidnightTransport[1];
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return null;
+
+  try {
+    parseDateOnly(dateOnly);
+    return dateOnly;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeStoredBirthDate(profile: StoredProfile): StoredProfile | null {
+  const birthDate = canonicalBirthDate(profile.birthDate);
+  if (!birthDate) return null;
+  return birthDate === profile.birthDate ? profile : { ...profile, birthDate };
+}
+
 function notifyProfileUpdated(): void {
   if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
   window.dispatchEvent(new Event(ACTIVE_PROFILE_UPDATED_EVENT));
@@ -104,9 +130,18 @@ export function loadActiveProfile(): ProfileLoadResult {
     }
 
     if (canonical.status === "loaded") {
-      const validation = validateProfile(canonical.profile);
+      const normalized = normalizeStoredBirthDate(canonical.profile);
+      if (!normalized) {
+        return {
+          status: "corrupted",
+          profile: null,
+          reason: "Profile birthDate must be a real YYYY-MM-DD calendar date",
+        };
+      }
+
+      const validation = validateProfile(normalized);
       if (validation.valid) {
-        const repaired = repairStoredLifePath(canonical.profile);
+        const repaired = repairStoredLifePath(normalized);
         if (repaired !== canonical.profile) saveToKey(CANONICAL_KEY, repaired);
         return { status: "loaded", profile: repaired };
       }
@@ -147,13 +182,30 @@ export function saveActiveProfile(profile: StoredProfile): {
   error?: string;
 } {
   try {
+    const birthDate = canonicalBirthDate(profile.birthDate);
+    if (!birthDate) {
+      return {
+        success: false,
+        error: "Profile birthDate must be a real YYYY-MM-DD calendar date",
+      };
+    }
+
     const now = new Date().toISOString();
     const enriched: StoredProfile = {
       ...profile,
+      birthDate,
       schemaVersion: SCHEMA_VERSION,
       updatedAt: now,
       createdAt: profile.createdAt ?? now,
     };
+
+    const preWriteValidation = validateProfile(enriched);
+    if (!preWriteValidation.valid) {
+      return {
+        success: false,
+        error: `Profile verification failed: ${preWriteValidation.message}`,
+      };
+    }
 
     saveToKey(CANONICAL_KEY, enriched);
 
@@ -288,11 +340,12 @@ function migrateLegacyProfile(profile: StoredProfile): {
     return { success: false };
   }
 
-  if (!profile.birthDate) return { success: false };
+  const normalized = normalizeStoredBirthDate(profile);
+  if (!normalized) return { success: false };
 
   const now = new Date().toISOString();
   const migrated: StoredProfile = repairStoredLifePath({
-    ...profile,
+    ...normalized,
     schemaVersion: SCHEMA_VERSION,
     createdAt: profile.createdAt ?? now,
     updatedAt: now,
@@ -359,11 +412,12 @@ function validateProfile(
     };
   }
 
-  if (!profile.birthDate) {
+  const birthDate = canonicalBirthDate(profile.birthDate);
+  if (!birthDate || birthDate !== profile.birthDate) {
     return {
       valid: false,
       reason: "incomplete",
-      message: "Profile missing required birthDate",
+      message: "Profile birthDate must be a real YYYY-MM-DD calendar date",
     };
   }
 
