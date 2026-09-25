@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - fed-human-design-differential-audit
+  pull_request:
+    paths:
+      - "packages/astrology/human-design.ts"
+      - "packages/astrology/__tests__/human-design-phase3.test.ts"
+      - "tests/human-design-differential-contract.test.ts"
+      - "scripts/audit-human-design-differential.ts"
+      - ".github/workflows/federation-human-design-audit.yml"
   workflow_dispatch:
 
 permissions:
