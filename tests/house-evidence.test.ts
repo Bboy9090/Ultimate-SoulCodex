@@ -11,6 +11,7 @@ import {
 } from "../server/services/house-verification";
 import {
   SWISS_EQUAL_HOUSE_FIXTURES,
+  SWISS_EQUAL_HOUSE_POLAR_EDGE_FIXTURES,
   SWISS_EQUAL_HOUSE_REFERENCE,
 } from "./fixtures/swiss-equal-house-fixtures";
 
@@ -109,4 +110,27 @@ test("invalid inputs fail closed", () => {
     () => calculateEqualHouseCuspsFromAscendant(Number.NaN),
     /ascendant_longitude_invalid/,
   );
+});
+
+
+test("polar edge evidence stays numerically close to Swiss without rewriting the approved 24-fixture receipt", () => {
+  for (const fixture of SWISS_EQUAL_HOUSE_POLAR_EDGE_FIXTURES) {
+    const input = {
+      inputTimestamp: fixture.inputTimestamp,
+      latitude: fixture.latitude,
+      longitude: fixture.longitude,
+    };
+    const evidence = calculateEqualHouseEvidence(input);
+    const mcDelta = circularDegreesDelta(
+      evidence.midheavenCandidate.longitudeDegrees,
+      fixture.expectedMidheavenLongitude,
+    );
+    assert.ok(mcDelta <= 0.01, `${fixture.id} MC delta ${mcDelta}`);
+
+    for (let index = 0; index < evidence.cusps.length; index += 1) {
+      const expected = normalizeDegrees(fixture.expectedAscendantLongitude + index * 30);
+      const delta = circularDegreesDelta(evidence.cusps[index].longitudeDegrees, expected);
+      assert.ok(delta <= 0.01, `${fixture.id} house ${index + 1} cusp delta ${delta}`);
+    }
+  }
 });
