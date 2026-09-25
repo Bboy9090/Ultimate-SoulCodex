@@ -18,7 +18,7 @@ export interface HumanDesignTimeConversionEvidence {
   historicalTimeRequiresIndependentSource: boolean;
   birthTimeAccuracy?: "recorded" | "recalled" | "estimated" | "unknown";
   birthTimeUncertaintyMinutes?: number | null;
-  estimatedTimeRequiresUncertaintyReview?: boolean;
+  birthTimeQualityRequiresReview?: boolean;
 }
 
 interface HumanDesignEvidenceBase {
@@ -188,7 +188,7 @@ export function createHumanDesignTrustRecord(input: {
         ]
       : [];
   const uncertaintyLimitations =
-    input.timeConversion?.estimatedTimeRequiresUncertaintyReview
+    input.timeConversion?.birthTimeQualityRequiresReview
       ? [
           `Birth time is estimated${Number.isFinite(input.timeConversion.birthTimeUncertaintyMinutes) ? ` within ±${input.timeConversion.birthTimeUncertaintyMinutes} minutes` : ""}; timed Human Design fields remain unverified until the uncertainty window is resolved.`,
         ]
@@ -234,7 +234,7 @@ export function createVerifiedHumanDesignTrustRecord(input: {
 
   if (
     input.timeConversion?.historicalTimeRequiresIndependentSource ||
-    input.timeConversion?.estimatedTimeRequiresUncertaintyReview
+    input.timeConversion?.birthTimeQualityRequiresReview
   ) {
     return createHumanDesignTrustRecord({
       ...input,
