@@ -1,5 +1,6 @@
 import type { BirthData } from "../shared/schema";
 import { parseDateOnly } from "../packages/core/compute/date-only.js";
+import { resolveCivilTimeStrict } from "../packages/core/compute/civil-time.js";
 import { 
   getPlanetSignInterpretation, 
   getHouseInterpretation, 
@@ -9,7 +10,6 @@ import {
 } from "./interpretations";
 import * as AstronomyModule from 'astronomy-engine';
 const Astro = (AstronomyModule as any).default ?? AstronomyModule;
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 
 interface PlanetData {
@@ -128,25 +128,24 @@ function normalizeTime24(value: unknown): string | undefined {
   return `${match[1]}:${match[2]}`;
 }
 
-function normalizeCoordinate(value: unknown, fallback: number): number {
+function normalizeCoordinate(value: unknown): number | null {
   if (typeof value === "number") {
-    return Number.isFinite(value) ? value : fallback;
+    return Number.isFinite(value) ? value : null;
   }
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    if (!trimmed) return fallback;
+    if (!trimmed) return null;
     const parsed = parseFloat(trimmed);
-    return Number.isFinite(parsed) ? parsed : fallback;
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
-  return fallback;
+  return null;
 }
 
 function normalizeTimezoneInput(value: unknown): string {
-  if (typeof value !== "string") return "UTC";
-  const trimmed = value.trim();
-  return trimmed || "UTC";
+  if (typeof value !== "string") return "";
+  return value.trim();
 }
 
 function parseBirthDateParts(value: string): { year: number; month: number; day: number } {
@@ -159,25 +158,40 @@ function parseBirthDateParts(value: string): { year: number; month: number; day:
 
 function createBirthTime(birthData: BirthData): Date {
   try {
-    const { year, month, day } = parseBirthDateParts(birthData.birthDate);
-    const normalizedTime = normalizeTime24((birthData as any).birthTime) ?? "12:00";
-    const [hours, minutes] = normalizedTime.split(":").map(Number);
-    
-    const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-    const latitude = normalizeCoordinate((birthData as any).latitude, 0);
-    const longitude = normalizeCoordinate((birthData as any).longitude, 0);
+    parseBirthDateParts(birthData.birthDate);
+    const normalizedTime = normalizeTime24((birthData as any).birthTime);
+    if (!normalizedTime) {
+      throw new Error("Exact birth time is required for timed astrology calculations");
+    }
+
+    const latitude = normalizeCoordinate((birthData as any).latitude);
+    const longitude = normalizeCoordinate((birthData as any).longitude);
     const timezone = normalizeTimezoneInput((birthData as any).timezone);
-    
     const resolvedTimezone = resolveTimezone(timezone, latitude, longitude);
-    
-    return fromZonedTime(new Date(localTimeString), resolvedTimezone);
+
+    const civilTime = resolveCivilTimeStrict(
+      birthData.birthDate,
+      normalizedTime,
+      resolvedTimezone,
+    );
+    if (civilTime.status !== "valid" || !civilTime.utc) {
+      throw new Error(
+        `Birth time cannot be resolved exactly: ${civilTime.reason ?? civilTime.status}`,
+      );
+    }
+
+    return civilTime.utc;
   } catch (error) {
     console.error('Error creating precise birth time:', error);
     throw error;
   }
 }
 
-function resolveTimezone(inputTimezone: string | undefined, latitude: number, longitude: number): string {
+function resolveTimezone(
+  inputTimezone: string | undefined,
+  latitude: number | null,
+  longitude: number | null,
+): string {
   const normalizedInput = normalizeTimezoneInput(inputTimezone);
 
   if (normalizedInput.includes('/')) {
@@ -212,36 +226,22 @@ function resolveTimezone(inputTimezone: string | undefined, latitude: number, lo
   if (mapped) {
     return mapped;
   }
-  
-  return estimateTimezoneFromCoordinates(latitude, longitude);
-}
 
-function estimateTimezoneFromCoordinates(latitude: number, longitude: number): string {
-  if (longitude >= -180 && longitude < -30) {
-    if (longitude >= -75) return 'America/New_York';
-    if (longitude >= -90) return 'America/Chicago';
-    if (longitude >= -105) return 'America/Denver';
-    if (longitude >= -125) return 'America/Los_Angeles';
-    return 'America/Anchorage';
-  }
-  
-  if (longitude >= -30 && longitude < 60) {
-    if (latitude > 35) {
-      if (longitude < 15) return 'Europe/London';
-      if (longitude < 30) return 'Europe/Paris';
-      return 'Europe/Moscow';
+  if (
+    latitude !== null &&
+    longitude !== null &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  ) {
+    const timezones = geoTz.find(latitude, longitude);
+    if (timezones && timezones.length > 0) {
+      return timezones[0];
     }
-    return 'Africa/Cairo';
   }
-  
-  if (longitude >= 60 && longitude <= 180) {
-    if (longitude < 90) return 'Asia/Kolkata';
-    if (longitude < 120) return 'Asia/Shanghai';
-    if (longitude < 150) return 'Asia/Tokyo';
-    return 'Pacific/Auckland';
-  }
-  
-  return 'UTC';
+
+  throw new Error("A valid IANA timezone or resolvable birth coordinates are required");
 }
 
 function calculateCelestialPosition(body: any, birthTime: Date): { longitude: number; sign: string; degree: number } {
