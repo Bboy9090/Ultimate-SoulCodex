@@ -47,6 +47,8 @@ const BUILT_IN_LOCATIONS: Record<
   { lat: string; lng: string; timezone: string }
 > = {
   "new york": { lat: "40.7128", lng: "-74.0060", timezone: "America/New_York" },
+  "new york city": { lat: "40.7128", lng: "-74.0060", timezone: "America/New_York" },
+  nyc: { lat: "40.7128", lng: "-74.0060", timezone: "America/New_York" },
   manhattan: { lat: "40.7831", lng: "-73.9712", timezone: "America/New_York" },
   bronx: { lat: "40.8448", lng: "-73.8648", timezone: "America/New_York" },
   "bronx new york": { lat: "40.8448", lng: "-73.8648", timezone: "America/New_York" },
@@ -70,9 +72,6 @@ const SAFE_OFFLINE_LOCATION_KEYS = new Set([
   "brooklyn",
   "bronx",
   "bronx new york",
-  "queens",
-  "staten island",
-  "harlem",
 ]);
 
 function builtInLocation(value: string) {
