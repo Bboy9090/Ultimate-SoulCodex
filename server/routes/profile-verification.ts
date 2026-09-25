@@ -32,9 +32,23 @@ export const profileVerificationRequestSchema = z
   })
   .strict();
 
-function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
+type InputTimeProvenance = {
+  provenanceStatus: "modern_tzdb" | "historical_tzdb_unverified";
+  historicalTimeRequiresIndependentSource: boolean;
+  timezone: string;
+  runtimeTzdbVersion: string | null;
+};
+
+function withVerifiedLegacyAliases(
+  astrologyData: AstrologyData,
+  inputTimeProvenance: InputTimeProvenance | null,
+) {
   return {
     ...astrologyData,
+    verification: {
+      ...astrologyData.verification,
+      inputTimeProvenance,
+    },
     sunSign: astrologyData.sun.verificationStatus === "verified" ? astrologyData.sun.sign : null,
     moonSign: astrologyData.moon.verificationStatus === "verified" ? astrologyData.moon.sign : null,
     risingSign: astrologyData.rising.verificationStatus === "verified" ? astrologyData.rising.sign : null,
@@ -62,6 +76,24 @@ export function registerProfileVerificationRoutes(app: Express) {
     }
 
     try {
+      const timedCivilTime = parsed.data.birthTime?.trim()
+        ? resolveCivilTimeStrict(
+            parsed.data.birthDate,
+            parsed.data.birthTime,
+            parsed.data.timezone,
+          )
+        : null;
+      const inputTimeProvenance: InputTimeProvenance | null =
+        timedCivilTime?.status === "valid"
+          ? {
+              provenanceStatus: timedCivilTime.provenanceStatus,
+              historicalTimeRequiresIndependentSource:
+                timedCivilTime.historicalTimeRequiresIndependentSource,
+              timezone: timedCivilTime.timezone,
+              runtimeTzdbVersion: timedCivilTime.runtimeTzdbVersion,
+            }
+          : null;
+
       const astrologyData = await calculateVerifiedAstrology({
         birthDate: parsed.data.birthDate,
         birthTime: parsed.data.birthTime?.trim() || undefined,
@@ -159,7 +191,7 @@ export function registerProfileVerificationRoutes(app: Express) {
       }
 
       return res.json({
-        astrologyData: withVerifiedLegacyAliases(astrologyData),
+        astrologyData: withVerifiedLegacyAliases(astrologyData, inputTimeProvenance),
         humanDesignData,
         updatedAt,
         processing: {
