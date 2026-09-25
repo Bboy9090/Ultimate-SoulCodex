@@ -12,6 +12,8 @@ import { createGalacticFingerprint } from '../fingerprint';
 import { validateInterpretation } from '../prompts';
 import type { GalacticCodeInput } from '../../../../shared/galactic-code/types';
 
+const TRUSTED = { trustedEvidenceContext: true } as const;
+
 // Test fixture
 const testInput: GalacticCodeInput = {
   profileId: 'test-profile-001',
@@ -20,6 +22,18 @@ const testInput: GalacticCodeInput = {
   birthLocation: 'Detroit, Michigan',
   astrology: {
     evidenceState: 'verified',
+    fieldEvidence: {
+      sun: 'verified',
+      moon: 'verified',
+      rising: 'verified',
+      mercury: 'verified',
+      venus: 'verified',
+      mars: 'verified',
+      dominantElements: 'verified',
+      dominantModalities: 'verified',
+      houseEmphasis: 'verified',
+      majorAspects: 'verified',
+    },
     sun: 'Virgo',
     moon: 'Capricorn',
     rising: 'Scorpio',
@@ -66,10 +80,36 @@ const testInput: GalacticCodeInput = {
   },
 };
 
+
+test('Galactic Code: Trust Boundaries', async (t) => {
+  await t.test('rejects generation without a trusted evidence context', () => {
+    assert.throws(
+      () => generateGalacticCode(testInput),
+      /trusted_evidence_context_required/,
+    );
+  });
+
+  await t.test('blanket astrology verification cannot promote unverified fields', () => {
+    const spoofed: GalacticCodeInput = {
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        fieldEvidence: { sun: 'verified' },
+      },
+      humanDesign: { coverage: 'missing' } as any,
+    };
+
+    assert.throws(
+      () => generateGalacticCode(spoofed, TRUSTED),
+      /requires at least 2 of 3 systems/,
+    );
+  });
+});
+
 test('Galactic Code: Determinism', async (t) => {
   await t.test('same input produces same fingerprint', () => {
-    const result1 = generateGalacticCode(testInput);
-    const result2 = generateGalacticCode(testInput);
+    const result1 = generateGalacticCode(testInput, TRUSTED);
+    const result2 = generateGalacticCode(testInput, TRUSTED);
 
     assert.strictEqual(result1.fingerprint, result2.fingerprint, 'fingerprints should match');
     assert.strictEqual(result1.shortCode, result2.shortCode, 'short codes should match');
@@ -92,15 +132,15 @@ test('Galactic Code: Determinism', async (t) => {
       },
     };
 
-    const result1 = generateGalacticCode(input1);
-    const result2 = generateGalacticCode(input2);
+    const result1 = generateGalacticCode(input1, TRUSTED);
+    const result2 = generateGalacticCode(input2, TRUSTED);
 
     assert.strictEqual(result1.fingerprint, result2.fingerprint, 'fingerprint should be independent of array order');
   });
 
   await t.test('prose changes do not change fingerprint', () => {
-    const result1 = generateGalacticCode(testInput);
-    const result2 = generateGalacticCode(testInput);
+    const result1 = generateGalacticCode(testInput, TRUSTED);
+    const result2 = generateGalacticCode(testInput, TRUSTED);
 
     // Fingerprint is deterministic across invocations
     assert.strictEqual(result1.fingerprint, result2.fingerprint);
@@ -118,11 +158,11 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
       behavior: { traits: [] },
     };
 
-    assert.throws(() => generateGalacticCode(minimalInput), /requires at least 2 of 3 systems/);
+    assert.throws(() => generateGalacticCode(minimalInput, TRUSTED), /requires at least 2 of 3 systems/);
   });
 
   await t.test('calculates coverage based on data completeness', () => {
-    const result = generateGalacticCode(testInput);
+    const result = generateGalacticCode(testInput, TRUSTED);
 
     assert.strictEqual(result.coverage, 'partial');
     assert.strictEqual(result.sourceCoverage.astrology, 'complete');
@@ -136,7 +176,7 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
       humanDesign: { coverage: 'missing' } as any,
     };
 
-    const result = generateGalacticCode(noHDInput);
+    const result = generateGalacticCode(noHDInput, TRUSTED);
     assert.ok(['partial', 'insufficient'].includes(result.coverage));
   });
 
@@ -153,12 +193,12 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
       behavior: { traits: [] },
     };
 
-    assert.throws(() => generateGalacticCode(sunOnlyInput));
+    assert.throws(() => generateGalacticCode(sunOnlyInput, TRUSTED));
   });
 });
 
 test('Galactic Code: Structure & Content', async (t) => {
-  const result = generateGalacticCode(testInput);
+  const result = generateGalacticCode(testInput, TRUSTED);
 
   await t.test('returns all required fields', () => {
     assert(result.profileId, 'profileId required');
@@ -221,7 +261,7 @@ test('Galactic Code: Structure & Content', async (t) => {
 });
 
 test('Galactic Code: Changed inputs produce different fingerprints', async (t) => {
-  const baseResult = generateGalacticCode(testInput);
+  const baseResult = generateGalacticCode(testInput, TRUSTED);
 
   await t.test('changed Moon produces different fingerprint', () => {
     const changedInput: GalacticCodeInput = {
@@ -232,7 +272,7 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
       },
     };
 
-    const result = generateGalacticCode(changedInput);
+    const result = generateGalacticCode(changedInput, TRUSTED);
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
   });
 
@@ -246,7 +286,7 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
       },
     };
 
-    const result = generateGalacticCode(changedInput);
+    const result = generateGalacticCode(changedInput, TRUSTED);
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
   });
 
@@ -260,7 +300,7 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
       },
     };
 
-    const result = generateGalacticCode(changedInput);
+    const result = generateGalacticCode(changedInput, TRUSTED);
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
   });
 });
@@ -272,7 +312,7 @@ test('Galactic Code: Edge Cases', async (t) => {
       humanDesign: { coverage: 'missing' } as any,
     };
 
-    const result = generateGalacticCode(noHDInput);
+    const result = generateGalacticCode(noHDInput, TRUSTED);
     assert(result.fingerprint);
     assert(result.sourceCoverage.humanDesign === 'missing');
   });
@@ -336,8 +376,8 @@ test('Normalization: Stability', async (t) => {
       },
     };
 
-    const result1 = generateGalacticCode(input1);
-    const result2 = generateGalacticCode(input2);
+    const result1 = generateGalacticCode(input1, TRUSTED);
+    const result2 = generateGalacticCode(input2, TRUSTED);
 
     assert.strictEqual(result1.fingerprint, result2.fingerprint);
   });
