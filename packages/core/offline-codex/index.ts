@@ -7,6 +7,12 @@ import {
   type DepthTensionAxis,
   type InterpretationEvidenceRef,
 } from "../depth-interpretation/index.js";
+import {
+  calcCoreNumerology,
+} from "../compute/numerology.js";
+import {
+  calcPersonalYear,
+} from "../compute/personal-numbers.js";
 
 export interface OfflineBirthInput {
   name: string;
@@ -255,16 +261,25 @@ function calculateAstrology(input: OfflineBirthInput): OfflineAstrologyData {
 }
 
 function calculateNumerology(input: OfflineBirthInput, currentYear: number): OfflineNumerologyData {
-  const { year, month, day } = parseDate(input.birthDate);
-  const lifePath = reduceNumber(day + month + year);
-  const birthday = reduceNumber(day);
-  const expression = nameNumber(input.name, "all");
-  const soulUrge = nameNumber(input.name, "vowels");
-  const personality = nameNumber(input.name, "consonants");
-  const maturity = reduceNumber(lifePath + expression);
-  const personalYear = reduceNumber(day + month + currentYear);
+  const core = calcCoreNumerology(input.birthDate, input.name);
+  const personalYear = calcPersonalYear(input.birthDate, currentYear);
+  const {
+    lifePath,
+    birthday,
+    expression,
+    soulUrge,
+    personality,
+    maturity,
+  } = core;
+
   return {
-    lifePath, birthday, expression, soulUrge, personality, maturity, personalYear,
+    lifePath,
+    birthday,
+    expression,
+    soulUrge,
+    personality,
+    maturity,
+    personalYear,
     interpretations: {
       lifePath: `Life Path ${lifePath}: ${LIFE_PATH_TRAITS[lifePath]?.theme ?? "an individual growth pattern"}.`,
       birthday: `Birthday ${birthday}: deterministic reduction of the calendar day, used here only as symbolic reflection.`,
@@ -272,7 +287,7 @@ function calculateNumerology(input: OfflineBirthInput, currentYear: number): Off
       soulUrge: `Soul Urge ${soulUrge}: a symbolic description of inner motivation.`,
       personality: `Personality ${personality}: a symbolic description of first impressions.`,
       maturity: `Maturity ${maturity}: deterministic combination of Life Path and Expression, used here only as symbolic reflection.`,
-      personalYear: `Personal Year ${personalYear}: a reflective theme for ${currentYear}, not a guaranteed prediction.`,
+      personalYear: `Personal Year ${personalYear}: a calendar-year symbolic theme for ${currentYear}, not a guaranteed prediction.`,
     },
   };
 }
