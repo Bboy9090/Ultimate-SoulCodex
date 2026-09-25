@@ -52,7 +52,8 @@ node --import tsx --test \
   tests/unknown-time-input-contract.test.ts \
   tests/foundation-local-astronomy-boundary.test.ts \
   tests/profile-verification-boundary.test.ts \
-  tests/no-simulated-release-routes.test.ts
+  tests/no-simulated-release-routes.test.ts \
+  tests/production-route-quarantine.test.ts
 
 node scripts/verify-foundation-codebuild.mjs
 npm audit --omit=dev --audit-level=high
