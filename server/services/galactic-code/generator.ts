@@ -9,12 +9,20 @@ import type {
   GalacticCodeResult,
   GalacticCoverageState,
   SourceCoverageResult,
+  GalacticAstrologyField,
 } from '../../../shared/galactic-code/types';
 import { normalizeGalacticInput, extractHashableInput } from './normalize';
 import { createGalacticFingerprint } from './fingerprint';
 import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
 import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
+
+function verifiedAstrologyField(
+  input: GalacticCodeInput['astrology'],
+  field: GalacticAstrologyField,
+): boolean {
+  return input.fieldEvidence?.[field] === 'verified';
+}
 
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   const astrologyAllowed = maySystemInfluenceSynthesis(
@@ -37,7 +45,19 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   return {
     ...input,
     astrology: astrologyAllowed
-      ? input.astrology
+      ? {
+          ...input.astrology,
+          sun: verifiedAstrologyField(input.astrology, 'sun') ? input.astrology.sun : undefined,
+          moon: verifiedAstrologyField(input.astrology, 'moon') ? input.astrology.moon : undefined,
+          rising: verifiedAstrologyField(input.astrology, 'rising') ? input.astrology.rising : undefined,
+          mercury: verifiedAstrologyField(input.astrology, 'mercury') ? input.astrology.mercury : undefined,
+          venus: verifiedAstrologyField(input.astrology, 'venus') ? input.astrology.venus : undefined,
+          mars: verifiedAstrologyField(input.astrology, 'mars') ? input.astrology.mars : undefined,
+          dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements') ? input.astrology.dominantElements : undefined,
+          dominantModalities: verifiedAstrologyField(input.astrology, 'dominantModalities') ? input.astrology.dominantModalities : undefined,
+          houseEmphasis: verifiedAstrologyField(input.astrology, 'houseEmphasis') ? input.astrology.houseEmphasis : undefined,
+          majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects') ? input.astrology.majorAspects : undefined,
+        }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
     humanDesign: humanDesignAllowed
       ? input.humanDesign
@@ -81,7 +101,18 @@ const LIFE_PATH_LEGACY: Record<string, string> = {
   '33': 'Teaching Through Service',
 };
 
-export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResult {
+export interface GalacticCodeGenerationOptions {
+  trustedEvidenceContext?: boolean;
+}
+
+export function generateGalacticCode(
+  input: GalacticCodeInput,
+  options: GalacticCodeGenerationOptions = {},
+): GalacticCodeResult {
+  if (!options.trustedEvidenceContext) {
+    throw new Error('trusted_evidence_context_required');
+  }
+
   const eligibleInput = synthesisEligibleInput(input);
 
   // Step 1: Validate minimum system coverage
