@@ -24,7 +24,7 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.evidence.engine, 'numerology');
       assert.strictEqual(result1.evidence.claim, 'Personal Day');
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-day');
-      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
+      assert.strictEqual(result1.evidence.formulaVersion, 'calendar-cycle-v1');
       assert.strictEqual(result1.evidence.calculationStatus, 'resolved');
     });
 
@@ -91,7 +91,7 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.evidence.value, result1.value);
       assert.strictEqual(result1.evidence.engine, 'numerology');
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-year');
-      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
+      assert.strictEqual(result1.evidence.formulaVersion, 'calendar-cycle-v1');
     });
 
     it('should produce different years for different target years', () => {
@@ -102,6 +102,14 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
 
       assert.strictEqual(typeof year2026.value, 'number');
       assert.strictEqual(typeof year2027.value, 'number');
+    });
+
+    it('documents calendar-year rather than birthday boundaries', () => {
+      const result = calcPersonalYearWithEvidence('1990-08-15', 2026);
+
+      assert.ok(result.evidence.limitations.some((value) => value.includes('target calendar year')));
+      assert.ok(result.evidence.limitations.every((value) => !value.includes('changes on birthday')));
+      assert.strictEqual(result.evidence.formulaVersion, 'calendar-cycle-v1');
     });
 
     it('should fail closed for missing birth date', () => {
@@ -132,6 +140,15 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok(result1.value >= 1 && result1.value <= 9);
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-month');
+    });
+
+    it('accepts preserved master-number Personal Years', () => {
+      for (const personalYear of [11, 22, 33]) {
+        const result = calcPersonalMonthWithEvidence(personalYear, 7);
+        assert.strictEqual(typeof result.value, 'number');
+        assert.strictEqual(result.evidence.inputState, 'valid');
+        assert.strictEqual(result.evidence.formulaVersion, 'calendar-cycle-v1');
+      }
     });
 
     it('should fail closed for invalid personal year', () => {
@@ -167,7 +184,7 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result1.value));
       assert.strictEqual(result1.evidence.formulaId, 'numerology.life-path');
-      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
+      assert.strictEqual(result1.evidence.formulaVersion, 'calendar-cycle-v1');
     });
 
     it('should fail closed for missing birth date', () => {
