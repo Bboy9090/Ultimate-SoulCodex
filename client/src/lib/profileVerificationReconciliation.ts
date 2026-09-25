@@ -36,6 +36,9 @@ type AstrologyInputTimeProvenance = {
   historicalTimeRequiresIndependentSource?: boolean;
   timezone?: string;
   runtimeTzdbVersion?: string | null;
+  birthTimeAccuracy?: "recorded" | "recalled" | "estimated" | "unknown";
+  birthTimeUncertaintyMinutes?: number | null;
+  estimatedTimeRequiresUncertaintyReview?: boolean;
 };
 
 function getInputTimeProvenance(
@@ -53,11 +56,24 @@ export function requiresHistoricalTimeReview(
   return getInputTimeProvenance(astrology)?.historicalTimeRequiresIndependentSource === true;
 }
 
+export function requiresBirthTimeUncertaintyReview(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  return getInputTimeProvenance(astrology)?.estimatedTimeRequiresUncertaintyReview === true;
+}
+
+export function requiresManualTimeReview(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  return requiresHistoricalTimeReview(astrology) || requiresBirthTimeUncertaintyReview(astrology);
+}
+
 function hasTrustedTimedInputProvenance(
   astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
 ): boolean {
   const provenance = getInputTimeProvenance(astrology);
-  return provenance?.historicalTimeRequiresIndependentSource !== true;
+  return provenance?.historicalTimeRequiresIndependentSource !== true &&
+    provenance?.estimatedTimeRequiresUncertaintyReview !== true;
 }
 
 export type RemoteProfileSnapshot = {
@@ -449,7 +465,7 @@ export function reconcileOfflineProfile(
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
 ): boolean {
-  if (requiresHistoricalTimeReview(profile.verifiedAstrologyData)) {
+  if (requiresManualTimeReview(profile.verifiedAstrologyData)) {
     return false;
   }
 
