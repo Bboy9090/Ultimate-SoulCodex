@@ -303,6 +303,62 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
     const result = generateGalacticCode(changedInput, TRUSTED);
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
   });
+
+  await t.test('changed scoring inputs always change fingerprint', () => {
+    const variants: GalacticCodeInput[] = [
+      {
+        ...testInput,
+        astrology: {
+          ...testInput.astrology,
+          houseEmphasis: ['House 10'],
+        },
+      },
+      {
+        ...testInput,
+        astrology: {
+          ...testInput.astrology,
+          majorAspects: ['Sun square Moon'],
+        },
+      },
+      {
+        ...testInput,
+        numerology: {
+          ...testInput.numerology,
+          soulUrgeNumber: 9,
+        },
+      },
+      {
+        ...testInput,
+        numerology: {
+          ...testInput.numerology,
+          maturityNumber: 7,
+        },
+      },
+      {
+        ...testInput,
+        behavior: {
+          ...testInput.behavior,
+          relationalPattern: 'Highly collaborative',
+        },
+      },
+      {
+        ...testInput,
+        behavior: {
+          ...testInput.behavior,
+          moralCompass: 'Duty and stewardship',
+        },
+      },
+    ];
+
+    for (const variant of variants) {
+      const result = generateGalacticCode(variant, TRUSTED);
+      assert.notStrictEqual(
+        result.fingerprint,
+        baseResult.fingerprint,
+        'any governed scoring input must participate in fingerprint identity',
+      );
+    }
+  });
 });
 
 test('Galactic Code: Edge Cases', async (t) => {
