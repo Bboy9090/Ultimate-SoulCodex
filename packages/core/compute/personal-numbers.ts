@@ -7,6 +7,15 @@
 
 import { parseDateOnly } from './date-only.js';
 
+export const PERSONAL_CYCLE_POLICY = Object.freeze({
+  boundary: 'calendar' as const,
+  personalYear: 'birth month + birth day + target calendar year',
+  personalMonth: 'personal year + target calendar month',
+  personalDay: 'birth month + birth day + target calendar date',
+  masterNumbers: [11, 22, 33] as const,
+  version: 'calendar-cycle-v1',
+});
+
 function reduceToSingleDigit(num: number): number {
   while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
     num = num.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
@@ -40,7 +49,8 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
 
 /**
  * Calculates Personal Year Number based on birth month/day and target year.
- * Personal Year is annual and changes on each birthday.
+ * Soul Codex uses a calendar-year boundary: the value for a target year applies
+ * to that calendar year. It does not switch on the birthday.
  * Calculated from: reduced(birth month) + reduced(birth day) + reduced(target year)
  *
  * @example
@@ -81,7 +91,8 @@ export function calcPersonalYear(
 
 /**
  * Calculates Personal Month Number based on Personal Year and target month.
- * Personal Month is monthly and cycles 1-9 within the Personal Year.
+ * Personal Month follows calendar months within the target Personal Year.
+ * Master values 11/22/33 remain preserved under the shared reduction policy.
  * Calculated from: reduced(personal year) + reduced(target month)
  *
  * @example
