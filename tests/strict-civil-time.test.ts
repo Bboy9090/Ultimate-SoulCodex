@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveCivilTimeStrict } from '../packages/core/compute/civil-time';
 import { calculateAstrology } from '../server/services/astrology';
+import { calculateAstrology as calculatePackageAstrology } from '../packages/astrology/astrology';
 import { calculateHumanDesign } from '../packages/astrology/human-design';
 
 test('strict civil time rejects New York spring-forward gap', () => {
@@ -65,4 +66,18 @@ test('Human Design refuses ambiguous repeated-hour birth time', () => {
 
   assert.equal(result.status, 'unresolved');
   assert.equal(result.reason, 'ambiguous_local_time');
+});
+
+
+test('an exact recorded noon birth time is not treated as unknown', () => {
+  const result = calculatePackageAstrology({
+    birthDate: '1990-09-17',
+    birthTime: '12:00',
+    timezone: 'America/New_York',
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+
+  assert.equal(result.placements?.moon?.verificationStatus, 'calculated');
+  assert.equal(result.placements?.rising?.verificationStatus, 'calculated');
 });
