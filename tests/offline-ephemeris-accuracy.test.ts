@@ -22,6 +22,21 @@ test('offline Sun uses ephemeris math for an ordinary exact birth time', () => {
   }
 });
 
+test('date-only Sun exposes a stable sign without inventing an exact longitude', () => {
+  const result = resolveOfflineSun(
+    '1990-09-17',
+    null,
+    'America/New_York',
+  );
+
+  assert.equal(result.status, 'resolved');
+  if (result.status === 'resolved') {
+    assert.equal(result.sign, 'Virgo');
+    assert.equal(result.policy, 'stable-across-local-day');
+    assert.equal(result.longitudeDegrees, null);
+  }
+});
+
 test('date-only Sun fails closed on the annual sign-ingress day', () => {
   let ingressDate: string | null = null;
 
