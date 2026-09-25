@@ -118,3 +118,25 @@ test("Ascendant verification matrix", async (suite) => {
     if (invalid.status === "rejected") assert.equal(invalid.reason, "invalid_input");
   });
 });
+
+
+test("Ascendant verification rejects geographic poles where horizon/ecliptic geometry is undefined", () => {
+  for (const latitude of [-90, 90]) {
+    const input = {
+      inputTimestamp: "2026-09-24T12:00:00Z",
+      latitude,
+      longitude: 0,
+    };
+
+    assert.throws(
+      () => calculateAscendantCandidate(input),
+      /ascendant_input_invalid/,
+    );
+
+    const result = verifyAscendant(input);
+    assert.equal(result.status, "rejected");
+    if (result.status === "rejected") {
+      assert.equal(result.reason, "invalid_input");
+    }
+  }
+});
