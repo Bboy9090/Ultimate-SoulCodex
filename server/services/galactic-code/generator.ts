@@ -379,11 +379,12 @@ function calculateCoverage(sourceCoverage: SourceCoverageResult, systemCount: nu
   const completeCount = [
     sourceCoverage.astrology === 'complete' ? 1 : 0,
     sourceCoverage.humanDesign === 'complete' ? 1 : 0,
+    sourceCoverage.numerology === 'complete' ? 1 : 0,
   ].reduce((a, b) => a + b);
 
   const hasBehavior = sourceCoverage.behavioralTraitCount >= 5;
 
-  // High coverage: at least 2 complete systems (astrology + HD) plus behavioral traits
+  // High coverage: at least 2 complete governed systems plus behavioral traits
   if (completeCount >= 2 && hasBehavior) {
     return 'high';
   }
