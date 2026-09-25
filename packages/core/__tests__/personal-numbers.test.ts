@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 import {
   calcPersonalDay,
+  calcPersonalDayForDate,
   calcPersonalYear,
   calcPersonalMonth,
   getPersonalDayLabel,
@@ -41,6 +42,30 @@ test('calcPersonalDay - Daily Number Consistency', async (t) => {
 
   await t.test('should handle master numbers (11, 22, 33)', () => {
     const result = calcPersonalDay('2000-02-29', new Date('2026-11-11'));
+    assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result));
+  });
+});
+
+test('calcPersonalDayForDate - Explicit Calendar Date', async (t) => {
+  await t.test('should be invariant to host timezone for the same YYYY-MM-DD', () => {
+    const originalTimezone = process.env.TZ;
+    const values: number[] = [];
+
+    try {
+      for (const timezone of ['UTC', 'America/New_York', 'Pacific/Honolulu', 'Asia/Tokyo']) {
+        process.env.TZ = timezone;
+        values.push(calcPersonalDayForDate('1990-09-17', '2026-09-24'));
+      }
+    } finally {
+      if (originalTimezone === undefined) delete process.env.TZ;
+      else process.env.TZ = originalTimezone;
+    }
+
+    assert.ok(values.every((value) => value === values[0]));
+  });
+
+  await t.test('should preserve master numbers when produced by the governed rule', () => {
+    const result = calcPersonalDayForDate('2000-02-29', '2026-11-11');
     assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result));
   });
 });
