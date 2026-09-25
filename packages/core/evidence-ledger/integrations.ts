@@ -564,9 +564,10 @@ export function calcPersonalityWithEvidence(
   }
 
   const personalityValue = calcPersonality(fullName);
-  const consonantCount =
-    fullName.replace(/[^A-Za-z]/g, '').length -
-    (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const consonantCount = [...normalizedName].filter(
+    (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter),
+  ).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
