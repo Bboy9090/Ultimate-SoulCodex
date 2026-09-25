@@ -102,6 +102,7 @@ export type EqualHouseVerificationResult =
         | "midheaven_coordinate_mismatch"
         | "midheaven_sign_disagreement"
         | "midheaven_outside_tolerance"
+        | "midheaven_boundary_within_tolerance"
         | "evidence_identity_missing";
       ascendantReason?: string;
       midheavenCandidate?: AngleEvidenceRecord;
@@ -259,6 +260,25 @@ export function verifyEqualHouse(
       status: "unresolved",
       houseSystem: "equal",
       reason: "midheaven_outside_tolerance",
+      midheavenCandidate: candidate,
+      midheavenReference: reference,
+      midheavenDeltaDegrees,
+    };
+  }
+
+  const candidateWithinSign = ((candidate.longitudeDegrees % 30) + 30) % 30;
+  const referenceWithinSign = ((reference.longitudeDegrees % 30) + 30) % 30;
+  const boundaryDistance = Math.min(
+    candidateWithinSign,
+    30 - candidateWithinSign,
+    referenceWithinSign,
+    30 - referenceWithinSign,
+  );
+  if (boundaryDistance <= policy.maximumMidheavenDeltaDegrees) {
+    return {
+      status: "unresolved",
+      houseSystem: "equal",
+      reason: "midheaven_boundary_within_tolerance",
       midheavenCandidate: candidate,
       midheavenReference: reference,
       midheavenDeltaDegrees,
