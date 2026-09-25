@@ -4,6 +4,7 @@ import { resolveCivilTimeStrict } from '../packages/core/compute/civil-time';
 import { calculateAstrology } from '../server/services/astrology';
 import { calculateAstrology as calculatePackageAstrology } from '../packages/astrology/astrology';
 import { calculateHumanDesign } from '../packages/astrology/human-design';
+import { calculateAstrology as calculateRootAstrology } from '../services/astrology';
 
 test('strict civil time rejects New York spring-forward gap', () => {
   const resolved = resolveCivilTimeStrict(
@@ -115,4 +116,37 @@ test('historical IANA timezone resolution preserves pre-standard local mean time
 
   assert.equal(resolved.status, 'valid');
   assert.equal(resolved.utc?.toISOString(), '1850-05-15T07:24:51.000Z');
+});
+
+
+test('reachable root astrology refuses missing timed inputs instead of fabricating noon/UTC/zero coordinates', () => {
+  assert.throws(
+    () =>
+      calculateRootAstrology({
+        name: 'Missing data',
+        birthDate: '1990-09-17',
+        birthLocation: 'Unknown',
+        birthTime: '',
+        timezone: '',
+        latitude: '',
+        longitude: '',
+      } as any),
+    /Exact birth time|required|timezone|coordinates/i,
+  );
+});
+
+test('reachable root astrology still calculates with exact supported inputs', () => {
+  const result = calculateRootAstrology({
+    name: 'Exact data',
+    birthDate: '1990-09-17',
+    birthTime: '11:11',
+    birthLocation: 'Bronx, NY',
+    timezone: 'America/New_York',
+    latitude: '40.8448',
+    longitude: '-73.8648',
+  } as any);
+
+  assert.equal(typeof result.sunSign, 'string');
+  assert.equal(typeof result.moonSign, 'string');
+  assert.equal(typeof result.risingSign, 'string');
 });
