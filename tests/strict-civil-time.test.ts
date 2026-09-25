@@ -81,3 +81,28 @@ test('an exact recorded noon birth time is not treated as unknown', () => {
   assert.equal(result.placements?.moon?.verificationStatus, 'calculated');
   assert.equal(result.placements?.rising?.verificationStatus, 'calculated');
 });
+
+
+test('civil-time resolver marks pre-1970 tzdb reconstruction as historically unverified', () => {
+  const resolved = resolveCivilTimeStrict(
+    '1879-03-14',
+    '11:30',
+    'Europe/Berlin',
+  );
+
+  assert.equal(resolved.status, 'valid');
+  assert.equal(resolved.provenanceStatus, 'historical_tzdb_unverified');
+  assert.equal(resolved.historicalTimeRequiresIndependentSource, true);
+});
+
+test('civil-time resolver marks modern tzdb conversion as modern provenance', () => {
+  const resolved = resolveCivilTimeStrict(
+    '1990-09-17',
+    '11:11',
+    'America/New_York',
+  );
+
+  assert.equal(resolved.status, 'valid');
+  assert.equal(resolved.provenanceStatus, 'modern_tzdb');
+  assert.equal(resolved.historicalTimeRequiresIndependentSource, false);
+});
