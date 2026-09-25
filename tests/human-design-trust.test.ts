@@ -210,3 +210,34 @@ test("modern tzdb conversions may still receive verified promotion", () => {
 
   assert.equal(record.status, "verified");
 });
+
+
+test("estimated birth time cannot receive verified Human Design promotion", () => {
+  const record = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc: "1990-09-17T15:00:00.000Z",
+    calculatedAt: "2026-09-25T05:00:00.000Z",
+    candidate: {
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+    timeConversion: {
+      timezone: "America/New_York",
+      utcOffsetMinutes: -240,
+      conversionMethod: "standard-iana-tzdb",
+      runtimeTzdbVersion: "2026b",
+      provenanceStatus: "modern_tzdb",
+      historicalTimeRequiresIndependentSource: false,
+      birthTimeAccuracy: "estimated",
+      birthTimeUncertaintyMinutes: 30,
+      birthTimeQualityRequiresReview: true,
+    },
+  });
+
+  assert.equal(record.status, "calculated_unverified");
+  assert.equal(mayUseHumanDesignForCompatibility(record), false);
+  assert.match(record.limitations.join(" "), /estimated/i);
+  assert.match(record.limitations.join(" "), /±30 minutes/i);
+});
