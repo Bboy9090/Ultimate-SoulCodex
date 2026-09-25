@@ -43,15 +43,27 @@ function withVerifiedLegacyAliases(
   astrologyData: AstrologyData,
   inputTimeProvenance: InputTimeProvenance | null,
 ) {
+  const timedInputTrusted =
+    inputTimeProvenance?.historicalTimeRequiresIndependentSource !== true;
+
   return {
     ...astrologyData,
     verification: {
       ...astrologyData.verification,
       inputTimeProvenance,
     },
-    sunSign: astrologyData.sun.verificationStatus === "verified" ? astrologyData.sun.sign : null,
-    moonSign: astrologyData.moon.verificationStatus === "verified" ? astrologyData.moon.sign : null,
-    risingSign: astrologyData.rising.verificationStatus === "verified" ? astrologyData.rising.sign : null,
+    sunSign:
+      timedInputTrusted && astrologyData.sun.verificationStatus === "verified"
+        ? astrologyData.sun.sign
+        : null,
+    moonSign:
+      timedInputTrusted && astrologyData.moon.verificationStatus === "verified"
+        ? astrologyData.moon.sign
+        : null,
+    risingSign:
+      timedInputTrusted && astrologyData.rising.verificationStatus === "verified"
+        ? astrologyData.rising.sign
+        : null,
   };
 }
 
