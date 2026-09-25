@@ -983,7 +983,7 @@ function calculateHumanDesignInternal(birthData: {
   }
 
   // Validate coordinates first (always required)
-  if (!birthData.latitude || !birthData.longitude) {
+  if (String(birthData.latitude ?? '').trim() === '' || String(birthData.longitude ?? '').trim() === '') {
     return {
       result: {
         status: 'unresolved',
