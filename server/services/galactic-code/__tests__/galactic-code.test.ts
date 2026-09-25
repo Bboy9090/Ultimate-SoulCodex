@@ -89,6 +89,29 @@ test('Galactic Code: Trust Boundaries', async (t) => {
     );
   });
 
+  await t.test('rejects malformed trusted identity inputs before synthesis', () => {
+    assert.throws(
+      () => generateGalacticCode({ ...testInput, profileId: '   ' }, TRUSTED),
+      /galactic_profile_id_required/,
+    );
+    assert.throws(
+      () => generateGalacticCode({ ...testInput, birthDate: '1998-02-30' }, TRUSTED),
+      /galactic_birth_date_invalid/,
+    );
+    assert.throws(
+      () => generateGalacticCode({ ...testInput, birthTime: '24:00' }, TRUSTED),
+      /galactic_birth_time_invalid/,
+    );
+    assert.throws(
+      () =>
+        generateGalacticCode(
+          { ...testInput, birthDate: undefined, birthTime: '05:15' },
+          TRUSTED,
+        ),
+      /galactic_birth_time_requires_birth_date/,
+    );
+  });
+
   await t.test('blanket astrology verification cannot promote unverified fields', () => {
     const spoofed: GalacticCodeInput = {
       ...testInput,
