@@ -14,8 +14,8 @@ import {
   type EvidenceEntry,
   type EvidenceConfidenceLevel,
 } from './index.js';
-import { calcPersonalDay, calcPersonalMonth, calcPersonalYear } from '../compute/personal-numbers.js';
-import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality } from '../compute/numerology.js';
+import { calcPersonalDay, calcPersonalMonth, calcPersonalYear, dateOnlyFromLocalDate, isPersonalNumerologyValue, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
+import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality, normalizeNumerologyName, NUMEROLOGY_POLICY } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
 type InputState = 'valid' | 'partial' | 'missing' | 'invalid';
@@ -32,8 +32,7 @@ function isValidDate(dateStr: string): boolean {
 
 function isValidName(name: string): boolean {
   if (!name || typeof name !== 'string') return false;
-  const letters = name.replace(/[^A-Za-z]/g, '');
-  return letters.length > 0;
+  return normalizeNumerologyName(name).length > 0;
 }
 
 function deriveInputStateForDate(dateStr: string): InputState {
@@ -70,7 +69,7 @@ function confidenceForInputState(inputState: InputState): {
 
 export function calcPersonalDayWithEvidence(
   birthDate: string,
-  targetDate: Date = new Date()
+  targetDate: Date | string = new Date()
 ): {
   value?: number;
   evidence: EvidenceEntry;
@@ -107,11 +106,11 @@ export function calcPersonalDayWithEvidence(
     return { evidence };
   }
 
-  const personalDay = calcPersonalDay(birthDate, targetDate);
+  const targetDateISO =
+    typeof targetDate === 'string' ? targetDate : dateOnlyFromLocalDate(targetDate);
+  const personalDay = calcPersonalDay(birthDate, targetDateISO);
   const { day: birthDay, month: birthMonth } = parseDateOnly(birthDate);
-  const targetDay = targetDate.getDate();
-  const targetMonth = targetDate.getMonth() + 1;
-  const targetYear = targetDate.getFullYear();
+  const { day: targetDay, month: targetMonth, year: targetYear } = parseDateOnly(targetDateISO);
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -129,7 +128,7 @@ export function calcPersonalDayWithEvidence(
       ],
       reasoning: [
         `Birth day ${birthDay} + birth month ${birthMonth} + current day ${targetDay} + current month ${targetMonth} + current year ${targetYear}`,
-        'All values reduced to single digits',
+        'Values use the canonical reduction policy; 11, 22, and 33 remain preserved when reached',
         `Sum reduced to single digit = Day ${personalDay}`,
       ],
       limitations: [
@@ -175,7 +174,7 @@ export function calcPersonalYearWithEvidence(
           'Birth date could not be processed',
         ],
         limitations: [
-          'Personal Year cycles annually, changes on birthday',
+          `Personal Year uses the ${PERSONAL_YEAR_BOUNDARY_POLICY} convention (January 1 through December 31)`,
           'Calculation does not account for birth time',
         ],
         formulaId: 'numerology.personal-year',
@@ -205,11 +204,11 @@ export function calcPersonalYearWithEvidence(
       ],
       reasoning: [
         `Birth month ${birthMonth} + birth day ${birthDay} + target year ${targetYear}`,
-        'All values reduced to single digits',
+        'Values use the canonical reduction policy; 11, 22, and 33 remain preserved when reached',
         `Sum reduced to single digit = Year ${personalYear}`,
       ],
       limitations: [
-        'Personal Year cycles annually, changes on birthday',
+        `Personal Year uses the ${PERSONAL_YEAR_BOUNDARY_POLICY} convention (January 1 through December 31)`,
         'Calculation does not account for birth time',
       ],
       formulaId: 'numerology.personal-year',
@@ -230,7 +229,7 @@ export function calcPersonalMonthWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const yearValid = typeof personalYear === 'number' && personalYear >= 1 && personalYear <= 9;
+  const yearValid = typeof personalYear === 'number' && isPersonalNumerologyValue(personalYear);
   const monthValid = typeof targetMonth === 'number' && targetMonth >= 1 && targetMonth <= 12;
 
   let derivedInputState: InputState = 'valid';
@@ -253,12 +252,12 @@ export function calcPersonalMonthWithEvidence(
           `calendar_month_${targetMonth}`,
         ],
         reasoning: [
-          !yearValid ? `Personal Year ${personalYear} must be 1-9` : '',
+          !yearValid ? `Personal Year ${personalYear} must be one of 1-9, 11, 22, or 33` : '',
           !monthValid ? `Calendar month ${targetMonth} must be 1-12` : '',
         ].filter(Boolean),
         limitations: [
           'Derived from Personal Year; dependent on year accuracy',
-          'Calendar month only; does not account for birth date transition',
+          `Calendar month follows the ${PERSONAL_YEAR_BOUNDARY_POLICY} Personal Year convention`,
         ],
         formulaId: 'numerology.personal-month',
         formulaVersion: '1.0.0',
@@ -285,12 +284,12 @@ export function calcPersonalMonthWithEvidence(
       ],
       reasoning: [
         `Personal Year ${personalYear} + calendar month ${targetMonth}`,
-        'Both reduced to single digits',
+        'Both inputs use the canonical reduction policy; 11, 22, and 33 remain preserved when reached',
         `Sum reduced to single digit = Month ${personalMonth}`,
       ],
       limitations: [
         'Derived from Personal Year; dependent on year accuracy',
-        'Calendar month only; does not account for birth date transition',
+        `Calendar month follows the ${PERSONAL_YEAR_BOUNDARY_POLICY} Personal Year convention`,
       ],
       formulaId: 'numerology.personal-month',
       formulaVersion: '1.0.0',
@@ -362,7 +361,7 @@ export function calcLifePathWithEvidence(
       ],
       reasoning: [
         `All digits of birth date summed: ${birthMonth} + ${birthDay} + ${birthYear}`,
-        'Sum reduced to single digit',
+        'Sum reduced under the canonical policy with master numbers preserved',
         `Life Path Number = ${lifePathValue}`,
       ],
       limitations: [
@@ -420,7 +419,8 @@ export function calcExpressionWithEvidence(
   }
 
   const expressionValue = calcExpression(fullName);
-  const letterCount = fullName.replace(/[^A-Za-z]/g, '').length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const letterCount = normalizedName.length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -433,7 +433,7 @@ export function calcExpressionWithEvidence(
       reasoning: [
         `Letter-to-number mapping applied to all ${letterCount} letters in name`,
         'Sum of all letter values calculated',
-        'Sum reduced to single digit',
+        'Sum reduced under the canonical policy with master numbers preserved',
         `Expression Number = ${expressionValue}`,
       ],
       limitations: [
@@ -491,7 +491,8 @@ export function calcSoulUrgeWithEvidence(
   }
 
   const soulUrgeValue = calcSoulUrge(fullName);
-  const vowelCount = (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const vowelCount = [...normalizedName].filter((letter) => NUMEROLOGY_POLICY.vowels.includes(letter)).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -505,7 +506,7 @@ export function calcSoulUrgeWithEvidence(
         `Vowels identified: ${vowelCount} vowels in name`,
         'Letter-to-number mapping applied to vowels only',
         'Sum of vowel values calculated',
-        'Sum reduced to single digit',
+        'Sum reduced under the canonical policy with master numbers preserved',
         `Soul Urge Number = ${soulUrgeValue}`,
       ],
       limitations: [
@@ -563,9 +564,10 @@ export function calcPersonalityWithEvidence(
   }
 
   const personalityValue = calcPersonality(fullName);
-  const consonantCount =
-    fullName.replace(/[^A-Za-z]/g, '').length -
-    (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const consonantCount = [...normalizedName].filter(
+    (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter),
+  ).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -579,7 +581,7 @@ export function calcPersonalityWithEvidence(
         `Consonants identified: ${consonantCount} consonants in name`,
         'Letter-to-number mapping applied to consonants only',
         'Sum of consonant values calculated',
-        'Sum reduced to single digit',
+        'Sum reduced under the canonical policy with master numbers preserved',
         `Personality Number = ${personalityValue}`,
       ],
       limitations: [

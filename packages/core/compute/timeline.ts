@@ -7,6 +7,7 @@
  */
 
 import { calcPersonalYear, calcPersonalMonth } from './personal-numbers.js';
+import { reduceNumerology } from './numerology.js';
 
 export { calcPersonalYear, calcPersonalMonth };
 
@@ -22,12 +23,19 @@ export function getCycleTransitionState(currentMonth: number) {
   };
 }
 
+function nextReducedCycleValue(current: number): number {
+  if (!Number.isInteger(current) || current < 1) {
+    throw new RangeError("Cycle value must be a positive integer");
+  }
+  return reduceNumerology(current + 1).value;
+}
+
 export function getNextYearNum(py: number): number {
-  return py === 9 ? 1 : py + 1;
+  return nextReducedCycleValue(py);
 }
 
 export function getNextMonthNum(pm: number): number {
-  return pm === 9 ? 1 : pm + 1;
+  return nextReducedCycleValue(pm);
 }
 
 export const DAY_LABELS: Record<number, { label: string; theme: string }> = {
@@ -40,4 +48,7 @@ export const DAY_LABELS: Record<number, { label: string; theme: string }> = {
   7: { label: "Reflect", theme: "an inner phase for study, solitude, and trusting the pattern" },
   8: { label: "Command", theme: "a power phase for bold calls, boundaries, and leverage" },
   9: { label: "Release", theme: "a completion phase for closing chapters, giving, and letting go" },
+  11: { label: "Illuminate", theme: "a master-number reflection phase for insight, sensitivity, and translating inspiration into grounded action" },
+  22: { label: "Build Big", theme: "a master-number reflection phase for structure, scale, and disciplined execution" },
+  33: { label: "Serve", theme: "a master-number reflection phase for teaching, care, integration, and bounded service" },
 };

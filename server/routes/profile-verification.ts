@@ -6,7 +6,7 @@ import {
 } from "../services/astrology-production";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
-import { fromZonedTime } from "date-fns-tz";
+import { resolveCivilTimeStrict } from "@soulcodex/core";
 
 const numericCoordinate = z
   .union([z.number(), z.string().min(1)])
@@ -23,6 +23,15 @@ export const profileVerificationRequestSchema = z
       ])
       .optional(),
     timezone: z.string().min(1, "Timezone is required"),
+    birthTimeAccuracy: z
+      .enum(["recorded", "recalled", "estimated", "unknown"])
+      .optional(),
+    birthTimeUncertaintyMinutes: z
+      .number()
+      .int()
+      .min(0)
+      .max(720)
+      .optional(),
     latitude: numericCoordinate
       .refine((value) => value >= -90 && value <= 90, "Latitude must be between -90 and 90")
       .optional(),
@@ -30,14 +39,62 @@ export const profileVerificationRequestSchema = z
       .refine((value) => value >= -180 && value <= 180, "Longitude must be between -180 and 180")
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, context) => {
+    if (!data.birthTime?.trim() && data.birthTimeAccuracy && data.birthTimeAccuracy !== "unknown") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["birthTimeAccuracy"],
+        message: "Birth-time accuracy cannot be set when birth time is unknown",
+      });
+    }
+    if (
+      data.birthTimeAccuracy === "estimated" &&
+      data.birthTimeUncertaintyMinutes === undefined
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["birthTimeUncertaintyMinutes"],
+        message: "Approximate birth time requires an uncertainty window",
+      });
+    }
+  });
 
-function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
+type InputTimeProvenance = {
+  provenanceStatus: "modern_tzdb" | "historical_tzdb_unverified";
+  historicalTimeRequiresIndependentSource: boolean;
+  timezone: string;
+  runtimeTzdbVersion: string | null;
+  birthTimeAccuracy: "recorded" | "recalled" | "estimated" | "unknown";
+  birthTimeUncertaintyMinutes: number | null;
+  birthTimeQualityRequiresReview: boolean;
+};
+
+function withVerifiedLegacyAliases(
+  astrologyData: AstrologyData,
+  inputTimeProvenance: InputTimeProvenance | null,
+) {
+  const timedInputTrusted =
+    inputTimeProvenance?.historicalTimeRequiresIndependentSource !== true;
+
   return {
     ...astrologyData,
-    sunSign: astrologyData.sun.verificationStatus === "verified" ? astrologyData.sun.sign : null,
-    moonSign: astrologyData.moon.verificationStatus === "verified" ? astrologyData.moon.sign : null,
-    risingSign: astrologyData.rising.verificationStatus === "verified" ? astrologyData.rising.sign : null,
+    verification: {
+      ...astrologyData.verification,
+      inputTimeProvenance,
+    },
+    sunSign:
+      timedInputTrusted && astrologyData.sun.verificationStatus === "verified"
+        ? astrologyData.sun.sign
+        : null,
+    moonSign:
+      timedInputTrusted && astrologyData.moon.verificationStatus === "verified"
+        ? astrologyData.moon.sign
+        : null,
+    risingSign:
+      timedInputTrusted && astrologyData.rising.verificationStatus === "verified"
+        ? astrologyData.rising.sign
+        : null,
   };
 }
 
@@ -62,6 +119,32 @@ export function registerProfileVerificationRoutes(app: Express) {
     }
 
     try {
+      const timedCivilTime = parsed.data.birthTime?.trim()
+        ? resolveCivilTimeStrict(
+            parsed.data.birthDate,
+            parsed.data.birthTime,
+            parsed.data.timezone,
+          )
+        : null;
+      const inputTimeProvenance: InputTimeProvenance | null =
+        timedCivilTime?.status === "valid"
+          ? {
+              provenanceStatus: timedCivilTime.provenanceStatus,
+              historicalTimeRequiresIndependentSource:
+                timedCivilTime.historicalTimeRequiresIndependentSource,
+              timezone: timedCivilTime.timezone,
+              runtimeTzdbVersion: timedCivilTime.runtimeTzdbVersion,
+              birthTimeAccuracy:
+                parsed.data.birthTimeAccuracy ??
+                (parsed.data.birthTime?.trim() ? "recalled" : "unknown"),
+              birthTimeUncertaintyMinutes:
+                parsed.data.birthTimeUncertaintyMinutes ?? null,
+              birthTimeQualityRequiresReview:
+                parsed.data.birthTimeAccuracy === "estimated" ||
+                parsed.data.birthTimeAccuracy === "unknown",
+            }
+          : null;
+
       const astrologyData = await calculateVerifiedAstrology({
         birthDate: parsed.data.birthDate,
         birthTime: parsed.data.birthTime?.trim() || undefined,
@@ -88,10 +171,21 @@ export function registerProfileVerificationRoutes(app: Express) {
         });
 
         if (humanDesign.status === "resolved") {
-          const inputTimestampUtc = fromZonedTime(
-            `${parsed.data.birthDate}T${parsed.data.birthTime}:00`,
+          const civilTime = resolveCivilTimeStrict(
+            parsed.data.birthDate,
+            parsed.data.birthTime,
             parsed.data.timezone,
-          ).toISOString();
+          );
+          if (civilTime.status !== "valid" || !civilTime.utc) {
+            throw new Error(`human_design_civil_time_${civilTime.status}`);
+          }
+
+          const inputTimestampUtc = civilTime.utc.toISOString();
+          const utcOffsetMinutes = civilTime.candidateUtcOffsetsMinutes[0];
+          if (!Number.isFinite(utcOffsetMinutes)) {
+            throw new Error("human_design_timezone_offset_missing");
+          }
+
           const trust = createVerifiedHumanDesignTrustRecord({
             birthTimeKnown: true,
             inputTimestampUtc,
@@ -102,36 +196,61 @@ export function registerProfileVerificationRoutes(app: Express) {
               authority: humanDesign.authority,
               profile: humanDesign.profile,
             },
+            timeConversion: {
+              timezone: civilTime.timezone,
+              utcOffsetMinutes,
+              conversionMethod: civilTime.conversionMethod,
+              runtimeTzdbVersion: civilTime.runtimeTzdbVersion,
+              provenanceStatus: civilTime.provenanceStatus,
+              historicalTimeRequiresIndependentSource:
+                civilTime.historicalTimeRequiresIndependentSource,
+              birthTimeAccuracy:
+                parsed.data.birthTimeAccuracy ??
+                (parsed.data.birthTime?.trim() ? "recalled" : "unknown"),
+              birthTimeUncertaintyMinutes:
+                parsed.data.birthTimeUncertaintyMinutes ?? null,
+              birthTimeQualityRequiresReview:
+                parsed.data.birthTimeAccuracy === "estimated" ||
+                parsed.data.birthTimeAccuracy === "unknown",
+            },
           });
-          if (trust.status !== "verified") {
-            throw new Error("human_design_verified_contract_not_produced");
-          }
-
-          humanDesignData = {
-            status: trust.status,
-            type: humanDesign.type,
-            strategy: humanDesign.strategy,
-            authority: humanDesign.authority,
-            profile: humanDesign.profile,
-            definition: humanDesign.definition,
-            centers: humanDesign.centers,
-            channels: humanDesign.channels,
-            activations: humanDesign.activations,
-            activatedGates: humanDesign.activatedGates,
-            engine: trust.engine,
-            source: trust.source,
-            calculatedAt: trust.calculatedAt,
-            inputTimestampUtc: trust.inputTimestampUtc,
-            verificationReceiptId: trust.verificationReceiptId,
-            independentSource: trust.independentSource,
-            verifiedAt: trust.verifiedAt,
-            limitations: trust.limitations,
-          };
+          humanDesignData = trust.status === "verified"
+            ? {
+                status: trust.status,
+                type: humanDesign.type,
+                strategy: humanDesign.strategy,
+                authority: humanDesign.authority,
+                profile: humanDesign.profile,
+                definition: humanDesign.definition,
+                centers: humanDesign.centers,
+                channels: humanDesign.channels,
+                activations: humanDesign.activations,
+                activatedGates: humanDesign.activatedGates,
+                engine: trust.engine,
+                source: trust.source,
+                calculatedAt: trust.calculatedAt,
+                inputTimestampUtc: trust.inputTimestampUtc,
+                verificationReceiptId: trust.verificationReceiptId,
+                independentSource: trust.independentSource,
+                verifiedAt: trust.verifiedAt,
+                limitations: trust.limitations,
+                timeConversion: trust.timeConversion,
+              }
+            : {
+                status: trust.status,
+                candidate: trust.candidate,
+                engine: trust.engine,
+                source: trust.source,
+                calculatedAt: trust.calculatedAt,
+                inputTimestampUtc: trust.inputTimestampUtc,
+                limitations: trust.limitations,
+                timeConversion: trust.timeConversion,
+              };
         }
       }
 
       return res.json({
-        astrologyData: withVerifiedLegacyAliases(astrologyData),
+        astrologyData: withVerifiedLegacyAliases(astrologyData, inputTimeProvenance),
         humanDesignData,
         updatedAt,
         processing: {

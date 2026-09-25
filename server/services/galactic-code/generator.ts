@@ -9,12 +9,62 @@ import type {
   GalacticCodeResult,
   GalacticCoverageState,
   SourceCoverageResult,
+  GalacticAstrologyField,
 } from '../../../shared/galactic-code/types';
 import { normalizeGalacticInput, extractHashableInput } from './normalize';
 import { createGalacticFingerprint } from './fingerprint';
 import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
 import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
+
+function verifiedAstrologyField(
+  input: GalacticCodeInput['astrology'],
+  field: GalacticAstrologyField,
+): boolean {
+  return input.fieldEvidence?.[field] === 'verified';
+}
+
+const GOVERNED_SIGNS = new Set([
+  'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
+  'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
+]);
+
+const GOVERNED_HD_TYPES = new Set([
+  'manifestor',
+  'generator',
+  'manifesting generator',
+  'projector',
+  'reflector',
+]);
+
+const GOVERNED_NUMEROLOGY_VALUES = new Set([
+  '1', '2', '3', '4', '5', '6', '7', '8', '9', '11', '22', '33',
+]);
+
+function governedSign(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  return GOVERNED_SIGNS.has(normalized) ? value : undefined;
+}
+
+function governedHumanDesignType(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  return GOVERNED_HD_TYPES.has(normalized) ? value : undefined;
+}
+
+function governedNumerologyValue(
+  value: number | string | undefined,
+): number | string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const normalized = String(value).trim();
+  return GOVERNED_NUMEROLOGY_VALUES.has(normalized) ? value : undefined;
+}
+
+function governedProfile(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return /^[1-6]\/[1-6]$/.test(value.trim()) ? value : undefined;
+}
 
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   const astrologyAllowed = maySystemInfluenceSynthesis(
@@ -37,13 +87,37 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   return {
     ...input,
     astrology: astrologyAllowed
-      ? input.astrology
+      ? {
+          ...input.astrology,
+          sun: verifiedAstrologyField(input.astrology, 'sun') ? governedSign(input.astrology.sun) : undefined,
+          moon: verifiedAstrologyField(input.astrology, 'moon') ? governedSign(input.astrology.moon) : undefined,
+          rising: verifiedAstrologyField(input.astrology, 'rising') ? governedSign(input.astrology.rising) : undefined,
+          mercury: verifiedAstrologyField(input.astrology, 'mercury') ? governedSign(input.astrology.mercury) : undefined,
+          venus: verifiedAstrologyField(input.astrology, 'venus') ? governedSign(input.astrology.venus) : undefined,
+          mars: verifiedAstrologyField(input.astrology, 'mars') ? governedSign(input.astrology.mars) : undefined,
+          dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements') ? input.astrology.dominantElements : undefined,
+          dominantModalities: verifiedAstrologyField(input.astrology, 'dominantModalities') ? input.astrology.dominantModalities : undefined,
+          houseEmphasis: verifiedAstrologyField(input.astrology, 'houseEmphasis') ? input.astrology.houseEmphasis : undefined,
+          majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects') ? input.astrology.majorAspects : undefined,
+        }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
     humanDesign: humanDesignAllowed
-      ? input.humanDesign
+      ? {
+          ...input.humanDesign,
+          type: governedHumanDesignType(input.humanDesign.type),
+          profile: governedProfile(input.humanDesign.profile),
+        }
       : { coverage: 'missing', evidenceState: input.humanDesign.evidenceState || 'candidate' },
     numerology: numerologyAllowed
-      ? input.numerology
+      ? {
+          ...input.numerology,
+          lifePath: governedNumerologyValue(input.numerology.lifePath),
+          birthdayNumber: governedNumerologyValue(input.numerology.birthdayNumber),
+          expressionNumber: governedNumerologyValue(input.numerology.expressionNumber),
+          soulUrgeNumber: governedNumerologyValue(input.numerology.soulUrgeNumber),
+          personalityNumber: governedNumerologyValue(input.numerology.personalityNumber),
+          maturityNumber: governedNumerologyValue(input.numerology.maturityNumber),
+        }
       : { coverage: 'missing', evidenceState: input.numerology.evidenceState || 'candidate' },
     behavior: behaviorAllowed
       ? input.behavior
@@ -81,13 +155,32 @@ const LIFE_PATH_LEGACY: Record<string, string> = {
   '33': 'Teaching Through Service',
 };
 
-export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResult {
+export interface GalacticCodeGenerationOptions {
+  trustedEvidenceContext?: boolean;
+}
+
+export function generateGalacticCode(
+  input: GalacticCodeInput,
+  options: GalacticCodeGenerationOptions = {},
+): GalacticCodeResult {
+  if (!options.trustedEvidenceContext) {
+    throw new Error('trusted_evidence_context_required');
+  }
+
   const eligibleInput = synthesisEligibleInput(input);
 
   // Step 1: Validate minimum system coverage
   const hasAstrology = eligibleInput.astrology.coverage !== 'missing' && eligibleInput.astrology.sun;
-  const hasHD = eligibleInput.humanDesign.coverage !== 'missing' && eligibleInput.humanDesign.type;
-  const hasNumerology = eligibleInput.numerology.coverage !== 'missing' && eligibleInput.numerology.lifePath;
+  const hasHD = Boolean(
+    eligibleInput.humanDesign.coverage !== 'missing' &&
+    eligibleInput.humanDesign.type &&
+    eligibleInput.humanDesign.authority &&
+    eligibleInput.humanDesign.profile,
+  );
+  const hasNumerology = Boolean(
+    eligibleInput.numerology.coverage !== 'missing' &&
+    eligibleInput.numerology.lifePath,
+  );
   const traitCount = (eligibleInput.behavior.traits || []).length;
 
   const systemCount = [hasAstrology, hasHD, hasNumerology].filter(Boolean).length;

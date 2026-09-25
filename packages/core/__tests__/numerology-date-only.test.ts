@@ -12,7 +12,7 @@ import {
   normalizeNumerologyName,
   reduceNumerology,
 } from '../compute/numerology.js';
-import { calcPersonalYear } from '../compute/personal-numbers.js';
+import { calcPersonalMonth, calcPersonalYear, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
 import { calcLifePathWithEvidence } from '../evidence-ledger/integrations.js';
 
 test('Bobby fixture resolves Life Path 9 in every host timezone', () => {
@@ -104,4 +104,18 @@ test('core numerology snapshot is deterministic and versioned', () => {
     personality: 8,
     maturity: 4,
   });
+});
+
+
+test('Personal Year boundary policy is explicitly calendar-year', () => {
+  assert.equal(PERSONAL_YEAR_BOUNDARY_POLICY, 'calendar-year');
+  assert.equal(calcPersonalYear('1990-09-17', 2026), calcPersonalYear('1990-09-17', 2026));
+});
+
+
+test('personal numerology core rejects invalid direct-call domains', () => {
+  assert.throws(() => calcPersonalYear(13, 1, 2026), /valid birth month\/day/);
+  assert.throws(() => calcPersonalYear(9, 17, 0), /target year/);
+  assert.throws(() => calcPersonalMonth(12, 5), /Personal Year 1-9, 11, 22, or 33/);
+  assert.throws(() => calcPersonalMonth(9, 13), /calendar month 1-12/);
 });

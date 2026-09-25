@@ -1,4 +1,6 @@
 import * as Astronomy from 'astronomy-engine';
+import { calcPersonalDay, dateOnlyFromLocalDate } from '@soulcodex/core';
+import { degreeToGateAndLine } from '@soulcodex/astrology';
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
 export interface DailyContext {
@@ -10,7 +12,7 @@ export interface DailyContext {
   moonPhasePercentage: number;
   currentHDGate: number;
   currentHDLine: number;
-  planetaryHour: string;
+  planetaryHour: string | null;
 }
 
 function reduceToSingleDigit(num: number): number {
@@ -20,19 +22,8 @@ function reduceToSingleDigit(num: number): number {
   return num;
 }
 
-export function calculatePersonalDayNumber(birthDate: string, currentDate: Date = new Date()): number {
-  const birth = new Date(birthDate);
-  const birthMonth = birth.getMonth() + 1;
-  const birthDay = birth.getDate();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth() + 1;
-  const currentDay = currentDate.getDate();
-
-  const personalYear = reduceToSingleDigit(
-    reduceToSingleDigit(birthMonth) + reduceToSingleDigit(birthDay) + reduceToSingleDigit(currentYear)
-  );
-  const personalMonth = reduceToSingleDigit(personalYear + currentMonth);
-  return reduceToSingleDigit(personalMonth + currentDay);
+export function calculatePersonalDayNumber(birthDate: string, currentDate: Date | string = new Date()): number {
+  return calcPersonalDay(birthDate, currentDate);
 }
 
 export function calculateUniversalDayNumber(currentDate: Date = new Date()): number {
@@ -63,7 +54,7 @@ export function getMoonSign(date: Date): string {
 
 export function getMoonPhase(date: Date): { phase: string; percentage: number } {
   const illumination = Astro.Illumination(Astro.Body.Moon, date);
-  const phaseAngle = illumination.phase_angle;
+  const phaseAngle = Astro.MoonPhase(date);
   const percentage = Math.round(illumination.phase_fraction * 100);
   
   let phase: string;
@@ -90,43 +81,7 @@ export function getMoonPhase(date: Date): { phase: string; percentage: number } 
 
 export function getCurrentHDGate(date: Date): { gate: number; line: number } {
   const sunPos = Astro.Ecliptic(Astro.GeoVector(Astro.Body.Sun, date, false));
-  const eclipticLongitude = sunPos.elon;
-  
-  const normalizedLon = ((eclipticLongitude % 360) + 360) % 360;
-  
-  const gateOrder = [
-    41, 19, 13, 49, 30, 55, 37, 63, 22, 36, 25, 17, 21, 51, 42, 3, 27, 24, 2, 23, 8, 20, 16, 35,
-    45, 12, 15, 52, 39, 53, 62, 56, 31, 33, 7, 4, 29, 59, 40, 64, 47, 6, 46, 18, 48, 57, 32, 50,
-    28, 44, 1, 43, 14, 34, 9, 5, 26, 11, 10, 58, 38, 54, 61, 60
-  ];
-  
-  const degreesPerGate = 360 / 64;
-  const startLon = 58;
-  const adjustedLon = (normalizedLon - startLon + 360) % 360;
-  
-  const gateIndex = Math.floor(adjustedLon / degreesPerGate) % 64;
-  const gate = gateOrder[gateIndex];
-  
-  const positionInGate = (adjustedLon % degreesPerGate) / degreesPerGate;
-  const line = Math.floor(positionInGate * 6) + 1;
-  
-  return { gate, line };
-}
-
-function getPlanetaryHour(date: Date): string {
-  const planets = ['Saturn', 'Jupiter', 'Mars', 'Sun', 'Venus', 'Mercury', 'Moon'];
-  const dayOfWeek = date.getDay();
-  const hour = date.getHours();
-  
-  const planetaryDayRulers = [
-    'Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'
-  ];
-  
-  const dayRuler = planetaryDayRulers[dayOfWeek];
-  const dayRulerIndex = planets.indexOf(dayRuler);
-  
-  const hourIndex = (dayRulerIndex + hour) % 7;
-  return planets[hourIndex];
+  return degreeToGateAndLine(sunPos.elon);
 }
 
 export function getDailyContext(birthDate: string, currentDate: Date = new Date()): DailyContext {
@@ -134,7 +89,7 @@ export function getDailyContext(birthDate: string, currentDate: Date = new Date(
   const hdGateData = getCurrentHDGate(currentDate);
   
   return {
-    date: currentDate.toISOString().split('T')[0],
+    date: dateOnlyFromLocalDate(currentDate),
     personalDayNumber: calculatePersonalDayNumber(birthDate, currentDate),
     universalDayNumber: calculateUniversalDayNumber(currentDate),
     moonSign: getMoonSign(currentDate),
@@ -142,6 +97,6 @@ export function getDailyContext(birthDate: string, currentDate: Date = new Date(
     moonPhasePercentage: moonPhaseData.percentage,
     currentHDGate: hdGateData.gate,
     currentHDLine: hdGateData.line,
-    planetaryHour: getPlanetaryHour(currentDate),
+    planetaryHour: null,
   };
 }

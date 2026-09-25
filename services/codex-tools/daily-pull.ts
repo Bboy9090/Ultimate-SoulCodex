@@ -5,6 +5,7 @@
 
 import type { CodexToolResult, ProfileInput } from "./types";
 import { extractCore } from "./types";
+import { parseDateOnly } from "../../packages/core/compute/date-only.js";
 
 const MAJOR_ARCANA = [
   { name: "The Fool", theme: "new beginnings", behavior: "starting something without overthinking", shadow: "recklessness" },
@@ -37,15 +38,23 @@ function getDailyCardIndex(birthDate: string | Date | null, date: Date = new Dat
   const y = date.getFullYear();
   let seed = d + m + y;
   if (birthDate) {
-    const bd = new Date(birthDate);
-    if (!isNaN(bd.getTime())) {
-      seed += bd.getDate() + (bd.getMonth() + 1);
+    if (birthDate instanceof Date) {
+      if (!Number.isNaN(birthDate.getTime())) {
+        seed += birthDate.getDate() + (birthDate.getMonth() + 1);
+      }
+    } else {
+      try {
+        const { day, month } = parseDateOnly(birthDate.slice(0, 10));
+        seed += day + month;
+      } catch {
+        // Invalid date-only input contributes no birth-date seed.
+      }
     }
   }
   return seed % MAJOR_ARCANA.length;
 }
 
-function getTransitSignal(profile: ProfileInput): { planet: string; theme: string; detail: string } {
+function getTransitSignal(profile: ProfileInput, date: Date): { planet: string; theme: string; detail: string } {
   try {
     const astro = profile?.astrologyData;
     if (!astro) return { planet: "Moon", theme: "emotional processing", detail: "inner reflection is active" };
@@ -53,7 +62,7 @@ function getTransitSignal(profile: ProfileInput): { planet: string; theme: strin
     const moonSign = astro?.moonSign || "";
     const sunSign = astro?.sunSign || "";
 
-    const day = new Date().getDay();
+    const day = date.getDay();
     const signals = [
       { planet: "Mercury", theme: "communication clarity", detail: `watch how you express ideas today — your ${sunSign} directness may land harder than intended` },
       { planet: "Venus", theme: "values and connection", detail: `notice what you're drawn to vs. what you're settling for` },
@@ -74,7 +83,7 @@ export function dailyPull(profile: ProfileInput, date: Date = new Date()): Codex
   const core = extractCore(profile);
   const cardIndex = getDailyCardIndex(core.birthDate, date);
   const card = MAJOR_ARCANA[cardIndex];
-  const transit = getTransitSignal(profile);
+  const transit = getTransitSignal(profile, date);
 
   const observation = `Card: ${card.name}\nTransit signal: ${transit.planet} — ${transit.theme}\nArchetype: ${core.archetype || "Your current pattern"}`;
 

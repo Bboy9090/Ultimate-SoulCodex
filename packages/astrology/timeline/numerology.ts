@@ -1,4 +1,5 @@
 import type { PhaseSignal, TimelinePhase } from "./types";
+import { parseDateOnly } from "@soulcodex/core";
 
 const digitSum = (n: number): number =>
   Math.abs(n)
@@ -12,10 +13,10 @@ const reduce = (n: number): number => {
 };
 
 export function personalYear(birthDate: string, currentDate: Date): number {
-  const d = new Date(birthDate);
+  const birth = parseDateOnly(birthDate);
   const total =
-    digitSum(d.getMonth() + 1) +
-    digitSum(d.getDate()) +
+    digitSum(birth.month) +
+    digitSum(birth.day) +
     digitSum(currentDate.getFullYear());
   return reduce(total) || 9;
 }

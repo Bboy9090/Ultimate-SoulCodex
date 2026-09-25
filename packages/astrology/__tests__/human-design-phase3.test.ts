@@ -907,7 +907,7 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       assert.ok(typeof receipt?.algorithmVersion === 'string');
     });
 
-    it('should have configured arc equal to 87.975', () => {
+    it('should have configured arc equal to exact verified 88.0 degrees', () => {
       const result = calculateHumanDesignWithEvidence({
         name: 'Albert Einstein',
         birthDate: '1879-03-14',
@@ -923,7 +923,7 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       );
 
       const receipt = activationsEntry?.metadata?.solar_arc_receipt;
-      assert.strictEqual(receipt?.configuredSolarArc, 87.975);
+      assert.strictEqual(receipt?.configuredSolarArc, 88.0);
     });
 
     it('should have actual arc within tolerance', () => {
@@ -943,9 +943,9 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
 
       const receipt = activationsEntry?.metadata?.solar_arc_receipt;
 
-      // Actual arc should be close to configured (87.975)
+      // Actual arc should be close to configured (88.0)
       assert.ok(receipt?.actualSolarArc !== undefined);
-      const difference = Math.abs((receipt?.actualSolarArc || 0) - 87.975);
+      const difference = Math.abs((receipt?.actualSolarArc || 0) - 88.0);
       assert.ok(difference < 1, `Arc difference ${difference} should be less than 1 degree`);
     });
 

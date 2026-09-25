@@ -1,8 +1,9 @@
-import type {
-  BirthData,
-  VerificationState,
-  PlacementEvidence,
-  PlacementLike
+import {
+  parseDateOnly,
+  type BirthData,
+  type VerificationState,
+  type PlacementEvidence,
+  type PlacementLike
 } from "@soulcodex/core";
 import {
   getPlanetSignInterpretation,
@@ -383,7 +384,7 @@ function determinePlacementStatus(
   birthData: BirthData,
   placement: 'sun' | 'moon' | 'rising'
 ): VerificationState {
-  const hasExactTime = birthData.birthTime && birthData.birthTime !== '12:00';
+  const hasExactTime = Boolean(birthData.birthTime?.trim());
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
 
   // Sun: never requires time
@@ -589,10 +590,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
 
 export function getTarotBirthCards(birthDate: string): { card1: string; card2: string; interpretation: string } {
   // Correct tarot birth card calculation: sum all digits and reduce to 1-22
-  const date = new Date(birthDate);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
+  const { day, month, year } = parseDateOnly(birthDate);
   
   // Sum all individual digits (e.g., 15/03/1990 = 1+5+0+3+1+9+9+0 = 28)
   const sumAllDigits = (num: number) => {

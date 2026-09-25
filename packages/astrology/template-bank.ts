@@ -1047,10 +1047,14 @@ export function selectTemplates(
   profileData: any,
   lastUsedIds: string[] = []
 ): { selectedTemplates: TemplateVariation[]; templateIds: string[] } {
-  // Combine ALL template arrays (original 4 + 15 new systems = 19 total categories covering all 30+ mystical systems)
+  const eligibleAstrologyTemplates = dailyContext.planetaryHour
+    ? astrologyTemplates
+    : astrologyTemplates.filter((template) => !template.id.startsWith('astro-planetary-'));
+
+  // Combine only templates whose required calculation inputs are actually available.
   const allTemplates = [
     ...numerologyTemplates, 
-    ...astrologyTemplates, 
+    ...eligibleAstrologyTemplates, 
     ...humanDesignTemplates, 
     ...personalityTemplates,
     ...chineseTemplates,
@@ -1075,7 +1079,7 @@ export function selectTemplates(
   
   const availableByCategory: Record<string, TemplateVariation[]> = {
     numerology: numerologyTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    astrology: astrologyTemplates.filter(t => !lastUsedIds.includes(t.id)),
+    astrology: eligibleAstrologyTemplates.filter(t => !lastUsedIds.includes(t.id)),
     humandesign: humanDesignTemplates.filter(t => !lastUsedIds.includes(t.id)),
     personality: personalityTemplates.filter(t => !lastUsedIds.includes(t.id)),
     chinese: chineseTemplates.filter(t => !lastUsedIds.includes(t.id)),

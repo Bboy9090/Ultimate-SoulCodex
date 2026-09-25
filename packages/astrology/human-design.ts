@@ -1,7 +1,6 @@
 import * as Astronomy from 'astronomy-engine';
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
-import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
+import { resolveCivilTimeStrict, createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
 
 // Human Design Gates mapped to their correct centers and meanings
 export const HD_GATES = {
@@ -294,6 +293,8 @@ export type HumanDesignUnresolvedReason =
   | 'malformed_birth_time'
   | 'invalid_timezone'
   | 'timezone_resolution_failed'
+  | 'nonexistent_local_time'
+  | 'ambiguous_local_time'
   | 'invalid_coordinates'
   | 'missing_birth_date'
   | 'missing_birth_time'
@@ -378,7 +379,7 @@ export interface TimezoneResolution {
  * Captures structured provenance for reconstructing the calculation.
  */
 export interface SolarArcForensics {
-  configuredSolarArc: number;           // 87.975 constant
+  configuredSolarArc: number;           // exact 88.0 degree design solar arc
   actualSolarArc: number;               // computed from bisection
   iterationCount: number;               // bisection loop count
   finalSearchWindowDays: number;        // maxDays - minDays final value
@@ -405,7 +406,7 @@ function calculateAbsoluteLongitude(sign: string, degreeInSign: number): number 
 }
 
 // Convert zodiac degrees to Human Design gate and line
-function degreeToGateAndLine(degree: number): { gate: number; line: number } {
+export function degreeToGateAndLine(degree: number): { gate: number; line: number } {
   const normalized = ((degree % 360) + 360) % 360;
   const radiansPosition = normalized * Math.PI / 180;
   const circle = Math.PI * 2;
@@ -982,7 +983,7 @@ function calculateHumanDesignInternal(birthData: {
   }
 
   // Validate coordinates first (always required)
-  if (!birthData.latitude || !birthData.longitude) {
+  if (String(birthData.latitude ?? '').trim() === '' || String(birthData.longitude ?? '').trim() === '') {
     return {
       result: {
         status: 'unresolved',
@@ -1031,13 +1032,26 @@ function calculateHumanDesignInternal(birthData: {
   const localTimeString =
     `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T` +
     `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-  const birthTimeUTC = fromZonedTime(localTimeString, resolvedTimezone);
-  if (Number.isNaN(birthTimeUTC.getTime())) {
-    return { result: { status: 'unresolved', reason: 'timezone_resolution_failed' } };
+
+  const civilTime = resolveCivilTimeStrict(
+    birthData.birthDate,
+    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+    resolvedTimezone,
+  );
+  if (civilTime.status !== 'valid' || !civilTime.utc) {
+    const reason =
+      civilTime.status === 'nonexistent'
+        ? 'nonexistent_local_time'
+        : civilTime.status === 'ambiguous'
+          ? 'ambiguous_local_time'
+          : 'timezone_resolution_failed';
+    return { result: { status: 'unresolved', reason } };
   }
 
+  const birthTimeUTC = civilTime.utc;
+
   const astroData = calculateHdAstroAtUtc(birthTimeUTC);
-  const DESIGN_SOLAR_ARC = 87.975;
+  const DESIGN_SOLAR_ARC = 88.0;
   const birthSunLongitude = astroData.planets.sun.longitude;
   const targetLongitude = normalizeHdLongitude(birthSunLongitude - DESIGN_SOLAR_ARC);
 

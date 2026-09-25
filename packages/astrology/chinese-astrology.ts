@@ -96,6 +96,8 @@ function getCompatibility(animal: string): { best: string[]; challenging: string
 }
 
 export function calculateChineseAstrology(birthDate: string): ChineseAstrologyData {
+  void birthDate;
+  throw new Error("chinese_astrology_unavailable:no_governed_bazi_four_pillars_engine");
   const date = new Date(birthDate);
   const year = date.getFullYear();
   const month = date.getMonth();

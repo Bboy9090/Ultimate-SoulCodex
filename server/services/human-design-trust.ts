@@ -1,3 +1,4 @@
+import type { CivilTimeProvenanceStatus } from "@soulcodex/core";
 export type HumanDesignVerificationStatus =
   | "unresolved"
   | "calculated_unverified"
@@ -8,8 +9,21 @@ export type HumanDesignCoreField = "type" | "strategy" | "authority" | "profile"
 type HumanDesignCandidateFields = Partial<Record<HumanDesignCoreField, string>>;
 type CompleteHumanDesignCandidateFields = Record<HumanDesignCoreField, string>;
 
+export interface HumanDesignTimeConversionEvidence {
+  timezone: string;
+  utcOffsetMinutes: number;
+  conversionMethod: "standard-iana-tzdb";
+  runtimeTzdbVersion: string | null;
+  provenanceStatus: CivilTimeProvenanceStatus;
+  historicalTimeRequiresIndependentSource: boolean;
+  birthTimeAccuracy?: "recorded" | "recalled" | "estimated" | "unknown";
+  birthTimeUncertaintyMinutes?: number | null;
+  birthTimeQualityRequiresReview?: boolean;
+}
+
 interface HumanDesignEvidenceBase {
   limitations: readonly string[];
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }
 
 export interface HumanDesignCandidateEvidence extends HumanDesignEvidenceBase {
@@ -134,6 +148,7 @@ export function createHumanDesignTrustRecord(input: {
   inputTimestampUtc?: string | null;
   calculatedAt?: string;
   candidate?: HumanDesignCandidateFields | null;
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }): HumanDesignTrustRecord {
   if (!input.birthTimeKnown || !input.inputTimestampUtc) {
     return {
@@ -166,6 +181,19 @@ export function createHumanDesignTrustRecord(input: {
     ),
   ) as HumanDesignCandidateFields;
 
+  const historicalLimitations =
+    input.timeConversion?.historicalTimeRequiresIndependentSource
+      ? [
+          "Historical civil-time conversion is deterministic from the runtime tzdb but has not been independently audited against the time standard in force at the birthplace and date.",
+        ]
+      : [];
+  const uncertaintyLimitations =
+    input.timeConversion?.birthTimeQualityRequiresReview
+      ? [
+          `Birth time is estimated${Number.isFinite(input.timeConversion.birthTimeUncertaintyMinutes) ? ` within ±${input.timeConversion.birthTimeUncertaintyMinutes} minutes` : ""}; timed Human Design fields remain unverified until the uncertainty window is resolved.`,
+        ]
+      : [];
+
   return {
     status: "calculated_unverified",
     engine: "soulcodex-hd-candidate-v0",
@@ -174,7 +202,12 @@ export function createHumanDesignTrustRecord(input: {
     inputTimestampUtc: input.inputTimestampUtc,
     birthTimeKnown: true,
     candidate,
-    limitations: UNVERIFIED_LIMITATIONS,
+    ...(input.timeConversion ? { timeConversion: input.timeConversion } : {}),
+    limitations: Object.freeze([
+      ...UNVERIFIED_LIMITATIONS,
+      ...historicalLimitations,
+      ...uncertaintyLimitations,
+    ]),
   };
 }
 
@@ -184,6 +217,7 @@ export function createVerifiedHumanDesignTrustRecord(input: {
   inputTimestampUtc?: string | null;
   calculatedAt?: string;
   candidate?: HumanDesignCandidateFields | null;
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }): HumanDesignTrustRecord {
   if (!input.birthTimeKnown || !input.inputTimestampUtc) {
     return createHumanDesignTrustRecord(input);
@@ -196,6 +230,16 @@ export function createVerifiedHumanDesignTrustRecord(input: {
   const calculatedAt = input.calculatedAt ?? new Date().toISOString();
   if (!isValidIsoTimestamp(calculatedAt)) {
     throw new Error("human_design_calculation_timestamp_invalid");
+  }
+
+  if (
+    input.timeConversion?.historicalTimeRequiresIndependentSource ||
+    input.timeConversion?.birthTimeQualityRequiresReview
+  ) {
+    return createHumanDesignTrustRecord({
+      ...input,
+      calculatedAt,
+    });
   }
 
   const candidate = completeVerifiedCandidate(input.candidate);
@@ -214,6 +258,7 @@ export function createVerifiedHumanDesignTrustRecord(input: {
     inputTimestampUtc: input.inputTimestampUtc,
     birthTimeKnown: true,
     candidate,
+    ...(input.timeConversion ? { timeConversion: input.timeConversion } : {}),
     verificationReceiptId:
       APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.verificationReceiptId,
     independentSource:

@@ -60,6 +60,7 @@ export type IndependentVerificationResult =
         | "timestamp_mismatch"
         | "sign_disagreement"
         | "longitude_outside_tolerance"
+        | "sign_boundary_within_tolerance"
         | "invalid_longitude";
       longitudeDeltaDegrees: number | null;
     };
@@ -75,6 +76,11 @@ function isValidLongitude(value: number): boolean {
 function circularLongitudeDelta(left: number, right: number): number {
   const raw = Math.abs(normalizeLongitude(left) - normalizeLongitude(right));
   return Math.min(raw, 360 - raw);
+}
+
+export function distanceToNearestSignBoundary(longitude: number): number {
+  const withinSign = normalizeLongitude(longitude) % 30;
+  return Math.min(withinSign, 30 - withinSign);
 }
 
 function normalizedIdentity(value: string): string {
@@ -124,6 +130,19 @@ export function verifyAgainstIndependentReference(
 
   if (longitudeDeltaDegrees > policy.maximumLongitudeDeltaDegrees) {
     return { status: "rejected", sign: null, reason: "longitude_outside_tolerance", longitudeDeltaDegrees };
+  }
+
+  const boundaryDistance = Math.min(
+    distanceToNearestSignBoundary(candidate.longitude),
+    distanceToNearestSignBoundary(reference.longitude),
+  );
+  if (boundaryDistance <= policy.maximumLongitudeDeltaDegrees) {
+    return {
+      status: "rejected",
+      sign: null,
+      reason: "sign_boundary_within_tolerance",
+      longitudeDeltaDegrees,
+    };
   }
 
   return {

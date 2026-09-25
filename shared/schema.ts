@@ -146,6 +146,15 @@ export const birthDataSchema = z.object({
   // Empty string is an explicit unknown-time state. Never force the user to
   // invent a clock time just to satisfy validation.
   birthTime: birthTimeSchema,
+  birthTimeAccuracy: z
+    .enum(["recorded", "recalled", "estimated", "unknown"])
+    .optional(),
+  birthTimeUncertaintyMinutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(720)
+    .optional(),
   birthLocation: z.string().min(1, "Birth location is required"),
   timezone: z.string(),
   latitude: z.union([z.string(), z.number()]).optional(),
@@ -179,6 +188,20 @@ export const birthDataSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["timezone"],
       message: "Timezone must be a valid IANA timezone",
+    });
+  }
+  if (!data.birthTime && data.birthTimeAccuracy && data.birthTimeAccuracy !== "unknown") {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["birthTimeAccuracy"],
+      message: "Birth-time accuracy cannot be set when birth time is unknown",
+    });
+  }
+  if (data.birthTimeAccuracy === "estimated" && data.birthTimeUncertaintyMinutes === undefined) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["birthTimeUncertaintyMinutes"],
+      message: "Approximate birth time requires an uncertainty window",
     });
   }
   if (data.birthTime && !timezone) {

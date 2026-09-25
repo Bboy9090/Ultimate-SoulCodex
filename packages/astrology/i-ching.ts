@@ -158,6 +158,8 @@ function getHexagram(number: number): Hexagram {
 }
 
 export function calculateIChing(birthDate: string): IChingReading {
+  void birthDate;
+  throw new Error("i_ching_unavailable:incomplete_hexagram_corpus_and_no_governed_divination_method");
   const birthCalc = calculateBirthHexagram(birthDate);
   const birthHexagram = getHexagram(birthCalc.hexagramNumber);
   
