@@ -332,7 +332,7 @@ export async function generateDailyHoroscope(profile: any): Promise<DailyHorosco
   const alignments = calculateAlignments(planets);
   const personalTransits = calculatePersonalTransitsFromProfile(profile, now);
   const moonPhase = getMoonPhase(now);
-  const personalDayNumber = calculatePersonalDayNumber(profile.birthDate, now);
+  const personalDayNumber = calculatePersonalDayNumber(profile.birthDate, now, tz);
 
   const horoscope = await generateAIHoroscope(profile, planets, alignments, personalTransits, moonPhase, personalDayNumber);
 
