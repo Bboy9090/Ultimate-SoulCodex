@@ -31,6 +31,51 @@ const FULL_NATAL_PLANET_KEYS = [
 
 export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 7;
 
+type AstrologyInputTimeProvenance = {
+  provenanceStatus?: "modern_tzdb" | "historical_tzdb_unverified";
+  historicalTimeRequiresIndependentSource?: boolean;
+  timezone?: string;
+  runtimeTzdbVersion?: string | null;
+  birthTimeAccuracy?: "recorded" | "recalled" | "estimated" | "unknown";
+  birthTimeUncertaintyMinutes?: number | null;
+  birthTimeQualityRequiresReview?: boolean;
+};
+
+function getInputTimeProvenance(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): AstrologyInputTimeProvenance | null {
+  const verification = astrology?.verification as
+    | { inputTimeProvenance?: AstrologyInputTimeProvenance | null }
+    | undefined;
+  return verification?.inputTimeProvenance ?? null;
+}
+
+export function requiresHistoricalTimeReview(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  return getInputTimeProvenance(astrology)?.historicalTimeRequiresIndependentSource === true;
+}
+
+export function requiresBirthTimeUncertaintyReview(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  return getInputTimeProvenance(astrology)?.birthTimeQualityRequiresReview === true;
+}
+
+export function requiresManualTimeReview(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  return requiresHistoricalTimeReview(astrology) || requiresBirthTimeUncertaintyReview(astrology);
+}
+
+function hasTrustedTimedInputProvenance(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  const provenance = getInputTimeProvenance(astrology);
+  return provenance?.historicalTimeRequiresIndependentSource !== true &&
+    provenance?.birthTimeQualityRequiresReview !== true;
+}
+
 export type RemoteProfileSnapshot = {
   id?: string;
   name?: string;
@@ -130,6 +175,7 @@ export function getVerifiedAstrologySign(
   astrology: RemoteProfileSnapshot["astrologyData"],
   body: "sun" | "moon" | "rising",
 ): string | null {
+  if (requiresManualTimeReview(astrology)) return null;
   const placement = astrology?.[body];
   if (placement?.verificationStatus !== "verified") return null;
   return validZodiacSign(placement.sign)
@@ -183,7 +229,8 @@ export function hasVerifiedBigThree(
   astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
 ): boolean {
   return Boolean(
-    hasVerifiedSunAndMoon(astrology) &&
+    hasTrustedTimedInputProvenance(astrology) &&
+      hasVerifiedSunAndMoon(astrology) &&
       getVerifiedAstrologySign(astrology, "rising"),
   );
 }
@@ -191,7 +238,7 @@ export function hasVerifiedBigThree(
 export function hasVerifiedFullNatalChart(
   astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
 ): boolean {
-  if (!astrology || !hasVerifiedBigThree(astrology)) return false;
+  if (!astrology || !hasTrustedTimedInputProvenance(astrology) || !hasVerifiedBigThree(astrology)) return false;
   if (astrology.houseSystem !== "equal") return false;
   const verification = astrology.verification as { policyId?: unknown } | undefined;
   const policyIdentity = typeof verification?.policyId === "string" ? verification.policyId : "";
@@ -418,6 +465,10 @@ export function reconcileOfflineProfile(
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
 ): boolean {
+  if (requiresManualTimeReview(profile.verifiedAstrologyData)) {
+    return false;
+  }
+
   if (!hasVerifiedSunAndMoon(profile.verifiedAstrologyData)) {
     return true;
   }

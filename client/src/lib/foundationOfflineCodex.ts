@@ -324,6 +324,11 @@ export function generateFoundationOfflineCodexProfile(
     name: input.name.trim(),
     birthDate: input.birthDate,
     birthTime: input.birthTime || null,
+    birthTimeAccuracy:
+      input.birthTimeAccuracy ??
+      (input.birthTime ? "recalled" : "unknown"),
+    birthTimeUncertaintyMinutes:
+      input.birthTimeUncertaintyMinutes ?? null,
     birthLocation: input.birthLocation.trim(),
     timezone: input.timezone,
     latitude: input.latitude === undefined || input.latitude === "" ? null : String(input.latitude),

@@ -8,6 +8,9 @@ import {
   hasVerifiedFullNatalChart,
   hasVerifiedSunAndMoon,
   profileNeedsOnlineVerification,
+  requiresBirthTimeUncertaintyReview,
+  requiresHistoricalTimeReview,
+  requiresManualTimeReview,
   reconcileActiveProfile,
   reconcileOfflineProfile,
   type ReconciledOfflineProfile,
@@ -442,5 +445,148 @@ test("verified Human Design is reconciled into active and offline profiles", () 
       (entry) => entry.id === "verified.human-design.core",
     ),
     true,
+  );
+});
+
+
+test("historical timed astrology remains inspectable but is not promoted as verified identity", () => {
+  const historicalRemote = {
+    ...verifiedRemote,
+    astrologyData: {
+      ...verifiedRemote.astrologyData,
+      verification: {
+        ...verifiedRemote.astrologyData.verification,
+        inputTimeProvenance: {
+          provenanceStatus: "historical_tzdb_unverified",
+          historicalTimeRequiresIndependentSource: true,
+          timezone: "Europe/Berlin",
+          runtimeTzdbVersion: "2026b",
+        },
+      },
+    },
+    humanDesignData: {
+      status: "calculated_unverified",
+      candidate: {
+        type: "Generator",
+        strategy: "To Respond",
+        authority: "Sacral Authority",
+        profile: "1/3",
+      },
+    },
+  };
+
+  assert.equal(requiresHistoricalTimeReview(historicalRemote.astrologyData), true);
+  assert.equal(getVerifiedAstrologySign(historicalRemote.astrologyData, "sun"), null);
+  assert.equal(getVerifiedAstrologySign(historicalRemote.astrologyData, "moon"), null);
+  assert.equal(getVerifiedAstrologySign(historicalRemote.astrologyData, "rising"), null);
+  assert.equal(hasVerifiedBigThree(historicalRemote.astrologyData), false);
+  assert.equal(hasVerifiedFullNatalChart(historicalRemote.astrologyData), false);
+
+  const hydrated = reconcileOfflineProfile(
+    local,
+    historicalRemote,
+    "2026-09-25T04:45:00.000Z",
+  );
+
+  assert.equal(hydrated.verifiedAstrologyData?.sun?.verificationStatus, "verified");
+  assert.equal(requiresHistoricalTimeReview(hydrated.verifiedAstrologyData), true);
+  assert.equal(profileNeedsOnlineVerification(hydrated), false);
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some(
+      (item) => item.id === "verified.astrology.moon",
+    ),
+    false,
+  );
+  assert.equal(hydrated.humanDesignData?.status, "calculated_unverified");
+});
+
+test("modern timed provenance preserves the verified full-natal path", () => {
+  const modernRemote = {
+    ...verifiedRemote,
+    astrologyData: {
+      ...verifiedRemote.astrologyData,
+      verification: {
+        ...verifiedRemote.astrologyData.verification,
+        inputTimeProvenance: {
+          provenanceStatus: "modern_tzdb",
+          historicalTimeRequiresIndependentSource: false,
+          timezone: "America/New_York",
+          runtimeTzdbVersion: "2026b",
+        },
+      },
+    },
+  };
+
+  assert.equal(requiresHistoricalTimeReview(modernRemote.astrologyData), false);
+  assert.equal(hasVerifiedFullNatalChart(modernRemote.astrologyData), true);
+
+  const hydrated = reconcileOfflineProfile(
+    local,
+    modernRemote,
+    "2026-09-25T04:46:00.000Z",
+  );
+  assert.equal(profileNeedsOnlineVerification(hydrated), false);
+});
+
+
+test("estimated timed astrology stays inspectable but cannot enter verified synthesis", () => {
+  const estimatedRemote = {
+    ...verifiedRemote,
+    astrologyData: {
+      ...verifiedRemote.astrologyData,
+      verification: {
+        ...verifiedRemote.astrologyData.verification,
+        inputTimeProvenance: {
+          provenanceStatus: "modern_tzdb",
+          historicalTimeRequiresIndependentSource: false,
+          timezone: "America/New_York",
+          runtimeTzdbVersion: "2026b",
+          birthTimeAccuracy: "estimated",
+          birthTimeUncertaintyMinutes: 30,
+          birthTimeQualityRequiresReview: true,
+        },
+      },
+    },
+    humanDesignData: {
+      status: "calculated_unverified",
+      candidate: {
+        type: "Reflector",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    },
+  };
+
+  assert.equal(requiresBirthTimeUncertaintyReview(estimatedRemote.astrologyData), true);
+  assert.equal(requiresManualTimeReview(estimatedRemote.astrologyData), true);
+  assert.equal(getVerifiedAstrologySign(estimatedRemote.astrologyData, "moon"), null);
+  assert.equal(getVerifiedAstrologySign(estimatedRemote.astrologyData, "rising"), null);
+  assert.equal(hasVerifiedFullNatalChart(estimatedRemote.astrologyData), false);
+
+  const estimatedLocal = {
+    ...local,
+    birthTimeAccuracy: "estimated" as const,
+    birthTimeUncertaintyMinutes: 30,
+  };
+  const hydrated = reconcileOfflineProfile(
+    estimatedLocal,
+    estimatedRemote,
+    "2026-09-25T05:05:00.000Z",
+  );
+
+  assert.equal(profileNeedsOnlineVerification(hydrated), false);
+  assert.equal(hydrated.humanDesignData?.status, "calculated_unverified");
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.astrology.moon",
+    ),
+    false,
+  );
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.human-design.core",
+    ),
+    false,
   );
 });
