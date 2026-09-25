@@ -84,7 +84,7 @@ test("trine and opposition exact orb edges are inclusive and zodiac-wrap safe", 
   assert.equal(oppositionAtLimit[0].aspect, "opposition");
   assert.equal(oppositionAtLimit[0].orbDegrees, 10);
 
-  const oppositionOutside = calculateMajorAspects([p("Sun", 350), p("Moon", 179.9999)]);
+  const oppositionOutside = calculateMajorAspects([p("Sun", 350), p("Moon", 180.0001)]);
   assert.equal(oppositionOutside.length, 0);
 });
 
