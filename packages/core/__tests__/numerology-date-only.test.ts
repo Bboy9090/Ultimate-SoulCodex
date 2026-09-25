@@ -105,3 +105,19 @@ test('core numerology snapshot is deterministic and versioned', () => {
     maturity: 4,
   });
 });
+
+
+test('unsupported alphabetic scripts fail closed instead of being silently deleted', () => {
+  assert.throws(
+    () => normalizeNumerologyName('Алексей Иванов'),
+    /outside the supported Latin transliteration policy/i,
+  );
+  assert.throws(
+    () => calcExpression('Γεώργιος'),
+    /outside the supported Latin transliteration policy/i,
+  );
+});
+
+test('supported Latin diacritics and punctuation remain deterministic', () => {
+  assert.equal(normalizeNumerologyName("Renée O'Connor-Straße"), 'RENEEOCONNORSTRASSE');
+});
