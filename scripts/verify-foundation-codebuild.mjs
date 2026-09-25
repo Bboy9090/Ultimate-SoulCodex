@@ -9,6 +9,7 @@ const files = {
   server: read("server/index.ts"),
   serverRoutes: read("server/routes.ts"),
   storage: read("server/storage.ts"),
+  database: read("server/db.ts"),
   consumerAuth: read("server/routes/consumer-auth.ts"),
   activeProfile: read("client/src/lib/ActiveProfileRepository.ts"),
   app: read("client/src/App.tsx"),
@@ -60,6 +61,7 @@ check("PRIVACY-06", "Astronomy verification is evidence-only", files.verificatio
 check("PERSIST-01", "Server storage exposes durability instead of treating memory as persistence", files.storage.includes("readonly durable = false") && files.storage.includes("readonly durable = true") && files.storage.includes("durableServerPersistenceAvailable"));
 check("PERSIST-02", "Production server-profile routes fail closed without durable storage", files.serverRoutes.includes("productionProfilePersistenceUnavailable") && files.serverRoutes.includes("durable_storage_required") && files.serverRoutes.includes("Local Soul Codex profiles on this device are unaffected"));
 check("PERSIST-03", "Production Apple sign-in cannot create volatile accounts", files.consumerAuth.includes("productionPersistenceUnavailable") && files.consumerAuth.includes("durable_storage_required") && files.consumerAuth.includes("Local Soul Codex profiles remain available on this device"));
+check("PERSIST-04", "Configured Postgres must pass an explicit schema compatibility probe before serving traffic", files.database.includes("assertDatabaseSchemaCompatible") && files.database.includes("information_schema.columns") && files.database.includes("soul_profiles") && files.database.includes("timestamp without time zone") && files.server.includes("assertDatabaseSchemaCompatible") && files.server.indexOf("assertDatabaseSchemaCompatible") < files.server.indexOf("registerRoutes(app)"));
 check("DATE-ONLY-01", "Active profile repository canonicalizes birth dates before persistence", files.activeProfile.includes("canonicalBirthDate") && files.activeProfile.includes("parseDateOnly") && files.activeProfile.includes("T00:00:00") && !files.activeProfile.includes("new Date(profile.birthDate)"));
 
 check("TRUTH-01", "Local generation does not fabricate time-dependent astronomy", files.foundationOffline.includes('moonSign: ""') && files.foundationOffline.includes('risingSign: ""') && files.foundationOffline.includes("planets: {}") && files.foundationOffline.includes("houses: []") && files.foundationOffline.includes("aspects: []"));
