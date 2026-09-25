@@ -49,6 +49,18 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result.evidence.confidenceLabel, 'unverified');
     });
 
+    it('should fail closed for an invalid target Date', () => {
+      const result = calcPersonalDayWithEvidence(
+        '1990-08-15',
+        new Date(Number.NaN),
+      );
+
+      assert.strictEqual(result.value, undefined);
+      assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(result.evidence.inputState, 'invalid');
+      assert.ok(result.evidence.reasoning.some((r) => r.includes('Target date')));
+    });
+
     it('should not claim verification for deterministic calculation', () => {
       const result = calcPersonalDayWithEvidence('1990-08-15', new Date());
 
@@ -110,6 +122,15 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result.value, undefined);
       assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
       assert.strictEqual(result.evidence.inputState, 'missing');
+    });
+
+    it('should fail closed for an invalid target year', () => {
+      const result = calcPersonalYearWithEvidence('1990-08-15', 0);
+
+      assert.strictEqual(result.value, undefined);
+      assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(result.evidence.inputState, 'invalid');
+      assert.ok(result.evidence.reasoning.some((r) => r.includes('Target year')));
     });
 
     it('should fail closed for invalid birth date', () => {
