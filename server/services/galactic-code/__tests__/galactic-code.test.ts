@@ -50,7 +50,7 @@ const testInput: GalacticCodeInput = {
     evidenceState: 'verified',
     type: 'Generator',
     strategy: 'To Respond',
-    authority: 'Sacral',
+    authority: 'Sacral Authority',
     profile: '2/4',
     definition: 'Split',
     centers: { defined: ['Head', 'Solar Plexus'], undefined: ['Root'] },
@@ -146,6 +146,26 @@ test('Galactic Code: Determinism', async (t) => {
     assert.strictEqual(result1.fingerprint, result2.fingerprint);
     // (generatedAt may be identical if calls are fast enough; this is acceptable)
   });
+  await t.test('profile storage identity does not change evidence fingerprint', () => {
+    const result1 = generateGalacticCode(testInput, TRUSTED);
+    const result2 = generateGalacticCode(
+      { ...testInput, profileId: 'recreated-profile-id' },
+      TRUSTED,
+    );
+
+    assert.strictEqual(result1.fingerprint, result2.fingerprint);
+  });
+
+  await t.test('birth time changes fingerprint because it changes emitted frequency', () => {
+    const result1 = generateGalacticCode(testInput, TRUSTED);
+    const result2 = generateGalacticCode(
+      { ...testInput, birthTime: '05:16' },
+      TRUSTED,
+    );
+
+    assert.notStrictEqual(result1.frequency, result2.frequency);
+    assert.notStrictEqual(result1.fingerprint, result2.fingerprint);
+  });
 });
 
 test('Galactic Code: System Coverage & Confidence', async (t) => {
@@ -234,7 +254,8 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
       humanDesign: {
         evidenceState: 'verified',
         type: 'Super Generator',
-        authority: 'Sacral',
+        strategy: 'To Respond',
+        authority: 'Sacral Authority',
         profile: '2/4',
         coverage: 'complete',
       },
@@ -242,6 +263,24 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
 
     assert.throws(
       () => generateGalacticCode(invalidHumanDesign, TRUSTED),
+      /requires at least 2 of 3 systems/,
+    );
+
+    const impossibleHumanDesign: GalacticCodeInput = {
+      ...testInput,
+      astrology: { coverage: 'missing' } as any,
+      humanDesign: {
+        evidenceState: 'verified',
+        type: 'Generator',
+        strategy: 'To Respond',
+        authority: 'Lunar Authority',
+        profile: '2/4',
+        coverage: 'complete',
+      },
+    };
+
+    assert.throws(
+      () => generateGalacticCode(impossibleHumanDesign, TRUSTED),
       /requires at least 2 of 3 systems/,
     );
   });
@@ -332,7 +371,7 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
       humanDesign: {
         evidenceState: 'verified',
         ...testInput.humanDesign,
-        authority: 'Emotional',
+        authority: 'Emotional Authority',
       },
     };
 
@@ -514,7 +553,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
         evidenceState: 'verified',
         type: 'Projector',
         strategy: 'To Be Invited',
-        authority: 'Mental',
+        authority: 'Mental Authority',
         profile: '3/5',
         definition: 'Single',
         centers: { defined: ['Head', 'Heart'], undefined: ['Root'] },
