@@ -65,20 +65,6 @@ function pattern(drive: string, gift: string, shadow: string, relationship: stri
   return { drive, gift, shadow, relationship, action, axes };
 }
 
-function parseDate(dateISO: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateISO);
-  if (!match) throw new Error("birthDate must use YYYY-MM-DD");
-  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
-}
-
-function reduceNumber(input: number): number {
-  let value = Math.abs(Math.trunc(input));
-  while (value > 9 && value !== 11 && value !== 22 && value !== 33) {
-    value = String(value).split("").reduce((sum, digit) => sum + Number(digit), 0);
-  }
-  return value;
-}
-
 function elementForSign(sign: string): "Fire" | "Earth" | "Air" | "Water" | null {
   if (["Aries", "Leo", "Sagittarius"].includes(sign)) return "Fire";
   if (["Taurus", "Virgo", "Capricorn"].includes(sign)) return "Earth";
