@@ -197,16 +197,7 @@ function resolveTimezone(
   if (normalizedInput.includes('/')) {
     return normalizedInput;
   }
-  
-  try {
-    const timezones = geoTz.find(latitude, longitude);
-    if (timezones && timezones.length > 0) {
-      return timezones[0];
-    }
-  } catch (error) {
-    console.warn('Geo-tz lookup failed, falling back to coordinate calculation:', error);
-  }
-  
+
   const timezoneMap: { [key: string]: string } = {
     'EST': 'America/New_York',
     'EDT': 'America/New_York', 
