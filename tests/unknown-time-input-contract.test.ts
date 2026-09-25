@@ -50,3 +50,45 @@ test("a provided birth time must use HH:MM instead of accepting arbitrary text",
   assert.throws(() => birthDataSchema.parse({ ...base, birthTime: "not-a-time" }), /Birth time must use HH:MM/);
   assert.equal(birthDataSchema.parse({ ...base, birthTime: "11:11" }).birthTime, "11:11");
 });
+
+
+test("remembered birth time is accepted without forcing certificate-grade provenance", () => {
+  const parsed = birthDataSchema.parse({
+    ...base,
+    birthTime: "11:11",
+    birthTimeAccuracy: "recalled",
+  });
+  assert.equal(parsed.birthTimeAccuracy, "recalled");
+});
+
+test("approximate birth time requires an explicit uncertainty window", () => {
+  assert.throws(
+    () =>
+      birthDataSchema.parse({
+        ...base,
+        birthTime: "11:00",
+        birthTimeAccuracy: "estimated",
+      }),
+    /Approximate birth time requires an uncertainty window/,
+  );
+
+  const parsed = birthDataSchema.parse({
+    ...base,
+    birthTime: "11:00",
+    birthTimeAccuracy: "estimated",
+    birthTimeUncertaintyMinutes: 30,
+  });
+  assert.equal(parsed.birthTimeUncertaintyMinutes, 30);
+});
+
+test("unknown birth time cannot claim recorded or recalled provenance", () => {
+  assert.throws(
+    () =>
+      birthDataSchema.parse({
+        ...base,
+        birthTime: "",
+        birthTimeAccuracy: "recorded",
+      }),
+    /Birth-time accuracy cannot be set when birth time is unknown/,
+  );
+});
