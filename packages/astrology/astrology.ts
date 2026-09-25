@@ -383,7 +383,7 @@ function determinePlacementStatus(
   birthData: BirthData,
   placement: 'sun' | 'moon' | 'rising'
 ): VerificationState {
-  const hasExactTime = birthData.birthTime && birthData.birthTime !== '12:00';
+  const hasExactTime = Boolean(birthData.birthTime?.trim());
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
 
   // Sun: never requires time
