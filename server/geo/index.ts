@@ -8,6 +8,13 @@ function isAmbiguityError(error: unknown): boolean {
   return error instanceof Error && error.message.startsWith("Ambiguous geocoding results for:");
 }
 
+export class AmbiguousLocationError extends Error {
+  constructor(public readonly place: string) {
+    super(`Birthplace is ambiguous: ${place}`);
+    this.name = "AmbiguousLocationError";
+  }
+}
+
 const SAFE_STATIC_FALLBACK_ALIASES = new Set([
   "nyc",
   "new york city",
@@ -52,7 +59,7 @@ export async function resolveGeo(place: string): Promise<GeoResult | null> {
   } catch (err) {
     if (isAmbiguityError(err)) {
       console.warn(`[GeoCache] Ambiguous birthplace "${place}" requires more detail`);
-      return null;
+      throw new AmbiguousLocationError(place);
     }
     console.warn(`[GeoCache] Nominatim unavailable for "${place}"; checking static fallback`, err);
   }
