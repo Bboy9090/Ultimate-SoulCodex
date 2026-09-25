@@ -14,7 +14,7 @@ import {
   type EvidenceEntry,
   type EvidenceConfidenceLevel,
 } from './index.js';
-import { calcPersonalDay, calcPersonalMonth, calcPersonalYear } from '../compute/personal-numbers.js';
+import { calcPersonalDay, calcPersonalMonth, calcPersonalYear, PERSONAL_CYCLE_POLICY } from '../compute/personal-numbers.js';
 import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
@@ -98,7 +98,7 @@ export function calcPersonalDayWithEvidence(
           'Calculation does not account for birth time',
         ],
         formulaId: 'numerology.personal-day',
-        formulaVersion: '1.0.0',
+        formulaVersion: PERSONAL_CYCLE_POLICY.version,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -137,7 +137,7 @@ export function calcPersonalDayWithEvidence(
         'Calculation does not account for birth time',
       ],
       formulaId: 'numerology.personal-day',
-      formulaVersion: '1.0.0',
+      formulaVersion: PERSONAL_CYCLE_POLICY.version,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -175,11 +175,11 @@ export function calcPersonalYearWithEvidence(
           'Birth date could not be processed',
         ],
         limitations: [
-          'Personal Year cycles annually, changes on birthday',
+          'Soul Codex Personal Year uses the target calendar year; it does not switch on the birthday',
           'Calculation does not account for birth time',
         ],
         formulaId: 'numerology.personal-year',
-        formulaVersion: '1.0.0',
+        formulaVersion: PERSONAL_CYCLE_POLICY.version,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -209,11 +209,11 @@ export function calcPersonalYearWithEvidence(
         `Sum reduced to single digit = Year ${personalYear}`,
       ],
       limitations: [
-        'Personal Year cycles annually, changes on birthday',
+        'Soul Codex Personal Year uses the target calendar year; it does not switch on the birthday',
         'Calculation does not account for birth time',
       ],
       formulaId: 'numerology.personal-year',
-      formulaVersion: '1.0.0',
+      formulaVersion: PERSONAL_CYCLE_POLICY.version,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -230,7 +230,7 @@ export function calcPersonalMonthWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const yearValid = typeof personalYear === 'number' && personalYear >= 1 && personalYear <= 9;
+  const yearValid = typeof personalYear === 'number' && [1,2,3,4,5,6,7,8,9,11,22,33].includes(personalYear);
   const monthValid = typeof targetMonth === 'number' && targetMonth >= 1 && targetMonth <= 12;
 
   let derivedInputState: InputState = 'valid';
@@ -253,15 +253,15 @@ export function calcPersonalMonthWithEvidence(
           `calendar_month_${targetMonth}`,
         ],
         reasoning: [
-          !yearValid ? `Personal Year ${personalYear} must be 1-9` : '',
+          !yearValid ? `Personal Year ${personalYear} must be 1-9 or a preserved master number (11, 22, 33)` : '',
           !monthValid ? `Calendar month ${targetMonth} must be 1-12` : '',
         ].filter(Boolean),
         limitations: [
           'Derived from Personal Year; dependent on year accuracy',
-          'Calendar month only; does not account for birth date transition',
+          'Soul Codex Personal Month uses the target calendar month under the calendar-cycle policy',
         ],
         formulaId: 'numerology.personal-month',
-        formulaVersion: '1.0.0',
+        formulaVersion: PERSONAL_CYCLE_POLICY.version,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -290,10 +290,10 @@ export function calcPersonalMonthWithEvidence(
       ],
       limitations: [
         'Derived from Personal Year; dependent on year accuracy',
-        'Calendar month only; does not account for birth date transition',
+        'Soul Codex Personal Month uses the target calendar month under the calendar-cycle policy',
       ],
       formulaId: 'numerology.personal-month',
-      formulaVersion: '1.0.0',
+      formulaVersion: PERSONAL_CYCLE_POLICY.version,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -332,7 +332,7 @@ export function calcLifePathWithEvidence(
           'Life Path is constant throughout life',
         ],
         formulaId: 'numerology.life-path',
-        formulaVersion: '1.0.0',
+        formulaVersion: PERSONAL_CYCLE_POLICY.version,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -371,7 +371,7 @@ export function calcLifePathWithEvidence(
         'Life Path is constant throughout life',
       ],
       formulaId: 'numerology.life-path',
-      formulaVersion: '1.0.0',
+      formulaVersion: PERSONAL_CYCLE_POLICY.version,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -410,7 +410,7 @@ export function calcExpressionWithEvidence(
           'Letter-to-number mapping is Pythagorean',
         ],
         formulaId: 'numerology.expression',
-        formulaVersion: '1.0.0',
+        formulaVersion: PERSONAL_CYCLE_POLICY.version,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -442,7 +442,7 @@ export function calcExpressionWithEvidence(
         'Letter-to-number mapping is Pythagorean',
       ],
       formulaId: 'numerology.expression',
-      formulaVersion: '1.0.0',
+      formulaVersion: PERSONAL_CYCLE_POLICY.version,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -481,7 +481,7 @@ export function calcSoulUrgeWithEvidence(
           'Reveals inner desires but not actions taken',
         ],
         formulaId: 'numerology.soul-urge',
-        formulaVersion: '1.0.0',
+        formulaVersion: PERSONAL_CYCLE_POLICY.version,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -514,7 +514,7 @@ export function calcSoulUrgeWithEvidence(
         'Reveals inner desires but not actions taken',
       ],
       formulaId: 'numerology.soul-urge',
-      formulaVersion: '1.0.0',
+      formulaVersion: PERSONAL_CYCLE_POLICY.version,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -553,7 +553,7 @@ export function calcPersonalityWithEvidence(
           'Name changes after birth would alter this number',
         ],
         formulaId: 'numerology.personality',
-        formulaVersion: '1.0.0',
+        formulaVersion: PERSONAL_CYCLE_POLICY.version,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -588,7 +588,7 @@ export function calcPersonalityWithEvidence(
         'Name changes after birth would alter this number',
       ],
       formulaId: 'numerology.personality',
-      formulaVersion: '1.0.0',
+      formulaVersion: PERSONAL_CYCLE_POLICY.version,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
