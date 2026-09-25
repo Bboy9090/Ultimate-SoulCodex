@@ -27,7 +27,7 @@ function reduceToSingleDigit(num: number): number {
  * Calculates Personal Day Number using the shared core module.
  * This ensures consistency across all surfaces (Today, Timeline, Codex, Profile).
  */
-export function calculatePersonalDayNumber(birthDate: string, currentDate: Date = new Date()): number {
+export function calculatePersonalDayNumber(birthDate: string, currentDate: Date | string = new Date()): number {
   return calcPersonalDay(birthDate, currentDate);
 }
 
