@@ -1,6 +1,7 @@
 import { formatInTimeZone, fromZonedTime, getTimezoneOffset } from 'date-fns-tz';
 
 export type CivilTimeStatus = 'valid' | 'nonexistent' | 'ambiguous' | 'invalid';
+export type CivilTimeProvenanceStatus = 'modern_tzdb' | 'historical_tzdb_unverified';
 
 export type CivilTimeResolution = {
   status: CivilTimeStatus;
@@ -11,6 +12,8 @@ export type CivilTimeResolution = {
   candidateUtcOffsetsMinutes: number[];
   conversionMethod: 'standard-iana-tzdb';
   runtimeTzdbVersion: string | null;
+  provenanceStatus: CivilTimeProvenanceStatus;
+  historicalTimeRequiresIndependentSource: boolean;
   reason: string | null;
 };
 
@@ -25,11 +28,21 @@ function candidateOffsetsMinutes(timezone: string, candidates: Date[]): number[]
   return candidates.map((candidate) => getTimezoneOffset(timezone, candidate) / 60_000);
 }
 
-function baseResolutionMetadata(timezone: string) {
+function civilTimeProvenanceStatus(birthDate: string): CivilTimeProvenanceStatus {
+  const year = Number.parseInt(birthDate.slice(0, 4), 10);
+  return Number.isInteger(year) && year < 1970
+    ? 'historical_tzdb_unverified'
+    : 'modern_tzdb';
+}
+
+function baseResolutionMetadata(timezone: string, birthDate: string) {
+  const provenanceStatus = civilTimeProvenanceStatus(birthDate);
   return {
     timezone,
     conversionMethod: 'standard-iana-tzdb' as const,
     runtimeTzdbVersion: runtimeTzdbVersion(),
+    provenanceStatus,
+    historicalTimeRequiresIndependentSource: provenanceStatus === 'historical_tzdb_unverified',
   };
 }
 
@@ -92,7 +105,7 @@ export function resolveCivilTimeStrict(
       status: 'invalid',
       utc: null,
       localTimestamp: localTimestamp ?? `${birthDate}T${birthTime}`,
-      ...baseResolutionMetadata(timezone),
+      ...baseResolutionMetadata(timezone, birthDate),
       candidates: [],
       candidateUtcOffsetsMinutes: [],
       reason: 'invalid_local_date_time_or_timezone',
@@ -108,7 +121,7 @@ export function resolveCivilTimeStrict(
       status: 'invalid',
       utc: null,
       localTimestamp,
-      ...baseResolutionMetadata(timezone),
+      ...baseResolutionMetadata(timezone, birthDate),
       candidates: [],
       candidateUtcOffsetsMinutes: [],
       reason: 'timezone_resolution_failed',
@@ -121,7 +134,7 @@ export function resolveCivilTimeStrict(
       status: 'nonexistent',
       utc: null,
       localTimestamp,
-      ...baseResolutionMetadata(timezone),
+      ...baseResolutionMetadata(timezone, birthDate),
       candidates: [primary.toISOString()],
       candidateUtcOffsetsMinutes: candidateOffsetsMinutes(timezone, [primary]),
       reason: 'local_time_does_not_exist_in_timezone',
@@ -155,7 +168,7 @@ export function resolveCivilTimeStrict(
       status: 'ambiguous',
       utc: null,
       localTimestamp,
-      ...baseResolutionMetadata(timezone),
+      ...baseResolutionMetadata(timezone, birthDate),
       candidates,
       candidateUtcOffsetsMinutes: candidateOffsetsMinutes(
         timezone,
@@ -169,7 +182,7 @@ export function resolveCivilTimeStrict(
     status: 'valid',
     utc: primary,
     localTimestamp,
-    ...baseResolutionMetadata(timezone),
+    ...baseResolutionMetadata(timezone, birthDate),
     candidates,
     candidateUtcOffsetsMinutes: candidateOffsetsMinutes(timezone, [primary]),
     reason: null,
