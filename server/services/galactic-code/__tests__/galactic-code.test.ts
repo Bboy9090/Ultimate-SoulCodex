@@ -66,7 +66,7 @@ const testInput: GalacticCodeInput = {
     expressionNumber: 8,
     soulUrgeNumber: 3,
     personalityNumber: 5,
-    maturityNumber: 12,
+    maturityNumber: 3,
     coverage: 'partial',
   },
   behavior: {
@@ -194,6 +194,56 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
     };
 
     assert.throws(() => generateGalacticCode(sunOnlyInput, TRUSTED));
+  });
+
+  await t.test('invalid governed values cannot satisfy system coverage', () => {
+    const invalidNumerology: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { coverage: 'missing' } as any,
+      numerology: {
+        evidenceState: 'deterministic',
+        lifePath: 99,
+        coverage: 'complete',
+      },
+    };
+
+    assert.throws(
+      () => generateGalacticCode(invalidNumerology, TRUSTED),
+      /requires at least 2 of 3 systems/,
+    );
+
+    const invalidAstrology: GalacticCodeInput = {
+      ...testInput,
+      astrology: {
+        evidenceState: 'verified',
+        fieldEvidence: { sun: 'verified' },
+        sun: 'Ophiuchus',
+        coverage: 'complete',
+      },
+      humanDesign: { coverage: 'missing' } as any,
+    };
+
+    assert.throws(
+      () => generateGalacticCode(invalidAstrology, TRUSTED),
+      /requires at least 2 of 3 systems/,
+    );
+
+    const invalidHumanDesign: GalacticCodeInput = {
+      ...testInput,
+      astrology: { coverage: 'missing' } as any,
+      humanDesign: {
+        evidenceState: 'verified',
+        type: 'Super Generator',
+        authority: 'Sacral',
+        profile: '2/4',
+        coverage: 'complete',
+      },
+    };
+
+    assert.throws(
+      () => generateGalacticCode(invalidHumanDesign, TRUSTED),
+      /requires at least 2 of 3 systems/,
+    );
   });
 });
 
@@ -480,7 +530,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
         expressionNumber: 9,
         soulUrgeNumber: 7,
         personalityNumber: 2,
-        maturityNumber: 12,
+        maturityNumber: 3,
         coverage: 'partial',
       },
       behavior: {
