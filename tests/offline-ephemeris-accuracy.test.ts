@@ -141,3 +141,30 @@ test('legacy offline numerology matches canonical name normalization', () => {
   assert.equal(profile.numerologyData.soulUrge, ascii.numerologyData.soulUrge);
   assert.equal(profile.numerologyData.personality, ascii.numerologyData.personality);
 });
+
+
+test('offline Sun does not reinterpret malformed explicit birth time as date-only', () => {
+  const result = resolveOfflineSun(
+    '1990-09-17',
+    '99:99',
+    'America/New_York',
+  );
+
+  assert.equal(result.status, 'unresolved');
+  if (result.status === 'unresolved') {
+    assert.equal(result.reason, 'invalid_or_ambiguous_local_time');
+  }
+});
+
+test('offline Sun does not normalize a nonexistent DST spring-forward birth time', () => {
+  const result = resolveOfflineSun(
+    '2023-03-12',
+    '02:30',
+    'America/New_York',
+  );
+
+  assert.equal(result.status, 'unresolved');
+  if (result.status === 'unresolved') {
+    assert.equal(result.reason, 'invalid_or_ambiguous_local_time');
+  }
+});
