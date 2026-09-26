@@ -222,28 +222,31 @@ export function getUpcomingSignificantTransits(
   profile: Profile,
   days: number = 30
 ): Transit[] {
-  const astrologyData = profile.astrologyData as any;
-  const natalPlanets = extractNatalPositions(astrologyData);
-  const today = new Date();
-  const endDate = new Date(today);
-  endDate.setDate(endDate.getDate() + days);
-
-  const allTransits: Transit[] = [];
-  const currentDate = new Date(today);
-
-  while (currentDate <= endDate) {
-    const activeTransits = calculateActiveTransits(natalPlanets, new Date(currentDate));
-    const significant = activeTransits.transits.filter(t => t.intensity === 'high');
-    allTransits.push(...significant);
-    currentDate.setDate(currentDate.getDate() + 1);
+  if (!Number.isInteger(days) || days < 1 || days > MAX_TRANSIT_CALENDAR_DAYS) {
+    throw new RangeError(`Transit upcoming days must be 1-${MAX_TRANSIT_CALENDAR_DAYS}`);
   }
 
-  // Remove duplicates and sort by date
+  const astrologyData = profile.astrologyData as any;
+  const natalPlanets = extractNatalPositions(astrologyData);
+  const timezone = validTimezone((profile as any).timezone);
+  const todayISO = formatInTimeZone(new Date(), timezone, 'yyyy-MM-dd');
+  const startOrdinal = dateOnlyOrdinal(todayISO);
+
+  const allTransits: Transit[] = [];
+
+  for (let offset = 0; offset < days; offset += 1) {
+    const dateISO = dateOnlyFromOrdinal(startOrdinal + offset);
+    const checkDate = localNoonInstant(dateISO, timezone);
+    const activeTransits = calculateActiveTransits(natalPlanets, checkDate);
+    const significant = activeTransits.transits.filter(t => t.intensity === 'high');
+    allTransits.push(...significant);
+  }
+
   const uniqueTransits = Array.from(
     new Map(allTransits.map(t => [`${t.planet}-${t.natalPlanet}-${t.aspect}`, t])).values()
   );
 
-  return uniqueTransits.slice(0, 10); // Return top 10
+  return uniqueTransits.slice(0, 10);
 }
 
 export default {
