@@ -483,3 +483,28 @@ test('server numerology preserves valid components when Personality Number is un
   assert.ok(typeof result.expression === 'number');
   assert.match(result.interpretations.personality, /unresolved/i);
 });
+
+
+test('numerology interpretations preserve symbolic-versus-measured boundaries', () => {
+  const result = calculateNumerology('Ada Lovelace', '1815-12-10', 2026);
+  assert.equal(result.status, 'resolved');
+  if (result.status !== 'resolved') return;
+
+  const text = Object.values(result.interpretations).join(' ').toLowerCase();
+
+  assert.match(result.interpretations.expression, /symbolic reflection/i);
+  assert.match(result.interpretations.expression, /rather than a measured talent profile/i);
+  assert.match(result.interpretations.soulUrge, /rather than a factual statement about inner desires/i);
+  assert.match(result.interpretations.personality, /rather than a factual statement about how others perceive you/i);
+  assert.match(result.interpretations.personalYear, /rather than a prediction/i);
+
+  for (const forbidden of [
+    'will definitely',
+    'guarantees',
+    'destined to',
+    'proves that you',
+    'scientifically shows',
+  ]) {
+    assert.equal(text.includes(forbidden), false, forbidden);
+  }
+});
