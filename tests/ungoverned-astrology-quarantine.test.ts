@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { registryEntry } from '../shared/system-registry';
+import { calculateAsteroids as calculateServiceAsteroids } from '../services/asteroids';
+import { calculateAsteroids as calculatePackageAsteroids } from '../packages/astrology/asteroids';
 
 const routes = fs.readFileSync(new URL('../routes.ts', import.meta.url), 'utf8');
 
@@ -21,4 +23,22 @@ test('returns and progressions remain unavailable until governed math exists', (
   assert.doesNotMatch(routes, /calculateLunarReturn\(/);
   assert.doesNotMatch(routes, /calculateSecondaryProgressions\(/);
   assert.match(routes, /progressions_not_production_governed/);
+});
+
+
+test('approximate asteroid placements remain quarantined from production', () => {
+  for (const calculateAsteroids of [
+    calculateServiceAsteroids,
+    calculatePackageAsteroids,
+  ]) {
+    assert.throws(
+      () => calculateAsteroids(
+        '1990-09-17',
+        '11:11',
+        'America/New_York',
+        0,
+      ),
+      /asteroid_placements_not_production_ready/,
+    );
+  }
 });
