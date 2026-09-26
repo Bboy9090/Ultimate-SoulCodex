@@ -1,4 +1,12 @@
-import type { OfflineCodexProfile } from "@soulcodex/core";
+import {
+  TROPICAL_ZODIAC_SIGNS,
+  circularDegreesDelta,
+  degreeInTropicalSign,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+  type OfflineCodexProfile,
+  type TropicalZodiacSign,
+} from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
 import {
   synthesizeVerifiedFoundationProfile,
@@ -22,11 +30,6 @@ type PlacementRecord = {
     inputTimestamp?: string;
   };
 };
-
-const ZODIAC_SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
 
 const MAJOR_ASPECTS = new Set([
   "conjunction", "opposition", "trine", "square", "sextile",
@@ -129,9 +132,9 @@ export type ReconciledOfflineProfile = OfflineCodexProfile & {
   };
 };
 
-function validZodiacSign(value: unknown): value is (typeof ZODIAC_SIGNS)[number] {
+function validZodiacSign(value: unknown): value is TropicalZodiacSign {
   return typeof value === "string" &&
-    ZODIAC_SIGNS.includes(value.trim() as (typeof ZODIAC_SIGNS)[number]);
+    TROPICAL_ZODIAC_SIGNS.includes(value.trim() as TropicalZodiacSign);
 }
 
 function verifiedPlacementSign(
@@ -154,14 +157,6 @@ export function getVerifiedAstrologySign(
   body: "sun" | "moon" | "rising",
 ): string | null {
   return verifiedPlacementSign(astrology?.[body]);
-}
-
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function signFromLongitude(value: number): (typeof ZODIAC_SIGNS)[number] {
-  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(value) / 30)];
 }
 
 function validHouseNumber(value: unknown): value is number {
@@ -193,10 +188,10 @@ function validVerifiedPoint(
   return point?.verificationStatus === "verified" &&
     validZodiacSign(point.sign) &&
     Number.isFinite(point.longitude) &&
-    Number(point.longitude) >= 0 && Number(point.longitude) < 360 &&
-    signFromLongitude(Number(point.longitude)) === point.sign &&
+    normalizeDegrees(Number(point.longitude)) === Number(point.longitude) &&
+    tropicalSignFromLongitude(Number(point.longitude)) === point.sign &&
     Number.isFinite(point.degree) &&
-    Math.abs(Number(point.degree) - (Number(point.longitude) % 30)) < 0.01 &&
+    Math.abs(Number(point.degree) - degreeInTropicalSign(Number(point.longitude))) < 0.01 &&
     point.policyId === policyId &&
     typeof point.evidenceArtifactId === "string" &&
     point.evidenceArtifactId.trim().length > 0;
@@ -244,10 +239,10 @@ export function hasVerifiedFullNatalChart(
         typeof house.evidenceArtifactId !== "string" ||
         !house.evidenceArtifactId.trim() ||
         !Number.isFinite(house.longitude) ||
-        Number(house.longitude) < 0 || Number(house.longitude) >= 360 ||
-        signFromLongitude(Number(house.longitude)) !== house.sign ||
+        normalizeDegrees(Number(house.longitude)) !== Number(house.longitude) ||
+        tropicalSignFromLongitude(Number(house.longitude)) !== house.sign ||
         !Number.isFinite(house.degree) ||
-        Math.abs(Number(house.degree) - (Number(house.longitude) % 30)) >= 0.01,
+        Math.abs(Number(house.degree) - degreeInTropicalSign(Number(house.longitude))) >= 0.01,
     )
   ) {
     return false;
@@ -306,8 +301,11 @@ export function hasVerifiedFullNatalChart(
 
   const northLongitude = Number(astrology.northNode?.longitude);
   const southLongitude = Number(astrology.southNode?.longitude);
-  const nodeOpposition = Math.abs(normalizeLongitude(northLongitude - southLongitude));
-  if (Math.min(nodeOpposition, 360 - nodeOpposition) < 179.99 || Math.min(nodeOpposition, 360 - nodeOpposition) > 180.01) {
+  if (
+    !Number.isFinite(northLongitude) ||
+    !Number.isFinite(southLongitude) ||
+    Math.abs(circularDegreesDelta(northLongitude, southLongitude) - 180) > 0.01
+  ) {
     return false;
   }
 
