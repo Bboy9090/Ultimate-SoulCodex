@@ -147,10 +147,11 @@ export default function VerifiedSystemsPanel({
             {/* Moon - Only shown when verified or estimated */}
             {showMoon && astrology.moonSign && (
               <div
+                data-verified-system-card
                 style={{
-                  padding: "0.75rem",
+                  padding: "0.9rem",
                   background: "rgba(255,255,255,0.03)",
-                  borderRadius: "6px",
+                  borderRadius: "10px",
                 }}
               >
                 <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Moon</div>
@@ -170,10 +171,11 @@ export default function VerifiedSystemsPanel({
             {/* Ascendant - Only shown when verified */}
             {showAscendant && astrology.ascendant && (
               <div
+                data-verified-system-card
                 style={{
-                  padding: "0.75rem",
+                  padding: "0.9rem",
                   background: "rgba(255,255,255,0.03)",
-                  borderRadius: "6px",
+                  borderRadius: "10px",
                 }}
               >
                 <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Ascendant</div>
@@ -252,6 +254,36 @@ export default function VerifiedSystemsPanel({
                 {systems.numerology.birthdayNumber}
               </div>
             </div>
+            {typeof systems.numerology.expressionNumber === "number" && (
+              <div
+                data-verified-system-card
+                style={{
+                  padding: "0.9rem",
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: "10px",
+                }}
+              >
+                <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Expression</div>
+                <div style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", fontWeight: 600 }}>
+                  {systems.numerology.expressionNumber}
+                </div>
+              </div>
+            )}
+            {typeof systems.numerology.soulUrgeNumber === "number" && (
+              <div
+                data-verified-system-card
+                style={{
+                  padding: "0.9rem",
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: "10px",
+                }}
+              >
+                <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Soul Urge</div>
+                <div style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", fontWeight: 600 }}>
+                  {systems.numerology.soulUrgeNumber}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -276,6 +308,21 @@ export default function VerifiedSystemsPanel({
               gap: "1rem",
             }}
           >
+            {systems.humanDesign.type && (
+              <div
+                data-verified-system-card
+                style={{
+                  padding: "0.9rem",
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: "10px",
+                }}
+              >
+                <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Type</div>
+                <div style={{ fontSize: "0.95rem", color: "var(--sc-ivory)", fontWeight: 600 }}>
+                  {systems.humanDesign.type}
+                </div>
+              </div>
+            )}
             <div
               data-verified-system-card
               style={{
