@@ -6,6 +6,7 @@ import {
   registrySystemsAllowedInUltimateCodex,
   registrySystemsExcludedFromUltimateCodex,
   registrySystemsForUseContext,
+  registryDisplayManifest,
 } from "../shared/system-registry.ts";
 import { SOUL_CODEX_SYSTEM_POLICIES } from "../shared/system-visibility.ts";
 
@@ -181,5 +182,42 @@ test("legacy visibility policy cannot outrank the production registry", () => {
       SOUL_CODEX_SYSTEM_POLICIES[legacyKey].mayInfluencePrimarySynthesis,
       registry?.mayInfluenceUltimateCodex,
     );
+  }
+});
+
+
+test("display manifest mirrors governance without implying per-user verification", () => {
+  const manifest = registryDisplayManifest();
+  assert.equal(manifest.length, SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.length);
+
+  const byId = new Map(manifest.map((entry) => [entry.id, entry]));
+  assert.equal(byId.get("natal-astrology")?.state, "Governed");
+  assert.equal(byId.get("personality-assessments")?.state, "Supporting");
+  assert.equal(byId.get("human-design-advanced")?.state, "Inspect only");
+  assert.equal(byId.get("gene-keys")?.state, "Unavailable");
+
+  for (const entry of manifest) {
+    const source = SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.find(
+      (candidate) => candidate.id === entry.id,
+    );
+    assert.ok(source);
+    assert.equal(
+      entry.stableIdentityEligible,
+      source?.mayInfluenceUltimateCodex,
+      entry.id,
+    );
+  }
+
+  assert.equal(
+    manifest.some((entry) => /verified for this user|user verified/i.test(entry.state)),
+    false,
+  );
+});
+
+test("supporting, inspect-only, and unavailable display states never become stable identity eligible", () => {
+  for (const entry of registryDisplayManifest()) {
+    if (entry.state !== "Governed") {
+      assert.equal(entry.stableIdentityEligible, false, entry.id);
+    }
   }
 });
