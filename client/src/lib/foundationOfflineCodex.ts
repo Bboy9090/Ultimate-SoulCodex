@@ -470,13 +470,22 @@ function verifiedGovernedPoint(
   placement: VerifiedPlacementForSynthesis | null | undefined,
   policyId: string,
 ): string | null {
-  const sign = verifiedPlacementSign(placement);
-  return sign &&
-    placement?.policyId === policyId &&
-    typeof placement.evidenceArtifactId === "string" &&
-    placement.evidenceArtifactId.trim().length > 0
-      ? sign
-      : null;
+  if (
+    placement?.verificationStatus !== "verified" ||
+    typeof placement.sign !== "string" ||
+    !signPatternFor(placement.sign) ||
+    placement.policyId !== policyId ||
+    typeof placement.evidenceArtifactId !== "string" ||
+    placement.evidenceArtifactId.trim().length === 0
+  ) {
+    return null;
+  }
+
+  // Policy-derived chart points (MC, Nodes, qualified Chiron) are promoted by
+  // their named verification policy + immutable evidence artifact. Unlike
+  // independently compared planets, production does not attach a second
+  // PlacementEvidence object to these derived records.
+  return placement.sign;
 }
 
 function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "moon" | "rising"): string | null {
