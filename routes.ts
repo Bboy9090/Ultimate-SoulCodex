@@ -2623,6 +2623,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const calendar = generateTransitsCalendar(profile, start, end);
       res.json(calendar);
     } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(400).json({ message: error.message });
+      }
       return handleError(error, res, "GetTransitsCalendar");
     }
   });
@@ -2647,6 +2650,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const upcoming = getUpcomingSignificantTransits(profile, days);
       res.json({ transits: upcoming, days });
     } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(400).json({ message: error.message });
+      }
       return handleError(error, res, "GetUpcomingTransits");
     }
   });
@@ -3154,6 +3160,9 @@ ${contextData}
       const upcoming = await getUpcomingTransitNotifications(profile, days);
       res.json({ notifications: upcoming, days });
     } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(400).json({ message: error.message });
+      }
       return handleError(error, res, "GetUpcomingTransitNotifications");
     }
   });
