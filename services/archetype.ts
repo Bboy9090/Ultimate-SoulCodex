@@ -117,8 +117,23 @@ function generateAstrologyInfluence(astrologyData: any): string {
     return "Astrology is withheld here until governed placement evidence is available.";
   }
 
-  const { sunSign, moonSign, risingSign } = astrologyData;
-  return `In astrological tradition, a ${sunSign} Sun, ${moonSign} Moon, and ${risingSign} Rising are used as symbolic lenses for identity, emotional style, and outward presentation. Soul Codex treats those meanings as reflection prompts, not measured personality traits or causes of behavior.`;
+  const placements = [
+    typeof astrologyData.sunSign === "string" && astrologyData.sunSign !== "Unknown"
+      ? `${astrologyData.sunSign} Sun`
+      : null,
+    typeof astrologyData.moonSign === "string" && astrologyData.moonSign !== "Unknown"
+      ? `${astrologyData.moonSign} Moon`
+      : null,
+    typeof astrologyData.risingSign === "string" && astrologyData.risingSign !== "Unknown"
+      ? `${astrologyData.risingSign} Rising`
+      : null,
+  ].filter((value): value is string => Boolean(value));
+
+  if (placements.length === 0) {
+    return "Astrology is withheld here until governed placement evidence is available.";
+  }
+
+  return `Verified-supported astrology currently includes ${placements.join(", ")}. In astrological tradition, those placements are used as symbolic reflection lenses; Soul Codex does not treat them as measured personality traits or causes of behavior.`;
 }
 
 // Numerology influence generator
