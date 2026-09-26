@@ -146,10 +146,17 @@ function createBirthTime(birthData: BirthData): Date {
     `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` +
     `T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
 
+  const hasCoordinates =
+    birthData.latitude !== undefined &&
+    birthData.latitude !== null &&
+    birthData.longitude !== undefined &&
+    birthData.longitude !== null;
+
   const resolvedTimezone = resolveTimezone(
-    birthData.timezone || "UTC",
+    birthData.timezone,
     latitude,
     longitude,
+    hasCoordinates,
   );
 
   const instant = fromZonedTime(localTimeString, resolvedTimezone);
@@ -159,41 +166,64 @@ function createBirthTime(birthData: BirthData): Date {
   return instant;
 }
 
-function resolveTimezone(inputTimezone: string, latitude: number, longitude: number): string {
-  if (inputTimezone.includes('/')) {
-    return inputTimezone;
-  }
-  
+function isValidIanaTimezone(timezone: string): boolean {
   try {
-    const timezones = geoTz.find(latitude, longitude);
-    if (timezones && timezones.length > 0) {
-      return timezones[0];
-    }
-  } catch (error) {
-    console.warn('Geo-tz lookup failed, falling back to coordinate calculation:', error);
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(new Date(0));
+    return true;
+  } catch {
+    return false;
   }
-  
-  const timezoneMap: { [key: string]: string } = {
-    'EST': 'America/New_York',
-    'EDT': 'America/New_York', 
-    'CST': 'America/Chicago',
-    'CDT': 'America/Chicago',
-    'MST': 'America/Denver',
-    'MDT': 'America/Denver',
-    'PST': 'America/Los_Angeles',
-    'PDT': 'America/Los_Angeles',
-    'GMT': 'Europe/London',
-    'BST': 'Europe/London',
-    'CET': 'Europe/Paris',
-    'CEST': 'Europe/Paris'
+}
+
+function resolveTimezone(
+  inputTimezone: string | undefined,
+  latitude: number,
+  longitude: number,
+  canInferFromCoordinates: boolean,
+): string {
+  const normalized = inputTimezone?.trim();
+
+  const timezoneMap: Record<string, string> = {
+    UTC: 'UTC',
+    GMT: 'Europe/London',
+    EST: 'America/New_York',
+    EDT: 'America/New_York',
+    CST: 'America/Chicago',
+    CDT: 'America/Chicago',
+    MST: 'America/Denver',
+    MDT: 'America/Denver',
+    PST: 'America/Los_Angeles',
+    PDT: 'America/Los_Angeles',
+    BST: 'Europe/London',
+    CET: 'Europe/Paris',
+    CEST: 'Europe/Paris',
   };
-  
-  const mapped = timezoneMap[inputTimezone.toUpperCase()];
-  if (mapped) {
-    return mapped;
+
+  if (normalized) {
+    const mapped = timezoneMap[normalized.toUpperCase()];
+    if (mapped) return mapped;
+
+    if (isValidIanaTimezone(normalized)) {
+      return normalized;
+    }
+
+    // Explicit but unknown timezone input is evidence failure, not permission
+    // to silently substitute a coordinate-derived zone.
+    throw new RangeError(`Invalid timezone: ${normalized}`);
   }
-  
-  return estimateTimezoneFromCoordinates(latitude, longitude);
+
+  if (canInferFromCoordinates) {
+    try {
+      const timezones = geoTz.find(latitude, longitude);
+      if (timezones && timezones.length > 0) {
+        return timezones[0];
+      }
+    } catch (error) {
+      console.warn('Geo-tz lookup failed:', error);
+    }
+  }
+
+  return 'UTC';
 }
 
 function estimateTimezoneFromCoordinates(latitude: number, longitude: number): string {
