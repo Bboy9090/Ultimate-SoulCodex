@@ -17,20 +17,29 @@ const TYPE_EXPLANATIONS: Record<string, string> = {
 };
 
 export function humanDesignSignals(hd: any): Signal[] {
-  if (!hd?.type) return [];
+  const hasVerifiedCore =
+    hd?.status === "verified" &&
+    typeof hd?.verificationReceiptId === "string" &&
+    hd.verificationReceiptId.trim().length > 0 &&
+    typeof hd?.independentSource === "string" &&
+    hd.independentSource.trim().length > 0 &&
+    typeof hd?.verifiedAt === "string" &&
+    !Number.isNaN(Date.parse(hd.verifiedAt));
+
+  if (!hasVerifiedCore || !hd?.type) return [];
   const raw = String(hd.type).toLowerCase().replace(/\s+/g, "_");
-  const tags = TYPE_TAGS[raw] ?? ["courage", "craft"];
-  const label = TYPE_EXPLANATIONS[raw]
-    ?? `This ${hd.type} interpretation may describe pacing, rest needs, and decision timing, but it should be tested against lived experience. Notice when the pattern helps, what it costs when overused, how other people may misread it, and which practical adjustment creates more clarity.`;
+  if (!TYPE_TAGS[raw] || !TYPE_EXPLANATIONS[raw]) return [];
+  const tags = TYPE_TAGS[raw];
+  const label = TYPE_EXPLANATIONS[raw];
 
   return [{
     id: `hd.type.${raw}`,
     system: "humanDesign",
     label,
-    evidence: [`Human Design type entered or calculated as ${hd.type}. This is symbolic interpretation, not verified psychology.`],
+    evidence: [`Human Design type ${hd.type} passed the approved core verification contract. Interpretation remains symbolic, not verified psychology.`],
     intensity: 0.75,
     polarity: "neutral",
-    confidence: "low",
+    confidence: "high",
     tags,
   }];
 }
