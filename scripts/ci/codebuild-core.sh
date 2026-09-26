@@ -63,6 +63,7 @@ node --import tsx --test \
   tests/birth-location-consistency.test.ts \
   tests/system-visibility-contract.test.ts \
   tests/assessment-source-boundary.test.ts \
+  tests/assessment-interpretation-boundary.test.ts \
   tests/readme-system-truth.test.ts \
   tests/primary-synthesis-system-policy.test.ts \
   tests/server-profile-ownership.test.ts \
