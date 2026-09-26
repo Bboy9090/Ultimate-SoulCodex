@@ -291,6 +291,56 @@ function normalizeHdCenters(hd: AnyRecord): { defined: string[]; undefined: stri
   return { defined, undefined: undefinedCenters };
 }
 
+function canonicalGateNumber(value: unknown): number | null {
+  const gate = Number(value);
+  return Number.isInteger(gate) && gate >= 1 && gate <= 64 ? gate : null;
+}
+
+function canonicalHdChannel(value: unknown): string | null {
+  if (typeof value === "string") {
+    const match = value.trim().match(/^(\d{1,2})\s*[-/]\s*(\d{1,2})$/);
+    if (!match) return null;
+    const left = canonicalGateNumber(match[1]);
+    const right = canonicalGateNumber(match[2]);
+    if (left === null || right === null || left === right) return null;
+    return [left, right].sort((a, b) => a - b).join("-");
+  }
+
+  if (!value || typeof value !== "object") return null;
+  const record = value as AnyRecord;
+  if (record.defined !== true || !Array.isArray(record.gates) || record.gates.length !== 2) {
+    return null;
+  }
+  const left = canonicalGateNumber(record.gates[0]);
+  const right = canonicalGateNumber(record.gates[1]);
+  if (left === null || right === null || left === right) return null;
+  return [left, right].sort((a, b) => a - b).join("-");
+}
+
+function canonicalHdChannels(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(
+    value
+      .map(canonicalHdChannel)
+      .filter((channel): channel is string => Boolean(channel)),
+  )].sort((a, b) => {
+    const [a1, a2] = a.split("-").map(Number);
+    const [b1, b2] = b.split("-").map(Number);
+    return a1 - b1 || a2 - b2;
+  });
+}
+
+function canonicalHdGates(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(
+    value
+      .map(canonicalGateNumber)
+      .filter((gate): gate is number => gate !== null),
+  )]
+    .sort((a, b) => a - b)
+    .map(String);
+}
+
 function fnv1a(value: string, seed = 0x811c9dc5): number {
   let hash = seed >>> 0;
   for (let i = 0; i < value.length; i += 1) {
@@ -467,10 +517,8 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const hdProfile = verifiedHd && typeof hd.profile === "string" ? hd.profile.trim() : null;
   const hdDefinition = verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : null;
   const hdCenters = verifiedHd ? normalizeHdCenters(hd) : { defined: [], undefined: [] };
-  const hdChannels = verifiedHd && Array.isArray(hd.channels) ? hd.channels.map((value: unknown) =>
-    typeof value === "string" ? value : JSON.stringify(value)
-  ) : [];
-  const hdGates = verifiedHd && Array.isArray(hd.activatedGates) ? hd.activatedGates.map(String) : [];
+  const hdChannels = verifiedHd ? canonicalHdChannels(hd.channels) : [];
+  const hdGates = verifiedHd ? canonicalHdGates(hd.activatedGates) : [];
   const hdActivationSignature: string[] = [];
   if (verifiedHd) {
     for (const side of ["conscious", "unconscious"] as const) {
