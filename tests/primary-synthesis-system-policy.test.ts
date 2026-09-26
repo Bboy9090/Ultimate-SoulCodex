@@ -23,6 +23,16 @@ const local = generateFoundationOfflineCodexProfile(
   },
 );
 
+const hdTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-20T20:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 const verifiedPlanets = {
   sun: { verificationStatus: "verified", sign: "Virgo" },
   moon: { verificationStatus: "verified", sign: "Virgo" },
@@ -131,6 +141,7 @@ test("verified Human Design core fills supported reading layers", () => {
       centers: { defined: ["Head", "Ajna"], undefined: ["Root"] },
       channels: ["64-47"],
       activatedGates: [64, 47],
+      ...hdTrust,
     },
   );
 
@@ -148,6 +159,28 @@ test("verified Human Design core fills supported reading layers", () => {
     JSON.stringify(result.depthInterpretation),
     /Reflector|Lunar Authority|Wait a lunar cycle|Single Definition|64-47/,
   );
+});
+
+test("status-only Human Design never changes primary synthesis", () => {
+  const baseline = synthesizeVerifiedFoundationProfile(
+    local,
+    chart("first"),
+    "2026-09-20T20:00:00.000Z",
+  );
+  const spoofed = synthesizeVerifiedFoundationProfile(
+    local,
+    chart("first"),
+    "2026-09-20T20:00:00.000Z",
+    {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  );
+
+  assert.deepEqual(spoofed, baseline);
 });
 
 test("unverified Human Design never changes primary synthesis", () => {
