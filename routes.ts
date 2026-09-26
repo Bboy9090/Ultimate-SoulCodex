@@ -3310,11 +3310,13 @@ ${contextData}
       const { profileId, profile, codexSynthesis } = req.body;
 
       let horoscopeData: any = null;
+      let resolvedProfile: any = profile ?? null;
 
       if (profileId) {
         try {
           const storedProfile = await storage.getProfile(profileId);
           if (storedProfile) {
+            resolvedProfile = storedProfile;
             const { generateDailyHoroscope } = await import("./services/horoscope");
             horoscopeData = await generateDailyHoroscope(storedProfile);
           }
@@ -3323,14 +3325,16 @@ ${contextData}
         }
       }
 
+      const profileForToday = resolvedProfile ?? {};
+
       if (!horoscopeData) {
         const today = new Date();
-        const date = today.toISOString().slice(0, 10);
+        const date = profileLocalDateKey(profileForToday, today);
         let personalDayNumber: number | null = null;
 
-        if (typeof profile?.birthDate === "string" && profile.birthDate.trim()) {
+        if (typeof profileForToday?.birthDate === "string" && profileForToday.birthDate.trim()) {
           try {
-            personalDayNumber = calculatePersonalDayNumber(profile.birthDate, date);
+            personalDayNumber = calculatePersonalDayNumber(profileForToday.birthDate, date);
           } catch {
             personalDayNumber = null;
           }
@@ -3348,7 +3352,7 @@ ${contextData}
         };
       }
 
-      const card = buildTodayCard(horoscopeData, profile ?? {}, codexSynthesis);
+      const card = buildTodayCard(horoscopeData, profileForToday, codexSynthesis);
       
       const cardStrengths = Array.isArray(card.strengths) ? card.strengths : [];
       const cardTriggers  = Array.isArray(card.triggers)  ? card.triggers  : [];
@@ -3360,7 +3364,7 @@ ${contextData}
 
       // AI personalisation — overwrite static fields if successful
       try {
-        const aiCard = await generateTodayCardAI(card, profile ?? {}, horoscopeData, codexSynthesis);
+        const aiCard = await generateTodayCardAI(card, profileForToday, horoscopeData, codexSynthesis);
         if (aiCard) Object.assign(card, aiCard);
       } catch (e) {
         console.warn("[TodayCard] AI personalisation failed, using static fallback:", e);
