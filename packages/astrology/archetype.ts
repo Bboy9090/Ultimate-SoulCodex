@@ -236,7 +236,7 @@ function generateSpiritualPurpose(astrologyData: any, numerologyData: any, perso
 
 // Evolution path generator
 function generateEvolutionPath(astrologyData: any, numerologyData: any, archetype: any): string {
-  let path = `Your evolutionary path follows the ${archetype.title} template, moving from `;
+  let path = `As a reflection exercise, the ${archetype.title} template frames a possible movement from `;
   
   if (archetype.shadows && archetype.shadows.length > 0) {
     path += `possible reactive patterns such as ${archetype.shadows[0].toLowerCase()} toward `;
@@ -245,9 +245,9 @@ function generateEvolutionPath(astrologyData: any, numerologyData: any, archetyp
   }
   
   if (archetype.strengths && archetype.strengths.length > 0) {
-    path += `conscious mastery of ${archetype.strengths[0].toLowerCase()}. `;
+    path += `deliberate practice of ${archetype.strengths[0].toLowerCase()}. `;
   } else {
-    path += "conscious mastery of your gifts. ";
+    path += "deliberate practice of the strengths you choose to develop. ";
   }
   
   if (astrologyData?.southNode && astrologyData?.northNode) {
@@ -275,7 +275,7 @@ function generateKeyLessons(astrologyData: any, numerologyData: any, personality
     else if (lifePath === 7) lessons.push("Sharing wisdom without becoming isolated");
     else if (lifePath === 8) lessons.push("Using power for service rather than control");
     else if (lifePath === 9) lessons.push("Giving without depleting your own resources");
-    else if ([11, 22, 33].includes(lifePath)) lessons.push("Grounding spiritual gifts in practical service");
+    else if ([11, 22, 33].includes(lifePath)) lessons.push("Turning inspiration and service themes into concrete, testable actions");
   }
   
   // Add astrology-based lessons
@@ -311,9 +311,9 @@ function generateKeyLessons(astrologyData: any, numerologyData: any, personality
   
   // Fallback lessons if no specific data
   if (lessons.length === 0) {
-    lessons.push("Integrating your cosmic blueprint with earthly service");
-    lessons.push("Balancing personal growth with contribution to others");
-    lessons.push("Noticing reactive patterns and deliberately practicing preferred strengths");
+    lessons.push("Notice which reflection themes actually match your lived experience");
+    lessons.push("Balance personal growth with contribution to others where it is genuinely useful");
+    lessons.push("Notice reactive patterns and deliberately practice the strengths you want to develop");
   }
   
   return lessons;
@@ -575,7 +575,7 @@ export function synthesizeArchetype(
 
   const result = {
     title: uniqueTitle,
-    description: bestMatch.description,
+    description: `Reflection lens only — not a measured personality result. ${bestMatch.description}`,
     strengths: bestMatch.strengths || [],
     shadows: bestMatch.shadows || [],
     themes: bestMatch.themes || [],
