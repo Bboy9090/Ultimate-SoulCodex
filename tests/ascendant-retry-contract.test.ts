@@ -172,6 +172,9 @@ test("verified full natal chart and Human Design complete the exact-input verifi
     strategy: "To Respond",
     authority: "Sacral",
     profile: "4/6",
+    verificationReceiptId: "hd-retry-fixture",
+    independentSource: "independent-hd-fixture",
+    verifiedAt: "2026-09-26T00:00:00.000Z",
   };
   assert.equal(profileNeedsOnlineVerification(profile), false);
 });
