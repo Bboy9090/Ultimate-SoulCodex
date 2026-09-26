@@ -113,3 +113,35 @@ test('Today Card AI prompt does not inject a synthetic precision theme', () => {
     /TOP THEMES: \$\{themes \|\| "Unavailable — do not infer"\}/,
   );
 });
+
+
+test('Today Card decision-style guidance never invents clock windows or certainty', () => {
+  const styles = [
+    'calm_logic',
+    'sleep_on_it',
+    'quiet_instinct',
+    'willpower',
+    'gut_yes_no',
+    'analysis',
+    'gut',
+    'consensus',
+    'impulse',
+    'avoidance',
+  ];
+
+  for (const decisionStyle of styles) {
+    const card = buildTodayCard(
+      {
+        date: '2026-09-25',
+        personalDayNumber: 7,
+        moonPhase: { phase: 'First Quarter', percentage: 50 },
+        personalTransits: [],
+      },
+      { signals: { decisionStyle } },
+    );
+
+    assert.doesNotMatch(card.decisionAdvice, /\b(?:10\s?am|noon|2\s?pm|tonight|this morning)\b/i);
+    assert.doesNotMatch(card.decisionAdvice, /probably right|ahead of my logic|best answer comes/i);
+    assert.match(card.decisionAdvice, /I\s/);
+  }
+});
