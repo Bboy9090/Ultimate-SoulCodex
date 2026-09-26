@@ -15,9 +15,21 @@
 import { calcLifePath } from "@soulcodex/core";
 import type { PlacementLike } from './placementVerification';
 
+function validEvidenceText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function validEvidenceTimestamp(value: unknown): value is string {
+  return validEvidenceText(value) && !Number.isNaN(Date.parse(value));
+}
+
 function hasCompleteVerificationEvidence(value: any): boolean {
   const evidence = value?.provenance ?? value?.evidence;
-  return Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt);
+  return Boolean(
+    validEvidenceText(evidence?.source) &&
+    validEvidenceText(evidence?.engine) &&
+    validEvidenceTimestamp(evidence?.calculatedAt)
+  );
 }
 
 function sanitizePlacementVerificationClaim(value: any): any {
@@ -74,13 +86,13 @@ function sanitizeHumanDesignVerificationClaim(humanDesignData: any): any {
   if (humanDesignData.status !== "verified") return humanDesignData;
 
   const hasTrustRecord = Boolean(
-    humanDesignData.engine &&
-    humanDesignData.source &&
-    humanDesignData.calculatedAt &&
-    humanDesignData.inputTimestampUtc &&
-    humanDesignData.verificationReceiptId &&
-    humanDesignData.independentSource &&
-    humanDesignData.verifiedAt
+    validEvidenceText(humanDesignData.engine) &&
+    validEvidenceText(humanDesignData.source) &&
+    validEvidenceTimestamp(humanDesignData.calculatedAt) &&
+    validEvidenceTimestamp(humanDesignData.inputTimestampUtc) &&
+    validEvidenceText(humanDesignData.verificationReceiptId) &&
+    validEvidenceText(humanDesignData.independentSource) &&
+    validEvidenceTimestamp(humanDesignData.verifiedAt)
   );
 
   return hasTrustRecord
