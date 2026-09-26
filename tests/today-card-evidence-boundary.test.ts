@@ -145,3 +145,28 @@ test('Today Card decision-style guidance never invents clock windows or certaint
     assert.match(card.decisionAdvice, /I\s/);
   }
 });
+
+
+test('Today Card Personal Day guidance stays reflective rather than predictive or high-stakes prescriptive', () => {
+  for (const personalDayNumber of [1,2,3,4,5,6,7,8,9,11,22,33]) {
+    const card = buildTodayCard(
+      {
+        date: '2026-09-25',
+        personalDayNumber,
+        moonPhase: { phase: 'Waxing Crescent', percentage: 18 },
+        personalTransits: [],
+      },
+      {},
+    );
+
+    const combined = [
+      ...card.doList,
+      ...card.dontList,
+      ...card.watchouts,
+      card.decisionAdvice,
+    ].join(' ');
+
+    assert.doesNotMatch(combined, /make one bold financial|trust my first instinct|probably right|intuition is ahead of my logic/i);
+    assert.doesNotMatch(combined, /because the day symbolism says|today is special/i);
+  }
+});
