@@ -429,31 +429,24 @@ function calculateSourceCoverage(
 }
 
 function calculateCoverage(sourceCoverage: SourceCoverageResult, systemCount: number): GalacticCoverageState {
-  // Count how many systems have complete data (not including 'partial')
+  // Stable Galactic coverage is determined only by the three governed identity
+  // systems. Supporting self-assessment context must never upgrade identity
+  // confidence or make the fingerprint look more complete than its birth/evidence
+  // inputs actually are.
   const completeCount = [
     sourceCoverage.astrology === 'complete' ? 1 : 0,
     sourceCoverage.humanDesign === 'complete' ? 1 : 0,
     sourceCoverage.numerology === 'complete' ? 1 : 0,
   ].reduce((a, b) => a + b);
 
-  const hasBehavior = sourceCoverage.behavioralTraitCount >= 5;
-
-  // High coverage: at least 2 complete governed systems plus behavioral traits
-  if (completeCount >= 2 && hasBehavior) {
+  if (completeCount === 3) {
     return 'high';
   }
 
-  // High/Partial boundary: at least 2 complete systems but insufficient behavioral traits
-  if (completeCount >= 2) {
-    return 'partial';
-  }
-
-  // Partial coverage: 2+ systems present, even if not complete
   if (systemCount >= 2) {
     return 'partial';
   }
 
-  // Insufficient: less than 2 systems or insufficient data
   return 'insufficient';
 }
 
