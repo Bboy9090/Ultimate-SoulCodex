@@ -81,3 +81,33 @@ test("release declaration fails closed when any required workflow is absent", ()
 
   assert.equal(canDeclareV4ReleaseCandidate(evidence), false);
 });
+
+
+test("every required manifest route is mounted in the live router", () => {
+  for (const route of V4_RELEASE_MANIFEST.requiredRoutes) {
+    const escaped = route
+      .replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")
+      .replace(/:id/g, "[^/]+");
+    const matcher = new RegExp(`path=["']${escaped}["']`);
+    assert.match(app, matcher, route);
+  }
+});
+
+test("legal, support, and deletion surfaces are release-critical", () => {
+  for (const route of [
+    "/privacy",
+    "/terms",
+    "/support",
+    "/delete-account",
+  ] as const) {
+    assert.ok(
+      V4_RELEASE_MANIFEST.requiredRoutes.includes(route),
+      route,
+    );
+  }
+  assert.ok(
+    V4_RELEASE_MANIFEST.requiredTrustRules.includes(
+      "legal-support-and-deletion-routes-remain-mounted",
+    ),
+  );
+});
