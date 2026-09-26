@@ -4,6 +4,26 @@ import { randomUUID } from "crypto";
 // Avoid importing DB modules and table schemas to prevent build-time resolution.
 // Removed drizzle imports to avoid schema resolution in bundle
 
+function canonicalBirthDateTimestamp(value: unknown): Date {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new RangeError("Birth date must be a valid civil date");
+    }
+    return new Date(Date.UTC(
+      value.getUTCFullYear(),
+      value.getUTCMonth(),
+      value.getUTCDate(),
+    ));
+  }
+
+  if (typeof value === "string" && schema.isValidDateOnly(value.trim())) {
+    return new Date(`${value.trim()}T00:00:00.000Z`);
+  }
+
+  throw new RangeError("Birth date storage requires a real YYYY-MM-DD civil date");
+}
+
+
 export interface IStorage {
   // schema.User operations (required for Replit Auth)
   getUser(id: string): Promise<schema.User | undefined>;
@@ -234,6 +254,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const profile: schema.Profile = { 
       ...insertProfile,
+      birthDate: canonicalBirthDateTimestamp((insertProfile as any).birthDate),
       // Optional birth fields (inclusivity for adoptees, incomplete records)
       birthTime: insertProfile.birthTime || null,
       birthLocation: insertProfile.birthLocation || null,
