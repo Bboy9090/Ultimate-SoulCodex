@@ -103,7 +103,7 @@ export default function CodexHeader({
               letterSpacing: "0.05em",
             }}
           >
-            Provisional until all systems are verified
+            Provisional while key evidence remains incomplete
           </div>
         )}
       </div>
@@ -231,7 +231,7 @@ export default function CodexHeader({
               marginBottom: "1rem",
             }}
           >
-            Calculation Confidence
+            Calculation support
           </div>
           <div
             style={{
@@ -247,6 +247,9 @@ export default function CodexHeader({
             }}
           >
             {calculationConfidence}
+          </div>
+          <div style={{ fontSize: "0.78rem", lineHeight: 1.5, color: "var(--sc-stone)", marginBottom: "0.75rem" }}>
+            Reflects input and calculation quality, not certainty about symbolic interpretation.
           </div>
           <div style={{ fontSize: "0.85rem", color: "var(--sc-stone)" }}>
             {verifiedSystems.map((sys, idx) => (
