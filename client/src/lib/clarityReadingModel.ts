@@ -157,7 +157,14 @@ function parsedNumber(value: unknown): number | undefined {
 function verifiedPlacement(value: unknown): AnyRecord | undefined {
   if (!value || typeof value !== "object") return undefined;
   const placement = value as AnyRecord;
+  const evidence = placement.provenance ?? placement.evidence;
+  const hasProvenance =
+    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
+    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
+    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
+
   return placement.verificationStatus === "verified" &&
+    hasProvenance &&
     typeof placement.sign === "string" && ZODIAC_SIGNS.has(placement.sign)
     ? placement
     : undefined;
@@ -185,6 +192,9 @@ function verifiedEqualHouses(astrology: AnyRecord): boolean {
 
 function verifiedHumanDesignCore(value: AnyRecord): boolean {
   return value.status === "verified" &&
+    typeof value.verificationReceiptId === "string" && value.verificationReceiptId.trim().length > 0 &&
+    typeof value.independentSource === "string" && value.independentSource.trim().length > 0 &&
+    typeof value.verifiedAt === "string" && value.verifiedAt.trim().length > 0 &&
     [value.type, value.strategy, value.authority, value.profile]
       .every((field) => typeof field === "string" && field.trim().length > 0);
 }
