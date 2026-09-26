@@ -2,11 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { PERSONAL_ATLAS_HOUSE_CONTRACT, personalAtlasPlacements, verifiedHouseCusps } from "../client/src/lib/personalAstrologyAtlas";
 
+const provenance = {
+  source: "Independent atlas fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
+
 function chart() {
   const houses = Array.from({ length: 12 }, (_, index) => ({ house: index + 1, sign: "Aries", verificationStatus: "verified" }));
-  const planets = Object.fromEntries(["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"].map(key => [key, { sign: "Virgo", verificationStatus: "verified" }]));
+  const planets = Object.fromEntries(["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"].map(key => [key, { sign: "Virgo", verificationStatus: "verified", evidence: provenance }]));
   const planetaryHouses = Object.fromEntries(Object.keys(planets).map((key, index) => [key, index + 1]));
-  return { houseSystem: "equal", houses, planets, planetaryHouses, rising: { sign: "Scorpio", verificationStatus: "verified" }, midheaven: { sign: "Leo", verificationStatus: "verified" }, northNode: { sign: "Aquarius", house: 4, verificationStatus: "verified" }, southNode: { sign: "Leo", house: 10, verificationStatus: "verified" }, chiron: { sign: "Cancer", house: 9, verificationStatus: "verified", qualificationMethod: "live-jpl-qualified-against-swiss" } };
+  return { houseSystem: "equal", houses, planets, planetaryHouses, rising: { sign: "Scorpio", verificationStatus: "verified", evidence: provenance }, midheaven: { sign: "Leo", verificationStatus: "verified", evidence: provenance }, northNode: { sign: "Aquarius", house: 4, verificationStatus: "verified", evidence: provenance }, southNode: { sign: "Leo", house: 10, verificationStatus: "verified", evidence: provenance }, chiron: { sign: "Cancer", house: 9, verificationStatus: "verified", evidence: provenance, qualificationMethod: "live-jpl-qualified-against-swiss" } };
 }
 
 test("verified Equal-house records populate a personal atlas", () => {
@@ -45,4 +51,14 @@ test("verified records with unsupported sign labels fail closed", () => {
   invalidCusp.houses[3].sign = "Ophiuchus";
   assert.deepEqual(personalAtlasPlacements(invalidCusp), []);
   assert.deepEqual(verifiedHouseCusps(invalidCusp), []);
+});
+
+
+test("status-only placements without provenance never appear in the atlas", () => {
+  const input = chart();
+  delete input.planets.sun.evidence;
+  delete input.rising.evidence;
+  const placements = personalAtlasPlacements(input);
+  assert.equal(placements.some(row => row.key === "sun"), false);
+  assert.equal(placements.some(row => row.key === "rising"), false);
 });
