@@ -16,6 +16,12 @@ const PLANETS = [
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
 
+const ASPECT_BODIES = [...PLANETS, "chiron"] as const;
+type AspectBodyKey = (typeof ASPECT_BODIES)[number];
+const ASPECT_BODY_ORDER = new Map(
+  ASPECT_BODIES.map((body, index) => [body, index] as const),
+);
+
 const PLANET_LABELS: Record<(typeof PLANETS)[number], string> = {
   sun: "Sun",
   moon: "Moon",
@@ -224,6 +230,27 @@ function hasGovernedAspect(row: AnyRecord | undefined): boolean {
     isGovernedMajorAspect(row?.aspect, row?.orb) &&
     row?.policyId === MAJOR_ASPECT_POLICY_ID,
   );
+}
+
+function canonicalAspectBody(value: unknown): AspectBodyKey | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return ASPECT_BODY_ORDER.has(normalized as AspectBodyKey)
+    ? normalized as AspectBodyKey
+    : null;
+}
+
+function canonicalAspectBodies(
+  left: AspectBodyKey,
+  right: AspectBodyKey,
+): [AspectBodyKey, AspectBodyKey] {
+  const leftRank = ASPECT_BODY_ORDER.get(left) ?? Number.MAX_SAFE_INTEGER;
+  const rightRank = ASPECT_BODY_ORDER.get(right) ?? Number.MAX_SAFE_INTEGER;
+  return leftRank <= rightRank ? [left, right] : [right, left];
+}
+
+function roundedHundredth(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function hasVerifiedHumanDesignTrust(hd: AnyRecord): boolean {
@@ -474,7 +501,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
         .map((row: AnyRecord) => ({
           house: Number(row.house),
           sign: String(row.sign),
-          degree: finiteNumber(row.degree),
+          degree: roundedHundredth(Number(row.degree)),
           longitude: normalizedLongitude(row.longitude),
         }))
         .sort((a: { house: number }, b: { house: number }) => a.house - b.house)
@@ -518,16 +545,48 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     });
   }
 
-  const aspects = Array.isArray(astrology?.aspects)
-    ? astrology.aspects
-        .filter((row: AnyRecord) => hasGovernedAspect(row))
-        .map((row: AnyRecord) => ({
-          planet1: String(row.planet1),
-          planet2: String(row.planet2),
-          aspect: String(row.aspect).toLowerCase(),
-          orb: Number(row.orb),
-        }))
-    : [];
+  const qualifiedAspectBodies = new Set<AspectBodyKey>(
+    placements.map((placement) => placement.key as AspectBodyKey),
+  );
+  if (supportingPoints.some((point) => point.key === "chiron")) {
+    qualifiedAspectBodies.add("chiron");
+  }
+
+  const aspectByCanonicalKey = new Map<
+    string,
+    { planet1: string; planet2: string; aspect: string; orb: number }
+  >();
+  if (Array.isArray(astrology?.aspects)) {
+    for (const row of astrology.aspects as AnyRecord[]) {
+      if (!hasGovernedAspect(row)) continue;
+      const left = canonicalAspectBody(row.planet1);
+      const right = canonicalAspectBody(row.planet2);
+      if (
+        !left ||
+        !right ||
+        left === right ||
+        !qualifiedAspectBodies.has(left) ||
+        !qualifiedAspectBodies.has(right)
+      ) {
+        continue;
+      }
+      const [planet1, planet2] = canonicalAspectBodies(left, right);
+      const aspect = String(row.aspect).toLowerCase();
+      const orb = roundedHundredth(Number(row.orb));
+      const key = `${planet1}|${aspect}|${planet2}|${orb.toFixed(2)}`;
+      if (!aspectByCanonicalKey.has(key)) {
+        aspectByCanonicalKey.set(key, { planet1, planet2, aspect, orb });
+      }
+    }
+  }
+  const aspects = [...aspectByCanonicalKey.values()].sort((a, b) =>
+    (ASPECT_BODY_ORDER.get(a.planet1 as AspectBodyKey) ?? 99) -
+      (ASPECT_BODY_ORDER.get(b.planet1 as AspectBodyKey) ?? 99) ||
+    (ASPECT_BODY_ORDER.get(a.planet2 as AspectBodyKey) ?? 99) -
+      (ASPECT_BODY_ORDER.get(b.planet2 as AspectBodyKey) ?? 99) ||
+    a.aspect.localeCompare(b.aspect) ||
+    a.orb - b.orb
+  );
 
   const elementCounts = new Map<string, number>();
   const modalityCounts = new Map<string, number>();
