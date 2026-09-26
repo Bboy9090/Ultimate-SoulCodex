@@ -1,4 +1,5 @@
 import type { NatalReportInput } from "../natalReportPdf";
+import { hasApprovedVerifiedHumanDesignTrust } from "../services/human-design-trust";
 
 type PlacementLike = {
   sign?: unknown;
@@ -84,17 +85,7 @@ function verifiedPlanet(value: unknown): Record<string, number | string> | undef
 
 function verifiedHumanDesign(value: unknown): Record<string, string> {
   const hd = record(value);
-  const hasTrustRecord = Boolean(
-    hd.status === "verified" &&
-    typeof hd.engine === "string" && hd.engine.trim() &&
-    typeof hd.source === "string" && hd.source.trim() &&
-    typeof hd.calculatedAt === "string" && hd.calculatedAt.trim() && !Number.isNaN(Date.parse(hd.calculatedAt)) &&
-    typeof hd.inputTimestampUtc === "string" && hd.inputTimestampUtc.trim() && !Number.isNaN(Date.parse(hd.inputTimestampUtc)) &&
-    typeof hd.verificationReceiptId === "string" && hd.verificationReceiptId.trim() &&
-    typeof hd.independentSource === "string" && hd.independentSource.trim() &&
-    typeof hd.verifiedAt === "string" && hd.verifiedAt.trim() && !Number.isNaN(Date.parse(hd.verifiedAt))
-  );
-  if (!hasTrustRecord) return {};
+  if (!hasApprovedVerifiedHumanDesignTrust(hd)) return {};
   const candidate = Object.keys(record(hd.candidate)).length
     ? record(hd.candidate)
     : hd;
