@@ -5,6 +5,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { generateText, isGeminiAvailable } from './gemini';
 import { calculatePersonalDayNumber, getMoonPhase, getMoonSign } from './daily-context';
 import { calculateActiveTransits, extractNatalPositions } from './transits';
+import { dateOnlyFromStoredValue } from '@soulcodex/core';
 
 const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
@@ -359,7 +360,10 @@ export async function generateDailyHoroscope(profile: any): Promise<DailyHorosco
   const personalTransits = calculatePersonalTransitsFromProfile(profile, now);
   const moonPhase = getMoonPhase(now);
   const currentMoonSign = getMoonSign(now);
-  const personalDayNumber = calculatePersonalDayNumber(profile.birthDate, dateKey);
+  const personalDayNumber = calculatePersonalDayNumber(
+    dateOnlyFromStoredValue(profile.birthDate),
+    dateKey,
+  );
 
   const horoscope = await generateAIHoroscope(
     profile,
