@@ -154,11 +154,31 @@ function parsedNumber(value: unknown): number | undefined {
   return Number.isInteger(parsed) ? parsed : undefined;
 }
 
+function evidenceText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function evidenceTimestamp(value: unknown): value is string {
+  return evidenceText(value) && !Number.isNaN(Date.parse(value));
+}
+
 function verifiedPlacement(value: unknown): AnyRecord | undefined {
   if (!value || typeof value !== "object") return undefined;
   const placement = value as AnyRecord;
+  const evidence = placement.provenance ?? placement.evidence;
+  const directEvidence = Boolean(
+    evidenceText(evidence?.source) &&
+    evidenceText(evidence?.engine) &&
+    evidenceTimestamp(evidence?.calculatedAt)
+  );
+  const governedDerivedEvidence = Boolean(
+    evidenceText(placement.policyId) &&
+    evidenceText(placement.evidenceArtifactId)
+  );
   return placement.verificationStatus === "verified" &&
-    typeof placement.sign === "string" && ZODIAC_SIGNS.has(placement.sign)
+    typeof placement.sign === "string" &&
+    ZODIAC_SIGNS.has(placement.sign) &&
+    (directEvidence || governedDerivedEvidence)
     ? placement
     : undefined;
 }
@@ -184,7 +204,17 @@ function verifiedEqualHouses(astrology: AnyRecord): boolean {
 }
 
 function verifiedHumanDesignCore(value: AnyRecord): boolean {
-  return value.status === "verified" &&
+  const trustComplete = Boolean(
+    value.status === "verified" &&
+    evidenceText(value.engine) &&
+    evidenceText(value.source) &&
+    evidenceTimestamp(value.calculatedAt) &&
+    evidenceTimestamp(value.inputTimestampUtc) &&
+    evidenceText(value.verificationReceiptId) &&
+    evidenceText(value.independentSource) &&
+    evidenceTimestamp(value.verifiedAt)
+  );
+  return trustComplete &&
     [value.type, value.strategy, value.authority, value.profile]
       .every((field) => typeof field === "string" && field.trim().length > 0);
 }
