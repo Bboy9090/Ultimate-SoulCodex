@@ -1,4 +1,4 @@
-import { formatInTimeZone, fromZonedTime, getTimezoneOffset } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 export type CivilTimeStatus = 'valid' | 'nonexistent' | 'ambiguous' | 'invalid';
 
@@ -21,8 +21,29 @@ function runtimeTzdbVersion(): string | null {
   return typeof version === 'string' && version.trim() ? version : null;
 }
 
+function timezoneOffsetMillisecondsAtInstant(timezone: string, instant: Date): number {
+  const local = formatInTimeZone(instant, timezone, LOCAL_PATTERN);
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/.exec(local);
+  if (!match) {
+    throw new Error('timezone_offset_format_failed');
+  }
+
+  const [, year, month, day, hour, minute, second] = match;
+  const localAsUtc = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second),
+  );
+  return localAsUtc - instant.getTime();
+}
+
 function candidateOffsetsMinutes(timezone: string, candidates: Date[]): number[] {
-  return candidates.map((candidate) => getTimezoneOffset(timezone, candidate) / 60_000);
+  return candidates.map(
+    (candidate) => timezoneOffsetMillisecondsAtInstant(timezone, candidate) / 60_000,
+  );
 }
 
 function baseResolutionMetadata(timezone: string) {
@@ -138,7 +159,10 @@ export function resolveCivilTimeStrict(
   const observedOffsets = [
     ...new Set(
       neighborhoodHours.map((hours) =>
-        getTimezoneOffset(timezone, new Date(primary.getTime() + hours * HOUR_MS)),
+        timezoneOffsetMillisecondsAtInstant(
+          timezone,
+          new Date(primary.getTime() + hours * HOUR_MS),
+        ),
       ),
     ),
   ];
