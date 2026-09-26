@@ -79,3 +79,19 @@ test("Foundation offline identity does not include Tarot without explicit symbol
 
   assert.equal(Object.prototype.hasOwnProperty.call(profile.archetypeData, "tarotCards"), false);
 });
+
+
+test("root SoulArchetype route does not treat withheld astrology markers as resolved evidence", () => {
+  const rootRoutes = readFileSync("routes.ts", "utf8");
+
+  assert.match(rootRoutes, /trimmed\.toLowerCase\(\) === "unknown"/);
+  assert.match(rootRoutes, /Array\.isArray\(a\.houses\) && a\.houses\.length > 0/);
+  assert.doesNotMatch(
+    rootRoutes,
+    /Birth time unknown — Sun and Moon are calculated; Rising sign and houses are omitted, not estimated\./,
+  );
+  assert.match(
+    rootRoutes,
+    /exact Moon\/Rising and planetary degrees are withheld/,
+  );
+});
