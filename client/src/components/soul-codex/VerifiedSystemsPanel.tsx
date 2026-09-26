@@ -47,7 +47,7 @@ export default function VerifiedSystemsPanel({
           margin: "0 0 1.5rem 0",
         }}
       >
-        Verified Systems
+        Verified / Deterministic Systems
       </h2>
 
       {/* Astrology */}
