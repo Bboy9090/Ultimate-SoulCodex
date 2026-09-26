@@ -459,3 +459,27 @@ test('server numerology fails closed for an invalid explicit target year', () =>
   assert.equal(result.status, 'unresolved');
   assert.match(result.reason, /Target year/);
 });
+
+
+test('server numerology preserves valid components when Soul Urge is unresolved', () => {
+  const result = calculateNumerology('Lynn', '1990-09-17', 2026);
+  assert.equal(result.status, 'resolved');
+  if (result.status !== 'resolved') return;
+
+  assert.equal(result.soulUrge, null);
+  assert.ok(typeof result.expression === 'number');
+  assert.ok(typeof result.personality === 'number');
+  assert.ok(typeof result.lifePath === 'number');
+  assert.match(result.interpretations.soulUrge, /unresolved/i);
+});
+
+test('server numerology preserves valid components when Personality Number is unresolved', () => {
+  const result = calculateNumerology('Aeia', '1990-09-17', 2026);
+  assert.equal(result.status, 'resolved');
+  if (result.status !== 'resolved') return;
+
+  assert.equal(result.personality, null);
+  assert.ok(typeof result.soulUrge === 'number');
+  assert.ok(typeof result.expression === 'number');
+  assert.match(result.interpretations.personality, /unresolved/i);
+});
