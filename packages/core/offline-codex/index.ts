@@ -51,7 +51,6 @@ export interface OfflineArchetypeData {
   shadows: string[];
   themes: string[];
   guidance: string;
-  tarotCards: { card1: string; card2: string; interpretation: string };
 }
 
 export interface OfflineCodexProfile {
@@ -243,24 +242,7 @@ function elementForSign(sign: string): string {
   return "water";
 }
 
-function calculateTarotCards(birthDate: string): OfflineArchetypeData["tarotCards"] {
-  const { year, month, day } = parseDate(birthDate);
-  const cards: Array<[string, string, string]> = [
-    ["The Fool", "The World", "Potential develops through completed cycles."],
-    ["The Magician", "The High Priestess", "Directed will is balanced by reflection."],
-    ["The Empress", "The Emperor", "Creative growth benefits from structure."],
-    ["The Hierophant", "The Lovers", "Inherited values meet conscious choice."],
-    ["The Chariot", "Strength", "Direction becomes sustainable through self-command."],
-    ["The Hermit", "Wheel of Fortune", "Inner guidance helps navigate changing cycles."],
-    ["Justice", "The Hanged Man", "Balance may require a deliberate change in perspective."],
-    ["Death", "Temperance", "Transformation becomes useful through integration."],
-    ["The Devil", "The Tower", "Attachment is challenged by disruptive clarity."],
-  ];
-  const selected = cards[reduceNumber(day + month + year) % cards.length];
-  return { card1: selected[0], card2: selected[1], interpretation: selected[2] };
-}
-
-function synthesizeArchetype(astrology: OfflineAstrologyData, numerology: OfflineNumerologyData, birthDate: string): OfflineArchetypeData {
+function synthesizeArchetype(astrology: OfflineAstrologyData, numerology: OfflineNumerologyData): OfflineArchetypeData {
   const sign = astrology.sunSign ? SIGN_TRAITS[astrology.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerology.lifePath];
   if (!path) {
@@ -320,7 +302,6 @@ function synthesizeArchetype(astrology: OfflineAstrologyData, numerology: Offlin
       .filter((value): value is string => Boolean(value))
       .slice(0, 3)
       .join(" "),
-    tarotCards: calculateTarotCards(birthDate),
   };
 }
 
@@ -458,7 +439,7 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
   const currentYear = options.currentYear ?? new Date(generatedAt).getUTCFullYear();
   const astrologyData = calculateAstrology(input);
   const numerologyData = calculateNumerology(input, currentYear);
-  const archetypeData = synthesizeArchetype(astrologyData, numerologyData, input.birthDate);
+  const archetypeData = synthesizeArchetype(astrologyData, numerologyData);
   const depthInterpretation = buildDepthInterpretation(input, astrologyData, numerologyData, archetypeData, generatedAt);
   const sign = astrologyData.sunSign ? SIGN_TRAITS[astrologyData.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerologyData.lifePath];
