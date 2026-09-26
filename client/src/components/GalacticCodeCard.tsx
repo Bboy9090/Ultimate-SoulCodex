@@ -1,7 +1,7 @@
 /**
  * Galactic Code Card
  *
- * Hero card displaying codename, designation, short code, and confidence.
+ * Hero card displaying codename, designation, short code, and data coverage.
  */
 
 import type { GalacticCodeResult } from '../../../shared/galactic-code/types';
@@ -25,7 +25,7 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
       </div>
 
       <div className="relative z-10 space-y-6">
-        {/* Eye logo and confidence badge */}
+        {/* Eye logo and data-coverage badge */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="text-3xl">👁</div>
@@ -52,7 +52,7 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
             <p className="text-sm font-semibold text-ivory-100">{code.primaryFunction}</p>
           </div>
           <div className="border-l-2 border-gold-400/50 pl-3">
-            <p className="text-xs text-gold-300/70 uppercase tracking-wider">Secondary Function</p>
+            <p className="text-xs text-gold-300/70 uppercase tracking-wider">Secondary Synthesis Axis</p>
             <p className="text-sm font-semibold text-ivory-100">{code.secondaryFunction}</p>
           </div>
         </div>
@@ -91,8 +91,8 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
             </p>
           </div>
           <div className="rounded bg-slate-800/50 p-2">
-            <p className="text-slate-400">Traits</p>
-            <p className={`font-semibold ${code.sourceCoverage.behavioralTraitCount >= 5 ? 'text-emerald-300' : 'text-amber-300'}`}>
+            <p className="text-slate-400">Supporting traits</p>
+            <p className="font-semibold text-slate-300">
               {code.sourceCoverage.behavioralTraitCount}
             </p>
           </div>
