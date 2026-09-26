@@ -398,6 +398,11 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const birthTime = createBirthTime(birthData);
   const latitude = parseFloat(String(birthData.latitude ?? 0));
   const longitude = parseFloat(String(birthData.longitude ?? 0));
+  const hasExactTime = Boolean(birthData.birthTime?.trim());
+  const hasTimezone = Boolean(birthData.timezone?.trim());
+  const hasLocation = birthData.latitude != null && birthData.longitude != null;
+  const moonResolved = hasExactTime && hasTimezone;
+  const risingResolved = moonResolved && hasLocation;
   
   const sunPos = calculateCelestialPosition(Astro.Body.Sun, birthTime);
   const moonPos = calculateCelestialPosition(Astro.Body.Moon, birthTime);
@@ -415,8 +420,8 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const houseCusps = calculateEqualHouseCusps(ascendantData.longitude);
   
   const sunSign = sunPos.sign;
-  const moonSign = moonPos.sign;
-  const risingSign = ascendantData.sign;
+  const moonSign = moonResolved ? moonPos.sign : "Unknown";
+  const risingSign = risingResolved ? ascendantData.sign : "Unknown";
   
   function createPlanetData(planetName: string, pos: { longitude: number; sign: string; degree: number }): PlanetData {
     const house = calculateHousePosition(pos.longitude, houseCusps);
@@ -443,11 +448,13 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     pluto: createPlanetData('pluto', plutoPos)
   };
   
-  const houses = houseCusps.map((cuspLongitude, index) => ({
-    sign: eclipticToZodiacSign(cuspLongitude),
-    degree: cuspLongitude,
-    interpretation: getHouseInterpretation(index + 1)
-  }));
+  const houses = risingResolved
+    ? houseCusps.map((cuspLongitude, index) => ({
+        sign: eclipticToZodiacSign(cuspLongitude),
+        degree: cuspLongitude,
+        interpretation: getHouseInterpretation(index + 1)
+      }))
+    : [];
   
   const planetPositions = {
     sun: sunPos.longitude,
@@ -462,7 +469,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     pluto: plutoPos.longitude
   };
   
-  const aspects = calculateAspects(planetPositions);
+  const aspects = moonResolved ? calculateAspects(planetPositions) : [];
   
   // Legacy/package astrology does not emit Lunar Nodes or Chiron.
   // Production supplies them only through independently governed verification.
@@ -471,8 +478,12 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const chiron = null;
   
   const sunInterpretation = getPlanetSignInterpretation('sun', sunSign);
-  const moonInterpretation = getPlanetSignInterpretation('moon', moonSign);
-  const risingInterpretation = getPlanetSignInterpretation('sun', risingSign);
+  const moonInterpretation = moonResolved
+    ? getPlanetSignInterpretation('moon', moonSign)
+    : null;
+  const risingInterpretation = risingResolved
+    ? getPlanetSignInterpretation('sun', risingSign)
+    : null;
 
   const calculatedAt = new Date().toISOString();
   const sunPlacement = buildPlacement(sunSign, birthData, 'sun', calculatedAt);
@@ -492,10 +503,16 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     interpretations: {
       bigThree: {
         sun: `Your ${sunInterpretation.title} essence drives you to ${sunInterpretation.spiritualMeaning.toLowerCase()}`,
-        moon: `Your ${moonInterpretation.title} emotional nature ${moonInterpretation.spiritualMeaning.toLowerCase()}`,
-        rising: `You present to the world as ${risingSign}, projecting ${risingInterpretation.keywords.join(', ')} energy`
+        moon: moonInterpretation
+          ? `Your ${moonInterpretation.title} emotional nature ${moonInterpretation.spiritualMeaning.toLowerCase()}`
+          : "Moon placement withheld until exact birth time and timezone are available.",
+        rising: risingInterpretation
+          ? `You present to the world as ${risingSign}, projecting ${risingInterpretation.keywords.join(', ')} energy`
+          : "Rising sign withheld until exact birth time, timezone, and location are available."
       },
-      summary: `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies. Your soul's journey involves balancing these cosmic influences to express your highest potential.`
+      summary: moonInterpretation && risingInterpretation
+        ? `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies.`
+        : `Sun candidate: ${sunSign}. Time-dependent Moon/Rising interpretation is withheld until required birth evidence is present.`
     },
     placements: {
       sun: sunPlacement,
