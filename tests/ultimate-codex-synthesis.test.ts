@@ -316,3 +316,43 @@ test("invalid current-cycle numerology never changes the stable Codex identity",
     false,
   );
 });
+
+
+test("Ultimate Codex rejects malformed aspect policy rows", () => {
+  const invalid: any = profile();
+  invalid.verifiedAstrologyData.aspects.push(
+    { planet1: "sun", planet2: "moon", aspect: "banana", orb: 1, policyId: "ASTRO-ASPECT-MAJOR-v1" },
+    { planet1: "sun", planet2: "venus", aspect: "square", orb: -1, policyId: "ASTRO-ASPECT-MAJOR-v1" },
+    { planet1: "mars", planet2: "jupiter", aspect: "sextile", orb: 6.01, policyId: "ASTRO-ASPECT-MAJOR-v1" },
+  );
+
+  const result = buildUltimateCodexSynthesis(invalid);
+  assert.equal(result.aspects.length, 2);
+  assert.equal(result.aspects.some((aspect) => aspect.aspect === "banana"), false);
+  assert.equal(result.aspects.some((aspect) => aspect.orb < 0), false);
+  assert.equal(
+    result.aspects.some((aspect) => aspect.aspect === "sextile" && aspect.orb > 6),
+    false,
+  );
+});
+
+test("Ultimate Codex rejects inconsistent governed cusp and point geometry", () => {
+  const invalid: any = profile();
+
+  invalid.verifiedAstrologyData.houses[0].sign = "Taurus";
+  invalid.verifiedAstrologyData.midheaven.degree = 35;
+  invalid.verifiedAstrologyData.northNode.sign = "Gemini";
+
+  const result = buildUltimateCodexSynthesis(invalid);
+
+  assert.equal(result.houseCusps.length, 11);
+  assert.equal(
+    result.supportingPoints.some((point) => point.key === "midheaven"),
+    false,
+  );
+  assert.equal(
+    result.supportingPoints.some((point) => point.key === "northNode"),
+    false,
+  );
+  assert.equal(result.coverage, "partial");
+});
