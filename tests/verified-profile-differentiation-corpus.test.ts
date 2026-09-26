@@ -229,23 +229,35 @@ function synthesisEvidenceSignature(
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([body, house]) => `${body}:H${house}`);
 
-  const aspects = (astrology.aspects ?? [])
-    .map((aspect: any) => [
-      String(aspect.body1 ?? aspect.planet1 ?? ""),
-      String(aspect.aspect ?? aspect.type ?? ""),
-      String(aspect.body2 ?? aspect.planet2 ?? ""),
-      Number.isFinite(aspect.orb) ? Number(aspect.orb).toFixed(3) : "unresolved",
-    ].join(":"))
-    .sort();
+  const strongestAspect = [...(astrology.aspects ?? [])]
+    .filter(
+      (aspect: any) =>
+        typeof (aspect.planet1 ?? aspect.body1) === "string" &&
+        typeof (aspect.planet2 ?? aspect.body2) === "string" &&
+        typeof (aspect.aspect ?? aspect.type) === "string" &&
+        Number.isFinite(aspect.orb),
+    )
+    .sort((left: any, right: any) => Number(left.orb) - Number(right.orb))[0];
+
+  const strongestAspectKey = strongestAspect
+    ? [
+        String(strongestAspect.planet1 ?? strongestAspect.body1),
+        String(strongestAspect.aspect ?? strongestAspect.type),
+        String(strongestAspect.planet2 ?? strongestAspect.body2),
+      ].join(":")
+    : "unresolved";
 
   return [
     ...supportedSignature(reading),
     `midheaven:${astrology.midheaven?.sign ?? "unresolved"}`,
     `northNode:${astrology.northNode?.sign ?? "unresolved"}`,
+    `northNodeHouse:${astrology.northNode?.house ?? "unresolved"}`,
     `southNode:${astrology.southNode?.sign ?? "unresolved"}`,
+    `southNodeHouse:${astrology.southNode?.house ?? "unresolved"}`,
     `chiron:${astrology.chiron?.sign ?? "unresolved"}`,
+    `chironHouse:${astrology.chiron?.house ?? "unresolved"}`,
     ...planetaryHouses,
-    ...aspects.map((aspect: string) => `aspect:${aspect}`),
+    `strongestAspect:${strongestAspectKey}`,
     `lifePath:${numerology.lifePath ?? "unresolved"}`,
     `expression:${numerology.expression ?? "unresolved"}`,
     `soulUrge:${numerology.soulUrge ?? "unresolved"}`,
