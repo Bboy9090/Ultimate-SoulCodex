@@ -16,7 +16,6 @@ import { calculateHumanDesign } from "@soulcodex/astrology";
 import { generateDailyInsights } from "./services/daily-insights";
 import type { RelationshipMode } from "./services/archetype-matches";
 import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
-import { getDailyElementalGuidance } from "./services/elemental-medicine";
 import { calculateMoralCompass } from "./services/moral-compass";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
