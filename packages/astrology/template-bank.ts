@@ -138,12 +138,12 @@ const astrologyTemplates: TemplateVariation[] = [
   {
     id: 'astro-lunar-wisdom-1',
     category: 'astrology',
-    template: (ctx) => `The Moon's ${Math.round(ctx.moonIllumination)}% illumination in ${ctx.moonSign} creates potent emotional alchemy. ${getMoonSignAction(ctx.moonSign)}`
+    template: (ctx) => `The Moon's ${Math.round(ctx.moonPhasePercentage)}% illumination in ${ctx.moonSign} creates potent emotional alchemy. ${getMoonSignAction(ctx.moonSign)}`
   },
   {
     id: 'astro-lunar-wisdom-2',
     category: 'astrology',
-    template: (ctx) => `${ctx.moonSign}'s lunar wisdom ${getMoonSignEnergy(ctx.moonSign)} at ${Math.round(ctx.moonIllumination)}% illumination.`
+    template: (ctx) => `${ctx.moonSign}'s lunar wisdom ${getMoonSignEnergy(ctx.moonSign)} at ${Math.round(ctx.moonPhasePercentage)}% illumination.`
   },
 ];
 
@@ -1043,7 +1043,7 @@ function getFixedStarsWisdom(): string {
 }
 
 export function selectTemplates(
-  dailyContext: DailyContext, 
+  dailyContext: DailyContext,
   profileData: any,
   lastUsedIds: string[] = []
 ): { selectedTemplates: TemplateVariation[]; templateIds: string[] } {
@@ -1051,85 +1051,51 @@ export function selectTemplates(
     ? astrologyTemplates
     : astrologyTemplates.filter((template) => !template.id.startsWith('astro-planetary-'));
 
-  // Combine only templates whose required calculation inputs are actually available.
-  const allTemplates = [
-    ...numerologyTemplates, 
-    ...eligibleAstrologyTemplates, 
-    ...humanDesignTemplates, 
-    ...personalityTemplates,
-    ...chineseTemplates,
-    ...ayurvedaTemplates,
-    ...vedicTemplates,
-    ...geneKeysTemplates,
-    ...iChingTemplates,
-    ...mayanTemplates,
-    ...chakraTemplates,
-    ...runesTemplates,
-    ...tarotTemplates,
-    ...kabbalahTemplates,
-    ...sacredGeomTemplates,
-    ...sabianTemplates,
-    ...biorhythmsTemplates,
-    ...asteroidsTemplates,
-    ...arabicPartsTemplates,
-    ...fixedStarsTemplates
-  ];
-  
-  const seed = parseInt(dailyContext.date.replace(/-/g, '')) + (profileData.id ? profileData.id.charCodeAt(0) : 0);
-  
-  const availableByCategory: Record<string, TemplateVariation[]> = {
-    numerology: numerologyTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    astrology: eligibleAstrologyTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    humandesign: humanDesignTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    personality: personalityTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    chinese: chineseTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    ayurveda: ayurvedaTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    vedic: vedicTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    genekeys: geneKeysTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    iching: iChingTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    mayan: mayanTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    chakras: chakraTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    runes: runesTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    tarot: tarotTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    kabbalah: kabbalahTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    sacredgeom: sacredGeomTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    sabian: sabianTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    biorhythms: biorhythmsTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    asteroids: asteroidsTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    arabicparts: arabicPartsTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    fixedstars: fixedStarsTemplates.filter(t => !lastUsedIds.includes(t.id)),
+  // Daily Insights may draw only from currently governed, directly computed
+  // daily systems. Registry-disabled identity systems and unverified profile
+  // combinations are deliberately excluded from rotation.
+  const governedByCategory: Record<string, TemplateVariation[]> = {
+    numerology: numerologyTemplates,
+    astrology: eligibleAstrologyTemplates,
+    humandesign: humanDesignTemplates,
   };
-  
-  // Reset category if all templates were used
-  Object.keys(availableByCategory).forEach(cat => {
-    if (availableByCategory[cat].length === 0) {
-      availableByCategory[cat] = allTemplates.filter(t => t.category === cat);
-    }
-  });
-  
-  const selected: TemplateVariation[] = [];
-  // Select from FULL expanded categories pool - ALL 15 new advanced systems now included (19 total categories)
-  const allCategories = ['numerology', 'astrology', 'humandesign', 'personality', 'chinese', 'ayurveda', 'vedic', 'genekeys', 'iching', 'mayan', 'chakras', 'runes', 'tarot', 'kabbalah', 'sacredgeom', 'sabian', 'biorhythms', 'asteroids', 'arabicparts', 'fixedstars'];
-  
-  // Shuffle categories deterministically based on date seed
-  const shuffledCategories = allCategories.sort((a, b) => {
+
+  const seed =
+    parseInt(dailyContext.date.replace(/-/g, ''), 10) +
+    (profileData.id ? String(profileData.id).charCodeAt(0) : 0);
+
+  const categories = Object.keys(governedByCategory);
+  const shuffledCategories = [...categories].sort((a, b) => {
     const hashA = (a.charCodeAt(0) * seed) % 1000;
     const hashB = (b.charCodeAt(0) * seed) % 1000;
     return hashA - hashB;
   });
-  
-  // Select 4 templates from shuffled categories (ensures variety across ALL 30+ mystical systems)
-  for (let i = 0; i < 4 && i < shuffledCategories.length; i++) {
-    const cat = shuffledCategories[i];
-    const options = availableByCategory[cat];
-    if (options && options.length > 0) {
-      const seededIndex = (seed + i * 17) % options.length;
-      selected.push(options[seededIndex]);
+
+  const selected: TemplateVariation[] = [];
+
+  // First take one from each governed category so the daily card is balanced.
+  for (let i = 0; i < shuffledCategories.length; i += 1) {
+    const category = shuffledCategories[i];
+    const fullPool = governedByCategory[category];
+    const unused = fullPool.filter((template) => !lastUsedIds.includes(template.id));
+    const options = unused.length > 0 ? unused : fullPool;
+    if (options.length === 0) continue;
+    selected.push(options[(seed + i * 17) % options.length]);
+  }
+
+  // Add a fourth item from the governed pool only.
+  const allGoverned = categories.flatMap((category) => governedByCategory[category]);
+  const unusedGoverned = allGoverned.filter((template) => !lastUsedIds.includes(template.id));
+  const fourthPool = unusedGoverned.length > 0 ? unusedGoverned : allGoverned;
+  if (fourthPool.length > 0) {
+    const candidate = fourthPool[(seed + 53) % fourthPool.length];
+    if (!selected.some((template) => template.id === candidate.id)) {
+      selected.push(candidate);
     }
   }
-  
+
   return {
-    selectedTemplates: selected,
-    templateIds: selected.map(t => t.id)
+    selectedTemplates: selected.slice(0, 4),
+    templateIds: selected.slice(0, 4).map((template) => template.id),
   };
 }
