@@ -104,6 +104,54 @@ test("canonical active Soul Profile contract", async (t) => {
     assert.strictEqual(restored?.astrologyData?.planets?.mercury?.verificationStatus, "pending_independent_verification");
   });
 
+  await t.test("canonical save downgrades Human Design verified status without trust receipt", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    saveActiveProfile({
+      birthDate: "1990-09-17",
+      humanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    });
+
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.humanDesignData?.status, "calculated_unverified");
+  });
+
+  await t.test("canonical save preserves Human Design verified status with complete trust receipt", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    const humanDesignData = {
+      status: "verified",
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      engine: "soulcodex-hd-geocentric-v1",
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: "35474994858:human-design-repair-audit",
+      independentSource: "free-human-design@1.0.1 differential verifier",
+      verifiedAt: "2026-09-19T23:03:08.000Z",
+    };
+
+    saveActiveProfile({ birthDate: "1990-09-17", humanDesignData });
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.humanDesignData?.status, "verified");
+    assert.strictEqual(restored?.humanDesignData?.verificationReceiptId, humanDesignData.verificationReceiptId);
+  });
+
   await t.test("canonical save preserves verified astrology when provenance is complete", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),
