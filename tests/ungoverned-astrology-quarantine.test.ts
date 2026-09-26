@@ -80,3 +80,17 @@ test('Arabic Parts and fixed stars remain unavailable until their astronomy cont
     /fixed_stars_unavailable:epoch_aware_governed_catalog_required/,
   );
 });
+
+
+test('Vedic calculator itself remains fail-closed until a governed sidereal contract exists', () => {
+  assert.throws(
+    () => calculateVedicAstrology({
+      birthDate: '1990-09-17',
+      birthTime: '11:11',
+      timezone: 'America/New_York',
+      latitude: 40.7128,
+      longitude: -74.006,
+    }),
+    /vedic_astrology_unavailable:no_governed_sidereal_contract/,
+  );
+});
