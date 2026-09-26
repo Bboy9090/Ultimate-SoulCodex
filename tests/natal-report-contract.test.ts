@@ -198,3 +198,15 @@ test("natal report preserves canonical stored civil birth date", () => {
   const report = buildNatalReportInput(evidenceProfile());
   assert.equal(report.birthDate, "1990-09-17");
 });
+
+
+test("legacy natal-report request path requires strict date-only caller input", () => {
+  const routes = readFileSync("routes.ts", "utf8");
+  const start = routes.indexOf('app.post("/api/natal-report"');
+  const end = routes.indexOf('app.post("/api/pdf/compatibility"', start);
+  const route = routes.slice(start, end);
+
+  assert.match(route, /parseDateOnly\(dateOnly\)/);
+  assert.doesNotMatch(route, /String\(rawBirthDate\)\.slice\(0, 10\)/);
+  assert.doesNotMatch(route, /rawBirthDate\.toISOString\(\)\.slice\(0, 10\)/);
+});
