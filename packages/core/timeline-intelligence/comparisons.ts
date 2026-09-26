@@ -1,98 +1,155 @@
-import type { Match, Divergence, SystemSignal, LivedSignal } from "./types.js";
+import type {
+  Match,
+  Divergence,
+  SystemSignal,
+  LivedSignal,
+} from "./types.js";
 import { calculateEnergyAlignmentMatch } from "./scoring.js";
+
+function numericMetric(
+  livedSignals: LivedSignal[],
+  metric: "energy" | "alignment",
+): number | null {
+  const signal = livedSignals.find((entry) => entry.metric === metric);
+  if (!signal || typeof signal.value !== "number") return null;
+  return Number.isFinite(signal.value) ? signal.value : null;
+}
 
 export function compareSystemToLived(
   systemSignal: SystemSignal,
-  livedSignals: LivedSignal[]
+  livedSignals: LivedSignal[],
 ): { match: Match | null; divergence: Divergence | null } {
   if (livedSignals.length === 0) {
     return { match: null, divergence: null };
   }
 
-  // Extract energy and alignment data if available
-  const energySignals = livedSignals.filter((s) => s.metric === "energy");
-  const alignmentSignals = livedSignals.filter((s) => s.metric === "alignment");
-  const moodSignals = livedSignals.filter((s) => s.metric === "mood");
+  const livedEnergy = numericMetric(livedSignals, "energy");
+  const livedAlignment = numericMetric(livedSignals, "alignment");
 
-  let alignmentScore = 0.5; // Default neutral
-
-  // Calculate alignment score based on system type
-  if (energySignals.length > 0 && alignmentSignals.length > 0) {
-    const avgEnergy = (energySignals[0].value as number) || 3;
-    const avgAlignment = (alignmentSignals[0].value as number) || 3;
-    alignmentScore = calculateEnergyAlignmentMatch(systemSignal.label, avgEnergy, avgAlignment);
+  // A comparison is not eligible unless both required lived metrics exist and
+  // the symbolic signal has an explicit comparison model.
+  if (livedEnergy === null || livedAlignment === null) {
+    return { match: null, divergence: null };
   }
 
-  // Determine if this is a match or divergence based on threshold
+  const alignmentScore = calculateEnergyAlignmentMatch(
+    systemSignal.label,
+    livedEnergy,
+    livedAlignment,
+  );
+  if (alignmentScore === null) {
+    return { match: null, divergence: null };
+  }
+
   const MATCH_THRESHOLD = 0.6;
 
   if (alignmentScore >= MATCH_THRESHOLD) {
-    const match: Match = {
-      systemSignal,
-      livedSignals,
-      alignment: alignmentScore,
-      description: describeMatch(systemSignal, livedSignals, alignmentScore),
+    return {
+      match: {
+        systemSignal,
+        livedSignals,
+        alignment: alignmentScore,
+        description: describeMatch(
+          systemSignal,
+          livedSignals,
+          alignmentScore,
+        ),
+      },
+      divergence: null,
     };
-    return { match, divergence: null };
-  } else {
-    const divergence: Divergence = {
+  }
+
+  return {
+    match: null,
+    divergence: {
       systemSignal,
       livedSignals,
-      expectedVsActual: generateExpectationVsActual(systemSignal, livedSignals),
+      expectedVsActual: generateModelVsObserved(
+        systemSignal,
+        livedSignals,
+      ),
       description: describeDivergence(systemSignal, livedSignals),
-    };
-    return { match: null, divergence };
-  }
+    },
+  };
 }
 
-function describeMatch(signal: SystemSignal, lived: LivedSignal[], alignment: number): string {
+function describeMatch(
+  signal: SystemSignal,
+  lived: LivedSignal[],
+  alignment: number,
+): string {
   const alignmentPct = Math.round(alignment * 100);
-  const energyLived = lived.find((s) => s.metric === "energy");
-  const alignmentLived = lived.find((s) => s.metric === "alignment");
+  const energyLived = lived.find((entry) => entry.metric === "energy");
+  const alignmentLived = lived.find(
+    (entry) => entry.metric === "alignment",
+  );
 
-  if (signal.system === "personal-day") {
-    if (energyLived) {
-      return `${signal.label} suggested steady energy. Logged energy averaged ${energyLived.value}. (${alignmentPct}% alignment)`;
-    }
+  if (signal.system === "personal-day" && energyLived) {
+    return (
+      `${signal.label} used a predefined reflection mapping; logged energy was ` +
+      `${energyLived.value}. The modeled correspondence score was ${alignmentPct}%.`
+    );
   }
 
   if (signal.system === "moon-phase") {
-    if (signal.label.includes("Full Moon")) {
-      return `Full Moon phase suggested high energy. Logged ${energyLived?.value || "variable"} energy. (${alignmentPct}% alignment)`;
+    const normalized = signal.label.toLowerCase();
+    if (normalized.includes("full moon")) {
+      return (
+        `For this reflection experiment, Full Moon was mapped to higher energy; ` +
+        `logged energy was ${energyLived?.value ?? "unavailable"}. ` +
+        `Modeled correspondence: ${alignmentPct}%.`
+      );
     }
-    if (signal.label.includes("New Moon")) {
-      return `New Moon phase suggested introspection. Logged ${alignmentLived?.value || "varied"} alignment. (${alignmentPct}% alignment)`;
+    if (normalized.includes("new moon")) {
+      return (
+        `For this reflection experiment, New Moon was mapped to a lower-energy, ` +
+        `inward pattern; logged alignment was ${alignmentLived?.value ?? "unavailable"}. ` +
+        `Modeled correspondence: ${alignmentPct}%.`
+      );
     }
   }
 
-  return `The system signal corresponded with lived data at ${alignmentPct}% alignment.`;
+  return `The modeled signal corresponded with the logged metrics at ${alignmentPct}% within this comparison rule.`;
 }
 
-function describeDivergence(signal: SystemSignal, lived: LivedSignal[]): string {
-  const energyLived = lived.find((s) => s.metric === "energy");
-  const alignmentLived = lived.find((s) => s.metric === "alignment");
+function describeDivergence(
+  signal: SystemSignal,
+  lived: LivedSignal[],
+): string {
+  const energyLived = lived.find((entry) => entry.metric === "energy");
+  const alignmentLived = lived.find(
+    (entry) => entry.metric === "alignment",
+  );
 
   if (signal.system === "personal-day") {
-    return `${signal.label} suggested one pattern, but logged energy was ${energyLived?.value || "different"}.`;
+    return (
+      `${signal.label}'s predefined reflection mapping differed from the logged metrics; ` +
+      `energy was ${energyLived?.value ?? "unavailable"}.`
+    );
   }
 
   if (signal.system === "moon-phase") {
-    return `${signal.label} phase did not match logged experience: ${alignmentLived?.value || "alignment was different"}.`;
+    return (
+      `${signal.label}'s predefined reflection mapping differed from the logged metrics; ` +
+      `alignment was ${alignmentLived?.value ?? "unavailable"}.`
+    );
   }
 
-  return `The system signal differed from the lived data.`;
+  return "The modeled signal differed from the logged metrics.";
 }
 
-function generateExpectationVsActual(signal: SystemSignal, lived: LivedSignal[]): string {
-  const energyLived = lived.find((s) => s.metric === "energy");
+function generateModelVsObserved(
+  signal: SystemSignal,
+  lived: LivedSignal[],
+): string {
+  const energyLived = lived.find((entry) => entry.metric === "energy");
+  const alignmentLived = lived.find(
+    (entry) => entry.metric === "alignment",
+  );
 
-  if (signal.system === "personal-day") {
-    return `Expected: ${signal.description || signal.label}. Actual: Energy averaged ${energyLived?.value || "N/A"}.`;
-  }
-
-  if (signal.system === "moon-phase") {
-    return `Expected: ${signal.description || signal.label}. Actual: Lived data showed different pattern.`;
-  }
-
-  return `Expected: ${signal.description}. Actual: See lived signals.`;
+  return (
+    `Model: ${signal.description || signal.label}. ` +
+    `Observed: energy ${energyLived?.value ?? "N/A"}; ` +
+    `alignment ${alignmentLived?.value ?? "N/A"}.`
+  );
 }
