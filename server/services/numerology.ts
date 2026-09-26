@@ -91,7 +91,11 @@ const interpretations = {
     33: "Life Path 33 is traditionally treated as a master-number theme of teaching, service, and care."
   }
 };
-export function calculateNumerology(fullName: string, birthDate: string): NumerologyData {
+export function calculateNumerology(
+  fullName: string,
+  birthDate: string,
+  targetYear: number = new Date().getUTCFullYear(),
+): NumerologyData {
   // FAIL-CLOSED: Validate inputs before calculating
   if (!isValidName(fullName)) {
     return {
@@ -107,6 +111,13 @@ export function calculateNumerology(fullName: string, birthDate: string): Numero
     };
   }
 
+  if (!Number.isInteger(targetYear) || targetYear < 1 || targetYear > 9999) {
+    return {
+      status: 'unresolved',
+      reason: `Target year "${targetYear}" is invalid`,
+    };
+  }
+
   // Only calculate if inputs are valid
   const lifePath = calcLifePath(birthDate);
   const birthday = calcBirthday(birthDate);
@@ -114,7 +125,7 @@ export function calculateNumerology(fullName: string, birthDate: string): Numero
   const soulUrge = calcSoulUrge(fullName);
   const personality = calcPersonality(fullName);
   const maturity = calcMaturity(birthDate, fullName);
-  const personalYear = calcPersonalYear(birthDate);
+  const personalYear = calcPersonalYear(birthDate, targetYear);
 
   return {
     status: 'resolved',
@@ -132,7 +143,7 @@ export function calculateNumerology(fullName: string, birthDate: string): Numero
       soulUrge: `Soul Urge ${soulUrge}: deterministic vowel-number mapping, used here as symbolic reflection rather than a factual statement about inner desires.`,
       personality: `Personality Number ${personality}: deterministic consonant-number mapping, used here as symbolic reflection rather than a factual statement about how others perceive you.`,
       maturity: `Maturity Number ${maturity}: deterministic combination of Life Path and Expression, used here as symbolic reflection.`,
-      personalYear: `Personal Year ${personalYear}: deterministic calendar-year cycle under the Soul Codex numerology policy, used as a reflective timing theme rather than a prediction.`
+      personalYear: `Personal Year ${personalYear} for ${targetYear}: deterministic calendar-year cycle under the Soul Codex numerology policy, used as a reflective timing theme rather than a prediction.`
     }
   };
 }
