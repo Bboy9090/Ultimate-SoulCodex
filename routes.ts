@@ -3528,6 +3528,11 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       const { id } = req.params;
       const { settings } = req.body;
 
+      const existingLink = await storage.getShareableLink(id);
+      if (!existingLink || existingLink.userId !== userId) {
+        return res.status(404).json({ message: "Shareable link not found" });
+      }
+
       const updated = await updateShareableLink(storage, id, settings);
       res.json({ message: "Shareable link updated", link: updated });
     } catch (error) {
@@ -3543,6 +3548,11 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       }
 
       const { id } = req.params;
+      const existingLink = await storage.getShareableLink(id);
+      if (!existingLink || existingLink.userId !== userId) {
+        return res.status(404).json({ message: "Shareable link not found" });
+      }
+
       await deactivateShareableLink(storage, id);
       res.json({ message: "Shareable link deactivated" });
     } catch (error) {
