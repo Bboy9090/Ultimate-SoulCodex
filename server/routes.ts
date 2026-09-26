@@ -13,7 +13,6 @@ import {
 } from "@shared/schema";
 import {
   calculateVerifiedAstrology,
-  getTarotBirthCards,
   type AstrologyData,
 } from "./services/astrology-production";
 import { calculateNumerology } from "./services/numerology";
@@ -145,7 +144,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
       const numerologyData = calculateNumerology(birthData.name, birthData.birthDate);
-      const tarotCards = getTarotBirthCards(birthData.birthDate);
       const archetypeData = synthesizeArchetype(astrologyData, numerologyData, {});
       const biography = await generateBiography({
         name: birthData.name,
@@ -179,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         astrologyData,
         numerologyData,
         personalityData: {},
-        archetypeData: { ...archetypeData, tarotCards },
+        archetypeData,
         biography,
         dailyGuidance,
       });
@@ -219,8 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enneagramResult = calculateEnneagram(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "enneagram", responses: assessment.responses, calculatedType: enneagramResult?.type?.toString() || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), enneagram: enneagramResult };
-      const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData);
-      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData, archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards } });
+      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData });
       res.json(serializeProfileForJson(updatedProfile));
     } catch (error) {
       console.error("Error processing Enneagram assessment:", error);
@@ -241,8 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mbtiResult = calculateMBTI(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "mbti", responses: assessment.responses, calculatedType: mbtiResult?.type || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), mbti: mbtiResult };
-      const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData);
-      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData, archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards } });
+      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData });
       res.json(serializeProfileForJson(updatedProfile));
     } catch (error) {
       console.error("Error processing MBTI assessment:", error);
