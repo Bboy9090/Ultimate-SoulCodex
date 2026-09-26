@@ -57,3 +57,76 @@ for (const [label, calculate] of [
     );
   });
 }
+
+
+test('synastry rendered guidance remains symbolic and agency-safe', () => {
+  const houses = Array.from({ length: 12 }, (_, index) => index * 30);
+  const first = chart({
+    northNode: { sign: 'Aries', degree: 10 },
+    southNode: { sign: 'Libra', degree: 10 },
+    vertex: { sign: 'Aries', degree: 10 },
+    ascendant: { sign: 'Aries', degree: 10 },
+    houses,
+  });
+  const second = chart({
+    northNode: { sign: 'Aries', degree: 10 },
+    southNode: { sign: 'Libra', degree: 10 },
+    vertex: { sign: 'Aries', degree: 10 },
+    ascendant: { sign: 'Aries', degree: 10 },
+    houses,
+  });
+
+  const result = calculatePackageSynastry(first, second);
+  const rendered = [
+    ...result.goldenAspects.map((aspect) => aspect.description),
+    ...result.diamondAspects.map((aspect) => aspect.description),
+    ...result.fatedAspects.map((aspect) => aspect.description),
+    ...result.otherAspects.map((aspect) => aspect.description),
+    ...result.houseOverlays.person1Planets.map((overlay) => overlay.significance),
+    ...result.houseOverlays.person2Planets.map((overlay) => overlay.significance),
+    result.chemistry.description,
+    result.commitment.description,
+    result.growth.description,
+    ...result.summary.strengths,
+    ...result.summary.challenges,
+    ...result.summary.soulMateIndicators,
+    result.summary.relationshipType,
+  ].join(' ');
+
+  assert.doesNotMatch(
+    rendered,
+    /destined|meant to happen|telepathic|ultimate soul mate|divine, unconditional love|marriage energy|fated encounter|#1 passion indicator|guaranteed longevity/i,
+  );
+  assert.match(rendered, /symbolic|traditionally|developmental/i);
+});
+
+test('synastry fails closed on malformed house cusp geometry', () => {
+  const invalidHouses = [
+    0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, Number.NaN,
+  ];
+
+  assert.throws(
+    () =>
+      calculatePackageSynastry(
+        chart(),
+        chart({ houses: invalidHouses }),
+      ),
+    /House cusps must contain exactly 12 finite longitudes/,
+  );
+});
+
+test('synastry house overlays are invariant under full-circle cusp shifts', () => {
+  const houses = Array.from({ length: 12 }, (_, index) => index * 30);
+  const shifted = houses.map((longitude) => longitude + 720);
+
+  const base = calculatePackageSynastry(
+    chart({ houses }),
+    chart({ houses }),
+  );
+  const rotated = calculatePackageSynastry(
+    chart({ houses: shifted }),
+    chart({ houses: shifted }),
+  );
+
+  assert.deepEqual(rotated.houseOverlays, base.houseOverlays);
+});
