@@ -2679,8 +2679,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ── Full Cosmic Blueprint — premium AI reading per modality ─────────────
   app.post("/api/blueprint/generate", async (req: any, res) => {
     try {
-      const { profile } = req.body;
-      if (!profile) return res.status(400).json({ error: "profile required" });
+      const requestedProfileId = req.body?.profileId ?? req.body?.profile?.id;
+      if (!requestedProfileId || typeof requestedProfileId !== "string") {
+        return res.status(400).json({
+          error: "saved_profile_required",
+          message: "Blueprint generation requires an owned server-saved profile.",
+        });
+      }
+
+      const trustedProfile = await storage.getProfile(requestedProfileId);
+      const actor = {
+        userId: req.user?.id ?? null,
+        sessionId: req.sessionID ?? null,
+      };
+      if (!trustedProfile || !profileBelongsToActor(trustedProfile, actor)) {
+        // Do not reveal whether another actor's profile ID exists.
+        return res.status(404).json({ message: "Profile not found" });
+      }
 
       // Premium gate: OWNER_PROFILE_ID bypass first (server-side only), then entitlement check
       const ownerProfileId = process.env.OWNER_PROFILE_ID;
@@ -2711,45 +2726,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "premium_required" });
       }
 
-      const num  = profile.numerology ?? {};
-      const astro = profile.astrology ?? profile.natalChart ?? {};
-      const hd   = profile.humanDesign ?? profile.human_design ?? {};
-      const enn  = profile.enneagram ?? {};
-      const name = profile.name ?? "the seeker";
+      const name =
+        typeof trustedProfile.name === "string" && trustedProfile.name.trim()
+          ? trustedProfile.name.trim()
+          : "the seeker";
 
-      const lpNum      = num.lifePathNumber ?? profile.lifePathNumber ?? "unknown";
-      const lpArchetype = { 1:"Pioneer",2:"Diplomat",3:"Communicator",4:"Builder",5:"Explorer",6:"Nurturer",7:"Seeker",8:"Executive",9:"Humanitarian",11:"Intuitive",22:"Master Builder",33:"Teacher" }[lpNum as number] ?? "Pathfinder";
-      const sun     = astro.sun     ?? profile.sunSign    ?? "unknown";
-      const moon    = astro.moon    ?? profile.moonSign   ?? "unknown";
-      const rising  = astro.rising  ?? profile.risingSign ?? "unknown";
-      const hdType  = hd.type       ?? "unknown";
-      const hdAuth  = hd.authority  ?? "";
-      const hdProf  = hd.profile    ?? "";
-      // Legacy Gene Keys, Chiron, and Nodes are excluded from this blueprint
-      // unless/until this route is migrated to the governed verified evidence adapter.
+      let lpNum: number | "unknown" = "unknown";
+      try {
+        if (typeof trustedProfile.birthDate === "string") {
+          lpNum = calcLifePath(trustedProfile.birthDate);
+        }
+      } catch {
+        lpNum = "unknown";
+      }
+      const lpArchetype =
+        lpNum === "unknown"
+          ? "unknown"
+          : ({ 1:"Pioneer",2:"Diplomat",3:"Communicator",4:"Builder",5:"Explorer",6:"Nurturer",7:"Seeker",8:"Executive",9:"Humanitarian",11:"Intuitive",22:"Master Builder",33:"Teacher" }[lpNum] ?? "unknown");
+
+      const verifiedAstrology = extractVerifiedAstrology(trustedProfile);
+      const sun = verifiedAstrology.sun ?? "unknown";
+      const moon = verifiedAstrology.moon ?? "unknown";
+      const rising = verifiedAstrology.rising ?? "unknown";
+
+      const hd = trustedProfile.humanDesignData as any;
+      const hdResolved = hd?.status === "resolved";
+      const hdType = hdResolved && typeof hd.type === "string" ? hd.type : "unknown";
+      const hdAuth = hdResolved && typeof hd.authority === "string" ? hd.authority : "";
+      const hdProf = hdResolved && typeof hd.profile === "string" ? hd.profile : "";
+
+      const personality = trustedProfile.personalityData as any;
+      const assessedEnneagram = personality?.enneagram;
+      const ennType =
+        assessedEnneagram &&
+        (typeof assessedEnneagram.type === "number" || typeof assessedEnneagram.type === "string")
+          ? assessedEnneagram.type
+          : "unknown";
+
+      // Registry-disabled or separately governed systems remain withheld here.
       const chirPl  = "unknown";
       const northN  = "unknown";
       const southN  = "unknown";
-      const ennType = enn.type ?? enn.enneagramType ?? profile.enneagramType ?? "unknown";
       const gkArr: string[] = [];
 
-      // Build planet+house summary for the planets section
-      const planetEntries = Object.entries(astro.planets ?? {}) as [string, Record<string,unknown>][];
-      const houseCusps: number[] = Array.isArray(astro.houses?.cusps) ? astro.houses.cusps : [];
-      const planetSummary = planetEntries.slice(0, 8).map(([planet, p]) => {
-        const sign  = typeof p.sign === "string" ? p.sign : "?";
-        const lon   = typeof p.longitude === "number" ? p.longitude : -1;
-        let houseNum = 0;
-        if (lon >= 0 && houseCusps.length === 12) {
-          for (let i = 0; i < 12; i++) {
-            const start = houseCusps[i];
-            const end   = houseCusps[(i + 1) % 12];
-            const l     = ((lon % 360) + 360) % 360;
-            if (start <= end ? (l >= start && l < end) : (l >= start || l < end)) { houseNum = i + 1; break; }
-          }
-        }
-        return houseNum > 0 ? `${planet} in ${sign} (House ${houseNum})` : `${planet} in ${sign}`;
-      }).join(", ");
+      // Planetary summary accepts only server-saved placements carrying the
+      // verified evidence contract. Houses are omitted from this legacy route
+      // until it consumes the verified house-assignment contract directly.
+      const storedAstrology = trustedProfile.astrologyData as any;
+      const planetEntries = Object.entries(storedAstrology?.planets ?? {}) as [string, Record<string, unknown>][];
+      const verifiedPlanet = (p: Record<string, unknown>): boolean => {
+        const status = p.verificationStatus ?? p.status;
+        const evidence = (p.provenance ?? p.evidence) as any;
+        return (
+          status === "verified" &&
+          typeof p.sign === "string" &&
+          Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt)
+        );
+      };
+      const planetSummary = planetEntries
+        .filter(([, p]) => verifiedPlanet(p))
+        .slice(0, 8)
+        .map(([planet, p]) => `${planet} in ${String(p.sign)}`)
+        .join(", ");
 
       const contextData = `
 User Profile:
