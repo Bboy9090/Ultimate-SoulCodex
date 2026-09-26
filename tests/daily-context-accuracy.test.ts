@@ -14,7 +14,7 @@ import {
   calculateUniversalDayNumber as getPackageUniversalDay,
 } from '../packages/astrology/daily-context';
 import { degreeToGateAndLine } from '../packages/astrology/human-design';
-import { calcUniversalDay } from '../packages/core/compute/personal-numbers';
+import { calcPersonalDay, calcUniversalDay } from '../packages/core/compute/personal-numbers';
 import { selectTemplates } from '../packages/astrology/template-bank';
 
 function expectedPhase(angle: number): string {
@@ -134,12 +134,14 @@ test('profile-local calendar date drives daily numerology while sky context uses
   assert.equal(newYorkDay.currentHDGate, utcDay.currentHDGate);
   assert.equal(newYorkDay.currentHDLine, utcDay.currentHDLine);
 
-  // Calendar numerology is local-date based and may differ across the boundary.
+  // Calendar numerology is local-date based.
   assert.equal(
     newYorkDay.personalDayNumber,
-    getPackageUniversalDay('2026-09-25') === getPackageUniversalDay('2026-09-26')
-      ? newYorkDay.personalDayNumber
-      : newYorkDay.personalDayNumber,
+    calcPersonalDay('1990-09-17', '2026-09-25'),
+  );
+  assert.equal(
+    utcDay.personalDayNumber,
+    calcPersonalDay('1990-09-17', '2026-09-26'),
   );
   assert.equal(newYorkDay.universalDayNumber, getPackageUniversalDay('2026-09-25'));
   assert.equal(utcDay.universalDayNumber, getPackageUniversalDay('2026-09-26'));
