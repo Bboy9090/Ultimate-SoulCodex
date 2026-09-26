@@ -29,7 +29,10 @@ function profile(moonSign = "Virgo") {
     planetaryHouses[key] = key === "sun" || key === "moon" || key === "mercury" ? 10 : ((index + 2) % 12) + 1;
   });
 
-  const zodiac = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+  const equalHouseSigns = [
+    "Scorpio","Sagittarius","Capricorn","Aquarius","Pisces","Aries",
+    "Taurus","Gemini","Cancer","Leo","Virgo","Libra",
+  ];
   return {
     verifiedAstrologyData: {
       planets,
@@ -78,9 +81,9 @@ function profile(moonSign = "Virgo") {
       houses: Array.from({ length: 12 }, (_, index) => ({
         verificationStatus: "verified",
         house: index + 1,
-        sign: zodiac[index],
+        sign: equalHouseSigns[index],
         degree: 12,
-        longitude: index * 30 + 12,
+        longitude: (222 + index * 30) % 360,
         policyId: "ASTRO-EQUAL-HOUSE-v1",
         evidenceArtifactId: "equal-house-fixture",
       })),
