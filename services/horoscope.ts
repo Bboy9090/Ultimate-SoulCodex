@@ -4,7 +4,8 @@ import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { generateText, isGeminiAvailable } from '../gemini';
 import { calculatePersonalDayNumber, getMoonPhase, getMoonSign } from './daily-context';
-import { calculateActiveTransits, extractNatalPositions } from '../transits';
+import { calculateActiveTransits } from '../transits';
+import { extractVerifiedAstrology } from '../server/lib/verified-astrology';
 
 const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
@@ -182,9 +183,62 @@ export function calculateAlignments(planets: PlanetPosition[]): Alignment[] {
   return alignments;
 }
 
+function hasVerificationEvidence(value: any): boolean {
+  const evidence = value?.evidence ?? value?.provenance;
+  return Boolean(
+    value?.verificationStatus === 'verified' &&
+    evidence?.source &&
+    evidence?.engine &&
+    evidence?.calculatedAt
+  );
+}
+
+function placementLongitude(value: any): number | null {
+  const candidate = value?.internalCandidate?.longitude ?? value?.longitude;
+  return typeof candidate === 'number' && Number.isFinite(candidate)
+    ? ((candidate % 360) + 360) % 360
+    : null;
+}
+
+export function extractVerifiedNatalPositions(profile: any): Record<string, { longitude: number; sign: string }> {
+  const astrology = profile?.astrologyData ?? {};
+  const positions: Record<string, { longitude: number; sign: string }> = {};
+  const sourcePlanets = astrology?.planets ?? {};
+
+  for (const [key, value] of Object.entries(sourcePlanets)) {
+    const placement = value as any;
+    const longitude = placementLongitude(placement);
+    if (!hasVerificationEvidence(placement) || longitude === null || typeof placement.sign !== 'string') continue;
+    positions[key.charAt(0).toUpperCase() + key.slice(1)] = { longitude, sign: placement.sign };
+  }
+
+  for (const [label, key] of [['Sun', 'sun'], ['Moon', 'moon']] as const) {
+    if (positions[label]) continue;
+    const placement = astrology?.[key];
+    const longitude = placementLongitude(placement);
+    if (hasVerificationEvidence(placement) && longitude !== null && typeof placement.sign === 'string') {
+      positions[label] = { longitude, sign: placement.sign };
+    }
+  }
+
+  const rising = astrology?.rising ?? astrology?.ascendant;
+  const risingLongitude = placementLongitude(rising);
+  if (hasVerificationEvidence(rising) && risingLongitude !== null && typeof rising.sign === 'string') {
+    positions.Ascendant = { longitude: risingLongitude, sign: rising.sign };
+  }
+
+  const midheaven = astrology?.midheaven;
+  const midheavenLongitude = placementLongitude(midheaven);
+  if (hasVerificationEvidence(midheaven) && midheavenLongitude !== null && typeof midheaven.sign === 'string') {
+    positions.Midheaven = { longitude: midheavenLongitude, sign: midheaven.sign };
+  }
+
+  return positions;
+}
+
 export function calculatePersonalTransitsFromProfile(profile: any, date: Date = new Date()): PersonalTransit[] {
-  if (!profile.astrologyData) return [];
-  const natalPositions = extractNatalPositions(profile.astrologyData);
+  const natalPositions = extractVerifiedNatalPositions(profile);
+  if (Object.keys(natalPositions).length === 0) return [];
   const activeTransits = calculateActiveTransits(natalPositions, date);
   return activeTransits.transits.map(t => ({
     transitingPlanet: t.planet,
@@ -209,8 +263,10 @@ async function generateAIHoroscope(
   personalDayNumber: number,
 ): Promise<string> {
   const name = profile.name || 'you';
-  const sunSign = profile.astrologyData?.sunSign || 'Unknown';
-  const moonSign = profile.astrologyData?.moonSign || 'Unknown';
+  const verifiedAstrology = extractVerifiedAstrology(profile);
+  const sunSign = verifiedAstrology.sun || 'Unresolved';
+  const moonSign = verifiedAstrology.moon || 'Unresolved';
+  const currentMoonSign = planets.find((planet) => planet.name === 'Moon')?.sign || 'Unresolved';
 
   const topAlignments = alignments.slice(0, 3).map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`).join(', ');
   const topTransits = personalTransits.slice(0, 3).map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`).join(', ');
