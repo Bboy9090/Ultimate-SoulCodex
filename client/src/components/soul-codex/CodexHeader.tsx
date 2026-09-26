@@ -24,6 +24,7 @@ interface CodexHeaderProps {
   groundedAction: string;
   calculationConfidence: "High" | "Moderate" | "Low";
   verifiedSystems: string[];
+  generatedAt?: string;
 }
 
 export default function CodexHeader({
@@ -38,6 +39,7 @@ export default function CodexHeader({
   groundedAction,
   calculationConfidence,
   verifiedSystems,
+  generatedAt,
 }: CodexHeaderProps) {
   return (
     <div style={{ marginBottom: "3rem" }}>
@@ -68,7 +70,9 @@ export default function CodexHeader({
             textTransform: "uppercase",
           }}
         >
-          Generated {new Date().toLocaleDateString()}
+          {generatedAt
+            ? `Generated ${new Date(generatedAt).toLocaleDateString()}`
+            : "Generated date unavailable"}
         </div>
       </div>
 
