@@ -1042,90 +1042,71 @@ function getFixedStarsWisdom(): string {
   return 'channels';
 }
 
+const governedDailyNumerology: TemplateVariation[] = [
+  { id: 'daily-num-1', category: 'numerology', template: (ctx) => `Personal Day ${ctx.personalDayNumber} is a symbolic planning lens. Pick one task that matches ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()} and judge the lens by the result.` },
+  { id: 'daily-num-2', category: 'numerology', template: (ctx) => `Use Personal Day ${ctx.personalDayNumber} as an experiment: ${getPersonalDayAction(ctx.personalDayNumber)} Record what actually changes instead of treating the number as a prediction.` },
+  { id: 'daily-num-3', category: 'numerology', template: (ctx) => `Personal Day ${ctx.personalDayNumber} suggests a ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()} theme. Keep it only if it helps you make one clearer decision today.` },
+  { id: 'daily-num-4', category: 'numerology', template: (ctx) => `Universal Day ${ctx.universalDayNumber} is a traditional collective-number lens, not an empirical forecast. Compare ${getUniversalDayTheme(ctx.universalDayNumber).toLowerCase()} with what you actually observe.` },
+  { id: 'daily-num-5', category: 'numerology', template: (ctx) => `Today combines Personal Day ${ctx.personalDayNumber} with Universal Day ${ctx.universalDayNumber}. Use the contrast as a reflection prompt, then prioritize observable conditions over symbolism.` },
+];
+
+const governedDailyAstrology: TemplateVariation[] = [
+  { id: 'daily-astro-1', category: 'astrology', template: (ctx) => `Current Moon: ${ctx.moonSign}, ${ctx.moonPhase}. Treat that calculated sky state as a symbolic reflection prompt, not proof of a mood or event.` },
+  { id: 'daily-astro-2', category: 'astrology', template: (ctx) => `${ctx.moonPhase} is the current lunar phase. If useful, use it to review ${ctx.moonPhase.includes('Waxing') ? 'what you are building' : ctx.moonPhase.includes('Waning') ? 'what you can simplify or release' : 'what has become visible'}; verify the insight against the day itself.` },
+  { id: 'daily-astro-3', category: 'astrology', template: (ctx) => `The Moon is currently in ${ctx.moonSign}. Use that sign only as a symbolic vocabulary for reflection; it does not establish how you feel.` },
+  { id: 'daily-astro-4', category: 'astrology', template: (ctx) => `Current lunar illumination is about ${Math.round(ctx.moonPhasePercentage)}%. That astronomical fact can anchor a phase reflection without turning the sky into a behavioral diagnosis.` },
+  { id: 'daily-astro-5', category: 'astrology', template: (ctx) => `Calculated sky context: Moon in ${ctx.moonSign} during ${ctx.moonPhase}. Ask one concrete question about your actual day before applying any symbolic interpretation.` },
+];
+
+const governedDailyHumanDesign: TemplateVariation[] = [
+  { id: 'daily-hd-1', category: 'humandesign', template: (ctx) => `Human Design transit lens: Gate ${ctx.currentHDGate}.${ctx.currentHDLine}. Because your saved Human Design core is verified, you can compare this symbolic transit theme with lived decisions without treating it as a command.` },
+  { id: 'daily-hd-2', category: 'humandesign', template: (ctx) => `Gate ${ctx.currentHDGate}, Line ${ctx.currentHDLine} is today's calculated Human Design solar position. Use it as an experiment alongside your verified core, not as evidence that a specific event must occur.` },
+  { id: 'daily-hd-3', category: 'humandesign', template: (ctx) => `Today's Human Design gate is ${ctx.currentHDGate}.${ctx.currentHDLine}. Test one interpretation against observable behavior and discard it if it does not fit.` },
+];
+
+function chooseGovernedTemplates(
+  pool: TemplateVariation[],
+  count: number,
+  seed: number,
+  lastUsedIds: string[],
+): TemplateVariation[] {
+  const fresh = pool.filter((template) => !lastUsedIds.includes(template.id));
+  const source = fresh.length >= count ? fresh : pool;
+  const selected: TemplateVariation[] = [];
+  for (let index = 0; index < count && source.length; index += 1) {
+    const candidate = source[(seed + index * 17) % source.length];
+    if (!selected.some((item) => item.id === candidate.id)) selected.push(candidate);
+  }
+  for (const candidate of source) {
+    if (selected.length >= count) break;
+    if (!selected.some((item) => item.id === candidate.id)) selected.push(candidate);
+  }
+  return selected;
+}
+
 export function selectTemplates(
-  dailyContext: DailyContext, 
+  dailyContext: DailyContext,
   profileData: any,
   lastUsedIds: string[] = []
 ): { selectedTemplates: TemplateVariation[]; templateIds: string[] } {
-  // Combine ALL template arrays (original 4 + 15 new systems = 19 total categories covering all 30+ mystical systems)
-  const allTemplates = [
-    ...numerologyTemplates, 
-    ...astrologyTemplates, 
-    ...humanDesignTemplates, 
-    ...personalityTemplates,
-    ...chineseTemplates,
-    ...ayurvedaTemplates,
-    ...vedicTemplates,
-    ...geneKeysTemplates,
-    ...iChingTemplates,
-    ...mayanTemplates,
-    ...chakraTemplates,
-    ...runesTemplates,
-    ...tarotTemplates,
-    ...kabbalahTemplates,
-    ...sacredGeomTemplates,
-    ...sabianTemplates,
-    ...biorhythmsTemplates,
-    ...asteroidsTemplates,
-    ...arabicPartsTemplates,
-    ...fixedStarsTemplates
+  const seed = parseInt(dailyContext.date.replace(/-/g, ''), 10) +
+    (profileData.id ? String(profileData.id).charCodeAt(0) : 0);
+
+  // Daily feed policy: use systems because they add day-specific, qualified
+  // signal—not because the repository happens to contain an implementation.
+  // Static/legacy systems remain explorable elsewhere and never enter this
+  // automatic feed by random rotation.
+  const selected: TemplateVariation[] = [
+    ...chooseGovernedTemplates(governedDailyNumerology, 2, seed, lastUsedIds),
+    ...chooseGovernedTemplates(governedDailyAstrology, profileData.hdVerified ? 1 : 2, seed + 31, lastUsedIds),
   ];
-  
-  const seed = parseInt(dailyContext.date.replace(/-/g, '')) + (profileData.id ? profileData.id.charCodeAt(0) : 0);
-  
-  const availableByCategory: Record<string, TemplateVariation[]> = {
-    numerology: numerologyTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    astrology: astrologyTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    humandesign: humanDesignTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    personality: personalityTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    chinese: chineseTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    ayurveda: ayurvedaTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    vedic: vedicTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    genekeys: geneKeysTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    iching: iChingTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    mayan: mayanTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    chakras: chakraTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    runes: runesTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    tarot: tarotTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    kabbalah: kabbalahTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    sacredgeom: sacredGeomTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    sabian: sabianTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    biorhythms: biorhythmsTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    asteroids: asteroidsTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    arabicparts: arabicPartsTemplates.filter(t => !lastUsedIds.includes(t.id)),
-    fixedstars: fixedStarsTemplates.filter(t => !lastUsedIds.includes(t.id)),
-  };
-  
-  // Reset category if all templates were used
-  Object.keys(availableByCategory).forEach(cat => {
-    if (availableByCategory[cat].length === 0) {
-      availableByCategory[cat] = allTemplates.filter(t => t.category === cat);
-    }
-  });
-  
-  const selected: TemplateVariation[] = [];
-  // Select from FULL expanded categories pool - ALL 15 new advanced systems now included (19 total categories)
-  const allCategories = ['numerology', 'astrology', 'humandesign', 'personality', 'chinese', 'ayurveda', 'vedic', 'genekeys', 'iching', 'mayan', 'chakras', 'runes', 'tarot', 'kabbalah', 'sacredgeom', 'sabian', 'biorhythms', 'asteroids', 'arabicparts', 'fixedstars'];
-  
-  // Shuffle categories deterministically based on date seed
-  const shuffledCategories = allCategories.sort((a, b) => {
-    const hashA = (a.charCodeAt(0) * seed) % 1000;
-    const hashB = (b.charCodeAt(0) * seed) % 1000;
-    return hashA - hashB;
-  });
-  
-  // Select 4 templates from shuffled categories (ensures variety across ALL 30+ mystical systems)
-  for (let i = 0; i < 4 && i < shuffledCategories.length; i++) {
-    const cat = shuffledCategories[i];
-    const options = availableByCategory[cat];
-    if (options && options.length > 0) {
-      const seededIndex = (seed + i * 17) % options.length;
-      selected.push(options[seededIndex]);
-    }
+
+  if (profileData.hdVerified) {
+    selected.push(...chooseGovernedTemplates(governedDailyHumanDesign, 1, seed + 67, lastUsedIds));
   }
-  
+
   return {
-    selectedTemplates: selected,
-    templateIds: selected.map(t => t.id)
+    selectedTemplates: selected.slice(0, 4),
+    templateIds: selected.slice(0, 4).map((template) => template.id),
   };
 }

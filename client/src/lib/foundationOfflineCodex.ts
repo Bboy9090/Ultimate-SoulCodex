@@ -14,6 +14,7 @@ import {
 } from "@soulcodex/core";
 import type { BirthData } from "@shared/schema";
 import { maySystemInfluenceSynthesis } from "@shared/system-visibility";
+import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 
 type Pattern = {
   drive: string;
@@ -858,7 +859,7 @@ export function synthesizeVerifiedFoundationProfile(
     housesMidheaven: maySystemInfluenceSynthesis("housesMidheaven", "verified"),
     nodesChiron: maySystemInfluenceSynthesis("nodesChiron", "verified"),
     humanDesign:
-      humanDesign?.status === "verified" &&
+      hasVerifiedHumanDesignTrust(humanDesign ?? null) &&
       maySystemInfluenceSynthesis("humanDesign", "verified"),
   };
 

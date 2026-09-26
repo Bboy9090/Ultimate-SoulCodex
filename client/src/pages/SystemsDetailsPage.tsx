@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import Navigation from "@/components/navigation";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
+import { getVerifiedPlacement } from "@/lib/placementVerification";
+import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 
 type Placement = {
   sign?: string | null;
@@ -47,8 +49,7 @@ function PlacementRow({
   placement?: Placement;
   legacyValue?: unknown;
 }) {
-  const verified =
-    placement?.verificationStatus === "verified" && textValue(placement.sign);
+  const verified = textValue(getVerifiedPlacement(placement)?.sign);
   const candidate = textValue(placement?.internalCandidate?.sign);
   const legacy = textValue(legacyValue);
 
@@ -143,7 +144,7 @@ export default function SystemsDetailsPage() {
   const numerology = (profile.numerologyData ?? profile.personalNumbers ?? {}) as Record<string, any>;
   const humanDesign = (profile.humanDesignData ?? {}) as Record<string, any>;
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
-  const humanDesignVerified = humanDesignStatus === "verified";
+  const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
 
   const latitude = textValue(profile.latitude);
   const longitude = textValue(profile.longitude);

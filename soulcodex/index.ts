@@ -15,6 +15,7 @@ export function buildSoulProfile(inputs: UserInputs, overrides?: Partial<SoulSig
   const mirrorProfile = analyzeMirror(inputs.mirror);
 
   const reactionMap: any = { fix: "fight", analyze: "adapt", talk: "perform", withdraw: "withdraw" };
+  const decisionMap: any = { fix: "impulse", analyze: "analysis", talk: "consensus", withdraw: "avoidance" };
   const drainMap: any = { chaos: "air", repetition: "earth", lies: "metal", misunderstood: "water" };
 
   const signals: SoulSignals = {
@@ -32,10 +33,12 @@ export function buildSoulProfile(inputs: UserInputs, overrides?: Partial<SoulSig
       inputs.mirror.reaction.join(""),
       inputs.mirror.drain.join(""),
     ].join("|"),
-    pressureStyle: inputs.mirror.reaction.map(r => reactionMap[r]).filter(Boolean) as any,
-    stressElement: inputs.mirror.drain.map(d => drainMap[d]).filter(Boolean) as any,
-    decisionStyle: ["analysis"], // fallback
-    socialEnergy: ["steady"],    // fallback
+    pressureStyle: (overrides?.pressureStyle ?? inputs.mirror.reaction.map(r => reactionMap[r]).filter(Boolean)) as any,
+    stressElement: (overrides?.stressElement ?? inputs.mirror.drain.map(d => drainMap[d]).filter(Boolean)) as any,
+    decisionStyle: (overrides?.decisionStyle ?? inputs.mirror.reaction.map(r => decisionMap[r]).filter(Boolean)) as any,
+    // Social cadence is not collected by the Mirror questionnaire. Keep it
+    // unresolved unless a caller supplies an explicit supported override.
+    socialEnergy: (overrides?.socialEnergy ?? []) as any,
   };
 
   const archetype = chooseArchetype(signals);

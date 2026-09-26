@@ -1,4 +1,6 @@
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
+import { getVerifiedPlacement } from "./placementVerification";
+import { hasVerifiedHumanDesignTrust } from "./profileVerificationReconciliation";
 
 type AnyRecord = Record<string, any>;
 
@@ -162,6 +164,35 @@ function validHouse(value: unknown): number | null {
   return Number.isInteger(n) && n >= 1 && n <= 12 ? n : null;
 }
 
+function governedEvidence(
+  value: AnyRecord | undefined,
+  policyId: string,
+): boolean {
+  return Boolean(
+    value?.verificationStatus === "verified" &&
+    value?.policyId === policyId &&
+    typeof value?.evidenceArtifactId === "string" &&
+    value.evidenceArtifactId.trim().length > 0
+  );
+}
+
+function verifiedSupportingPoint(
+  key: UltimateCodexPoint["key"],
+  point: AnyRecord | undefined,
+): boolean {
+  if (!point || !validSign(point.sign)) return false;
+  if (key === "rising") return Boolean(getVerifiedPlacement(point));
+  if (key === "midheaven") return governedEvidence(point, "ASTRO-EQUAL-HOUSE-v1");
+  if (key === "northNode" || key === "southNode") {
+    return governedEvidence(point, "ASTRO-MEAN-NODE-v1") &&
+      point.mode === "mean" &&
+      validHouse(point.house) !== null;
+  }
+  return governedEvidence(point, "ASTRO-CHIRON-v1") &&
+    point.qualificationMethod === "live-jpl-qualified-against-swiss" &&
+    validHouse(point.house) !== null;
+}
+
 function normalizedLongitude(value: unknown): number | null {
   const n = finiteNumber(value);
   if (n === null) return null;
@@ -289,7 +320,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const placements: UltimateCodexPlacement[] = [];
   for (const key of PLANETS) {
     const placement = astrology?.planets?.[key] as AnyRecord | undefined;
-    if (placement?.verificationStatus !== "verified" || !validSign(placement.sign)) continue;
+    if (!getVerifiedPlacement(placement) || !validSign(placement?.sign)) continue;
     const house = validHouse(astrology?.planetaryHouses?.[key]);
     placements.push({
       key,
@@ -305,7 +336,11 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
 
   const houseCusps = Array.isArray(astrology?.houses)
     ? astrology.houses
-        .filter((row: AnyRecord) => row?.verificationStatus === "verified" && validHouse(row?.house) && validSign(row?.sign))
+        .filter((row: AnyRecord) =>
+          governedEvidence(row, "ASTRO-EQUAL-HOUSE-v1") &&
+          validHouse(row?.house) !== null &&
+          validSign(row?.sign)
+        )
         .map((row: AnyRecord) => ({
           house: Number(row.house),
           sign: String(row.sign),
@@ -324,7 +359,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ["chiron", "Chiron", astrology?.chiron, validHouse(astrology?.chiron?.house)],
   ] as const;
   for (const [key, label, point, house] of pointSpecs) {
-    if (point?.verificationStatus !== "verified" || !validSign(point?.sign)) continue;
+    if (!verifiedSupportingPoint(key, point as AnyRecord | undefined)) continue;
     supportingPoints.push({
       key,
       label,
@@ -341,7 +376,8 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
           typeof row?.planet1 === "string" &&
           typeof row?.planet2 === "string" &&
           typeof row?.aspect === "string" &&
-          finiteNumber(row?.orb) !== null
+          finiteNumber(row?.orb) !== null &&
+          row?.policyId === "ASTRO-ASPECT-MAJOR-v1"
         )
         .map((row: AnyRecord) => ({
           planet1: String(row.planet1),
@@ -372,7 +408,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
   const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
 
-  const verifiedHd = hd?.status === "verified";
+  const verifiedHd = hasVerifiedHumanDesignTrust(hd);
   const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
   const hdStrategy = verifiedHd && typeof hd.strategy === "string" ? hd.strategy.trim() : null;
   const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : null;

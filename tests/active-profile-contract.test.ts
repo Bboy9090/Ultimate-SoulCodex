@@ -79,6 +79,153 @@ test("canonical active Soul Profile contract", async (t) => {
     }), "partial");
   });
 
+  await t.test("canonical save downgrades verified astrology labels that lack provenance", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    saveActiveProfile({
+      birthDate: "1990-09-17",
+      astrologyData: {
+        sun: { sign: "Virgo", verificationStatus: "verified" },
+        moon: { sign: "Cancer", status: "verified" },
+        rising: { sign: null, verificationStatus: "verified" },
+        planets: {
+          mercury: { sign: "Libra", verificationStatus: "verified" },
+        },
+      },
+    });
+
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "pending_independent_verification");
+    assert.strictEqual(restored?.astrologyData?.moon?.status, "pending_independent_verification");
+    assert.strictEqual(restored?.astrologyData?.rising?.verificationStatus, "unresolved");
+    assert.strictEqual(restored?.astrologyData?.planets?.mercury?.verificationStatus, "pending_independent_verification");
+  });
+
+  await t.test("canonical save downgrades Human Design verified status without trust receipt", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    saveActiveProfile({
+      birthDate: "1990-09-17",
+      humanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    });
+
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.humanDesignData?.status, "calculated_unverified");
+  });
+
+  await t.test("canonical save preserves Human Design verified status with complete trust receipt", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    const humanDesignData = {
+      status: "verified",
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      engine: "soulcodex-hd-geocentric-v1",
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: "35474994858:human-design-repair-audit",
+      independentSource: "free-human-design@1.0.1 differential verifier",
+      verifiedAt: "2026-09-19T23:03:08.000Z",
+    };
+
+    saveActiveProfile({ birthDate: "1990-09-17", humanDesignData });
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.humanDesignData?.status, "verified");
+    assert.strictEqual(restored?.humanDesignData?.verificationReceiptId, humanDesignData.verificationReceiptId);
+  });
+
+  await t.test("canonical save rejects malformed verification timestamps", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    saveActiveProfile({
+      birthDate: "1990-09-17",
+      astrologyData: {
+        sun: {
+          sign: "Virgo",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+      },
+      humanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        engine: "soulcodex-hd-geocentric-v1",
+        source: "Soul Codex deterministic Human Design core engine",
+        calculatedAt: "not-a-date",
+        inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+        verificationReceiptId: "receipt",
+        independentSource: "reference",
+        verifiedAt: "2026-09-19T23:03:08.000Z",
+      },
+    });
+
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "pending_independent_verification");
+    assert.strictEqual(restored?.humanDesignData?.status, "calculated_unverified");
+  });
+
+  await t.test("canonical save preserves verified astrology when provenance is complete", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    saveActiveProfile({
+      birthDate: "1990-09-17",
+      astrologyData: {
+        sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+      },
+    });
+
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "verified");
+    assert.deepEqual(restored?.astrologyData?.sun?.evidence, evidence);
+  });
+
+  await t.test("malformed placement timestamps cannot produce verified confidence", () => {
+    assert.strictEqual(deriveConfidenceState({
+      birthDate: "1990-09-17",
+      astrologyData: {
+        sun: {
+          sign: "Virgo",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+        moon: {
+          sign: "Cancer",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+        rising: {
+          sign: "Scorpio",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+      },
+    }), "partial");
+  });
+
   await t.test("requires evidence-complete verified placements for verified confidence", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),

@@ -1,3 +1,5 @@
+import { hasApprovedVerifiedHumanDesignTrust } from "../../server/services/human-design-trust";
+
 /**
  * Shared types for all Codex tools.
  * Every tool produces a CodexToolResult following Observation → Meaning → Action.
@@ -30,6 +32,12 @@ export function extractCore(profile: ProfileInput) {
   const astro = profile?.astrologyData || {};
   const numData = profile?.numerologyData || {};
   const hdData = profile?.humanDesignData || {};
+  const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(hdData) ? hdData : null;
+  const verifiedHumanDesignFields = verifiedHumanDesign
+    ? ((verifiedHumanDesign.candidate && typeof verifiedHumanDesign.candidate === "object")
+        ? verifiedHumanDesign.candidate
+        : (hdData as Record<string, any>))
+    : {};
   const elemData = profile?.elementalMedicineData || {};
   const archData = profile?.archetypeData || profile?.archetype || {};
   const synth = profile?.synthesis || {};
@@ -40,9 +48,9 @@ export function extractCore(profile: ProfileInput) {
     moonSign: astro?.moonSign || profile?.moonSign || "",
     risingSign: astro?.risingSign || profile?.risingSign || "",
     lifePath: numData?.lifePath || profile?.lifePath || "",
-    hdType: hdData?.type || profile?.hdType || "",
-    hdStrategy: hdData?.strategy || "",
-    hdAuthority: hdData?.authority || "",
+    hdType: verifiedHumanDesignFields.type || "",
+    hdStrategy: verifiedHumanDesignFields.strategy || "",
+    hdAuthority: verifiedHumanDesignFields.authority || "",
     primaryElement: elemData?.primaryElement || archData?.element || profile?.element || "",
     secondaryElement: elemData?.secondaryElement || "",
     archetype: archData?.archetype || archData?.name ||

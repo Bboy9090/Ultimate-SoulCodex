@@ -4,7 +4,8 @@ import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { generateText, isGeminiAvailable } from '../gemini';
 import { calculatePersonalDayNumber, getMoonPhase, getMoonSign } from './daily-context';
-import { calculateActiveTransits, extractNatalPositions } from '../transits';
+import { calculateActiveTransits } from '../transits';
+import { extractVerifiedAstrology } from '../server/lib/verified-astrology';
 
 const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
@@ -182,9 +183,66 @@ export function calculateAlignments(planets: PlanetPosition[]): Alignment[] {
   return alignments;
 }
 
+function hasVerificationEvidence(value: any): boolean {
+  const evidence = value?.evidence ?? value?.provenance;
+  return Boolean(
+    value?.verificationStatus === 'verified' &&
+    evidence?.source &&
+    evidence?.engine &&
+    evidence?.calculatedAt
+  );
+}
+
+function placementLongitude(value: any): number | null {
+  const candidate = value?.internalCandidate?.longitude ?? value?.longitude;
+  if (typeof candidate !== 'number' || !Number.isFinite(candidate)) return null;
+
+  // Modulo normalization can introduce IEEE-754 noise (for example
+  // 174.2 -> 174.20000000000005). Keep the verified source longitude
+  // numerically stable without reducing meaningful ephemeris precision.
+  const normalized = ((candidate % 360) + 360) % 360;
+  return Math.round(normalized * 1e12) / 1e12;
+}
+
+export function extractVerifiedNatalPositions(profile: any): Record<string, { longitude: number; sign: string }> {
+  const astrology = profile?.astrologyData ?? {};
+  const positions: Record<string, { longitude: number; sign: string }> = {};
+  const sourcePlanets = astrology?.planets ?? {};
+
+  for (const [key, value] of Object.entries(sourcePlanets)) {
+    const placement = value as any;
+    const longitude = placementLongitude(placement);
+    if (!hasVerificationEvidence(placement) || longitude === null || typeof placement.sign !== 'string') continue;
+    positions[key.charAt(0).toUpperCase() + key.slice(1)] = { longitude, sign: placement.sign };
+  }
+
+  for (const [label, key] of [['Sun', 'sun'], ['Moon', 'moon']] as const) {
+    if (positions[label]) continue;
+    const placement = astrology?.[key];
+    const longitude = placementLongitude(placement);
+    if (hasVerificationEvidence(placement) && longitude !== null && typeof placement.sign === 'string') {
+      positions[label] = { longitude, sign: placement.sign };
+    }
+  }
+
+  const rising = astrology?.rising ?? astrology?.ascendant;
+  const risingLongitude = placementLongitude(rising);
+  if (hasVerificationEvidence(rising) && risingLongitude !== null && typeof rising.sign === 'string') {
+    positions.Ascendant = { longitude: risingLongitude, sign: rising.sign };
+  }
+
+  const midheaven = astrology?.midheaven;
+  const midheavenLongitude = placementLongitude(midheaven);
+  if (hasVerificationEvidence(midheaven) && midheavenLongitude !== null && typeof midheaven.sign === 'string') {
+    positions.Midheaven = { longitude: midheavenLongitude, sign: midheaven.sign };
+  }
+
+  return positions;
+}
+
 export function calculatePersonalTransitsFromProfile(profile: any, date: Date = new Date()): PersonalTransit[] {
-  if (!profile.astrologyData) return [];
-  const natalPositions = extractNatalPositions(profile.astrologyData);
+  const natalPositions = extractVerifiedNatalPositions(profile);
+  if (Object.keys(natalPositions).length === 0) return [];
   const activeTransits = calculateActiveTransits(natalPositions, date);
   return activeTransits.transits.map(t => ({
     transitingPlanet: t.planet,
@@ -209,8 +267,10 @@ async function generateAIHoroscope(
   personalDayNumber: number,
 ): Promise<string> {
   const name = profile.name || 'you';
-  const sunSign = profile.astrologyData?.sunSign || 'Unknown';
-  const moonSign = profile.astrologyData?.moonSign || 'Unknown';
+  const verifiedAstrology = extractVerifiedAstrology(profile);
+  const sunSign = verifiedAstrology.sun || 'Unresolved';
+  const moonSign = verifiedAstrology.moon || 'Unresolved';
+  const currentMoonSign = planets.find((planet) => planet.name === 'Moon')?.sign || 'Unresolved';
 
   const topAlignments = alignments.slice(0, 3).map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`).join(', ');
   const topTransits = personalTransits.slice(0, 3).map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`).join(', ');
@@ -219,62 +279,65 @@ async function generateAIHoroscope(
 You are the final synthesis layer of Soul Codex.
 Your job is to expose ${name}'s behavioral pattern today with surgical accuracy, grounded realism, and zero system leakage.
 
-Identity Data:
-- Sun in ${sunSign}, Moon in ${moonSign}
-- Today's sky: ${topAlignments || 'no major alignments'}
+Evidence layers:
+- Verified natal Sun: ${sunSign}
+- Verified natal Moon: ${moonSign}
+- Current Moon sign: ${currentMoonSign}
+- Calculated current-sky alignments: ${topAlignments || 'no major alignments'}
 - Personal transits: ${topTransits || 'none exact today'}
 - Moon phase: ${moonPhase.phase}
 - Personal day number: ${personalDayNumber}
 
 CORE DIRECTIVE:
 - Write in FIRST PERSON (I/my/me) as if ${name} is reading their own inner voice.
-- Expose the behavioral loop today. Focus on what I DO, what others notice, and the observable loop.
-- One sentence for the loop, one for the pressure/stress response, one for a practical build pattern.
+- Write a reflection hypothesis, not a diagnosis or prediction. Focus on an observable behavior the user can confirm or reject.
+- Verified natal placements may explain a symbolic lens; current sky may supply context; neither proves a mood, event, or personality trait.
+- One sentence for the possible loop, one for the observable tension, one for a practical experiment.
 
 🚫 HARD BLOCKS:
 - No "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency".
 - No advice or suggestions.
-- No placeholders or "unknown".
+- If a natal field is Unresolved, do not infer it or use it as personality evidence.
+- Do not claim astrology or numerology caused an event, feeling, or decision.
 - No poetic filler.
 
 Return ONLY the behavioral synthesis text (2-3 sentences).
 `;
 
   if (!isGeminiAvailable()) {
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   }
 
   try {
     const result = await generateText({ model: 'gemini-2.5-flash', temperature: 0.8, prompt });
     if (result && result.trim().length > 20) return result.trim();
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   } catch (err) {
     console.error('[Horoscope] AI generation failed, using fallback:', err);
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   }
 }
 
 function generateFallbackHoroscope(
-  sunSign: string,
-  moonSign: string,
+  currentMoonSign: string,
   moonPhase: { phase: string; percentage: number },
   personalDayNumber: number,
   alignments: Alignment[],
   personalTransits: PersonalTransit[],
 ): string {
   const dayThemes: Record<number, string> = {
-    1: 'I feel a push to start something new — initiative comes naturally if I stop overthinking.',
-    2: 'I do better today by listening more than talking. Cooperation over competition.',
-    3: 'My words carry weight today. Expressing what I actually feel unlocks stuck energy.',
-    4: 'Structure calms me down today. Making a list or organizing my space resets my focus.',
-    5: 'Restlessness means I need variety. Break a routine — even a small one.',
-    6: 'Responsibility pulls at me. I show up for someone today and it matters more than I think.',
-    7: 'I need space to think. Solitude is not avoidance today — it is fuel.',
-    8: 'Power dynamics surface. I notice where I give my authority away and I stop doing it.',
-    9: 'Completion energy. I finish what I have been avoiding and feel lighter for it.',
-    11: 'Heightened intuition. I trust the first instinct before my mind talks me out of it.',
-    22: 'I can build something lasting today if I commit to the work instead of the idea.',
-    33: 'My presence matters more than my performance. Just being steady helps others around me.',
+    1: 'Personal Day 1 lens: choose one concrete beginning and define the first visible step.',
+    2: 'Personal Day 2 lens: test whether listening, coordination, or patience improves the next interaction.',
+    3: 'Personal Day 3 lens: put one idea into words or a creative form and see what becomes clearer.',
+    4: 'Personal Day 4 lens: create one small piece of structure that makes the rest of the day easier to navigate.',
+    5: 'Personal Day 5 lens: introduce one deliberate change instead of treating restlessness as a command.',
+    6: 'Personal Day 6 lens: choose one responsibility worth caring for and set a boundary around the rest.',
+    7: 'Personal Day 7 lens: make room for reflection, then separate what you observed from what you assumed.',
+    8: 'Personal Day 8 lens: review one decision involving resources, authority, or execution and make the next criterion explicit.',
+    9: 'Personal Day 9 lens: close one open loop that no longer needs more analysis.',
+    11: 'Personal Day 11 lens: record the first impression, then verify it before treating intuition as fact.',
+    22: 'Personal Day 22 lens: turn one ambitious idea into a load-bearing step you can actually complete.',
+    33: 'Personal Day 33 lens: choose one act of care that is sustainable rather than overextending yourself.',
   };
 
   const dayMessage = dayThemes[personalDayNumber] || dayThemes[personalDayNumber % 10] || dayThemes[1]!;
@@ -282,16 +345,24 @@ function generateFallbackHoroscope(
   let transitNote = '';
   if (personalTransits.length > 0) {
     const top = personalTransits[0];
-    transitNote = ` ${top.transitingPlanet} ${top.aspect.toLowerCase()} my natal ${top.natalPlanet} — ${top.interpretation.split('.')[0]}.`;
+    transitNote = ` Verified personal transit: ${top.transitingPlanet} ${top.aspect.toLowerCase()} natal ${top.natalPlanet}. Symbolic transit lens: ${top.interpretation.split('.')[0]}.`;
   }
 
   let alignmentNote = '';
   if (alignments.length > 0) {
     const top = alignments[0];
-    alignmentNote = ` ${top.interpretation.split('.')[0]}.`;
+    alignmentNote = ` Current-sky aspect lens: ${top.interpretation.split('.')[0]}.`;
   }
 
-  return `${dayMessage}${transitNote}${alignmentNote} The ${moonPhase.phase.toLowerCase()} in ${moonSign} reminds me to ${moonPhase.phase.includes('Waxing') ? 'build momentum' : moonPhase.phase.includes('Waning') ? 'release what is not working' : moonPhase.phase.includes('Full') ? 'see clearly what I have been avoiding' : 'plant a seed of intention'}.`;
+  const phaseLens = moonPhase.phase.includes('Waxing')
+    ? 'building momentum'
+    : moonPhase.phase.includes('Waning')
+      ? 'reviewing what can be released'
+      : moonPhase.phase.includes('Full')
+        ? 'reviewing what has become visible'
+        : 'choosing one new intention';
+
+  return `${dayMessage}${transitNote}${alignmentNote} Current Moon: ${currentMoonSign}, ${moonPhase.phase}. I use that calculated sky state as a symbolic prompt for ${phaseLens}, not as proof of a mood or event.`;
 }
 
 const horoscopeCache = new Map<string, DailyHoroscope>();

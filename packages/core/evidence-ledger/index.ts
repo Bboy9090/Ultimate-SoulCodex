@@ -38,7 +38,9 @@ export {
   calcPersonalYearWithEvidence,
   calcPersonalMonthWithEvidence,
   calcLifePathWithEvidence,
+  calcBirthdayWithEvidence,
   calcExpressionWithEvidence,
   calcSoulUrgeWithEvidence,
   calcPersonalityWithEvidence,
+  calcMaturityWithEvidence,
 } from './integrations.js';

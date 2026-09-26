@@ -10,7 +10,7 @@ import VerifiedNatalChart from "@/components/VerifiedNatalChart";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
-import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
+import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDesignTrust, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
@@ -90,7 +90,7 @@ export default function OfflineProfilePage() {
   const verifiedSouthNode = verifiedAstrology?.southNode;
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, unknown>;
-  const verifiedHumanDesign = humanDesign.status === "verified" ? humanDesign : null;
+  const verifiedHumanDesign = hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
   const ultimateCodex = useMemo(
     () => buildUltimateCodexSynthesis(reconciledProfile ?? {}),
     [reconciledProfile],

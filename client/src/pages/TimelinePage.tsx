@@ -23,6 +23,11 @@ import {
 import TimelineIntelligence from "../components/TimelineIntelligence";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
+import {
+  getVerifiedAstrologySign,
+  hasVerifiedFullNatalChart,
+  hasVerifiedHumanDesignTrust,
+} from "../lib/profileVerificationReconciliation";
 
 type Phase = {
   label: string;
@@ -90,8 +95,12 @@ export default function TimelinePage() {
   const profileContext = useMemo(() => {
     const astrology = (profile?.astrologyData ?? {}) as Record<string, any>;
     const humanDesign = (profile?.humanDesignData ?? {}) as Record<string, any>;
-    const houses = Object.values(astrology.planetaryHouses ?? {})
-      .filter((value): value is number => Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12);
+    const fullNatalVerified = hasVerifiedFullNatalChart(astrology);
+    const hdVerified = hasVerifiedHumanDesignTrust(humanDesign);
+    const houses = fullNatalVerified
+      ? Object.values(astrology.planetaryHouses ?? {})
+          .filter((value): value is number => Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12)
+      : [];
     const houseCounts = houses.reduce<Record<number, number>>((counts, house) => {
       counts[house] = (counts[house] ?? 0) + 1;
       return counts;
@@ -99,11 +108,14 @@ export default function TimelinePage() {
     const dominantHouse = Object.entries(houseCounts)
       .sort((left, right) => right[1] - left[1] || Number(left[0]) - Number(right[0]))[0];
     return {
-      rising: astrology.rising?.verificationStatus === "verified" ? astrology.rising.sign as string : null,
-      midheaven: astrology.midheaven?.verificationStatus === "verified" ? astrology.midheaven.sign as string : null,
+      rising: getVerifiedAstrologySign(astrology, "rising"),
+      midheaven:
+        fullNatalVerified && astrology.midheaven?.verificationStatus === "verified"
+          ? astrology.midheaven.sign as string
+          : null,
       dominantHouse: dominantHouse ? Number(dominantHouse[0]) : null,
       dominantHouseCount: dominantHouse ? dominantHouse[1] : 0,
-      hdVerified: humanDesign.status === "verified",
+      hdVerified,
       hdType: humanDesign.type as string | undefined,
       hdStrategy: humanDesign.strategy as string | undefined,
       hdAuthority: humanDesign.authority as string | undefined,

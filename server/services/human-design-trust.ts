@@ -84,11 +84,25 @@ function isValidIsoTimestamp(value: string): boolean {
 }
 
 const HUMAN_DESIGN_STRATEGY_BY_TYPE = Object.freeze({
-  Manifestor: "To Inform",
-  Generator: "To Respond",
-  "Manifesting Generator": "To Respond & Inform",
-  Projector: "To Wait for Invitation",
-  Reflector: "To Wait a Lunar Cycle",
+  Manifestor: Object.freeze(["to inform", "inform"]),
+  Generator: Object.freeze(["to respond", "respond"]),
+  "Manifesting Generator": Object.freeze([
+    "to respond & inform",
+    "to respond and inform",
+    "respond & inform",
+    "respond and inform",
+  ]),
+  Projector: Object.freeze([
+    "to wait for invitation",
+    "wait for invitation",
+    "wait for the invitation",
+  ]),
+  Reflector: Object.freeze([
+    "to wait a lunar cycle",
+    "wait a lunar cycle",
+    "wait for lunar month",
+    "wait a full lunar cycle",
+  ]),
 } as const);
 
 const HUMAN_DESIGN_AUTHORITIES_BY_TYPE: Readonly<
@@ -122,8 +136,12 @@ function completeVerifiedCandidate(
   if (!(type in HUMAN_DESIGN_STRATEGY_BY_TYPE)) return null;
 
   const supportedType = type as keyof typeof HUMAN_DESIGN_STRATEGY_BY_TYPE;
-  if (strategy !== HUMAN_DESIGN_STRATEGY_BY_TYPE[supportedType]) return null;
-  if (!HUMAN_DESIGN_AUTHORITIES_BY_TYPE[supportedType].includes(authority)) return null;
+  const normalizedStrategy = strategy.toLowerCase().replace(/\s+/g, " ");
+  const normalizedAuthority = authority.toLowerCase().replace(/\s+/g, " ");
+  if (!HUMAN_DESIGN_STRATEGY_BY_TYPE[supportedType].includes(normalizedStrategy as never)) return null;
+  if (!HUMAN_DESIGN_AUTHORITIES_BY_TYPE[supportedType]
+    .map((value) => value.toLowerCase())
+    .includes(normalizedAuthority)) return null;
   if (!/^[1-6]\/[1-6]$/.test(profile)) return null;
 
   return { type, strategy, authority, profile };
@@ -224,6 +242,30 @@ export function createVerifiedHumanDesignTrustRecord(input: {
       "Advanced values such as Variables and Incarnation Cross naming remain outside HUMAN-DESIGN-CORE-v1 and must not be presented as independently verified facts.",
     ]),
   };
+}
+
+export function hasApprovedVerifiedHumanDesignTrust(
+  value: unknown,
+): value is HumanDesignVerifiedEvidence {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  const candidate = completeVerifiedCandidate(
+    (record.candidate && typeof record.candidate === "object" && !Array.isArray(record.candidate))
+      ? record.candidate as HumanDesignCandidateFields
+      : record as HumanDesignCandidateFields,
+  );
+  if (!candidate) return false;
+
+  return Boolean(
+    record.status === "verified" &&
+    record.engine === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.engine &&
+    record.verificationReceiptId === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.verificationReceiptId &&
+    record.independentSource === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.independentSource &&
+    record.verifiedAt === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.approvedAt &&
+    typeof record.source === "string" && record.source.trim() &&
+    typeof record.calculatedAt === "string" && isValidIsoTimestamp(record.calculatedAt) &&
+    typeof record.inputTimestampUtc === "string" && isValidIsoTimestamp(record.inputTimestampUtc)
+  );
 }
 
 export function getVerifiedHumanDesignField(

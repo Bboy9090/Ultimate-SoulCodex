@@ -5,12 +5,14 @@ import {
   calcPersonalYearWithEvidence,
   calcPersonalMonthWithEvidence,
   calcLifePathWithEvidence,
+  calcBirthdayWithEvidence,
   calcExpressionWithEvidence,
   calcSoulUrgeWithEvidence,
   calcPersonalityWithEvidence,
+  calcMaturityWithEvidence,
 } from '../integrations.js';
 
-describe('Numerology Evidence Integration - All 7 Calculations', () => {
+describe('Numerology Evidence Integration - Canonical 9 Calculations', () => {
   describe('Personal Day Evidence', () => {
     it('should deterministically calculate Personal Day with valid birth date', () => {
       const birthDate = '1990-08-15';
@@ -119,6 +121,15 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
       assert.strictEqual(result.evidence.inputState, 'invalid');
     });
+
+    it('should fail closed for explicit invalid target year instead of substituting the current year', () => {
+      const result = calcPersonalYearWithEvidence('1990-08-15', 0);
+
+      assert.strictEqual(result.value, undefined);
+      assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(result.evidence.inputState, 'invalid');
+      assert.ok(result.evidence.reasoning.some((reason) => reason.includes('Target year 0')));
+    });
   });
 
   describe('Personal Month Evidence', () => {
@@ -132,6 +143,18 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok(result1.value >= 1 && result1.value <= 9);
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-month');
+    });
+
+    it('should preserve supported master Personal Years in evidence-backed Personal Month calculations', () => {
+      for (const personalYear of [11, 22, 33]) {
+        const result = calcPersonalMonthWithEvidence(personalYear, 7);
+
+        assert.strictEqual(result.evidence.calculationStatus, 'resolved');
+        assert.strictEqual(result.evidence.inputState, 'valid');
+        assert.strictEqual(typeof result.value, 'number');
+        assert.strictEqual(result.evidence.value, result.value);
+        assert.ok(result.evidence.inputsUsed.includes(`personal_year_${personalYear}`));
+      }
     });
 
     it('should fail closed for invalid personal year', () => {
@@ -167,7 +190,7 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result1.value));
       assert.strictEqual(result1.evidence.formulaId, 'numerology.life-path');
-      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
+      assert.strictEqual(result1.evidence.formulaVersion, 'pythagorean-v2');
     });
 
     it('should fail closed for missing birth date', () => {
@@ -200,6 +223,49 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
 
       assert.strictEqual(result.evidence.engine, 'numerology');
       assert.strictEqual(result.evidence.claim, 'Life Path Number');
+    });
+  });
+
+  describe('Birthday Evidence', () => {
+    it('calculates the Birthday Number with canonical provenance', () => {
+      const result = calcBirthdayWithEvidence('1990-09-17');
+      assert.strictEqual(result.value, 8);
+      assert.strictEqual(result.evidence.formulaId, 'numerology.birthday');
+      assert.strictEqual(result.evidence.formulaVersion, 'pythagorean-v2');
+      assert.strictEqual(result.evidence.calculationStatus, 'resolved');
+    });
+
+    it('fails closed for an invalid calendar date', () => {
+      const result = calcBirthdayWithEvidence('1990-02-30');
+      assert.strictEqual(result.value, undefined);
+      assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(result.evidence.inputState, 'invalid');
+    });
+  });
+
+  describe('Maturity Evidence', () => {
+    it('calculates Maturity from the same canonical Life Path and Expression engine', () => {
+      const result = calcMaturityWithEvidence('1990-09-17', 'Robert Gonzalez');
+      assert.strictEqual(result.value, 4);
+      assert.strictEqual(result.evidence.formulaId, 'numerology.maturity');
+      assert.strictEqual(result.evidence.formulaVersion, 'pythagorean-v2');
+      assert.strictEqual(result.evidence.calculationStatus, 'resolved');
+    });
+
+    it('accepts accented names when the canonical numerology engine can normalize them', () => {
+      const accented = calcMaturityWithEvidence('1990-09-17', 'José González');
+      const ascii = calcMaturityWithEvidence('1990-09-17', 'Jose Gonzalez');
+
+      assert.strictEqual(accented.evidence.calculationStatus, 'resolved');
+      assert.strictEqual(accented.value, ascii.value);
+      assert.strictEqual(accented.evidence.inputState, 'valid');
+    });
+
+    it('fails closed when either required input is invalid', () => {
+      const missingName = calcMaturityWithEvidence('1990-09-17', '');
+      const invalidDate = calcMaturityWithEvidence('1990-02-30', 'Robert Gonzalez');
+      assert.strictEqual(missingName.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(invalidDate.evidence.calculationStatus, 'unresolved');
     });
   });
 
@@ -327,6 +393,22 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
     });
   });
 
+  describe('Canonical Unicode Name Normalization', () => {
+    it('keeps evidence-backed name calculations in parity with transliterated equivalents', () => {
+      for (const calculate of [
+        calcExpressionWithEvidence,
+        calcSoulUrgeWithEvidence,
+        calcPersonalityWithEvidence,
+      ]) {
+        const accented = calculate('José González');
+        const ascii = calculate('Jose Gonzalez');
+        assert.strictEqual(accented.evidence.calculationStatus, 'resolved');
+        assert.strictEqual(accented.evidence.inputState, 'valid');
+        assert.strictEqual(accented.value, ascii.value);
+      }
+    });
+  });
+
   describe('Cross-Calculation Consistency', () => {
     it('should produce evidence entries for all 7 calculation types with valid inputs', () => {
       const birthDate = '1990-08-15';
@@ -337,11 +419,13 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       const personalYear = calcPersonalYearWithEvidence(birthDate, 2026);
       const personalMonth = calcPersonalMonthWithEvidence(6, 7);
       const lifePath = calcLifePathWithEvidence(birthDate);
+      const birthday = calcBirthdayWithEvidence(birthDate);
       const expression = calcExpressionWithEvidence(fullName);
       const soulUrge = calcSoulUrgeWithEvidence(fullName);
       const personality = calcPersonalityWithEvidence(fullName);
+      const maturity = calcMaturityWithEvidence(birthDate, fullName);
 
-      [personalDay, personalYear, personalMonth, lifePath, expression, soulUrge, personality].forEach(
+      [personalDay, personalYear, personalMonth, lifePath, birthday, expression, soulUrge, personality, maturity].forEach(
         (result) => {
           assert.strictEqual(result.evidence.engine, 'numerology');
           assert.ok(result.evidence.claim);
@@ -365,9 +449,11 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
         calcPersonalYearWithEvidence(birthDate, 2026),
         calcPersonalMonthWithEvidence(6, 7),
         calcLifePathWithEvidence(birthDate),
+        calcBirthdayWithEvidence(birthDate),
         calcExpressionWithEvidence(fullName),
         calcSoulUrgeWithEvidence(fullName),
         calcPersonalityWithEvidence(fullName),
+        calcMaturityWithEvidence(birthDate, fullName),
       ];
 
       allResults.forEach((result) => {
@@ -385,9 +471,11 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
         calcPersonalYearWithEvidence('invalid-date', 2026),
         calcPersonalMonthWithEvidence(15, 7),
         calcLifePathWithEvidence(''),
+        calcBirthdayWithEvidence(''),
         calcExpressionWithEvidence(''),
         calcSoulUrgeWithEvidence('123'),
         calcPersonalityWithEvidence(''),
+        calcMaturityWithEvidence('', ''),
       ];
 
       invalidCases.forEach((result) => {
@@ -469,9 +557,11 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
         calcPersonalYearWithEvidence(birthDate, 2026),
         calcPersonalMonthWithEvidence(6, 7),
         calcLifePathWithEvidence(birthDate),
+        calcBirthdayWithEvidence(birthDate),
         calcExpressionWithEvidence(fullName),
         calcSoulUrgeWithEvidence(fullName),
         calcPersonalityWithEvidence(fullName),
+        calcMaturityWithEvidence(birthDate, fullName),
       ];
 
       results.forEach((result) => {
