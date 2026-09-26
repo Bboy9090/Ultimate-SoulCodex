@@ -182,3 +182,19 @@ test("legacy profile PDF route uses the canonical natal report contract", () => 
   assert.doesNotMatch(source, /Guidance based on your dominant elements/);
   assert.doesNotMatch(source, /Analysis of your life focus areas/);
 });
+
+
+test("natal report rejects non-canonical stored birth timestamps", () => {
+  const profile = evidenceProfile();
+  profile.birthDate = new Date("1990-09-17T11:11:00.000Z");
+
+  assert.throws(
+    () => buildNatalReportInput(profile),
+    /non-canonical.*ambiguous/i,
+  );
+});
+
+test("natal report preserves canonical stored civil birth date", () => {
+  const report = buildNatalReportInput(evidenceProfile());
+  assert.equal(report.birthDate, "1990-09-17");
+});
