@@ -58,6 +58,7 @@ node --import tsx --test \
   tests/technical-appendix-truth.test.ts \
   tests/systems-details-registry-ui.test.ts \
   tests/evidence-drawer-language.test.ts \
+  tests/codex-header-evidence-language.test.ts \
   tests/compatibility-data-minimization.test.ts \
   tests/compatibility-profile-contract.test.ts \
   tests/compatibility-http-integration.test.ts \
