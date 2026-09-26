@@ -101,6 +101,9 @@ describe('Astrology Evidence Integration - Phase 1', () => {
       const moonPlacement = result.placements?.moon;
 
       assert.equal(moonPlacement?.verificationStatus, 'requires_verified_birth_time', 'moon should require verified birth time when time missing');
+      assert.equal(result.moonSign, 'Unknown', 'moon alias should be withheld when birth time is missing');
+      assert.equal(moonPlacement?.sign, 'Unknown', 'moon placement should not expose a noon fallback sign');
+      assert.deepEqual(result.aspects, [], 'aspects should be withheld when exact civil time is unresolved');
     });
 
     test('moon is calculated when exact time provided', () => {
@@ -117,6 +120,24 @@ describe('Astrology Evidence Integration - Phase 1', () => {
       const moonPlacement = result.placements?.moon;
 
       assert.equal(moonPlacement?.verificationStatus, 'calculated', 'moon should be calculated with exact time');
+    });
+
+
+    test('moon requires timezone as part of the civil timestamp', () => {
+      const result = calculateAstrology({
+        name: 'Test Person',
+        birthDate: '1990-05-15',
+        birthTime: '14:30',
+        timezone: undefined,
+        latitude: 40.7128,
+        longitude: -74.0060,
+      });
+
+      assert.equal(result.placements?.moon?.verificationStatus, 'requires_verified_birth_time');
+      assert.equal(result.moonSign, 'Unknown');
+      assert.equal(result.risingSign, 'Unknown');
+      assert.deepEqual(result.aspects, []);
+      assert.deepEqual(result.houses, []);
     });
 
     test('moon location is optional', () => {
@@ -167,6 +188,8 @@ describe('Astrology Evidence Integration - Phase 1', () => {
       const risingPlacement = result.placements?.rising;
 
       assert.equal(risingPlacement?.verificationStatus, 'requires_location', 'rising should require location when time available but location missing');
+      assert.equal(result.risingSign, 'Unknown', 'rising alias should be withheld without location');
+      assert.deepEqual(result.houses, [], 'houses should be withheld without a resolved geographic horizon');
     });
 
     test('rising is calculated with complete data (time + location)', () => {
