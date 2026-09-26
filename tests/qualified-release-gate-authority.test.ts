@@ -18,6 +18,10 @@ const codebuild = readFileSync(
   "scripts/ci/codebuild-core.sh",
   "utf8",
 );
+const backendVerifier = readFileSync(
+  "scripts/ci/verify-live-backend-contract.mjs",
+  "utf8",
+);
 
 test("Diamond Way and Store Candidate use the same qualified release runner", () => {
   for (const [name, workflow] of [
@@ -88,4 +92,26 @@ test("Store Candidate owns the production dependency audit", () => {
   assert.ok(sharedGateIndex >= 0);
   assert.ok(auditIndex > sharedGateIndex);
   assert.ok(releaseContractIndex > auditIndex);
+});
+
+
+test("Store Candidate requires a live backend contract receipt", () => {
+  const auditIndex = store.indexOf("npm audit --omit=dev --audit-level=high");
+  const backendIndex = store.indexOf("node scripts/ci/verify-live-backend-contract.mjs");
+  const releaseContractIndex = store.indexOf("tests/store-release-candidate-contract.test.ts");
+
+  assert.ok(auditIndex >= 0);
+  assert.ok(backendIndex > auditIndex);
+  assert.ok(releaseContractIndex > backendIndex);
+  assert.match(store, /BACKEND-CONTRACT-RECEIPT\.json/);
+});
+
+test("live backend verifier preserves release trust boundaries", () => {
+  assert.match(backendVerifier, /startsWith\("https:\/\/"\)/);
+  assert.match(backendVerifier, /backend \/health must report a non-unknown release SHA/);
+  assert.match(backendVerifier, /compatibility ping contract failed/);
+  assert.match(backendVerifier, /lifePathNumber !== 11/);
+  assert.match(backendVerifier, /lifePathNumber !== 22/);
+  assert.match(backendVerifier, /forbidden overallScore/);
+  assert.match(backendVerifier, /exactCandidateShaRequiredPreMerge: false/);
 });
