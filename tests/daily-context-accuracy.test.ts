@@ -12,6 +12,7 @@ import {
   getCurrentHDGate as getPackageHDGate,
 } from '../packages/astrology/daily-context';
 import { degreeToGateAndLine } from '../packages/astrology/human-design';
+import { selectTemplates } from '../packages/astrology/template-bank';
 
 function expectedPhase(angle: number): string {
   if (angle < 22.5 || angle >= 337.5) return 'New Moon';
@@ -55,4 +56,29 @@ test('daily context withholds planetary hour without observer-backed sunrise and
   assert.equal(server.currentHDLine, pkg.currentHDLine);
   assert.equal(server.moonPhase, pkg.moonPhase);
   assert.equal(server.personalDayNumber, pkg.personalDayNumber);
+});
+
+
+test('daily template rotation excludes registry-disabled systems and renders governed context cleanly', () => {
+  const context = {
+    date: '2026-09-25',
+    personalDayNumber: 9,
+    universalDayNumber: 8,
+    moonSign: 'Pisces',
+    moonPhase: 'Full Moon',
+    moonPhasePercentage: 97,
+    currentHDGate: 18,
+    currentHDLine: 3,
+    planetaryHour: null,
+  };
+
+  const { selectedTemplates } = selectTemplates(context, { id: 'profile-test' }, []);
+  const allowed = new Set(['numerology', 'astrology', 'humandesign']);
+
+  assert.ok(selectedTemplates.length >= 3);
+  for (const template of selectedTemplates) {
+    assert.ok(allowed.has(template.category), `unexpected daily category: ${template.category}`);
+    const rendered = template.template({ ...context, profile: { id: 'profile-test', name: 'Test' } });
+    assert.doesNotMatch(rendered, /NaN|nakshatra|birth rune|dosha|Gene Key|hexagram|Sabian|fixed star|Part of Fortune/i);
+  }
 });
