@@ -131,7 +131,18 @@ function signFromLongitude(longitude: number): AscendantSign {
   return SIGNS[Math.floor(normalizeDegrees(longitude) / 30)];
 }
 
+function hasExplicitUtcOffset(inputTimestamp: string): boolean {
+  return /(?:Z|[+-]\\d{2}:\\d{2})$/i.test(inputTimestamp.trim());
+}
+
 function isValidInput(input: AscendantInput): boolean {
+  if (
+    typeof input.inputTimestamp !== "string" ||
+    !hasExplicitUtcOffset(input.inputTimestamp)
+  ) {
+    return false;
+  }
+
   const timestamp = new Date(input.inputTimestamp);
   return (
     !Number.isNaN(timestamp.getTime()) &&
