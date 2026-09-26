@@ -86,9 +86,9 @@ function verifiedPlanet(value: unknown): Record<string, number | string> | undef
 function verifiedHumanDesign(value: unknown): Record<string, string> {
   const hd = record(value);
   if (!hasApprovedVerifiedHumanDesignTrust(hd)) return {};
-  const candidate = Object.keys(record(hd.candidate)).length
+  const candidate: Record<string, any> = Object.keys(record(hd.candidate)).length
     ? record(hd.candidate)
-    : hd;
+    : record(hd);
   const result: Record<string, string> = {};
 
   for (const field of ["type", "strategy", "authority", "profile"] as const) {
