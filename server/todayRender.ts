@@ -19,39 +19,39 @@ export interface TodayCardData {
 }
 
 const DAY_DO: Record<number, string[]> = {
-  1: ["Start the one thing I've been circling", "Initiate — I don't wait for permission", "Trust my first instinct today"],
-  2: ["Listen before I speak", "Let a partnership carry some weight", "Resolve one tension with honesty"],
-  3: ["Say what's actually on my mind", "Make something — write, build, draw", "Connect with someone who challenges me"],
-  4: ["Organize one thing that's been messy", "Block time for uninterrupted work", "Finish what I started last week"],
-  5: ["Move — change my environment", "Say yes to something outside my routine", "Clear one thing from the stale pile"],
-  6: ["Support someone without keeping score", "Repair something I've been avoiding", "Create a moment of order at home"],
-  7: ["Go quiet for an hour — no input", "Research or study something deep", "Trust the pattern I keep seeing"],
-  8: ["Make one bold financial or strategic call", "Take responsibility for something I've delayed", "Set a boundary that protects my build"],
-  9: ["Complete or close one chapter", "Give something away — time, knowledge, energy", "Reflect on what this cycle taught me"]
+  1: ["Pick one useful beginning and take its first concrete step", "Choose a small action you can initiate without waiting for perfect certainty", "Write down your first instinct, then check it against the facts"],
+  2: ["Listen long enough to understand before responding", "Ask where collaboration would actually reduce friction", "Name one tension clearly and address the part you can influence"],
+  3: ["Express one idea clearly instead of scattering attention", "Make something concrete — write, build, sketch, or prototype", "Have one conversation that adds a useful perspective"],
+  4: ["Organize one messy area that is slowing progress", "Protect one focused work block", "Finish one existing task before opening another"],
+  5: ["Change one routine deliberately and observe the effect", "Try one low-cost option outside the usual pattern", "Clear one stale commitment, file, or task that no longer helps"],
+  6: ["Offer support without taking over someone else's responsibility", "Repair one avoidable point of friction", "Create one practical improvement in the home or daily routine"],
+  7: ["Reduce input for a while and review what you already know", "Research one question deeply enough to improve a real decision", "Write down the pattern you notice and look for evidence for and against it"],
+  8: ["Review one important financial or strategic decision before acting", "Take responsibility for one delayed obligation", "Set one boundary that protects a real priority"],
+  9: ["Complete or formally close one unfinished item", "Share time, knowledge, or resources only where it is genuinely useful", "Review what this cycle taught you without treating the symbolism as a prediction"]
 };
 
 const DAY_DONT: Record<number, string[]> = {
-  1: ["Defer to others when I know the answer", "Overthink before acting", "Let perfectionism stall my first move"],
-  2: ["Force outcomes before they're ready", "Argue when I should be listening", "Let pride block collaboration"],
-  3: ["Stay silent when I have something real to say", "Suppress creativity to look 'professional'", "Spend the day in pure reaction mode"],
-  4: ["Start something new before the old is done", "Ignore structure because it feels boring", "Skip the plan and wing it today"],
-  5: ["Stay in the same loop expecting different results", "Commit to something I'm not actually ready for", "Let fear of the unknown keep me static"],
-  6: ["Neglect my own needs to fix everyone else", "Avoid a difficult but necessary conversation", "Say yes when I mean no"],
-  7: ["Make a big decision based on noise", "Expose my process before it's ready", "Seek validation for a choice only I can make"],
-  8: ["Back down from something I've already committed to", "Let others define the terms", "Spend energy on the small when the big is waiting"],
-  9: ["Hold on to what's already finished", "Start a new project before closing the current one", "Ignore what this period is trying to teach me"]
+  1: ["Treat urgency as proof that an action is correct", "Keep analyzing after the next useful step is already clear", "Let perfectionism block a low-risk first move"],
+  2: ["Force agreement before the other person has been heard", "Argue past useful information", "Confuse cooperation with abandoning your own position"],
+  3: ["Say more just to fill space", "Hide a useful idea because it is unfinished", "Let constant reaction replace deliberate expression"],
+  4: ["Open several new tasks while important existing work is unfinished", "Reject structure only because it feels repetitive", "Skip a necessary plan for a high-cost decision"],
+  5: ["Change something important only to escape boredom", "Commit before checking the cost and consequences", "Treat novelty as automatically better"],
+  6: ["Take responsibility for problems that are not yours", "Delay a necessary repair conversation indefinitely", "Agree when your actual capacity says otherwise"],
+  7: ["Make a high-stakes decision from noise or isolation alone", "Publish unfinished work before its purpose is clear", "Collect validation instead of testing the reasoning"],
+  8: ["Double down on a commitment only because it already consumed effort", "Accept terms you have not reviewed", "Make a financial move because the day symbolism says to be bold"],
+  9: ["Keep an obligation only because it is familiar", "Start a replacement project before deciding what is actually complete", "Treat closure symbolism as proof that something must end"]
 };
 
 const DAY_WATCHOUTS: Record<number, string[]> = {
-  1: ["Impatience with people moving slower than me", "Starting strong, losing steam by afternoon"],
-  2: ["Over-accommodating — I may lose my own thread", "Emotional undercurrents in group dynamics"],
-  3: ["Scattered energy that spreads thin", "Saying more than I meant to"],
-  4: ["Frustration when results don't match the effort", "Rigidity passing as discipline"],
-  5: ["Impulsive decisions that feel liberating but cost me later", "Restlessness masking avoidance"],
-  6: ["Over-responsibility for others' problems", "Resentment building from unspoken needs"],
-  7: ["Overthinking replacing action", "Isolation deepening rather than refreshing"],
-  8: ["Pressure creating tunnel vision", "Ignoring feedback from people who see what I don't"],
-  9: ["Nostalgia slowing my forward movement", "Completion anxiety — finishing feels like loss"]
+  1: ["Notice whether urgency is turning into impatience", "Check whether an energetic start has a realistic follow-through"],
+  2: ["Notice whether accommodation is erasing your own position", "Check for assumptions about other people's emotions before acting on them"],
+  3: ["Watch for attention spreading across too many ideas", "Pause before saying more than the situation needs"],
+  4: ["Separate slow results from evidence that the method is wrong", "Check whether discipline has become unnecessary rigidity"],
+  5: ["Pause before treating an impulse as liberation", "Ask whether restlessness is pointing to a real problem or simple boredom"],
+  6: ["Check whether support has turned into over-responsibility", "Name needs early instead of assuming resentment proves what others should know"],
+  7: ["Watch for analysis replacing the next useful action", "Make sure solitude is helping rather than cutting off useful feedback"],
+  8: ["Check whether pressure is narrowing the evidence you are willing to see", "Review relevant feedback before increasing commitment"],
+  9: ["Notice whether familiarity is delaying a necessary review", "Treat feelings about completion as information, not proof that you should stay or leave"]
 };
 
 const NEUTRAL_DO = [
