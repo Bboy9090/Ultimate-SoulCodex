@@ -4,7 +4,7 @@
 
 Soul Codex is synthesis-first. Specialist systems exist to add distinct explanatory depth, not to make the interface look more mystical or to repeat the same claim under different names.
 
-The main reading may use a system only when its evidence state satisfies `shared/system-visibility.ts`. Raw system details remain available through the optional **Underlying systems** inspector so a curious user can audit what was calculated, verified, withheld, or left unresolved.
+The main reading may use a system only when it is permitted by `shared/system-registry.ts` and its evidence state also satisfies the stricter compatibility checks in `shared/system-visibility.ts`. Raw system details remain available through the optional **Underlying systems** inspector so a curious user can audit what was calculated, verified, withheld, or left unresolved.
 
 ## Complete birth data is not the same as verified chart evidence
 
@@ -61,7 +61,7 @@ The inspector does not create a new profile, upload data merely by opening, or u
 | Astrocartography | unavailable | not production-ready | no |
 | Palmistry CV | unavailable | not production-ready | no |
 
-`shared/system-visibility.ts` is the executable policy source.
+`shared/system-registry.ts` is the canonical production policy source. `shared/system-visibility.ts` is a compatibility enforcement layer that may impose stricter evidence requirements but may never promote a system excluded by the registry.
 
 ## Elegant natal PDF
 
