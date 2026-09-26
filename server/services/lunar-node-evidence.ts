@@ -44,8 +44,9 @@ function julianDayUtc(timestamp: Date): number {
 export function calculateMeanNorthNodeCandidate(
   input: MeanNodeInput,
 ): NodePosition {
-  const timestamp = new Date(input.inputTimestamp);
-  if (Number.isNaN(timestamp.getTime())) {
+  const rawTimestamp = input.inputTimestamp?.trim();
+  const timestamp = new Date(rawTimestamp);
+  if (!/Z$/i.test(rawTimestamp) || Number.isNaN(timestamp.getTime())) {
     throw new Error("node_input_timestamp_invalid");
   }
 
