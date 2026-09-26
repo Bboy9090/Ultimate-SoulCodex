@@ -21,7 +21,6 @@ import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
 import {
   generateBiography,
-  generateDailyGuidance,
 } from "./services/openai-service";
 import { buildNatalReportPdf } from "./natalReportPdf";
 import {
@@ -207,14 +206,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         personalityData: {},
         archetype: archetypeData,
       });
-      const dailyGuidance = await generateDailyGuidance({
-        name: birthData.name,
-        archetypeTitle: archetypeData.title,
-        astrologyData,
-        numerologyData,
-        personalityData: {},
-        archetype: archetypeData,
-      });
+      // Persist only stable, governed profile guidance here. Current-day
+      // guidance belongs to the live Daily/Today engine and must not be frozen
+      // into a profile by an AI call at creation time.
+      const dailyGuidance = archetypeData.guidance;
 
       const authenticatedUserId = req.session?.userId ?? null;
       const profile = await storage.createProfile({
