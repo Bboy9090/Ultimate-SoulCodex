@@ -16,7 +16,7 @@ const evidence = {
 };
 
 describe("compatibility saved-profile contract", () => {
-  it("rejects naked legacy astrology strings from the verified input path", () => {
+  it("rejects naked caller-supplied astrology and numerology from the trusted input path", () => {
     const input = buildCompatibilityProfileInput({
       sunSign: "Virgo",
       moonSign: "Scorpio",
@@ -25,7 +25,7 @@ describe("compatibility saved-profile contract", () => {
     });
 
     assert.equal(input.sunSign, undefined);
-    assert.equal(input.lifePathNumber, 9);
+    assert.equal(input.lifePathNumber, undefined);
     assert.ok(input.unresolved.astrology.includes("Sun"));
   });
 
