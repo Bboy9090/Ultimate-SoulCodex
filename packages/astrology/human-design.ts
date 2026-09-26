@@ -384,6 +384,10 @@ export interface SolarArcForensics {
   actualSolarArc: number;               // computed from bisection
   angularResidualDegrees: number;        // circular error from configured solar arc
   angularToleranceDegrees: number;       // maximum accepted residual
+  bracketMinimumDays: number;             // lower bound of initial UTC search bracket
+  bracketMaximumDays: number;             // upper bound of initial UTC search bracket
+  bracketMinimumSignedDeltaDegrees: number;
+  bracketMaximumSignedDeltaDegrees: number;
   iterationCount: number;               // bisection loop count
   finalSearchWindowDays: number;        // maxDays - minDays final value
   finalToleranceDays: number;           // tolerance achieved
@@ -1062,18 +1066,50 @@ function calculateHumanDesignInternal(birthData: {
   // directly in UTC. No local-time minute round-trip is allowed here.
   let minDays = 80;
   let maxDays = 95;
+  const bracketMinimumDays = minDays;
+  const bracketMaximumDays = maxDays;
   let iteration = 0;
   const maxIterations = 50;
   let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - 88 * 86_400_000);
+
+  const signedLongitudeDelta = (longitude: number): number => {
+    let diff = longitude - targetLongitude;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    return diff;
+  };
+
+  const minimumBracketLongitude = calculateHdAstroAtUtc(
+    new Date(birthTimeUTC.getTime() - minDays * 86_400_000),
+  ).planets.sun.longitude;
+  const maximumBracketLongitude = calculateHdAstroAtUtc(
+    new Date(birthTimeUTC.getTime() - maxDays * 86_400_000),
+  ).planets.sun.longitude;
+  const bracketMinimumSignedDeltaDegrees = signedLongitudeDelta(minimumBracketLongitude);
+  const bracketMaximumSignedDeltaDegrees = signedLongitudeDelta(maximumBracketLongitude);
+
+  // Bisection is only valid when the target crossing is actually bracketed.
+  // For the backward-in-time solar search the nearer bound must be on or ahead
+  // of the target and the farther bound must be on or behind it.
+  if (
+    !Number.isFinite(bracketMinimumSignedDeltaDegrees) ||
+    !Number.isFinite(bracketMaximumSignedDeltaDegrees) ||
+    bracketMinimumSignedDeltaDegrees < 0 ||
+    bracketMaximumSignedDeltaDegrees > 0
+  ) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'design_solar_arc_unresolved',
+      },
+    };
+  }
 
   while (iteration < maxIterations && (maxDays - minDays) > 1e-4) {
     const midDays = (minDays + maxDays) / 2;
     const testTimeUTC = new Date(birthTimeUTC.getTime() - midDays * 86_400_000);
     const testSunLongitude = calculateHdAstroAtUtc(testTimeUTC).planets.sun.longitude;
-
-    let diff = testSunLongitude - targetLongitude;
-    if (diff > 180) diff -= 360;
-    if (diff < -180) diff += 360;
+    const diff = signedLongitudeDelta(testSunLongitude);
 
     if (diff > 0) minDays = midDays;
     else maxDays = midDays;
@@ -1116,6 +1152,10 @@ function calculateHumanDesignInternal(birthData: {
     actualSolarArc: actualArc,
     angularResidualDegrees,
     angularToleranceDegrees,
+    bracketMinimumDays,
+    bracketMaximumDays,
+    bracketMinimumSignedDeltaDegrees,
+    bracketMaximumSignedDeltaDegrees,
     iterationCount: iteration,
     finalSearchWindowDays,
     finalToleranceDays,
@@ -1557,6 +1597,8 @@ export function calculateHumanDesignWithEvidence(birthData: {
             `actual_solar_arc_${forensics.actualSolarArc.toFixed(3)}`,
             `solar_arc_residual_${forensics.angularResidualDegrees.toFixed(6)}`,
             `solar_arc_tolerance_${forensics.angularToleranceDegrees.toFixed(6)}`,
+            `solar_arc_bracket_min_delta_${forensics.bracketMinimumSignedDeltaDegrees.toFixed(6)}`,
+            `solar_arc_bracket_max_delta_${forensics.bracketMaximumSignedDeltaDegrees.toFixed(6)}`,
             `iteration_count_${forensics.iterationCount}`,
             `timezone_resolution_source_${forensics.timezoneResolutionSource}`,
           ] : []),
@@ -1590,6 +1632,10 @@ export function calculateHumanDesignWithEvidence(birthData: {
             actualSolarArc: forensics.actualSolarArc,
             angularResidualDegrees: forensics.angularResidualDegrees,
             angularToleranceDegrees: forensics.angularToleranceDegrees,
+            bracketMinimumDays: forensics.bracketMinimumDays,
+            bracketMaximumDays: forensics.bracketMaximumDays,
+            bracketMinimumSignedDeltaDegrees: forensics.bracketMinimumSignedDeltaDegrees,
+            bracketMaximumSignedDeltaDegrees: forensics.bracketMaximumSignedDeltaDegrees,
             iterationCount: forensics.iterationCount,
             finalSearchWindowDays: forensics.finalSearchWindowDays,
             finalToleranceDays: forensics.finalToleranceDays,
