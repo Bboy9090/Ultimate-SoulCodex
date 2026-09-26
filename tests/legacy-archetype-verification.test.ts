@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { synthesizeArchetype as synthesizeLegacyArchetype } from "../services/archetype";
 import { synthesizeArchetype as synthesizePackageArchetype } from "../packages/astrology/archetype";
+import { synthesizeArchetype as synthesizeServerArchetype } from "../server/services/archetype";
 
 const rawLegacyAstrology = {
   sunSign: "Virgo",
@@ -91,12 +92,21 @@ test("master Life Path 11 never substring-matches Life Path 1 archetype rules", 
     personalYear: 11,
   };
 
-  for (const synthesize of [synthesizeLegacyArchetype, synthesizePackageArchetype]) {
-    const result = synthesize({}, numerology, {});
-    assert.equal(result.title, "Archetype unresolved");
-    assert.deepEqual(result.strengths, []);
-    assert.doesNotMatch(JSON.stringify(result), /Natural Leader|Effortless Authority|born to lead/i);
-  }
+  const governed = synthesizeLegacyArchetype({}, numerology, {});
+  const server = synthesizeServerArchetype({}, numerology, {});
+
+  assert.equal(governed.title, server.title);
+  assert.match(governed.title, /LP11|Visionary|11/i);
+  assert.doesNotMatch(
+    JSON.stringify(governed),
+    /LP1\b|Natural Leader|Effortless Authority|born to lead/i,
+  );
+
+  const packageResult = synthesizePackageArchetype({}, numerology, {});
+  assert.doesNotMatch(
+    JSON.stringify(packageResult),
+    /LP1\b|Natural Leader|Effortless Authority|born to lead/i,
+  );
 });
 
 test("unmatched personality-only evidence never receives the first archetype as a silent default", () => {
@@ -107,5 +117,26 @@ test("unmatched personality-only evidence never receives the first archetype as 
     assert.equal(result.title, "Archetype unresolved");
     assert.match(result.description, /does not match a declared archetype rule/i);
     assert.deepEqual(result.themes, []);
+  }
+});
+
+
+test("root archetype selection matches the governed server authority", () => {
+  const fixtures = [
+    [verifiedSunAstrology, {}, {}],
+    [{}, { status: "resolved", lifePath: 9, expression: 3, soulUrge: 6 }, {}],
+    [rawLegacyAstrology, {}, {}],
+  ] as const;
+
+  for (const [astrology, numerology, personality] of fixtures) {
+    const root = synthesizeLegacyArchetype(astrology, numerology, personality);
+    const server = synthesizeServerArchetype(astrology, numerology, personality);
+
+    assert.equal(root.title, server.title);
+    assert.equal(root.description, server.description);
+    assert.deepEqual(root.strengths, server.strengths);
+    assert.deepEqual(root.shadows, server.shadows);
+    assert.deepEqual(root.themes, server.themes);
+    assert.equal(root.guidance, server.guidance);
   }
 });
