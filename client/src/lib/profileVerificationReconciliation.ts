@@ -136,26 +136,34 @@ function validZodiacSign(value: unknown): value is (typeof ZODIAC_SIGNS)[number]
     ZODIAC_SIGNS.includes(value.trim() as (typeof ZODIAC_SIGNS)[number]);
 }
 
+function nonEmptyText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function validIsoLikeTimestamp(value: unknown): value is string {
+  return nonEmptyText(value) && !Number.isNaN(Date.parse(value));
+}
+
 function hasVerifiedPlacementEvidence(placement: PlacementRecord | undefined): boolean {
   const evidence = placement?.provenance ?? placement?.evidence;
   return Boolean(
     placement?.verificationStatus === "verified" &&
-    evidence?.source &&
-    evidence?.engine &&
-    evidence?.calculatedAt
+    nonEmptyText(evidence?.source) &&
+    nonEmptyText(evidence?.engine) &&
+    validIsoLikeTimestamp(evidence?.calculatedAt)
   );
 }
 
 function hasVerifiedHumanDesignTrust(humanDesignData: Record<string, unknown> | null | undefined): boolean {
   return Boolean(
     humanDesignData?.status === "verified" &&
-    typeof humanDesignData.engine === "string" && humanDesignData.engine &&
-    typeof humanDesignData.source === "string" && humanDesignData.source &&
-    typeof humanDesignData.calculatedAt === "string" && humanDesignData.calculatedAt &&
-    typeof humanDesignData.inputTimestampUtc === "string" && humanDesignData.inputTimestampUtc &&
-    typeof humanDesignData.verificationReceiptId === "string" && humanDesignData.verificationReceiptId &&
-    typeof humanDesignData.independentSource === "string" && humanDesignData.independentSource &&
-    typeof humanDesignData.verifiedAt === "string" && humanDesignData.verifiedAt
+    nonEmptyText(humanDesignData.engine) &&
+    nonEmptyText(humanDesignData.source) &&
+    validIsoLikeTimestamp(humanDesignData.calculatedAt) &&
+    validIsoLikeTimestamp(humanDesignData.inputTimestampUtc) &&
+    nonEmptyText(humanDesignData.verificationReceiptId) &&
+    nonEmptyText(humanDesignData.independentSource) &&
+    validIsoLikeTimestamp(humanDesignData.verifiedAt)
   );
 }
 
