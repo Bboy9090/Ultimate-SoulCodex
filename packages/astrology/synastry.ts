@@ -280,7 +280,7 @@ function classifyAspectTier(
     if (['sun', 'moon', 'venus', 'mars'].includes(otherPlanet) && aspect === 'conjunction') {
       return {
         tier: 'fated',
-        description: `☊ ${node} conjunct ${otherPlanet}: Nodal conjunctions are traditionally read as developmentally salient contacts. They may feel meaningful without implying destiny.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `☊ ${node} conjunct ${otherPlanet}: Nodal conjunctions are traditionally read as developmentally salient contacts. They may feel meaningful while remaining symbolic rather than predictive.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(90, orb, maxOrbs.conjunction)
       };
@@ -290,7 +290,7 @@ function classifyAspectTier(
     if (['sun', 'moon', 'venus', 'mars', 'jupiter', 'saturn'].includes(otherPlanet) && (aspect === 'trine' || aspect === 'sextile')) {
       return {
         tier: 'fated',
-        description: `☊ ${node} ${aspect} ${otherPlanet}: Traditionally read as a supportive developmental contact. Its significance is symbolic, not proof that two paths were meant to cross.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `☊ ${node} ${aspect} ${otherPlanet}: Traditionally read as a supportive developmental contact. Its significance is symbolic and does not establish why two people met.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(75, orb, maxOrbs[aspect])
       };
@@ -303,7 +303,7 @@ function classifyAspectTier(
     if (['sun', 'moon', 'venus', 'mars', 'ascendant'].includes(otherPlanet) && aspect === 'conjunction') {
       return {
         tier: 'fated',
-        description: `⚡ Vertex conjunct ${otherPlanet}: Traditionally treated as an unusually salient or catalytic contact. It can feel significant without implying fate or inevitability.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `⚡ Vertex conjunct ${otherPlanet}: Traditionally treated as an unusually salient or catalytic contact. It can feel significant without establishing inevitability.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(88, orb, maxOrbs.conjunction)
       };
