@@ -49,6 +49,8 @@ test("canonical qualified suite includes the high-value cross-domain gates", () 
     "tests/synastry-input-validation.test.ts",
     "tests/system-registry-contract.test.ts",
     "tests/release-manifest-contract.test.ts",
+    "tests/no-simulated-release-routes.test.ts",
+    "tests/billing-security.test.ts",
   ]) {
     assert.match(runner, new RegExp(required.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")));
   }
