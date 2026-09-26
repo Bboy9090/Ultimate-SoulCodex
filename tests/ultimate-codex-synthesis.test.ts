@@ -348,7 +348,7 @@ test("Ultimate Codex rejects inconsistent governed cusp and point geometry", () 
 
   const result = buildUltimateCodexSynthesis(invalid);
 
-  assert.equal(result.houseCusps.length, 11);
+  assert.equal(result.houseCusps.length, 0);
   assert.equal(
     result.supportingPoints.some((point) => point.key === "midheaven"),
     false,
