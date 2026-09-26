@@ -161,15 +161,22 @@ function validHouseNumber(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
 }
 
-function verifiedHumanDesignRecord(
+export function getVerifiedHumanDesignRecord(
   value: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> | null {
   if (!value || value.status !== "verified") return null;
   for (const field of ["type", "strategy", "authority", "profile"] as const) {
     if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
   }
-  for (const field of ["verificationReceiptId", "independentSource", "verifiedAt"] as const) {
+  for (const field of ["verificationReceiptId", "independentSource"] as const) {
     if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
+  }
+  if (
+    typeof value.verifiedAt !== "string" ||
+    !value.verifiedAt.trim() ||
+    Number.isNaN(new Date(value.verifiedAt).getTime())
+  ) {
+    return null;
   }
   return value;
 }
@@ -340,7 +347,7 @@ export function reconcileActiveProfile(
   const sunSign = getVerifiedAstrologySign(astrology, "sun");
   const moonSign = getVerifiedAstrologySign(astrology, "moon");
   const risingSign = getVerifiedAstrologySign(astrology, "rising");
-  const remoteHumanDesign = verifiedHumanDesignRecord(remote.humanDesignData);
+  const remoteHumanDesign = getVerifiedHumanDesignRecord(remote.humanDesignData);
 
   return {
     ...local,
@@ -394,7 +401,7 @@ export function reconcileOfflineProfile(
   const numerologyData =
     (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??
     local.numerologyData;
-  const remoteHumanDesign = verifiedHumanDesignRecord(remote.humanDesignData);
+  const remoteHumanDesign = getVerifiedHumanDesignRecord(remote.humanDesignData);
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
@@ -475,7 +482,7 @@ export function profileNeedsOnlineVerification(
 
   if (!hasVerifiedFullNatalChart(profile.verifiedAstrologyData)) return true;
 
-  return !verifiedHumanDesignRecord(
+  return !getVerifiedHumanDesignRecord(
     profile.humanDesignData as Record<string, unknown> | null | undefined,
   );
 }
