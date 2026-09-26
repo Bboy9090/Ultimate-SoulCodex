@@ -5,13 +5,16 @@ import {
   getDailyContext as getServerDailyContext,
   getMoonPhase as getServerMoonPhase,
   getCurrentHDGate as getServerHDGate,
+  calculateUniversalDayNumber as getServerUniversalDay,
 } from '../services/daily-context';
 import {
   getDailyContext as getPackageDailyContext,
   getMoonPhase as getPackageMoonPhase,
   getCurrentHDGate as getPackageHDGate,
+  calculateUniversalDayNumber as getPackageUniversalDay,
 } from '../packages/astrology/daily-context';
 import { degreeToGateAndLine } from '../packages/astrology/human-design';
+import { calcUniversalDay } from '../packages/core/compute/personal-numbers';
 import { selectTemplates } from '../packages/astrology/template-bank';
 
 function expectedPhase(angle: number): string {
@@ -81,4 +84,35 @@ test('daily template rotation excludes registry-disabled systems and renders gov
     const rendered = template.template({ ...context, profile: { id: 'profile-test', name: 'Test' } });
     assert.doesNotMatch(rendered, /NaN|nakshatra|birth rune|dosha|Gene Key|hexagram|Sabian|fixed star|Part of Fortune/i);
   }
+});
+
+
+test('Universal Day uses the governed core reduction policy everywhere', () => {
+  const dates = [
+    '2026-09-25',
+    '2026-11-11',
+    '2033-03-03',
+  ];
+
+  for (const date of dates) {
+    const expected = calcUniversalDay(date);
+    assert.equal(getPackageUniversalDay(date), expected);
+    assert.equal(getServerUniversalDay(date), expected);
+  }
+});
+
+test('Universal Day preserves declared master-number results when reached', () => {
+  let foundMaster = false;
+  for (let month = 1; month <= 12 && !foundMaster; month += 1) {
+    for (let day = 1; day <= 28 && !foundMaster; day += 1) {
+      const date = `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const value = calcUniversalDay(date);
+      if ([11, 22, 33].includes(value)) {
+        foundMaster = true;
+        assert.equal(getPackageUniversalDay(date), value);
+        assert.equal(getServerUniversalDay(date), value);
+      }
+    }
+  }
+  assert.equal(foundMaster, true);
 });
