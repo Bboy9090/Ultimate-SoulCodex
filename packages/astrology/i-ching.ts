@@ -105,8 +105,7 @@ interface IChingReading {
 
 // Calculate hexagram from birth data
 function calculateBirthHexagram(birthDate: string): { hexagramNumber: number; changingLines: number[] } {
-  const { day, month } = parseDateOnly(birthDate);
-  const year = date.getFullYear();
+  const { day, month, year } = parseDateOnly(birthDate);
   
   // Use birth numbers to generate hexagram (simplified method)
   const hexagramNumber = ((day + month + year) % 64) || 1;
