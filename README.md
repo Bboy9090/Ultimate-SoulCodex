@@ -107,7 +107,7 @@ Calculation paths may be local or server-side depending on the feature. Governed
 | Database | PostgreSQL via Neon (serverless), Drizzle ORM |
 | AI | Google Gemini (primary), OpenAI GPT-4 (fallback) |
 | Payments | Stripe (subscriptions) |
-| Build | Vite 5 (client), esbuild (server) |
+| Build | Vite 8 (client), esbuild (server) |
 | Auth | Passport.js local strategy, Argon2id password hashing |
 | Ephemeris | astronomy-engine (real planetary calculations) |
 
@@ -202,10 +202,10 @@ The active app path in this worktree is root-level:
 
 - Backend entry: `server/index.ts` (Express + Vite middleware in dev).
 - Frontend entry: `client/src/main.tsx` (served by root `vite.config.ts` with `client/` root).
-- Route layer: root `routes.ts`.
+- Route layer: `server/routes.ts`, with governed specialized routers under `server/routes/`.
 - Shared and engine packages: `packages/*` (`core`, `db`, `ai`, `astrology`).
 
-## Quick Start
+## Development Notes
 
 ### Prerequisites
 - Node.js 20 (use nvm: `nvm use 20`)
@@ -250,7 +250,7 @@ NODE_ENV=development npx tsx server/index.ts
 ```
 
 6. **Open the app**
-Navigate to `http://localhost:5000`
+Navigate to `http://localhost:3000`
 
 ### Production Build
 
