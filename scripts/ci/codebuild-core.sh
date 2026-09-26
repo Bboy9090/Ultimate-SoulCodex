@@ -27,6 +27,7 @@ node --import tsx --test \
   tests/astrology-evidence-matrix.test.ts \
   tests/astrology-tolerance-policy.test.ts \
   tests/astrology-sign-boundary-verification.test.ts \
+  tests/aspect-engine.test.ts \
   tests/astrology-production-verification.test.ts \
   tests/strict-civil-time.test.ts \
   tests/timeline-cycle-reduction.test.ts \
