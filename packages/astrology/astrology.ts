@@ -99,25 +99,64 @@ function getDegreesInSign(longitude: number): number {
   return longitude % 30;
 }
 
-function createBirthTime(birthData: BirthData): Date {
-  try {
-    const [year, month, day] = birthData.birthDate.split('-').map(Number);
-    const time = birthData.birthTime || "12:00";
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-    
-    const resolvedTimezone = resolveTimezone(
-      birthData.timezone || "UTC",
-      parseFloat(String(birthData.latitude ?? 0)),
-      parseFloat(String(birthData.longitude ?? 0))
-    );
-    
-    return fromZonedTime(new Date(localTimeString), resolvedTimezone);
-  } catch (error) {
-    console.error('Error creating precise birth time:', error);
-    throw error;
+function parseBirthClock(value: unknown): { hours: number; minutes: number } {
+  if (value === undefined || value === null || value === "") {
+    return { hours: 12, minutes: 0 };
   }
+
+  if (typeof value !== "string") {
+    throw new RangeError("Invalid birthTime format; expected HH:mm");
+  }
+
+  const match = /^(\\d{2}):(\\d{2})$/.exec(value.trim());
+  if (!match) {
+    throw new RangeError("Invalid birthTime format; expected HH:mm");
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    throw new RangeError("Invalid birthTime value");
+  }
+
+  return { hours, minutes };
+}
+
+function finiteCoordinate(
+  value: unknown,
+  kind: "latitude" | "longitude",
+): number {
+  if (value === undefined || value === null || value === "") return 0;
+
+  const number = Number(value);
+  const limit = kind === "latitude" ? 90 : 180;
+  if (!Number.isFinite(number) || number < -limit || number > limit) {
+    throw new RangeError(`Invalid ${kind}`);
+  }
+  return number;
+}
+
+function createBirthTime(birthData: BirthData): Date {
+  const { year, month, day } = parseDateOnly(birthData.birthDate);
+  const { hours, minutes } = parseBirthClock(birthData.birthTime);
+  const latitude = finiteCoordinate(birthData.latitude, "latitude");
+  const longitude = finiteCoordinate(birthData.longitude, "longitude");
+
+  const localTimeString =
+    `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` +
+    `T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+
+  const resolvedTimezone = resolveTimezone(
+    birthData.timezone || "UTC",
+    latitude,
+    longitude,
+  );
+
+  const instant = fromZonedTime(localTimeString, resolvedTimezone);
+  if (Number.isNaN(instant.getTime())) {
+    throw new RangeError("Birth civil time could not be resolved");
+  }
+  return instant;
 }
 
 function resolveTimezone(inputTimezone: string, latitude: number, longitude: number): string {
@@ -397,8 +436,8 @@ function buildPlacement(
 
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const birthTime = createBirthTime(birthData);
-  const latitude = parseFloat(String(birthData.latitude ?? 0));
-  const longitude = parseFloat(String(birthData.longitude ?? 0));
+  const latitude = finiteCoordinate(birthData.latitude, "latitude");
+  const longitude = finiteCoordinate(birthData.longitude, "longitude");
   const hasExactTime = Boolean(birthData.birthTime?.trim());
   const hasTimezone = Boolean(birthData.timezone?.trim());
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
