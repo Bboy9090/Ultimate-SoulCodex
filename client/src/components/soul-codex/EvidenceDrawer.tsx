@@ -16,6 +16,11 @@
 
 import { useState } from "react";
 import type { EvidenceLayer, LimitationGroup } from "@soulcodex/core";
+import {
+  calculationStatusLabel,
+  inputStatusLabel,
+  interpretationStatusLabel,
+} from "@/lib/evidenceStatusLabels";
 
 interface EvidenceDrawerProps {
   evidenceLayers: EvidenceLayer[];
@@ -278,21 +283,21 @@ function EvidenceLayerCard({ layer }: EvidenceLayerCardProps) {
       <div style={{ display: "grid", gap: "0.5rem", fontSize: "0.75rem", color: "var(--sc-stone)" }}>
         {layer.inputStatus && (
           <div>
-            <span style={{ opacity: 0.7 }}>Input:</span> {layer.inputStatus}
+            <span style={{ opacity: 0.7 }}>Input:</span> {inputStatusLabel(layer.inputStatus)}
             {layer.inputRemark && <div style={{ opacity: 0.6 }}>→ {layer.inputRemark}</div>}
           </div>
         )}
 
         {layer.calculationStatus && (
           <div>
-            <span style={{ opacity: 0.7 }}>Calculation:</span> {layer.calculationStatus}
+            <span style={{ opacity: 0.7 }}>Calculation:</span> {calculationStatusLabel(layer.calculationStatus)}
             {layer.calculationRemark && <div style={{ opacity: 0.6 }}>→ {layer.calculationRemark}</div>}
           </div>
         )}
 
         {layer.interpretationStatus && (
           <div>
-            <span style={{ opacity: 0.7 }}>Interpretation:</span> {layer.interpretationStatus}
+            <span style={{ opacity: 0.7 }}>Interpretation:</span> {interpretationStatusLabel(layer.interpretationStatus)}
             {layer.interpretationRemark && <div style={{ opacity: 0.6 }}>→ {layer.interpretationRemark}</div>}
           </div>
         )}
