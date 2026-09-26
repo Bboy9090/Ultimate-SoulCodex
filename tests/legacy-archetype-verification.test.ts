@@ -50,3 +50,30 @@ test("legacy archetype surfaces may use astrology only after verified placement 
     assert.doesNotMatch(JSON.stringify(result), /Scorpio|Capricorn/);
   }
 });
+
+
+test("legacy archetype partial verified astrology never renders missing placements as undefined", () => {
+  const numerology = {
+    status: "resolved",
+    lifePath: 9,
+    birthday: 8,
+    expression: 3,
+    soulUrge: 6,
+    personality: 1,
+    maturity: 3,
+    personalYear: 9,
+  };
+
+  for (const synthesize of [synthesizeLegacyArchetype, synthesizePackageArchetype]) {
+    const result = synthesize(verifiedSunAstrology, numerology, {});
+    const text = JSON.stringify(result);
+
+    assert.doesNotMatch(text, /undefined Moon|undefined Rising|Scorpio|Capricorn/);
+    assert.match(text, /Verified-supported astrology currently includes Virgo Sun/);
+    assert.match(text, /symbolic|reflection/i);
+    assert.doesNotMatch(
+      text,
+      /soul's intended journey|mathematical blueprint of your soul|you're here to|Christ consciousness|predetermined mission/i,
+    );
+  }
+});
