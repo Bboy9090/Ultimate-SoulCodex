@@ -73,3 +73,59 @@ test('cross-boundary sign disagreement remains a stronger rejection', () => {
     assert.equal(result.reason, 'sign_disagreement');
   }
 });
+
+
+test('verification rejects matching sign labels that contradict longitude', () => {
+  const result = verifyAgainstIndependentReference(
+    candidate(44.5, 'Aries'),
+    reference(44.5002, 'Aries'),
+    policy,
+  );
+
+  assert.equal(result.status, 'rejected');
+  if (result.status === 'rejected') {
+    assert.equal(result.reason, 'sign_longitude_mismatch');
+  }
+});
+
+test('longitude-derived sign integrity holds across all twelve zodiac sectors', () => {
+  const signs = [
+    'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+    'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
+  ];
+
+  for (let index = 0; index < signs.length; index += 1) {
+    const longitude = index * 30 + 15;
+    const result = verifyAgainstIndependentReference(
+      candidate(longitude, signs[index]),
+      reference(longitude + 0.0002, signs[index]),
+      policy,
+    );
+
+    assert.equal(result.status, 'verified', signs[index]);
+  }
+});
+
+test('each zodiac boundary rejects a stale sign label immediately after crossing', () => {
+  const signs = [
+    'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+    'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
+  ];
+
+  for (let index = 0; index < signs.length; index += 1) {
+    const nextIndex = (index + 1) % signs.length;
+    const boundary = (index + 1) * 30;
+    const longitude = boundary >= 360 ? 0.01 : boundary + 0.01;
+
+    const result = verifyAgainstIndependentReference(
+      candidate(longitude, signs[index]),
+      reference(longitude + 0.0002, signs[index]),
+      policy,
+    );
+
+    assert.equal(result.status, 'rejected', `${signs[index]} -> ${signs[nextIndex]}`);
+    if (result.status === 'rejected') {
+      assert.equal(result.reason, 'sign_longitude_mismatch');
+    }
+  }
+});
