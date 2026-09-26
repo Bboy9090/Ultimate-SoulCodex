@@ -9,11 +9,9 @@
  * "What they see: Attention to detail"
  * "What they miss: The humanitarian impulse behind it"
  *
- * NEW:
- * "What they see: Discernment, practical problem-solving, high standards"
- * "What they miss: The pressure you place on yourself to make the work useful,
- *                  meaningful, and worthy of a larger mission. The cost isn't pride—
- *                  it's the feeling that nothing is ever ready to release."
+ * CURRENT STANDARD:
+ * Use observable behavior first. Describe what people can actually notice, then
+ * explain the hidden tradeoff without substituting generic identity adjectives.
  */
 
 interface PsychologicalMirrorProps {
