@@ -72,24 +72,36 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
     midheaven: {
       verificationStatus: "verified",
       sign: sign(index + 7),
+      evidence: placementEvidence,
+      policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-differentiation-fixture",
     },
     northNode: {
       verificationStatus: "verified",
       sign: sign(index + 9),
       house: ((index * 5 + 1) % 12) + 1,
       mode: "mean",
+      evidence: placementEvidence,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-differentiation-fixture",
     },
     southNode: {
       verificationStatus: "verified",
       sign: sign(index + 3),
       house: ((index * 5 + 7) % 12) + 1,
       mode: "mean",
+      evidence: placementEvidence,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-differentiation-fixture",
     },
     chiron: {
       verificationStatus: "verified",
       sign: sign(index * 3 + 4),
       house: ((index * 7 + 2) % 12) + 1,
       qualificationMethod: "live-jpl-qualified-against-swiss",
+      evidence: placementEvidence,
+      policyId: "ASTRO-CHIRON-v1",
+      evidenceArtifactId: "chiron-differentiation-fixture",
     },
     aspects: [
       {
