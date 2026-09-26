@@ -332,3 +332,51 @@ export function registrySystemsExcludedFromUltimateCodex(): SoulCodexRegistryEnt
 export function registryEntry(id: string): SoulCodexRegistryEntry | null {
   return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.find((entry) => entry.id === id) ?? null;
 }
+
+export type SoulCodexUseContext =
+  | "stable-identity"
+  | "current-guidance"
+  | "supporting-reflection"
+  | "technical-inspection";
+
+const CURRENT_GUIDANCE_SYSTEM_IDS = new Set([
+  "numerology-cycles",
+]);
+
+const SUPPORTING_REFLECTION_SYSTEM_IDS = new Set([
+  "personality-assessments",
+  "moral-compass",
+]);
+
+/**
+ * Select systems by the job they are actually qualified to do.
+ *
+ * This is intentionally not a "more systems is better" selector:
+ * - stable identity admits only governed systems explicitly allowed to alter the Codex;
+ * - current guidance admits governed time-varying systems, without promoting them into identity;
+ * - supporting reflection admits explicit user-assessment context, without treating it as birth-derived fact;
+ * - technical inspection exposes every registered system so unresolved/excluded states stay inspectable.
+ */
+export function registrySystemsForUseContext(
+  context: SoulCodexUseContext,
+): SoulCodexRegistryEntry[] {
+  if (context === "stable-identity") {
+    return registrySystemsAllowedInUltimateCodex();
+  }
+
+  if (context === "current-guidance") {
+    return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.filter(
+      (entry) =>
+        entry.state === "governed" &&
+        (entry.mayInfluenceUltimateCodex || CURRENT_GUIDANCE_SYSTEM_IDS.has(entry.id)),
+    );
+  }
+
+  if (context === "supporting-reflection") {
+    return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.filter(
+      (entry) => SUPPORTING_REFLECTION_SYSTEM_IDS.has(entry.id),
+    );
+  }
+
+  return [...SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY];
+}
