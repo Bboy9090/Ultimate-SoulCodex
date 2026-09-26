@@ -1,3 +1,6 @@
+import {
+  tropicalSignFromLongitude,
+} from "@soulcodex/core";
 import type { IndependentEphemerisReference } from "./astrology-verification";
 
 export type SupportedHorizonsBody =
@@ -41,39 +44,21 @@ const BODY_COMMAND: Record<SupportedHorizonsBody, string> = {
 };
 const TRANSIENT_HTTP_STATUSES = new Set([429, 500, 502, 503, 504]);
 
-const ZODIAC_SIGNS = [
-  "Aries",
-  "Taurus",
-  "Gemini",
-  "Cancer",
-  "Leo",
-  "Virgo",
-  "Libra",
-  "Scorpio",
-  "Sagittarius",
-  "Capricorn",
-  "Aquarius",
-  "Pisces",
-] as const;
-
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function signFromLongitude(value: number): string {
-  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(value) / 30)];
+function explicitUtcDate(timestamp: string): Date {
+  const raw = timestamp.trim();
+  const date = new Date(raw);
+  if (!/Z$/i.test(raw) || Number.isNaN(date.getTime())) {
+    throw new Error("invalid_input_timestamp");
+  }
+  return date;
 }
 
 function addOneMinute(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) throw new Error("invalid_input_timestamp");
-  return new Date(date.getTime() + 60_000).toISOString();
+  return new Date(explicitUtcDate(timestamp).getTime() + 60_000).toISOString();
 }
 
 function horizonsTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) throw new Error("invalid_input_timestamp");
-  return date.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
+  return explicitUtcDate(timestamp).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
 }
 
 function sleep(milliseconds: number): Promise<void> {
@@ -183,12 +168,12 @@ export async function fetchHorizonsReference(
       const longitude = parseHorizonsLongitude(payload.result);
       return {
         body,
-        sign: signFromLongitude(longitude),
+        sign: tropicalSignFromLongitude(longitude),
         longitude,
         source: HORIZONS_SOURCE,
         engine: HORIZONS_ENGINE,
         calculatedAt: new Date().toISOString(),
-        inputTimestamp: new Date(inputTimestamp).toISOString(),
+        inputTimestamp: explicitUtcDate(inputTimestamp).toISOString(),
       };
     } finally {
       clearTimeout(timeout);
