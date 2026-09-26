@@ -1,5 +1,7 @@
 import type { LifeMap, LifeMapYear, TimelinePhase, CurrentEra } from "../types/soulcodex";
-import { resolveTimeline } from "../timeline/engine";
+import { resolveTimeline, timelinePhaseCycleYear } from "../timeline/engine";
+import { calcPersonalYear } from "../../packages/core/compute/personal-numbers";
+import { parseDateOnly } from "../../packages/core/compute/date-only";
 
 export type { LifeMap, LifeMapYear, CurrentEra };
 
@@ -96,21 +98,6 @@ const AGE_MARKERS: { age: number; label: string; phase_influence?: TimelinePhase
   { age: 58, label: "Second Saturn return — elder wisdom phase", phase_influence: "Legacy" },
 ];
 
-function personalYearForDate(birthMonth: number, birthDay: number, targetYear: number): number {
-  const sum = (birthMonth + birthDay + targetYear)
-    .toString()
-    .split("")
-    .reduce((a, b) => a + Number(b), 0);
-  let reduced = sum;
-  while (![11, 22, 33].includes(reduced) && reduced > 9) {
-    reduced = reduced
-      .toString()
-      .split("")
-      .reduce((a, b) => a + Number(b), 0);
-  }
-  return reduced > 9 ? ((reduced - 1) % 9) + 1 : reduced;
-}
-
 function buildReasons(phase: TimelinePhase, personalYear: number, age: number, themes: string[]): string[] {
   const reasons: string[] = [];
 
@@ -178,10 +165,7 @@ export function generateLifeMap(
   futureYears = 5,
   themes: string[] = [],
 ): LifeMap {
-  const birth = new Date(birthDate);
-  const birthYear = birth.getFullYear();
-  const birthMonth = birth.getMonth() + 1;
-  const birthDay = birth.getDate();
+  const { year: birthYear } = parseDateOnly(birthDate);
   const now = new Date();
   const currentYear = now.getFullYear();
 
@@ -192,7 +176,7 @@ export function generateLifeMap(
 
   for (let year = startYear; year <= endYear; year++) {
     const age = year - birthYear;
-    const pYear = personalYearForDate(birthMonth, birthDay, year);
+    const pYear = calcPersonalYear(birthDate, year);
     const phase = resolveTimeline({ personalYear: pYear, themes });
     const isCurrent = year === currentYear;
     const isFuture = year > currentYear;
@@ -212,12 +196,17 @@ export function generateLifeMap(
   const prevData = currentIdx > 0 ? years[currentIdx - 1] : null;
   const nextData = currentIdx < years.length - 1 ? years[currentIdx + 1] : null;
 
-  const currentPhase: TimelinePhase = currentData?.phase || "Integration";
-  const prevPhase: TimelinePhase = prevData?.phase || "Integration";
-  const nextPhase: TimelinePhase = nextData?.phase || "Expansion";
+  if (!currentData) {
+    throw new Error("lifemap_current_year_unresolved");
+  }
+
+  const currentPhase: TimelinePhase = currentData.phase;
+  const prevPhase: TimelinePhase = prevData?.phase ?? currentPhase;
+  const nextPhase: TimelinePhase = nextData?.phase ?? currentPhase;
 
   const currentAge = currentYear - birthYear;
-  const currentPY = currentData?.personalYear || 1;
+  const currentPY = currentData.personalYear;
+  timelinePhaseCycleYear(currentPY);
 
   const currentEra: CurrentEra = {
     phase: currentPhase,
