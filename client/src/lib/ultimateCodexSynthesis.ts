@@ -1,3 +1,4 @@
+import { isPersonalNumerologyValue } from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 
 type AnyRecord = Record<string, any>;
@@ -242,9 +243,9 @@ function placementDegree(placement: AnyRecord | undefined): number | null {
   return longitude === null ? null : Math.round((longitude % 30) * 100) / 100;
 }
 
-function numericValue(value: unknown): number | null {
+function governedNumerologyValue(value: unknown): number | null {
   const n = Number(value);
-  return Number.isInteger(n) ? n : null;
+  return Number.isInteger(n) && isPersonalNumerologyValue(n) ? n : null;
 }
 
 function normalizeHdCenters(hd: AnyRecord): { defined: string[]; undefined: string[] } {
@@ -426,13 +427,13 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   // Normalize only documented producer aliases. Alias handling prevents the same
   // deterministic number from changing coverage or fingerprint merely because
   // a legacy producer used a different field name.
-  const lifePath = numericValue(numerology.lifePath ?? numerology.lifePathNumber);
-  const birthday = numericValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
-  const expression = numericValue(numerology.expression ?? numerology.expressionNumber);
-  const soulUrge = numericValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
-  const personality = numericValue(numerology.personality ?? numerology.personalityNumber);
-  const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
-  const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
+  const lifePath = governedNumerologyValue(numerology.lifePath ?? numerology.lifePathNumber);
+  const birthday = governedNumerologyValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
+  const expression = governedNumerologyValue(numerology.expression ?? numerology.expressionNumber);
+  const soulUrge = governedNumerologyValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
+  const personality = governedNumerologyValue(numerology.personality ?? numerology.personalityNumber);
+  const maturity = governedNumerologyValue(numerology.maturity ?? numerology.maturityNumber);
+  const personalYear = governedNumerologyValue(numerology.personalYear ?? numerology.personalYearNumber);
 
   const verifiedHd = hasVerifiedHumanDesignTrust(hd);
   const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
