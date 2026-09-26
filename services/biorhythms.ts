@@ -1,3 +1,6 @@
+import { formatInTimeZone } from 'date-fns-tz';
+import { parseDateOnly } from '@soulcodex/core';
+
 // Biorhythms - Physical, Emotional, Intellectual Cycles
 
 interface BiorhythmCycle {
@@ -10,6 +13,8 @@ interface BiorhythmCycle {
 }
 
 interface BiorhythmData {
+  referenceDate: string;
+  calculationBasis: "date-only-symbolic";
   physical: BiorhythmCycle;
   emotional: BiorhythmCycle;
   intellectual: BiorhythmCycle;
@@ -44,9 +49,34 @@ function calculateCycle(daysSinceBirth: number, period: number): {
   return { value, phase, daysUntilPeak: Math.round(daysUntilPeak) };
 }
 
-export function calculateBiorhythms(birthDate: string, currentDate: Date = new Date()): BiorhythmData {
-  const birth = new Date(birthDate);
-  const daysSinceBirth = Math.floor((currentDate.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
+function dateOnlyOrdinal(dateISO: string): number {
+  const { year, month, day } = parseDateOnly(dateISO);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
+function referenceDateISO(currentDate: Date | string, timezone?: string): string {
+  if (typeof currentDate === "string") {
+    parseDateOnly(currentDate);
+    return currentDate;
+  }
+  if (Number.isNaN(currentDate.getTime())) {
+    throw new RangeError("Biorhythm current date must be valid");
+  }
+  return timezone
+    ? formatInTimeZone(currentDate, timezone, "yyyy-MM-dd")
+    : currentDate.toISOString().slice(0, 10);
+}
+
+export function calculateBiorhythms(
+  birthDate: string,
+  currentDate: Date | string = new Date(),
+  timezone?: string,
+): BiorhythmData {
+  const referenceDate = referenceDateISO(currentDate, timezone);
+  const daysSinceBirth = dateOnlyOrdinal(referenceDate) - dateOnlyOrdinal(birthDate);
+  if (daysSinceBirth < 0) {
+    throw new RangeError("Biorhythm reference date cannot precede birth date");
+  }
   
   // Three primary cycles
   const PHYSICAL_PERIOD = 23;
@@ -62,8 +92,7 @@ export function calculateBiorhythms(birthDate: string, currentDate: Date = new D
   const criticalDays: Date[] = [];
   
   for (let i = 0; i < 30; i++) {
-    const futureDate = new Date(currentDate);
-    futureDate.setDate(futureDate.getDate() + i);
+    const futureDate = new Date((dateOnlyOrdinal(referenceDate) + i) * 86_400_000);
     const futureDays = daysSinceBirth + i;
     
     const p = calculateCycle(futureDays, PHYSICAL_PERIOD);
@@ -81,6 +110,8 @@ export function calculateBiorhythms(birthDate: string, currentDate: Date = new D
   const overallEnergy = Math.round((physical.value + emotional.value + intellectual.value) / 3);
   
   return {
+    referenceDate,
+    calculationBasis: "date-only-symbolic",
     physical: {
       name: "Physical",
       period: PHYSICAL_PERIOD,
