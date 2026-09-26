@@ -6,6 +6,7 @@
  */
 
 import type { AIRequest } from "../src/types/ai";
+import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
 
 interface FallbackResult {
   title: string;
@@ -62,12 +63,40 @@ export function deterministicFallback(input: AIRequest): FallbackResult {
   }
 }
 
+function validLifePath(value: unknown): number | "" {
+  const candidate =
+    typeof value === "number"
+      ? value
+      : typeof value === "object" && value !== null
+        ? Number((value as any).number ?? (value as any).value)
+        : Number(value);
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(candidate)
+    ? candidate
+    : "";
+}
+
+function verifiedHumanDesign(profile: any): {
+  type: string;
+  strategy: string;
+  authority: string;
+} {
+  const hd = profile?.humanDesignData;
+  if (!hd || hd.status !== "verified") {
+    return { type: "", strategy: "", authority: "" };
+  }
+  return {
+    type: typeof hd.type === "string" ? hd.type : "",
+    strategy: typeof hd.strategy === "string" ? hd.strategy : "",
+    authority: typeof hd.authority === "string" ? hd.authority : "",
+  };
+}
+
 function extractCoreData(profile: any) {
-  const astro = profile?.astrologyData || profile || {};
   const numData = profile?.numerologyData || profile || {};
-  const hdData = profile?.humanDesignData || profile || {};
   const elemData = profile?.elementalMedicineData || {};
   const archData = profile?.archetypeData || profile?.archetype || {};
+  const verifiedAstrology = extractVerifiedAstrology(profile);
+  const humanDesign = verifiedHumanDesign(profile);
 
   return {
     name: profile?.name || "You",
@@ -78,19 +107,24 @@ function extractCoreData(profile: any) {
         ? profile.archetype
         : profile?.archetype?.name) ||
       "your archetype",
-    sunSign: astro?.sunSign || profile?.sunSign || "",
-    moonSign: astro?.moonSign || profile?.moonSign || "",
-    risingSign: astro?.risingSign || profile?.risingSign || "",
-    lifePath: numData?.lifePath || profile?.lifePath || "",
-    hdType: hdData?.type || profile?.hdType || "",
-    hdStrategy: hdData?.strategy || "",
-    hdAuthority: hdData?.authority || "",
+    sunSign: verifiedAstrology.sun || "",
+    moonSign: verifiedAstrology.moon || "",
+    risingSign: verifiedAstrology.rising || "",
+    lifePath: validLifePath(numData?.lifePath ?? numData?.lifePathNumber ?? profile?.lifePath),
+    hdType: humanDesign.type,
+    hdStrategy: humanDesign.strategy,
+    hdAuthority: humanDesign.authority,
     primaryElement: elemData?.primaryElement || archData?.element || profile?.element || "",
-    themes: archData?.themes || profile?.themes?.topThemes || [],
-    strengths: archData?.strengths || [],
-    shadows: archData?.shadows || [],
+    themes: Array.isArray(archData?.themes)
+      ? archData.themes
+      : Array.isArray(profile?.themes?.topThemes)
+        ? profile.themes.topThemes
+        : [],
+    strengths: Array.isArray(archData?.strengths) ? archData.strengths : [],
+    shadows: Array.isArray(archData?.shadows) ? archData.shadows : [],
     stressPattern: profile?.synthesis?.stressPattern || "",
     myPattern: profile?.synthesis?.myPattern || "",
+    unresolvedAstrology: verifiedAstrology.unresolved,
   };
 }
 
@@ -126,7 +160,14 @@ function getSurgicalNuance(d: any): string {
   if (d.hdType === "Reflector") {
     return "I am a mirror of my environment. I do not have a fixed center, only a lunar cycle that reveals the truth of where I am standing.";
   }
-  return `As a ${d.archetype}, I process life through a lens of ${d.themes[0] || "accuracy"} and ${d.themes[1] || "depth"}. My default is to ${d.shadows[0] || "over-analyze"} when I feel pressured.`;
+  const supported = [
+    d.myPattern,
+    d.stressPattern,
+    d.themes[0] ? `A supported symbolic theme in this profile is ${d.themes[0]}.` : "",
+  ].filter(Boolean);
+  return supported.length
+    ? supported.join(" ")
+    : "The saved profile does not contain enough evidence-backed behavioral material for a specific fallback interpretation.";
 }
 
 function soulGuideFallback(
@@ -148,11 +189,12 @@ function soulGuideFallback(
   lines.push(`### THE PATTERN`);
   if (d.sunSign && d.moonSign) {
     lines.push(
-      `Your ${d.sunSign} Sun demands concrete progress, while your ${d.moonSign} Moon is tracking a subtle emotional leak. This creates a friction point: you are doing the work, but you don't trust the outcome yet.`
+      `Your verified ${d.sunSign} Sun and ${d.moonSign} Moon are both available as symbolic lenses. Compare the identity and emotional themes they describe against what is actually happening rather than treating either placement as a fixed behavior claim.`
     );
   } else {
     lines.push(
-      `Your current pattern is centered on ${topTheme}. You are trying to solve a complex problem with a simple tool, which is causing the current stall.`
+      d.myPattern ||
+        `The current saved profile emphasizes ${topTheme}. No verified Sun/Moon interaction is available here, so the fallback will not invent one.`
     );
   }
 
@@ -160,17 +202,17 @@ function soulGuideFallback(
   lines.push(`### THE MECHANICS`);
   if (d.hdType) {
     lines.push(
-      `As a ${d.hdType}, your power is in ${d.hdStrategy === "To Respond" ? "response, not initiation" : "invitation and recognition"}. ${d.lifePath ? `Life Path ${d.lifePath} confirms this — ` : ""}stop trying to force the timeline. The harder you push, the more noise you create.`
+      `Verified Human Design core: ${d.hdType}${d.hdStrategy ? ` · Strategy: ${d.hdStrategy}` : ""}${d.hdAuthority ? ` · Authority: ${d.hdAuthority}` : ""}. Treat this as a symbolic decision framework, not a diagnosis or command.`
     );
   } else {
     lines.push(
-      `The mechanics are simple: rushing is a trauma response, not a strategy. You are in ${phase}, which requires observation, not over-correction.`
+      `No verified Human Design core is available in this profile. The saved phase is ${phase}; use it only as a planning label, and rely on observable behavior rather than an invented decision mechanism.`
     );
   }
 
   lines.push("");
   lines.push(`### THE STRIKE`);
-  lines.push(`**Do this now:** ${focus}. Do not look at the next three steps. Only the immediate one. Use your ${d.primaryElement || "core"} energy to stabilize before you commit further.`);
+  lines.push(`**Do this now:** ${focus}. Keep the action small enough to observe the result before adding another interpretation.`);
 
   return {
     title: "Codex Failsafe: Deep Alignment",
@@ -186,11 +228,15 @@ function dailyGuidanceFallback(profile: any): FallbackResult {
   lines.push(`## ⚓ DAILY ANCHOR`);
   lines.push(`${nuance}`);
   lines.push("");
-  lines.push(`**Observation**: Today is pulling you toward ${d.themes[1] || "distraction"}. Your ${d.sunSign || "core"} drive is high, but your focus is fragmented.`);
+  lines.push(
+    d.themes[1]
+      ? `**Observation**: The saved profile includes the symbolic theme "${d.themes[1]}". Use it as a reflection prompt, not evidence that today's conditions caused a particular mood.`
+      : `**Observation**: No current-day astrological evidence was supplied to this fallback, so it will not invent a daily cosmic condition.`
+  );
   lines.push("");
-  lines.push(`**The Shift**: Stop the internal debate. Whether you feel like it or not, the architecture of your ${d.archetype} requires one act of discipline before noon.`);
+  lines.push(`**The Shift**: Choose one observable task and define what "done" means before starting it.`);
   lines.push("");
-  lines.push(`**Strike**: Complete the most avoided task first. No exceptions. No research. Just execution.`);
+  lines.push(`**Action**: Complete one bounded task, then record whether it reduced friction or created new information.`);
 
   return {
     title: "Daily Codex Failsafe",
@@ -202,16 +248,24 @@ function dailyHoroscopeFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
 
   const lines: string[] = [];
-  lines.push(`## 🌌 COSMIC MECHANICS`);
+  lines.push(`## 🌌 DAILY ASTROLOGY FALLBACK`);
   lines.push(
-    d.sunSign
-      ? `Your ${d.sunSign} Sun is in high-friction today. This isn't a problem; it's a diagnostic. Where you feel resistance is exactly where you are leaking energy.`
-      : `Today's energy is a mirror. If you feel stuck, it's because you are trying to use an old pattern on a new problem.`
+    "Current transit evidence is unavailable in deterministic fallback mode, so Soul Codex will not invent a planetary condition for today."
   );
+  if (d.sunSign) {
+    lines.push(
+      `Your verified natal Sun is ${d.sunSign}. That is a static birth-chart fact; any meaning attached to it remains symbolic and is not evidence about today's events.`
+    );
+  }
+  if (d.moonSign) {
+    lines.push(
+      `Your verified natal Moon is ${d.moonSign}. Use its interpretation only as a reflection lens, not as a claim about your present mood.`
+    );
+  }
   lines.push("");
-  lines.push(`**Alignment**: ${d.moonSign ? `Your ${d.moonSign} Moon needs a boundary.` : "Set a firm boundary around your time."} Do not let external noise dictate your internal pace.`);
-  lines.push("");
-  lines.push(`**Action**: Move the body for 10 minutes. Then do the one thing you said you'd do yesterday.`);
+  lines.push(
+    `**Action**: Use one observable condition from your actual day—deadline, energy level, conversation, or unfinished task—to choose the next step.`
+  );
 
   return {
     title: "Horoscope Failsafe",
@@ -233,19 +287,19 @@ function codexReadingFallback(profile: any): FallbackResult {
 
   if (d.moonSign) {
     sections.push(
-      `**Emotional Engine**: Your ${d.moonSign} Moon runs the background process. You absorb more than you admit, which leads to sudden ${d.shadows[0] || "withdrawal"} when the load becomes too high.`
+      `**Emotional Lens**: Your verified ${d.moonSign} Moon can be used as a symbolic lens for emotional processing. Keep only the interpretation that matches observed experience; the placement itself does not prove a behavior.`
     );
   }
 
   if (d.hdType) {
     sections.push(
-      `**System Logic**: Your ${d.hdType} type is your navigation system. ${d.hdStrategy === "To Respond" ? "Wait for the world to show you where to put your energy." : "Wait for the recognition of your specific genius."} Forcing the world to move at your pace is the quickest way to burnout.`
+      `**System Logic**: Verified Human Design core: ${d.hdType}${d.hdStrategy ? ` · ${d.hdStrategy}` : ""}${d.hdAuthority ? ` · ${d.hdAuthority}` : ""}. Treat the system as a symbolic experiment and compare it against lived decisions.`
     );
   }
 
   if (d.lifePath) {
     sections.push(
-      `**Long-Game**: Life Path ${d.lifePath} is the current underneath the waves. It pulls you toward ${d.themes[2] || "legacy"}. Every small choice either feeds this legacy or dilutes it.`
+      `**Long-Game**: Life Path ${d.lifePath} is a deterministic numerology result. Its interpretation is symbolic; use it as a planning lens rather than a prediction.`
     );
   }
 
@@ -259,12 +313,14 @@ function todayCardFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
   
   const lines: string[] = [
-    `**RECOGNITION**: I am the architect of my own focus.`,
-    `**FOCUS**: ${d.themes[0] || "Absolute Integrity"}.`,
+    `**RECOGNITION**: I can separate what is verified, what is calculated, and what is only interpretive.`,
+    `**FOCUS**: ${d.themes[0] ? `Use "${d.themes[0]}" as a reflection prompt` : "Choose one observable priority"}.`,
     `**DO**:`,
     `- Zero-out one lingering obligation.`,
     `- Close the tabs that are leaking my attention.`,
-    `- Trust the ${d.hdAuthority || "internal"} signal.`,
+    d.hdAuthority
+      ? `- If useful, test the verified Human Design authority "${d.hdAuthority}" against the actual result of the decision.`
+      : `- Use the decision evidence you actually have; no Human Design authority is verified here.`,
     `**DONT**:`,
     `- Accept a "maybe" when I know it's a "no."`,
     `- Rushing the foundational work.`,
@@ -283,8 +339,13 @@ function biographyFallback(profile: any): FallbackResult {
   const bio = {
     codename: d.archetype,
     motto: `Surgical accuracy. Zero compromise.`,
-    my_pattern: `I operate through the ${d.archetype} lens, using ${d.sunSign || "precise"} logic and ${d.moonSign || "deep"} intuition to build what matters.`,
-    how_i_move: `As a ${d.hdType || d.archetype}, I move when the signal is clear. I don't follow the crowd; I follow the blueprint.`,
+    my_pattern: d.myPattern ||
+      (d.sunSign
+        ? `My verified natal Sun is ${d.sunSign}; I treat its meaning as a symbolic lens and test it against lived behavior.`
+        : `I do not have enough verified behavioral evidence for a specific identity claim in fallback mode.`),
+    how_i_move: d.hdType
+      ? `My verified Human Design core is ${d.hdType}${d.hdStrategy ? ` with strategy ${d.hdStrategy}` : ""}; I use it as an experiment, not a command.`
+      : `No verified Human Design movement strategy is available in this fallback.`,
     what_i_wont_tolerate: "Vagueness, generic advice, and misaligned energy.",
     what_im_building: `A legacy of ${d.themes[1] || "truth"} and ${d.themes[2] || "impact"}.`
   };
