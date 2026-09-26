@@ -92,3 +92,24 @@ test("Offline Codex runtime", async (suite) => {
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.soul-urge"), true);
   });
 });
+
+
+test("offline profile keeps valid numerology when Soul Urge component is unavailable", () => {
+  const profile = generateOfflineCodexProfile({
+    name: "Lynn",
+    birthDate: "1990-09-17",
+    birthTime: "11:11",
+    birthLocation: "Bronx, New York",
+    timezone: "America/New_York",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  }, {
+    generatedAt: "2026-09-26T12:00:00.000Z",
+    currentYear: 2026,
+  });
+
+  assert.equal(profile.numerologyData.soulUrge, null);
+  assert.ok(typeof profile.numerologyData.expression === "number");
+  assert.ok(typeof profile.numerologyData.personality === "number");
+  assert.doesNotMatch(profile.biography, /Soul Urge null/);
+});
