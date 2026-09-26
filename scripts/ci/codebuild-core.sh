@@ -37,6 +37,7 @@ node --import tsx --test \
   tests/civil-time-authority-contract.test.ts \
   tests/zoned-instant.test.ts \
   tests/timeline-cycle-reduction.test.ts \
+  tests/numerology-cycle-authority-contract.test.ts \
   tests/daily-template-system-mix.test.ts \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
