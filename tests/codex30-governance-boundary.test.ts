@@ -1,0 +1,149 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { astrologySignals } from "../packages/core/codex30/systems/astrology";
+import { aspectSignals } from "../packages/core/codex30/systems/aspects";
+import { humanDesignSignals } from "../packages/core/codex30/systems/humanDesign";
+import {
+  collectSignals,
+  collectSupportingSignals,
+} from "../packages/core/codex30/registry";
+
+test("Codex30 astrology requires verified, recognized zodiac evidence", () => {
+  const chart = {
+    planets: {
+      sun: { sign: "Virgo" },
+      moon: { sign: "Pisces" },
+      rising: { sign: "Scorpio" },
+    },
+  };
+
+  assert.deepEqual(astrologySignals(chart, false), []);
+
+  const verified = astrologySignals(chart, true);
+  assert.equal(verified.length, 3);
+  assert.ok(verified.every((signal) => signal.confidence === "high"));
+  assert.ok(verified.every((signal) => /verified|astronomical|symbolic/i.test(signal.label)));
+
+  assert.deepEqual(
+    astrologySignals({ planets: { sun: { sign: "Ophiuchus" } } }, true),
+    [],
+  );
+});
+
+test("Codex30 aspects never fabricate missing or unsupported geometry", () => {
+  assert.deepEqual(
+    aspectSignals(
+      { aspects: [{ planet1: "Sun", planet2: "Moon", aspect: "trine" }] },
+      true,
+    ),
+    [],
+    "missing orb must stay unresolved rather than defaulting to 1 degree",
+  );
+
+  assert.deepEqual(
+    aspectSignals(
+      {
+        aspects: [
+          { planet1: "Sun", planet2: "Moon", aspect: "quincunx", orb: 1.2 },
+        ],
+      },
+      true,
+    ),
+    [],
+    "non-governed aspect types must not enter the major-aspect signal set",
+  );
+
+  assert.deepEqual(
+    aspectSignals(
+      {
+        aspects: [
+          { planet1: "Sun", planet2: "Moon", aspect: "trine", orb: 1.2 },
+        ],
+      },
+      false,
+    ),
+    [],
+    "unverified aspect geometry must not influence Codex30",
+  );
+
+  const valid = aspectSignals(
+    {
+      aspects: [
+        { planet1: "Sun", planet2: "Moon", aspect: "trine", orb: 1.2 },
+      ],
+    },
+    true,
+  );
+  assert.equal(valid.length, 1);
+  assert.match(valid[0]?.label ?? "", /verified aspect geometry/i);
+});
+
+test("Codex30 Human Design requires the complete verified core contract", () => {
+  const base = {
+    type: "Reflector",
+    status: "verified",
+    verificationReceiptId: "receipt-1",
+    independentSource: "independent-verifier",
+    verifiedAt: "2026-09-26T12:00:00.000Z",
+  };
+
+  assert.equal(humanDesignSignals(base).length, 1);
+  assert.equal(
+    humanDesignSignals({ ...base, verificationReceiptId: undefined }).length,
+    0,
+  );
+  assert.equal(
+    humanDesignSignals({ ...base, verifiedAt: "not-a-date" }).length,
+    0,
+  );
+  assert.equal(
+    humanDesignSignals({ ...base, type: "Unknown Aura Type" }).length,
+    0,
+  );
+});
+
+test("Codex30 stable collector excludes user-assessed moral and legacy element signals", () => {
+  const input = {
+    profile: {
+      signals: { lifePath: 9 },
+    },
+    userInputs: {
+      stressElement: "fire",
+      decisionStyle: "analysis",
+      pressureStyle: "step_in",
+      nonNegotiables: ["no lies"],
+    },
+  };
+
+  const stable = collectSignals(input as any);
+  assert.ok(stable.some((signal) => signal.system === "numerology"));
+  assert.equal(
+    stable.some(
+      (signal) =>
+        signal.system === "moralCompass" || signal.system === "elements",
+    ),
+    false,
+  );
+
+  const supporting = collectSupportingSignals(input as any);
+  assert.ok(supporting.length > 0);
+  assert.ok(supporting.every((signal) => signal.system === "moralCompass"));
+});
+
+test("package and legacy Codex30 registries preserve the same separation doctrine", () => {
+  const packageRegistry = readFileSync(
+    "packages/core/codex30/registry.ts",
+    "utf8",
+  );
+  const legacyRegistry = readFileSync("soulcodex/codex30/registry.ts", "utf8");
+
+  for (const source of [packageRegistry, legacyRegistry]) {
+    assert.match(source, /collectSupportingSignals/);
+    assert.doesNotMatch(source, /\.\.\.elementSignals\(/);
+    assert.doesNotMatch(
+      source.match(/export function collectSignals[\s\S]*?return Array\.from\(map\.values\(\)\);\n}/)?.[0] ?? "",
+      /moralCompassSignals/,
+    );
+  }
+});
