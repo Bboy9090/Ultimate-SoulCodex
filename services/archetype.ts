@@ -1,4 +1,5 @@
 import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
+import { synthesizeArchetype as synthesizeGovernedArchetype } from "../server/services/archetype";
 
 interface ArchetypeData {
   title: string;
@@ -502,97 +503,25 @@ export function synthesizeArchetype(
   numerologyData: any,
   personalityData: any
 ): ArchetypeData {
-  const rawAstrologyData = astrologyData;
-  astrologyData = governedAstrologyView(astrologyData);
-  const keywords: string[] = [];
-  
-  // Extract keywords from verified astrology only
-  if (astrologyData) {
-    if (astrologyData.sunSign) keywords.push(astrologyData.sunSign.toLowerCase());
-    if (astrologyData.moonSign) keywords.push(astrologyData.moonSign.toLowerCase());
-    if (astrologyData.risingSign) keywords.push(astrologyData.risingSign.toLowerCase());
-    
-    // Add element keywords
-    const sunSignLower = astrologyData.sunSign?.toLowerCase();
-    if (['aries', 'leo', 'sagittarius'].includes(sunSignLower)) keywords.push('fire');
-    if (['taurus', 'virgo', 'capricorn'].includes(sunSignLower)) keywords.push('earth');
-    if (['gemini', 'libra', 'aquarius'].includes(sunSignLower)) keywords.push('air');
-    if (['cancer', 'scorpio', 'pisces'].includes(sunSignLower)) keywords.push('water');
-  }
-  
-  // Extract keywords from numerology
-  if (numerologyData?.lifePath) {
-    keywords.push(numerologyData.lifePath.toString());
-  }
-  
-  // Extract keywords from personality
-  if (personalityData?.enneagram?.type) {
-    keywords.push(personalityData.enneagram.type.toString());
-  }
-  if (personalityData?.mbti?.type) {
-    keywords.push(personalityData.mbti.type.toLowerCase());
-  }
+  const governed = synthesizeGovernedArchetype(
+    astrologyData,
+    numerologyData,
+    personalityData,
+  );
 
-  if (keywords.length === 0) {
-    return {
-      title: "Archetype unresolved",
-      description: "No governed identity evidence is available for archetype synthesis. No substitute archetype is assigned.",
-      strengths: [],
-      shadows: [],
-      themes: [],
-      guidance: "Add or verify supported profile evidence before using archetype interpretation.",
-      integration: generateIntegrationAnalysis(rawAstrologyData, numerologyData, personalityData, {}),
-      personalizedInsights: generatePersonalizedInsights(rawAstrologyData, numerologyData, personalityData, {}),
-    };
-  }
-
-  // Find the best explicit token match. Substring matching is forbidden here:
-  // e.g. master Life Path 11 must never match archetype keyword "1".
-  let bestMatch: (typeof archetypes)[number] | null = null;
-  let maxMatches = 0;
-
-  for (const archetype of archetypes) {
-    const matches = archetype.keywords.filter((keyword) =>
-      keywords.some((candidate) => candidate === keyword)
-    ).length;
-
-    if (matches > maxMatches) {
-      maxMatches = matches;
-      bestMatch = archetype;
-    }
-  }
-
-  // Never fall back to archetypes[0] when no governed rule matched.
-  if (!bestMatch || maxMatches === 0) {
-    return {
-      title: "Archetype unresolved",
-      description: "The available governed evidence does not match a declared archetype rule. No default archetype is assigned.",
-      strengths: [],
-      shadows: [],
-      themes: [],
-      guidance: "Keep the verified inputs visible without forcing them into an archetype label.",
-      integration: generateIntegrationAnalysis(rawAstrologyData, numerologyData, personalityData, {}),
-      personalizedInsights: generatePersonalizedInsights(rawAstrologyData, numerologyData, personalityData, {}),
-    };
-  }
-
-  // Generate unique personalized title
-  const uniqueTitle = generateUniqueArchetypeTitle(astrologyData, numerologyData, personalityData);
-
-  // Generate detailed integration analysis
-  const integration = generateIntegrationAnalysis(rawAstrologyData, numerologyData, personalityData, bestMatch);
-  const personalizedInsights = generatePersonalizedInsights(rawAstrologyData, numerologyData, personalityData, bestMatch);
-
-  const result = {
-    title: uniqueTitle,
-    description: `Reflection lens only — not a measured personality result. ${bestMatch.description}`,
-    strengths: bestMatch.strengths || [],
-    shadows: bestMatch.shadows || [],
-    themes: bestMatch.themes || [],
-    guidance: bestMatch.guidance,
-    integration,
-    personalizedInsights
+  return {
+    ...governed,
+    integration: generateIntegrationAnalysis(
+      astrologyData,
+      numerologyData,
+      personalityData,
+      governed,
+    ),
+    personalizedInsights: generatePersonalizedInsights(
+      astrologyData,
+      numerologyData,
+      personalityData,
+      governed,
+    ),
   };
-  
-  return result;
 }
