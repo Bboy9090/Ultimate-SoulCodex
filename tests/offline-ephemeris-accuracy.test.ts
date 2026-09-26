@@ -168,3 +168,64 @@ test('offline Sun does not normalize a nonexistent DST spring-forward birth time
     assert.equal(result.reason, 'invalid_or_ambiguous_local_time');
   }
 });
+
+
+function utcDateStringsForYear(year: number): string[] {
+  const values: string[] = [];
+  for (
+    let current = new Date(Date.UTC(year, 0, 1));
+    current.getUTCFullYear() === year;
+    current = new Date(current.getTime() + 86_400_000)
+  ) {
+    values.push(current.toISOString().slice(0, 10));
+  }
+  return values;
+}
+
+test('date-only Sun identifies all twelve annual ingress days across diverse timezones', { timeout: 60_000 }, () => {
+  const timezones = [
+    'UTC',
+    'America/New_York',
+    'Asia/Kathmandu',
+    'Australia/Lord_Howe',
+  ];
+  const dates = utcDateStringsForYear(2026);
+
+  for (const timezone of timezones) {
+    const ingressDates: string[] = [];
+
+    for (const date of dates) {
+      const result = resolveOfflineSun(date, null, timezone);
+
+      if (
+        result.status === 'unresolved' &&
+        result.reason === 'sun_sign_changes_within_local_day'
+      ) {
+        ingressDates.push(date);
+        assert.equal(result.longitudeDegrees, null);
+        assert.equal(result.policy, 'unresolved');
+        continue;
+      }
+
+      assert.equal(result.status, 'resolved', `${timezone} ${date}`);
+      if (result.status === 'resolved') {
+        assert.equal(result.policy, 'stable-across-local-day');
+        assert.equal(result.longitudeDegrees, null);
+        assert.equal(result.inputTimestamps.length, 2);
+      }
+    }
+
+    assert.equal(
+      ingressDates.length,
+      12,
+      `${timezone} should withhold exactly the twelve local-date solar ingress days in 2026; got ${ingressDates.join(', ')}`,
+    );
+
+    const ingressMonths = new Set(ingressDates.map((date) => date.slice(5, 7)));
+    assert.equal(
+      ingressMonths.size,
+      12,
+      `${timezone} should expose one solar ingress-containing local date in every month`,
+    );
+  }
+});
