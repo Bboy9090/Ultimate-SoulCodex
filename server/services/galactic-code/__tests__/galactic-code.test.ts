@@ -416,6 +416,64 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
   });
 
+
+  await t.test('non-scoring metadata does not perturb evidence fingerprint', () => {
+    const base = generateGalacticCode(testInput, TRUSTED);
+    const variants: GalacticCodeInput[] = [
+      {
+        ...testInput,
+        astrology: {
+          ...testInput.astrology,
+          dominantModalities: ['fixed'],
+        },
+      },
+      {
+        ...testInput,
+        humanDesign: {
+          ...testInput.humanDesign,
+          definition: 'Triple Split',
+        },
+      },
+      {
+        ...testInput,
+        humanDesign: {
+          ...testInput.humanDesign,
+          centers: {
+            defined: testInput.humanDesign.centers?.defined ?? [],
+            undefined: ['Root', 'G'],
+          },
+        },
+      },
+      {
+        ...testInput,
+        humanDesign: {
+          ...testInput.humanDesign,
+          gates: ['1', '2', '3'],
+        },
+      },
+      {
+        ...testInput,
+        humanDesign: {
+          ...testInput.humanDesign,
+          incarnationCross: 'Different descriptive cross label',
+        },
+      },
+      {
+        ...testInput,
+        birthLocation: 'Same verified evidence, different display label',
+      },
+    ];
+
+    for (const variant of variants) {
+      const result = generateGalacticCode(variant, TRUSTED);
+      assert.strictEqual(
+        result.fingerprint,
+        base.fingerprint,
+        'metadata that does not affect governed synthesis must not change fingerprint identity',
+      );
+    }
+  });
+
   await t.test('changed scoring inputs always change fingerprint', () => {
     const variants: GalacticCodeInput[] = [
       {
