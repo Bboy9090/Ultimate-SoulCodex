@@ -9,7 +9,8 @@ import { calculateActiveTransits, extractNatalPositions, type Transit } from '..
 import type { Profile } from '../shared/schema';
 import { sendToUser, type PushNotificationPayload } from '../push-notifications';
 import { storage } from '../storage';
-import type { Profile } from '../shared/schema';
+import { formatInTimeZone } from 'date-fns-tz';
+import { parseDateOnly, resolveCivilTimeStrict } from '@soulcodex/core';
 
 export interface TransitNotification {
   transit: Transit;
@@ -17,6 +18,54 @@ export interface TransitNotification {
   userId: string;
   notifiedAt: Date;
   notificationId: string;
+}
+
+const MAX_UPCOMING_NOTIFICATION_DAYS = 366;
+
+function notificationTimezone(profile: Profile): string {
+  const timezone =
+    typeof (profile as any).timezone === 'string' && (profile as any).timezone.trim()
+      ? (profile as any).timezone.trim()
+      : 'UTC';
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date(0));
+  } catch {
+    throw new RangeError(`Invalid transit notification timezone: ${timezone}`);
+  }
+  return timezone;
+}
+
+function notificationDateKey(profile: Profile, date: Date): string {
+  return formatInTimeZone(date, notificationTimezone(profile), 'yyyy-MM-dd');
+}
+
+function dateOnlyOrdinal(dateISO: string): number {
+  const { year, month, day } = parseDateOnly(dateISO);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
+function dateOnlyFromOrdinal(ordinal: number): string {
+  return new Date(ordinal * 86_400_000).toISOString().slice(0, 10);
+}
+
+function localNoonForNotification(dateISO: string, timezone: string): Date {
+  const resolution = resolveCivilTimeStrict(dateISO, '12:00', timezone);
+  if (resolution.status !== 'valid' || !resolution.utc) {
+    throw new RangeError(
+      `Transit notification local noon is ${resolution.status}: ${resolution.reason ?? 'unresolved'}`,
+    );
+  }
+  return resolution.utc;
+}
+
+function transitNotificationId(
+  profile: Profile,
+  transit: Transit,
+  date: Date,
+): string {
+  const dateKey = notificationDateKey(profile, date);
+  return `${profile.id}-${transit.planet}-${transit.natalPlanet}-${transit.aspect}-${dateKey}`;
 }
 
 /**
@@ -44,7 +93,7 @@ export async function checkAndNotifySignificantTransits(
 
   for (const transit of significantTransits) {
     // Check if we've already notified for this transit today
-    const alreadyNotified = await checkIfAlreadyNotified(profile.id, userId, transit, today);
+    const alreadyNotified = await checkIfAlreadyNotified(profile, userId, transit, today);
     if (alreadyNotified) {
       continue;
     }
@@ -63,7 +112,7 @@ export async function checkAndNotifySignificantTransits(
         profileId: profile.id,
         userId,
         notifiedAt: today,
-        notificationId: `${profile.id}-${transit.planet}-${transit.natalPlanet}-${today.toISOString().split('T')[0]}`
+        notificationId: transitNotificationId(profile, transit, today)
       });
     }
   }
@@ -125,47 +174,29 @@ function createTransitNotificationPayload(
  * Get notification title
  */
 function getTransitNotificationTitle(transit: Transit): string {
-  const planetNames: Record<string, string> = {
-    Pluto: '🔄 Transformation Transit',
-    Neptune: '🌊 Spiritual Awakening',
-    Uranus: '⚡ Revolutionary Energy',
-    Saturn: '🏛️ Mastery Challenge',
-    Jupiter: '✨ Expansion Opportunity'
-  };
-
-  return planetNames[transit.planet] || `${transit.planet} Transit`;
+  return `Transit Reflection — ${transit.planet}`;
 }
 
 /**
  * Get notification body
  */
 function getTransitNotificationBody(transit: Transit, dominantTheme: string): string {
-  const aspectNames: Record<string, string> = {
-    Conjunction: 'aligning with',
-    Opposition: 'opposing',
-    Square: 'challenging',
-    Trine: 'harmonizing with',
-    Sextile: 'supporting'
-  };
-
-  const aspectText = aspectNames[transit.aspect] || 'aspecting';
-  
-  return `${transit.planet} is ${aspectText} your ${transit.natalPlanet}. ${transit.theme}`;
+  void dominantTheme;
+  return `${transit.planet} forms a ${transit.aspect.toLowerCase()} to your verified natal ${transit.natalPlanet}. ${transit.theme} Use this as a reflection prompt, not a prediction.`;
 }
 
 /**
  * Check if we've already notified for this transit today
  */
 async function checkIfAlreadyNotified(
-  profileId: string,
+  profile: Profile,
   userId: string,
   transit: Transit,
   date: Date
 ): Promise<boolean> {
-  const notificationId = `${profileId}-${transit.planet}-${transit.natalPlanet}-${date.toISOString().split('T')[0]}`;
+  void userId;
+  const notificationId = transitNotificationId(profile, transit, date);
   
-  // Check storage for existing notification
-  // You'll need to add this method to storage
   try {
     const existing = await storage.getTransitNotification(notificationId);
     return !!existing;
@@ -218,14 +249,20 @@ export async function getUpcomingTransitNotifications(
   profile: Profile,
   days: number = 7
 ): Promise<Array<{ date: Date; transit: Transit; notification: PushNotificationPayload }>> {
+  if (!Number.isInteger(days) || days < 1 || days > MAX_UPCOMING_NOTIFICATION_DAYS) {
+    throw new RangeError(`Transit notification days must be 1-${MAX_UPCOMING_NOTIFICATION_DAYS}`);
+  }
+
   const astrologyData = profile.astrologyData as any;
   const natalPlanets = extractNatalPositions(astrologyData);
-  const today = new Date();
+  const timezone = notificationTimezone(profile);
+  const todayISO = formatInTimeZone(new Date(), timezone, 'yyyy-MM-dd');
+  const startOrdinal = dateOnlyOrdinal(todayISO);
   const upcoming: Array<{ date: Date; transit: Transit; notification: PushNotificationPayload }> = [];
 
-  for (let i = 0; i < days; i++) {
-    const checkDate = new Date(today);
-    checkDate.setDate(checkDate.getDate() + i);
+  for (let i = 0; i < days; i += 1) {
+    const dateISO = dateOnlyFromOrdinal(startOrdinal + i);
+    const checkDate = localNoonForNotification(dateISO, timezone);
     
     const activeTransits = calculateActiveTransits(natalPlanets, checkDate);
     const significant = activeTransits.transits.filter(t => 
