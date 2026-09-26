@@ -1186,11 +1186,17 @@ function canonicalBirthDateTimestamp(value: unknown): Date {
     if (Number.isNaN(value.getTime())) {
       throw new RangeError("Birth date must be a valid civil date");
     }
-    return new Date(Date.UTC(
-      value.getUTCFullYear(),
-      value.getUTCMonth(),
-      value.getUTCDate(),
-    ));
+    if (
+      value.getUTCHours() !== 0 ||
+      value.getUTCMinutes() !== 0 ||
+      value.getUTCSeconds() !== 0 ||
+      value.getUTCMilliseconds() !== 0
+    ) {
+      throw new RangeError(
+        "Birth date Date objects must already be canonical UTC midnight; use YYYY-MM-DD for civil dates",
+      );
+    }
+    return new Date(value.getTime());
   }
 
   if (typeof value === "string" && schema.isValidDateOnly(value.trim())) {
