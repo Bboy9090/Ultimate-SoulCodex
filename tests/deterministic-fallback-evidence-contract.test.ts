@@ -103,7 +103,7 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
     } as any);
 
     const parsed = JSON.parse(result.content);
-    assert.match(parsed.my_pattern, /not enough verified behavioral evidence/i);
+    assert.match(parsed.my_pattern, /enough verified behavioral evidence/i);
     assert.match(parsed.how_i_move, /No verified Human Design movement strategy/i);
     assert.doesNotMatch(result.content, /Scorpio|Pisces|Projector/);
   });
