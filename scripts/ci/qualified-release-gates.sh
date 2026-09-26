@@ -10,6 +10,7 @@ node --import tsx --test \
   tests/strict-civil-time.test.ts \
   tests/jpl-horizons-reference.test.ts \
   tests/astrology-evidence-matrix.test.ts \
+  tests/verification-angle-authority.test.ts \
   tests/planetary-boundary-integrity.test.ts \
   tests/ascendant-verification.test.ts \
   tests/bobby-big-three-golden.test.ts \
