@@ -109,20 +109,29 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
         planet2: "moon",
         aspect: ["conjunction", "sextile", "square", "trine", "opposition"][index % 5],
         orb: Number((0.4 + (index % 7) * 0.37).toFixed(2)),
+        policyId: "ASTRO-ASPECT-MAJOR-v1",
+        evidenceArtifactId: "aspect-differentiation-fixture",
       },
       {
         planet1: "venus",
         planet2: "mars",
         aspect: ["trine", "square", "sextile"][index % 3],
         orb: Number((0.7 + (index % 5) * 0.41).toFixed(2)),
+        policyId: "ASTRO-ASPECT-MAJOR-v1",
+        evidenceArtifactId: "aspect-differentiation-fixture",
       },
       {
         planet1: "mercury",
         planet2: "saturn",
         aspect: ["square", "trine", "opposition", "sextile"][index % 4],
         orb: Number((0.3 + (index % 6) * 0.29).toFixed(2)),
+        policyId: "ASTRO-ASPECT-MAJOR-v1",
+        evidenceArtifactId: "aspect-differentiation-fixture",
       },
     ],
+    verification: {
+      policyId: "ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1",
+    },
   };
 }
 
