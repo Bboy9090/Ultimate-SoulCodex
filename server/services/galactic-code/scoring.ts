@@ -296,9 +296,9 @@ export function scoreAxes(normalized: NormalizedGalacticInput): GalacticAxisScor
   for (const center of normalized.humanDesign.definedCenters) {
     applyWeighted(axes, CENTER_TO_AXES[center], HD_WEIGHTS.definedCenter, `Defined center: ${center}`);
   }
-  for (const channel of normalized.humanDesign.channels) {
-    applyBehaviorText(axes, channel, HD_WEIGHTS.channel, 'HD channel');
-  }
+  // Channels remain verified/inspectable Human Design evidence, but Soul Codex
+  // does not currently maintain an approved channel-to-axis semantic map.
+  // Do not route channel labels through generic behavioral keyword matching.
 
   // Numerology: all governed core values score independently instead of Life Path carrying the whole system.
   applyNumber(axes, normalized.numerology.lifePath, NUMEROLOGY_WEIGHTS.lifePath, 'Life Path');
