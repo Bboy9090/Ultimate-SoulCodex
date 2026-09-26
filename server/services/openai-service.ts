@@ -1,4 +1,3 @@
-import { generateText, isGeminiAvailable } from "../../gemini";
 import { extractVerifiedAstrology } from "../lib/verified-astrology";
 
 interface BiographyRequest {
@@ -26,34 +25,42 @@ function astrologyPromptLines(data: BiographyRequest): string[] {
   return lines;
 }
 
+/**
+ * Stable profile biography authority.
+ *
+ * Persisted identity text must be reproducible from governed inputs. Optional
+ * AI rewriting may exist as a presentation layer elsewhere, but it must never
+ * become the authoritative stored biography.
+ */
 export async function generateBiography(data: BiographyRequest): Promise<string> {
-  if (!isGeminiAvailable()) return generateFallbackBiography(data);
+  const description =
+    typeof data.archetype?.description === "string"
+      ? data.archetype.description.trim()
+      : "";
+  const themes = Array.isArray(data.archetype?.themes)
+    ? data.archetype.themes
+        .filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0)
+        .slice(0, 4)
+    : [];
+  const guidance =
+    typeof data.archetype?.guidance === "string"
+      ? data.archetype.guidance.trim()
+      : "";
 
-  try {
-    const prompt = `You are an expert behavioral biographer. Create a compelling 2-3 paragraph first-person narrative for ${data.name}.
+  if (!description) return generateFallbackBiography(data);
 
-Profile Summary:
-- Archetype: ${data.archetypeTitle}
-${astrologyPromptLines(data).join("\n")}
-- Life Path Number: ${data.numerologyData?.lifePath || "Unresolved"}
-- Enneagram Type: ${data.personalityData?.enneagram?.type || "Unresolved"}
-- MBTI Type: ${data.personalityData?.mbti?.type || "Unresolved"}
+  const themeSentence = themes.length
+    ? `Supported themes: ${themes.join(", ")}.`
+    : "";
+  const actionSentence = guidance
+    ? `A grounded next step from this synthesis is: ${guidance}`
+    : "Use the supported pattern as a reflection prompt and compare it with lived experience.";
 
-Core Themes from Analysis:
-${data.archetype?.themes?.join(", ") || "No verified themes supplied"}
-
-Rules:
-1. Use only supplied profile facts.
-2. Do not invent or infer unresolved astrology, biography, motives, trauma, or confidence.
-3. Describe observable patterns and practical meaning.
-4. Return only the biographical text.`;
-
-    const result = await generateText({ prompt, temperature: 0.8 });
-    return result || generateFallbackBiography(data);
-  } catch (error) {
-    console.error("Error generating biography:", error);
-    return generateFallbackBiography(data);
-  }
+  return [
+    `${data.name}'s current Soul Codex centers on ${data.archetypeTitle}. ${description}`,
+    themeSentence,
+    actionSentence,
+  ].filter(Boolean).join("\n\n");
 }
 
 /**
