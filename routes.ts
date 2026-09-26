@@ -48,13 +48,14 @@ import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
 import { buildNatalReportPdf } from "./server/natalReportPdf";
 import { buildNatalReportInput, natalReportFilename } from "./server/lib/natal-report-contract";
 import { profileBelongsToActor } from "./server/lib/profile-ownership";
+import { extractVerifiedAstrology } from "./server/lib/verified-astrology";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
 import { isGeneric, scoreOutput } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
-import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
+import { calcLifePath, getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
 import { VOICE_LAWS } from "./soulcodex/codex30/prompts/voice_laws";
 import { pureText } from "./services/sanitizer";
 
@@ -3526,91 +3527,129 @@ ${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) 
     }
   });
 
-  // ── Soul Comparables — 2K-style archetypal matches ─────────────────────────
+  // ── Soul Comparables — symbolic analogies from governed saved evidence ──────
   app.post("/api/soul-comparables", async (req, res) => {
     try {
-      const { profile } = req.body;
-      if (!profile) return res.status(400).json({ error: "profile required" });
+      const requestedProfileId = req.body?.profileId ?? req.body?.profile?.id;
+      if (!requestedProfileId) {
+        return res.status(400).json({
+          available: false,
+          error: "profileId required; caller-supplied identity labels are not accepted",
+        });
+      }
 
-      const archetype   = profile.archetype?.name ?? "Unknown Archetype";
-      const element     = profile.archetype?.element ?? "";
-      const role        = profile.archetype?.role ?? "";
-      const sunSign     = profile.sunSign ?? profile.astrologyData?.sunSign ?? "Unknown";
-      const moonSign    = profile.moonSign ?? profile.astrologyData?.moonSign ?? "Unknown";
-      const risingSign  = profile.risingSign ?? profile.astrologyData?.risingSign ?? "Unknown";
-      const lifePath    = profile.lifePath ?? "";
-      const hdType      = profile.humanDesignData?.type ?? "Unknown";
-      const hdAuth      = profile.humanDesignData?.authority ?? "";
-      const hdProf      = profile.humanDesignData?.profile ?? "";
-      const coreEssence = profile.synthesis?.coreEssence ?? "";
+      const savedProfile = await storage.getProfile(String(requestedProfileId));
+      const actor = {
+        userId: (req.user as any)?.id ?? null,
+        sessionId: req.sessionID ?? null,
+      };
+      if (!savedProfile || !profileBelongsToActor(savedProfile, actor)) {
+        return res.status(404).json({ available: false, error: "Profile not found or access denied" });
+      }
+
+      const verifiedAstrology = extractVerifiedAstrology({
+        astrologyData: savedProfile.astrologyData,
+      });
+      const hd = (savedProfile.humanDesignData ?? {}) as any;
+      const hdCandidate = hd?.status === "verified"
+        ? (hd.candidate && typeof hd.candidate === "object" ? hd.candidate : hd)
+        : {};
+      const dateOnly = savedProfile.birthDate instanceof Date
+        ? savedProfile.birthDate.toISOString().slice(0, 10)
+        : String(savedProfile.birthDate).slice(0, 10);
+
+      let lifePath: number | null = null;
+      try {
+        lifePath = calcLifePath(dateOnly);
+      } catch {
+        lifePath = null;
+      }
+
+      const evidenceLines = [
+        verifiedAstrology.sun ? `- Verified Sun: ${verifiedAstrology.sun}` : null,
+        verifiedAstrology.moon ? `- Verified Moon: ${verifiedAstrology.moon}` : null,
+        verifiedAstrology.rising ? `- Verified Rising: ${verifiedAstrology.rising}` : null,
+        lifePath !== null ? `- Life Path: ${lifePath} (deterministic numerology; symbolic interpretation only)` : null,
+        typeof hdCandidate.type === "string" ? `- Verified HD Type: ${hdCandidate.type}` : null,
+        typeof hdCandidate.authority === "string" ? `- Verified HD Authority: ${hdCandidate.authority}` : null,
+        typeof hdCandidate.profile === "string" ? `- Verified HD Profile: ${hdCandidate.profile}` : null,
+      ].filter(Boolean);
+
+      if (evidenceLines.length === 0) {
+        return res.status(422).json({
+          available: false,
+          reason: "No governed saved evidence is available for symbolic comparables.",
+        });
+      }
 
       const prompt = `
-You are generating 4 soul archetype comparables for this person's natal chart + Human Design profile. Think of it like NBA 2K telling you which players your build is most similar to, but instead of players, you're matching to archetypes.
+Create four OPTIONAL SYMBOLIC ANALOGIES for ${savedProfile.name}. These are reflective comparisons, not factual claims that the person resembles, equals, or shares the biography of the comparison target.
 
-PROFILE:
-- Archetype: ${archetype}${element ? ` (${element}${role ? ` - ${role}` : ""})` : ""}
-- Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${risingSign}
-${lifePath ? `- Life Path: ${lifePath}` : ""}
-- Human Design: ${hdType}${hdAuth ? `, ${hdAuth} Authority` : ""}${hdProf ? `, ${hdProf} Profile` : ""}
-${coreEssence ? `- Core essence: ${coreEssence}` : ""}
+SUPPORTED EVIDENCE:
+${evidenceLines.join("\n")}
 
-Return ONLY valid JSON (no markdown, no code fences, no explanation):
-
+Return ONLY valid JSON:
 {
-  "animal": {
-    "name": "specific animal name (e.g. Peregrine Falcon, Octopus, Mantis Shrimp)",
-    "why": "1-2 sentences on shared behavioral pattern, concrete and not generic"
-  },
-  "deity": {
-    "name": "Deity - Pantheon (e.g. Athena - Greek, Shiva - Hindu, Odin - Norse)",
-    "why": "1-2 sentences on why this deity's domain and function mirrors this profile behaviorally"
-  },
-  "historical": {
-    "name": "Full name - brief identifier (e.g. Nikola Tesla - inventor, Cleopatra - strategist-queen)",
-    "why": "1-2 sentences on the shared behavioral or archetypal pattern and what they both do"
-  },
-  "icon": {
-    "name": "Name - source (e.g. Atticus Finch - To Kill a Mockingbird, David Bowie - Ziggy era)",
-    "why": "1-2 sentences on the shared archetypal signature in behavior and approach"
-  }
+  "animal": { "name": "specific animal", "why": "1-2 sentences tied only to supported patterns" },
+  "deity": { "name": "Deity - Pantheon", "why": "1-2 sentences explaining the symbolic domain match" },
+  "historical": { "name": "Full name - identifier", "why": "1-2 sentences on a limited behavioral analogy, not personality certainty" },
+  "icon": { "name": "Name - source", "why": "1-2 sentences on a limited archetypal analogy" }
 }
 
 Rules:
-- Behavioral and direct language only. No cosmic/spiritual/divine/universe/soul journey/vibrational wording.
-- Each "why" must reference concrete behavioral traits, what they do and how they decide.
-- Pick comparables with genuine archetypal alignment. Avoid cliches unless truly fitting.
-- Animal should be specific and interesting, not generic wolf/eagle/lion unless exact fit.
-- Icon can be fictional character OR real living/historical cultural figure.
-      `.trim();
-
-      let comparables = null;
+- Use only the supported evidence above.
+- Do not infer trauma, motives, intelligence, morality, destiny, health, or biography.
+- Do not invent unresolved astrology or Human Design.
+- Treat numerology and Human Design meanings as symbolic lenses, not scientific measurements.
+- No mystical filler or certainty language.
+`.trim();
 
       try {
         const aiResponse = await routeAIRequest({
           prompt,
           promptType: "biography",
-          temperature: 0.82,
+          temperature: 0.65,
         });
         const raw = aiResponse.content || "";
-        const cleaned = raw.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-        comparables = JSON.parse(cleaned);
-      } catch (aiErr) {
-        console.warn("[SoulComparables] AI parse failed:", aiErr);
-      }
+        const cleaned = raw.replace(/^\`\`\`json\s*/i, "").replace(/\`\`\`\s*$/, "").trim();
+        if (!cleaned) throw new Error("empty_comparables_response");
+        const parsed = JSON.parse(cleaned);
 
-      if (!comparables) {
-        comparables = {
-          animal:     { name: "Raven", why: "Operates through observation and pattern recognition before acting. Adapts strategy in real time rather than committing to a fixed plan." },
-          deity:      { name: "Hermes - Greek", why: "The connector and translator - moves between worlds, bridges information gaps, and operates at the edges where others don't venture." },
-          historical: { name: "Leonardo da Vinci - polymath", why: "Driven by systematic curiosity and the compulsion to understand mechanisms beneath the surface before moving on." },
-          icon:       { name: "Atticus Finch - To Kill a Mockingbird", why: "Steady moral architecture that holds under social pressure. The kind of clarity that costs something and is chosen anyway." },
+        const comparables = {
+          animal: {
+            name: pureText(parsed.animal?.name),
+            why: pureText(parsed.animal?.why),
+          },
+          deity: {
+            name: pureText(parsed.deity?.name),
+            why: pureText(parsed.deity?.why),
+          },
+          historical: {
+            name: pureText(parsed.historical?.name),
+            why: pureText(parsed.historical?.why),
+          },
+          icon: {
+            name: pureText(parsed.icon?.name),
+            why: pureText(parsed.icon?.why),
+          },
         };
-      }
 
-      res.json({ comparables });
+        return res.json({
+          available: true,
+          evidenceMode: "saved-governed",
+          label: "Optional symbolic analogies",
+          comparables,
+        });
+      } catch (aiErr) {
+        console.warn("[SoulComparables] generation unavailable:", aiErr);
+        return res.status(503).json({
+          available: false,
+          reason: "Symbolic comparables are temporarily unavailable; no fallback identities were substituted.",
+        });
+      }
     } catch (error) {
       console.error("[SoulComparables] Route error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ available: false, error: "Internal server error" });
     }
   });
 
