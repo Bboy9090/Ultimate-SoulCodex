@@ -36,7 +36,7 @@ test('daily affirmations avoid predictive and metaphysical guarantees', () => {
 test('master Life Path 11 keeps its own affirmation pool rather than collapsing to 1', () => {
   const profile = {
     id: 'affirmation-master-11',
-    birthDate: '1990-01-01',
+    birthDate: '1990-08-11',
     timezone: 'America/New_York',
   } as any;
 
