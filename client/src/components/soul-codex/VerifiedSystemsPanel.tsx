@@ -1,11 +1,10 @@
 /**
  * VerifiedSystemsPanel - Phase 1
  *
- * Shows exact degrees and calculated values (technical depth only)
- * CRITICAL: Respects AstrologyDataStatus
- * - Only shows Moon when status is "verified_ephemeris" or "estimated_birth_window"
- * - Only shows Ascendant when status is "verified_ephemeris"
- * - Never shows legacy approximations alongside verified data
+ * Verified / deterministic technical depth only.
+ * Astrology appears here only when the full ephemeris contract is verified.
+ * Estimated, date-only, legacy, and unavailable astrology belong in inspectable
+ * surfaces with explicit uncertainty labels, not in this verified panel.
  */
 
 import type { VerifiedSystems, AstrologyDataStatus } from "@soulcodex/core";
@@ -20,8 +19,16 @@ export default function VerifiedSystemsPanel({
   astrologyStatus
 }: VerifiedSystemsPanelProps) {
   const astrology = systems.astrology;
-  const showMoon = astrologyStatus === "verified_ephemeris" || astrologyStatus === "estimated_birth_window";
-  const showAscendant = astrologyStatus === "verified_ephemeris";
+  const showVerifiedAstrology = astrologyStatus === "verified_ephemeris" && astrology.status === "verified_ephemeris";
+  const showMoon = showVerifiedAstrology;
+  const showAscendant = showVerifiedAstrology;
+  const showVerifiedHumanDesign =
+    systems.humanDesign?.status === "verified" &&
+    Boolean(
+      systems.humanDesign.verificationReceiptId?.trim() &&
+      systems.humanDesign.independentSource?.trim() &&
+      systems.humanDesign.verifiedAt?.trim(),
+    );
 
   return (
     <div
@@ -44,7 +51,7 @@ export default function VerifiedSystemsPanel({
       </h2>
 
       {/* Astrology */}
-      {astrology && (
+      {showVerifiedAstrology && astrology && (
         <div style={{ marginBottom: "2rem" }}>
           <h3
             style={{
@@ -67,11 +74,7 @@ export default function VerifiedSystemsPanel({
               letterSpacing: "0.05em",
             }}
           >
-            {astrology.status === "verified_ephemeris" && "✓ Verified Ephemeris"}
-            {astrology.status === "estimated_birth_window" && "≈ Estimated Window"}
-            {astrology.status === "date_only" && "📅 Date Only"}
-            {astrology.status === "legacy_approximation" && "⚠ Legacy Approximation"}
-            {astrology.status === "unavailable" && "⊘ Data Unavailable"}
+            ✓ Verified Ephemeris
           </div>
 
           <div
@@ -120,17 +123,7 @@ export default function VerifiedSystemsPanel({
                 >
                   {astrology.moonSign} {astrology.moonDegree?.toFixed(2)}°
                 </div>
-                {astrologyStatus === "estimated_birth_window" && (
-                  <div
-                    style={{
-                      fontSize: "0.65rem",
-                      color: "var(--sc-teal)",
-                      marginTop: "0.25rem",
-                    }}
-                  >
-                    depends on exact time
-                  </div>
-                )}
+
               </div>
             )}
 
@@ -156,22 +149,7 @@ export default function VerifiedSystemsPanel({
               </div>
             )}
 
-            {/* Remark for date-only or estimated cases */}
-            {astrology.remark && !showAscendant && (
-              <div
-                style={{
-                  padding: "0.75rem",
-                  background: "rgba(255,152,0,0.08)",
-                  border: "1px dashed rgba(255,152,0,0.2)",
-                  borderRadius: "6px",
-                  fontSize: "0.8rem",
-                  color: "var(--sc-stone)",
-                  gridColumn: "1 / -1",
-                }}
-              >
-                {astrology.remark}
-              </div>
-            )}
+
           </div>
         </div>
       )}
@@ -237,7 +215,7 @@ export default function VerifiedSystemsPanel({
       )}
 
       {/* Human Design */}
-      {systems.humanDesign && (
+      {showVerifiedHumanDesign && systems.humanDesign && (
         <div>
           <h3
             style={{
