@@ -222,8 +222,10 @@ function evidenceRecord(
   source: string,
 ): AscendantEvidenceRecord {
   const normalized = normalizeDegrees(longitudeDegrees);
+  const canonicalInputTimestamp = new Date(input.inputTimestamp).toISOString();
   return {
     ...input,
+    inputTimestamp: canonicalInputTimestamp,
     longitudeDegrees: normalized,
     sign: tropicalSignFromLongitude(normalized),
     degreeInSign: degreeInTropicalSign(normalized),
