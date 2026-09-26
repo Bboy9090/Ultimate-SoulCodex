@@ -164,10 +164,13 @@ export function generateLifeMap(
   birthDate: string,
   futureYears = 5,
   themes: string[] = [],
+  referenceYear: number = new Date().getUTCFullYear(),
 ): LifeMap {
   const { year: birthYear } = parseDateOnly(birthDate);
-  const now = new Date();
-  const currentYear = now.getFullYear();
+  if (!Number.isInteger(referenceYear) || referenceYear < birthYear || referenceYear > 9999) {
+    throw new RangeError("LifeMap reference year must be a valid year on or after birth");
+  }
+  const currentYear = referenceYear;
 
   const startYear = Math.max(birthYear, birthYear + 7);
   const endYear = currentYear + futureYears;
