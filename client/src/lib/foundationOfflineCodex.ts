@@ -913,7 +913,7 @@ export function synthesizeVerifiedFoundationProfile(
     ...(expressionPattern
       ? [makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 96)]
       : []),
-    ...(soulUrgePattern
+    ...(soulUrgePattern && soulUrge !== null
       ? [makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 95)]
       : []),
     verifiedPlacementSeed({
