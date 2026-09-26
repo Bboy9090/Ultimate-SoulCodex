@@ -21,46 +21,46 @@ const ASPECTS: Record<string, { degrees: number; orb: number; name: string }> = 
 
 const ASPECT_INTERPRETATIONS: Record<string, Record<string, string>> = {
   'Sun-Moon': {
-    Conjunction: 'My conscious will and emotional instincts merge — I act from a unified place today.',
-    Opposition: 'I feel pulled between what I want and what I need. Tension between head and heart.',
-    Square: 'Inner friction pushes me to reconcile conflicting drives. Growth through discomfort.',
-    Trine: 'My energy and emotions flow together naturally. I feel aligned and confident.',
-    Sextile: 'Small openings to harmonize my identity with my emotional needs.',
+    Conjunction: 'I can use this Sun-Moon conjunction as a prompt to compare what I intend with what I am actually feeling.',
+    Opposition: 'I can look for places where stated goals and emotional needs are pulling in different directions.',
+    Square: 'I can treat this square as a prompt to notice friction between intention and emotional response without assuming conflict is inevitable.',
+    Trine: 'I can notice where intention and emotional response already support each other and where they do not.',
+    Sextile: 'I can look for a practical way to coordinate identity goals with emotional needs.',
   },
   'Venus-Jupiter': {
-    Conjunction: 'Generosity and warmth expand — I attract good things when I stay open.',
-    Opposition: 'I may overindulge or over-promise. Balance pleasure with responsibility.',
-    Square: 'Desires clash with reality. I want more than what is practical right now.',
-    Trine: 'Love, beauty, and opportunity flow effortlessly. A genuinely good day for connection.',
-    Sextile: 'Pleasant social openings. Small gestures of kindness create ripple effects.',
+    Conjunction: 'I can use this conjunction to review where generosity, pleasure, or optimism may be influencing my choices.',
+    Opposition: 'I can check whether enthusiasm is outrunning practical limits or commitments.',
+    Square: 'I can compare what feels desirable with what is actually affordable, sustainable, or appropriate.',
+    Trine: 'I can notice where social ease or generosity is present without assuming opportunity is guaranteed.',
+    Sextile: 'I can look for a low-risk opening to practice generosity or connection intentionally.',
   },
   'Mars-Saturn': {
-    Conjunction: 'Disciplined energy — I can accomplish hard things if I stay patient.',
-    Opposition: 'Frustration builds when effort meets resistance. Channel anger into structure.',
-    Square: 'I feel blocked or restricted. The obstacle is showing me where I need to build strength.',
-    Trine: 'Steady, productive energy. I can work hard without burning out.',
-    Sextile: 'Practical effort pays off. Small disciplined actions compound.',
+    Conjunction: 'I can use this conjunction to review how effort, restraint, and patience are interacting in a current task.',
+    Opposition: 'I can distinguish genuine external limits from frustration about slower progress.',
+    Square: 'I can use the friction as a prompt to identify whether the plan, pace, or constraint needs adjustment.',
+    Trine: 'I can notice where disciplined effort is already sustainable rather than assuming productivity will come automatically.',
+    Sextile: 'I can choose one structured action and observe whether it actually improves progress.',
   },
   'Mercury-Uranus': {
-    Conjunction: 'My mind buzzes with original ideas. Breakthroughs in thinking are possible.',
-    Opposition: 'Nervous mental energy. I may say something unexpected or hear surprising news.',
-    Square: 'Restless thoughts disrupt focus. Let unusual ideas land before reacting.',
-    Trine: 'Inventive thinking comes naturally. I see solutions others miss.',
-    Sextile: 'Flashes of insight arrive through conversation or reading.',
+    Conjunction: 'I can capture unusual ideas without treating novelty as proof that they are correct.',
+    Opposition: 'I can slow down surprising information or reactions long enough to verify them before responding.',
+    Square: 'I can separate useful originality from distraction before changing direction.',
+    Trine: 'I can notice unconventional connections while still checking them against evidence.',
+    Sextile: 'I can use conversation or reading to test a new idea rather than assuming insight has arrived fully formed.',
   },
   'Venus-Saturn': {
-    Conjunction: 'Love feels serious today. I value what is real over what is exciting.',
-    Opposition: 'Loneliness or emotional distance surfaces. I need to reach out, not withdraw.',
-    Square: 'Relationships feel heavy or limiting. What am I tolerating that I should not be?',
-    Trine: 'Commitment and loyalty feel stabilizing. Mature love is quiet but strong.',
-    Sextile: 'Opportunities to deepen bonds through honesty and responsibility.',
+    Conjunction: 'I can review what commitment, care, and limits look like in a relationship or value decision.',
+    Opposition: 'I can check for distance or unmet expectations without assuming rejection or loneliness is predetermined.',
+    Square: 'I can ask whether a relationship limit is real, temporary, negotiated, or simply assumed.',
+    Trine: 'I can notice where reliability supports connection without treating stability as guaranteed.',
+    Sextile: 'I can choose one honest, responsible action that may strengthen trust if the other person is receptive.',
   },
   'Mars-Pluto': {
-    Conjunction: 'Intense willpower. I can transform something fundamental if I stay conscious.',
-    Opposition: 'Power struggles surface. Someone pushes my buttons — the reaction reveals my shadow.',
-    Square: 'Compulsive energy that demands an outlet. Physical activity channels it productively.',
-    Trine: 'Deep reserves of strength are available. I can push through barriers.',
-    Sextile: 'Subtle power shifts in my favor. Strategic action works better than force.',
+    Conjunction: 'I can notice where intensity is affecting my actions and choose a proportionate response.',
+    Opposition: 'I can check for control struggles without assigning motives to other people.',
+    Square: 'I can give strong impulses time and a safe outlet before deciding what action is warranted.',
+    Trine: 'I can notice persistence without assuming I have unlimited energy or guaranteed leverage.',
+    Sextile: 'I can use strategy rather than force and judge the result from what actually happens.',
   },
 };
 
@@ -153,13 +153,13 @@ function getAlignmentInterpretation(p1: string, p2: string, aspect: string): str
   if (entry && entry[aspect]) return entry[aspect];
 
   const defaults: Record<string, string> = {
-    Conjunction: `${p1} and ${p2} merge their energies — I feel this combination amplified today.`,
-    Opposition: `${p1} and ${p2} pull in opposite directions — I notice tension asking for balance.`,
-    Square: `${p1} and ${p2} create friction — pressure that forces me to adapt and grow.`,
-    Trine: `${p1} and ${p2} flow together — things in this area come easier today.`,
-    Sextile: `${p1} and ${p2} open a small door — opportunity if I choose to walk through it.`,
+    Conjunction: `${p1} and ${p2} are conjunct; I can use that geometry as a prompt to notice where their symbolic themes overlap.`,
+    Opposition: `${p1} and ${p2} are opposed; I can use the polarity as a prompt to compare competing priorities.`,
+    Square: `${p1} and ${p2} form a square; I can use the geometry as a prompt to notice friction without assuming an event will occur.`,
+    Trine: `${p1} and ${p2} form a trine; I can notice where their symbolic themes seem easier to coordinate without assuming outcomes.`,
+    Sextile: `${p1} and ${p2} form a sextile; I can look for a practical option to test rather than treating it as promised opportunity.`,
   };
-  return defaults[aspect] || `${p1} ${aspect.toLowerCase()} ${p2} — pay attention to how these energies interact in my day.`;
+  return defaults[aspect] || `${p1} ${aspect.toLowerCase()} ${p2} is a measured sky angle; any personal meaning remains a reflection prompt.`;
 }
 
 export function calculateAlignments(planets: PlanetPosition[]): Alignment[] {
@@ -269,18 +269,18 @@ function generateFallbackHoroscope(
   personalTransits: PersonalTransit[],
 ): string {
   const dayThemes: Record<number, string> = {
-    1: 'I feel a push to start something new — initiative comes naturally if I stop overthinking.',
-    2: 'I do better today by listening more than talking. Cooperation over competition.',
-    3: 'My words carry weight today. Expressing what I actually feel unlocks stuck energy.',
-    4: 'Structure calms me down today. Making a list or organizing my space resets my focus.',
-    5: 'Restlessness means I need variety. Break a routine — even a small one.',
-    6: 'Responsibility pulls at me. I show up for someone today and it matters more than I think.',
-    7: 'I need space to think. Solitude is not avoidance today — it is fuel.',
-    8: 'Power dynamics surface. I notice where I give my authority away and I stop doing it.',
-    9: 'Completion energy. I finish what I have been avoiding and feel lighter for it.',
-    11: 'Heightened intuition. I trust the first instinct before my mind talks me out of it.',
-    22: 'I can build something lasting today if I commit to the work instead of the idea.',
-    33: 'My presence matters more than my performance. Just being steady helps others around me.',
+    1: 'Personal Day 1 is a reflection prompt for beginnings; I can choose one low-risk first step and observe the result.',
+    2: 'Personal Day 2 is a reflection prompt for cooperation; I can listen carefully without giving up my own position.',
+    3: 'Personal Day 3 is a reflection prompt for expression; I can communicate one useful idea clearly and see how it lands.',
+    4: 'Personal Day 4 is a reflection prompt for structure; I can improve one practical routine or unfinished task.',
+    5: 'Personal Day 5 is a reflection prompt for change; I can test one reversible change instead of assuming restlessness means I must act.',
+    6: 'Personal Day 6 is a reflection prompt for responsibility; I can choose one act of care that fits my actual capacity.',
+    7: 'Personal Day 7 is a reflection prompt for review; I can reduce noise and check what the evidence supports before deciding.',
+    8: 'Personal Day 8 is a reflection prompt for power and resources; I can review one consequential choice without treating boldness as automatically better.',
+    9: 'Personal Day 9 is a reflection prompt for completion; I can identify what is genuinely finished without forcing an ending.',
+    11: 'Personal Day 11 keeps its master-number identity; I can record intuitive impressions and test them against evidence before acting.',
+    22: 'Personal Day 22 keeps its master-number identity; I can translate a large idea into one concrete, testable building step.',
+    33: 'Personal Day 33 keeps its master-number identity; I can practice care or service without assuming responsibility for everyone around me.',
   };
 
   const dayMessage = dayThemes[personalDayNumber] || dayThemes[personalDayNumber % 10] || dayThemes[1]!;
