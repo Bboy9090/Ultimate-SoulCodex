@@ -14,7 +14,7 @@
  * - Version/provenance
  */
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { EvidenceLayer, LimitationGroup } from "@soulcodex/core";
 import {
   calculationStatusLabel,
@@ -38,6 +38,7 @@ export default function EvidenceDrawer({
   calculationMethod,
 }: EvidenceDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const drawerId = useId();
 
   const highConfidence = evidenceLayers.filter((l) => l.confidence === "high");
   const moderateConfidence = evidenceLayers.filter((l) => l.confidence === "moderate");
@@ -53,6 +54,9 @@ export default function EvidenceDrawer({
     >
       {/* Drawer Toggle */}
       <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={drawerId}
         onClick={() => setIsOpen(!isOpen)}
         style={{
           background: "none",
@@ -76,6 +80,9 @@ export default function EvidenceDrawer({
       {/* Drawer Content */}
       {isOpen && (
         <div
+          id={drawerId}
+          role="region"
+          aria-label="Reading evidence and methods"
           style={{
             marginTop: "1.5rem",
             padding: "1.5rem",
