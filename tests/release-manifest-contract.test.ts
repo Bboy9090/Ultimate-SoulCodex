@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import {
   V4_RELEASE_MANIFEST,
@@ -110,4 +110,39 @@ test("legal, support, and deletion surfaces are release-critical", () => {
       "legal-support-and-deletion-routes-remain-mounted",
     ),
   );
+});
+
+
+test("every required workflow name belongs to an active GitHub workflow", () => {
+  const activeWorkflowNames = new Set(
+    readdirSync(".github/workflows")
+      .filter((file) => file.endsWith(".yml") || file.endsWith(".yaml"))
+      .map((file) => readFileSync(`.github/workflows/${file}`, "utf8"))
+      .map((source) => source.match(/^name:\s*(.+)$/m)?.[1]?.trim())
+      .filter((name): name is string => Boolean(name)),
+  );
+
+  for (const workflow of V4_RELEASE_MANIFEST.requiredWorkflows) {
+    assert.ok(
+      activeWorkflowNames.has(workflow),
+      `required release workflow is not active: ${workflow}`,
+    );
+  }
+});
+
+test("archived workflow names cannot remain release requirements", () => {
+  for (const archived of [
+    "Ultimate SoulCodex CI",
+    "CI Tests",
+    "Foundation Doctrine Gate",
+    "Dependency Security Audit",
+    "Railway Container Smoke",
+    "Live Ephemeris Evidence",
+  ]) {
+    assert.equal(
+      V4_RELEASE_MANIFEST.requiredWorkflows.includes(archived as never),
+      false,
+      archived,
+    );
+  }
 });
