@@ -44,7 +44,8 @@ export function sanitizeInput(input: string): string {
     // Strip only explicit pipe-delimited transport artifacts. Words such as
     // "unknown", "chaos", and "fix" can carry essential uncertainty or
     // behavioral evidence and must survive prompt sanitation.
-    .replace(/\|[^|]*\|/g, " ")
+    .replace(/\|/g, " ")
+    .replace(/\s{2,}/g, " ")
     .replace(/I am someone who/gi, "I")
     .replace(/I tend to/gi, "I default to")
     .replace(/I try to/gi, "I")
