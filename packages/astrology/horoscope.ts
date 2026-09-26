@@ -201,18 +201,6 @@ export function calculatePersonalTransitsFromProfile(profile: any, date: Date = 
   }));
 }
 
-function verifiedNatalSign(profile: any, key: "sun" | "moon" | "rising"): string | null {
-  const placement =
-    profile?.astrologyData?.[key] ??
-    profile?.astrologyData?.placements?.[key];
-  if (!placement || typeof placement !== "object") return null;
-  const status = placement.verificationStatus ?? placement.status;
-  const evidence = placement.provenance ?? placement.evidence;
-  if (status !== "verified") return null;
-  if (!evidence?.source || !evidence?.engine || !evidence?.calculatedAt) return null;
-  return typeof placement.sign === "string" && placement.sign.trim() ? placement.sign : null;
-}
-
 async function generateAIHoroscope(
   profile: any,
   planets: PlanetPosition[],
@@ -223,8 +211,6 @@ async function generateAIHoroscope(
   personalDayNumber: number,
 ): Promise<string> {
   const name = profile.name || 'you';
-  const verifiedSun = verifiedNatalSign(profile, "sun");
-  const verifiedMoon = verifiedNatalSign(profile, "moon");
 
   const topAlignments = alignments.slice(0, 3)
     .map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`)
@@ -233,15 +219,10 @@ async function generateAIHoroscope(
     .map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`)
     .join(', ');
 
-  const verifiedNatal = [
-    verifiedSun ? `Verified natal Sun: ${verifiedSun}` : null,
-    verifiedMoon ? `Verified natal Moon: ${verifiedMoon}` : null,
-  ].filter(Boolean).join("\n");
-
   const prompt = `Write a daily reflection for ${name}.
 
 Supported inputs:
-${verifiedNatal || '- Natal Sun/Moon unresolved; do not infer them.'}
+- Natal Sun/Moon are not supplied here; do not infer them.
 - Today's Moon: ${currentMoonSign} (${moonPhase.phase}, ${moonPhase.percentage}% illuminated)
 - Today's governed sky alignments: ${topAlignments || 'none selected'}
 - Verified-natal personal transits: ${topTransits || 'none available'}
