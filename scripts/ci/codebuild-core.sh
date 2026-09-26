@@ -61,6 +61,7 @@ node --import tsx --test \
   tests/ui-backend-consistency-contract.test.ts \
   tests/verified-system-method-summary.test.ts \
   tests/verified-systems-panel-contract.test.ts \
+  tests/offline-profile-hd-verification-ui.test.ts \
   tests/technical-appendix-truth.test.ts \
   tests/systems-details-registry-ui.test.ts \
   tests/evidence-drawer-language.test.ts \
