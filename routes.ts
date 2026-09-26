@@ -54,7 +54,7 @@ import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/comp
 import { isGeneric, scoreOutput } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
-import { calcLifePath, dateOnlyFromStoredValue, getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
+import { calcLifePath, dateOnlyFromStoredValue, parseDateOnly, getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
 import { VOICE_LAWS } from "./soulcodex/codex30/prompts/voice_laws";
 import { pureText } from "./services/sanitizer";
 
@@ -2997,14 +2997,13 @@ ${contextData}
           return res.status(400).json({ error: "profileId or profile name/birthDate required" });
         }
 
-        const rawBirthDate = requestedProfile.birthDate;
-        const dateOnly = rawBirthDate instanceof Date
-          ? rawBirthDate.toISOString().slice(0, 10)
-          : String(rawBirthDate).slice(0, 10);
-        const birthDate = new Date(`${dateOnly}T00:00:00.000Z`);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly) || Number.isNaN(birthDate.getTime())) {
+        const dateOnly = String(requestedProfile.birthDate).trim();
+        try {
+          parseDateOnly(dateOnly);
+        } catch {
           return res.status(400).json({ error: "birthDate must be a valid YYYY-MM-DD date" });
         }
+        const birthDate = new Date(`${dateOnly}T00:00:00.000Z`);
 
         reportProfile = {
           name: String(requestedProfile.name).trim() || "User",
