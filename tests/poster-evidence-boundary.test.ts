@@ -24,7 +24,8 @@ test('poster identity fields come from governed stored evidence', () => {
   const source = posterSource();
 
   assert.match(source, /extractVerifiedAstrology\(storedProfile\)/);
-  assert.match(source, /calcLifePath\(storedProfile\.birthDate\)/);
+  assert.match(source, /dateOnlyFromStoredValue\(storedProfile\.birthDate\)/);
+  assert.match(source, /calcLifePath\(/[\s\S]*dateOnlyFromStoredValue/);
   assert.match(source, /verified\.sun/);
   assert.match(source, /verified\.moon/);
   assert.match(source, /verified\.rising/);
