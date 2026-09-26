@@ -32,6 +32,7 @@ node --import tsx --test \
   tests/aspect-engine.test.ts \
   tests/astrology-production-verification.test.ts \
   tests/strict-civil-time.test.ts \
+  tests/zoned-instant.test.ts \
   tests/timeline-cycle-reduction.test.ts \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
