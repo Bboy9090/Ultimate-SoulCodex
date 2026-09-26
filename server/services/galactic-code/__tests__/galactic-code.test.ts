@@ -900,3 +900,42 @@ test('Galactic Code: unverified house emphasis cannot influence synthesis', () =
   );
   assert.deepEqual(candidate.axes, withoutHouse.axes);
 });
+
+
+test('Galactic Code: ungoverned astrology array values are inert', () => {
+  const base = generateGalacticCode(testInput, TRUSTED);
+
+  const junkInput: GalacticCodeInput = {
+    ...testInput,
+    astrology: {
+      ...testInput.astrology,
+      dominantElements: [
+        ...(testInput.astrology.dominantElements ?? []),
+        'plasma',
+      ],
+      houseEmphasis: [
+        ...(testInput.astrology.houseEmphasis ?? []),
+        'House 99',
+      ],
+      majorAspects: [
+        ...(testInput.astrology.majorAspects ?? []),
+        'Sun sparkle Moon',
+      ],
+    },
+  };
+
+  const junk = generateGalacticCode(junkInput, TRUSTED);
+  assert.strictEqual(junk.fingerprint, base.fingerprint);
+  assert.deepEqual(junk.axes, base.axes);
+
+  const governedInput: GalacticCodeInput = {
+    ...testInput,
+    astrology: {
+      ...testInput.astrology,
+      dominantElements: ['earth', 'fire'],
+    },
+  };
+
+  const governed = generateGalacticCode(governedInput, TRUSTED);
+  assert.notStrictEqual(governed.fingerprint, base.fingerprint);
+});
