@@ -15,7 +15,16 @@ import {
   type EvidenceConfidenceLevel,
 } from './index.js';
 import { calcPersonalDay, calcPersonalMonth, calcPersonalYear } from '../compute/personal-numbers.js';
-import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality } from '../compute/numerology.js';
+import {
+  NUMEROLOGY_ENGINE_VERSION,
+  calcBirthday,
+  calcExpression,
+  calcLifePath,
+  calcMaturity,
+  calcPersonality,
+  calcSoulUrge,
+  normalizeNumerologyName,
+} from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
 type InputState = 'valid' | 'partial' | 'missing' | 'invalid';
@@ -32,8 +41,7 @@ function isValidDate(dateStr: string): boolean {
 
 function isValidName(name: string): boolean {
   if (!name || typeof name !== 'string') return false;
-  const letters = name.replace(/[^A-Za-z]/g, '');
-  return letters.length > 0;
+  return normalizeNumerologyName(name).length > 0;
 }
 
 function deriveInputStateForDate(dateStr: string): InputState {
@@ -340,7 +348,7 @@ export function calcLifePathWithEvidence(
           'Life Path is constant throughout life',
         ],
         formulaId: 'numerology.life-path',
-        formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -369,8 +377,8 @@ export function calcLifePathWithEvidence(
         `birth_year_${birthYear}`,
       ],
       reasoning: [
-        `All digits of birth date summed: ${birthMonth} + ${birthDay} + ${birthYear}`,
-        'Sum reduced to single digit',
+        `Birth month ${birthMonth} + birth day ${birthDay} + full birth year ${birthYear}`,
+        'Total digit-reduced with master numbers 11, 22, and 33 preserved',
         `Life Path Number = ${lifePathValue}`,
       ],
       limitations: [
@@ -379,7 +387,7 @@ export function calcLifePathWithEvidence(
         'Life Path is constant throughout life',
       ],
       formulaId: 'numerology.life-path',
-      formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -418,7 +426,7 @@ export function calcExpressionWithEvidence(
           'Letter-to-number mapping is Pythagorean',
         ],
         formulaId: 'numerology.expression',
-        formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -428,7 +436,8 @@ export function calcExpressionWithEvidence(
   }
 
   const expressionValue = calcExpression(fullName);
-  const letterCount = fullName.replace(/[^A-Za-z]/g, '').length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const letterCount = normalizedName.length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -441,7 +450,7 @@ export function calcExpressionWithEvidence(
       reasoning: [
         `Letter-to-number mapping applied to all ${letterCount} letters in name`,
         'Sum of all letter values calculated',
-        'Sum reduced to single digit',
+        'Total reduced with master numbers 11, 22, and 33 preserved',
         `Expression Number = ${expressionValue}`,
       ],
       limitations: [
@@ -450,7 +459,7 @@ export function calcExpressionWithEvidence(
         'Letter-to-number mapping is Pythagorean',
       ],
       formulaId: 'numerology.expression',
-      formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -489,7 +498,7 @@ export function calcSoulUrgeWithEvidence(
           'Reveals inner desires but not actions taken',
         ],
         formulaId: 'numerology.soul-urge',
-        formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -499,7 +508,8 @@ export function calcSoulUrgeWithEvidence(
   }
 
   const soulUrgeValue = calcSoulUrge(fullName);
-  const vowelCount = (fullName.match(/[aeiouAEIOU]/g) || []).length;
+  const normalizedName = normalizeNumerologyName(fullName);
+  const vowelCount = [...normalizedName].filter((letter) => 'AEIOU'.includes(letter)).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -513,7 +523,7 @@ export function calcSoulUrgeWithEvidence(
         `Vowels identified: ${vowelCount} vowels in name`,
         'Letter-to-number mapping applied to vowels only',
         'Sum of vowel values calculated',
-        'Sum reduced to single digit',
+        'Total reduced with master numbers 11, 22, and 33 preserved',
         `Soul Urge Number = ${soulUrgeValue}`,
       ],
       limitations: [
@@ -522,7 +532,7 @@ export function calcSoulUrgeWithEvidence(
         'Reveals inner desires but not actions taken',
       ],
       formulaId: 'numerology.soul-urge',
-      formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -561,7 +571,7 @@ export function calcPersonalityWithEvidence(
           'Name changes after birth would alter this number',
         ],
         formulaId: 'numerology.personality',
-        formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
         calculationStatus: 'unresolved',
         inputState: derivedInputState,
         calculatedAt: new Date().toISOString(),
@@ -571,9 +581,10 @@ export function calcPersonalityWithEvidence(
   }
 
   const personalityValue = calcPersonality(fullName);
+  const normalizedName = normalizeNumerologyName(fullName);
   const consonantCount =
-    fullName.replace(/[^A-Za-z]/g, '').length -
-    (fullName.match(/[aeiouAEIOU]/g) || []).length;
+    normalizedName.length -
+    [...normalizedName].filter((letter) => 'AEIOU'.includes(letter)).length;
 
   const evidence = createEvidenceEntry(
     'numerology',
@@ -587,7 +598,7 @@ export function calcPersonalityWithEvidence(
         `Consonants identified: ${consonantCount} consonants in name`,
         'Letter-to-number mapping applied to consonants only',
         'Sum of consonant values calculated',
-        'Sum reduced to single digit',
+        'Total reduced with master numbers 11, 22, and 33 preserved',
         `Personality Number = ${personalityValue}`,
       ],
       limitations: [
@@ -596,7 +607,7 @@ export function calcPersonalityWithEvidence(
         'Name changes after birth would alter this number',
       ],
       formulaId: 'numerology.personality',
-      formulaVersion: '1.0.0',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
       calculationStatus: 'resolved',
       inputState: derivedInputState,
       calculatedAt: new Date().toISOString(),
@@ -604,4 +615,161 @@ export function calcPersonalityWithEvidence(
   );
 
   return { value: personalityValue, evidence };
+}
+
+
+export function calcBirthdayWithEvidence(
+  birthDate: string
+): {
+  value?: number;
+  evidence: EvidenceEntry;
+} {
+  const derivedInputState = deriveInputStateForDate(birthDate);
+  const { confidence, label } = confidenceForInputState(derivedInputState);
+
+  if (derivedInputState !== 'valid') {
+    return {
+      evidence: createEvidenceEntry(
+        'numerology',
+        'Birthday Number',
+        'UNRESOLVED',
+        confidence,
+        label,
+        {
+          inputsUsed: [`birth_date_${birthDate || 'missing'}`],
+          reasoning: [
+            derivedInputState === 'missing'
+              ? 'Birth date not provided'
+              : `Birth date "${birthDate}" is not a valid calendar date in YYYY-MM-DD format`,
+          ],
+          limitations: [
+            'Birthday Number uses only the entered day of month',
+            'Interpretation is symbolic even though the calculation is deterministic',
+          ],
+          formulaId: 'numerology.birthday',
+          formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+          calculationStatus: 'unresolved',
+          inputState: derivedInputState,
+          calculatedAt: new Date().toISOString(),
+        }
+      ),
+    };
+  }
+
+  const { day } = parseDateOnly(birthDate);
+  const value = calcBirthday(birthDate);
+  return {
+    value,
+    evidence: createEvidenceEntry(
+      'numerology',
+      'Birthday Number',
+      value,
+      confidence,
+      label,
+      {
+        inputsUsed: [`birth_day_${day}`],
+        reasoning: [
+          `Birth day of month = ${day}`,
+          'Day digit-reduced with master numbers 11, 22, and 33 preserved',
+          `Birthday Number = ${value}`,
+        ],
+        limitations: [
+          'Birthday Number uses only the entered day of month',
+          'Interpretation is symbolic even though the calculation is deterministic',
+        ],
+        formulaId: 'numerology.birthday',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+        calculationStatus: 'resolved',
+        inputState: derivedInputState,
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+  };
+}
+
+export function calcMaturityWithEvidence(
+  birthDate: string,
+  fullName: string
+): {
+  value?: number;
+  evidence: EvidenceEntry;
+} {
+  const dateState = deriveInputStateForDate(birthDate);
+  const nameState = deriveInputStateForName(fullName);
+  const derivedInputState: InputState =
+    dateState === 'valid' && nameState === 'valid'
+      ? 'valid'
+      : dateState === 'missing' || nameState === 'missing'
+        ? 'missing'
+        : 'invalid';
+  const { confidence, label } = confidenceForInputState(derivedInputState);
+
+  if (derivedInputState !== 'valid') {
+    return {
+      evidence: createEvidenceEntry(
+        'numerology',
+        'Maturity Number',
+        'UNRESOLVED',
+        confidence,
+        label,
+        {
+          inputsUsed: [
+            `birth_date_${birthDate || 'missing'}`,
+            `full_name_${fullName ? normalizeNumerologyName(fullName).length : 0}_letters`,
+          ],
+          reasoning: [
+            dateState !== 'valid' ? 'A valid birth date is required' : '',
+            nameState !== 'valid' ? 'A valid name containing supported letters is required' : '',
+          ].filter(Boolean),
+          limitations: [
+            'Maturity Number depends on both Life Path and Expression inputs',
+            'Name changes alter the Expression component',
+            'Interpretation is symbolic even though the calculation is deterministic',
+          ],
+          formulaId: 'numerology.maturity',
+          formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+          calculationStatus: 'unresolved',
+          inputState: derivedInputState,
+          calculatedAt: new Date().toISOString(),
+        }
+      ),
+    };
+  }
+
+  const normalizedName = normalizeNumerologyName(fullName);
+  const lifePath = calcLifePath(birthDate);
+  const expression = calcExpression(fullName);
+  const value = calcMaturity(birthDate, fullName);
+  return {
+    value,
+    evidence: createEvidenceEntry(
+      'numerology',
+      'Maturity Number',
+      value,
+      confidence,
+      label,
+      {
+        inputsUsed: [
+          `birth_date_${birthDate}`,
+          `full_name_${normalizedName.length}_letters`,
+        ],
+        reasoning: [
+          `Life Path component = ${lifePath}`,
+          `Expression component = ${expression}`,
+          'Components combined and digit-reduced with master numbers 11, 22, and 33 preserved',
+          `Maturity Number = ${value}`,
+        ],
+        limitations: [
+          'Maturity Number depends on both Life Path and Expression inputs',
+          'Name changes alter the Expression component',
+          'Interpretation is symbolic even though the calculation is deterministic',
+        ],
+        formulaId: 'numerology.maturity',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+        calculationStatus: 'resolved',
+        inputState: derivedInputState,
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+  };
 }
