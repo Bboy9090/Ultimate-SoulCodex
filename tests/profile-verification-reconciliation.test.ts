@@ -96,6 +96,20 @@ test("Human Design trust requires a complete coherent core, not provenance metad
     }),
     true,
   );
+  assert.equal(
+    hasVerifiedHumanDesignTrust({
+      ...base,
+      verificationReceiptId: "forged-receipt",
+    }),
+    false,
+  );
+  assert.equal(
+    hasVerifiedHumanDesignTrust({
+      ...base,
+      independentSource: "unapproved-verifier",
+    }),
+    false,
+  );
 });
 
 const verifiedRemote = {
