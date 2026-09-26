@@ -175,3 +175,32 @@ test('date-only Sun is withheld when the civil date spans a solar-ingress bounda
     assert.deepEqual(Object.keys(result.planets), []);
   }
 });
+
+
+test('clock time without timezone or coordinates does not unlock exact planetary precision', () => {
+  const result = calculateAstrology({
+    birthDate: '1990-09-17',
+    birthTime: '11:11',
+  } as any);
+
+  assert.equal(result.sunSign, 'Virgo');
+  assert.equal(result.moonSign, 'Unknown');
+  assert.equal(result.risingSign, 'Unknown');
+  assert.deepEqual(Object.keys(result.planets), []);
+  assert.deepEqual(result.houses, []);
+  assert.deepEqual(result.aspects, []);
+});
+
+test('coordinates may supply timezone evidence when explicit timezone is absent', () => {
+  const result = calculateAstrology({
+    birthDate: '1990-09-17',
+    birthTime: '11:11',
+    latitude: 40.8448,
+    longitude: -73.8648,
+  } as any);
+
+  assert.notEqual(result.moonSign, 'Unknown');
+  assert.notEqual(result.risingSign, 'Unknown');
+  assert.equal(Object.keys(result.planets).length, 10);
+  assert.equal(result.houses.length, 12);
+});
