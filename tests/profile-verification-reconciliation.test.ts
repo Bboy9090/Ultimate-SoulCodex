@@ -32,17 +32,23 @@ const local = generateOfflineCodexProfile(
   },
 );
 
+const placementEvidence = {
+  source: "Independent verification fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
+
 const verifiedPlanets = {
-  sun: { verificationStatus: "verified", sign: "Virgo" },
-  moon: { verificationStatus: "verified", sign: "Virgo" },
-  mercury: { verificationStatus: "verified", sign: "Virgo" },
-  venus: { verificationStatus: "verified", sign: "Virgo" },
-  mars: { verificationStatus: "verified", sign: "Gemini" },
-  jupiter: { verificationStatus: "verified", sign: "Leo" },
-  saturn: { verificationStatus: "verified", sign: "Capricorn" },
-  uranus: { verificationStatus: "verified", sign: "Capricorn" },
-  neptune: { verificationStatus: "verified", sign: "Capricorn" },
-  pluto: { verificationStatus: "verified", sign: "Scorpio" },
+  sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  mercury: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  venus: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  mars: { verificationStatus: "verified", sign: "Gemini", evidence: placementEvidence },
+  jupiter: { verificationStatus: "verified", sign: "Leo", evidence: placementEvidence },
+  saturn: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  uranus: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  neptune: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  pluto: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
 };
 
 const zodiacSigns = [
@@ -62,9 +68,9 @@ const verifiedRemote = {
     verificationReceiptId: "35474994858:human-design-repair-audit",
   },
   astrologyData: {
-    sun: { verificationStatus: "verified", sign: "Virgo" },
-    moon: { verificationStatus: "verified", sign: "Virgo" },
-    rising: { verificationStatus: "verified", sign: "Scorpio" },
+    sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+    moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+    rising: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
     planets: verifiedPlanets,
     houseSystem: "equal",
     houses: Array.from({ length: 12 }, (_, index) => ({
@@ -524,4 +530,16 @@ test("minimal verification schema shares the same strict birth input domain", ()
     }).success,
     false,
   );
+});
+
+
+test("verified labels without placement provenance cannot reconcile as verified astrology", () => {
+  const astrology = {
+    sun: { verificationStatus: "verified", sign: "Virgo" },
+    moon: { verificationStatus: "verified", sign: "Virgo" },
+    rising: { verificationStatus: "verified", sign: "Scorpio" },
+  };
+  assert.equal(getVerifiedAstrologySign(astrology, "sun"), null);
+  assert.equal(hasVerifiedSunAndMoon(astrology), false);
+  assert.equal(hasVerifiedBigThree(astrology), false);
 });
