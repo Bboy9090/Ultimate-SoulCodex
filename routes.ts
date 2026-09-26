@@ -3629,19 +3629,19 @@ ${thisWeekArr.map((t: string) => (typeof t === 'string' && t.startsWith("-")) ? 
           
           const thisWeekArrRw = Array.isArray(parsedRw.this_week) ? parsedRw.this_week : [];
           narrative = `CODENAME: ${parsedRw.codename || codename}
-MOTTO: ${parsedRw.motto || "My path is carved by intention."}
+MOTTO: ${parsedRw.motto || "I test what fits and discard what does not."}
 
 WHO I AM
-${parsedRw.who_i_am || "Aligning with the cosmic cycle."}
+${parsedRw.who_i_am || "I use the supported themes as reflection prompts, not as fixed identity facts."}
 
 HOW I MOVE UNDER PRESSURE
-${parsedRw.how_i_move || "Returning to the center."}
+${parsedRw.how_i_move || "Under pressure, I check what I actually do before naming a pattern."}
 
 WHAT I WON'T TOLERATE
-${parsedRw.what_i_wont_tolerate || "Static energy and noise."}
+${parsedRw.what_i_wont_tolerate || "I distinguish observed boundaries from assumptions before I act."}
 
 WHAT I'M BUILDING
-${parsedRw.what_im_building || "A foundation for the eternal now."}
+${parsedRw.what_im_building || "I choose one concrete priority and measure progress from completed steps."}
 
 THIS WEEK
 ${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) ? t : `- ${t}`).join("\n")}`;
@@ -3658,10 +3658,13 @@ ${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) 
       // Strip any raw signal-label artifacts the AI echoed back
       narrative = scrubNarrative(narrative);
 
-      // Log any banned phrases that slipped through for audit (non-blocking)
+      // Hard-reject generic or unsupported certainty instead of only logging it.
       const langCheck = checkNarrative(narrative);
       if (!langCheck.pass) {
-        console.warn("[anti-generic] Hard-reject phrases in narrative:", langCheck.hardRejects);
+        console.warn("[anti-generic] Rejecting narrative phrases:", langCheck.hardRejects);
+        narrative = scrubNarrative(
+          buildFallbackNarrative(codename, anchors, themes, strengths, triggers),
+        );
       }
 
       const conf = profile?.meta?.confidence ?? profile?.confidence;
@@ -4093,6 +4096,42 @@ function buildFallbackNarrative(
   codename: string,
   anchors: string[],
   themes: { tag: string; score: number }[],
+  strengths: string[],
+  triggers: string[]
+): string {
+  void anchors;
+
+  const topTheme = themes[0]?.tag?.replace(/_/g, " ") ?? "no ranked theme available";
+  const secondTheme = themes[1]?.tag?.replace(/_/g, " ") ?? null;
+  const strengthPrompt = strengths[0]
+    ? `Candidate strength to verify: ${strengths[0]}`
+    : "No assessed strength is assumed here.";
+  const triggerPrompt = triggers[0]
+    ? `Candidate trigger to verify: ${triggers[0]}`
+    : "No pressure trigger is assumed here.";
+
+  return `CODENAME: ${codename}
+MOTTO: I test the pattern against what actually happens.
+
+WHO I AM
+The current synthesis ranks ${topTheme} as a reflection theme${secondTheme ? ` and also surfaces ${secondTheme}` : ""}. I use those labels as questions to test against my lived experience, not as proof of a fixed identity.
+
+${strengthPrompt} I keep it only if repeated observation supports it.
+
+HOW I MOVE UNDER PRESSURE
+No pressure response is assumed from symbolic systems. I notice what I actually do under stress, record the sequence, and separate one-off reactions from repeated behavior.
+
+WHAT I WON'T TOLERATE
+${triggerPrompt} I treat a boundary as established only when I can name the concrete condition, cost, or behavior behind it.
+
+WHAT I'M BUILDING
+I choose one concrete priority, define the next observable step, and judge progress by what gets completed rather than by a narrative about who I am.
+
+THIS WEEK
+- Verify one claimed pattern against something that actually happened.
+- Complete one concrete next step before adding a new interpretation.
+- Keep symbolic themes that improve reflection; discard the ones that do not fit.`;
+}[],
   strengths: string[],
   triggers: string[]
 ): string {
