@@ -71,3 +71,14 @@ test("production does not accidentally mount legacy share-link routes", () => {
     "production routes must keep social sharing unavailable until a governed privacy router is promoted",
   );
 });
+
+
+test("production cannot mount legacy reading confidence generators", () => {
+  for (const source of [serverIndex, activeServerRoutes]) {
+    assert.doesNotMatch(
+      source,
+      /soul-codex-reading-generator-v1|src\/soul-codex\/reading-generator|generateSoulCodexReadingV1|generateSoulCodexReading\(/,
+      "production must not mount legacy reading generators that derive confidence from birth-data completeness or pass through arbitrary interaction strength",
+    );
+  }
+});
