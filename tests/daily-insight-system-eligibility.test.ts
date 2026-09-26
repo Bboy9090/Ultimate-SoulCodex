@@ -22,6 +22,16 @@ const evidence = {
   calculatedAt: "2026-09-26T18:00:00.000Z",
 };
 
+const hdTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 function profile(overrides: Record<string, unknown> = {}) {
   return {
     id: "daily-policy-profile",
@@ -77,8 +87,10 @@ test("daily insight system eligibility", async (suite) => {
       humanDesignData: {
         status: "verified",
         type: "Reflector",
+        strategy: "Wait a lunar cycle",
         profile: "2/5",
         authority: "Lunar Authority",
+        ...hdTrust,
       },
     }));
     const result = selectTemplates(dailyContext as any, summary, []);
@@ -91,6 +103,27 @@ test("daily insight system eligibility", async (suite) => {
       ),
       true,
     );
+  });
+
+  await suite.test("status-only Human Design is withheld from daily summary and affirmations", () => {
+    const statusOnly = profile({
+      humanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        strategy: "Wait a lunar cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    });
+
+    const summary = extractDailyProfileSummary(statusOnly);
+    assert.equal(summary.hdVerified, false);
+    assert.equal(summary.hdType, undefined);
+
+    const text = generateDailyAffirmations(statusOnly, 6, "2026-09-26")
+      .map((item) => item.text)
+      .join(" ");
+    assert.doesNotMatch(text, /Reflector|Human Design experiment/i);
   });
 
   await suite.test("verified natal Sun can enter the summary only with provenance", () => {
