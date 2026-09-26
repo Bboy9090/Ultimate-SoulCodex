@@ -69,3 +69,13 @@ test("production create and Identity surfaces use the Foundation-safe path and n
   // the production router from ever importing it while it contains sample math.
   assert.match(chartSource, /Math\.random\(\)/);
 });
+
+
+test("Foundation offline identity does not include Tarot without explicit symbolic opt-in", () => {
+  const profile = generateFoundationOfflineCodexProfile(
+    { ...baseInput, birthTime: "11:11" },
+    { id: "local-no-tarot", generatedAt: "2026-08-14T00:00:00.000Z", currentYear: 2026 },
+  );
+
+  assert.equal(Object.prototype.hasOwnProperty.call(profile.archetypeData, "tarotCards"), false);
+});
