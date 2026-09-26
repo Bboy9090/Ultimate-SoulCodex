@@ -129,6 +129,10 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
     'personalityAssessments',
     input.behavior.evidenceState || 'candidate',
   );
+  const housesAllowed = maySystemInfluenceSynthesis(
+    'housesMidheaven',
+    input.astrology.fieldEvidence?.houseEmphasis || 'candidate',
+  );
   const humanDesignCore = humanDesignAllowed
     ? governedHumanDesignCore(input.humanDesign)
     : null;
@@ -146,7 +150,10 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
           mars: verifiedAstrologyField(input.astrology, 'mars') ? governedSign(input.astrology.mars) : undefined,
           dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements') ? input.astrology.dominantElements : undefined,
           dominantModalities: verifiedAstrologyField(input.astrology, 'dominantModalities') ? input.astrology.dominantModalities : undefined,
-          houseEmphasis: verifiedAstrologyField(input.astrology, 'houseEmphasis') ? input.astrology.houseEmphasis : undefined,
+          houseEmphasis:
+            housesAllowed && verifiedAstrologyField(input.astrology, 'houseEmphasis')
+              ? input.astrology.houseEmphasis
+              : undefined,
           majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects') ? input.astrology.majorAspects : undefined,
         }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
