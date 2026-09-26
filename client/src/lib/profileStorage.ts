@@ -23,7 +23,13 @@ interface PlacementLike {
 function isEvidenceComplete(value: PlacementLike | null | undefined): boolean {
   const state = value?.verificationStatus ?? value?.status;
   const evidence = value?.provenance ?? value?.evidence;
-  return state === "verified" && Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt);
+  const sourceValid = typeof evidence?.source === "string" && evidence.source.trim().length > 0;
+  const engineValid = typeof evidence?.engine === "string" && evidence.engine.trim().length > 0;
+  const timestampValid =
+    typeof evidence?.calculatedAt === "string" &&
+    evidence.calculatedAt.trim().length > 0 &&
+    !Number.isNaN(Date.parse(evidence.calculatedAt));
+  return state === "verified" && sourceValid && engineValid && timestampValid;
 }
 
 function placement(profile: StoredProfile, key: "sun" | "moon" | "rising"): PlacementLike | undefined {
