@@ -10,6 +10,7 @@ import {
   numerologyNameComponentAvailability,
   reduceNumerology,
 } from "../packages/core/compute/numerology";
+import { calcPersonalYear } from "../packages/core/compute/personal-numbers";
 
 const allowedFinalValues = new Set([1,2,3,4,5,6,7,8,9,11,22,33]);
 
@@ -112,5 +113,39 @@ test("names with no supported Latin letters remain unresolved rather than manufa
       /at least one canonical A-Z letter/i,
       name,
     );
+  }
+});
+
+
+test("numeric Personal Year overload requires all calendar fields", () => {
+  assert.equal(
+    calcPersonalYear(9, 17, 2026),
+    calcPersonalYear("1990-09-17", 2026),
+  );
+
+  assert.throws(
+    () => calcPersonalYear(9),
+    /requires explicit month, day, and target year/i,
+  );
+  assert.throws(
+    () => calcPersonalYear(9, 17),
+    /requires explicit month, day, and target year/i,
+  );
+});
+
+test("Personal Year numeric and date-string forms agree across calendar samples", () => {
+  for (let month = 1; month <= 12; month += 1) {
+    const day = Math.min(
+      28,
+      [31,29,31,30,31,30,31,31,30,31,30,31][month - 1],
+    );
+    for (const year of [1, 99, 1900, 1990, 2026, 9999]) {
+      const date = `1990-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      assert.equal(
+        calcPersonalYear(month, day, year),
+        calcPersonalYear(date, year),
+        `${month}/${day} in ${year}`,
+      );
+    }
   }
 });
