@@ -1,6 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { buildClarityReadingModel, firstSupportedText } from "../clarityReadingModel";
 
+const placementEvidence = {
+  source: "independent ephemeris comparison",
+  engine: "clarity-vitest-reference@1",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+};
+
+const hdTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 describe("clarityReadingModel", () => {
   it("uses the first meaningful supported text", () => {
     expect(firstSupportedText(undefined, "", "  ", "usable", "later")).toBe("usable");
@@ -9,8 +25,8 @@ describe("clarityReadingModel", () => {
   it("prefers independently verified astronomy over symbolic fallback", () => {
     const model = buildClarityReadingModel({
       verifiedAstrologyData: {
-        sun: { sign: "Virgo" },
-        moon: { sign: "Scorpio" },
+        sun: { sign: "Virgo", verificationStatus: "verified", evidence: placementEvidence },
+        moon: { sign: "Scorpio", verificationStatus: "verified", evidence: placementEvidence },
       },
       astrologyData: {
         sunSign: "Leo",
@@ -60,14 +76,49 @@ describe("clarityReadingModel", () => {
   it("exposes verified houses, governed points, and Human Design bodygraph evidence", () => {
     const model = buildClarityReadingModel({
       verifiedAstrologyData: {
+        verification: { policyId: "ASTRO-EQUAL-HOUSE-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1" },
         houseSystem: "equal",
-        houses: Array.from({ length: 12 }, (_, index) => ({ house: index + 1, sign: "Virgo", verificationStatus: "verified" })),
-        planets: { sun: { sign: "Virgo", verificationStatus: "verified" } },
+        houses: Array.from({ length: 12 }, (_, index) => ({
+          house: index + 1,
+          sign: "Virgo",
+          verificationStatus: "verified",
+          policyId: "ASTRO-EQUAL-HOUSE-v1",
+          evidenceArtifactId: "equal-house-vitest",
+          longitude: index * 30 + 150,
+          degree: (index * 30 + 150) % 30,
+        })),
+        planets: { sun: { sign: "Virgo", verificationStatus: "verified", evidence: placementEvidence } },
         planetaryHouses: { sun: 10 },
-        midheaven: { sign: "Leo", verificationStatus: "verified" },
-        northNode: { sign: "Aquarius", house: 4, verificationStatus: "verified" },
-        southNode: { sign: "Leo", house: 10, verificationStatus: "verified" },
-        chiron: { sign: "Cancer", house: 8, verificationStatus: "verified", qualificationMethod: "live-jpl-qualified-against-swiss" },
+        midheaven: {
+          sign: "Leo",
+          verificationStatus: "verified",
+          policyId: "ASTRO-EQUAL-HOUSE-v1",
+          evidenceArtifactId: "equal-house-vitest",
+        },
+        northNode: {
+          sign: "Aquarius",
+          house: 4,
+          mode: "mean",
+          verificationStatus: "verified",
+          policyId: "ASTRO-MEAN-NODE-v1",
+          evidenceArtifactId: "mean-node-vitest",
+        },
+        southNode: {
+          sign: "Leo",
+          house: 10,
+          mode: "mean",
+          verificationStatus: "verified",
+          policyId: "ASTRO-MEAN-NODE-v1",
+          evidenceArtifactId: "mean-node-vitest",
+        },
+        chiron: {
+          sign: "Cancer",
+          house: 8,
+          verificationStatus: "verified",
+          policyId: "ASTRO-CHIRON-v1",
+          evidenceArtifactId: "chiron-vitest",
+          qualificationMethod: "live-jpl-qualified-against-swiss",
+        },
       },
       humanDesignData: {
         status: "verified",
@@ -79,6 +130,7 @@ describe("clarityReadingModel", () => {
         centers: { defined: [], undefined: ["Head", "Ajna"] },
         channels: [],
         activatedGates: [1, 2],
+        ...hdTrust,
       },
     });
 
