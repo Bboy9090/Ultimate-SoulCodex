@@ -1,4 +1,11 @@
-import { isPersonalNumerologyValue } from "@soulcodex/core";
+import {
+  MAJOR_ASPECT_POLICY_ID,
+  degreeInTropicalSign,
+  isGovernedMajorAspect,
+  isPersonalNumerologyValue,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+} from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 
 type AnyRecord = Record<string, any>;
@@ -175,19 +182,33 @@ function hasGovernedDerivedPoint(
   point: AnyRecord | undefined,
   policyId: string,
 ): boolean {
+  const longitude = placementLongitude(point);
+  const degree = placementDegree(point);
   return Boolean(
     point?.verificationStatus === "verified" &&
     validSign(point?.sign) &&
+    longitude !== null &&
+    tropicalSignFromLongitude(longitude) === point?.sign &&
+    degree !== null &&
+    Math.abs(degree - degreeInTropicalSign(longitude)) < 0.01 &&
     point?.policyId === policyId &&
     nonEmptyString(point?.evidenceArtifactId),
   );
 }
 
 function hasGovernedHouse(row: AnyRecord | undefined): boolean {
+  const longitude = normalizedLongitude(row?.longitude);
+  const degree = finiteNumber(row?.degree);
   return Boolean(
     row?.verificationStatus === "verified" &&
     validHouse(row?.house) !== null &&
     validSign(row?.sign) &&
+    longitude !== null &&
+    tropicalSignFromLongitude(longitude) === row?.sign &&
+    degree !== null &&
+    degree >= 0 &&
+    degree < 30 &&
+    Math.abs(degree - degreeInTropicalSign(longitude)) < 0.01 &&
     row?.policyId === "ASTRO-EQUAL-HOUSE-v1" &&
     nonEmptyString(row?.evidenceArtifactId),
   );
@@ -197,9 +218,8 @@ function hasGovernedAspect(row: AnyRecord | undefined): boolean {
   return Boolean(
     typeof row?.planet1 === "string" &&
     typeof row?.planet2 === "string" &&
-    typeof row?.aspect === "string" &&
-    finiteNumber(row?.orb) !== null &&
-    row?.policyId === "ASTRO-ASPECT-MAJOR-v1",
+    isGovernedMajorAspect(row?.aspect, row?.orb) &&
+    row?.policyId === MAJOR_ASPECT_POLICY_ID,
   );
 }
 
@@ -224,8 +244,7 @@ function validHouse(value: unknown): number | null {
 
 function normalizedLongitude(value: unknown): number | null {
   const n = finiteNumber(value);
-  if (n === null) return null;
-  return ((n % 360) + 360) % 360;
+  return n === null ? null : normalizeDegrees(n);
 }
 
 function placementLongitude(placement: AnyRecord | undefined): number | null {
@@ -238,9 +257,13 @@ function placementLongitude(placement: AnyRecord | undefined): number | null {
 
 function placementDegree(placement: AnyRecord | undefined): number | null {
   const direct = finiteNumber(placement?.degree);
-  if (direct !== null) return Math.round(direct * 100) / 100;
+  if (direct !== null && direct >= 0 && direct < 30) {
+    return Math.round(direct * 100) / 100;
+  }
   const longitude = placementLongitude(placement);
-  return longitude === null ? null : Math.round((longitude % 30) * 100) / 100;
+  return longitude === null
+    ? null
+    : Math.round(degreeInTropicalSign(longitude) * 100) / 100;
 }
 
 function governedNumerologyValue(value: unknown): number | null {
