@@ -305,7 +305,9 @@ function generateFallbackHoroscope(
     33: 'Personal Day 33 keeps its master-number identity; I can practice care or service without assuming responsibility for everyone around me.',
   };
 
-  const dayMessage = dayThemes[personalDayNumber] || dayThemes[personalDayNumber % 10] || dayThemes[1]!;
+  const dayMessage =
+    dayThemes[personalDayNumber] ??
+    'Personal Day is unavailable; I keep the reflection general instead of inventing a Day 1 cycle.';
 
   let transitNote = '';
   if (personalTransits.length > 0) {
@@ -326,7 +328,9 @@ const horoscopeCache = new Map<string, DailyHoroscope>();
 
 /** Get date string in user's timezone for cache key (production checklist: timezone + date) */
 function getDateKeyInTimezone(now: Date, timezone: string | null | undefined): string {
-  if (!timezone) return now.toISOString().split('T')[0];
+  if (!timezone || !timezone.trim()) {
+    throw new RangeError('Horoscope timezone is required for a user-local calendar date');
+  }
 
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(now);
@@ -340,7 +344,10 @@ function getDateKeyInTimezone(now: Date, timezone: string | null | undefined): s
 
 export async function generateDailyHoroscope(profile: any): Promise<DailyHoroscope> {
   const now = new Date();
-  const tz = profile.timezone || 'UTC';
+  const tz =
+    typeof profile?.timezone === 'string' && profile.timezone.trim()
+      ? profile.timezone.trim()
+      : undefined;
   const dateKey = getDateKeyInTimezone(now, tz);
   const profileUpdatedAt = profile.updatedAt ? String(profile.updatedAt) : '';
   const stableProfileId =
