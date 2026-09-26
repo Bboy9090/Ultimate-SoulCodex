@@ -72,11 +72,16 @@ function shareStorageFixture(includePersonalInfo: boolean) {
       type: 'Reflector',
       verification: {
         inputTimestampUtc: '1990-09-17T15:11:00.000Z',
+        input_timestamp: '1990-09-17T15:11:00.000Z',
+        birth_time: '11:11',
+        birth_coordinates: '40.8448,-73.8648',
         latitude: 40.8448,
         longitude: -73.8648,
         safeReceiptId: 'receipt-safe',
       },
     },
+    biography: 'Private Person was born on 1990-09-17 in Bronx, New York at 11:11 America/New_York.',
+    dailyGuidance: 'Private Person can use this reflective guidance today.',
     archetypeData: { title: 'Verified Archetype' },
     soulCodexData: {
       birthDate: '1990-09-17',
@@ -129,6 +134,7 @@ test('anonymous full-profile sharing recursively strips nested birth evidence', 
     '1990-09-17T15:11:00.000Z',
     '1990-09-17',
     'Bronx, New York',
+    'Private Person',
   ]) {
     assert.equal(serialized.includes(forbidden), false, forbidden);
   }
@@ -159,4 +165,26 @@ test('explicit personal sharing may expose date/location but never exact birth g
   ]) {
     assert.equal(serialized.includes(forbidden), false, forbidden);
   }
+});
+
+
+test('alternate sensitive key spellings are stripped recursively', async () => {
+  const { storage } = shareStorageFixture(false);
+  const result = await getShareableProfile(storage as any, 'token');
+
+  assert.ok(result);
+  const serialized = JSON.stringify(result?.profile);
+  for (const forbiddenKey of [
+    'input_timestamp',
+    'inputTimestampUtc',
+    'birth_time',
+    'birth_coordinates',
+    'timezone',
+    'latitude',
+    'longitude',
+  ]) {
+    assert.equal(serialized.includes(forbiddenKey), false, forbiddenKey);
+  }
+  assert.match(serialized, /Shared Profile/);
+  assert.doesNotMatch(serialized, /Private Person/);
 });
