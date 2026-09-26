@@ -252,19 +252,20 @@ Supported inputs:
 FORMAT — use this exact structure:
 
 **Observation**
-What I might notice today — specific and behavioral (1-2 sentences)
+One specific behavior, decision, or condition I can observe or test today (1-2 sentences). Do not claim it is already happening.
 
 **Meaning**
-What symbolic pattern the supported inputs suggest (1 sentence)
+What symbolic pattern the supported inputs offer as a reflection lens (1 sentence), explicitly without treating it as a cause or prediction.
 
 **Action**
-One concrete reflection or action (1 sentence)
+One concrete action experiment I can verify from the result (1 sentence).
 
 RULES:
 - Write in FIRST PERSON (I/my/me).
 - Use only supplied inputs.
-- Do not invent unresolved natal placements, Human Design, personality types, elements, motives, trauma, or certainty.
-- Treat numerology/astrology as reflective frameworks, not guaranteed events.
+- Do not invent unresolved natal placements, Human Design, personality types, elements, motives, trauma, stress responses, relationship patterns, or certainty.
+- Treat numerology/astrology as reflective frameworks, not validated predictors of behavior or guaranteed events.
+- The Moon phase, sky alignments, personal transits, and Personal Day may suggest questions; they do not prove what I will do, feel, encounter, or become.
 - No metaphors or mystical filler.
 - Return only the reflection text.`;
 
