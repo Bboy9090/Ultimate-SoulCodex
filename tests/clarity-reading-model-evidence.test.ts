@@ -22,6 +22,7 @@ function verifiedChart() {
     verificationStatus: "verified",
     evidence: provenance,
     policyId: "ASTRO-EQUAL-HOUSE-v1",
+    evidenceArtifactId: "equal-house-fixture",
   }));
   return {
     verification: { policyId: "ASTRO-LONGITUDE-v1 + ASTRO-EQUAL-HOUSE-v1" },
@@ -45,6 +46,7 @@ function verifiedChart() {
       house: 3,
       mode: "mean",
       policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
       verificationStatus: "verified",
       evidence: provenance,
     },
@@ -60,6 +62,7 @@ function verifiedChart() {
       sign: "Cancer",
       house: 9,
       policyId: "ASTRO-CHIRON-v1",
+      evidenceArtifactId: "chiron-fixture",
       qualificationMethod: "live-jpl-qualified-against-swiss",
       verificationStatus: "verified",
       evidence: provenance,
@@ -137,4 +140,18 @@ test("status-only Human Design cannot become verified without a trust receipt", 
     },
   });
   assert.equal(model.signals.some((signal) => signal.id.startsWith("hd-")), false);
+});
+
+
+test("policy labels without evidence artifacts do not become verified geometry signals", () => {
+  const astrology = verifiedChart();
+  astrology.houses[0].evidenceArtifactId = "";
+  astrology.midheaven.evidenceArtifactId = "";
+  astrology.northNode.evidenceArtifactId = "";
+  astrology.chiron.evidenceArtifactId = "";
+
+  const model = buildClarityReadingModel({ verifiedAstrologyData: astrology });
+  for (const id of ["houses", "midheaven", "north-node", "chiron"]) {
+    assert.equal(model.signals.some((signal) => signal.id === id), false, id);
+  }
 });
