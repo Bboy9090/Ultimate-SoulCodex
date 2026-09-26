@@ -36,14 +36,14 @@ const MOON_SIGN_REFLECTIONS: Record<string, string> = {
   Pisces: 'What needs imagination or compassion, and what needs firmer reality-testing or boundaries?',
 };
 
-function personalDayReflection(number: number): { theme: string; action: string } {
+export function personalDayReflection(number: number): { theme: string; action: string } {
   return PERSONAL_DAY_REFLECTIONS[number] ?? {
     theme: 'structured reflection',
     action: 'choose one observable behavior to test rather than treating the number as a forecast',
   };
 }
 
-function moonSignReflection(sign: string): string {
+export function moonSignReflection(sign: string): string {
   return MOON_SIGN_REFLECTIONS[sign] ??
     'What real situation today could benefit from a different question or perspective?';
 }
