@@ -1,5 +1,5 @@
 import * as Astronomy from 'astronomy-engine';
-import { calcPersonalDay, dateOnlyFromLocalDate } from '@soulcodex/core';
+import { calcPersonalDay, calcUniversalDay, dateOnlyFromLocalDate } from '@soulcodex/core';
 import { degreeToGateAndLine } from './human-design';
 
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
@@ -16,13 +16,6 @@ export interface DailyContext {
   planetaryHour: string | null;
 }
 
-function reduceToSingleDigit(num: number): number {
-  while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
-    num = num.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
-  }
-  return num;
-}
-
 /**
  * Calculates Personal Day Number using the shared core module.
  * This ensures consistency across all surfaces (Today, Timeline, Codex, Profile).
@@ -31,17 +24,8 @@ export function calculatePersonalDayNumber(birthDate: string, currentDate: Date 
   return calcPersonalDay(birthDate, currentDate);
 }
 
-export function calculateUniversalDayNumber(currentDate: Date = new Date()): number {
-  const day = currentDate.getDate();
-  const month = currentDate.getMonth() + 1;
-  const year = currentDate.getFullYear();
-  
-  const reducedDay = reduceToSingleDigit(day);
-  const reducedMonth = reduceToSingleDigit(month);
-  const reducedYear = reduceToSingleDigit(year);
-  
-  const sum = reducedDay + reducedMonth + reducedYear;
-  return reduceToSingleDigit(sum);
+export function calculateUniversalDayNumber(currentDate: Date | string = new Date()): number {
+  return calcUniversalDay(currentDate);
 }
 
 export function getMoonSign(date: Date): string {
