@@ -12,7 +12,28 @@ import {
   type InsertProfile,
   type Assessment,
   type InsertAssessment,
+  isValidDateOnly,
 } from "@shared/schema";
+
+function canonicalBirthDateTimestamp(value: unknown): Date {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new RangeError("Birth date must be a valid civil date");
+    }
+    return new Date(Date.UTC(
+      value.getUTCFullYear(),
+      value.getUTCMonth(),
+      value.getUTCDate(),
+    ));
+  }
+
+  if (typeof value === "string" && isValidDateOnly(value.trim())) {
+    return new Date(`${value.trim()}T00:00:00.000Z`);
+  }
+
+  throw new RangeError("Birth date storage requires a real YYYY-MM-DD civil date");
+}
+
 
 function appleUsername(subject: string) {
   return `apple:${subject}`;
@@ -107,6 +128,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const profile = {
       ...insertProfile,
+      birthDate: canonicalBirthDateTimestamp((insertProfile as any).birthDate),
       id: randomUUID(),
       userId: insertProfile.userId ?? null,
       sessionId: insertProfile.sessionId ?? null,
@@ -246,11 +268,22 @@ class PostgresStorage implements IStorage {
   }
   async createProfile(insertProfile: InsertProfile): Promise<Profile> {
     const db = await this.db();
-    return (await db.insert(profiles).values(insertProfile).returning())[0];
+    const normalized = {
+      ...insertProfile,
+      birthDate: canonicalBirthDateTimestamp((insertProfile as any).birthDate),
+    };
+    return (await db.insert(profiles).values(normalized).returning())[0];
   }
   async updateProfile(id: string, updates: Partial<Profile>): Promise<Profile> {
     const db = await this.db();
-    const row = (await db.update(profiles).set({ ...updates, updatedAt: new Date() }).where(eq(profiles.id, id)).returning())[0];
+    const normalized = {
+      ...updates,
+      ...(Object.prototype.hasOwnProperty.call(updates, "birthDate")
+        ? { birthDate: canonicalBirthDateTimestamp((updates as any).birthDate) }
+        : {}),
+      updatedAt: new Date(),
+    };
+    const row = (await db.update(profiles).set(normalized).where(eq(profiles.id, id)).returning())[0];
     if (!row) throw new Error("Profile not found");
     return row;
   }
