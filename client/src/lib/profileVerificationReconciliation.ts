@@ -1,7 +1,9 @@
 import {
+  MAJOR_ASPECT_POLICY_ID,
   TROPICAL_ZODIAC_SIGNS,
   circularDegreesDelta,
   degreeInTropicalSign,
+  isGovernedMajorAspect,
   normalizeDegrees,
   tropicalSignFromLongitude,
   type OfflineCodexProfile,
@@ -30,10 +32,6 @@ type PlacementRecord = {
     inputTimestamp?: string;
   };
 };
-
-const MAJOR_ASPECTS = new Set([
-  "conjunction", "opposition", "trine", "square", "sextile",
-]);
 
 const FULL_NATAL_PLANET_KEYS = [
   "sun", "moon", "mercury", "venus", "mars",
@@ -282,10 +280,8 @@ export function hasVerifiedFullNatalChart(
   if (!Array.isArray(astrology.aspects) || astrology.aspects.some((aspect) =>
     typeof aspect.planet1 !== "string" ||
     typeof aspect.planet2 !== "string" ||
-    !MAJOR_ASPECTS.has(String(aspect.aspect).toLowerCase()) ||
-    !Number.isFinite(aspect.orb) ||
-    Number(aspect.orb) < 0 ||
-    aspect.policyId !== "ASTRO-ASPECT-MAJOR-v1"
+    !isGovernedMajorAspect(aspect.aspect, aspect.orb) ||
+    aspect.policyId !== MAJOR_ASPECT_POLICY_ID
   )) return false;
 
   for (const node of [astrology.northNode, astrology.southNode]) {
