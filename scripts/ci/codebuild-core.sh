@@ -73,6 +73,7 @@ node --import tsx --test \
   tests/assessment-source-boundary.test.ts \
   tests/assessment-interpretation-boundary.test.ts \
   tests/readme-system-truth.test.ts \
+  tests/changelog-current-truth.test.ts \
   tests/canonical-doctrine-contract.test.ts \
   tests/primary-synthesis-system-policy.test.ts \
   tests/server-profile-ownership.test.ts \
