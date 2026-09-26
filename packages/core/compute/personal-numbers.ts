@@ -93,6 +93,21 @@ export function calcPersonalDay(
 }
 
 /**
+ * Calculates the Universal Day from the target calendar date using the same
+ * declared reduction policy as the personal-number engine.
+ */
+export function calcUniversalDay(
+  targetDate: Date | string = new Date(),
+): number {
+  const { year, month, day } = targetCalendarParts(targetDate);
+  const sum =
+    reduceToSingleDigit(day) +
+    reduceToSingleDigit(month) +
+    reduceToSingleDigit(year);
+  return reduceToSingleDigit(sum);
+}
+
+/**
  * Calculates Personal Year Number based on birth month/day and target year.
  * Soul Codex uses the explicit calendar-year convention: the target year's
  * Personal Year applies from January 1 through December 31. It is calculated
