@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * SOUL CODEX - ADVANCED TRANSITS CALENDAR
- * Visual calendar with transit predictions and insights
+ * SOUL CODEX - TRANSITS REFLECTION CALENDAR
+ * Visual calendar of measured transit geometry with symbolic reflection prompts
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -16,7 +16,7 @@ export interface CalendarDay {
   transits: Transit[];
   dominantTheme: string;
   overallIntensity: number;
-  significantTransits: Transit[]; // High intensity transits
+  significantTransits: Transit[]; // Legacy high-priority model bucket; not measured intensity
   recommendations: string[];
   moonPhase?: string;
   moonSign?: string;
@@ -28,8 +28,10 @@ export interface TransitsCalendar {
   days: CalendarDay[];
   summary: {
     totalTransits: number;
+    /** @deprecated Legacy model-priority count; not measured event intensity. */
     highIntensityDays: number;
     dominantThemes: string[];
+    /** @deprecated Legacy model-score threshold dates; not predicted peak events. */
     peakDates: Date[];
   };
 }
@@ -126,11 +128,13 @@ export function generateTransitsCalendar(
     const significantTransits = activeTransits.transits.filter(t => t.intensity === 'high');
     const recommendations = generateRecommendations(activeTransits.transits, activeTransits.dominantTheme);
 
-    if (activeTransits.overallIntensity >= 7) {
+    // Preserve legacy summary fields using explicit model-priority semantics.
+    // These are not physical or predictive intensity thresholds.
+    if (significantTransits.length > 0) {
       highIntensityDays++;
     }
 
-    if (activeTransits.overallIntensity >= 8) {
+    if (significantTransits.length >= 2) {
       peakDates.push(currentDate);
     }
 
@@ -178,40 +182,36 @@ export function generateTransitsCalendar(
  * Generate recommendations based on transits
  */
 function generateRecommendations(transits: Transit[], dominantTheme: string): string[] {
+  void dominantTheme;
   const recommendations: string[] = [];
 
-  // High intensity transits get specific recommendations
-  const highIntensityTransits = transits.filter(t => t.intensity === 'high');
-  
-  for (const transit of highIntensityTransits) {
+  // These are reflection experiments keyed to symbolic transit themes. They do
+  // not assert that an event, feeling, opportunity, or psychological state is active.
+  const modelPriorityTransits = transits.filter(t => t.intensity === 'high');
+
+  for (const transit of modelPriorityTransits) {
     if (transit.planet === 'Pluto') {
-      recommendations.push('Focus on deep transformation and shadow work');
-      recommendations.push('Release what no longer serves you');
+      recommendations.push('Reflection experiment: identify one change already supported by observable facts');
+      recommendations.push('Check whether anything actually needs release before acting on transformation symbolism');
     } else if (transit.planet === 'Saturn') {
-      recommendations.push('Take responsibility and build structure');
-      recommendations.push('Practice discipline and patience');
+      recommendations.push('Reflection experiment: review one real constraint, responsibility, or structure');
+      recommendations.push('Test whether a small increase in structure improves the situation');
     } else if (transit.planet === 'Uranus') {
-      recommendations.push('Embrace change and innovation');
-      recommendations.push('Release control and allow breakthroughs');
+      recommendations.push('Reflection experiment: test one low-cost change instead of assuming disruption is required');
+      recommendations.push('Separate real constraints from a symbolic desire for novelty');
     } else if (transit.planet === 'Neptune') {
-      recommendations.push('Connect with spirituality and intuition');
-      recommendations.push('Practice surrender and compassion');
+      recommendations.push('Reflection experiment: separate imagination and intuition from facts you can verify');
+      recommendations.push('Write down assumptions before treating uncertainty as meaningful');
     } else if (transit.planet === 'Jupiter') {
-      recommendations.push('Expand your horizons and take opportunities');
-      recommendations.push('Practice gratitude and optimism');
+      recommendations.push('Reflection experiment: evaluate one real opportunity for upside, cost, and overextension');
+      recommendations.push('Do not expand a commitment solely because the transit symbolism emphasizes growth');
     }
   }
 
-  // Add general recommendations based on theme
-  if (dominantTheme.includes('Transformation')) {
-    recommendations.push('This is a powerful time for deep inner work');
-  } else if (dominantTheme.includes('Structure')) {
-    recommendations.push('Focus on building solid foundations');
-  } else if (dominantTheme.includes('Expansion')) {
-    recommendations.push('Say yes to new opportunities');
+  if (recommendations.length === 0 && transits.length > 0) {
+    recommendations.push('Use the measured aspect as a reflection prompt and verify any personal meaning against real circumstances');
   }
 
-  // Remove duplicates and limit to 5
   return [...new Set(recommendations)].slice(0, 5);
 }
 
