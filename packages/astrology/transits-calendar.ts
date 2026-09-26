@@ -39,10 +39,10 @@ export interface TransitsCalendar {
 const MAX_TRANSIT_CALENDAR_DAYS = 366;
 
 function validTimezone(value: unknown): string {
-  const timezone =
-    typeof value === 'string' && value.trim()
-      ? value.trim()
-      : 'UTC';
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new RangeError('Transit calendar timezone is required for profile-local date semantics');
+  }
+  const timezone = value.trim();
 
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date(0));
@@ -238,12 +238,19 @@ export function getUpcomingSignificantTransits(
     const dateISO = dateOnlyFromOrdinal(startOrdinal + offset);
     const checkDate = localNoonInstant(dateISO, timezone);
     const activeTransits = calculateActiveTransits(natalPlanets, checkDate);
-    const significant = activeTransits.transits.filter(t => t.intensity === 'high');
+    const significant = activeTransits.transits
+      .filter(t => t.intensity === 'high')
+      .map((transit) => ({ ...transit, dateISO }));
     allTransits.push(...significant);
   }
 
   const uniqueTransits = Array.from(
-    new Map(allTransits.map(t => [`${t.planet}-${t.natalPlanet}-${t.aspect}`, t])).values()
+    new Map(
+      allTransits.map((t) => [
+        `${t.dateISO ?? 'undated'}-${t.planet}-${t.natalPlanet}-${t.aspect}`,
+        t,
+      ]),
+    ).values(),
   );
 
   return uniqueTransits.slice(0, 10);
