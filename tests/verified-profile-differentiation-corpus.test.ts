@@ -77,12 +77,17 @@ function ngrams(text: string, width: number): Set<string> {
   return grams;
 }
 
-function ngramJaccard(a: string, b: string, width: number): number {
-  const left = ngrams(a, width);
-  const right = ngrams(b, width);
-  const intersection = [...left].filter((gram) => right.has(gram)).length;
-  const union = new Set([...left, ...right]).size;
+function setJaccard(left: Set<string>, right: Set<string>): number {
+  let intersection = 0;
+  for (const value of left) {
+    if (right.has(value)) intersection += 1;
+  }
+  const union = left.size + right.size - intersection;
   return union === 0 ? 0 : intersection / union;
+}
+
+function ngramJaccard(a: string, b: string, width: number): number {
+  return setJaccard(ngrams(a, width), ngrams(b, width));
 }
 
 function referenceFetcherFor(birth: BirthData): IndependentReferenceFetcher {
@@ -255,6 +260,11 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     );
   }
 
+  const fingerprints = readings.map((reading) => fingerprint(reading));
+  const normalizedFingerprints = fingerprints.map((value) => normalize(value));
+  const bigramSets = fingerprints.map((value) => ngrams(value, 2));
+  const trigramSets = fingerprints.map((value) => ngrams(value, 3));
+
   await suite.test("all 300 readings use complete verified chart evidence", () => {
     assert.equal(readings.length, 300);
     for (const [index, reading] of readings.entries()) {
@@ -340,7 +350,7 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
   });
 
   await suite.test("all 300 verified readings are unique", () => {
-    const unique = new Set(readings.map((reading) => normalize(fingerprint(reading))));
+    const unique = new Set(normalizedFingerprints);
     assert.equal(
       unique.size,
       readings.length,
@@ -349,7 +359,7 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
   });
 
   await suite.test("generic umbrella language does not dominate the verified population", () => {
-    const texts = readings.map((reading) => normalize(fingerprint(reading)));
+    const texts = normalizedFingerprints;
     for (const term of genericTerms) {
       const hits = texts.filter((text) => text.includes(term)).length;
       const ratio = hits / texts.length;
@@ -375,16 +385,8 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
         const distance = supportedSignatureDistance(readings[left], readings[right]);
         if (distance < 3) continue;
         materiallyDifferentPairs += 1;
-        const bigram = ngramJaccard(
-          fingerprint(readings[left]),
-          fingerprint(readings[right]),
-          2,
-        );
-        const trigram = ngramJaccard(
-          fingerprint(readings[left]),
-          fingerprint(readings[right]),
-          3,
-        );
+        const bigram = setJaccard(bigramSets[left], bigramSets[right]);
+        const trigram = setJaccard(trigramSets[left], trigramSets[right]);
         if (bigram > worstBigram.score) worstBigram = { score: bigram, left, right, distance };
         if (trigram > worstTrigram.score) worstTrigram = { score: trigram, left, right, distance };
       }
