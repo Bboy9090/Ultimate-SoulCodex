@@ -1,15 +1,11 @@
 import * as Astronomy from 'astronomy-engine';
 import { resolveCivilTimeStrict } from './civil-time.js';
-
-const SIGNS = [
-  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
-] as const;
+import { normalizeDegrees, tropicalSignFromLongitude, type TropicalZodiacSign } from './angular-math.js';
 
 export type OfflineSunResolution =
   | {
       status: 'resolved';
-      sign: (typeof SIGNS)[number];
+      sign: TropicalZodiacSign;
       longitudeDegrees: number | null;
       policy: 'exact-local-time' | 'stable-across-local-day';
       inputTimestamps: string[];
@@ -31,14 +27,10 @@ export type OfflineSunResolution =
         | 'ephemeris_calculation_failed';
     };
 
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
 function sunAt(timestamp: Date) {
   const vector = Astronomy.GeoVector(Astronomy.Body.Sun, timestamp, true);
-  const longitudeDegrees = normalizeLongitude(Astronomy.Ecliptic(vector).elon);
-  const sign = SIGNS[Math.floor(longitudeDegrees / 30)];
+  const longitudeDegrees = normalizeDegrees(Astronomy.Ecliptic(vector).elon);
+  const sign = tropicalSignFromLongitude(longitudeDegrees);
   return { sign, longitudeDegrees };
 }
 
