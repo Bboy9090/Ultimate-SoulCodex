@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { getShareableProfile } from '../services/shareable-links';
+import { createShareableLink, getShareableProfile, updateShareableLink } from '../services/shareable-links';
 
 const service = fs.readFileSync(new URL('../services/shareable-links.ts', import.meta.url), 'utf8');
 const routes = fs.readFileSync(new URL('../routes.ts', import.meta.url), 'utf8');
@@ -114,7 +114,7 @@ function shareStorageFixture(includePersonalInfo: boolean) {
     updateShareableLink: async () => undefined,
   };
 
-  return { storage, settings };
+  return { storage, settings, link };
 }
 
 test('anonymous full-profile sharing recursively strips nested birth evidence', async () => {
@@ -198,4 +198,105 @@ test('public share responses never expose password hashes', async () => {
   assert.ok(result);
   assert.equal(result?.settings.passwordHash, undefined);
   assert.doesNotMatch(JSON.stringify(result), /private-hash-material/);
+});
+
+
+test('protected share creation rejects plaintext or missing hashes', async () => {
+  let writes = 0;
+  const storage = {
+    createShareableLink: async () => { writes += 1; },
+  };
+
+  await assert.rejects(
+    () =>
+      createShareableLink(
+        storage as any,
+        'profile-1',
+        'user-1',
+        { passwordProtected: true, passwordHash: 'plain-text-secret' },
+      ),
+    /Argon2 password hash/,
+  );
+
+  await assert.rejects(
+    () =>
+      createShareableLink(
+        storage as any,
+        'profile-1',
+        'user-1',
+        { passwordProtected: true },
+      ),
+    /Argon2 password hash/,
+  );
+
+  assert.equal(writes, 0);
+});
+
+test('unprotected share creation drops stray password hashes before persistence', async () => {
+  let persisted: any = null;
+  const storage = {
+    createShareableLink: async (link: any) => { persisted = link; },
+  };
+
+  const created = await createShareableLink(
+    storage as any,
+    'profile-1',
+    'user-1',
+    {
+      passwordProtected: false,
+      passwordHash: '$argon2id$should-not-be-kept',
+    },
+  );
+
+  assert.equal(created.settings.passwordHash, undefined);
+  assert.equal(persisted?.settings?.passwordHash, undefined);
+});
+
+test('malformed protected share records fail closed before profile disclosure', async () => {
+  const { storage, link } = shareStorageFixture(false);
+  link.settings.passwordProtected = true;
+  link.settings.passwordHash = 'not-an-argon2-hash';
+
+  const result = await getShareableProfile(storage as any, 'token', 'secret');
+  assert.equal(result, null);
+});
+
+test('share updates cannot enable password protection without an Argon2 hash', async () => {
+  const existing = {
+    id: 'share-1',
+    profileId: 'profile-1',
+    userId: 'user-1',
+    token: 'token',
+    url: 'https://example.test/share/token',
+    settings: {
+      includeFullProfile: false,
+      includeSections: ['archetype'],
+      includePersonalInfo: false,
+      includeCompatibility: false,
+      includeTransits: false,
+      includeJournal: false,
+      passwordProtected: false,
+      allowComments: false,
+    },
+    createdAt: new Date(),
+    accessCount: 0,
+    isActive: true,
+  };
+
+  let writes = 0;
+  const storage = {
+    getShareableLink: async () => existing,
+    updateShareableLink: async () => { writes += 1; },
+  };
+
+  await assert.rejects(
+    () =>
+      updateShareableLink(
+        storage as any,
+        existing.id,
+        { passwordProtected: true, passwordHash: 'plaintext' },
+      ),
+    /Argon2 password hash/,
+  );
+  assert.equal(writes, 0);
 });
