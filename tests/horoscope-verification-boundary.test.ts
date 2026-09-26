@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { calculatePersonalTransitsFromProfile } from "../packages/astrology/horoscope";
+import { calculatePersonalTransitsFromProfile, generateDailyHoroscope } from "../packages/astrology/horoscope";
 
 test("daily horoscope personal transits require verified natal geometry", () => {
   const rawLegacyProfile = {
@@ -67,4 +67,24 @@ test("daily horoscope fallback language stays reflective rather than predictive"
   assert.doesNotMatch(source, /practical effort pays off/i);
   assert.match(source, /reflection prompt/i);
   assert.match(source, /without assuming an event will occur/i);
+});
+
+test("daily horoscope rejects an explicit invalid timezone instead of silently using UTC", async () => {
+  await assert.rejects(
+    () => generateDailyHoroscope({
+      id: "invalid-zone",
+      birthDate: "1990-09-17",
+      timezone: "Mars/Olympus_Mons",
+    }),
+    /Invalid horoscope timezone/,
+  );
+});
+
+test("daily horoscope cache requires a stable profile id", () => {
+  const source = readFileSync("packages/astrology/horoscope.ts", "utf8");
+
+  assert.match(source, /const cacheKey = stableProfileId\s*\?/);
+  assert.match(source, /if \(cacheKey\) \{\s*const cached = horoscopeCache\.get\(cacheKey\)/);
+  assert.match(source, /if \(cacheKey\) \{\s*horoscopeCache\.set\(cacheKey, result\)/);
+  assert.doesNotMatch(source, /profile\.id\}\+\$\{dateKey/);
 });
