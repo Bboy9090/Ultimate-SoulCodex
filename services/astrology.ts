@@ -58,36 +58,9 @@ interface AstrologyData {
     };
   }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: { 
-    sign: string; 
-    house: number; 
-    degree: number;
-    interpretation: {
-      title: string;
-      description: string;
-      spiritualGrowth: string;
-    };
-  };
-  southNode: { 
-    sign: string; 
-    house: number; 
-    degree: number;
-    interpretation: {
-      title: string;
-      description: string;
-      spiritualGrowth: string;
-    };
-  };
-  chiron: { 
-    sign: string; 
-    house: number; 
-    degree: number;
-    interpretation: {
-      title: string;
-      description: string;
-      healingPath: string;
-    };
-  };
+  northNode: null;
+  southNode: null;
+  chiron: null;
   interpretations: {
     bigThree: {
       sun: string;
@@ -379,22 +352,6 @@ function calculateAspects(planetPositions: { [key: string]: number }): Array<{ p
   return aspects;
 }
 
-function calculateChironPosition(birthTime: Date): { longitude: number; sign: string; degree: number } {
-  const epochTime = new Date('2000-01-01T12:00:00Z').getTime();
-  const currentTime = birthTime.getTime();
-  const yearsSinceEpoch = (currentTime - epochTime) / (1000 * 60 * 60 * 24 * 365.25);
-  
-  const epochChironDegree = 270;
-  const chironDegree = (epochChironDegree + (yearsSinceEpoch * 7.2)) % 360;
-  const normalizedDegree = chironDegree < 0 ? chironDegree + 360 : chironDegree;
-  
-  return {
-    longitude: normalizedDegree,
-    sign: eclipticToZodiacSign(normalizedDegree),
-    degree: getDegreesInSign(normalizedDegree)
-  };
-}
-
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const birthTime = createBirthTime(birthData);
   const latitude = normalizeCoordinate((birthData as any).latitude, 0);
@@ -466,51 +423,11 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   
   const aspects = calculateAspects(planetPositions);
   
-  const nodeEvent = (Astro as any).SearchMoonNode(birthTime);
-  const nodeTime = nodeEvent.time.date;
-  const daysSinceNode = (birthTime.getTime() - nodeTime.getTime()) / (1000 * 60 * 60 * 24);
-  const nodeRetrogradeDegrees = daysSinceNode * 0.0529;
-  
-  const baseNodeLongitude = (nodeEvent.kind === (Astro as any).NodeEventKind.Ascending ? 0 : 180);
-  const currentMoonEq = (Astro as any).GeoVector((Astro as any).Body.Moon, nodeTime, true);
-  const currentMoonEcl = (Astro as any).Ecliptic(currentMoonEq);
-  const nodeAtEventLongitude = currentMoonEcl.elon;
-  
-  let northNodeLongitude = (nodeAtEventLongitude - nodeRetrogradeDegrees + 360) % 360;
-  if (nodeEvent.kind !== (Astro as any).NodeEventKind.Ascending) {
-    northNodeLongitude = (northNodeLongitude + 180) % 360;
-  }
-  
-  const southNodeLongitude = (northNodeLongitude + 180) % 360;
-  
-  const northNodeSign = eclipticToZodiacSign(northNodeLongitude);
-  const southNodeSign = eclipticToZodiacSign(southNodeLongitude);
-  
-  const northNode = {
-    sign: northNodeSign,
-    house: calculateHousePosition(northNodeLongitude, houseCusps),
-    degree: getDegreesInSign(northNodeLongitude),
-    interpretation: getKarmicInterpretation('northNode', northNodeSign)
-  };
-  
-  const southNode = {
-    sign: southNodeSign,
-    house: calculateHousePosition(southNodeLongitude, houseCusps),
-    degree: getDegreesInSign(southNodeLongitude),
-    interpretation: {
-      title: `Soul History: ${southNodeSign} Mastery`,
-      description: `You've mastered ${southNodeSign} qualities in past lives. Now it's time to balance this with your North Node growth.`,
-      spiritualGrowth: `Release over-attachment to ${southNodeSign} patterns and embrace your North Node path.`
-    }
-  };
-  
-  const chironPos = calculateChironPosition(birthTime);
-  const chiron = {
-    sign: chironPos.sign,
-    house: calculateHousePosition(chironPos.longitude, houseCusps),
-    degree: chironPos.degree,
-    interpretation: getKarmicInterpretation('chiron', chironPos.sign)
-  };
+  // Legacy/candidate astrology does not emit Lunar Nodes or Chiron.
+  // Production supplies them only through independently governed verification.
+  const northNode = null;
+  const southNode = null;
+  const chiron = null;
   
   const sunInterpretation = getPlanetSignInterpretation('sun', sunSign);
   const moonInterpretation = getPlanetSignInterpretation('moon', moonSign);
