@@ -9,6 +9,12 @@ const SIGNS = [
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ] as const;
 
+const placementEvidence = {
+  source: "Independent differentiation fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
+
 export interface DifferentiationReading {
   id: string;
   signature: string;
@@ -31,6 +37,7 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
   const planet = (offset: number) => ({
     verificationStatus: "verified",
     sign: sign(index * 2 + offset),
+    evidence: placementEvidence,
   });
   const planetaryHouses = {
     sun: ((index + 9) % 12) + 1,
@@ -46,12 +53,12 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
   };
 
   return {
-    sun: { verificationStatus: "verified", sign: sun },
-    moon: { verificationStatus: "verified", sign: moon },
-    rising: { verificationStatus: "verified", sign: rising },
+    sun: { verificationStatus: "verified", sign: sun, evidence: placementEvidence },
+    moon: { verificationStatus: "verified", sign: moon, evidence: placementEvidence },
+    rising: { verificationStatus: "verified", sign: rising, evidence: placementEvidence },
     planets: {
-      sun: { verificationStatus: "verified", sign: sun },
-      moon: { verificationStatus: "verified", sign: moon },
+      sun: { verificationStatus: "verified", sign: sun, evidence: placementEvidence },
+      moon: { verificationStatus: "verified", sign: moon, evidence: placementEvidence },
       mercury: planet(2),
       venus: planet(3),
       mars: planet(5),
