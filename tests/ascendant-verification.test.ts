@@ -140,3 +140,46 @@ test("Ascendant verification rejects geographic poles where horizon/ecliptic geo
     }
   }
 });
+
+
+test("Ascendant verification rejects timezone-less instants", () => {
+  const bareLocal = {
+    inputTimestamp: "1990-09-17T15:11:00",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  };
+
+  assert.throws(
+    () => calculateAscendantCandidate(bareLocal),
+    /ascendant_input_invalid/,
+  );
+
+  const result = verifyAscendant(bareLocal);
+  assert.equal(result.status, "rejected");
+  if (result.status === "rejected") {
+    assert.equal(result.reason, "invalid_input");
+  }
+});
+
+test("Ascendant verification accepts equivalent explicit offsets deterministically", () => {
+  const utc = verifyAscendant({
+    inputTimestamp: "1990-09-17T15:11:00Z",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+  const offset = verifyAscendant({
+    inputTimestamp: "1990-09-17T11:11:00-04:00",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+
+  assert.equal(utc.status, "verified");
+  assert.equal(offset.status, "verified");
+  if (utc.status !== "verified" || offset.status !== "verified") return;
+
+  assert.equal(utc.sign, offset.sign);
+  assert.ok(
+    circularDelta(utc.longitudeDegrees, offset.longitudeDegrees) < 1e-10,
+    "equivalent instants must produce the same ascendant geometry",
+  );
+});
