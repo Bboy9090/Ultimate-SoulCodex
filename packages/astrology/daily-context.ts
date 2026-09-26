@@ -73,14 +73,23 @@ export function getCurrentHDGate(date: Date): { gate: number; line: number } {
   return degreeToGateAndLine(sunPos.elon);
 }
 
-export function getDailyContext(birthDate: string, currentDate: Date = new Date()): DailyContext {
+export function getDailyContext(
+  birthDate: string,
+  currentDate: Date = new Date(),
+  calendarDateISO?: string,
+): DailyContext {
+  if (!(currentDate instanceof Date) || Number.isNaN(currentDate.getTime())) {
+    throw new RangeError('Daily Context requires a valid astronomical instant');
+  }
+
+  const date = calendarDateISO ?? dateOnlyFromLocalDate(currentDate);
   const moonPhaseData = getMoonPhase(currentDate);
   const hdGateData = getCurrentHDGate(currentDate);
   
   return {
-    date: dateOnlyFromLocalDate(currentDate),
-    personalDayNumber: calculatePersonalDayNumber(birthDate, currentDate),
-    universalDayNumber: calculateUniversalDayNumber(currentDate),
+    date,
+    personalDayNumber: calculatePersonalDayNumber(birthDate, date),
+    universalDayNumber: calculateUniversalDayNumber(date),
     moonSign: getMoonSign(currentDate),
     moonPhase: moonPhaseData.phase,
     moonPhasePercentage: moonPhaseData.percentage,
