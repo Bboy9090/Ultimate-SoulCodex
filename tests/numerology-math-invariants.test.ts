@@ -10,7 +10,7 @@ import {
   numerologyNameComponentAvailability,
   reduceNumerology,
 } from "../packages/core/compute/numerology";
-import { calcPersonalYear } from "../packages/core/compute/personal-numbers";
+import { calcPersonalYear, PERSONAL_DAY_LABELS, PERSONAL_MONTH_LABELS, PERSONAL_YEAR_LABELS } from "../packages/core/compute/personal-numbers";
 
 const allowedFinalValues = new Set([1,2,3,4,5,6,7,8,9,11,22,33]);
 
@@ -148,4 +148,21 @@ test("Personal Year numeric and date-string forms agree across calendar samples"
       );
     }
   }
+});
+
+
+test("cycle labels remain reflective rather than destiny claims", () => {
+  const rendered = [
+    ...Object.values(PERSONAL_DAY_LABELS),
+    ...Object.values(PERSONAL_MONTH_LABELS),
+    ...Object.values(PERSONAL_YEAR_LABELS),
+  ].join(" ");
+
+  assert.doesNotMatch(
+    rendered,
+    /divine|destin|fated|awakening|transcend|guaranteed|manifest$/i,
+  );
+  assert.equal(PERSONAL_YEAR_LABELS[11], "Inspiration and Perspective");
+  assert.equal(PERSONAL_YEAR_LABELS[22], "Large-Scale Building");
+  assert.equal(PERSONAL_YEAR_LABELS[33], "Teaching and Service");
 });
