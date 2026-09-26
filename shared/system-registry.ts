@@ -140,6 +140,15 @@ export const SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY: readonly SoulCodexRegistryEn
     rule: "No dosha is inferred from unrelated profile fields.",
   },
   {
+    id: "returns-progressions",
+    label: "Solar / Lunar Returns and Secondary Progressions",
+    family: "Astrology extensions",
+    state: "unavailable",
+    mayInfluenceUltimateCodex: false,
+    evidenceContract: "no approved return/progression astronomical verification contract",
+    rule: "Legacy placeholder day-of-year, fixed-house, or approximate return calculations are quarantined. Production requires exact return search, governed chart geometry, and independent verification.",
+  },
+  {
     id: "vedic-astrology",
     label: "Vedic astrology / Nakshatras",
     family: "Legacy symbolic systems",
