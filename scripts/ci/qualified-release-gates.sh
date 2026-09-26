@@ -67,5 +67,6 @@ node --import tsx --test \
   tests/systems-details-governance-ui.test.ts \
   tests/readme-system-truth.test.ts \
   tests/release-manifest-contract.test.ts \
+  tests/qualified-release-gate-authority.test.ts \
   tests/assessment-source-boundary.test.ts \
   tests/assessment-interpretation-boundary.test.ts
