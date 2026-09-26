@@ -7,6 +7,7 @@ import {
   registrySystemsExcludedFromUltimateCodex,
   registrySystemsForUseContext,
 } from "../shared/system-registry.ts";
+import { SOUL_CODEX_SYSTEM_POLICIES } from "../shared/system-visibility.ts";
 
 const legacyTemplateSystems = [
   "chinese-astrology",
@@ -156,4 +157,29 @@ test("use-context selector prevents system pile-on", () => {
   assert.equal(technical.length, SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.length);
   assert.ok(technical.includes("gene-keys"));
   assert.ok(technical.includes("fixed-stars"));
+});
+
+
+test("legacy visibility policy cannot outrank the production registry", () => {
+  assert.equal(
+    SOUL_CODEX_SYSTEM_POLICIES.personalityAssessments.mayInfluencePrimarySynthesis,
+    false,
+  );
+  assert.equal(SOUL_CODEX_SYSTEM_POLICIES.runes.visibility, "unavailable");
+  assert.equal(SOUL_CODEX_SYSTEM_POLICIES.sacredGeometry.visibility, "unavailable");
+
+  for (const [legacyKey, registryId] of [
+    ["runes", "runes"],
+    ["sacredGeometry", "sacred-geometry"],
+  ] as const) {
+    const registry = SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.find(
+      (entry) => entry.id === registryId,
+    );
+    assert.ok(registry);
+    assert.equal(SOUL_CODEX_SYSTEM_POLICIES[legacyKey].visibility, registry?.state);
+    assert.equal(
+      SOUL_CODEX_SYSTEM_POLICIES[legacyKey].mayInfluencePrimarySynthesis,
+      registry?.mayInfluenceUltimateCodex,
+    );
+  }
 });
