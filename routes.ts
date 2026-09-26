@@ -1844,7 +1844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      const today = profileLocalDateKey(profile);
+      const referenceInstant = new Date();
+      const today = profileLocalDateKey(profile, referenceInstant);
       console.log(`[GetDailyInsights] Fetching insights for profile ${profileId} on ${today}`);
       
       // Check if we already have insights for the profile-local day.
@@ -1858,7 +1859,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate new insights
       console.log(`[GetDailyInsights] Generating new insights for ${today}`);
       const recentTemplateIds = await storage.getRecentTemplateIds(profileId, 7);
-      const { data, templateIds, contentHash } = generateDailyInsights(profile, recentTemplateIds);
+      const { data, templateIds, contentHash } = generateDailyInsights(
+        profile,
+        recentTemplateIds,
+        today,
+        referenceInstant,
+      );
       
       // Store the insights
       dailyInsight = await storage.createDailyInsight({
