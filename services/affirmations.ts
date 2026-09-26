@@ -1,5 +1,6 @@
 import type { Profile } from '../shared/schema';
 import { extractVerifiedAstrology } from '../server/lib/verified-astrology';
+import { hasApprovedVerifiedHumanDesignTrust } from '../server/services/human-design-trust';
 
 export interface Affirmation {
   text: string;
@@ -242,7 +243,7 @@ export function generateDailyAffirmations(profile: Profile, count: number = 3, d
   const numData = profile.numerologyData as any;
   const lifePath = Number(numData?.lifePath ?? numData?.lifePathNumber);
   const validLifePath = [1,2,3,4,5,6,7,8,9,11,22,33].includes(lifePath);
-  const hdVerified = hdData?.status === 'verified';
+  const hdVerified = hasApprovedVerifiedHumanDesignTrust(hdData);
 
   // Affirmations are self-directed prompts, not claims that a symbolic system
   // caused an outcome. Build them only from governed/profile-qualified inputs.
