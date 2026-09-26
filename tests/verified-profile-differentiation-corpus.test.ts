@@ -223,8 +223,29 @@ function synthesisEvidenceSignature(
   reading: Awaited<ReturnType<typeof fullVerifiedReading>>,
 ): string {
   const numerology = (reading.local as any).numerologyData ?? {};
+  const astrology = reading.astrology as any;
+
+  const planetaryHouses = Object.entries(astrology.planetaryHouses ?? {})
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([body, house]) => `${body}:H${house}`);
+
+  const aspects = (astrology.aspects ?? [])
+    .map((aspect: any) => [
+      String(aspect.body1 ?? aspect.planet1 ?? ""),
+      String(aspect.aspect ?? aspect.type ?? ""),
+      String(aspect.body2 ?? aspect.planet2 ?? ""),
+      Number.isFinite(aspect.orb) ? Number(aspect.orb).toFixed(3) : "unresolved",
+    ].join(":"))
+    .sort();
+
   return [
     ...supportedSignature(reading),
+    `midheaven:${astrology.midheaven?.sign ?? "unresolved"}`,
+    `northNode:${astrology.northNode?.sign ?? "unresolved"}`,
+    `southNode:${astrology.southNode?.sign ?? "unresolved"}`,
+    `chiron:${astrology.chiron?.sign ?? "unresolved"}`,
+    ...planetaryHouses,
+    ...aspects.map((aspect: string) => `aspect:${aspect}`),
     `lifePath:${numerology.lifePath ?? "unresolved"}`,
     `expression:${numerology.expression ?? "unresolved"}`,
     `soulUrge:${numerology.soulUrge ?? "unresolved"}`,
