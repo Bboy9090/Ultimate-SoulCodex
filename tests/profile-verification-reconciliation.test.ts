@@ -66,6 +66,8 @@ const verifiedRemote = {
     authority: "Lunar Authority",
     profile: "2/5",
     verificationReceiptId: "35474994858:human-design-repair-audit",
+    independentSource: "free-human-design@1.0.1 differential verifier",
+    verifiedAt: "2026-09-19T23:03:08.000Z",
   },
   astrologyData: {
     sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
@@ -428,6 +430,8 @@ test("verified Human Design is reconciled into active and offline profiles", () 
       authority: "Lunar Authority",
       profile: "2/5",
       verificationReceiptId: "35474994858:human-design-repair-audit",
+      independentSource: "free-human-design@1.0.1 differential verifier",
+      verifiedAt: "2026-09-19T23:03:08.000Z",
     },
   };
 
@@ -542,4 +546,34 @@ test("verified labels without placement provenance cannot reconcile as verified 
   assert.equal(getVerifiedAstrologySign(astrology, "sun"), null);
   assert.equal(hasVerifiedSunAndMoon(astrology), false);
   assert.equal(hasVerifiedBigThree(astrology), false);
+});
+
+
+test("status-only remote Human Design is not promoted during reconciliation", () => {
+  const untrustedRemote = {
+    ...verifiedRemote,
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  };
+
+  const active = reconcileActiveProfile(
+    { id: local.id, name: local.name, humanDesignType: "Generator" },
+    untrustedRemote,
+    "2026-09-26T08:00:00.000Z",
+  );
+  assert.equal(active.humanDesignType, "Generator");
+  assert.notEqual(active.humanDesignData?.status, "verified");
+
+  const offline = reconcileOfflineProfile(
+    local,
+    untrustedRemote,
+    "2026-09-26T08:00:00.000Z",
+  );
+  assert.notEqual(offline.humanDesignData?.status, "verified");
+  assert.equal(profileNeedsOnlineVerification(offline), true);
 });
