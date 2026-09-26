@@ -4,6 +4,7 @@ import { calculateAstrology } from '../astrology';
 import { getVerifiedPlacement } from '../../../client/src/lib/placementVerification';
 import type { BirthData } from '@soulcodex/core';
 import type { VerificationState } from '../../../client/src/lib/placementVerification';
+import * as Astronomy from 'astronomy-engine';
 
 describe('Astrology Evidence Integration - Phase 1', () => {
   describe('Placement Creation (Canonical Types)', () => {
@@ -327,5 +328,40 @@ describe('Astrology Evidence Integration - Phase 1', () => {
       // State should remain calculated, not become verified
       assert.equal(storedPlacement.verificationStatus, 'calculated', 'calculated state should not be promoted at load time');
     });
+  });
+});
+
+
+describe('Legacy extension hardening', () => {
+  const birthDataComplete: BirthData = {
+    name: 'Test Person',
+    birthDate: '1990-05-15',
+    birthTime: '14:30',
+    timezone: 'America/New_York',
+    latitude: 40.7128,
+    longitude: -74.0060,
+  };
+
+  test('legacy extension placements remain withheld outside verified production paths', () => {
+    const result = calculateAstrology(birthDataComplete);
+
+    assert.equal(result.northNode, null);
+    assert.equal(result.southNode, null);
+    assert.equal(result.chiron, null);
+  });
+
+  test('planetary longitudes are geocentric rather than observer-topocentric', () => {
+    const result = calculateAstrology(birthDataComplete);
+    const timestamp = new Date('1990-05-15T18:30:00.000Z');
+
+    const expectedSun = Astronomy.Ecliptic(
+      Astronomy.GeoVector(Astronomy.Body.Sun, timestamp, true),
+    ).elon;
+    const expectedMoon = Astronomy.Ecliptic(
+      Astronomy.GeoVector(Astronomy.Body.Moon, timestamp, true),
+    ).elon;
+
+    assert.ok(Math.abs(result.planets.sun.longitude - expectedSun) < 1e-9);
+    assert.ok(Math.abs(result.planets.moon.longitude - expectedMoon) < 1e-9);
   });
 });
