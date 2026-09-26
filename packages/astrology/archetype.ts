@@ -20,6 +20,25 @@ interface ArchetypeData {
   };
 }
 
+function verifiedPlacementSign(astrologyData: any, key: "sun" | "moon" | "rising"): string | undefined {
+  const placement = astrologyData?.placements?.[key] ?? astrologyData?.[key];
+  if (!placement || typeof placement !== "object") return undefined;
+  const status = placement.verificationStatus ?? placement.status;
+  const evidence = placement.provenance ?? placement.evidence;
+  if (status !== "verified") return undefined;
+  if (!evidence?.source || !evidence?.engine || !evidence?.calculatedAt) return undefined;
+  return typeof placement.sign === "string" && placement.sign.trim() ? placement.sign : undefined;
+}
+
+function governedAstrologyView(astrologyData: unknown): any | null {
+  const source = astrologyData as any;
+  const sun = verifiedPlacementSign(source, "sun");
+  const moon = verifiedPlacementSign(source, "moon");
+  const rising = verifiedPlacementSign(source, "rising");
+  if (!sun && !moon && !rising) return null;
+  return { sunSign: sun, moonSign: moon, risingSign: rising };
+}
+
 const archetypes = [
   {
     keywords: ['fire', 'leo', 'leader', '1', '8', 'commander', 'achiever'],
@@ -70,6 +89,7 @@ const archetypes = [
 
 // Helper function to generate integration analysis
 export function generateIntegrationAnalysis(astrologyData: any, numerologyData: any, personalityData: any, archetype: any) {
+  astrologyData = governedAstrologyView(astrologyData);
   const astroInfluence = generateAstrologyInfluence(astrologyData);
   const numeroInfluence = generateNumerologyInfluence(numerologyData);
   const personalityBridge = generatePersonalityBridge(personalityData);
@@ -87,6 +107,7 @@ export function generateIntegrationAnalysis(astrologyData: any, numerologyData: 
 
 // Helper function to generate personalized insights
 export function generatePersonalizedInsights(astrologyData: any, numerologyData: any, personalityData: any, archetype: any) {
+  astrologyData = governedAstrologyView(astrologyData);
   return {
     coreEssence: generateCoreEssence(astrologyData, numerologyData, archetype),
     spiritualPurpose: generateSpiritualPurpose(astrologyData, numerologyData, personalityData),
@@ -445,9 +466,11 @@ export function synthesizeArchetype(
   numerologyData: any,
   personalityData: any
 ): ArchetypeData {
+  const rawAstrologyData = astrologyData;
+  astrologyData = governedAstrologyView(astrologyData);
   const keywords: string[] = [];
   
-  // Extract keywords from astrology
+  // Extract keywords from verified astrology only
   if (astrologyData) {
     if (astrologyData.sunSign) keywords.push(astrologyData.sunSign.toLowerCase());
     if (astrologyData.moonSign) keywords.push(astrologyData.moonSign.toLowerCase());
@@ -493,8 +516,8 @@ export function synthesizeArchetype(
   const uniqueTitle = generateUniqueArchetypeTitle(astrologyData, numerologyData, personalityData);
 
   // Generate detailed integration analysis
-  const integration = generateIntegrationAnalysis(astrologyData, numerologyData, personalityData, bestMatch);
-  const personalizedInsights = generatePersonalizedInsights(astrologyData, numerologyData, personalityData, bestMatch);
+  const integration = generateIntegrationAnalysis(rawAstrologyData, numerologyData, personalityData, bestMatch);
+  const personalizedInsights = generatePersonalizedInsights(rawAstrologyData, numerologyData, personalityData, bestMatch);
 
   const result = {
     title: uniqueTitle,
