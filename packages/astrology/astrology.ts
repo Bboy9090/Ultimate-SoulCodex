@@ -344,19 +344,20 @@ function determinePlacementStatus(
   placement: 'sun' | 'moon' | 'rising'
 ): VerificationState {
   const hasExactTime = Boolean(birthData.birthTime?.trim());
+  const hasTimezone = Boolean(birthData.timezone?.trim());
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
 
-  // Sun: never requires time
+  // Sun remains a date-only candidate.
   if (placement === 'sun') {
-    return 'calculated';  // Repeatable but not yet verified
+    return 'calculated';
   }
 
-  // Moon/Rising: require time
-  if (!hasExactTime) {
+  // Moon/Rising require a resolvable civil timestamp: clock time + timezone.
+  if (!hasExactTime || !hasTimezone) {
     return 'requires_verified_birth_time';
   }
 
-  // Rising: also requires location
+  // Rising additionally requires a geographic horizon.
   if (placement === 'rising' && !hasLocation) {
     return 'requires_location';
   }
