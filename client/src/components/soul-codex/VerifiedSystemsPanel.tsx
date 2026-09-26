@@ -39,20 +39,59 @@ export default function VerifiedSystemsPanel({
         borderRadius: "12px",
       }}
     >
+      <style>{`
+        @keyframes soulCodexFoundationRise {
+          from { opacity: 0; transform: translateY(10px) scale(0.99); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        [data-verified-system-section] {
+          animation: soulCodexFoundationRise 520ms cubic-bezier(.2,.8,.2,1) both;
+        }
+        [data-verified-system-section="numerology"] { animation-delay: 70ms; }
+        [data-verified-system-section="human-design"] { animation-delay: 140ms; }
+        [data-verified-system-card] {
+          transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+          border: 1px solid rgba(255,255,255,0.06);
+        }
+        [data-verified-system-card]:hover {
+          transform: translateY(-2px);
+          border-color: rgba(255,255,255,0.16);
+          background: rgba(255,255,255,0.05) !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-verified-system-section] { animation: none; }
+          [data-verified-system-card] { transition: none; }
+          [data-verified-system-card]:hover { transform: none; }
+        }
+      `}</style>
+
       <h2
         style={{
           fontSize: "1rem",
           textTransform: "uppercase",
           color: "var(--sc-gold)",
-          margin: "0 0 1.5rem 0",
+          margin: "0 0 0.5rem 0",
+          letterSpacing: "0.08em",
         }}
       >
-        Verified / Deterministic Systems
+        Your Verified Foundations
       </h2>
+      <p
+        style={{
+          margin: "0 0 1.5rem 0",
+          maxWidth: "62ch",
+          color: "var(--sc-stone)",
+          fontSize: "0.82rem",
+          lineHeight: 1.6,
+        }}
+      >
+        Each system appears only when its own evidence contract passes. When two systems repeat a theme,
+        Soul Codex treats that as symbolic resonance — not extra certainty.
+      </p>
 
       {/* Astrology */}
       {showVerifiedAstrology && astrology && (
-        <div style={{ marginBottom: "2rem" }}>
+        <div data-verified-system-section="astrology" style={{ marginBottom: "2rem" }}>
           <h3
             style={{
               fontSize: "0.9rem",
@@ -86,10 +125,11 @@ export default function VerifiedSystemsPanel({
           >
             {/* Sun - Always shown when astrology exists */}
             <div
+              data-verified-system-card
               style={{
-                padding: "0.75rem",
+                padding: "0.9rem",
                 background: "rgba(255,255,255,0.03)",
-                borderRadius: "6px",
+                borderRadius: "10px",
               }}
             >
               <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Sun</div>
@@ -156,7 +196,7 @@ export default function VerifiedSystemsPanel({
 
       {/* Numerology */}
       {systems.numerology && (
-        <div style={{ marginBottom: "2rem" }}>
+        <div data-verified-system-section="numerology" style={{ marginBottom: "2rem" }}>
           <h3
             style={{
               fontSize: "0.9rem",
@@ -175,10 +215,11 @@ export default function VerifiedSystemsPanel({
             }}
           >
             <div
+              data-verified-system-card
               style={{
-                padding: "0.75rem",
+                padding: "0.9rem",
                 background: "rgba(255,255,255,0.03)",
-                borderRadius: "6px",
+                borderRadius: "10px",
               }}
             >
               <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Life Path</div>
@@ -193,10 +234,11 @@ export default function VerifiedSystemsPanel({
               </div>
             </div>
             <div
+              data-verified-system-card
               style={{
-                padding: "0.75rem",
+                padding: "0.9rem",
                 background: "rgba(255,255,255,0.03)",
-                borderRadius: "6px",
+                borderRadius: "10px",
               }}
             >
               <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Birthday</div>
@@ -216,7 +258,7 @@ export default function VerifiedSystemsPanel({
 
       {/* Human Design */}
       {showVerifiedHumanDesign && systems.humanDesign && (
-        <div>
+        <div data-verified-system-section="human-design">
           <h3
             style={{
               fontSize: "0.9rem",
@@ -235,10 +277,11 @@ export default function VerifiedSystemsPanel({
             }}
           >
             <div
+              data-verified-system-card
               style={{
-                padding: "0.75rem",
+                padding: "0.9rem",
                 background: "rgba(255,255,255,0.03)",
-                borderRadius: "6px",
+                borderRadius: "10px",
               }}
             >
               <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Profile</div>
@@ -253,10 +296,11 @@ export default function VerifiedSystemsPanel({
               </div>
             </div>
             <div
+              data-verified-system-card
               style={{
-                padding: "0.75rem",
+                padding: "0.9rem",
                 background: "rgba(255,255,255,0.03)",
-                borderRadius: "6px",
+                borderRadius: "10px",
               }}
             >
               <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Strategy</div>
@@ -271,10 +315,11 @@ export default function VerifiedSystemsPanel({
               </div>
             </div>
             <div
+              data-verified-system-card
               style={{
-                padding: "0.75rem",
+                padding: "0.9rem",
                 background: "rgba(255,255,255,0.03)",
-                borderRadius: "6px",
+                borderRadius: "10px",
               }}
             >
               <div style={{ fontSize: "0.7rem", color: "var(--sc-stone)" }}>Authority</div>
