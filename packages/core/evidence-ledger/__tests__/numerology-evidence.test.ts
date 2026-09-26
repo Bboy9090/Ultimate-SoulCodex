@@ -12,7 +12,7 @@ import {
   calcMaturityWithEvidence,
 } from '../integrations.js';
 
-describe('Numerology Evidence Integration - All 7 Calculations', () => {
+describe('Numerology Evidence Integration - Canonical 9 Calculations', () => {
   describe('Personal Day Evidence', () => {
     it('should deterministically calculate Personal Day with valid birth date', () => {
       const birthDate = '1990-08-15';
@@ -190,7 +190,7 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result1.value));
       assert.strictEqual(result1.evidence.formulaId, 'numerology.life-path');
-      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
+      assert.strictEqual(result1.evidence.formulaVersion, 'pythagorean-v2');
     });
 
     it('should fail closed for missing birth date', () => {
@@ -419,11 +419,13 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       const personalYear = calcPersonalYearWithEvidence(birthDate, 2026);
       const personalMonth = calcPersonalMonthWithEvidence(6, 7);
       const lifePath = calcLifePathWithEvidence(birthDate);
+      const birthday = calcBirthdayWithEvidence(birthDate);
       const expression = calcExpressionWithEvidence(fullName);
       const soulUrge = calcSoulUrgeWithEvidence(fullName);
       const personality = calcPersonalityWithEvidence(fullName);
+      const maturity = calcMaturityWithEvidence(birthDate, fullName);
 
-      [personalDay, personalYear, personalMonth, lifePath, expression, soulUrge, personality].forEach(
+      [personalDay, personalYear, personalMonth, lifePath, birthday, expression, soulUrge, personality, maturity].forEach(
         (result) => {
           assert.strictEqual(result.evidence.engine, 'numerology');
           assert.ok(result.evidence.claim);
@@ -447,9 +449,11 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
         calcPersonalYearWithEvidence(birthDate, 2026),
         calcPersonalMonthWithEvidence(6, 7),
         calcLifePathWithEvidence(birthDate),
+        calcBirthdayWithEvidence(birthDate),
         calcExpressionWithEvidence(fullName),
         calcSoulUrgeWithEvidence(fullName),
         calcPersonalityWithEvidence(fullName),
+        calcMaturityWithEvidence(birthDate, fullName),
       ];
 
       allResults.forEach((result) => {
@@ -467,9 +471,11 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
         calcPersonalYearWithEvidence('invalid-date', 2026),
         calcPersonalMonthWithEvidence(15, 7),
         calcLifePathWithEvidence(''),
+        calcBirthdayWithEvidence(''),
         calcExpressionWithEvidence(''),
         calcSoulUrgeWithEvidence('123'),
         calcPersonalityWithEvidence(''),
+        calcMaturityWithEvidence('', ''),
       ];
 
       invalidCases.forEach((result) => {
@@ -551,9 +557,11 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
         calcPersonalYearWithEvidence(birthDate, 2026),
         calcPersonalMonthWithEvidence(6, 7),
         calcLifePathWithEvidence(birthDate),
+        calcBirthdayWithEvidence(birthDate),
         calcExpressionWithEvidence(fullName),
         calcSoulUrgeWithEvidence(fullName),
         calcPersonalityWithEvidence(fullName),
+        calcMaturityWithEvidence(birthDate, fullName),
       ];
 
       results.forEach((result) => {
