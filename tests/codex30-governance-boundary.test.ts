@@ -8,6 +8,10 @@ import {
   collectSignals,
   collectSupportingSignals,
 } from "../packages/core/codex30/registry";
+import {
+  compileBulletLists,
+  pickCodename,
+} from "../packages/core/codex30/synth/compile";
 
 test("Codex30 astrology requires verified, recognized zodiac evidence", () => {
   const chart = {
@@ -146,4 +150,34 @@ test("package and legacy Codex30 registries preserve the same separation doctrin
       /moralCompassSignals/,
     );
   }
+});
+
+
+test("Codex30 compiler keeps behavioral guidance reflective and no-fallback", () => {
+  assert.equal(pickCodename([]), "Synthesis Pending");
+
+  const themes = [
+    { tag: "precision", score: 90, sources: ["test"] },
+    { tag: "privacy", score: 80, sources: ["test"] },
+  ];
+  const compiled = compileBulletLists([], themes as any);
+  const rendered = [
+    ...compiled.triggers,
+    ...compiled.prescriptions,
+  ].join(" ");
+
+  assert.match(rendered, /Reflection prompt|Experiment:/);
+  assert.doesNotMatch(
+    rendered,
+    /your nervous system|you are|you always|you never|destined|guaranteed|this drains you/i,
+  );
+});
+
+test("Codex30 unknown theme names do not fall back to a fabricated legacy archetype", () => {
+  const codename = pickCodename([
+    { tag: "unmapped_theme", score: 100, sources: ["test"] },
+  ] as any);
+
+  assert.match(codename, /Symbolic unmapped theme/i);
+  assert.doesNotMatch(codename, /Quiet Storm Architect|legacy|craft/i);
 });
