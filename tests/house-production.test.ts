@@ -142,3 +142,33 @@ test("Equal House verification rejects a Midheaven sign that contradicts longitu
     assert.equal(result.reason, "midheaven_sign_longitude_mismatch");
   }
 });
+
+
+test("Equal House verification treats equivalent zoned instants identically", () => {
+  const utcInput = {
+    inputTimestamp: "1990-09-17T15:11:00.000Z",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  };
+  const offsetInput = {
+    inputTimestamp: "1990-09-17T11:11:00-04:00",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  };
+
+  const utc = verifyEqualHouse(utcInput);
+  const offset = verifyEqualHouse(offsetInput);
+
+  assert.equal(utc.status, "verified");
+  assert.equal(offset.status, "verified");
+  if (utc.status !== "verified" || offset.status !== "verified") return;
+
+  assert.equal(utc.ascendant.sign, offset.ascendant.sign);
+  assert.equal(utc.midheaven.sign, offset.midheaven.sign);
+  assert.ok(Math.abs(utc.ascendant.longitudeDegrees - offset.ascendant.longitudeDegrees) < 1e-10);
+  assert.ok(Math.abs(utc.midheaven.longitudeDegrees - offset.midheaven.longitudeDegrees) < 1e-10);
+  assert.deepEqual(
+    utc.cusps.map((cusp) => [cusp.house, cusp.sign, cusp.longitudeDegrees]),
+    offset.cusps.map((cusp) => [cusp.house, cusp.sign, cusp.longitudeDegrees]),
+  );
+});
