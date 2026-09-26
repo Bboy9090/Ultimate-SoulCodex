@@ -188,7 +188,12 @@ function validVerifiedPoint(
   return point?.verificationStatus === "verified" &&
     validZodiacSign(point.sign) &&
     Number.isFinite(point.longitude) &&
-    normalizeDegrees(Number(point.longitude)) === Number(point.longitude) &&
+    Number(point.longitude) >= 0 &&
+    Number(point.longitude) < 360 &&
+    circularDegreesDelta(
+      normalizeDegrees(Number(point.longitude)),
+      Number(point.longitude),
+    ) < 1e-10 &&
     tropicalSignFromLongitude(Number(point.longitude)) === point.sign &&
     Number.isFinite(point.degree) &&
     Math.abs(Number(point.degree) - degreeInTropicalSign(Number(point.longitude))) < 0.01 &&
@@ -239,7 +244,12 @@ export function hasVerifiedFullNatalChart(
         typeof house.evidenceArtifactId !== "string" ||
         !house.evidenceArtifactId.trim() ||
         !Number.isFinite(house.longitude) ||
-        normalizeDegrees(Number(house.longitude)) !== Number(house.longitude) ||
+        Number(house.longitude) < 0 ||
+        Number(house.longitude) >= 360 ||
+        circularDegreesDelta(
+          normalizeDegrees(Number(house.longitude)),
+          Number(house.longitude),
+        ) >= 1e-10 ||
         tropicalSignFromLongitude(Number(house.longitude)) !== house.sign ||
         !Number.isFinite(house.degree) ||
         Math.abs(Number(house.degree) - degreeInTropicalSign(Number(house.longitude))) >= 0.01,
