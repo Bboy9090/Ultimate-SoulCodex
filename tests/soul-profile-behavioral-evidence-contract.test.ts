@@ -87,3 +87,32 @@ test("Soul Profile behavioral evidence contract", async (suite) => {
     assert.equal(result.friction.includes("Decision pace mismatch — agree on a process before big calls."), false);
   });
 });
+
+
+test("multi-select stress and full decision vocabulary remain evidence-backed", async (suite) => {
+  await suite.test("multiple drain signals do not collapse to the old Air fallback", () => {
+    const input = baseInput();
+    input.mirror.reaction = ["fix"];
+    input.mirror.drain = ["lies", "chaos"];
+
+    const { profile, signals } = buildSoulProfile(input);
+
+    assert.deepEqual(signals.stressElement, ["metal", "air"]);
+    assert.match(profile.synthesis.stressPattern, /Goes cold/i);
+    assert.match(profile.synthesis.stressPattern, /Mind speeds up/i);
+  });
+
+  await suite.test("talk and withdraw map to supported consensus and avoidance decision prose", () => {
+    const talkInput = baseInput();
+    talkInput.mirror.reaction = ["talk"];
+    const talk = buildSoulProfile(talkInput);
+    assert.deepEqual(talk.signals.decisionStyle, ["consensus"]);
+    assert.match(talk.profile.synthesis.relationshipPattern, /talking them through|conversation|trusted perspectives/i);
+
+    const withdrawInput = baseInput();
+    withdrawInput.mirror.reaction = ["withdraw"];
+    const withdraw = buildSoulProfile(withdrawInput);
+    assert.deepEqual(withdraw.signals.decisionStyle, ["avoidance"]);
+    assert.match(withdraw.profile.synthesis.relationshipPattern, /delay a decision|step away from a choice|postpone hard calls/i);
+  });
+});
