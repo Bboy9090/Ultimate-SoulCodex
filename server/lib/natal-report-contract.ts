@@ -1,3 +1,4 @@
+import { dateOnlyFromStoredValue } from "@soulcodex/core";
 import type { NatalReportInput } from "../natalReportPdf";
 
 type PlacementLike = {
@@ -168,7 +169,7 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
 
   return {
     name: profile.name,
-    birthDate: profile.birthDate.toISOString().split("T")[0],
+    birthDate: dateOnlyFromStoredValue(profile.birthDate),
     birthTime: profile.birthTime ?? "",
     birthLocation: profile.birthLocation ?? "",
     astrology: safeAstrology,
