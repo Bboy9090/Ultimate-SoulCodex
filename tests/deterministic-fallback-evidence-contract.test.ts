@@ -8,6 +8,16 @@ const evidence = {
   calculatedAt: "2026-09-26T18:00:00.000Z",
 };
 
+const verifiedHumanDesignTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 test("deterministic AI fallback evidence boundary", async (suite) => {
   await suite.test("unverified astrology aliases never become natal facts", () => {
     const result = deterministicFallback({
@@ -74,6 +84,24 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
     assert.doesNotMatch(result.content, /trauma response/i);
   });
 
+  await suite.test("label-only Human Design verified status cannot drive fallback mechanics", () => {
+    const result = deterministicFallback({
+      prompt: "",
+      promptType: "soul_guide",
+      profile: {
+        humanDesignData: {
+          status: "verified",
+          type: "Reflector",
+          strategy: "Wait a lunar cycle",
+          authority: "Lunar Authority",
+        },
+      },
+    } as any);
+
+    assert.doesNotMatch(result.content, /Verified Human Design core: Reflector/i);
+    assert.match(result.content, /No verified Human Design core is available/i);
+  });
+
   await suite.test("verified Human Design core can enter the fallback with symbolic caveat", () => {
     const result = deterministicFallback({
       prompt: "",
@@ -84,6 +112,7 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
           type: "Reflector",
           strategy: "Wait a lunar cycle",
           authority: "Lunar Authority",
+          ...verifiedHumanDesignTrust,
         },
       },
     } as any);
