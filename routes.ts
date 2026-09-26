@@ -577,37 +577,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!astrologyData && astroResult) {
         astrologyData = astroResult;
       }
+      const usableSign = (value: unknown): string | undefined => {
+        if (typeof value !== "string") return undefined;
+        const trimmed = value.trim();
+        if (!trimmed || trimmed.toLowerCase() === "unknown") return undefined;
+        return trimmed;
+      };
       let astrologyStatus: { state: "full" | "partial" | "unavailable"; reason: string };
       if (astrologyData) {
         const a: any = astrologyData;
-        const sunSign = a.sunSign ?? a.sun;
-        const moonSign = a.moonSign ?? a.moon;
-        // Honesty rule: Rising sign is ONLY valid with a known birth time. Never estimate it.
-        const risingSign = timeKnown ? (a.risingSign ?? a.rising) : undefined;
-        const housesAvailable = timeKnown && hasCompleteData && !!(a.houses || a.housesAvailable);
+        const sunSign = usableSign(a.sunSign ?? a.sun);
+        const moonSign = usableSign(a.moonSign ?? a.moon);
+        // Honesty rule: Rising sign is ONLY valid with a resolved birth time.
+        const risingSign = timeKnown ? usableSign(a.risingSign ?? a.rising) : undefined;
+        const housesAvailable =
+          timeKnown &&
+          hasCompleteData &&
+          (
+            a.housesAvailable === true ||
+            (Array.isArray(a.houses) && a.houses.length > 0)
+          );
 
         if (!sunSign && !moonSign) {
           astrologyData = null;
           astrologyStatus = {
             state: "unavailable",
-            reason: "The astrology engine returned no placements for the provided birth date. Check the date is valid (YYYY-MM-DD).",
+            reason: "No astrology placement is safely resolved from the available birth evidence. Add or correct birth time/timezone/location rather than estimating missing placements.",
           };
         } else {
           astrologyData = { ...a, sunSign, moonSign, risingSign, housesAvailable };
           if (!timeKnown) {
             astrologyStatus = {
               state: "partial",
-              reason: "Birth time unknown — Sun and Moon are calculated; Rising sign and houses are omitted, not estimated.",
+              reason: "Birth time unknown — exact Moon/Rising and planetary degrees are withheld. A Sun sign is shown only when the birth date resolves unambiguously.",
             };
           } else if (!hasCompleteData) {
             astrologyStatus = {
               state: "partial",
-              reason: "Birth location or timezone is incomplete — Sun and Moon are calculated; houses are omitted.",
+              reason: "Birth location or timezone is incomplete — only placements supported by the available civil-time evidence are returned; Rising sign and houses stay withheld.",
             };
           } else {
             astrologyStatus = {
               state: "full",
-              reason: "Full birth data — Sun, Moon, Rising, and houses are calculated.",
+              reason: "Full birth date, exact time, timezone, and coordinates are available for the calculated chart layer.",
             };
           }
         }
