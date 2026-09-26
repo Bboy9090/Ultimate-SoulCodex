@@ -185,7 +185,7 @@ export function calculateActiveTransits(
   
   // Calculate dominant theme (most intense planet currently transiting)
   const dominantTransit = transits.find(t => t.intensity === 'high') || transits[0];
-  const dominantTheme = dominantTransit ? dominantTransit.theme : 'Integration and Balance';
+  const dominantTheme = dominantTransit ? dominantTransit.theme : 'No active governed major transit';
   
   // Calculate overall intensity (0-100 scale)
   const overallIntensity = transits.length > 0
@@ -204,34 +204,47 @@ export function calculateActiveTransits(
   };
 }
 
-// Helper to extract natal positions from astrology data
+// Helper to extract only independently verified natal positions.
+function verifiedNatalLongitude(placement: any): number | null {
+  if (!placement || placement.verificationStatus !== 'verified') return null;
+  const candidate = Number(
+    placement.longitude ??
+    placement.internalCandidate?.longitude ??
+    placement.evidence?.longitude,
+  );
+  return Number.isFinite(candidate) ? ((candidate % 360) + 360) % 360 : null;
+}
+
+function addVerifiedNatalPosition(
+  positions: Record<string, { longitude: number, sign: string }>,
+  name: string,
+  placement: any,
+): void {
+  const longitude = verifiedNatalLongitude(placement);
+  const sign = typeof placement?.sign === 'string' ? placement.sign : null;
+  if (longitude === null || !sign) return;
+  positions[name] = { longitude, sign };
+}
+
 export function extractNatalPositions(astrologyData: any): Record<string, { longitude: number, sign: string }> {
   const positions: Record<string, { longitude: number, sign: string }> = {};
-  
+
   if (astrologyData?.planets) {
-    for (const [planet, data] of Object.entries(astrologyData.planets)) {
-      if (typeof data === 'object' && data !== null && 'longitude' in data && 'sign' in data) {
-        positions[planet.charAt(0).toUpperCase() + planet.slice(1)] = {
-          longitude: (data as any).longitude,
-          sign: (data as any).sign
-        };
-      }
+    for (const [planet, placement] of Object.entries(astrologyData.planets)) {
+      addVerifiedNatalPosition(
+        positions,
+        planet.charAt(0).toUpperCase() + planet.slice(1),
+        placement,
+      );
     }
   }
-  
-  if (astrologyData?.ascendant) {
-    positions['Ascendant'] = {
-      longitude: astrologyData.ascendant.longitude,
-      sign: astrologyData.ascendant.sign
-    };
-  }
-  
-  if (astrologyData?.midheaven) {
-    positions['Midheaven'] = {
-      longitude: astrologyData.midheaven.longitude,
-      sign: astrologyData.midheaven.sign
-    };
-  }
-  
+
+  addVerifiedNatalPosition(
+    positions,
+    'Ascendant',
+    astrologyData?.rising ?? astrologyData?.ascendant,
+  );
+  addVerifiedNatalPosition(positions, 'Midheaven', astrologyData?.midheaven);
+
   return positions;
 }
