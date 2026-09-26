@@ -128,7 +128,6 @@ export function buildTodayCard(
   const moonPrefix = MOON_TITLE_PREFIX[moonPhase] ?? "Focus";
 
   const decisionStyle: string =
-    profile?.signals?.decisionStyle ??
     profile?.userInputs?.decisionStyle ??
     "";
 
