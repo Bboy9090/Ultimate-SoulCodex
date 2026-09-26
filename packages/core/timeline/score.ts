@@ -6,10 +6,11 @@ import {
   THEME_TAG_RULES,
   CONFIDENCE_MULTIPLIERS,
   UNVERIFIED_IGNORE_THRESHOLD,
+  timelinePersonalYearRuleKey,
 } from "./rules.js";
 
 export interface TimelineScoreInput {
-  personalYear: number;
+  personalYear?: number;
   astrologyCycles: string[];
   themeTags: string[];
   confidence: ConfidenceLabel;
@@ -43,13 +44,17 @@ export function scoreTimeline(input: TimelineScoreInput): TimelineScoreBreakdown
 
   const multiplier = CONFIDENCE_MULTIPLIERS[input.confidence];
 
-  // Personal year
-  const pyRules = PERSONAL_YEAR_RULES[input.personalYear];
-  if (pyRules) {
+  // Personal year. Missing input contributes nothing; it never defaults to Year 1.
+  if (input.personalYear !== undefined && input.personalYear !== null) {
+    const phaseRuleKey = timelinePersonalYearRuleKey(input.personalYear);
+    const pyRules = PERSONAL_YEAR_RULES[phaseRuleKey];
     addDeltas(numerologyScores, pyRules);
     addDeltas(scores, pyRules);
     for (const [phase, delta] of Object.entries(pyRules) as [Phase, number][]) {
-      reasons.push(`Personal Year ${input.personalYear} → ${phase} +${delta}`);
+      const masterNote = phaseRuleKey !== input.personalYear
+        ? ` (phase rule ${phaseRuleKey})`
+        : "";
+      reasons.push(`Personal Year ${input.personalYear}${masterNote} → ${phase} +${delta}`);
     }
   }
 
