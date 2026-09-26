@@ -203,6 +203,29 @@ test("canonical active Soul Profile contract", async (t) => {
     assert.deepEqual(restored?.astrologyData?.sun?.evidence, evidence);
   });
 
+  await t.test("malformed placement timestamps cannot produce verified confidence", () => {
+    assert.strictEqual(deriveConfidenceState({
+      birthDate: "1990-09-17",
+      astrologyData: {
+        sun: {
+          sign: "Virgo",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+        moon: {
+          sign: "Cancer",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+        rising: {
+          sign: "Scorpio",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+      },
+    }), "partial");
+  });
+
   await t.test("requires evidence-complete verified placements for verified confidence", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),
