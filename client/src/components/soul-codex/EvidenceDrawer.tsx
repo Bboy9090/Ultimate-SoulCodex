@@ -101,7 +101,7 @@ export default function EvidenceDrawer({
                     marginBottom: "0.5rem",
                   }}
                 >
-                  ✓ High Confidence ({highConfidence.length})
+                  ✓ High source support ({highConfidence.length})
                 </div>
                 <div
                   style={{
@@ -126,7 +126,7 @@ export default function EvidenceDrawer({
                     marginBottom: "0.5rem",
                   }}
                 >
-                  ≈ Moderate Confidence ({moderateConfidence.length})
+                  ≈ Moderate source support ({moderateConfidence.length})
                 </div>
                 <div
                   style={{
@@ -151,7 +151,7 @@ export default function EvidenceDrawer({
                     marginBottom: "0.5rem",
                   }}
                 >
-                  ○ Low Confidence ({lowConfidence.length})
+                  ○ Low source support ({lowConfidence.length})
                 </div>
                 <div
                   style={{
@@ -299,7 +299,7 @@ function EvidenceLayerCard({ layer }: EvidenceLayerCardProps) {
 
         {layer.confidence && (
           <div style={{ marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px dashed rgba(255,255,255,0.1)" }}>
-            <span style={{ color: "var(--sc-teal)" }}>◆ Confidence:</span> {layer.confidence}
+            <span style={{ color: "var(--sc-teal)" }}>◆ Source support:</span> {layer.confidence}
             {layer.confidenceReason && (
               <div style={{ opacity: 0.6 }}>({layer.confidenceReason})</div>
             )}
