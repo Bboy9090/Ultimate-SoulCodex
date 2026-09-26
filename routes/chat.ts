@@ -6,6 +6,7 @@ import { buildRewriteLayerPrompt, buildSoulCodexSystemPrompt } from "../src/ai/s
 import { validateDiamondOutput } from "../src/ai/diamondClarity";
 import { runSoulCodexEngine } from "@soulcodex/core";
 import { buildVerifiedAstrologyLines, extractVerifiedAstrology } from "../server/lib/verified-astrology";
+import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
 
 const SAFE_DIAMOND_REFUSAL = `**Pattern**
 The first response did not meet Soul Codex clarity standards.
@@ -93,6 +94,9 @@ export function registerChatRoutes(app: Express) {
       let systemInstruction = "";
       if (profile) {
         const verifiedAstrology = extractVerifiedAstrology(profile);
+        const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(profile?.humanDesignData)
+          ? profile.humanDesignData
+          : null;
         const engineData = runSoulCodexEngine({
           toneMode: "challenging",
           astrology: {
@@ -100,7 +104,7 @@ export function registerChatRoutes(app: Express) {
             moon: verifiedAstrology.moon,
             rising: verifiedAstrology.rising,
           },
-          human_design: { type: profile.hdType },
+          human_design: { type: verifiedHumanDesign?.type },
           numerology: { life_path: profile.lifePath },
           mirror: profile.mirrorProfile,
         });
