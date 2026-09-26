@@ -56,25 +56,20 @@ Rules:
   }
 }
 
+/**
+ * Legacy compatibility surface for the persisted profile guidance field.
+ *
+ * Current-day guidance belongs to the governed Daily/Today engine. Persisted
+ * profile guidance must remain stable and deterministic, so this function never
+ * calls a generative model.
+ */
 export async function generateDailyGuidance(data: BiographyRequest): Promise<string> {
-  if (!isGeminiAvailable()) return generateFallbackGuidance(data);
+  const governedArchetypeGuidance =
+    typeof data.archetype?.guidance === "string"
+      ? data.archetype.guidance.trim()
+      : "";
 
-  try {
-    const prompt = `Create brief, actionable daily guidance for ${data.name}.
-
-Supported profile:
-- Archetype: ${data.archetypeTitle}
-${astrologyPromptLines(data).join("\n")}
-- Life Path: ${data.numerologyData?.lifePath || "Unresolved"}
-
-Use only supported data. Do not infer unresolved astrology. Return 2-3 grounded sentences.`;
-
-    const result = await generateText({ prompt, temperature: 0.7 });
-    return result || generateFallbackGuidance(data);
-  } catch (error) {
-    console.error("Error generating daily guidance:", error);
-    return generateFallbackGuidance(data);
-  }
+  return governedArchetypeGuidance || generateFallbackGuidance(data);
 }
 
 function generateFallbackBiography(data: BiographyRequest): string {
