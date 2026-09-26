@@ -646,191 +646,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Calculate Elemental Medicine Profile
-      let elementalMedicineData = null;
-      try {
-        console.log("[SoulArchetype] Calculating Elemental Medicine Profile...");
-        if (astrologyData && numerologyData) {
-          elementalMedicineData = calculateElementalProfile(
-            validatedBirthData.birthDate,
-            numerologyData.lifePath,
-            (astrologyData as any).sunSign || (astrologyData as any).sun,
-            (astrologyData as any).moonSign || (astrologyData as any).moon,
-            humanDesignData?.type
-          );
-          console.log("[SoulArchetype] Elemental Medicine Profile calculated successfully");
-        }
-      } catch (error) {
-        console.error("[SoulArchetype] Elemental Medicine calculation failed:", error);
-      }
-      
-      // Generate soul archetype using elemental medicine system
-      let soulArchetypeData = null;
-      try {
-        console.log("[SoulArchetype] Generating soul archetype...");
-        if (numerologyData && astrologyData) {
-          soulArchetypeData = generateSoulArchetype(
-            validatedBirthData.name,
-            numerologyData.lifePath || 1,
-            (astrologyData as any).sunSign,
-            (astrologyData as any).moonSign,
-            humanDesignData?.type,
-            undefined // enneagramType
-          );
-          console.log("[SoulArchetype] Soul archetype generated successfully");
-        }
-      } catch (error) {
-        console.error("[SoulArchetype] Soul archetype generation failed:", error);
-      }
-      
-      // Calculate Moral Compass
+      // Legacy birth-derived personality/soul systems are quarantined.
+      // They remain null until a governed evidence contract exists.
+      const elementalMedicineData = null;
+      const soulArchetypeData = null;
+      const parentalInfluenceData = null;
+      const soulCodexResult = null;
+
+      // Moral Compass is an explicit user assessment only. Birth data,
+      // numerology, and astrology must not manufacture moral traits.
       let moralCompassData = null;
-      try {
-        console.log("[SoulArchetype] Calculating Moral Compass...");
-        if (validatedBirthData.moralCompassAnswers && 
-            validatedBirthData.moralCompassAnswers.familyValues && 
-            validatedBirthData.moralCompassAnswers.neighborhoodType && 
-            validatedBirthData.moralCompassAnswers.conflictResolution) {
-          moralCompassData = calculateMoralCompass(
-            validatedBirthData.moralCompassAnswers,
-            numerologyData?.lifePath,
-            astrologyData?.sunSign
-          );
-        } else {
-          moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.lifePath,
-            astrologyData?.sunSign,
-            astrologyData?.moonSign
-          );
-        }
-        console.log("[SoulArchetype] Moral Compass calculated successfully");
-      } catch (error) {
-        console.error("[SoulArchetype] Moral Compass calculation failed:", error);
-      }
-      
-      // Calculate Parental Influence
-      let parentalInfluenceData = null;
-      try {
-        if (astrologyData) {
-          parentalInfluenceData = calculateParentalInfluence(
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            validatedBirthData.fatherSign,
-            validatedBirthData.motherSign
-          );
-        }
-      } catch (error) {
-        console.error("[SoulArchetype] Parental Influence calculation failed:", error);
-      }
-      
-      // Run Soul Codex synthesis engine
-      let soulCodexResult = null;
-      try {
-        // 1. Map Onboarding Patterns to Mirror Signals
-        const mapDriver = (p: string | undefined): string | null => {
-          if (!p) return null;
-          const map: Record<string, string> = {
-            spiral_inward: "sanctuary",
-            explode_outward: "movement",
-            shut_down: "sanctuary",
-            lock_up: "system",
-            hyper_control: "masterpiece",
-            flee_distract: "movement",
-          };
-          return map[p] || null;
-        };
-
-        const mapShadow = (e: string | undefined): string | null => {
-          if (!e) return null;
-          const map: Record<string, string> = {
-            suppress_until_snap: "emotional",
-            escalate_fast: "disrespect",
-            go_cold: "dishonesty",
-            people_please: "dishonesty",
-            intellectualize: "stupidity",
-            withdraw_disappear: "emotional",
-          };
-          return map[e] || null;
-        };
-
-        const mapDecision = (d: string | undefined): string | null => {
-          if (!d) return null;
-          const map: Record<string, string> = {
-            analysis_paralysis: "analyze",
-            fear_of_wrong: "withdraw",
-            need_consensus: "talk",
-            impulse_regret: "fix",
-            avoidance_freeze: "withdraw",
-            overthink_intuition: "analyze",
-          };
-          return map[d] || null;
-        };
-
-        const mapDrain = (dr: string | undefined): string | null => {
-          if (!dr) return null;
-          const map: Record<string, string> = {
-            unstructured_time: "chaos",
-            conflict_tension: "chaos",
-            performing_energy: "misunderstood",
-            unclear_expectations: "chaos",
-            being_needed: "repetition",
-            sensory_overload: "chaos",
-          };
-          return map[dr] || null;
-        };
-
-        // Build robust MirrorAnswers object from questionnaire signals
-        const mirror: Partial<MirrorAnswers> = {
-          freedomBuild: [
-            mapDriver(req.body.primary_pressure_pattern),
-            mapDriver(req.body.secondary_pressure_pattern)
-          ].filter(Boolean) as any[],
-          betrayal: [
-            mapShadow(req.body.escalation_pattern)
-          ].filter(Boolean) as any[],
-          reaction: [
-            mapDecision(req.body.decision_friction_primary),
-            mapDecision(req.body.decision_friction_secondary)
-          ].filter(Boolean) as any[],
-          drain: [
-            mapDrain(req.body.drain_pattern_primary),
-            mapDrain(req.body.drain_pattern_secondary)
-          ].filter(Boolean) as any[],
-        };
-
-        console.log("[SoulArchetype] Mapped onboarding signals to mirror:", mirror);
-
-        const soulInputs: UserInputs = {
-          birthData: {
-            name: validatedBirthData.name,
-            birthDate: validatedBirthData.birthDate,
-            birthTime: validatedBirthData.birthTime,
-            birthLocation: validatedBirthData.birthLocation,
-            timezone: validatedBirthData.timezone,
-            latitude: validatedBirthData.latitude,
-            longitude: validatedBirthData.longitude,
-          },
-          mirror: mirror as MirrorAnswers,
-          nonNegotiables: req.body.nonNegotiables ?? [],
-          goals: req.body.goals ?? [],
-        };
-
-        // astrologyData is already normalized + provider-backed above.
-        // (Provider returns sun/moon/rising as strings; calc returns *Sign fields.)
-        const sunSign = astrologyData?.sunSign || (astroResult as any)?.sun;
-        const moonSign = astrologyData?.moonSign || (astroResult as any)?.moon;
-        // Rising only when birth time is known — never estimated.
-        const risingSign = timeKnown ? (astrologyData?.risingSign || (astroResult as any)?.rising) : undefined;
-
-        soulCodexResult = buildSoulProfile(soulInputs, {
-          sunSign,
-          moonSign,
-          risingSign,
-          lifePath: numerologyData?.lifePath || 0,
-        });
-        console.log("[SoulArchetype] Soul Codex synthesis completed");
-      } catch (error) {
-        console.error("[SoulArchetype] Soul Codex synthesis failed:", error);
+      if (
+        validatedBirthData.moralCompassAnswers &&
+        validatedBirthData.moralCompassAnswers.familyValues &&
+        validatedBirthData.moralCompassAnswers.neighborhoodType &&
+        validatedBirthData.moralCompassAnswers.conflictResolution
+      ) {
+        moralCompassData = calculateMoralCompass(
+          validatedBirthData.moralCompassAnswers,
+        );
       }
 
       // Persist profile to database
@@ -876,16 +710,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         savedProfile = { id: `temp_${Date.now()}` };
       }
 
-      // Deterministic fill so the core reading is NEVER empty/stubbed without AI.
-      const fill = deterministicArchetypeProfile({
-        sunSign: astrologyData?.sunSign,
-        moonSign: astrologyData?.moonSign,
-        lifePath: numerologyData?.lifePath,
-        element: elementalMedicineData?.primaryElement || (soulCodexResult?.profile.archetype as any)?.element,
-        archetypeName: soulCodexResult?.profile.archetype?.name || soulArchetypeData?.name,
-      });
-      const coreStrengths = (soulArchetypeData?.strengths?.length ? soulArchetypeData.strengths : fill.strengths);
-      const shadowAspects = (soulArchetypeData?.shadows?.length ? soulArchetypeData.shadows : fill.shadows);
+      // Missing interpretation remains missing. Do not fill identity claims from
+      // zodiac stereotypes or generic deterministic prose.
+      const coreStrengths: string[] = [];
+      const shadowAspects: string[] = [];
 
       // Build response in the format expected by frontend
       const response = {
@@ -898,21 +726,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         astrologyData: astrologyData ?? null,
         astrologyStatus,
         humanDesignData: humanDesignData ?? null,
-        soul_frequency: soulArchetypeData?.soulFrequency || {
-          frequency: "432 Hz",
-          resonance: "Harmonic",
-          vibration: "High"
-        },
-        who_i_am: soulArchetypeData?.firstPersonBio || fill.bio,
+        soul_frequency: null,
+        who_i_am: null,
         core_strengths: coreStrengths,
         shadow_aspects: shadowAspects,
-        purpose: soulArchetypeData?.purpose || fill.purpose,
-        soul_architecture: {
-          foundation: astrologyData?.sunSign || "Astrological Big 3",
-          structure: humanDesignData?.type || "Human Design Type",
-          expression: numerologyData?.lifePath?.toString() || "Life Path Number",
-          integration: "All 35+ Systems Unified"
-        },
+        purpose: null,
+        soul_architecture: null,
         elementalMedicineData,
         moralCompassData,
         parentalInfluenceData,
