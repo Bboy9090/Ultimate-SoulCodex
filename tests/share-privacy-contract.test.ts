@@ -42,6 +42,7 @@ function shareStorageFixture(includePersonalInfo: boolean) {
     includeTransits: false,
     includeJournal: false,
     passwordProtected: false,
+    passwordHash: '$argon2id$private-hash-material',
     allowComments: false,
   };
 
@@ -187,4 +188,14 @@ test('alternate sensitive key spellings are stripped recursively', async () => {
   }
   assert.match(serialized, /Shared Profile/);
   assert.doesNotMatch(serialized, /Private Person/);
+});
+
+
+test('public share responses never expose password hashes', async () => {
+  const { storage } = shareStorageFixture(false);
+  const result = await getShareableProfile(storage as any, 'token');
+
+  assert.ok(result);
+  assert.equal(result?.settings.passwordHash, undefined);
+  assert.doesNotMatch(JSON.stringify(result), /private-hash-material/);
 });
