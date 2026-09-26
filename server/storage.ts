@@ -170,7 +170,13 @@ export class MemStorage implements IStorage {
   async updateProfile(id: string, updates: Partial<Profile>): Promise<Profile> {
     const existing = this.profiles.get(id);
     if (!existing) throw new Error("Profile not found");
-    const updated = { ...existing, ...updates, updatedAt: new Date() } satisfies Profile;
+    const normalizedUpdates: Partial<Profile> = {
+      ...updates,
+      ...(Object.prototype.hasOwnProperty.call(updates, "birthDate")
+        ? { birthDate: canonicalBirthDateTimestamp((updates as any).birthDate) }
+        : {}),
+    };
+    const updated = { ...existing, ...normalizedUpdates, updatedAt: new Date() } satisfies Profile;
     this.profiles.set(id, updated);
     return updated;
   }
