@@ -134,6 +134,18 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-month');
     });
 
+    it('should preserve supported master Personal Years in evidence-backed Personal Month calculations', () => {
+      for (const personalYear of [11, 22, 33]) {
+        const result = calcPersonalMonthWithEvidence(personalYear, 7);
+
+        assert.strictEqual(result.evidence.calculationStatus, 'resolved');
+        assert.strictEqual(result.evidence.inputState, 'valid');
+        assert.strictEqual(typeof result.value, 'number');
+        assert.strictEqual(result.evidence.value, result.value);
+        assert.ok(result.evidence.inputsUsed.includes(`personal_year_${personalYear}`));
+      }
+    });
+
     it('should fail closed for invalid personal year', () => {
       const result = calcPersonalMonthWithEvidence(15, 7);
 
