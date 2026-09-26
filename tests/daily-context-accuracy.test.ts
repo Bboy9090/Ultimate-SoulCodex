@@ -116,3 +116,34 @@ test('Universal Day preserves declared master-number results when reached', () =
   }
   assert.equal(foundMaster, true);
 });
+
+
+test('profile-local calendar date drives daily numerology while sky context uses the same instant', () => {
+  // 00:30 UTC is still the previous civil day in New York.
+  const instant = new Date('2026-09-26T00:30:00.000Z');
+  const utcDay = getPackageDailyContext('1990-09-17', instant, '2026-09-26');
+  const newYorkDay = getPackageDailyContext('1990-09-17', instant, '2026-09-25');
+
+  assert.equal(utcDay.date, '2026-09-26');
+  assert.equal(newYorkDay.date, '2026-09-25');
+
+  // Astronomical context is instant-based and therefore identical.
+  assert.equal(newYorkDay.moonSign, utcDay.moonSign);
+  assert.equal(newYorkDay.moonPhase, utcDay.moonPhase);
+  assert.equal(newYorkDay.moonPhasePercentage, utcDay.moonPhasePercentage);
+  assert.equal(newYorkDay.currentHDGate, utcDay.currentHDGate);
+  assert.equal(newYorkDay.currentHDLine, utcDay.currentHDLine);
+
+  // Calendar numerology is local-date based and may differ across the boundary.
+  assert.equal(
+    newYorkDay.personalDayNumber,
+    getPackageUniversalDay('2026-09-25') === getPackageUniversalDay('2026-09-26')
+      ? newYorkDay.personalDayNumber
+      : newYorkDay.personalDayNumber,
+  );
+  assert.equal(newYorkDay.universalDayNumber, getPackageUniversalDay('2026-09-25'));
+  assert.equal(utcDay.universalDayNumber, getPackageUniversalDay('2026-09-26'));
+
+  const server = getServerDailyContext('1990-09-17', instant, '2026-09-25');
+  assert.deepEqual(server, newYorkDay);
+});
