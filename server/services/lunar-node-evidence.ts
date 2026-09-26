@@ -1,7 +1,9 @@
-const SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
+import {
+  circularDegreesDelta,
+  degreeInTropicalSign,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+} from "./angular-math";
 
 export type NodeMode = "mean";
 
@@ -29,14 +31,6 @@ const CANDIDATE_ENGINE = "meeus-mean-lunar-node-v1";
 const CANDIDATE_SOURCE =
   "Meeus mean ascending lunar node longitude, tropical ecliptic of date";
 
-function normalizeDegrees(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function signFromLongitude(longitude: number): string {
-  return SIGNS[Math.floor(normalizeDegrees(longitude) / 30)];
-}
-
 function julianDayUtc(timestamp: Date): number {
   return timestamp.getTime() / 86_400_000 + 2_440_587.5;
 }
@@ -63,8 +57,8 @@ export function calculateMeanNorthNodeCandidate(
   return {
     mode: "mean",
     longitudeDegrees,
-    sign: signFromLongitude(longitudeDegrees),
-    degreeInSign: longitudeDegrees % 30,
+    sign: tropicalSignFromLongitude(longitudeDegrees),
+    degreeInSign: degreeInTropicalSign(longitudeDegrees),
     source: CANDIDATE_SOURCE,
     engine: CANDIDATE_ENGINE,
     calculatedAt: new Date().toISOString(),
@@ -81,8 +75,8 @@ export function calculateMeanNodePair(input: MeanNodeInput): MeanNodePair {
     southNode: {
       ...northNode,
       longitudeDegrees: southLongitude,
-      sign: signFromLongitude(southLongitude),
-      degreeInSign: southLongitude % 30,
+      sign: tropicalSignFromLongitude(southLongitude),
+      degreeInSign: degreeInTropicalSign(southLongitude),
       source: `${northNode.source}; South Node defined as exact 180-degree opposition`,
       engine: `${northNode.engine} + exact-opposition`,
     },
@@ -90,9 +84,12 @@ export function calculateMeanNodePair(input: MeanNodeInput): MeanNodePair {
 }
 
 export function circularNodeDeltaDegrees(left: number, right: number): number {
-  if (!Number.isFinite(left) || !Number.isFinite(right)) {
+  try {
+    return circularDegreesDelta(left, right);
+  } catch {
     throw new Error("node_longitude_invalid");
   }
+}
   const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
   return Math.min(raw, 360 - raw);
 }
