@@ -106,3 +106,32 @@ test('transit calendar recommendations remain reflection experiments rather than
   );
   assert.doesNotMatch(source, /overallIntensity >= 7|overallIntensity >= 8/);
 });
+
+
+test('transit calendar requires explicit profile timezone instead of assuming UTC', () => {
+  assert.throws(
+    () => generateTransitsCalendar(
+      { ...profile, timezone: undefined } as any,
+      '2026-09-25',
+      '2026-09-26',
+    ),
+    /Transit calendar timezone is required/,
+  );
+
+  assert.throws(
+    () => getUpcomingSignificantTransits(
+      { ...profile, timezone: '' } as any,
+      7,
+    ),
+    /Transit calendar timezone is required/,
+  );
+});
+
+test('upcoming transit dedupe preserves profile-local date identity', () => {
+  const source = readFileSync('packages/astrology/transits-calendar.ts', 'utf8');
+  const transitSource = readFileSync('transits.ts', 'utf8');
+
+  assert.match(transitSource, /dateISO\?: string/);
+  assert.match(source, /map\(\(transit\) => \(\{ \.\.\.transit, dateISO \}\)\)/);
+  assert.match(source, /\$\{t\.dateISO \?\? 'undated'\}-\$\{t\.planet\}-\$\{t\.natalPlanet\}-\$\{t\.aspect\}/);
+});
