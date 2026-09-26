@@ -183,3 +183,40 @@ test("Ascendant verification accepts equivalent explicit offsets deterministical
     "equivalent instants must produce the same ascendant geometry",
   );
 });
+
+
+test("Ascendant engines remain finite and self-consistent through near-polar latitudes", () => {
+  const latitudes = [-85, -80, -75, -70, -66, 66, 70, 75, 80, 85];
+  const longitudes = [-170, -90, 0, 90, 170];
+
+  for (const latitude of latitudes) {
+    for (const longitude of longitudes) {
+      const input = {
+        inputTimestamp: "2026-09-26T12:00:00.000Z",
+        latitude,
+        longitude,
+      };
+
+      const candidate = calculateAscendantCandidate(input);
+      const reference = calculateIndependentAscendantReference(input);
+
+      for (const record of [candidate, reference]) {
+        assert.ok(Number.isFinite(record.longitudeDegrees), `${latitude},${longitude}`);
+        assert.ok(record.longitudeDegrees >= 0 && record.longitudeDegrees < 360);
+        assert.ok(record.degreeInSign >= 0 && record.degreeInSign < 30);
+      }
+
+      const result = verifyAscendant(input);
+      if (result.status === "verified") {
+        assert.ok(Number.isFinite(result.longitudeDegrees));
+        assert.equal(result.sign, candidate.sign);
+      } else {
+        assert.ok([
+          "sign_disagreement",
+          "longitude_outside_tolerance",
+          "sign_boundary_within_tolerance",
+        ].includes(result.reason), `${latitude},${longitude}: ${result.reason}`);
+      }
+    }
+  }
+});
