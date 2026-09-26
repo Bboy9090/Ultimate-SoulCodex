@@ -55,6 +55,7 @@ node --import tsx --test \
   tests/generative-evidence-boundary.test.ts \
   tests/connection-repository.test.ts \
   tests/runtime-esm-import-contract.test.ts \
+  tests/ios-native-load-hotfix.test.ts \
   packages/core/soul-guide/__tests__/depth-ui-source-contract.test.ts \
   packages/core/soul-guide/__tests__/depth-soul-guide.test.ts \
   tests/reflection-lens.test.ts \
