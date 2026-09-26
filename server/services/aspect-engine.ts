@@ -1,3 +1,6 @@
+import {
+  circularDegreesDelta,
+} from "./angular-math";
 import type { VerifiableBody } from "./astrology-verification";
 
 export type MajorAspectKind =
@@ -70,14 +73,13 @@ export const LEGACY_COMPAT_MAJOR_ASPECT_POLICY_V1: AspectPolicy = Object.freeze(
     "Versioned compatibility policy matching the historical Soul Codex major-aspect orb convention. Orb values are interpretive policy, not astronomical measurement accuracy.",
 });
 
-function normalizeDegrees(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
 export function circularSeparationDegrees(left: number, right: number): number {
-  if (!Number.isFinite(left) || !Number.isFinite(right)) {
+  try {
+    return circularDegreesDelta(left, right);
+  } catch {
     throw new Error("aspect_longitude_invalid");
   }
+}
   const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
   return Math.min(raw, 360 - raw);
 }
