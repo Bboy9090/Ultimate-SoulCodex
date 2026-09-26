@@ -1238,7 +1238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const warnings: string[] = [];
-      const ayurvedaData = profile.ayurvedaData;
+      // Ayurveda is registry-disabled until an explicit governed assessment
+      // exists. Preserve the response key for old clients but never surface
+      // stored legacy/inferred dosha data as personalized guidance.
+      const ayurvedaData = null;
       
       // Extract daily insights affirmations
       let affirmations: any[] = [];
@@ -2826,11 +2829,13 @@ ${contextData}
         moon:        fallback("moon", moon),
         rising:      fallback("rising", rising),
         humanDesign: fallback("humanDesign", hdType),
-        geneKeys:    fallback("geneKeys", "geneKeys"),
+        // Registry-disabled/withheld systems stay structurally present for
+        // compatibility but cannot be filled by model invention.
+        geneKeys:    "",
         enneagram:   fallback("enneagram", ennType),
         planets:     fallback("planets", "planets"),
-        chiron:      fallback("chiron", chirPl),
-        nodes:       fallback("nodes", "nodes"),
+        chiron:      "",
+        nodes:       "",
         lifeTheme:   fallback("lifeTheme", "lifeTheme"),
       };
 
