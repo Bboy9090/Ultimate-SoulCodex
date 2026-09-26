@@ -208,7 +208,7 @@ test("verified supporting points alter the Codex fingerprint", () => {
 
 test("status-only Human Design cannot enter the stable Codex fingerprint", () => {
   const trusted = profile();
-  const statusOnly = profile();
+  const statusOnly: any = profile();
   delete statusOnly.humanDesignData.verificationReceiptId;
   delete statusOnly.humanDesignData.independentSource;
   delete statusOnly.humanDesignData.verifiedAt;
@@ -226,7 +226,7 @@ test("status-only Human Design cannot enter the stable Codex fingerprint", () =>
 });
 
 test("status-only derived astrology cannot enter Ultimate Codex evidence", () => {
-  const candidate = profile();
+  const candidate: any = profile();
 
   for (const row of candidate.verifiedAstrologyData.houses) {
     delete row.policyId;
@@ -257,7 +257,7 @@ test("status-only derived astrology cannot enter Ultimate Codex evidence", () =>
 });
 
 test("status-only natal placements and Rising cannot enter Ultimate Codex evidence", () => {
-  const candidate = profile();
+  const candidate: any = profile();
 
   for (const placement of Object.values(candidate.verifiedAstrologyData.planets) as any[]) {
     delete placement.evidence;
