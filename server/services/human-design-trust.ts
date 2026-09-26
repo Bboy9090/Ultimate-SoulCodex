@@ -226,6 +226,30 @@ export function createVerifiedHumanDesignTrustRecord(input: {
   };
 }
 
+export function hasApprovedVerifiedHumanDesignTrust(
+  value: unknown,
+): value is HumanDesignVerifiedEvidence {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  const candidate = completeVerifiedCandidate(
+    (record.candidate && typeof record.candidate === "object" && !Array.isArray(record.candidate))
+      ? record.candidate as HumanDesignCandidateFields
+      : record as HumanDesignCandidateFields,
+  );
+  if (!candidate) return false;
+
+  return Boolean(
+    record.status === "verified" &&
+    record.engine === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.engine &&
+    record.verificationReceiptId === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.verificationReceiptId &&
+    record.independentSource === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.independentSource &&
+    record.verifiedAt === APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.approvedAt &&
+    typeof record.source === "string" && record.source.trim() &&
+    typeof record.calculatedAt === "string" && isValidIsoTimestamp(record.calculatedAt) &&
+    typeof record.inputTimestampUtc === "string" && isValidIsoTimestamp(record.inputTimestampUtc)
+  );
+}
+
 export function getVerifiedHumanDesignField(
   record: HumanDesignTrustRecord,
   field: HumanDesignCoreField,
