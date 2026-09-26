@@ -1,3 +1,4 @@
+import { parseDateOnly } from '@soulcodex/core';
 // I Ching (Yi Jing) - Book of Changes
 // 64 Hexagrams representing universal principles
 
@@ -104,9 +105,7 @@ interface IChingReading {
 
 // Calculate hexagram from birth data
 function calculateBirthHexagram(birthDate: string): { hexagramNumber: number; changingLines: number[] } {
-  const date = new Date(birthDate);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
+  const { day, month } = parseDateOnly(birthDate);
   const year = date.getFullYear();
   
   // Use birth numbers to generate hexagram (simplified method)
