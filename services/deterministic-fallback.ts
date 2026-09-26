@@ -7,6 +7,7 @@
 
 import type { AIRequest } from "../src/types/ai";
 import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
+import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
 
 interface FallbackResult {
   title: string;
@@ -81,27 +82,13 @@ function verifiedHumanDesign(profile: any): {
   authority: string;
 } {
   const hd = profile?.humanDesignData;
-  const validText = (value: unknown) =>
-    typeof value === "string" && value.trim().length > 0;
-  const validTimestamp = (value: unknown) =>
-    validText(value) && !Number.isNaN(Date.parse(value as string));
-  const hasTrustRecord = Boolean(
-    hd?.status === "verified" &&
-    validText(hd?.engine) &&
-    validText(hd?.source) &&
-    validTimestamp(hd?.calculatedAt) &&
-    validTimestamp(hd?.inputTimestampUtc) &&
-    validText(hd?.verificationReceiptId) &&
-    validText(hd?.independentSource) &&
-    validTimestamp(hd?.verifiedAt)
-  );
-  if (!hasTrustRecord) {
+  if (!hasApprovedVerifiedHumanDesignTrust(hd)) {
     return { type: "", strategy: "", authority: "" };
   }
   return {
-    type: typeof hd.type === "string" ? hd.type : "",
-    strategy: typeof hd.strategy === "string" ? hd.strategy : "",
-    authority: typeof hd.authority === "string" ? hd.authority : "",
+    type: hd.type,
+    strategy: hd.strategy,
+    authority: hd.authority,
   };
 }
 
