@@ -4,6 +4,10 @@ import fs from 'node:fs';
 import { registryEntry } from '../shared/system-registry';
 import { calculateAsteroids as calculateServiceAsteroids } from '../services/asteroids';
 import { calculateAsteroids as calculatePackageAsteroids } from '../packages/astrology/asteroids';
+import { calculateChineseAstrology } from '../services/chinese-astrology';
+import { calculateMayanAstrology } from '../services/mayan-astrology';
+import { calculateKabbalah } from '../services/kabbalah';
+import { calculateAyurveda } from '../services/ayurveda';
 
 const routes = fs.readFileSync(new URL('../routes.ts', import.meta.url), 'utf8');
 
@@ -41,4 +45,24 @@ test('approximate asteroid placements remain quarantined from production', () =>
       /asteroid_placements_not_production_ready/,
     );
   }
+});
+
+
+test('legacy symbolic identity calculators match their unavailable registry state', () => {
+  assert.throws(
+    () => calculateChineseAstrology('1990-09-17'),
+    /chinese_astrology_unavailable/,
+  );
+  assert.throws(
+    () => calculateMayanAstrology('1990-09-17'),
+    /mayan_astrology_unavailable/,
+  );
+  assert.throws(
+    () => calculateKabbalah('Bobby', '1990-09-17', 9),
+    /kabbalah_unavailable/,
+  );
+  assert.throws(
+    () => calculateAyurveda('1990-09-17', {}, {}),
+    /ayurveda_unavailable/,
+  );
 });
