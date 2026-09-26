@@ -132,3 +132,15 @@ test('personal numerology core rejects invalid direct-call domains', () => {
   assert.throws(() => calcPersonalMonth(12, 5), /Personal Year 1-9, 11, 22, or 33/);
   assert.throws(() => calcPersonalMonth(9, 13), /calendar month 1-12/);
 });
+
+
+test('name numerology normalizes supported Latin characters deterministically', () => {
+  assert.equal(normalizeNumerologyName('José Núñez'), 'JOSENUNEZ');
+  assert.equal(normalizeNumerologyName('Łukasz Żółć'), 'LUKASZZOLC');
+  assert.equal(normalizeNumerologyName('Straße'), 'STRASSE');
+});
+
+test('name numerology fails closed for unsupported non-Latin scripts', () => {
+  assert.equal(normalizeNumerologyName('Алексей'), '');
+  assert.throws(() => calcExpression('Алексей'), /canonical A-Z letter/);
+});
