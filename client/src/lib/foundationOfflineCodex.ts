@@ -174,11 +174,6 @@ function archetypeFor(
       "Preliminary local symbolic synthesis",
     ],
     guidance,
-    tarotCards: {
-      card1: "Unresolved locally",
-      card2: "Unresolved locally",
-      interpretation: "Tarot birth-card interpretation is not used as evidence in the Foundation local profile.",
-    },
   };
 }
 
