@@ -168,3 +168,17 @@ test("legacy premium natal-report route uses the hardened saved-profile contract
   assert.match(route, /astrologyData: null/);
   assert.match(route, /humanDesignData: null/);
 });
+
+
+test("legacy profile PDF route uses the canonical natal report contract", () => {
+  const routes = readFileSync("routes.ts", "utf8");
+  const start = routes.indexOf('app.post("/api/pdf/profile"');
+  const end = routes.indexOf('// ── Full Cosmic Blueprint', start);
+  assert.ok(start >= 0 && end > start);
+  const source = routes.slice(start, end);
+
+  assert.match(source, /buildNatalReportInput\(profile\)/);
+  assert.doesNotMatch(source, /A comprehensive behavioral analysis of your soul architecture/);
+  assert.doesNotMatch(source, /Guidance based on your dominant elements/);
+  assert.doesNotMatch(source, /Analysis of your life focus areas/);
+});
