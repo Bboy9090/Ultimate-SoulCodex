@@ -3210,13 +3210,23 @@ ${contextData}
 
       if (!horoscopeData) {
         const today = new Date();
-        const birth = profile?.signals?.lifePath ?? 4;
-        const daySum = today.getDate() + today.getMonth() + today.getFullYear() % 100;
-        const personalDay = ((daySum + birth - 1) % 9) + 1;
+        const date = today.toISOString().slice(0, 10);
+        let personalDayNumber: number | null = null;
+
+        if (typeof profile?.birthDate === "string" && profile.birthDate.trim()) {
+          try {
+            personalDayNumber = calculatePersonalDayNumber(profile.birthDate, date);
+          } catch {
+            personalDayNumber = null;
+          }
+        }
+
+        const moonPhase = getMoonPhase(today);
+
         horoscopeData = {
-          date: today.toISOString().slice(0, 10),
-          personalDayNumber: personalDay,
-          moonPhase: { phase: "Waxing Gibbous", percentage: 65 },
+          date,
+          personalDayNumber,
+          moonPhase,
           personalTransits: [],
           alignments: [],
           horoscope: ""
@@ -3741,7 +3751,9 @@ async function generateTodayCardAI(
   }
 
   const dayNum   = base.personalDayNumber;
-  const archDesc = DAY_ARCHETYPE[dayNum] ?? "focused work";
+  const archDesc = dayNum == null
+    ? "personal-day evidence unavailable"
+    : (DAY_ARCHETYPE[dayNum] ?? "focused work");
   const moon     = base.moonPhase;
   const codename = sanitizeForAI(base.codename);
   const themeList = (codexSynthesis?.topThemes ?? horoscopeData?.topThemes ?? [])
@@ -3760,8 +3772,8 @@ ${historyPrompt}
 ## 🧬 IDENTITY DATA
 - IDENTITY: ${codename}
 - TOP THEMES: ${themes}
-- PERSONAL DAY: ${dayNum} — ${archDesc}
-- MOON PHASE: ${moon}
+- PERSONAL DAY: ${dayNum == null ? "Unavailable — do not infer" : `${dayNum} — ${archDesc}`}
+- MOON PHASE: ${moon === "Unavailable" ? "Unavailable — do not infer" : moon}
 - DECISION STYLE: ${decide || "Omit"}
 - PRESSURE STYLE: ${pressure || "Omit"}
 ${transit ? `- ACTIVE TRANSIT: ${transit}` : ""}
