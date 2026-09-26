@@ -24,7 +24,8 @@ test('blueprint generation requires an owned server-saved profile', () => {
 test('blueprint identity evidence comes from trusted stored data, not caller-supplied labels', () => {
   const source = blueprintSource();
 
-  assert.match(source, /calcLifePath\(trustedProfile\.birthDate\)/);
+  assert.match(source, /dateOnlyFromStoredValue\(trustedProfile\.birthDate\)/);
+  assert.match(source, /calcLifePath\(dateOnlyFromStoredValue\(trustedProfile\.birthDate\)\)/);
   assert.match(source, /extractVerifiedAstrology\(trustedProfile\)/);
   assert.match(source, /trustedProfile\.humanDesignData/);
   assert.match(source, /hd\?\.status === "resolved"/);
