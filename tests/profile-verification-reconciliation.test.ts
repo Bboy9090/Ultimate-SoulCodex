@@ -229,6 +229,29 @@ test("verified remote placements replace legacy active aliases without changing 
   );
 });
 
+test("malformed provenance timestamps are rejected during reconciliation", () => {
+  const astrology = {
+    sun: {
+      verificationStatus: "verified",
+      sign: "Virgo",
+      evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+    },
+  };
+
+  assert.equal(getVerifiedAstrologySign(astrology, "sun"), null);
+
+  const untrustedRemote = {
+    ...verifiedRemote,
+    humanDesignData: {
+      ...verifiedRemote.humanDesignData,
+      calculatedAt: "not-a-date",
+    },
+  };
+  const hydrated = reconcileOfflineProfile(local, untrustedRemote, "2026-09-21T02:30:00.000Z");
+  assert.notEqual(hydrated.humanDesignData?.status, "verified");
+  assert.equal(profileNeedsOnlineVerification(hydrated), true);
+});
+
 test("verified labels without placement provenance are rejected during reconciliation", () => {
   const astrology = {
     sun: { verificationStatus: "verified", sign: "Virgo" },
