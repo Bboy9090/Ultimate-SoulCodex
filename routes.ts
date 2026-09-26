@@ -651,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const elementalMedicineData = null;
       const soulArchetypeData = null;
       const parentalInfluenceData = null;
-      const soulCodexResult = null;
+      const soulCodexResult: any = null;
 
       // Moral Compass is an explicit user assessment only. Birth data,
       // numerology, and astrology must not manufacture moral traits.
@@ -901,82 +901,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const arabicPartsData = null;
       const fixedStarsData = null;
       
-      // Calculate Elemental Medicine Profile
-      let elementalMedicineData;
-      try {
-        if (astrologyData && numerologyData) {
-          elementalMedicineData = calculateElementalProfile(
-            birthData.birthDate,
-            numerologyData.calculateNumerology?.lifePath,
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            humanDesignData?.type
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Elemental Medicine calculation failed:", error);
-        elementalMedicineData = null;
-      }
-      
-      // Calculate Soul Archetype (from Elemental Medicine system)
-      let soulArchetypeData;
-      try {
-        if (numerologyData && astrologyData) {
-          soulArchetypeData = generateSoulArchetype(
-            birthData.name,
-            numerologyData.calculateNumerology?.lifePath || 1,
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            humanDesignData?.type,
-            undefined // enneagramType - can be added later
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Soul Archetype generation failed:", error);
-        soulArchetypeData = null;
-      }
-      
-      // Calculate Parental Influence (uses parent signs if provided)
-      let parentalInfluenceData;
-      try {
-        if (astrologyData) {
-          parentalInfluenceData = calculateParentalInfluence(
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            birthData.fatherSign,
-            birthData.motherSign
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Parental Influence calculation failed:", error);
-        parentalInfluenceData = null;
-      }
-      
-      // Calculate Moral Compass (uses answers if provided, otherwise from birth data)
-      let moralCompassData;
-      try {
-        if (birthData.moralCompassAnswers && 
-            birthData.moralCompassAnswers.familyValues && 
-            birthData.moralCompassAnswers.neighborhoodType && 
-            birthData.moralCompassAnswers.conflictResolution) {
-          // Use provided answers
-          const { calculateMoralCompass } = await import("./services/moral-compass");
-          moralCompassData = calculateMoralCompass(
-            birthData.moralCompassAnswers,
-            numerologyData?.lifePath || 1,
-            (astrologyData as any)?.sunSign
-          );
-        } else {
-          // Fallback to birth data calculation
-          moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.lifePath || 1,
-            (astrologyData as any)?.sunSign,
-            (astrologyData as any)?.moonSign
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Moral Compass calculation failed:", error);
-        moralCompassData = null;
+      // Legacy elemental/soul/parental inference is quarantined.
+      const elementalMedicineData = null;
+      const soulArchetypeData = null;
+      const parentalInfluenceData = null;
+
+      // Moral Compass requires explicit assessment answers. Do not infer ethics
+      // from birth date, numerology, or astrology.
+      let moralCompassData = null;
+      if (
+        birthData.moralCompassAnswers &&
+        birthData.moralCompassAnswers.familyValues &&
+        birthData.moralCompassAnswers.neighborhoodType &&
+        birthData.moralCompassAnswers.conflictResolution
+      ) {
+        const { calculateMoralCompass } = await import("./services/moral-compass");
+        moralCompassData = calculateMoralCompass(
+          birthData.moralCompassAnswers,
+        );
       }
       
       // Basic archetype synthesis (will be enhanced with personality data)
