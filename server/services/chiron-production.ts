@@ -124,6 +124,10 @@ function validatePolicy(
   return null;
 }
 
+function isExplicitUtcTimestamp(value: string): boolean {
+  return /Z$/i.test(value.trim()) && !Number.isNaN(new Date(value).getTime());
+}
+
 export async function verifyChiron(
   inputTimestamp: string,
   options: {
@@ -135,6 +139,10 @@ export async function verifyChiron(
   const failure = validatePolicy(policy);
   if (failure) return failure;
 
+  if (!isExplicitUtcTimestamp(inputTimestamp)) {
+    return { status: "unresolved", reason: "reference_timestamp_mismatch" };
+  }
+
   try {
     const reference = await (
       options.referenceFetcher ??
@@ -145,13 +153,13 @@ export async function verifyChiron(
       return { status: "unresolved", reason: "reference_identity_mismatch" };
     }
 
+    if (!isExplicitUtcTimestamp(reference.inputTimestamp)) {
+      return { status: "unresolved", reason: "reference_timestamp_mismatch" };
+    }
+
     const requestedTime = new Date(inputTimestamp).getTime();
     const referenceTime = new Date(reference.inputTimestamp).getTime();
-    if (
-      !Number.isFinite(requestedTime) ||
-      !Number.isFinite(referenceTime) ||
-      requestedTime !== referenceTime
-    ) {
+    if (requestedTime !== referenceTime) {
       return { status: "unresolved", reason: "reference_timestamp_mismatch" };
     }
 
