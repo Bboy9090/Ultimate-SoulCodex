@@ -130,6 +130,7 @@ export default function SoulCodexReadingDisplay({
             groundedAction={reading.snapshot.groundedAction}
             calculationConfidence={reading.meta.confidence === "high" ? "High" : reading.meta.confidence === "medium" ? "Moderate" : "Low"}
             verifiedSystems={reading.meta.verifiedSystems || []}
+            generatedAt={reading.meta.generatedAt}
           />
         </SectionContainer>
       )}
