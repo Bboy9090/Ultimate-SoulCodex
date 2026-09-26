@@ -2315,13 +2315,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const enrichedLogs = logs.map(log => {
         const logDate = new Date(log.loggedAt);
-        
+        if (Number.isNaN(logDate.getTime())) {
+          throw new RangeError("Frequency log contains an invalid timestamp");
+        }
+
+        const logCalendarDate = profileLocalDateKey(userProfile ?? {}, logDate);
         const moonPhaseData = getMoonPhase(logDate);
         const moonSign = getMoonSign(logDate);
         const hdGateData = getCurrentHDGate(logDate);
-        const universalDay = calculateUniversalDayNumber(logDate);
-        const personalDay = userProfile?.birthDate 
-          ? calculatePersonalDayNumber(userProfile.birthDate, logDate)
+        const universalDay = calculateUniversalDayNumber(logCalendarDate);
+        const personalDay = userProfile?.birthDate
+          ? calculatePersonalDayNumber(
+              dateOnlyFromStoredValue(userProfile.birthDate),
+              logCalendarDate,
+            )
           : null;
         
         return {
