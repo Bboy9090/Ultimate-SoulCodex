@@ -11,6 +11,7 @@ import {
   calcPersonality,
   calcSoulUrge,
   normalizeNumerologyName,
+  numerologyNameComponentAvailability,
   reduceNumerology,
 } from '../compute/numerology.js';
 import {
@@ -21,7 +22,11 @@ import {
   isPersonalNumerologyValue,
   PERSONAL_YEAR_BOUNDARY_POLICY,
 } from '../compute/personal-numbers.js';
-import { calcLifePathWithEvidence } from '../evidence-ledger/integrations.js';
+import {
+  calcLifePathWithEvidence,
+  calcPersonalityWithEvidence,
+  calcSoulUrgeWithEvidence,
+} from '../evidence-ledger/integrations.js';
 
 test('Bobby fixture resolves Life Path 9 in every host timezone', () => {
   const originalTimezone = process.env.TZ;
@@ -213,4 +218,55 @@ test('personal-cycle arithmetic uses the canonical core reducer', () => {
   );
   assert.match(source, /import \{ reduceNumerology \} from ['"]\.\/numerology\.js['"]/);
   assert.doesNotMatch(source, /while \(num > 9/);
+});
+
+
+test('name-number components fail closed instead of producing numerology zero', () => {
+  const noGovernedVowels = numerologyNameComponentAvailability('Lynn');
+  assert.equal(noGovernedVowels.vowelCount, 0);
+  assert.ok(noGovernedVowels.consonantCount > 0);
+  assert.throws(() => calcSoulUrge('Lynn'), /Soul Urge is unresolved/);
+
+  const allVowels = numerologyNameComponentAvailability('Aeia');
+  assert.equal(allVowels.consonantCount, 0);
+  assert.ok(allVowels.vowelCount > 0);
+  assert.throws(() => calcPersonality('Aeia'), /Personality is unresolved/);
+
+  const lynn = calcCoreNumerology('1990-09-17', 'Lynn');
+  assert.equal(lynn.soulUrge, null);
+  assert.ok(isPersonalNumerologyValue(lynn.personality as number));
+
+  const aeia = calcCoreNumerology('1990-09-17', 'Aeia');
+  assert.equal(aeia.personality, null);
+  assert.ok(isPersonalNumerologyValue(aeia.soulUrge as number));
+});
+
+test('name-component evidence records partial unresolved state without zero', () => {
+  const soul = calcSoulUrgeWithEvidence('Lynn');
+  assert.equal(soul.value, undefined);
+  assert.equal(soul.evidence.calculationStatus, 'unresolved');
+  assert.equal(soul.evidence.inputState, 'partial');
+  assert.notEqual(soul.evidence.value, 0);
+
+  const personality = calcPersonalityWithEvidence('Aeia');
+  assert.equal(personality.value, undefined);
+  assert.equal(personality.evidence.calculationStatus, 'unresolved');
+  assert.equal(personality.evidence.inputState, 'partial');
+  assert.notEqual(personality.evidence.value, 0);
+});
+
+test('date numerology remains in the governed value set across every calendar day from 1900 through 2100', () => {
+  let checked = 0;
+  for (let year = 1900; year <= 2100; year += 1) {
+    for (let month = 1; month <= 12; month += 1) {
+      const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        assert.ok(isPersonalNumerologyValue(calcLifePath(date)), `Life Path ${date}`);
+        assert.ok(isPersonalNumerologyValue(calcBirthday(date)), `Birthday ${date}`);
+        checked += 1;
+      }
+    }
+  }
+  assert.ok(checked > 73_000);
 });
