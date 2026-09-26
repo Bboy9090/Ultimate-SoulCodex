@@ -2,7 +2,15 @@ import { ATLAS_SIGNS, type AtlasSign } from "./astrologyAtlas";
 
 export const PERSONAL_ATLAS_HOUSE_CONTRACT = "ASTRO-EQUAL-HOUSE-v1";
 
-type Placement = { verificationStatus?: string; sign?: string | null; house?: number; degree?: number; longitude?: number };
+type Placement = {
+  verificationStatus?: string;
+  sign?: string | null;
+  house?: number;
+  degree?: number;
+  longitude?: number;
+  evidence?: { source?: string; engine?: string; calculatedAt?: string } | null;
+  provenance?: { source?: string; engine?: string; calculatedAt?: string } | null;
+};
 
 export type PersonalAtlasPlacement = {
   key: string;
@@ -29,7 +37,13 @@ function atlasSign(value: unknown): AtlasSign | null {
 }
 
 function verifiedSign(value: Placement | undefined): AtlasSign | null {
-  return value?.verificationStatus === "verified" ? atlasSign(value.sign) : null;
+  if (value?.verificationStatus !== "verified") return null;
+  const evidence = value.provenance ?? value.evidence;
+  const hasProvenance =
+    Boolean(evidence?.source?.trim()) &&
+    Boolean(evidence?.engine?.trim()) &&
+    Boolean(evidence?.calculatedAt?.trim());
+  return hasProvenance ? atlasSign(value.sign) : null;
 }
 
 /** Returns only evidence-bearing chart placements. It never falls back to legacy aliases. */
