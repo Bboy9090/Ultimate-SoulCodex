@@ -1069,7 +1069,7 @@ export function synthesizeVerifiedFoundationProfile(
         field: key,
         bodyLabel: label,
         sign: nodeSign,
-        house: node.house,
+        house: node?.house,
         priority: key === "northNode" ? 114 : 109,
         facets: key === "northNode"
           ? { decisionImpact: `Developmental-direction symbolism may invite more ${nodePattern.drive}.` }
