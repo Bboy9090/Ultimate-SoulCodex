@@ -51,7 +51,7 @@ import { finalOutputGuard, routeAIRequest } from "./services/ai-router";
 import { generateRelationshipAutopsy } from "./services/relationship-autopsy";
 import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
 import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
-import { generateProfilePDF, generateCompatibilityPDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
+import { generateProfilePDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
 import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks } from "./services/shareable-links";
 import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "./services/transit-notifications";
 
@@ -68,7 +68,6 @@ import { computeConfidence } from "./soulcodex/compute/confidence";
 import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
 import { buildNatalReportPdf } from "./server/natalReportPdf";
 import { profileBelongsToActor } from "./server/lib/profile-ownership";
-import { buildCompatibilityReportPdf } from "./server/compatibilityReportPdf";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
@@ -3514,49 +3513,12 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
     }
   });
 
-  app.post("/api/pdf/compatibility", requirePremium, async (req, res) => {
-    try {
-      const { profile1Id, profile2Id } = req.body;
-      if (!profile1Id || !profile2Id) {
-        return res.status(400).json({ message: "profile1Id and profile2Id are required" });
-      }
-
-      const profile1 = await storage.getProfile(profile1Id);
-      const profile2 = await storage.getProfile(profile2Id);
-      
-      if (!profile1 || !profile2) {
-        return res.status(404).json({ message: "One or both profiles not found" });
-      }
-
-      // Get compatibility data
-      const compatibility = await storage.getCompatibility(profile1Id, profile2Id);
-      if (!compatibility) {
-        return res.status(404).json({ message: "Compatibility analysis not found" });
-      }
-
-      const options = req.body.options || { template: 'compatibility', theme: 'mystical' };
-      
-      const isPremium = (req.user as any)?.subscriptionStatus === "premium";
-
-      const pdfBuffer = await buildCompatibilityReportPdf({
-        profile1,
-        profile2,
-        compatibilityData: compatibility.compatibilityData,
-        aiText: compatibility.compatibilityData.aiText || {
-          overview: "A deep behavioral synthesis of your combined natal charts.",
-          strengths: compatibility.compatibilityData.strengths || [],
-          challenges: compatibility.compatibilityData.challenges || [],
-          bottomLine: "A partnership with unique growth opportunities."
-        },
-        isPremium,
-      });
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="compatibility-${profile1.name}-${profile2.name}.pdf"`);
-      res.send(pdfBuffer);
-    } catch (error) {
-      return handleError(error, res, "GenerateCompatibilityPDF");
-    }
+  app.post("/api/pdf/compatibility", requirePremium, (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_pdf_retired",
+      message:
+        "Legacy aggregate compatibility PDFs are retired because their stored scores do not meet the current evidence-aware compatibility contract.",
+    });
   });
 
   // Shareable Links Endpoints
