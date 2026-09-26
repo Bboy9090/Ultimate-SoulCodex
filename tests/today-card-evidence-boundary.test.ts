@@ -170,3 +170,16 @@ test('Today Card Personal Day guidance stays reflective rather than predictive o
     assert.doesNotMatch(combined, /because the day symbolism says|today is special/i);
   }
 });
+
+
+test('Today Card route preserves stored profile context and profile-local fallback date', () => {
+  const routes = readFileSync('routes.ts', 'utf8');
+
+  assert.match(routes, /let resolvedProfile: any = profile \?\? null/);
+  assert.match(routes, /resolvedProfile = storedProfile/);
+  assert.match(routes, /const profileForToday = resolvedProfile \?\? \{\}/);
+  assert.match(routes, /const date = profileLocalDateKey\(profileForToday, today\)/);
+  assert.match(routes, /buildTodayCard\(horoscopeData, profileForToday, codexSynthesis\)/);
+  assert.match(routes, /generateTodayCardAI\(card, profileForToday, horoscopeData, codexSynthesis\)/);
+  assert.doesNotMatch(routes, /buildTodayCard\(horoscopeData, profile \?\? \{\}, codexSynthesis\)/);
+});
