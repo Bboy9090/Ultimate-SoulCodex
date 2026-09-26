@@ -4,6 +4,8 @@ import { calculateChineseAstrology as packageChinese } from '../packages/astrolo
 import { calculateChineseAstrology as legacyChinese } from '../services/chinese-astrology';
 import { calculateIChing as packageIChing } from '../packages/astrology/i-ching';
 import { calculateIChing as legacyIChing } from '../services/i-ching';
+import { calculateRunes as packageRunes } from '../packages/astrology/runes';
+import { calculateRunes as legacyRunes } from '../services/runes';
 import { generatePalmReading as packagePalm } from '../packages/astrology/palmistry';
 import { generatePalmReading as legacyPalm } from '../services/palmistry';
 import { calculateGeneKeys as packageGeneKeys } from '../packages/astrology/gene-keys';
@@ -69,4 +71,14 @@ test('chakra and sacred-geometry identity calculators remain unavailable', () =>
     () => calculateSacredGeometry('1990-09-17', 9, 'Bobby'),
     /sacred_geometry_unavailable:no_governed_identity_calculation/,
   );
+});
+
+
+test('birth-rune identity mappings remain unavailable without a governed historical method', () => {
+  for (const calculate of [packageRunes, legacyRunes]) {
+    assert.throws(
+      () => calculate('Bobby', '1990-09-17', 9),
+      /runes_unavailable:no_governed_birth_rune_method/,
+    );
+  }
 });
