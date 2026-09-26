@@ -6,6 +6,7 @@ import {
   getVerifiedAstrologySign,
   hasVerifiedBigThree,
   hasVerifiedFullNatalChart,
+  hasVerifiedHumanDesignTrust,
   hasVerifiedSunAndMoon,
   profileNeedsOnlineVerification,
   reconcileActiveProfile,
@@ -63,6 +64,39 @@ const zodiacSigns = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ] as const;
+
+
+test("Human Design trust requires a complete coherent core, not provenance metadata alone", () => {
+  const base = {
+    status: "verified",
+    type: "Reflector",
+    strategy: "To Wait a Lunar Cycle",
+    authority: "Lunar Authority",
+    profile: "2/5",
+    ...humanDesignTrust,
+  };
+
+  assert.equal(hasVerifiedHumanDesignTrust(base), true);
+  assert.equal(
+    hasVerifiedHumanDesignTrust({ ...base, strategy: "To Respond" }),
+    false,
+  );
+  assert.equal(
+    hasVerifiedHumanDesignTrust({ ...base, authority: "Sacral Authority" }),
+    false,
+  );
+  assert.equal(
+    hasVerifiedHumanDesignTrust({ ...base, profile: "" }),
+    false,
+  );
+  assert.equal(
+    hasVerifiedHumanDesignTrust({
+      ...base,
+      strategy: "Wait a lunar cycle",
+    }),
+    true,
+  );
+});
 
 const verifiedRemote = {
   id: "remote-robert",
