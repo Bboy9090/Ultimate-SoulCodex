@@ -38,21 +38,26 @@ Canonical placement lifecycle and evidence types remain in `packages/core/placem
 
 ### Numerology
 
-Evidence-backed wrappers exist in `packages/core/evidence-ledger/integrations.ts` for:
+Evidence-backed wrappers exist in `packages/core/evidence-ledger/integrations.ts` for the canonical nine calculations:
 
 - [x] Personal Day
 - [x] Personal Year
 - [x] Personal Month
 - [x] Life Path
+- [x] Birthday
 - [x] Expression
 - [x] Soul Urge
 - [x] Personality
+- [x] Maturity
 
 Hardening now also guarantees:
 
 - [x] Master Personal Years 11, 22 and 33 remain valid through Personal Month evidence.
 - [x] Explicit zero/invalid Personal Year inputs fail closed instead of defaulting to the current year.
 - [x] Numerology evidence uses calculated provenance language rather than claiming independent verification.
+- [x] Core numerology evidence records the canonical `pythagorean-v2` engine version.
+- [x] Name-based evidence uses the same Unicode normalization/transliteration path as the calculator.
+- [x] Personal Year is explicitly a calendar-year cycle under Soul Codex policy.
 
 ### Human Design
 
@@ -79,7 +84,6 @@ Hardening now also guarantees:
 ## Active Hardening / Remaining Gate Work
 
 - [ ] Keep exact-head Diamond Way, store-candidate, and Xcode parity workflows green after every trust-boundary change.
-- [ ] Extend evidence-wrapper coverage to any remaining production numerology outputs that are still outside the seven canonical wrappers (for example Birthday/Maturity where those outputs are surfaced).
 - [ ] Continue replacing loose `any` profile evidence shapes with shared typed contracts where doing so does not break migration compatibility.
 - [ ] Audit every remaining user-visible consumer for direct `status === "verified"` checks that do not also validate provenance.
 - [ ] Consolidate repeated trust predicates into a shared cross-runtime contract after behavior is locked by regression tests.
