@@ -58,8 +58,14 @@ function signFromLongitude(longitude: number): string {
   return SIGNS[Math.floor(normalizeDegrees(longitude) / 30)];
 }
 
+function hasExplicitUtcOffset(inputTimestamp: string): boolean {
+  return /(?:Z|[+-]\\d{2}:\\d{2})$/i.test(inputTimestamp.trim());
+}
+
 function validInput(input: HouseInput): boolean {
   return (
+    typeof input.inputTimestamp === "string" &&
+    hasExplicitUtcOffset(input.inputTimestamp) &&
     !Number.isNaN(new Date(input.inputTimestamp).getTime()) &&
     Number.isFinite(input.latitude) &&
     input.latitude > -90 &&
