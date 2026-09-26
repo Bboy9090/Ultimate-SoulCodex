@@ -846,3 +846,57 @@ test('Galactic Code: axis scores and derived sequence are labeled as symbolic mo
     assert.match(step, /^Reflection prompt:/);
   }
 });
+
+
+test('Galactic Code: unverified house emphasis cannot influence synthesis', () => {
+  const verifiedHouseInput: GalacticCodeInput = {
+    ...testInput,
+    astrology: {
+      ...testInput.astrology,
+      fieldEvidence: {
+        ...testInput.astrology.fieldEvidence,
+        houseEmphasis: 'verified',
+      },
+      houseEmphasis: ['House 10'],
+    },
+  };
+
+  const candidateHouseInput: GalacticCodeInput = {
+    ...verifiedHouseInput,
+    astrology: {
+      ...verifiedHouseInput.astrology,
+      fieldEvidence: {
+        ...verifiedHouseInput.astrology.fieldEvidence,
+        houseEmphasis: 'candidate',
+      },
+    },
+  };
+
+  const withoutHouseInput: GalacticCodeInput = {
+    ...verifiedHouseInput,
+    astrology: {
+      ...verifiedHouseInput.astrology,
+      fieldEvidence: {
+        ...verifiedHouseInput.astrology.fieldEvidence,
+        houseEmphasis: 'candidate',
+      },
+      houseEmphasis: [],
+    },
+  };
+
+  const verified = generateGalacticCode(verifiedHouseInput, TRUSTED);
+  const candidate = generateGalacticCode(candidateHouseInput, TRUSTED);
+  const withoutHouse = generateGalacticCode(withoutHouseInput, TRUSTED);
+
+  assert.notStrictEqual(
+    verified.fingerprint,
+    withoutHouse.fingerprint,
+    'verified governed house evidence may influence the synthesis identity',
+  );
+  assert.strictEqual(
+    candidate.fingerprint,
+    withoutHouse.fingerprint,
+    'candidate house evidence must be excluded from production synthesis',
+  );
+  assert.deepEqual(candidate.axes, withoutHouse.axes);
+});
