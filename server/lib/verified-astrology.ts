@@ -24,9 +24,13 @@ function verifiedSign(value: PlacementLike | null | undefined): string | undefin
 
 function placementFromProfile(profile: any, key: "sun" | "moon" | "rising"): PlacementLike | undefined {
   return (
+    profile?.astrologyData?.placements?.[key] ??
     profile?.astrologyData?.[key] ??
+    profile?.astrology?.placements?.[key] ??
     profile?.astrology?.[key] ??
+    profile?.natalChart?.placements?.[key] ??
     profile?.natalChart?.[key] ??
+    profile?.chart?.placements?.[key] ??
     profile?.chart?.[key]
   );
 }
