@@ -229,10 +229,25 @@ export function selectTemplates(
     ? astrologyTemplates
     : astrologyTemplates.filter((template) => !template.id.startsWith('astro-planetary-'));
 
+  const humanDesign = profileData?.humanDesignData;
+  const hasVerifiedPersonalHumanDesign =
+    humanDesign?.status === 'verified' &&
+    typeof humanDesign?.verificationReceiptId === 'string' &&
+    humanDesign.verificationReceiptId.trim().length > 0 &&
+    typeof humanDesign?.independentSource === 'string' &&
+    humanDesign.independentSource.trim().length > 0 &&
+    typeof humanDesign?.verifiedAt === 'string' &&
+    humanDesign.verifiedAt.trim().length > 0;
+
+  // Daily guidance is intentionally selective. Astrology supplies measured sky
+  // context, numerology supplies deterministic calendar symbolism, and Human
+  // Design enters the personalized mix only when the user's natal HD core is
+  // independently verified. We do not add extra systems merely to make the
+  // reading look larger.
   const governedByCategory: Record<string, TemplateVariation[]> = {
-    numerology: numerologyTemplates,
     astrology: eligibleAstrologyTemplates,
-    humandesign: humanDesignTemplates,
+    numerology: numerologyTemplates,
+    ...(hasVerifiedPersonalHumanDesign ? { humandesign: humanDesignTemplates } : {}),
   };
 
   const dateSeed = parseInt(dailyContext.date.replace(/-/g, ''), 10);
@@ -257,18 +272,9 @@ export function selectTemplates(
     selected.push(options[(seed + i * 17) % options.length]);
   }
 
-  const allGoverned = categories.flatMap((category) => governedByCategory[category]);
-  const unusedGoverned = allGoverned.filter((template) => !lastUsedIds.includes(template.id));
-  const fourthPool = unusedGoverned.length > 0 ? unusedGoverned : allGoverned;
-  if (fourthPool.length > 0) {
-    const candidate = fourthPool[(seed + 53) % fourthPool.length];
-    if (!selected.some((template) => template.id === candidate.id)) {
-      selected.push(candidate);
-    }
-  }
-
   return {
-    selectedTemplates: selected.slice(0, 4),
-    templateIds: selected.slice(0, 4).map((template) => template.id),
+    selectedTemplates: selected,
+    templateIds: selected.map((template) => template.id),
   };
 }
+
