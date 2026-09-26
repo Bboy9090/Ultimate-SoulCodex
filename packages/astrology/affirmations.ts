@@ -1,5 +1,6 @@
 import type { Profile } from './shared/schema';
-import { calcLifePath } from '@soulcodex/core';
+import { calcLifePath, parseDateOnly } from '@soulcodex/core';
+import { formatInTimeZone } from 'date-fns-tz';
 
 export interface Affirmation {
   text: string;
@@ -7,269 +8,155 @@ export interface Affirmation {
   focus: string;
 }
 
-// Affirmation templates based on different soul profile aspects
-const AFFIRMATION_TEMPLATES = {
-  // Life Path Number based
-  lifePath: {
-    1: [
-      { text: "I am a natural leader, and I step confidently into my power today.", category: 'power' as const, focus: "Leadership" },
-      { text: "New beginnings flow to me effortlessly as I trust my pioneering spirit.", category: 'transformation' as const, focus: "New Beginnings" },
-      { text: "I attract opportunities that honor my independence and originality.", category: 'abundance' as const, focus: "Independence" }
-    ],
-    2: [
-      { text: "I am a peacemaker, and harmony flows through all my relationships.", category: 'peace' as const, focus: "Harmony" },
-      { text: "My sensitivity is my superpower, connecting me deeply to love and truth.", category: 'love' as const, focus: "Connection" },
-      { text: "I attract balanced partnerships that honor my gentle strength.", category: 'abundance' as const, focus: "Partnership" }
-    ],
-    3: [
-      { text: "I express my creative gifts freely, and the universe celebrates my joy.", category: 'transformation' as const, focus: "Creativity" },
-      { text: "Love and laughter surround me as I share my authentic voice.", category: 'love' as const, focus: "Self-Expression" },
-      { text: "Abundance flows to me through my natural charisma and joy.", category: 'abundance' as const, focus: "Joy" }
-    ],
-    4: [
-      { text: "I build strong foundations, and my efforts create lasting abundance.", category: 'abundance' as const, focus: "Foundation" },
-      { text: "I trust the process, knowing my dedication brings peaceful rewards.", category: 'peace' as const, focus: "Trust" },
-      { text: "My practical wisdom transforms challenges into stepping stones.", category: 'transformation' as const, focus: "Wisdom" }
-    ],
-    5: [
-      { text: "I embrace freedom and change, attracting adventures that align with my soul.", category: 'transformation' as const, focus: "Freedom" },
-      { text: "My curiosity opens doors to abundant opportunities and experiences.", category: 'abundance' as const, focus: "Adventure" },
-      { text: "I flow with life's changes, finding peace in every transformation.", category: 'peace' as const, focus: "Flow" }
-    ],
-    6: [
-      { text: "I nurture myself and others with unconditional love and compassion.", category: 'love' as const, focus: "Nurturing" },
-      { text: "My heart is open, attracting harmonious and loving relationships.", category: 'love' as const, focus: "Harmony" },
-      { text: "I create beauty and peace in my home and in the world.", category: 'peace' as const, focus: "Beauty" }
-    ],
-    7: [
-      { text: "I trust my inner wisdom, and spiritual abundance flows to me naturally.", category: 'abundance' as const, focus: "Wisdom" },
-      { text: "I find peace in solitude, connecting deeply with my higher self.", category: 'peace' as const, focus: "Solitude" },
-      { text: "My quest for truth transforms my life and inspires others.", category: 'transformation' as const, focus: "Truth" }
-    ],
-    8: [
-      { text: "I am a powerful manifestor, and material abundance is my natural state.", category: 'abundance' as const, focus: "Manifestation" },
-      { text: "I use my power wisely, creating prosperity that benefits all.", category: 'power' as const, focus: "Prosperity" },
-      { text: "Success flows to me as I align my ambition with divine purpose.", category: 'transformation' as const, focus: "Success" }
-    ],
-    9: [
-      { text: "I am a compassionate healer, and love radiates from my very being.", category: 'love' as const, focus: "Healing" },
-      { text: "I release what no longer serves me, making space for abundant blessings.", category: 'transformation' as const, focus: "Release" },
-      { text: "My humanitarian spirit attracts soul-aligned opportunities to serve.", category: 'abundance' as const, focus: "Service" }
-    ],
-    11: [
-      { text: "I am a spiritual messenger, and my intuition guides me to divine abundance.", category: 'power' as const, focus: "Intuition" },
-      { text: "I trust my visions, knowing they transform lives including my own.", category: 'transformation' as const, focus: "Vision" },
-      { text: "My light inspires others, and love multiplies through my presence.", category: 'love' as const, focus: "Inspiration" }
-    ],
-    22: [
-      { text: "I am a master builder, manifesting abundance on a grand scale.", category: 'abundance' as const, focus: "Mastery" },
-      { text: "My practical vision transforms dreams into lasting reality.", category: 'transformation' as const, focus: "Vision" },
-      { text: "I create peace and prosperity for myself and the collective.", category: 'peace' as const, focus: "Legacy" }
-    ],
-    33: [
-      { text: "I am a master teacher, and unconditional love flows through everything I do.", category: 'love' as const, focus: "Teaching" },
-      { text: "My compassion transforms pain into healing for all beings.", category: 'transformation' as const, focus: "Compassion" },
-      { text: "I attract abundant opportunities to serve and uplift humanity.", category: 'abundance' as const, focus: "Service" }
-    ]
-  },
-  
-  // Sun Sign based
-  sunSign: {
-    Aries: [
-      { text: "I courageously pursue my passions, and success flows naturally to me.", category: 'power' as const, focus: "Courage" },
-      { text: "My bold energy attracts exciting opportunities and abundant experiences.", category: 'abundance' as const, focus: "Boldness" }
-    ],
-    Taurus: [
-      { text: "I am grounded in abundance, attracting wealth and beauty effortlessly.", category: 'abundance' as const, focus: "Stability" },
-      { text: "I create a peaceful sanctuary, and serenity surrounds me always.", category: 'peace' as const, focus: "Sanctuary" }
-    ],
-    Gemini: [
-      { text: "My curious mind attracts abundant knowledge and connections.", category: 'abundance' as const, focus: "Curiosity" },
-      { text: "I communicate with love, and my words create positive transformation.", category: 'love' as const, focus: "Communication" }
-    ],
-    Cancer: [
-      { text: "I nurture myself with love, and emotional abundance flows to me.", category: 'love' as const, focus: "Self-Love" },
-      { text: "I trust my intuition, finding peace in the wisdom of my emotions.", category: 'peace' as const, focus: "Intuition" }
-    ],
-    Leo: [
-      { text: "I shine my light boldly, and the universe celebrates my magnificence.", category: 'power' as const, focus: "Radiance" },
-      { text: "Love and admiration flow to me as I express my authentic self.", category: 'love' as const, focus: "Authenticity" }
-    ],
-    Virgo: [
-      { text: "I serve with love, and abundant blessings return to me multiplied.", category: 'abundance' as const, focus: "Service" },
-      { text: "I find peace in perfection unfolding naturally through my efforts.", category: 'peace' as const, focus: "Perfection" }
-    ],
-    Libra: [
-      { text: "I create harmony in all areas, attracting balanced and abundant relationships.", category: 'love' as const, focus: "Balance" },
-      { text: "Peace and beauty surround me as I align with grace and fairness.", category: 'peace' as const, focus: "Grace" }
-    ],
-    Scorpio: [
-      { text: "I transform powerfully, shedding old layers to reveal my abundant truth.", category: 'transformation' as const, focus: "Transformation" },
-      { text: "My depth attracts profound love and soul-level connections.", category: 'love' as const, focus: "Depth" }
-    ],
-    Sagittarius: [
-      { text: "I expand fearlessly, and abundance meets me on every adventure.", category: 'abundance' as const, focus: "Expansion" },
-      { text: "I trust life's journey, finding peace in the wisdom of experience.", category: 'peace' as const, focus: "Trust" }
-    ],
-    Capricorn: [
-      { text: "I build my empire with patience, attracting lasting wealth and success.", category: 'abundance' as const, focus: "Achievement" },
-      { text: "My discipline transforms dreams into tangible reality.", category: 'transformation' as const, focus: "Discipline" }
-    ],
-    Aquarius: [
-      { text: "My unique vision attracts abundant opportunities to innovate and lead.", category: 'power' as const, focus: "Innovation" },
-      { text: "I connect with my tribe, and collective love amplifies my purpose.", category: 'love' as const, focus: "Community" }
-    ],
-    Pisces: [
-      { text: "I flow with divine guidance, and spiritual abundance fills my life.", category: 'abundance' as const, focus: "Flow" },
-      { text: "Love is my natural state, and compassion transforms everything I touch.", category: 'love' as const, focus: "Compassion" }
-    ]
-  },
-  
-  // Human Design Type based
-  hdType: {
-    Generator: [
-      { text: "I respond to life with joy, and my energy attracts abundant satisfaction.", category: 'abundance' as const, focus: "Response" },
-      { text: "I trust my sacral wisdom, finding peace in work that lights me up.", category: 'peace' as const, focus: "Satisfaction" }
-    ],
-    "Manifesting Generator": [
-      { text: "I move quickly toward my desires, manifesting abundance at lightning speed.", category: 'abundance' as const, focus: "Speed" },
-      { text: "I honor my multi-passionate nature, transforming through diverse experiences.", category: 'transformation' as const, focus: "Versatility" }
-    ],
-    Manifestor: [
-      { text: "I initiate powerfully, and the universe supports my bold moves.", category: 'power' as const, focus: "Initiation" },
-      { text: "I inform with love, creating peace through clear communication.", category: 'peace' as const, focus: "Clarity" }
-    ],
-    Projector: [
-      { text: "I am recognized for my gifts, attracting abundant invitations to guide.", category: 'abundance' as const, focus: "Recognition" },
-      { text: "I rest deeply, finding peace in honoring my unique energy rhythm.", category: 'peace' as const, focus: "Rest" }
-    ],
-    Reflector: [
-      { text: "I am a wise mirror, and my clarity attracts abundant opportunities to reflect truth.", category: 'power' as const, focus: "Wisdom" },
-      { text: "I honor my lunar cycle, finding peace in patient decision-making.", category: 'peace' as const, focus: "Patience" }
-    ]
-  },
-  
-  // Enneagram Type based
-  enneagram: {
-    1: [
-      { text: "I release perfectionism, finding peace in progress and growth.", category: 'peace' as const, focus: "Progress" },
-      { text: "My integrity attracts abundant opportunities aligned with my values.", category: 'abundance' as const, focus: "Integrity" }
-    ],
-    2: [
-      { text: "I receive love as generously as I give it, creating abundant reciprocity.", category: 'love' as const, focus: "Receiving" },
-      { text: "My needs matter, and honoring them brings peace to my relationships.", category: 'peace' as const, focus: "Self-Care" }
-    ],
-    3: [
-      { text: "I am worthy beyond my achievements, attracting love for who I am.", category: 'love' as const, focus: "Worthiness" },
-      { text: "Success flows naturally when I align authenticity with ambition.", category: 'abundance' as const, focus: "Authenticity" }
-    ],
-    4: [
-      { text: "I am whole and complete, and this truth transforms my experience.", category: 'transformation' as const, focus: "Wholeness" },
-      { text: "My unique gifts attract abundant appreciation and recognition.", category: 'abundance' as const, focus: "Uniqueness" }
-    ],
-    5: [
-      { text: "I trust that I have enough energy, time, and resources for abundance.", category: 'abundance' as const, focus: "Sufficiency" },
-      { text: "I engage with life fully, finding peace in connection and presence.", category: 'peace' as const, focus: "Engagement" }
-    ],
-    6: [
-      { text: "I trust myself and life, releasing fear to welcome abundant peace.", category: 'peace' as const, focus: "Trust" },
-      { text: "My courage transforms anxiety into confident action and growth.", category: 'transformation' as const, focus: "Courage" }
-    ],
-    7: [
-      { text: "I find joy in the present moment, where true abundance already exists.", category: 'abundance' as const, focus: "Presence" },
-      { text: "I embrace all emotions, finding peace in the fullness of experience.", category: 'peace' as const, focus: "Wholeness" }
-    ],
-    8: [
-      { text: "I use my power to protect and empower, attracting love and loyalty.", category: 'love' as const, focus: "Protection" },
-      { text: "My vulnerability is strength, transforming relationships through openness.", category: 'transformation' as const, focus: "Vulnerability" }
-    ],
-    9: [
-      { text: "My voice matters, and speaking my truth attracts abundant respect.", category: 'power' as const, focus: "Voice" },
-      { text: "I honor my priorities, finding peace in asserting my needs.", category: 'peace' as const, focus: "Assertion" }
-    ]
-  }
+// These are intentional reflection statements, not predictions, guarantees,
+// diagnoses, or claims that a symbolic number causes personality or outcomes.
+const LIFE_PATH_AFFIRMATIONS: Record<number, Affirmation[]> = {
+  1: [
+    { text: "I can take one clear first step without needing perfect certainty.", category: 'power', focus: "Initiative" },
+    { text: "I can lead by making my reasoning visible and leaving room for other people.", category: 'power', focus: "Leadership" },
+    { text: "I can protect my independence without treating every situation as a solo mission.", category: 'peace', focus: "Independence" },
+  ],
+  2: [
+    { text: "I can listen carefully without abandoning my own position.", category: 'peace', focus: "Cooperation" },
+    { text: "I can ask for clarity instead of guessing what another person feels.", category: 'love', focus: "Connection" },
+    { text: "I can pursue harmony without avoiding a necessary disagreement.", category: 'power', focus: "Boundaries" },
+  ],
+  3: [
+    { text: "I can express one useful idea clearly and let the response teach me something.", category: 'transformation', focus: "Expression" },
+    { text: "I can make something concrete instead of waiting for inspiration to feel complete.", category: 'power', focus: "Creativity" },
+    { text: "I can enjoy attention without depending on it to decide what my work is worth.", category: 'peace', focus: "Self-Expression" },
+  ],
+  4: [
+    { text: "I can strengthen one foundation by finishing the next practical step.", category: 'power', focus: "Structure" },
+    { text: "I can use discipline as a tool without turning it into rigidity.", category: 'peace', focus: "Flexibility" },
+    { text: "I can measure progress by what is actually completed, not by how controlled the process feels.", category: 'abundance', focus: "Progress" },
+  ],
+  5: [
+    { text: "I can test one change without treating novelty as proof that it is better.", category: 'transformation', focus: "Change" },
+    { text: "I can keep freedom and responsibility in the same decision.", category: 'power', focus: "Freedom" },
+    { text: "I can notice restlessness before deciding what truly needs to move.", category: 'peace', focus: "Adaptability" },
+  ],
+  6: [
+    { text: "I can care for other people without taking over responsibilities that belong to them.", category: 'love', focus: "Care" },
+    { text: "I can make one practical improvement where I actually have influence.", category: 'power', focus: "Responsibility" },
+    { text: "I can include my own capacity when deciding what support I can give.", category: 'peace', focus: "Boundaries" },
+  ],
+  7: [
+    { text: "I can investigate one question deeply enough to improve a real decision.", category: 'power', focus: "Inquiry" },
+    { text: "I can value solitude without using it to avoid useful feedback.", category: 'peace', focus: "Reflection" },
+    { text: "I can separate intuition, assumption, and evidence before acting.", category: 'transformation', focus: "Discernment" },
+  ],
+  8: [
+    { text: "I can use resources and influence deliberately instead of reacting to pressure.", category: 'power', focus: "Execution" },
+    { text: "I can review the cost, leverage, and downside before increasing a commitment.", category: 'abundance', focus: "Resources" },
+    { text: "I can pursue results without measuring my worth by the result.", category: 'peace', focus: "Achievement" },
+  ],
+  9: [
+    { text: "I can finish what is genuinely complete without forcing an ending.", category: 'transformation', focus: "Completion" },
+    { text: "I can contribute where it is useful without depleting myself to prove I care.", category: 'love', focus: "Contribution" },
+    { text: "I can keep perspective by asking what this experience actually taught me.", category: 'peace', focus: "Perspective" },
+  ],
+  11: [
+    { text: "I can record a strong impression and test it against evidence before treating it as guidance.", category: 'power', focus: "Discernment" },
+    { text: "I can turn inspiration into one concrete experiment.", category: 'transformation', focus: "Inspiration" },
+    { text: "I can stay open to meaning without confusing symbolism with certainty.", category: 'peace', focus: "Perspective" },
+  ],
+  22: [
+    { text: "I can reduce a large vision to the next buildable step.", category: 'power', focus: "Implementation" },
+    { text: "I can test the structure before scaling the ambition.", category: 'abundance', focus: "Building" },
+    { text: "I can value durable progress more than impressive scope.", category: 'peace', focus: "Scale" },
+  ],
+  33: [
+    { text: "I can offer care without assuming I am responsible for everyone else's healing.", category: 'love', focus: "Service" },
+    { text: "I can teach from what I have tested rather than from certainty I have not earned.", category: 'power', focus: "Teaching" },
+    { text: "I can practice compassion while keeping clear limits.", category: 'peace', focus: "Compassion" },
+  ],
 };
 
-// Universal affirmations for days when specific data isn't available
 const UNIVERSAL_AFFIRMATIONS: Affirmation[] = [
-  { text: "I am worthy of infinite abundance, and prosperity flows to me from expected and unexpected sources.", category: 'abundance', focus: "Worthiness" },
-  { text: "Peace is my natural state, and I return to calm with every breath.", category: 'peace', focus: "Calm" },
-  { text: "I am love, I give love, I receive love - love is the essence of who I am.", category: 'love', focus: "Essence" },
-  { text: "I transform with grace, releasing what no longer serves my highest good.", category: 'transformation', focus: "Grace" },
-  { text: "I step into my power today, trusting in my ability to create my reality.", category: 'power', focus: "Creation" },
-  { text: "The universe conspires in my favor, aligning me with perfect opportunities.", category: 'abundance', focus: "Alignment" },
-  { text: "I choose peace over worry, knowing that everything unfolds in divine timing.", category: 'peace', focus: "Timing" },
-  { text: "My heart is open to give and receive love in all its beautiful forms.", category: 'love', focus: "Openness" },
-  { text: "I embrace change as a catalyst for positive transformation in my life.", category: 'transformation', focus: "Change" },
-  { text: "I am divinely guided, protected, and deeply loved by the universe.", category: 'love', focus: "Divine Love" }
+  { text: "I can choose one useful action and judge it by what actually happens.", category: 'power', focus: "Agency" },
+  { text: "I can slow down enough to separate facts, assumptions, and preferences.", category: 'peace', focus: "Clarity" },
+  { text: "I can communicate care without pretending to know what another person needs.", category: 'love', focus: "Connection" },
+  { text: "I can change my approach when new evidence gives me a good reason.", category: 'transformation', focus: "Adaptation" },
+  { text: "I can define abundance in practical terms I can observe, build, and maintain.", category: 'abundance', focus: "Resources" },
 ];
 
-// Deterministic seeded shuffle for consistent daily affirmations
 function seededShuffle<T>(array: T[], seed: number): T[] {
   const shuffled = [...array];
-  let currentSeed = seed;
-  
-  // Simple seeded random number generator (Mulberry32)
+  let currentSeed = seed >>> 0;
+
   const seededRandom = () => {
-    currentSeed = (currentSeed * 1664525 + 1013904223) % 4294967296;
+    currentSeed = (currentSeed * 1664525 + 1013904223) >>> 0;
     return currentSeed / 4294967296;
   };
-  
-  // Fisher-Yates shuffle with seeded random
-  for (let i = shuffled.length - 1; i > 0; i--) {
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(seededRandom() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  
+
   return shuffled;
 }
 
-// Generate seed from profile ID and date for deterministic selection
-function generateSeed(profileId: string, date: string = new Date().toISOString().split('T')[0]): number {
-  const str = `${profileId}-${date}`;
+function resolveAffirmationDate(profile: Profile, date?: string): string {
+  if (date) {
+    parseDateOnly(date);
+    return date;
+  }
+
+  const timezone =
+    typeof (profile as any)?.timezone === 'string' && (profile as any).timezone.trim()
+      ? (profile as any).timezone.trim()
+      : null;
+
+  if (!timezone) {
+    throw new RangeError('Daily affirmation date or profile timezone is required');
+  }
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date());
+  } catch {
+    throw new RangeError(`Invalid daily affirmation timezone: ${timezone}`);
+  }
+
+  return formatInTimeZone(new Date(), timezone, 'yyyy-MM-dd');
+}
+
+function generateSeed(profileId: unknown, date: string): number {
+  const stableId =
+    typeof profileId === 'string' || typeof profileId === 'number'
+      ? String(profileId)
+      : 'anonymous';
+
+  const str = `${stableId}-${date}`;
   let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+  for (let i = 0; i < str.length; i += 1) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
   }
   return Math.abs(hash);
 }
 
-export function generateDailyAffirmations(profile: Profile, count: number = 3, date?: string): Affirmation[] {
-  const affirmations: Affirmation[] = [];
-  const sources: Affirmation[][] = [];
+export function generateDailyAffirmations(
+  profile: Profile,
+  count: number = 3,
+  date?: string,
+): Affirmation[] {
+  if (!Number.isInteger(count) || count < 1 || count > 10) {
+    throw new RangeError('Daily affirmation count must be an integer from 1 to 10');
+  }
 
-  // Life Path is recomputed from the canonical deterministic engine instead of
-  // trusting a stored legacy numerology payload. Other profile labels remain
-  // outside this legacy daily-affirmation personalization path.
+  const resolvedDate = resolveAffirmationDate(profile, date);
+  const seed = generateSeed((profile as any).id, resolvedDate);
+
+  let specific: Affirmation[] = [];
   try {
     const lifePath = calcLifePath(profile.birthDate);
-    const templates = AFFIRMATION_TEMPLATES.lifePath[
-      lifePath as keyof typeof AFFIRMATION_TEMPLATES.lifePath
-    ];
-    if (templates) sources.push(templates);
+    specific = LIFE_PATH_AFFIRMATIONS[lifePath] ?? [];
   } catch {
-    // Universal affirmations below remain available when birth data is invalid.
+    // Invalid or missing birth data does not create substitute symbolic identity.
   }
 
-  const allAffirmations = sources.flat();
-
-  // Generate deterministic seed based on profile ID and date
-  const seed = generateSeed(profile.id, date);
-  
-  // If we have profile-specific affirmations, select deterministically
-  if (allAffirmations.length > 0) {
-    const shuffled = seededShuffle(allAffirmations, seed);
-    affirmations.push(...shuffled.slice(0, count));
-  }
-  
-  // Fill remaining with universal affirmations if needed
-  while (affirmations.length < count) {
-    const remaining = count - affirmations.length;
-    const universal = seededShuffle(UNIVERSAL_AFFIRMATIONS, seed + affirmations.length);
-    affirmations.push(...universal.slice(0, remaining));
-  }
-  
-  return affirmations.slice(0, count);
+  const pool = [...specific, ...UNIVERSAL_AFFIRMATIONS];
+  return seededShuffle(pool, seed).slice(0, count);
 }
