@@ -1,3 +1,4 @@
+import { circularDegreesDelta } from "./angular-math";
 import { calculateAstrology } from "./astrology";
 import { fetchHorizonsReference, type SupportedHorizonsBody } from "./jpl-horizons-reference";
 
@@ -281,11 +282,6 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
   },
 ];
 
-function circularDelta(left: number, right: number): number {
-  const raw = Math.abs(left - right) % 360;
-  return Math.min(raw, 360 - raw);
-}
-
 function maximum(values: number[]): number | null {
   return values.length > 0 ? Math.max(...values) : null;
 }
@@ -327,7 +323,7 @@ export async function runLiveEphemerisEvidenceMatrix(
         referenceEngine: reference.engine,
         referenceLongitude: reference.longitude,
         referenceSign: reference.sign,
-        longitudeDeltaDegrees: circularDelta(candidate.longitude, reference.longitude),
+        longitudeDeltaDegrees: circularDegreesDelta(candidate.longitude, reference.longitude),
         signAgreement: candidate.sign === reference.sign,
       });
     }
