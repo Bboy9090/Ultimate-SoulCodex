@@ -7,6 +7,22 @@ const SIGNS = [
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ] as const;
 
+const placementEvidence = {
+  source: "independent ephemeris comparison",
+  engine: "clarity-test-reference@1",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+};
+
+const hdTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 function verifiedChart() {
   const houses = Array.from({ length: 12 }, (_, index) => ({
     house: index + 1,
@@ -15,16 +31,17 @@ function verifiedChart() {
     degree: 0,
     verificationStatus: "verified",
     policyId: "ASTRO-EQUAL-HOUSE-v1",
+    evidenceArtifactId: "equal-house-test-artifact",
   }));
   return {
     verification: { policyId: "ASTRO-LONGITUDE-v1 + ASTRO-EQUAL-HOUSE-v1" },
     houseSystem: "equal",
     houses,
-    sun: { sign: "Virgo", verificationStatus: "verified" },
-    moon: { sign: "Cancer", verificationStatus: "verified" },
-    rising: { sign: "Scorpio", verificationStatus: "verified" },
+    sun: { sign: "Virgo", verificationStatus: "verified", evidence: placementEvidence },
+    moon: { sign: "Cancer", verificationStatus: "verified", evidence: placementEvidence },
+    rising: { sign: "Scorpio", verificationStatus: "verified", evidence: placementEvidence },
     planets: {
-      sun: { sign: "Virgo", verificationStatus: "verified" },
+      sun: { sign: "Virgo", verificationStatus: "verified", evidence: placementEvidence },
     },
     planetaryHouses: { sun: 11 },
     midheaven: {
@@ -37,6 +54,7 @@ function verifiedChart() {
       house: 3,
       mode: "mean",
       policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "astro-mean-node-v1-test-artifact",
       verificationStatus: "verified",
     },
     southNode: {
@@ -44,6 +62,7 @@ function verifiedChart() {
       house: 9,
       mode: "mean",
       policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "astro-mean-node-v1-test-artifact",
       verificationStatus: "verified",
     },
     chiron: {
@@ -84,6 +103,7 @@ test("complete policy-bearing evidence reaches the clarity inspector", () => {
       strategy: "Wait a lunar cycle",
       authority: "Lunar Authority",
       profile: "2/5",
+      ...hdTrust,
     },
   });
 
@@ -93,6 +113,19 @@ test("complete policy-bearing evidence reaches the clarity inspector", () => {
   ]) {
     assert.equal(model.signals.some((signal) => signal.id === id), true, id);
   }
+});
+
+test("complete fields without the Human Design trust receipt are never labeled verified", () => {
+  const model = buildClarityReadingModel({
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  });
+  assert.equal(model.signals.some((signal) => signal.id.startsWith("hd-")), false);
 });
 
 test("an incomplete Human Design object is never labeled verified", () => {
