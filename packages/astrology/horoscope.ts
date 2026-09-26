@@ -305,12 +305,15 @@ const horoscopeCache = new Map<string, DailyHoroscope>();
 /** Get date string in user's timezone for cache key (production checklist: timezone + date) */
 function getDateKeyInTimezone(now: Date, timezone: string | null | undefined): string {
   if (!timezone) return now.toISOString().split('T')[0];
+
   try {
-    const zoned = toZonedTime(now, timezone);
-    return format(zoned, 'yyyy-MM-dd');
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(now);
   } catch {
-    return now.toISOString().split('T')[0];
+    throw new RangeError(`Invalid horoscope timezone: ${timezone}`);
   }
+
+  const zoned = toZonedTime(now, timezone);
+  return format(zoned, 'yyyy-MM-dd');
 }
 
 export async function generateDailyHoroscope(profile: any): Promise<DailyHoroscope> {
@@ -318,10 +321,18 @@ export async function generateDailyHoroscope(profile: any): Promise<DailyHorosco
   const tz = profile.timezone || 'UTC';
   const dateKey = getDateKeyInTimezone(now, tz);
   const profileUpdatedAt = profile.updatedAt ? String(profile.updatedAt) : '';
-  const cacheKey = `${profile.id}+${dateKey}+${tz}+${profileUpdatedAt}`;
+  const stableProfileId =
+    typeof profile.id === 'string' || typeof profile.id === 'number'
+      ? String(profile.id)
+      : '';
+  const cacheKey = stableProfileId
+    ? `${stableProfileId}+${dateKey}+${tz}+${profileUpdatedAt}`
+    : null;
 
-  const cached = horoscopeCache.get(cacheKey);
-  if (cached) return cached;
+  if (cacheKey) {
+    const cached = horoscopeCache.get(cacheKey);
+    if (cached) return cached;
+  }
 
   const planets = calculateCurrentPlanets(now);
   const alignments = calculateAlignments(planets);
@@ -350,6 +361,8 @@ export async function generateDailyHoroscope(profile: any): Promise<DailyHorosco
     personalDayNumber,
   };
 
-  horoscopeCache.set(cacheKey, result);
+  if (cacheKey) {
+    horoscopeCache.set(cacheKey, result);
+  }
   return result;
 }
