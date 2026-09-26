@@ -42,6 +42,7 @@ node --import tsx --test \
   tests/technical-appendix-truth.test.ts \
   tests/systems-details-registry-ui.test.ts \
   tests/evidence-drawer-language.test.ts \
+  tests/evidence-status-labels.test.ts \
   tests/codex-header-evidence-language.test.ts \
   tests/codex-header-generated-at.test.ts \
   tests/release-identity.test.ts \
