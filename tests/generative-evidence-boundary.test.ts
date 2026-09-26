@@ -5,11 +5,21 @@ import { readFileSync } from "node:fs";
 const openaiService = readFileSync("server/services/openai-service.ts", "utf8");
 const activeRoutes = readFileSync("server/routes.ts", "utf8");
 
-test("generated biography and guidance consume verified astrology only", () => {
+test("persisted biography and guidance consume only governed verified astrology", () => {
   assert.match(openaiService, /extractVerifiedAstrology/);
   assert.match(openaiService, /Do not infer or interpret these placements/);
-  assert.match(openaiService, /Do not invent or infer unresolved astrology/);
-  assert.match(openaiService, /Unresolved astrology is intentionally omitted rather than turned into a polished guess/);
+  assert.match(
+    openaiService,
+    /Unresolved astrology is intentionally omitted rather than turned into a polished guess/,
+  );
+  assert.match(
+    openaiService,
+    /Persisted identity text must be reproducible from governed inputs/,
+  );
+  assert.match(
+    openaiService,
+    /this function never\s*\n?\s*\*?\s*calls a generative model|this function never\s+calls a generative model/,
+  );
 });
 
 test("active profile creation passes verification-gated astrology into stable prose only", () => {
