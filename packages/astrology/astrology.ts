@@ -1,5 +1,6 @@
 import {
   parseDateOnly,
+  resolveCivilTimeStrict,
   type BirthData,
   type VerificationState,
   type PlacementEvidence,
@@ -14,7 +15,6 @@ import {
 } from "./interpretations";
 import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = Astronomy;
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 
 interface PlanetData {
@@ -159,11 +159,19 @@ function createBirthTime(birthData: BirthData): Date {
     hasCoordinates,
   );
 
-  const instant = fromZonedTime(localTimeString, resolvedTimezone);
-  if (Number.isNaN(instant.getTime())) {
-    throw new RangeError("Birth civil time could not be resolved");
+  const resolution = resolveCivilTimeStrict(
+    `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
+    resolvedTimezone,
+  );
+
+  if (resolution.status !== "valid" || !resolution.utc) {
+    throw new RangeError(
+      `Birth civil time is ${resolution.status}: ${resolution.reason ?? "unresolved"}`,
+    );
   }
-  return instant;
+
+  return resolution.utc;
 }
 
 function isValidIanaTimezone(timezone: string): boolean {
