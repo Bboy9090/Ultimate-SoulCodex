@@ -146,3 +146,12 @@ test("archived workflow names cannot remain release requirements", () => {
     );
   }
 });
+
+
+test("release trust contract requires a high-severity runtime dependency audit", () => {
+  assert.ok(
+    V4_RELEASE_MANIFEST.requiredTrustRules.includes(
+      "runtime-dependencies-pass-high-severity-audit",
+    ),
+  );
+});
