@@ -27,6 +27,7 @@ node --import tsx --test \
   tests/astrology-evidence-matrix.test.ts \
   tests/astrology-tolerance-policy.test.ts \
   tests/astrology-sign-boundary-verification.test.ts \
+  tests/planetary-boundary-integrity.test.ts \
   tests/aspect-engine.test.ts \
   tests/astrology-production-verification.test.ts \
   tests/strict-civil-time.test.ts \
@@ -40,6 +41,7 @@ node --import tsx --test \
   tests/bobby-big-three-golden.test.ts \
   tests/human-design-trust.test.ts \
   tests/human-design-gate-boundaries.test.ts \
+  packages/astrology/__tests__/human-design-phase3.test.ts \
   tests/profile-verification-reconciliation.test.ts \
   tests/active-profile-contract.test.ts \
   tests/ui-backend-consistency-contract.test.ts \
