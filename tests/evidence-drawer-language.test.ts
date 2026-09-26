@@ -18,3 +18,13 @@ test("evidence drawer frames confidence as source support", () => {
   assert.doesNotMatch(source, /Low Confidence/);
   assert.doesNotMatch(source, /◆ Confidence:/);
 });
+
+
+test("evidence drawer exposes an accessible toggle relationship", () => {
+  assert.match(source, /type="button"/);
+  assert.match(source, /aria-expanded=\{isOpen\}/);
+  assert.match(source, /aria-controls=\{drawerId\}/);
+  assert.match(source, /id=\{drawerId\}/);
+  assert.match(source, /role="region"/);
+  assert.match(source, /aria-label="Reading evidence and methods"/);
+});
