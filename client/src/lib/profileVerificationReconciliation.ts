@@ -6,6 +6,7 @@ import {
   tropicalSignFromLongitude,
   type OfflineCodexProfile,
   type TropicalZodiacSign,
+  type VerifiedAstrologyForSynthesis,
 } from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
 import {
