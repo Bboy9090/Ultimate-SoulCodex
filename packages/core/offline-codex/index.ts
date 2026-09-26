@@ -402,7 +402,7 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
     }] : []),
     ...(soulUrge && soulUrgeNumber !== null ? [{
       evidence: makeEvidence({ id: "offline.numerology.soul-urge", system: "numerology", field: "soulUrge", value: soulUrgeNumber, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from vowels in the supplied name."] }),
-      label: "Soul Urge " + soulUrgeNumber + " " + (NUMBER_LABELS[numerology.soulUrge] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
+      label: "Soul Urge " + soulUrgeNumber + " " + (NUMBER_LABELS[soulUrgeNumber] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
       facets: {
         hiddenNeed: "Soul Urge " + soulUrgeNumber + " adds " + soulUrge.drive + " as a symbolic inner-motivation theme.",
         protectiveFunction: "Protection may become organized around preserving room for " + soulUrge.drive + ".",
