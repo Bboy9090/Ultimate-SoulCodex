@@ -152,6 +152,63 @@ function validSign(value: unknown): value is keyof typeof SIGN_META {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(SIGN_META, value);
 }
 
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasVerifiedPlacementEvidence(placement: AnyRecord | undefined): boolean {
+  if (placement?.verificationStatus !== "verified" || !validSign(placement?.sign)) {
+    return false;
+  }
+  const evidence = placement?.provenance ?? placement?.evidence;
+  return Boolean(
+    nonEmptyString(evidence?.source) &&
+    nonEmptyString(evidence?.engine) &&
+    nonEmptyString(evidence?.calculatedAt),
+  );
+}
+
+function hasGovernedDerivedPoint(
+  point: AnyRecord | undefined,
+  policyId: string,
+): boolean {
+  return Boolean(
+    point?.verificationStatus === "verified" &&
+    validSign(point?.sign) &&
+    point?.policyId === policyId &&
+    nonEmptyString(point?.evidenceArtifactId),
+  );
+}
+
+function hasGovernedHouse(row: AnyRecord | undefined): boolean {
+  return Boolean(
+    row?.verificationStatus === "verified" &&
+    validHouse(row?.house) !== null &&
+    validSign(row?.sign) &&
+    row?.policyId === "ASTRO-EQUAL-HOUSE-v1" &&
+    nonEmptyString(row?.evidenceArtifactId),
+  );
+}
+
+function hasGovernedAspect(row: AnyRecord | undefined): boolean {
+  return Boolean(
+    typeof row?.planet1 === "string" &&
+    typeof row?.planet2 === "string" &&
+    typeof row?.aspect === "string" &&
+    finiteNumber(row?.orb) !== null &&
+    row?.policyId === "ASTRO-ASPECT-MAJOR-v1",
+  );
+}
+
+function hasVerifiedHumanDesignTrust(hd: AnyRecord): boolean {
+  return Boolean(
+    hd?.status === "verified" &&
+    nonEmptyString(hd?.verificationReceiptId) &&
+    nonEmptyString(hd?.independentSource) &&
+    nonEmptyString(hd?.verifiedAt),
+  );
+}
+
 function finiteNumber(value: unknown): number | null {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
@@ -289,7 +346,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const placements: UltimateCodexPlacement[] = [];
   for (const key of PLANETS) {
     const placement = astrology?.planets?.[key] as AnyRecord | undefined;
-    if (placement?.verificationStatus !== "verified" || !validSign(placement.sign)) continue;
+    if (!hasVerifiedPlacementEvidence(placement)) continue;
     const house = validHouse(astrology?.planetaryHouses?.[key]);
     placements.push({
       key,
@@ -305,7 +362,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
 
   const houseCusps = Array.isArray(astrology?.houses)
     ? astrology.houses
-        .filter((row: AnyRecord) => row?.verificationStatus === "verified" && validHouse(row?.house) && validSign(row?.sign))
+        .filter((row: AnyRecord) => hasGovernedHouse(row))
         .map((row: AnyRecord) => ({
           house: Number(row.house),
           sign: String(row.sign),
@@ -324,7 +381,15 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ["chiron", "Chiron", astrology?.chiron, validHouse(astrology?.chiron?.house)],
   ] as const;
   for (const [key, label, point, house] of pointSpecs) {
-    if (point?.verificationStatus !== "verified" || !validSign(point?.sign)) continue;
+    const qualified =
+      key === "rising"
+        ? hasVerifiedPlacementEvidence(point)
+        : key === "midheaven"
+          ? hasGovernedDerivedPoint(point, "ASTRO-EQUAL-HOUSE-v1")
+          : key === "northNode" || key === "southNode"
+            ? hasGovernedDerivedPoint(point, "ASTRO-MEAN-NODE-v1")
+            : hasGovernedDerivedPoint(point, "ASTRO-CHIRON-v1");
+    if (!qualified) continue;
     supportingPoints.push({
       key,
       label,
@@ -337,12 +402,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
 
   const aspects = Array.isArray(astrology?.aspects)
     ? astrology.aspects
-        .filter((row: AnyRecord) =>
-          typeof row?.planet1 === "string" &&
-          typeof row?.planet2 === "string" &&
-          typeof row?.aspect === "string" &&
-          finiteNumber(row?.orb) !== null
-        )
+        .filter((row: AnyRecord) => hasGovernedAspect(row))
         .map((row: AnyRecord) => ({
           planet1: String(row.planet1),
           planet2: String(row.planet2),
@@ -372,7 +432,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
   const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
 
-  const verifiedHd = hd?.status === "verified";
+  const verifiedHd = hasVerifiedHumanDesignTrust(hd);
   const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
   const hdStrategy = verifiedHd && typeof hd.strategy === "string" ? hd.strategy.trim() : null;
   const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : null;
