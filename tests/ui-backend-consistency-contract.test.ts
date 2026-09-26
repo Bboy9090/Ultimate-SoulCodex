@@ -408,6 +408,12 @@ test("UI/Backend Consistency Contract: Galactic Code labels preserve symbolic se
   assert.match(cardSource, /Data coverage:/);
   assert.match(cardSource, /Primary Synthesis Axis/);
   assert.match(cardSource, /Secondary Synthesis Axis/);
+  assert.match(cardSource, /Supporting traits/);
   assert.match(cardSource, /Deterministic fingerprint key/);
-  assert.doesNotMatch(cardSource, />Primary Function<|>Secondary Function</);
+  assert.doesNotMatch(cardSource, />Primary Function<|>Secondary Function|confidence badge/i);
+  assert.doesNotMatch(
+    cardSource,
+    /behavioralTraitCount\s*>=\s*\d+[\s\S]*text-emerald/,
+    "supporting assessment quantity must not be visualized as stronger stable-identity evidence",
+  );
 });
