@@ -3758,7 +3758,7 @@ async function generateTodayCardAI(
   const codename = sanitizeForAI(base.codename);
   const themeList = (codexSynthesis?.topThemes ?? horoscopeData?.topThemes ?? [])
     .slice(0, 4).map((t: any) => t.tag ?? t).filter(Boolean);
-  const themes   = sanitizeForAI(themeList.length ? themeList.join(", ") : (base.topTheme ?? "precision"));
+  const themes   = sanitizeForAI(themeList.length ? themeList.join(", ") : (base.topTheme ?? ""));
   const decide   = sanitizeForAI(profile?.userInputs?.decisionStyle ?? profile?.signals?.decisionStyle ?? "");
   const pressure = sanitizeForAI(profile?.userInputs?.pressureStyle ?? profile?.signals?.pressureStyle ?? "");
   const transit  = sanitizeForAI(horoscopeData?.personalTransits?.[0]?.description ?? "");
@@ -3771,7 +3771,7 @@ Your job is to expose ${codename}'s behavioral pattern today with surgical accur
 ${historyPrompt}
 ## 🧬 IDENTITY DATA
 - IDENTITY: ${codename}
-- TOP THEMES: ${themes}
+- TOP THEMES: ${themes || "Unavailable — do not infer"}
 - PERSONAL DAY: ${dayNum == null ? "Unavailable — do not infer" : `${dayNum} — ${archDesc}`}
 - MOON PHASE: ${moon === "Unavailable" ? "Unavailable — do not infer" : moon}
 - DECISION STYLE: ${decide || "Omit"}
