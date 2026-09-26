@@ -81,3 +81,25 @@ export const CONFIDENCE_MULTIPLIERS: Record<ConfidenceLabel, number> = {
 
 export const UNVERIFIED_IGNORE_THRESHOLD = 3;
 
+
+
+/**
+ * Timeline phase scoring has rules for the 1-9 root cycle. Canonical
+ * numerology may preserve master Personal Years 11, 22, and 33; for phase
+ * scoring only, Soul Codex uses their declared root-cycle counterparts.
+ * The displayed/recorded Personal Year remains the master number.
+ */
+export function timelinePersonalYearRuleKey(
+  personalYear: number,
+): 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 {
+  if (!Number.isInteger(personalYear)) {
+    throw new RangeError("Timeline Personal Year must be an integer");
+  }
+  if (personalYear >= 1 && personalYear <= 9) {
+    return personalYear as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  }
+  if (personalYear === 11) return 2;
+  if (personalYear === 22) return 4;
+  if (personalYear === 33) return 6;
+  throw new RangeError("Timeline Personal Year must be 1-9, 11, 22, or 33");
+}
