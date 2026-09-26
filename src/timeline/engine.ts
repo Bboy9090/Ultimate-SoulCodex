@@ -28,6 +28,26 @@ const themePhaseBoostMap: Record<string, { phase: TimelinePhase; weight: number 
   legacy: { phase: "Legacy", weight: 3 },
 };
 
+export function timelinePhaseCycleYear(personalYear: number): 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 {
+  if (!Number.isInteger(personalYear)) {
+    throw new RangeError("Timeline Personal Year must be an integer");
+  }
+
+  if (personalYear >= 1 && personalYear <= 9) {
+    return personalYear as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  }
+
+  const masterRoot: Record<number, 2 | 4 | 6> = {
+    11: 2,
+    22: 4,
+    33: 6,
+  };
+  const root = masterRoot[personalYear];
+  if (root) return root;
+
+  throw new RangeError("Timeline Personal Year must be 1-9, 11, 22, or 33");
+}
+
 export function resolveTimeline(input: TimelineInput): TimelinePhase {
   const scores: Record<TimelinePhase, number> = {
     Ignition: 0,
@@ -40,8 +60,8 @@ export function resolveTimeline(input: TimelineInput): TimelinePhase {
     Legacy: 0,
   };
 
-  const normalizedYear = ((input.personalYear - 1) % 9) + 1;
-  const basePhase = yearPhaseMap[normalizedYear] ?? "Integration";
+  const phaseCycleYear = timelinePhaseCycleYear(input.personalYear);
+  const basePhase = yearPhaseMap[phaseCycleYear];
   scores[basePhase] += 5;
 
   for (const theme of input.themes) {
@@ -62,7 +82,10 @@ export function resolveTimeline(input: TimelineInput): TimelinePhase {
  * Convenience overload that accepts a SoulProfile directly.
  */
 export function resolveTimelineFromProfile(profile: SoulProfile): TimelinePhase {
-  const personalYear = profile.numerology?.personalYear ?? 1;
+  const personalYear = profile.numerology?.personalYear;
+  if (personalYear === undefined || personalYear === null) {
+    throw new Error("timeline_personal_year_required");
+  }
   const themes = profile.themes?.topThemes ?? [];
   return resolveTimeline({ personalYear, themes });
 }
