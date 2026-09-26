@@ -108,7 +108,7 @@ function parseBirthClock(value: unknown): { hours: number; minutes: number } {
     throw new RangeError("Invalid birthTime format; expected HH:mm");
   }
 
-  const match = /^(\\d{2}):(\\d{2})$/.exec(value.trim());
+  const match = /^(\d{2}):(\d{2})$/.exec(value.trim());
   if (!match) {
     throw new RangeError("Invalid birthTime format; expected HH:mm");
   }
