@@ -135,15 +135,19 @@ export function buildTodayCard(
   const confidence = profile?.confidence ?? profile?.meta?.confidence;
   const confidenceLabel = confidence?.label ?? confidence?.badge ?? "Unverified";
 
-  const codename = codexSynthesis?.codename ?? profile?.archetype?.name ?? "The Quiet Builder";
-  const topTheme = codexSynthesis?.topThemes?.[0]?.tag ?? "precision";
+  const codename = codexSynthesis?.codename ?? profile?.archetype?.name ?? "Identity unresolved";
+  const topTheme =
+    typeof codexSynthesis?.topThemes?.[0]?.tag === "string" &&
+    codexSynthesis.topThemes[0].tag.trim()
+      ? codexSynthesis.topThemes[0].tag.trim()
+      : undefined;
 
   const topTransit = horoscopeData?.personalTransits?.[0];
   let focus =
     dayNum === null
       ? `Personal Day unavailable — I use only the evidence actually present today. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I keep the reflection general instead of inventing a cycle."}`
-      : `Personal Day ${dayNum} — a ${dayLabel.toLowerCase()} phase for ${
-          topTheme.replace(/_/g, " ")
+      : `Personal Day ${dayNum} — a ${dayLabel.toLowerCase()} reflection${
+          topTheme ? ` with emphasis on ${topTheme.replace(/_/g, " ")}` : ""
         }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I use this as a reflection prompt, not a prediction."}`;
 
   if (focus.length > 160) focus = focus.slice(0, 157) + "…";
