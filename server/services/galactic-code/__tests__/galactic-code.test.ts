@@ -690,6 +690,56 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     );
   });
 
+  await t.test('bogus governed values cannot satisfy the 2-of-3 system threshold', () => {
+    const invalidAstrology: GalacticCodeInput = {
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        sun: 'NotARealSign',
+        moon: undefined,
+        rising: undefined,
+        fieldEvidence: { sun: 'verified' },
+        coverage: 'complete',
+      },
+      humanDesign: { coverage: 'missing' } as any,
+      numerology: {
+        evidenceState: 'deterministic',
+        lifePath: 99,
+        coverage: 'complete',
+      },
+      behavior: { evidenceState: 'assessed', traits: ['analytical'] },
+    };
+
+    assert.throws(
+      () => generateGalacticCode(invalidAstrology, TRUSTED),
+      /requires at least 2 of 3 systems/,
+    );
+
+    const invalidHumanDesign: GalacticCodeInput = {
+      ...testInput,
+      astrology: { coverage: 'missing' } as any,
+      humanDesign: {
+        evidenceState: 'verified',
+        type: 'Generator',
+        strategy: 'To Wait for Invitation',
+        authority: 'Lunar Authority',
+        profile: '9/9',
+        coverage: 'complete',
+      },
+      numerology: {
+        evidenceState: 'deterministic',
+        lifePath: 7,
+        coverage: 'partial',
+      },
+      behavior: { evidenceState: 'assessed', traits: ['analytical'] },
+    };
+
+    assert.throws(
+      () => generateGalacticCode(invalidHumanDesign, TRUSTED),
+      /requires at least 2 of 3 systems/,
+    );
+  });
+
   await t.test('coverage cannot claim verification from field presence alone', () => {
     // Even if all three astrological bodies are present...
     const input: GalacticCodeInput = {
