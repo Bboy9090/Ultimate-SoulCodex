@@ -2687,37 +2687,50 @@ export function getAspectInterpretation(planet1: string, planet2: string, aspect
   const p1Meaning = PLANET_MEANINGS[planet1.toLowerCase()];
   const p2Meaning = PLANET_MEANINGS[planet2.toLowerCase()];
   
-  // Create personalized fallback based on aspect type and planet meanings
+  // Governed fallback for recognized major aspects that do not yet have
+  // an editorially authored planet-pair entry. Keep this mechanical and
+  // planet-specific; never substitute horoscope filler for missing content.
+  const firstDomain = p1Meaning?.governs || planet1;
+  const secondDomain = p2Meaning?.governs || planet2;
   const aspectDescriptions = {
     conjunction: {
-      description: `Your ${p1Meaning?.governs || planet1} energy and ${p2Meaning?.governs || planet2} nature are deeply unified, creating a powerful blend that shapes your spiritual path.`,
-      spiritualMeaning: `This unified energy teaches you how ${p1Meaning?.spiritualRole?.toLowerCase() || 'growth'} and ${p2Meaning?.spiritualRole?.toLowerCase() || 'evolution'} work together as one force in your life.`,
+      description: `${firstDomain} and ${secondDomain} are operating in the same angular zone, so the two functions tend to act together rather than separately.`,
+      spiritualMeaning: `Symbolically, this conjunction asks you to notice where ${firstDomain} and ${secondDomain} reinforce, crowd, or amplify one another in lived experience.`,
       harmonyLevel: 'dynamic' as const
     },
     sextile: {
-      description: `Your ${p1Meaning?.governs || planet1} and ${p2Meaning?.governs || planet2} create gentle opportunities for growth when you make conscious effort to develop these gifts.`,
-      spiritualMeaning: `This aspect offers pathways to integrate ${p1Meaning?.spiritualRole?.toLowerCase() || 'your wisdom'} with ${p2Meaning?.spiritualRole?.toLowerCase() || 'your power'} through mindful practice.`,
+      description: `${firstDomain} and ${secondDomain} form a cooperative 60° relationship. The connection is supportive, but it usually becomes most visible when you actively use both functions together.`,
+      spiritualMeaning: `Symbolically, this sextile is an invitation to test where deliberate cooperation between ${firstDomain} and ${secondDomain} produces a practical opening.`,
       harmonyLevel: 'harmonious' as const
     },
     trine: {
-      description: `Your ${p1Meaning?.governs || planet1} and ${p2Meaning?.governs || planet2} flow together naturally, creating effortless talents and natural grace in these areas of life.`,
-      spiritualMeaning: `This harmonious flow shows how ${p1Meaning?.spiritualRole?.toLowerCase() || 'your essence'} and ${p2Meaning?.spiritualRole?.toLowerCase() || 'your purpose'} align divinely without struggle.`,
+      description: `${firstDomain} and ${secondDomain} form a flowing 120° relationship, so these functions can support one another with relatively little internal friction.`,
+      spiritualMeaning: `Symbolically, this trine highlights an easier exchange between ${firstDomain} and ${secondDomain}; the useful question is how consciously you use that ease rather than taking it for granted.`,
       harmonyLevel: 'harmonious' as const
     },
     square: {
-      description: `Tension between your ${p1Meaning?.governs || planet1} and ${p2Meaning?.governs || planet2} creates dynamic challenges that forge strength and wisdom through conscious effort.`,
-      spiritualMeaning: `This challenging aspect teaches you to master the friction between ${p1Meaning?.spiritualRole?.toLowerCase() || 'different parts of your soul'} and ${p2Meaning?.spiritualRole?.toLowerCase() || 'your life path'}, building resilience.`,
+      description: `${firstDomain} and ${secondDomain} form a 90° relationship, creating friction that can make the two functions compete for priority or demand adjustment.`,
+      spiritualMeaning: `Symbolically, this square points to a recurring negotiation between ${firstDomain} and ${secondDomain}; growth comes from observing the conflict clearly and changing the response, not from treating tension as destiny.`,
       harmonyLevel: 'challenging' as const
     },
     opposition: {
-      description: `You experience polarity between ${p1Meaning?.governs || planet1} and ${p2Meaning?.governs || planet2}, learning to balance these opposing forces for greater self-awareness.`,
-      spiritualMeaning: `This opposition teaches you how ${p1Meaning?.spiritualRole?.toLowerCase() || 'one aspect of your nature'} and ${p2Meaning?.spiritualRole?.toLowerCase() || 'another dimension'} can complement each other through conscious integration.`,
+      description: `${firstDomain} and ${secondDomain} sit across a 180° axis, so attention can swing between the two functions until a workable way of holding both is developed.`,
+      spiritualMeaning: `Symbolically, this opposition asks for conscious coordination between ${firstDomain} and ${secondDomain} without pretending either side should disappear.`,
       harmonyLevel: 'dynamic' as const
     }
   };
-  
-  const fallback = aspectDescriptions[aspectType as keyof typeof aspectDescriptions] || aspectDescriptions.conjunction;
-  
+
+  const fallback = aspectDescriptions[aspectType as keyof typeof aspectDescriptions];
+  if (!fallback) {
+    return {
+      title: `${planet1.charAt(0).toUpperCase() + planet1.slice(1)} ${aspectType.charAt(0).toUpperCase() + aspectType.slice(1)} ${planet2.charAt(0).toUpperCase() + planet2.slice(1)}`,
+      description: `No governed interpretation is available for the ${aspectType} relationship between ${planet1} and ${planet2}.`,
+      spiritualMeaning: `This aspect is withheld from symbolic interpretation until a supported rule is defined.`,
+      keywords: [planet1, planet2, aspectType],
+      harmonyLevel: 'dynamic' as const
+    };
+  }
+
   return {
     title: `${planet1.charAt(0).toUpperCase() + planet1.slice(1)} ${aspectType.charAt(0).toUpperCase() + aspectType.slice(1)} ${planet2.charAt(0).toUpperCase() + planet2.slice(1)}`,
     description: fallback.description,
