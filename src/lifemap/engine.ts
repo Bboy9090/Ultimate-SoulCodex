@@ -2,6 +2,7 @@ import type { LifeMapInput, LifeMapResult, LifeMapYear, LifeMapPhase } from "./t
 import { scoreLifeMap, rankPhases } from "./score";
 import { phaseDoList, phaseDontList, phaseSummary } from "./narrative";
 import { NUMEROLOGY_PHASE_RULES } from "./rules";
+import { timelinePhaseCycleYear } from "../timeline/engine";
 
 function nextPhaseFrom(current: LifeMapPhase): LifeMapPhase {
   switch (current) {
@@ -30,8 +31,11 @@ function previousPhaseFrom(current: LifeMapPhase): LifeMapPhase {
 }
 
 function projectYearPhase(basePersonalYear: number, offset: number): LifeMapPhase {
-  const cycleYear = ((basePersonalYear - 1 + offset) % 9) + 1;
-  return NUMEROLOGY_PHASE_RULES[cycleYear]?.primary || "Integration";
+  const baseCycleYear = timelinePhaseCycleYear(basePersonalYear);
+  const cycleYear = (((baseCycleYear - 1 + offset) % 9 + 9) % 9) + 1;
+  const rule = NUMEROLOGY_PHASE_RULES[cycleYear];
+  if (!rule) throw new Error("lifemap_phase_rule_missing");
+  return rule.primary;
 }
 
 const PHASE_WHY: Record<LifeMapPhase, string> = {
@@ -90,12 +94,16 @@ export function buildLifeMap(input: LifeMapInput, pastYears = 2, futureYears = 5
   const doList = phaseDoList(currentPhase);
   const dontList = phaseDontList(currentPhase);
 
-  const basePersonalYear = input.profile?.numerology?.personalYear || 1;
+  const basePersonalYear = input.profile?.numerology?.personalYear;
+  if (basePersonalYear === undefined || basePersonalYear === null) {
+    throw new Error("lifemap_personal_year_required");
+  }
+  const baseCycleYear = timelinePhaseCycleYear(basePersonalYear);
   const years: LifeMapYear[] = [];
 
   for (let i = -pastYears; i <= futureYears; i++) {
     const year = input.currentYear + i;
-    const cycleYear = ((basePersonalYear - 1 + i) % 9 + 9) % 9 + 1;
+    const cycleYear = ((baseCycleYear - 1 + i) % 9 + 9) % 9 + 1;
     const phase = i === 0 ? currentPhase : projectYearPhase(basePersonalYear, i);
     years.push({
       year,
