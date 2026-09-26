@@ -6,6 +6,7 @@ import { generateOfflineCodexProfile } from "../packages/core/offline-codex/inde
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
   getVerifiedAstrologySign,
+  getVerifiedHumanDesignRecord,
   hasVerifiedBigThree,
   hasVerifiedFullNatalChart,
   hasVerifiedSunAndMoon,
@@ -591,4 +592,31 @@ test("canonical angle validation tolerates harmless floating-point roundoff", ()
     hasVerifiedFullNatalChart(noisyRemote.astrologyData),
     true,
   );
+});
+
+
+test("client Human Design verification gate rejects malformed trust metadata", () => {
+  const valid = {
+    status: "verified",
+    type: "Reflector",
+    strategy: "To Wait a Lunar Cycle",
+    authority: "Lunar Authority",
+    profile: "2/5",
+    verificationReceiptId: "receipt",
+    independentSource: "independent verifier",
+    verifiedAt: "2026-09-19T23:03:08.000Z",
+  };
+
+  assert.equal(getVerifiedHumanDesignRecord(valid)?.type, "Reflector");
+
+  for (const invalid of [
+    { ...valid, verificationReceiptId: "" },
+    { ...valid, independentSource: "   " },
+    { ...valid, verifiedAt: "not-a-date" },
+    { ...valid, verifiedAt: "" },
+    { ...valid, type: "" },
+    { ...valid, status: "calculated_unverified" },
+  ]) {
+    assert.equal(getVerifiedHumanDesignRecord(invalid), null);
+  }
 });
