@@ -393,6 +393,66 @@ function calculateAspects(planetPositions: { [key: string]: number }): Array<{ p
   return aspects;
 }
 
+function dateOnlySunSignCandidate(birthData: BirthData): string | null {
+  const { year, month, day } = parseDateOnly(birthData.birthDate);
+  const HOUR_MS = 60 * 60 * 1000;
+
+  const collectSigns = (start: Date, end: Date): Set<string> => {
+    const signs = new Set<string>();
+    for (let instant = start.getTime(); instant <= end.getTime(); instant += 3 * HOUR_MS) {
+      signs.add(calculateCelestialPosition(Astro.Body.Sun, new Date(instant)).sign);
+    }
+    signs.add(calculateCelestialPosition(Astro.Body.Sun, end).sign);
+    return signs;
+  };
+
+  const latitude = finiteCoordinate(birthData.latitude, "latitude");
+  const longitude = finiteCoordinate(birthData.longitude, "longitude");
+  const hasCoordinates =
+    birthData.latitude !== undefined &&
+    birthData.latitude !== null &&
+    birthData.longitude !== undefined &&
+    birthData.longitude !== null;
+
+  if (birthData.timezone?.trim() || hasCoordinates) {
+    const timezone = resolveTimezone(
+      birthData.timezone,
+      latitude,
+      longitude,
+      hasCoordinates,
+    );
+    const start = resolveCivilTimeStrict(
+      birthData.birthDate,
+      "00:00",
+      timezone,
+    );
+    const end = resolveCivilTimeStrict(
+      birthData.birthDate,
+      "23:59",
+      timezone,
+    );
+
+    if (
+      start.status === "valid" &&
+      start.utc &&
+      end.status === "valid" &&
+      end.utc
+    ) {
+      const signs = collectSigns(start.utc, end.utc);
+      return signs.size === 1 ? [...signs][0] : null;
+    }
+
+    return null;
+  }
+
+  // With no timezone/location, cover every UTC instant that could belong to
+  // this local civil date across the IANA offset range (UTC-12 through UTC+14).
+  const earliestUtc = new Date(Date.UTC(year, month - 1, day - 1, 10, 0, 0));
+  const latestUtc = new Date(Date.UTC(year, month - 1, day + 1, 12, 0, 0));
+  const signs = collectSigns(earliestUtc, latestUtc);
+  return signs.size === 1 ? [...signs][0] : null;
+}
+
 /**
  * Authority Split for Placement Verification:
  *
@@ -462,7 +522,10 @@ function buildPlacement(
   placement: 'sun' | 'moon' | 'rising',
   calculatedAt: string
 ): PlacementLike {
-  const verificationStatus = determinePlacementStatus(birthData, placement);
+  const verificationStatus: VerificationState =
+    placement === 'sun' && sign === 'Unknown'
+      ? 'unresolved'
+      : determinePlacementStatus(birthData, placement);
   const evidence = buildPlacementEvidence(birthData, placement, calculatedAt);
 
   return {
@@ -497,7 +560,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   
   const houseCusps = calculateEqualHouseCusps(ascendantData.longitude);
   
-  const sunSign = sunPos.sign;
+  const sunSign = hasExactTime ? sunPos.sign : (dateOnlySunSignCandidate(birthData) ?? "Unknown");
   const moonSign = moonResolved ? moonPos.sign : "Unknown";
   const risingSign = risingResolved ? ascendantData.sign : "Unknown";
   
@@ -523,9 +586,9 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     };
   }
 
-  // Without an exact civil timestamp, only the date-based Sun candidate is
-  // exposed. Other planetary positions are withheld rather than silently
-  // freezing them at fallback noon. Houses require resolved Rising/location.
+  // Without an exact civil timestamp, expose no exact planet longitude/degree.
+  // A date-only Sun sign may still be returned at top level when the entire
+  // possible civil-day interval stays inside one zodiac sign.
   const planets: AstrologyData["planets"] = moonResolved
     ? {
         sun: createPlanetData('sun', sunPos, risingResolved),
@@ -539,9 +602,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
         neptune: createPlanetData('neptune', neptunePos, risingResolved),
         pluto: createPlanetData('pluto', plutoPos, risingResolved),
       }
-    : {
-        sun: createPlanetData('sun', sunPos, false),
-      };
+    : {};
   
   const houses = risingResolved
     ? houseCusps.map((cuspLongitude, index) => ({
@@ -572,7 +633,9 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const southNode = null;
   const chiron = null;
   
-  const sunInterpretation = getPlanetSignInterpretation('sun', sunSign);
+  const sunInterpretation = sunSign !== "Unknown"
+    ? getPlanetSignInterpretation('sun', sunSign)
+    : null;
   const moonInterpretation = moonResolved
     ? getPlanetSignInterpretation('moon', moonSign)
     : null;
@@ -597,7 +660,9 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     chiron,
     interpretations: {
       bigThree: {
-        sun: `Your ${sunInterpretation.title} essence drives you to ${sunInterpretation.spiritualMeaning.toLowerCase()}`,
+        sun: sunInterpretation
+          ? `Your ${sunInterpretation.title} essence drives you to ${sunInterpretation.spiritualMeaning.toLowerCase()}`
+          : "Sun sign withheld because the date spans a solar-ingress boundary without exact birth time.",
         moon: moonInterpretation
           ? `Your ${moonInterpretation.title} emotional nature ${moonInterpretation.spiritualMeaning.toLowerCase()}`
           : "Moon placement withheld until exact birth time and timezone are available.",
@@ -605,9 +670,11 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
           ? `You present to the world as ${risingSign}, projecting ${risingInterpretation.keywords.join(', ')} energy`
           : "Rising sign withheld until exact birth time, timezone, and location are available."
       },
-      summary: moonInterpretation && risingInterpretation
+      summary: sunInterpretation && moonInterpretation && risingInterpretation
         ? `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies.`
-        : `Sun candidate: ${sunSign}. Time-dependent Moon/Rising interpretation is withheld until required birth evidence is present.`
+        : sunInterpretation
+          ? `Sun candidate: ${sunSign}. Exact planetary degrees and time-dependent Moon/Rising interpretation are withheld until required birth evidence is present.`
+          : "Sun, Moon, and Rising interpretation are withheld until the missing birth-time evidence resolves the solar-ingress boundary and other time-dependent placements."
     },
     placements: {
       sun: sunPlacement,
