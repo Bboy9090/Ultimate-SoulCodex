@@ -39,6 +39,7 @@ node --import tsx --test \
   tests/ascendant-retry-contract.test.ts \
   tests/house-production.test.ts \
   tests/equal-house-math-invariants.test.ts \
+  tests/equal-house-geographic-stress.test.ts \
   tests/lunar-node-production.test.ts \
   tests/lunar-node-math-invariants.test.ts \
   tests/chiron-production.test.ts \
