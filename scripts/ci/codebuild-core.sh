@@ -59,6 +59,7 @@ node --import tsx --test \
   tests/systems-details-registry-ui.test.ts \
   tests/evidence-drawer-language.test.ts \
   tests/codex-header-evidence-language.test.ts \
+  tests/codex-header-generated-at.test.ts \
   tests/compatibility-data-minimization.test.ts \
   tests/compatibility-profile-contract.test.ts \
   tests/compatibility-http-integration.test.ts \
