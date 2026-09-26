@@ -186,13 +186,22 @@ function buildRelationshipPattern(s: SoulSignals, arc: Archetype, v: number): st
   };
 
   const socialKey = firstSignal(s.socialEnergy);
-  const decisionKey = firstSignal(s.decisionStyle);
   const sVariants = socialKey ? social[socialKey] : undefined;
-  const dVariants = decisionKey ? decision[decisionKey] : undefined;
+  const decisionKeys = Array.isArray(s.decisionStyle)
+    ? [...new Set(s.decisionStyle.filter(Boolean))]
+    : [];
 
   const parts: string[] = [];
   if (sVariants?.length) parts.push(sVariants[v % sVariants.length]);
-  if (dVariants?.length) parts.push(dVariants[v % dVariants.length]);
+
+  // Multi-select Mirror answers are additive evidence. Do not collapse them
+  // to the first selected reaction or stringify the array into a fake key.
+  decisionKeys.forEach((decisionKey, index) => {
+    const dVariants = decision[decisionKey];
+    if (dVariants?.length) {
+      parts.push(dVariants[(v + index) % dVariants.length]);
+    }
+  });
 
   if (parts.length === 0) {
     return "I have not provided enough direct behavioral evidence to name a stable social or decision rhythm yet.";
