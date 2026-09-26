@@ -1,3 +1,4 @@
+import { canonicalExplicitZonedInstant, parseExplicitZonedInstant } from "./zoned-instant";
 import {
   circularDegreesDelta,
   degreeInTropicalSign,
@@ -105,19 +106,11 @@ function degrees(radiansValue: number): number {
   return (radiansValue * 180) / Math.PI;
 }
 
-function hasExplicitUtcOffset(inputTimestamp: string): boolean {
-  return /(?:Z|[+-]\\d{2}:\\d{2})$/i.test(inputTimestamp.trim());
-}
-
 function isValidInput(input: AscendantInput): boolean {
-  if (
-    typeof input.inputTimestamp !== "string" ||
-    !hasExplicitUtcOffset(input.inputTimestamp)
-  ) {
+  const timestamp = parseExplicitZonedInstant(input.inputTimestamp);
+  if (!timestamp) {
     return false;
   }
-
-  const timestamp = new Date(input.inputTimestamp);
   return (
     !Number.isNaN(timestamp.getTime()) &&
     Number.isFinite(input.latitude) &&
