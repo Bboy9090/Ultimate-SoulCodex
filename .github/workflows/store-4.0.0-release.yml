@@ -52,6 +52,11 @@ jobs:
 
       - name: Production dependency security audit
         run: npm audit --omit=dev --audit-level=high
+      - name: Verify deployed backend API contract
+        env:
+          SOUL_CODEX_BACKEND_URL: https://soulcodex.up.railway.app
+          SOUL_CODEX_API_CONTRACT: foundation-v4
+        run: node scripts/ci/verify-live-backend-contract.mjs
       - name: Store release candidate contract
         run: node --import tsx --test tests/store-release-candidate-contract.test.ts
       - name: Build production Capacitor payload
@@ -92,7 +97,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: soulcodex-4.0.1-release-gate
-          path: STORE-CANDIDATE-RECEIPT.txt
+          path: |
+            STORE-CANDIDATE-RECEIPT.txt
+            BACKEND-CONTRACT-RECEIPT.json
           retention-days: 90
 
   android-store:
