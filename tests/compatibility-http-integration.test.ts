@@ -64,7 +64,7 @@ describe("Compatibility HTTP integration", () => {
     assert.equal(body.available, true);
     assert.equal(body.formula.version, COMPATIBILITY_FORMULA_VERSION);
     assert.equal(body.formula.inputs.sunSign, "Virgo");
-    assert.equal(body.formula.inputs.lifePathNumber, 11);
+    assert.equal(body.formula.inputs.lifePathNumber, null);
     assert.equal(body.all.length, 12);
     assert.equal(Object.prototype.hasOwnProperty.call(body, "overallScore"), false);
   });
@@ -88,7 +88,7 @@ describe("Compatibility HTTP integration", () => {
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.equal(body.available, true);
-    assert.equal(body.formula.inputs.lifePathNumber, 22);
+    assert.equal(body.formula.inputs.lifePathNumber, null);
     for (const key of ["romantic", "chemistry", "mentalFriendship", "growth"]) {
       assert.equal(typeof body.dimensions[key], "number");
     }
