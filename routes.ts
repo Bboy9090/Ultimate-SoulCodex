@@ -60,6 +60,14 @@ import { pureText } from "./services/sanitizer";
 
 
 // Utility function for consistent error responses
+function profileLocalYear(
+  profile: { timezone?: unknown },
+  now: Date = new Date(),
+): number {
+  return Number(profileLocalDateKey(profile, now).slice(0, 4));
+}
+
+
 function profileLocalDateKey(
   profile: { timezone?: unknown },
   now: Date = new Date(),
@@ -654,7 +662,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let numerologyData;
       try {
-        numerologyData = calculateNumerology(validatedBirthData.name, validatedBirthData.birthDate);
+        numerologyData = calculateNumerology(
+          validatedBirthData.name,
+          validatedBirthData.birthDate,
+          profileLocalYear({ timezone: validatedBirthData.timezone }),
+        );
       } catch (error) {
         console.error("[SoulArchetype] Numerology calculation failed:", error);
         return res.status(500).json({ message: "Failed to calculate numerology data" });
@@ -874,7 +886,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let numerologyData;
       try {
-        numerologyData = calculateNumerology(birthData.name, birthData.birthDate);
+        numerologyData = calculateNumerology(
+          birthData.name,
+          birthData.birthDate,
+          profileLocalYear({ timezone: birthData.timezone }),
+        );
       } catch (error) {
         console.error("[CreateProfile] Numerology calculation failed:", error);
         throw new Error("Failed to calculate numerology data. Please verify name and birth date.");
@@ -1176,7 +1192,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (!numerologyData && profileBirthDateISO) {
-          numerologyData = calculateNumerology(profile.name, profileBirthDateISO);
+          numerologyData = calculateNumerology(
+            profile.name,
+            profileBirthDateISO,
+            profileLocalYear(profile),
+          );
           updatedData.numerologyData = numerologyData;
           needsUpdate = true;
         }
@@ -1230,7 +1250,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const numeroData = profile.numerologyData as any;
       if ((!numeroData || !numeroData.interpretations) && profileBirthDateISO) {
         console.log("Auto-healing: Missing enhanced numerologyData for profile", req.params.id);
-        const enhancedNumerologyData = calculateNumerology(profile.name, profileBirthDateISO);
+        const enhancedNumerologyData = calculateNumerology(
+            profile.name,
+            profileBirthDateISO,
+            profileLocalYear(profile),
+          );
         updatedData.numerologyData = enhancedNumerologyData;
         needsUpdate = true;
       }
@@ -2959,7 +2983,11 @@ ${contextData}
           ...savedProfile,
           birthDate: savedDate,
           // Deterministic numerology is recomputed from authoritative saved data.
-          numerologyData: calculateNumerology(savedProfile.name, dateOnly),
+          numerologyData: calculateNumerology(
+            savedProfile.name,
+            dateOnly,
+            profileLocalYear(savedProfile),
+          ),
           isPremium: true,
         };
       } else {
@@ -2985,7 +3013,11 @@ ${contextData}
           birthLocation: requestedProfile.birthLocation ?? null,
           astrologyData: null,
           humanDesignData: null,
-          numerologyData: calculateNumerology(String(requestedProfile.name), dateOnly),
+          numerologyData: calculateNumerology(
+            String(requestedProfile.name),
+            dateOnly,
+            profileLocalYear({ timezone: requestedProfile.timezone }),
+          ),
           archetypeData: null,
           biography: null,
           dailyGuidance: null,
