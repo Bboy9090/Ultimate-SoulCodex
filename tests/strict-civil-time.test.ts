@@ -107,3 +107,84 @@ test('strict civil time rejects Samoa skipped civil date', () => {
   assert.equal(resolved.status, 'nonexistent');
   assert.equal(resolved.utc, null);
 });
+
+
+test('strict civil time detects London spring gap and repeated fall hour', () => {
+  const gap = resolveCivilTimeStrict(
+    '2023-03-26',
+    '01:30',
+    'Europe/London',
+  );
+  assert.equal(gap.status, 'nonexistent');
+  assert.equal(gap.utc, null);
+
+  const repeat = resolveCivilTimeStrict(
+    '2023-10-29',
+    '01:30',
+    'Europe/London',
+  );
+  assert.equal(repeat.status, 'ambiguous');
+  assert.equal(repeat.utc, null);
+  assert.deepEqual(
+    [...repeat.candidateUtcOffsetsMinutes].sort((a, b) => a - b),
+    [0, 60],
+  );
+});
+
+test('strict civil time detects Newfoundland half-hour DST transitions', () => {
+  const gap = resolveCivilTimeStrict(
+    '2023-03-12',
+    '02:30',
+    'America/St_Johns',
+  );
+  assert.equal(gap.status, 'nonexistent');
+  assert.equal(gap.utc, null);
+
+  const repeat = resolveCivilTimeStrict(
+    '2023-11-05',
+    '01:30',
+    'America/St_Johns',
+  );
+  assert.equal(repeat.status, 'ambiguous');
+  assert.equal(repeat.utc, null);
+  assert.deepEqual(
+    [...repeat.candidateUtcOffsetsMinutes].sort((a, b) => a - b),
+    [-210, -150],
+  );
+});
+
+test('strict civil time preserves quarter-hour timezone offsets exactly', () => {
+  const kathmandu = resolveCivilTimeStrict(
+    '2026-09-26',
+    '12:00',
+    'Asia/Kathmandu',
+  );
+  assert.equal(kathmandu.status, 'valid');
+  assert.equal(kathmandu.utc?.toISOString(), '2026-09-26T06:15:00.000Z');
+  assert.deepEqual(kathmandu.candidateUtcOffsetsMinutes, [345]);
+});
+
+test('strict civil time detects Lord Howe 30-minute spring-forward gap', () => {
+  const resolved = resolveCivilTimeStrict(
+    '2023-10-01',
+    '02:15',
+    'Australia/Lord_Howe',
+  );
+
+  assert.equal(resolved.status, 'nonexistent');
+  assert.equal(resolved.utc, null);
+});
+
+test('strict civil time rejects malformed calendar and timezone inputs without normalization', () => {
+  for (const [date, time, timezone] of [
+    ['2023-02-29', '12:00', 'UTC'],
+    ['2023-04-31', '12:00', 'UTC'],
+    ['2023-01-01', '24:00', 'UTC'],
+    ['2023-01-01', '12:60', 'UTC'],
+    ['2023-01-01', '12:00', 'Mars/Olympus'],
+  ] as const) {
+    const resolved = resolveCivilTimeStrict(date, time, timezone);
+    assert.equal(resolved.status, 'invalid', `${date} ${time} ${timezone}`);
+    assert.equal(resolved.utc, null);
+  }
+});
