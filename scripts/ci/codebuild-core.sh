@@ -31,6 +31,7 @@ node --import tsx --test \
   tests/astrology-sign-boundary-verification.test.ts \
   tests/planetary-boundary-integrity.test.ts \
   tests/aspect-engine.test.ts \
+  tests/aspect-policy-authority.test.ts \
   tests/astrology-production-verification.test.ts \
   tests/offline-ephemeris-accuracy.test.ts \
   tests/strict-civil-time.test.ts \
