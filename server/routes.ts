@@ -11,6 +11,7 @@ import {
   enneagramAssessmentSchema,
   mbtiAssessmentSchema,
 } from "@shared/schema";
+import { resolveCivilTimeStrict } from "@soulcodex/core";
 import {
   calculateVerifiedAstrology,
   type AstrologyData,
@@ -143,6 +144,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const birthData = parsedBirthData.data;
       const latitude = finiteCoordinate(birthData.latitude);
       const longitude = finiteCoordinate(birthData.longitude);
+
+      if (birthData.birthTime?.trim()) {
+        const civilTime = resolveCivilTimeStrict(
+          birthData.birthDate,
+          birthData.birthTime,
+          birthData.timezone,
+        );
+        if (civilTime.status !== "valid") {
+          return res.status(422).json({
+            message:
+              civilTime.status === "ambiguous"
+                ? "Birth time occurs more than once in this timezone. Enter a disambiguated time or verify the recorded offset."
+                : civilTime.status === "nonexistent"
+                  ? "Birth time did not exist in this timezone because of a clock transition."
+                  : "Birth date, time, or timezone could not be resolved safely.",
+            code: `birth_civil_time_${civilTime.status}`,
+            candidates: civilTime.candidates,
+            utcOffsetsMinutes: civilTime.candidateUtcOffsetsMinutes,
+          });
+        }
+      }
 
       if (latitude !== undefined && longitude !== undefined) {
         const locationConsistency = verifyBirthTimezoneCoordinates({
