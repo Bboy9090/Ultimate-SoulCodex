@@ -24,10 +24,15 @@ test("astronomy-engine consumers use the ESM namespace directly", () => {
   for (const path of [
     "packages/astrology/astrology.ts",
     "packages/astrology/human-design.ts",
-    "packages/astrology/vedic-astrology.ts",
   ]) {
     const source = readFileSync(path, "utf8");
     assert.doesNotMatch(source, /Astronomy(?: as any)?\)\.default|Astronomy\.default/);
     assert.match(source, /import \* as Astronomy from ['"]astronomy-engine['"]/);
   }
+});
+
+test("quarantined Vedic astrology does not retain a dormant astronomy-engine dependency", () => {
+  const source = readFileSync("packages/astrology/vedic-astrology.ts", "utf8");
+  assert.doesNotMatch(source, /astronomy-engine/);
+  assert.match(source, /vedic_astrology_unavailable:no_governed_sidereal_contract/);
 });
