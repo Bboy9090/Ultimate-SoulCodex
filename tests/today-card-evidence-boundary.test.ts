@@ -78,7 +78,7 @@ test('Today Card fallback route uses governed current context instead of hard-co
   assert.doesNotMatch(routes, /birth = profile\?\.signals\?\.lifePath \?\? 4/);
   assert.doesNotMatch(routes, /Waxing Gibbous/);
   assert.doesNotMatch(routes, /percentage:\s*65/);
-  assert.match(routes, /calculatePersonalDayNumber\(profile\.birthDate, date\)/);
+  assert.match(routes, /calculatePersonalDayNumber\([\s\S]*dateOnlyFromStoredValue\(profileForToday\.birthDate\)[\s\S]*date[\s\S]*\)/);
   assert.match(routes, /const moonPhase = getMoonPhase\(today\)/);
 });
 
@@ -182,4 +182,43 @@ test('Today Card route preserves stored profile context and profile-local fallba
   assert.match(routes, /buildTodayCard\(horoscopeData, profileForToday, codexSynthesis\)/);
   assert.match(routes, /generateTodayCardAI\(card, profileForToday, horoscopeData, codexSynthesis\)/);
   assert.doesNotMatch(routes, /buildTodayCard\(horoscopeData, profile \?\? \{\}, codexSynthesis\)/);
+});
+
+
+test('Today Card does not treat generated card history as behavioral evidence', () => {
+  const routes = readFileSync('routes.ts', 'utf8');
+
+  assert.match(routes, /RECENT CARD OUTPUTS — NOT BEHAVIORAL EVIDENCE/);
+  assert.match(routes, /Do not treat a previous generated card as proof that a behavior occurred/);
+  assert.doesNotMatch(routes, /RECENT BEHAVIORAL HISTORY/);
+  assert.doesNotMatch(routes, /confront me directly/);
+});
+
+test('Today Card trusts explicit user-entered behavior fields instead of synthesized signals', () => {
+  const routes = readFileSync('routes.ts', 'utf8');
+
+  assert.match(routes, /USER-ENTERED DECISION STYLE/);
+  assert.match(routes, /USER-ENTERED PRESSURE STYLE/);
+  assert.match(routes, /profile\?\.userInputs\?\.decisionStyle \?\? ""/);
+  assert.match(routes, /profile\?\.userInputs\?\.pressureStyle \?\? ""/);
+  assert.doesNotMatch(
+    routes,
+    /profile\?\.userInputs\?\.decisionStyle \?\? profile\?\.signals\?\.decisionStyle/,
+  );
+  assert.doesNotMatch(
+    routes,
+    /profile\?\.userInputs\?\.pressureStyle \?\? profile\?\.signals\?\.pressureStyle/,
+  );
+});
+
+test('Today Card symbolic daily inputs remain reflection prompts rather than behavioral facts', () => {
+  const routes = readFileSync('routes.ts', 'utf8');
+
+  assert.match(
+    routes,
+    /Personal Day, Moon phase, transit text, codename, and synthesis themes as reflection prompts only/,
+  );
+  assert.match(routes, /They do not prove what I will do, feel, or experience/);
+  assert.match(routes, /Do not predict tomorrow/);
+  assert.doesNotMatch(routes, /behavioral confession/);
 });
