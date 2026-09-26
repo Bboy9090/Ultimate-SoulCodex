@@ -1178,8 +1178,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for enhanced astrology data (may have basic vs comprehensive data) - only if complete data available
       const astroData = profile.astrologyData as any;
-      if ((!astroData || !astroData.interpretations || !astroData.northNode || !astroData.southNode || !astroData.chiron) && profileHasCompleteData) {
-        console.log("Auto-healing: Missing enhanced astrologyData for profile", req.params.id);
+      if ((!astroData || !astroData.interpretations) && profileHasCompleteData) {
+        console.log("Auto-healing: Missing governed legacy astrologyData for profile", req.params.id);
         try {
           const enhancedAstrologyData = calculateAstrology({
             name: profile.name,
