@@ -230,7 +230,8 @@ export function calcPersonalMonthWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const yearValid = typeof personalYear === 'number' && personalYear >= 1 && personalYear <= 9;
+  const validPersonalYears = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33]);
+  const yearValid = typeof personalYear === 'number' && validPersonalYears.has(personalYear);
   const monthValid = typeof targetMonth === 'number' && targetMonth >= 1 && targetMonth <= 12;
 
   let derivedInputState: InputState = 'valid';
@@ -253,7 +254,7 @@ export function calcPersonalMonthWithEvidence(
           `calendar_month_${targetMonth}`,
         ],
         reasoning: [
-          !yearValid ? `Personal Year ${personalYear} must be 1-9` : '',
+          !yearValid ? `Personal Year ${personalYear} must be 1-9 or a supported master year (11, 22, 33)` : '',
           !monthValid ? `Calendar month ${targetMonth} must be 1-12` : '',
         ].filter(Boolean),
         limitations: [
