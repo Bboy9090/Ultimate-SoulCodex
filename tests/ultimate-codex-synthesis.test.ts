@@ -356,3 +356,57 @@ test("Ultimate Codex rejects inconsistent governed cusp and point geometry", () 
   );
   assert.equal(result.coverage, "partial");
 });
+
+
+test("Human Design fingerprint is invariant to channel and gate ordering", () => {
+  const first: any = profile();
+  const second: any = profile();
+
+  first.humanDesignData.channels = [
+    { gates: [64, 47], name: "Channel of Abstraction", description: "x", defined: true },
+    { gates: [1, 8], name: "Channel of Inspiration", description: "y", defined: true },
+    { gates: [3, 60], name: "Undefined catalog channel", description: "z", defined: false },
+  ];
+  first.humanDesignData.activatedGates = [64, 47, 1, 8, 64];
+
+  second.humanDesignData.channels = [
+    { defined: false, description: "ignored", name: "Different metadata", gates: [60, 3] },
+    { defined: true, description: "metadata order differs", gates: [8, 1], name: "Renamed presentation" },
+    { description: "metadata differs", name: "Another presentation", gates: [47, 64], defined: true },
+  ];
+  second.humanDesignData.activatedGates = [8, 1, 47, 64];
+
+  const a = buildUltimateCodexSynthesis(first);
+  const b = buildUltimateCodexSynthesis(second);
+
+  assert.ok(a.evidenceSignature.includes("hd:channel:1-8"));
+  assert.ok(a.evidenceSignature.includes("hd:channel:47-64"));
+  assert.equal(
+    a.evidenceSignature.some((value) => value.includes("3-60")),
+    false,
+  );
+  assert.equal(a.fingerprint, b.fingerprint);
+  assert.equal(a.codexNumber, b.codexNumber);
+});
+
+test("invalid Human Design channel and gate values stay out of the stable fingerprint", () => {
+  const candidate: any = profile();
+  candidate.humanDesignData.channels = [
+    "0-65",
+    "12-12",
+    "not-a-channel",
+    { gates: [1, 8], defined: false },
+  ];
+  candidate.humanDesignData.activatedGates = [0, 65, "bad", -1];
+
+  const result = buildUltimateCodexSynthesis(candidate);
+
+  assert.equal(
+    result.evidenceSignature.some((value) => value.startsWith("hd:channel:")),
+    false,
+  );
+  assert.equal(
+    result.evidenceSignature.some((value) => value.startsWith("hd:gate:")),
+    false,
+  );
+});
