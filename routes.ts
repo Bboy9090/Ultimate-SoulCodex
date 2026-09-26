@@ -2756,9 +2756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let lpNum: number | "unknown" = "unknown";
       try {
-        if (typeof trustedProfile.birthDate === "string") {
-          lpNum = calcLifePath(trustedProfile.birthDate);
-        }
+        lpNum = calcLifePath(dateOnlyFromStoredValue(trustedProfile.birthDate));
       } catch {
         lpNum = "unknown";
       }
@@ -3203,10 +3201,12 @@ ${contextData}
 
       let lifePathNumber: number;
       try {
-        lifePathNumber = calcLifePath(storedProfile.birthDate);
+        lifePathNumber = calcLifePath(
+          dateOnlyFromStoredValue(storedProfile.birthDate),
+        );
       } catch {
         return res.status(422).json({
-          message: "A valid stored birth date is required before rendering a Soul Codex birth poster.",
+          message: "A canonical stored birth date is required before rendering a Soul Codex birth poster.",
           code: "valid_birth_date_required",
         });
       }
