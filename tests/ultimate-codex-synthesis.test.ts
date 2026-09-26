@@ -413,3 +413,71 @@ test("invalid Human Design channel and gate values stay out of the stable finger
     false,
   );
 });
+
+
+test("aspect reversal and exact duplicate rows do not change the stable Codex identity", () => {
+  const canonical: any = profile();
+  const reordered: any = profile();
+
+  const baseAspect = canonical.verifiedAstrologyData.aspects[0];
+  reordered.verifiedAstrologyData.aspects = [
+    reordered.verifiedAstrologyData.aspects[1],
+    {
+      ...baseAspect,
+      planet1: baseAspect.planet2,
+      planet2: baseAspect.planet1,
+    },
+    { ...baseAspect },
+  ];
+
+  const a = buildUltimateCodexSynthesis(canonical);
+  const b = buildUltimateCodexSynthesis(reordered);
+
+  assert.equal(a.aspects.length, 2);
+  assert.equal(b.aspects.length, 2);
+  assert.deepEqual(b.aspects, a.aspects);
+  assert.equal(a.fingerprint, b.fingerprint);
+  assert.equal(a.codexNumber, b.codexNumber);
+});
+
+test("aspects referencing unqualified or unknown bodies stay out of the stable Codex", () => {
+  const candidate: any = profile();
+  candidate.verifiedAstrologyData.aspects.push(
+    { planet1: "sun", planet2: "ceres", aspect: "trine", orb: 1, policyId: "ASTRO-ASPECT-MAJOR-v1" },
+    { planet1: "sun", planet2: "chiron", aspect: "trine", orb: 1, policyId: "ASTRO-ASPECT-MAJOR-v1" },
+  );
+  delete candidate.verifiedAstrologyData.chiron.evidenceArtifactId;
+
+  const result = buildUltimateCodexSynthesis(candidate);
+
+  assert.equal(result.supportingPoints.some((point) => point.key === "chiron"), false);
+  assert.equal(
+    result.aspects.some((aspect) => aspect.planet1 === "ceres" || aspect.planet2 === "ceres"),
+    false,
+  );
+  assert.equal(
+    result.aspects.some((aspect) => aspect.planet1 === "chiron" || aspect.planet2 === "chiron"),
+    false,
+  );
+});
+
+test("sub-hundredth governed cusp precision noise does not change the stable Codex identity", () => {
+  const first: any = profile();
+  const second: any = profile();
+
+  for (const house of second.verifiedAstrologyData.houses) {
+    house.degree += 0.004;
+  }
+
+  const a = buildUltimateCodexSynthesis(first);
+  const b = buildUltimateCodexSynthesis(second);
+
+  assert.equal(a.houseCusps.length, 12);
+  assert.equal(b.houseCusps.length, 12);
+  assert.deepEqual(
+    b.houseCusps.map((house) => house.degree),
+    a.houseCusps.map((house) => house.degree),
+  );
+  assert.equal(a.fingerprint, b.fingerprint);
+  assert.equal(a.codexNumber, b.codexNumber);
+});
