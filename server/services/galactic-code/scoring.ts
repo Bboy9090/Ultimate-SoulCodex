@@ -47,7 +47,6 @@ const HD_WEIGHTS = {
   authority: 7,
   profile: 6,
   definedCenter: 2,
-  channel: 3,
   incarnationCross: 5,
 };
 
