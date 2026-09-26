@@ -84,20 +84,28 @@ export const localAstroProvider: AstroProvider = {
 };
 
 function computeBasic(req: AstroRequest): Pick<AstroResult, "sun" | "moon"> {
-  const safeBirthTime = normalizeTime24(req.time24) ?? "12:00";
-  const safeTimezone = normalizeTimezone(req.timezone) ?? "UTC";
-  const safeLat = normalizeCoordinate(req.lat) ?? 0;
-  const safeLon = normalizeCoordinate(req.lon) ?? 0;
+  const exactTime = normalizeTime24(req.time24);
+  const timezone = normalizeTimezone(req.timezone);
+
+  // Do not fabricate natal placements from noon/UTC/location-zero defaults.
+  // Without an exact civil time and timezone, Moon is unresolved and Sun can
+  // be cusp-ambiguous on an ingress date, so both are withheld here.
+  if (req.timeUnknown || !exactTime || !timezone) {
+    return { sun: "Unknown", moon: "Unknown" };
+  }
+
+  const latitude = normalizeCoordinate(req.lat) ?? 0;
+  const longitude = normalizeCoordinate(req.lon) ?? 0;
 
   try {
     const data = calculateAstrology({
       name: req.place,
       birthDate: req.dateISO,
-      birthTime: safeBirthTime,
+      birthTime: exactTime,
       birthLocation: req.place,
-      latitude: safeLat,
-      longitude: safeLon,
-      timezone: safeTimezone,
+      latitude,
+      longitude,
+      timezone,
     });
     return { sun: data.sunSign, moon: data.moonSign };
   } catch {
