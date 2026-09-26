@@ -106,3 +106,68 @@ test("draft aspect policy cannot produce authoritative aspect output", () => {
     /aspect_policy_not_approved/,
   );
 });
+
+
+test("every governed major-aspect orb is inclusive at the boundary and exclusive immediately outside", () => {
+  for (const entry of LEGACY_COMPAT_MAJOR_ASPECT_POLICY_V1.entries) {
+    const insideLow = Math.max(0, entry.angleDegrees - entry.maximumOrbDegrees);
+    const insideHigh = Math.min(180, entry.angleDegrees + entry.maximumOrbDegrees);
+
+    const lowResult = calculateMajorAspects([p("Sun", 0), p("Moon", insideLow)]);
+    assert.equal(lowResult.length, 1, `${entry.kind} low boundary`);
+    assert.equal(lowResult[0].aspect, entry.kind);
+
+    const highResult = calculateMajorAspects([p("Sun", 0), p("Moon", insideHigh)]);
+    assert.equal(highResult.length, 1, `${entry.kind} high boundary`);
+    assert.equal(highResult[0].aspect, entry.kind);
+
+    const epsilon = 1e-6;
+    if (insideLow > 0) {
+      const outsideLow = calculateMajorAspects([
+        p("Sun", 0),
+        p("Moon", insideLow - epsilon),
+      ]);
+      assert.equal(outsideLow.length, 0, `${entry.kind} below orb`);
+    }
+    if (insideHigh < 180) {
+      const outsideHigh = calculateMajorAspects([
+        p("Sun", 0),
+        p("Moon", insideHigh + epsilon),
+      ]);
+      assert.equal(outsideHigh.length, 0, `${entry.kind} above orb`);
+    }
+  }
+});
+
+test("circular separation is symmetric and invariant under whole-circle shifts", () => {
+  const values = [-721.25, -360, -0.001, 0, 1, 59.5, 179.999, 180, 359.999, 360, 721.25];
+
+  for (const left of values) {
+    for (const right of values) {
+      const forward = circularSeparationDegrees(left, right);
+      const reverse = circularSeparationDegrees(right, left);
+      assert.ok(forward >= 0 && forward <= 180);
+      assert.ok(Math.abs(forward - reverse) < 1e-12);
+      assert.ok(
+        Math.abs(
+          forward -
+            circularSeparationDegrees(left + 360 * 5, right - 360 * 7),
+        ) < 1e-12,
+      );
+    }
+  }
+});
+
+test("aspect output never duplicates an unordered body pair", () => {
+  const placements = [
+    p("Sun", 0),
+    p("Moon", 60),
+    p("Mercury", 90),
+    p("Venus", 120),
+    p("Mars", 180),
+    p("Jupiter", 240),
+  ];
+  const aspects = calculateMajorAspects(placements);
+  const pairKeys = aspects.map((aspect) => [aspect.bodyA, aspect.bodyB].sort().join(":"));
+  assert.equal(new Set(pairKeys).size, pairKeys.length);
+});
