@@ -110,5 +110,9 @@ export function moralCompassSignals(userInputs: any): Signal[] {
     });
   }
 
-  return out;
+  return out.map((signal) => ({
+    ...signal,
+    label: `Self-reported reflection: ${signal.label}`,
+    confidence: "medium",
+  }));
 }
