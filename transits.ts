@@ -185,7 +185,7 @@ export function calculateActiveTransits(
   
   // Calculate dominant theme (most intense planet currently transiting)
   const dominantTransit = transits.find(t => t.intensity === 'high') || transits[0];
-  const dominantTheme = dominantTransit ? dominantTransit.theme : 'Integration and Balance';
+  const dominantTheme = dominantTransit ? dominantTransit.theme : 'No active governed major transit';
   
   // Calculate overall intensity (0-100 scale)
   const overallIntensity = transits.length > 0
