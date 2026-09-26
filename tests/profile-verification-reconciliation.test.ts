@@ -29,18 +29,34 @@ const local = generateOfflineCodexProfile(
     currentYear: 2026,
   },
 );
+const placementEvidence = {
+  source: "independent ephemeris comparison",
+  engine: "soulcodex-test-reference@1",
+  calculatedAt: "2026-09-21T01:00:00.000Z",
+};
+
+const humanDesignTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-21T01:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 
 const verifiedPlanets = {
-  sun: { verificationStatus: "verified", sign: "Virgo" },
-  moon: { verificationStatus: "verified", sign: "Virgo" },
-  mercury: { verificationStatus: "verified", sign: "Virgo" },
-  venus: { verificationStatus: "verified", sign: "Virgo" },
-  mars: { verificationStatus: "verified", sign: "Gemini" },
-  jupiter: { verificationStatus: "verified", sign: "Leo" },
-  saturn: { verificationStatus: "verified", sign: "Capricorn" },
-  uranus: { verificationStatus: "verified", sign: "Capricorn" },
-  neptune: { verificationStatus: "verified", sign: "Capricorn" },
-  pluto: { verificationStatus: "verified", sign: "Scorpio" },
+  sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  mercury: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  venus: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  mars: { verificationStatus: "verified", sign: "Gemini", evidence: placementEvidence },
+  jupiter: { verificationStatus: "verified", sign: "Leo", evidence: placementEvidence },
+  saturn: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  uranus: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  neptune: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  pluto: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
 };
 
 const zodiacSigns = [
@@ -58,11 +74,12 @@ const verifiedRemote = {
     authority: "Lunar Authority",
     profile: "2/5",
     verificationReceiptId: "35474994858:human-design-repair-audit",
+    ...humanDesignTrust,
   },
   astrologyData: {
-    sun: { verificationStatus: "verified", sign: "Virgo" },
-    moon: { verificationStatus: "verified", sign: "Virgo" },
-    rising: { verificationStatus: "verified", sign: "Scorpio" },
+    sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+    moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+    rising: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
     planets: verifiedPlanets,
     houseSystem: "equal",
     houses: Array.from({ length: 12 }, (_, index) => ({
@@ -210,6 +227,38 @@ test("verified remote placements replace legacy active aliases without changing 
     (active.confidence as Record<string, unknown>).astrologyVerificationVersion,
     CURRENT_ASTROLOGY_VERIFICATION_VERSION,
   );
+});
+
+test("verified labels without placement provenance are rejected during reconciliation", () => {
+  const astrology = {
+    sun: { verificationStatus: "verified", sign: "Virgo" },
+    moon: { verificationStatus: "verified", sign: "Cancer" },
+    rising: { verificationStatus: "verified", sign: "Scorpio" },
+  };
+
+  assert.equal(getVerifiedAstrologySign(astrology, "sun"), null);
+  assert.equal(hasVerifiedBigThree(astrology), false);
+});
+
+test("Human Design verified label without trust receipt cannot enter reconciled synthesis", () => {
+  const untrustedRemote = {
+    ...verifiedRemote,
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  };
+
+  const hydrated = reconcileOfflineProfile(local, untrustedRemote, "2026-09-21T02:00:00.000Z");
+  assert.notEqual(hydrated.humanDesignData?.status, "verified");
+  assert.equal(
+    hydrated.depthInterpretation.evidence.some((entry) => entry.id === "verified.human-design.core"),
+    false,
+  );
+  assert.equal(profileNeedsOnlineVerification(hydrated), true);
 });
 
 test("unverified nested placements never inherit populated legacy aliases", () => {
@@ -420,6 +469,7 @@ test("verified Human Design is reconciled into active and offline profiles", () 
       authority: "Lunar Authority",
       profile: "2/5",
       verificationReceiptId: "35474994858:human-design-repair-audit",
+      ...humanDesignTrust,
     },
   };
 
