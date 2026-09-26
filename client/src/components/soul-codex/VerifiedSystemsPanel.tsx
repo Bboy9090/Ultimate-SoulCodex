@@ -8,10 +8,60 @@
  */
 
 import type { VerifiedSystems, AstrologyDataStatus } from "@soulcodex/core";
+import {
+  buildVerifiedSystemMethodSummaries,
+  type VerifiedSystemMethodSummary,
+} from "@/lib/verifiedSystemMethodSummary";
 
 interface VerifiedSystemsPanelProps {
   systems: VerifiedSystems;
   astrologyStatus: AstrologyDataStatus;
+}
+
+function MethodDisclosure({
+  summary,
+}: {
+  summary: VerifiedSystemMethodSummary;
+}) {
+  return (
+    <details
+      data-verified-system-method={summary.id}
+      style={{
+        marginBottom: "1rem",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: "10px",
+        background: "rgba(255,255,255,0.025)",
+        padding: "0.7rem 0.8rem",
+      }}
+    >
+      <summary
+        style={{
+          cursor: "pointer",
+          color: "var(--sc-ivory-soft)",
+          fontSize: "0.78rem",
+          fontWeight: 600,
+        }}
+      >
+        Why this system is included
+      </summary>
+      <div
+        style={{
+          marginTop: "0.65rem",
+          display: "grid",
+          gap: "0.45rem",
+          color: "var(--sc-stone)",
+          fontSize: "0.75rem",
+          lineHeight: 1.55,
+        }}
+      >
+        <div>
+          <strong style={{ color: "var(--sc-teal)" }}>{summary.statusLabel}</strong>
+        </div>
+        <div>{summary.basis}</div>
+        <div>{summary.interpretationBoundary}</div>
+      </div>
+    </details>
+  );
 }
 
 export default function VerifiedSystemsPanel({
@@ -19,6 +69,13 @@ export default function VerifiedSystemsPanel({
   astrologyStatus
 }: VerifiedSystemsPanelProps) {
   const astrology = systems.astrology;
+  const methodSummaries = buildVerifiedSystemMethodSummaries(
+    systems,
+    astrologyStatus,
+  );
+  const methodSummaryById = new Map(
+    methodSummaries.map((summary) => [summary.id, summary]),
+  );
   const showVerifiedAstrology = astrologyStatus === "verified_ephemeris" && astrology.status === "verified_ephemeris";
   const showMoon = showVerifiedAstrology;
   const showAscendant = showVerifiedAstrology;
@@ -116,6 +173,10 @@ export default function VerifiedSystemsPanel({
             ✓ Verified Ephemeris
           </div>
 
+          {methodSummaryById.get("astrology") && (
+            <MethodDisclosure summary={methodSummaryById.get("astrology")!} />
+          )}
+
           <div
             style={{
               display: "grid",
@@ -209,6 +270,9 @@ export default function VerifiedSystemsPanel({
           >
             Numerology
           </h3>
+          {methodSummaryById.get("numerology") && (
+            <MethodDisclosure summary={methodSummaryById.get("numerology")!} />
+          )}
           <div
             style={{
               display: "grid",
@@ -301,6 +365,9 @@ export default function VerifiedSystemsPanel({
           >
             Human Design
           </h3>
+          {methodSummaryById.get("human-design") && (
+            <MethodDisclosure summary={methodSummaryById.get("human-design")!} />
+          )}
           <div
             style={{
               display: "grid",
