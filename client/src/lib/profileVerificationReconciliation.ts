@@ -168,6 +168,19 @@ function validHouseNumber(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
 }
 
+function verifiedHumanDesignRecord(
+  value: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null {
+  if (!value || value.status !== "verified") return null;
+  for (const field of ["type", "strategy", "authority", "profile"] as const) {
+    if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
+  }
+  for (const field of ["verificationReceiptId", "independentSource", "verifiedAt"] as const) {
+    if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
+  }
+  return value;
+}
+
 function validVerifiedPoint(
   point: PlacementRecord & {
     longitude?: number;
@@ -323,6 +336,7 @@ export function reconcileActiveProfile(
   const sunSign = getVerifiedAstrologySign(astrology, "sun");
   const moonSign = getVerifiedAstrologySign(astrology, "moon");
   const risingSign = getVerifiedAstrologySign(astrology, "rising");
+  const remoteHumanDesign = verifiedHumanDesignRecord(remote.humanDesignData);
 
   return {
     ...local,
@@ -349,10 +363,10 @@ export function reconcileActiveProfile(
     risingSign,
     astrologyData: astrology ?? local.astrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData: remoteHumanDesign ?? local.humanDesignData,
     humanDesignType:
-      typeof remote.humanDesignData?.type === "string"
-        ? remote.humanDesignData.type
+      typeof remoteHumanDesign?.type === "string"
+        ? remoteHumanDesign.type
         : local.humanDesignType,
     archetype: remote.archetypeData?.title ?? local.archetype,
     confidence: {
@@ -376,10 +390,13 @@ export function reconcileOfflineProfile(
   const numerologyData =
     (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??
     local.numerologyData;
+  const remoteHumanDesign = verifiedHumanDesignRecord(remote.humanDesignData);
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData:
+      (remoteHumanDesign as OfflineCodexProfile["humanDesignData"] | null) ??
+      local.humanDesignData,
   };
 
   const verifiedNarrative =
@@ -388,14 +405,16 @@ export function reconcileOfflineProfile(
           mergedLocal,
           remote.astrologyData as VerifiedAstrologyForSynthesis,
           syncedAt,
-          remote.humanDesignData ?? undefined,
+          remoteHumanDesign ?? undefined,
         )
       : null;
 
   return {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData:
+      (remoteHumanDesign as OfflineCodexProfile["humanDesignData"] | null) ??
+      local.humanDesignData,
     archetypeData:
       verifiedNarrative?.archetypeData ??
       (remote.archetypeData as OfflineCodexProfile["archetypeData"] | undefined) ??
@@ -452,5 +471,7 @@ export function profileNeedsOnlineVerification(
 
   if (!hasVerifiedFullNatalChart(profile.verifiedAstrologyData)) return true;
 
-  return profile.humanDesignData?.status !== "verified";
+  return !verifiedHumanDesignRecord(
+    profile.humanDesignData as Record<string, unknown> | null | undefined,
+  );
 }
