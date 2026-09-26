@@ -12,7 +12,7 @@ import type { AIPromptType } from "../src/types/ai";
 import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
 import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
 
-function buildPromptForType(
+export function buildPromptForType(
   type: AIPromptType,
   question: string,
   profile: any,
