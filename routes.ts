@@ -3114,16 +3114,80 @@ ${contextData}
     }
   });
 
-  // Poster PNG render endpoint
+  // Poster PNG render endpoint — owned saved-profile evidence only.
   app.post("/api/poster/render", async (req: any, res) => {
     try {
       const width = Math.min(parseInt(req.query.width as string) || 2048, 4096);
       const height = Math.round(width * 1350 / 1080);
+      const profileId = req.body?.profileId;
 
-      const data = req.body as PosterSvgData;
-      if (!data.birthDate || !data.sunSign || !data.moonSign || !data.lifePathNumber) {
-        return res.status(400).json({ message: "birthDate, sunSign, moonSign, and lifePathNumber are required" });
+      if (!profileId || typeof profileId !== "string") {
+        return res.status(400).json({
+          message: "An owned saved profileId is required for poster rendering.",
+          code: "saved_profile_required",
+        });
       }
+
+      const storedProfile = await storage.getProfile(profileId);
+      if (
+        !storedProfile ||
+        !profileBelongsToActor(storedProfile, {
+          userId: req.user?.id ?? null,
+          sessionId: req.sessionID ?? null,
+        })
+      ) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const verified = extractVerifiedAstrology(storedProfile);
+      if (!verified.sun || !verified.moon) {
+        return res.status(422).json({
+          message:
+            "Verified Sun and Moon placements are required before rendering a Soul Codex birth poster.",
+          code: "verified_poster_evidence_required",
+        });
+      }
+
+      let lifePathNumber: number;
+      try {
+        lifePathNumber = calcLifePath(storedProfile.birthDate);
+      } catch {
+        return res.status(422).json({
+          message: "A valid stored birth date is required before rendering a Soul Codex birth poster.",
+          code: "valid_birth_date_required",
+        });
+      }
+
+      const astrology = storedProfile.astrologyData as any;
+      const verifiedPlanets = Object.entries(astrology?.planets ?? {})
+        .filter(([, placement]) => {
+          const p = placement as any;
+          const status = p?.verificationStatus ?? p?.status;
+          const evidence = p?.provenance ?? p?.evidence;
+          return (
+            status === "verified" &&
+            typeof p?.longitude === "number" &&
+            Number.isFinite(p.longitude) &&
+            Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt)
+          );
+        })
+        .map(([name, placement]) => ({
+          name,
+          longitude: Number((placement as any).longitude),
+        }));
+
+      const data: PosterSvgData = {
+        name: storedProfile.name ?? undefined,
+        birthDate: storedProfile.birthDate,
+        birthTime: storedProfile.birthTime || undefined,
+        birthLocation: storedProfile.birthLocation || undefined,
+        sunSign: verified.sun,
+        moonSign: verified.moon,
+        risingSign: verified.rising,
+        lifePathNumber,
+        masterNumber: [11, 22, 33].includes(lifePathNumber) ? lifePathNumber : undefined,
+        planets: verifiedPlanets,
+      };
 
       // Determine premium status (session flag, OWNER_PROFILE_ID bypass, or entitlement check)
       let isPremium = false;
