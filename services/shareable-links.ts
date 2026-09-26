@@ -165,6 +165,44 @@ export async function getShareableProfile(
   };
 }
 
+const ALWAYS_PRIVATE_SHARE_KEYS = new Set([
+  'userid',
+  'sessionid',
+  'birthtime',
+  'timezone',
+  'latitude',
+  'longitude',
+  'inputtimestamp',
+  'inputtimestamputc',
+]);
+
+const PERSONAL_SHARE_KEYS = new Set([
+  'birthdate',
+  'birthlocation',
+]);
+
+function sanitizeSharedValue(
+  value: unknown,
+  includePersonalInfo: boolean,
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeSharedValue(entry, includePersonalInfo));
+  }
+
+  if (!value || typeof value !== 'object' || value instanceof Date) {
+    return value;
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    const normalizedKey = key.toLowerCase();
+    if (ALWAYS_PRIVATE_SHARE_KEYS.has(normalizedKey)) continue;
+    if (!includePersonalInfo && PERSONAL_SHARE_KEYS.has(normalizedKey)) continue;
+    sanitized[key] = sanitizeSharedValue(nested, includePersonalInfo);
+  }
+  return sanitized;
+}
+
 /**
  * Filter profile data based on share settings
  */
@@ -216,15 +254,12 @@ function filterProfileForSharing(profile: Profile, settings: ShareSettings): Par
     (filtered as any).soulCodexData = (profile as any).soulCodexData;
   }
 
-  // Never include sensitive data
-  delete (filtered as any).userId;
-  delete (filtered as any).sessionId;
-  delete (filtered as any).latitude;
-  delete (filtered as any).longitude;
-  delete (filtered as any).timezone;
-  delete (filtered as any).birthTime; // Unless explicitly allowed
-
-  return filtered;
+  // Apply privacy recursively. Nested astronomy/Human Design evidence can
+  // contain exact instants or coordinates even after top-level fields are removed.
+  return sanitizeSharedValue(
+    filtered,
+    settings.includePersonalInfo,
+  ) as Partial<Profile>;
 }
 
 /**
