@@ -64,10 +64,14 @@ export interface NumerologyOutput {
 }
 
 export interface HumanDesignOutput {
+  status?: "verified" | "calculated_unverified" | "unresolved";
   profileType: string; // e.g. "5/1"
   strategy: string;
   authority: string;
   type?: string;
+  verificationReceiptId?: string;
+  independentSource?: string;
+  verifiedAt?: string;
 }
 
 export interface VerifiedSystems {
