@@ -226,3 +226,26 @@ test("generic profile badges cannot authorize arbitrary chart data", () => {
   assert.ok(verifiedChart.some((signal) => signal.system === "astrology"));
   assert.ok(verifiedChart.some((signal) => signal.system === "aspects"));
 });
+
+
+test("legacy elemental inference remains unavailable", () => {
+  for (const stressElement of ["fire", "water", "earth", "air", "metal"]) {
+    assert.deepEqual(elementSignals({ stressElement }), []);
+  }
+});
+
+test("Moral Compass remains explicit self-reported supporting context", () => {
+  const signals = moralCompassSignals({
+    decisionStyle: "analysis",
+    pressureStyle: "step_in",
+    nonNegotiables: ["no lies"],
+  });
+
+  assert.ok(signals.length >= 2);
+  assert.ok(
+    signals.every((signal) =>
+      signal.label.startsWith("Self-reported reflection:"),
+    ),
+  );
+  assert.ok(signals.every((signal) => signal.confidence === "medium"));
+});
