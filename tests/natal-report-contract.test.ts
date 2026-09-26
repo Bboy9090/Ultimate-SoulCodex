@@ -169,3 +169,29 @@ test("production profile UI and endpoint are wired to the canonical report path"
   assert.doesNotMatch(routes, /authToken !== profileId/);
   assert.match(routes, /requestOwnsProfile\(req, profile\)/);
 });
+
+
+test("natal report withholds Human Design when verification identity is forged", () => {
+  const profile = verifiedProfile();
+  profile.humanDesignData = {
+    ...(profile.humanDesignData as Record<string, unknown>),
+    verificationReceiptId: "forged-receipt",
+  };
+
+  const report = buildNatalReportInput(profile);
+  assert.deepEqual(report.humanDesign, {});
+  assert.match(report.aiText.hdInterpretation, /not independently verified|intentionally omitted/i);
+});
+
+test("natal report withholds internally incoherent Human Design even with valid-looking metadata", () => {
+  const profile = verifiedProfile();
+  profile.humanDesignData = {
+    ...(profile.humanDesignData as Record<string, unknown>),
+    type: "Reflector",
+    strategy: "To Respond",
+    authority: "Sacral Authority",
+  };
+
+  const report = buildNatalReportInput(profile);
+  assert.deepEqual(report.humanDesign, {});
+});
