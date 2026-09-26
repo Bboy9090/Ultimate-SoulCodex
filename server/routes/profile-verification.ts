@@ -32,12 +32,29 @@ export const profileVerificationRequestSchema = z
   })
   .strict();
 
+function verifiedLegacySign(placement: any): string | null {
+  const evidence = placement?.provenance ?? placement?.evidence;
+  const evidenceComplete = Boolean(
+    typeof evidence?.source === "string" && evidence.source.trim() &&
+    typeof evidence?.engine === "string" && evidence.engine.trim() &&
+    typeof evidence?.calculatedAt === "string" &&
+    evidence.calculatedAt.trim() &&
+    !Number.isNaN(Date.parse(evidence.calculatedAt))
+  );
+  return placement?.verificationStatus === "verified" &&
+    evidenceComplete &&
+    typeof placement?.sign === "string" &&
+    placement.sign.trim()
+    ? placement.sign.trim()
+    : null;
+}
+
 function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   return {
     ...astrologyData,
-    sunSign: astrologyData.sun.verificationStatus === "verified" ? astrologyData.sun.sign : null,
-    moonSign: astrologyData.moon.verificationStatus === "verified" ? astrologyData.moon.sign : null,
-    risingSign: astrologyData.rising.verificationStatus === "verified" ? astrologyData.rising.sign : null,
+    sunSign: verifiedLegacySign(astrologyData.sun),
+    moonSign: verifiedLegacySign(astrologyData.moon),
+    risingSign: verifiedLegacySign(astrologyData.rising),
   };
 }
 
