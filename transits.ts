@@ -201,7 +201,8 @@ export function calculateActiveTransits(
         }
       }
     } catch (error) {
-      console.error(`Error calculating ${transitPlanet} transit:`, error);
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`transit_planet_calculation_failed:${transitPlanet}:${detail}`);
     }
   }
   
