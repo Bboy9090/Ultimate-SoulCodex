@@ -41,6 +41,14 @@ const FULL_NATAL_PLANET_KEYS = [
 
 export const CURRENT_ASTROLOGY_VERIFICATION_VERSION = 7;
 
+export const APPROVED_HUMAN_DESIGN_TRUST = Object.freeze({
+  engine: "soulcodex-hd-geocentric-v1",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+});
+
+
 export type RemoteProfileSnapshot = {
   id?: string;
   name?: string;
@@ -217,13 +225,13 @@ export function hasVerifiedHumanDesignTrust(humanDesignData: Record<string, unkn
   return Boolean(
     humanDesignData?.status === "verified" &&
     hasCoherentVerifiedHumanDesignCore(humanDesignData) &&
-    nonEmptyText(humanDesignData.engine) &&
+    humanDesignData.engine === APPROVED_HUMAN_DESIGN_TRUST.engine &&
     nonEmptyText(humanDesignData.source) &&
     validIsoLikeTimestamp(humanDesignData.calculatedAt) &&
     validIsoLikeTimestamp(humanDesignData.inputTimestampUtc) &&
-    nonEmptyText(humanDesignData.verificationReceiptId) &&
-    nonEmptyText(humanDesignData.independentSource) &&
-    validIsoLikeTimestamp(humanDesignData.verifiedAt)
+    humanDesignData.verificationReceiptId === APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId &&
+    humanDesignData.independentSource === APPROVED_HUMAN_DESIGN_TRUST.independentSource &&
+    humanDesignData.verifiedAt === APPROVED_HUMAN_DESIGN_TRUST.verifiedAt
   );
 }
 
