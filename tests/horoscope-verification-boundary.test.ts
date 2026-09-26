@@ -118,3 +118,22 @@ test("daily horoscope AI prompt treats symbolic sky and numerology as observatio
   assert.match(source, /do not prove what I will do, feel, encounter, or become/);
   assert.doesNotMatch(source, /What I might notice today — specific and behavioral/);
 });
+
+
+test("daily horoscope requires an explicit profile timezone for user-local date semantics", async () => {
+  await assert.rejects(
+    () => generateDailyHoroscope({
+      id: "missing-zone",
+      birthDate: "1990-09-17",
+    }),
+    /Horoscope timezone is required/,
+  );
+});
+
+test("daily horoscope fallback never invents Personal Day 1", () => {
+  const source = readFileSync("packages/astrology/horoscope.ts", "utf8");
+
+  assert.doesNotMatch(source, /dayThemes\[personalDayNumber % 10\]/);
+  assert.doesNotMatch(source, /\|\| dayThemes\[1\]/);
+  assert.match(source, /Personal Day is unavailable; I keep the reflection general instead of inventing a Day 1 cycle/);
+});
