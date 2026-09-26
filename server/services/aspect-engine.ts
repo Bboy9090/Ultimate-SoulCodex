@@ -1,20 +1,14 @@
 import {
+  MAJOR_ASPECT_POLICY_V1,
   circularDegreesDelta,
-} from "./angular-math";
+  type MajorAspectKind,
+  type MajorAspectPolicyEntry,
+} from "@soulcodex/core";
 import type { VerifiableBody } from "./astrology-verification";
 
-export type MajorAspectKind =
-  | "conjunction"
-  | "sextile"
-  | "square"
-  | "trine"
-  | "opposition";
+export type { MajorAspectKind } from "@soulcodex/core";
 
-export interface AspectPolicyEntry {
-  kind: MajorAspectKind;
-  angleDegrees: number;
-  maximumOrbDegrees: number;
-}
+export type AspectPolicyEntry = MajorAspectPolicyEntry;
 
 export interface AspectPolicy {
   policyId: string;
@@ -59,19 +53,8 @@ const BODY_ORDER_INDEX = new Map(
   BODY_ORDER.map((body, index) => [body, index] as const),
 );
 
-export const LEGACY_COMPAT_MAJOR_ASPECT_POLICY_V1: AspectPolicy = Object.freeze({
-  policyId: "ASTRO-ASPECT-MAJOR-v1",
-  status: "approved",
-  entries: Object.freeze([
-    { kind: "conjunction", angleDegrees: 0, maximumOrbDegrees: 10 },
-    { kind: "sextile", angleDegrees: 60, maximumOrbDegrees: 6 },
-    { kind: "square", angleDegrees: 90, maximumOrbDegrees: 8 },
-    { kind: "trine", angleDegrees: 120, maximumOrbDegrees: 8 },
-    { kind: "opposition", angleDegrees: 180, maximumOrbDegrees: 10 },
-  ] as const),
-  rationale:
-    "Versioned compatibility policy matching the historical Soul Codex major-aspect orb convention. Orb values are interpretive policy, not astronomical measurement accuracy.",
-});
+export const LEGACY_COMPAT_MAJOR_ASPECT_POLICY_V1: AspectPolicy =
+  MAJOR_ASPECT_POLICY_V1;
 
 export function circularSeparationDegrees(left: number, right: number): number {
   try {
