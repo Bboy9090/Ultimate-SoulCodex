@@ -64,11 +64,23 @@ test("production server does not import the generic legacy template bank", () =>
   assert.doesNotMatch(serverRoutes, /template-bank|daily-insights/);
 });
 
-test("generic legacy placeholder language cannot masquerade as governed evidence", () => {
-  const legacy = readFileSync("services/template-bank.ts", "utf8");
-  assert.match(legacy, /divine purpose|Chinese zodiac|your nakshatra/i, "test should continue detecting the legacy placeholder surface");
-  const registry = JSON.stringify(SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY);
-  assert.match(registry, /quarantined|not production-governed|No .* inferred|excluded/i);
+test("legacy daily template service delegates to a selector that rotates only governed systems", () => {
+  const legacyService = readFileSync("services/template-bank.ts", "utf8");
+  const governedPackage = readFileSync("packages/astrology/template-bank.ts", "utf8");
+
+  assert.match(legacyService, /export \* from ['"]\.\.\/packages\/astrology\/template-bank['"]/);
+
+  const selectorStart = governedPackage.indexOf("export function selectTemplates");
+  assert.ok(selectorStart >= 0, "governed template selector must exist");
+  const selector = governedPackage.slice(selectorStart);
+
+  assert.match(selector, /numerology:\s*numerologyTemplates/);
+  assert.match(selector, /astrology:\s*eligibleAstrologyTemplates/);
+  assert.match(selector, /humandesign:\s*humanDesignTemplates/);
+  assert.doesNotMatch(
+    selector,
+    /chinese:\s*|ayurveda:\s*|vedic:\s*|genekeys:\s*|iching:\s*|mayan:\s*|chakras:\s*|runes:\s*|tarot:\s*|kabbalah:\s*|sacredgeom:\s*|sabian:\s*|biorhythms:\s*|asteroids:\s*|arabicparts:\s*|fixedstars:\s*/,
+  );
 });
 
 
