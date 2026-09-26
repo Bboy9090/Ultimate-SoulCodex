@@ -37,6 +37,32 @@ const MAJOR_ASPECTS = {
 // Outer planets only - these create the most significant life transits
 const OUTER_PLANETS = ['Pluto', 'Neptune', 'Uranus', 'Saturn', 'Jupiter'];
 
+function canonicalSignFromLongitude(longitude: number): string {
+  const normalized = ((longitude % 360) + 360) % 360;
+  return SIGNS[Math.floor(normalized / 30)];
+}
+
+function validateNatalPlanets(
+  natalPlanets: Record<string, { longitude: number; sign: string }>,
+): void {
+  const entries = Object.entries(natalPlanets);
+  if (entries.length === 0) {
+    throw new Error('transit_verified_natal_positions_required');
+  }
+
+  for (const [name, position] of entries) {
+    if (!Number.isFinite(position?.longitude)) {
+      throw new Error(`transit_natal_longitude_invalid:${name}`);
+    }
+    const normalized = ((position.longitude % 360) + 360) % 360;
+    const expectedSign = canonicalSignFromLongitude(normalized);
+    if (position.sign !== expectedSign) {
+      throw new Error(`transit_natal_sign_longitude_mismatch:${name}`);
+    }
+  }
+}
+
+
 const TRANSIT_THEMES: Record<string, { theme: string, intensity: 'high' | 'medium' | 'low' }> = {
   'Pluto': { theme: 'Transformation, Shadow Work, Death & Rebirth', intensity: 'high' },
   'Neptune': { theme: 'Dissolution, Spirituality, Surrender, Illusion', intensity: 'high' },
@@ -134,6 +160,10 @@ export function calculateActiveTransits(
   natalPlanets: Record<string, { longitude: number, sign: string }>,
   date: Date = new Date()
 ): ActiveTransits {
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('transit_date_invalid');
+  }
+  validateNatalPlanets(natalPlanets);
   const transits: Transit[] = [];
   
   // Calculate current positions of outer planets
