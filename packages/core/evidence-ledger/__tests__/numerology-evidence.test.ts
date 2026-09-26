@@ -5,9 +5,11 @@ import {
   calcPersonalYearWithEvidence,
   calcPersonalMonthWithEvidence,
   calcLifePathWithEvidence,
+  calcBirthdayWithEvidence,
   calcExpressionWithEvidence,
   calcSoulUrgeWithEvidence,
   calcPersonalityWithEvidence,
+  calcMaturityWithEvidence,
 } from '../integrations.js';
 
 describe('Numerology Evidence Integration - All 7 Calculations', () => {
@@ -224,6 +226,49 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
     });
   });
 
+  describe('Birthday Evidence', () => {
+    it('calculates the Birthday Number with canonical provenance', () => {
+      const result = calcBirthdayWithEvidence('1990-09-17');
+      assert.strictEqual(result.value, 8);
+      assert.strictEqual(result.evidence.formulaId, 'numerology.birthday');
+      assert.strictEqual(result.evidence.formulaVersion, 'pythagorean-v2');
+      assert.strictEqual(result.evidence.calculationStatus, 'resolved');
+    });
+
+    it('fails closed for an invalid calendar date', () => {
+      const result = calcBirthdayWithEvidence('1990-02-30');
+      assert.strictEqual(result.value, undefined);
+      assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(result.evidence.inputState, 'invalid');
+    });
+  });
+
+  describe('Maturity Evidence', () => {
+    it('calculates Maturity from the same canonical Life Path and Expression engine', () => {
+      const result = calcMaturityWithEvidence('1990-09-17', 'Robert Gonzalez');
+      assert.strictEqual(result.value, 4);
+      assert.strictEqual(result.evidence.formulaId, 'numerology.maturity');
+      assert.strictEqual(result.evidence.formulaVersion, 'pythagorean-v2');
+      assert.strictEqual(result.evidence.calculationStatus, 'resolved');
+    });
+
+    it('accepts accented names when the canonical numerology engine can normalize them', () => {
+      const accented = calcMaturityWithEvidence('1990-09-17', 'José González');
+      const ascii = calcMaturityWithEvidence('1990-09-17', 'Jose Gonzalez');
+
+      assert.strictEqual(accented.evidence.calculationStatus, 'resolved');
+      assert.strictEqual(accented.value, ascii.value);
+      assert.strictEqual(accented.evidence.inputState, 'valid');
+    });
+
+    it('fails closed when either required input is invalid', () => {
+      const missingName = calcMaturityWithEvidence('1990-09-17', '');
+      const invalidDate = calcMaturityWithEvidence('1990-02-30', 'Robert Gonzalez');
+      assert.strictEqual(missingName.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(invalidDate.evidence.calculationStatus, 'unresolved');
+    });
+  });
+
   describe('Expression Evidence', () => {
     it('should deterministically calculate Expression Number from name', () => {
       const fullName = 'Albert Einstein';
@@ -345,6 +390,22 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.ok(
         result.evidence.limitations.some((l) => l.includes('name changes') || l.includes('birth'))
       );
+    });
+  });
+
+  describe('Canonical Unicode Name Normalization', () => {
+    it('keeps evidence-backed name calculations in parity with transliterated equivalents', () => {
+      for (const calculate of [
+        calcExpressionWithEvidence,
+        calcSoulUrgeWithEvidence,
+        calcPersonalityWithEvidence,
+      ]) {
+        const accented = calculate('José González');
+        const ascii = calculate('Jose Gonzalez');
+        assert.strictEqual(accented.evidence.calculationStatus, 'resolved');
+        assert.strictEqual(accented.evidence.inputState, 'valid');
+        assert.strictEqual(accented.value, ascii.value);
+      }
     });
   });
 
