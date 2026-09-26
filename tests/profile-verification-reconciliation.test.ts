@@ -577,3 +577,18 @@ test("status-only remote Human Design is not promoted during reconciliation", ()
   assert.notEqual(offline.humanDesignData?.status, "verified");
   assert.equal(profileNeedsOnlineVerification(offline), true);
 });
+
+
+test("canonical angle validation tolerates harmless floating-point roundoff", () => {
+  const noisyRemote = structuredClone(verifiedRemote);
+  const nodeLongitude = 304.71;
+  noisyRemote.astrologyData.northNode.longitude =
+    ((nodeLongitude % 360) + 360) % 360;
+  noisyRemote.astrologyData.northNode.degree =
+    noisyRemote.astrologyData.northNode.longitude % 30;
+
+  assert.equal(
+    hasVerifiedFullNatalChart(noisyRemote.astrologyData),
+    true,
+  );
+});
