@@ -1,4 +1,9 @@
 import {
+  degreeInTropicalSign,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+} from "./angular-math";
+import {
   fetchChironHorizonsReference,
   type ChironReference,
 } from "./chiron-horizons-reference";
@@ -84,16 +89,6 @@ export type ChironReferenceFetcher = (
   inputTimestamp: string,
 ) => Promise<ChironReference>;
 
-const ZODIAC_SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
-
-function signFromLongitude(value: number): string {
-  const normalized = ((value % 360) + 360) % 360;
-  return ZODIAC_SIGNS[Math.floor(normalized / 30)];
-}
-
 function validatePolicy(
   policy: ChironProductionPolicy,
 ): ChironVerificationResult | null {
@@ -167,8 +162,8 @@ export async function verifyChiron(
       return { status: "unresolved", reason: "reference_invalid" };
     }
 
-    const longitudeDegrees = ((reference.longitude % 360) + 360) % 360;
-    if (reference.sign !== signFromLongitude(longitudeDegrees)) {
+    const longitudeDegrees = normalizeDegrees(reference.longitude);
+    if (reference.sign !== tropicalSignFromLongitude(longitudeDegrees)) {
       return { status: "unresolved", reason: "reference_invalid" };
     }
     return {
@@ -176,7 +171,7 @@ export async function verifyChiron(
       chiron: {
         sign: reference.sign,
         longitudeDegrees,
-        degreeInSign: longitudeDegrees % 30,
+        degreeInSign: degreeInTropicalSign(longitudeDegrees),
         verificationStatus: "verified",
         policyId: policy.policyId,
         evidenceRunId: policy.evidenceRunId!,
