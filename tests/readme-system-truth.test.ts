@@ -48,3 +48,16 @@ test("README keeps unsupported systems visibly quarantined", () => {
     assert.match(readme, new RegExp(system.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&"), "i"));
   }
 });
+
+
+test("README mirrors the active runtime architecture", () => {
+  assert.match(
+    readme,
+    /Route layer: `server/routes.ts`, with governed specialized routers under `server/routes/`/,
+  );
+  assert.doesNotMatch(readme, /Route layer: root `routes.ts`/);
+  assert.match(readme, /| Build | Vite 8 (client), esbuild (server) |/);
+  assert.doesNotMatch(readme, /Vite 5 (client)/);
+  assert.match(readme, /Navigate to `http://localhost:3000`/);
+  assert.doesNotMatch(readme, /Navigate to `http://localhost:5000`/);
+});
