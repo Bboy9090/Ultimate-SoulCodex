@@ -17,21 +17,6 @@ import { generateDailyInsights } from "./services/daily-insights";
 import { generateCompatibilityInsights } from "./services/compatibility-insights";
 import { getMatchesByMode, type RelationshipMode } from "./services/archetype-matches";
 import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
-import { calculateGeneKeys } from "./services/gene-keys";
-import { calculateIChing } from "./services/i-ching";
-import { calculateChineseAstrology } from "./services/chinese-astrology";
-import { calculateKabbalah } from "./services/kabbalah";
-import { calculateMayanAstrology } from "./services/mayan-astrology";
-import { calculateChakraSystem } from "./services/chakra-system";
-import { calculateSacredGeometry } from "./services/sacred-geometry";
-import { calculateRunes } from "./services/runes";
-import { calculateSabianSymbols } from "./services/sabian-symbols";
-import { calculateAyurveda } from "./services/ayurveda";
-import { calculateBiorhythms } from "./services/biorhythms";
-import { calculateAsteroids } from "./services/asteroids";
-import { calculateArabicParts } from "./services/arabic-parts";
-import { calculateFixedStars } from "./services/fixed-stars";
-import { generatePalmReading } from "./services/palmistry";
 import { calculateElementalProfile, generateSoulArchetype, getDailyElementalGuidance } from "./services/elemental-medicine";
 import { calculateMoralCompass, calculateMoralCompassFromBirthData } from "./services/moral-compass";
 import { calculateParentalInfluence } from "./services/parental-influence";
@@ -1076,187 +1061,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Calculate all new mystical systems (30+ total)
-      let vedicAstrologyData, geneKeysData, iChingData, chineseAstrologyData;
-      let kabbalahData, mayanAstrologyData, chakraData, sacredGeometryData;
-      let runesData, sabianSymbolsData, ayurvedaData, biorhythmsData;
-      let asteroidsData, arabicPartsData, fixedStarsData;
-      
-      // Vedic astrology is explicitly unavailable in the production system registry.
-      // Legacy calculator code remains quarantined until a governed sidereal,
-      // ayanamsa, Ascendant, node, and independent-verification contract exists.
-      vedicAstrologyData = null;
-      
-      // Gene Keys (requires complete data for HD gates)
-      if (hasCompleteData && astrologyData && humanDesignData) {
-        try {
-          const sunGate = humanDesignData.activations.conscious.sun.gate;
-          const earthGate = humanDesignData.activations.conscious.earth.gate;
-          const moonGate = humanDesignData.activations.conscious.moon.gate;
-          geneKeysData = calculateGeneKeys(sunGate, earthGate, moonGate);
-        } catch (error) {
-          console.error("[CreateProfile] Gene Keys calculation failed:", error);
-          geneKeysData = null;
-        }
-      } else {
-        geneKeysData = null;
-      }
-      
-      // I Ching (works with just birth date)
-      try {
-        iChingData = calculateIChing(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] I Ching calculation failed:", error);
-        iChingData = null;
-      }
-      
-      // Chinese Astrology (works with just birth date)
-      try {
-        chineseAstrologyData = calculateChineseAstrology(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Chinese Astrology calculation failed:", error);
-        chineseAstrologyData = null;
-      }
-      
-      // Kabbalah (works with name + birth date + numerology)
-      try {
-        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData.lifePath || 1);
-      } catch (error) {
-        console.error("[CreateProfile] Kabbalah calculation failed:", error);
-        kabbalahData = null;
-      }
-      
-      // Mayan Astrology (works with just birth date)
-      try {
-        mayanAstrologyData = calculateMayanAstrology(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Mayan Astrology calculation failed:", error);
-        mayanAstrologyData = null;
-      }
-      
-      // Chakra System (works with birth date + numerology)
-      try {
-        chakraData = calculateChakraSystem(astrologyData, numerologyData, {});
-      } catch (error) {
-        console.error("[CreateProfile] Chakra System calculation failed:", error);
-        chakraData = null;
-      }
-      
-      // Sacred Geometry (works with birth date + numerology)
-      try {
-        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData.lifePath || 1, birthData.name);
-      } catch (error) {
-        console.error("[CreateProfile] Sacred Geometry calculation failed:", error);
-        sacredGeometryData = null;
-      }
-      
-      // Runes (works with name + birth date + numerology)
-      try {
-        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData.lifePath || 1);
-      } catch (error) {
-        console.error("[CreateProfile] Runes calculation failed:", error);
-        runesData = null;
-      }
-      
-      // Sabian Symbols (requires complete data for planetary longitudes)
-      if (hasCompleteData && astrologyData) {
-        const sunLongitude = (astrologyData.planets.sun.house - 1) * 30 + astrologyData.planets.sun.degree;
-        const moonLongitude = (astrologyData.planets.moon.house - 1) * 30 + astrologyData.planets.moon.degree;
-        const ascendantLongitude = astrologyData.houses[0].degree;
-        sabianSymbolsData = await runWithTimeoutAndTiming(
-          "Sabian Symbols",
-          TIMEOUT_VALUES.SABIAN_SYMBOLS,
-          () => calculateSabianSymbols(sunLongitude, moonLongitude, ascendantLongitude),
-          null
-        );
-      } else {
-        sabianSymbolsData = null;
-      }
-      
-      // Ayurveda (works with birth date, enhanced with astrology)
-      try {
-        ayurvedaData = calculateAyurveda(birthData.birthDate, numerologyData.lifePath || 1);
-      } catch (error) {
-        console.error("[CreateProfile] Ayurveda calculation failed:", error);
-        ayurvedaData = null;
-      }
-      
-      // Biorhythms (works with just birth date)
-      try {
-        biorhythmsData = calculateBiorhythms(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Biorhythms calculation failed:", error);
-        biorhythmsData = null;
-      }
-      
-      // Palmistry (works with birth date + numerology life path)
-      let palmistryData;
-      try {
-        palmistryData = generatePalmReading(birthData.birthDate, numerologyData.lifePath || 1);
-        console.log("[CreateProfile] Palm reading generated successfully");
-      } catch (error) {
-        console.error("[CreateProfile] Palmistry calculation failed:", error);
-        palmistryData = null;
-      }
-      
-      // Asteroids (requires complete data for planetary positions)
-      if (hasCompleteData && astrologyData) {
-        try {
-          const ascendantLongitude = (astrologyData as any).houses?.[0]?.degree || 0;
-          asteroidsData = calculateAsteroids(
-            birthData.birthDate,
-            birthData.birthTime!,
-            birthData.timezone!,
-            ascendantLongitude
-          );
-        } catch (error) {
-          console.error("[CreateProfile] Asteroids calculation failed:", error);
-          asteroidsData = null;
-        }
-      } else {
-        asteroidsData = null;
-      }
-      
-      // Arabic Parts (requires complete data for ascendant)
-      if (hasCompleteData && astrologyData) {
-        try {
-          const ascendantLongitude = astrologyData.houses[0].degree;
-          arabicPartsData = calculateArabicParts(
-            ascendantLongitude,
-            astrologyData.planets.sun.degree,
-            astrologyData.planets.moon.degree,
-            astrologyData.planets.venus.degree,
-            astrologyData.planets.jupiter.degree,
-            astrologyData.planets.saturn.degree,
-            true // isDayBirth - simplified
-          );
-        } catch (error) {
-          console.error("[CreateProfile] Arabic Parts calculation failed:", error);
-          arabicPartsData = null;
-        }
-      } else {
-        arabicPartsData = null;
-      }
-      
-      // Fixed Stars (requires planetary longitudes)
-      if (hasCompleteData && astrologyData) {
-        try {
-          const planetLongitudes = {
-            sun: astrologyData.planets.sun.degree,
-            moon: astrologyData.planets.moon.degree,
-            mercury: astrologyData.planets.mercury.degree,
-            venus: astrologyData.planets.venus.degree,
-            mars: astrologyData.planets.mars.degree,
-            jupiter: astrologyData.planets.jupiter.degree,
-            saturn: astrologyData.planets.saturn.degree
-          };
-          fixedStarsData = calculateFixedStars(planetLongitudes);
-        } catch (error) {
-          console.error("[CreateProfile] Fixed Stars calculation failed:", error);
-          fixedStarsData = null;
-        }
-      } else {
-        fixedStarsData = null;
-      }
+      // Systems below are present only as legacy code and are explicitly
+      // unavailable in the production system registry. Preserve schema keys
+      // as null so old clients/storage remain compatible without manufacturing
+      // identity claims from ungoverned calculators.
+      const vedicAstrologyData = null;
+      const geneKeysData = null;
+      const iChingData = null;
+      const chineseAstrologyData = null;
+      const kabbalahData = null;
+      const mayanAstrologyData = null;
+      const chakraData = null;
+      const sacredGeometryData = null;
+      const runesData = null;
+      const sabianSymbolsData = null;
+      const ayurvedaData = null;
+      const biorhythmsData = null;
+      const palmistryData = null;
+      const asteroidsData = null;
+      const arabicPartsData = null;
+      const fixedStarsData = null;
       
       // Calculate Elemental Medicine Profile
       let elementalMedicineData;
