@@ -60,7 +60,36 @@ test("mean-node sign and degree-in-sign remain mathematically consistent", () =>
   }
 });
 
-test("mean-node calculation is deterministic for identical exact UTC input", () => {
+test("mean-node geometry is deterministic for identical exact UTC input", () => {
   const input = { inputTimestamp: "1990-09-17T15:11:00.000Z" };
-  assert.deepEqual(calculateMeanNodePair(input), calculateMeanNodePair(input));
+  const first = calculateMeanNodePair(input);
+  const second = calculateMeanNodePair(input);
+
+  const mathematicalProjection = (pair: ReturnType<typeof calculateMeanNodePair>) => ({
+    northNode: {
+      mode: pair.northNode.mode,
+      longitudeDegrees: pair.northNode.longitudeDegrees,
+      sign: pair.northNode.sign,
+      degreeInSign: pair.northNode.degreeInSign,
+      source: pair.northNode.source,
+      engine: pair.northNode.engine,
+      inputTimestamp: pair.northNode.inputTimestamp,
+    },
+    southNode: {
+      mode: pair.southNode.mode,
+      longitudeDegrees: pair.southNode.longitudeDegrees,
+      sign: pair.southNode.sign,
+      degreeInSign: pair.southNode.degreeInSign,
+      source: pair.southNode.source,
+      engine: pair.southNode.engine,
+      inputTimestamp: pair.southNode.inputTimestamp,
+    },
+  });
+
+  assert.deepEqual(mathematicalProjection(first), mathematicalProjection(second));
+
+  for (const pair of [first, second]) {
+    assert.ok(Number.isFinite(Date.parse(pair.northNode.calculatedAt)));
+    assert.equal(pair.southNode.calculatedAt, pair.northNode.calculatedAt);
+  }
 });
