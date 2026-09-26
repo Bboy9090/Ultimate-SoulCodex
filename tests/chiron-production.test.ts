@@ -110,3 +110,41 @@ test("draft Chiron policy cannot promote output", async () => {
   assert.equal(result.status, "unresolved");
   assert.equal(result.reason, "policy_not_approved");
 });
+
+
+test("Chiron verification rejects timezone-less and offset request timestamps", async () => {
+  for (const inputTimestamp of [
+    "1990-09-17T15:11:00",
+    "1990-09-17T11:11:00-04:00",
+  ]) {
+    const result = await verifyChiron(inputTimestamp, {
+      referenceFetcher: async () => {
+        throw new Error("reference should not be called for invalid timestamp");
+      },
+    });
+
+    assert.deepEqual(result, {
+      status: "unresolved",
+      reason: "reference_timestamp_mismatch",
+    });
+  }
+});
+
+test("Chiron verification rejects non-UTC reference timestamps even for the same instant", async () => {
+  const result = await verifyChiron("1990-09-17T15:11:00.000Z", {
+    referenceFetcher: async () => ({
+      body: "Chiron",
+      longitude: 115.3498,
+      sign: "Cancer",
+      source: "offset-reference fixture",
+      engine: "fixture",
+      calculatedAt: "2026-09-19T22:49:00.000Z",
+      inputTimestamp: "1990-09-17T11:11:00-04:00",
+    }),
+  });
+
+  assert.deepEqual(result, {
+    status: "unresolved",
+    reason: "reference_timestamp_mismatch",
+  });
+});
