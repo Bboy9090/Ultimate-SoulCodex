@@ -1,3 +1,6 @@
+import {
+  tropicalSignFromLongitude,
+} from "./angular-math";
 import { parseHorizonsLongitude } from "./jpl-horizons-reference";
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
@@ -26,19 +29,6 @@ const HORIZONS_ENGINE = "nasa-jpl-horizons-api@1.3-small-body";
 const HORIZONS_SOURCE =
   "NASA/JPL Horizons 2060 Chiron observer quantity 31: geocentric apparent ecliptic-of-date longitude";
 const CHIRON_COMMAND = "DES=1977 UB;";
-
-const ZODIAC_SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
-
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function signFromLongitude(value: number): string {
-  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(value) / 30)];
-}
 
 function assertExplicitUtcTimestamp(timestamp: string): Date {
   const raw = timestamp.trim();
@@ -106,7 +96,7 @@ export async function fetchChironHorizonsReference(
     return {
       body: "Chiron",
       longitude,
-      sign: signFromLongitude(longitude),
+      sign: tropicalSignFromLongitude(longitude),
       source: HORIZONS_SOURCE,
       engine: HORIZONS_ENGINE,
       calculatedAt: new Date().toISOString(),
