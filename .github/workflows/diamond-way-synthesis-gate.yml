@@ -71,7 +71,12 @@ jobs:
             tests/ultimate-codex-ui-contract.test.ts \
             tests/astrology-atlas.test.ts \
             tests/personal-astrology-atlas.test.ts \
-            tests/system-registry-contract.test.ts
+            tests/system-registry-contract.test.ts \
+            tests/aspect-interpretation-fallback-contract.test.ts \
+            tests/soul-profile-behavioral-evidence-contract.test.ts \
+            tests/deterministic-fallback-evidence-contract.test.ts \
+            packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts \
+            packages/core/__tests__/personal-numbers.test.ts
 
       - name: Typecheck
         run: npm run check
