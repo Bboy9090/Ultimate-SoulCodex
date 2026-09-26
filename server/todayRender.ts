@@ -72,16 +72,16 @@ const NEUTRAL_WATCHOUTS = [
 ];
 
 const DECISION_ADVICE: Record<string, string> = {
-  calm_logic:     "My clearest thinking lands between 10am and noon. I lock big decisions into that window.",
-  sleep_on_it:    "I don't finalize anything today that I haven't slept on. My best answer comes tonight.",
-  quiet_instinct: "The first signal I got this morning is probably right. I trust it before the noise builds.",
-  willpower:      "I commit early and hold the line. Second-guessing costs more energy than following through.",
-  gut_yes_no:     "If I can't feel a clear yes, it's a no. I trust the silence.",
-  analysis:       "I map the decision before noon, choose by 2pm. More data after that won't change the call.",
-  gut:            "My intuition is ahead of my logic today. I move on the feeling.",
-  consensus:      "I check my thinking with one trusted person before acting. One voice, not five.",
-  impulse:        "I notice which impulses have energy and which have anxiety. I act on energy. I pause on anxiety.",
-  avoidance:      "I pick the thing I've been avoiding longest. I address it first — the rest is easier after."
+  calm_logic:     "I slow the decision down enough to separate facts, assumptions, and preferences before I commit.",
+  sleep_on_it:    "For a non-urgent decision, I give myself another review after rest instead of forcing certainty now.",
+  quiet_instinct: "I notice my first reaction, then compare it with the facts before treating it as guidance.",
+  willpower:      "I check whether the commitment still matches my goal before I spend more effort defending it.",
+  gut_yes_no:     "I treat a strong yes/no feeling as one input, then check it against consequences and constraints.",
+  analysis:       "I define what information would actually change the decision, then stop collecting data once that threshold is met.",
+  gut:            "I record the intuitive signal and test it against observable evidence before acting on it.",
+  consensus:      "I ask one relevant person for a useful counterpoint, then make the decision from the full evidence I have.",
+  impulse:        "I separate urgency from importance and give high-cost impulses a deliberate review before acting.",
+  avoidance:      "I name what I am avoiding, identify the smallest concrete next step, and decide whether it truly belongs on today's list."
 };
 
 const DAY_TITLE_LABELS: Record<number, string> = {
