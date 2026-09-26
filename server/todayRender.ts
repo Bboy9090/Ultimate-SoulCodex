@@ -3,6 +3,8 @@ import { formatInTimeZone } from "date-fns-tz";
 
 export interface TodayCardData {
   codename: string;
+  /** Optional AI-generated observation target; not stored behavioral evidence. */
+  recognitionMoment?: string;
   title: string;
   focus: string;
   doList: string[];
