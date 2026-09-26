@@ -3,9 +3,10 @@ import { VOICE_LAWS } from "./voice_laws";
 function sanitize(text: string | undefined): string {
   if (!text) return "";
   return text
-    .replace(/\|/g, "")
-    .replace(/unknown/gi, "")
-    .replace(/chaos/gi, "")
+    // Keep semantic evidence intact. "unknown" is an uncertainty state;
+    // "chaos" may be a recorded trigger. Only remove the transport delimiter.
+    .replace(/\|/g, " ")
+    .replace(/\s{2,}/g, " ")
     .trim();
 }
 
