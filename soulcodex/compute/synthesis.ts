@@ -168,6 +168,21 @@ function buildRelationshipPattern(s: SoulSignals, arc: Archetype, v: number): st
       "I monitor the potential and the risk before I invest my heart, choosing precision over impulse.",
       "I don't trust the first impression; I wait until I have enough data to prove the logic holds up."
     ],
+    consensus: [
+      "I make important calls by talking them through, checking how the choice affects the people involved before I commit.",
+      "I use conversation to expose blind spots, preferring a decision the group can understand over a private conclusion nobody can follow.",
+      "I test a choice against trusted perspectives before I move, which improves context but can slow me when agreement is impossible."
+    ],
+    impulse: [
+      "I decide quickly when the first clear signal appears, then correct course from real-world feedback instead of waiting for perfect certainty.",
+      "I favor movement over prolonged debate, trusting that action will reveal information that analysis cannot.",
+      "I commit fast when something feels immediately workable, which creates momentum but raises the cost of skipped details."
+    ],
+    avoidance: [
+      "I delay a decision when the emotional or practical cost feels unclear, using distance to reduce pressure before I choose.",
+      "I step away from a choice when I do not yet trust the conditions around it, which protects me from rushed commitments but can let the window close.",
+      "I postpone hard calls until the consequences feel easier to contain, trading immediate conflict for the risk of a larger decision later."
+    ],
   };
 
   const socialKey = firstSignal(s.socialEnergy);
