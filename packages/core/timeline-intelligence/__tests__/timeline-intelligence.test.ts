@@ -6,6 +6,8 @@ import {
   compareSystemToLived,
   canShowTimelineIntelligence,
   calculateAlignmentScore,
+  calculateEnergyAlignmentMatch,
+  getTimelineConfidenceDescription,
 } from "../index.js";
 import type { SystemSignal, LivedSignal } from "../types.js";
 
@@ -246,4 +248,122 @@ test("empty data returns safe defaults", () => {
   assert.deepStrictEqual(intelligence.divergences, []);
   assert.strictEqual(intelligence.alignmentScore, 0);
   assert.ok(intelligence.observations.length > 0);
+});
+
+
+test("unsupported symbolic signals are unscored rather than forced into divergence", () => {
+  const system = createSystemSignal({
+    system: "personal-year",
+    label: "year-9",
+    value: 9,
+  });
+  const lived = [
+    createLivedSignal({ metric: "energy", value: 4 }),
+    createLivedSignal({ metric: "alignment", value: 4 }),
+  ];
+
+  const comparison = compareSystemToLived(system, lived);
+  assert.strictEqual(comparison.match, null);
+  assert.strictEqual(comparison.divergence, null);
+  assert.strictEqual(
+    calculateEnergyAlignmentMatch("year-9", 4, 4),
+    null,
+  );
+});
+
+test("modeled Moon and Personal Day labels normalize before comparison", () => {
+  assert.notStrictEqual(
+    calculateEnergyAlignmentMatch("Full Moon", 5, 3),
+    null,
+  );
+  assert.notStrictEqual(
+    calculateEnergyAlignmentMatch("Day 4 — Build", 3, 3),
+    null,
+  );
+});
+
+test("comparison fails closed when required lived metrics are incomplete", () => {
+  const system = createSystemSignal({
+    system: "personal-day",
+    label: "day-4",
+  });
+
+  const comparison = compareSystemToLived(system, [
+    createLivedSignal({ metric: "energy", value: 3 }),
+  ]);
+
+  assert.strictEqual(comparison.match, null);
+  assert.strictEqual(comparison.divergence, null);
+});
+
+test("timeline intelligence reports no comparison instead of a false mismatch", () => {
+  const systems = [
+    createSystemSignal({
+      system: "personal-year",
+      label: "year-9",
+      value: 9,
+    }),
+  ];
+  const lived = [
+    createLivedSignal({ metric: "energy", value: 4 }),
+    createLivedSignal({ metric: "alignment", value: 4 }),
+  ];
+
+  const intelligence = generateTimelineIntelligence(systems, lived, {
+    sampleSize: 14,
+  });
+
+  assert.deepStrictEqual(intelligence.matches, []);
+  assert.deepStrictEqual(intelligence.divergences, []);
+  assert.strictEqual(intelligence.alignmentScore, 0);
+  assert.ok(
+    intelligence.observations.some((observation) =>
+      observation.includes("No supported signal-to-lived-data comparison"),
+    ),
+  );
+  assert.match(
+    intelligence.nextTrackingSuggestion ?? "",
+    /do not yet have a supported comparison rule/i,
+  );
+});
+
+test("sample-depth descriptions never claim reliability or proof", () => {
+  const rendered = [
+    "Very Low",
+    "Low",
+    "Moderate",
+    "High",
+    "Very High",
+  ]
+    .map((level) =>
+      getTimelineConfidenceDescription(level as any),
+    )
+    .join(" ");
+
+  assert.doesNotMatch(
+    rendered,
+    /highly reliable|proof|confirmed|causation established|predictive truth/i,
+  );
+  assert.match(rendered, /observation window/i);
+});
+
+test("timeline suggestions ask whether correspondence persists rather than confirming it", () => {
+  const system = createSystemSignal({
+    system: "personal-day",
+    label: "day-4",
+    value: 4,
+  });
+  const lived = [
+    createLivedSignal({ metric: "energy", value: 3 }),
+    createLivedSignal({ metric: "alignment", value: 3 }),
+  ];
+
+  const intelligence = generateTimelineIntelligence([system], lived, {
+    sampleSize: 30,
+  });
+
+  assert.doesNotMatch(
+    intelligence.nextTrackingSuggestion ?? "",
+    /confirm|prove|guarantee|predict/i,
+  );
 });
