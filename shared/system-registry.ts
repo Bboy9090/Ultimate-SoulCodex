@@ -380,3 +380,48 @@ export function registrySystemsForUseContext(
 
   return [...SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY];
 }
+
+
+export type SoulCodexRegistryDisplayState =
+  | "Governed"
+  | "Supporting"
+  | "Inspect only"
+  | "Unavailable";
+
+export interface SoulCodexRegistryDisplayEntry {
+  id: string;
+  label: string;
+  family: string;
+  state: SoulCodexRegistryDisplayState;
+  stableIdentityEligible: boolean;
+  evidenceContract: string;
+  rule: string;
+}
+
+function registryDisplayState(
+  state: SoulCodexRegistryState,
+): SoulCodexRegistryDisplayState {
+  if (state === "governed") return "Governed";
+  if (state === "user-assessed") return "Supporting";
+  if (state === "inspect-only") return "Inspect only";
+  return "Unavailable";
+}
+
+/**
+ * Canonical user-facing projection of the production registry.
+ *
+ * Important distinction: "Governed" describes the system's production policy,
+ * not whether a particular user's evidence has passed verification. Per-profile
+ * verification remains a separate runtime concern.
+ */
+export function registryDisplayManifest(): SoulCodexRegistryDisplayEntry[] {
+  return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.map((entry) => ({
+    id: entry.id,
+    label: entry.label,
+    family: entry.family,
+    state: registryDisplayState(entry.state),
+    stableIdentityEligible: entry.mayInfluenceUltimateCodex,
+    evidenceContract: entry.evidenceContract,
+    rule: entry.rule,
+  }));
+}
