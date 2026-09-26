@@ -46,6 +46,12 @@ function reduceToSingleDigit(num: number): number {
   return num;
 }
 
+function validMonthDay(month: number, day: number): boolean {
+  if (!Number.isInteger(month) || !Number.isInteger(day)) return false;
+  const maximumDay = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  return month >= 1 && month <= 12 && day >= 1 && day <= maximumDay;
+}
+
 /**
  * Calculates Personal Day Number based on birth date and target date.
  * Personal Day changes daily and is calculated from the entered birth month/day
@@ -134,17 +140,16 @@ export function calcPersonalYear(
     const birth = parseDateOnly(birthDateOrMonth);
     birthMonth = birth.month;
     birthDay = birth.day;
-    targetYear = targetYearOrDay ?? new Date().getFullYear();
+    targetYear = targetYearOrDay ?? new Date().getUTCFullYear();
   } else {
     // Legacy signature: (month, day, year)
     birthMonth = birthDateOrMonth;
     birthDay = targetYearOrDay ?? 1;
-    targetYear = targetYearIfThreeArgs ?? new Date().getFullYear();
+    targetYear = targetYearIfThreeArgs ?? new Date().getUTCFullYear();
   }
 
   if (
-    !Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12 ||
-    !Number.isInteger(birthDay) || birthDay < 1 || birthDay > 31 ||
+    !validMonthDay(birthMonth, birthDay) ||
     !Number.isInteger(targetYear) || targetYear < 1 || targetYear > 9999
   ) {
     throw new RangeError('Personal Year requires a valid birth month/day and target year');
