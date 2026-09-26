@@ -91,3 +91,18 @@ test('transit notifications use reflection language and local-date identity keys
   assert.match(source, /\$\{transit\.aspect\}-\$\{dateKey\}/);
   assert.match(routes, /days must be an integer from 1 to 366/);
 });
+
+
+test('transit calendar recommendations remain reflection experiments rather than predictions', () => {
+  const source = readFileSync('packages/astrology/transits-calendar.ts', 'utf8');
+
+  assert.match(source, /TRANSITS REFLECTION CALENDAR/);
+  assert.match(source, /Reflection experiment:/);
+  assert.match(source, /not measured intensity/);
+  assert.match(source, /not predicted peak events/);
+  assert.doesNotMatch(
+    source,
+    /This is a powerful time|Say yes to new opportunities|Embrace change and innovation|Connect with spirituality and intuition|Release what no longer serves you/,
+  );
+  assert.doesNotMatch(source, /overallIntensity >= 7|overallIntensity >= 8/);
+});
