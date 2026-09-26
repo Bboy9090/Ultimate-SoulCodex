@@ -168,7 +168,7 @@ export function generateCorePatternInterpretation(
 export interface PsychologicalMirror {
   whatPeopleSee: string;
   whatTheyMiss: string;
-  howTheyMisit: string; // typo intentional - the mechanism of the misreading
+  howTheyMissIt: string;
 }
 
 export function generatePsychologicalMirror(
@@ -179,18 +179,18 @@ export function generatePsychologicalMirror(
   if (sunSign === "Virgo" && moonSign === "Virgo" && ascendant === "Scorpio") {
     return {
       whatPeopleSee:
-        "Discernment, practical problem-solving, and high standards. Someone who catches errors and improves systems.",
+        "You catch weak points quickly, tighten loose processes, and ask the question everyone else skipped. That can make you look exacting, skeptical, or hard to impress.",
       whatTheyMiss:
-        "The pressure you place on yourself to make the work useful, meaningful, and worthy of the larger mission. The cost of perfectionism isn't pride—it's the feeling that nothing is ever ready to release.",
-      howTheyMisit:
-        "They see the standard-setting and assume it's personal excellence. They don't see the moral weight—that good-enough feels like failure when people depend on you.",
+        "The pressure underneath that behavior is not simply a preference for being right. You may keep refining because releasing flawed work can feel like handing somebody else a preventable problem.",
+      howTheyMissIt:
+        "They see repeated correction and assume criticism or perfectionism for its own sake. They miss the responsibility loop: once you notice a flaw, it can feel difficult to leave it untouched when another person may have to carry the consequence.",
     };
   }
 
   return {
     whatPeopleSee: "Awaiting complete data",
     whatTheyMiss: "",
-    howTheyMisit: "",
+    howTheyMissIt: "",
   };
 }
 

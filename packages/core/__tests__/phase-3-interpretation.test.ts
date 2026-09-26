@@ -108,16 +108,17 @@ test("Phase 3: Interpretation & Archetype", async (t) => {
     await t.test("shows actual misreading mechanism", () => {
       const mirror = generatePsychologicalMirror("Virgo", "Virgo", "Scorpio");
 
-      assert(mirror.whatPeopleSee.includes("Discernment"));
-      assert(mirror.whatTheyMiss.includes("pressure"));
-      assert(mirror.whatTheyMiss.includes("meaningful"));
-      assert(mirror.howTheyMisit);
+      assert(mirror.whatPeopleSee.includes("weak points"));
+      assert(mirror.whatPeopleSee.includes("question everyone else skipped"));
+      assert(mirror.whatTheyMiss.includes("releasing flawed work"));
+      assert(mirror.howTheyMissIt.includes("responsibility loop"));
     });
 
     await t.test("not generic - specific to this chart", () => {
       const mirror = generatePsychologicalMirror("Virgo", "Virgo", "Scorpio");
-      assert(!(/attention|detail|organized/i.test(mirror.whatPeopleSee)));
-      assert(mirror.whatTheyMiss.includes("cost"));
+      assert(!(/attention|detail|organized|discernment|alignment|purpose|intuition|balance/i.test(mirror.whatPeopleSee)));
+      assert(!(/discernment|alignment|purpose|intuition|balance/i.test(mirror.whatTheyMiss)));
+      assert(mirror.whatTheyMiss.includes("preventable problem"));
     });
   });
 
