@@ -401,9 +401,7 @@ export function calcExpressionWithEvidence(
         reasoning: [
           derivedInputState === 'missing' ? 'Full name not provided' :
           derivedInputState === 'invalid' ? `Name "${fullName}" contains no letters` :
-          availability.vowelCount === 0
-            ? 'No A/E/I/O/U vowels remain after canonical name normalization under the active Y-as-consonant policy'
-            : 'Full name could not be processed',
+          'Full name could not be processed',
         ],
         limitations: [
           'Depends on accuracy of full name provided',
