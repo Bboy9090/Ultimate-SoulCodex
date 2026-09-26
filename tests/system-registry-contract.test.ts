@@ -70,3 +70,10 @@ test("generic legacy placeholder language cannot masquerade as governed evidence
   const registry = JSON.stringify(SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY);
   assert.match(registry, /quarantined|not production-governed|No .* inferred|excluded/i);
 });
+
+
+test("root profile routes do not silently inject Tarot into identity synthesis", () => {
+  const rootRoutes = readFileSync("routes.ts", "utf8");
+  assert.doesNotMatch(rootRoutes, /getTarotBirthCards/);
+  assert.doesNotMatch(rootRoutes, /tarotCards/);
+});
