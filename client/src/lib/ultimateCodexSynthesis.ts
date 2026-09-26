@@ -183,13 +183,15 @@ function hasGovernedDerivedPoint(
   policyId: string,
 ): boolean {
   const longitude = placementLongitude(point);
-  const degree = placementDegree(point);
+  const degree = finiteNumber(point?.degree);
   return Boolean(
     point?.verificationStatus === "verified" &&
     validSign(point?.sign) &&
     longitude !== null &&
     tropicalSignFromLongitude(longitude) === point?.sign &&
     degree !== null &&
+    degree >= 0 &&
+    degree < 30 &&
     Math.abs(degree - degreeInTropicalSign(longitude)) < 0.01 &&
     point?.policyId === policyId &&
     nonEmptyString(point?.evidenceArtifactId),
