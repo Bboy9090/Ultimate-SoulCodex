@@ -156,11 +156,13 @@ function nonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function hasVerifiedPlacementEvidence(placement: AnyRecord | undefined): boolean {
-  if (placement?.verificationStatus !== "verified" || !validSign(placement?.sign)) {
+function hasVerifiedPlacementEvidence(
+  placement: AnyRecord | undefined,
+): placement is AnyRecord & { sign: keyof typeof SIGN_META } {
+  if (placement?.verificationStatus !== "verified" || !validSign(placement.sign)) {
     return false;
   }
-  const evidence = placement?.provenance ?? placement?.evidence;
+  const evidence = placement.provenance ?? placement.evidence;
   return Boolean(
     nonEmptyString(evidence?.source) &&
     nonEmptyString(evidence?.engine) &&
