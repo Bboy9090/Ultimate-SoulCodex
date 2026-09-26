@@ -148,3 +148,53 @@ test("Chiron verification rejects non-UTC reference timestamps even for the same
     reason: "reference_timestamp_mismatch",
   });
 });
+
+
+test("Chiron verification preserves sign-longitude integrity across all zodiac sectors", async () => {
+  const signs = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+  ] as const;
+
+  for (let index = 0; index < signs.length; index += 1) {
+    const longitude = index * 30 + 15;
+    const result = await verifyChiron("2000-01-01T12:00:00.000Z", {
+      referenceFetcher: async (inputTimestamp) => ({
+        body: "Chiron",
+        longitude,
+        sign: signs[index],
+        source: "zodiac-integrity fixture",
+        engine: "fixture",
+        calculatedAt: "2026-09-26T00:00:00.000Z",
+        inputTimestamp,
+      }),
+    });
+
+    assert.equal(result.status, "verified", signs[index]);
+  }
+});
+
+test("Chiron verification rejects stale sign labels immediately after every zodiac crossing", async () => {
+  const signs = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+  ] as const;
+
+  for (let index = 0; index < signs.length; index += 1) {
+    const boundary = (index + 1) * 30;
+    const longitude = boundary >= 360 ? 0.01 : boundary + 0.01;
+    const result = await verifyChiron("2000-01-01T12:00:00.000Z", {
+      referenceFetcher: async (inputTimestamp) => ({
+        body: "Chiron",
+        longitude,
+        sign: signs[index],
+        source: "stale-sign fixture",
+        engine: "fixture",
+        calculatedAt: "2026-09-26T00:00:00.000Z",
+        inputTimestamp,
+      }),
+    });
+
+    assert.deepEqual(result, { status: "unresolved", reason: "reference_invalid" });
+  }
+});
