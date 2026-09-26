@@ -3116,7 +3116,11 @@ ${contextData}
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      const days = parseInt(req.query.days as string) || 7;
+      const requestedDays = Number.parseInt(String(req.query.days ?? "7"), 10);
+      if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 366) {
+        return res.status(400).json({ message: "days must be an integer from 1 to 366" });
+      }
+      const days = requestedDays;
       const upcoming = await getUpcomingTransitNotifications(profile, days);
       res.json({ notifications: upcoming, days });
     } catch (error) {
