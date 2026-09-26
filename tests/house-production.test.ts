@@ -111,3 +111,34 @@ test("MC outside governed tolerance fails closed", () => {
   assert.equal(result.status, "unresolved");
   assert.equal(result.reason, "midheaven_outside_tolerance");
 });
+
+
+test("Midheaven calculation rejects timezone-less instants", () => {
+  assert.throws(
+    () =>
+      calculateMidheavenCandidate({
+        inputTimestamp: "1990-09-17T15:11:00",
+        latitude: 40.8448,
+        longitude: -73.8648,
+      }),
+    /house_input_invalid/,
+  );
+});
+
+test("Equal House verification rejects a Midheaven sign that contradicts longitude", () => {
+  const fixture = SWISS_EQUAL_HOUSE_FIXTURES[0];
+  const result = verifyEqualHouse(fixture, {
+    midheavenReference: (input) => {
+      const normal = calculateIndependentMidheavenReference(input);
+      return {
+        ...normal,
+        longitudeDegrees: (normal.longitudeDegrees + 30) % 360,
+      };
+    },
+  });
+
+  assert.equal(result.status, "unresolved");
+  if (result.status === "unresolved") {
+    assert.equal(result.reason, "midheaven_sign_longitude_mismatch");
+  }
+});
