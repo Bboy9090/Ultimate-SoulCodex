@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { calculateActiveTransits, extractNatalPositions, type ActiveTransits, type Transit } from '../transits';
+import { calculateActiveTransits, extractNatalPositions, type Transit } from './transits';
 import type { Profile } from '../shared/schema';
 import { getMoonPhase as getCanonicalMoonPhase, getMoonSign as getCanonicalMoonSign } from './daily-context';
 
