@@ -190,7 +190,7 @@ export function calcPersonalYearWithEvidence(
           'Birth date or target year could not be processed',
         ],
         limitations: [
-          'Personal Year cycles annually, changes on birthday',
+          'Personal Year is keyed to the supplied calendar year under Soul Codex policy',
           'Calculation does not account for birth time',
         ],
         formulaId: 'numerology.personal-year',
@@ -224,7 +224,7 @@ export function calcPersonalYearWithEvidence(
         `Sum reduced to single digit = Year ${personalYear}`,
       ],
       limitations: [
-        'Personal Year cycles annually, changes on birthday',
+        'Personal Year is keyed to the supplied calendar year under Soul Codex policy',
         'Calculation does not account for birth time',
       ],
       formulaId: 'numerology.personal-year',
@@ -274,7 +274,7 @@ export function calcPersonalMonthWithEvidence(
         ].filter(Boolean),
         limitations: [
           'Derived from Personal Year; dependent on year accuracy',
-          'Calendar month only; does not account for birth date transition',
+          'Personal Month is derived from the supplied Personal Year and calendar month',
         ],
         formulaId: 'numerology.personal-month',
         formulaVersion: '1.0.0',
@@ -301,12 +301,12 @@ export function calcPersonalMonthWithEvidence(
       ],
       reasoning: [
         `Personal Year ${personalYear} + calendar month ${targetMonth}`,
-        'Both reduced to single digits',
-        `Sum reduced to single digit = Month ${personalMonth}`,
+        'Inputs are reduced with master numbers 11, 22, and 33 preserved',
+        `Combined value reduces to Personal Month ${personalMonth}`,
       ],
       limitations: [
         'Derived from Personal Year; dependent on year accuracy',
-        'Calendar month only; does not account for birth date transition',
+        'Personal Month is derived from the supplied Personal Year and calendar month',
       ],
       formulaId: 'numerology.personal-month',
       formulaVersion: '1.0.0',
