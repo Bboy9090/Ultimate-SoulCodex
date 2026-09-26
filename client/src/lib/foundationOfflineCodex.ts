@@ -339,9 +339,19 @@ export function generateFoundationOfflineCodexProfile(
 }
 
 
+type VerifiedPlacementEvidenceForSynthesis = {
+  source?: string | null;
+  engine?: string | null;
+  calculatedAt?: string | null;
+};
+
 type VerifiedPlacementForSynthesis = {
   verificationStatus?: string;
   sign?: string | null;
+  evidence?: VerifiedPlacementEvidenceForSynthesis | null;
+  provenance?: VerifiedPlacementEvidenceForSynthesis | null;
+  policyId?: string;
+  evidenceArtifactId?: string;
 };
 
 export type VerifiedAstrologyForSynthesis = {
@@ -370,7 +380,12 @@ export type VerifiedAstrologyForSynthesis = {
     planet2?: string;
     aspect?: string;
     orb?: number;
+    policyId?: string;
+    evidenceArtifactId?: string;
   }>;
+  verification?: {
+    policyId?: string;
+  };
 };
 
 function verifiedEvidence(
@@ -439,10 +454,33 @@ function verifiedPlacementSeed(input: {
   };
 }
 
-function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "moon" | "rising"): string | null {
-  const placement = astrology[key];
+function verifiedPlacementSign(
+  placement: VerifiedPlacementForSynthesis | null | undefined,
+): string | null {
   if (placement?.verificationStatus !== "verified" || typeof placement.sign !== "string") return null;
-  return signPatternFor(placement.sign) ? placement.sign : null;
+  const evidence = placement.provenance ?? placement.evidence;
+  const hasEvidence =
+    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
+    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
+    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
+  return hasEvidence && signPatternFor(placement.sign) ? placement.sign : null;
+}
+
+function verifiedGovernedPoint(
+  placement: VerifiedPlacementForSynthesis | null | undefined,
+  policyId: string,
+): string | null {
+  const sign = verifiedPlacementSign(placement);
+  return sign &&
+    placement?.policyId === policyId &&
+    typeof placement.evidenceArtifactId === "string" &&
+    placement.evidenceArtifactId.trim().length > 0
+      ? sign
+      : null;
+}
+
+function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "moon" | "rising"): string | null {
+  return verifiedPlacementSign(astrology[key]);
 }
 
 const HOUSE_THEMES: Record<number, { theme: string; action: string }> = {
@@ -510,8 +548,9 @@ function dominantVerifiedElement(
   const counts = new Map<string, number>();
   let total = 0;
   for (const placement of Object.values(astrology.planets ?? {})) {
-    if (placement?.verificationStatus !== "verified" || !placement.sign) continue;
-    const element = elementForSign(placement.sign);
+    const sign = verifiedPlacementSign(placement);
+    if (!sign) continue;
+    const element = elementForSign(sign);
     if (!element) continue;
     counts.set(element, (counts.get(element) ?? 0) + 1);
     total += 1;
@@ -592,10 +631,7 @@ function verifiedAggregateSeeds(
   const verifiedPlanetSign = (
     key: keyof NonNullable<VerifiedAstrologyForSynthesis["planets"]>,
   ): string | null => {
-    const placement = astrology.planets?.[key];
-    return placement?.verificationStatus === "verified" && typeof placement.sign === "string"
-      ? placement.sign
-      : null;
+    return verifiedPlacementSign(astrology.planets?.[key]);
   };
   const sunSign = verifiedPlanetSign("sun");
   const moonSign = verifiedPlanetSign("moon");
@@ -607,11 +643,7 @@ function verifiedAggregateSeeds(
   const neptuneSign = verifiedPlanetSign("neptune");
   const plutoSign = verifiedPlanetSign("pluto");
 
-  const risingSign =
-    astrology.rising?.verificationStatus === "verified" &&
-    typeof astrology.rising.sign === "string"
-      ? astrology.rising.sign
-      : null;
+  const risingSign = verifiedPlacementSign(astrology.rising);
 
   if (
     sunSign &&
@@ -665,12 +697,10 @@ function verifiedAggregateSeeds(
     });
   }
 
-  const midheavenSign =
-    astrology.midheaven?.verificationStatus === "verified" &&
-    typeof astrology.midheaven.sign === "string" &&
-    signPatternFor(astrology.midheaven.sign)
-      ? astrology.midheaven.sign
-      : null;
+  const midheavenSign = verifiedGovernedPoint(
+    astrology.midheaven,
+    "ASTRO-EQUAL-HOUSE-v1",
+  );
   const sunHouse = astrology.planetaryHouses?.sun;
   const moonHouse = astrology.planetaryHouses?.moon;
 
@@ -841,6 +871,12 @@ export function synthesizeVerifiedFoundationProfile(
     nodesChiron: maySystemInfluenceSynthesis("nodesChiron", "verified"),
     humanDesign:
       humanDesign?.status === "verified" &&
+      typeof humanDesign.verificationReceiptId === "string" &&
+      humanDesign.verificationReceiptId.trim().length > 0 &&
+      typeof humanDesign.independentSource === "string" &&
+      humanDesign.independentSource.trim().length > 0 &&
+      typeof humanDesign.verifiedAt === "string" &&
+      humanDesign.verifiedAt.trim().length > 0 &&
       maySystemInfluenceSynthesis("humanDesign", "verified"),
   };
 
@@ -985,10 +1021,13 @@ export function synthesizeVerifiedFoundationProfile(
 
   if (
     eligibility.housesMidheaven &&
-    astrology.midheaven?.verificationStatus === "verified" &&
-    astrology.midheaven.sign
+    verifiedGovernedPoint(astrology.midheaven, "ASTRO-EQUAL-HOUSE-v1")
   ) {
-    const mcPattern = signPatternFor(astrology.midheaven.sign);
+    const midheavenSign = verifiedGovernedPoint(
+      astrology.midheaven,
+      "ASTRO-EQUAL-HOUSE-v1",
+    )!;
+    const mcPattern = signPatternFor(midheavenSign);
     if (!mcPattern) {
       throw new Error("Verified Midheaven contained an unsupported sign.");
     }
@@ -996,7 +1035,7 @@ export function synthesizeVerifiedFoundationProfile(
       id: "verified.astrology.midheaven",
       field: "midheaven",
       bodyLabel: "Midheaven",
-      sign: astrology.midheaven.sign,
+      sign: midheavenSign,
       priority: 117,
       facets: {
         visiblePattern: `Public-direction symbolism may emphasize ${mcPattern.drive}.`,
@@ -1008,14 +1047,18 @@ export function synthesizeVerifiedFoundationProfile(
   if (eligibility.nodesChiron) {
     for (const [key, label] of [["northNode", "Mean North Node"], ["southNode", "Mean South Node"]] as const) {
       const node = astrology[key];
-      if (node?.verificationStatus !== "verified" || !node.sign) continue;
-      const nodePattern = signPatternFor(node.sign);
+      const nodeSign =
+        node?.mode === "mean"
+          ? verifiedGovernedPoint(node, "ASTRO-MEAN-NODE-v1")
+          : null;
+      if (!nodeSign) continue;
+      const nodePattern = signPatternFor(nodeSign);
       if (!nodePattern) continue;
       seeds.push(verifiedPlacementSeed({
         id: `verified.astrology.${key}`,
         field: key,
         bodyLabel: label,
-        sign: node.sign,
+        sign: nodeSign,
         house: node.house,
         priority: key === "northNode" ? 114 : 109,
         facets: key === "northNode"
@@ -1027,11 +1070,14 @@ export function synthesizeVerifiedFoundationProfile(
 
   if (
     eligibility.nodesChiron &&
-    astrology.chiron?.verificationStatus === "verified" &&
-    astrology.chiron.sign &&
-    astrology.chiron.qualificationMethod === "live-jpl-qualified-against-swiss"
+    astrology.chiron?.qualificationMethod === "live-jpl-qualified-against-swiss" &&
+    verifiedGovernedPoint(astrology.chiron, "ASTRO-CHIRON-v1")
   ) {
-    const chironPattern = signPatternFor(astrology.chiron.sign);
+    const chironSign = verifiedGovernedPoint(
+      astrology.chiron,
+      "ASTRO-CHIRON-v1",
+    )!;
+    const chironPattern = signPatternFor(chironSign);
     if (!chironPattern) {
       throw new Error("Verified Chiron contained an unsupported sign.");
     }
@@ -1039,7 +1085,7 @@ export function synthesizeVerifiedFoundationProfile(
       id: "verified.astrology.chiron",
       field: "chiron",
       bodyLabel: "Chiron",
-      sign: astrology.chiron.sign,
+      sign: chironSign,
       house: astrology.chiron.house,
       priority: 115,
       facets: {
@@ -1050,7 +1096,15 @@ export function synthesizeVerifiedFoundationProfile(
   }
 
   const strongestAspects = [...(astrology.aspects ?? [])]
-    .filter((aspect) => aspect.planet1 && aspect.planet2 && aspect.aspect && typeof aspect.orb === "number")
+    .filter((aspect) =>
+      aspect.planet1 &&
+      aspect.planet2 &&
+      aspect.aspect &&
+      typeof aspect.orb === "number" &&
+      aspect.policyId === "ASTRO-ASPECT-MAJOR-v1" &&
+      typeof aspect.evidenceArtifactId === "string" &&
+      aspect.evidenceArtifactId.trim().length > 0
+    )
     .sort((left, right) => (left.orb ?? 99) - (right.orb ?? 99))
     .slice(0, 6);
   for (const [index, aspect] of strongestAspects.entries()) {
