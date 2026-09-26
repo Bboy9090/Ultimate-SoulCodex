@@ -50,6 +50,8 @@ jobs:
       - name: Qualified evidence, math, privacy, synthesis, and Human Design gates
         run: bash scripts/ci/qualified-release-gates.sh
 
+      - name: Production dependency security audit
+        run: npm audit --omit=dev --audit-level=high
       - name: Store release candidate contract
         run: node --import tsx --test tests/store-release-candidate-contract.test.ts
       - name: Build production Capacitor payload
