@@ -436,3 +436,26 @@ describe('Server/Core Numerology Contract', () => {
     });
   });
 });
+
+
+test('server numerology uses the explicit target year for Personal Year', () => {
+  const birthDate = '1990-09-17';
+  const year2026 = calculateNumerology('Bobby Test', birthDate, 2026);
+  const year2027 = calculateNumerology('Bobby Test', birthDate, 2027);
+
+  assert.equal(year2026.status, 'resolved');
+  assert.equal(year2027.status, 'resolved');
+
+  if (year2026.status === 'resolved' && year2027.status === 'resolved') {
+    assert.equal(year2026.personalYear, calcPersonalYear(birthDate, 2026));
+    assert.equal(year2027.personalYear, calcPersonalYear(birthDate, 2027));
+    assert.match(year2026.interpretations.personalYear, /for 2026/);
+    assert.match(year2027.interpretations.personalYear, /for 2027/);
+  }
+});
+
+test('server numerology fails closed for an invalid explicit target year', () => {
+  const result = calculateNumerology('Bobby Test', '1990-09-17', 0);
+  assert.equal(result.status, 'unresolved');
+  assert.match(result.reason, /Target year/);
+});
