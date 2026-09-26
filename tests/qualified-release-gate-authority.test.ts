@@ -14,6 +14,10 @@ const runner = readFileSync(
   "scripts/ci/qualified-release-gates.sh",
   "utf8",
 );
+const codebuild = readFileSync(
+  "scripts/ci/codebuild-core.sh",
+  "utf8",
+);
 
 test("Diamond Way and Store Candidate use the same qualified release runner", () => {
   for (const [name, workflow] of [
@@ -62,4 +66,15 @@ test("Diamond Way keeps synthesis-specific fallback checks before the shared sui
 
   assert.ok(fallbackIndex >= 0);
   assert.ok(sharedGateIndex > fallbackIndex);
+});
+
+
+test("CodeBuild reuses the canonical suite before lane-specific extras", () => {
+  const sharedGateIndex = codebuild.indexOf("bash scripts/ci/qualified-release-gates.sh");
+  const extraGateIndex = codebuild.indexOf("server/tests/gate1-foundation.test.ts");
+
+  assert.ok(sharedGateIndex >= 0);
+  assert.ok(extraGateIndex > sharedGateIndex);
+  assert.match(codebuild, /tests\/billing-security\.test\.ts/);
+  assert.match(codebuild, /tests\/server-profile-ownership\.test\.ts/);
 });
