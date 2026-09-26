@@ -833,3 +833,16 @@ test('Galactic Code: deterministic fallback does not invent behavior when assess
   assert.match(text, /observable value/i);
   assert.doesNotMatch(text, /natural inclination|you tend to|you show up as|mission is|destiny is/i);
 });
+
+
+test('Galactic Code: axis scores and derived sequence are labeled as symbolic model outputs', () => {
+  const result = generateGalacticCode(testInput, TRUSTED);
+
+  assert.match(result.tagline, /symbolic synthesis axes/i);
+  assert.match(result.tagline, /not measured traits/i);
+
+  assert.equal(result.behavioralSequence.length, 5);
+  for (const step of result.behavioralSequence) {
+    assert.match(step, /^Reflection prompt:/);
+  }
+});
