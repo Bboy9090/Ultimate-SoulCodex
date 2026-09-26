@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calculateRunes as packageRunes } from '../packages/astrology/runes';
 import { calculateRunes as legacyRunes } from '../services/runes';
+import { calculateIChing as packageIChing } from '../packages/astrology/i-ching';
+import { calculateIChing as legacyIChing } from '../services/i-ching';
 import { calculateSacredGeometry as packageSacredGeometry } from '../packages/astrology/sacred-geometry';
 import { calculateSacredGeometry as legacySacredGeometry } from '../services/sacred-geometry';
 import { dailyPull } from '../services/codex-tools/daily-pull';
@@ -62,4 +64,15 @@ test('Timing Window uses canonical Personal Day for string birth dates', () => {
 
   assert.deepEqual(run('America/New_York'), run('UTC'));
   assert.deepEqual(run('America/Los_Angeles'), run('UTC'));
+});
+
+
+test('I Ching date-only seed is invariant across host timezones', () => {
+  for (const calculate of [packageIChing, legacyIChing]) {
+    const utc = underTimezone('UTC', () => calculate('1990-09-17'));
+    const ny = underTimezone('America/New_York', () => calculate('1990-09-17'));
+    const la = underTimezone('America/Los_Angeles', () => calculate('1990-09-17'));
+    assert.deepEqual(ny, utc);
+    assert.deepEqual(la, utc);
+  }
 });
