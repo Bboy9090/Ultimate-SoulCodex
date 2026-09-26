@@ -23,17 +23,23 @@ const local = generateFoundationOfflineCodexProfile(
   },
 );
 
+const placementEvidence = {
+  source: "Independent synthesis fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
+
 const verifiedPlanets = {
-  sun: { verificationStatus: "verified", sign: "Virgo" },
-  moon: { verificationStatus: "verified", sign: "Virgo" },
-  mercury: { verificationStatus: "verified", sign: "Libra" },
-  venus: { verificationStatus: "verified", sign: "Leo" },
-  mars: { verificationStatus: "verified", sign: "Gemini" },
-  jupiter: { verificationStatus: "verified", sign: "Cancer" },
-  saturn: { verificationStatus: "verified", sign: "Capricorn" },
-  uranus: { verificationStatus: "verified", sign: "Capricorn" },
-  neptune: { verificationStatus: "verified", sign: "Capricorn" },
-  pluto: { verificationStatus: "verified", sign: "Scorpio" },
+  sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  mercury: { verificationStatus: "verified", sign: "Libra", evidence: placementEvidence },
+  venus: { verificationStatus: "verified", sign: "Leo", evidence: placementEvidence },
+  mars: { verificationStatus: "verified", sign: "Gemini", evidence: placementEvidence },
+  jupiter: { verificationStatus: "verified", sign: "Cancer", evidence: placementEvidence },
+  saturn: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  uranus: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  neptune: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  pluto: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
 } satisfies NonNullable<VerifiedAstrologyForSynthesis["planets"]>;
 
 function chart(variant: "first" | "second"): VerifiedAstrologyForSynthesis {
@@ -41,7 +47,7 @@ function chart(variant: "first" | "second"): VerifiedAstrologyForSynthesis {
   return {
     sun: verifiedPlanets.sun,
     moon: verifiedPlanets.moon,
-    rising: { verificationStatus: "verified", sign: "Scorpio" },
+    rising: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
     planets: verifiedPlanets,
     planetaryHouses: Object.fromEntries(
       Object.keys(verifiedPlanets).map((key, index) => [
@@ -52,29 +58,44 @@ function chart(variant: "first" | "second"): VerifiedAstrologyForSynthesis {
     midheaven: {
       verificationStatus: "verified",
       sign: first ? "Leo" : "Aquarius",
+      evidence: placementEvidence,
+      policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-fixture",
     },
     northNode: {
       verificationStatus: "verified",
       sign: first ? "Aries" : "Libra",
       house: first ? 1 : 7,
       mode: "mean",
+      evidence: placementEvidence,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     southNode: {
       verificationStatus: "verified",
       sign: first ? "Libra" : "Aries",
       house: first ? 7 : 1,
       mode: "mean",
+      evidence: placementEvidence,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
     },
     chiron: {
       verificationStatus: "verified",
       sign: first ? "Cancer" : "Capricorn",
       house: first ? 4 : 10,
       qualificationMethod: "live-jpl-qualified-against-swiss",
+      evidence: placementEvidence,
+      policyId: "ASTRO-CHIRON-v1",
+      evidenceArtifactId: "chiron-fixture",
     },
     aspects: [
-      { planet1: "sun", planet2: "moon", aspect: "conjunction", orb: 1.25 },
-      { planet1: "venus", planet2: "mars", aspect: "sextile", orb: 2.1 },
+      { planet1: "sun", planet2: "moon", aspect: "conjunction", orb: 1.25, policyId: "ASTRO-ASPECT-MAJOR-v1", evidenceArtifactId: "aspect-fixture" },
+      { planet1: "venus", planet2: "mars", aspect: "sextile", orb: 2.1, policyId: "ASTRO-ASPECT-MAJOR-v1", evidenceArtifactId: "aspect-fixture" },
     ],
+    verification: {
+      policyId: "ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1",
+    },
   };
 }
 
@@ -131,6 +152,9 @@ test("verified Human Design core fills supported reading layers", () => {
       centers: { defined: ["Head", "Ajna"], undefined: ["Root"] },
       channels: ["64-47"],
       activatedGates: [64, 47],
+      verificationReceiptId: "hd-synthesis-fixture",
+      independentSource: "independent-hd-fixture",
+      verifiedAt: "2026-09-26T00:00:00.000Z",
     },
   );
 
