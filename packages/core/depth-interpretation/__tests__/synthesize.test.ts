@@ -96,6 +96,30 @@ test("Depth synthesis", async (suite) => {
     ]);
   });
 
+  await suite.test("confidence is invariant to duplicated cross-system evidence", () => {
+    const oneSignal = synthesizeDepthInterpretationV1(input([completeSeed()]));
+
+    const duplicateSignal: DepthSynthesisSeed = {
+      ...completeSeed(),
+      evidence: evidence("astrology.same-pattern", {
+        system: "astrology",
+      }),
+      label: "the same supported pattern restated through another system",
+      priority: 10,
+    };
+
+    const repeatedAcrossSystems = synthesizeDepthInterpretationV1(
+      input([completeSeed(), duplicateSignal]),
+    );
+
+    assert.equal(oneSignal.overallConfidence, "high");
+    assert.equal(
+      repeatedAcrossSystems.overallConfidence,
+      oneSignal.overallConfidence,
+      "adding another system must not increase confidence by vote-counting",
+    );
+  });
+
   await suite.test("links every available layer to existing evidence", () => {
     const result = synthesizeDepthInterpretationV1(input([completeSeed()]));
     const evidenceIds = new Set(result.evidence.map((item) => item.id));
