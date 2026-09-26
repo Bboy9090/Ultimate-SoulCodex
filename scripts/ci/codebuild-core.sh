@@ -33,6 +33,7 @@ node --import tsx --test \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
   tests/house-production.test.ts \
+  tests/equal-house-math-invariants.test.ts \
   tests/bobby-big-three-golden.test.ts \
   tests/human-design-trust.test.ts \
   tests/human-design-gate-boundaries.test.ts \
