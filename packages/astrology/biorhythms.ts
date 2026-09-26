@@ -1,7 +1,9 @@
 import { formatInTimeZone } from 'date-fns-tz';
 import { parseDateOnly } from '@soulcodex/core';
 
-// Biorhythms - Physical, Emotional, Intellectual Cycles
+// Biorhythms - symbolic date-cycle visualization.
+// These sine-wave cycles are not validated measurements of physical health,
+// emotion, cognition, readiness, safety, or decision quality.
 
 interface BiorhythmCycle {
   name: string;
@@ -118,11 +120,11 @@ export function calculateBiorhythms(
       currentValue: physical.value,
       phase: physical.phase,
       daysUntilPeak: physical.daysUntilPeak,
-      interpretation: physical.phase === "High" 
-        ? "Your physical energy is high. Great time for exercise, sports, and physical challenges."
+      interpretation: physical.phase === "High"
+        ? "The symbolic 23-day cycle is above its midpoint."
         : physical.phase === "Low"
-        ? "Physical energy is low. Focus on rest, recovery, and gentle activities."
-        : "Critical day for physical cycle. Be cautious with strenuous activities."
+        ? "The symbolic 23-day cycle is below its midpoint."
+        : "The symbolic 23-day cycle is near a zero crossing."
     },
     emotional: {
       name: "Emotional",
@@ -131,10 +133,10 @@ export function calculateBiorhythms(
       phase: emotional.phase,
       daysUntilPeak: emotional.daysUntilPeak,
       interpretation: emotional.phase === "High"
-        ? "Emotional wellbeing is elevated. Good time for relationships and creative expression."
+        ? "The symbolic 28-day cycle is above its midpoint."
         : emotional.phase === "Low"
-        ? "Emotional sensitivity is heightened. Practice self-care and introspection."
-        : "Critical emotional day. Be mindful of mood swings and emotional reactions."
+        ? "The symbolic 28-day cycle is below its midpoint."
+        : "The symbolic 28-day cycle is near a zero crossing."
     },
     intellectual: {
       name: "Intellectual",
@@ -143,22 +145,16 @@ export function calculateBiorhythms(
       phase: intellectual.phase,
       daysUntilPeak: intellectual.daysUntilPeak,
       interpretation: intellectual.phase === "High"
-        ? "Mental clarity is sharp. Excellent for learning, problem-solving, and decisions."
+        ? "The symbolic 33-day cycle is above its midpoint."
         : intellectual.phase === "Low"
-        ? "Mental energy is quieter. Good for reflection and intuitive processes."
-        : "Critical intellectual day. Double-check important decisions and communications."
+        ? "The symbolic 33-day cycle is below its midpoint."
+        : "The symbolic 33-day cycle is near a zero crossing."
     },
     overall: {
       energy: overallEnergy,
       bestDays: bestDays.slice(0, 5),
       criticalDays: criticalDays.slice(0, 5),
-      interpretation: `Your overall biorhythm energy is at ${overallEnergy}%. ${
-        overallEnergy > 50 
-          ? "You're in a high-energy phase across multiple cycles." 
-          : overallEnergy < -50
-          ? "You're in a recovery phase. Honor your need for rest."
-          : "Your cycles are balanced. Navigate mindfully."
-      }`
+      interpretation: `Symbolic combined cycle value: ${overallEnergy}%. This is a mathematical visualization only, not a measurement of health, mood, cognition, readiness, or future performance.`
     }
   };
 }
