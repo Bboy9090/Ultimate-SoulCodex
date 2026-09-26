@@ -3929,11 +3929,12 @@ async function generateTodayCardAI(
     try {
       const history = await storage.getDailyInsightsHistory(profileId, 7);
       if (history.length > 0) {
-        historyPrompt = "## RECENT BEHAVIORAL HISTORY\n" + 
+        historyPrompt = "## RECENT CARD OUTPUTS — NOT BEHAVIORAL EVIDENCE\n" +
           history.map(h => {
             const data = h.insightsData as any;
             return `- ${h.date}: ${data.recognitionMoment || data.focus || ""}`;
-          }).join("\n") + "\n\n";
+          }).join("\n") +
+          "\nUse these only to avoid repetitive wording. Do not treat a previous generated card as proof that a behavior occurred.\n\n";
       }
     } catch (e) {
       console.warn("[TodayCardAI] History fetch failed:", e);
@@ -3949,24 +3950,24 @@ async function generateTodayCardAI(
   const themeList = (codexSynthesis?.topThemes ?? horoscopeData?.topThemes ?? [])
     .slice(0, 4).map((t: any) => t.tag ?? t).filter(Boolean);
   const themes   = sanitizeForAI(themeList.length ? themeList.join(", ") : (base.topTheme ?? ""));
-  const decide   = sanitizeForAI(profile?.userInputs?.decisionStyle ?? profile?.signals?.decisionStyle ?? "");
-  const pressure = sanitizeForAI(profile?.userInputs?.pressureStyle ?? profile?.signals?.pressureStyle ?? "");
+  const decide   = sanitizeForAI(profile?.userInputs?.decisionStyle ?? "");
+  const pressure = sanitizeForAI(profile?.userInputs?.pressureStyle ?? "");
   const transit  = sanitizeForAI(horoscopeData?.personalTransits?.[0]?.description ?? "");
 
     const prompt = `
 You are the final synthesis layer of Soul Codex.
-Your job is to expose ${codename}'s behavioral pattern today with surgical accuracy, grounded realism, and zero system leakage.
+Create a direct daily reflection card for ${codename}. Be concrete and useful without pretending symbolic inputs prove behavior.
 
 ---
 ${historyPrompt}
-## 🧬 IDENTITY DATA
-- IDENTITY: ${codename}
-- TOP THEMES: ${themes || "Unavailable — do not infer"}
-- PERSONAL DAY: ${dayNum == null ? "Unavailable — do not infer" : `${dayNum} — ${archDesc}`}
-- MOON PHASE: ${moon === "Unavailable" ? "Unavailable — do not infer" : moon}
-- DECISION STYLE: ${decide || "Omit"}
-- PRESSURE STYLE: ${pressure || "Omit"}
-${transit ? `- ACTIVE TRANSIT: ${transit}` : ""}
+## 🧬 AVAILABLE INPUTS
+- SYMBOLIC IDENTITY LABEL: ${codename}
+- SYNTHESIS THEMES: ${themes || "Unavailable — do not infer"}
+- SYMBOLIC PERSONAL DAY: ${dayNum == null ? "Unavailable — do not infer" : `${dayNum} — ${archDesc}`}
+- ASTRONOMICAL MOON PHASE: ${moon === "Unavailable" ? "Unavailable — do not infer" : moon}
+- USER-ENTERED DECISION STYLE: ${decide || "Omit"}
+- USER-ENTERED PRESSURE STYLE: ${pressure || "Omit"}
+${transit ? `- SYMBOLIC TRANSIT REFLECTION: ${transit}` : ""}
 
 ---
 ${VOICE_LAWS}
@@ -3974,29 +3975,31 @@ ${VOICE_LAWS}
 ---
 ## 🧪 CORE DIRECTIVE
 - Write in FIRST PERSON (I/my/me).
-- Expose the behavioral loop today. Focus on what I DO, what others notice, and the observable loop.
-- CHECK FOR RECURRING LOOPS. If the same pattern is repeating from history, confront me directly. 
-- Tone: Escalation. Day 1 is observation. Day 3 is confrontation. Day 7 is declaration of choice.
-- No "I think," "I feel," "I try." Use direct verbs.
+- Treat Personal Day, Moon phase, transit text, codename, and synthesis themes as reflection prompts only. They do not prove what I will do, feel, or experience.
+- Only USER-ENTERED decision/pressure styles may be described as supplied behavior evidence.
+- Previous generated cards are not behavioral history. Never claim a loop repeated just because an earlier card mentioned it.
+- Make each line an observation target, decision experiment, or concrete action I can verify today.
+- Stay direct: no "I think," "I feel," "I try." Use active verbs without claiming hidden motives.
+- Do not predict tomorrow; frame TOMORROW as a question or preparation prompt.
 
 ---
 ## OUTPUT FORMAT
-RECOGNITION: [One blunt, uncomfortable behavioral confession. 12 words max.]
-MEMORY: [If repeating a pattern from history, call it out. Otherwise omit.]
-FOCUS: [One sentence exposing the core loop today.]
-TOMORROW: [Expose the tension for tomorrow.]
+RECOGNITION: [One sharp first-person pattern to observe or test today. 12 words max.]
+MEMORY: [Optional: name a prior card theme only as something to verify, never as proof of repetition.]
+FOCUS: [One sentence naming an observable behavior or decision experiment for today.]
+TOMORROW: [One preparation question for tomorrow, not a prediction.]
 DO:
-- [behavioral action 1]
-- [behavioral action 2]
-- [behavioral action 3]
+- [concrete action experiment 1]
+- [concrete action experiment 2]
+- [concrete action experiment 3]
 DONT:
-- [trap to avoid 1]
-- [trap to avoid 2]
-- [trap to avoid 3]
+- [observable trap to avoid 1]
+- [observable trap to avoid 2]
+- [observable trap to avoid 3]
 WATCHOUT:
-- [escalation trigger 1]
-- [escalation trigger 2]
-DECISION: [behavioral decision rule for today]
+- [observable trigger or condition 1]
+- [observable trigger or condition 2]
+DECISION: [first-person decision rule I can test today]
 `.trim();
 
   const aiResponse = await routeAIRequest({
