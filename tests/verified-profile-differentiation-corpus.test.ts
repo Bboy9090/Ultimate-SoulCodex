@@ -14,7 +14,7 @@ import type {
   VerifiableBody,
 } from "../server/services/astrology-verification";
 import type { IndependentReferenceFetcher } from "../server/services/astrology";
-import type { VerifiedAstrologyForSynthesis } from "../client/src/lib/foundationOfflineCodex";
+import type { VerifiedAstrologyForSynthesis } from "../packages/core/verified-synthesis.ts";
 
 const names = [
   "Avery Cole", "Bianca Stone", "Caleb Hart", "Dalia Reed", "Elias North",
