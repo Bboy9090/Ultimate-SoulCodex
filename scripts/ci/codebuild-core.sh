@@ -56,6 +56,7 @@ node --import tsx --test \
   tests/ui-backend-consistency-contract.test.ts \
   tests/verified-system-method-summary.test.ts \
   tests/technical-appendix-truth.test.ts \
+  tests/systems-details-registry-ui.test.ts \
   tests/compatibility-data-minimization.test.ts \
   tests/compatibility-profile-contract.test.ts \
   tests/compatibility-http-integration.test.ts \
