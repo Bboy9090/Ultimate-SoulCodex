@@ -6,11 +6,53 @@ export interface TemplateVariation {
   template: (context: any) => string;
 }
 
+const PERSONAL_DAY_REFLECTIONS: Record<number, { theme: string; action: string }> = {
+  1: { theme: 'initiative and beginnings', action: 'choose one first step you can complete today' },
+  2: { theme: 'cooperation and pacing', action: 'improve one conversation by listening before responding' },
+  3: { theme: 'expression and creativity', action: 'make or communicate one thing clearly instead of scattering attention' },
+  4: { theme: 'structure and follow-through', action: 'finish one practical task or tighten one routine' },
+  5: { theme: 'adaptability and change', action: 'test one flexible alternative without creating avoidable chaos' },
+  6: { theme: 'care and responsibility', action: 'support someone or something without taking on a duty that is not yours' },
+  7: { theme: 'reflection and inquiry', action: 'protect a short block of quiet time to examine one question carefully' },
+  8: { theme: 'resources and execution', action: 'make one concrete decision about time, money, authority, or priorities' },
+  9: { theme: 'completion and perspective', action: 'close, release, or summarize one thing that no longer needs more energy' },
+  11: { theme: 'inspiration and heightened perspective', action: 'capture one useful insight and translate it into a grounded next step' },
+  22: { theme: 'large-scale building and implementation', action: 'turn one big idea into a small piece of executable structure' },
+  33: { theme: 'teaching, care, and service', action: 'help in one specific way that preserves both compassion and boundaries' },
+};
+
+const MOON_SIGN_REFLECTIONS: Record<string, string> = {
+  Aries: 'Where would direct action help, and where would speed create unnecessary friction?',
+  Taurus: 'What would become steadier if you simplified the pace or protected a useful routine?',
+  Gemini: 'Which conversation, question, or piece of information deserves clearer attention?',
+  Cancer: 'What needs care, privacy, or emotional context before you react?',
+  Leo: 'Where can you express yourself clearly without turning recognition into the goal?',
+  Virgo: 'What small correction, skill, or practical detail would genuinely improve the situation?',
+  Libra: 'What needs balancing, and what decision is being delayed in the name of keeping peace?',
+  Scorpio: 'What requires honesty, depth, stronger boundaries, or a willingness to face what is uncomfortable?',
+  Sagittarius: 'What larger perspective is useful, and what assumption needs checking before you act on it?',
+  Capricorn: 'What responsibility, limit, or long-term objective deserves a concrete next step?',
+  Aquarius: 'What would improve if you stepped outside the usual pattern and looked at the system itself?',
+  Pisces: 'What needs imagination or compassion, and what needs firmer reality-testing or boundaries?',
+};
+
+function personalDayReflection(number: number): { theme: string; action: string } {
+  return PERSONAL_DAY_REFLECTIONS[number] ?? {
+    theme: 'structured reflection',
+    action: 'choose one observable behavior to test rather than treating the number as a forecast',
+  };
+}
+
+function moonSignReflection(sign: string): string {
+  return MOON_SIGN_REFLECTIONS[sign] ??
+    'What real situation today could benefit from a different question or perspective?';
+}
+
 const numerologyTemplates: TemplateVariation[] = [
   {
     id: 'num-personal-1',
     category: 'numerology',
-    template: (ctx) => `Personal Day ${ctx.personalDayNumber} is a deterministic symbolic cycle label. Use it as a prompt to choose one concrete action and compare the result with real evidence.`,
+    template: (ctx) => `Personal Day ${ctx.personalDayNumber} is a deterministic symbolic cycle label. Traditional theme: ${personalDayReflection(ctx.personalDayNumber).theme}. Try this as a reflection experiment: ${personalDayReflection(ctx.personalDayNumber).action}, then compare the result with real evidence.`,
   },
   {
     id: 'num-personal-2',
@@ -20,7 +62,7 @@ const numerologyTemplates: TemplateVariation[] = [
   {
     id: 'num-personal-3',
     category: 'numerology',
-    template: (ctx) => `Reflection prompt for Personal Day ${ctx.personalDayNumber}: pick one decision, state the facts first, then ask whether the traditional number theme adds a useful perspective.`,
+    template: (ctx) => `Reflection prompt for Personal Day ${ctx.personalDayNumber}: ${personalDayReflection(ctx.personalDayNumber).theme}. State the facts first, then ask whether ${personalDayReflection(ctx.personalDayNumber).action} would improve the situation.`,
   },
   {
     id: 'num-personal-4',
@@ -30,7 +72,7 @@ const numerologyTemplates: TemplateVariation[] = [
   {
     id: 'num-personal-5',
     category: 'numerology',
-    template: (ctx) => `Use Personal Day ${ctx.personalDayNumber} as an experiment: choose one low-risk behavior to observe today instead of treating the cycle as a forecast.`,
+    template: (ctx) => `Use Personal Day ${ctx.personalDayNumber} as an experiment around ${personalDayReflection(ctx.personalDayNumber).theme}: ${personalDayReflection(ctx.personalDayNumber).action}. Treat the result—not the number—as the evidence.`,
   },
   {
     id: 'num-personal-6',
@@ -83,7 +125,7 @@ const astrologyTemplates: TemplateVariation[] = [
   {
     id: 'astro-moon-1',
     category: 'astrology',
-    template: (ctx) => `Measured sky context: the Moon is in ${ctx.moonSign} during the ${ctx.moonPhase}. Any personal meaning is optional astrological symbolism, not a mood or event prediction.`,
+    template: (ctx) => `Measured sky context: the Moon is in ${ctx.moonSign} during the ${ctx.moonPhase}. Optional reflection question: ${moonSignReflection(ctx.moonSign)} This is symbolism, not a mood or event prediction.`,
   },
   {
     id: 'astro-moon-2',
@@ -98,7 +140,7 @@ const astrologyTemplates: TemplateVariation[] = [
   {
     id: 'astro-moon-4',
     category: 'astrology',
-    template: (ctx) => `Reflection prompt: with the Moon in ${ctx.moonSign} at ${ctx.moonPhase}, notice one real situation first and use the symbolism only as a question about it.`,
+    template: (ctx) => `Reflection prompt: with the Moon in ${ctx.moonSign} at ${ctx.moonPhase}, start with one real situation. ${moonSignReflection(ctx.moonSign)} Keep the answer grounded in what is actually happening.`,
   },
   {
     id: 'astro-moon-5',
@@ -113,7 +155,7 @@ const astrologyTemplates: TemplateVariation[] = [
   {
     id: 'astro-moon-7',
     category: 'astrology',
-    template: (ctx) => `Today's lunar geometry is ${ctx.moonSign} / ${ctx.moonPhase}. Use it to generate a reflection question, not to infer emotions, motives, luck, or outcomes.`,
+    template: (ctx) => `Today's lunar geometry is ${ctx.moonSign} / ${ctx.moonPhase}. ${moonSignReflection(ctx.moonSign)} Use the question for reflection, not to infer emotions, motives, luck, or outcomes.`,
   },
   {
     id: 'astro-planetary-1',
