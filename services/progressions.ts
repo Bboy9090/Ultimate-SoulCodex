@@ -42,6 +42,10 @@ export interface Progression {
 const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
                'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
 
+function progressionFeatureUnavailable(feature: string): never {
+  throw new Error(`${feature}_not_production_ready`);
+}
+
 /**
  * Calculate Solar Return chart
  */
@@ -49,6 +53,10 @@ export function calculateSolarReturn(
   profile: Profile,
   returnYear: number
 ): ReturnChart {
+  void profile;
+  void returnYear;
+  return progressionFeatureUnavailable('solar_return');
+
   const birthDate = new Date(profile.birthDate);
   const birthYear = birthDate.getFullYear();
   const returnDate = new Date(birthDate);
@@ -79,6 +87,10 @@ export function calculateLunarReturn(
   profile: Profile,
   returnDate: Date
 ): ReturnChart {
+  void profile;
+  void returnDate;
+  return progressionFeatureUnavailable('lunar_return');
+
   const chart = calculateChart(returnDate, profile);
   const themes = generateLunarReturnThemes(chart);
   const interpretation = generateLunarReturnInterpretation(chart);
@@ -99,6 +111,10 @@ export function calculateSecondaryProgressions(
   profile: Profile,
   currentDate: Date
 ): Progression {
+  void profile;
+  void currentDate;
+  return progressionFeatureUnavailable('secondary_progressions');
+
   const birthDate = new Date(profile.birthDate);
   const daysSinceBirth = Math.floor((currentDate.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
   
