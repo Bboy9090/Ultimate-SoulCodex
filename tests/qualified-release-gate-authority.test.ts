@@ -39,6 +39,7 @@ test("Diamond Way and Store Candidate use the same qualified release runner", ()
 test("canonical qualified suite includes the high-value cross-domain gates", () => {
   for (const required of [
     "tests/angular-math-invariants.test.ts",
+    "tests/verification-angle-authority.test.ts",
     "tests/numerology-math-invariants.test.ts",
     "tests/strict-civil-time.test.ts",
     "tests/equal-house-geographic-stress.test.ts",
