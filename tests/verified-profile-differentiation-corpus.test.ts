@@ -216,12 +216,12 @@ function supportedSignatureDistance(
 
 test("verified profile differentiation corpus", { timeout: 120_000 }, async (suite) => {
   const readings = [];
-  for (let index = 0; index < 60; index += 1) {
+  for (let index = 0; index < 120; index += 1) {
     readings.push(await fullVerifiedReading(index));
   }
 
-  await suite.test("all 60 readings use complete verified chart evidence", () => {
-    assert.equal(readings.length, 60);
+  await suite.test("all 120 readings use complete verified chart evidence", () => {
+    assert.equal(readings.length, 120);
     for (const [index, reading] of readings.entries()) {
       assert.equal(reading.astrology.verification.complete, true, `fixture ${index}`);
       assert.equal(reading.astrology.houseSystem, "equal");
@@ -244,12 +244,12 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
   });
 
-  await suite.test("all 60 verified readings are unique", () => {
+  await suite.test("all 120 verified readings are unique", () => {
     const unique = new Set(readings.map((reading) => normalize(fingerprint(reading))));
     assert.equal(
       unique.size,
       readings.length,
-      `expected all 60 verified readings to be unique, got ${unique.size}`,
+      `expected all 120 verified readings to be unique, got ${unique.size}`,
     );
   });
 
@@ -296,7 +296,7 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
 
     assert.ok(
-      materiallyDifferentPairs >= 100,
+      materiallyDifferentPairs >= 500,
       `expected a meaningful comparison population, got ${materiallyDifferentPairs} pairs`,
     );
 
