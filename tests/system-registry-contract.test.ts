@@ -85,3 +85,17 @@ test("legacy blueprint route cannot consume excluded symbolic fields from stored
   assert.doesNotMatch(rootRoutes, /astro\.planets\?\.chiron\?\.sign/);
   assert.doesNotMatch(rootRoutes, /astro\.northNode|astro\.southNode/);
 });
+
+
+test("legacy ritual and blueprint routes preserve disabled systems as inert compatibility fields", () => {
+  const rootRoutes = readFileSync("routes.ts", "utf8");
+
+  assert.match(
+    rootRoutes,
+    /const ayurvedaData = null;/,
+    "legacy rituals must not surface stored or inferred Ayurveda data",
+  );
+  assert.match(rootRoutes, /geneKeys:\s*""/);
+  assert.match(rootRoutes, /chiron:\s*""/);
+  assert.match(rootRoutes, /nodes:\s*""/);
+});
