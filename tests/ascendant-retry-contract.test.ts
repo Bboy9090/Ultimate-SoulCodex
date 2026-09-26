@@ -180,7 +180,7 @@ test("verified full natal chart and Human Design complete the exact-input verifi
     status: "verified",
     type: "Generator",
     strategy: "To Respond",
-    authority: "Sacral",
+    authority: "Sacral Authority",
     profile: "4/6",
     ...humanDesignTrust,
   };
