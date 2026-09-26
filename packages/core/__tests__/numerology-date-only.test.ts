@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   NUMEROLOGY_ENGINE_VERSION,
@@ -12,7 +13,14 @@ import {
   normalizeNumerologyName,
   reduceNumerology,
 } from '../compute/numerology.js';
-import { calcPersonalMonth, calcPersonalYear, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
+import {
+  calcPersonalDayForDateISO,
+  calcPersonalMonth,
+  calcPersonalYear,
+  calcUniversalDay,
+  isPersonalNumerologyValue,
+  PERSONAL_YEAR_BOUNDARY_POLICY,
+} from '../compute/personal-numbers.js';
 import { calcLifePathWithEvidence } from '../evidence-ledger/integrations.js';
 
 test('Bobby fixture resolves Life Path 9 in every host timezone', () => {
@@ -158,4 +166,51 @@ test('Personal Year omitted target year uses UTC year deterministically', () => 
     calcPersonalYear('1990-09-17'),
     calcPersonalYear('1990-09-17', currentUtcYear),
   );
+});
+
+
+test('canonical numerology reduction is idempotent across the supported integer domain', () => {
+  for (let value = 0; value <= 9999; value += 1) {
+    const reduced = reduceNumerology(value).value;
+    assert.equal(
+      reduceNumerology(reduced).value,
+      reduced,
+      `reduction must be idempotent for ${value}`,
+    );
+    if (value > 0) {
+      assert.ok(
+        isPersonalNumerologyValue(reduced),
+        `positive reduction ${value} -> ${reduced} must remain in the governed value set`,
+      );
+    }
+  }
+});
+
+test('personal cycles stay inside the governed value set across representative calendar space', () => {
+  const years = [1900, 1999, 2000, 2026, 2099];
+  for (const year of years) {
+    for (let month = 1; month <= 12; month += 1) {
+      for (const day of [1, 7, 11, 17, 22, 28]) {
+        const target = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        assert.ok(isPersonalNumerologyValue(calcUniversalDay(target)), target);
+        assert.ok(
+          isPersonalNumerologyValue(calcPersonalDayForDateISO('1990-09-17', target)),
+          target,
+        );
+      }
+      assert.ok(
+        isPersonalNumerologyValue(calcPersonalYear('1990-09-17', year)),
+        String(year),
+      );
+    }
+  }
+});
+
+test('personal-cycle arithmetic uses the canonical core reducer', () => {
+  const source = readFileSync(
+    new URL('../compute/personal-numbers.ts', import.meta.url),
+    'utf8',
+  );
+  assert.match(source, /import \{ reduceNumerology \} from ['"]\.\/numerology\.js['"]/);
+  assert.doesNotMatch(source, /while \(num > 9/);
 });
