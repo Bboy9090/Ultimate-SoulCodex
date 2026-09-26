@@ -866,9 +866,19 @@ export function synthesizeVerifiedFoundationProfile(
   if (!sunPattern || !moonPattern || !risingPattern) {
     throw new Error("Verified Big Three contained an unsupported sign.");
   }
+  const policyIdentity =
+    typeof astrology.verification?.policyId === "string"
+      ? astrology.verification.policyId
+      : "";
   const eligibility = {
-    housesMidheaven: maySystemInfluenceSynthesis("housesMidheaven", "verified"),
-    nodesChiron: maySystemInfluenceSynthesis("nodesChiron", "verified"),
+    housesMidheaven:
+      policyIdentity.includes("ASTRO-EQUAL-HOUSE-v1") &&
+      Boolean(verifiedGovernedPoint(astrology.midheaven, "ASTRO-EQUAL-HOUSE-v1")) &&
+      maySystemInfluenceSynthesis("housesMidheaven", "verified"),
+    nodesChiron:
+      policyIdentity.includes("ASTRO-MEAN-NODE-v1") &&
+      policyIdentity.includes("ASTRO-CHIRON-v1") &&
+      maySystemInfluenceSynthesis("nodesChiron", "verified"),
     humanDesign:
       humanDesign?.status === "verified" &&
       typeof humanDesign.verificationReceiptId === "string" &&
