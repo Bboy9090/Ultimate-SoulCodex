@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert";
+import { readFileSync } from "node:fs";
 import type { GalacticCodeResult } from "../shared/galactic-code/types";
 
 /**
@@ -391,4 +392,22 @@ test("UI/Backend Consistency Contract: Color Coding Honesty", async (t) => {
     assert.strictEqual(colorMap.missing, "gray");
     // No exceptions, no "it's context dependent"
   });
+});
+
+
+test("UI/Backend Consistency Contract: Galactic Code labels preserve symbolic semantics", () => {
+  const mapSource = readFileSync("client/src/components/GalacticCodeMap.tsx", "utf8");
+  const cardSource = readFileSync("client/src/components/GalacticCodeCard.tsx", "utf8");
+
+  assert.match(mapSource, /Symbolic Synthesis Axes/);
+  assert.match(mapSource, /Reflection Sequence/);
+  assert.match(mapSource, /Symbolic Legacy Theme/);
+  assert.match(mapSource, /not a prediction of long-term impact/);
+  assert.doesNotMatch(mapSource, />Behavioral Sequence<|>Legacy Function<|>Galactic Axes</);
+
+  assert.match(cardSource, /Data coverage:/);
+  assert.match(cardSource, /Primary Synthesis Axis/);
+  assert.match(cardSource, /Secondary Synthesis Axis/);
+  assert.match(cardSource, /Deterministic fingerprint key/);
+  assert.doesNotMatch(cardSource, />Primary Function<|>Secondary Function</);
 });
