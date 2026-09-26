@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { VerifiedAstrologyForSynthesis } from "../packages/core/verified-synthesis.ts";
 import {
   generateFoundationOfflineCodexProfile,
   synthesizeVerifiedFoundationProfile,
-  type VerifiedAstrologyForSynthesis,
 } from "../client/src/lib/foundationOfflineCodex";
 
 const local = generateFoundationOfflineCodexProfile(
