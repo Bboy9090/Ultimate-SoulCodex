@@ -154,7 +154,7 @@ function hasVerifiedPlacementEvidence(placement: PlacementRecord | undefined): b
   );
 }
 
-function hasVerifiedHumanDesignTrust(humanDesignData: Record<string, unknown> | null | undefined): boolean {
+export function hasVerifiedHumanDesignTrust(humanDesignData: Record<string, unknown> | null | undefined): boolean {
   return Boolean(
     humanDesignData?.status === "verified" &&
     nonEmptyText(humanDesignData.engine) &&
