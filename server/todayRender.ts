@@ -1,4 +1,5 @@
 import { getPersonalDayLabel } from "@soulcodex/core";
+import { formatInTimeZone } from "date-fns-tz";
 
 export interface TodayCardData {
   codename: string;
@@ -16,6 +17,28 @@ export interface TodayCardData {
   date: string;
   tomorrowTension?: string;
   memoryCallout?: string;
+}
+
+
+function resolvedTodayCardDate(horoscopeData: any, profile: any, now: Date = new Date()): string {
+  const supplied = horoscopeData?.date;
+  if (typeof supplied === "string" && /^\d{4}-\d{2}-\d{2}$/.test(supplied)) {
+    return supplied;
+  }
+
+  const timezone =
+    typeof profile?.timezone === "string" && profile.timezone.trim()
+      ? profile.timezone.trim()
+      : null;
+
+  if (!timezone) return "Unavailable";
+
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(now);
+    return formatInTimeZone(now, timezone, "yyyy-MM-dd");
+  } catch {
+    return "Unavailable";
+  }
 }
 
 const DAY_DO: Record<number, string[]> = {
@@ -170,7 +193,7 @@ export function buildTodayCard(
     personalDayLabel: dayLabel,
     confidenceLabel,
     topTheme,
-    date: horoscopeData?.date ?? new Date().toISOString().slice(0, 10)
+    date: resolvedTodayCardDate(horoscopeData, profile)
   };
 }
 
