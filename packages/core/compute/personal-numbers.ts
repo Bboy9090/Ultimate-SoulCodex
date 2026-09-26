@@ -205,9 +205,9 @@ export const PERSONAL_DAY_LABELS: Record<number, string> = {
   7: "Introspect",
   8: "Execute",
   9: "Complete",
-  11: "Illuminate",
-  22: "Manifest",
-  33: "Transcend",
+  11: "Insight",
+  22: "Build at Scale",
+  33: "Teach and Serve",
 };
 
 export const PERSONAL_YEAR_LABELS: Record<number, string> = {
@@ -220,9 +220,9 @@ export const PERSONAL_YEAR_LABELS: Record<number, string> = {
   7: "Reflection",
   8: "Abundance",
   9: "Completion",
-  11: "Spiritual Awakening",
-  22: "Master Building",
-  33: "Divine Service",
+  11: "Inspiration and Perspective",
+  22: "Large-Scale Building",
+  33: "Teaching and Service",
 };
 
 export const PERSONAL_MONTH_LABELS: Record<number, string> = {
@@ -235,9 +235,9 @@ export const PERSONAL_MONTH_LABELS: Record<number, string> = {
   7: "Stillness",
   8: "Power",
   9: "Closure",
-  11: "Intuition",
-  22: "Vision",
-  33: "Compassion",
+  11: "Insight",
+  22: "Structured Vision",
+  33: "Compassionate Service",
 };
 
 /**
