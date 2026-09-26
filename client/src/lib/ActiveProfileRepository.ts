@@ -15,6 +15,58 @@
 import { calcLifePath } from "@soulcodex/core";
 import type { PlacementLike } from './placementVerification';
 
+function hasCompleteVerificationEvidence(value: any): boolean {
+  const evidence = value?.provenance ?? value?.evidence;
+  return Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt);
+}
+
+function sanitizePlacementVerificationClaim(value: any): any {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const state = value.verificationStatus ?? value.status;
+  if (state !== "verified" || hasCompleteVerificationEvidence(value)) return value;
+
+  const downgradedState = typeof value.sign === "string" && value.sign.trim()
+    ? "pending_independent_verification"
+    : "unresolved";
+
+  return {
+    ...value,
+    ...(value.verificationStatus !== undefined ? { verificationStatus: downgradedState } : {}),
+    ...(value.status !== undefined ? { status: downgradedState } : {}),
+  };
+}
+
+function sanitizeAstrologyVerificationClaims(astrologyData: any): any {
+  if (!astrologyData || typeof astrologyData !== "object" || Array.isArray(astrologyData)) {
+    return astrologyData;
+  }
+
+  const sanitized: any = { ...astrologyData };
+  for (const key of ["sun", "moon", "rising", "ascendant", "midheaven"]) {
+    if (key in sanitized) sanitized[key] = sanitizePlacementVerificationClaim(sanitized[key]);
+  }
+
+  if (sanitized.planets && typeof sanitized.planets === "object" && !Array.isArray(sanitized.planets)) {
+    sanitized.planets = Object.fromEntries(
+      Object.entries(sanitized.planets).map(([key, value]) => [
+        key,
+        sanitizePlacementVerificationClaim(value),
+      ]),
+    );
+  }
+
+  if (sanitized.placements && typeof sanitized.placements === "object" && !Array.isArray(sanitized.placements)) {
+    sanitized.placements = Object.fromEntries(
+      Object.entries(sanitized.placements).map(([key, value]) => [
+        key,
+        sanitizePlacementVerificationClaim(value),
+      ]),
+    );
+  }
+
+  return sanitized;
+}
+
 export interface StoredProfile {
   id?: string;
   remoteId?: string;
@@ -150,6 +202,9 @@ export function saveActiveProfile(profile: StoredProfile): {
     const now = new Date().toISOString();
     const enriched: StoredProfile = {
       ...profile,
+      ...(profile.astrologyData !== undefined
+        ? { astrologyData: sanitizeAstrologyVerificationClaims(profile.astrologyData) }
+        : {}),
       schemaVersion: SCHEMA_VERSION,
       updatedAt: now,
       createdAt: profile.createdAt ?? now,
