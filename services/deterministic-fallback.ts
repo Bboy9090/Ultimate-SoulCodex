@@ -81,15 +81,19 @@ function verifiedHumanDesign(profile: any): {
   authority: string;
 } {
   const hd = profile?.humanDesignData;
+  const validText = (value: unknown) =>
+    typeof value === "string" && value.trim().length > 0;
+  const validTimestamp = (value: unknown) =>
+    validText(value) && !Number.isNaN(Date.parse(value as string));
   const hasTrustRecord = Boolean(
     hd?.status === "verified" &&
-    hd?.engine &&
-    hd?.source &&
-    hd?.calculatedAt &&
-    hd?.inputTimestampUtc &&
-    hd?.verificationReceiptId &&
-    hd?.independentSource &&
-    hd?.verifiedAt
+    validText(hd?.engine) &&
+    validText(hd?.source) &&
+    validTimestamp(hd?.calculatedAt) &&
+    validTimestamp(hd?.inputTimestampUtc) &&
+    validText(hd?.verificationReceiptId) &&
+    validText(hd?.independentSource) &&
+    validTimestamp(hd?.verifiedAt)
   );
   if (!hasTrustRecord) {
     return { type: "", strategy: "", authority: "" };
