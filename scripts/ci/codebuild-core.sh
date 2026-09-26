@@ -53,6 +53,7 @@ node --import tsx --test \
   tests/compatibility-data-minimization.test.ts \
   tests/compatibility-profile-contract.test.ts \
   tests/compatibility-http-integration.test.ts \
+  tests/synastry-input-validation.test.ts \
   tests/release-identity.test.ts \
   tests/billing-security.test.ts \
   tests/local-first-privacy-contract.test.ts \
