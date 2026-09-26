@@ -2,6 +2,8 @@ import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
 export interface Transit {
+  /** Profile-local calendar date when this transit occurrence was sampled. */
+  dateISO?: string;
   planet: string;
   transitingDegree: number;
   transitingSign: string;
