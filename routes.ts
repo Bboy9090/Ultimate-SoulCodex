@@ -99,7 +99,7 @@ function handleError(error: unknown, res: any, context: string) {
   });
 }
 
-import compatibilityRoutes from "./routes/compatibility";
+import compatibilityRoutes, { buildMatchResponse } from "./routes/compatibility";
 import { getVapidPublicKey } from "./services/push-notifications";
 import { insertPushSubscriptionSchema } from "./shared/schema";
 
@@ -1831,15 +1831,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Archetype match rankings — pre-computed from user's own soul blueprint
+  // Compatibility fallback route mirrors the canonical evidence boundary.
+  // It must never accept naked caller-supplied verification claims.
   app.post("/api/compatibility/archetype-matches", async (req, res) => {
     try {
-      const { sunSign, lifePathNumber, hdType, mode = "love" } = req.body;
-      if (!sunSign) return res.status(400).json({ message: "sunSign is required" });
-      const result = getMatchesByMode(sunSign, lifePathNumber ? Number(lifePathNumber) : undefined, hdType, mode as RelationshipMode);
-      res.json(result);
+      const { profile, mode = "love" } = req.body ?? {};
+      if (!profile || typeof profile !== "object") {
+        return res.status(400).json({
+          message: "A saved profile is required. Do not resubmit naked sign strings.",
+        });
+      }
+      const safeMode: RelationshipMode =
+        ["love", "attraction", "friendship", "growth"].includes(mode)
+          ? mode as RelationshipMode
+          : "love";
+      const result = buildMatchResponse(profile, safeMode, {
+        trustedEvidenceContext: false,
+      });
+      res.status(result.available ? 200 : 422).json(result);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      res.status(500).json({ message: err?.message || "Compatibility match generation failed" });
     }
   });
 
