@@ -8,6 +8,8 @@
 import { calculateActiveTransits, extractNatalPositions, type Transit } from './transits';
 import type { Profile } from '../shared/schema';
 import { getMoonPhase as getCanonicalMoonPhase, getMoonSign as getCanonicalMoonSign } from './daily-context';
+import { parseDateOnly, resolveCivilTimeStrict } from '@soulcodex/core';
+import { formatInTimeZone } from 'date-fns-tz';
 
 export interface CalendarDay {
   date: Date;
@@ -32,13 +34,65 @@ export interface TransitsCalendar {
   };
 }
 
+const MAX_TRANSIT_CALENDAR_DAYS = 366;
+
+function validTimezone(value: unknown): string {
+  const timezone =
+    typeof value === 'string' && value.trim()
+      ? value.trim()
+      : 'UTC';
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date(0));
+  } catch {
+    throw new RangeError(`Invalid transit calendar timezone: ${timezone}`);
+  }
+
+  return timezone;
+}
+
+function dateOnlyOrdinal(dateISO: string): number {
+  const { year, month, day } = parseDateOnly(dateISO);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
+function dateOnlyFromOrdinal(ordinal: number): string {
+  return new Date(ordinal * 86_400_000).toISOString().slice(0, 10);
+}
+
+function calendarDateKey(
+  value: Date | string,
+  timezone: string,
+): string {
+  if (typeof value === 'string') {
+    parseDateOnly(value);
+    return value;
+  }
+
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+    throw new RangeError('Transit calendar date must be valid');
+  }
+
+  return formatInTimeZone(value, timezone, 'yyyy-MM-dd');
+}
+
+function localNoonInstant(dateISO: string, timezone: string): Date {
+  const resolution = resolveCivilTimeStrict(dateISO, '12:00', timezone);
+  if (resolution.status !== 'valid' || !resolution.utc) {
+    throw new RangeError(
+      `Transit calendar local noon is ${resolution.status}: ${resolution.reason ?? 'unresolved'}`,
+    );
+  }
+  return resolution.utc;
+}
+
 /**
  * Generate a transits calendar for a date range
  */
 export function generateTransitsCalendar(
   profile: Profile,
-  startDate: Date,
-  endDate: Date
+  startDate: Date | string,
+  endDate: Date | string
 ): TransitsCalendar {
   const days: CalendarDay[] = [];
   const allThemes: string[] = [];
@@ -46,14 +100,28 @@ export function generateTransitsCalendar(
   let totalTransits = 0;
   let highIntensityDays = 0;
 
-  // Extract natal positions from profile
+  const timezone = validTimezone((profile as any).timezone);
+  const startDateISO = calendarDateKey(startDate, timezone);
+  const endDateISO = calendarDateKey(endDate, timezone);
+  const startOrdinal = dateOnlyOrdinal(startDateISO);
+  const endOrdinal = dateOnlyOrdinal(endDateISO);
+  const spanDays = endOrdinal - startOrdinal + 1;
+
+  if (spanDays < 1) {
+    throw new RangeError('Transit calendar end date must be on or after start date');
+  }
+  if (spanDays > MAX_TRANSIT_CALENDAR_DAYS) {
+    throw new RangeError(`Transit calendar range exceeds ${MAX_TRANSIT_CALENDAR_DAYS} days`);
+  }
+
+  // Extract only governed natal positions.
   const astrologyData = profile.astrologyData as any;
   const natalPlanets = extractNatalPositions(astrologyData);
 
-  // Generate calendar for each day
-  const currentDate = new Date(startDate);
-  while (currentDate <= endDate) {
-    const activeTransits = calculateActiveTransits(natalPlanets, new Date(currentDate));
+  for (let ordinal = startOrdinal; ordinal <= endOrdinal; ordinal += 1) {
+    const dateISO = dateOnlyFromOrdinal(ordinal);
+    const currentDate = localNoonInstant(dateISO, timezone);
+    const activeTransits = calculateActiveTransits(natalPlanets, currentDate);
     
     const significantTransits = activeTransits.transits.filter(t => t.intensity === 'high');
     const recommendations = generateRecommendations(activeTransits.transits, activeTransits.dominantTheme);
@@ -63,14 +131,14 @@ export function generateTransitsCalendar(
     }
 
     if (activeTransits.overallIntensity >= 8) {
-      peakDates.push(new Date(currentDate));
+      peakDates.push(currentDate);
     }
 
     allThemes.push(activeTransits.dominantTheme);
     totalTransits += activeTransits.transits.length;
 
     days.push({
-      date: new Date(currentDate),
+      date: currentDate,
       transits: activeTransits.transits,
       dominantTheme: activeTransits.dominantTheme,
       overallIntensity: activeTransits.overallIntensity,
@@ -79,9 +147,6 @@ export function generateTransitsCalendar(
       moonPhase: getCanonicalMoonPhase(currentDate).phase,
       moonSign: getCanonicalMoonSign(currentDate)
     });
-
-    // Move to next day
-    currentDate.setDate(currentDate.getDate() + 1);
   }
 
   // Calculate summary
@@ -96,8 +161,8 @@ export function generateTransitsCalendar(
     .map(([theme]) => theme);
 
   return {
-    startDate,
-    endDate,
+    startDate: localNoonInstant(startDateISO, timezone),
+    endDate: localNoonInstant(endDateISO, timezone),
     days,
     summary: {
       totalTransits,
