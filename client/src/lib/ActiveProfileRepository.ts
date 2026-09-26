@@ -67,6 +67,27 @@ function sanitizeAstrologyVerificationClaims(astrologyData: any): any {
   return sanitized;
 }
 
+function sanitizeHumanDesignVerificationClaim(humanDesignData: any): any {
+  if (!humanDesignData || typeof humanDesignData !== "object" || Array.isArray(humanDesignData)) {
+    return humanDesignData;
+  }
+  if (humanDesignData.status !== "verified") return humanDesignData;
+
+  const hasTrustRecord = Boolean(
+    humanDesignData.engine &&
+    humanDesignData.source &&
+    humanDesignData.calculatedAt &&
+    humanDesignData.inputTimestampUtc &&
+    humanDesignData.verificationReceiptId &&
+    humanDesignData.independentSource &&
+    humanDesignData.verifiedAt
+  );
+
+  return hasTrustRecord
+    ? humanDesignData
+    : { ...humanDesignData, status: "calculated_unverified" };
+}
+
 export interface StoredProfile {
   id?: string;
   remoteId?: string;
@@ -204,6 +225,9 @@ export function saveActiveProfile(profile: StoredProfile): {
       ...profile,
       ...(profile.astrologyData !== undefined
         ? { astrologyData: sanitizeAstrologyVerificationClaims(profile.astrologyData) }
+        : {}),
+      ...(profile.humanDesignData !== undefined
+        ? { humanDesignData: sanitizeHumanDesignVerificationClaim(profile.humanDesignData) }
         : {}),
       schemaVersion: SCHEMA_VERSION,
       updatedAt: now,
