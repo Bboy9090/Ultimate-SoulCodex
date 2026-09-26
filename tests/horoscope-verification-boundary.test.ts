@@ -55,3 +55,16 @@ test("daily horoscope AI prompt cannot consume natal Sun/Moon through a weaker l
   assert.match(source, /Natal Sun\/Moon are not supplied here; do not infer them/);
   assert.match(source, /Verified-natal personal transits:/);
 });
+
+
+test("daily horoscope fallback language stays reflective rather than predictive", () => {
+  const source = readFileSync("packages/astrology/horoscope.ts", "utf8");
+
+  assert.doesNotMatch(source, /genuinely good day for connection/i);
+  assert.doesNotMatch(source, /hear surprising news/i);
+  assert.doesNotMatch(source, /things in this area come easier today/i);
+  assert.doesNotMatch(source, /heightened intuition/i);
+  assert.doesNotMatch(source, /practical effort pays off/i);
+  assert.match(source, /reflection prompt/i);
+  assert.match(source, /without assuming an event will occur/i);
+});
