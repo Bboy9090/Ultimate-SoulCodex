@@ -91,3 +91,41 @@ test('legacy astrology rejects non-finite and out-of-range coordinates', () => {
     );
   }
 });
+
+
+test('explicit timezone wins over coordinate inference', () => {
+  const utc = calculateAstrology({
+    birthDate: '1990-09-17',
+    birthTime: '11:11',
+    timezone: 'UTC',
+    latitude: 40.8448,
+    longitude: -73.8648,
+  } as any);
+
+  const ny = calculateAstrology({
+    birthDate: '1990-09-17',
+    birthTime: '11:11',
+    timezone: 'America/New_York',
+    latitude: 40.8448,
+    longitude: -73.8648,
+  } as any);
+
+  assert.notEqual(
+    utc.planets.moon?.longitude,
+    ny.planets.moon?.longitude,
+    'UTC must not be silently replaced by the coordinate-derived New York zone',
+  );
+});
+
+test('explicit invalid timezone is rejected instead of silently inferred from coordinates', () => {
+  assert.throws(
+    () => calculateAstrology({
+      birthDate: '1990-09-17',
+      birthTime: '11:11',
+      timezone: 'Mars/Olympus_Mons',
+      latitude: 40.8448,
+      longitude: -73.8648,
+    } as any),
+    /Invalid timezone/,
+  );
+});
