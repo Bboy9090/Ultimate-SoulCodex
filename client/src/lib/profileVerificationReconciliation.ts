@@ -9,6 +9,16 @@ type PlacementRecord = {
   status?: string;
   verificationStatus?: string;
   sign?: string | null;
+  evidence?: {
+    source?: string | null;
+    engine?: string | null;
+    calculatedAt?: string | null;
+  } | null;
+  provenance?: {
+    source?: string | null;
+    engine?: string | null;
+    calculatedAt?: string | null;
+  } | null;
   internalCandidate?: {
     longitude?: number;
     inputTimestamp?: string;
@@ -126,12 +136,35 @@ function validZodiacSign(value: unknown): value is (typeof ZODIAC_SIGNS)[number]
     ZODIAC_SIGNS.includes(value.trim() as (typeof ZODIAC_SIGNS)[number]);
 }
 
+function hasVerifiedPlacementEvidence(placement: PlacementRecord | undefined): boolean {
+  const evidence = placement?.provenance ?? placement?.evidence;
+  return Boolean(
+    placement?.verificationStatus === "verified" &&
+    evidence?.source &&
+    evidence?.engine &&
+    evidence?.calculatedAt
+  );
+}
+
+function hasVerifiedHumanDesignTrust(humanDesignData: Record<string, unknown> | null | undefined): boolean {
+  return Boolean(
+    humanDesignData?.status === "verified" &&
+    typeof humanDesignData.engine === "string" && humanDesignData.engine &&
+    typeof humanDesignData.source === "string" && humanDesignData.source &&
+    typeof humanDesignData.calculatedAt === "string" && humanDesignData.calculatedAt &&
+    typeof humanDesignData.inputTimestampUtc === "string" && humanDesignData.inputTimestampUtc &&
+    typeof humanDesignData.verificationReceiptId === "string" && humanDesignData.verificationReceiptId &&
+    typeof humanDesignData.independentSource === "string" && humanDesignData.independentSource &&
+    typeof humanDesignData.verifiedAt === "string" && humanDesignData.verifiedAt
+  );
+}
+
 export function getVerifiedAstrologySign(
   astrology: RemoteProfileSnapshot["astrologyData"],
   body: "sun" | "moon" | "rising",
 ): string | null {
   const placement = astrology?.[body];
-  if (placement?.verificationStatus !== "verified") return null;
+  if (!hasVerifiedPlacementEvidence(placement)) return null;
   return validZodiacSign(placement.sign)
     ? placement.sign.trim()
     : null;
@@ -225,7 +258,7 @@ export function hasVerifiedFullNatalChart(
   if (
     !planets ||
     FULL_NATAL_PLANET_KEYS.some(
-      (key) => planets[key]?.verificationStatus !== "verified" || !validZodiacSign(planets[key]?.sign),
+      (key) => !hasVerifiedPlacementEvidence(planets[key]) || !validZodiacSign(planets[key]?.sign),
     )
   ) {
     return false;
@@ -330,8 +363,11 @@ export function reconcileActiveProfile(
     risingSign,
     astrologyData: astrology ?? local.astrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData: hasVerifiedHumanDesignTrust(remote.humanDesignData)
+      ? remote.humanDesignData
+      : local.humanDesignData,
     humanDesignType:
+      hasVerifiedHumanDesignTrust(remote.humanDesignData) &&
       typeof remote.humanDesignData?.type === "string"
         ? remote.humanDesignData.type
         : local.humanDesignType,
@@ -360,7 +396,9 @@ export function reconcileOfflineProfile(
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData: hasVerifiedHumanDesignTrust(remote.humanDesignData)
+      ? remote.humanDesignData
+      : local.humanDesignData,
   };
 
   const verifiedNarrative =
@@ -369,14 +407,18 @@ export function reconcileOfflineProfile(
           mergedLocal,
           remote.astrologyData as VerifiedAstrologyForSynthesis,
           syncedAt,
-          remote.humanDesignData ?? undefined,
+          hasVerifiedHumanDesignTrust(remote.humanDesignData)
+            ? remote.humanDesignData ?? undefined
+            : undefined,
         )
       : null;
 
   return {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData: hasVerifiedHumanDesignTrust(remote.humanDesignData)
+      ? remote.humanDesignData
+      : local.humanDesignData,
     archetypeData:
       verifiedNarrative?.archetypeData ??
       (remote.archetypeData as OfflineCodexProfile["archetypeData"] | undefined) ??
@@ -433,5 +475,5 @@ export function profileNeedsOnlineVerification(
 
   if (!hasVerifiedFullNatalChart(profile.verifiedAstrologyData)) return true;
 
-  return profile.humanDesignData?.status !== "verified";
+  return !hasVerifiedHumanDesignTrust(profile.humanDesignData as Record<string, unknown> | null | undefined);
 }
