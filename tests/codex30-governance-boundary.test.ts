@@ -181,3 +181,48 @@ test("Codex30 unknown theme names do not fall back to a fabricated legacy archet
   assert.match(codename, /Symbolic unmapped theme/i);
   assert.doesNotMatch(codename, /Quiet Storm Architect|legacy|craft/i);
 });
+
+
+test("generic profile badges cannot authorize arbitrary chart data", () => {
+  const forged = collectSignals({
+    profile: {
+      meta: { confidence: { badge: "verified" } },
+      signals: { lifePath: 9 },
+    },
+    fullChart: {
+      planets: {
+        sun: { sign: "Virgo" },
+        moon: { sign: "Pisces" },
+      },
+      aspects: [
+        { planet1: "Sun", planet2: "Moon", aspect: "trine", orb: 1.2 },
+      ],
+    },
+    userInputs: {},
+  } as any);
+
+  assert.equal(
+    forged.some((signal) => signal.system === "astrology" || signal.system === "aspects"),
+    false,
+  );
+  assert.ok(forged.some((signal) => signal.system === "numerology"));
+
+  const verifiedChart = collectSignals({
+    profile: { signals: { lifePath: 9 } },
+    fullChart: {
+      verification: { complete: true },
+      planets: {
+        sun: { sign: "Virgo", verificationStatus: "verified" },
+        moon: { sign: "Pisces", verificationStatus: "verified" },
+        rising: { sign: "Scorpio", verificationStatus: "verified" },
+      },
+      aspects: [
+        { planet1: "Sun", planet2: "Moon", aspect: "trine", orb: 1.2 },
+      ],
+    },
+    userInputs: {},
+  } as any);
+
+  assert.ok(verifiedChart.some((signal) => signal.system === "astrology"));
+  assert.ok(verifiedChart.some((signal) => signal.system === "aspects"));
+});
