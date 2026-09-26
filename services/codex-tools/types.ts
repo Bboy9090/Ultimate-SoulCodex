@@ -33,6 +33,11 @@ export function extractCore(profile: ProfileInput) {
   const numData = profile?.numerologyData || {};
   const hdData = profile?.humanDesignData || {};
   const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(hdData) ? hdData : null;
+  const verifiedHumanDesignFields = verifiedHumanDesign
+    ? ((verifiedHumanDesign.candidate && typeof verifiedHumanDesign.candidate === "object")
+        ? verifiedHumanDesign.candidate
+        : (hdData as Record<string, any>))
+    : {};
   const elemData = profile?.elementalMedicineData || {};
   const archData = profile?.archetypeData || profile?.archetype || {};
   const synth = profile?.synthesis || {};
@@ -43,9 +48,9 @@ export function extractCore(profile: ProfileInput) {
     moonSign: astro?.moonSign || profile?.moonSign || "",
     risingSign: astro?.risingSign || profile?.risingSign || "",
     lifePath: numData?.lifePath || profile?.lifePath || "",
-    hdType: verifiedHumanDesign?.candidate?.type || verifiedHumanDesign?.type || "",
-    hdStrategy: verifiedHumanDesign?.candidate?.strategy || verifiedHumanDesign?.strategy || "",
-    hdAuthority: verifiedHumanDesign?.candidate?.authority || verifiedHumanDesign?.authority || "",
+    hdType: verifiedHumanDesignFields.type || "",
+    hdStrategy: verifiedHumanDesignFields.strategy || "",
+    hdAuthority: verifiedHumanDesignFields.authority || "",
     primaryElement: elemData?.primaryElement || archData?.element || profile?.element || "",
     secondaryElement: elemData?.secondaryElement || "",
     archetype: archData?.archetype || archData?.name ||
