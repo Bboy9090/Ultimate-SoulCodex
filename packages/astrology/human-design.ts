@@ -1268,15 +1268,20 @@ export function calculateHumanDesign(birthData: {
 export function getHumanDesignInterpretation(hdData: HumanDesignData): string {
   const { type, strategy, authority, profile } = hdData;
 
-  const typeDescriptions = {
-    "Manifestor": "You are here to initiate and impact others. Your aura is closed and repelling, designed to make things happen without waiting for others.",
-    "Generator": "You are here to respond and build. Your life force energy is sustainable when you're doing what you love and responding to what comes to you.",
-    "Manifesting Generator": "You are here to respond and then inform. You have the energy to manifest quickly but must wait to respond before acting.",
-    "Projector": "You are here to guide and manage others. Your aura is focused and penetrating, designed to see deeply into others and systems.",
-    "Reflector": "You are here to reflect the health of your community. Your completely open aura samples and reflects the energy around you."
+  const typeDescriptions: Record<string, string> = {
+    "Manifestor": "Human Design tradition associates Manifestor with initiation and informing before action.",
+    "Generator": "Human Design tradition associates Generator with responding before committing energy.",
+    "Manifesting Generator": "Human Design tradition associates Manifesting Generator with responding, then informing as action develops.",
+    "Projector": "Human Design tradition associates Projector with recognition, invitation, and guidance themes.",
+    "Reflector": "Human Design tradition associates Reflector with lunar-cycle timing and environmental reflection themes.",
   };
 
-  return `As a ${type}, ${typeDescriptions[type as keyof typeof typeDescriptions] || typeDescriptions.Generator} Your strategy is "${strategy}" and your authority is "${authority}". Your profile ${profile} indicates your life theme and how you interact with the world. This combination creates your unique energetic blueprint for navigating life authentically.`;
+  const description = typeDescriptions[type];
+  if (!description) {
+    throw new RangeError(`Unsupported Human Design type for interpretation: ${type}`);
+  }
+
+  return `Calculated Human Design labels: Type ${type}; Strategy "${strategy}"; Authority "${authority}"; Profile ${profile}. ${description} The strategy, authority, profile, aura, and purpose language belong to the Human Design interpretive framework; they are not measured personality traits, biological energy states, destiny, or proof of how you must make decisions.`;
 }
 
 export function calculateHumanDesignWithEvidence(birthData: {
