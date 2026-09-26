@@ -140,10 +140,20 @@ export function calcPersonalYear(
     birthDay = birth.day;
     targetYear = targetYearOrDay ?? new Date().getUTCFullYear();
   } else {
-    // Legacy signature: (month, day, year)
+    // Legacy signature: (month, day, year). Unlike the string form, numeric
+    // input has no complete calendar date to recover omitted fields from, so
+    // missing day/year must fail closed rather than becoming day 1 or host year.
+    if (
+      targetYearOrDay === undefined ||
+      targetYearIfThreeArgs === undefined
+    ) {
+      throw new RangeError(
+        'Numeric Personal Year input requires explicit month, day, and target year',
+      );
+    }
     birthMonth = birthDateOrMonth;
-    birthDay = targetYearOrDay ?? 1;
-    targetYear = targetYearIfThreeArgs ?? new Date().getUTCFullYear();
+    birthDay = targetYearOrDay;
+    targetYear = targetYearIfThreeArgs;
   }
 
   if (
