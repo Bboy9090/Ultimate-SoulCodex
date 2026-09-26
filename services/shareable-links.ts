@@ -45,6 +45,24 @@ export interface ShareableProfileView {
   settings: ShareSettings;
 }
 
+function isArgon2PasswordHash(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^\$argon2(?:id|i|d)\$/.test(value)
+  );
+}
+
+function validateProtectedShareSettings(settings: ShareSettings): void {
+  if (settings.passwordProtected) {
+    if (!isArgon2PasswordHash(settings.passwordHash)) {
+      throw new Error('Protected share requires an Argon2 password hash');
+    }
+    return;
+  }
+
+  settings.passwordHash = undefined;
+}
+
 /**
  * Create a shareable link for a profile
  */
@@ -72,6 +90,8 @@ export async function createShareableLink(
     ...defaultSettings,
     ...settings
   };
+
+  validateProtectedShareSettings(finalSettings);
 
   // Set expiration if specified
   let expiresAt: Date | undefined;
@@ -123,13 +143,22 @@ export async function getShareableProfile(
     return null;
   }
 
-  // Check password
+  // Check password. A protected link with missing/malformed hash fails closed.
   if (link.settings.passwordProtected) {
+    if (!isArgon2PasswordHash(link.settings.passwordHash)) {
+      return null;
+    }
     if (!password) {
       throw new Error('Password required');
     }
-    // Use argon2 for proper password hashing
-    if (!await argon2.verify(link.settings.passwordHash!, password)) {
+
+    let validPassword = false;
+    try {
+      validPassword = await argon2.verify(link.settings.passwordHash, password);
+    } catch {
+      return null;
+    }
+    if (!validPassword) {
       throw new Error('Invalid password');
     }
   }
@@ -372,6 +401,8 @@ export async function updateShareableLink(
     ...link.settings,
     ...settings
   };
+
+  validateProtectedShareSettings(updatedSettings);
 
   // Recalculate expiration if needed
   let expiresAt = link.expiresAt;
