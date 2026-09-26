@@ -42,3 +42,24 @@ test('active storage implementations normalize birthDate on create and update', 
   assert.match(server, /birthDate: canonicalBirthDateTimestamp\(\(insertProfile as any\)\.birthDate\)/);
   assert.match(server, /hasOwnProperty\.call\(updates, "birthDate"\)/);
 });
+
+
+test('package MemStorage enforces the civil birth-date invariant on updates', async () => {
+  const storage = new PackageMemStorage();
+  const profile = await storage.createProfile({
+    name: 'Update Civil Date',
+    birthDate: '1990-09-17',
+  } as any);
+
+  const updated = await storage.updateProfile(profile.id, {
+    birthDate: '1991-10-18',
+  } as any);
+  assert.equal(updated.birthDate.toISOString(), '1991-10-18T00:00:00.000Z');
+
+  await assert.rejects(
+    () => storage.updateProfile(profile.id, {
+      birthDate: '1991-10-18T08:30:00-04:00',
+    } as any),
+    /Birth date storage requires a real YYYY-MM-DD civil date/,
+  );
+});
