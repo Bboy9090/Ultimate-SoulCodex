@@ -1,4 +1,5 @@
 import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology";
+import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 
 type AnyRecord = Record<string, any>;
 
@@ -104,7 +105,7 @@ function shapePoints(name: string) {
 }
 
 export default function HumanDesignBodygraph({ data }: { data: Record<string, any> }) {
-  if (data?.status !== "verified") {
+  if (!hasVerifiedHumanDesignTrust(data)) {
     return (
       <section className="sc-panel p-6">
         <p className="sc-eyebrow">Human Design bodygraph</p>
