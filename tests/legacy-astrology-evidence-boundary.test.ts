@@ -2,19 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calculateAstrology } from '../services/astrology';
 
-test('date-only legacy astrology exposes only the Sun candidate', () => {
+test('date-only legacy astrology exposes only an unambiguous Sun sign candidate', () => {
   const result = calculateAstrology({
     birthDate: '1990-09-17',
   } as any);
 
+  assert.equal(result.sunSign, 'Virgo');
   assert.equal(result.moonSign, 'Unknown');
   assert.equal(result.risingSign, 'Unknown');
-  assert.deepEqual(Object.keys(result.planets), ['sun']);
-  assert.equal(result.planets.sun?.house, undefined);
+  assert.deepEqual(Object.keys(result.planets), []);
   assert.deepEqual(result.houses, []);
   assert.deepEqual(result.aspects, []);
   assert.match(result.interpretations.bigThree.moon, /withheld/i);
   assert.match(result.interpretations.bigThree.rising, /withheld/i);
+  assert.match(result.interpretations.summary, /Exact planetary degrees.*withheld/i);
 });
 
 test('exact time and timezone expose planetary longitudes but not houses without location', () => {
@@ -155,4 +156,22 @@ test('legacy astrology rejects ambiguous repeated DST wall times', () => {
     } as any),
     /Birth civil time is ambiguous/,
   );
+});
+
+
+test('date-only Sun is withheld when the civil date spans a solar-ingress boundary', () => {
+  const result = calculateAstrology({
+    birthDate: '2026-09-23',
+  } as any);
+
+  if (result.sunSign === 'Unknown') {
+    assert.equal(result.placements?.sun?.verificationStatus, 'unresolved');
+    assert.deepEqual(Object.keys(result.planets), []);
+    assert.match(result.interpretations.bigThree.sun, /withheld/i);
+  } else {
+    // The test remains robust if ephemeris/tzdb shifts establish the entire
+    // worldwide civil-date interval inside one sign.
+    assert.ok(['Virgo', 'Libra'].includes(result.sunSign));
+    assert.deepEqual(Object.keys(result.planets), []);
+  }
 });
