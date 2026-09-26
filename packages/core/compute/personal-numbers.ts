@@ -63,12 +63,23 @@ export function calcPersonalYear(
     const birth = parseDateOnly(birthDateOrMonth);
     birthMonth = birth.month;
     birthDay = birth.day;
-    targetYear = targetYearOrDay || new Date().getFullYear();
+    targetYear = targetYearOrDay ?? new Date().getFullYear();
   } else {
     // Legacy signature: (month, day, year)
     birthMonth = birthDateOrMonth;
-    birthDay = targetYearOrDay || 1;
-    targetYear = targetYearIfThreeArgs || new Date().getFullYear();
+    birthDay = targetYearOrDay ?? 1;
+    targetYear = targetYearIfThreeArgs ?? new Date().getFullYear();
+
+    if (!Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12) {
+      throw new RangeError('birthMonth must be an integer from 1 to 12');
+    }
+    if (!Number.isInteger(birthDay) || birthDay < 1 || birthDay > 31) {
+      throw new RangeError('birthDay must be an integer from 1 to 31');
+    }
+  }
+
+  if (!Number.isInteger(targetYear) || targetYear < 1) {
+    throw new RangeError('targetYear must be a positive integer');
   }
 
   const sum =
