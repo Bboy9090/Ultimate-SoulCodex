@@ -3,6 +3,7 @@ export * from "./score.js";
 export * from "./resolve.js";
 import { resolveTimelinePhase } from "./resolve.js";
 import { parseDateOnly } from "../compute/date-only.js";
+import { calcPersonalYear } from "../compute/personal-numbers.js";
 
 export type TimelineOutput = {
   phase: import("./rules.js").Phase;
@@ -80,17 +81,11 @@ export function generateTimeline(input: {
     if (age >= 40 && age <= 44) cycles.push("uranus_hard");
   }
 
-  // Personal year: standard numerology.
-  const personalYear = (() => {
-    if (!birthDate) return 1;
-    const birth = parseDateOnly(birthDate);
-    const sum = (n: number) => String(Math.abs(n)).split("").reduce((a, d) => a + Number(d), 0);
-    const reduce = (n: number) => {
-      while (n > 9) n = sum(n);
-      return n || 9;
-    };
-    return reduce(sum(birth.month) + sum(birth.day) + sum(currentDate.year));
-  })();
+  // Personal Year uses the canonical numerology engine. If birth date is
+  // unavailable, numerology contributes nothing rather than inventing Year 1.
+  const personalYear = birthDate
+    ? calcPersonalYear(birthDate, currentDate.year)
+    : undefined;
 
   const resolved = resolveTimelinePhase({
     personalYear,
