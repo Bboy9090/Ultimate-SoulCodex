@@ -35,9 +35,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -105,14 +105,14 @@ jobs:
       GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - name: Setup Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -131,6 +131,15 @@ jobs:
         shell: bash
         run: |
           if [[ -n "$ANDROID_KEYSTORE" && -n "$ANDROID_KEYSTORE_PASSWORD" && -n "$ANDROID_KEY_ALIAS" && -n "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Detect Google Play publishing credentials
+        id: play
+        shell: bash
+        run: |
+          if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
@@ -174,11 +183,7 @@ jobs:
             echo "versionName=4.0.1"
             echo "versionCode=4000008"
             echo "signing_available=${{ steps.signing.outputs.available }}"
-            if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
-              echo "play_credentials_available=true"
-            else
-              echo "play_credentials_available=false"
-            fi
+            echo "play_credentials_available=${{ steps.play.outputs.available }}"
           } > android-store-state.txt
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
@@ -193,7 +198,7 @@ jobs:
           if-no-files-found: error
           retention-days: 90
       - name: Publish signed AAB to Google Play production
-        if: github.ref == 'refs/heads/main' && steps.signing.outputs.available == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: github.ref == 'refs/heads/main' && steps.signing.outputs.available == 'true' && steps.play.outputs.available == 'true'
         uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -207,9 +212,15 @@ jobs:
           echo "Qualification completed without a Google Play production upload; production publishing is main-only."
 
       - name: Block false Google Play deployment claims on main
-        if: github.ref == 'refs/heads/main' && (steps.signing.outputs.available != 'true' || env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON == '')
+        if: github.ref == 'refs/heads/main' && (steps.signing.outputs.available != 'true' || steps.play.outputs.available != 'true')
+        shell: bash
         run: |
-          echo "Google Play production upload is blocked by missing private signing and/or Play service-account credentials."
+          if [[ "${{ steps.signing.outputs.available }}" != "true" ]]; then
+            echo "::error title=Android signing credential blocker::Signed Google Play publishing is blocked because one or more ANDROID_KEYSTORE credentials are unavailable."
+          fi
+          if [[ "${{ steps.play.outputs.available }}" != "true" ]]; then
+            echo "::error title=Google Play service-account blocker::Signed AAB qualification passed, but automated Google Play production publishing is blocked because GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is unavailable."
+          fi
           exit 2
 
   ios-store-validation:
@@ -220,9 +231,9 @@ jobs:
       VITE_RELEASE_VERSION: 4.0.2
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
