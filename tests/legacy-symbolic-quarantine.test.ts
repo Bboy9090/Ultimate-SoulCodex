@@ -10,6 +10,8 @@ import { calculateGeneKeys as packageGeneKeys } from '../packages/astrology/gene
 import { calculateGeneKeys as legacyGeneKeys } from '../services/gene-keys';
 import { calculateSabianSymbols as packageSabianSymbols } from '../packages/astrology/sabian-symbols';
 import { calculateSabianSymbols as legacySabianSymbols } from '../services/sabian-symbols';
+import { calculateChakraSystem } from '../services/chakra-system';
+import { calculateSacredGeometry } from '../services/sacred-geometry';
 
 test('legacy pseudo-BaZi remains quarantined until a governed Four Pillars engine exists', () => {
   for (const calculate of [packageChinese, legacyChinese]) {
@@ -55,4 +57,16 @@ test('Sabian symbols are not AI-fabricated for missing degree corpus entries', a
       /sabian_symbols_unavailable:governed_360_degree_corpus_required/,
     );
   }
+});
+
+
+test('chakra and sacred-geometry identity calculators remain unavailable', () => {
+  assert.throws(
+    () => calculateChakraSystem({}, {}, {}),
+    /chakra_system_unavailable:explicit_governed_assessment_required/,
+  );
+  assert.throws(
+    () => calculateSacredGeometry('1990-09-17', 9, 'Bobby'),
+    /sacred_geometry_unavailable:no_governed_identity_calculation/,
+  );
 });
