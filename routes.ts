@@ -4427,10 +4427,10 @@ const DAY_ARCHETYPE: Record<number, string> = {
 function sanitizeForAI(text: string | undefined | null): string {
   if (!text) return "";
   return text
-    .replace(/\|/g, "")
-    .replace(/unknown/gi, "")
-    .replace(/chaos/gi, "")
-    .replace(/fix/gi, "")
+    // Preserve uncertainty and behavioral vocabulary; remove only raw
+    // transport delimiters and normalize whitespace.
+    .replace(/\|/g, " ")
+    .replace(/\s{2,}/g, " ")
     .trim();
 }
 
