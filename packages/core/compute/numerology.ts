@@ -99,24 +99,50 @@ function getLetterValue(letter: string): number {
   return LETTER_VALUES[letter] ?? 0;
 }
 
-function sumNameLetters(fullName: string, include: (letter: string) => boolean): number {
+export function numerologyNameComponentAvailability(fullName: string): {
+  normalized: string;
+  letterCount: number;
+  vowelCount: number;
+  consonantCount: number;
+} {
   const normalized = normalizeNumerologyName(fullName);
-  if (!normalized) {
+  const letters = [...normalized];
+  const vowelCount = letters.filter((letter) => NUMEROLOGY_POLICY.vowels.includes(letter)).length;
+  return {
+    normalized,
+    letterCount: letters.length,
+    vowelCount,
+    consonantCount: letters.length - vowelCount,
+  };
+}
+
+function sumNameLetters(
+  fullName: string,
+  include: (letter: string) => boolean,
+  component: 'Expression' | 'Soul Urge' | 'Personality',
+): number {
+  const availability = numerologyNameComponentAvailability(fullName);
+  if (!availability.normalized) {
     throw new RangeError(
       'Name numerology requires at least one canonical A-Z letter after Latin transliteration',
     );
   }
 
-  return [...normalized]
-    .filter(include)
-    .reduce((total, letter) => total + getLetterValue(letter), 0);
+  const included = [...availability.normalized].filter(include);
+  if (included.length === 0) {
+    throw new RangeError(
+      `${component} is unresolved because the normalized name contains no eligible letters under the active numerology policy`,
+    );
+  }
+
+  return included.reduce((total, letter) => total + getLetterValue(letter), 0);
 }
 
 /**
  * Expression / Destiny Number: Pythagorean sum of every normalized name letter.
  */
 export function calcExpression(fullName: string): number {
-  return reduceToSingleDigit(sumNameLetters(fullName, () => true));
+  return reduceToSingleDigit(sumNameLetters(fullName, () => true, 'Expression'));
 }
 
 /**
@@ -125,14 +151,14 @@ export function calcExpression(fullName: string): number {
  */
 export function calcSoulUrge(fullName: string): number {
   return reduceToSingleDigit(
-    sumNameLetters(fullName, (letter) => NUMEROLOGY_POLICY.vowels.includes(letter)),
+    sumNameLetters(fullName, (letter) => NUMEROLOGY_POLICY.vowels.includes(letter), 'Soul Urge'),
   );
 }
 
 /** Personality Number: Pythagorean sum of normalized consonants. */
 export function calcPersonality(fullName: string): number {
   return reduceToSingleDigit(
-    sumNameLetters(fullName, (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter)),
+    sumNameLetters(fullName, (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter), 'Personality'),
   );
 }
 
