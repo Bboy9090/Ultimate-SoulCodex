@@ -155,3 +155,23 @@ test("release trust contract requires a high-severity runtime dependency audit",
     ),
   );
 });
+
+
+test("pricing and billing trust are release-critical", () => {
+  assert.ok(V4_RELEASE_MANIFEST.requiredRoutes.includes("/pricing"));
+  assert.ok(
+    V4_RELEASE_MANIFEST.requiredJourney.includes(
+      "inspect-pricing-before-purchase",
+    ),
+  );
+  assert.ok(
+    V4_RELEASE_MANIFEST.requiredTrustRules.includes(
+      "checkout-never-collects-raw-card-data",
+    ),
+  );
+  assert.ok(
+    V4_RELEASE_MANIFEST.requiredTrustRules.includes(
+      "premium-entitlement-requires-persistent-server-state",
+    ),
+  );
+});
