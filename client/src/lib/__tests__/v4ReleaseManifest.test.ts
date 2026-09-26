@@ -10,12 +10,13 @@ const completeWebEvidence = {
   mobileVisualReceipt: true,
   offlineVisualReceipt: true,
   deploymentReceipt: true,
+  backendContractReceipt: true,
   rollbackProcedure: true,
 } as const;
 
 describe("V4 release manifest", () => {
-  it("locks the v4.0.0-rc.2 release identity", () => {
-    expect(V4_RELEASE_MANIFEST.releaseVersion).toBe("4.0.0-rc.2");
+  it("locks the v4.0.1 release identity", () => {
+    expect(V4_RELEASE_MANIFEST.releaseVersion).toBe("4.0.1");
     expect(V4_RELEASE_MANIFEST.classification).toBe("release-candidate");
     expect(V4_RELEASE_MANIFEST.releaseScope).toBe("foundation-web");
   });
@@ -57,6 +58,15 @@ describe("V4 release manifest", () => {
     expect(canDeclareV4ReleaseCandidate(completeWebEvidence)).toBe(true);
   });
 
+  it("fails closed without backend contract evidence", () => {
+    expect(
+      canDeclareV4ReleaseCandidate({
+        ...completeWebEvidence,
+        backendContractReceipt: false,
+      }),
+    ).toBe(false);
+  });
+
   it("fails closed when one required workflow is absent", () => {
     expect(
       canDeclareV4ReleaseCandidate({
@@ -96,6 +106,12 @@ describe("V4 release manifest", () => {
     expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("local-profile-verification-is-explicit-opt-in");
     expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("no-simulated-premium-analysis-routes");
     expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("inspect-evidence-and-limitations");
+    expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("inspect-system-governance");
+    expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("explore-astrology-atlas-without-promoting-unverified-data");
+    expect(V4_RELEASE_MANIFEST.requiredRoutes).toContain("/systems");
+    expect(V4_RELEASE_MANIFEST.requiredRoutes).toContain("/systems/atlas");
+    expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("system-governance-stays-inspectable");
+    expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("quarantined-systems-never-masquerade-as-active");
     expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("open-compatibility-without-recreating-profile");
   });
 });
