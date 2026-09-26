@@ -483,14 +483,17 @@ function determinePlacementStatus(
   const hasExactTime = Boolean(birthData.birthTime?.trim());
   const hasTimezone = Boolean(birthData.timezone?.trim());
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
+  const hasTimezoneEvidence = hasTimezone || hasLocation;
 
-  // Sun remains a date-only candidate.
+  // Sun remains a date-only candidate unless a solar-ingress boundary makes
+  // the date alone insufficient (handled by buildPlacement).
   if (placement === 'sun') {
     return 'calculated';
   }
 
-  // Moon/Rising require a resolvable civil timestamp: clock time + timezone.
-  if (!hasExactTime || !hasTimezone) {
+  // Moon/Rising require a resolvable civil timestamp: clock time plus either
+  // an explicit timezone or coordinates from which an IANA timezone can be inferred.
+  if (!hasExactTime || !hasTimezoneEvidence) {
     return 'requires_verified_birth_time';
   }
 
@@ -542,8 +545,9 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const hasExactTime = Boolean(birthData.birthTime?.trim());
   const hasTimezone = Boolean(birthData.timezone?.trim());
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
-  const moonResolved = hasExactTime && hasTimezone;
-  const risingResolved = moonResolved && hasLocation;
+  const hasResolvedCivilTimestamp = hasExactTime && (hasTimezone || hasLocation);
+  const moonResolved = hasResolvedCivilTimestamp;
+  const risingResolved = hasResolvedCivilTimestamp && hasLocation;
   
   const sunPos = calculateCelestialPosition(Astro.Body.Sun, birthTime);
   const moonPos = calculateCelestialPosition(Astro.Body.Moon, birthTime);
@@ -560,7 +564,9 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   
   const houseCusps = calculateEqualHouseCusps(ascendantData.longitude);
   
-  const sunSign = hasExactTime ? sunPos.sign : (dateOnlySunSignCandidate(birthData) ?? "Unknown");
+  const sunSign = hasResolvedCivilTimestamp
+    ? sunPos.sign
+    : (dateOnlySunSignCandidate(birthData) ?? "Unknown");
   const moonSign = moonResolved ? moonPos.sign : "Unknown";
   const risingSign = risingResolved ? ascendantData.sign : "Unknown";
   
