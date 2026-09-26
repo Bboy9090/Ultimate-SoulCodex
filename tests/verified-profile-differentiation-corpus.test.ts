@@ -112,11 +112,13 @@ function referenceFetcherFor(birth: BirthData): IndependentReferenceFetcher {
 }
 
 async function fullVerifiedReading(index: number) {
-  const location = locations[index % locations.length];
+  const identityIndex = index % names.length;
+  const variantIndex = Math.floor(index / names.length);
+  const location = locations[variantIndex % locations.length];
   const birth: BirthData = {
-    name: names[index % names.length],
-    birthDate: dates[index % dates.length],
-    birthTime: times[index % times.length],
+    name: names[identityIndex],
+    birthDate: dates[identityIndex],
+    birthTime: times[variantIndex % times.length],
     timezone: location.timezone,
     latitude: location.latitude,
     longitude: location.longitude,
@@ -216,12 +218,12 @@ function supportedSignatureDistance(
 
 test("verified profile differentiation corpus", { timeout: 120_000 }, async (suite) => {
   const readings = [];
-  for (let index = 0; index < 120; index += 1) {
+  for (let index = 0; index < 300; index += 1) {
     readings.push(await fullVerifiedReading(index));
   }
 
-  await suite.test("all 120 readings use complete verified chart evidence", () => {
-    assert.equal(readings.length, 120);
+  await suite.test("all 300 readings use complete verified chart evidence", () => {
+    assert.equal(readings.length, 300);
     for (const [index, reading] of readings.entries()) {
       assert.equal(reading.astrology.verification.complete, true, `fixture ${index}`);
       assert.equal(reading.astrology.houseSystem, "equal");
@@ -244,11 +246,16 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
   });
 
-  await suite.test("same name/date repeated across all eight variants stays evidence-differentiated", () => {
+  await suite.test("same name/date repeated across twenty time/location variants stays evidence-differentiated", () => {
     for (let base = 0; base < 15; base += 1) {
-      const group = Array.from({ length: 8 }, (_, repeat) => readings[base + repeat * 15]);
+      const group = Array.from({ length: 20 }, (_, repeat) => readings[base + repeat * 15]);
       const localBiographies = new Set(group.map((reading) => reading.local.biography));
       assert.equal(localBiographies.size, 1, `base fixture ${base} should share the same local name/date biography`);
+
+      const timeVariants = new Set(group.map((reading) => reading.birth.birthTime));
+      const locationVariants = new Set(group.map((reading) => reading.birth.birthLocation));
+      assert.equal(timeVariants.size, times.length, `base fixture ${base} should exercise all birth times`);
+      assert.equal(locationVariants.size, locations.length, `base fixture ${base} should exercise all locations`);
 
       const verifiedNarratives = new Set(
         group.map((reading) => normalize(fingerprint(reading))),
@@ -269,12 +276,12 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
   });
 
-  await suite.test("all 120 verified readings are unique", () => {
+  await suite.test("all 300 verified readings are unique", () => {
     const unique = new Set(readings.map((reading) => normalize(fingerprint(reading))));
     assert.equal(
       unique.size,
       readings.length,
-      `expected all 120 verified readings to be unique, got ${unique.size}`,
+      `expected all 300 verified readings to be unique, got ${unique.size}`,
     );
   });
 
@@ -321,7 +328,7 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
 
     assert.ok(
-      materiallyDifferentPairs >= 500,
+      materiallyDifferentPairs >= 5000,
       `expected a meaningful comparison population, got ${materiallyDifferentPairs} pairs`,
     );
 
