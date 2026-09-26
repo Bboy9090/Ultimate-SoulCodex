@@ -59,10 +59,10 @@ export default function TechnicalAppendix({ birthData, meta }: TechnicalAppendix
             Calculation Method
           </div>
           <div style={{ fontSize: "0.85rem", color: "var(--sc-stone)", lineHeight: "1.8" }}>
-            <div>Engine: astronomy-engine</div>
-            <div>House System: Placidus</div>
+            <div>Engine: Soul Codex governed astronomy stack</div>
+            <div>House System: Equal House (verified production path)</div>
             <div>Zodiac: Tropical</div>
-            <div>Ephemeris: SOFA-compliant</div>
+            <div>Ephemeris: governed verified-ephemeris contract</div>
           </div>
         </div>
 
@@ -91,7 +91,7 @@ export default function TechnicalAppendix({ birthData, meta }: TechnicalAppendix
           lineHeight: "1.6",
         }}
       >
-        <strong style={{ color: "var(--sc-amber)" }}>Note:</strong> This reading synthesizes astrology, numerology, and Human Design. Calculation precision depends on birth time accuracy. Unknown or rounded birth times reduce house and ascendant confidence.
+        <strong style={{ color: "var(--sc-amber)" }}>Note:</strong> This record describes calculation support, not certainty about personality or outcomes. Astrology enters verified surfaces only after the applicable evidence contract passes. Numerology arithmetic is deterministic under the governed reduction policy. Human Design contributes only when its separate verified core contract is present. Unknown or approximate birth time limits time-sensitive chart geometry rather than being silently replaced with invented precision.
       </div>
     </div>
   );
