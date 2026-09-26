@@ -1,6 +1,11 @@
 import * as Astronomy from 'astronomy-engine';
 import * as geoTz from 'geo-tz';
-import { resolveCivilTimeStrict, createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
+import {
+  createEvidenceEntry,
+  normalizeDegrees,
+  resolveCivilTimeStrict,
+  type EvidenceEntry,
+} from '@soulcodex/core';
 
 // Human Design Gates mapped to their correct centers and meanings
 export const HD_GATES = {
@@ -820,7 +825,7 @@ const HD_SIGNS = [
 ] as const;
 
 function normalizeHdLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
+  return normalizeDegrees(value);
 }
 
 function hdPosition(longitude: number): HdPosition {
