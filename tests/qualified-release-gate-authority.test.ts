@@ -78,3 +78,14 @@ test("CodeBuild reuses the canonical suite before lane-specific extras", () => {
   assert.match(codebuild, /tests\/billing-security\.test\.ts/);
   assert.match(codebuild, /tests\/server-profile-ownership\.test\.ts/);
 });
+
+
+test("Store Candidate owns the production dependency audit", () => {
+  const sharedGateIndex = store.indexOf("bash scripts/ci/qualified-release-gates.sh");
+  const auditIndex = store.indexOf("npm audit --omit=dev --audit-level=high");
+  const releaseContractIndex = store.indexOf("tests/store-release-candidate-contract.test.ts");
+
+  assert.ok(sharedGateIndex >= 0);
+  assert.ok(auditIndex > sharedGateIndex);
+  assert.ok(releaseContractIndex > auditIndex);
+});
