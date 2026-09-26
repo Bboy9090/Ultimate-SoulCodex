@@ -6,6 +6,7 @@
  */
 
 import { parseDateOnly } from './date-only.js';
+import { reduceNumerology } from './numerology.js';
 
 export const PERSONAL_NUMEROLOGY_POLICY = Object.freeze({
   engineVersion: 'personal-numerology-v2',
@@ -39,11 +40,8 @@ export function isPersonalNumerologyValue(value: number): value is PersonalNumer
 }
 
 
-function reduceToSingleDigit(num: number): number {
-  while (num > 9 && num !== 11 && num !== 22 && num !== 33) {
-    num = num.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
-  }
-  return num;
+function reduceToPersonalValue(num: number): number {
+  return reduceNumerology(num).value;
 }
 
 function validMonthDay(month: number, day: number): boolean {
@@ -80,13 +78,13 @@ export function calcPersonalDayForDateISO(
   const { day: targetDay, month: targetMonth, year: targetYear } = parseDateOnly(targetDateISO);
 
   const sum =
-    reduceToSingleDigit(birthDay) +
-    reduceToSingleDigit(birthMonth) +
-    reduceToSingleDigit(targetDay) +
-    reduceToSingleDigit(targetMonth) +
-    reduceToSingleDigit(targetYear);
+    reduceToPersonalValue(birthDay) +
+    reduceToPersonalValue(birthMonth) +
+    reduceToPersonalValue(targetDay) +
+    reduceToPersonalValue(targetMonth) +
+    reduceToPersonalValue(targetYear);
 
-  return reduceToSingleDigit(sum);
+  return reduceToPersonalValue(sum);
 }
 
 export function calcPersonalDay(
@@ -107,10 +105,10 @@ export function calcUniversalDay(
 ): number {
   const { year, month, day } = targetCalendarParts(targetDate);
   const sum =
-    reduceToSingleDigit(day) +
-    reduceToSingleDigit(month) +
-    reduceToSingleDigit(year);
-  return reduceToSingleDigit(sum);
+    reduceToPersonalValue(day) +
+    reduceToPersonalValue(month) +
+    reduceToPersonalValue(year);
+  return reduceToPersonalValue(sum);
 }
 
 /**
@@ -156,11 +154,11 @@ export function calcPersonalYear(
   }
 
   const sum =
-    reduceToSingleDigit(birthMonth) +
-    reduceToSingleDigit(birthDay) +
-    reduceToSingleDigit(targetYear);
+    reduceToPersonalValue(birthMonth) +
+    reduceToPersonalValue(birthDay) +
+    reduceToPersonalValue(targetYear);
 
-  return reduceToSingleDigit(sum);
+  return reduceToPersonalValue(sum);
 }
 
 /**
@@ -180,8 +178,8 @@ export function calcPersonalMonth(personalYear: number, targetMonth: number): nu
     throw new RangeError('Personal Month requires calendar month 1-12');
   }
 
-  const sum = reduceToSingleDigit(personalYear) + reduceToSingleDigit(targetMonth);
-  return reduceToSingleDigit(sum);
+  const sum = reduceToPersonalValue(personalYear) + reduceToPersonalValue(targetMonth);
+  return reduceToPersonalValue(sum);
 }
 
 /**
