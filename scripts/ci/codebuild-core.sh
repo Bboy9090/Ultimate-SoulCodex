@@ -34,6 +34,7 @@ node --import tsx --test \
   tests/astrology-production-verification.test.ts \
   tests/offline-ephemeris-accuracy.test.ts \
   tests/strict-civil-time.test.ts \
+  tests/civil-time-authority-contract.test.ts \
   tests/zoned-instant.test.ts \
   tests/timeline-cycle-reduction.test.ts \
   tests/daily-template-system-mix.test.ts \
