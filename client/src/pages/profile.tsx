@@ -161,7 +161,7 @@ export default function ProfilePage() {
         misunderstanding: "Symbolic guidance is not a command or prediction. You remain responsible for context and consequences.",
         relationshipView: "When guidance involves another person, communicate directly rather than silently testing whether they can guess what you need.",
         practicalTakeaway: "Rewrite the guidance as one sentence beginning with “Today I will…” and include a behavior another person could observe.",
-        evidence: "Drawn from the saved daily and archetype guidance fields. Relevance must be confirmed through lived experience.",
+        evidence: "Drawn from the saved stable profile guidance and archetype synthesis. Live Today guidance is calculated separately from current-day context.",
       });
     }
 
