@@ -17,7 +17,6 @@ import { generateDailyInsights } from "./services/daily-insights";
 import { generateCompatibilityInsights } from "./services/compatibility-insights";
 import { getMatchesByMode, type RelationshipMode } from "./services/archetype-matches";
 import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
-import { calculateVedicAstrology } from "./services/vedic-astrology";
 import { calculateGeneKeys } from "./services/gene-keys";
 import { calculateIChing } from "./services/i-ching";
 import { calculateChineseAstrology } from "./services/chinese-astrology";
@@ -50,7 +49,6 @@ import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, ge
 import { finalOutputGuard, routeAIRequest } from "./services/ai-router";
 import { generateRelationshipAutopsy } from "./services/relationship-autopsy";
 import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
-import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
 import { generateProfilePDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
 import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks } from "./services/shareable-links";
 import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "./services/transit-notifications";
@@ -1083,23 +1081,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let runesData, sabianSymbolsData, ayurvedaData, biorhythmsData;
       let asteroidsData, arabicPartsData, fixedStarsData;
       
-      // Vedic Astrology (requires complete data)
-      if (hasCompleteData) {
-        try {
-          vedicAstrologyData = calculateVedicAstrology({
-            birthDate: birthData.birthDate,
-            birthTime: birthData.birthTime!,
-            latitude: parseFloat(String(birthData.latitude || "0")),
-            longitude: parseFloat(String(birthData.longitude || "0")),
-            timezone: birthData.timezone!
-          });
-        } catch (error) {
-          console.error("[CreateProfile] Vedic Astrology calculation failed:", error);
-          vedicAstrologyData = null;
-        }
-      } else {
-        vedicAstrologyData = null;
-      }
+      // Vedic astrology is explicitly unavailable in the production system registry.
+      // Legacy calculator code remains quarantined until a governed sidereal,
+      // ayanamsa, Ascendant, node, and independent-verification contract exists.
+      vedicAstrologyData = null;
       
       // Gene Keys (requires complete data for HD gates)
       if (hasCompleteData && astrologyData && humanDesignData) {
@@ -3039,65 +3024,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Progressions & Return Charts Endpoints
-  app.get("/api/progressions/solar-return", async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+  const progressionsUnavailable = (_req: any, res: any) =>
+    res.status(503).json({
+      code: "progressions_not_production_governed",
+      message:
+        "Solar returns, lunar returns, and secondary progressions are unavailable until their astronomical calculation and verification contracts are approved.",
+    });
 
-      const profile = await storage.getProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      const returnYear = parseInt(req.query.year as string) || new Date().getFullYear();
-      const solarReturn = calculateSolarReturn(profile, returnYear);
-      res.json(solarReturn);
-    } catch (error) {
-      return handleError(error, res, "GetSolarReturn");
-    }
-  });
-
-  app.get("/api/progressions/lunar-return", async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      const profile = await storage.getProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      const returnDate = req.query.date ? new Date(req.query.date as string) : new Date();
-      const lunarReturn = calculateLunarReturn(profile, returnDate);
-      res.json(lunarReturn);
-    } catch (error) {
-      return handleError(error, res, "GetLunarReturn");
-    }
-  });
-
-  app.get("/api/progressions/secondary", async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      const profile = await storage.getProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      const currentDate = req.query.date ? new Date(req.query.date as string) : new Date();
-      const progressions = calculateSecondaryProgressions(profile, currentDate);
-      res.json(progressions);
-    } catch (error) {
-      return handleError(error, res, "GetSecondaryProgressions");
-    }
-  });
+  app.get("/api/progressions/solar-return", progressionsUnavailable);
+  app.get("/api/progressions/lunar-return", progressionsUnavailable);
+  app.get("/api/progressions/secondary", progressionsUnavailable);
 
   // PDF Generation Endpoints
   app.post("/api/pdf/profile", requirePremium, async (req, res) => {
