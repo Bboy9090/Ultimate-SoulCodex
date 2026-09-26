@@ -5,10 +5,18 @@ import {
   type VerifiedAstrologyForSynthesis,
 } from "./foundationOfflineCodex";
 
+type PlacementEvidenceRecord = {
+  source?: string | null;
+  engine?: string | null;
+  calculatedAt?: string | null;
+};
+
 type PlacementRecord = {
   status?: string;
   verificationStatus?: string;
   sign?: string | null;
+  evidence?: PlacementEvidenceRecord | null;
+  provenance?: PlacementEvidenceRecord | null;
   internalCandidate?: {
     longitude?: number;
     inputTimestamp?: string;
@@ -126,15 +134,26 @@ function validZodiacSign(value: unknown): value is (typeof ZODIAC_SIGNS)[number]
     ZODIAC_SIGNS.includes(value.trim() as (typeof ZODIAC_SIGNS)[number]);
 }
 
+function verifiedPlacementSign(
+  placement: PlacementRecord | null | undefined,
+): string | null {
+  const state = placement?.verificationStatus ?? placement?.status;
+  if (state !== "verified" || !validZodiacSign(placement?.sign)) return null;
+
+  const evidence = placement?.provenance ?? placement?.evidence;
+  const hasEvidence =
+    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
+    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
+    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
+
+  return hasEvidence ? placement!.sign!.trim() : null;
+}
+
 export function getVerifiedAstrologySign(
   astrology: RemoteProfileSnapshot["astrologyData"],
   body: "sun" | "moon" | "rising",
 ): string | null {
-  const placement = astrology?.[body];
-  if (placement?.verificationStatus !== "verified") return null;
-  return validZodiacSign(placement.sign)
-    ? placement.sign.trim()
-    : null;
+  return verifiedPlacementSign(astrology?.[body]);
 }
 
 function normalizeLongitude(value: number): number {
@@ -225,7 +244,7 @@ export function hasVerifiedFullNatalChart(
   if (
     !planets ||
     FULL_NATAL_PLANET_KEYS.some(
-      (key) => planets[key]?.verificationStatus !== "verified" || !validZodiacSign(planets[key]?.sign),
+      (key) => !verifiedPlacementSign(planets[key]),
     )
   ) {
     return false;
