@@ -299,7 +299,8 @@ export type HumanDesignUnresolvedReason =
   | 'missing_birth_date'
   | 'missing_birth_time'
   | 'missing_timezone'
-  | 'missing_coordinates';
+  | 'missing_coordinates'
+  | 'design_solar_arc_unresolved';
 
 /**
  * Resolved Human Design chart with all calculated values guaranteed to be present.
@@ -381,6 +382,8 @@ export interface TimezoneResolution {
 export interface SolarArcForensics {
   configuredSolarArc: number;           // exact 88.0 degree design solar arc
   actualSolarArc: number;               // computed from bisection
+  angularResidualDegrees: number;        // circular error from configured solar arc
+  angularToleranceDegrees: number;       // maximum accepted residual
   iterationCount: number;               // bisection loop count
   finalSearchWindowDays: number;        // maxDays - minDays final value
   finalToleranceDays: number;           // tolerance achieved
@@ -1086,11 +1089,33 @@ function calculateHumanDesignInternal(birthData: {
   const actualArc = normalizeHdLongitude(
     birthSunLongitude - unconsciousSunLongitude,
   );
+  const rawArcResidual = Math.abs(actualArc - DESIGN_SOLAR_ARC);
+  const angularResidualDegrees = Math.min(
+    rawArcResidual,
+    360 - rawArcResidual,
+  );
+  const angularToleranceDegrees = 0.001;
+
+  // A converged day-window is not enough on its own: promotion requires the
+  // astronomy result to actually land on the configured solar arc.
+  if (
+    !Number.isFinite(angularResidualDegrees) ||
+    angularResidualDegrees > angularToleranceDegrees
+  ) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'design_solar_arc_unresolved',
+      },
+    };
+  }
 
   // Store solar arc forensics for evidence receipt
   const solarArcForensics = {
     configuredSolarArc: DESIGN_SOLAR_ARC,
     actualSolarArc: actualArc,
+    angularResidualDegrees,
+    angularToleranceDegrees,
     iterationCount: iteration,
     finalSearchWindowDays,
     finalToleranceDays,
@@ -1530,6 +1555,8 @@ export function calculateHumanDesignWithEvidence(birthData: {
           ...(forensics ? [
             `configured_solar_arc_${forensics.configuredSolarArc}`,
             `actual_solar_arc_${forensics.actualSolarArc.toFixed(3)}`,
+            `solar_arc_residual_${forensics.angularResidualDegrees.toFixed(6)}`,
+            `solar_arc_tolerance_${forensics.angularToleranceDegrees.toFixed(6)}`,
             `iteration_count_${forensics.iterationCount}`,
             `timezone_resolution_source_${forensics.timezoneResolutionSource}`,
           ] : []),
@@ -1561,6 +1588,8 @@ export function calculateHumanDesignWithEvidence(birthData: {
           solar_arc_receipt: {
             configuredSolarArc: forensics.configuredSolarArc,
             actualSolarArc: forensics.actualSolarArc,
+            angularResidualDegrees: forensics.angularResidualDegrees,
+            angularToleranceDegrees: forensics.angularToleranceDegrees,
             iterationCount: forensics.iterationCount,
             finalSearchWindowDays: forensics.finalSearchWindowDays,
             finalToleranceDays: forensics.finalToleranceDays,
