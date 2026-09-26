@@ -536,21 +536,36 @@ export function synthesizeArchetype(
     };
   }
 
-  // Find best matching archetype
-  let bestMatch = archetypes[0];
+  // Find the best explicit token match. Substring matching is forbidden here:
+  // e.g. master Life Path 11 must never match archetype keyword "1".
+  let bestMatch: (typeof archetypes)[number] | null = null;
   let maxMatches = 0;
 
   for (const archetype of archetypes) {
-    const matches = archetype.keywords.filter(keyword => 
-      keywords.some(k => k && (k.includes(keyword) || keyword.includes(k)))
+    const matches = archetype.keywords.filter((keyword) =>
+      keywords.some((candidate) => candidate === keyword)
     ).length;
-    
+
     if (matches > maxMatches) {
       maxMatches = matches;
       bestMatch = archetype;
     }
   }
-  
+
+  // Never fall back to archetypes[0] when no governed rule matched.
+  if (!bestMatch || maxMatches === 0) {
+    return {
+      title: "Archetype unresolved",
+      description: "The available governed evidence does not match a declared archetype rule. No default archetype is assigned.",
+      strengths: [],
+      shadows: [],
+      themes: [],
+      guidance: "Keep the verified inputs visible without forcing them into an archetype label.",
+      integration: generateIntegrationAnalysis(rawAstrologyData, numerologyData, personalityData, {}),
+      personalizedInsights: generatePersonalizedInsights(rawAstrologyData, numerologyData, personalityData, {}),
+    };
+  }
+
   // Generate unique personalized title
   const uniqueTitle = generateUniqueArchetypeTitle(astrologyData, numerologyData, personalityData);
 
