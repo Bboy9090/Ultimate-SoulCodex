@@ -1,4 +1,5 @@
 import type { Profile } from './shared/schema';
+import { calcLifePath } from '@soulcodex/core';
 
 export interface Affirmation {
   text: string;
@@ -237,37 +238,23 @@ function generateSeed(profileId: string, date: string = new Date().toISOString()
 
 export function generateDailyAffirmations(profile: Profile, count: number = 3, date?: string): Affirmation[] {
   const affirmations: Affirmation[] = [];
-  const astroData = profile.astrologyData as any;
-  const hdData = profile.humanDesignData as any;
-  const personalityData = profile.personalityData as any;
-  const numData = profile.numerologyData as any;
-  
-  // Get affirmations from different aspects
   const sources: Affirmation[][] = [];
-  
-  // Life Path affirmations
-  if (numData?.lifePath && AFFIRMATION_TEMPLATES.lifePath[numData.lifePath as keyof typeof AFFIRMATION_TEMPLATES.lifePath]) {
-    sources.push(AFFIRMATION_TEMPLATES.lifePath[numData.lifePath as keyof typeof AFFIRMATION_TEMPLATES.lifePath]);
+
+  // Life Path is recomputed from the canonical deterministic engine instead of
+  // trusting a stored legacy numerology payload. Other profile labels remain
+  // outside this legacy daily-affirmation personalization path.
+  try {
+    const lifePath = calcLifePath(profile.birthDate);
+    const templates = AFFIRMATION_TEMPLATES.lifePath[
+      lifePath as keyof typeof AFFIRMATION_TEMPLATES.lifePath
+    ];
+    if (templates) sources.push(templates);
+  } catch {
+    // Universal affirmations below remain available when birth data is invalid.
   }
-  
-  // Sun Sign affirmations
-  if (astroData?.sunSign && AFFIRMATION_TEMPLATES.sunSign[astroData.sunSign as keyof typeof AFFIRMATION_TEMPLATES.sunSign]) {
-    sources.push(AFFIRMATION_TEMPLATES.sunSign[astroData.sunSign as keyof typeof AFFIRMATION_TEMPLATES.sunSign]);
-  }
-  
-  // Human Design Type affirmations
-  if (hdData?.type && AFFIRMATION_TEMPLATES.hdType[hdData.type as keyof typeof AFFIRMATION_TEMPLATES.hdType]) {
-    sources.push(AFFIRMATION_TEMPLATES.hdType[hdData.type as keyof typeof AFFIRMATION_TEMPLATES.hdType]);
-  }
-  
-  // Enneagram affirmations
-  if (personalityData?.enneagram?.type && AFFIRMATION_TEMPLATES.enneagram[personalityData.enneagram.type as keyof typeof AFFIRMATION_TEMPLATES.enneagram]) {
-    sources.push(AFFIRMATION_TEMPLATES.enneagram[personalityData.enneagram.type as keyof typeof AFFIRMATION_TEMPLATES.enneagram]);
-  }
-  
-  // Combine all sources
+
   const allAffirmations = sources.flat();
-  
+
   // Generate deterministic seed based on profile ID and date
   const seed = generateSeed(profile.id, date);
   
