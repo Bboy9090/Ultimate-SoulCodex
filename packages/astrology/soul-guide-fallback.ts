@@ -1,4 +1,4 @@
-import { synthesizeCodex, type CodexSynthesis } from "../src/codex/synthesize";
+import type { CodexSynthesis } from "../src/codex/synthesize";
 
 export interface FallbackCard {
   title: string;
@@ -13,12 +13,8 @@ export interface SoulGuideFallbackResult {
 }
 
 function tryGetSynthesis(profile: any): CodexSynthesis | null {
-  try {
-    if (profile?.synthesis?.coreNature) return profile.synthesis;
-    return synthesizeCodex(profile);
-  } catch {
-    return null;
-  }
+  const synthesis = profile?.synthesis as CodexSynthesis | undefined;
+  return synthesis?.coreNature ? synthesis : null;
 }
 
 export function soulGuideFallback(
