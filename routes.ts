@@ -2688,7 +2688,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const num  = profile.numerology ?? {};
       const astro = profile.astrology ?? profile.natalChart ?? {};
       const hd   = profile.humanDesign ?? profile.human_design ?? {};
-      const gk   = profile.geneKeys ?? profile.gene_keys ?? {};
       const enn  = profile.enneagram ?? {};
       const name = profile.name ?? "the seeker";
 
@@ -2700,11 +2699,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hdType  = hd.type       ?? "unknown";
       const hdAuth  = hd.authority  ?? "";
       const hdProf  = hd.profile    ?? "";
-      const chirPl  = astro.planets?.chiron?.sign ?? astro.chiron ?? "unknown";
-      const northN  = astro.planets?.north_node?.sign ?? astro.northNode ?? "unknown";
-      const southN  = astro.planets?.south_node?.sign ?? astro.southNode ?? "unknown";
+      // Legacy Gene Keys, Chiron, and Nodes are excluded from this blueprint
+      // unless/until this route is migrated to the governed verified evidence adapter.
+      const chirPl  = "unknown";
+      const northN  = "unknown";
+      const southN  = "unknown";
       const ennType = enn.type ?? enn.enneagramType ?? profile.enneagramType ?? "unknown";
-      const gkArr: string[] = Array.isArray(gk) ? gk.slice(0,3).map((g:any) => `Gate ${g.gate ?? g}`).filter(Boolean) : gk.gates ? (gk.gates as any[]).slice(0,3).map((g:any) => `Gate ${g}`) : [];
+      const gkArr: string[] = [];
 
       // Build planet+house summary for the planets section
       const planetEntries = Object.entries(astro.planets ?? {}) as [string, Record<string,unknown>][];
