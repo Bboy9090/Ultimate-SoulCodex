@@ -6,6 +6,7 @@ import {
   calcPersonality,
   calcSoulUrge,
   calcPersonalYear,
+  numerologyNameComponentAvailability,
   resolveOfflineSun,
   synthesizeDepthInterpretationV1,
   validateDepthInterpretationV1,
@@ -236,8 +237,9 @@ export function generateFoundationOfflineCodexProfile(
   const lifePath = calcLifePath(input.birthDate);
   const birthday = calcBirthday(input.birthDate);
   const expression = calcExpression(input.name);
-  const soulUrge = calcSoulUrge(input.name);
-  const personality = calcPersonality(input.name);
+  const nameAvailability = numerologyNameComponentAvailability(input.name);
+  const soulUrge = nameAvailability.vowelCount > 0 ? calcSoulUrge(input.name) : null;
+  const personality = nameAvailability.consonantCount > 0 ? calcPersonality(input.name) : null;
   const maturity = calcMaturity(input.birthDate, input.name);
   const yearNumber = calcPersonalYear(input.birthDate, currentYear);
   const pathPattern = numerologyPatternFor(lifePath);
@@ -260,8 +262,12 @@ export function generateFoundationOfflineCodexProfile(
       lifePath: `Life Path ${lifePath}: deterministic number, symbolic interpretation.`,
       birthday: `Birthday ${birthday}: deterministic day-of-birth reduction, symbolic interpretation.`,
       expression: `Expression ${expression}: deterministic name number, symbolic interpretation.`,
-      soulUrge: `Soul Urge ${soulUrge}: deterministic vowel-number calculation, symbolic interpretation.`,
-      personality: `Personality ${personality}: deterministic consonant-number calculation, symbolic interpretation.`,
+      soulUrge: soulUrge === null
+        ? "Soul Urge unresolved: no A/E/I/O/U vowels remain after canonical name normalization under the Y-as-consonant policy."
+        : `Soul Urge ${soulUrge}: deterministic vowel-number calculation, symbolic interpretation.`,
+      personality: personality === null
+        ? "Personality Number unresolved: no consonants remain after canonical name normalization."
+        : `Personality ${personality}: deterministic consonant-number calculation, symbolic interpretation.`,
       maturity: `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
       personalYear: `Personal Year ${yearNumber}: reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
@@ -279,7 +285,7 @@ export function generateFoundationOfflineCodexProfile(
       ...(expressionPattern
         ? [makeSeed("offline.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 92)]
         : []),
-      ...(soulUrgePattern
+      ...(soulUrgePattern && soulUrge !== null
         ? [makeSeed("offline.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 91)]
         : []),
     ],
