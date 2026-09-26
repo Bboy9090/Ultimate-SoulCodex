@@ -1,0 +1,24 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { registryEntry } from '../shared/system-registry';
+
+const routes = fs.readFileSync(new URL('../routes.ts', import.meta.url), 'utf8');
+
+test('Vedic astrology remains quarantined from production profile generation', () => {
+  const policy = registryEntry('vedic-astrology');
+  assert.equal(policy?.state, 'unavailable');
+  assert.equal(policy?.mayInfluenceUltimateCodex, false);
+  assert.doesNotMatch(routes, /calculateVedicAstrology\(/);
+  assert.match(routes, /vedicAstrologyData = null/);
+});
+
+test('returns and progressions remain unavailable until governed math exists', () => {
+  const policy = registryEntry('returns-progressions');
+  assert.equal(policy?.state, 'unavailable');
+  assert.equal(policy?.mayInfluenceUltimateCodex, false);
+  assert.doesNotMatch(routes, /calculateSolarReturn\(/);
+  assert.doesNotMatch(routes, /calculateLunarReturn\(/);
+  assert.doesNotMatch(routes, /calculateSecondaryProgressions\(/);
+  assert.match(routes, /progressions_not_production_governed/);
+});
