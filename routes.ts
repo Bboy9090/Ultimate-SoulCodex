@@ -15,7 +15,7 @@ import { generateBiography, generateDailyGuidance } from "./services/openai";
 import { calculateHumanDesign } from "@soulcodex/astrology";
 import { generateDailyInsights } from "./services/daily-insights";
 import { generateCompatibilityInsights } from "./services/compatibility-insights";
-import { getMatchesByMode, type RelationshipMode } from "./services/archetype-matches";
+import type { RelationshipMode } from "./services/archetype-matches";
 import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
 import { getDailyElementalGuidance } from "./services/elemental-medicine";
 import { calculateMoralCompass } from "./services/moral-compass";
