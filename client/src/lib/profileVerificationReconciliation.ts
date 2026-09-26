@@ -164,7 +164,7 @@ export function getVerifiedAstrologySign(
   body: "sun" | "moon" | "rising",
 ): string | null {
   const placement = astrology?.[body];
-  if (!hasVerifiedPlacementEvidence(placement)) return null;
+  if (!placement || !hasVerifiedPlacementEvidence(placement)) return null;
   return validZodiacSign(placement.sign)
     ? placement.sign.trim()
     : null;
