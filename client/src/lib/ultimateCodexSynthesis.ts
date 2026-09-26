@@ -1,5 +1,6 @@
 import {
   MAJOR_ASPECT_POLICY_ID,
+  circularDegreesDelta,
   degreeInTropicalSign,
   isGovernedMajorAspect,
   isPersonalNumerologyValue,
@@ -415,6 +416,35 @@ function aspectText(aspect: { planet1: string; planet2: string; aspect: string; 
   return `${aspect.planet1} ${aspect.aspect} ${aspect.planet2} · orb ${aspect.orb.toFixed(2)}°`;
 }
 
+function isCompleteEqualHouseCuspSet(
+  cusps: Array<{ house: number; sign: string; degree: number | null; longitude: number | null }>,
+  risingLongitude: number | null,
+): boolean {
+  if (cusps.length !== 12 || risingLongitude === null) return false;
+  const ordered = [...cusps].sort((a, b) => a.house - b.house);
+  if (ordered.some((cusp, index) => cusp.house !== index + 1 || cusp.longitude === null)) {
+    return false;
+  }
+
+  if (
+    circularDegreesDelta(
+      ordered[0].longitude as number,
+      risingLongitude,
+    ) >= 0.01
+  ) {
+    return false;
+  }
+
+  for (let index = 0; index < ordered.length; index += 1) {
+    const current = ordered[index].longitude as number;
+    const next = ordered[(index + 1) % ordered.length].longitude as number;
+    if (Math.abs(circularDegreesDelta(current, next) - 30) >= 0.01) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSynthesis {
   const astrology = (profile?.verifiedAstrologyData ?? profile?.astrologyData ?? {}) as AnyRecord;
   const numerology = (profile?.numerologyData ?? {}) as AnyRecord;
@@ -438,7 +468,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     });
   }
 
-  const houseCusps = Array.isArray(astrology?.houses)
+  const candidateHouseCusps = Array.isArray(astrology?.houses)
     ? astrology.houses
         .filter((row: AnyRecord) => hasGovernedHouse(row))
         .map((row: AnyRecord) => ({
@@ -448,6 +478,16 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
           longitude: normalizedLongitude(row.longitude),
         }))
         .sort((a: { house: number }, b: { house: number }) => a.house - b.house)
+    : [];
+  const verifiedRisingLongitude =
+    hasVerifiedPlacementEvidence(astrology?.rising)
+      ? placementLongitude(astrology.rising)
+      : null;
+  const houseCusps = isCompleteEqualHouseCuspSet(
+    candidateHouseCusps,
+    verifiedRisingLongitude,
+  )
+    ? candidateHouseCusps
     : [];
 
   const supportingPoints: UltimateCodexPoint[] = [];
