@@ -1,4 +1,5 @@
 import type { Profile } from '../shared/schema';
+import { extractVerifiedAstrology } from '../server/lib/verified-astrology';
 
 export interface Affirmation {
   text: string;
@@ -236,53 +237,43 @@ function generateSeed(profileId: string, date: string = new Date().toISOString()
 }
 
 export function generateDailyAffirmations(profile: Profile, count: number = 3, date?: string): Affirmation[] {
-  const affirmations: Affirmation[] = [];
-  const astroData = profile.astrologyData as any;
+  const verifiedAstrology = extractVerifiedAstrology(profile);
   const hdData = profile.humanDesignData as any;
-  const personalityData = profile.personalityData as any;
   const numData = profile.numerologyData as any;
-  
-  // Get affirmations from different aspects
-  const sources: Affirmation[][] = [];
-  
-  // Life Path affirmations
-  if (numData?.lifePath && AFFIRMATION_TEMPLATES.lifePath[numData.lifePath as keyof typeof AFFIRMATION_TEMPLATES.lifePath]) {
-    sources.push(AFFIRMATION_TEMPLATES.lifePath[numData.lifePath as keyof typeof AFFIRMATION_TEMPLATES.lifePath]);
+  const lifePath = Number(numData?.lifePath ?? numData?.lifePathNumber);
+  const validLifePath = [1,2,3,4,5,6,7,8,9,11,22,33].includes(lifePath);
+  const hdVerified = hdData?.status === 'verified';
+
+  // Affirmations are self-directed prompts, not claims that a symbolic system
+  // caused an outcome. Build them only from governed/profile-qualified inputs.
+  const candidates: Affirmation[] = [
+    { text: 'I can separate what I know from what I am interpreting, and act on the clearest evidence available.', category: 'power', focus: 'Clarity' },
+    { text: 'I can choose one concrete action today and judge it by the result rather than by expectation.', category: 'transformation', focus: 'Action' },
+    { text: 'I can change my mind when new evidence gives me a better direction.', category: 'peace', focus: 'Flexibility' },
+  ];
+
+  if (validLifePath) {
+    candidates.push({
+      text: `I can use Life Path ${lifePath} as a symbolic reflection lens without letting a number make decisions for me.`,
+      category: 'power',
+      focus: 'Numerology lens',
+    });
   }
-  
-  // Sun Sign affirmations
-  if (astroData?.sunSign && AFFIRMATION_TEMPLATES.sunSign[astroData.sunSign as keyof typeof AFFIRMATION_TEMPLATES.sunSign]) {
-    sources.push(AFFIRMATION_TEMPLATES.sunSign[astroData.sunSign as keyof typeof AFFIRMATION_TEMPLATES.sunSign]);
+  if (verifiedAstrology.sun) {
+    candidates.push({
+      text: `My verified natal Sun is ${verifiedAstrology.sun}; I can explore its symbolism while keeping lived experience as the final check.`,
+      category: 'transformation',
+      focus: 'Natal reflection',
+    });
   }
-  
-  // Human Design Type affirmations
-  if (hdData?.type && AFFIRMATION_TEMPLATES.hdType[hdData.type as keyof typeof AFFIRMATION_TEMPLATES.hdType]) {
-    sources.push(AFFIRMATION_TEMPLATES.hdType[hdData.type as keyof typeof AFFIRMATION_TEMPLATES.hdType]);
+  if (hdVerified && typeof hdData?.type === 'string') {
+    candidates.push({
+      text: `I can test the ${hdData.type} framework against real decisions and keep only what proves useful.`,
+      category: 'peace',
+      focus: 'Human Design experiment',
+    });
   }
-  
-  // Enneagram affirmations
-  if (personalityData?.enneagram?.type && AFFIRMATION_TEMPLATES.enneagram[personalityData.enneagram.type as keyof typeof AFFIRMATION_TEMPLATES.enneagram]) {
-    sources.push(AFFIRMATION_TEMPLATES.enneagram[personalityData.enneagram.type as keyof typeof AFFIRMATION_TEMPLATES.enneagram]);
-  }
-  
-  // Combine all sources
-  const allAffirmations = sources.flat();
-  
-  // Generate deterministic seed based on profile ID and date
+
   const seed = generateSeed(profile.id, date);
-  
-  // If we have profile-specific affirmations, select deterministically
-  if (allAffirmations.length > 0) {
-    const shuffled = seededShuffle(allAffirmations, seed);
-    affirmations.push(...shuffled.slice(0, count));
-  }
-  
-  // Fill remaining with universal affirmations if needed
-  while (affirmations.length < count) {
-    const remaining = count - affirmations.length;
-    const universal = seededShuffle(UNIVERSAL_AFFIRMATIONS, seed + affirmations.length);
-    affirmations.push(...universal.slice(0, remaining));
-  }
-  
-  return affirmations.slice(0, count);
+  return seededShuffle(candidates, seed).slice(0, Math.max(0, count));
 }
