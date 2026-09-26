@@ -8,6 +8,7 @@ import { calculateSacredGeometry as packageSacredGeometry } from '../packages/as
 import { calculateSacredGeometry as legacySacredGeometry } from '../services/sacred-geometry';
 import { dailyPull } from '../services/codex-tools/daily-pull';
 import { timingWindow } from '../services/codex-tools/timing-windows';
+import { calculateBiorhythms } from '../packages/astrology/biorhythms';
 
 function underTimezone<T>(timezone: string, callback: () => T): T {
   const previous = process.env.TZ;
@@ -20,23 +21,36 @@ function underTimezone<T>(timezone: string, callback: () => T): T {
   }
 }
 
-test('runes date-only seed is invariant across host timezones', () => {
+function errorMessageUnderTimezone(timezone: string, callback: () => unknown): string {
+  return underTimezone(timezone, () => {
+    try {
+      callback();
+      return 'NO_ERROR';
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
+  });
+}
+
+test('runes quarantine is invariant across host timezones', () => {
   for (const calculate of [packageRunes, legacyRunes]) {
-    const utc = underTimezone('UTC', () => calculate('Bobby', '1990-09-17', 9));
-    const ny = underTimezone('America/New_York', () => calculate('Bobby', '1990-09-17', 9));
-    const la = underTimezone('America/Los_Angeles', () => calculate('Bobby', '1990-09-17', 9));
-    assert.deepEqual(ny, utc);
-    assert.deepEqual(la, utc);
+    const utc = errorMessageUnderTimezone('UTC', () => calculate('Bobby', '1990-09-17', 9));
+    const ny = errorMessageUnderTimezone('America/New_York', () => calculate('Bobby', '1990-09-17', 9));
+    const la = errorMessageUnderTimezone('America/Los_Angeles', () => calculate('Bobby', '1990-09-17', 9));
+    assert.match(utc, /runes_unavailable/);
+    assert.equal(ny, utc);
+    assert.equal(la, utc);
   }
 });
 
-test('sacred geometry date-only seed is invariant across host timezones', () => {
+test('sacred geometry quarantine is invariant across host timezones', () => {
   for (const calculate of [packageSacredGeometry, legacySacredGeometry]) {
-    const utc = underTimezone('UTC', () => calculate('1990-09-17', 9, 'Bobby'));
-    const ny = underTimezone('America/New_York', () => calculate('1990-09-17', 9, 'Bobby'));
-    const la = underTimezone('America/Los_Angeles', () => calculate('1990-09-17', 9, 'Bobby'));
-    assert.deepEqual(ny, utc);
-    assert.deepEqual(la, utc);
+    const utc = errorMessageUnderTimezone('UTC', () => calculate('1990-09-17', 9, 'Bobby'));
+    const ny = errorMessageUnderTimezone('America/New_York', () => calculate('1990-09-17', 9, 'Bobby'));
+    const la = errorMessageUnderTimezone('America/Los_Angeles', () => calculate('1990-09-17', 9, 'Bobby'));
+    assert.match(utc, /sacred_geometry_unavailable/);
+    assert.equal(ny, utc);
+    assert.equal(la, utc);
   }
 });
 
@@ -67,12 +81,25 @@ test('Timing Window uses canonical Personal Day for string birth dates', () => {
 });
 
 
-test('I Ching date-only seed is invariant across host timezones', () => {
+test('I Ching quarantine is invariant across host timezones', () => {
   for (const calculate of [packageIChing, legacyIChing]) {
-    const utc = underTimezone('UTC', () => calculate('1990-09-17'));
-    const ny = underTimezone('America/New_York', () => calculate('1990-09-17'));
-    const la = underTimezone('America/Los_Angeles', () => calculate('1990-09-17'));
-    assert.deepEqual(ny, utc);
-    assert.deepEqual(la, utc);
+    const utc = errorMessageUnderTimezone('UTC', () => calculate('1990-09-17'));
+    const ny = errorMessageUnderTimezone('America/New_York', () => calculate('1990-09-17'));
+    const la = errorMessageUnderTimezone('America/Los_Angeles', () => calculate('1990-09-17'));
+    assert.match(utc, /i_ching_unavailable/);
+    assert.equal(ny, utc);
+    assert.equal(la, utc);
   }
+});
+
+test('biorhythm date-only math is timezone-stable and explicitly symbolic', () => {
+  const utc = underTimezone('UTC', () => calculateBiorhythms('1990-09-17', '2026-09-25'));
+  const ny = underTimezone('America/New_York', () => calculateBiorhythms('1990-09-17', '2026-09-25'));
+  const la = underTimezone('America/Los_Angeles', () => calculateBiorhythms('1990-09-17', '2026-09-25'));
+
+  assert.deepEqual(ny, utc);
+  assert.deepEqual(la, utc);
+  assert.equal(utc.calculationBasis, 'date-only-symbolic');
+  assert.match(utc.overall.interpretation, /mathematical visualization only/i);
+  assert.doesNotMatch(utc.overall.interpretation, /health|mood|cognition.*measurement/i);
 });
