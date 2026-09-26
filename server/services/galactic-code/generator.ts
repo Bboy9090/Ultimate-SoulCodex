@@ -452,7 +452,7 @@ function createTagline(topAxes: Array<{ label: string; score: number }>): string
   if (!primary || !secondary) {
     throw new Error('Galactic Code tagline requires two supported axes');
   }
-  return `${primary.label} (${primary.score}) and ${secondary.label} (${secondary.score}) are the two strongest governed synthesis axes.`;
+  return `${primary.label} (${primary.score}) and ${secondary.label} (${secondary.score}) are the two strongest symbolic synthesis axes under the Galactic Code v1 mapping; the scores are model outputs, not measured traits.`;
 }
 
 function createFrequency(birthDate?: string, birthTime?: string, lifePathStr?: string): string {
@@ -489,21 +489,21 @@ function createBehavioralSequence(topAxes: any[]): string[] {
   const axisLabels = topAxes.slice(0, 3).map(a => a.label);
 
   const sequenceMap: Record<string, string[]> = {
-    Observer: ['Observe', 'Analyze', 'Refine'],
-    Builder: ['Build', 'Test', 'Optimize'],
-    Strategist: ['Decode', 'Plan', 'Execute'],
-    Initiator: ['Initiate', 'Adapt', 'Lead'],
-    Transformer: ['Transform', 'Integrate', 'Evolve'],
-    Connector: ['Connect', 'Align', 'Strengthen'],
-    Protector: ['Protect', 'Stabilize', 'Guide'],
-    Teacher: ['Teach', 'Clarify', 'Empower'],
-    Explorer: ['Explore', 'Discover', 'Expand'],
-    Stabilizer: ['Stabilize', 'Ground', 'Sustain'],
+    Observer: ['Reflection prompt: observe', 'Reflection prompt: analyze', 'Reflection prompt: refine'],
+    Builder: ['Reflection prompt: build', 'Reflection prompt: test', 'Reflection prompt: optimize'],
+    Strategist: ['Reflection prompt: decode', 'Reflection prompt: plan', 'Reflection prompt: execute'],
+    Initiator: ['Reflection prompt: initiate', 'Reflection prompt: adapt', 'Reflection prompt: lead'],
+    Transformer: ['Reflection prompt: transform', 'Reflection prompt: integrate', 'Reflection prompt: evolve'],
+    Connector: ['Reflection prompt: connect', 'Reflection prompt: align', 'Reflection prompt: strengthen'],
+    Protector: ['Reflection prompt: protect', 'Reflection prompt: stabilize', 'Reflection prompt: guide'],
+    Teacher: ['Reflection prompt: teach', 'Reflection prompt: clarify', 'Reflection prompt: empower'],
+    Explorer: ['Reflection prompt: explore', 'Reflection prompt: discover', 'Reflection prompt: expand'],
+    Stabilizer: ['Reflection prompt: stabilize', 'Reflection prompt: ground', 'Reflection prompt: sustain'],
   };
 
   const unsupported = axisLabels.filter((label) => !sequenceMap[label]);
   if (unsupported.length > 0) {
-    throw new Error(`No governed behavioral sequence exists for axis: ${unsupported.join(', ')}`);
+    throw new Error(`No governed reflection sequence exists for axis: ${unsupported.join(', ')}`);
   }
 
   const sequences = axisLabels
@@ -511,7 +511,7 @@ function createBehavioralSequence(topAxes: any[]): string[] {
     .slice(0, 5);
 
   if (sequences.length < 5) {
-    throw new Error('Galactic Code needs enough supported axes to derive a five-step behavioral sequence');
+    throw new Error('Galactic Code needs enough supported axes to derive a five-step reflection sequence');
   }
   return sequences;
 }
