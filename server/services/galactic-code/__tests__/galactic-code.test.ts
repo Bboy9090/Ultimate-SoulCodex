@@ -455,6 +455,13 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
         ...testInput,
         humanDesign: {
           ...testInput.humanDesign,
+          channels: ['Builder Connection Channel', 'Observer Channel'],
+        },
+      },
+      {
+        ...testInput,
+        humanDesign: {
+          ...testInput.humanDesign,
           incarnationCross: 'Different descriptive cross label',
         },
       },
