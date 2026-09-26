@@ -77,3 +77,11 @@ test("root profile routes do not silently inject Tarot into identity synthesis",
   assert.doesNotMatch(rootRoutes, /getTarotBirthCards/);
   assert.doesNotMatch(rootRoutes, /tarotCards/);
 });
+
+
+test("legacy blueprint route cannot consume excluded symbolic fields from stored profiles", () => {
+  const rootRoutes = readFileSync("routes.ts", "utf8");
+  assert.doesNotMatch(rootRoutes, /profile\.geneKeys|profile\.gene_keys/);
+  assert.doesNotMatch(rootRoutes, /astro\.planets\?\.chiron\?\.sign/);
+  assert.doesNotMatch(rootRoutes, /astro\.northNode|astro\.southNode/);
+});
