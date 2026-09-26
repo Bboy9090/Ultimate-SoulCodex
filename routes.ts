@@ -2637,34 +2637,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      // Re-use the high-quality natal report builder
-      const astro = profile.data?.astrologyData || {};
-      const hd    = profile.data?.humanDesignData || {};
-      
-      // Fallback AI text (or we could trigger a generation if premium)
-      const aiText = profile.data?.aiReportText || {
-        overview: "A comprehensive behavioral analysis of your soul architecture.",
-        bigThreeSun: "Interpretation of your core identity drive.",
-        bigThreeMoon: "Interpretation of your emotional needs.",
-        bigThreeRising: "Interpretation of your outward persona.",
-        whatStandsOut: ["Key planetary alignments", "Elemental balance", "Human Design signatures"],
-        workingInterpretation: "A synthesis of your combined esoteric systems.",
-        elementEmphasis: "Guidance based on your dominant elements.",
-        houseEmphasis: "Analysis of your life focus areas.",
-        bottomLine: "A life built for specific growth and mastery.",
-        hdInterpretation: "Behavioral guidance based on your Human Design type and authority."
-      };
-
+      // Re-use the canonical natal-report contract so PDF evidence policy
+      // cannot drift from the verified report surface.
+      const reportInput = buildNatalReportInput(profile);
       const isPremium = (req.user as any)?.subscriptionStatus === "premium";
 
       const pdfBuffer = await buildNatalReportPdf({
-        name: profile.name,
-        birthDate: profile.birthDate,
-        birthTime: profile.birthTime || "",
-        birthLocation: profile.birthLocation || "",
-        astrology: astro,
-        humanDesign: hd,
-        aiText: aiText as any,
+        ...reportInput,
         isPremium,
       });
 
