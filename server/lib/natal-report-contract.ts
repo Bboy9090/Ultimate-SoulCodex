@@ -4,6 +4,16 @@ type PlacementLike = {
   sign?: unknown;
   verificationStatus?: unknown;
   reason?: unknown;
+  evidence?: {
+    source?: unknown;
+    engine?: unknown;
+    calculatedAt?: unknown;
+  } | null;
+  provenance?: {
+    source?: unknown;
+    engine?: unknown;
+    calculatedAt?: unknown;
+  } | null;
   internalCandidate?: {
     longitude?: unknown;
   } | null;
@@ -31,7 +41,15 @@ function record(value: unknown): Record<string, any> {
 
 function verifiedSign(value: unknown): string | null {
   const placement = record(value) as PlacementLike;
+  const evidence = placement.provenance ?? placement.evidence;
+  const hasEvidence = Boolean(
+    evidence &&
+    typeof evidence.source === "string" && evidence.source.trim() &&
+    typeof evidence.engine === "string" && evidence.engine.trim() &&
+    typeof evidence.calculatedAt === "string" && evidence.calculatedAt.trim()
+  );
   return placement.verificationStatus === "verified" &&
+    hasEvidence &&
     typeof placement.sign === "string" &&
     placement.sign.trim()
     ? placement.sign.trim()
@@ -64,8 +82,20 @@ function verifiedPlanet(value: unknown): Record<string, number | string> | undef
 
 function verifiedHumanDesign(value: unknown): Record<string, string> {
   const hd = record(value);
-  if (hd.status !== "verified") return {};
-  const candidate = record(hd.candidate);
+  const hasTrustRecord = Boolean(
+    hd.status === "verified" &&
+    typeof hd.engine === "string" && hd.engine.trim() &&
+    typeof hd.source === "string" && hd.source.trim() &&
+    typeof hd.calculatedAt === "string" && hd.calculatedAt.trim() &&
+    typeof hd.inputTimestampUtc === "string" && hd.inputTimestampUtc.trim() &&
+    typeof hd.verificationReceiptId === "string" && hd.verificationReceiptId.trim() &&
+    typeof hd.independentSource === "string" && hd.independentSource.trim() &&
+    typeof hd.verifiedAt === "string" && hd.verifiedAt.trim()
+  );
+  if (!hasTrustRecord) return {};
+  const candidate = Object.keys(record(hd.candidate)).length
+    ? record(hd.candidate)
+    : hd;
   const result: Record<string, string> = {};
 
   for (const field of ["type", "strategy", "authority", "profile"] as const) {
@@ -100,9 +130,9 @@ function reportHighlights(astrology: Record<string, any>, numerology: Record<str
   highlights.push(moon ? `Moon verified: ${moon}.` : `Moon unresolved: ${placementReason(astrology.moon, "verified birth-time evidence or independent verification is incomplete")}`);
   highlights.push(rising ? `Ascendant verified: ${rising}.` : `Ascendant unresolved: ${placementReason(astrology.rising, "verified birth time, coordinates, or independent verification is incomplete")}`);
   if (lifePath !== null) highlights.push(`Life Path ${lifePath} is a deterministic numerology calculation; its meaning remains interpretive.`);
-  highlights.push(humanDesign.status === "verified"
+  highlights.push(Object.keys(verifiedHumanDesign(humanDesign)).length > 0
     ? "Human Design core fields carry a verified trust record and may be displayed."
-    : "Human Design is unresolved or calculated-unverified and is deliberately withheld from authoritative report fields.");
+    : "Human Design is unresolved, calculated-unverified, or missing its trust receipt and is deliberately withheld from authoritative report fields.");
 
   return highlights;
 }
@@ -145,9 +175,9 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
       ? `Your saved Soul Codex archetype is ${archetypeTitle}. Treat this as a symbolic synthesis to compare with lived experience, not as a factual diagnosis.`
       : "This report separates verified astronomical evidence, deterministic calculations, and symbolic interpretation so uncertainty remains visible instead of being filled with guesses.";
 
-  const humanDesignText = humanDesignRecord.status === "verified"
+  const humanDesignText = Object.keys(humanDesign).length > 0
     ? "Human Design core fields shown here come from a verified trust record. Their interpretive meaning remains symbolic rather than scientific diagnosis."
-    : "Human Design is not independently verified for this profile, so candidate Type, Strategy, Authority, Profile, channels, centers, and advanced values are intentionally omitted rather than presented as facts.";
+    : "Human Design is not independently verified with a complete trust receipt for this profile, so candidate Type, Strategy, Authority, Profile, channels, centers, and advanced values are intentionally omitted rather than presented as facts.";
 
   return {
     name: profile.name,
