@@ -130,10 +130,22 @@ export function resolveOfflineSun(
   if (!trimmedTime) return stableLocalDay(birthDate, timezone);
 
   const resolved = resolveCivilTimeStrict(birthDate, trimmedTime, timezone);
-  if (resolved.status !== 'valid' || !resolved.utc) {
-    // A DST ambiguity does not necessarily make the Sun sign ambiguous. Prove
-    // stability across the local day instead of inventing one UTC occurrence.
+  if (resolved.status === 'ambiguous') {
+    // A repeated DST hour does not necessarily make the Sun sign ambiguous.
+    // Prove stability across the local day instead of inventing one UTC occurrence.
     return stableLocalDay(birthDate, timezone);
+  }
+  if (resolved.status !== 'valid' || !resolved.utc) {
+    return {
+      status: 'unresolved',
+      sign: null,
+      longitudeDegrees: null,
+      policy: 'unresolved',
+      inputTimestamps: resolved.candidates,
+      engine: 'astronomy-engine@2.1.19',
+      verificationStatus: 'unavailable',
+      reason: 'invalid_or_ambiguous_local_time',
+    };
   }
 
   try {
