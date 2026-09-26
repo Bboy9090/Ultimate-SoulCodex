@@ -4,6 +4,7 @@ import { selectTemplates } from './template-bank';
 import { generateDailyAffirmations, type Affirmation } from './affirmations';
 import crypto from 'crypto';
 import { extractVerifiedAstrology } from '../server/lib/verified-astrology';
+import { hasApprovedVerifiedHumanDesignTrust } from '../server/services/human-design-trust';
 
 export interface DailyInsightData {
   date: string;
@@ -34,7 +35,7 @@ export function extractDailyProfileSummary(profile: Profile) {
   const hdData = profile.humanDesignData as any;
   const numData = profile.numerologyData as any;
   const personalityData = profile.personalityData as any;
-  const hdVerified = hdData?.status === 'verified';
+  const hdVerified = hasApprovedVerifiedHumanDesignTrust(hdData);
 
   return {
     id: profile.id,
