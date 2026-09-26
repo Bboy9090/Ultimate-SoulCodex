@@ -515,6 +515,21 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
           maturityNumber: 7,
         },
       },
+
+    ];
+
+    for (const variant of variants) {
+      const result = generateGalacticCode(variant, TRUSTED);
+      assert.notStrictEqual(
+        result.fingerprint,
+        baseResult.fingerprint,
+        'any governed scoring input must participate in fingerprint identity',
+      );
+    }
+  });
+  await t.test('supporting assessment changes do not rewrite stable identity fingerprint', () => {
+    const base = generateGalacticCode(testInput, TRUSTED);
+    const variants: GalacticCodeInput[] = [
       {
         ...testInput,
         behavior: {
@@ -529,17 +544,26 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
           moralCompass: 'Duty and stewardship',
         },
       },
+      {
+        ...testInput,
+        behavior: {
+          ...testInput.behavior,
+          traits: ['different', 'self', 'assessment'],
+          builderMode: 'Different assessed builder mode',
+        },
+      },
     ];
 
     for (const variant of variants) {
       const result = generateGalacticCode(variant, TRUSTED);
-      assert.notStrictEqual(
+      assert.strictEqual(
         result.fingerprint,
-        baseResult.fingerprint,
-        'any governed scoring input must participate in fingerprint identity',
+        base.fingerprint,
+        'supporting assessment context must not alter the stable Galactic fingerprint',
       );
     }
   });
+
 });
 
 test('Galactic Code: Edge Cases', async (t) => {
@@ -677,8 +701,9 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
 
     const result = generateGalacticCode(completeCoverageInput, TRUSTED);
 
-    // Coverage is high (2+ complete systems + behavioral traits)
-    assert.strictEqual(result.coverage, 'high', 'complete coverage should produce high coverage state');
+    // Coverage is high only when all three governed identity systems are complete.
+    // Supporting behavioral assessments do not upgrade stable identity coverage.
+    assert.strictEqual(result.coverage, 'high', 'three complete governed systems should produce high coverage state');
 
     // But coverage NEVER means the underlying placements are independently verified
     // The result.coverage is about input availability, not astrological verification
