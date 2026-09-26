@@ -77,3 +77,35 @@ test("legacy archetype partial verified astrology never renders missing placemen
     );
   }
 });
+
+
+test("master Life Path 11 never substring-matches Life Path 1 archetype rules", () => {
+  const numerology = {
+    status: "resolved",
+    lifePath: 11,
+    birthday: 2,
+    expression: 11,
+    soulUrge: 2,
+    personality: 7,
+    maturity: 4,
+    personalYear: 11,
+  };
+
+  for (const synthesize of [synthesizeLegacyArchetype, synthesizePackageArchetype]) {
+    const result = synthesize({}, numerology, {});
+    assert.equal(result.title, "Archetype unresolved");
+    assert.deepEqual(result.strengths, []);
+    assert.doesNotMatch(JSON.stringify(result), /Natural Leader|Effortless Authority|born to lead/i);
+  }
+});
+
+test("unmatched personality-only evidence never receives the first archetype as a silent default", () => {
+  const personality = { mbti: { type: "ISTJ" } };
+
+  for (const synthesize of [synthesizeLegacyArchetype, synthesizePackageArchetype]) {
+    const result = synthesize({}, {}, personality);
+    assert.equal(result.title, "Archetype unresolved");
+    assert.match(result.description, /does not match a declared archetype rule/i);
+    assert.deepEqual(result.themes, []);
+  }
+});
