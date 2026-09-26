@@ -57,6 +57,7 @@ export type IndependentVerificationResult =
         | "body_mismatch"
         | "same_engine_not_independent"
         | "same_source_not_independent"
+        | "invalid_timestamp"
         | "timestamp_mismatch"
         | "sign_longitude_mismatch"
         | "sign_disagreement"
@@ -107,6 +108,14 @@ function normalizedIdentity(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function isExplicitUtcTimestamp(value: string): boolean {
+  return (
+    typeof value === "string" &&
+    /Z$/i.test(value.trim()) &&
+    !Number.isNaN(new Date(value).getTime())
+  );
+}
+
 export function verifyAgainstIndependentReference(
   candidate: EphemerisCandidate,
   reference: IndependentEphemerisReference,
@@ -136,6 +145,13 @@ export function verifyAgainstIndependentReference(
 
   if (normalizedIdentity(candidate.source) === normalizedIdentity(reference.source)) {
     return { status: "rejected", sign: null, reason: "same_source_not_independent", longitudeDeltaDegrees: null };
+  }
+
+  if (
+    !isExplicitUtcTimestamp(candidate.inputTimestamp) ||
+    !isExplicitUtcTimestamp(reference.inputTimestamp)
+  ) {
+    return { status: "rejected", sign: null, reason: "invalid_timestamp", longitudeDeltaDegrees: null };
   }
 
   if (candidate.inputTimestamp !== reference.inputTimestamp) {
