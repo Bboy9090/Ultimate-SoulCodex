@@ -9,7 +9,7 @@ export interface TodayCardData {
   watchouts: string[];
   decisionAdvice: string;
   moonPhase: string;
-  personalDayNumber: number;
+  personalDayNumber: number | null;
   personalDayLabel: string;
   confidenceLabel: string;
   topTheme?: string;
@@ -54,6 +54,23 @@ const DAY_WATCHOUTS: Record<number, string[]> = {
   9: ["Nostalgia slowing my forward movement", "Completion anxiety — finishing feels like loss"]
 };
 
+const NEUTRAL_DO = [
+  "Choose one concrete priority and finish the next useful step",
+  "Use observed facts before symbolic interpretation",
+  "Record what actually happens so tomorrow has better evidence",
+];
+
+const NEUTRAL_DONT = [
+  "Invent a personal cycle from missing birth data",
+  "Treat symbolic guidance as a guaranteed prediction",
+  "Force a decision because a placeholder says today is special",
+];
+
+const NEUTRAL_WATCHOUTS = [
+  "Filling missing evidence with certainty",
+  "Confusing a reflection prompt with a measured outcome",
+];
+
 const DECISION_ADVICE: Record<string, string> = {
   calm_logic:     "My clearest thinking lands between 10am and noon. I lock big decisions into that window.",
   sleep_on_it:    "I don't finalize anything today that I haven't slept on. My best answer comes tonight.",
@@ -96,9 +113,18 @@ export function buildTodayCard(
   profile: any,
   codexSynthesis?: any
 ): TodayCardData {
-  const dayNum = Math.min(9, Math.max(1, horoscopeData?.personalDayNumber ?? 4));
-  const dayLabel = getPersonalDayLabel(dayNum);
-  const moonPhase = (horoscopeData?.moonPhase?.phase ?? "Full Moon").toLowerCase();
+  const rawDay = horoscopeData?.personalDayNumber;
+  const dayNum =
+    Number.isInteger(rawDay) && [1,2,3,4,5,6,7,8,9,11,22,33].includes(rawDay)
+      ? rawDay as number
+      : null;
+  const dayLabel = dayNum === null ? "Unavailable" : getPersonalDayLabel(dayNum);
+  const moonPhaseValue =
+    typeof horoscopeData?.moonPhase?.phase === "string" &&
+    horoscopeData.moonPhase.phase.trim()
+      ? horoscopeData.moonPhase.phase.trim()
+      : "Unavailable";
+  const moonPhase = moonPhaseValue.toLowerCase();
   const moonPrefix = MOON_TITLE_PREFIX[moonPhase] ?? "Focus";
 
   const decisionStyle: string =
@@ -112,25 +138,31 @@ export function buildTodayCard(
   const codename = codexSynthesis?.codename ?? profile?.archetype?.name ?? "The Quiet Builder";
   const topTheme = codexSynthesis?.topThemes?.[0]?.tag ?? "precision";
 
-  const dayThemeDesc = DAY_THEME_DESC[dayNum] ?? "a focused phase for clarity and precision";
   const topTransit = horoscopeData?.personalTransits?.[0];
-  let focus = `Personal Day ${dayNum} — a ${dayLabel.toLowerCase()} phase for ${
-    topTheme.replace(/_/g, " ")
-  }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I stay in my lane and build today."}`;
+  let focus =
+    dayNum === null
+      ? `Personal Day unavailable — I use only the evidence actually present today. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I keep the reflection general instead of inventing a cycle."}`
+      : `Personal Day ${dayNum} — a ${dayLabel.toLowerCase()} phase for ${
+          topTheme.replace(/_/g, " ")
+        }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I use this as a reflection prompt, not a prediction."}`;
 
   if (focus.length > 160) focus = focus.slice(0, 157) + "…";
 
-  const dayIndex = ((dayNum - 1) % 9) + 1;
+  const dayIndex =
+    dayNum === 11 ? 2 :
+    dayNum === 22 ? 4 :
+    dayNum === 33 ? 6 :
+    dayNum;
 
   return {
     codename,
-    title: `Day ${dayNum} — ${dayLabel}`,
+    title: dayNum === null ? "Today — Evidence First" : `Day ${dayNum} — ${dayLabel}`,
     focus,
-    doList: (DAY_DO[dayIndex] ?? DAY_DO[4]).slice(0, 3),
-    dontList: (DAY_DONT[dayIndex] ?? DAY_DONT[4]).slice(0, 3),
-    watchouts: (DAY_WATCHOUTS[dayIndex] ?? DAY_WATCHOUTS[4]).slice(0, 2),
+    doList: dayIndex === null ? NEUTRAL_DO : (DAY_DO[dayIndex] ?? NEUTRAL_DO).slice(0, 3),
+    dontList: dayIndex === null ? NEUTRAL_DONT : (DAY_DONT[dayIndex] ?? NEUTRAL_DONT).slice(0, 3),
+    watchouts: dayIndex === null ? NEUTRAL_WATCHOUTS : (DAY_WATCHOUTS[dayIndex] ?? NEUTRAL_WATCHOUTS).slice(0, 2),
     decisionAdvice: DECISION_ADVICE[decisionStyle] ?? "I let my decision breathe before committing. Clarity comes after the noise settles.",
-    moonPhase: horoscopeData?.moonPhase?.phase ?? "Full Moon",
+    moonPhase: moonPhaseValue,
     personalDayNumber: dayNum,
     personalDayLabel: dayLabel,
     confidenceLabel,
