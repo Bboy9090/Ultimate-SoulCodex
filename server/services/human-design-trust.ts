@@ -8,8 +8,16 @@ export type HumanDesignCoreField = "type" | "strategy" | "authority" | "profile"
 type HumanDesignCandidateFields = Partial<Record<HumanDesignCoreField, string>>;
 type CompleteHumanDesignCandidateFields = Record<HumanDesignCoreField, string>;
 
+export interface HumanDesignTimeConversionEvidence {
+  timezone: string;
+  utcOffsetMinutes: number;
+  conversionMethod: "standard-iana-tzdb";
+  runtimeTzdbVersion: string | null;
+}
+
 interface HumanDesignEvidenceBase {
   limitations: readonly string[];
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }
 
 export interface HumanDesignCandidateEvidence extends HumanDesignEvidenceBase {
@@ -83,6 +91,10 @@ function isValidIsoTimestamp(value: string): boolean {
   return Boolean(value.trim()) && !Number.isNaN(new Date(value).getTime());
 }
 
+function isExplicitUtcTimestamp(value: string): boolean {
+  return isValidIsoTimestamp(value) && /Z$/i.test(value.trim());
+}
+
 const HUMAN_DESIGN_STRATEGY_BY_TYPE = Object.freeze({
   Manifestor: "To Inform",
   Generator: "To Respond",
@@ -134,6 +146,7 @@ export function createHumanDesignTrustRecord(input: {
   inputTimestampUtc?: string | null;
   calculatedAt?: string;
   candidate?: HumanDesignCandidateFields | null;
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }): HumanDesignTrustRecord {
   if (!input.birthTimeKnown || !input.inputTimestampUtc) {
     return {
@@ -151,7 +164,7 @@ export function createHumanDesignTrustRecord(input: {
     };
   }
 
-  if (!isValidIsoTimestamp(input.inputTimestampUtc)) {
+  if (!isExplicitUtcTimestamp(input.inputTimestampUtc)) {
     throw new Error("human_design_input_timestamp_invalid");
   }
 
@@ -174,6 +187,7 @@ export function createHumanDesignTrustRecord(input: {
     inputTimestampUtc: input.inputTimestampUtc,
     birthTimeKnown: true,
     candidate,
+    ...(input.timeConversion ? { timeConversion: input.timeConversion } : {}),
     limitations: UNVERIFIED_LIMITATIONS,
   };
 }
@@ -184,12 +198,13 @@ export function createVerifiedHumanDesignTrustRecord(input: {
   inputTimestampUtc?: string | null;
   calculatedAt?: string;
   candidate?: HumanDesignCandidateFields | null;
+  timeConversion?: HumanDesignTimeConversionEvidence;
 }): HumanDesignTrustRecord {
   if (!input.birthTimeKnown || !input.inputTimestampUtc) {
     return createHumanDesignTrustRecord(input);
   }
 
-  if (!isValidIsoTimestamp(input.inputTimestampUtc)) {
+  if (!isExplicitUtcTimestamp(input.inputTimestampUtc)) {
     throw new Error("human_design_input_timestamp_invalid");
   }
 
@@ -214,6 +229,7 @@ export function createVerifiedHumanDesignTrustRecord(input: {
     inputTimestampUtc: input.inputTimestampUtc,
     birthTimeKnown: true,
     candidate,
+    ...(input.timeConversion ? { timeConversion: input.timeConversion } : {}),
     verificationReceiptId:
       APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.verificationReceiptId,
     independentSource:

@@ -1,3 +1,6 @@
+import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
+import { synthesizeArchetype as synthesizeGovernedArchetype } from "../server/services/archetype";
+
 interface ArchetypeData {
   title: string;
   description: string;
@@ -17,6 +20,18 @@ interface ArchetypeData {
     spiritualPurpose: string;
     evolutionPath: string;
     keyLessons: string[];
+  };
+}
+
+function governedAstrologyView(astrologyData: unknown): any | null {
+  const verified = extractVerifiedAstrology({ astrologyData });
+  if (!verified.sun && !verified.moon && !verified.rising) return null;
+  return {
+    sunSign: verified.sun,
+    moonSign: verified.moon,
+    risingSign: verified.rising,
+    // Legacy Nodes/Chiron/houses/planets are intentionally not promoted by
+    // this adapter; those require their own verified production contracts.
   };
 }
 
@@ -70,6 +85,7 @@ const archetypes = [
 
 // Helper function to generate integration analysis
 export function generateIntegrationAnalysis(astrologyData: any, numerologyData: any, personalityData: any, archetype: any) {
+  astrologyData = governedAstrologyView(astrologyData);
   const astroInfluence = generateAstrologyInfluence(astrologyData);
   const numeroInfluence = generateNumerologyInfluence(numerologyData);
   const personalityBridge = generatePersonalityBridge(personalityData);
@@ -87,6 +103,7 @@ export function generateIntegrationAnalysis(astrologyData: any, numerologyData: 
 
 // Helper function to generate personalized insights
 export function generatePersonalizedInsights(astrologyData: any, numerologyData: any, personalityData: any, archetype: any) {
+  astrologyData = governedAstrologyView(astrologyData);
   return {
     coreEssence: generateCoreEssence(astrologyData, numerologyData, archetype),
     spiritualPurpose: generateSpiritualPurpose(astrologyData, numerologyData, personalityData),
@@ -97,116 +114,142 @@ export function generatePersonalizedInsights(astrologyData: any, numerologyData:
 
 // Astrology influence generator
 function generateAstrologyInfluence(astrologyData: any): string {
-  if (!astrologyData) return "Your astrological blueprint awaits discovery through detailed birth chart analysis.";
-  
-  const { sunSign, moonSign, risingSign } = astrologyData;
-  return `Your ${sunSign} Sun provides your core identity and creative force, while your ${moonSign} Moon shapes your emotional nature and inner world. Your ${risingSign} Rising sign creates the persona you present to the world, influencing how others first perceive you. Together, these three form your astrological trinity, creating a unique cosmic signature that influences your personality, motivations, and life path.`;
+  if (!astrologyData) {
+    return "Astrology is withheld here until governed placement evidence is available.";
+  }
+
+  const placements = [
+    typeof astrologyData.sunSign === "string" && astrologyData.sunSign !== "Unknown"
+      ? `${astrologyData.sunSign} Sun`
+      : null,
+    typeof astrologyData.moonSign === "string" && astrologyData.moonSign !== "Unknown"
+      ? `${astrologyData.moonSign} Moon`
+      : null,
+    typeof astrologyData.risingSign === "string" && astrologyData.risingSign !== "Unknown"
+      ? `${astrologyData.risingSign} Rising`
+      : null,
+  ].filter((value): value is string => Boolean(value));
+
+  if (placements.length === 0) {
+    return "Astrology is withheld here until governed placement evidence is available.";
+  }
+
+  return `Verified-supported astrology currently includes ${placements.join(", ")}. In astrological tradition, those placements are used as symbolic reflection lenses; Soul Codex does not treat them as measured personality traits or causes of behavior.`;
 }
 
-// Numerology influence generator  
+// Numerology influence generator
 function generateNumerologyInfluence(numerologyData: any): string {
-  if (!numerologyData) return "Your numerological patterns reveal themselves through the sacred mathematics of your name and birth date.";
-  
+  if (!numerologyData || numerologyData.status === "unresolved") {
+    return "Numerology is withheld here until deterministic name and birth-date inputs are resolved.";
+  }
+
   const { lifePath, expression, soulUrge, personality } = numerologyData;
-  return `Your Life Path ${lifePath} reveals your soul's intended journey and core lessons. Expression Number ${expression} shows your natural talents and abilities, while Soul Urge ${soulUrge} uncovers your heart's deepest desires. Your Personality Number ${personality} influences how others perceive you. These numbers work together to create a mathematical blueprint of your soul's purpose and potential.`;
+  return `Under the declared Soul Codex numerology policy, Life Path ${lifePath}, Expression ${expression}, Soul Urge ${soulUrge}, and Personality ${personality} are deterministic symbolic numbers. Traditional numerology associates them with different reflection themes, but they do not prove destiny, talent, hidden desire, or how other people perceive you.`;
 }
 
 // Personality bridge generator
 function generatePersonalityBridge(personalityData: any): string {
   if (!personalityData?.enneagram && !personalityData?.mbti) {
-    return "Your personality patterns bridge your cosmic blueprint with earthly expression through conscious self-awareness.";
+    return "No personality-framework result is being used in this layer.";
   }
-  
-  let bridge = "";
-  if (personalityData?.enneagram) {
-    bridge += `Your Enneagram Type ${personalityData.enneagram.type} reveals your core motivations and unconscious patterns. `;
+
+  const parts: string[] = [];
+  if (personalityData?.enneagram?.type) {
+    parts.push(`Enneagram Type ${personalityData.enneagram.type}`);
   }
-  if (personalityData?.mbti) {
-    bridge += `Your ${personalityData.mbti.type} type shows how you process information and make decisions. `;
+  if (personalityData?.mbti?.type) {
+    parts.push(`MBTI ${personalityData.mbti.type}`);
   }
-  bridge += "These personality frameworks help bridge your cosmic design with practical daily living, showing how your soul's blueprint manifests in conscious behavior and choice.";
-  
-  return bridge;
+
+  return `${parts.join(" and ")} can be used as self-reflection frameworks when they come from an explicit assessment. They are not treated here as objective measurements of unconscious motives, cognition, or fixed behavior.`;
 }
 
 // Soul synthesis generator
 function generateSoulSynthesis(astrologyData: any, numerologyData: any, personalityData: any, archetype: any): string {
   const systems = [];
-  if (astrologyData) systems.push("astrological influences");
-  if (numerologyData) systems.push("numerological patterns");  
-  if (personalityData?.enneagram || personalityData?.mbti) systems.push("personality dynamics");
-  
+  if (astrologyData) systems.push("verified-supported astrology");
+  if (numerologyData && numerologyData.status !== "unresolved") systems.push("deterministic numerology");
+  if (personalityData?.enneagram || personalityData?.mbti) systems.push("explicit personality-framework results");
+
   if (systems.length === 0) {
-    return `The ${archetype.title} archetype represents your soul's unique expression awaiting full discovery.`;
+    return `The ${archetype.title} label is withheld from factual identity claims because there is not enough governed evidence to support a synthesis.`;
   }
-  
-  const systemsText = systems.join(", ");
-  return `The ${archetype.title} archetype emerges from the synthesis of your ${systemsText}. This archetypal pattern represents how your soul chose to express itself in this incarnation, combining cosmic timing, sacred mathematics, and conscious personality into a unified spiritual identity. Your archetype serves as a guiding template for understanding your deepest nature and highest potential.`;
+
+  return `The ${archetype.title} archetype is a reflective synthesis of ${systems.join(", ")}. It is a narrative lens for exploring patterns and questions; it is not proof of a soul plan, destiny, incarnation purpose, or fixed psychological identity.`;
 }
 
 // Core essence generator
 function generateCoreEssence(astrologyData: any, numerologyData: any, archetype: any): string {
-  let essence = `At your core, you embody the ${archetype.title} archetype - ${archetype.description.toLowerCase()}`;
-  
+  const themes = Array.isArray(archetype?.themes) ? archetype.themes.join(', ').toLowerCase() : "the available themes";
+  let essence = `As a reflection prompt, the ${archetype.title} archetype emphasizes ${themes}.`;
+
   if (astrologyData?.sunSign && numerologyData?.lifePath) {
-    essence += ` Your ${astrologyData.sunSign} Sun and Life Path ${numerologyData.lifePath} create a unique soul signature that expresses through ${archetype.themes.join(', ').toLowerCase()}.`;
-  } else {
-    essence += ` This archetypal essence expresses through themes of ${archetype.themes.join(', ').toLowerCase()}.`;
+    essence += ` A ${astrologyData.sunSign} Sun and Life Path ${numerologyData.lifePath} add two different symbolic traditions to that prompt; neither is treated as a measured core essence.`;
   }
-  
+
   return essence;
 }
 
 // Spiritual purpose generator
 function generateSpiritualPurpose(astrologyData: any, numerologyData: any, personalityData: any): string {
-  let purpose = "Your spiritual purpose involves integrating your cosmic gifts into earthly service.";
-  
-  if (astrologyData?.northNode) {
-    purpose = `Your North Node in ${astrologyData.northNode.sign} reveals your soul's primary growth direction. `;
+  void personalityData;
+  const prompts: string[] = [];
+
+  if (astrologyData?.northNode?.sign) {
+    prompts.push(
+      `In some astrological traditions, North Node in ${astrologyData.northNode.sign} is used as a symbolic growth-direction prompt.`,
+    );
   }
-  
-  if (numerologyData?.lifePath) {
-    const lifePath = numerologyData.lifePath;
-    if (lifePath === 1) purpose += "As a Life Path 1, you're here to pioneer new ways of being and lead others toward authenticity.";
-    else if (lifePath === 2) purpose += "As a Life Path 2, you're here to teach cooperation and bring harmony to divided situations.";
-    else if (lifePath === 3) purpose += "As a Life Path 3, you're here to inspire others through creative expression and joyful communication.";
-    else if (lifePath === 4) purpose += "As a Life Path 4, you're here to build stable foundations that support humanity's progress.";
-    else if (lifePath === 5) purpose += "As a Life Path 5, you're here to expand consciousness through exploration and change.";
-    else if (lifePath === 6) purpose += "As a Life Path 6, you're here to heal and nurture others through unconditional love.";
-    else if (lifePath === 7) purpose += "As a Life Path 7, you're here to seek truth and bridge spiritual wisdom with practical application.";
-    else if (lifePath === 8) purpose += "As a Life Path 8, you're here to master material realm while maintaining spiritual values.";
-    else if (lifePath === 9) purpose += "As a Life Path 9, you're here to serve humanity's evolution through wisdom and compassion.";
-    else if (lifePath === 11) purpose += "As a Master Number 11, you're here to inspire others through spiritual insight and intuitive guidance.";
-    else if (lifePath === 22) purpose += "As a Master Number 22, you're here to build lasting structures that bridge heaven and earth.";
-    else if (lifePath === 33) purpose += "As a Master Number 33, you're here to heal through pure love and embody Christ consciousness.";
-    else purpose += `Your Life Path ${lifePath} carries unique spiritual assignments for this incarnation.`;
-  } else {
-    purpose += " Your purpose unfolds through conscious integration of your spiritual gifts with practical service.";
+
+  const lifePathThemes: Record<number, string> = {
+    1: "initiative and independent action",
+    2: "cooperation and relationship balance",
+    3: "expression and creativity",
+    4: "structure and steady building",
+    5: "change and adaptability",
+    6: "responsibility and care",
+    7: "inquiry and reflection",
+    8: "execution, resources, and leadership",
+    9: "completion, contribution, and perspective",
+    11: "inspiration and heightened perspective",
+    22: "large-scale building and implementation",
+    33: "teaching, service, and care",
+  };
+
+  const lifePath = Number(numerologyData?.lifePath);
+  if (Number.isInteger(lifePath) && lifePathThemes[lifePath]) {
+    prompts.push(
+      `Traditional numerology uses Life Path ${lifePath} as a reflection theme around ${lifePathThemes[lifePath]}.`,
+    );
   }
-  
-  return purpose;
+
+  if (prompts.length === 0) {
+    return "No governed spiritual-purpose claim is made from the available data.";
+  }
+
+  return `${prompts.join(" ")} These are optional symbolic prompts, not evidence that you were born for a predetermined mission.`;
 }
 
 // Evolution path generator
 function generateEvolutionPath(astrologyData: any, numerologyData: any, archetype: any): string {
-  let path = `Your evolutionary path follows the ${archetype.title} template, moving from `;
+  let path = `As a reflection exercise, the ${archetype.title} template frames a possible movement from `;
   
   if (archetype.shadows && archetype.shadows.length > 0) {
-    path += `unconscious patterns like ${archetype.shadows[0].toLowerCase()} toward `;
+    path += `possible reactive patterns such as ${archetype.shadows[0].toLowerCase()} toward `;
   } else {
-    path += "unconscious reactive patterns toward ";
+    path += "possible reactive patterns toward ";
   }
   
   if (archetype.strengths && archetype.strengths.length > 0) {
-    path += `conscious mastery of ${archetype.strengths[0].toLowerCase()}. `;
+    path += `deliberate practice of ${archetype.strengths[0].toLowerCase()}. `;
   } else {
-    path += "conscious mastery of your gifts. ";
+    path += "deliberate practice of the strengths you choose to develop. ";
   }
   
   if (astrologyData?.southNode && astrologyData?.northNode) {
     path += `Astrologically, you're evolving from ${astrologyData.southNode.sign} patterns toward ${astrologyData.northNode.sign} growth.`;
   } else {
-    path += "This evolution involves integrating shadow aspects while developing your highest potential.";
+    path += "Use this as a reflection exercise: notice which listed shadow themes actually fit, then practice the strengths you want to develop.";
   }
   
   return path;
@@ -228,7 +271,7 @@ function generateKeyLessons(astrologyData: any, numerologyData: any, personality
     else if (lifePath === 7) lessons.push("Sharing wisdom without becoming isolated");
     else if (lifePath === 8) lessons.push("Using power for service rather than control");
     else if (lifePath === 9) lessons.push("Giving without depleting your own resources");
-    else if ([11, 22, 33].includes(lifePath)) lessons.push("Grounding spiritual gifts in practical service");
+    else if ([11, 22, 33].includes(lifePath)) lessons.push("Turning inspiration and service themes into concrete, testable actions");
   }
   
   // Add astrology-based lessons
@@ -264,9 +307,9 @@ function generateKeyLessons(astrologyData: any, numerologyData: any, personality
   
   // Fallback lessons if no specific data
   if (lessons.length === 0) {
-    lessons.push("Integrating your cosmic blueprint with earthly service");
-    lessons.push("Balancing personal growth with contribution to others");
-    lessons.push("Transforming unconscious patterns into conscious gifts");
+    lessons.push("Notice which reflection themes actually match your lived experience");
+    lessons.push("Balance personal growth with contribution to others where it is genuinely useful");
+    lessons.push("Notice reactive patterns and deliberately practice the strengths you want to develop");
   }
   
   return lessons;
@@ -460,67 +503,25 @@ export function synthesizeArchetype(
   numerologyData: any,
   personalityData: any
 ): ArchetypeData {
-  const keywords: string[] = [];
-  
-  // Extract keywords from astrology
-  if (astrologyData) {
-    if (astrologyData.sunSign) keywords.push(astrologyData.sunSign.toLowerCase());
-    if (astrologyData.moonSign) keywords.push(astrologyData.moonSign.toLowerCase());
-    if (astrologyData.risingSign) keywords.push(astrologyData.risingSign.toLowerCase());
-    
-    // Add element keywords
-    const sunSignLower = astrologyData.sunSign?.toLowerCase();
-    if (['aries', 'leo', 'sagittarius'].includes(sunSignLower)) keywords.push('fire');
-    if (['taurus', 'virgo', 'capricorn'].includes(sunSignLower)) keywords.push('earth');
-    if (['gemini', 'libra', 'aquarius'].includes(sunSignLower)) keywords.push('air');
-    if (['cancer', 'scorpio', 'pisces'].includes(sunSignLower)) keywords.push('water');
-  }
-  
-  // Extract keywords from numerology
-  if (numerologyData?.lifePath) {
-    keywords.push(numerologyData.lifePath.toString());
-  }
-  
-  // Extract keywords from personality
-  if (personalityData?.enneagram?.type) {
-    keywords.push(personalityData.enneagram.type.toString());
-  }
-  if (personalityData?.mbti?.type) {
-    keywords.push(personalityData.mbti.type.toLowerCase());
-  }
+  const governed = synthesizeGovernedArchetype(
+    astrologyData,
+    numerologyData,
+    personalityData,
+  );
 
-  // Find best matching archetype
-  let bestMatch = archetypes[0];
-  let maxMatches = 0;
-
-  for (const archetype of archetypes) {
-    const matches = archetype.keywords.filter(keyword => 
-      keywords.some(k => k && (k.includes(keyword) || keyword.includes(k)))
-    ).length;
-    
-    if (matches > maxMatches) {
-      maxMatches = matches;
-      bestMatch = archetype;
-    }
-  }
-  
-  // Generate unique personalized title
-  const uniqueTitle = generateUniqueArchetypeTitle(astrologyData, numerologyData, personalityData);
-
-  // Generate detailed integration analysis
-  const integration = generateIntegrationAnalysis(astrologyData, numerologyData, personalityData, bestMatch);
-  const personalizedInsights = generatePersonalizedInsights(astrologyData, numerologyData, personalityData, bestMatch);
-
-  const result = {
-    title: uniqueTitle,
-    description: bestMatch.description,
-    strengths: bestMatch.strengths || [],
-    shadows: bestMatch.shadows || [],
-    themes: bestMatch.themes || [],
-    guidance: bestMatch.guidance,
-    integration,
-    personalizedInsights
+  return {
+    ...governed,
+    integration: generateIntegrationAnalysis(
+      astrologyData,
+      numerologyData,
+      personalityData,
+      governed,
+    ),
+    personalizedInsights: generatePersonalizedInsights(
+      astrologyData,
+      numerologyData,
+      personalityData,
+      governed,
+    ),
   };
-  
-  return result;
 }

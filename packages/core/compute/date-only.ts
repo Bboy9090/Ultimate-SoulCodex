@@ -36,3 +36,57 @@ export function parseDateOnly(dateISO: string): DateOnlyParts {
 
   return { year, month, day };
 }
+
+
+/**
+ * Convert a storage-layer civil-date value back to YYYY-MM-DD without silently
+ * reinterpreting timezone-bearing timestamps.
+ *
+ * Soul Codex currently persists profile birth dates in a timestamp column.
+ * The canonical storage invariant is UTC midnight for the original civil date.
+ * Non-midnight timestamps are rejected because the original civil date cannot
+ * be recovered safely from them without additional provenance.
+ */
+export function dateOnlyFromStoredValue(value: unknown): string {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    try {
+      parseDateOnly(trimmed);
+      return trimmed;
+    } catch {
+      const canonicalTimestamp =
+        /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.000)?Z$/.exec(trimmed);
+      if (canonicalTimestamp) {
+        parseDateOnly(canonicalTimestamp[1]);
+        return canonicalTimestamp[1];
+      }
+      throw new RangeError(
+        "Stored civil date must be YYYY-MM-DD or canonical UTC-midnight timestamp",
+      );
+    }
+  }
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new RangeError("Stored civil date must be valid");
+    }
+
+    if (
+      value.getUTCHours() !== 0 ||
+      value.getUTCMinutes() !== 0 ||
+      value.getUTCSeconds() !== 0 ||
+      value.getUTCMilliseconds() !== 0
+    ) {
+      throw new RangeError(
+        "Stored civil date timestamp is non-canonical; original civil date is ambiguous",
+      );
+    }
+
+    const dateISO = value.toISOString().slice(0, 10);
+    parseDateOnly(dateISO);
+    return dateISO;
+  }
+
+  throw new RangeError("Stored civil date has unsupported type");
+}

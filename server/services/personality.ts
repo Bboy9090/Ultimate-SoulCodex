@@ -15,115 +15,115 @@ interface PersonalityData {
 
 const enneagramTypes = {
   1: {
-    description: "The Perfectionist - Principled, purposeful, self-controlled, and perfectionistic.",
-    motivation: "To be good, right, perfect, and to improve everything",
-    fear: "Being corrupt, defective, or wrong"
+    description: "Type 1 / Reformer: traditionally associated with principled, improvement-focused themes.",
+    motivation: "Traditional motivation theme: to be good, right, perfect, and to improve everything",
+    fear: "Traditional fear theme: being corrupt, defective, or wrong"
   },
   2: {
-    description: "The Helper - Demonstrative, generous, people-pleasing, and possessive.",
-    motivation: "To be loved and needed",
-    fear: "Being unloved or unwanted for themselves"
+    description: "Type 2 / Helper: traditionally associated with generosity, connection, and being useful to others.",
+    motivation: "Traditional motivation theme: to be loved and needed",
+    fear: "Traditional fear theme: being unloved or unwanted for themselves"
   },
   3: {
-    description: "The Achiever - Adaptive, excelling, driven, and image-conscious.",
-    motivation: "To be valuable and worthwhile",
-    fear: "Being worthless or without value apart from achievements"
+    description: "Type 3 / Achiever: traditionally associated with achievement, adaptation, and recognition themes.",
+    motivation: "Traditional motivation theme: to be valuable and worthwhile",
+    fear: "Traditional fear theme: being worthless or without value apart from achievements"
   },
   4: {
-    description: "The Individualist - Expressive, dramatic, self-absorbed, and temperamental.",
-    motivation: "To find themselves and their significance",
-    fear: "Having no identity or personal significance"
+    description: "Type 4 / Individualist: traditionally associated with identity, expression, and emotional depth themes.",
+    motivation: "Traditional motivation theme: to find themselves and their significance",
+    fear: "Traditional fear theme: having no identity or personal significance"
   },
   5: {
-    description: "The Investigator - Perceptive, innovative, secretive, and isolated.",
-    motivation: "To be capable and competent",
-    fear: "Being useless, helpless, or incapable"
+    description: "Type 5 / Investigator: traditionally associated with observation, competence, and conserving personal resources.",
+    motivation: "Traditional motivation theme: to be capable and competent",
+    fear: "Traditional fear theme: being useless, helpless, or incapable"
   },
   6: {
-    description: "The Loyalist - Engaging, responsible, anxious, and suspicious.",
-    motivation: "To have security and support",
-    fear: "Being without support or guidance"
+    description: "Type 6 / Loyalist: traditionally associated with security, preparation, loyalty, and questioning risk.",
+    motivation: "Traditional motivation theme: to have security and support",
+    fear: "Traditional fear theme: being without support or guidance"
   },
   7: {
-    description: "The Enthusiast - Spontaneous, versatile, acquisitive, and scattered.",
-    motivation: "To maintain happiness and satisfaction",
-    fear: "Being trapped in pain or deprivation"
+    description: "Type 7 / Enthusiast: traditionally associated with possibility, variety, optimism, and avoiding constraint.",
+    motivation: "Traditional motivation theme: to maintain happiness and satisfaction",
+    fear: "Traditional fear theme: being trapped in pain or deprivation"
   },
   8: {
-    description: "The Challenger - Self-confident, decisive, willful, and confrontational.",
-    motivation: "To be self-reliant and in control of their environment",
-    fear: "Being controlled or vulnerable to others"
+    description: "Type 8 / Challenger: traditionally associated with autonomy, directness, protection, and use of personal power.",
+    motivation: "Traditional motivation theme: to be self-reliant and in control of their environment",
+    fear: "Traditional fear theme: being controlled or vulnerable to others"
   },
   9: {
-    description: "The Peacemaker - Receptive, reassuring, agreeable, and complacent.",
-    motivation: "To maintain inner and outer peace",
-    fear: "Loss of connection and fragmentation"
+    description: "Type 9 / Peacemaker: traditionally associated with harmony, receptivity, steadiness, and conflict avoidance.",
+    motivation: "Traditional motivation theme: to maintain inner and outer peace",
+    fear: "Traditional fear theme: loss of connection and fragmentation"
   }
 };
 
 const mbtiTypes = {
   'INTJ': {
-    description: "The Architect - Imaginative and strategic thinkers, with a plan for everything.",
+    description: "INTJ: traditionally described as strategic, independent, and pattern-oriented.",
     functions: ["Ni", "Te", "Fi", "Se"]
   },
   'INTP': {
-    description: "The Thinker - Innovative inventors with an unquenchable thirst for knowledge.",
+    description: "INTP: traditionally described as analytical, exploratory, and concept-oriented.",
     functions: ["Ti", "Ne", "Si", "Fe"]
   },
   'ENTJ': {
-    description: "The Commander - Bold, imaginative and strong-willed leaders.",
+    description: "ENTJ: traditionally described as decisive, strategic, and organizing.",
     functions: ["Te", "Ni", "Se", "Fi"]
   },
   'ENTP': {
-    description: "The Debater - Smart and curious thinkers who cannot resist an intellectual challenge.",
+    description: "ENTP: traditionally described as exploratory, idea-generating, and debate-oriented.",
     functions: ["Ne", "Ti", "Fe", "Si"]
   },
   'INFJ': {
-    description: "The Advocate - Quiet and mystical, yet very inspiring and tireless idealists.",
+    description: "INFJ: traditionally described as reflective, values-oriented, and pattern-sensitive.",
     functions: ["Ni", "Fe", "Ti", "Se"]
   },
   'INFP': {
-    description: "The Mediator - Poetic, kind and altruistic people, always eager to help a good cause.",
+    description: "INFP: traditionally described as values-oriented, imaginative, and individually expressive.",
     functions: ["Fi", "Ne", "Si", "Te"]
   },
   'ENFJ': {
-    description: "The Protagonist - Charismatic and inspiring leaders, able to mesmerize their listeners.",
+    description: "ENFJ: traditionally described as socially attuned, expressive, and group-oriented.",
     functions: ["Fe", "Ni", "Se", "Ti"]
   },
   'ENFP': {
-    description: "The Campaigner - Enthusiastic, creative and sociable free spirits.",
+    description: "ENFP: traditionally described as possibility-oriented, expressive, and socially curious.",
     functions: ["Ne", "Fi", "Te", "Si"]
   },
   'ISTJ': {
-    description: "The Logistician - Practical and fact-minded, reliable and responsible.",
+    description: "ISTJ: traditionally described as detail-oriented, structured, and reliability-focused.",
     functions: ["Si", "Te", "Fi", "Ne"]
   },
   'ISFJ': {
-    description: "The Protector - Warm-hearted and dedicated, always ready to protect their loved ones.",
+    description: "ISFJ: traditionally described as supportive, detail-aware, and continuity-focused.",
     functions: ["Si", "Fe", "Ti", "Ne"]
   },
   'ESTJ': {
-    description: "The Executive - Excellent administrators, unsurpassed at managing things or people.",
+    description: "ESTJ: traditionally described as structured, decisive, and implementation-focused.",
     functions: ["Te", "Si", "Ne", "Fi"]
   },
   'ESFJ': {
-    description: "The Consul - Extraordinarily caring, social and popular people, always eager to help.",
+    description: "ESFJ: traditionally described as socially attentive, cooperative, and structure-oriented.",
     functions: ["Fe", "Si", "Ne", "Ti"]
   },
   'ISTP': {
-    description: "The Virtuoso - Bold and practical experimenters, masters of all kinds of tools.",
+    description: "ISTP: traditionally described as analytical, adaptable, and hands-on.",
     functions: ["Ti", "Se", "Ni", "Fe"]
   },
   'ISFP': {
-    description: "The Adventurer - Flexible and charming artists, always ready to explore new possibilities.",
+    description: "ISFP: traditionally described as values-aware, adaptable, and experience-oriented.",
     functions: ["Fi", "Se", "Ni", "Te"]
   },
   'ESTP': {
-    description: "The Entrepreneur - Smart, energetic and perceptive people, truly enjoy living on the edge.",
+    description: "ESTP: traditionally described as action-oriented, adaptable, and present-focused.",
     functions: ["Se", "Ti", "Fe", "Ni"]
   },
   'ESFP': {
-    description: "The Entertainer - Spontaneous, energetic and enthusiastic people - life is never boring.",
+    description: "ESFP: traditionally described as expressive, present-focused, and socially responsive.",
     functions: ["Se", "Fi", "Te", "Ni"]
   }
 };
@@ -178,7 +178,7 @@ export function calculateMBTI(responses: string[]): PersonalityData['mbti'] {
   
   return {
     type,
-    description: mbtiTypes[type as keyof typeof mbtiTypes]?.description || "Unique personality type",
+    description: mbtiTypes[type as keyof typeof mbtiTypes]?.description || "Assessment result available; use the type as a self-reflection framework rather than a fixed identity claim.",
     functions: mbtiTypes[type as keyof typeof mbtiTypes]?.functions || []
   };
 }

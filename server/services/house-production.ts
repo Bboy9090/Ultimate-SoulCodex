@@ -100,8 +100,10 @@ export type EqualHouseVerificationResult =
         | "midheaven_reference_not_independent"
         | "midheaven_timestamp_mismatch"
         | "midheaven_coordinate_mismatch"
+        | "midheaven_sign_longitude_mismatch"
         | "midheaven_sign_disagreement"
         | "midheaven_outside_tolerance"
+        | "midheaven_boundary_within_tolerance"
         | "evidence_identity_missing";
       ascendantReason?: string;
       midheavenCandidate?: AngleEvidenceRecord;
@@ -243,6 +245,27 @@ export function verifyEqualHouse(
     reference.longitudeDegrees,
   );
 
+  const signs = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+  ] as const;
+  const signFromLongitude = (longitudeDegrees: number): string =>
+    signs[Math.floor((((longitudeDegrees % 360) + 360) % 360) / 30)];
+
+  if (
+    candidate.sign !== signFromLongitude(candidate.longitudeDegrees) ||
+    reference.sign !== signFromLongitude(reference.longitudeDegrees)
+  ) {
+    return {
+      status: "unresolved",
+      houseSystem: "equal",
+      reason: "midheaven_sign_longitude_mismatch",
+      midheavenCandidate: candidate,
+      midheavenReference: reference,
+      midheavenDeltaDegrees,
+    };
+  }
+
   if (candidate.sign !== reference.sign) {
     return {
       status: "unresolved",
@@ -259,6 +282,25 @@ export function verifyEqualHouse(
       status: "unresolved",
       houseSystem: "equal",
       reason: "midheaven_outside_tolerance",
+      midheavenCandidate: candidate,
+      midheavenReference: reference,
+      midheavenDeltaDegrees,
+    };
+  }
+
+  const candidateWithinSign = ((candidate.longitudeDegrees % 30) + 30) % 30;
+  const referenceWithinSign = ((reference.longitudeDegrees % 30) + 30) % 30;
+  const boundaryDistance = Math.min(
+    candidateWithinSign,
+    30 - candidateWithinSign,
+    referenceWithinSign,
+    30 - referenceWithinSign,
+  );
+  if (boundaryDistance <= policy.maximumMidheavenDeltaDegrees) {
+    return {
+      status: "unresolved",
+      houseSystem: "equal",
+      reason: "midheaven_boundary_within_tolerance",
       midheavenCandidate: candidate,
       midheavenReference: reference,
       midheavenDeltaDegrees,

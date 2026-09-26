@@ -5,12 +5,12 @@ import {
   differentiationMetrics,
 } from "./fixtures/verified-differentiation-corpus";
 
-test("96 distinct verified chart signatures remain structurally differentiated", () => {
-  const readings = buildVerifiedDifferentiationCorpus(96);
+test("192 distinct verified chart signatures remain structurally differentiated", () => {
+  const readings = buildVerifiedDifferentiationCorpus(192);
   const metrics = differentiationMetrics(readings);
 
-  assert.equal(metrics.profileCount, 96);
-  assert.equal(metrics.uniqueNarratives, 96);
+  assert.equal(metrics.profileCount, 192);
+  assert.equal(metrics.uniqueNarratives, 192);
   assert.equal(metrics.exactDuplicateCount, 0);
   assert.ok(
     metrics.maximumMaterialBigramJaccard < 0.9,
@@ -24,7 +24,7 @@ test("96 distinct verified chart signatures remain structurally differentiated",
     metrics.maximumMaterialIdenticalLayerSummaries <= 5,
     `${metrics.maximumMaterialIdenticalLayerSummaries}/${metrics.layerCount} material-pair layer summaries were identical for ${metrics.mostMaterialLayerDuplicatePair?.join(" vs ")}`,
   );
-  assert.ok(metrics.materialPairCount > 1000);
+  assert.ok(metrics.materialPairCount > 4000);
   assert.ok(metrics.minimumVerifiedEvidenceCount >= 10);
   assert.ok(metrics.minimumTotalEvidenceCount >= 13);
 });

@@ -4,14 +4,14 @@ import {
   differentiationMetrics,
 } from "../tests/fixtures/verified-differentiation-corpus";
 
-const readings = buildVerifiedDifferentiationCorpus(96);
+const readings = buildVerifiedDifferentiationCorpus(192);
 const metrics = differentiationMetrics(readings);
 const receipt = {
   schemaVersion: "2.0.0",
   generatedAt: new Date().toISOString(),
   policyStatus: "release-gate",
   corpus: {
-    profileCount: 96,
+    profileCount: 192,
     controlledLocalBaseline: true,
     variedVerifiedNatalEvidence: true,
   },
@@ -32,7 +32,7 @@ console.log(JSON.stringify({ outputPath, ...metrics }, null, 2));
 if (
   metrics.exactDuplicateCount !== 0 ||
   metrics.uniqueNarratives !== metrics.profileCount ||
-  metrics.materialPairCount <= 1000 ||
+  metrics.materialPairCount <= 4000 ||
   metrics.maximumMaterialBigramJaccard >= 0.9 ||
   metrics.maximumMaterialTrigramJaccard >= 0.85 ||
   metrics.maximumMaterialIdenticalLayerSummaries > 5 ||

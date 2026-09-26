@@ -10,12 +10,13 @@ const completeWebEvidence = {
   mobileVisualReceipt: true,
   offlineVisualReceipt: true,
   deploymentReceipt: true,
+  backendContractReceipt: true,
   rollbackProcedure: true,
 } as const;
 
 describe("V4 release manifest", () => {
-  it("locks the v4.0.0-rc.2 release identity", () => {
-    expect(V4_RELEASE_MANIFEST.releaseVersion).toBe("4.0.0-rc.2");
+  it("locks the v4.0.1 release identity", () => {
+    expect(V4_RELEASE_MANIFEST.releaseVersion).toBe("4.0.1");
     expect(V4_RELEASE_MANIFEST.classification).toBe("release-candidate");
     expect(V4_RELEASE_MANIFEST.releaseScope).toBe("foundation-web");
   });
@@ -29,15 +30,10 @@ describe("V4 release manifest", () => {
 
   it("locks every required same-SHA workflow", () => {
     expect(V4_RELEASE_MANIFEST.requiredWorkflows).toEqual([
-      "Ultimate SoulCodex CI",
-      "CI Tests",
-      "Foundation Doctrine Gate",
-      "Gate 4 Lifecycle Validation",
-      "PWA Offline Browser Validation",
-      "Mobile Native Smoke",
-      "Dependency Security Audit",
-      "Railway Container Smoke",
-      "Live Ephemeris Evidence",
+      "Diamond Way Synthesis Gate",
+      "Federation Human Design Differential Audit",
+      "Soul Codex Store Candidate — Android 4.0.1 / iOS 4.0.2",
+      "Xcode Cloud Bootstrap Parity",
     ]);
   });
 
@@ -57,12 +53,21 @@ describe("V4 release manifest", () => {
     expect(canDeclareV4ReleaseCandidate(completeWebEvidence)).toBe(true);
   });
 
+  it("fails closed without backend contract evidence", () => {
+    expect(
+      canDeclareV4ReleaseCandidate({
+        ...completeWebEvidence,
+        backendContractReceipt: false,
+      }),
+    ).toBe(false);
+  });
+
   it("fails closed when one required workflow is absent", () => {
     expect(
       canDeclareV4ReleaseCandidate({
         ...completeWebEvidence,
         successfulWorkflows: V4_RELEASE_MANIFEST.requiredWorkflows.filter(
-          (workflow) => workflow !== "Railway Container Smoke",
+          (workflow) => workflow !== "Xcode Cloud Bootstrap Parity",
         ),
       }),
     ).toBe(false);
@@ -96,6 +101,12 @@ describe("V4 release manifest", () => {
     expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("local-profile-verification-is-explicit-opt-in");
     expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("no-simulated-premium-analysis-routes");
     expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("inspect-evidence-and-limitations");
+    expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("inspect-system-governance");
+    expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("explore-astrology-atlas-without-promoting-unverified-data");
+    expect(V4_RELEASE_MANIFEST.requiredRoutes).toContain("/systems");
+    expect(V4_RELEASE_MANIFEST.requiredRoutes).toContain("/systems/atlas");
+    expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("system-governance-stays-inspectable");
+    expect(V4_RELEASE_MANIFEST.requiredTrustRules).toContain("quarantined-systems-never-masquerade-as-active");
     expect(V4_RELEASE_MANIFEST.requiredJourney).toContain("open-compatibility-without-recreating-profile");
   });
 });

@@ -1,7 +1,7 @@
 /**
  * Galactic Code Map
  *
- * Visualizes axes scores, element matrix, behavioral sequence, and legacy function.
+ * Visualizes symbolic synthesis axes, astrology element counts, reflection prompts, and legacy themes.
  */
 
 import type { GalacticCodeResult } from '../../../shared/galactic-code/types';
@@ -29,14 +29,14 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
     <div className="space-y-6">
       {/* Top 5 Axes */}
       <div className="rounded-lg border border-gold-500/30 bg-gradient-to-br from-slate-950 to-purple-950 p-6">
-        <h2 className="text-lg font-bold text-gold-200 mb-4 uppercase tracking-wider">Galactic Axes</h2>
+        <h2 className="text-lg font-bold text-gold-200 mb-4 uppercase tracking-wider">Symbolic Synthesis Axes</h2>
 
         <div className="space-y-3">
           {code.axes.slice(0, 5).map((axis, idx) => (
             <div key={axis.key} className="space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-ivory-100">{axis.label}</span>
-                <span className="text-sm font-bold text-gold-200">{axis.score}</span>
+                <span className="text-sm font-bold text-gold-200">{axis.score} model</span>
               </div>
               <div className="w-full h-2 bg-slate-900/50 rounded-full overflow-hidden border border-slate-800/50">
                 <div
@@ -52,9 +52,9 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
         </div>
       </div>
 
-      {/* Behavioral Sequence */}
+      {/* Reflection Sequence */}
       <div className="rounded-lg border border-purple-500/30 bg-gradient-to-br from-slate-950 to-purple-950 p-6">
-        <h2 className="text-lg font-bold text-purple-200 mb-4 uppercase tracking-wider">Behavioral Sequence</h2>
+        <h2 className="text-lg font-bold text-purple-200 mb-4 uppercase tracking-wider">Reflection Sequence</h2>
 
         <div className="flex items-center justify-between">
           {code.behavioralSequence.map((step, idx) => (
@@ -74,7 +74,7 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
 
       {/* Element Matrix */}
       <div className="rounded-lg border border-gold-500/30 bg-gradient-to-br from-slate-950 to-purple-950 p-6">
-        <h2 className="text-lg font-bold text-gold-200 mb-4 uppercase tracking-wider">Element Matrix</h2>
+        <h2 className="text-lg font-bold text-gold-200 mb-4 uppercase tracking-wider">Astrology Element Count</h2>
 
         <div className="grid grid-cols-4 gap-3">
           {Object.entries(elementColors).map(([element, colors]) => (
@@ -87,11 +87,11 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
         </div>
       </div>
 
-      {/* Legacy Function */}
+      {/* Legacy Theme */}
       <div className="rounded-lg border border-emerald-500/30 bg-gradient-to-br from-slate-950 to-emerald-950 p-6">
-        <h2 className="text-lg font-bold text-emerald-200 mb-2 uppercase tracking-wider">Legacy Function</h2>
+        <h2 className="text-lg font-bold text-emerald-200 mb-2 uppercase tracking-wider">Symbolic Legacy Theme</h2>
         <p className="text-lg text-emerald-100 font-semibold">{code.legacyFunction}</p>
-        <p className="text-sm text-emerald-300/70 mt-2">Long-term trajectory and generational impact</p>
+        <p className="text-sm text-emerald-300/70 mt-2">A symbolic or assessed theme, not a prediction of long-term impact</p>
       </div>
 
       {/* Source Evidence */}

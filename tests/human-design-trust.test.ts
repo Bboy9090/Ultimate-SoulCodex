@@ -159,3 +159,38 @@ test("approved Human Design receipt is exact and complete", () => {
     "d57b747658668492d72869e8a973d5708e21d09d",
   );
 });
+
+
+test("Human Design trust rejects timezone-less or offset-only inputTimestampUtc values", () => {
+  for (const inputTimestampUtc of [
+    "1990-09-17T15:11:00",
+    "1990-09-17T11:11:00-04:00",
+  ]) {
+    assert.throws(
+      () =>
+        createHumanDesignTrustRecord({
+          birthTimeKnown: true,
+          inputTimestampUtc,
+          candidate: { type: "Generator" },
+        }),
+      /human_design_input_timestamp_invalid/,
+    );
+  }
+});
+
+test("verified Human Design promotion requires an explicit UTC instant", () => {
+  assert.throws(
+    () =>
+      createVerifiedHumanDesignTrustRecord({
+        birthTimeKnown: true,
+        inputTimestampUtc: "1990-09-17T15:11:00",
+        candidate: {
+          type: "Generator",
+          strategy: "To Respond",
+          authority: "Sacral Authority",
+          profile: "2/4",
+        },
+      }),
+    /human_design_input_timestamp_invalid/,
+  );
+});

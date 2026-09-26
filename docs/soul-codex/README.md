@@ -40,6 +40,10 @@ Every meaningful output should answer:
 - [../engine/system-outputs.md](../engine/system-outputs.md)
 - [../engine/test-fixtures.md](../engine/test-fixtures.md)
 
+## Production system authority
+
+The executable system-state authority is `shared/system-registry.ts`, mirrored in `governance/SYSTEM_REGISTRY.md`. Historical code or documentation does not make a system production-governed.
+
 ## Scope Guard
 
 This docs suite does not authorize runtime refactors by itself. It locks doctrine and contracts first so future implementation can stay coherent and testable.

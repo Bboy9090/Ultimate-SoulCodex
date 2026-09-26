@@ -5,6 +5,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { generateText, isGeminiAvailable } from './gemini';
 import { calculatePersonalDayNumber, getMoonPhase, getMoonSign } from './daily-context';
 import { calculateActiveTransits, extractNatalPositions } from './transits';
+import { dateOnlyFromStoredValue } from '@soulcodex/core';
 
 const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
@@ -21,46 +22,46 @@ const ASPECTS: Record<string, { degrees: number; orb: number; name: string }> = 
 
 const ASPECT_INTERPRETATIONS: Record<string, Record<string, string>> = {
   'Sun-Moon': {
-    Conjunction: 'My conscious will and emotional instincts merge — I act from a unified place today.',
-    Opposition: 'I feel pulled between what I want and what I need. Tension between head and heart.',
-    Square: 'Inner friction pushes me to reconcile conflicting drives. Growth through discomfort.',
-    Trine: 'My energy and emotions flow together naturally. I feel aligned and confident.',
-    Sextile: 'Small openings to harmonize my identity with my emotional needs.',
+    Conjunction: 'I can use this Sun-Moon conjunction as a prompt to compare what I intend with what I am actually feeling.',
+    Opposition: 'I can look for places where stated goals and emotional needs are pulling in different directions.',
+    Square: 'I can treat this square as a prompt to notice friction between intention and emotional response without assuming conflict is inevitable.',
+    Trine: 'I can notice where intention and emotional response already support each other and where they do not.',
+    Sextile: 'I can look for a practical way to coordinate identity goals with emotional needs.',
   },
   'Venus-Jupiter': {
-    Conjunction: 'Generosity and warmth expand — I attract good things when I stay open.',
-    Opposition: 'I may overindulge or over-promise. Balance pleasure with responsibility.',
-    Square: 'Desires clash with reality. I want more than what is practical right now.',
-    Trine: 'Love, beauty, and opportunity flow effortlessly. A genuinely good day for connection.',
-    Sextile: 'Pleasant social openings. Small gestures of kindness create ripple effects.',
+    Conjunction: 'I can use this conjunction to review where generosity, pleasure, or optimism may be influencing my choices.',
+    Opposition: 'I can check whether enthusiasm is outrunning practical limits or commitments.',
+    Square: 'I can compare what feels desirable with what is actually affordable, sustainable, or appropriate.',
+    Trine: 'I can notice where social ease or generosity is present without assuming opportunity is guaranteed.',
+    Sextile: 'I can look for a low-risk opening to practice generosity or connection intentionally.',
   },
   'Mars-Saturn': {
-    Conjunction: 'Disciplined energy — I can accomplish hard things if I stay patient.',
-    Opposition: 'Frustration builds when effort meets resistance. Channel anger into structure.',
-    Square: 'I feel blocked or restricted. The obstacle is showing me where I need to build strength.',
-    Trine: 'Steady, productive energy. I can work hard without burning out.',
-    Sextile: 'Practical effort pays off. Small disciplined actions compound.',
+    Conjunction: 'I can use this conjunction to review how effort, restraint, and patience are interacting in a current task.',
+    Opposition: 'I can distinguish genuine external limits from frustration about slower progress.',
+    Square: 'I can use the friction as a prompt to identify whether the plan, pace, or constraint needs adjustment.',
+    Trine: 'I can notice where disciplined effort is already sustainable rather than assuming productivity will come automatically.',
+    Sextile: 'I can choose one structured action and observe whether it actually improves progress.',
   },
   'Mercury-Uranus': {
-    Conjunction: 'My mind buzzes with original ideas. Breakthroughs in thinking are possible.',
-    Opposition: 'Nervous mental energy. I may say something unexpected or hear surprising news.',
-    Square: 'Restless thoughts disrupt focus. Let unusual ideas land before reacting.',
-    Trine: 'Inventive thinking comes naturally. I see solutions others miss.',
-    Sextile: 'Flashes of insight arrive through conversation or reading.',
+    Conjunction: 'I can capture unusual ideas without treating novelty as proof that they are correct.',
+    Opposition: 'I can slow down surprising information or reactions long enough to verify them before responding.',
+    Square: 'I can separate useful originality from distraction before changing direction.',
+    Trine: 'I can notice unconventional connections while still checking them against evidence.',
+    Sextile: 'I can use conversation or reading to test a new idea rather than assuming insight has arrived fully formed.',
   },
   'Venus-Saturn': {
-    Conjunction: 'Love feels serious today. I value what is real over what is exciting.',
-    Opposition: 'Loneliness or emotional distance surfaces. I need to reach out, not withdraw.',
-    Square: 'Relationships feel heavy or limiting. What am I tolerating that I should not be?',
-    Trine: 'Commitment and loyalty feel stabilizing. Mature love is quiet but strong.',
-    Sextile: 'Opportunities to deepen bonds through honesty and responsibility.',
+    Conjunction: 'I can review what commitment, care, and limits look like in a relationship or value decision.',
+    Opposition: 'I can check for distance or unmet expectations without assuming rejection or loneliness is predetermined.',
+    Square: 'I can ask whether a relationship limit is real, temporary, negotiated, or simply assumed.',
+    Trine: 'I can notice where reliability supports connection without treating stability as guaranteed.',
+    Sextile: 'I can choose one honest, responsible action that may strengthen trust if the other person is receptive.',
   },
   'Mars-Pluto': {
-    Conjunction: 'Intense willpower. I can transform something fundamental if I stay conscious.',
-    Opposition: 'Power struggles surface. Someone pushes my buttons — the reaction reveals my shadow.',
-    Square: 'Compulsive energy that demands an outlet. Physical activity channels it productively.',
-    Trine: 'Deep reserves of strength are available. I can push through barriers.',
-    Sextile: 'Subtle power shifts in my favor. Strategic action works better than force.',
+    Conjunction: 'I can notice where intensity is affecting my actions and choose a proportionate response.',
+    Opposition: 'I can check for control struggles without assigning motives to other people.',
+    Square: 'I can give strong impulses time and a safe outlet before deciding what action is warranted.',
+    Trine: 'I can notice persistence without assuming I have unlimited energy or guaranteed leverage.',
+    Sextile: 'I can use strategy rather than force and judge the result from what actually happens.',
   },
 };
 
@@ -121,16 +122,36 @@ function longitudeToSign(longitude: number): { sign: string; degree: number } {
 }
 
 export function calculateCurrentPlanets(date: Date = new Date()): PlanetPosition[] {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    throw new RangeError('Horoscope sky date must be valid');
+  }
+
   const planets: PlanetPosition[] = [];
+  const failures: string[] = [];
+
   for (const name of ALL_PLANETS) {
     try {
       const longitude = calculatePlanetLongitude(name, date);
+      if (!Number.isFinite(longitude)) {
+        throw new Error('non_finite_longitude');
+      }
       const { sign, degree } = longitudeToSign(longitude);
-      planets.push({ name, sign, degree: Math.round(degree * 100) / 100, longitude: Math.round(longitude * 100) / 100 });
+      planets.push({
+        name,
+        sign,
+        degree: Math.round(degree * 100) / 100,
+        longitude: Math.round(longitude * 100) / 100,
+      });
     } catch (err) {
       console.error(`[Horoscope] Failed to calculate ${name}:`, err);
+      failures.push(name);
     }
   }
+
+  if (failures.length > 0 || planets.length !== ALL_PLANETS.length) {
+    throw new Error(`horoscope_current_sky_incomplete:${failures.join(',') || 'unknown'}`);
+  }
+
   return planets;
 }
 
@@ -153,13 +174,13 @@ function getAlignmentInterpretation(p1: string, p2: string, aspect: string): str
   if (entry && entry[aspect]) return entry[aspect];
 
   const defaults: Record<string, string> = {
-    Conjunction: `${p1} and ${p2} merge their energies — I feel this combination amplified today.`,
-    Opposition: `${p1} and ${p2} pull in opposite directions — I notice tension asking for balance.`,
-    Square: `${p1} and ${p2} create friction — pressure that forces me to adapt and grow.`,
-    Trine: `${p1} and ${p2} flow together — things in this area come easier today.`,
-    Sextile: `${p1} and ${p2} open a small door — opportunity if I choose to walk through it.`,
+    Conjunction: `${p1} and ${p2} are conjunct; I can use that geometry as a prompt to notice where their symbolic themes overlap.`,
+    Opposition: `${p1} and ${p2} are opposed; I can use the polarity as a prompt to compare competing priorities.`,
+    Square: `${p1} and ${p2} form a square; I can use the geometry as a prompt to notice friction without assuming an event will occur.`,
+    Trine: `${p1} and ${p2} form a trine; I can notice where their symbolic themes seem easier to coordinate without assuming outcomes.`,
+    Sextile: `${p1} and ${p2} form a sextile; I can look for a practical option to test rather than treating it as promised opportunity.`,
   };
-  return defaults[aspect] || `${p1} ${aspect.toLowerCase()} ${p2} — pay attention to how these energies interact in my day.`;
+  return defaults[aspect] || `${p1} ${aspect.toLowerCase()} ${p2} is a measured sky angle; any personal meaning remains a reflection prompt.`;
 }
 
 export function calculateAlignments(planets: PlanetPosition[]): Alignment[] {
@@ -185,6 +206,7 @@ export function calculateAlignments(planets: PlanetPosition[]): Alignment[] {
 export function calculatePersonalTransitsFromProfile(profile: any, date: Date = new Date()): PersonalTransit[] {
   if (!profile.astrologyData) return [];
   const natalPositions = extractNatalPositions(profile.astrologyData);
+  if (Object.keys(natalPositions).length === 0) return [];
   const activeTransits = calculateActiveTransits(natalPositions, date);
   return activeTransits.transits.map(t => ({
     transitingPlanet: t.planet,
@@ -206,89 +228,86 @@ async function generateAIHoroscope(
   alignments: Alignment[],
   personalTransits: PersonalTransit[],
   moonPhase: { phase: string; percentage: number },
+  currentMoonSign: string,
   personalDayNumber: number,
 ): Promise<string> {
   const name = profile.name || 'you';
-  const sunSign = profile.astrologyData?.sunSign || 'Unknown';
-  const moonSign = profile.astrologyData?.moonSign || 'Unknown';
-  const risingSign = profile.astrologyData?.risingSign || '';
-  const hdType = profile.humanDesignData?.type || '';
-  const lifePath = profile.numerologyData?.lifePath || '';
-  const primaryElement = profile.elementalMedicineData?.primaryElement || '';
 
-  const topAlignments = alignments.slice(0, 3).map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`).join(', ');
-  const topTransits = personalTransits.slice(0, 3).map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`).join(', ');
+  const topAlignments = alignments.slice(0, 3)
+    .map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`)
+    .join(', ');
+  const topTransits = personalTransits.slice(0, 3)
+    .map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`)
+    .join(', ');
 
-  const prompt = `Write a daily horoscope for ${name} (Sun in ${sunSign}, Moon in ${moonSign}).
+  const prompt = `Write a daily reflection for ${name}.
 
-Profile (use where it adds meaning):
-${risingSign ? `Rising: ${risingSign} | ` : ''}${lifePath ? `Life Path: ${lifePath} | ` : ''}${hdType ? `HD: ${hdType} | ` : ''}${primaryElement ? `Element: ${primaryElement}` : ''}
-
-Today's sky: ${topAlignments || 'no major alignments'}.
-Personal transits: ${topTransits || 'none exact today'}.
-Moon phase: ${moonPhase.phase} (${moonPhase.percentage}% illuminated).
-Personal day number: ${personalDayNumber}.
+Supported inputs:
+- Natal Sun/Moon are not supplied here; do not infer them.
+- Today's Moon: ${currentMoonSign} (${moonPhase.phase}, ${moonPhase.percentage}% illuminated)
+- Today's governed sky alignments: ${topAlignments || 'none selected'}
+- Verified-natal personal transits: ${topTransits || 'none available'}
+- Personal Day number: ${personalDayNumber}
 
 FORMAT — use this exact structure:
 
 **Observation**
-What I'm likely experiencing today — specific, behavioral (1-2 sentences)
+One specific behavior, decision, or condition I can observe or test today (1-2 sentences). Do not claim it is already happening.
 
 **Meaning**
-Why it matters — the pattern or tension driving it (1 sentence)
+What symbolic pattern the supported inputs offer as a reflection lens (1 sentence), explicitly without treating it as a cause or prediction.
 
 **Action**
-What to do about it — concrete, immediate (1 sentence)
+One concrete action experiment I can verify from the result (1 sentence).
 
 RULES:
-- Write in FIRST PERSON (I/my/me) as if ${name} is reading their own inner voice.
-- Lead with the insight. Reference a placement only when it explains WHY.
-- Use behavioral, concrete language. Describe what I might feel, do, or notice today.
-- BANNED PHRASES (do NOT use): "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency", "holistic convergence", "incarnation", "celestial", "universe is telling you", "spiritual journey", "cosmic dance", "soul's evolution", "a shift is happening", "energy is present", "a door is opening".
-- Every sentence must describe something real — a behavior, decision, conversation, or habit.
-- No metaphors. No poetic padding. No vague encouragement.
-- Direct and useful.
-
-Return only the horoscope text in the format above.`;
+- Write in FIRST PERSON (I/my/me).
+- Use only supplied inputs.
+- Do not invent unresolved natal placements, Human Design, personality types, elements, motives, trauma, stress responses, relationship patterns, or certainty.
+- Treat numerology/astrology as reflective frameworks, not validated predictors of behavior or guaranteed events.
+- The Moon phase, sky alignments, personal transits, and Personal Day may suggest questions; they do not prove what I will do, feel, encounter, or become.
+- No metaphors or mystical filler.
+- Return only the reflection text.`;
 
   if (!isGeminiAvailable()) {
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   }
 
   try {
-    const result = await generateText({ model: 'gemini-2.5-flash', temperature: 0.8, prompt });
+    const result = await generateText({ model: 'gemini-2.5-flash', temperature: 0.7, prompt });
     if (result && result.trim().length > 20) return result.trim();
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   } catch (err) {
     console.error('[Horoscope] AI generation failed, using fallback:', err);
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   }
 }
 
 function generateFallbackHoroscope(
-  sunSign: string,
-  moonSign: string,
+  currentMoonSign: string,
   moonPhase: { phase: string; percentage: number },
   personalDayNumber: number,
   alignments: Alignment[],
   personalTransits: PersonalTransit[],
 ): string {
   const dayThemes: Record<number, string> = {
-    1: 'I feel a push to start something new — initiative comes naturally if I stop overthinking.',
-    2: 'I do better today by listening more than talking. Cooperation over competition.',
-    3: 'My words carry weight today. Expressing what I actually feel unlocks stuck energy.',
-    4: 'Structure calms me down today. Making a list or organizing my space resets my focus.',
-    5: 'Restlessness means I need variety. Break a routine — even a small one.',
-    6: 'Responsibility pulls at me. I show up for someone today and it matters more than I think.',
-    7: 'I need space to think. Solitude is not avoidance today — it is fuel.',
-    8: 'Power dynamics surface. I notice where I give my authority away and I stop doing it.',
-    9: 'Completion energy. I finish what I have been avoiding and feel lighter for it.',
-    11: 'Heightened intuition. I trust the first instinct before my mind talks me out of it.',
-    22: 'I can build something lasting today if I commit to the work instead of the idea.',
-    33: 'My presence matters more than my performance. Just being steady helps others around me.',
+    1: 'Personal Day 1 is a reflection prompt for beginnings; I can choose one low-risk first step and observe the result.',
+    2: 'Personal Day 2 is a reflection prompt for cooperation; I can listen carefully without giving up my own position.',
+    3: 'Personal Day 3 is a reflection prompt for expression; I can communicate one useful idea clearly and see how it lands.',
+    4: 'Personal Day 4 is a reflection prompt for structure; I can improve one practical routine or unfinished task.',
+    5: 'Personal Day 5 is a reflection prompt for change; I can test one reversible change instead of assuming restlessness means I must act.',
+    6: 'Personal Day 6 is a reflection prompt for responsibility; I can choose one act of care that fits my actual capacity.',
+    7: 'Personal Day 7 is a reflection prompt for review; I can reduce noise and check what the evidence supports before deciding.',
+    8: 'Personal Day 8 is a reflection prompt for power and resources; I can review one consequential choice without treating boldness as automatically better.',
+    9: 'Personal Day 9 is a reflection prompt for completion; I can identify what is genuinely finished without forcing an ending.',
+    11: 'Personal Day 11 keeps its master-number identity; I can record intuitive impressions and test them against evidence before acting.',
+    22: 'Personal Day 22 keeps its master-number identity; I can translate a large idea into one concrete, testable building step.',
+    33: 'Personal Day 33 keeps its master-number identity; I can practice care or service without assuming responsibility for everyone around me.',
   };
 
-  const dayMessage = dayThemes[personalDayNumber] || dayThemes[personalDayNumber % 10] || dayThemes[1]!;
+  const dayMessage =
+    dayThemes[personalDayNumber] ??
+    'Personal Day is unavailable; I keep the reflection general instead of inventing a Day 1 cycle.';
 
   let transitNote = '';
   if (personalTransits.length > 0) {
@@ -302,39 +321,67 @@ function generateFallbackHoroscope(
     alignmentNote = ` ${top.interpretation.split('.')[0]}.`;
   }
 
-  return `${dayMessage}${transitNote}${alignmentNote} The ${moonPhase.phase.toLowerCase()} in ${moonSign} reminds me to ${moonPhase.phase.includes('Waxing') ? 'build momentum' : moonPhase.phase.includes('Waning') ? 'release what is not working' : moonPhase.phase.includes('Full') ? 'see clearly what I have been avoiding' : 'plant a seed of intention'}.`;
+  return `${dayMessage}${transitNote}${alignmentNote} Today's ${moonPhase.phase.toLowerCase()} Moon is in ${currentMoonSign}; I can use that symbolism as a reflection prompt rather than a prediction.`;
 }
 
 const horoscopeCache = new Map<string, DailyHoroscope>();
 
 /** Get date string in user's timezone for cache key (production checklist: timezone + date) */
 function getDateKeyInTimezone(now: Date, timezone: string | null | undefined): string {
-  if (!timezone) return now.toISOString().split('T')[0];
-  try {
-    const zoned = toZonedTime(now, timezone);
-    return format(zoned, 'yyyy-MM-dd');
-  } catch {
-    return now.toISOString().split('T')[0];
+  if (!timezone || !timezone.trim()) {
+    throw new RangeError('Horoscope timezone is required for a user-local calendar date');
   }
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(now);
+  } catch {
+    throw new RangeError(`Invalid horoscope timezone: ${timezone}`);
+  }
+
+  const zoned = toZonedTime(now, timezone);
+  return format(zoned, 'yyyy-MM-dd');
 }
 
 export async function generateDailyHoroscope(profile: any): Promise<DailyHoroscope> {
   const now = new Date();
-  const tz = profile.timezone || 'UTC';
+  const tz =
+    typeof profile?.timezone === 'string' && profile.timezone.trim()
+      ? profile.timezone.trim()
+      : undefined;
   const dateKey = getDateKeyInTimezone(now, tz);
   const profileUpdatedAt = profile.updatedAt ? String(profile.updatedAt) : '';
-  const cacheKey = `${profile.id}+${dateKey}+${tz}+${profileUpdatedAt}`;
+  const stableProfileId =
+    typeof profile.id === 'string' || typeof profile.id === 'number'
+      ? String(profile.id)
+      : '';
+  const cacheKey = stableProfileId
+    ? `${stableProfileId}+${dateKey}+${tz}+${profileUpdatedAt}`
+    : null;
 
-  const cached = horoscopeCache.get(cacheKey);
-  if (cached) return cached;
+  if (cacheKey) {
+    const cached = horoscopeCache.get(cacheKey);
+    if (cached) return cached;
+  }
 
   const planets = calculateCurrentPlanets(now);
   const alignments = calculateAlignments(planets);
   const personalTransits = calculatePersonalTransitsFromProfile(profile, now);
   const moonPhase = getMoonPhase(now);
-  const personalDayNumber = calculatePersonalDayNumber(profile.birthDate, now);
+  const currentMoonSign = getMoonSign(now);
+  const personalDayNumber = calculatePersonalDayNumber(
+    dateOnlyFromStoredValue(profile.birthDate),
+    dateKey,
+  );
 
-  const horoscope = await generateAIHoroscope(profile, planets, alignments, personalTransits, moonPhase, personalDayNumber);
+  const horoscope = await generateAIHoroscope(
+    profile,
+    planets,
+    alignments,
+    personalTransits,
+    moonPhase,
+    currentMoonSign,
+    personalDayNumber,
+  );
 
   const result: DailyHoroscope = {
     date: dateKey,
@@ -346,6 +393,8 @@ export async function generateDailyHoroscope(profile: any): Promise<DailyHorosco
     personalDayNumber,
   };
 
-  horoscopeCache.set(cacheKey, result);
+  if (cacheKey) {
+    horoscopeCache.set(cacheKey, result);
+  }
   return result;
 }

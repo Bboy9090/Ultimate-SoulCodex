@@ -64,7 +64,7 @@ describe("Compatibility HTTP integration", () => {
     assert.equal(body.available, true);
     assert.equal(body.formula.version, COMPATIBILITY_FORMULA_VERSION);
     assert.equal(body.formula.inputs.sunSign, "Virgo");
-    assert.equal(body.formula.inputs.lifePathNumber, 11);
+    assert.equal(body.formula.inputs.lifePathNumber, null);
     assert.equal(body.all.length, 12);
     assert.equal(Object.prototype.hasOwnProperty.call(body, "overallScore"), false);
   });
@@ -88,11 +88,42 @@ describe("Compatibility HTTP integration", () => {
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.equal(body.available, true);
-    assert.equal(body.formula.inputs.lifePathNumber, 22);
+    assert.equal(body.formula.inputs.lifePathNumber, null);
     for (const key of ["romantic", "chemistry", "mentalFriendship", "growth"]) {
       assert.equal(typeof body.dimensions[key], "number");
     }
     assert.equal(Object.prototype.hasOwnProperty.call(body, "overallScore"), false);
+  });
+
+  it("cannot promote caller-supplied verification metadata above symbolic evidence", async () => {
+    const response = await fetch(`${baseUrl}/api/compatibility/archetype-matches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: {
+          astrologyData: {
+            sunSign: "Leo",
+            sun: {
+              sign: "Virgo",
+              verificationStatus: "verified",
+              evidence: {
+                source: "spoofed-client-source",
+                engine: "spoofed-client-engine",
+                calculatedAt: "2026-09-25T00:00:00Z",
+              },
+            },
+          },
+          numerologyData: { lifePath: 9 },
+        },
+        mode: "love",
+      }),
+    });
+
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.evidenceMode, "symbolic");
+    assert.equal(body.formula.inputs.sunSign, "Leo");
+    assert.notEqual(body.formula.inputs.sunSign, "Virgo");
   });
 
   it("fails closed on missing profile rather than accepting naked sign strings", async () => {

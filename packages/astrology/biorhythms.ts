@@ -1,4 +1,9 @@
-// Biorhythms - Physical, Emotional, Intellectual Cycles
+import { formatInTimeZone } from 'date-fns-tz';
+import { parseDateOnly } from '@soulcodex/core';
+
+// Biorhythms - symbolic date-cycle visualization.
+// These sine-wave cycles are not validated measurements of physical health,
+// emotion, cognition, readiness, safety, or decision quality.
 
 interface BiorhythmCycle {
   name: string;
@@ -10,6 +15,8 @@ interface BiorhythmCycle {
 }
 
 interface BiorhythmData {
+  referenceDate: string;
+  calculationBasis: "date-only-symbolic";
   physical: BiorhythmCycle;
   emotional: BiorhythmCycle;
   intellectual: BiorhythmCycle;
@@ -44,9 +51,34 @@ function calculateCycle(daysSinceBirth: number, period: number): {
   return { value, phase, daysUntilPeak: Math.round(daysUntilPeak) };
 }
 
-export function calculateBiorhythms(birthDate: string, currentDate: Date = new Date()): BiorhythmData {
-  const birth = new Date(birthDate);
-  const daysSinceBirth = Math.floor((currentDate.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
+function dateOnlyOrdinal(dateISO: string): number {
+  const { year, month, day } = parseDateOnly(dateISO);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
+function referenceDateISO(currentDate: Date | string, timezone?: string): string {
+  if (typeof currentDate === "string") {
+    parseDateOnly(currentDate);
+    return currentDate;
+  }
+  if (Number.isNaN(currentDate.getTime())) {
+    throw new RangeError("Biorhythm current date must be valid");
+  }
+  return timezone
+    ? formatInTimeZone(currentDate, timezone, "yyyy-MM-dd")
+    : currentDate.toISOString().slice(0, 10);
+}
+
+export function calculateBiorhythms(
+  birthDate: string,
+  currentDate: Date | string = new Date(),
+  timezone?: string,
+): BiorhythmData {
+  const referenceDate = referenceDateISO(currentDate, timezone);
+  const daysSinceBirth = dateOnlyOrdinal(referenceDate) - dateOnlyOrdinal(birthDate);
+  if (daysSinceBirth < 0) {
+    throw new RangeError("Biorhythm reference date cannot precede birth date");
+  }
   
   // Three primary cycles
   const PHYSICAL_PERIOD = 23;
@@ -62,8 +94,7 @@ export function calculateBiorhythms(birthDate: string, currentDate: Date = new D
   const criticalDays: Date[] = [];
   
   for (let i = 0; i < 30; i++) {
-    const futureDate = new Date(currentDate);
-    futureDate.setDate(futureDate.getDate() + i);
+    const futureDate = new Date((dateOnlyOrdinal(referenceDate) + i) * 86_400_000);
     const futureDays = daysSinceBirth + i;
     
     const p = calculateCycle(futureDays, PHYSICAL_PERIOD);
@@ -81,17 +112,19 @@ export function calculateBiorhythms(birthDate: string, currentDate: Date = new D
   const overallEnergy = Math.round((physical.value + emotional.value + intellectual.value) / 3);
   
   return {
+    referenceDate,
+    calculationBasis: "date-only-symbolic",
     physical: {
       name: "Physical",
       period: PHYSICAL_PERIOD,
       currentValue: physical.value,
       phase: physical.phase,
       daysUntilPeak: physical.daysUntilPeak,
-      interpretation: physical.phase === "High" 
-        ? "Your physical energy is high. Great time for exercise, sports, and physical challenges."
+      interpretation: physical.phase === "High"
+        ? "The symbolic 23-day cycle is above its midpoint."
         : physical.phase === "Low"
-        ? "Physical energy is low. Focus on rest, recovery, and gentle activities."
-        : "Critical day for physical cycle. Be cautious with strenuous activities."
+        ? "The symbolic 23-day cycle is below its midpoint."
+        : "The symbolic 23-day cycle is near a zero crossing."
     },
     emotional: {
       name: "Emotional",
@@ -100,10 +133,10 @@ export function calculateBiorhythms(birthDate: string, currentDate: Date = new D
       phase: emotional.phase,
       daysUntilPeak: emotional.daysUntilPeak,
       interpretation: emotional.phase === "High"
-        ? "Emotional wellbeing is elevated. Good time for relationships and creative expression."
+        ? "The symbolic 28-day cycle is above its midpoint."
         : emotional.phase === "Low"
-        ? "Emotional sensitivity is heightened. Practice self-care and introspection."
-        : "Critical emotional day. Be mindful of mood swings and emotional reactions."
+        ? "The symbolic 28-day cycle is below its midpoint."
+        : "The symbolic 28-day cycle is near a zero crossing."
     },
     intellectual: {
       name: "Intellectual",
@@ -112,22 +145,16 @@ export function calculateBiorhythms(birthDate: string, currentDate: Date = new D
       phase: intellectual.phase,
       daysUntilPeak: intellectual.daysUntilPeak,
       interpretation: intellectual.phase === "High"
-        ? "Mental clarity is sharp. Excellent for learning, problem-solving, and decisions."
+        ? "The symbolic 33-day cycle is above its midpoint."
         : intellectual.phase === "Low"
-        ? "Mental energy is quieter. Good for reflection and intuitive processes."
-        : "Critical intellectual day. Double-check important decisions and communications."
+        ? "The symbolic 33-day cycle is below its midpoint."
+        : "The symbolic 33-day cycle is near a zero crossing."
     },
     overall: {
       energy: overallEnergy,
       bestDays: bestDays.slice(0, 5),
       criticalDays: criticalDays.slice(0, 5),
-      interpretation: `Your overall biorhythm energy is at ${overallEnergy}%. ${
-        overallEnergy > 50 
-          ? "You're in a high-energy phase across multiple cycles." 
-          : overallEnergy < -50
-          ? "You're in a recovery phase. Honor your need for rest."
-          : "Your cycles are balanced. Navigate mindfully."
-      }`
+      interpretation: `Symbolic combined cycle value: ${overallEnergy}%. This is a mathematical visualization only, not a measurement of health, mood, cognition, readiness, or future performance.`
     }
   };
 }

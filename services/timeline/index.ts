@@ -10,11 +10,15 @@ export function generateTimeline(input: TimelineInput): TimelineOutput {
   const currentDate = new Date(currentDateISO);
 
   const signals = [];
+  let hasNumerologySignal = false;
 
   // 1. Personal year numerology
   if (profile.birthDate) {
     const numSig = getNumerologySignal(profile.birthDate, currentDate);
-    if (numSig) signals.push(numSig);
+    if (numSig) {
+      signals.push(numSig);
+      hasNumerologySignal = true;
+    }
   }
 
   // 2. Astrology cycle markers
@@ -48,27 +52,26 @@ export function generateTimeline(input: TimelineInput): TimelineOutput {
 
   const reasons = Array.from(new Set(sortedReasons)).slice(0, 5);
 
-  // Determine confidence
-  const hasBirthTime = Boolean(
-    profile.birthTime && profile.birthTime.trim().length > 0
-  );
+  // Confidence reflects the evidence actually used by the current Timeline
+  // model. Birth time/location are not confidence inputs while time-dependent
+  // astrology cycle claims remain quarantined.
   const profileConfidence = (profile.confidenceLabel ?? "").toLowerCase();
-  let confidence: TimelineConfidence = "Full";
-  if (!hasBirthTime || profileConfidence === "partial" || profileConfidence === "unverified") {
-    confidence = "Partial";
-  }
+  const confidence: TimelineConfidence =
+    hasNumerologySignal &&
+    profileConfidence !== "partial" &&
+    profileConfidence !== "unverified"
+      ? "Full"
+      : "Partial";
 
   // Normalize to the same confidence object used across the app.
   const badge = confidence === "Full" ? "verified" : "partial";
   const label = badge === "verified" ? "Verified" : "Partial";
   const reason =
     badge === "verified"
-      ? "Birth time and location are set — full chart layer (houses, rising) is included."
-      : "Birth time unknown or not trusted — rising sign and houses are omitted from timeline-sensitive claims.";
+      ? "A governed Personal Year signal is available for Timeline phase scoring. Time-dependent astrology cycle claims are not included."
+      : "Governed Personal Year evidence is missing or the profile is marked partial/unverified. Time-dependent astrology cycle claims are not included.";
   const aiAssuranceNote =
-    badge === "verified"
-      ? "Timeline timing is derived from your birth record and major cycles. Interpretive language is guidance, not a guarantee."
-      : "Timeline themes still apply, but time-specific timing is softened without a verified birth time.";
+    "Timeline phase language is interpretive guidance based on the governed signals shown in the reasons list; it is not a prediction or guarantee.";
 
   const narrative = buildNarrative(phase, confidence, reasons);
 

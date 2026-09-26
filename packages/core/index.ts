@@ -9,6 +9,10 @@ export * from './compute/synthesis.js';
 export * from './compute/archetype.js';
 export * from './compute/numerology.js';
 export * from './compute/date-only.js';
+export * from './compute/civil-time.js';
+export * from './compute/angular-math.js';
+export * from './compute/aspect-policy.js';
+export * from './compute/offline-sun.js';
 export * from './compute/elements.js';
 export * from './compute/moral.js';
 export * from './compute/confidence.js';
@@ -28,3 +32,5 @@ export * from './evidence-ledger/index.js';
 export * from './cross-engine-validation/index.js';
 export * from './regression-fixtures/types.js';
 export { GOLDEN_FIXTURES, getFixtureById, getAllFixtures, getFixturesByTimeVerification } from './regression-fixtures/fixtures.js';
+
+export * from './verified-synthesis.js';

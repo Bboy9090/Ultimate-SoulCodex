@@ -1,7 +1,13 @@
+import {
+  TROPICAL_ZODIAC_SIGNS,
+  circularDegreesDelta,
+  normalizeDegrees,
+} from '@soulcodex/core';
+
 /**
- * Professional Synastry Analysis Engine
- * Calculates detailed astrological compatibility between two birth charts
- * Based on professional astrologer-level soul mate formulas
+ * Synastry Analysis Engine
+ * Calculates symbolic astrological comparison patterns between two birth charts.
+ * Scores are interpretive heuristics, not empirical relationship predictions.
  */
 
 interface Planet {
@@ -85,18 +91,21 @@ interface SynastryResult {
 
 // Convert sign + degree to absolute longitude (0-360°)
 function getAbsoluteLongitude(sign: string, degree: number): number {
-  const signOrder = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
-                     'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-  const signIndex = signOrder.indexOf(sign);
-  if (signIndex === -1) return 0;
-  return signIndex * 30 + degree;
+  const signIndex = TROPICAL_ZODIAC_SIGNS.findIndex(
+    (candidate) => candidate === sign,
+  );
+  if (signIndex === -1) {
+    throw new RangeError(`Unsupported zodiac sign: ${sign}`);
+  }
+  if (!Number.isFinite(degree) || degree < 0 || degree >= 30) {
+    throw new RangeError(`Degree within sign must be finite and in [0, 30): ${degree}`);
+  }
+  return normalizeDegrees(signIndex * 30 + degree);
 }
 
 // Calculate the angular difference between two planets
 function calculateAspectAngle(long1: number, long2: number): number {
-  let diff = Math.abs(long1 - long2);
-  if (diff > 180) diff = 360 - diff;
-  return diff;
+  return circularDegreesDelta(long1, long2);
 }
 
 // Identify the type of aspect and orb
@@ -125,7 +134,8 @@ function calculateOrbScore(baseScore: number, orb: number, maxOrb: number): numb
     return Math.round(baseScore * (1 - orb * 0.0125));
   } else {
     // Loose orb: 70-95% of base score
-    const orbRatio = (orb - 4) / (maxOrb - 4);
+    const orbDiff = maxOrb - 4;
+    const orbRatio = orbDiff > 0 ? (orb - 4) / orbDiff : 0;
     return Math.round(baseScore * (0.95 - orbRatio * 0.25));
   }
 }
@@ -146,12 +156,12 @@ function classifyAspectTier(
     opposition: 10
   };
   
-  // GOLDEN TIER: Unconditional Love & Understanding
+  // GOLDEN TIER: high-emphasis harmonious symbolism
   if ((planet1 === 'sun' && planet2 === 'moon') || (planet1 === 'moon' && planet2 === 'sun')) {
     if (aspect === 'conjunction') {
       return {
         tier: 'golden',
-        description: '☀️🌙 Sun-Moon Conjunction: The ultimate soul mate aspect. Your ego and emotions blend perfectly. This is the "coming home" feeling.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '☀️🌙 Sun-Moon Conjunction: Traditionally read as strong identity-emotion alignment. This can feel familiar and mutually understandable.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(100, orb, maxOrbs.conjunction)
       };
@@ -159,7 +169,7 @@ function classifyAspectTier(
     if (aspect === 'trine' || aspect === 'sextile') {
       return {
         tier: 'golden',
-        description: '☀️🌙 Sun-Moon Harmony: Natural flow between your core self and their emotional needs. Effortless understanding.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '☀️🌙 Sun-Moon Harmony: Traditionally read as supportive flow between identity and emotional needs. Understanding may come more easily here.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(90, orb, maxOrbs[aspect])
       };
@@ -169,7 +179,7 @@ function classifyAspectTier(
   if (planet1 === 'moon' && planet2 === 'moon' && aspect === 'conjunction') {
     return {
       tier: 'golden',
-      description: '🌙🌙 Moon-Moon Conjunction: Telepathic emotional bond. You feel safe and understood at the deepest level.' + (orb <= 4 ? ' [EXACT]' : ''),
+      description: '🌙🌙 Moon-Moon Conjunction: Emotional rhythms may feel familiar, which can support empathy and mutual understanding.' + (orb <= 4 ? ' [EXACT]' : ''),
       impact: 'harmony',
       score: calculateOrbScore(95, orb, maxOrbs.conjunction)
     };
@@ -179,7 +189,7 @@ function classifyAspectTier(
     if (aspect === 'conjunction') {
       return {
         tier: 'golden',
-        description: '♀️↑ Venus-Ascendant Conjunction: You embody their ideal of beauty and love. Instant, magnetic attraction.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '♀️↑ Venus-Ascendant Conjunction: Traditionally associated with attraction and aesthetic appreciation. The contact can feel immediately noticeable.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(85, orb, maxOrbs.conjunction)
       };
@@ -192,7 +202,7 @@ function classifyAspectTier(
     if (['sun', 'moon', 'venus'].includes(otherPlanet) && (aspect === 'trine' || aspect === 'conjunction')) {
       return {
         tier: 'golden',
-        description: `♃ Jupiter ${aspect} ${otherPlanet}: Brings joy, growth, and luck to the relationship. You make each other better.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `♃ Jupiter ${aspect} ${otherPlanet}: Traditionally associated with encouragement, expansion, and optimism in the relationship.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(80, orb, maxOrbs[aspect])
       };
@@ -205,21 +215,21 @@ function classifyAspectTier(
     if (['sun', 'moon', 'venus'].includes(otherPlanet) && aspect === 'trine') {
       return {
         tier: 'golden',
-        description: `♆ Neptune trine ${otherPlanet}: Divine, unconditional love. Rose-colored glasses aspect - feels magical and spiritual.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `♆ Neptune trine ${otherPlanet}: Can add idealism, imagination, and spiritual or romantic symbolism. Keep room for clear perception as well.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(75, orb, maxOrbs.trine)
       };
     }
   }
 
-  // DIAMOND TIER: The Cosmic Glue (Saturn = Commitment)
+  // DIAMOND TIER: Saturn-based structure and commitment symbolism
   if (planet1 === 'saturn' || planet2 === 'saturn') {
     const otherPlanet = planet1 === 'saturn' ? planet2 : planet1;
     
     if (['sun', 'moon'].includes(otherPlanet) && (aspect === 'trine' || aspect === 'sextile')) {
       return {
         tier: 'diamond',
-        description: `♄ Saturn ${aspect} ${otherPlanet}: The ultimate relationship glue. Provides stability, commitment, and long-term staying power.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `♄ Saturn ${aspect} ${otherPlanet}: Traditionally associated with structure, responsibility, and commitment-building; it does not guarantee longevity.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(95, orb, maxOrbs[aspect])
       };
@@ -228,7 +238,7 @@ function classifyAspectTier(
     if (otherPlanet === 'venus' && aspect === 'conjunction') {
       return {
         tier: 'diamond',
-        description: '♄ Saturn conjunct Venus: "I want to commit to you." Serious about the relationship, though can feel heavy at times.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '♄ Saturn conjunct Venus: Can emphasize seriousness, responsibility, and questions of commitment, while sometimes feeling heavy.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(85, orb, maxOrbs.conjunction)
       };
@@ -237,7 +247,7 @@ function classifyAspectTier(
     if (otherPlanet === 'venus' && (aspect === 'trine' || aspect === 'sextile')) {
       return {
         tier: 'diamond',
-        description: `♄ Saturn ${aspect} Venus: Commitment and lasting love. Building something real together.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `♄ Saturn ${aspect} Venus: Traditionally linked with steadiness and commitment-building. It may support practical investment in the relationship.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(82, orb, maxOrbs[aspect])
       };
@@ -255,14 +265,14 @@ function classifyAspectTier(
     if (['sun', 'moon'].includes(otherPlanet) && aspect === 'conjunction') {
       return {
         tier: 'diamond',
-        description: `♄ Saturn conjunct ${otherPlanet}: Serious commitment energy. This person takes you and the relationship seriously.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `♄ Saturn conjunct ${otherPlanet}: Can bring seriousness, responsibility, and a stronger focus on what the relationship requires.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(90, orb, maxOrbs.conjunction)
       };
     }
   }
 
-  // FATED TIER: Karmic Connections
+  // Legacy 'fated' tier key: nodal/Vertex salience symbolism (schema retained for compatibility)
   if (planet1 === 'northNode' || planet2 === 'northNode' || planet1 === 'southNode' || planet2 === 'southNode') {
     const otherPlanet = planet1.includes('Node') ? planet2 : planet1;
     const node = planet1.includes('Node') ? planet1 : planet2;
@@ -270,7 +280,7 @@ function classifyAspectTier(
     if (['sun', 'moon', 'venus', 'mars'].includes(otherPlanet) && aspect === 'conjunction') {
       return {
         tier: 'fated',
-        description: `☊ ${node} conjunct ${otherPlanet}: Karmic, destined connection. This meeting was meant to happen. Soul-level significance.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `☊ ${node} conjunct ${otherPlanet}: Nodal conjunctions are traditionally read as developmentally salient contacts. They may feel meaningful while remaining symbolic rather than predictive.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(90, orb, maxOrbs.conjunction)
       };
@@ -280,20 +290,20 @@ function classifyAspectTier(
     if (['sun', 'moon', 'venus', 'mars', 'jupiter', 'saturn'].includes(otherPlanet) && (aspect === 'trine' || aspect === 'sextile')) {
       return {
         tier: 'fated',
-        description: `☊ ${node} ${aspect} ${otherPlanet}: Karmic harmony. Your paths were meant to cross to support soul growth.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `☊ ${node} ${aspect} ${otherPlanet}: Traditionally read as a supportive developmental contact. Its significance is symbolic and does not establish why two people met.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(75, orb, maxOrbs[aspect])
       };
     }
   }
   
-  // Vertex contacts - fated encounters
+  // Vertex contacts - traditionally treated as salient/catalytic encounters
   if (planet1 === 'vertex' || planet2 === 'vertex') {
     const otherPlanet = planet1 === 'vertex' ? planet2 : planet1;
     if (['sun', 'moon', 'venus', 'mars', 'ascendant'].includes(otherPlanet) && aspect === 'conjunction') {
       return {
         tier: 'fated',
-        description: `⚡ Vertex conjunct ${otherPlanet}: Electric gate of fated encounters. This meeting feels destined and life-changing.` + (orb <= 4 ? ' [EXACT]' : ''),
+        description: `⚡ Vertex conjunct ${otherPlanet}: Traditionally treated as an unusually salient or catalytic contact. It can feel significant without establishing inevitability.` + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(88, orb, maxOrbs.conjunction)
       };
@@ -305,7 +315,7 @@ function classifyAspectTier(
     if (aspect === 'conjunction') {
       return {
         tier: 'golden',
-        description: '♀️♂️ Venus-Mars Conjunction: Explosive sexual chemistry. Raw magnetic attraction. The #1 passion indicator.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '♀️♂️ Venus-Mars Conjunction: A strong traditional attraction and chemistry indicator. Intensity still depends on the people and wider relationship context.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(100, orb, maxOrbs.conjunction)
       };
@@ -313,7 +323,7 @@ function classifyAspectTier(
     if (aspect === 'trine' || aspect === 'sextile') {
       return {
         tier: 'golden',
-        description: '♀️♂️ Venus-Mars Harmony: Strong physical chemistry with emotional connection. Passionate and balanced.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '♀️♂️ Venus-Mars Harmony: Traditionally associated with easier attraction and expressive chemistry. How balanced it feels depends on the wider relationship.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(85, orb, maxOrbs[aspect])
       };
@@ -321,7 +331,7 @@ function classifyAspectTier(
     if (aspect === 'square' || aspect === 'opposition') {
       return {
         tier: 'standard',
-        description: '♀️♂️ Venus-Mars Tension: Intense, explosive chemistry. "Can\'t keep hands off you" energy. Passionate but challenging.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '♀️♂️ Venus-Mars Tension: Traditionally associated with charged attraction and friction. It can feel energizing or challenging depending on context.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'tension',
         score: calculateOrbScore(70, orb, maxOrbs[aspect])
       };
@@ -333,7 +343,7 @@ function classifyAspectTier(
     if (aspect === 'trine' || aspect === 'sextile') {
       return {
         tier: 'golden',
-        description: '🌙🌙 Moon Harmony: Emotional needs align beautifully. Deep empathy and understanding.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '🌙🌙 Moon Harmony: Emotional needs may be easier to coordinate, which can support empathy and understanding.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(88, orb, maxOrbs[aspect])
       };
@@ -345,7 +355,7 @@ function classifyAspectTier(
     if (aspect === 'trine') {
       return {
         tier: 'golden',
-        description: '☀️☀️ Sun Trine: Life paths support each other naturally. You help each other shine.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '☀️☀️ Sun Trine: Core styles may support one another more naturally, making mutual encouragement easier.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(85, orb, maxOrbs.trine)
       };
@@ -353,7 +363,7 @@ function classifyAspectTier(
     if (aspect === 'conjunction') {
       return {
         tier: 'standard',
-        description: '☀️☀️ Sun Conjunction: Same sign, same core identity. Deep understanding or too similar.' + (orb <= 4 ? ' [EXACT]' : ''),
+        description: '☀️☀️ Sun Conjunction: Similar core styles can increase familiarity while also amplifying points of sameness.' + (orb <= 4 ? ' [EXACT]' : ''),
         impact: 'harmony',
         score: calculateOrbScore(75, orb, maxOrbs.conjunction)
       };
@@ -416,23 +426,36 @@ function calculateHouseOverlays(
 
 // Find which house a given longitude falls into
 function findHouseForLongitude(longitude: number, houseCusps: number[]): number {
+  if (!Number.isFinite(longitude)) {
+    throw new RangeError('House overlay longitude must be finite');
+  }
+  if (
+    houseCusps.length !== 12 ||
+    houseCusps.some((cusp) => !Number.isFinite(cusp))
+  ) {
+    throw new RangeError('House cusps must contain exactly 12 finite longitudes');
+  }
+
+  const normalizedLongitude = normalizeDegrees(longitude);
+  const normalizedCusps = houseCusps.map((cusp) => normalizeDegrees(cusp));
+
   for (let i = 0; i < 12; i++) {
-    const currentCusp = houseCusps[i];
-    const nextCusp = houseCusps[(i + 1) % 12];
-    
-    // Handle wrap-around at 360°/0°
+    const currentCusp = normalizedCusps[i];
+    const nextCusp = normalizedCusps[(i + 1) % 12];
+
     if (nextCusp > currentCusp) {
-      if (longitude >= currentCusp && longitude < nextCusp) {
-        return i + 1; // Houses are 1-indexed
-      }
-    } else {
-      // Wrap-around case (e.g., 12th house crossing 0°)
-      if (longitude >= currentCusp || longitude < nextCusp) {
+      if (normalizedLongitude >= currentCusp && normalizedLongitude < nextCusp) {
         return i + 1;
       }
+    } else if (
+      normalizedLongitude >= currentCusp ||
+      normalizedLongitude < nextCusp
+    ) {
+      return i + 1;
     }
   }
-  return 1; // Default to 1st house if calculation fails
+
+  throw new Error('house_overlay_position_unresolved');
 }
 
 function analyzeHouseOverlay(planet: string, house: number, personName: string): HouseOverlay | null {
@@ -443,7 +466,7 @@ function analyzeHouseOverlay(planet: string, house: number, personName: string):
       impact: 'profound'
     },
     4: {
-      significance: `${planet} in ${personName}'s 4th House: They feel like home and family. Desire to build a life together.`,
+      significance: `${planet} in ${personName}'s 4th House: Can evoke home, family, and belonging themes, including questions about what building a life together would mean.`,
       impact: 'profound'
     },
     5: {
@@ -451,11 +474,11 @@ function analyzeHouseOverlay(planet: string, house: number, personName: string):
       impact: 'moderate'
     },
     7: {
-      significance: `${planet} in ${personName}'s 7th House: You see them as an ideal partner. Marriage and commitment energy.`,
+      significance: `${planet} in ${personName}'s 7th House: Activates partnership themes and expectations, including how each person approaches commitment.`,
       impact: 'profound'
     },
     8: {
-      significance: `${planet} in ${personName}'s 8th House: Deep, intense, transformative bond. Strong intimacy and soul connection.`,
+      significance: `${planet} in ${personName}'s 8th House: Can emphasize intimacy, vulnerability, shared resources, and transformative relationship themes.`,
       impact: 'profound'
     }
   };
@@ -561,30 +584,30 @@ export function calculateDetailedSynastry(
 
   // Generate summary
   const soulMateIndicators: string[] = [];
-  if (goldenAspects.length >= 3) soulMateIndicators.push('Multiple Golden Tier aspects - strong soul connection');
-  if (diamondAspects.length >= 2) soulMateIndicators.push('Saturn aspects present - long-term staying power');
-  if (fatedAspects.length >= 1) soulMateIndicators.push('Karmic/fated connection indicators');
+  if (goldenAspects.length >= 3) soulMateIndicators.push('Multiple high-emphasis harmonious synastry aspects');
+  if (diamondAspects.length >= 2) soulMateIndicators.push('Saturn aspects present - stronger structure and responsibility themes');
+  if (fatedAspects.length >= 1) soulMateIndicators.push('Nodal or Vertex contacts present - developmental or catalytic symbolism');
   if (person1Overlays.filter(o => o.impact === 'profound').length >= 2) {
-    soulMateIndicators.push('Significant house overlays - deep life integration');
+    soulMateIndicators.push('Significant house overlays - stronger life-area overlap themes');
   }
 
   const strengths: string[] = [];
-  if (goldenAspects.length > 0) strengths.push(`${goldenAspects.length} harmonious soul mate aspects`);
+  if (goldenAspects.length > 0) strengths.push(`${goldenAspects.length} harmonious high-emphasis aspects`);
   if (diamondAspects.length > 0) strengths.push(`${diamondAspects.length} commitment-building Saturn aspects`);
-  if (chemistryScore >= 80) strengths.push('Exceptional natural chemistry and attraction');
+  if (chemistryScore >= 80) strengths.push('High symbolic attraction/chemistry emphasis');
 
   const challenges: string[] = [];
   const tensionAspects = allAspects.filter(a => a.impact === 'tension');
   if (tensionAspects.length > 5) challenges.push('Multiple challenging aspects requiring conscious work');
-  if (commitmentScore < 60) challenges.push('May lack long-term stability indicators');
-  if (goldenAspects.length === 0) challenges.push('Limited natural harmony - will require more effort');
+  if (commitmentScore < 60) challenges.push('Fewer traditional structure/commitment indicators');
+  if (goldenAspects.length === 0) challenges.push('Fewer easy-flow indicators; communication and effort may matter more');
 
   const relationshipType = 
-    overallScore >= 85 ? 'Soul Mate Connection' :
-    overallScore >= 75 ? 'Profound Partnership' :
-    overallScore >= 65 ? 'Strong Compatibility' :
-    overallScore >= 50 ? 'Growth-Oriented Connection' :
-    'Challenging but Transformative';
+    overallScore >= 85 ? 'High-Emphasis Symbolic Compatibility' :
+    overallScore >= 75 ? 'Strong Symbolic Partnership Themes' :
+    overallScore >= 65 ? 'Moderate-High Symbolic Compatibility' :
+    overallScore >= 50 ? 'Mixed Symbolic Compatibility' :
+    'Higher-Friction Symbolic Pattern';
 
   return {
     overallScore,
@@ -602,7 +625,7 @@ export function calculateDetailedSynastry(
     },
     commitment: {
       score: commitmentScore,
-      description: commitmentScore >= 80 ? 'Exceptional long-term potential' : commitmentScore >= 65 ? 'Strong staying power' : commitmentScore >= 50 ? 'Moderate commitment' : 'May lack stability'
+      description: commitmentScore >= 80 ? 'Strong traditional commitment symbolism' : commitmentScore >= 65 ? 'Moderate-strong structure symbolism' : commitmentScore >= 50 ? 'Moderate structure symbolism' : 'Fewer traditional stability indicators'
     },
     growth: {
       score: growthScore,

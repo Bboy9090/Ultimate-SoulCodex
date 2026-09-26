@@ -2,49 +2,99 @@
 
 **A personal insight and journaling app for self-discovery**
 
-It is not a horoscope generator. It is not incense smoke wrapped in JSON. It calculates your birth chart, derives your Human Design type and gates, maps your Gene Key profile, computes your numerology, and weaves these together into a coherent narrative that respects your intelligence and does not predict your fate.
+Soul Codex combines governed symbolic systems only when their evidence contracts pass. It currently uses independently verified natal astrology, deterministic numerology, and the verified Human Design core as stable identity inputs. The repository contains historical code for many additional systems, but code presence does **not** make a system production-governed.
+
+The executable source of truth is `shared/system-registry.ts`, mirrored in `governance/SYSTEM_REGISTRY.md`.
 
 ---
 
-## What the 35+ Systems Actually Do
+## Current Production System States
 
-| Category | Systems Included |
+### Governed stable identity inputs
+
+| System | Current production scope |
 |---|---|
-| **Western Astrology** | Sun/Moon/Rising, 10 planets, 12 houses, major aspects, Chiron, Lilith, North Node |
-| **Vedic Astrology** | Jyotish chart, Nakshatras (27 lunar mansions), Dasha periods |
-| **Human Design** | Type (Generator/Manifestor/Projector/Reflector/MG), Strategy, Authority, Profile, Defined/Open Centers |
-| **Gene Keys** | Activation Sequence (Life's Work, Evolution, Radiance, Purpose), Shadow → Gift → Siddhi arc |
-| **Numerology** | Life Path, Expression, Soul Urge, Personality, Birthday, Maturity numbers |
-| **Tarot** | Birth card pair (Major Arcana), year card, monthly card |
-| **I Ching** | Hexagram derived from birth data, line reading |
-| **Runes** | Birth rune and current-cycle rune |
-| **Fixed Stars** | Prominent fixed stars conjunct natal planets |
-| **Chinese Astrology** | Year animal, element, inner/secret animals |
-| **Mayan Calendar** | Tzolk'in day sign and tone |
-| **Elemental Medicine** | Five-element profile (Wood/Fire/Earth/Metal/Water) |
-| **Enneagram** | Type and wing suggestion based on chart signature |
-| **MBTI overlay** | Cognitive function stack correlated to chart |
-| **Chakra system** | Dominant and blocked chakras from chart patterns |
-| **Sacred Geometry** | Core geometric archetype from numerology/chart |
-| **Moral Compass** | Core values cluster derived from chart emphasis |
+| **Natal Astrology** | Verified Sun, Moon, Rising, ten natal planets, Equal Houses, Ascendant, Midheaven, major aspects, Mean Nodes, qualified Chiron, and verified-chart aggregates such as elements/modalities |
+| **Numerology Core** | Life Path, Birthday, Expression, Soul Urge, Personality, and Maturity under the documented deterministic arithmetic policy |
+| **Human Design Core** | Verified Type, Strategy, Authority, Profile, Definition, centers, channels, gates, and conscious/unconscious gate-line activations |
 
-All calculations are performed on the server using real ephemeris data (`astronomy-engine`). No hardcoded readings. Every result is computed from your exact birth date, time, and place.
+### Governed current guidance
+
+| System | Current production scope |
+|---|---|
+| **Numerology Cycles** | Personal Year/day-style deterministic timing themes used as reflection, not prediction |
+| **Verified natal / Human Design context** | May support current guidance only when the relevant personal evidence contract is already satisfied |
+
+### Supporting context, not birth-derived identity
+
+| System | Current production scope |
+|---|---|
+| **MBTI / Enneagram / similar assessments** | User-supplied assessment context only. Soul Codex does not infer these types from a birth chart. |
+| **Moral Compass** | User-response context only; not derived from zodiac, numerology, or compatibility weights |
+
+### Inspect-only
+
+- Human Design Variables / Incarnation Cross naming remains inspect-only until independently qualified.
+
+### Unavailable / quarantined from production synthesis
+
+The registry currently excludes unsupported legacy implementations and placeholders for systems including:
+
+- Vedic astrology / Nakshatras
+- Gene Keys
+- Chinese astrology
+- Ayurveda
+- I Ching
+- Mayan / Tzolk'in-style astrology
+- Chakras / energy-center profiles
+- Runes
+- Tarot birth cards
+- Kabbalah / Tree of Life paths
+- Sacred geometry
+- Sabian Symbols
+- Biorhythms
+- Asteroids
+- Arabic Parts / Lots
+- Fixed stars
+- Astrocartography
+- Palmistry
+- Solar/Lunar Returns and Secondary Progressions
+
+These systems may be promoted later only after they receive their own calculation, evidence, privacy, and interpretation contracts.
 
 ---
 
-## The 4 Core Experiences (MVP)
+## The 4 Core Experiences
 
 ### 1. Profile
-Enter your birth date, time, and place once. The engine calculates all 35+ systems and renders your complete Soul Codex — a layered portrait of your archetype, strengths, shadow, purpose, and life path.
+
+Enter birth data once. Soul Codex builds the strongest profile justified by the available evidence. Exact-time systems stay unresolved when exact time or location evidence is missing; the app does not substitute noon or fabricate placements.
 
 ### 2. Daily
-Every day, your transiting planets, active Gene Key, Tarot card of the day, and I Ching reading combine into a Daily Soul Context — not a forecast, a lens for today.
+
+Daily guidance is selective rather than additive. Soul Codex chooses only context-qualified systems for the job instead of forcing every registered system into every reading. Repeated themes may be shown as symbolic resonance, never as extra proof or inflated certainty.
 
 ### 3. Compatibility
-Add any person (partner, friend, colleague). The engine runs a 5-pillar compatibility analysis: synastry aspects, Human Design inter-type dynamics, Gene Key resonance, numerology harmony, and elemental balance.
+
+Compatibility uses saved profile evidence and symbolic relationship models. It distinguishes verified inputs from interpretive scoring and does not present symbolic compatibility scores as empirical predictions of relationship success.
 
 ### 4. Codex Reading
-A deeper dive into your full reading with AI-generated synthesis (powered by Google Gemini), section-by-section interpretation, and PDF export for offline use.
+
+The Codex synthesizes qualified evidence into a readable narrative, with unresolved and excluded systems kept explicit. AI-assisted prose may improve clarity, but it may not invent missing evidence, rewrite system status, or turn symbolic interpretation into factual identity claims.
+
+---
+
+## Accuracy and Evidence Doctrine
+
+- No invented noon charts.
+- No fake houses, aspects, Nodes, Chiron, Human Design, or unsupported system values.
+- No chart-derived MBTI, Enneagram, dosha, chakra, rune, tarot, or Gene Key fallback.
+- Exact astronomical verification requires explicit zoned instants and governed tolerance policies.
+- Symbolic interpretations stay labeled as symbolic.
+- Missing evidence produces **unresolved**, not filler.
+- More systems do not automatically mean more certainty.
+
+Calculation paths may be local or server-side depending on the feature. Governed astronomy uses pinned calculation engines and independent verification policies where required.
 
 ---
 
@@ -57,7 +107,7 @@ A deeper dive into your full reading with AI-generated synthesis (powered by Goo
 | Database | PostgreSQL via Neon (serverless), Drizzle ORM |
 | AI | Google Gemini (primary), OpenAI GPT-4 (fallback) |
 | Payments | Stripe (subscriptions) |
-| Build | Vite 5 (client), esbuild (server) |
+| Build | Vite 8 (client), esbuild (server) |
 | Auth | Passport.js local strategy, Argon2id password hashing |
 | Ephemeris | astronomy-engine (real planetary calculations) |
 
@@ -152,10 +202,10 @@ The active app path in this worktree is root-level:
 
 - Backend entry: `server/index.ts` (Express + Vite middleware in dev).
 - Frontend entry: `client/src/main.tsx` (served by root `vite.config.ts` with `client/` root).
-- Route layer: root `routes.ts`.
+- Route layer: `server/routes.ts`, with governed specialized routers under `server/routes/`.
 - Shared and engine packages: `packages/*` (`core`, `db`, `ai`, `astrology`).
 
-## Quick Start
+## Development Notes
 
 ### Prerequisites
 - Node.js 20 (use nvm: `nvm use 20`)
@@ -200,7 +250,7 @@ NODE_ENV=development npx tsx server/index.ts
 ```
 
 6. **Open the app**
-Navigate to `http://localhost:5000`
+Navigate to `http://localhost:3000`
 
 ### Production Build
 

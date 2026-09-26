@@ -898,6 +898,12 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       // Check all required fields are present
       assert.ok(typeof receipt?.configuredSolarArc === 'number');
       assert.ok(typeof receipt?.actualSolarArc === 'number');
+      assert.ok(typeof receipt?.angularResidualDegrees === 'number');
+      assert.ok(typeof receipt?.angularToleranceDegrees === 'number');
+      assert.ok(typeof receipt?.bracketMinimumDays === 'number');
+      assert.ok(typeof receipt?.bracketMaximumDays === 'number');
+      assert.ok(typeof receipt?.bracketMinimumSignedDeltaDegrees === 'number');
+      assert.ok(typeof receipt?.bracketMaximumSignedDeltaDegrees === 'number');
       assert.ok(typeof receipt?.iterationCount === 'number');
       assert.ok(typeof receipt?.finalSearchWindowDays === 'number');
       assert.ok(typeof receipt?.finalToleranceDays === 'number');
@@ -907,7 +913,7 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       assert.ok(typeof receipt?.algorithmVersion === 'string');
     });
 
-    it('should have configured arc equal to 87.975', () => {
+    it('should have configured arc equal to exact verified 88.0 degrees', () => {
       const result = calculateHumanDesignWithEvidence({
         name: 'Albert Einstein',
         birthDate: '1879-03-14',
@@ -923,7 +929,7 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       );
 
       const receipt = activationsEntry?.metadata?.solar_arc_receipt;
-      assert.strictEqual(receipt?.configuredSolarArc, 87.975);
+      assert.strictEqual(receipt?.configuredSolarArc, 88.0);
     });
 
     it('should have actual arc within tolerance', () => {
@@ -943,10 +949,18 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
 
       const receipt = activationsEntry?.metadata?.solar_arc_receipt;
 
-      // Actual arc should be close to configured (87.975)
       assert.ok(receipt?.actualSolarArc !== undefined);
-      const difference = Math.abs((receipt?.actualSolarArc || 0) - 87.975);
-      assert.ok(difference < 1, `Arc difference ${difference} should be less than 1 degree`);
+      assert.ok(receipt?.angularResidualDegrees !== undefined);
+      assert.ok(receipt?.angularToleranceDegrees !== undefined);
+      assert.ok(
+        (receipt?.angularResidualDegrees ?? Number.POSITIVE_INFINITY) <=
+          (receipt?.angularToleranceDegrees ?? 0),
+        `Arc residual ${receipt?.angularResidualDegrees} must stay within ${receipt?.angularToleranceDegrees} degrees`,
+      );
+      assert.ok(
+        (receipt?.angularToleranceDegrees ?? Number.POSITIVE_INFINITY) <= 0.001,
+        'Solar-arc angular tolerance must remain at or below 0.001 degrees',
+      );
     });
 
     it('should have iteration count within bounds', () => {
@@ -1039,4 +1053,28 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       assert.strictEqual(receipt?.resolvedTimezone, 'Europe/Berlin');
     });
   });
+});
+
+
+test('Human Design design-date solver proves the 88-degree crossing is bracketed', () => {
+  const result = calculateHumanDesignWithEvidence({
+    name: 'Bracket proof fixture',
+    birthDate: '1990-09-17',
+    birthTime: '11:11',
+    birthLocation: 'Bronx, New York',
+    latitude: '40.8448',
+    longitude: '-73.8648',
+    timezone: 'America/New_York',
+  });
+
+  assert.equal(result.result?.status, 'resolved');
+  const activationsEntry = result.evidence.find(
+    (entry) => entry.name === 'Human Design Activations (88° Solar Arc)',
+  );
+  const receipt = activationsEntry?.metadata?.solar_arc_receipt;
+
+  assert.equal(receipt?.bracketMinimumDays, 80);
+  assert.equal(receipt?.bracketMaximumDays, 95);
+  assert.ok((receipt?.bracketMinimumSignedDeltaDegrees ?? -Infinity) >= 0);
+  assert.ok((receipt?.bracketMaximumSignedDeltaDegrees ?? Infinity) <= 0);
 });

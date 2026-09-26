@@ -1,7 +1,11 @@
 import * as Astronomy from 'astronomy-engine';
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
-import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
+import {
+  createEvidenceEntry,
+  normalizeDegrees,
+  resolveCivilTimeStrict,
+  type EvidenceEntry,
+} from '@soulcodex/core';
 
 // Human Design Gates mapped to their correct centers and meanings
 export const HD_GATES = {
@@ -294,11 +298,14 @@ export type HumanDesignUnresolvedReason =
   | 'malformed_birth_time'
   | 'invalid_timezone'
   | 'timezone_resolution_failed'
+  | 'nonexistent_local_time'
+  | 'ambiguous_local_time'
   | 'invalid_coordinates'
   | 'missing_birth_date'
   | 'missing_birth_time'
   | 'missing_timezone'
-  | 'missing_coordinates';
+  | 'missing_coordinates'
+  | 'design_solar_arc_unresolved';
 
 /**
  * Resolved Human Design chart with all calculated values guaranteed to be present.
@@ -378,8 +385,14 @@ export interface TimezoneResolution {
  * Captures structured provenance for reconstructing the calculation.
  */
 export interface SolarArcForensics {
-  configuredSolarArc: number;           // 87.975 constant
+  configuredSolarArc: number;           // exact 88.0 degree design solar arc
   actualSolarArc: number;               // computed from bisection
+  angularResidualDegrees: number;        // circular error from configured solar arc
+  angularToleranceDegrees: number;       // maximum accepted residual
+  bracketMinimumDays: number;             // lower bound of initial UTC search bracket
+  bracketMaximumDays: number;             // upper bound of initial UTC search bracket
+  bracketMinimumSignedDeltaDegrees: number;
+  bracketMaximumSignedDeltaDegrees: number;
   iterationCount: number;               // bisection loop count
   finalSearchWindowDays: number;        // maxDays - minDays final value
   finalToleranceDays: number;           // tolerance achieved
@@ -405,7 +418,7 @@ function calculateAbsoluteLongitude(sign: string, degreeInSign: number): number 
 }
 
 // Convert zodiac degrees to Human Design gate and line
-function degreeToGateAndLine(degree: number): { gate: number; line: number } {
+export function degreeToGateAndLine(degree: number): { gate: number; line: number } {
   const normalized = ((degree % 360) + 360) % 360;
   const radiansPosition = normalized * Math.PI / 180;
   const circle = Math.PI * 2;
@@ -812,7 +825,7 @@ const HD_SIGNS = [
 ] as const;
 
 function normalizeHdLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
+  return normalizeDegrees(value);
 }
 
 function hdPosition(longitude: number): HdPosition {
@@ -982,7 +995,7 @@ function calculateHumanDesignInternal(birthData: {
   }
 
   // Validate coordinates first (always required)
-  if (!birthData.latitude || !birthData.longitude) {
+  if (String(birthData.latitude ?? '').trim() === '' || String(birthData.longitude ?? '').trim() === '') {
     return {
       result: {
         status: 'unresolved',
@@ -1031,13 +1044,26 @@ function calculateHumanDesignInternal(birthData: {
   const localTimeString =
     `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T` +
     `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-  const birthTimeUTC = fromZonedTime(localTimeString, resolvedTimezone);
-  if (Number.isNaN(birthTimeUTC.getTime())) {
-    return { result: { status: 'unresolved', reason: 'timezone_resolution_failed' } };
+
+  const civilTime = resolveCivilTimeStrict(
+    birthData.birthDate,
+    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+    resolvedTimezone,
+  );
+  if (civilTime.status !== 'valid' || !civilTime.utc) {
+    const reason =
+      civilTime.status === 'nonexistent'
+        ? 'nonexistent_local_time'
+        : civilTime.status === 'ambiguous'
+          ? 'ambiguous_local_time'
+          : 'timezone_resolution_failed';
+    return { result: { status: 'unresolved', reason } };
   }
 
+  const birthTimeUTC = civilTime.utc;
+
   const astroData = calculateHdAstroAtUtc(birthTimeUTC);
-  const DESIGN_SOLAR_ARC = 87.975;
+  const DESIGN_SOLAR_ARC = 88.0;
   const birthSunLongitude = astroData.planets.sun.longitude;
   const targetLongitude = normalizeHdLongitude(birthSunLongitude - DESIGN_SOLAR_ARC);
 
@@ -1045,18 +1071,50 @@ function calculateHumanDesignInternal(birthData: {
   // directly in UTC. No local-time minute round-trip is allowed here.
   let minDays = 80;
   let maxDays = 95;
+  const bracketMinimumDays = minDays;
+  const bracketMaximumDays = maxDays;
   let iteration = 0;
   const maxIterations = 50;
   let unconsciousTimeUTC = new Date(birthTimeUTC.getTime() - 88 * 86_400_000);
+
+  const signedLongitudeDelta = (longitude: number): number => {
+    let diff = longitude - targetLongitude;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    return diff;
+  };
+
+  const minimumBracketLongitude = calculateHdAstroAtUtc(
+    new Date(birthTimeUTC.getTime() - minDays * 86_400_000),
+  ).planets.sun.longitude;
+  const maximumBracketLongitude = calculateHdAstroAtUtc(
+    new Date(birthTimeUTC.getTime() - maxDays * 86_400_000),
+  ).planets.sun.longitude;
+  const bracketMinimumSignedDeltaDegrees = signedLongitudeDelta(minimumBracketLongitude);
+  const bracketMaximumSignedDeltaDegrees = signedLongitudeDelta(maximumBracketLongitude);
+
+  // Bisection is only valid when the target crossing is actually bracketed.
+  // For the backward-in-time solar search the nearer bound must be on or ahead
+  // of the target and the farther bound must be on or behind it.
+  if (
+    !Number.isFinite(bracketMinimumSignedDeltaDegrees) ||
+    !Number.isFinite(bracketMaximumSignedDeltaDegrees) ||
+    bracketMinimumSignedDeltaDegrees < 0 ||
+    bracketMaximumSignedDeltaDegrees > 0
+  ) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'design_solar_arc_unresolved',
+      },
+    };
+  }
 
   while (iteration < maxIterations && (maxDays - minDays) > 1e-4) {
     const midDays = (minDays + maxDays) / 2;
     const testTimeUTC = new Date(birthTimeUTC.getTime() - midDays * 86_400_000);
     const testSunLongitude = calculateHdAstroAtUtc(testTimeUTC).planets.sun.longitude;
-
-    let diff = testSunLongitude - targetLongitude;
-    if (diff > 180) diff -= 360;
-    if (diff < -180) diff += 360;
+    const diff = signedLongitudeDelta(testSunLongitude);
 
     if (diff > 0) minDays = midDays;
     else maxDays = midDays;
@@ -1072,11 +1130,37 @@ function calculateHumanDesignInternal(birthData: {
   const actualArc = normalizeHdLongitude(
     birthSunLongitude - unconsciousSunLongitude,
   );
+  const rawArcResidual = Math.abs(actualArc - DESIGN_SOLAR_ARC);
+  const angularResidualDegrees = Math.min(
+    rawArcResidual,
+    360 - rawArcResidual,
+  );
+  const angularToleranceDegrees = 0.001;
+
+  // A converged day-window is not enough on its own: promotion requires the
+  // astronomy result to actually land on the configured solar arc.
+  if (
+    !Number.isFinite(angularResidualDegrees) ||
+    angularResidualDegrees > angularToleranceDegrees
+  ) {
+    return {
+      result: {
+        status: 'unresolved',
+        reason: 'design_solar_arc_unresolved',
+      },
+    };
+  }
 
   // Store solar arc forensics for evidence receipt
   const solarArcForensics = {
     configuredSolarArc: DESIGN_SOLAR_ARC,
     actualSolarArc: actualArc,
+    angularResidualDegrees,
+    angularToleranceDegrees,
+    bracketMinimumDays,
+    bracketMaximumDays,
+    bracketMinimumSignedDeltaDegrees,
+    bracketMaximumSignedDeltaDegrees,
     iterationCount: iteration,
     finalSearchWindowDays,
     finalToleranceDays,
@@ -1254,15 +1338,20 @@ export function calculateHumanDesign(birthData: {
 export function getHumanDesignInterpretation(hdData: HumanDesignData): string {
   const { type, strategy, authority, profile } = hdData;
 
-  const typeDescriptions = {
-    "Manifestor": "You are here to initiate and impact others. Your aura is closed and repelling, designed to make things happen without waiting for others.",
-    "Generator": "You are here to respond and build. Your life force energy is sustainable when you're doing what you love and responding to what comes to you.",
-    "Manifesting Generator": "You are here to respond and then inform. You have the energy to manifest quickly but must wait to respond before acting.",
-    "Projector": "You are here to guide and manage others. Your aura is focused and penetrating, designed to see deeply into others and systems.",
-    "Reflector": "You are here to reflect the health of your community. Your completely open aura samples and reflects the energy around you."
+  const typeDescriptions: Record<string, string> = {
+    "Manifestor": "Human Design tradition associates Manifestor with initiation and informing before action.",
+    "Generator": "Human Design tradition associates Generator with responding before committing energy.",
+    "Manifesting Generator": "Human Design tradition associates Manifesting Generator with responding, then informing as action develops.",
+    "Projector": "Human Design tradition associates Projector with recognition, invitation, and guidance themes.",
+    "Reflector": "Human Design tradition associates Reflector with lunar-cycle timing and environmental reflection themes.",
   };
 
-  return `As a ${type}, ${typeDescriptions[type as keyof typeof typeDescriptions] || typeDescriptions.Generator} Your strategy is "${strategy}" and your authority is "${authority}". Your profile ${profile} indicates your life theme and how you interact with the world. This combination creates your unique energetic blueprint for navigating life authentically.`;
+  const description = typeDescriptions[type];
+  if (!description) {
+    throw new RangeError(`Unsupported Human Design type for interpretation: ${type}`);
+  }
+
+  return `Calculated Human Design labels: Type ${type}; Strategy "${strategy}"; Authority "${authority}"; Profile ${profile}. ${description} The strategy, authority, profile, aura, and purpose language belong to the Human Design interpretive framework; they are not measured personality traits, biological energy states, destiny, or proof of how you must make decisions.`;
 }
 
 export function calculateHumanDesignWithEvidence(birthData: {
@@ -1511,6 +1600,10 @@ export function calculateHumanDesignWithEvidence(birthData: {
           ...(forensics ? [
             `configured_solar_arc_${forensics.configuredSolarArc}`,
             `actual_solar_arc_${forensics.actualSolarArc.toFixed(3)}`,
+            `solar_arc_residual_${forensics.angularResidualDegrees.toFixed(6)}`,
+            `solar_arc_tolerance_${forensics.angularToleranceDegrees.toFixed(6)}`,
+            `solar_arc_bracket_min_delta_${forensics.bracketMinimumSignedDeltaDegrees.toFixed(6)}`,
+            `solar_arc_bracket_max_delta_${forensics.bracketMaximumSignedDeltaDegrees.toFixed(6)}`,
             `iteration_count_${forensics.iterationCount}`,
             `timezone_resolution_source_${forensics.timezoneResolutionSource}`,
           ] : []),
@@ -1542,6 +1635,12 @@ export function calculateHumanDesignWithEvidence(birthData: {
           solar_arc_receipt: {
             configuredSolarArc: forensics.configuredSolarArc,
             actualSolarArc: forensics.actualSolarArc,
+            angularResidualDegrees: forensics.angularResidualDegrees,
+            angularToleranceDegrees: forensics.angularToleranceDegrees,
+            bracketMinimumDays: forensics.bracketMinimumDays,
+            bracketMaximumDays: forensics.bracketMaximumDays,
+            bracketMinimumSignedDeltaDegrees: forensics.bracketMinimumSignedDeltaDegrees,
+            bracketMaximumSignedDeltaDegrees: forensics.bracketMaximumSignedDeltaDegrees,
             iterationCount: forensics.iterationCount,
             finalSearchWindowDays: forensics.finalSearchWindowDays,
             finalToleranceDays: forensics.finalToleranceDays,

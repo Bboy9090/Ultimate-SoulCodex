@@ -211,7 +211,7 @@ test("a sign disagreement leaves the candidate withheld while independent matche
 
   assert.equal(result.sun.verificationStatus, "pending_independent_verification");
   assert.equal(result.sun.sign, null);
-  assert.equal(result.sun.verificationFailure?.reason, "sign_disagreement");
+  assert.equal(result.sun.verificationFailure?.reason, "sign_longitude_mismatch");
   assert.equal(result.moon.verificationStatus, "verified");
   assert.ok(result.moon.sign);
   assert.equal(result.rising.verificationStatus, "verified");

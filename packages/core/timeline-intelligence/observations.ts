@@ -1,55 +1,59 @@
-import type { Match, Divergence, TimelineIntelligenceSummary, TimelineConfidenceLevel } from "./types.js";
+import type { Match, Divergence } from "./types.js";
 
 export function generateObservations(
   matches: Match[],
   divergences: Divergence[],
   alignmentScore: number,
-  sampleSize: number
+  sampleSize: number,
 ): string[] {
   const observations: string[] = [];
 
   if (sampleSize === 0) {
-    observations.push("No logged data to compare yet. Log at least 7 Daily Pulse entries to begin Timeline Intelligence.");
+    observations.push(
+      "No logged data to compare yet. Log at least 7 Daily Pulse entries to begin Timeline Intelligence.",
+    );
     return observations;
   }
 
-  // Overall alignment observation
-  const alignmentPct = Math.round(alignmentScore * 100);
-  if (alignmentScore >= 0.7) {
+  const comparisonCount = matches.length + divergences.length;
+  if (comparisonCount === 0) {
     observations.push(
-      `System signals and lived data aligned on ${matches.length} of ${matches.length + divergences.length} comparisons (${alignmentPct}%).`
-    );
-  } else if (alignmentScore >= 0.5) {
-    observations.push(
-      `Moderate alignment: system signals corresponded with ${alignmentPct}% of the comparisons.`
+      "No supported signal-to-lived-data comparison is available for the current inputs. Logged data is retained, but no match or divergence claim is made.",
     );
   } else {
-    observations.push(
-      `System signals differed from lived data on ${divergences.length} of ${matches.length + divergences.length} comparisons.`
-    );
+    const alignmentPct = Math.round(alignmentScore * 100);
+
+    if (alignmentScore >= 0.7) {
+      observations.push(
+        `Modeled signals corresponded with logged data on ${matches.length} of ${comparisonCount} supported comparisons (aggregate correspondence ${alignmentPct}%).`,
+      );
+    } else if (alignmentScore >= 0.5) {
+      observations.push(
+        `Mixed correspondence: the supported comparison rules produced an aggregate score of ${alignmentPct}% across ${comparisonCount} comparisons.`,
+      );
+    } else {
+      observations.push(
+        `Modeled signals differed from logged data on ${divergences.length} of ${comparisonCount} supported comparisons.`,
+      );
+    }
   }
 
-  // Match observations
-  if (matches.length > 0) {
-    const matchExamples = matches.slice(0, 2);
-    matchExamples.forEach((m) => {
-      observations.push(`✓ ${m.description}`);
-    });
+  for (const match of matches.slice(0, 2)) {
+    observations.push(`✓ ${match.description}`);
   }
 
-  // Divergence observations
-  if (divergences.length > 0) {
-    const divergenceExamples = divergences.slice(0, 2);
-    divergenceExamples.forEach((d) => {
-      observations.push(`○ ${d.description}`);
-    });
+  for (const divergence of divergences.slice(0, 2)) {
+    observations.push(`○ ${divergence.description}`);
   }
 
-  // Observation-window caveat
   if (sampleSize < 14) {
-    observations.push("Note: Early data collection. Patterns become clearer with 14+ entries.");
+    observations.push(
+      "Note: this is an early observation window. More entries increase coverage, not certainty.",
+    );
   } else if (sampleSize >= 30) {
-    observations.push("The 30-entry analysis window is filled. This increases coverage; it does not establish correctness or causation.");
+    observations.push(
+      "The 30-entry analysis window is filled. This increases coverage; it does not establish correctness, causation, or predictive accuracy.",
+    );
   }
 
   return observations;
@@ -59,20 +63,25 @@ export function generateNextSuggestion(
   matches: Match[],
   divergences: Divergence[],
   alignmentScore: number,
-  sampleSize: number
+  sampleSize: number,
 ): string | null {
   if (sampleSize < 7) {
     return null;
   }
 
+  const comparisonCount = matches.length + divergences.length;
+  if (comparisonCount === 0) {
+    return "Continue logging. The current symbolic signals do not yet have a supported comparison rule for the available lived metrics.";
+  }
+
   if (alignmentScore >= 0.7) {
-    return "Systems and lived experience are strongly aligned. Continue daily logging to confirm this pattern.";
+    return "The modeled signals and logged metrics corresponded in this window. Keep tracking to see whether that correspondence persists.";
   }
 
   if (divergences.length > 0) {
     const firstDivergence = divergences[0];
-    return `Track closely: ${firstDivergence.systemSignal.label} differed from your logged experience. Watch this over the next 14 days.`;
+    return `Keep observing: ${firstDivergence.systemSignal.label} differed from the logged metrics under its predefined comparison rule. See whether that difference persists over the next 14 days.`;
   }
 
-  return "Continue logging to build stronger signal. Patterns need consistent data to confirm.";
+  return "Continue logging to expand the observation window. More entries can show whether the current correspondence pattern persists.";
 }

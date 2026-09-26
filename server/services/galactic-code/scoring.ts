@@ -3,7 +3,7 @@
  *
  * Score 10 axes (0-100) based on weighted evidence from:
  * - Astrology (Sun, Moon, Rising, Mercury, Venus, Mars, aspects, elements, houses)
- * - Human Design (Type, Authority, Profile, centers, channels, cross)
+ * - Human Design (verified Type, Authority, Profile, and defined centers)
  * - Numerology (Life Path, Expression, Birthday, etc.)
  * - Behavior (traits, decision style, stress pattern, etc.)
  */
@@ -47,8 +47,6 @@ const HD_WEIGHTS = {
   authority: 7,
   profile: 6,
   definedCenter: 2,
-  channel: 3,
-  incarnationCross: 5,
 };
 
 const NUMEROLOGY_WEIGHTS = {
@@ -263,7 +261,7 @@ export function scoreAxes(normalized: NormalizedGalacticInput): GalacticAxisScor
     }
   }
 
-  // Human Design: verified type, authority, profile, centers, and channels all contribute.
+  // Human Design: only governed verified core fields with an approved semantic map contribute.
   if (normalized.humanDesign.type) {
     applyWeighted(
       axes,
@@ -296,9 +294,9 @@ export function scoreAxes(normalized: NormalizedGalacticInput): GalacticAxisScor
   for (const center of normalized.humanDesign.definedCenters) {
     applyWeighted(axes, CENTER_TO_AXES[center], HD_WEIGHTS.definedCenter, `Defined center: ${center}`);
   }
-  for (const channel of normalized.humanDesign.channels) {
-    applyBehaviorText(axes, channel, HD_WEIGHTS.channel, 'HD channel');
-  }
+  // Channels remain verified/inspectable Human Design evidence, but Soul Codex
+  // does not currently maintain an approved channel-to-axis semantic map.
+  // Do not route channel labels through generic behavioral keyword matching.
 
   // Numerology: all governed core values score independently instead of Life Path carrying the whole system.
   applyNumber(axes, normalized.numerology.lifePath, NUMEROLOGY_WEIGHTS.lifePath, 'Life Path');

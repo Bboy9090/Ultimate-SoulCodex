@@ -7,6 +7,17 @@ import {
   type DepthTensionAxis,
   type InterpretationEvidenceRef,
 } from "../depth-interpretation/index.js";
+import {
+  calcBirthday,
+  calcExpression,
+  calcLifePath,
+  calcMaturity,
+  calcPersonality,
+  calcSoulUrge,
+  numerologyNameComponentAvailability,
+} from "../compute/numerology.js";
+import { calcPersonalYear } from "../compute/personal-numbers.js";
+import { resolveOfflineSun } from "../compute/offline-sun.js";
 
 export interface OfflineBirthInput {
   name: string;
@@ -25,17 +36,17 @@ export interface OfflineAstrologyData {
   planets: Record<string, { sign: string; house: number; degree: number }>;
   houses: Array<{ sign: string; degree: number }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: { sign: string; house: number; degree: number };
-  southNode: { sign: string; house: number; degree: number };
-  chiron: { sign: string; house: number; degree: number };
+  northNode: { sign: string; house: number; degree: number } | null;
+  southNode: { sign: string; house: number; degree: number } | null;
+  chiron: { sign: string; house: number; degree: number } | null;
 }
 
 export interface OfflineNumerologyData {
   lifePath: number;
   birthday: number;
   expression: number;
-  soulUrge: number;
-  personality: number;
+  soulUrge: number | null;
+  personality: number | null;
   maturity: number;
   personalYear: number;
   interpretations: Record<string, string>;
@@ -48,7 +59,6 @@ export interface OfflineArchetypeData {
   shadows: string[];
   themes: string[];
   guidance: string;
-  tarotCards: { card1: string; card2: string; interpretation: string };
 }
 
 export interface OfflineCodexProfile {
@@ -180,33 +190,6 @@ function reduceNumber(input: number): number {
   return value;
 }
 
-function nameNumber(name: string, mode: "all" | "vowels" | "consonants"): number {
-  const vowels = new Set(["A", "E", "I", "O", "U"]);
-  const total = name.toUpperCase().split("").reduce((sum, character) => {
-    const code = character.charCodeAt(0) - 64;
-    if (code < 1 || code > 26) return sum;
-    const value = ((code - 1) % 9) + 1;
-    const isVowel = vowels.has(character);
-    if (mode === "vowels" && !isVowel) return sum;
-    if (mode === "consonants" && isVowel) return sum;
-    return sum + value;
-  }, 0);
-  return reduceNumber(total);
-}
-
-function calculateSunSign(month: number, day: number): string {
-  const boundaries: Array<[number, number, string]> = [
-    [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"],
-    [4, 20, "Taurus"], [5, 21, "Gemini"], [6, 21, "Cancer"],
-    [7, 23, "Leo"], [8, 23, "Virgo"], [9, 23, "Libra"],
-    [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
-  ];
-  const current = boundaries.find(([boundaryMonth]) => boundaryMonth === month);
-  const nextSign = current?.[2] ?? "Capricorn";
-  const previousSign = SIGNS[(SIGNS.indexOf(nextSign as (typeof SIGNS)[number]) + 11) % 12];
-  return day >= (current?.[1] ?? 22) ? nextSign : previousSign;
-}
-
 function stableHash(value: string): number {
   let hash = 2166136261;
   for (const character of value) {
@@ -217,60 +200,52 @@ function stableHash(value: string): number {
 }
 
 function calculateAstrology(input: OfflineBirthInput): OfflineAstrologyData {
-  const date = parseDate(input.birthDate);
-  const time = parseTime(input.birthTime);
-  const latitude = Number(input.latitude ?? 0);
-  const sunSign = calculateSunSign(date.month, date.day);
-  const dayIndex = Math.floor((Date.UTC(date.year, date.month - 1, date.day) - Date.UTC(date.year, 0, 0)) / 86_400_000);
-  const moonSign = SIGNS[(dayIndex + time.hours) % 12];
-  const risingSign = SIGNS[(Math.floor((time.hours * 60 + time.minutes) / 120) + Math.floor(latitude / 10) + 24) % 12];
-  const sunIndex = SIGNS.indexOf(sunSign as (typeof SIGNS)[number]);
-  const risingIndex = SIGNS.indexOf(risingSign);
-  const seed = stableHash(`${input.birthDate}|${input.birthTime ?? "unknown"}|${latitude}|${input.longitude ?? 0}`);
-  const planet = (offset: number, house: number, degree: number) => ({ sign: SIGNS[(sunIndex + offset) % 12], house, degree });
-  const planets = {
-    sun: { sign: sunSign, house: 1, degree: 15.5 },
-    moon: { sign: moonSign, house: 4, degree: 23.2 },
-    mercury: planet(1, 3, 8.7), venus: planet(2, 2, 19.3), mars: planet(3, 6, 12.8),
-    jupiter: planet(4, 9, 26.1), saturn: planet(5, 10, 4.9), uranus: planet(6, 11, 18.4),
-    neptune: planet(7, 12, 21.7), pluto: planet(8, 8, 14.2),
-  };
-  const houses = Array.from({ length: 12 }, (_, index) => ({
-    sign: SIGNS[(risingIndex + index) % 12],
-    degree: Number((((seed % 3000) / 100 + index * 30) % 360).toFixed(2)),
-  }));
-  const moonIndex = SIGNS.indexOf(moonSign);
-  const northNode = { sign: SIGNS[(moonIndex + 6) % 12], house: 5, degree: 11.3 };
+  const sun = resolveOfflineSun(input.birthDate, input.birthTime, input.timezone);
+
+  // Fail closed in offline mode. The Sun is retained only when real ephemeris
+  // math resolves it exactly or proves the sign stable across the local day.
+  // Every time-sensitive or otherwise ungoverned placement stays unresolved.
   return {
-    sunSign, moonSign, risingSign, planets, houses,
-    aspects: [
-      { planet1: "sun", planet2: "moon", aspect: "sextile", orb: 2.3 },
-      { planet1: "venus", planet2: "mars", aspect: "trine", orb: 1.8 },
-      { planet1: "jupiter", planet2: "saturn", aspect: "square", orb: 3.1 },
-    ],
-    northNode,
-    southNode: { sign: SIGNS[(SIGNS.indexOf(northNode.sign) + 6) % 12], house: 11, degree: 11.3 },
-    chiron: { sign: SIGNS[(sunIndex + 9) % 12], house: 7, degree: 16.8 },
+    sunSign: sun.status === "resolved" ? sun.sign : "",
+    moonSign: "",
+    risingSign: "",
+    planets: {},
+    houses: [],
+    aspects: [],
+    northNode: null,
+    southNode: null,
+    chiron: null,
   };
 }
 
 function calculateNumerology(input: OfflineBirthInput, currentYear: number): OfflineNumerologyData {
-  const { year, month, day } = parseDate(input.birthDate);
-  const lifePath = reduceNumber(day + month + year);
-  const birthday = reduceNumber(day);
-  const expression = nameNumber(input.name, "all");
-  const soulUrge = nameNumber(input.name, "vowels");
-  const personality = nameNumber(input.name, "consonants");
-  const maturity = reduceNumber(lifePath + expression);
-  const personalYear = reduceNumber(day + month + currentYear);
+  const availability = numerologyNameComponentAvailability(input.name);
+  const lifePath = calcLifePath(input.birthDate);
+  const birthday = calcBirthday(input.birthDate);
+  const expression = calcExpression(input.name);
+  const soulUrge = availability.vowelCount > 0 ? calcSoulUrge(input.name) : null;
+  const personality = availability.consonantCount > 0 ? calcPersonality(input.name) : null;
+  const maturity = calcMaturity(input.birthDate, input.name);
+  const personalYear = calcPersonalYear(input.birthDate, currentYear);
+
   return {
-    lifePath, birthday, expression, soulUrge, personality, maturity, personalYear,
+    lifePath,
+    birthday,
+    expression,
+    soulUrge,
+    personality,
+    maturity,
+    personalYear,
     interpretations: {
       lifePath: `Life Path ${lifePath}: ${LIFE_PATH_TRAITS[lifePath]?.theme ?? "an individual growth pattern"}.`,
       birthday: `Birthday ${birthday}: deterministic reduction of the calendar day, used here only as symbolic reflection.`,
       expression: `Expression ${expression}: a symbolic description of how talents may be directed.`,
-      soulUrge: `Soul Urge ${soulUrge}: a symbolic description of inner motivation.`,
-      personality: `Personality ${personality}: a symbolic description of first impressions.`,
+      soulUrge: soulUrge === null
+        ? "Soul Urge is unresolved because the normalized name contains no A/E/I/O/U vowels under the active Y-as-consonant policy."
+        : `Soul Urge ${soulUrge}: a symbolic description of inner motivation.`,
+      personality: personality === null
+        ? "Personality Number is unresolved because the normalized name contains no consonants under the active numerology policy."
+        : `Personality ${personality}: a symbolic description of first impressions.`,
       maturity: `Maturity ${maturity}: deterministic combination of Life Path and Expression, used here only as symbolic reflection.`,
       personalYear: `Personal Year ${personalYear}: a reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
@@ -284,77 +259,67 @@ function elementForSign(sign: string): string {
   return "water";
 }
 
-function calculateTarotCards(birthDate: string): OfflineArchetypeData["tarotCards"] {
-  const { year, month, day } = parseDate(birthDate);
-  const cards: Array<[string, string, string]> = [
-    ["The Fool", "The World", "Potential develops through completed cycles."],
-    ["The Magician", "The High Priestess", "Directed will is balanced by reflection."],
-    ["The Empress", "The Emperor", "Creative growth benefits from structure."],
-    ["The Hierophant", "The Lovers", "Inherited values meet conscious choice."],
-    ["The Chariot", "Strength", "Direction becomes sustainable through self-command."],
-    ["The Hermit", "Wheel of Fortune", "Inner guidance helps navigate changing cycles."],
-    ["Justice", "The Hanged Man", "Balance may require a deliberate change in perspective."],
-    ["Death", "Temperance", "Transformation becomes useful through integration."],
-    ["The Devil", "The Tower", "Attachment is challenged by disruptive clarity."],
-  ];
-  const selected = cards[reduceNumber(day + month + year) % cards.length];
-  return { card1: selected[0], card2: selected[1], interpretation: selected[2] };
-}
-
-function synthesizeArchetype(astrology: OfflineAstrologyData, numerology: OfflineNumerologyData, birthDate: string): OfflineArchetypeData {
-  const sign = SIGN_TRAITS[astrology.sunSign];
+function synthesizeArchetype(astrology: OfflineAstrologyData, numerology: OfflineNumerologyData): OfflineArchetypeData {
+  const sign = astrology.sunSign ? SIGN_TRAITS[astrology.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerology.lifePath];
-  if (!sign || !path) {
-    throw new Error("Supported Sun and Life Path are required for local archetype synthesis.");
+  if (!path) {
+    throw new Error("Supported Life Path is required for local archetype synthesis.");
   }
 
   const expression = LIFE_PATH_TRAITS[numerology.expression];
-  const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge];
+  const soulUrgeNumber = numerology.soulUrge;
+  const soulUrge = soulUrgeNumber === null ? null : LIFE_PATH_TRAITS[soulUrgeNumber];
   const fingerprint = stableHash([
-    astrology.sunSign,
+    astrology.sunSign || "sun-unresolved",
     numerology.lifePath,
     numerology.expression,
-    numerology.soulUrge,
-    numerology.personality,
+    soulUrgeNumber ?? "soul-unresolved",
+    numerology.personality ?? "personality-unresolved",
   ].join("|")).toString(16).padStart(8, "0").slice(0, 6).toUpperCase();
 
-  const title = astrology.sunSign + " × Life Path " + numerology.lifePath + " · " + fingerprint;
+  const title = (astrology.sunSign ? astrology.sunSign + " × " : "") +
+    "Life Path " + numerology.lifePath + " · " + fingerprint;
   const strengths = [...new Set([
-    sign.gift,
+    sign?.gift,
     path.drive,
     expression?.drive,
     soulUrge?.drive,
   ].filter((value): value is string => Boolean(value)))];
   const shadows = [...new Set([
-    sign.shadow,
+    sign?.shadow,
     path.shadow,
     expression?.shadow,
     soulUrge?.shadow,
   ].filter((value): value is string => Boolean(value)))];
   const themes = [
-    astrology.sunSign,
-    elementForSign(astrology.sunSign),
+    ...(astrology.sunSign ? [
+      astrology.sunSign,
+      elementForSign(astrology.sunSign),
+    ] : []),
     "Life Path " + numerology.lifePath,
     ...(expression ? ["Expression " + numerology.expression] : []),
-    ...(soulUrge ? ["Soul Urge " + numerology.soulUrge] : []),
-  ];
+    ...(soulUrge ? ["Soul Urge " + soulUrgeNumber] : []),
+  ].filter((value): value is string => Boolean(value));
 
   return {
     title,
     description:
-      "Local symbolic synthesis combines " + astrology.sunSign + " Sun themes with Life Path " +
-      numerology.lifePath +
+      "Local symbolic synthesis uses " +
+      (astrology.sunSign ? astrology.sunSign + " Sun themes plus " : "") +
+      "Life Path " + numerology.lifePath +
       (expression ? ", Expression " + numerology.expression : "") +
-      (soulUrge ? ", and Soul Urge " + numerology.soulUrge : "") +
-      ". No preset archetype template is substituted for unsupported inputs.",
+      (soulUrge ? ", and Soul Urge " + soulUrgeNumber : "") +
+      (astrology.sunSign
+        ? ". The Sun placement is a local ephemeris calculation and has not been independently verified."
+        : ". Sun-sign interpretation is withheld because the local birth day crosses a solar-sign boundary or cannot be resolved safely.") +
+      " No preset archetype template is substituted for unsupported inputs.",
     strengths,
     shadows,
     themes,
-    guidance: [sign.action, path.action, expression?.action, soulUrge?.action]
+    guidance: [sign?.action, path.action, expression?.action, soulUrge?.action]
       .filter((value): value is string => Boolean(value))
       .slice(0, 3)
       .join(" "),
-    tarotCards: calculateTarotCards(birthDate),
   };
 }
 
@@ -372,25 +337,46 @@ function makeEvidence(input: Omit<InterpretationEvidenceRef, "provenanceStatus" 
 
 function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAstrologyData, numerology: OfflineNumerologyData, archetypeData: OfflineArchetypeData, generatedAt: string): DepthInterpretationV1 {
   const birthTimeStatus: BirthTimeStatus = parseTime(input.birthTime).known ? "known" : "unknown";
-  const sign = SIGN_TRAITS[astrology.sunSign];
+  const sign = astrology.sunSign ? SIGN_TRAITS[astrology.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerology.lifePath];
   if (!path) throw new Error("Unsupported Life Path cannot influence offline synthesis.");
   const expression = LIFE_PATH_TRAITS[numerology.expression] ?? null;
-  const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge] ?? null;
+  const soulUrgeNumber = numerology.soulUrge;
+  const soulUrge = soulUrgeNumber === null ? null : LIFE_PATH_TRAITS[soulUrgeNumber] ?? null;
+
   const seeds: DepthSynthesisSeed[] = [
-    {
-      evidence: makeEvidence({ id: "offline.astrology.sun", system: "astrology", field: "sunSign", value: astrology.sunSign, confidence: "moderate", timeSensitivity: "none", notes: ["Sun-sign boundary calculation is local and deterministic."] }),
-      label: `${astrology.sunSign} Sun symbolism`, priority: 100, claimKind: "derived",
+    ...(sign ? [{
+      evidence: makeEvidence({
+        id: "offline.astrology.sun",
+        system: "astrology",
+        field: "sunSign",
+        value: astrology.sunSign,
+        confidence: "moderate",
+        timeSensitivity: "none",
+        notes: [
+          "Calculated locally with astronomy-engine.",
+          "The placement is not independently verified in offline mode.",
+        ],
+      }),
+      label: `${astrology.sunSign} Sun symbolism`,
+      priority: 100,
+      claimKind: "derived" as const,
       facets: {
-        claritySummary: `A central pattern emphasizes ${sign.drive}.`, visiblePattern: `Others may first notice ${sign.gift}.`,
-        hiddenNeed: `The pattern may be trying to preserve conditions for ${sign.drive}.`, gift: `The constructive expression is ${sign.gift}.`,
-        shadow: `When overused, the same pattern can become ${sign.shadow}.`, relationshipImpact: `In relationships, the symbolic pattern ${sign.relationship}.`,
+        claritySummary: `A central pattern emphasizes ${sign.drive}.`,
+        visiblePattern: `Others may first notice ${sign.gift}.`,
+        hiddenNeed: `The pattern may be trying to preserve conditions for ${sign.drive}.`,
+        gift: `The constructive expression is ${sign.gift}.`,
+        shadow: `When overused, the same pattern can become ${sign.shadow}.`,
+        relationshipImpact: `In relationships, the symbolic pattern ${sign.relationship}.`,
         boundaryOrRepair: sign.action,
         action: `Choose one situation to test this pattern this week. ${sign.action}`,
       },
       tensionAxes: sign.axes,
-      limitations: ["Sun-sign symbolism is interpretive and does not establish fixed personality."],
-    },
+      limitations: [
+        "Sun longitude is locally calculated but not independently verified.",
+        "Sun-sign symbolism is interpretive and does not establish fixed personality.",
+      ],
+    }] : []),
     {
       evidence: makeEvidence({ id: "offline.numerology.life-path", system: "numerology", field: "lifePath", value: numerology.lifePath, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated locally from the entered calendar date."] }),
       label: `Life Path ${numerology.lifePath} symbolism`, priority: 95, claimKind: "derived",
@@ -414,11 +400,11 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       tensionAxes: expression.axes,
       limitations: ["The Expression number is deterministic from the supplied name; its personality meaning remains symbolic interpretation."],
     }] : []),
-    ...(soulUrge ? [{
-      evidence: makeEvidence({ id: "offline.numerology.soul-urge", system: "numerology", field: "soulUrge", value: numerology.soulUrge, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from vowels in the supplied name."] }),
-      label: "Soul Urge " + numerology.soulUrge + " " + (NUMBER_LABELS[numerology.soulUrge] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
+    ...(soulUrge && soulUrgeNumber !== null ? [{
+      evidence: makeEvidence({ id: "offline.numerology.soul-urge", system: "numerology", field: "soulUrge", value: soulUrgeNumber, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from vowels in the supplied name."] }),
+      label: "Soul Urge " + soulUrgeNumber + " " + (NUMBER_LABELS[soulUrgeNumber] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
       facets: {
-        hiddenNeed: "Soul Urge " + numerology.soulUrge + " adds " + soulUrge.drive + " as a symbolic inner-motivation theme.",
+        hiddenNeed: "Soul Urge " + soulUrgeNumber + " adds " + soulUrge.drive + " as a symbolic inner-motivation theme.",
         protectiveFunction: "Protection may become organized around preserving room for " + soulUrge.drive + ".",
         relationshipImpact: "The Soul Urge layer may make " + soulUrge.drive + " especially noticeable around trust and belonging.",
         shadow: "When overused, the Soul Urge theme may repeat " + soulUrge.shadow + ".",
@@ -427,23 +413,25 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       limitations: ["The Soul Urge number is deterministic from the supplied name; its motivation meaning remains symbolic interpretation."],
     }] : []),
     {
-      evidence: makeEvidence({ id: "offline.archetype.primary", system: "system", field: "archetype", value: archetypeData.title, confidence: "moderate", timeSensitivity: "none", notes: ["Synthesized from the local astrology and numerology layers."] }),
+      evidence: makeEvidence({ id: "offline.archetype.primary", system: "system", field: "archetype", value: archetypeData.title, confidence: "moderate", timeSensitivity: "none", notes: ["Synthesized only from locally supported inputs."] }),
       label: `${archetypeData.title} synthesis`, priority: 85, claimKind: "inferred",
       facets: {
         visiblePattern: archetypeData.description, gift: archetypeData.strengths.join(", "),
         commonMisreading: `The strengths of ${archetypeData.title} may be judged only by their shadow form: ${archetypeData.shadows.join(", ")}.`,
         boundaryOrRepair: archetypeData.guidance,
       },
-      tensionAxes: [...sign.axes, ...path.axes],
+      tensionAxes: [...(sign?.axes ?? []), ...path.axes],
       limitations: ["The archetype combines symbolic sources; overlap is supporting context, not independent proof."],
     },
   ];
+
   const interpretation = synthesizeDepthInterpretationV1({
     version: 1,
     generatedAt,
     birthTimeStatus,
     seeds,
     missingData: [
+      ...(!sign ? ["Sun sign is unresolved locally because the birth day crosses a solar-sign boundary or the local time cannot be resolved safely."] : []),
       ...(birthTimeStatus === "unknown" ? ["Exact birth time is unknown; Rising sign, houses, angles, Moon degree, and time-sensitive Human Design claims are unavailable."] : []),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
       "Human Design core is withheld from this offline profile until its qualified engine result is explicitly reconciled.",
@@ -470,9 +458,9 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
   const currentYear = options.currentYear ?? new Date(generatedAt).getUTCFullYear();
   const astrologyData = calculateAstrology(input);
   const numerologyData = calculateNumerology(input, currentYear);
-  const archetypeData = synthesizeArchetype(astrologyData, numerologyData, input.birthDate);
+  const archetypeData = synthesizeArchetype(astrologyData, numerologyData);
   const depthInterpretation = buildDepthInterpretation(input, astrologyData, numerologyData, archetypeData, generatedAt);
-  const sign = SIGN_TRAITS[astrologyData.sunSign];
+  const sign = astrologyData.sunSign ? SIGN_TRAITS[astrologyData.sunSign] ?? null : null;
   const path = LIFE_PATH_TRAITS[numerologyData.lifePath];
   if (!path) throw new Error("Unsupported Life Path cannot influence offline profile prose.");
   return {
@@ -482,8 +470,8 @@ export function generateOfflineCodexProfile(input: OfflineBirthInput, options: O
     latitude: input.latitude === undefined ? null : String(input.latitude),
     longitude: input.longitude === undefined ? null : String(input.longitude),
     isPremium: false, astrologyData, numerologyData, personalityData: {}, archetypeData,
-    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign} symbolism, Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}, Soul Urge ${numerologyData.soulUrge}, and the ${archetypeData.title} synthesis. The strongest supported themes are ${sign.drive} and ${path.drive}. These are reflective frameworks, not fixed identity or guaranteed biography.`,
-    dailyGuidance: `${path.action} ${sign.action}`,
+    biography: `${input.name.trim()}'s local Codex combines ${astrologyData.sunSign ? astrologyData.sunSign + " Sun symbolism, " : ""}Life Path ${numerologyData.lifePath}, Expression ${numerologyData.expression}${numerologyData.soulUrge === null ? "" : `, Soul Urge ${numerologyData.soulUrge}`}, and the ${archetypeData.title} synthesis. ${sign ? "Supported Sun and numerology themes include " + sign.drive + " and " + path.drive + "." : "The Sun layer is withheld because it cannot be resolved safely from the available local birth data; numerology remains available."} These are reflective frameworks, not fixed identity or guaranteed biography.`,
+    dailyGuidance: [path.action, sign?.action].filter(Boolean).join(" "),
     depthInterpretation, localOnly: true, syncStatus: "local-only",
     createdAt: generatedAt, updatedAt: generatedAt,
   };

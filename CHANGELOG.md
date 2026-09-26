@@ -4,6 +4,23 @@ All notable changes to Soul Codex are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Current production-status correction — 2026-09-26
+
+The v1.0.0 notes below are preserved as a historical record of what the project described at that time. They are **not** the current production system contract.
+
+Current authority is `shared/system-registry.ts`, mirrored in `governance/SYSTEM_REGISTRY.md`. In particular:
+
+- Soul Codex does **not** currently claim that 35+ systems are production-governed or active in every reading.
+- Stable identity synthesis is limited to governed, evidence-qualified natal astrology, deterministic numerology core, and verified Human Design core.
+- MBTI / Enneagram are explicit user-assessment context only; they are not inferred from a birth chart.
+- Gene Keys, Vedic astrology / Nakshatras, Tarot birth cards, I Ching, Runes, Chinese astrology, Mayan systems, chakras, sacred geometry, fixed stars, astrocartography, and other quarantined systems do not enter current production synthesis unless and until their own contracts are promoted.
+- Unknown birth time is never silently replaced with noon. Time-sensitive claims remain unresolved or visibly degraded.
+- Human Design core must carry its approved verification receipt and independent-source evidence before it may influence verified synthesis.
+- Current Compatibility uses the governed evidence-aware router rather than the historical five-pillar stack.
+- Legacy share-link code is not mounted by the production server while its privacy contract remains quarantined.
+
+Historical bullets below may therefore describe retired, experimental, or superseded behavior. They should not be used to infer current product capability.
+
 ---
 
 ## [1.0.0] — 2026-03-07

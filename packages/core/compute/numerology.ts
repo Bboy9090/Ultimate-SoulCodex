@@ -9,7 +9,7 @@ export const NUMEROLOGY_POLICY = Object.freeze({
   vowels: 'AEIOU',
   yPolicy: 'consonant' as const,
   lifePathFormula: 'birth month + birth day + birth year, then digit-reduce while preserving 11/22/33',
-  nameNormalization: 'Unicode NFKD transliteration to A-Z before Pythagorean letter mapping',
+  nameNormalization: 'Latin-script NFKD normalization plus explicit supported character transliteration to A-Z before Pythagorean letter mapping',
 });
 
 export type NumerologyReduction = {
@@ -99,17 +99,50 @@ function getLetterValue(letter: string): number {
   return LETTER_VALUES[letter] ?? 0;
 }
 
-function sumNameLetters(fullName: string, include: (letter: string) => boolean): number {
-  return [...normalizeNumerologyName(fullName)]
-    .filter(include)
-    .reduce((total, letter) => total + getLetterValue(letter), 0);
+export function numerologyNameComponentAvailability(fullName: string): {
+  normalized: string;
+  letterCount: number;
+  vowelCount: number;
+  consonantCount: number;
+} {
+  const normalized = normalizeNumerologyName(fullName);
+  const letters = [...normalized];
+  const vowelCount = letters.filter((letter) => NUMEROLOGY_POLICY.vowels.includes(letter)).length;
+  return {
+    normalized,
+    letterCount: letters.length,
+    vowelCount,
+    consonantCount: letters.length - vowelCount,
+  };
+}
+
+function sumNameLetters(
+  fullName: string,
+  include: (letter: string) => boolean,
+  component: 'Expression' | 'Soul Urge' | 'Personality',
+): number {
+  const availability = numerologyNameComponentAvailability(fullName);
+  if (!availability.normalized) {
+    throw new RangeError(
+      'Name numerology requires at least one canonical A-Z letter after Latin transliteration',
+    );
+  }
+
+  const included = [...availability.normalized].filter(include);
+  if (included.length === 0) {
+    throw new RangeError(
+      `${component} is unresolved because the normalized name contains no eligible letters under the active numerology policy`,
+    );
+  }
+
+  return included.reduce((total, letter) => total + getLetterValue(letter), 0);
 }
 
 /**
  * Expression / Destiny Number: Pythagorean sum of every normalized name letter.
  */
 export function calcExpression(fullName: string): number {
-  return reduceToSingleDigit(sumNameLetters(fullName, () => true));
+  return reduceToSingleDigit(sumNameLetters(fullName, () => true, 'Expression'));
 }
 
 /**
@@ -118,14 +151,14 @@ export function calcExpression(fullName: string): number {
  */
 export function calcSoulUrge(fullName: string): number {
   return reduceToSingleDigit(
-    sumNameLetters(fullName, (letter) => NUMEROLOGY_POLICY.vowels.includes(letter)),
+    sumNameLetters(fullName, (letter) => NUMEROLOGY_POLICY.vowels.includes(letter), 'Soul Urge'),
   );
 }
 
 /** Personality Number: Pythagorean sum of normalized consonants. */
 export function calcPersonality(fullName: string): number {
   return reduceToSingleDigit(
-    sumNameLetters(fullName, (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter)),
+    sumNameLetters(fullName, (letter) => !NUMEROLOGY_POLICY.vowels.includes(letter), 'Personality'),
   );
 }
 
@@ -139,13 +172,14 @@ export function calcMaturity(dateISO: string, fullName: string): number {
  * This is calculation data only; interpretation belongs in the synthesis layer.
  */
 export function calcCoreNumerology(dateISO: string, fullName: string) {
+  const availability = numerologyNameComponentAvailability(fullName);
   return {
     engineVersion: NUMEROLOGY_ENGINE_VERSION,
     lifePath: calcLifePath(dateISO),
     birthday: calcBirthday(dateISO),
     expression: calcExpression(fullName),
-    soulUrge: calcSoulUrge(fullName),
-    personality: calcPersonality(fullName),
+    soulUrge: availability.vowelCount > 0 ? calcSoulUrge(fullName) : null,
+    personality: availability.consonantCount > 0 ? calcPersonality(fullName) : null,
     maturity: calcMaturity(dateISO, fullName),
   } as const;
 }

@@ -1,3 +1,11 @@
+import { canonicalExplicitZonedInstant, parseExplicitZonedInstant } from "./zoned-instant";
+import {
+  circularDegreesDelta,
+  degreeInTropicalSign,
+  distanceToNearestThirtyDegreeBoundary,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+} from "./angular-math";
 import { SiderealTime } from "./astronomy-engine-compat";
 
 export type AscendantSign =
@@ -69,23 +77,9 @@ export type AscendantVerificationResult =
         | "coordinate_mismatch"
         | "sign_disagreement"
         | "longitude_outside_tolerance"
+        | "sign_boundary_within_tolerance"
         | "calculation_failed";
     };
-
-const SIGNS: readonly AscendantSign[] = [
-  "Aries",
-  "Taurus",
-  "Gemini",
-  "Cancer",
-  "Leo",
-  "Virgo",
-  "Libra",
-  "Scorpio",
-  "Sagittarius",
-  "Capricorn",
-  "Aquarius",
-  "Pisces",
-];
 
 const CANDIDATE_ENGINE = "astronomy-engine@2.1.19-sidereal-time + IAU-2006-obliquity";
 const CANDIDATE_SOURCE =
@@ -112,26 +106,16 @@ function degrees(radiansValue: number): number {
   return (radiansValue * 180) / Math.PI;
 }
 
-function normalizeDegrees(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function circularDelta(left: number, right: number): number {
-  const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
-  return Math.min(raw, 360 - raw);
-}
-
-function signFromLongitude(longitude: number): AscendantSign {
-  return SIGNS[Math.floor(normalizeDegrees(longitude) / 30)];
-}
-
 function isValidInput(input: AscendantInput): boolean {
-  const timestamp = new Date(input.inputTimestamp);
+  const timestamp = parseExplicitZonedInstant(input.inputTimestamp);
+  if (!timestamp) {
+    return false;
+  }
   return (
     !Number.isNaN(timestamp.getTime()) &&
     Number.isFinite(input.latitude) &&
-    input.latitude >= -90 &&
-    input.latitude <= 90 &&
+    input.latitude > -90 &&
+    input.latitude < 90 &&
     Number.isFinite(input.longitude) &&
     input.longitude >= -180 &&
     input.longitude <= 180
@@ -231,11 +215,13 @@ function evidenceRecord(
   source: string,
 ): AscendantEvidenceRecord {
   const normalized = normalizeDegrees(longitudeDegrees);
+  const canonicalInputTimestamp = new Date(input.inputTimestamp).toISOString();
   return {
     ...input,
+    inputTimestamp: canonicalInputTimestamp,
     longitudeDegrees: normalized,
-    sign: signFromLongitude(normalized),
-    degreeInSign: normalized % 30,
+    sign: tropicalSignFromLongitude(normalized),
+    degreeInSign: degreeInTropicalSign(normalized),
     engine,
     source,
     calculatedAt: new Date().toISOString(),
@@ -422,7 +408,7 @@ export function verifyAscendant(
     };
   }
 
-  const longitudeDeltaDegrees = circularDelta(
+  const longitudeDeltaDegrees = circularDegreesDelta(
     candidate.longitudeDegrees,
     reference.longitudeDegrees,
   );
@@ -450,6 +436,23 @@ export function verifyAscendant(
       candidate,
       reference,
       reason: "longitude_outside_tolerance",
+    };
+  }
+
+  const boundaryDistance = Math.min(
+    distanceToNearestThirtyDegreeBoundary(candidate.longitudeDegrees),
+    distanceToNearestThirtyDegreeBoundary(reference.longitudeDegrees),
+  );
+  if (boundaryDistance <= policy.maximumLongitudeDeltaDegrees) {
+    return {
+      status: "rejected",
+      sign: null,
+      longitudeDegrees: null,
+      degreeInSign: null,
+      longitudeDeltaDegrees,
+      candidate,
+      reference,
+      reason: "sign_boundary_within_tolerance",
     };
   }
 

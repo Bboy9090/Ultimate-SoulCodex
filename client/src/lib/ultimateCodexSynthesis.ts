@@ -1,3 +1,12 @@
+import {
+  MAJOR_ASPECT_POLICY_ID,
+  circularDegreesDelta,
+  degreeInTropicalSign,
+  isGovernedMajorAspect,
+  isPersonalNumerologyValue,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+} from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 
 type AnyRecord = Record<string, any>;
@@ -6,6 +15,12 @@ const PLANETS = [
   "sun", "moon", "mercury", "venus", "mars",
   "jupiter", "saturn", "uranus", "neptune", "pluto",
 ] as const;
+
+const ASPECT_BODIES = [...PLANETS, "chiron"] as const;
+type AspectBodyKey = (typeof ASPECT_BODIES)[number];
+const ASPECT_BODY_ORDER = new Map(
+  ASPECT_BODIES.map((body, index) => [body, index] as const),
+);
 
 const PLANET_LABELS: Record<(typeof PLANETS)[number], string> = {
   sun: "Sun",
@@ -152,6 +167,101 @@ function validSign(value: unknown): value is keyof typeof SIGN_META {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(SIGN_META, value);
 }
 
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasVerifiedPlacementEvidence(
+  placement: AnyRecord | undefined,
+): placement is AnyRecord & { sign: keyof typeof SIGN_META } {
+  if (placement?.verificationStatus !== "verified" || !validSign(placement.sign)) {
+    return false;
+  }
+  const evidence = placement.provenance ?? placement.evidence;
+  return Boolean(
+    nonEmptyString(evidence?.source) &&
+    nonEmptyString(evidence?.engine) &&
+    nonEmptyString(evidence?.calculatedAt),
+  );
+}
+
+function hasGovernedDerivedPoint(
+  point: AnyRecord | undefined,
+  policyId: string,
+): boolean {
+  const longitude = placementLongitude(point);
+  const degree = finiteNumber(point?.degree);
+  return Boolean(
+    point?.verificationStatus === "verified" &&
+    validSign(point?.sign) &&
+    longitude !== null &&
+    tropicalSignFromLongitude(longitude) === point?.sign &&
+    degree !== null &&
+    degree >= 0 &&
+    degree < 30 &&
+    Math.abs(degree - degreeInTropicalSign(longitude)) < 0.01 &&
+    point?.policyId === policyId &&
+    nonEmptyString(point?.evidenceArtifactId),
+  );
+}
+
+function hasGovernedHouse(row: AnyRecord | undefined): boolean {
+  const longitude = normalizedLongitude(row?.longitude);
+  const degree = finiteNumber(row?.degree);
+  return Boolean(
+    row?.verificationStatus === "verified" &&
+    validHouse(row?.house) !== null &&
+    validSign(row?.sign) &&
+    longitude !== null &&
+    tropicalSignFromLongitude(longitude) === row?.sign &&
+    degree !== null &&
+    degree >= 0 &&
+    degree < 30 &&
+    Math.abs(degree - degreeInTropicalSign(longitude)) < 0.01 &&
+    row?.policyId === "ASTRO-EQUAL-HOUSE-v1" &&
+    nonEmptyString(row?.evidenceArtifactId),
+  );
+}
+
+function hasGovernedAspect(row: AnyRecord | undefined): boolean {
+  return Boolean(
+    typeof row?.planet1 === "string" &&
+    typeof row?.planet2 === "string" &&
+    isGovernedMajorAspect(row?.aspect, row?.orb) &&
+    row?.policyId === MAJOR_ASPECT_POLICY_ID,
+  );
+}
+
+function canonicalAspectBody(value: unknown): AspectBodyKey | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  return ASPECT_BODY_ORDER.has(normalized as AspectBodyKey)
+    ? normalized as AspectBodyKey
+    : null;
+}
+
+function canonicalAspectBodies(
+  left: AspectBodyKey,
+  right: AspectBodyKey,
+): [AspectBodyKey, AspectBodyKey] {
+  const leftRank = ASPECT_BODY_ORDER.get(left) ?? Number.MAX_SAFE_INTEGER;
+  const rightRank = ASPECT_BODY_ORDER.get(right) ?? Number.MAX_SAFE_INTEGER;
+  return leftRank <= rightRank ? [left, right] : [right, left];
+}
+
+function roundedHundredth(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function hasVerifiedHumanDesignTrust(hd: AnyRecord): boolean {
+  return Boolean(
+    hd?.status === "verified" &&
+    nonEmptyString(hd?.verificationReceiptId) &&
+    nonEmptyString(hd?.independentSource) &&
+    nonEmptyString(hd?.verifiedAt),
+  );
+}
+
 function finiteNumber(value: unknown): number | null {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
@@ -164,8 +274,7 @@ function validHouse(value: unknown): number | null {
 
 function normalizedLongitude(value: unknown): number | null {
   const n = finiteNumber(value);
-  if (n === null) return null;
-  return ((n % 360) + 360) % 360;
+  return n === null ? null : normalizeDegrees(n);
 }
 
 function placementLongitude(placement: AnyRecord | undefined): number | null {
@@ -178,14 +287,18 @@ function placementLongitude(placement: AnyRecord | undefined): number | null {
 
 function placementDegree(placement: AnyRecord | undefined): number | null {
   const direct = finiteNumber(placement?.degree);
-  if (direct !== null) return Math.round(direct * 100) / 100;
+  if (direct !== null && direct >= 0 && direct < 30) {
+    return Math.round(direct * 100) / 100;
+  }
   const longitude = placementLongitude(placement);
-  return longitude === null ? null : Math.round((longitude % 30) * 100) / 100;
+  return longitude === null
+    ? null
+    : Math.round(degreeInTropicalSign(longitude) * 100) / 100;
 }
 
-function numericValue(value: unknown): number | null {
+function governedNumerologyValue(value: unknown): number | null {
   const n = Number(value);
-  return Number.isInteger(n) ? n : null;
+  return Number.isInteger(n) && isPersonalNumerologyValue(n) ? n : null;
 }
 
 function normalizeHdCenters(hd: AnyRecord): { defined: string[]; undefined: string[] } {
@@ -204,6 +317,56 @@ function normalizeHdCenters(hd: AnyRecord): { defined: string[]; undefined: stri
     else if ((value as AnyRecord)?.defined === false) undefinedCenters.push(name);
   }
   return { defined, undefined: undefinedCenters };
+}
+
+function canonicalGateNumber(value: unknown): number | null {
+  const gate = Number(value);
+  return Number.isInteger(gate) && gate >= 1 && gate <= 64 ? gate : null;
+}
+
+function canonicalHdChannel(value: unknown): string | null {
+  if (typeof value === "string") {
+    const match = value.trim().match(/^(\d{1,2})\s*[-/]\s*(\d{1,2})$/);
+    if (!match) return null;
+    const left = canonicalGateNumber(match[1]);
+    const right = canonicalGateNumber(match[2]);
+    if (left === null || right === null || left === right) return null;
+    return [left, right].sort((a, b) => a - b).join("-");
+  }
+
+  if (!value || typeof value !== "object") return null;
+  const record = value as AnyRecord;
+  if (record.defined !== true || !Array.isArray(record.gates) || record.gates.length !== 2) {
+    return null;
+  }
+  const left = canonicalGateNumber(record.gates[0]);
+  const right = canonicalGateNumber(record.gates[1]);
+  if (left === null || right === null || left === right) return null;
+  return [left, right].sort((a, b) => a - b).join("-");
+}
+
+function canonicalHdChannels(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(
+    value
+      .map(canonicalHdChannel)
+      .filter((channel): channel is string => Boolean(channel)),
+  )].sort((a, b) => {
+    const [a1, a2] = a.split("-").map(Number);
+    const [b1, b2] = b.split("-").map(Number);
+    return a1 - b1 || a2 - b2;
+  });
+}
+
+function canonicalHdGates(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(
+    value
+      .map(canonicalGateNumber)
+      .filter((gate): gate is number => gate !== null),
+  )]
+    .sort((a, b) => a - b)
+    .map(String);
 }
 
 function fnv1a(value: string, seed = 0x811c9dc5): number {
@@ -280,6 +443,35 @@ function aspectText(aspect: { planet1: string; planet2: string; aspect: string; 
   return `${aspect.planet1} ${aspect.aspect} ${aspect.planet2} · orb ${aspect.orb.toFixed(2)}°`;
 }
 
+function isCompleteEqualHouseCuspSet(
+  cusps: Array<{ house: number; sign: string; degree: number | null; longitude: number | null }>,
+  risingLongitude: number | null,
+): boolean {
+  if (cusps.length !== 12 || risingLongitude === null) return false;
+  const ordered = [...cusps].sort((a, b) => a.house - b.house);
+  if (ordered.some((cusp, index) => cusp.house !== index + 1 || cusp.longitude === null)) {
+    return false;
+  }
+
+  if (
+    circularDegreesDelta(
+      ordered[0].longitude as number,
+      risingLongitude,
+    ) >= 0.01
+  ) {
+    return false;
+  }
+
+  for (let index = 0; index < ordered.length; index += 1) {
+    const current = ordered[index].longitude as number;
+    const next = ordered[(index + 1) % ordered.length].longitude as number;
+    if (Math.abs(circularDegreesDelta(current, next) - 30) >= 0.01) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSynthesis {
   const astrology = (profile?.verifiedAstrologyData ?? profile?.astrologyData ?? {}) as AnyRecord;
   const numerology = (profile?.numerologyData ?? {}) as AnyRecord;
@@ -289,7 +481,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const placements: UltimateCodexPlacement[] = [];
   for (const key of PLANETS) {
     const placement = astrology?.planets?.[key] as AnyRecord | undefined;
-    if (placement?.verificationStatus !== "verified" || !validSign(placement.sign)) continue;
+    if (!hasVerifiedPlacementEvidence(placement)) continue;
     const house = validHouse(astrology?.planetaryHouses?.[key]);
     placements.push({
       key,
@@ -303,16 +495,26 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     });
   }
 
-  const houseCusps = Array.isArray(astrology?.houses)
+  const candidateHouseCusps = Array.isArray(astrology?.houses)
     ? astrology.houses
-        .filter((row: AnyRecord) => row?.verificationStatus === "verified" && validHouse(row?.house) && validSign(row?.sign))
+        .filter((row: AnyRecord) => hasGovernedHouse(row))
         .map((row: AnyRecord) => ({
           house: Number(row.house),
           sign: String(row.sign),
-          degree: finiteNumber(row.degree),
+          degree: roundedHundredth(Number(row.degree)),
           longitude: normalizedLongitude(row.longitude),
         }))
         .sort((a: { house: number }, b: { house: number }) => a.house - b.house)
+    : [];
+  const verifiedRisingLongitude =
+    hasVerifiedPlacementEvidence(astrology?.rising)
+      ? placementLongitude(astrology.rising)
+      : null;
+  const houseCusps = isCompleteEqualHouseCuspSet(
+    candidateHouseCusps,
+    verifiedRisingLongitude,
+  )
+    ? candidateHouseCusps
     : [];
 
   const supportingPoints: UltimateCodexPoint[] = [];
@@ -324,7 +526,15 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ["chiron", "Chiron", astrology?.chiron, validHouse(astrology?.chiron?.house)],
   ] as const;
   for (const [key, label, point, house] of pointSpecs) {
-    if (point?.verificationStatus !== "verified" || !validSign(point?.sign)) continue;
+    const qualified =
+      key === "rising"
+        ? hasVerifiedPlacementEvidence(point)
+        : key === "midheaven"
+          ? hasGovernedDerivedPoint(point, "ASTRO-EQUAL-HOUSE-v1")
+          : key === "northNode" || key === "southNode"
+            ? hasGovernedDerivedPoint(point, "ASTRO-MEAN-NODE-v1")
+            : hasGovernedDerivedPoint(point, "ASTRO-CHIRON-v1");
+    if (!qualified) continue;
     supportingPoints.push({
       key,
       label,
@@ -335,21 +545,48 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     });
   }
 
-  const aspects = Array.isArray(astrology?.aspects)
-    ? astrology.aspects
-        .filter((row: AnyRecord) =>
-          typeof row?.planet1 === "string" &&
-          typeof row?.planet2 === "string" &&
-          typeof row?.aspect === "string" &&
-          finiteNumber(row?.orb) !== null
-        )
-        .map((row: AnyRecord) => ({
-          planet1: String(row.planet1),
-          planet2: String(row.planet2),
-          aspect: String(row.aspect).toLowerCase(),
-          orb: Number(row.orb),
-        }))
-    : [];
+  const qualifiedAspectBodies = new Set<AspectBodyKey>(
+    placements.map((placement) => placement.key as AspectBodyKey),
+  );
+  if (supportingPoints.some((point) => point.key === "chiron")) {
+    qualifiedAspectBodies.add("chiron");
+  }
+
+  const aspectByCanonicalKey = new Map<
+    string,
+    { planet1: string; planet2: string; aspect: string; orb: number }
+  >();
+  if (Array.isArray(astrology?.aspects)) {
+    for (const row of astrology.aspects as AnyRecord[]) {
+      if (!hasGovernedAspect(row)) continue;
+      const left = canonicalAspectBody(row.planet1);
+      const right = canonicalAspectBody(row.planet2);
+      if (
+        !left ||
+        !right ||
+        left === right ||
+        !qualifiedAspectBodies.has(left) ||
+        !qualifiedAspectBodies.has(right)
+      ) {
+        continue;
+      }
+      const [planet1, planet2] = canonicalAspectBodies(left, right);
+      const aspect = String(row.aspect).toLowerCase();
+      const orb = roundedHundredth(Number(row.orb));
+      const key = `${planet1}|${aspect}|${planet2}|${orb.toFixed(2)}`;
+      if (!aspectByCanonicalKey.has(key)) {
+        aspectByCanonicalKey.set(key, { planet1, planet2, aspect, orb });
+      }
+    }
+  }
+  const aspects = [...aspectByCanonicalKey.values()].sort((a, b) =>
+    (ASPECT_BODY_ORDER.get(a.planet1 as AspectBodyKey) ?? 99) -
+      (ASPECT_BODY_ORDER.get(b.planet1 as AspectBodyKey) ?? 99) ||
+    (ASPECT_BODY_ORDER.get(a.planet2 as AspectBodyKey) ?? 99) -
+      (ASPECT_BODY_ORDER.get(b.planet2 as AspectBodyKey) ?? 99) ||
+    a.aspect.localeCompare(b.aspect) ||
+    a.orb - b.orb
+  );
 
   const elementCounts = new Map<string, number>();
   const modalityCounts = new Map<string, number>();
@@ -364,25 +601,23 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   // Normalize only documented producer aliases. Alias handling prevents the same
   // deterministic number from changing coverage or fingerprint merely because
   // a legacy producer used a different field name.
-  const lifePath = numericValue(numerology.lifePath ?? numerology.lifePathNumber);
-  const birthday = numericValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
-  const expression = numericValue(numerology.expression ?? numerology.expressionNumber);
-  const soulUrge = numericValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
-  const personality = numericValue(numerology.personality ?? numerology.personalityNumber);
-  const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
-  const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
+  const lifePath = governedNumerologyValue(numerology.lifePath ?? numerology.lifePathNumber);
+  const birthday = governedNumerologyValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
+  const expression = governedNumerologyValue(numerology.expression ?? numerology.expressionNumber);
+  const soulUrge = governedNumerologyValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
+  const personality = governedNumerologyValue(numerology.personality ?? numerology.personalityNumber);
+  const maturity = governedNumerologyValue(numerology.maturity ?? numerology.maturityNumber);
+  const personalYear = governedNumerologyValue(numerology.personalYear ?? numerology.personalYearNumber);
 
-  const verifiedHd = hd?.status === "verified";
+  const verifiedHd = hasVerifiedHumanDesignTrust(hd);
   const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
   const hdStrategy = verifiedHd && typeof hd.strategy === "string" ? hd.strategy.trim() : null;
   const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : null;
   const hdProfile = verifiedHd && typeof hd.profile === "string" ? hd.profile.trim() : null;
   const hdDefinition = verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : null;
   const hdCenters = verifiedHd ? normalizeHdCenters(hd) : { defined: [], undefined: [] };
-  const hdChannels = verifiedHd && Array.isArray(hd.channels) ? hd.channels.map((value: unknown) =>
-    typeof value === "string" ? value : JSON.stringify(value)
-  ) : [];
-  const hdGates = verifiedHd && Array.isArray(hd.activatedGates) ? hd.activatedGates.map(String) : [];
+  const hdChannels = verifiedHd ? canonicalHdChannels(hd.channels) : [];
+  const hdGates = verifiedHd ? canonicalHdGates(hd.activatedGates) : [];
   const hdActivationSignature: string[] = [];
   if (verifiedHd) {
     for (const side of ["conscious", "unconscious"] as const) {

@@ -192,7 +192,7 @@ test("Depth interpretation quality gates", async (suite) => {
     assert.ok(codes.has("contract-deterministic-wording"));
   });
 
-  await suite.test("rejects high confidence without system diversity", () => {
+  await suite.test("rejects high confidence when provenance is unverified", () => {
     const fixture = DEPTH_QUALITY_FIXTURES.find(
       (item) => item.id === "unsupported-high-confidence",
     );
@@ -202,7 +202,7 @@ test("Depth interpretation quality gates", async (suite) => {
     const codes = findingCodes(result);
 
     assert.equal(result.pass, false);
-    assert.ok(codes.has("high-confidence-low-system-diversity"));
+    assert.equal(codes.has("high-confidence-low-system-diversity"), false);
     assert.ok(codes.has("contract-unsupported-overall-high-confidence"));
     assert.ok(codes.has("contract-unsupported-layer-high-confidence"));
   });

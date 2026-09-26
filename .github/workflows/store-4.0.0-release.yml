@@ -47,9 +47,16 @@ jobs:
         run: npm run build:workspaces
       - name: Typecheck
         run: npm run check
-      - name: Qualified astrology, differentiation, privacy, and Human Design gates
-        run: |
-          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/primary-synthesis-system-policy.test.ts             tests/verified-profile-differentiation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/verified-profile-differentiation-corpus.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts             tests/astrology-atlas.test.ts             tests/birth-date-exploration.test.ts             tests/personal-astrology-atlas.test.ts             tests/connection-repository.test.ts             tests/runtime-esm-import-contract.test.ts
+      - name: Qualified evidence, math, privacy, synthesis, and Human Design gates
+        run: bash scripts/ci/qualified-release-gates.sh
+
+      - name: Production dependency security audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Verify deployed backend API contract
+        env:
+          SOUL_CODEX_BACKEND_URL: https://soulcodex.up.railway.app
+          SOUL_CODEX_API_CONTRACT: foundation-v4
+        run: node scripts/ci/verify-live-backend-contract.mjs
       - name: Store release candidate contract
         run: node --import tsx --test tests/store-release-candidate-contract.test.ts
       - name: Build production Capacitor payload
@@ -90,7 +97,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: soulcodex-4.0.1-release-gate
-          path: STORE-CANDIDATE-RECEIPT.txt
+          path: |
+            STORE-CANDIDATE-RECEIPT.txt
+            BACKEND-CONTRACT-RECEIPT.json
           retention-days: 90
 
   android-store:

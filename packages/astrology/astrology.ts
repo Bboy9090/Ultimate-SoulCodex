@@ -1,8 +1,10 @@
-import type {
-  BirthData,
-  VerificationState,
-  PlacementEvidence,
-  PlacementLike
+import {
+  parseDateOnly,
+  resolveCivilTimeStrict,
+  type BirthData,
+  type VerificationState,
+  type PlacementEvidence,
+  type PlacementLike
 } from "@soulcodex/core";
 import {
   getPlanetSignInterpretation,
@@ -13,12 +15,11 @@ import {
 } from "./interpretations";
 import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = Astronomy;
-import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 
 interface PlanetData {
   sign: string;
-  house: number;
+  house?: number;
   degree: number;
   longitude: number;
   interpretation: {
@@ -27,7 +28,7 @@ interface PlanetData {
     keywords: string[];
     spiritualMeaning: string;
   };
-  houseInterpretation: {
+  houseInterpretation?: {
     title: string;
     description: string;
     themes: string[];
@@ -39,7 +40,7 @@ interface AstrologyData {
   sunSign: string;
   moonSign: string;
   risingSign: string;
-  planets: {
+  planets: Partial<{
     sun: PlanetData;
     moon: PlanetData;
     mercury: PlanetData;
@@ -50,7 +51,7 @@ interface AstrologyData {
     uranus: PlanetData;
     neptune: PlanetData;
     pluto: PlanetData;
-  };
+  }>;
   houses: Array<{
     sign: string;
     degree: number;
@@ -62,36 +63,9 @@ interface AstrologyData {
     };
   }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: {
-    sign: string;
-    house: number;
-    degree: number;
-    interpretation: {
-      title: string;
-      description: string;
-      spiritualGrowth: string;
-    };
-  };
-  southNode: {
-    sign: string;
-    house: number;
-    degree: number;
-    interpretation: {
-      title: string;
-      description: string;
-      spiritualGrowth: string;
-    };
-  };
-  chiron: {
-    sign: string;
-    house: number;
-    degree: number;
-    interpretation: {
-      title: string;
-      description: string;
-      healingPath: string;
-    };
-  };
+  northNode: null;
+  southNode: null;
+  chiron: null;
   interpretations: {
     bigThree: {
       sun: string;
@@ -125,62 +99,139 @@ function getDegreesInSign(longitude: number): number {
   return longitude % 30;
 }
 
+function parseBirthClock(value: unknown): { hours: number; minutes: number } {
+  if (value === undefined || value === null || value === "") {
+    return { hours: 12, minutes: 0 };
+  }
+
+  if (typeof value !== "string") {
+    throw new RangeError("Invalid birthTime format; expected HH:mm");
+  }
+
+  const match = /^(\d{2}):(\d{2})$/.exec(value.trim());
+  if (!match) {
+    throw new RangeError("Invalid birthTime format; expected HH:mm");
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    throw new RangeError("Invalid birthTime value");
+  }
+
+  return { hours, minutes };
+}
+
+function finiteCoordinate(
+  value: unknown,
+  kind: "latitude" | "longitude",
+): number {
+  if (value === undefined || value === null || value === "") return 0;
+
+  const number = Number(value);
+  const limit = kind === "latitude" ? 90 : 180;
+  if (!Number.isFinite(number) || number < -limit || number > limit) {
+    throw new RangeError(`Invalid ${kind}`);
+  }
+  return number;
+}
+
 function createBirthTime(birthData: BirthData): Date {
-  try {
-    const [year, month, day] = birthData.birthDate.split('-').map(Number);
-    const time = birthData.birthTime || "12:00";
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    const localTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-    
-    const resolvedTimezone = resolveTimezone(
-      birthData.timezone || "UTC",
-      parseFloat(String(birthData.latitude ?? 0)),
-      parseFloat(String(birthData.longitude ?? 0))
+  const { year, month, day } = parseDateOnly(birthData.birthDate);
+  const { hours, minutes } = parseBirthClock(birthData.birthTime);
+  const latitude = finiteCoordinate(birthData.latitude, "latitude");
+  const longitude = finiteCoordinate(birthData.longitude, "longitude");
+
+  const localTimeString =
+    `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` +
+    `T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+
+  const hasCoordinates =
+    birthData.latitude !== undefined &&
+    birthData.latitude !== null &&
+    birthData.longitude !== undefined &&
+    birthData.longitude !== null;
+
+  const resolvedTimezone = resolveTimezone(
+    birthData.timezone,
+    latitude,
+    longitude,
+    hasCoordinates,
+  );
+
+  const resolution = resolveCivilTimeStrict(
+    `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
+    resolvedTimezone,
+  );
+
+  if (resolution.status !== "valid" || !resolution.utc) {
+    throw new RangeError(
+      `Birth civil time is ${resolution.status}: ${resolution.reason ?? "unresolved"}`,
     );
-    
-    return fromZonedTime(new Date(localTimeString), resolvedTimezone);
-  } catch (error) {
-    console.error('Error creating precise birth time:', error);
-    throw error;
+  }
+
+  return resolution.utc;
+}
+
+function isValidIanaTimezone(timezone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(new Date(0));
+    return true;
+  } catch {
+    return false;
   }
 }
 
-function resolveTimezone(inputTimezone: string, latitude: number, longitude: number): string {
-  if (inputTimezone.includes('/')) {
-    return inputTimezone;
-  }
-  
-  try {
-    const timezones = geoTz.find(latitude, longitude);
-    if (timezones && timezones.length > 0) {
-      return timezones[0];
-    }
-  } catch (error) {
-    console.warn('Geo-tz lookup failed, falling back to coordinate calculation:', error);
-  }
-  
-  const timezoneMap: { [key: string]: string } = {
-    'EST': 'America/New_York',
-    'EDT': 'America/New_York', 
-    'CST': 'America/Chicago',
-    'CDT': 'America/Chicago',
-    'MST': 'America/Denver',
-    'MDT': 'America/Denver',
-    'PST': 'America/Los_Angeles',
-    'PDT': 'America/Los_Angeles',
-    'GMT': 'Europe/London',
-    'BST': 'Europe/London',
-    'CET': 'Europe/Paris',
-    'CEST': 'Europe/Paris'
+function resolveTimezone(
+  inputTimezone: string | undefined,
+  latitude: number,
+  longitude: number,
+  canInferFromCoordinates: boolean,
+): string {
+  const normalized = inputTimezone?.trim();
+
+  const timezoneMap: Record<string, string> = {
+    UTC: 'UTC',
+    GMT: 'Europe/London',
+    EST: 'America/New_York',
+    EDT: 'America/New_York',
+    CST: 'America/Chicago',
+    CDT: 'America/Chicago',
+    MST: 'America/Denver',
+    MDT: 'America/Denver',
+    PST: 'America/Los_Angeles',
+    PDT: 'America/Los_Angeles',
+    BST: 'Europe/London',
+    CET: 'Europe/Paris',
+    CEST: 'Europe/Paris',
   };
-  
-  const mapped = timezoneMap[inputTimezone.toUpperCase()];
-  if (mapped) {
-    return mapped;
+
+  if (normalized) {
+    const mapped = timezoneMap[normalized.toUpperCase()];
+    if (mapped) return mapped;
+
+    if (isValidIanaTimezone(normalized)) {
+      return normalized;
+    }
+
+    // Explicit but unknown timezone input is evidence failure, not permission
+    // to silently substitute a coordinate-derived zone.
+    throw new RangeError(`Invalid timezone: ${normalized}`);
   }
-  
-  return estimateTimezoneFromCoordinates(latitude, longitude);
+
+  if (canInferFromCoordinates) {
+    try {
+      const timezones = geoTz.find(latitude, longitude);
+      if (timezones && timezones.length > 0) {
+        return timezones[0];
+      }
+    } catch (error) {
+      console.warn('Geo-tz lookup failed:', error);
+    }
+  }
+
+  return 'UTC';
 }
 
 function estimateTimezoneFromCoordinates(latitude: number, longitude: number): string {
@@ -211,9 +262,11 @@ function estimateTimezoneFromCoordinates(latitude: number, longitude: number): s
   return 'UTC';
 }
 
-function calculateCelestialPosition(body: Astronomy.Body, birthTime: Date, observer: Astronomy.Observer): { longitude: number; sign: string; degree: number } {
-  const equator = Astro.Equator(body, birthTime, observer, true, true);
-  const ecliptic = Astro.Ecliptic(equator.vec);
+function calculateCelestialPosition(body: Astronomy.Body, birthTime: Date): { longitude: number; sign: string; degree: number } {
+  // Natal zodiac longitudes are geocentric. Observer coordinates belong to
+  // horizon/angle calculations (Ascendant, houses), not planetary longitude.
+  const vector = Astro.GeoVector(body, birthTime, true);
+  const ecliptic = Astro.Ecliptic(vector);
   const longitude = ecliptic.elon;
   
   return {
@@ -340,20 +393,64 @@ function calculateAspects(planetPositions: { [key: string]: number }): Array<{ p
   return aspects;
 }
 
-function calculateChironPosition(birthTime: Date): { longitude: number; sign: string; degree: number } {
-  const epochTime = new Date('2000-01-01T12:00:00Z').getTime();
-  const currentTime = birthTime.getTime();
-  const yearsSinceEpoch = (currentTime - epochTime) / (1000 * 60 * 60 * 24 * 365.25);
+function dateOnlySunSignCandidate(birthData: BirthData): string | null {
+  const { year, month, day } = parseDateOnly(birthData.birthDate);
+  const HOUR_MS = 60 * 60 * 1000;
 
-  const epochChironDegree = 270;
-  const chironDegree = (epochChironDegree + (yearsSinceEpoch * 7.2)) % 360;
-  const normalizedDegree = chironDegree < 0 ? chironDegree + 360 : chironDegree;
-
-  return {
-    longitude: normalizedDegree,
-    sign: eclipticToZodiacSign(normalizedDegree),
-    degree: getDegreesInSign(normalizedDegree)
+  const collectSigns = (start: Date, end: Date): Set<string> => {
+    const signs = new Set<string>();
+    for (let instant = start.getTime(); instant <= end.getTime(); instant += 3 * HOUR_MS) {
+      signs.add(calculateCelestialPosition(Astro.Body.Sun, new Date(instant)).sign);
+    }
+    signs.add(calculateCelestialPosition(Astro.Body.Sun, end).sign);
+    return signs;
   };
+
+  const latitude = finiteCoordinate(birthData.latitude, "latitude");
+  const longitude = finiteCoordinate(birthData.longitude, "longitude");
+  const hasCoordinates =
+    birthData.latitude !== undefined &&
+    birthData.latitude !== null &&
+    birthData.longitude !== undefined &&
+    birthData.longitude !== null;
+
+  if (birthData.timezone?.trim() || hasCoordinates) {
+    const timezone = resolveTimezone(
+      birthData.timezone,
+      latitude,
+      longitude,
+      hasCoordinates,
+    );
+    const start = resolveCivilTimeStrict(
+      birthData.birthDate,
+      "00:00",
+      timezone,
+    );
+    const end = resolveCivilTimeStrict(
+      birthData.birthDate,
+      "23:59",
+      timezone,
+    );
+
+    if (
+      start.status === "valid" &&
+      start.utc &&
+      end.status === "valid" &&
+      end.utc
+    ) {
+      const signs = collectSigns(start.utc, end.utc);
+      return signs.size === 1 ? [...signs][0] : null;
+    }
+
+    return null;
+  }
+
+  // With no timezone/location, cover every UTC instant that could belong to
+  // this local civil date across the IANA offset range (UTC-12 through UTC+14).
+  const earliestUtc = new Date(Date.UTC(year, month - 1, day - 1, 10, 0, 0));
+  const latestUtc = new Date(Date.UTC(year, month - 1, day + 1, 12, 0, 0));
+  const signs = collectSigns(earliestUtc, latestUtc);
+  return signs.size === 1 ? [...signs][0] : null;
 }
 
 /**
@@ -383,20 +480,24 @@ function determinePlacementStatus(
   birthData: BirthData,
   placement: 'sun' | 'moon' | 'rising'
 ): VerificationState {
-  const hasExactTime = birthData.birthTime && birthData.birthTime !== '12:00';
+  const hasExactTime = Boolean(birthData.birthTime?.trim());
+  const hasTimezone = Boolean(birthData.timezone?.trim());
   const hasLocation = birthData.latitude != null && birthData.longitude != null;
+  const hasTimezoneEvidence = hasTimezone || hasLocation;
 
-  // Sun: never requires time
+  // Sun remains a date-only candidate unless a solar-ingress boundary makes
+  // the date alone insufficient (handled by buildPlacement).
   if (placement === 'sun') {
-    return 'calculated';  // Repeatable but not yet verified
+    return 'calculated';
   }
 
-  // Moon/Rising: require time
-  if (!hasExactTime) {
+  // Moon/Rising require a resolvable civil timestamp: clock time plus either
+  // an explicit timezone or coordinates from which an IANA timezone can be inferred.
+  if (!hasExactTime || !hasTimezoneEvidence) {
     return 'requires_verified_birth_time';
   }
 
-  // Rising: also requires location
+  // Rising additionally requires a geographic horizon.
   if (placement === 'rising' && !hasLocation) {
     return 'requires_location';
   }
@@ -424,7 +525,10 @@ function buildPlacement(
   placement: 'sun' | 'moon' | 'rising',
   calculatedAt: string
 ): PlacementLike {
-  const verificationStatus = determinePlacementStatus(birthData, placement);
+  const verificationStatus: VerificationState =
+    placement === 'sun' && sign === 'Unknown'
+      ? 'unresolved'
+      : determinePlacementStatus(birthData, placement);
   const evidence = buildPlacementEvidence(birthData, placement, calculatedAt);
 
   return {
@@ -436,60 +540,83 @@ function buildPlacement(
 
 export function calculateAstrology(birthData: BirthData): AstrologyData {
   const birthTime = createBirthTime(birthData);
-  const latitude = parseFloat(String(birthData.latitude ?? 0));
-  const longitude = parseFloat(String(birthData.longitude ?? 0));
+  const latitude = finiteCoordinate(birthData.latitude, "latitude");
+  const longitude = finiteCoordinate(birthData.longitude, "longitude");
+  const hasExactTime = Boolean(birthData.birthTime?.trim());
+  const hasTimezone = Boolean(birthData.timezone?.trim());
+  const hasLocation = birthData.latitude != null && birthData.longitude != null;
+  const hasResolvedCivilTimestamp = hasExactTime && (hasTimezone || hasLocation);
+  const moonResolved = hasResolvedCivilTimestamp;
+  const risingResolved = hasResolvedCivilTimestamp && hasLocation;
   
-  const observer = new Astro.Observer(latitude, longitude, 0);
-  
-  const sunPos = calculateCelestialPosition(Astro.Body.Sun, birthTime, observer);
-  const moonPos = calculateCelestialPosition(Astro.Body.Moon, birthTime, observer);
-  const mercuryPos = calculateCelestialPosition(Astro.Body.Mercury, birthTime, observer);
-  const venusPos = calculateCelestialPosition(Astro.Body.Venus, birthTime, observer);
-  const marsPos = calculateCelestialPosition(Astro.Body.Mars, birthTime, observer);
-  const jupiterPos = calculateCelestialPosition(Astro.Body.Jupiter, birthTime, observer);
-  const saturnPos = calculateCelestialPosition(Astro.Body.Saturn, birthTime, observer);
-  const uranusPos = calculateCelestialPosition(Astro.Body.Uranus, birthTime, observer);
-  const neptunePos = calculateCelestialPosition(Astro.Body.Neptune, birthTime, observer);
-  const plutoPos = calculateCelestialPosition(Astro.Body.Pluto, birthTime, observer);
+  const sunPos = calculateCelestialPosition(Astro.Body.Sun, birthTime);
+  const moonPos = calculateCelestialPosition(Astro.Body.Moon, birthTime);
+  const mercuryPos = calculateCelestialPosition(Astro.Body.Mercury, birthTime);
+  const venusPos = calculateCelestialPosition(Astro.Body.Venus, birthTime);
+  const marsPos = calculateCelestialPosition(Astro.Body.Mars, birthTime);
+  const jupiterPos = calculateCelestialPosition(Astro.Body.Jupiter, birthTime);
+  const saturnPos = calculateCelestialPosition(Astro.Body.Saturn, birthTime);
+  const uranusPos = calculateCelestialPosition(Astro.Body.Uranus, birthTime);
+  const neptunePos = calculateCelestialPosition(Astro.Body.Neptune, birthTime);
+  const plutoPos = calculateCelestialPosition(Astro.Body.Pluto, birthTime);
   
   const ascendantData = calculateAscendant(birthTime, latitude, longitude);
   
   const houseCusps = calculateEqualHouseCusps(ascendantData.longitude);
   
-  const sunSign = sunPos.sign;
-  const moonSign = moonPos.sign;
-  const risingSign = ascendantData.sign;
+  const sunSign = hasResolvedCivilTimestamp
+    ? sunPos.sign
+    : (dateOnlySunSignCandidate(birthData) ?? "Unknown");
+  const moonSign = moonResolved ? moonPos.sign : "Unknown";
+  const risingSign = risingResolved ? ascendantData.sign : "Unknown";
   
-  function createPlanetData(planetName: string, pos: { longitude: number; sign: string; degree: number }): PlanetData {
-    const house = calculateHousePosition(pos.longitude, houseCusps);
-    return {
+  function createPlanetData(
+    planetName: string,
+    pos: { longitude: number; sign: string; degree: number },
+    includeHouse: boolean,
+  ): PlanetData {
+    const base: PlanetData = {
       sign: pos.sign,
-      house,
       degree: pos.degree,
       longitude: pos.longitude,
       interpretation: getPlanetSignInterpretation(planetName, pos.sign),
-      houseInterpretation: getHouseInterpretation(house)
+    };
+
+    if (!includeHouse) return base;
+
+    const house = calculateHousePosition(pos.longitude, houseCusps);
+    return {
+      ...base,
+      house,
+      houseInterpretation: getHouseInterpretation(house),
     };
   }
+
+  // Without an exact civil timestamp, expose no exact planet longitude/degree.
+  // A date-only Sun sign may still be returned at top level when the entire
+  // possible civil-day interval stays inside one zodiac sign.
+  const planets: AstrologyData["planets"] = moonResolved
+    ? {
+        sun: createPlanetData('sun', sunPos, risingResolved),
+        moon: createPlanetData('moon', moonPos, risingResolved),
+        mercury: createPlanetData('mercury', mercuryPos, risingResolved),
+        venus: createPlanetData('venus', venusPos, risingResolved),
+        mars: createPlanetData('mars', marsPos, risingResolved),
+        jupiter: createPlanetData('jupiter', jupiterPos, risingResolved),
+        saturn: createPlanetData('saturn', saturnPos, risingResolved),
+        uranus: createPlanetData('uranus', uranusPos, risingResolved),
+        neptune: createPlanetData('neptune', neptunePos, risingResolved),
+        pluto: createPlanetData('pluto', plutoPos, risingResolved),
+      }
+    : {};
   
-  const planets = {
-    sun: createPlanetData('sun', sunPos),
-    moon: createPlanetData('moon', moonPos),
-    mercury: createPlanetData('mercury', mercuryPos),
-    venus: createPlanetData('venus', venusPos),
-    mars: createPlanetData('mars', marsPos),
-    jupiter: createPlanetData('jupiter', jupiterPos),
-    saturn: createPlanetData('saturn', saturnPos),
-    uranus: createPlanetData('uranus', uranusPos),
-    neptune: createPlanetData('neptune', neptunePos),
-    pluto: createPlanetData('pluto', plutoPos)
-  };
-  
-  const houses = houseCusps.map((cuspLongitude, index) => ({
-    sign: eclipticToZodiacSign(cuspLongitude),
-    degree: cuspLongitude,
-    interpretation: getHouseInterpretation(index + 1)
-  }));
+  const houses = risingResolved
+    ? houseCusps.map((cuspLongitude, index) => ({
+        sign: eclipticToZodiacSign(cuspLongitude),
+        degree: cuspLongitude,
+        interpretation: getHouseInterpretation(index + 1)
+      }))
+    : [];
   
   const planetPositions = {
     sun: sunPos.longitude,
@@ -504,57 +631,23 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     pluto: plutoPos.longitude
   };
   
-  const aspects = calculateAspects(planetPositions);
+  const aspects = moonResolved ? calculateAspects(planetPositions) : [];
   
-  const nodeEvent = Astro.SearchMoonNode(birthTime);
-  const nodeTime = nodeEvent.time.date;
-  const daysSinceNode = (birthTime.getTime() - nodeTime.getTime()) / (1000 * 60 * 60 * 24);
-  const nodeRetrogradeDegrees = daysSinceNode * 0.0529;
+  // Legacy/package astrology does not emit Lunar Nodes or Chiron.
+  // Production supplies them only through independently governed verification.
+  const northNode = null;
+  const southNode = null;
+  const chiron = null;
   
-  const baseNodeLongitude = (nodeEvent.kind === Astro.NodeEventKind.Ascending ? 0 : 180);
-  const currentMoonEq = Astro.Equator(Astro.Body.Moon, nodeTime, observer, true, true);
-  const currentMoonEcl = Astro.Ecliptic(currentMoonEq.vec);
-  const nodeAtEventLongitude = currentMoonEcl.elon;
-  
-  let northNodeLongitude = (nodeAtEventLongitude - nodeRetrogradeDegrees + 360) % 360;
-  if (nodeEvent.kind !== Astro.NodeEventKind.Ascending) {
-    northNodeLongitude = (northNodeLongitude + 180) % 360;
-  }
-  
-  const southNodeLongitude = (northNodeLongitude + 180) % 360;
-  
-  const northNodeSign = eclipticToZodiacSign(northNodeLongitude);
-  const southNodeSign = eclipticToZodiacSign(southNodeLongitude);
-  
-  const northNode = {
-    sign: northNodeSign,
-    house: calculateHousePosition(northNodeLongitude, houseCusps),
-    degree: getDegreesInSign(northNodeLongitude),
-    interpretation: getKarmicInterpretation('northNode', northNodeSign)
-  };
-  
-  const southNode = {
-    sign: southNodeSign,
-    house: calculateHousePosition(southNodeLongitude, houseCusps),
-    degree: getDegreesInSign(southNodeLongitude),
-    interpretation: {
-      title: `Soul History: ${southNodeSign} Mastery`,
-      description: `You've mastered ${southNodeSign} qualities in past lives. Now it's time to balance this with your North Node growth.`,
-      spiritualGrowth: `Release over-attachment to ${southNodeSign} patterns and embrace your North Node path.`
-    }
-  };
-  
-  const chironPos = calculateChironPosition(birthTime);
-  const chiron = {
-    sign: chironPos.sign,
-    house: calculateHousePosition(chironPos.longitude, houseCusps),
-    degree: chironPos.degree,
-    interpretation: getKarmicInterpretation('chiron', chironPos.sign)
-  };
-  
-  const sunInterpretation = getPlanetSignInterpretation('sun', sunSign);
-  const moonInterpretation = getPlanetSignInterpretation('moon', moonSign);
-  const risingInterpretation = getPlanetSignInterpretation('sun', risingSign);
+  const sunInterpretation = sunSign !== "Unknown"
+    ? getPlanetSignInterpretation('sun', sunSign)
+    : null;
+  const moonInterpretation = moonResolved
+    ? getPlanetSignInterpretation('moon', moonSign)
+    : null;
+  const risingInterpretation = risingResolved
+    ? getPlanetSignInterpretation('sun', risingSign)
+    : null;
 
   const calculatedAt = new Date().toISOString();
   const sunPlacement = buildPlacement(sunSign, birthData, 'sun', calculatedAt);
@@ -573,11 +666,21 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
     chiron,
     interpretations: {
       bigThree: {
-        sun: `Your ${sunInterpretation.title} essence drives you to ${sunInterpretation.spiritualMeaning.toLowerCase()}`,
-        moon: `Your ${moonInterpretation.title} emotional nature ${moonInterpretation.spiritualMeaning.toLowerCase()}`,
-        rising: `You present to the world as ${risingSign}, projecting ${risingInterpretation.keywords.join(', ')} energy`
+        sun: sunInterpretation
+          ? `Your ${sunInterpretation.title} essence drives you to ${sunInterpretation.spiritualMeaning.toLowerCase()}`
+          : "Sun sign withheld because the date spans a solar-ingress boundary without exact birth time.",
+        moon: moonInterpretation
+          ? `Your ${moonInterpretation.title} emotional nature ${moonInterpretation.spiritualMeaning.toLowerCase()}`
+          : "Moon placement withheld until exact birth time and timezone are available.",
+        rising: risingInterpretation
+          ? `You present to the world as ${risingSign}, projecting ${risingInterpretation.keywords.join(', ')} energy`
+          : "Rising sign withheld until exact birth time, timezone, and location are available."
       },
-      summary: `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies. Your soul's journey involves balancing these cosmic influences to express your highest potential.`
+      summary: sunInterpretation && moonInterpretation && risingInterpretation
+        ? `As a ${sunSign} Sun with ${moonSign} Moon and ${risingSign} Rising, you embody a unique blend of ${sunInterpretation.keywords[0]}, ${moonInterpretation.keywords[0]}, and ${risingInterpretation.keywords[0]} energies.`
+        : sunInterpretation
+          ? `Sun candidate: ${sunSign}. Exact planetary degrees and time-dependent Moon/Rising interpretation are withheld until required birth evidence is present.`
+          : "Sun, Moon, and Rising interpretation are withheld until the missing birth-time evidence resolves the solar-ingress boundary and other time-dependent placements."
     },
     placements: {
       sun: sunPlacement,
@@ -589,10 +692,7 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
 
 export function getTarotBirthCards(birthDate: string): { card1: string; card2: string; interpretation: string } {
   // Correct tarot birth card calculation: sum all digits and reduce to 1-22
-  const date = new Date(birthDate);
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
+  const { day, month, year } = parseDateOnly(birthDate);
   
   // Sum all individual digits (e.g., 15/03/1990 = 1+5+0+3+1+9+9+0 = 28)
   const sumAllDigits = (num: number) => {

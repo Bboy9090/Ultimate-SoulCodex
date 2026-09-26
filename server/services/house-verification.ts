@@ -1,3 +1,10 @@
+import { canonicalExplicitZonedInstant, parseExplicitZonedInstant } from "./zoned-instant";
+import {
+  circularDegreesDelta as canonicalCircularDegreesDelta,
+  degreeInTropicalSign,
+  normalizeDegrees as canonicalNormalizeDegrees,
+  tropicalSignFromLongitude,
+} from "./angular-math";
 import { SiderealTime } from "./astronomy-engine-compat";
 import { calculateAscendantCandidate } from "./ascendant-verification";
 
@@ -25,11 +32,6 @@ export interface HouseCusp {
   degreeInSign: number;
 }
 
-const SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
-
 const CANDIDATE_ENGINE = "astronomy-engine@2.1.19-sidereal-time + IAU-2006-obliquity";
 const CANDIDATE_SOURCE =
   "Astronomy Engine apparent sidereal time with standard ecliptic meridian geometry";
@@ -46,24 +48,23 @@ function degrees(radiansValue: number): number {
 }
 
 export function normalizeDegrees(value: number): number {
-  return ((value % 360) + 360) % 360;
+  return canonicalNormalizeDegrees(value);
 }
 
 export function circularDegreesDelta(left: number, right: number): number {
-  const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
-  return Math.min(raw, 360 - raw);
+  return canonicalCircularDegreesDelta(left, right);
 }
 
 function signFromLongitude(longitude: number): string {
-  return SIGNS[Math.floor(normalizeDegrees(longitude) / 30)];
+  return tropicalSignFromLongitude(longitude);
 }
 
 function validInput(input: HouseInput): boolean {
   return (
-    !Number.isNaN(new Date(input.inputTimestamp).getTime()) &&
+    Boolean(parseExplicitZonedInstant(input.inputTimestamp)) &&
     Number.isFinite(input.latitude) &&
-    input.latitude >= -90 &&
-    input.latitude <= 90 &&
+    input.latitude > -90 &&
+    input.latitude < 90 &&
     Number.isFinite(input.longitude) &&
     input.longitude >= -180 &&
     input.longitude <= 180
@@ -156,11 +157,13 @@ function angleRecord(
   source: string,
 ): AngleEvidenceRecord {
   const normalized = normalizeDegrees(longitudeDegrees);
+  const canonicalInputTimestamp = new Date(input.inputTimestamp).toISOString();
   return {
     ...input,
+    inputTimestamp: canonicalInputTimestamp,
     longitudeDegrees: normalized,
     sign: signFromLongitude(normalized),
-    degreeInSign: normalized % 30,
+    degreeInSign: degreeInTropicalSign(normalized),
     engine,
     source,
     calculatedAt: new Date().toISOString(),
@@ -220,7 +223,7 @@ export function calculateEqualHouseCuspsFromAscendant(
       house: index + 1,
       longitudeDegrees,
       sign: signFromLongitude(longitudeDegrees),
-      degreeInSign: longitudeDegrees % 30,
+      degreeInSign: degreeInTropicalSign(longitudeDegrees),
     };
   });
 }

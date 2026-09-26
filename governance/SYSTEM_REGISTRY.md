@@ -66,6 +66,17 @@ A complete governed timed profile should expose, when the evidence exists:
 
 A complete output does **not** mean every historical system is forced into the reading. Completeness means every registered system has an explicit disposition: **used, supporting, inspect-only, unresolved, or unavailable/excluded**.
 
+## Context-aware system use
+
+The executable registry also selects systems by the job being performed. This prevents a 10+ system product from becoming a 10+ system pile-on.
+
+- **Stable identity:** only governed systems explicitly allowed to alter the Ultimate Codex fingerprint.
+- **Current guidance:** stable governed inputs plus governed time-varying systems such as Personal Year / daily numerology cycles.
+- **Supporting reflection:** explicit user-assessment context such as personality assessments or Moral Compass. These can deepen reflection without pretending they were derived from birth data.
+- **Technical inspection:** the complete registry, including inspect-only, unresolved, and excluded systems, so advanced users can see exactly what is and is not currently qualified.
+
+A system repeating another system's theme does not create extra certainty. Repetition may be shown as symbolic resonance, but the interface and synthesis must not turn duplicate language into a vote count or inflated confidence.
+
 ## No-fallback doctrine
 
 Forbidden:

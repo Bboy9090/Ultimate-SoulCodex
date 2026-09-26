@@ -41,6 +41,9 @@ const YEAR_PHASES: Record<number, Phase> = {
   7: { label: "Depth", essence: "Go inward with purpose. Research, solitude, reflection, refinement, and meaning-making become productive work.", lean: ["Study deeply instead of broadly.", "Protect useful solitude.", "Ask the questions busyness keeps hiding."], release: ["Busyness as proof of progress.", "Forced visibility.", "Avoiding inner work because it has no obvious deliverable."] },
   8: { label: "Power", essence: "Use what you have built. Material leverage, authority, precision, ambition, and results come into focus.", lean: ["Ask for what the work has earned.", "Think in longer horizons.", "Make the decision you have prepared for."], release: ["Underselling your value.", "Shrinking from visibility.", "Confusing modesty with strategy."] },
   9: { label: "Completion", essence: "Close the chapter cleanly. Integration, forgiveness, finishing, and release make room for the next cycle.", lean: ["Finish and close loops.", "Release what has completed its role.", "Integrate the lesson instead of repeating it."], release: ["Starting what belongs in the next cycle.", "Clinging to expired identities.", "Forcing growth where closure is needed."] },
+  11: { label: "Illumination", essence: "A master-number year heightens symbolic emphasis on insight, inspiration, sensitivity, and translation. Treat the intensity as a prompt for reflection, not a prediction.", lean: ["Turn insight into something testable.", "Protect attention from noise.", "Translate intuition into clear language or craft."], release: ["Mistaking intensity for certainty.", "Over-reading coincidences.", "Letting inspiration replace practical verification."] },
+  22: { label: "Master Building", essence: "A master-number year emphasizes scale, structure, and the discipline required to turn a large vision into durable form.", lean: ["Break the large vision into buildable systems.", "Pair ambition with measurable structure.", "Choose foundations that can carry growth."], release: ["Grand plans without execution.", "Skipping boring structural work.", "Confusing scale with importance."] },
+  33: { label: "Service & Integration", essence: "A master-number year emphasizes teaching, care, responsibility, and integrating what has been learned into useful service.", lean: ["Teach from lived practice.", "Serve without erasing your limits.", "Make compassion operational and specific."], release: ["Martyrdom disguised as service.", "Trying to rescue everyone.", "Treating symbolic meaning as an obligation."] },
 };
 
 const MONTH_LABELS: Record<number, string> = {
@@ -53,6 +56,9 @@ const MONTH_LABELS: Record<number, string> = {
   7: "Depth",
   8: "Leverage",
   9: "Release",
+  11: "Intuition",
+  22: "Vision",
+  33: "Compassion",
 };
 
 export default function TimelinePage() {
@@ -175,7 +181,7 @@ export default function TimelinePage() {
         <div>
           <div className="sc-eyebrow">{dateLabel}</div>
           <h1 className="mt-4 font-serif text-[clamp(3rem,8vw,5.7rem)] font-medium leading-[.96] tracking-[-.04em] text-[var(--sc-ivory)]">Your current phase</h1>
-          <p className="sc-lede mt-5 max-w-3xl">A living view of the symbolic numerology cycle you are in now, the pressure inside it, and the next turn already approaching.</p>
+          <p className="sc-lede mt-5 max-w-3xl">A living view of the symbolic numerology cycle you are in now. Soul Codex uses the calendar-year convention and preserves 11, 22, and 33 when the calculation reaches them.</p>
         </div>
 
         {personalYear && phase ? (

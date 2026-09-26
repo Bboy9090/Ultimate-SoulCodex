@@ -10,11 +10,15 @@ export function generateTimeline(input: TimelineInput): TimelineOutput {
   const currentDate = new Date(currentDateISO);
 
   const signals = [];
+  let hasNumerologySignal = false;
 
   // 1. Personal year numerology
   if (profile.birthDate) {
     const numSig = getNumerologySignal(profile.birthDate, currentDate);
-    if (numSig) signals.push(numSig);
+    if (numSig) {
+      signals.push(numSig);
+      hasNumerologySignal = true;
+    }
   }
 
   // 2. Astrology cycle markers
@@ -48,16 +52,16 @@ export function generateTimeline(input: TimelineInput): TimelineOutput {
 
   const reasons = Array.from(new Set(sortedReasons)).slice(0, 5);
 
-  // Determine confidence
-  const hasBirthTime = Boolean(
-    profile.birthTime && profile.birthTime.trim().length > 0
-  );
+  // Confidence reflects the evidence actually used by the current Timeline
+  // model. Birth time is not a confidence input while time-dependent astrology
+  // cycle claims remain quarantined.
   const profileConfidence = (profile.confidenceLabel ?? "").toLowerCase();
-  let confidence: TimelineConfidence = "Full";
-
-  if (!hasBirthTime || profileConfidence === "partial" || profileConfidence === "unverified") {
-    confidence = "Partial";
-  }
+  const confidence: TimelineConfidence =
+    hasNumerologySignal &&
+    profileConfidence !== "partial" &&
+    profileConfidence !== "unverified"
+      ? "Full"
+      : "Partial";
 
   const narrative = buildNarrative(phase, confidence, reasons);
 

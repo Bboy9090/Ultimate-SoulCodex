@@ -7,7 +7,6 @@
 
 import type { Express } from 'express';
 import type { GalacticCodeInput } from '../../shared/galactic-code/types';
-import { generateGalacticCode } from '../services/galactic-code/generator';
 
 export function registerGalacticCodeRoutes(app: Express): void {
   // Generate or regenerate Galactic Code
@@ -26,10 +25,14 @@ export function registerGalacticCodeRoutes(app: Express): void {
         });
       }
 
-      // Generate Galactic Code
-      const result = generateGalacticCode(input);
-
-      res.json(result);
+      // Direct request bodies are not an evidence authority. Galactic Code
+      // generation is intentionally blocked here until a server-owned adapter
+      // reconstructs this input from trusted profile/evidence records.
+      return res.status(409).json({
+        error: 'trusted_evidence_required',
+        message:
+          'Galactic Code can only be generated from server-owned verified/deterministic evidence; client-supplied verification labels are not trusted.',
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('[GalacticCode] Generation error:', message);

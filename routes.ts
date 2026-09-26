@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, type User, signupSchema, loginSchema } from "./shared/schema";
 import { sendTestNotificationSchema, broadcastNotificationSchema } from "./shared/notification-schemas";
-import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
+import { calculateAstrology } from "./services/astrology";
 import { getAstroProvider } from "./server/astro/provider";
 import { buildPosterSvg, type PosterData as PosterSvgData } from "./server/posterSvg";
 import sharp from "sharp";
@@ -14,29 +14,9 @@ import { synthesizeArchetype, generateIntegrationAnalysis, generatePersonalizedI
 import { generateBiography, generateDailyGuidance } from "./services/openai";
 import { calculateHumanDesign } from "@soulcodex/astrology";
 import { generateDailyInsights } from "./services/daily-insights";
-import { calculateCompatibility } from "./services/compatibility";
-import { generateCompatibilityInsights } from "./services/compatibility-insights";
-import { getMatchesByMode, type RelationshipMode } from "./services/archetype-matches";
+import type { RelationshipMode } from "./services/archetype-matches";
 import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
-import { calculateVedicAstrology } from "./services/vedic-astrology";
-import { calculateGeneKeys } from "./services/gene-keys";
-import { calculateIChing } from "./services/i-ching";
-import { calculateChineseAstrology } from "./services/chinese-astrology";
-import { calculateKabbalah } from "./services/kabbalah";
-import { calculateMayanAstrology } from "./services/mayan-astrology";
-import { calculateChakraSystem } from "./services/chakra-system";
-import { calculateSacredGeometry } from "./services/sacred-geometry";
-import { calculateRunes } from "./services/runes";
-import { calculateSabianSymbols } from "./services/sabian-symbols";
-import { calculateAyurveda } from "./services/ayurveda";
-import { calculateBiorhythms } from "./services/biorhythms";
-import { calculateAsteroids } from "./services/asteroids";
-import { calculateArabicParts } from "./services/arabic-parts";
-import { calculateFixedStars } from "./services/fixed-stars";
-import { generatePalmReading } from "./services/palmistry";
-import { calculateElementalProfile, generateSoulArchetype, getDailyElementalGuidance } from "./services/elemental-medicine";
-import { calculateMoralCompass, calculateMoralCompassFromBirthData } from "./services/moral-compass";
-import { calculateParentalInfluence } from "./services/parental-influence";
+import { calculateMoralCompass } from "./services/moral-compass";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./auth";
@@ -51,36 +31,66 @@ import { getAllPrompts, getPromptByCategory, getPromptById, getTransitPrompt, ge
 import { finalOutputGuard, routeAIRequest } from "./services/ai-router";
 import { generateRelationshipAutopsy } from "./services/relationship-autopsy";
 import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
-import { calculateSolarReturn, calculateLunarReturn, calculateSecondaryProgressions } from "./services/progressions";
-import { generateProfilePDF, generateCompatibilityPDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
+import { generateProfilePDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
 import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks } from "./services/shareable-links";
 import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "./services/transit-notifications";
 
 import { SubscriptionService } from "./services/subscription-service";
 import { entitlementService } from "./services/entitlement-service";
 import { runWithTimeoutAndTiming, TIMEOUT_VALUES } from "./utils/timeout";
-import { buildSoulProfile } from "./soulcodex/index";
-import { deterministicArchetypeProfile } from "./services/deterministic-fallback";
-import type { UserInputs } from "./soulcodex/types";
 import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
+import { formatInTimeZone } from "date-fns-tz";
 import { resolveGeo } from "./server/geo/index";
 import { computeConfidence } from "./soulcodex/compute/confidence";
 import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
 import { buildNatalReportPdf } from "./server/natalReportPdf";
-import { buildCompatibilityReportPdf } from "./server/compatibilityReportPdf";
+import { buildNatalReportInput, natalReportFilename } from "./server/lib/natal-report-contract";
+import { profileBelongsToActor } from "./server/lib/profile-ownership";
+import { extractVerifiedAstrology } from "./server/lib/verified-astrology";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
 import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/compile";
 import { isGeneric, scoreOutput } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
-import { getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
+import { calcLifePath, dateOnlyFromStoredValue, parseDateOnly, getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
 import { VOICE_LAWS } from "./soulcodex/codex30/prompts/voice_laws";
 import { pureText } from "./services/sanitizer";
 
 
 // Utility function for consistent error responses
+function profileLocalYear(
+  profile: { timezone?: unknown },
+  now: Date = new Date(),
+): number {
+  return Number(profileLocalDateKey(profile, now).slice(0, 4));
+}
+
+
+function profileLocalDateKey(
+  profile: { timezone?: unknown },
+  now: Date = new Date(),
+): string {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
+    throw new RangeError("Profile-local date requires a valid instant");
+  }
+
+  const timezone =
+    typeof profile?.timezone === "string" && profile.timezone.trim()
+      ? profile.timezone.trim()
+      : "UTC";
+
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(now);
+  } catch {
+    throw new RangeError(`Invalid profile timezone: ${timezone}`);
+  }
+
+  return formatInTimeZone(now, timezone, "yyyy-MM-dd");
+}
+
+
 function handleError(error: unknown, res: any, context: string) {
   console.error(`[${context}] Error:`, error);
   
@@ -121,7 +131,7 @@ function handleError(error: unknown, res: any, context: string) {
   });
 }
 
-import compatibilityRoutes from "./routes/compatibility";
+import compatibilityRoutes, { buildMatchResponse } from "./routes/compatibility";
 import { getVapidPublicKey } from "./services/push-notifications";
 import { insertPushSubscriptionSchema } from "./shared/schema";
 
@@ -597,37 +607,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!astrologyData && astroResult) {
         astrologyData = astroResult;
       }
+      const usableSign = (value: unknown): string | undefined => {
+        if (typeof value !== "string") return undefined;
+        const trimmed = value.trim();
+        if (!trimmed || trimmed.toLowerCase() === "unknown") return undefined;
+        return trimmed;
+      };
       let astrologyStatus: { state: "full" | "partial" | "unavailable"; reason: string };
       if (astrologyData) {
         const a: any = astrologyData;
-        const sunSign = a.sunSign ?? a.sun;
-        const moonSign = a.moonSign ?? a.moon;
-        // Honesty rule: Rising sign is ONLY valid with a known birth time. Never estimate it.
-        const risingSign = timeKnown ? (a.risingSign ?? a.rising) : undefined;
-        const housesAvailable = timeKnown && hasCompleteData && !!(a.houses || a.housesAvailable);
+        const sunSign = usableSign(a.sunSign ?? a.sun);
+        const moonSign = usableSign(a.moonSign ?? a.moon);
+        // Honesty rule: Rising sign is ONLY valid with a resolved birth time.
+        const risingSign = timeKnown ? usableSign(a.risingSign ?? a.rising) : undefined;
+        const housesAvailable =
+          timeKnown &&
+          hasCompleteData &&
+          (
+            a.housesAvailable === true ||
+            (Array.isArray(a.houses) && a.houses.length > 0)
+          );
 
         if (!sunSign && !moonSign) {
           astrologyData = null;
           astrologyStatus = {
             state: "unavailable",
-            reason: "The astrology engine returned no placements for the provided birth date. Check the date is valid (YYYY-MM-DD).",
+            reason: "No astrology placement is safely resolved from the available birth evidence. Add or correct birth time/timezone/location rather than estimating missing placements.",
           };
         } else {
           astrologyData = { ...a, sunSign, moonSign, risingSign, housesAvailable };
           if (!timeKnown) {
             astrologyStatus = {
               state: "partial",
-              reason: "Birth time unknown — Sun and Moon are calculated; Rising sign and houses are omitted, not estimated.",
+              reason: "Birth time unknown — exact Moon/Rising and planetary degrees are withheld. A Sun sign is shown only when the birth date resolves unambiguously.",
             };
           } else if (!hasCompleteData) {
             astrologyStatus = {
               state: "partial",
-              reason: "Birth location or timezone is incomplete — Sun and Moon are calculated; houses are omitted.",
+              reason: "Birth location or timezone is incomplete — only placements supported by the available civil-time evidence are returned; Rising sign and houses stay withheld.",
             };
           } else {
             astrologyStatus = {
               state: "full",
-              reason: "Full birth data — Sun, Moon, Rising, and houses are calculated.",
+              reason: "Full birth date, exact time, timezone, and coordinates are available for the calculated chart layer.",
             };
           }
         }
@@ -640,7 +662,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let numerologyData;
       try {
-        numerologyData = calculateNumerology(validatedBirthData.name, validatedBirthData.birthDate);
+        numerologyData = calculateNumerology(
+          validatedBirthData.name,
+          validatedBirthData.birthDate,
+          profileLocalYear({ timezone: validatedBirthData.timezone }),
+        );
       } catch (error) {
         console.error("[SoulArchetype] Numerology calculation failed:", error);
         return res.status(500).json({ message: "Failed to calculate numerology data" });
@@ -664,191 +690,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Calculate Elemental Medicine Profile
-      let elementalMedicineData = null;
-      try {
-        console.log("[SoulArchetype] Calculating Elemental Medicine Profile...");
-        if (astrologyData && numerologyData) {
-          elementalMedicineData = calculateElementalProfile(
-            validatedBirthData.birthDate,
-            numerologyData.lifePath,
-            (astrologyData as any).sunSign || (astrologyData as any).sun,
-            (astrologyData as any).moonSign || (astrologyData as any).moon,
-            humanDesignData?.type
-          );
-          console.log("[SoulArchetype] Elemental Medicine Profile calculated successfully");
-        }
-      } catch (error) {
-        console.error("[SoulArchetype] Elemental Medicine calculation failed:", error);
-      }
-      
-      // Generate soul archetype using elemental medicine system
-      let soulArchetypeData = null;
-      try {
-        console.log("[SoulArchetype] Generating soul archetype...");
-        if (numerologyData && astrologyData) {
-          soulArchetypeData = generateSoulArchetype(
-            validatedBirthData.name,
-            numerologyData.lifePath || 1,
-            (astrologyData as any).sunSign,
-            (astrologyData as any).moonSign,
-            humanDesignData?.type,
-            undefined // enneagramType
-          );
-          console.log("[SoulArchetype] Soul archetype generated successfully");
-        }
-      } catch (error) {
-        console.error("[SoulArchetype] Soul archetype generation failed:", error);
-      }
-      
-      // Calculate Moral Compass
+      // Legacy birth-derived personality/soul systems are quarantined.
+      // They remain null until a governed evidence contract exists.
+      const elementalMedicineData = null;
+      const soulArchetypeData = null;
+      const parentalInfluenceData = null;
+      const soulCodexResult: any = null;
+
+      // Moral Compass is an explicit user assessment only. Birth data,
+      // numerology, and astrology must not manufacture moral traits.
       let moralCompassData = null;
-      try {
-        console.log("[SoulArchetype] Calculating Moral Compass...");
-        if (validatedBirthData.moralCompassAnswers && 
-            validatedBirthData.moralCompassAnswers.familyValues && 
-            validatedBirthData.moralCompassAnswers.neighborhoodType && 
-            validatedBirthData.moralCompassAnswers.conflictResolution) {
-          moralCompassData = calculateMoralCompass(
-            validatedBirthData.moralCompassAnswers,
-            numerologyData?.lifePath,
-            astrologyData?.sunSign
-          );
-        } else {
-          moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.lifePath,
-            astrologyData?.sunSign,
-            astrologyData?.moonSign
-          );
-        }
-        console.log("[SoulArchetype] Moral Compass calculated successfully");
-      } catch (error) {
-        console.error("[SoulArchetype] Moral Compass calculation failed:", error);
-      }
-      
-      // Calculate Parental Influence
-      let parentalInfluenceData = null;
-      try {
-        if (astrologyData) {
-          parentalInfluenceData = calculateParentalInfluence(
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            validatedBirthData.fatherSign,
-            validatedBirthData.motherSign
-          );
-        }
-      } catch (error) {
-        console.error("[SoulArchetype] Parental Influence calculation failed:", error);
-      }
-      
-      // Run Soul Codex synthesis engine
-      let soulCodexResult = null;
-      try {
-        // 1. Map Onboarding Patterns to Mirror Signals
-        const mapDriver = (p: string | undefined): string | null => {
-          if (!p) return null;
-          const map: Record<string, string> = {
-            spiral_inward: "sanctuary",
-            explode_outward: "movement",
-            shut_down: "sanctuary",
-            lock_up: "system",
-            hyper_control: "masterpiece",
-            flee_distract: "movement",
-          };
-          return map[p] || null;
-        };
-
-        const mapShadow = (e: string | undefined): string | null => {
-          if (!e) return null;
-          const map: Record<string, string> = {
-            suppress_until_snap: "emotional",
-            escalate_fast: "disrespect",
-            go_cold: "dishonesty",
-            people_please: "dishonesty",
-            intellectualize: "stupidity",
-            withdraw_disappear: "emotional",
-          };
-          return map[e] || null;
-        };
-
-        const mapDecision = (d: string | undefined): string | null => {
-          if (!d) return null;
-          const map: Record<string, string> = {
-            analysis_paralysis: "analyze",
-            fear_of_wrong: "withdraw",
-            need_consensus: "talk",
-            impulse_regret: "fix",
-            avoidance_freeze: "withdraw",
-            overthink_intuition: "analyze",
-          };
-          return map[d] || null;
-        };
-
-        const mapDrain = (dr: string | undefined): string | null => {
-          if (!dr) return null;
-          const map: Record<string, string> = {
-            unstructured_time: "chaos",
-            conflict_tension: "chaos",
-            performing_energy: "misunderstood",
-            unclear_expectations: "chaos",
-            being_needed: "repetition",
-            sensory_overload: "chaos",
-          };
-          return map[dr] || null;
-        };
-
-        // Build robust MirrorAnswers object from questionnaire signals
-        const mirror: Partial<MirrorAnswers> = {
-          freedomBuild: [
-            mapDriver(req.body.primary_pressure_pattern),
-            mapDriver(req.body.secondary_pressure_pattern)
-          ].filter(Boolean) as any[],
-          betrayal: [
-            mapShadow(req.body.escalation_pattern)
-          ].filter(Boolean) as any[],
-          reaction: [
-            mapDecision(req.body.decision_friction_primary),
-            mapDecision(req.body.decision_friction_secondary)
-          ].filter(Boolean) as any[],
-          drain: [
-            mapDrain(req.body.drain_pattern_primary),
-            mapDrain(req.body.drain_pattern_secondary)
-          ].filter(Boolean) as any[],
-        };
-
-        console.log("[SoulArchetype] Mapped onboarding signals to mirror:", mirror);
-
-        const soulInputs: UserInputs = {
-          birthData: {
-            name: validatedBirthData.name,
-            birthDate: validatedBirthData.birthDate,
-            birthTime: validatedBirthData.birthTime,
-            birthLocation: validatedBirthData.birthLocation,
-            timezone: validatedBirthData.timezone,
-            latitude: validatedBirthData.latitude,
-            longitude: validatedBirthData.longitude,
-          },
-          mirror: mirror as MirrorAnswers,
-          nonNegotiables: req.body.nonNegotiables ?? [],
-          goals: req.body.goals ?? [],
-        };
-
-        // astrologyData is already normalized + provider-backed above.
-        // (Provider returns sun/moon/rising as strings; calc returns *Sign fields.)
-        const sunSign = astrologyData?.sunSign || (astroResult as any)?.sun;
-        const moonSign = astrologyData?.moonSign || (astroResult as any)?.moon;
-        // Rising only when birth time is known — never estimated.
-        const risingSign = timeKnown ? (astrologyData?.risingSign || (astroResult as any)?.rising) : undefined;
-
-        soulCodexResult = buildSoulProfile(soulInputs, {
-          sunSign,
-          moonSign,
-          risingSign,
-          lifePath: numerologyData?.lifePath || 0,
-        });
-        console.log("[SoulArchetype] Soul Codex synthesis completed");
-      } catch (error) {
-        console.error("[SoulArchetype] Soul Codex synthesis failed:", error);
+      if (
+        validatedBirthData.moralCompassAnswers &&
+        validatedBirthData.moralCompassAnswers.familyValues &&
+        validatedBirthData.moralCompassAnswers.neighborhoodType &&
+        validatedBirthData.moralCompassAnswers.conflictResolution
+      ) {
+        moralCompassData = calculateMoralCompass(
+          validatedBirthData.moralCompassAnswers,
+        );
       }
 
       // Persist profile to database
@@ -894,16 +754,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         savedProfile = { id: `temp_${Date.now()}` };
       }
 
-      // Deterministic fill so the core reading is NEVER empty/stubbed without AI.
-      const fill = deterministicArchetypeProfile({
-        sunSign: astrologyData?.sunSign,
-        moonSign: astrologyData?.moonSign,
-        lifePath: numerologyData?.lifePath,
-        element: elementalMedicineData?.primaryElement || (soulCodexResult?.profile.archetype as any)?.element,
-        archetypeName: soulCodexResult?.profile.archetype?.name || soulArchetypeData?.name,
-      });
-      const coreStrengths = (soulArchetypeData?.strengths?.length ? soulArchetypeData.strengths : fill.strengths);
-      const shadowAspects = (soulArchetypeData?.shadows?.length ? soulArchetypeData.shadows : fill.shadows);
+      // Missing interpretation remains missing. Do not fill identity claims from
+      // zodiac stereotypes or generic deterministic prose.
+      const coreStrengths: string[] = [];
+      const shadowAspects: string[] = [];
 
       // Build response in the format expected by frontend
       const response = {
@@ -916,21 +770,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         astrologyData: astrologyData ?? null,
         astrologyStatus,
         humanDesignData: humanDesignData ?? null,
-        soul_frequency: soulArchetypeData?.soulFrequency || {
-          frequency: "432 Hz",
-          resonance: "Harmonic",
-          vibration: "High"
-        },
-        who_i_am: soulArchetypeData?.firstPersonBio || fill.bio,
+        soul_frequency: null,
+        who_i_am: null,
         core_strengths: coreStrengths,
         shadow_aspects: shadowAspects,
-        purpose: soulArchetypeData?.purpose || fill.purpose,
-        soul_architecture: {
-          foundation: astrologyData?.sunSign || "Astrological Big 3",
-          structure: humanDesignData?.type || "Human Design Type",
-          expression: numerologyData?.lifePath?.toString() || "Life Path Number",
-          integration: "All 35+ Systems Unified"
-        },
+        purpose: null,
+        soul_architecture: null,
         elementalMedicineData,
         moralCompassData,
         parentalInfluenceData,
@@ -1041,7 +886,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let numerologyData;
       try {
-        numerologyData = calculateNumerology(birthData.name, birthData.birthDate);
+        numerologyData = calculateNumerology(
+          birthData.name,
+          birthData.birthDate,
+          profileLocalYear({ timezone: birthData.timezone }),
+        );
       } catch (error) {
         console.error("[CreateProfile] Numerology calculation failed:", error);
         throw new Error("Failed to calculate numerology data. Please verify name and birth date.");
@@ -1069,287 +918,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         humanDesignData = null;
       }
       
-      // Get Tarot birth cards
-      let tarotCards;
-      try {
-        tarotCards = getTarotBirthCards(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Tarot calculation failed:", error);
-        tarotCards = []; // Non-critical, can continue without tarot cards
-      }
-      
       // Calculate all new mystical systems (30+ total)
-      let vedicAstrologyData, geneKeysData, iChingData, chineseAstrologyData;
-      let kabbalahData, mayanAstrologyData, chakraData, sacredGeometryData;
-      let runesData, sabianSymbolsData, ayurvedaData, biorhythmsData;
-      let asteroidsData, arabicPartsData, fixedStarsData;
+      // Systems below are present only as legacy code and are explicitly
+      // unavailable in the production system registry. Preserve schema keys
+      // as null so old clients/storage remain compatible without manufacturing
+      // identity claims from ungoverned calculators.
+      const vedicAstrologyData = null;
+      const geneKeysData = null;
+      const iChingData = null;
+      const chineseAstrologyData = null;
+      const kabbalahData = null;
+      const mayanAstrologyData = null;
+      const chakraData = null;
+      const sacredGeometryData = null;
+      const runesData = null;
+      const sabianSymbolsData = null;
+      const ayurvedaData = null;
+      const biorhythmsData = null;
+      const palmistryData = null;
+      const asteroidsData = null;
+      const arabicPartsData = null;
+      const fixedStarsData = null;
       
-      // Vedic Astrology (requires complete data)
-      if (hasCompleteData) {
-        try {
-          vedicAstrologyData = calculateVedicAstrology({
-            birthDate: birthData.birthDate,
-            birthTime: birthData.birthTime!,
-            latitude: parseFloat(String(birthData.latitude || "0")),
-            longitude: parseFloat(String(birthData.longitude || "0")),
-            timezone: birthData.timezone!
-          });
-        } catch (error) {
-          console.error("[CreateProfile] Vedic Astrology calculation failed:", error);
-          vedicAstrologyData = null;
-        }
-      } else {
-        vedicAstrologyData = null;
-      }
-      
-      // Gene Keys (requires complete data for HD gates)
-      if (hasCompleteData && astrologyData && humanDesignData) {
-        try {
-          const sunGate = humanDesignData.activations.conscious.sun.gate;
-          const earthGate = humanDesignData.activations.conscious.earth.gate;
-          const moonGate = humanDesignData.activations.conscious.moon.gate;
-          geneKeysData = calculateGeneKeys(sunGate, earthGate, moonGate);
-        } catch (error) {
-          console.error("[CreateProfile] Gene Keys calculation failed:", error);
-          geneKeysData = null;
-        }
-      } else {
-        geneKeysData = null;
-      }
-      
-      // I Ching (works with just birth date)
-      try {
-        iChingData = calculateIChing(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] I Ching calculation failed:", error);
-        iChingData = null;
-      }
-      
-      // Chinese Astrology (works with just birth date)
-      try {
-        chineseAstrologyData = calculateChineseAstrology(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Chinese Astrology calculation failed:", error);
-        chineseAstrologyData = null;
-      }
-      
-      // Kabbalah (works with name + birth date + numerology)
-      try {
-        kabbalahData = calculateKabbalah(birthData.name, birthData.birthDate, numerologyData.lifePath || 1);
-      } catch (error) {
-        console.error("[CreateProfile] Kabbalah calculation failed:", error);
-        kabbalahData = null;
-      }
-      
-      // Mayan Astrology (works with just birth date)
-      try {
-        mayanAstrologyData = calculateMayanAstrology(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Mayan Astrology calculation failed:", error);
-        mayanAstrologyData = null;
-      }
-      
-      // Chakra System (works with birth date + numerology)
-      try {
-        chakraData = calculateChakraSystem(astrologyData, numerologyData, {});
-      } catch (error) {
-        console.error("[CreateProfile] Chakra System calculation failed:", error);
-        chakraData = null;
-      }
-      
-      // Sacred Geometry (works with birth date + numerology)
-      try {
-        sacredGeometryData = calculateSacredGeometry(birthData.birthDate, numerologyData.lifePath || 1, birthData.name);
-      } catch (error) {
-        console.error("[CreateProfile] Sacred Geometry calculation failed:", error);
-        sacredGeometryData = null;
-      }
-      
-      // Runes (works with name + birth date + numerology)
-      try {
-        runesData = calculateRunes(birthData.name, birthData.birthDate, numerologyData.lifePath || 1);
-      } catch (error) {
-        console.error("[CreateProfile] Runes calculation failed:", error);
-        runesData = null;
-      }
-      
-      // Sabian Symbols (requires complete data for planetary longitudes)
-      if (hasCompleteData && astrologyData) {
-        const sunLongitude = (astrologyData.planets.sun.house - 1) * 30 + astrologyData.planets.sun.degree;
-        const moonLongitude = (astrologyData.planets.moon.house - 1) * 30 + astrologyData.planets.moon.degree;
-        const ascendantLongitude = astrologyData.houses[0].degree;
-        sabianSymbolsData = await runWithTimeoutAndTiming(
-          "Sabian Symbols",
-          TIMEOUT_VALUES.SABIAN_SYMBOLS,
-          () => calculateSabianSymbols(sunLongitude, moonLongitude, ascendantLongitude),
-          null
+      // Legacy elemental/soul/parental inference is quarantined.
+      const elementalMedicineData = null;
+      const soulArchetypeData = null;
+      const parentalInfluenceData = null;
+
+      // Moral Compass requires explicit assessment answers. Do not infer ethics
+      // from birth date, numerology, or astrology.
+      let moralCompassData = null;
+      if (
+        birthData.moralCompassAnswers &&
+        birthData.moralCompassAnswers.familyValues &&
+        birthData.moralCompassAnswers.neighborhoodType &&
+        birthData.moralCompassAnswers.conflictResolution
+      ) {
+        const { calculateMoralCompass } = await import("./services/moral-compass");
+        moralCompassData = calculateMoralCompass(
+          birthData.moralCompassAnswers,
         );
-      } else {
-        sabianSymbolsData = null;
-      }
-      
-      // Ayurveda (works with birth date, enhanced with astrology)
-      try {
-        ayurvedaData = calculateAyurveda(birthData.birthDate, numerologyData.lifePath || 1);
-      } catch (error) {
-        console.error("[CreateProfile] Ayurveda calculation failed:", error);
-        ayurvedaData = null;
-      }
-      
-      // Biorhythms (works with just birth date)
-      try {
-        biorhythmsData = calculateBiorhythms(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Biorhythms calculation failed:", error);
-        biorhythmsData = null;
-      }
-      
-      // Palmistry (works with birth date + numerology life path)
-      let palmistryData;
-      try {
-        palmistryData = generatePalmReading(birthData.birthDate, numerologyData.lifePath || 1);
-        console.log("[CreateProfile] Palm reading generated successfully");
-      } catch (error) {
-        console.error("[CreateProfile] Palmistry calculation failed:", error);
-        palmistryData = null;
-      }
-      
-      // Asteroids (requires complete data for planetary positions)
-      if (hasCompleteData && astrologyData) {
-        try {
-          const ascendantLongitude = (astrologyData as any).houses?.[0]?.degree || 0;
-          asteroidsData = calculateAsteroids(
-            birthData.birthDate,
-            birthData.birthTime!,
-            birthData.timezone!,
-            ascendantLongitude
-          );
-        } catch (error) {
-          console.error("[CreateProfile] Asteroids calculation failed:", error);
-          asteroidsData = null;
-        }
-      } else {
-        asteroidsData = null;
-      }
-      
-      // Arabic Parts (requires complete data for ascendant)
-      if (hasCompleteData && astrologyData) {
-        try {
-          const ascendantLongitude = astrologyData.houses[0].degree;
-          arabicPartsData = calculateArabicParts(
-            ascendantLongitude,
-            astrologyData.planets.sun.degree,
-            astrologyData.planets.moon.degree,
-            astrologyData.planets.venus.degree,
-            astrologyData.planets.jupiter.degree,
-            astrologyData.planets.saturn.degree,
-            true // isDayBirth - simplified
-          );
-        } catch (error) {
-          console.error("[CreateProfile] Arabic Parts calculation failed:", error);
-          arabicPartsData = null;
-        }
-      } else {
-        arabicPartsData = null;
-      }
-      
-      // Fixed Stars (requires planetary longitudes)
-      if (hasCompleteData && astrologyData) {
-        try {
-          const planetLongitudes = {
-            sun: astrologyData.planets.sun.degree,
-            moon: astrologyData.planets.moon.degree,
-            mercury: astrologyData.planets.mercury.degree,
-            venus: astrologyData.planets.venus.degree,
-            mars: astrologyData.planets.mars.degree,
-            jupiter: astrologyData.planets.jupiter.degree,
-            saturn: astrologyData.planets.saturn.degree
-          };
-          fixedStarsData = calculateFixedStars(planetLongitudes);
-        } catch (error) {
-          console.error("[CreateProfile] Fixed Stars calculation failed:", error);
-          fixedStarsData = null;
-        }
-      } else {
-        fixedStarsData = null;
-      }
-      
-      // Calculate Elemental Medicine Profile
-      let elementalMedicineData;
-      try {
-        if (astrologyData && numerologyData) {
-          elementalMedicineData = calculateElementalProfile(
-            birthData.birthDate,
-            numerologyData.calculateNumerology?.lifePath,
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            humanDesignData?.type
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Elemental Medicine calculation failed:", error);
-        elementalMedicineData = null;
-      }
-      
-      // Calculate Soul Archetype (from Elemental Medicine system)
-      let soulArchetypeData;
-      try {
-        if (numerologyData && astrologyData) {
-          soulArchetypeData = generateSoulArchetype(
-            birthData.name,
-            numerologyData.calculateNumerology?.lifePath || 1,
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            humanDesignData?.type,
-            undefined // enneagramType - can be added later
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Soul Archetype generation failed:", error);
-        soulArchetypeData = null;
-      }
-      
-      // Calculate Parental Influence (uses parent signs if provided)
-      let parentalInfluenceData;
-      try {
-        if (astrologyData) {
-          parentalInfluenceData = calculateParentalInfluence(
-            astrologyData.sunSign,
-            astrologyData.moonSign,
-            birthData.fatherSign,
-            birthData.motherSign
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Parental Influence calculation failed:", error);
-        parentalInfluenceData = null;
-      }
-      
-      // Calculate Moral Compass (uses answers if provided, otherwise from birth data)
-      let moralCompassData;
-      try {
-        if (birthData.moralCompassAnswers && 
-            birthData.moralCompassAnswers.familyValues && 
-            birthData.moralCompassAnswers.neighborhoodType && 
-            birthData.moralCompassAnswers.conflictResolution) {
-          // Use provided answers
-          const { calculateMoralCompass } = await import("./services/moral-compass");
-          moralCompassData = calculateMoralCompass(
-            birthData.moralCompassAnswers,
-            numerologyData?.lifePath || 1,
-            (astrologyData as any)?.sunSign
-          );
-        } else {
-          // Fallback to birth data calculation
-          moralCompassData = calculateMoralCompassFromBirthData(
-            numerologyData?.lifePath || 1,
-            (astrologyData as any)?.sunSign,
-            (astrologyData as any)?.moonSign
-          );
-        }
-      } catch (error) {
-        console.error("[CreateProfile] Moral Compass calculation failed:", error);
-        moralCompassData = null;
       }
       
       // Basic archetype synthesis (will be enhanced with personality data)
@@ -1383,8 +991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shadows: baseArchetypeData.shadows || [],
         guidance: baseArchetypeData.guidance,
         integration: integrationAnalysis,
-        personalizedInsights: personalizedInsights,
-        tarotCards
+        personalizedInsights: personalizedInsights
       };
       
       // Generate biography and guidance (AI-powered with ALL 30+ systems)
@@ -1398,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           numerologyData,
           personalityData: {},
           archetype: baseArchetypeData,
-          // All 15 new advanced systems + tarot for COMPLETE synthesis (30+ systems total)
+          // Legacy symbolic systems remain null and excluded from identity synthesis.
           humanDesignData,
           vedicAstrologyData,
           geneKeysData,
@@ -1414,8 +1021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           biorhythmsData,
           asteroidsData,
           arabicPartsData,
-          fixedStarsData,
-          tarotCards // Tarot birth cards
+          fixedStarsData
         }),
         "Your cosmic journey awaits..."
       );
@@ -1516,12 +1122,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
+      let profileBirthDateISO: string | null = null;
+      try {
+        profileBirthDateISO = dateOnlyFromStoredValue(profile.birthDate);
+      } catch (error) {
+        console.error("[GetProfile] Stored birth date is non-canonical; auto-healing is disabled for this profile.", error);
+      }
+
       // Auto-healing: Check for missing data fields
       let needsUpdate = false;
       let updatedData: any = {};
       
       // Check if profile has complete birth data
       const profileHasCompleteData = !!(
+        profileBirthDateISO &&
         profile.birthTime && 
         profile.birthLocation && 
         profile.timezone && 
@@ -1535,7 +1149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const humanDesignData = calculateHumanDesign({
             name: profile.name,
-            birthDate: profile.birthDate,
+            birthDate: profileBirthDateISO!,
             birthTime: profile.birthTime!,
             birthLocation: profile.birthLocation!,
             latitude: profile.latitude!,
@@ -1563,7 +1177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             astrologyData = calculateAstrology({
               name: profile.name,
-              birthDate: profile.birthDate,
+              birthDate: profileBirthDateISO!,
               birthTime: profile.birthTime!,
               birthLocation: profile.birthLocation!,
               latitude: profile.latitude!,
@@ -1577,8 +1191,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        if (!numerologyData) {
-          numerologyData = calculateNumerology(profile.name, profile.birthDate);
+        if (!numerologyData && profileBirthDateISO) {
+          numerologyData = calculateNumerology(
+            profile.name,
+            profileBirthDateISO,
+            profileLocalYear(profile),
+          );
           updatedData.numerologyData = numerologyData;
           needsUpdate = true;
         }
@@ -1590,9 +1208,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const integrationAnalysis = generateIntegrationAnalysis(astrologyData, numerologyData, profile.personalityData, baseArchetypeData);
         const personalizedInsights = generatePersonalizedInsights(astrologyData, numerologyData, profile.personalityData, baseArchetypeData);
         
-        // Get Tarot birth cards if not present
-        const tarotCards = getTarotBirthCards(profile.birthDate);
-        
         // Combine all archetype data with integration and insights
         const enhancedArchetypeData = {
           archetype: baseArchetypeData.title,
@@ -1603,8 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           shadows: baseArchetypeData.shadows || [],
           guidance: baseArchetypeData.guidance,
           integration: integrationAnalysis,
-          personalizedInsights: personalizedInsights,
-          tarotCards: tarotCards
+          personalizedInsights: personalizedInsights
         };
         
         updatedData.archetypeData = enhancedArchetypeData;
@@ -1613,12 +1227,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for enhanced astrology data (may have basic vs comprehensive data) - only if complete data available
       const astroData = profile.astrologyData as any;
-      if ((!astroData || !astroData.interpretations || !astroData.northNode || !astroData.southNode || !astroData.chiron) && profileHasCompleteData) {
-        console.log("Auto-healing: Missing enhanced astrologyData for profile", req.params.id);
+      if ((!astroData || !astroData.interpretations) && profileHasCompleteData) {
+        console.log("Auto-healing: Missing governed legacy astrologyData for profile", req.params.id);
         try {
           const enhancedAstrologyData = calculateAstrology({
             name: profile.name,
-            birthDate: profile.birthDate,
+            birthDate: profileBirthDateISO!,
             birthTime: profile.birthTime!,
             birthLocation: profile.birthLocation!,
             latitude: profile.latitude!,
@@ -1634,9 +1248,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for comprehensive numerology data
       const numeroData = profile.numerologyData as any;
-      if (!numeroData || !numeroData.interpretations) {
+      if ((!numeroData || !numeroData.interpretations) && profileBirthDateISO) {
         console.log("Auto-healing: Missing enhanced numerologyData for profile", req.params.id);
-        const enhancedNumerologyData = calculateNumerology(profile.name, profile.birthDate);
+        const enhancedNumerologyData = calculateNumerology(
+            profile.name,
+            profileBirthDateISO,
+            profileLocalYear(profile),
+          );
         updatedData.numerologyData = enhancedNumerologyData;
         needsUpdate = true;
       }
@@ -1674,21 +1292,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[GetRituals] Fetching rituals for profile: ${profileId}`);
       
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Parallel fetch of profile and daily insights
-      const [profile, dailyInsightsRecord] = await Promise.all([
-        storage.getProfile(profileId),
-        storage.getDailyInsight(profileId, today)
-      ]);
-      
+      const profile = await storage.getProfile(profileId);
       if (!profile) {
         console.log(`[GetRituals] Profile not found: ${profileId}`);
         return res.status(404).json({ message: "Profile not found" });
       }
+
+      const today = profileLocalDateKey(profile);
+      const dailyInsightsRecord = await storage.getDailyInsight(profileId, today);
       
       const warnings: string[] = [];
-      const ayurvedaData = profile.ayurvedaData;
+      // Ayurveda is registry-disabled until an explicit governed assessment
+      // exists. Preserve the response key for old clients but never surface
+      // stored legacy/inferred dosha data as personalized guidance.
+      const ayurvedaData = null;
       
       // Extract daily insights affirmations
       let affirmations: any[] = [];
@@ -1824,8 +1441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shadows: baseArchetypeData.shadows || [],
         guidance: baseArchetypeData.guidance,
         integration: integrationAnalysis,
-        personalizedInsights: personalizedInsights,
-        tarotCards: (profile.archetypeData as any)?.tarotCards
+        personalizedInsights: personalizedInsights
       };
       
       const updatedProfile = await storage.updateProfile(profileId, {
@@ -1895,8 +1511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shadows: baseArchetypeData.shadows || [],
         guidance: baseArchetypeData.guidance,
         integration: integrationAnalysis,
-        personalizedInsights: personalizedInsights,
-        tarotCards: (profile.archetypeData as any)?.tarotCards
+        personalizedInsights: personalizedInsights
       };
       
       const updatedProfile = await storage.updateProfile(profileId, {
@@ -2222,17 +1837,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/daily-insights/:profileId", async (req, res) => {
     try {
       const { profileId } = req.params;
-      const today = new Date().toISOString().split('T')[0];
       
-      console.log(`[GetDailyInsights] Fetching insights for profile ${profileId} on ${today}`);
-      
-      // Get the profile
+      // Get the profile before resolving its local calendar date.
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
+
+      const referenceInstant = new Date();
+      const today = profileLocalDateKey(profile, referenceInstant);
+      console.log(`[GetDailyInsights] Fetching insights for profile ${profileId} on ${today}`);
       
-      // Check if we already have insights for today
+      // Check if we already have insights for the profile-local day.
       let dailyInsight = await storage.getDailyInsight(profileId, today);
       
       if (dailyInsight) {
@@ -2243,7 +1859,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate new insights
       console.log(`[GetDailyInsights] Generating new insights for ${today}`);
       const recentTemplateIds = await storage.getRecentTemplateIds(profileId, 7);
-      const { data, templateIds, contentHash } = generateDailyInsights(profile, recentTemplateIds);
+      const { data, templateIds, contentHash } = generateDailyInsights(
+        profile,
+        recentTemplateIds,
+        today,
+        referenceInstant,
+      );
       
       // Store the insights
       dailyInsight = await storage.createDailyInsight({
@@ -2280,109 +1901,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Archetype match rankings — pre-computed from user's own soul blueprint
+  // Compatibility fallback route mirrors the canonical evidence boundary.
+  // It must never accept naked caller-supplied verification claims.
   app.post("/api/compatibility/archetype-matches", async (req, res) => {
     try {
-      const { sunSign, lifePathNumber, hdType, mode = "love" } = req.body;
-      if (!sunSign) return res.status(400).json({ message: "sunSign is required" });
-      const result = getMatchesByMode(sunSign, lifePathNumber ? Number(lifePathNumber) : undefined, hdType, mode as RelationshipMode);
-      res.json(result);
+      const { profile, mode = "love" } = req.body ?? {};
+      if (!profile || typeof profile !== "object") {
+        return res.status(400).json({
+          message: "A saved profile is required. Do not resubmit naked sign strings.",
+        });
+      }
+      const safeMode: RelationshipMode =
+        ["love", "attraction", "friendship", "growth"].includes(mode)
+          ? mode as RelationshipMode
+          : "love";
+      const result = buildMatchResponse(profile, safeMode, {
+        trustedEvidenceContext: false,
+      });
+      res.status(result.available ? 200 : 422).json(result);
     } catch (err: any) {
-      res.status(500).json({ message: err.message });
+      res.status(500).json({ message: err?.message || "Compatibility match generation failed" });
     }
   });
 
-  // Calculate compatibility between two profiles
-  app.post("/api/compatibility", async (req, res) => {
-    try {
-      const { profile1Id, profile2Id } = req.body;
-      
-      if (!profile1Id || !profile2Id) {
-        return res.status(400).json({ message: "Both profile1Id and profile2Id are required" });
-      }
-      
-      if (profile1Id === profile2Id) {
-        return res.status(400).json({ message: "Cannot calculate compatibility with the same profile" });
-      }
-      
-      console.log(`[CalculateCompatibility] Calculating compatibility between ${profile1Id} and ${profile2Id}`);
-      
-      // Check if we already have this compatibility calculated
-      const existingCompatibility = await storage.getCompatibility(profile1Id, profile2Id);
-      if (existingCompatibility) {
-        console.log(`[CalculateCompatibility] Returning cached compatibility`);
-        return res.json(existingCompatibility);
-      }
-      
-      // Get both profiles
-      const [profile1, profile2] = await Promise.all([
-        storage.getProfile(profile1Id),
-        storage.getProfile(profile2Id)
-      ]);
-      
-      if (!profile1) {
-        return res.status(404).json({ message: `Profile ${profile1Id} not found` });
-      }
-      if (!profile2) {
-        return res.status(404).json({ message: `Profile ${profile2Id} not found` });
-      }
-      
-      // Calculate compatibility
-      console.log(`[CalculateCompatibility] Running compatibility analysis`);
-      const compatibilityResult = calculateCompatibility(profile1, profile2);
-      
-      // Store the result
-      const savedCompatibility = await storage.createCompatibility({
-        profile1Id,
-        profile2Id,
-        overallScore: compatibilityResult.overallScore,
-        compatibilityData: compatibilityResult as any,
-      });
-      
-      // Add profile data to response
-      const astro1 = profile1.astrologyData as any;
-      const astro2 = profile2.astrologyData as any;
-      const num1 = profile1.numerologyData as any;
-      const num2 = profile2.numerologyData as any;
-      const hd1 = profile1.humanDesignData as any;
-      const hd2 = profile2.humanDesignData as any;
-      const pers1 = profile1.personalityData as any;
-      const pers2 = profile2.personalityData as any;
-      
-      const response = {
-        ...savedCompatibility,
-        // Surface scoring-honesty fields at the top level too (also in compatibilityData).
-        confidence: (compatibilityResult as any).confidence,
-        systemsUsed: (compatibilityResult as any).systemsUsed,
-        systemsExcluded: (compatibilityResult as any).systemsExcluded,
-        missingDataWarnings: (compatibilityResult as any).missingDataWarnings,
-        profile1: {
-          name: profile1.name,
-          sunSign: astro1?.sunSign,
-          moonSign: astro1?.moonSign,
-          risingSign: astro1?.risingSign,
-          lifePath: num1?.lifePath,
-          hdType: hd1?.type,
-          enneagramType: pers1?.enneagram?.type,
-          mbtiType: pers1?.mbti?.type
-        },
-        profile2: {
-          name: profile2.name,
-          sunSign: astro2?.sunSign,
-          moonSign: astro2?.moonSign,
-          risingSign: astro2?.risingSign,
-          lifePath: num2?.lifePath,
-          hdType: hd2?.type,
-          enneagramType: pers2?.enneagram?.type,
-          mbtiType: pers2?.mbti?.type
-        }
-      };
-      
-      console.log(`[CalculateCompatibility] Compatibility calculated: ${compatibilityResult.overallScore}%`);
-      res.json(response);
-    } catch (error) {
-      return handleError(error, res, "CalculateCompatibility");
-    }
+  // Retired legacy aggregate compatibility endpoint.
+  // The production UI uses the evidence-aware /api/compatibility/archetype-matches
+  // and /api/compatibility/person contracts instead.
+  app.post("/api/compatibility", (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_retired",
+      message:
+        "The legacy aggregate compatibility score is retired. Use the evidence-aware compatibility endpoints.",
+      supportedEndpoints: [
+        "/api/compatibility/archetype-matches",
+        "/api/compatibility/person",
+      ],
+    });
   });
 
   // Get all compatibilities for a specific profile
@@ -2398,6 +1952,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!p1 || !p2) return res.status(404).json({ error: "Profile not found" });
 
+      const actor = {
+        userId: (req.user as any)?.id ?? (req.session as any)?.userId ?? null,
+        sessionId: req.sessionID ?? null,
+      };
+      if (
+        !profileBelongsToActor(p1, actor) ||
+        !profileBelongsToActor(p2, actor)
+      ) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+
       const autopsy = await generateRelationshipAutopsy(p1, p2);
       res.json({ ok: true, autopsy });
     } catch (error) {
@@ -2405,120 +1970,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/compatibility/:profileId", async (req, res) => {
-    try {
-      const { profileId } = req.params;
-      
-      console.log(`[GetCompatibilities] Fetching compatibilities for profile ${profileId}`);
-      
-      const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-      
-      const compatibilities = await storage.getProfileCompatibilities(profileId);
-      
-      console.log(`[GetCompatibilities] Found ${compatibilities.length} compatibility analyses`);
-      res.json(compatibilities);
-    } catch (error) {
-      return handleError(error, res, "GetCompatibilities");
-    }
+  // Cached aggregate compatibility records were produced by the retired
+  // legacy scoring engine and must not be presented as current evidence-aware results.
+  app.get("/api/compatibility/:profile1Id/:profile2Id", (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_retired",
+      message:
+        "Stored legacy aggregate compatibility scores are retired and are not served as current results.",
+    });
   });
 
-  // Get specific compatibility between two profiles
-  app.get("/api/compatibility/:profile1Id/:profile2Id", async (req, res) => {
-    try {
-      const { profile1Id, profile2Id } = req.params;
-      
-      console.log(`[GetCompatibility] Fetching compatibility between ${profile1Id} and ${profile2Id}`);
-      
-      const compatibility = await storage.getCompatibility(profile1Id, profile2Id);
-      
-      if (!compatibility) {
-        return res.status(404).json({ message: "Compatibility analysis not found. Please calculate it first." });
-      }
-      
-      // Get profile data to include in response
-      const [profile1, profile2] = await Promise.all([
-        compatibility.profile1Id ? storage.getProfile(compatibility.profile1Id) : Promise.resolve(null),
-        compatibility.profile2Id ? storage.getProfile(compatibility.profile2Id) : Promise.resolve(null)
-      ]);
-      
-      if (!profile1 || !profile2) {
-        return res.status(404).json({ message: "One or both profiles not found" });
-      }
-      
-      const astro1 = profile1.astrologyData as any;
-      const astro2 = profile2.astrologyData as any;
-      const num1 = profile1.numerologyData as any;
-      const num2 = profile2.numerologyData as any;
-      const hd1 = profile1.humanDesignData as any;
-      const hd2 = profile2.humanDesignData as any;
-      const pers1 = profile1.personalityData as any;
-      const pers2 = profile2.personalityData as any;
-      
-      // Check premium status to determine what data to return
-      const userId = (req.user as any)?.id;
-      const sessionId = req.session?.id;
-      let isPremium = false;
-      if ((req.session as any)?.isPremium) {
-        isPremium = true;
-      } else {
-        const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
-        isPremium = entStatus.isPremium;
-      }
-      
-      // Build base response with profile info
-      let response: any = {
-        profile1Id: compatibility.profile1Id,
-        profile2Id: compatibility.profile2Id,
-        overallScore: compatibility.overallScore,
-        profile1: {
-          name: profile1.name,
-          sunSign: astro1?.sunSign,
-          moonSign: astro1?.moonSign,
-          risingSign: astro1?.risingSign,
-          calculateNumerology: num1?.calculateNumerology,
-          hdType: hd1?.type,
-          enneagramType: pers1?.enneagram?.type,
-          mbtiType: pers1?.mbti?.type
-        },
-        profile2: {
-          name: profile2.name,
-          sunSign: astro2?.sunSign,
-          moonSign: astro2?.moonSign,
-          risingSign: astro2?.risingSign,
-          calculateNumerology: num2?.calculateNumerology,
-          hdType: hd2?.type,
-          enneagramType: pers2?.enneagram?.type,
-          mbtiType: pers2?.mbti?.type
-        },
-        compatibilityData: {} as any
-      };
-      
-      const fullData = compatibility.compatibilityData as any;
-      
-      if (isPremium) {
-        // Premium users get full compatibility data
-        response.compatibilityData = fullData;
-        console.log(`[GetCompatibility] Premium user - returning full data`);
-      } else {
-        // Free users get overview (strengths/challenges/growth) but no detailed category breakdowns
-        response.compatibilityData = {
-          overallScore: fullData.overallScore || compatibility.overallScore,
-          strengths: fullData.strengths || [],
-          challenges: fullData.challenges || [],
-          growthOpportunities: fullData.growthOpportunities || [],
-          relationshipDynamics: fullData.relationshipDynamics || "",
-          categories: {} // Empty - no premium category breakdowns (astrology, numerology, etc.)
-        };
-        console.log(`[GetCompatibility] Free user - returning overview only (no category details)`);
-      }
-      
-      res.json(response);
-    } catch (error) {
-      return handleError(error, res, "GetCompatibility");
-    }
+  app.get("/api/compatibility/:profileId", (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_retired",
+      message:
+        "Stored legacy aggregate compatibility scores are retired and are not served as current results.",
+    });
   });
 
   // Push Notification Routes
@@ -2848,13 +2315,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const enrichedLogs = logs.map(log => {
         const logDate = new Date(log.loggedAt);
-        
+        if (Number.isNaN(logDate.getTime())) {
+          throw new RangeError("Frequency log contains an invalid timestamp");
+        }
+
+        const logCalendarDate = profileLocalDateKey(userProfile ?? {}, logDate);
         const moonPhaseData = getMoonPhase(logDate);
         const moonSign = getMoonSign(logDate);
         const hdGateData = getCurrentHDGate(logDate);
-        const universalDay = calculateUniversalDayNumber(logDate);
-        const personalDay = userProfile?.birthDate 
-          ? calculatePersonalDayNumber(userProfile.birthDate, logDate)
+        const universalDay = calculateUniversalDayNumber(logCalendarDate);
+        const personalDay = userProfile?.birthDate
+          ? calculatePersonalDayNumber(
+              dateOnlyFromStoredValue(userProfile.birthDate),
+              logCalendarDate,
+            )
           : null;
         
         return {
@@ -3170,16 +2644,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { startDate, endDate } = req.query;
-      const start = startDate ? new Date(startDate as string) : new Date();
-      const end = endDate ? new Date(endDate as string) : (() => {
-        const e = new Date();
-        e.setMonth(e.getMonth() + 1);
-        return e;
-      })();
+      const start =
+        typeof startDate === "string" && startDate.trim()
+          ? startDate.trim()
+          : new Date();
+      const end =
+        typeof endDate === "string" && endDate.trim()
+          ? endDate.trim()
+          : (() => {
+              const e = new Date();
+              e.setUTCMonth(e.getUTCMonth() + 1);
+              return e;
+            })();
 
       const calendar = generateTransitsCalendar(profile, start, end);
       res.json(calendar);
     } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(400).json({ message: error.message });
+      }
       return handleError(error, res, "GetTransitsCalendar");
     }
   });
@@ -3196,74 +2679,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      const days = parseInt(req.query.days as string) || 30;
+      const requestedDays = Number.parseInt(String(req.query.days ?? "30"), 10);
+      if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 366) {
+        return res.status(400).json({ message: "days must be an integer from 1 to 366" });
+      }
+      const days = requestedDays;
       const upcoming = getUpcomingSignificantTransits(profile, days);
       res.json({ transits: upcoming, days });
     } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(400).json({ message: error.message });
+      }
       return handleError(error, res, "GetUpcomingTransits");
     }
   });
 
   // Progressions & Return Charts Endpoints
-  app.get("/api/progressions/solar-return", async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+  const progressionsUnavailable = (_req: any, res: any) =>
+    res.status(503).json({
+      code: "progressions_not_production_governed",
+      message:
+        "Solar returns, lunar returns, and secondary progressions are unavailable until their astronomical calculation and verification contracts are approved.",
+    });
 
-      const profile = await storage.getProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      const returnYear = parseInt(req.query.year as string) || new Date().getFullYear();
-      const solarReturn = calculateSolarReturn(profile, returnYear);
-      res.json(solarReturn);
-    } catch (error) {
-      return handleError(error, res, "GetSolarReturn");
-    }
-  });
-
-  app.get("/api/progressions/lunar-return", async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      const profile = await storage.getProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      const returnDate = req.query.date ? new Date(req.query.date as string) : new Date();
-      const lunarReturn = calculateLunarReturn(profile, returnDate);
-      res.json(lunarReturn);
-    } catch (error) {
-      return handleError(error, res, "GetLunarReturn");
-    }
-  });
-
-  app.get("/api/progressions/secondary", async (req, res) => {
-    try {
-      const userId = (req.user as any)?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      const profile = await storage.getProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      const currentDate = req.query.date ? new Date(req.query.date as string) : new Date();
-      const progressions = calculateSecondaryProgressions(profile, currentDate);
-      res.json(progressions);
-    } catch (error) {
-      return handleError(error, res, "GetSecondaryProgressions");
-    }
-  });
+  app.get("/api/progressions/solar-return", progressionsUnavailable);
+  app.get("/api/progressions/lunar-return", progressionsUnavailable);
+  app.get("/api/progressions/secondary", progressionsUnavailable);
 
   // PDF Generation Endpoints
   app.post("/api/pdf/profile", requirePremium, async (req, res) => {
@@ -3277,34 +2718,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      // Re-use the high-quality natal report builder
-      const astro = profile.data?.astrologyData || {};
-      const hd    = profile.data?.humanDesignData || {};
-      
-      // Fallback AI text (or we could trigger a generation if premium)
-      const aiText = profile.data?.aiReportText || {
-        overview: "A comprehensive behavioral analysis of your soul architecture.",
-        bigThreeSun: "Interpretation of your core identity drive.",
-        bigThreeMoon: "Interpretation of your emotional needs.",
-        bigThreeRising: "Interpretation of your outward persona.",
-        whatStandsOut: ["Key planetary alignments", "Elemental balance", "Human Design signatures"],
-        workingInterpretation: "A synthesis of your combined esoteric systems.",
-        elementEmphasis: "Guidance based on your dominant elements.",
-        houseEmphasis: "Analysis of your life focus areas.",
-        bottomLine: "A life built for specific growth and mastery.",
-        hdInterpretation: "Behavioral guidance based on your Human Design type and authority."
-      };
-
+      // Re-use the canonical natal-report contract so PDF evidence policy
+      // cannot drift from the verified report surface.
+      const reportInput = buildNatalReportInput(profile);
       const isPremium = (req.user as any)?.subscriptionStatus === "premium";
 
       const pdfBuffer = await buildNatalReportPdf({
-        name: profile.name,
-        birthDate: profile.birthDate,
-        birthTime: profile.birthTime || "",
-        birthLocation: profile.birthLocation || "",
-        astrology: astro,
-        humanDesign: hd,
-        aiText: aiText as any,
+        ...reportInput,
         isPremium,
       });
 
@@ -3319,8 +2739,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ── Full Cosmic Blueprint — premium AI reading per modality ─────────────
   app.post("/api/blueprint/generate", async (req: any, res) => {
     try {
-      const { profile } = req.body;
-      if (!profile) return res.status(400).json({ error: "profile required" });
+      const requestedProfileId = req.body?.profileId ?? req.body?.profile?.id;
+      if (!requestedProfileId || typeof requestedProfileId !== "string") {
+        return res.status(400).json({
+          error: "saved_profile_required",
+          message: "Blueprint generation requires an owned server-saved profile.",
+        });
+      }
+
+      const trustedProfile = await storage.getProfile(requestedProfileId);
+      const actor = {
+        userId: req.user?.id ?? null,
+        sessionId: req.sessionID ?? null,
+      };
+      if (!trustedProfile || !profileBelongsToActor(trustedProfile, actor)) {
+        // Do not reveal whether another actor's profile ID exists.
+        return res.status(404).json({ message: "Profile not found" });
+      }
 
       // Premium gate: OWNER_PROFILE_ID bypass first (server-side only), then entitlement check
       const ownerProfileId = process.env.OWNER_PROFILE_ID;
@@ -3351,44 +2786,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "premium_required" });
       }
 
-      const num  = profile.numerology ?? {};
-      const astro = profile.astrology ?? profile.natalChart ?? {};
-      const hd   = profile.humanDesign ?? profile.human_design ?? {};
-      const gk   = profile.geneKeys ?? profile.gene_keys ?? {};
-      const enn  = profile.enneagram ?? {};
-      const name = profile.name ?? "the seeker";
+      const name =
+        typeof trustedProfile.name === "string" && trustedProfile.name.trim()
+          ? trustedProfile.name.trim()
+          : "the seeker";
 
-      const lpNum      = num.lifePathNumber ?? profile.lifePathNumber ?? "unknown";
-      const lpArchetype = { 1:"Pioneer",2:"Diplomat",3:"Communicator",4:"Builder",5:"Explorer",6:"Nurturer",7:"Seeker",8:"Executive",9:"Humanitarian",11:"Intuitive",22:"Master Builder",33:"Teacher" }[lpNum as number] ?? "Pathfinder";
-      const sun     = astro.sun     ?? profile.sunSign    ?? "unknown";
-      const moon    = astro.moon    ?? profile.moonSign   ?? "unknown";
-      const rising  = astro.rising  ?? profile.risingSign ?? "unknown";
-      const hdType  = hd.type       ?? "unknown";
-      const hdAuth  = hd.authority  ?? "";
-      const hdProf  = hd.profile    ?? "";
-      const chirPl  = astro.planets?.chiron?.sign ?? astro.chiron ?? "unknown";
-      const northN  = astro.planets?.north_node?.sign ?? astro.northNode ?? "unknown";
-      const southN  = astro.planets?.south_node?.sign ?? astro.southNode ?? "unknown";
-      const ennType = enn.type ?? enn.enneagramType ?? profile.enneagramType ?? "unknown";
-      const gkArr: string[] = Array.isArray(gk) ? gk.slice(0,3).map((g:any) => `Gate ${g.gate ?? g}`).filter(Boolean) : gk.gates ? (gk.gates as any[]).slice(0,3).map((g:any) => `Gate ${g}`) : [];
+      let lpNum: number | "unknown" = "unknown";
+      try {
+        lpNum = calcLifePath(dateOnlyFromStoredValue(trustedProfile.birthDate));
+      } catch {
+        lpNum = "unknown";
+      }
+      const lpArchetype =
+        lpNum === "unknown"
+          ? "unknown"
+          : ({ 1:"Pioneer",2:"Diplomat",3:"Communicator",4:"Builder",5:"Explorer",6:"Nurturer",7:"Seeker",8:"Executive",9:"Humanitarian",11:"Intuitive",22:"Master Builder",33:"Teacher" }[lpNum] ?? "unknown");
 
-      // Build planet+house summary for the planets section
-      const planetEntries = Object.entries(astro.planets ?? {}) as [string, Record<string,unknown>][];
-      const houseCusps: number[] = Array.isArray(astro.houses?.cusps) ? astro.houses.cusps : [];
-      const planetSummary = planetEntries.slice(0, 8).map(([planet, p]) => {
-        const sign  = typeof p.sign === "string" ? p.sign : "?";
-        const lon   = typeof p.longitude === "number" ? p.longitude : -1;
-        let houseNum = 0;
-        if (lon >= 0 && houseCusps.length === 12) {
-          for (let i = 0; i < 12; i++) {
-            const start = houseCusps[i];
-            const end   = houseCusps[(i + 1) % 12];
-            const l     = ((lon % 360) + 360) % 360;
-            if (start <= end ? (l >= start && l < end) : (l >= start || l < end)) { houseNum = i + 1; break; }
-          }
-        }
-        return houseNum > 0 ? `${planet} in ${sign} (House ${houseNum})` : `${planet} in ${sign}`;
-      }).join(", ");
+      const verifiedAstrology = extractVerifiedAstrology(trustedProfile);
+      const sun = verifiedAstrology.sun ?? "unknown";
+      const moon = verifiedAstrology.moon ?? "unknown";
+      const rising = verifiedAstrology.rising ?? "unknown";
+
+      const hd = trustedProfile.humanDesignData as any;
+      const hdResolved = hd?.status === "resolved";
+      const hdType = hdResolved && typeof hd.type === "string" ? hd.type : "unknown";
+      const hdAuth = hdResolved && typeof hd.authority === "string" ? hd.authority : "";
+      const hdProf = hdResolved && typeof hd.profile === "string" ? hd.profile : "";
+
+      const personality = trustedProfile.personalityData as any;
+      const assessedEnneagram = personality?.enneagram;
+      const ennType =
+        assessedEnneagram &&
+        (typeof assessedEnneagram.type === "number" || typeof assessedEnneagram.type === "string")
+          ? assessedEnneagram.type
+          : "unknown";
+
+      // Registry-disabled or separately governed systems remain withheld here.
+      const chirPl  = "unknown";
+      const northN  = "unknown";
+      const southN  = "unknown";
+      const gkArr: string[] = [];
+
+      // Planetary summary accepts only server-saved placements carrying the
+      // verified evidence contract. Houses are omitted from this legacy route
+      // until it consumes the verified house-assignment contract directly.
+      const storedAstrology = trustedProfile.astrologyData as any;
+      const planetEntries = Object.entries(storedAstrology?.planets ?? {}) as [string, Record<string, unknown>][];
+      const verifiedPlanet = (p: Record<string, unknown>): boolean => {
+        const status = p.verificationStatus ?? p.status;
+        const evidence = (p.provenance ?? p.evidence) as any;
+        return (
+          status === "verified" &&
+          typeof p.sign === "string" &&
+          Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt)
+        );
+      };
+      const planetSummary = planetEntries
+        .filter(([, p]) => verifiedPlanet(p))
+        .slice(0, 8)
+        .map(([planet, p]) => `${planet} in ${String(p.sign)}`)
+        .join(", ");
 
       const contextData = `
 User Profile:
@@ -3491,11 +2948,13 @@ ${contextData}
         moon:        fallback("moon", moon),
         rising:      fallback("rising", rising),
         humanDesign: fallback("humanDesign", hdType),
-        geneKeys:    fallback("geneKeys", "geneKeys"),
+        // Registry-disabled/withheld systems stay structurally present for
+        // compatibility but cannot be filled by model invention.
+        geneKeys:    "",
         enneagram:   fallback("enneagram", ennType),
         planets:     fallback("planets", "planets"),
-        chiron:      fallback("chiron", chirPl),
-        nodes:       fallback("nodes", "nodes"),
+        chiron:      "",
+        nodes:       "",
         lifeTheme:   fallback("lifeTheme", "lifeTheme"),
       };
 
@@ -3508,220 +2967,96 @@ ${contextData}
   // ── Natal Chart + Human Design PDF report ───────────────────────────────
   app.post("/api/natal-report", requirePremium, async (req, res) => {
     try {
-      const { profile, astrologyData, humanDesignData } = req.body;
-      if (!profile) return res.status(400).json({ error: "profile required" });
+      const requestedProfile = req.body?.profile;
+      const requestedProfileId = req.body?.profileId ?? requestedProfile?.id;
+      const actor = {
+        userId: (req.user as any)?.id ?? null,
+        sessionId: req.sessionID ?? null,
+      };
 
-      const name         = profile.name ?? "User";
-      const birthDate    = profile.birthDate ?? "";
-      const birthTime    = profile.birthTime ?? profile.birthTimeStr ?? "";
-      const birthLocation = profile.birthLocation ?? "";
+      let reportProfile: any;
 
-      const astro = astrologyData ?? profile.astrologyData ?? {};
-      const hd    = humanDesignData ?? profile.humanDesignData ?? {};
-
-      // Build a concise data snapshot for the AI prompt
-      const sunSign  = astro?.planets?.sun?.sign  ?? astro?.sunSign  ?? "Unknown";
-      const moonSign = astro?.planets?.moon?.sign ?? astro?.moonSign ?? "Unknown";
-      const rising   = astro?.risingSign ?? "Unknown";
-      const hdType   = hd?.type ?? "Unknown";
-      const hdAuth   = hd?.authority ?? "Unknown";
-      const hdProf   = hd?.profile ?? "Unknown";
-
-      const planetSnap = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
-        .map(k => {
-          const p = astro?.planets?.[k];
-          return p ? `${k.charAt(0).toUpperCase()+k.slice(1)}: ${p.sign} ${Math.floor(p.degree ?? 0)}° (${p.house}th house)` : null;
-        }).filter(Boolean).join(", ");
-
-      const aspectSnap = (astro?.aspects ?? []).slice(0, 10)
-        .map((a: any) => `${a.planet1} ${a.aspect} ${a.planet2}`).join(", ");
-
-      const prompt = `
-You are writing a natal chart and human design report for ${name}.
-
-Birth data:
-Date: ${birthDate} | Time: ${birthTime} | Location: ${birthLocation}
-Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${rising}
-Planets: ${planetSnap}
-Key aspects: ${aspectSnap}
-
-Human Design:
-Type: ${hdType} | Authority: ${hdAuth} | Profile: ${hdProf}
-Definition: ${hd?.definition ?? "Unknown"} | Channels: ${(hd?.channels ?? []).filter((c: any) => c.defined).map((c: any) => c.name).slice(0, 5).join(", ") || "None defined"}
-
-Write a full report in plain, behavioral, grounded language. No mystical filler, no "you are a unique soul", no "the universe". Just direct, accurate interpretation.
-
-Return ONLY a JSON object (no markdown, no code fences) with these exact keys:
-
-{
-  "overview": "2-3 paragraph natal chart overview — what the chart emphasizes, dominant elements/signs/houses and what that means for this person behaviorally",
-  "bigThreeSun": "1-2 sentence behavioral meaning of Sun in ${sunSign}",
-  "bigThreeMoon": "1-2 sentence behavioral meaning of Moon in ${moonSign}",
-  "bigThreeRising": "1-2 sentence behavioral meaning of ${rising} Rising",
-  "whatStandsOut": ["4-6 bullet strings, each a specific chart feature worth noting (no bullet symbols, just the text)"],
-  "workingInterpretation": "3-4 paragraphs — comprehensive behavioral interpretation of the full chart, how the elements work together",
-  "elementEmphasis": "1-2 sentences on the dominant element and what it means practically",
-  "houseEmphasis": "1-2 sentences on the house concentration and what areas of life it emphasizes",
-  "bottomLine": "1 punchy sentence summarizing what this chart is built for",
-  "hdInterpretation": "2-3 paragraphs interpreting the Human Design result behaviorally — Type, Authority, Profile and what they mean in daily life"
-}
-`.trim();
-
-      // Only call AI for authenticated users — prevents unauthenticated LLM cost abuse
-      const isAuthed = !!(req.user as any)?.id || !!(req.session as any)?.userId;
-      let aiText;
-      if (isAuthed) {
-        try {
-          const aiResponse = await routeAIRequest({
-            prompt,
-            promptType: "biography",
-            temperature: 0.72
-          });
-          const raw = aiResponse.content || "";
-          if (raw) {
-            const cleaned = (raw ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/,"").trim();
-            const parsed = JSON.parse(cleaned);
-            // Clean all fields
-            aiText = {
-              overview: pureText(parsed.overview),
-              bigThreeSun: pureText(parsed.bigThreeSun),
-              bigThreeMoon: pureText(parsed.bigThreeMoon),
-              bigThreeRising: pureText(parsed.bigThreeRising),
-              whatStandsOut: (parsed.whatStandsOut || []).map((s: string) => pureText(s)).filter(Boolean),
-              workingInterpretation: pureText(parsed.workingInterpretation),
-              elementEmphasis: pureText(parsed.elementEmphasis),
-              houseEmphasis: pureText(parsed.houseEmphasis),
-              bottomLine: pureText(parsed.bottomLine),
-              hdInterpretation: pureText(parsed.hdInterpretation),
-            };
-          }
-        } catch (e) {
-          console.warn("[NatalReport] AI generation failed, using fallback:", e);
+      if (requestedProfileId) {
+        const savedProfile = await storage.getProfile(String(requestedProfileId));
+        if (!savedProfile || !profileBelongsToActor(savedProfile, actor)) {
+          return res.status(404).json({ error: "Profile not found or access denied" });
         }
-      }
 
-      // Fallback if AI unavailable or parse fails
-      if (!aiText) {
-        aiText = {
-          overview: `This chart shows a ${sunSign} Sun with ${moonSign} Moon and ${rising} Rising. The dominant energies reflect the combination of these placements and their house positions.`,
-          bigThreeSun: `Identity shaped by ${sunSign} qualities — the core drive and life force.`,
-          bigThreeMoon: `Emotional needs and instincts colored by ${moonSign} energy.`,
-          bigThreeRising: `The outward presentation and initial approach filtered through ${rising}.`,
-          whatStandsOut: ["Planetary concentrations create focus in specific life areas.", "Dominant element shapes the overall temperament.", "Rising sign colors all first impressions."],
-          workingInterpretation: `The combination of ${sunSign} Sun, ${moonSign} Moon, and ${rising} Rising creates a particular signature in how this person operates, connects, and builds. The chart reflects patterns that show up consistently across different contexts.`,
-          elementEmphasis: "The element balance shapes the fundamental operating style.",
-          houseEmphasis: "House concentrations indicate where life energy is most directed.",
-          bottomLine: "A chart built for focused, purposeful engagement with the material world.",
-          hdInterpretation: `As a ${hdType}, the strategy and authority point toward a specific decision-making process. The ${hdProf} profile shapes the life theme and how others experience this person.`,
+        let dateOnly: string;
+        try {
+          dateOnly = dateOnlyFromStoredValue(savedProfile.birthDate);
+        } catch {
+          return res.status(422).json({
+            error: "Saved profile birth date is non-canonical; repair the profile before generating a report",
+          });
+        }
+        const savedDate = new Date(`${dateOnly}T00:00:00.000Z`);
+
+        reportProfile = {
+          ...savedProfile,
+          birthDate: savedDate,
+          // Deterministic numerology is recomputed from authoritative saved data.
+          numerologyData: calculateNumerology(
+            savedProfile.name,
+            dateOnly,
+            profileLocalYear(savedProfile),
+          ),
+          isPremium: true,
+        };
+      } else {
+        // Backward-compatible request shape: basic metadata may render an
+        // unresolved report, but request-body astrology/HD is never trusted.
+        if (!requestedProfile?.name || !requestedProfile?.birthDate) {
+          return res.status(400).json({ error: "profileId or profile name/birthDate required" });
+        }
+
+        const dateOnly = String(requestedProfile.birthDate).trim();
+        try {
+          parseDateOnly(dateOnly);
+        } catch {
+          return res.status(400).json({ error: "birthDate must be a valid YYYY-MM-DD date" });
+        }
+        const birthDate = new Date(`${dateOnly}T00:00:00.000Z`);
+
+        reportProfile = {
+          name: String(requestedProfile.name).trim() || "User",
+          birthDate,
+          birthTime: requestedProfile.birthTime ?? null,
+          birthLocation: requestedProfile.birthLocation ?? null,
+          astrologyData: null,
+          humanDesignData: null,
+          numerologyData: calculateNumerology(
+            String(requestedProfile.name),
+            dateOnly,
+            profileLocalYear({ timezone: requestedProfile.timezone }),
+          ),
+          archetypeData: null,
+          biography: null,
+          dailyGuidance: null,
+          isPremium: true,
         };
       }
 
-      // Generate soul comparables for the bonus PDF page
-      let comparables = null;
-      if (isAuthed) {
-        try {
-          const compPrompt = `
-You are generating 4 soul archetype comparables for a natal chart profile.
-Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${rising}
-Human Design: ${hdType}${hdAuth ? `, ${hdAuth} Authority` : ""}${hdProf ? `, ${hdProf} Profile` : ""}
+      const reportInput = buildNatalReportInput(reportProfile);
+      const pdfBuffer = await buildNatalReportPdf(reportInput);
 
-Return ONLY valid JSON (no markdown):
-{
-  "animal": { "name": "specific animal", "why": "1-2 sentences — behavioral pattern" },
-  "deity": { "name": "Deity · Pantheon", "why": "1-2 sentences — behavioral alignment" },
-  "historical": { "name": "Full name · identifier", "why": "1-2 sentences — shared behavioral pattern" },
-  "icon": { "name": "Name · source", "why": "1-2 sentences — shared archetypal signature" }
-}
-Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pick specific, well-matched comparables.`.trim();
-
-          const aiResponse2 = await routeAIRequest({
-            prompt: compPrompt,
-            promptType: "biography",
-            temperature: 0.82
-          });
-          const raw2 = aiResponse2.content || "";
-          if (raw2) {
-            const cleaned2 = (raw2 ?? "").replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-            const parsed2 = JSON.parse(cleaned2);
-            // Clean comparables
-            comparables = {
-              animal: { name: pureText(parsed2.animal?.name), why: pureText(parsed2.animal?.why) },
-              deity: { name: pureText(parsed2.deity?.name), why: pureText(parsed2.deity?.why) },
-              historical: { name: pureText(parsed2.historical?.name), why: pureText(parsed2.historical?.why) },
-              icon: { name: pureText(parsed2.icon?.name), why: pureText(parsed2.icon?.why) },
-            };
-          }
-        } catch (ce) {
-          console.warn("[NatalReport] Comparables generation failed:", ce);
-        }
-      }
-
-      const isPremium = (req.user as any)?.subscriptionStatus === "premium";
-
-      const pdfBuffer = await buildNatalReportPdf({
-        name,
-        birthDate,
-        birthTime,
-        birthLocation,
-        astrology: astro,
-        humanDesign: hd,
-        aiText,
-        comparables: comparables ?? undefined,
-        isPremium,
-      });
-
-      const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${safeName}_Natal_Chart_and_Human_Design.pdf"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${natalReportFilename(reportInput.name)}"`,
+      );
       res.send(pdfBuffer);
     } catch (error) {
       return handleError(error, res, "NatalReport");
     }
   });
 
-  app.post("/api/pdf/compatibility", requirePremium, async (req, res) => {
-    try {
-      const { profile1Id, profile2Id } = req.body;
-      if (!profile1Id || !profile2Id) {
-        return res.status(400).json({ message: "profile1Id and profile2Id are required" });
-      }
-
-      const profile1 = await storage.getProfile(profile1Id);
-      const profile2 = await storage.getProfile(profile2Id);
-      
-      if (!profile1 || !profile2) {
-        return res.status(404).json({ message: "One or both profiles not found" });
-      }
-
-      // Get compatibility data
-      const compatibility = await storage.getCompatibility(profile1Id, profile2Id);
-      if (!compatibility) {
-        return res.status(404).json({ message: "Compatibility analysis not found" });
-      }
-
-      const options = req.body.options || { template: 'compatibility', theme: 'mystical' };
-      
-      const isPremium = (req.user as any)?.subscriptionStatus === "premium";
-
-      const pdfBuffer = await buildCompatibilityReportPdf({
-        profile1,
-        profile2,
-        compatibilityData: compatibility.compatibilityData,
-        aiText: compatibility.compatibilityData.aiText || {
-          overview: "A deep behavioral synthesis of your combined natal charts.",
-          strengths: compatibility.compatibilityData.strengths || [],
-          challenges: compatibility.compatibilityData.challenges || [],
-          bottomLine: "A partnership with unique growth opportunities."
-        },
-        isPremium,
-      });
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="compatibility-${profile1.name}-${profile2.name}.pdf"`);
-      res.send(pdfBuffer);
-    } catch (error) {
-      return handleError(error, res, "GenerateCompatibilityPDF");
-    }
+  app.post("/api/pdf/compatibility", requirePremium, (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_pdf_retired",
+      message:
+        "Legacy aggregate compatibility PDFs are retired because their stored scores do not meet the current evidence-aware compatibility contract.",
+    });
   });
 
   // Shareable Links Endpoints
@@ -3795,6 +3130,11 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       const { id } = req.params;
       const { settings } = req.body;
 
+      const existingLink = await storage.getShareableLink(id);
+      if (!existingLink || existingLink.userId !== userId) {
+        return res.status(404).json({ message: "Shareable link not found" });
+      }
+
       const updated = await updateShareableLink(storage, id, settings);
       res.json({ message: "Shareable link updated", link: updated });
     } catch (error) {
@@ -3810,6 +3150,11 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       }
 
       const { id } = req.params;
+      const existingLink = await storage.getShareableLink(id);
+      if (!existingLink || existingLink.userId !== userId) {
+        return res.status(404).json({ message: "Shareable link not found" });
+      }
+
       await deactivateShareableLink(storage, id);
       res.json({ message: "Shareable link deactivated" });
     } catch (error) {
@@ -3849,24 +3194,97 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      const days = parseInt(req.query.days as string) || 7;
+      const requestedDays = Number.parseInt(String(req.query.days ?? "7"), 10);
+      if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 366) {
+        return res.status(400).json({ message: "days must be an integer from 1 to 366" });
+      }
+      const days = requestedDays;
       const upcoming = await getUpcomingTransitNotifications(profile, days);
       res.json({ notifications: upcoming, days });
     } catch (error) {
+      if (error instanceof RangeError) {
+        return res.status(400).json({ message: error.message });
+      }
       return handleError(error, res, "GetUpcomingTransitNotifications");
     }
   });
 
-  // Poster PNG render endpoint
+  // Poster PNG render endpoint — owned saved-profile evidence only.
   app.post("/api/poster/render", async (req: any, res) => {
     try {
       const width = Math.min(parseInt(req.query.width as string) || 2048, 4096);
       const height = Math.round(width * 1350 / 1080);
+      const profileId = req.body?.profileId;
 
-      const data = req.body as PosterSvgData;
-      if (!data.birthDate || !data.sunSign || !data.moonSign || !data.lifePathNumber) {
-        return res.status(400).json({ message: "birthDate, sunSign, moonSign, and lifePathNumber are required" });
+      if (!profileId || typeof profileId !== "string") {
+        return res.status(400).json({
+          message: "An owned saved profileId is required for poster rendering.",
+          code: "saved_profile_required",
+        });
       }
+
+      const storedProfile = await storage.getProfile(profileId);
+      if (
+        !storedProfile ||
+        !profileBelongsToActor(storedProfile, {
+          userId: req.user?.id ?? null,
+          sessionId: req.sessionID ?? null,
+        })
+      ) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const verified = extractVerifiedAstrology(storedProfile);
+      if (!verified.sun || !verified.moon) {
+        return res.status(422).json({
+          message:
+            "Verified Sun and Moon placements are required before rendering a Soul Codex birth poster.",
+          code: "verified_poster_evidence_required",
+        });
+      }
+
+      let lifePathNumber: number;
+      try {
+        lifePathNumber = calcLifePath(
+          dateOnlyFromStoredValue(storedProfile.birthDate),
+        );
+      } catch {
+        return res.status(422).json({
+          message: "A canonical stored birth date is required before rendering a Soul Codex birth poster.",
+          code: "valid_birth_date_required",
+        });
+      }
+
+      const astrology = storedProfile.astrologyData as any;
+      const verifiedPlanets = Object.entries(astrology?.planets ?? {})
+        .filter(([, placement]) => {
+          const p = placement as any;
+          const status = p?.verificationStatus ?? p?.status;
+          const evidence = p?.provenance ?? p?.evidence;
+          return (
+            status === "verified" &&
+            typeof p?.longitude === "number" &&
+            Number.isFinite(p.longitude) &&
+            Boolean(evidence?.source && evidence?.engine && evidence?.calculatedAt)
+          );
+        })
+        .map(([name, placement]) => ({
+          name,
+          longitude: Number((placement as any).longitude),
+        }));
+
+      const data: PosterSvgData = {
+        name: storedProfile.name ?? undefined,
+        birthDate: storedProfile.birthDate,
+        birthTime: storedProfile.birthTime || undefined,
+        birthLocation: storedProfile.birthLocation || undefined,
+        sunSign: verified.sun,
+        moonSign: verified.moon,
+        risingSign: verified.rising,
+        lifePathNumber,
+        masterNumber: [11, 22, 33].includes(lifePathNumber) ? lifePathNumber : undefined,
+        planets: verifiedPlanets,
+      };
 
       // Determine premium status (session flag, OWNER_PROFILE_ID bypass, or entitlement check)
       let isPremium = false;
@@ -3955,11 +3373,13 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
       const { profileId, profile, codexSynthesis } = req.body;
 
       let horoscopeData: any = null;
+      let resolvedProfile: any = profile ?? null;
 
       if (profileId) {
         try {
           const storedProfile = await storage.getProfile(profileId);
           if (storedProfile) {
+            resolvedProfile = storedProfile;
             const { generateDailyHoroscope } = await import("./services/horoscope");
             horoscopeData = await generateDailyHoroscope(storedProfile);
           }
@@ -3968,22 +3388,37 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
         }
       }
 
+      const profileForToday = resolvedProfile ?? {};
+
       if (!horoscopeData) {
         const today = new Date();
-        const birth = profile?.signals?.lifePath ?? 4;
-        const daySum = today.getDate() + today.getMonth() + today.getFullYear() % 100;
-        const personalDay = ((daySum + birth - 1) % 9) + 1;
+        const date = profileLocalDateKey(profileForToday, today);
+        let personalDayNumber: number | null = null;
+
+        if (profileForToday?.birthDate != null) {
+          try {
+            personalDayNumber = calculatePersonalDayNumber(
+              dateOnlyFromStoredValue(profileForToday.birthDate),
+              date,
+            );
+          } catch {
+            personalDayNumber = null;
+          }
+        }
+
+        const moonPhase = getMoonPhase(today);
+
         horoscopeData = {
-          date: today.toISOString().slice(0, 10),
-          personalDayNumber: personalDay,
-          moonPhase: { phase: "Waxing Gibbous", percentage: 65 },
+          date,
+          personalDayNumber,
+          moonPhase,
           personalTransits: [],
           alignments: [],
           horoscope: ""
         };
       }
 
-      const card = buildTodayCard(horoscopeData, profile ?? {}, codexSynthesis);
+      const card = buildTodayCard(horoscopeData, profileForToday, codexSynthesis);
       
       const cardStrengths = Array.isArray(card.strengths) ? card.strengths : [];
       const cardTriggers  = Array.isArray(card.triggers)  ? card.triggers  : [];
@@ -3995,7 +3430,7 @@ Rules: behavioral language only, no 'cosmic'/'spiritual'/'divine'/'universe'. Pi
 
       // AI personalisation — overwrite static fields if successful
       try {
-        const aiCard = await generateTodayCardAI(card, profile ?? {}, horoscopeData, codexSynthesis);
+        const aiCard = await generateTodayCardAI(card, profileForToday, horoscopeData, codexSynthesis);
         if (aiCard) Object.assign(card, aiCard);
       } catch (e) {
         console.warn("[TodayCard] AI personalisation failed, using static fallback:", e);
@@ -4194,19 +3629,19 @@ ${thisWeekArr.map((t: string) => (typeof t === 'string' && t.startsWith("-")) ? 
           
           const thisWeekArrRw = Array.isArray(parsedRw.this_week) ? parsedRw.this_week : [];
           narrative = `CODENAME: ${parsedRw.codename || codename}
-MOTTO: ${parsedRw.motto || "My path is carved by intention."}
+MOTTO: ${parsedRw.motto || "I test what fits and discard what does not."}
 
 WHO I AM
-${parsedRw.who_i_am || "Aligning with the cosmic cycle."}
+${parsedRw.who_i_am || "I use the supported themes as reflection prompts, not as fixed identity facts."}
 
 HOW I MOVE UNDER PRESSURE
-${parsedRw.how_i_move || "Returning to the center."}
+${parsedRw.how_i_move || "Under pressure, I check what I actually do before naming a pattern."}
 
 WHAT I WON'T TOLERATE
-${parsedRw.what_i_wont_tolerate || "Static energy and noise."}
+${parsedRw.what_i_wont_tolerate || "I distinguish observed boundaries from assumptions before I act."}
 
 WHAT I'M BUILDING
-${parsedRw.what_im_building || "A foundation for the eternal now."}
+${parsedRw.what_im_building || "I choose one concrete priority and measure progress from completed steps."}
 
 THIS WEEK
 ${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) ? t : `- ${t}`).join("\n")}`;
@@ -4223,10 +3658,13 @@ ${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) 
       // Strip any raw signal-label artifacts the AI echoed back
       narrative = scrubNarrative(narrative);
 
-      // Log any banned phrases that slipped through for audit (non-blocking)
+      // Hard-reject generic or unsupported certainty instead of only logging it.
       const langCheck = checkNarrative(narrative);
       if (!langCheck.pass) {
-        console.warn("[anti-generic] Hard-reject phrases in narrative:", langCheck.hardRejects);
+        console.warn("[anti-generic] Rejecting narrative phrases:", langCheck.hardRejects);
+        narrative = scrubNarrative(
+          buildFallbackNarrative(codename, anchors, themes, strengths, triggers),
+        );
       }
 
       const conf = profile?.meta?.confidence ?? profile?.confidence;
@@ -4297,91 +3735,134 @@ ${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) 
     }
   });
 
-  // ── Soul Comparables — 2K-style archetypal matches ─────────────────────────
+  // ── Soul Comparables — symbolic analogies from governed saved evidence ──────
   app.post("/api/soul-comparables", async (req, res) => {
     try {
-      const { profile } = req.body;
-      if (!profile) return res.status(400).json({ error: "profile required" });
+      const requestedProfileId = req.body?.profileId ?? req.body?.profile?.id;
+      if (!requestedProfileId) {
+        return res.status(400).json({
+          available: false,
+          error: "profileId required; caller-supplied identity labels are not accepted",
+        });
+      }
 
-      const archetype   = profile.archetype?.name ?? "Unknown Archetype";
-      const element     = profile.archetype?.element ?? "";
-      const role        = profile.archetype?.role ?? "";
-      const sunSign     = profile.sunSign ?? profile.astrologyData?.sunSign ?? "Unknown";
-      const moonSign    = profile.moonSign ?? profile.astrologyData?.moonSign ?? "Unknown";
-      const risingSign  = profile.risingSign ?? profile.astrologyData?.risingSign ?? "Unknown";
-      const lifePath    = profile.lifePath ?? "";
-      const hdType      = profile.humanDesignData?.type ?? "Unknown";
-      const hdAuth      = profile.humanDesignData?.authority ?? "";
-      const hdProf      = profile.humanDesignData?.profile ?? "";
-      const coreEssence = profile.synthesis?.coreEssence ?? "";
+      const savedProfile = await storage.getProfile(String(requestedProfileId));
+      const actor = {
+        userId: (req.user as any)?.id ?? null,
+        sessionId: req.sessionID ?? null,
+      };
+      if (!savedProfile || !profileBelongsToActor(savedProfile, actor)) {
+        return res.status(404).json({ available: false, error: "Profile not found or access denied" });
+      }
+
+      const verifiedAstrology = extractVerifiedAstrology({
+        astrologyData: savedProfile.astrologyData,
+      });
+      const hd = (savedProfile.humanDesignData ?? {}) as any;
+      const hdCandidate = hd?.status === "verified"
+        ? (hd.candidate && typeof hd.candidate === "object" ? hd.candidate : hd)
+        : {};
+      let dateOnly: string | null = null;
+      try {
+        dateOnly = dateOnlyFromStoredValue(savedProfile.birthDate);
+      } catch {
+        dateOnly = null;
+      }
+
+      let lifePath: number | null = null;
+      if (dateOnly) {
+        try {
+          lifePath = calcLifePath(dateOnly);
+        } catch {
+          lifePath = null;
+        }
+      }
+
+      const evidenceLines = [
+        verifiedAstrology.sun ? `- Verified Sun: ${verifiedAstrology.sun}` : null,
+        verifiedAstrology.moon ? `- Verified Moon: ${verifiedAstrology.moon}` : null,
+        verifiedAstrology.rising ? `- Verified Rising: ${verifiedAstrology.rising}` : null,
+        lifePath !== null ? `- Life Path: ${lifePath} (deterministic numerology; symbolic interpretation only)` : null,
+        typeof hdCandidate.type === "string" ? `- Verified HD Type: ${hdCandidate.type}` : null,
+        typeof hdCandidate.authority === "string" ? `- Verified HD Authority: ${hdCandidate.authority}` : null,
+        typeof hdCandidate.profile === "string" ? `- Verified HD Profile: ${hdCandidate.profile}` : null,
+      ].filter(Boolean);
+
+      if (evidenceLines.length === 0) {
+        return res.status(422).json({
+          available: false,
+          reason: "No governed saved evidence is available for symbolic comparables.",
+        });
+      }
 
       const prompt = `
-You are generating 4 soul archetype comparables for this person's natal chart + Human Design profile. Think of it like NBA 2K telling you which players your build is most similar to, but instead of players, you're matching to archetypes.
+Create four OPTIONAL SYMBOLIC ANALOGIES for ${savedProfile.name}. These are reflective comparisons, not factual claims that the person resembles, equals, or shares the biography of the comparison target.
 
-PROFILE:
-- Archetype: ${archetype}${element ? ` (${element}${role ? ` - ${role}` : ""})` : ""}
-- Sun: ${sunSign} | Moon: ${moonSign} | Rising: ${risingSign}
-${lifePath ? `- Life Path: ${lifePath}` : ""}
-- Human Design: ${hdType}${hdAuth ? `, ${hdAuth} Authority` : ""}${hdProf ? `, ${hdProf} Profile` : ""}
-${coreEssence ? `- Core essence: ${coreEssence}` : ""}
+SUPPORTED EVIDENCE:
+${evidenceLines.join("\n")}
 
-Return ONLY valid JSON (no markdown, no code fences, no explanation):
-
+Return ONLY valid JSON:
 {
-  "animal": {
-    "name": "specific animal name (e.g. Peregrine Falcon, Octopus, Mantis Shrimp)",
-    "why": "1-2 sentences on shared behavioral pattern, concrete and not generic"
-  },
-  "deity": {
-    "name": "Deity - Pantheon (e.g. Athena - Greek, Shiva - Hindu, Odin - Norse)",
-    "why": "1-2 sentences on why this deity's domain and function mirrors this profile behaviorally"
-  },
-  "historical": {
-    "name": "Full name - brief identifier (e.g. Nikola Tesla - inventor, Cleopatra - strategist-queen)",
-    "why": "1-2 sentences on the shared behavioral or archetypal pattern and what they both do"
-  },
-  "icon": {
-    "name": "Name - source (e.g. Atticus Finch - To Kill a Mockingbird, David Bowie - Ziggy era)",
-    "why": "1-2 sentences on the shared archetypal signature in behavior and approach"
-  }
+  "animal": { "name": "specific animal", "why": "1-2 sentences tied only to supported patterns" },
+  "deity": { "name": "Deity - Pantheon", "why": "1-2 sentences explaining the symbolic domain match" },
+  "historical": { "name": "Full name - identifier", "why": "1-2 sentences on a limited behavioral analogy, not personality certainty" },
+  "icon": { "name": "Name - source", "why": "1-2 sentences on a limited archetypal analogy" }
 }
 
 Rules:
-- Behavioral and direct language only. No cosmic/spiritual/divine/universe/soul journey/vibrational wording.
-- Each "why" must reference concrete behavioral traits, what they do and how they decide.
-- Pick comparables with genuine archetypal alignment. Avoid cliches unless truly fitting.
-- Animal should be specific and interesting, not generic wolf/eagle/lion unless exact fit.
-- Icon can be fictional character OR real living/historical cultural figure.
-      `.trim();
-
-      let comparables = null;
+- Use only the supported evidence above.
+- Do not infer trauma, motives, intelligence, morality, destiny, health, or biography.
+- Do not invent unresolved astrology or Human Design.
+- Treat numerology and Human Design meanings as symbolic lenses, not scientific measurements.
+- No mystical filler or certainty language.
+`.trim();
 
       try {
         const aiResponse = await routeAIRequest({
           prompt,
           promptType: "biography",
-          temperature: 0.82,
+          temperature: 0.65,
         });
         const raw = aiResponse.content || "";
-        const cleaned = raw.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-        comparables = JSON.parse(cleaned);
-      } catch (aiErr) {
-        console.warn("[SoulComparables] AI parse failed:", aiErr);
-      }
+        const cleaned = raw.replace(/^\`\`\`json\s*/i, "").replace(/\`\`\`\s*$/, "").trim();
+        if (!cleaned) throw new Error("empty_comparables_response");
+        const parsed = JSON.parse(cleaned);
 
-      if (!comparables) {
-        comparables = {
-          animal:     { name: "Raven", why: "Operates through observation and pattern recognition before acting. Adapts strategy in real time rather than committing to a fixed plan." },
-          deity:      { name: "Hermes - Greek", why: "The connector and translator - moves between worlds, bridges information gaps, and operates at the edges where others don't venture." },
-          historical: { name: "Leonardo da Vinci - polymath", why: "Driven by systematic curiosity and the compulsion to understand mechanisms beneath the surface before moving on." },
-          icon:       { name: "Atticus Finch - To Kill a Mockingbird", why: "Steady moral architecture that holds under social pressure. The kind of clarity that costs something and is chosen anyway." },
+        const comparables = {
+          animal: {
+            name: pureText(parsed.animal?.name),
+            why: pureText(parsed.animal?.why),
+          },
+          deity: {
+            name: pureText(parsed.deity?.name),
+            why: pureText(parsed.deity?.why),
+          },
+          historical: {
+            name: pureText(parsed.historical?.name),
+            why: pureText(parsed.historical?.why),
+          },
+          icon: {
+            name: pureText(parsed.icon?.name),
+            why: pureText(parsed.icon?.why),
+          },
         };
-      }
 
-      res.json({ comparables });
+        return res.json({
+          available: true,
+          evidenceMode: "saved-governed",
+          label: "Optional symbolic analogies",
+          comparables,
+        });
+      } catch (aiErr) {
+        console.warn("[SoulComparables] generation unavailable:", aiErr);
+        return res.status(503).json({
+          available: false,
+          reason: "Symbolic comparables are temporarily unavailable; no fallback identities were substituted.",
+        });
+      }
     } catch (error) {
       console.error("[SoulComparables] Route error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ available: false, error: "Internal server error" });
     }
   });
 
@@ -4451,11 +3932,12 @@ async function generateTodayCardAI(
     try {
       const history = await storage.getDailyInsightsHistory(profileId, 7);
       if (history.length > 0) {
-        historyPrompt = "## RECENT BEHAVIORAL HISTORY\n" + 
+        historyPrompt = "## RECENT CARD OUTPUTS — NOT BEHAVIORAL EVIDENCE\n" +
           history.map(h => {
             const data = h.insightsData as any;
             return `- ${h.date}: ${data.recognitionMoment || data.focus || ""}`;
-          }).join("\n") + "\n\n";
+          }).join("\n") +
+          "\nUse these only to avoid repetitive wording. Do not treat a previous generated card as proof that a behavior occurred.\n\n";
       }
     } catch (e) {
       console.warn("[TodayCardAI] History fetch failed:", e);
@@ -4463,30 +3945,32 @@ async function generateTodayCardAI(
   }
 
   const dayNum   = base.personalDayNumber;
-  const archDesc = DAY_ARCHETYPE[dayNum] ?? "focused work";
+  const archDesc = dayNum == null
+    ? "personal-day evidence unavailable"
+    : (DAY_ARCHETYPE[dayNum] ?? "focused work");
   const moon     = base.moonPhase;
   const codename = sanitizeForAI(base.codename);
   const themeList = (codexSynthesis?.topThemes ?? horoscopeData?.topThemes ?? [])
     .slice(0, 4).map((t: any) => t.tag ?? t).filter(Boolean);
-  const themes   = sanitizeForAI(themeList.length ? themeList.join(", ") : (base.topTheme ?? "precision"));
-  const decide   = sanitizeForAI(profile?.userInputs?.decisionStyle ?? profile?.signals?.decisionStyle ?? "");
-  const pressure = sanitizeForAI(profile?.userInputs?.pressureStyle ?? profile?.signals?.pressureStyle ?? "");
+  const themes   = sanitizeForAI(themeList.length ? themeList.join(", ") : (base.topTheme ?? ""));
+  const decide   = sanitizeForAI(profile?.userInputs?.decisionStyle ?? "");
+  const pressure = sanitizeForAI(profile?.userInputs?.pressureStyle ?? "");
   const transit  = sanitizeForAI(horoscopeData?.personalTransits?.[0]?.description ?? "");
 
     const prompt = `
 You are the final synthesis layer of Soul Codex.
-Your job is to expose ${codename}'s behavioral pattern today with surgical accuracy, grounded realism, and zero system leakage.
+Create a direct daily reflection card for ${codename}. Be concrete and useful without pretending symbolic inputs prove behavior.
 
 ---
 ${historyPrompt}
-## 🧬 IDENTITY DATA
-- IDENTITY: ${codename}
-- TOP THEMES: ${themes}
-- PERSONAL DAY: ${dayNum} — ${archDesc}
-- MOON PHASE: ${moon}
-- DECISION STYLE: ${decide || "Omit"}
-- PRESSURE STYLE: ${pressure || "Omit"}
-${transit ? `- ACTIVE TRANSIT: ${transit}` : ""}
+## 🧬 AVAILABLE INPUTS
+- SYMBOLIC IDENTITY LABEL: ${codename}
+- SYNTHESIS THEMES: ${themes || "Unavailable — do not infer"}
+- SYMBOLIC PERSONAL DAY: ${dayNum == null ? "Unavailable — do not infer" : `${dayNum} — ${archDesc}`}
+- ASTRONOMICAL MOON PHASE: ${moon === "Unavailable" ? "Unavailable — do not infer" : moon}
+- USER-ENTERED DECISION STYLE: ${decide || "Omit"}
+- USER-ENTERED PRESSURE STYLE: ${pressure || "Omit"}
+${transit ? `- SYMBOLIC TRANSIT REFLECTION: ${transit}` : ""}
 
 ---
 ${VOICE_LAWS}
@@ -4494,29 +3978,31 @@ ${VOICE_LAWS}
 ---
 ## 🧪 CORE DIRECTIVE
 - Write in FIRST PERSON (I/my/me).
-- Expose the behavioral loop today. Focus on what I DO, what others notice, and the observable loop.
-- CHECK FOR RECURRING LOOPS. If the same pattern is repeating from history, confront me directly. 
-- Tone: Escalation. Day 1 is observation. Day 3 is confrontation. Day 7 is declaration of choice.
-- No "I think," "I feel," "I try." Use direct verbs.
+- Treat Personal Day, Moon phase, transit text, codename, and synthesis themes as reflection prompts only. They do not prove what I will do, feel, or experience.
+- Only USER-ENTERED decision/pressure styles may be described as supplied behavior evidence.
+- Previous generated cards are not behavioral history. Never claim a loop repeated just because an earlier card mentioned it.
+- Make each line an observation target, decision experiment, or concrete action I can verify today.
+- Stay direct: no "I think," "I feel," "I try." Use active verbs without claiming hidden motives.
+- Do not predict tomorrow; frame TOMORROW as a question or preparation prompt.
 
 ---
 ## OUTPUT FORMAT
-RECOGNITION: [One blunt, uncomfortable behavioral confession. 12 words max.]
-MEMORY: [If repeating a pattern from history, call it out. Otherwise omit.]
-FOCUS: [One sentence exposing the core loop today.]
-TOMORROW: [Expose the tension for tomorrow.]
+RECOGNITION: [One sharp first-person pattern to observe or test today. 12 words max.]
+MEMORY: [Optional: name a prior card theme only as something to verify, never as proof of repetition.]
+FOCUS: [One sentence naming an observable behavior or decision experiment for today.]
+TOMORROW: [One preparation question for tomorrow, not a prediction.]
 DO:
-- [behavioral action 1]
-- [behavioral action 2]
-- [behavioral action 3]
+- [concrete action experiment 1]
+- [concrete action experiment 2]
+- [concrete action experiment 3]
 DONT:
-- [trap to avoid 1]
-- [trap to avoid 2]
-- [trap to avoid 3]
+- [observable trap to avoid 1]
+- [observable trap to avoid 2]
+- [observable trap to avoid 3]
 WATCHOUT:
-- [escalation trigger 1]
-- [escalation trigger 2]
-DECISION: [behavioral decision rule for today]
+- [observable trigger or condition 1]
+- [observable trigger or condition 2]
+DECISION: [first-person decision rule I can test today]
 `.trim();
 
   const aiResponse = await routeAIRequest({
@@ -4610,6 +4096,42 @@ function buildFallbackNarrative(
   codename: string,
   anchors: string[],
   themes: { tag: string; score: number }[],
+  strengths: string[],
+  triggers: string[]
+): string {
+  void anchors;
+
+  const topTheme = themes[0]?.tag?.replace(/_/g, " ") ?? "no ranked theme available";
+  const secondTheme = themes[1]?.tag?.replace(/_/g, " ") ?? null;
+  const strengthPrompt = strengths[0]
+    ? `Candidate strength to verify: ${strengths[0]}`
+    : "No assessed strength is assumed here.";
+  const triggerPrompt = triggers[0]
+    ? `Candidate trigger to verify: ${triggers[0]}`
+    : "No pressure trigger is assumed here.";
+
+  return `CODENAME: ${codename}
+MOTTO: I test the pattern against what actually happens.
+
+WHO I AM
+The current synthesis ranks ${topTheme} as a reflection theme${secondTheme ? ` and also surfaces ${secondTheme}` : ""}. I use those labels as questions to test against my lived experience, not as proof of a fixed identity.
+
+${strengthPrompt} I keep it only if repeated observation supports it.
+
+HOW I MOVE UNDER PRESSURE
+No pressure response is assumed from symbolic systems. I notice what I actually do under stress, record the sequence, and separate one-off reactions from repeated behavior.
+
+WHAT I WON'T TOLERATE
+${triggerPrompt} I treat a boundary as established only when I can name the concrete condition, cost, or behavior behind it.
+
+WHAT I'M BUILDING
+I choose one concrete priority, define the next observable step, and judge progress by what gets completed rather than by a narrative about who I am.
+
+THIS WEEK
+- Verify one claimed pattern against something that actually happened.
+- Complete one concrete next step before adding a new interpretation.
+- Keep symbolic themes that improve reflection; discard the ones that do not fit.`;
+}[],
   strengths: string[],
   triggers: string[]
 ): string {

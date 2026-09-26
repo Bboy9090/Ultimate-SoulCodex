@@ -14,6 +14,14 @@ type ConsumerAuthDependencies = {
   verifyApple: AppleVerifier;
 };
 
+function productionPersistenceUnavailable(deps: ConsumerAuthDependencies): boolean {
+  return (
+    deps.storage === storage &&
+    process.env.NODE_ENV === "production" &&
+    !deps.storage.durable
+  );
+}
+
 function publicUser(user: Awaited<ReturnType<IStorage["getUser"]>>) {
   if (!user) return null;
   const { password: _password, ...safe } = user;
@@ -44,6 +52,13 @@ export function registerConsumerAuthRoutes(
   deps: ConsumerAuthDependencies = { storage, verifyApple: verifyAppleIdentityToken },
 ) {
   app.post("/api/auth/apple", async (req: any, res) => {
+    if (productionPersistenceUnavailable(deps)) {
+      return res.status(503).json({
+        message: "Account sign-in is temporarily unavailable because durable server storage is not configured. Local Soul Codex profiles remain available on this device.",
+        code: "durable_storage_required",
+      });
+    }
+
     try {
       const identityToken = typeof req.body?.identityToken === "string" ? req.body.identityToken : "";
       const identity = await deps.verifyApple(identityToken);

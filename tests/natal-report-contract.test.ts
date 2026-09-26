@@ -7,9 +7,16 @@ import {
   natalReportFilename,
 } from "../server/lib/natal-report-contract.ts";
 
+const placementEvidence = {
+  source: "independent ephemeris reference",
+  engine: "astronomy-engine@2.1.19 + independent-reference@1",
+  calculatedAt: "2026-09-25T12:00:00.000Z",
+};
+
 const verifiedSun = {
   sign: "Virgo",
   verificationStatus: "verified",
+  evidence: placementEvidence,
   internalCandidate: { longitude: 174.25 },
 };
 
@@ -82,8 +89,8 @@ test("verified Human Design exposes only verified core fields", () => {
     birthLocation: "Bronx, NY",
     astrologyData: {
       sun: verifiedSun,
-      moon: { sign: "Leo", verificationStatus: "verified", internalCandidate: { longitude: 128.5 } },
-      rising: { sign: "Scorpio", verificationStatus: "verified", internalCandidate: { longitude: 220 } },
+      moon: { sign: "Leo", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 128.5 } },
+      rising: { sign: "Scorpio", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 220 } },
     },
     humanDesignData: {
       status: "verified",
@@ -126,4 +133,80 @@ test("production profile UI and endpoint are wired to the canonical report path"
   assert.match(routes, /buildNatalReportInput\(profile\)/);
   assert.doesNotMatch(routes, /authToken !== profileId/);
   assert.match(routes, /requestOwnsProfile\(req, profile\)/);
+});
+
+
+test("verified labels without provenance stay unresolved in natal reports", () => {
+  const report = buildNatalReportInput({
+    name: "Forged Evidence",
+    birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    astrologyData: {
+      sun: {
+        sign: "Virgo",
+        verificationStatus: "verified",
+        internalCandidate: { longitude: 174.25 },
+      },
+    },
+  });
+
+  assert.equal((report.astrology as any).sunSign, null);
+  assert.match(report.aiText.bigThreeSun, /unresolved/i);
+});
+
+test("legacy premium natal-report route uses the hardened saved-profile contract", () => {
+  const rootRoutes = readFileSync("routes.ts", "utf8");
+  const start = rootRoutes.indexOf('app.post("/api/natal-report"');
+  const end = rootRoutes.indexOf('app.post("/api/pdf/compatibility"', start);
+  assert.ok(start >= 0 && end > start);
+  const route = rootRoutes.slice(start, end);
+
+  assert.match(route, /storage\.getProfile/);
+  assert.match(route, /profileBelongsToActor/);
+  assert.match(route, /buildNatalReportInput\(reportProfile\)/);
+  assert.doesNotMatch(route, /const \{ profile, astrologyData, humanDesignData \} = req\.body/);
+  assert.doesNotMatch(route, /routeAIRequest/);
+  assert.match(route, /astrologyData: null/);
+  assert.match(route, /humanDesignData: null/);
+});
+
+
+test("legacy profile PDF route uses the canonical natal report contract", () => {
+  const routes = readFileSync("routes.ts", "utf8");
+  const start = routes.indexOf('app.post("/api/pdf/profile"');
+  const end = routes.indexOf('// ── Full Cosmic Blueprint', start);
+  assert.ok(start >= 0 && end > start);
+  const source = routes.slice(start, end);
+
+  assert.match(source, /buildNatalReportInput\(profile\)/);
+  assert.doesNotMatch(source, /A comprehensive behavioral analysis of your soul architecture/);
+  assert.doesNotMatch(source, /Guidance based on your dominant elements/);
+  assert.doesNotMatch(source, /Analysis of your life focus areas/);
+});
+
+
+test("natal report rejects non-canonical stored birth timestamps", () => {
+  const profile = evidenceProfile();
+  profile.birthDate = new Date("1990-09-17T11:11:00.000Z");
+
+  assert.throws(
+    () => buildNatalReportInput(profile),
+    /non-canonical.*ambiguous/i,
+  );
+});
+
+test("natal report preserves canonical stored civil birth date", () => {
+  const report = buildNatalReportInput(evidenceProfile());
+  assert.equal(report.birthDate, "1990-09-17");
+});
+
+
+test("legacy natal-report request path requires strict date-only caller input", () => {
+  const routes = readFileSync("routes.ts", "utf8");
+  const start = routes.indexOf('app.post("/api/natal-report"');
+  const end = routes.indexOf('app.post("/api/pdf/compatibility"', start);
+  const route = routes.slice(start, end);
+
+  assert.match(route, /parseDateOnly\(dateOnly\)/);
+  assert.doesNotMatch(route, /String\(rawBirthDate\)\.slice\(0, 10\)/);
+  assert.doesNotMatch(route, /rawBirthDate\.toISOString\(\)\.slice\(0, 10\)/);
 });

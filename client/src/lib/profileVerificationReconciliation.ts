@@ -1,28 +1,37 @@
-import type { OfflineCodexProfile } from "@soulcodex/core";
+import {
+  MAJOR_ASPECT_POLICY_ID,
+  TROPICAL_ZODIAC_SIGNS,
+  circularDegreesDelta,
+  degreeInTropicalSign,
+  isGovernedMajorAspect,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+  type OfflineCodexProfile,
+  type TropicalZodiacSign,
+  type VerifiedAstrologyForSynthesis,
+} from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
 import {
   synthesizeVerifiedFoundationProfile,
-  type VerifiedAstrologyForSynthesis,
 } from "./foundationOfflineCodex";
+
+type PlacementEvidenceRecord = {
+  source?: string | null;
+  engine?: string | null;
+  calculatedAt?: string | null;
+};
 
 type PlacementRecord = {
   status?: string;
   verificationStatus?: string;
   sign?: string | null;
+  evidence?: PlacementEvidenceRecord | null;
+  provenance?: PlacementEvidenceRecord | null;
   internalCandidate?: {
     longitude?: number;
     inputTimestamp?: string;
   };
 };
-
-const ZODIAC_SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
-
-const MAJOR_ASPECTS = new Set([
-  "conjunction", "opposition", "trine", "square", "sextile",
-]);
 
 const FULL_NATAL_PLANET_KEYS = [
   "sun", "moon", "mercury", "venus", "mars",
@@ -121,32 +130,55 @@ export type ReconciledOfflineProfile = OfflineCodexProfile & {
   };
 };
 
-function validZodiacSign(value: unknown): value is (typeof ZODIAC_SIGNS)[number] {
+function validZodiacSign(value: unknown): value is TropicalZodiacSign {
   return typeof value === "string" &&
-    ZODIAC_SIGNS.includes(value.trim() as (typeof ZODIAC_SIGNS)[number]);
+    TROPICAL_ZODIAC_SIGNS.includes(value.trim() as TropicalZodiacSign);
+}
+
+function verifiedPlacementSign(
+  placement: PlacementRecord | null | undefined,
+): string | null {
+  const state = placement?.verificationStatus ?? placement?.status;
+  if (state !== "verified" || !validZodiacSign(placement?.sign)) return null;
+
+  const evidence = placement?.provenance ?? placement?.evidence;
+  const hasEvidence =
+    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
+    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
+    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
+
+  return hasEvidence ? placement!.sign!.trim() : null;
 }
 
 export function getVerifiedAstrologySign(
   astrology: RemoteProfileSnapshot["astrologyData"],
   body: "sun" | "moon" | "rising",
 ): string | null {
-  const placement = astrology?.[body];
-  if (placement?.verificationStatus !== "verified") return null;
-  return validZodiacSign(placement.sign)
-    ? placement.sign.trim()
-    : null;
-}
-
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function signFromLongitude(value: number): (typeof ZODIAC_SIGNS)[number] {
-  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(value) / 30)];
+  return verifiedPlacementSign(astrology?.[body]);
 }
 
 function validHouseNumber(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
+}
+
+export function getVerifiedHumanDesignRecord(
+  value: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null {
+  if (!value || value.status !== "verified") return null;
+  for (const field of ["type", "strategy", "authority", "profile"] as const) {
+    if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
+  }
+  for (const field of ["verificationReceiptId", "independentSource"] as const) {
+    if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
+  }
+  if (
+    typeof value.verifiedAt !== "string" ||
+    !value.verifiedAt.trim() ||
+    Number.isNaN(new Date(value.verifiedAt).getTime())
+  ) {
+    return null;
+  }
+  return value;
 }
 
 function validVerifiedPoint(
@@ -161,10 +193,15 @@ function validVerifiedPoint(
   return point?.verificationStatus === "verified" &&
     validZodiacSign(point.sign) &&
     Number.isFinite(point.longitude) &&
-    Number(point.longitude) >= 0 && Number(point.longitude) < 360 &&
-    signFromLongitude(Number(point.longitude)) === point.sign &&
+    Number(point.longitude) >= 0 &&
+    Number(point.longitude) < 360 &&
+    circularDegreesDelta(
+      normalizeDegrees(Number(point.longitude)),
+      Number(point.longitude),
+    ) < 1e-10 &&
+    tropicalSignFromLongitude(Number(point.longitude)) === point.sign &&
     Number.isFinite(point.degree) &&
-    Math.abs(Number(point.degree) - (Number(point.longitude) % 30)) < 0.01 &&
+    Math.abs(Number(point.degree) - degreeInTropicalSign(Number(point.longitude))) < 0.01 &&
     point.policyId === policyId &&
     typeof point.evidenceArtifactId === "string" &&
     point.evidenceArtifactId.trim().length > 0;
@@ -212,10 +249,15 @@ export function hasVerifiedFullNatalChart(
         typeof house.evidenceArtifactId !== "string" ||
         !house.evidenceArtifactId.trim() ||
         !Number.isFinite(house.longitude) ||
-        Number(house.longitude) < 0 || Number(house.longitude) >= 360 ||
-        signFromLongitude(Number(house.longitude)) !== house.sign ||
+        Number(house.longitude) < 0 ||
+        Number(house.longitude) >= 360 ||
+        circularDegreesDelta(
+          normalizeDegrees(Number(house.longitude)),
+          Number(house.longitude),
+        ) >= 1e-10 ||
+        tropicalSignFromLongitude(Number(house.longitude)) !== house.sign ||
         !Number.isFinite(house.degree) ||
-        Math.abs(Number(house.degree) - (Number(house.longitude) % 30)) >= 0.01,
+        Math.abs(Number(house.degree) - degreeInTropicalSign(Number(house.longitude))) >= 0.01,
     )
   ) {
     return false;
@@ -225,7 +267,7 @@ export function hasVerifiedFullNatalChart(
   if (
     !planets ||
     FULL_NATAL_PLANET_KEYS.some(
-      (key) => planets[key]?.verificationStatus !== "verified" || !validZodiacSign(planets[key]?.sign),
+      (key) => !verifiedPlacementSign(planets[key]),
     )
   ) {
     return false;
@@ -245,10 +287,8 @@ export function hasVerifiedFullNatalChart(
   if (!Array.isArray(astrology.aspects) || astrology.aspects.some((aspect) =>
     typeof aspect.planet1 !== "string" ||
     typeof aspect.planet2 !== "string" ||
-    !MAJOR_ASPECTS.has(String(aspect.aspect).toLowerCase()) ||
-    !Number.isFinite(aspect.orb) ||
-    Number(aspect.orb) < 0 ||
-    aspect.policyId !== "ASTRO-ASPECT-MAJOR-v1"
+    !isGovernedMajorAspect(aspect.aspect, aspect.orb) ||
+    aspect.policyId !== MAJOR_ASPECT_POLICY_ID
   )) return false;
 
   for (const node of [astrology.northNode, astrology.southNode]) {
@@ -274,8 +314,11 @@ export function hasVerifiedFullNatalChart(
 
   const northLongitude = Number(astrology.northNode?.longitude);
   const southLongitude = Number(astrology.southNode?.longitude);
-  const nodeOpposition = Math.abs(normalizeLongitude(northLongitude - southLongitude));
-  if (Math.min(nodeOpposition, 360 - nodeOpposition) < 179.99 || Math.min(nodeOpposition, 360 - nodeOpposition) > 180.01) {
+  if (
+    !Number.isFinite(northLongitude) ||
+    !Number.isFinite(southLongitude) ||
+    Math.abs(circularDegreesDelta(northLongitude, southLongitude) - 180) > 0.01
+  ) {
     return false;
   }
 
@@ -304,6 +347,7 @@ export function reconcileActiveProfile(
   const sunSign = getVerifiedAstrologySign(astrology, "sun");
   const moonSign = getVerifiedAstrologySign(astrology, "moon");
   const risingSign = getVerifiedAstrologySign(astrology, "rising");
+  const remoteHumanDesign = getVerifiedHumanDesignRecord(remote.humanDesignData);
 
   return {
     ...local,
@@ -330,10 +374,10 @@ export function reconcileActiveProfile(
     risingSign,
     astrologyData: astrology ?? local.astrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData: remoteHumanDesign ?? local.humanDesignData,
     humanDesignType:
-      typeof remote.humanDesignData?.type === "string"
-        ? remote.humanDesignData.type
+      typeof remoteHumanDesign?.type === "string"
+        ? remoteHumanDesign.type
         : local.humanDesignType,
     archetype: remote.archetypeData?.title ?? local.archetype,
     confidence: {
@@ -357,10 +401,13 @@ export function reconcileOfflineProfile(
   const numerologyData =
     (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??
     local.numerologyData;
+  const remoteHumanDesign = getVerifiedHumanDesignRecord(remote.humanDesignData);
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData:
+      (remoteHumanDesign as OfflineCodexProfile["humanDesignData"] | null) ??
+      local.humanDesignData,
   };
 
   const verifiedNarrative =
@@ -369,14 +416,16 @@ export function reconcileOfflineProfile(
           mergedLocal,
           remote.astrologyData as VerifiedAstrologyForSynthesis,
           syncedAt,
-          remote.humanDesignData ?? undefined,
+          remoteHumanDesign ?? undefined,
         )
       : null;
 
   return {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData ?? local.humanDesignData,
+    humanDesignData:
+      (remoteHumanDesign as OfflineCodexProfile["humanDesignData"] | null) ??
+      local.humanDesignData,
     archetypeData:
       verifiedNarrative?.archetypeData ??
       (remote.archetypeData as OfflineCodexProfile["archetypeData"] | undefined) ??
@@ -433,5 +482,7 @@ export function profileNeedsOnlineVerification(
 
   if (!hasVerifiedFullNatalChart(profile.verifiedAstrologyData)) return true;
 
-  return profile.humanDesignData?.status !== "verified";
+  return !getVerifiedHumanDesignRecord(
+    profile.humanDesignData as Record<string, unknown> | null | undefined,
+  );
 }

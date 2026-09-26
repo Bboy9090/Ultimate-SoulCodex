@@ -65,3 +65,17 @@ test("missing evidence identity fails closed", () => {
   assert.equal(result.status, "unresolved");
   assert.equal(result.reason, "evidence_identity_missing");
 });
+
+
+test("Mean Node calculation rejects timezone-less and offset timestamps", () => {
+  for (const inputTimestamp of [
+    "1990-09-17T15:11:00",
+    "1990-09-17T11:11:00-04:00",
+  ]) {
+    const result = verifyMeanNodes({ inputTimestamp });
+    assert.equal(result.status, "unresolved");
+    if (result.status === "unresolved") {
+      assert.equal(result.reason, "candidate_failed");
+    }
+  }
+});

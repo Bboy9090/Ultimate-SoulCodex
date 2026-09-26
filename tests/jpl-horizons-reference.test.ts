@@ -137,3 +137,49 @@ test("rejects unsigned, malformed, or incomplete Horizons responses", async () =
     /horizons_ephemeris_block_missing/,
   );
 });
+
+
+test("uses the governed Horizons command for every supported natal body", () => {
+  const expected = {
+    Sun: "'10'",
+    Moon: "'301'",
+    Mercury: "'199'",
+    Venus: "'299'",
+    Mars: "'499'",
+    Jupiter: "'599'",
+    Saturn: "'699'",
+    Uranus: "'799'",
+    Neptune: "'899'",
+    Pluto: "'999'",
+  } as const;
+
+  for (const [body, command] of Object.entries(expected)) {
+    const url = new URL(
+      buildHorizonsReferenceUrl(
+        body as keyof typeof expected,
+        "1990-09-17T15:11:00.000Z",
+      ),
+    );
+    assert.equal(url.searchParams.get("COMMAND"), command, body);
+  }
+});
+
+test("Horizons reference adapter rejects timezone-less and offset timestamps", async () => {
+  for (const inputTimestamp of [
+    "1990-09-17T15:11:00",
+    "1990-09-17T11:11:00-04:00",
+  ]) {
+    assert.throws(
+      () => buildHorizonsReferenceUrl("Sun", inputTimestamp),
+      /invalid_input_timestamp/,
+    );
+    await assert.rejects(
+      fetchHorizonsReference("Moon", inputTimestamp, {
+        fetchImpl: async () => {
+          throw new Error("network should not be reached");
+        },
+      }),
+      /invalid_input_timestamp/,
+    );
+  }
+});

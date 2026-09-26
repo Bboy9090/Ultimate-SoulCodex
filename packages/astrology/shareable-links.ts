@@ -58,9 +58,9 @@ export async function createShareableLink(
   const linkId = randomUUID();
   
   const defaultSettings: ShareSettings = {
-    includeFullProfile: true,
-    includeSections: ['astrology', 'numerology', 'archetype'],
-    includePersonalInfo: true,
+    includeFullProfile: false,
+    includeSections: ['archetype'],
+    includePersonalInfo: false,
     includeCompatibility: false,
     includeTransits: false,
     includeJournal: false,
@@ -142,7 +142,9 @@ export async function getShareableProfile(
 
   // Get user info
   const user = await storage.getUser(link.userId);
-  const sharedBy = user?.name || profile.name || 'Anonymous';
+  const sharedBy = link.settings.includePersonalInfo
+    ? user?.name || profile.name || 'Anonymous'
+    : 'Anonymous';
 
   // Filter profile data based on settings
   const filteredProfile = filterProfileForSharing(profile, link.settings);

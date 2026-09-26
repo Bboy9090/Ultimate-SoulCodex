@@ -126,3 +126,30 @@ test("longitude outside the approved tolerance blocks promotion", () => {
   assert.equal(result.status, "rejected");
   if (result.status === "rejected") assert.equal(result.reason, "longitude_outside_tolerance");
 });
+
+
+test("verification rejects timezone-less candidate/reference timestamps", () => {
+  const result = verifyAgainstIndependentReference(
+    { ...candidate, inputTimestamp: "1990-09-17T15:11:00" },
+    { ...reference, inputTimestamp: "1990-09-17T15:11:00" },
+    approvedPolicy,
+  );
+
+  assert.equal(result.status, "rejected");
+  if (result.status === "rejected") {
+    assert.equal(result.reason, "invalid_timestamp");
+  }
+});
+
+test("verification rejects offset timestamps even when they represent the same instant", () => {
+  const result = verifyAgainstIndependentReference(
+    { ...candidate, inputTimestamp: "1990-09-17T11:11:00-04:00" },
+    { ...reference, inputTimestamp: "1990-09-17T11:11:00-04:00" },
+    approvedPolicy,
+  );
+
+  assert.equal(result.status, "rejected");
+  if (result.status === "rejected") {
+    assert.equal(result.reason, "invalid_timestamp");
+  }
+});

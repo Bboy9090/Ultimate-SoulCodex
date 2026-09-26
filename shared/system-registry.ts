@@ -113,6 +113,33 @@ export const SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY: readonly SoulCodexRegistryEn
     rule: "May be inspected as user-supplied supporting context, but does not enter the stable Codex fingerprint until a normalized assessment-evidence contract is promoted. Never infer a type from birth data.",
   },
   {
+    id: "legacy-elemental-medicine",
+    label: "Legacy Elemental Medicine profile",
+    family: "Legacy symbolic systems",
+    state: "unavailable",
+    mayInfluenceUltimateCodex: false,
+    evidenceContract: "no approved assessment or calculation contract",
+    rule: "Do not infer an elemental personality profile from natal signs, numerology, or Human Design.",
+  },
+  {
+    id: "legacy-soul-archetype",
+    label: "Legacy Soul Archetype generator",
+    family: "Legacy synthesis",
+    state: "unavailable",
+    mayInfluenceUltimateCodex: false,
+    evidenceContract: "superseded by governed Diamond Way / Galactic evidence synthesis",
+    rule: "Generic zodiac or numerology prose, deterministic fill text, and invented soul-frequency labels must not substitute for missing evidence.",
+  },
+  {
+    id: "parental-influence",
+    label: "Parental sign influence",
+    family: "Legacy symbolic systems",
+    state: "unavailable",
+    mayInfluenceUltimateCodex: false,
+    evidenceContract: "no approved behavioral or family-history assessment contract",
+    rule: "Parent zodiac signs do not establish inherited traits, relationship patterns, or parental influence facts.",
+  },
+  {
     id: "moral-compass",
     label: "Moral Compass",
     family: "Assessment",
@@ -138,6 +165,15 @@ export const SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY: readonly SoulCodexRegistryEn
     mayInfluenceUltimateCodex: false,
     evidenceContract: "not production-governed",
     rule: "No dosha is inferred from unrelated profile fields.",
+  },
+  {
+    id: "returns-progressions",
+    label: "Solar / Lunar Returns and Secondary Progressions",
+    family: "Astrology extensions",
+    state: "unavailable",
+    mayInfluenceUltimateCodex: false,
+    evidenceContract: "no approved return/progression astronomical verification contract",
+    rule: "Legacy placeholder day-of-year, fixed-house, or approximate return calculations are quarantined. Production requires exact return search, governed chart geometry, and independent verification.",
   },
   {
     id: "vedic-astrology",
@@ -295,4 +331,97 @@ export function registrySystemsExcludedFromUltimateCodex(): SoulCodexRegistryEnt
 
 export function registryEntry(id: string): SoulCodexRegistryEntry | null {
   return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.find((entry) => entry.id === id) ?? null;
+}
+
+export type SoulCodexUseContext =
+  | "stable-identity"
+  | "current-guidance"
+  | "supporting-reflection"
+  | "technical-inspection";
+
+const CURRENT_GUIDANCE_SYSTEM_IDS = new Set([
+  "numerology-cycles",
+]);
+
+const SUPPORTING_REFLECTION_SYSTEM_IDS = new Set([
+  "personality-assessments",
+  "moral-compass",
+]);
+
+/**
+ * Select systems by the job they are actually qualified to do.
+ *
+ * This is intentionally not a "more systems is better" selector:
+ * - stable identity admits only governed systems explicitly allowed to alter the Codex;
+ * - current guidance admits governed time-varying systems, without promoting them into identity;
+ * - supporting reflection admits explicit user-assessment context, without treating it as birth-derived fact;
+ * - technical inspection exposes every registered system so unresolved/excluded states stay inspectable.
+ */
+export function registrySystemsForUseContext(
+  context: SoulCodexUseContext,
+): SoulCodexRegistryEntry[] {
+  if (context === "stable-identity") {
+    return registrySystemsAllowedInUltimateCodex();
+  }
+
+  if (context === "current-guidance") {
+    return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.filter(
+      (entry) =>
+        entry.state === "governed" &&
+        (entry.mayInfluenceUltimateCodex || CURRENT_GUIDANCE_SYSTEM_IDS.has(entry.id)),
+    );
+  }
+
+  if (context === "supporting-reflection") {
+    return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.filter(
+      (entry) => SUPPORTING_REFLECTION_SYSTEM_IDS.has(entry.id),
+    );
+  }
+
+  return [...SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY];
+}
+
+
+export type SoulCodexRegistryDisplayState =
+  | "Governed"
+  | "Supporting"
+  | "Inspect only"
+  | "Unavailable";
+
+export interface SoulCodexRegistryDisplayEntry {
+  id: string;
+  label: string;
+  family: string;
+  state: SoulCodexRegistryDisplayState;
+  stableIdentityEligible: boolean;
+  evidenceContract: string;
+  rule: string;
+}
+
+function registryDisplayState(
+  state: SoulCodexRegistryState,
+): SoulCodexRegistryDisplayState {
+  if (state === "governed") return "Governed";
+  if (state === "user-assessed") return "Supporting";
+  if (state === "inspect-only") return "Inspect only";
+  return "Unavailable";
+}
+
+/**
+ * Canonical user-facing projection of the production registry.
+ *
+ * Important distinction: "Governed" describes the system's production policy,
+ * not whether a particular user's evidence has passed verification. Per-profile
+ * verification remains a separate runtime concern.
+ */
+export function registryDisplayManifest(): SoulCodexRegistryDisplayEntry[] {
+  return SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.map((entry) => ({
+    id: entry.id,
+    label: entry.label,
+    family: entry.family,
+    state: registryDisplayState(entry.state),
+    stableIdentityEligible: entry.mayInfluenceUltimateCodex,
+    evidenceContract: entry.evidenceContract,
+    rule: entry.rule,
+  }));
 }

@@ -1,9 +1,20 @@
+import { dateOnlyFromStoredValue } from "@soulcodex/core";
 import type { NatalReportInput } from "../natalReportPdf";
 
 type PlacementLike = {
   sign?: unknown;
   verificationStatus?: unknown;
   reason?: unknown;
+  evidence?: {
+    source?: unknown;
+    engine?: unknown;
+    calculatedAt?: unknown;
+  } | null;
+  provenance?: {
+    source?: unknown;
+    engine?: unknown;
+    calculatedAt?: unknown;
+  } | null;
   internalCandidate?: {
     longitude?: unknown;
   } | null;
@@ -31,7 +42,14 @@ function record(value: unknown): Record<string, any> {
 
 function verifiedSign(value: unknown): string | null {
   const placement = record(value) as PlacementLike;
+  const evidence = placement.provenance ?? placement.evidence;
+  const hasEvidence =
+    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
+    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
+    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
+
   return placement.verificationStatus === "verified" &&
+    hasEvidence &&
     typeof placement.sign === "string" &&
     placement.sign.trim()
     ? placement.sign.trim()
@@ -151,7 +169,7 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
 
   return {
     name: profile.name,
-    birthDate: profile.birthDate.toISOString().split("T")[0],
+    birthDate: dateOnlyFromStoredValue(profile.birthDate),
     birthTime: profile.birthTime ?? "",
     birthLocation: profile.birthLocation ?? "",
     astrology: safeAstrology,

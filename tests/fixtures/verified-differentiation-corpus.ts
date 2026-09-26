@@ -1,13 +1,19 @@
+import type { VerifiedAstrologyForSynthesis } from "../../packages/core/verified-synthesis.ts";
 import {
   generateFoundationOfflineCodexProfile,
   synthesizeVerifiedFoundationProfile,
-  type VerifiedAstrologyForSynthesis,
 } from "../../client/src/lib/foundationOfflineCodex";
 
 const SIGNS = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ] as const;
+
+const placementEvidence = {
+  source: "Independent differentiation fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
 
 export interface DifferentiationReading {
   id: string;
@@ -31,6 +37,7 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
   const planet = (offset: number) => ({
     verificationStatus: "verified",
     sign: sign(index * 2 + offset),
+    evidence: placementEvidence,
   });
   const planetaryHouses = {
     sun: ((index + 9) % 12) + 1,
@@ -46,12 +53,12 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
   };
 
   return {
-    sun: { verificationStatus: "verified", sign: sun },
-    moon: { verificationStatus: "verified", sign: moon },
-    rising: { verificationStatus: "verified", sign: rising },
+    sun: { verificationStatus: "verified", sign: sun, evidence: placementEvidence },
+    moon: { verificationStatus: "verified", sign: moon, evidence: placementEvidence },
+    rising: { verificationStatus: "verified", sign: rising, evidence: placementEvidence },
     planets: {
-      sun: { verificationStatus: "verified", sign: sun },
-      moon: { verificationStatus: "verified", sign: moon },
+      sun: { verificationStatus: "verified", sign: sun, evidence: placementEvidence },
+      moon: { verificationStatus: "verified", sign: moon, evidence: placementEvidence },
       mercury: planet(2),
       venus: planet(3),
       mars: planet(5),
@@ -65,24 +72,36 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
     midheaven: {
       verificationStatus: "verified",
       sign: sign(index + 7),
+      evidence: placementEvidence,
+      policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-differentiation-fixture",
     },
     northNode: {
       verificationStatus: "verified",
       sign: sign(index + 9),
       house: ((index * 5 + 1) % 12) + 1,
       mode: "mean",
+      evidence: placementEvidence,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-differentiation-fixture",
     },
     southNode: {
       verificationStatus: "verified",
       sign: sign(index + 3),
       house: ((index * 5 + 7) % 12) + 1,
       mode: "mean",
+      evidence: placementEvidence,
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-differentiation-fixture",
     },
     chiron: {
       verificationStatus: "verified",
       sign: sign(index * 3 + 4),
       house: ((index * 7 + 2) % 12) + 1,
       qualificationMethod: "live-jpl-qualified-against-swiss",
+      evidence: placementEvidence,
+      policyId: "ASTRO-CHIRON-v1",
+      evidenceArtifactId: "chiron-differentiation-fixture",
     },
     aspects: [
       {
@@ -90,20 +109,29 @@ function makeChart(index: number): VerifiedAstrologyForSynthesis {
         planet2: "moon",
         aspect: ["conjunction", "sextile", "square", "trine", "opposition"][index % 5],
         orb: Number((0.4 + (index % 7) * 0.37).toFixed(2)),
+        policyId: "ASTRO-ASPECT-MAJOR-v1",
+        evidenceArtifactId: "aspect-differentiation-fixture",
       },
       {
         planet1: "venus",
         planet2: "mars",
         aspect: ["trine", "square", "sextile"][index % 3],
         orb: Number((0.7 + (index % 5) * 0.41).toFixed(2)),
+        policyId: "ASTRO-ASPECT-MAJOR-v1",
+        evidenceArtifactId: "aspect-differentiation-fixture",
       },
       {
         planet1: "mercury",
         planet2: "saturn",
         aspect: ["square", "trine", "opposition", "sextile"][index % 4],
         orb: Number((0.3 + (index % 6) * 0.29).toFixed(2)),
+        policyId: "ASTRO-ASPECT-MAJOR-v1",
+        evidenceArtifactId: "aspect-differentiation-fixture",
       },
     ],
+    verification: {
+      policyId: "ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1",
+    },
   };
 }
 

@@ -12,13 +12,35 @@ import {
   type InsertProfile,
   type Assessment,
   type InsertAssessment,
+  isValidDateOnly,
 } from "@shared/schema";
+
+function canonicalBirthDateTimestamp(value: unknown): Date {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new RangeError("Birth date must be a valid civil date");
+    }
+    return new Date(Date.UTC(
+      value.getUTCFullYear(),
+      value.getUTCMonth(),
+      value.getUTCDate(),
+    ));
+  }
+
+  if (typeof value === "string" && isValidDateOnly(value.trim())) {
+    return new Date(`${value.trim()}T00:00:00.000Z`);
+  }
+
+  throw new RangeError("Birth date storage requires a real YYYY-MM-DD civil date");
+}
+
 
 function appleUsername(subject: string) {
   return `apple:${subject}`;
 }
 
 export interface IStorage {
+  readonly durable: boolean;
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -35,6 +57,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  readonly durable = false;
   private users = new Map<string, User>();
   private profiles = new Map<string, Profile>();
   private assessments = new Map<string, Assessment>();
@@ -105,6 +128,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const profile = {
       ...insertProfile,
+      birthDate: canonicalBirthDateTimestamp((insertProfile as any).birthDate),
       id: randomUUID(),
       userId: insertProfile.userId ?? null,
       sessionId: insertProfile.sessionId ?? null,
@@ -146,7 +170,13 @@ export class MemStorage implements IStorage {
   async updateProfile(id: string, updates: Partial<Profile>): Promise<Profile> {
     const existing = this.profiles.get(id);
     if (!existing) throw new Error("Profile not found");
-    const updated = { ...existing, ...updates, updatedAt: new Date() } satisfies Profile;
+    const normalizedUpdates: Partial<Profile> = {
+      ...updates,
+      ...(Object.prototype.hasOwnProperty.call(updates, "birthDate")
+        ? { birthDate: canonicalBirthDateTimestamp((updates as any).birthDate) }
+        : {}),
+    };
+    const updated = { ...existing, ...normalizedUpdates, updatedAt: new Date() } satisfies Profile;
     this.profiles.set(id, updated);
     return updated;
   }
@@ -191,6 +221,7 @@ export class MemStorage implements IStorage {
 }
 
 class PostgresStorage implements IStorage {
+  readonly durable = true;
   private async db() {
     return (await import("./db")).db;
   }
@@ -243,11 +274,22 @@ class PostgresStorage implements IStorage {
   }
   async createProfile(insertProfile: InsertProfile): Promise<Profile> {
     const db = await this.db();
-    return (await db.insert(profiles).values(insertProfile).returning())[0];
+    const normalized = {
+      ...insertProfile,
+      birthDate: canonicalBirthDateTimestamp((insertProfile as any).birthDate),
+    };
+    return (await db.insert(profiles).values(normalized).returning())[0];
   }
   async updateProfile(id: string, updates: Partial<Profile>): Promise<Profile> {
     const db = await this.db();
-    const row = (await db.update(profiles).set({ ...updates, updatedAt: new Date() }).where(eq(profiles.id, id)).returning())[0];
+    const normalized = {
+      ...updates,
+      ...(Object.prototype.hasOwnProperty.call(updates, "birthDate")
+        ? { birthDate: canonicalBirthDateTimestamp((updates as any).birthDate) }
+        : {}),
+      updatedAt: new Date(),
+    };
+    const row = (await db.update(profiles).set(normalized).where(eq(profiles.id, id)).returning())[0];
     if (!row) throw new Error("Profile not found");
     return row;
   }
@@ -282,4 +324,9 @@ class PostgresStorage implements IStorage {
 
 const usePostgres = Boolean(process.env.DATABASE_URL) && process.env.DEMO_MODE !== "true";
 export const storage: IStorage = usePostgres ? new PostgresStorage() : new MemStorage();
+
+export function durableServerPersistenceAvailable(): boolean {
+  return storage.durable;
+}
+
 console.log(`[ServerStorage] Using ${usePostgres ? "PostgresStorage" : "MemStorage"}`);

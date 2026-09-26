@@ -43,10 +43,10 @@ Includes:
 4. No medical diagnosis.
 5. Missing birth time or location must trigger confidence warnings.
 6. Parent and family data is shaping context, not destiny.
-7. Same Sun sign users must not receive identical readings.
+7. A Sun sign alone must never determine the full reading. When governed evidence differs, the reading must change in substance; when governed evidence is genuinely identical, the system must not manufacture uniqueness.
 8. Beginner mode must be simple, beautiful, and non-overwhelming.
 9. Advanced mode must expose system detail and calculation confidence.
-10. Clarity, usefulness, and emotional truth outrank mystical decoration.
+10. Clarity, usefulness, evidence honesty, and user agency outrank mystical decoration.
 
 ## Required Output Questions
 

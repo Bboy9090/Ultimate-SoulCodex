@@ -48,10 +48,15 @@ export interface EphemerisEvidenceReceipt {
     maximumLongitudeDeltaDegrees: number | null;
     sunMaximumDeltaDegrees: number | null;
     moonMaximumDeltaDegrees: number | null;
+    bodyMaximumDeltaDegrees: Partial<Record<SupportedHorizonsBody, number>>;
   };
 }
 
 const BOTH_BODIES: SupportedHorizonsBody[] = ["Sun", "Moon"];
+const ALL_NATAL_BODIES: SupportedHorizonsBody[] = [
+  "Sun", "Moon", "Mercury", "Venus", "Mars",
+  "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+];
 
 export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
   {
@@ -62,8 +67,8 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "America/New_York",
     latitude: 40.8448,
     longitude: -73.8648,
-    bodies: BOTH_BODIES,
-    note: "Golden profile fixture; no expected sign is hardcoded.",
+    bodies: ALL_NATAL_BODIES,
+    note: "Golden profile fixture; all ten natal-body longitudes are independently challenged.",
   },
   {
     id: "san-juan-profile-1991",
@@ -84,7 +89,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 0,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_NATAL_BODIES,
     note: "Near the Pisces-Aries tropical boundary; agreement must be measured, not assumed.",
   },
   {
@@ -95,7 +100,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 51.4769,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_NATAL_BODIES,
     note: "Near the Gemini-Cancer tropical boundary.",
   },
   {
@@ -106,7 +111,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 0,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_NATAL_BODIES,
     note: "Near the Virgo-Libra tropical boundary.",
   },
   {
@@ -117,7 +122,7 @@ export const EPHEMERIS_EVIDENCE_FIXTURES: EphemerisEvidenceFixture[] = [
     timezone: "UTC",
     latitude: 51.4769,
     longitude: 0,
-    bodies: BOTH_BODIES,
+    bodies: ALL_NATAL_BODIES,
     note: "Near the Sagittarius-Capricorn tropical boundary.",
   },
   {
@@ -294,8 +299,14 @@ export async function runLiveEphemerisEvidenceMatrix(
     const astrology = calculateAstrology(fixture);
 
     for (const body of fixture.bodies) {
-      const placement = body === "Sun" ? astrology.sun : astrology.moon;
-      const candidate = placement.internalCandidate;
+      const key = body.toLowerCase() as
+        | "sun" | "moon" | "mercury" | "venus" | "mars"
+        | "jupiter" | "saturn" | "uranus" | "neptune" | "pluto";
+      const placement =
+        body === "Sun" ? astrology.sun :
+        body === "Moon" ? astrology.moon :
+        astrology.planets?.[key];
+      const candidate = placement?.internalCandidate;
       if (!candidate) {
         throw new Error(`candidate_missing:${fixture.id}:${body}`);
       }
@@ -324,6 +335,16 @@ export async function runLiveEphemerisEvidenceMatrix(
 
   const sunRows = rows.filter((row) => row.body === "Sun");
   const moonRows = rows.filter((row) => row.body === "Moon");
+  const bodyMaximumDeltaDegrees = Object.fromEntries(
+    ALL_NATAL_BODIES
+      .map((body) => {
+        const value = maximum(
+          rows.filter((row) => row.body === body).map((row) => row.longitudeDeltaDegrees),
+        );
+        return value === null ? null : [body, value] as const;
+      })
+      .filter((entry): entry is readonly [SupportedHorizonsBody, number] => entry !== null),
+  );
 
   return {
     schemaVersion: "1.0.0",
@@ -337,6 +358,7 @@ export async function runLiveEphemerisEvidenceMatrix(
       maximumLongitudeDeltaDegrees: maximum(rows.map((row) => row.longitudeDeltaDegrees)),
       sunMaximumDeltaDegrees: maximum(sunRows.map((row) => row.longitudeDeltaDegrees)),
       moonMaximumDeltaDegrees: maximum(moonRows.map((row) => row.longitudeDeltaDegrees)),
+      bodyMaximumDeltaDegrees,
     },
   };
 }

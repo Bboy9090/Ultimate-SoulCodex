@@ -21,9 +21,9 @@ const unresolvedArchetype: ArchetypeData = {
   title: "Archetype unresolved",
   description:
     "Your Soul Codex is still assembling the governed layers needed for a responsible synthesis. No substitute archetype is assigned while those layers are unresolved.",
-  strengths: ["Self-observation", "Curiosity", "Patience with uncertainty"],
-  shadows: ["Rushing toward labels", "Treating guesses as identity"],
-  themes: ["Observation", "Verification", "Lived experience"],
+  strengths: [],
+  shadows: [],
+  themes: [],
   guidance:
     "Use supported facts as reflection prompts and leave unresolved material open instead of filling it with a generic identity.",
 };
@@ -122,8 +122,6 @@ export function synthesizeArchetype(
     lifePath ? "Life Path " + lifePath : null,
     expression ? "Expression " + expression : null,
     soulUrge ? "Soul Urge " + soulUrge : null,
-    personalityData?.enneagram?.type ? "Enneagram " + personalityData.enneagram.type : null,
-    personalityData?.mbti?.type ? "MBTI " + personalityData.mbti.type : null,
   ]);
 
   return {

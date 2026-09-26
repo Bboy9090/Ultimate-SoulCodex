@@ -4,14 +4,16 @@ import { storage } from "./storage";
 import { setupSession } from "./session";
 import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
 import { profileBelongsToActor } from "./lib/profile-ownership";
+import { serializeProfileForJson } from "./lib/profile-json";
+import { verifyBirthTimezoneCoordinates } from "./lib/birth-location-consistency";
 import {
   birthDataSchema,
   enneagramAssessmentSchema,
   mbtiAssessmentSchema,
 } from "@shared/schema";
+import { resolveCivilTimeStrict } from "@soulcodex/core";
 import {
   calculateVerifiedAstrology,
-  getTarotBirthCards,
   type AstrologyData,
 } from "./services/astrology-production";
 import { calculateNumerology } from "./services/numerology";
@@ -19,13 +21,40 @@ import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
 import {
   generateBiography,
-  generateDailyGuidance,
 } from "./services/openai-service";
 import { buildNatalReportPdf } from "./natalReportPdf";
 import {
   buildNatalReportInput,
   natalReportFilename,
 } from "./lib/natal-report-contract";
+
+function currentYearInTimezone(
+  timezone: string | undefined,
+  now: Date = new Date(),
+): number {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
+    throw new RangeError("Numerology target year requires a valid instant");
+  }
+
+  const resolved = timezone?.trim() || "UTC";
+  let formatter: Intl.DateTimeFormat;
+  try {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: resolved,
+      year: "numeric",
+    });
+  } catch {
+    throw new RangeError(`Invalid profile timezone: ${resolved}`);
+  }
+
+  const yearPart = formatter.formatToParts(now).find((part) => part.type === "year")?.value;
+  const year = Number(yearPart);
+  if (!Number.isInteger(year)) {
+    throw new RangeError("Unable to resolve numerology target year");
+  }
+  return year;
+}
+
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -52,6 +81,18 @@ function requestOwnsProfile(req: any, profile: any): boolean {
 function profileNotFound(res: any) {
   // Deliberately do not reveal whether another user's profile ID exists.
   return res.status(404).json({ message: "Profile not found" });
+}
+
+function productionProfilePersistenceUnavailable(): boolean {
+  return process.env.NODE_ENV === "production" && !storage.durable;
+}
+
+function durableProfileStorageRequired(res: any) {
+  return res.status(503).json({
+    message:
+      "Server-saved profiles are temporarily unavailable because durable storage is not configured. Local Soul Codex profiles on this device are unaffected.",
+    code: "durable_storage_required",
+  });
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -82,18 +123,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
-      const birthData = birthDataSchema.parse(req.body);
+      const parsedBirthData = birthDataSchema.safeParse(req.body);
+      if (!parsedBirthData.success) {
+        return res.status(400).json({
+          message: "Profile birth data is invalid",
+          code: "invalid_birth_data",
+          issues: parsedBirthData.error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+          })),
+        });
+      }
+
+      const birthData = parsedBirthData.data;
+      const latitude = finiteCoordinate(birthData.latitude);
+      const longitude = finiteCoordinate(birthData.longitude);
+
+      if (birthData.birthTime?.trim()) {
+        const civilTime = resolveCivilTimeStrict(
+          birthData.birthDate,
+          birthData.birthTime,
+          birthData.timezone,
+        );
+        if (civilTime.status !== "valid") {
+          return res.status(422).json({
+            message:
+              civilTime.status === "ambiguous"
+                ? "Birth time occurs more than once in this timezone. Enter a disambiguated time or verify the recorded offset."
+                : civilTime.status === "nonexistent"
+                  ? "Birth time did not exist in this timezone because of a clock transition."
+                  : "Birth date, time, or timezone could not be resolved safely.",
+            code: `birth_civil_time_${civilTime.status}`,
+            candidates: civilTime.candidates,
+            utcOffsetsMinutes: civilTime.candidateUtcOffsetsMinutes,
+          });
+        }
+      }
+
+      if (latitude !== undefined && longitude !== undefined) {
+        const locationConsistency = verifyBirthTimezoneCoordinates({
+          latitude,
+          longitude,
+          timezone: birthData.timezone,
+        });
+        if (locationConsistency.status !== "matched") {
+          return res.status(422).json({
+            message:
+              locationConsistency.reason === "timezone_coordinate_mismatch"
+                ? "Birthplace timezone does not match the supplied coordinates."
+                : "Birthplace timezone and coordinates could not be verified safely.",
+            code: locationConsistency.reason,
+            timezone: locationConsistency.timezone,
+            timezoneCandidates: locationConsistency.candidates,
+          });
+        }
+      }
+
       const verifiedAstrologyData = await calculateVerifiedAstrology({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
-        latitude: finiteCoordinate(birthData.latitude),
-        longitude: finiteCoordinate(birthData.longitude),
+        latitude,
+        longitude,
         timezone: birthData.timezone,
       });
       const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
-      const numerologyData = calculateNumerology(birthData.name, birthData.birthDate);
-      const tarotCards = getTarotBirthCards(birthData.birthDate);
+      const numerologyData = calculateNumerology(
+        birthData.name,
+        birthData.birthDate,
+        currentYearInTimezone(birthData.timezone),
+      );
       const archetypeData = synthesizeArchetype(astrologyData, numerologyData, {});
       const biography = await generateBiography({
         name: birthData.name,
@@ -103,14 +206,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         personalityData: {},
         archetype: archetypeData,
       });
-      const dailyGuidance = await generateDailyGuidance({
-        name: birthData.name,
-        archetypeTitle: archetypeData.title,
-        astrologyData,
-        numerologyData,
-        personalityData: {},
-        archetype: archetypeData,
-      });
+      // Persist only stable, governed profile guidance here. Current-day
+      // guidance belongs to the live Daily/Today engine and must not be frozen
+      // into a profile by an AI call at creation time.
+      const dailyGuidance = archetypeData.guidance;
 
       const authenticatedUserId = req.session?.userId ?? null;
       const profile = await storage.createProfile({
@@ -121,18 +220,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         birthTime: birthData.birthTime,
         birthLocation: birthData.birthLocation,
         timezone: birthData.timezone,
-        latitude: birthData.latitude === undefined ? null : String(birthData.latitude),
-        longitude: birthData.longitude === undefined ? null : String(birthData.longitude),
+        latitude: latitude === undefined ? null : String(latitude),
+        longitude: longitude === undefined ? null : String(longitude),
         isPremium: false,
         astrologyData,
         numerologyData,
         personalityData: {},
-        archetypeData: { ...archetypeData, tarotCards },
+        archetypeData,
         biography,
         dailyGuidance,
       });
       if (!authenticatedUserId && req.session) req.session.profileCreated = true;
-      res.status(201).json(profile);
+      res.status(201).json(serializeProfileForJson(profile));
     } catch (error) {
       console.error("Error creating profile:", error);
       res.status(500).json({ message: "Failed to create profile" });
@@ -140,10 +239,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/profiles/:id", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const profile = await storage.getProfile(req.params.id);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
-      res.json(profile);
+      res.json(serializeProfileForJson(profile));
     } catch (error) {
       console.error("Error getting profile:", error);
       res.status(500).json({ message: "Failed to get profile" });
@@ -151,6 +254,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles/:id/enneagram", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const assessment = enneagramAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
@@ -159,9 +266,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enneagramResult = calculateEnneagram(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "enneagram", responses: assessment.responses, calculatedType: enneagramResult?.type?.toString() || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), enneagram: enneagramResult };
-      const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData);
-      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData, archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards } });
-      res.json(updatedProfile);
+      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData });
+      res.json(serializeProfileForJson(updatedProfile));
     } catch (error) {
       console.error("Error processing Enneagram assessment:", error);
       res.status(500).json({ message: "Failed to process assessment" });
@@ -169,6 +275,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles/:id/mbti", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const assessment = mbtiAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
@@ -177,9 +287,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mbtiResult = calculateMBTI(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "mbti", responses: assessment.responses, calculatedType: mbtiResult?.type || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), mbti: mbtiResult };
-      const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData);
-      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData, archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards } });
-      res.json(updatedProfile);
+      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData });
+      res.json(serializeProfileForJson(updatedProfile));
     } catch (error) {
       console.error("Error processing MBTI assessment:", error);
       res.status(500).json({ message: "Failed to process assessment" });
@@ -197,6 +306,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/pdf/profile/:id", async (req: any, res) => {
+    if (productionProfilePersistenceUnavailable()) {
+      return durableProfileStorageRequired(res);
+    }
+
     try {
       const profileId = req.params.id;
       const profile = await storage.getProfile(profileId);

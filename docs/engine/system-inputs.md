@@ -18,23 +18,23 @@ Precision inputs:
 ## Inputs by System
 
 Astrology:
-- required: birth date
-- precision-critical: birth time, location, timezone
-- impact when missing: reduced or unverified rising/house precision
+- required minimum: birth date
+- exact timed chart requires: valid birth time, IANA timezone, and coordinates for horizon geometry
+- impact when missing: date-only Sun may be resolved only when the sign is stable across the relevant local civil day; Moon, Rising, houses, and other exact-time placements remain unresolved rather than approximated
 
 Human Design:
-- required baseline: birth date
-- precision-critical: birth time and location/timezone
-- impact when missing: degraded authority/profile/channel precision
+- required for governed core: valid birth date, exact birth time, resolvable timezone, and coordinates
+- impact when missing or civil time is ambiguous/nonexistent: Human Design remains unresolved; Type, Strategy, Authority, Profile, centers, channels, and gates are not partially invented or degraded into a substitute chart
 
 Numerology:
-- required: birth date
-- optional: name for expanded numerology layers
-- impact when missing: life-path or derived numerology fields may be unavailable
+- birth date required for date-derived fields such as Life Path, Birthday, and current cycles
+- normalized name required for name-derived fields such as Expression, Soul Urge, Personality, and Maturity
+- impact when missing: only fields justified by the available input are calculated; missing name components remain unresolved
 
 Behavioral and context layer:
-- optional: mirror answers, user reflections, parent-family context
-- impact when missing: less personalized pattern differentiation
+- optional: explicit mirror/assessment answers, user reflections, parent-family context
+- impact when missing: supporting reflection is thinner
+- boundary: these inputs do not silently rewrite the stable birth-derived Codex fingerprint
 
 ## Context Input Taxonomy
 

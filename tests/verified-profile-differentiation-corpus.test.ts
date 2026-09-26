@@ -14,7 +14,7 @@ import type {
   VerifiableBody,
 } from "../server/services/astrology-verification";
 import type { IndependentReferenceFetcher } from "../server/services/astrology";
-import type { VerifiedAstrologyForSynthesis } from "../client/src/lib/foundationOfflineCodex";
+import type { VerifiedAstrologyForSynthesis } from "../packages/core/verified-synthesis.ts";
 
 const names = [
   "Avery Cole", "Bianca Stone", "Caleb Hart", "Dalia Reed", "Elias North",
@@ -77,12 +77,17 @@ function ngrams(text: string, width: number): Set<string> {
   return grams;
 }
 
-function ngramJaccard(a: string, b: string, width: number): number {
-  const left = ngrams(a, width);
-  const right = ngrams(b, width);
-  const intersection = [...left].filter((gram) => right.has(gram)).length;
-  const union = new Set([...left, ...right]).size;
+function setJaccard(left: Set<string>, right: Set<string>): number {
+  let intersection = 0;
+  for (const value of left) {
+    if (right.has(value)) intersection += 1;
+  }
+  const union = left.size + right.size - intersection;
   return union === 0 ? 0 : intersection / union;
+}
+
+function ngramJaccard(a: string, b: string, width: number): number {
+  return setJaccard(ngrams(a, width), ngrams(b, width));
 }
 
 function referenceFetcherFor(birth: BirthData): IndependentReferenceFetcher {
@@ -112,11 +117,13 @@ function referenceFetcherFor(birth: BirthData): IndependentReferenceFetcher {
 }
 
 async function fullVerifiedReading(index: number) {
-  const location = locations[index % locations.length];
+  const identityIndex = index % names.length;
+  const variantIndex = Math.floor(index / names.length);
+  const location = locations[variantIndex % locations.length];
   const birth: BirthData = {
-    name: names[index % names.length],
-    birthDate: dates[index % dates.length],
-    birthTime: times[index % times.length],
+    name: names[identityIndex],
+    birthDate: dates[identityIndex],
+    birthTime: times[variantIndex % times.length],
     timezone: location.timezone,
     latitude: location.latitude,
     longitude: location.longitude,
@@ -144,8 +151,6 @@ async function fullVerifiedReading(index: number) {
       inputTimestamp,
     }),
   });
-
-  assert.equal(astrology.verification.complete, true, `fixture ${index} failed verification`);
 
   const narrative = synthesizeVerifiedFoundationProfile(
     local,
@@ -214,14 +219,102 @@ function supportedSignatureDistance(
   );
 }
 
+function synthesisEvidenceSignature(
+  reading: Awaited<ReturnType<typeof fullVerifiedReading>>,
+): string {
+  const numerology = (reading.local as any).numerologyData ?? {};
+  const astrology = reading.astrology as any;
+
+  const planetaryHouses = Object.entries(astrology.planetaryHouses ?? {})
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([body, house]) => `${body}:H${house}`);
+
+  const strongestAspect = [...(astrology.aspects ?? [])]
+    .filter(
+      (aspect: any) =>
+        typeof (aspect.planet1 ?? aspect.body1) === "string" &&
+        typeof (aspect.planet2 ?? aspect.body2) === "string" &&
+        typeof (aspect.aspect ?? aspect.type) === "string" &&
+        Number.isFinite(aspect.orb),
+    )
+    .sort((left: any, right: any) => Number(left.orb) - Number(right.orb))[0];
+
+  const strongestAspectKey = strongestAspect
+    ? [
+        String(strongestAspect.planet1 ?? strongestAspect.body1),
+        String(strongestAspect.aspect ?? strongestAspect.type),
+        String(strongestAspect.planet2 ?? strongestAspect.body2),
+      ].join(":")
+    : "unresolved";
+
+  return [
+    ...supportedSignature(reading),
+    `midheaven:${astrology.midheaven?.sign ?? "unresolved"}`,
+    `northNode:${astrology.northNode?.sign ?? "unresolved"}`,
+    `northNodeHouse:${astrology.northNode?.house ?? "unresolved"}`,
+    `southNode:${astrology.southNode?.sign ?? "unresolved"}`,
+    `southNodeHouse:${astrology.southNode?.house ?? "unresolved"}`,
+    `chiron:${astrology.chiron?.sign ?? "unresolved"}`,
+    `chironHouse:${astrology.chiron?.house ?? "unresolved"}`,
+    ...planetaryHouses,
+    `strongestAspect:${strongestAspectKey}`,
+    `lifePath:${numerology.lifePath ?? "unresolved"}`,
+    `expression:${numerology.expression ?? "unresolved"}`,
+    `soulUrge:${numerology.soulUrge ?? "unresolved"}`,
+    `personality:${numerology.personality ?? "unresolved"}`,
+    `maturity:${numerology.maturity ?? "unresolved"}`,
+  ].join("|");
+}
+
+
 test("verified profile differentiation corpus", { timeout: 120_000 }, async (suite) => {
-  const readings = [];
-  for (let index = 0; index < 60; index += 1) {
-    readings.push(await fullVerifiedReading(index));
+  const readings: Awaited<ReturnType<typeof fullVerifiedReading>>[] = [];
+  const withheld: Array<{
+    index: number;
+    unresolvedBodies: string[];
+    missingData: string[];
+  }> = [];
+
+  // Build 20 genuinely complete verified variants for each fixed name/date
+  // identity. Boundary-sensitive candidates are recorded rather than coerced
+  // into a verified state. This keeps the corpus honest while still producing
+  // exactly 300 complete readings.
+  for (let identityIndex = 0; identityIndex < names.length; identityIndex += 1) {
+    let accepted = 0;
+    let variantIndex = 0;
+
+    while (accepted < 20 && variantIndex < 80) {
+      const index = identityIndex + variantIndex * names.length;
+      const reading = await fullVerifiedReading(index);
+
+      if (reading.astrology.verification.complete) {
+        readings.push(reading);
+        accepted += 1;
+      } else {
+        withheld.push({
+          index,
+          unresolvedBodies: [...reading.astrology.verification.unresolvedBodies],
+          missingData: [...reading.astrology.verification.missingData],
+        });
+      }
+
+      variantIndex += 1;
+    }
+
+    assert.equal(
+      accepted,
+      20,
+      `identity fixture ${identityIndex} could not supply 20 complete verified variants`,
+    );
   }
 
-  await suite.test("all 60 readings use complete verified chart evidence", () => {
-    assert.equal(readings.length, 60);
+  const fingerprints = readings.map((reading) => fingerprint(reading));
+  const normalizedFingerprints = fingerprints.map((value) => normalize(value));
+  const bigramSets = fingerprints.map((value) => ngrams(value, 2));
+  const trigramSets = fingerprints.map((value) => ngrams(value, 3));
+
+  await suite.test("all 300 readings use complete verified chart evidence", () => {
+    assert.equal(readings.length, 300);
     for (const [index, reading] of readings.entries()) {
       assert.equal(reading.astrology.verification.complete, true, `fixture ${index}`);
       assert.equal(reading.astrology.houseSystem, "equal");
@@ -231,30 +324,107 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
   });
 
   await suite.test("repeated name/date pairs differentiate when supported verified placements differ", () => {
-    for (let index = 0; index < 15; index += 1) {
-      const first = readings[index];
-      const second = readings[index + 15];
+    for (let identityIndex = 0; identityIndex < names.length; identityIndex += 1) {
+      const group = readings.filter(
+        (reading) =>
+          reading.birth.name === names[identityIndex] &&
+          reading.birth.birthDate === dates[identityIndex],
+      );
+      assert.equal(group.length, 20);
+
+      const first = group[0];
+      const second = group.find(
+        (reading) => supportedSignatureDistance(first, reading) >= 1,
+      );
+      assert.ok(second, `identity ${identityIndex} needs at least one different verified placement variant`);
 
       assert.equal(first.local.biography, second.local.biography);
-      assert.equal(
-        normalize(fingerprint(first)) === normalize(fingerprint(second)),
-        false,
-        `verified fixtures ${index} and ${index + 15} stayed identical`,
+      assert.notEqual(
+        normalize(fingerprint(first)),
+        normalize(fingerprint(second)),
+        `identity ${identityIndex} stayed identical despite different verified placements`,
       );
     }
   });
 
-  await suite.test("all 60 verified readings are unique", () => {
-    const unique = new Set(readings.map((reading) => normalize(fingerprint(reading))));
-    assert.equal(
-      unique.size,
-      readings.length,
-      `expected all 60 verified readings to be unique, got ${unique.size}`,
+  await suite.test("same name/date repeated across twenty time/location variants stays evidence-differentiated", () => {
+    for (let identityIndex = 0; identityIndex < names.length; identityIndex += 1) {
+      const group = readings.filter(
+        (reading) =>
+          reading.birth.name === names[identityIndex] &&
+          reading.birth.birthDate === dates[identityIndex],
+      );
+      assert.equal(group.length, 20);
+
+      const localBiographies = new Set(group.map((reading) => reading.local.biography));
+      assert.equal(localBiographies.size, 1, `identity ${identityIndex} should share the same local name/date biography`);
+
+      const timeVariants = new Set(group.map((reading) => reading.birth.birthTime));
+      const locationVariants = new Set(group.map((reading) => reading.birth.birthLocation));
+      assert.equal(timeVariants.size, times.length, `identity ${identityIndex} should exercise all birth times`);
+      assert.equal(locationVariants.size, locations.length, `identity ${identityIndex} should exercise all locations`);
+
+      const signatures = new Set(
+        group.map((reading) => synthesisEvidenceSignature(reading)),
+      );
+      const verifiedNarratives = new Set(
+        group.map((reading) => normalize(fingerprint(reading))),
+      );
+
+      assert.ok(
+        signatures.size >= 4,
+        `same name/date group ${identityIndex} did not produce enough supported chart diversity`,
+      );
+
+      const minimumNarrativeDiversity = Math.max(
+        4,
+        Math.ceil(signatures.size * 0.8),
+      );
+      assert.ok(
+        verifiedNarratives.size >= minimumNarrativeDiversity,
+        `identity ${identityIndex} produced only ${verifiedNarratives.size} narratives for ${signatures.size} evidence signatures; expected at least ${minimumNarrativeDiversity}`,
+      );
+    }
+  });
+
+  await suite.test("boundary-sensitive candidates stay withheld rather than being forced verified", () => {
+    // A large real-chart sweep may legitimately encounter ingress/tolerance
+    // boundaries. The corpus can skip those candidates, but only as a small
+    // minority and only with explicit unresolved evidence.
+    assert.ok(
+      withheld.length <= 30,
+      `too many candidate charts were withheld: ${withheld.length}`,
+    );
+    for (const candidate of withheld) {
+      assert.ok(candidate.unresolvedBodies.length > 0, `fixture ${candidate.index}`);
+      assert.ok(candidate.missingData.length > 0, `fixture ${candidate.index}`);
+    }
+  });
+
+  await suite.test("real-chart synthesis preserves broad evidence-driven diversity", () => {
+    const evidenceSignatures = new Set(
+      readings.map((reading) => synthesisEvidenceSignature(reading)),
+    );
+    const narratives = new Set(normalizedFingerprints);
+
+    assert.ok(
+      evidenceSignatures.size >= 250,
+      `expected broad synthesis-evidence diversity, got ${evidenceSignatures.size} distinct signatures`,
+    );
+
+    const diversityRatio = narratives.size / evidenceSignatures.size;
+    assert.ok(
+      diversityRatio >= 0.85,
+      `only ${(diversityRatio * 100).toFixed(1)}% of distinct real-chart evidence signatures retained distinct narrative substance`,
+    );
+    assert.ok(
+      narratives.size >= 250,
+      `expected at least 250 distinct narratives in the 300-profile real-chart corpus, got ${narratives.size}`,
     );
   });
 
   await suite.test("generic umbrella language does not dominate the verified population", () => {
-    const texts = readings.map((reading) => normalize(fingerprint(reading)));
+    const texts = normalizedFingerprints;
     for (const term of genericTerms) {
       const hits = texts.filter((text) => text.includes(term)).length;
       const ratio = hits / texts.length;
@@ -280,23 +450,15 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
         const distance = supportedSignatureDistance(readings[left], readings[right]);
         if (distance < 3) continue;
         materiallyDifferentPairs += 1;
-        const bigram = ngramJaccard(
-          fingerprint(readings[left]),
-          fingerprint(readings[right]),
-          2,
-        );
-        const trigram = ngramJaccard(
-          fingerprint(readings[left]),
-          fingerprint(readings[right]),
-          3,
-        );
+        const bigram = setJaccard(bigramSets[left], bigramSets[right]);
+        const trigram = setJaccard(trigramSets[left], trigramSets[right]);
         if (bigram > worstBigram.score) worstBigram = { score: bigram, left, right, distance };
         if (trigram > worstTrigram.score) worstTrigram = { score: trigram, left, right, distance };
       }
     }
 
     assert.ok(
-      materiallyDifferentPairs >= 100,
+      materiallyDifferentPairs >= 5000,
       `expected a meaningful comparison population, got ${materiallyDifferentPairs} pairs`,
     );
 

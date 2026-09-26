@@ -1,19 +1,22 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * SOUL CODEX - ADVANCED TRANSITS CALENDAR
- * Visual calendar with transit predictions and insights
+ * SOUL CODEX - TRANSITS REFLECTION CALENDAR
+ * Visual calendar of measured transit geometry with symbolic reflection prompts
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { calculateActiveTransits, extractNatalPositions, type ActiveTransits, type Transit } from '../transits';
+import { calculateActiveTransits, extractNatalPositions, type Transit } from './transits';
 import type { Profile } from '../shared/schema';
+import { getMoonPhase as getCanonicalMoonPhase, getMoonSign as getCanonicalMoonSign } from './daily-context';
+import { parseDateOnly, resolveCivilTimeStrict } from '@soulcodex/core';
+import { formatInTimeZone } from 'date-fns-tz';
 
 export interface CalendarDay {
   date: Date;
   transits: Transit[];
   dominantTheme: string;
   overallIntensity: number;
-  significantTransits: Transit[]; // High intensity transits
+  significantTransits: Transit[]; // Legacy high-priority model bucket; not measured intensity
   recommendations: string[];
   moonPhase?: string;
   moonSign?: string;
@@ -25,10 +28,64 @@ export interface TransitsCalendar {
   days: CalendarDay[];
   summary: {
     totalTransits: number;
+    /** @deprecated Legacy model-priority count; not measured event intensity. */
     highIntensityDays: number;
     dominantThemes: string[];
+    /** @deprecated Legacy model-score threshold dates; not predicted peak events. */
     peakDates: Date[];
   };
+}
+
+const MAX_TRANSIT_CALENDAR_DAYS = 366;
+
+function validTimezone(value: unknown): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new RangeError('Transit calendar timezone is required for profile-local date semantics');
+  }
+  const timezone = value.trim();
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(new Date(0));
+  } catch {
+    throw new RangeError(`Invalid transit calendar timezone: ${timezone}`);
+  }
+
+  return timezone;
+}
+
+function dateOnlyOrdinal(dateISO: string): number {
+  const { year, month, day } = parseDateOnly(dateISO);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
+function dateOnlyFromOrdinal(ordinal: number): string {
+  return new Date(ordinal * 86_400_000).toISOString().slice(0, 10);
+}
+
+function calendarDateKey(
+  value: Date | string,
+  timezone: string,
+): string {
+  if (typeof value === 'string') {
+    parseDateOnly(value);
+    return value;
+  }
+
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+    throw new RangeError('Transit calendar date must be valid');
+  }
+
+  return formatInTimeZone(value, timezone, 'yyyy-MM-dd');
+}
+
+function localNoonInstant(dateISO: string, timezone: string): Date {
+  const resolution = resolveCivilTimeStrict(dateISO, '12:00', timezone);
+  if (resolution.status !== 'valid' || !resolution.utc) {
+    throw new RangeError(
+      `Transit calendar local noon is ${resolution.status}: ${resolution.reason ?? 'unresolved'}`,
+    );
+  }
+  return resolution.utc;
 }
 
 /**
@@ -36,8 +93,8 @@ export interface TransitsCalendar {
  */
 export function generateTransitsCalendar(
   profile: Profile,
-  startDate: Date,
-  endDate: Date
+  startDate: Date | string,
+  endDate: Date | string
 ): TransitsCalendar {
   const days: CalendarDay[] = [];
   const allThemes: string[] = [];
@@ -45,42 +102,55 @@ export function generateTransitsCalendar(
   let totalTransits = 0;
   let highIntensityDays = 0;
 
-  // Extract natal positions from profile
+  const timezone = validTimezone((profile as any).timezone);
+  const startDateISO = calendarDateKey(startDate, timezone);
+  const endDateISO = calendarDateKey(endDate, timezone);
+  const startOrdinal = dateOnlyOrdinal(startDateISO);
+  const endOrdinal = dateOnlyOrdinal(endDateISO);
+  const spanDays = endOrdinal - startOrdinal + 1;
+
+  if (spanDays < 1) {
+    throw new RangeError('Transit calendar end date must be on or after start date');
+  }
+  if (spanDays > MAX_TRANSIT_CALENDAR_DAYS) {
+    throw new RangeError(`Transit calendar range exceeds ${MAX_TRANSIT_CALENDAR_DAYS} days`);
+  }
+
+  // Extract only governed natal positions.
   const astrologyData = profile.astrologyData as any;
   const natalPlanets = extractNatalPositions(astrologyData);
 
-  // Generate calendar for each day
-  const currentDate = new Date(startDate);
-  while (currentDate <= endDate) {
-    const activeTransits = calculateActiveTransits(natalPlanets, new Date(currentDate));
+  for (let ordinal = startOrdinal; ordinal <= endOrdinal; ordinal += 1) {
+    const dateISO = dateOnlyFromOrdinal(ordinal);
+    const currentDate = localNoonInstant(dateISO, timezone);
+    const activeTransits = calculateActiveTransits(natalPlanets, currentDate);
     
     const significantTransits = activeTransits.transits.filter(t => t.intensity === 'high');
     const recommendations = generateRecommendations(activeTransits.transits, activeTransits.dominantTheme);
 
-    if (activeTransits.overallIntensity >= 7) {
+    // Preserve legacy summary fields using explicit model-priority semantics.
+    // These are not physical or predictive intensity thresholds.
+    if (significantTransits.length > 0) {
       highIntensityDays++;
     }
 
-    if (activeTransits.overallIntensity >= 8) {
-      peakDates.push(new Date(currentDate));
+    if (significantTransits.length >= 2) {
+      peakDates.push(currentDate);
     }
 
     allThemes.push(activeTransits.dominantTheme);
     totalTransits += activeTransits.transits.length;
 
     days.push({
-      date: new Date(currentDate),
+      date: currentDate,
       transits: activeTransits.transits,
       dominantTheme: activeTransits.dominantTheme,
       overallIntensity: activeTransits.overallIntensity,
       significantTransits,
       recommendations,
-      moonPhase: getMoonPhase(currentDate),
-      moonSign: getMoonSign(currentDate)
+      moonPhase: getCanonicalMoonPhase(currentDate).phase,
+      moonSign: getCanonicalMoonSign(currentDate)
     });
-
-    // Move to next day
-    currentDate.setDate(currentDate.getDate() + 1);
   }
 
   // Calculate summary
@@ -95,8 +165,8 @@ export function generateTransitsCalendar(
     .map(([theme]) => theme);
 
   return {
-    startDate,
-    endDate,
+    startDate: localNoonInstant(startDateISO, timezone),
+    endDate: localNoonInstant(endDateISO, timezone),
     days,
     summary: {
       totalTransits,
@@ -112,73 +182,37 @@ export function generateTransitsCalendar(
  * Generate recommendations based on transits
  */
 function generateRecommendations(transits: Transit[], dominantTheme: string): string[] {
+  void dominantTheme;
   const recommendations: string[] = [];
 
-  // High intensity transits get specific recommendations
-  const highIntensityTransits = transits.filter(t => t.intensity === 'high');
-  
-  for (const transit of highIntensityTransits) {
+  // These are reflection experiments keyed to symbolic transit themes. They do
+  // not assert that an event, feeling, opportunity, or psychological state is active.
+  const modelPriorityTransits = transits.filter(t => t.intensity === 'high');
+
+  for (const transit of modelPriorityTransits) {
     if (transit.planet === 'Pluto') {
-      recommendations.push('Focus on deep transformation and shadow work');
-      recommendations.push('Release what no longer serves you');
+      recommendations.push('Reflection experiment: identify one change already supported by observable facts');
+      recommendations.push('Check whether anything actually needs release before acting on transformation symbolism');
     } else if (transit.planet === 'Saturn') {
-      recommendations.push('Take responsibility and build structure');
-      recommendations.push('Practice discipline and patience');
+      recommendations.push('Reflection experiment: review one real constraint, responsibility, or structure');
+      recommendations.push('Test whether a small increase in structure improves the situation');
     } else if (transit.planet === 'Uranus') {
-      recommendations.push('Embrace change and innovation');
-      recommendations.push('Release control and allow breakthroughs');
+      recommendations.push('Reflection experiment: test one low-cost change instead of assuming disruption is required');
+      recommendations.push('Separate real constraints from a symbolic desire for novelty');
     } else if (transit.planet === 'Neptune') {
-      recommendations.push('Connect with spirituality and intuition');
-      recommendations.push('Practice surrender and compassion');
+      recommendations.push('Reflection experiment: separate imagination and intuition from facts you can verify');
+      recommendations.push('Write down assumptions before treating uncertainty as meaningful');
     } else if (transit.planet === 'Jupiter') {
-      recommendations.push('Expand your horizons and take opportunities');
-      recommendations.push('Practice gratitude and optimism');
+      recommendations.push('Reflection experiment: evaluate one real opportunity for upside, cost, and overextension');
+      recommendations.push('Do not expand a commitment solely because the transit symbolism emphasizes growth');
     }
   }
 
-  // Add general recommendations based on theme
-  if (dominantTheme.includes('Transformation')) {
-    recommendations.push('This is a powerful time for deep inner work');
-  } else if (dominantTheme.includes('Structure')) {
-    recommendations.push('Focus on building solid foundations');
-  } else if (dominantTheme.includes('Expansion')) {
-    recommendations.push('Say yes to new opportunities');
+  if (recommendations.length === 0 && transits.length > 0) {
+    recommendations.push('Use the measured aspect as a reflection prompt and verify any personal meaning against real circumstances');
   }
 
-  // Remove duplicates and limit to 5
   return [...new Set(recommendations)].slice(0, 5);
-}
-
-/**
- * Get moon phase for a date (simplified)
- */
-function getMoonPhase(date: Date): string {
-  // Simplified moon phase calculation
-  // In production, use a proper astronomy library
-  const dayOfMonth = date.getDate();
-  const phase = (dayOfMonth % 29.5) / 29.5;
-  
-  if (phase < 0.03 || phase > 0.97) return 'New Moon';
-  if (phase < 0.22) return 'Waxing Crescent';
-  if (phase < 0.28) return 'First Quarter';
-  if (phase < 0.47) return 'Waxing Gibbous';
-  if (phase < 0.53) return 'Full Moon';
-  if (phase < 0.72) return 'Waning Gibbous';
-  if (phase < 0.78) return 'Last Quarter';
-  return 'Waning Crescent';
-}
-
-/**
- * Get moon sign for a date (simplified)
- */
-function getMoonSign(date: Date): string {
-  // Simplified - in production use proper calculation
-  const SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
-                 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-  // Moon changes signs approximately every 2.5 days
-  const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24));
-  const signIndex = Math.floor((daysSinceEpoch / 2.5) % 12);
-  return SIGNS[signIndex];
 }
 
 /**
@@ -188,28 +222,38 @@ export function getUpcomingSignificantTransits(
   profile: Profile,
   days: number = 30
 ): Transit[] {
-  const astrologyData = profile.astrologyData as any;
-  const natalPlanets = extractNatalPositions(astrologyData);
-  const today = new Date();
-  const endDate = new Date(today);
-  endDate.setDate(endDate.getDate() + days);
-
-  const allTransits: Transit[] = [];
-  const currentDate = new Date(today);
-
-  while (currentDate <= endDate) {
-    const activeTransits = calculateActiveTransits(natalPlanets, new Date(currentDate));
-    const significant = activeTransits.transits.filter(t => t.intensity === 'high');
-    allTransits.push(...significant);
-    currentDate.setDate(currentDate.getDate() + 1);
+  if (!Number.isInteger(days) || days < 1 || days > MAX_TRANSIT_CALENDAR_DAYS) {
+    throw new RangeError(`Transit upcoming days must be 1-${MAX_TRANSIT_CALENDAR_DAYS}`);
   }
 
-  // Remove duplicates and sort by date
+  const astrologyData = profile.astrologyData as any;
+  const natalPlanets = extractNatalPositions(astrologyData);
+  const timezone = validTimezone((profile as any).timezone);
+  const todayISO = formatInTimeZone(new Date(), timezone, 'yyyy-MM-dd');
+  const startOrdinal = dateOnlyOrdinal(todayISO);
+
+  const allTransits: Transit[] = [];
+
+  for (let offset = 0; offset < days; offset += 1) {
+    const dateISO = dateOnlyFromOrdinal(startOrdinal + offset);
+    const checkDate = localNoonInstant(dateISO, timezone);
+    const activeTransits = calculateActiveTransits(natalPlanets, checkDate);
+    const significant = activeTransits.transits
+      .filter(t => t.intensity === 'high')
+      .map((transit) => ({ ...transit, dateISO }));
+    allTransits.push(...significant);
+  }
+
   const uniqueTransits = Array.from(
-    new Map(allTransits.map(t => [`${t.planet}-${t.natalPlanet}-${t.aspect}`, t])).values()
+    new Map(
+      allTransits.map((t) => [
+        `${t.dateISO ?? 'undated'}-${t.planet}-${t.natalPlanet}-${t.aspect}`,
+        t,
+      ]),
+    ).values(),
   );
 
-  return uniqueTransits.slice(0, 10); // Return top 10
+  return uniqueTransits.slice(0, 10);
 }
 
 export default {

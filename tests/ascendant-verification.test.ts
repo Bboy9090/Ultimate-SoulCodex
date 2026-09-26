@@ -118,3 +118,105 @@ test("Ascendant verification matrix", async (suite) => {
     if (invalid.status === "rejected") assert.equal(invalid.reason, "invalid_input");
   });
 });
+
+
+test("Ascendant verification rejects geographic poles where horizon/ecliptic geometry is undefined", () => {
+  for (const latitude of [-90, 90]) {
+    const input = {
+      inputTimestamp: "2026-09-24T12:00:00Z",
+      latitude,
+      longitude: 0,
+    };
+
+    assert.throws(
+      () => calculateAscendantCandidate(input),
+      /ascendant_input_invalid/,
+    );
+
+    const result = verifyAscendant(input);
+    assert.equal(result.status, "rejected");
+    if (result.status === "rejected") {
+      assert.equal(result.reason, "invalid_input");
+    }
+  }
+});
+
+
+test("Ascendant verification rejects timezone-less instants", () => {
+  const bareLocal = {
+    inputTimestamp: "1990-09-17T15:11:00",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  };
+
+  assert.throws(
+    () => calculateAscendantCandidate(bareLocal),
+    /ascendant_input_invalid/,
+  );
+
+  const result = verifyAscendant(bareLocal);
+  assert.equal(result.status, "rejected");
+  if (result.status === "rejected") {
+    assert.equal(result.reason, "invalid_input");
+  }
+});
+
+test("Ascendant verification accepts equivalent explicit offsets deterministically", () => {
+  const utc = verifyAscendant({
+    inputTimestamp: "1990-09-17T15:11:00Z",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+  const offset = verifyAscendant({
+    inputTimestamp: "1990-09-17T11:11:00-04:00",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+
+  assert.equal(utc.status, "verified");
+  assert.equal(offset.status, "verified");
+  if (utc.status !== "verified" || offset.status !== "verified") return;
+
+  assert.equal(utc.sign, offset.sign);
+  assert.ok(
+    circularDelta(utc.longitudeDegrees, offset.longitudeDegrees) < 1e-10,
+    "equivalent instants must produce the same ascendant geometry",
+  );
+});
+
+
+test("Ascendant engines remain finite and self-consistent through near-polar latitudes", () => {
+  const latitudes = [-85, -80, -75, -70, -66, 66, 70, 75, 80, 85];
+  const longitudes = [-170, -90, 0, 90, 170];
+
+  for (const latitude of latitudes) {
+    for (const longitude of longitudes) {
+      const input = {
+        inputTimestamp: "2026-09-26T12:00:00.000Z",
+        latitude,
+        longitude,
+      };
+
+      const candidate = calculateAscendantCandidate(input);
+      const reference = calculateIndependentAscendantReference(input);
+
+      for (const record of [candidate, reference]) {
+        assert.ok(Number.isFinite(record.longitudeDegrees), `${latitude},${longitude}`);
+        assert.ok(record.longitudeDegrees >= 0 && record.longitudeDegrees < 360);
+        assert.ok(record.degreeInSign >= 0 && record.degreeInSign < 30);
+      }
+
+      const result = verifyAscendant(input);
+      if (result.status === "verified") {
+        assert.ok(Number.isFinite(result.longitudeDegrees));
+        assert.equal(result.sign, candidate.sign);
+      } else {
+        assert.ok([
+          "sign_disagreement",
+          "longitude_outside_tolerance",
+          "sign_boundary_within_tolerance",
+        ].includes(result.reason), `${latitude},${longitude}: ${result.reason}`);
+      }
+    }
+  }
+});

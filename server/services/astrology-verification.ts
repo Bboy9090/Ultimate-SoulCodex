@@ -1,3 +1,9 @@
+import {
+  circularDegreesDelta,
+  distanceToNearestThirtyDegreeBoundary,
+  tropicalSignFromLongitude,
+} from "./angular-math";
+
 export type VerifiableBody =
   | "Sun"
   | "Moon"
@@ -57,28 +63,35 @@ export type IndependentVerificationResult =
         | "body_mismatch"
         | "same_engine_not_independent"
         | "same_source_not_independent"
+        | "invalid_timestamp"
         | "timestamp_mismatch"
+        | "sign_longitude_mismatch"
         | "sign_disagreement"
         | "longitude_outside_tolerance"
+        | "sign_boundary_within_tolerance"
         | "invalid_longitude";
       longitudeDeltaDegrees: number | null;
     };
-
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
 
 function isValidLongitude(value: number): boolean {
   return Number.isFinite(value) && value >= 0 && value < 360;
 }
 
-function circularLongitudeDelta(left: number, right: number): number {
-  const raw = Math.abs(normalizeLongitude(left) - normalizeLongitude(right));
-  return Math.min(raw, 360 - raw);
+
+export function distanceToNearestSignBoundary(longitude: number): number {
+  return distanceToNearestThirtyDegreeBoundary(longitude);
 }
 
 function normalizedIdentity(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function isExplicitUtcTimestamp(value: string): boolean {
+  return (
+    typeof value === "string" &&
+    /Z$/i.test(value.trim()) &&
+    !Number.isNaN(new Date(value).getTime())
+  );
 }
 
 export function verifyAgainstIndependentReference(
@@ -112,11 +125,30 @@ export function verifyAgainstIndependentReference(
     return { status: "rejected", sign: null, reason: "same_source_not_independent", longitudeDeltaDegrees: null };
   }
 
+  if (
+    !isExplicitUtcTimestamp(candidate.inputTimestamp) ||
+    !isExplicitUtcTimestamp(reference.inputTimestamp)
+  ) {
+    return { status: "rejected", sign: null, reason: "invalid_timestamp", longitudeDeltaDegrees: null };
+  }
+
   if (candidate.inputTimestamp !== reference.inputTimestamp) {
     return { status: "rejected", sign: null, reason: "timestamp_mismatch", longitudeDeltaDegrees: null };
   }
 
-  const longitudeDeltaDegrees = circularLongitudeDelta(candidate.longitude, reference.longitude);
+  if (
+    candidate.sign !== tropicalSignFromLongitude(candidate.longitude) ||
+    reference.sign !== tropicalSignFromLongitude(reference.longitude)
+  ) {
+    return {
+      status: "rejected",
+      sign: null,
+      reason: "sign_longitude_mismatch",
+      longitudeDeltaDegrees: null,
+    };
+  }
+
+  const longitudeDeltaDegrees = circularDegreesDelta(candidate.longitude, reference.longitude);
 
   if (candidate.sign !== reference.sign) {
     return { status: "rejected", sign: null, reason: "sign_disagreement", longitudeDeltaDegrees };
@@ -124,6 +156,19 @@ export function verifyAgainstIndependentReference(
 
   if (longitudeDeltaDegrees > policy.maximumLongitudeDeltaDegrees) {
     return { status: "rejected", sign: null, reason: "longitude_outside_tolerance", longitudeDeltaDegrees };
+  }
+
+  const boundaryDistance = Math.min(
+    distanceToNearestSignBoundary(candidate.longitude),
+    distanceToNearestSignBoundary(reference.longitude),
+  );
+  if (boundaryDistance <= policy.maximumLongitudeDeltaDegrees) {
+    return {
+      status: "rejected",
+      sign: null,
+      reason: "sign_boundary_within_tolerance",
+      longitudeDeltaDegrees,
+    };
   }
 
   return {

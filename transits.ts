@@ -2,6 +2,8 @@ import * as Astronomy from 'astronomy-engine';
 const Astro: typeof Astronomy = (Astronomy as any).default ?? Astronomy;
 
 export interface Transit {
+  /** Profile-local calendar date when this transit occurrence was sampled. */
+  dateISO?: string;
   planet: string;
   transitingDegree: number;
   transitingSign: string;
@@ -37,49 +39,77 @@ const MAJOR_ASPECTS = {
 // Outer planets only - these create the most significant life transits
 const OUTER_PLANETS = ['Pluto', 'Neptune', 'Uranus', 'Saturn', 'Jupiter'];
 
+function canonicalSignFromLongitude(longitude: number): string {
+  const normalized = ((longitude % 360) + 360) % 360;
+  return SIGNS[Math.floor(normalized / 30)];
+}
+
+function validateNatalPlanets(
+  natalPlanets: Record<string, { longitude: number; sign: string }>,
+): void {
+  const entries = Object.entries(natalPlanets);
+  if (entries.length === 0) {
+    throw new Error('transit_verified_natal_positions_required');
+  }
+
+  for (const [name, position] of entries) {
+    if (!Number.isFinite(position?.longitude)) {
+      throw new Error(`transit_natal_longitude_invalid:${name}`);
+    }
+    const normalized = ((position.longitude % 360) + 360) % 360;
+    const expectedSign = canonicalSignFromLongitude(normalized);
+    if (position.sign !== expectedSign) {
+      throw new Error(`transit_natal_sign_longitude_mismatch:${name}`);
+    }
+  }
+}
+
+
+// "intensity" is a legacy model-priority bucket used for sorting/display. It is
+// not a measured physical, psychological, or predictive intensity.
 const TRANSIT_THEMES: Record<string, { theme: string, intensity: 'high' | 'medium' | 'low' }> = {
-  'Pluto': { theme: 'Transformation, Shadow Work, Death & Rebirth', intensity: 'high' },
-  'Neptune': { theme: 'Dissolution, Spirituality, Surrender, Illusion', intensity: 'high' },
-  'Uranus': { theme: 'Awakening, Revolution, Liberation, Chaos', intensity: 'high' },
-  'Saturn': { theme: 'Discipline, Limitation, Mastery, Structure', intensity: 'medium' },
-  'Jupiter': { theme: 'Expansion, Abundance, Growth, Optimism', intensity: 'medium' }
+  'Pluto': { theme: 'Symbolic themes: transformation, endings, renewal', intensity: 'high' },
+  'Neptune': { theme: 'Symbolic themes: imagination, uncertainty, ideals', intensity: 'high' },
+  'Uranus': { theme: 'Symbolic themes: change, disruption, experimentation', intensity: 'high' },
+  'Saturn': { theme: 'Symbolic themes: structure, limits, responsibility', intensity: 'medium' },
+  'Jupiter': { theme: 'Symbolic themes: expansion, opportunity, excess', intensity: 'medium' }
 };
 
 const TRANSIT_INTERPRETATIONS: Record<string, Record<string, string>> = {
-  'Pluto': {
-    'Conjunction': 'Deep transformation is active. Old patterns are being replaced — not destroyed, but composted into something more honest. Stay present with the discomfort.',
-    'Opposition': 'External friction is surfacing something internal. Power dynamics are showing you where your real leverage lives. Look at what keeps repeating.',
-    'Square': 'Pressure is building around control and attachment. The tighter you grip, the more friction you create. Identify what you can release without losing ground.',
-    'Trine': 'Natural transformation flowing with ease. Your shadow work is supported. Deep healing happens without force.',
-    'Sextile': 'Opportunities for transformation present themselves. The work is available if you choose it.'
+  Pluto: {
+    Conjunction: 'Reflection prompt: examine where themes of transformation, endings, or renewal are useful to consider. The transit does not prove that a life event or psychological change is occurring.',
+    Opposition: 'Reflection prompt: compare competing priorities or power dynamics you can actually observe. Do not treat the aspect as evidence that external conflict must occur.',
+    Square: 'Reflection prompt: review where control, attachment, or resistance may be worth questioning if those themes fit the real situation.',
+    Trine: 'Reflection prompt: look for changes that are already occurring with relatively little friction; the aspect itself does not guarantee ease or healing.',
+    Sextile: 'Reflection prompt: notice optional openings for change if they are present in real circumstances; no opportunity is guaranteed.'
   },
-  'Saturn': {
-    'Conjunction': 'A season of discipline and accountability. This area of life is asking for maturity and structure. What you build now is load-bearing.',
-    'Opposition': 'Your existing structure is being stress-tested. What holds up under pressure stays. What doesn\'t gets rebuilt — that\'s useful information.',
-    'Square': 'Limitation and pressure reveal what needs strengthening. The obstacle is the path. Build your discipline here.',
-    'Trine': 'Your efforts are rewarded. Mastery flows naturally. The structure you\'ve built supports you.',
-    'Sextile': 'Opportunities to demonstrate mastery. Discipline creates opportunity.'
+  Saturn: {
+    Conjunction: 'Reflection prompt: review structure, responsibility, limits, and commitments where those themes are relevant. The transit does not establish a season of hardship or maturity.',
+    Opposition: 'Reflection prompt: stress-test an existing plan or commitment using observable evidence rather than assuming the transit is testing it for you.',
+    Square: 'Reflection prompt: identify constraints that are actually present and decide what needs reinforcement. Do not infer obstacles from the aspect alone.',
+    Trine: 'Reflection prompt: notice where existing structure is already helping. The aspect does not prove that effort will be rewarded or mastery will come easily.',
+    Sextile: 'Reflection prompt: test whether disciplined action creates a useful opening in the real situation; opportunity is not promised.'
   },
-  'Uranus': {
-    'Conjunction': 'A sudden shift is reorganizing this area of life. The old structure is being updated — not destroyed, but outgrown. Let the new pattern emerge.',
-    'Opposition': 'An external disruption is pushing you to choose between security and authenticity. Both matter — the question is which one is currently overweighted.',
-    'Square': 'Restlessness and disruption are forcing adaptation. You can\'t control the timing, but you can control your response. Move with it rather than against it.',
-    'Trine': 'Natural innovation and liberation. Change flows with ease. Your authentic self emerges effortlessly.',
-    'Sextile': 'Opportunities for freedom present themselves. Small awakenings lead to larger shifts.'
+  Uranus: {
+    Conjunction: 'Reflection prompt: consider where experimentation or change could be useful if circumstances already support it. The transit does not predict a sudden shift.',
+    Opposition: 'Reflection prompt: compare stability and change as competing values where that tension is actually observable; no disruption is implied.',
+    Square: 'Reflection prompt: identify where adaptation may help with a real constraint. The aspect itself does not force restlessness or disruption.',
+    Trine: 'Reflection prompt: notice where experimentation already feels workable; the aspect does not guarantee liberation, authenticity, or easy change.',
+    Sextile: 'Reflection prompt: test one low-cost change where it makes sense; no awakening or freedom event is predicted.'
   },
-  'Neptune': {
-    'Conjunction': 'Boundaries are softening. Spiritual and intuitive channels are wide open. Stay grounded while you explore — clarity returns once this transit settles.',
-    'Opposition': 'What you thought was solid may be less clear than expected. This is recalibration, not failure. Separate what you feel from what you know.',
-    'Square': 'Ideals are being tested against reality. Something you believed in is shifting form. This is a course correction, not a loss — update the map.',
-    'Trine': 'Spiritual connection flows naturally. Intuition is heightened. Grace and ease are accessible.',
-    'Sextile': 'Gentle spiritual openings. Opportunities for transcendence and compassion.'
+  Neptune: {
+    Conjunction: 'Reflection prompt: separate imagination, uncertainty, and evidence where those themes matter. The transit does not prove heightened intuition or softened boundaries.',
+    Opposition: 'Reflection prompt: check assumptions against observable facts where clarity is limited. The aspect does not establish confusion or recalibration.',
+    Square: 'Reflection prompt: compare ideals with current evidence and revise plans only when the evidence supports it.',
+    Trine: 'Reflection prompt: use imagination or compassion deliberately if they are useful. The aspect does not prove spiritual connection, intuition, grace, or ease.',
+    Sextile: 'Reflection prompt: explore a creative or compassionate option if it fits the situation; no spiritual opening is guaranteed.'
   },
-  'Jupiter': {
-    'Conjunction': 'Expansion and abundance arrive. Growth is accelerated. Optimism and faith are rewarded.',
-    'Opposition': 'Excess and overconfidence may create imbalance. Too much of a good thing. Find equilibrium.',
-    'Square': 'Growth comes through tension. You\'re being stretched beyond your comfort zone. Expansion requires friction.',
-    'Trine': 'Natural flow of abundance and opportunity. Your optimism manifests results. Growth is effortless.',
-    'Sextile': 'Small opportunities for growth. Say yes to expansion.'
+  Jupiter: {
+    Conjunction: 'Reflection prompt: review where expansion, opportunity, or excess are relevant to current facts. The transit does not mean abundance will arrive or growth will accelerate.',
+    Opposition: 'Reflection prompt: check for overextension or imbalance using actual commitments and resources rather than assuming excess from the aspect.',
+    Square: 'Reflection prompt: examine whether a growth goal is creating useful tension or simply unnecessary strain. Expansion is not guaranteed.',
+    Trine: 'Reflection prompt: notice where conditions already support growth; the aspect does not promise abundance, optimism, or effortless results.',
+    Sextile: 'Reflection prompt: test a small opportunity where evidence supports it. Do not say yes solely because of the transit.'
   }
 };
 
@@ -87,13 +117,12 @@ function calculatePlanetaryPosition(planet: string, date: Date): { longitude: nu
   const body = Astro.Body[planet as keyof typeof Astro.Body];
   const ecliptic = Astro.EclipticGeoMoon(date);
   
-  // Get heliocentric position for outer planets
+  // Use geocentric ecliptic longitude for natal/transit aspect geometry.
   let longitude = 0;
   
   if (planet === 'Moon') {
     longitude = ecliptic.lon;
   } else {
-    const helioVector = Astro.HelioVector(body, date);
     const geoVector = Astro.GeoVector(body, date, false);
     const eclipticCoords = Astro.Ecliptic(geoVector);
     longitude = eclipticCoords.elon;
@@ -134,6 +163,10 @@ export function calculateActiveTransits(
   natalPlanets: Record<string, { longitude: number, sign: string }>,
   date: Date = new Date()
 ): ActiveTransits {
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('transit_date_invalid');
+  }
+  validateNatalPlanets(natalPlanets);
   const transits: Transit[] = [];
   
   // Calculate current positions of outer planets
@@ -171,11 +204,12 @@ export function calculateActiveTransits(
         }
       }
     } catch (error) {
-      console.error(`Error calculating ${transitPlanet} transit:`, error);
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`transit_planet_calculation_failed:${transitPlanet}:${detail}`);
     }
   }
   
-  // Sort by intensity and orb (tighter orbs = more exact = more powerful)
+  // Sort by legacy model-priority bucket, then geometric exactness (orb).
   transits.sort((a, b) => {
     const intensityOrder = { high: 3, medium: 2, low: 1 };
     const intensityDiff = intensityOrder[b.intensity] - intensityOrder[a.intensity];
@@ -185,13 +219,13 @@ export function calculateActiveTransits(
   
   // Calculate dominant theme (most intense planet currently transiting)
   const dominantTransit = transits.find(t => t.intensity === 'high') || transits[0];
-  const dominantTheme = dominantTransit ? dominantTransit.theme : 'Integration and Balance';
+  const dominantTheme = dominantTransit ? dominantTransit.theme : 'No active governed major transit';
   
   // Calculate overall intensity (0-100 scale)
   const overallIntensity = transits.length > 0
     ? Math.min(100, transits.reduce((sum, t) => {
         const intensityValue = { high: 30, medium: 15, low: 5 }[t.intensity];
-        const exactnessBonus = (8 - t.orb) * 2; // Tighter orbs add more intensity
+        const exactnessBonus = (8 - t.orb) * 2; // Legacy model score; tighter geometry ranks higher
         return sum + intensityValue + exactnessBonus;
       }, 0))
     : 0;
@@ -204,34 +238,49 @@ export function calculateActiveTransits(
   };
 }
 
-// Helper to extract natal positions from astrology data
+// Helper to extract only independently verified natal positions.
+function verifiedNatalLongitude(placement: any): number | null {
+  if (!placement || placement.verificationStatus !== 'verified') return null;
+  const candidate = Number(
+    placement.longitude ??
+    placement.internalCandidate?.longitude ??
+    placement.evidence?.longitude,
+  );
+  return Number.isFinite(candidate) ? ((candidate % 360) + 360) % 360 : null;
+}
+
+function addVerifiedNatalPosition(
+  positions: Record<string, { longitude: number, sign: string }>,
+  name: string,
+  placement: any,
+): void {
+  const longitude = verifiedNatalLongitude(placement);
+  const sign = typeof placement?.sign === 'string' ? placement.sign : null;
+  if (longitude === null || !sign) return;
+  positions[name] = { longitude, sign };
+}
+
 export function extractNatalPositions(astrologyData: any): Record<string, { longitude: number, sign: string }> {
   const positions: Record<string, { longitude: number, sign: string }> = {};
-  
+
   if (astrologyData?.planets) {
-    for (const [planet, data] of Object.entries(astrologyData.planets)) {
-      if (typeof data === 'object' && data !== null && 'longitude' in data && 'sign' in data) {
-        positions[planet.charAt(0).toUpperCase() + planet.slice(1)] = {
-          longitude: (data as any).longitude,
-          sign: (data as any).sign
-        };
-      }
+    for (const [planet, placement] of Object.entries(astrologyData.planets)) {
+      addVerifiedNatalPosition(
+        positions,
+        planet.charAt(0).toUpperCase() + planet.slice(1),
+        placement,
+      );
     }
   }
-  
-  if (astrologyData?.ascendant) {
-    positions['Ascendant'] = {
-      longitude: astrologyData.ascendant.longitude,
-      sign: astrologyData.ascendant.sign
-    };
-  }
-  
-  if (astrologyData?.midheaven) {
-    positions['Midheaven'] = {
-      longitude: astrologyData.midheaven.longitude,
-      sign: astrologyData.midheaven.sign
-    };
-  }
-  
+
+  // Canonical production astrology names the angle "rising"; legacy verified
+  // snapshots may expose "ascendant". Both remain evidence-gated here.
+  addVerifiedNatalPosition(
+    positions,
+    'Ascendant',
+    astrologyData?.rising ?? astrologyData?.ascendant,
+  );
+  addVerifiedNatalPosition(positions, 'Midheaven', astrologyData?.midheaven);
+
   return positions;
 }

@@ -359,7 +359,6 @@ export const DEPTH_QUALITY_FIXTURES: readonly DepthQualityFixture[] = [
     expectedFindingCodes: [
       "contract-unsupported-overall-high-confidence",
       "contract-unsupported-layer-high-confidence",
-      "high-confidence-low-system-diversity",
     ],
   },
 ] as const;

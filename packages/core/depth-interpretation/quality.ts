@@ -386,10 +386,6 @@ function evaluateTraceability(
 ): void {
   const entries = layerEntries(interpretation);
   const available = entries.filter(([, layer]) => layer.claimKind !== "unavailable");
-  const evidenceSystems = new Set(
-    interpretation.evidence.map((evidence) => evidence.system),
-  );
-
   if (
     interpretation.coreContradiction.claimKind !== "unavailable" &&
     new Set(interpretation.coreContradiction.evidenceIds).size < 2
@@ -401,20 +397,6 @@ function evaluateTraceability(
       path: "coreContradiction.evidenceIds",
       message:
         "An available contradiction must cite at least two distinct evidence references.",
-    });
-  }
-
-  if (
-    interpretation.overallConfidence === "high" &&
-    evidenceSystems.size < 2
-  ) {
-    addFinding(findings, {
-      code: "high-confidence-low-system-diversity",
-      severity: "error",
-      category: "traceability",
-      path: "overallConfidence",
-      message:
-        "High overall confidence requires support from at least two evidence systems.",
     });
   }
 

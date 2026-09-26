@@ -38,17 +38,17 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
           <div
             className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${coverageColor[code.coverage]}`}
           >
-            {code.coverage}
+            Data coverage: {code.coverage}
           </div>
         </div>
 
         {/* Tagline */}
         <p className="text-lg text-ivory-100 leading-relaxed">{code.tagline}</p>
 
-        {/* Primary and Secondary Functions */}
+        {/* Primary and Secondary Synthesis Axiss */}
         <div className="grid grid-cols-2 gap-4 pt-4">
           <div className="border-l-2 border-gold-400/50 pl-3">
-            <p className="text-xs text-gold-300/70 uppercase tracking-wider">Primary Function</p>
+            <p className="text-xs text-gold-300/70 uppercase tracking-wider">Primary Synthesis Axis</p>
             <p className="text-sm font-semibold text-ivory-100">{code.primaryFunction}</p>
           </div>
           <div className="border-l-2 border-gold-400/50 pl-3">
@@ -61,7 +61,7 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
         <div className="rounded-lg bg-slate-900/50 p-3 font-mono">
           <p className="text-xs text-gold-300/70 uppercase tracking-wider">Fingerprint</p>
           <p className="text-lg text-gold-200 font-semibold tracking-wider">{code.shortCode}</p>
-          <p className="text-xs text-slate-400 mt-1">Uniqueness: {code.uniquenessKey}</p>
+          <p className="text-xs text-slate-400 mt-1">Deterministic fingerprint key: {code.uniquenessKey}</p>
         </div>
 
         {/* Frequency */}

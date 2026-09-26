@@ -78,7 +78,7 @@ export default function ProfilePage() {
         misunderstanding: "Symbolic language can sound more certain than the evidence allows. Recognition matters more than dramatic wording.",
         relationshipView: "The people closest to you may see different versions of this pattern. Their experience can add context without overruling your own.",
         practicalTakeaway: "Name one recent event that supports this description and one that complicates it. Keep both. Nuance is more useful than forced agreement.",
-        evidence: "Built from the saved biography and archetype description. These are interpretive synthesis fields, not clinical findings.",
+        evidence: "Built from the saved deterministic biography and governed archetype synthesis. These are symbolic interpretation fields, not clinical findings or AI-authored evidence.",
       });
     }
 
@@ -161,7 +161,7 @@ export default function ProfilePage() {
         misunderstanding: "Symbolic guidance is not a command or prediction. You remain responsible for context and consequences.",
         relationshipView: "When guidance involves another person, communicate directly rather than silently testing whether they can guess what you need.",
         practicalTakeaway: "Rewrite the guidance as one sentence beginning with “Today I will…” and include a behavior another person could observe.",
-        evidence: "Drawn from the saved daily and archetype guidance fields. Relevance must be confirmed through lived experience.",
+        evidence: "Drawn from the saved stable profile guidance and archetype synthesis. Live Today guidance is calculated separately from current-day context.",
       });
     }
 

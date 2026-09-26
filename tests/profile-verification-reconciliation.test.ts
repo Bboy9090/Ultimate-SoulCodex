@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { birthDataSchema } from "../shared/schema.ts";
+import { profileVerificationRequestSchema } from "../server/routes/profile-verification.ts";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
   getVerifiedAstrologySign,
+  getVerifiedHumanDesignRecord,
   hasVerifiedBigThree,
   hasVerifiedFullNatalChart,
   hasVerifiedSunAndMoon,
@@ -30,17 +33,23 @@ const local = generateOfflineCodexProfile(
   },
 );
 
+const placementEvidence = {
+  source: "Independent verification fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
+
 const verifiedPlanets = {
-  sun: { verificationStatus: "verified", sign: "Virgo" },
-  moon: { verificationStatus: "verified", sign: "Virgo" },
-  mercury: { verificationStatus: "verified", sign: "Virgo" },
-  venus: { verificationStatus: "verified", sign: "Virgo" },
-  mars: { verificationStatus: "verified", sign: "Gemini" },
-  jupiter: { verificationStatus: "verified", sign: "Leo" },
-  saturn: { verificationStatus: "verified", sign: "Capricorn" },
-  uranus: { verificationStatus: "verified", sign: "Capricorn" },
-  neptune: { verificationStatus: "verified", sign: "Capricorn" },
-  pluto: { verificationStatus: "verified", sign: "Scorpio" },
+  sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  mercury: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  venus: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+  mars: { verificationStatus: "verified", sign: "Gemini", evidence: placementEvidence },
+  jupiter: { verificationStatus: "verified", sign: "Leo", evidence: placementEvidence },
+  saturn: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  uranus: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  neptune: { verificationStatus: "verified", sign: "Capricorn", evidence: placementEvidence },
+  pluto: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
 };
 
 const zodiacSigns = [
@@ -58,11 +67,13 @@ const verifiedRemote = {
     authority: "Lunar Authority",
     profile: "2/5",
     verificationReceiptId: "35474994858:human-design-repair-audit",
+    independentSource: "free-human-design@1.0.1 differential verifier",
+    verifiedAt: "2026-09-19T23:03:08.000Z",
   },
   astrologyData: {
-    sun: { verificationStatus: "verified", sign: "Virgo" },
-    moon: { verificationStatus: "verified", sign: "Virgo" },
-    rising: { verificationStatus: "verified", sign: "Scorpio" },
+    sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+    moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+    rising: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
     planets: verifiedPlanets,
     houseSystem: "equal",
     houses: Array.from({ length: 12 }, (_, index) => ({
@@ -420,6 +431,8 @@ test("verified Human Design is reconciled into active and offline profiles", () 
       authority: "Lunar Authority",
       profile: "2/5",
       verificationReceiptId: "35474994858:human-design-repair-audit",
+      independentSource: "free-human-design@1.0.1 differential verifier",
+      verifiedAt: "2026-09-19T23:03:08.000Z",
     },
   };
 
@@ -443,4 +456,167 @@ test("verified Human Design is reconciled into active and offline profiles", () 
     ),
     true,
   );
+});
+
+
+test("birth input schemas reject impossible calendar and clock values before calculation", () => {
+  const base = {
+    name: "Input Boundary",
+    birthDate: "2000-02-29",
+    birthTime: "23:59",
+    birthLocation: "New York, NY",
+    timezone: "America/New_York",
+    latitude: "40.7128",
+    longitude: "-74.0060",
+  };
+
+  assert.equal(birthDataSchema.safeParse(base).success, true);
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthDate: "2001-02-29" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthDate: "2000-04-31" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthTime: "24:00" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, birthTime: "14:60" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, timezone: "EST" }).success,
+    false,
+  );
+  assert.equal(
+    birthDataSchema.safeParse({ ...base, longitude: undefined }).success,
+    false,
+  );
+});
+
+test("minimal verification schema shares the same strict birth input domain", () => {
+  const base = {
+    birthDate: "2000-02-29",
+    birthTime: "23:59",
+    timezone: "America/New_York",
+    latitude: 40.7128,
+    longitude: -74.006,
+  };
+
+  assert.equal(profileVerificationRequestSchema.safeParse(base).success, true);
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      birthDate: "2000-02-30",
+    }).success,
+    false,
+  );
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      birthTime: "99:99",
+    }).success,
+    false,
+  );
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      timezone: "New York",
+    }).success,
+    false,
+  );
+  assert.equal(
+    profileVerificationRequestSchema.safeParse({
+      ...base,
+      longitude: undefined,
+    }).success,
+    false,
+  );
+});
+
+
+test("verified labels without placement provenance cannot reconcile as verified astrology", () => {
+  const astrology = {
+    sun: { verificationStatus: "verified", sign: "Virgo" },
+    moon: { verificationStatus: "verified", sign: "Virgo" },
+    rising: { verificationStatus: "verified", sign: "Scorpio" },
+  };
+  assert.equal(getVerifiedAstrologySign(astrology, "sun"), null);
+  assert.equal(hasVerifiedSunAndMoon(astrology), false);
+  assert.equal(hasVerifiedBigThree(astrology), false);
+});
+
+
+test("status-only remote Human Design is not promoted during reconciliation", () => {
+  const untrustedRemote = {
+    ...verifiedRemote,
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  };
+
+  const active = reconcileActiveProfile(
+    { id: local.id, name: local.name, humanDesignType: "Generator" },
+    untrustedRemote,
+    "2026-09-26T08:00:00.000Z",
+  );
+  assert.equal(active.humanDesignType, "Generator");
+  assert.notEqual(active.humanDesignData?.status, "verified");
+
+  const offline = reconcileOfflineProfile(
+    local,
+    untrustedRemote,
+    "2026-09-26T08:00:00.000Z",
+  );
+  assert.notEqual(offline.humanDesignData?.status, "verified");
+  assert.equal(profileNeedsOnlineVerification(offline), true);
+});
+
+
+test("canonical angle validation tolerates harmless floating-point roundoff", () => {
+  const noisyRemote = structuredClone(verifiedRemote);
+  const nodeLongitude = 304.71;
+  noisyRemote.astrologyData.northNode.longitude =
+    ((nodeLongitude % 360) + 360) % 360;
+  noisyRemote.astrologyData.northNode.degree =
+    noisyRemote.astrologyData.northNode.longitude % 30;
+
+  assert.equal(
+    hasVerifiedFullNatalChart(noisyRemote.astrologyData),
+    true,
+  );
+});
+
+
+test("client Human Design verification gate rejects malformed trust metadata", () => {
+  const valid = {
+    status: "verified",
+    type: "Reflector",
+    strategy: "To Wait a Lunar Cycle",
+    authority: "Lunar Authority",
+    profile: "2/5",
+    verificationReceiptId: "receipt",
+    independentSource: "independent verifier",
+    verifiedAt: "2026-09-19T23:03:08.000Z",
+  };
+
+  assert.equal(getVerifiedHumanDesignRecord(valid)?.type, "Reflector");
+
+  for (const invalid of [
+    { ...valid, verificationReceiptId: "" },
+    { ...valid, independentSource: "   " },
+    { ...valid, verifiedAt: "not-a-date" },
+    { ...valid, verifiedAt: "" },
+    { ...valid, type: "" },
+    { ...valid, status: "calculated_unverified" },
+  ]) {
+    assert.equal(getVerifiedHumanDesignRecord(invalid), null);
+  }
 });

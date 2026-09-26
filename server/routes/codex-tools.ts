@@ -169,6 +169,11 @@ export function registerCodexToolRoutes(app: Express) {
           "Use these cards as symbolic prompts for reflection. Notice which themes feel relevant, which do not, and what concrete evidence in your life supports or contradicts the interpretation.",
         action:
           "Choose at most one reflection prompt to test against lived experience. Do not use this draw as evidence for medical, legal, financial, safety-critical, or irreversible decisions.",
+        extras: {
+          ...base.extras,
+          codexInsight:
+            "This random draw is a reflection prompt, not a detected behavioral pattern or confirmation. Keep only themes that fit lived evidence.",
+        },
         evidence: DRAW_EVIDENCE,
       });
     } catch (error) {

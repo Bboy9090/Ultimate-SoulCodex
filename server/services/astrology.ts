@@ -1,9 +1,13 @@
 import { Body, Ecliptic, GeoVector } from "./astronomy-engine-compat";
 import { fromZonedTime } from "date-fns-tz";
-import type {
-  VerificationState,
-  PlacementEvidence,
-  PlacementLike,
+import {
+  resolveCivilTimeStrict,
+  parseDateOnly,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+  type VerificationState,
+  type PlacementEvidence,
+  type PlacementLike,
 } from "@soulcodex/core";
 import {
   fetchHorizonsReference,
@@ -153,31 +157,8 @@ export interface VerifiedAstrologyOptions {
   policyForBody?: (body: VerifiableBody) => VerificationPolicy;
 }
 
-const ZODIAC_SIGNS = [
-  "Aries",
-  "Taurus",
-  "Gemini",
-  "Cancer",
-  "Leo",
-  "Virgo",
-  "Libra",
-  "Scorpio",
-  "Sagittarius",
-  "Capricorn",
-  "Aquarius",
-  "Pisces",
-] as const;
-
 const EPHEMERIS_ENGINE = "astronomy-engine@2.1.19";
 const EPHEMERIS_SOURCE = "Astronomy Engine geocentric true-ecliptic-of-date calculation";
-
-function normalizeLongitude(longitude: number): number {
-  return ((longitude % 360) + 360) % 360;
-}
-
-function signFromLongitude(longitude: number): string {
-  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(longitude) / 30)];
-}
 
 function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(birthData.birthDate)) return null;
@@ -189,6 +170,15 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
   const localTimestamp = `${birthData.birthDate}T${time}:00`;
 
   if (birthData.timezone) {
+    if (birthTime) {
+      const resolution = resolveCivilTimeStrict(
+        birthData.birthDate,
+        time,
+        birthData.timezone,
+      );
+      return resolution.status === "valid" ? resolution.utc : null;
+    }
+
     const zoned = fromZonedTime(localTimestamp, birthData.timezone);
     return Number.isNaN(zoned.getTime()) ? null : zoned;
   }
@@ -202,10 +192,10 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
 
 function calculateCandidate(body: Body, timestamp: Date): InternalCandidate {
   const vector = GeoVector(body as any, timestamp, true);
-  const longitude = normalizeLongitude(Ecliptic(vector).elon);
+  const longitude = normalizeDegrees(Ecliptic(vector).elon);
 
   return {
-    sign: signFromLongitude(longitude),
+    sign: tropicalSignFromLongitude(longitude),
     longitude,
     source: EPHEMERIS_SOURCE,
     engine: EPHEMERIS_ENGINE,
@@ -673,8 +663,8 @@ export async function calculateVerifiedAstrology(
 export function getTarotBirthCards(
   birthDate: string,
 ): { card1: string; card2: string; interpretation: string } {
-  const date = new Date(birthDate);
-  const sum = date.getDate() + (date.getMonth() + 1) + date.getFullYear();
+  const { day, month, year } = parseDateOnly(birthDate);
+  const sum = day + month + year;
   const digitalRoot = sum
     .toString()
     .split("")

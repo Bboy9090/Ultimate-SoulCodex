@@ -17,32 +17,47 @@ npm run check:workspaces
 npm run check
 npm test
 
+bash scripts/ci/qualified-release-gates.sh
+
 node --import tsx --test \
   server/tests/gate1-foundation.test.ts \
   server/services/galactic-code/__tests__/galactic-code.test.ts \
   packages/astrology/__tests__/astrology-evidence.test.ts \
   tests/astrology-candidate.test.ts \
   tests/astrology-independent-verification.test.ts \
-  tests/jpl-horizons-reference.test.ts \
-  tests/astrology-evidence-matrix.test.ts \
   tests/astrology-tolerance-policy.test.ts \
-  tests/astrology-production-verification.test.ts \
-  tests/ascendant-verification.test.ts \
-  tests/ascendant-retry-contract.test.ts \
-  tests/bobby-big-three-golden.test.ts \
-  tests/human-design-trust.test.ts \
-  tests/profile-verification-reconciliation.test.ts \
+  tests/angular-authority-contract.test.ts \
+  tests/astrology-sign-boundary-verification.test.ts \
+  tests/aspect-policy-authority.test.ts \
+  tests/offline-ephemeris-accuracy.test.ts \
+  tests/civil-time-authority-contract.test.ts \
+  tests/zoned-instant.test.ts \
+  tests/daily-guidance-authority.test.ts \
+  tests/profile-narrative-authority.test.ts \
+  tests/verified-synthesis-contract-authority.test.ts \
+  packages/astrology/__tests__/human-design-phase3.test.ts \
   tests/active-profile-contract.test.ts \
   tests/ui-backend-consistency-contract.test.ts \
-  tests/compatibility-data-minimization.test.ts \
-  tests/compatibility-profile-contract.test.ts \
-  tests/compatibility-http-integration.test.ts \
+  tests/offline-profile-hd-verification-ui.test.ts \
+  tests/technical-appendix-truth.test.ts \
+  tests/systems-details-registry-ui.test.ts \
+  tests/evidence-drawer-language.test.ts \
+  tests/evidence-status-labels.test.ts \
+  tests/codex-header-evidence-language.test.ts \
+  tests/codex-header-generated-at.test.ts \
   tests/release-identity.test.ts \
   tests/billing-security.test.ts \
-  tests/local-first-privacy-contract.test.ts \
-  tests/location-resolution-contract.test.ts \
   tests/system-visibility-contract.test.ts \
-  tests/primary-synthesis-system-policy.test.ts \
+  tests/verified-profile-differentiation-corpus.test.ts \
+  tests/daily-template-system-mix.test.ts \
+  tests/verified-system-method-summary.test.ts \
+  tests/share-privacy-contract.test.ts \
+  tests/synastry-input-validation.test.ts \
+  tests/assessment-source-boundary.test.ts \
+  tests/assessment-interpretation-boundary.test.ts \
+  tests/readme-system-truth.test.ts \
+  tests/changelog-current-truth.test.ts \
+  tests/canonical-doctrine-contract.test.ts \
   tests/server-profile-ownership.test.ts \
   tests/natal-report-contract.test.ts \
   tests/pdf-production-path-contract.test.ts \

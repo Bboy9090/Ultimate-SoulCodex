@@ -157,7 +157,14 @@ function parsedNumber(value: unknown): number | undefined {
 function verifiedPlacement(value: unknown): AnyRecord | undefined {
   if (!value || typeof value !== "object") return undefined;
   const placement = value as AnyRecord;
+  const evidence = placement.provenance ?? placement.evidence;
+  const hasProvenance =
+    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
+    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
+    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
+
   return placement.verificationStatus === "verified" &&
+    hasProvenance &&
     typeof placement.sign === "string" && ZODIAC_SIGNS.has(placement.sign)
     ? placement
     : undefined;
@@ -176,6 +183,8 @@ function verifiedEqualHouses(astrology: AnyRecord): boolean {
     astrology.houses.every((row: AnyRecord, index: number) =>
       row?.verificationStatus === "verified" &&
       row?.policyId === "ASTRO-EQUAL-HOUSE-v1" &&
+      typeof row?.evidenceArtifactId === "string" &&
+      row.evidenceArtifactId.trim().length > 0 &&
       row?.house === index + 1 &&
       ZODIAC_SIGNS.has(row?.sign) &&
       Number.isFinite(row?.longitude) &&
@@ -185,6 +194,9 @@ function verifiedEqualHouses(astrology: AnyRecord): boolean {
 
 function verifiedHumanDesignCore(value: AnyRecord): boolean {
   return value.status === "verified" &&
+    typeof value.verificationReceiptId === "string" && value.verificationReceiptId.trim().length > 0 &&
+    typeof value.independentSource === "string" && value.independentSource.trim().length > 0 &&
+    typeof value.verifiedAt === "string" && value.verifiedAt.trim().length > 0 &&
     [value.type, value.strategy, value.authority, value.profile]
       .every((field) => typeof field === "string" && field.trim().length > 0);
 }
@@ -311,7 +323,12 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   addSignal(signals, "soul-urge", "Soul Urge", soulUrge, "deterministic", "name-vowel calculation");
   const equalHousesVerified = verifiedEqualHouses(verified);
   const midheaven = verifiedPlacement(verified.midheaven);
-  if (equalHousesVerified && midheaven?.policyId === "ASTRO-EQUAL-HOUSE-v1") {
+  if (
+    equalHousesVerified &&
+    midheaven?.policyId === "ASTRO-EQUAL-HOUSE-v1" &&
+    typeof midheaven?.evidenceArtifactId === "string" &&
+    midheaven.evidenceArtifactId.trim().length > 0
+  ) {
     addSignal(signals, "midheaven", "Midheaven", midheaven.sign, "verified", "verified Equal House geometry");
   }
   if (equalHousesVerified) {
@@ -326,15 +343,33 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     }
   }
   const northNode = verifiedPlacement(verified.northNode);
-  if (northNode?.mode === "mean" && northNode.policyId === "ASTRO-MEAN-NODE-v1" && validHouse(northNode.house)) {
+  if (
+    northNode?.mode === "mean" &&
+    northNode.policyId === "ASTRO-MEAN-NODE-v1" &&
+    typeof northNode.evidenceArtifactId === "string" &&
+    northNode.evidenceArtifactId.trim().length > 0 &&
+    validHouse(northNode.house)
+  ) {
     addSignal(signals, "north-node", "Mean North Node", `${verified.northNode.sign}${verified.northNode.house ? ` · House ${verified.northNode.house}` : ""}`, "verified", "verified mean-node contract");
   }
   const southNode = verifiedPlacement(verified.southNode);
-  if (southNode?.mode === "mean" && southNode.policyId === "ASTRO-MEAN-NODE-v1" && validHouse(southNode.house)) {
+  if (
+    southNode?.mode === "mean" &&
+    southNode.policyId === "ASTRO-MEAN-NODE-v1" &&
+    typeof southNode.evidenceArtifactId === "string" &&
+    southNode.evidenceArtifactId.trim().length > 0 &&
+    validHouse(southNode.house)
+  ) {
     addSignal(signals, "south-node", "Mean South Node", `${verified.southNode.sign}${verified.southNode.house ? ` · House ${verified.southNode.house}` : ""}`, "verified", "verified mean-node contract");
   }
   const chiron = verifiedPlacement(verified.chiron);
-  if (chiron?.policyId === "ASTRO-CHIRON-v1" && chiron?.qualificationMethod === "live-jpl-qualified-against-swiss" && validHouse(chiron.house)) {
+  if (
+    chiron?.policyId === "ASTRO-CHIRON-v1" &&
+    chiron?.qualificationMethod === "live-jpl-qualified-against-swiss" &&
+    typeof chiron.evidenceArtifactId === "string" &&
+    chiron.evidenceArtifactId.trim().length > 0 &&
+    validHouse(chiron.house)
+  ) {
     addSignal(signals, "chiron", "Chiron", `${verified.chiron.sign}${verified.chiron.house ? ` · House ${verified.chiron.house}` : ""}`, "verified", "live JPL qualified against Swiss Ephemeris");
   }
   if (verifiedHumanDesignCore(humanDesign)) {

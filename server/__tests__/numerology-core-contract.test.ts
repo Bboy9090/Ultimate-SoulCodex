@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, test } from 'node:test';
 import assert from 'node:assert';
 import { calculateNumerology } from '../services/numerology';
 import {
@@ -371,7 +371,7 @@ describe('Server/Core Numerology Contract', () => {
       assert.ok(serverResult.interpretations.expression);
       assert.strictEqual(
         serverResult.interpretations.expression,
-        `Expression Number ${serverResult.expression}: Your talents and abilities shine through creative manifestation.`
+        `Expression Number ${serverResult.expression}: deterministic Pythagorean name-number mapping, used here as symbolic reflection rather than a measured talent profile.`
       );
     });
 
@@ -435,4 +435,76 @@ describe('Server/Core Numerology Contract', () => {
       assert.ok(result.reason);
     });
   });
+});
+
+
+test('server numerology uses the explicit target year for Personal Year', () => {
+  const birthDate = '1990-09-17';
+  const year2026 = calculateNumerology('Bobby Test', birthDate, 2026);
+  const year2027 = calculateNumerology('Bobby Test', birthDate, 2027);
+
+  assert.equal(year2026.status, 'resolved');
+  assert.equal(year2027.status, 'resolved');
+
+  if (year2026.status === 'resolved' && year2027.status === 'resolved') {
+    assert.equal(year2026.personalYear, calcPersonalYear(birthDate, 2026));
+    assert.equal(year2027.personalYear, calcPersonalYear(birthDate, 2027));
+    assert.match(year2026.interpretations.personalYear, /for 2026/);
+    assert.match(year2027.interpretations.personalYear, /for 2027/);
+  }
+});
+
+test('server numerology fails closed for an invalid explicit target year', () => {
+  const result = calculateNumerology('Bobby Test', '1990-09-17', 0);
+  assert.equal(result.status, 'unresolved');
+  assert.match(result.reason, /Target year/);
+});
+
+
+test('server numerology preserves valid components when Soul Urge is unresolved', () => {
+  const result = calculateNumerology('Lynn', '1990-09-17', 2026);
+  assert.equal(result.status, 'resolved');
+  if (result.status !== 'resolved') return;
+
+  assert.equal(result.soulUrge, null);
+  assert.ok(typeof result.expression === 'number');
+  assert.ok(typeof result.personality === 'number');
+  assert.ok(typeof result.lifePath === 'number');
+  assert.match(result.interpretations.soulUrge, /unresolved/i);
+});
+
+test('server numerology preserves valid components when Personality Number is unresolved', () => {
+  const result = calculateNumerology('Aeia', '1990-09-17', 2026);
+  assert.equal(result.status, 'resolved');
+  if (result.status !== 'resolved') return;
+
+  assert.equal(result.personality, null);
+  assert.ok(typeof result.soulUrge === 'number');
+  assert.ok(typeof result.expression === 'number');
+  assert.match(result.interpretations.personality, /unresolved/i);
+});
+
+
+test('numerology interpretations preserve symbolic-versus-measured boundaries', () => {
+  const result = calculateNumerology('Ada Lovelace', '1815-12-10', 2026);
+  assert.equal(result.status, 'resolved');
+  if (result.status !== 'resolved') return;
+
+  const text = Object.values(result.interpretations).join(' ').toLowerCase();
+
+  assert.match(result.interpretations.expression, /symbolic reflection/i);
+  assert.match(result.interpretations.expression, /rather than a measured talent profile/i);
+  assert.match(result.interpretations.soulUrge, /rather than a factual statement about inner desires/i);
+  assert.match(result.interpretations.personality, /rather than a factual statement about how others perceive you/i);
+  assert.match(result.interpretations.personalYear, /rather than a prediction/i);
+
+  for (const forbidden of [
+    'will definitely',
+    'guarantees',
+    'destined to',
+    'proves that you',
+    'scientifically shows',
+  ]) {
+    assert.equal(text.includes(forbidden), false, forbidden);
+  }
 });

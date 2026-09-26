@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { z } from "zod";
 import * as geoTz from "geo-tz";
-import { resolveGeo } from "../geo/index";
+import { AmbiguousLocationError, resolveGeo } from "../geo/index";
 
 const resolveLocationSchema = z
   .object({
@@ -73,6 +73,14 @@ export function registerLocationResolutionRoutes(app: Express) {
         },
       });
     } catch (error) {
+      if (error instanceof AmbiguousLocationError) {
+        return res.status(422).json({
+          message: "Birth location is ambiguous. Add a state, region, or country and try again.",
+          code: "location_ambiguous",
+          place: error.place,
+        });
+      }
+
       console.error("[LocationResolution] Failed safely:", error);
       return res.status(503).json({
         message: "Location resolution is temporarily unavailable",

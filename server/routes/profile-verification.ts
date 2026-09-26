@@ -6,7 +6,9 @@ import {
 } from "../services/astrology-production";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
-import { fromZonedTime } from "date-fns-tz";
+import { resolveCivilTimeStrict } from "@soulcodex/core";
+import { verifyBirthTimezoneCoordinates } from "../lib/birth-location-consistency";
+import { isValidClockTime, isValidDateOnly, isValidIanaTimezone } from "@shared/schema";
 
 const numericCoordinate = z
   .union([z.number(), z.string().min(1)])
@@ -15,14 +17,19 @@ const numericCoordinate = z
 
 export const profileVerificationRequestSchema = z
   .object({
-    birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Birth date must use YYYY-MM-DD"),
+    birthDate: z
+      .string()
+      .refine(isValidDateOnly, "Birth date must be a real YYYY-MM-DD calendar date"),
     birthTime: z
       .union([
         z.literal(""),
-        z.string().regex(/^\d{2}:\d{2}$/, "Birth time must use HH:MM when provided"),
+        z.string().refine(isValidClockTime, "Birth time must use a real 24-hour HH:MM value"),
       ])
       .optional(),
-    timezone: z.string().min(1, "Timezone is required"),
+    timezone: z
+      .string()
+      .min(1, "Timezone is required")
+      .refine(isValidIanaTimezone, "Timezone must be a valid IANA timezone"),
     latitude: numericCoordinate
       .refine((value) => value >= -90 && value <= 90, "Latitude must be between -90 and 90")
       .optional(),
@@ -30,7 +37,18 @@ export const profileVerificationRequestSchema = z
       .refine((value) => value >= -180 && value <= 180, "Longitude must be between -180 and 180")
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, context) => {
+    const latitudePresent = data.latitude !== undefined;
+    const longitudePresent = data.longitude !== undefined;
+    if (latitudePresent !== longitudePresent) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: latitudePresent ? ["longitude"] : ["latitude"],
+        message: "Latitude and longitude must be supplied together",
+      });
+    }
+  });
 
 function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   return {
@@ -62,6 +80,28 @@ export function registerProfileVerificationRoutes(app: Express) {
     }
 
     try {
+      if (
+        parsed.data.latitude !== undefined &&
+        parsed.data.longitude !== undefined
+      ) {
+        const locationConsistency = verifyBirthTimezoneCoordinates({
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
+          timezone: parsed.data.timezone,
+        });
+        if (locationConsistency.status !== "matched") {
+          return res.status(422).json({
+            message:
+              locationConsistency.reason === "timezone_coordinate_mismatch"
+                ? "Birthplace timezone does not match the supplied coordinates."
+                : "Birthplace timezone and coordinates could not be verified safely.",
+            code: locationConsistency.reason,
+            timezone: locationConsistency.timezone,
+            timezoneCandidates: locationConsistency.candidates,
+          });
+        }
+      }
+
       const astrologyData = await calculateVerifiedAstrology({
         birthDate: parsed.data.birthDate,
         birthTime: parsed.data.birthTime?.trim() || undefined,
@@ -88,10 +128,21 @@ export function registerProfileVerificationRoutes(app: Express) {
         });
 
         if (humanDesign.status === "resolved") {
-          const inputTimestampUtc = fromZonedTime(
-            `${parsed.data.birthDate}T${parsed.data.birthTime}:00`,
+          const civilTime = resolveCivilTimeStrict(
+            parsed.data.birthDate,
+            parsed.data.birthTime,
             parsed.data.timezone,
-          ).toISOString();
+          );
+          if (civilTime.status !== "valid" || !civilTime.utc) {
+            throw new Error(`human_design_civil_time_${civilTime.status}`);
+          }
+
+          const inputTimestampUtc = civilTime.utc.toISOString();
+          const utcOffsetMinutes = civilTime.candidateUtcOffsetsMinutes[0];
+          if (!Number.isFinite(utcOffsetMinutes)) {
+            throw new Error("human_design_timezone_offset_missing");
+          }
+
           const trust = createVerifiedHumanDesignTrustRecord({
             birthTimeKnown: true,
             inputTimestampUtc,
@@ -101,6 +152,12 @@ export function registerProfileVerificationRoutes(app: Express) {
               strategy: humanDesign.strategy,
               authority: humanDesign.authority,
               profile: humanDesign.profile,
+            },
+            timeConversion: {
+              timezone: civilTime.timezone,
+              utcOffsetMinutes,
+              conversionMethod: civilTime.conversionMethod,
+              runtimeTzdbVersion: civilTime.runtimeTzdbVersion,
             },
           });
           if (trust.status !== "verified") {
@@ -126,14 +183,28 @@ export function registerProfileVerificationRoutes(app: Express) {
             independentSource: trust.independentSource,
             verifiedAt: trust.verifiedAt,
             limitations: trust.limitations,
+            timeConversion: trust.timeConversion,
           };
         }
       }
+
+      const verifiedAstrologyBodies =
+        astrologyData.verification?.verifiedBodies ?? [];
+      const humanDesignVerified = humanDesignData?.status === "verified";
+      const verifiedEvidenceAvailable =
+        verifiedAstrologyBodies.length > 0 || humanDesignVerified;
 
       return res.json({
         astrologyData: withVerifiedLegacyAliases(astrologyData),
         humanDesignData,
         updatedAt,
+        evidenceSummary: {
+          status: verifiedEvidenceAvailable
+            ? "verified_evidence_available"
+            : "unresolved",
+          verifiedAstrologyBodies,
+          humanDesignVerified,
+        },
         processing: {
           persistedProfile: false,
           aiGeneration: false,

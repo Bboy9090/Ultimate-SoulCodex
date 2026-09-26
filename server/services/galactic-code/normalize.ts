@@ -104,8 +104,8 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
 
 export function extractHashableInput(normalized: NormalizedGalacticInput): unknown {
   return {
-    profileId: normalized.profileId,
     birthDate: normalized.birthDate,
+    birthTime: normalized.birthTime,
     astrology: {
       evidenceState: normalized.astrology.evidenceState,
       sun: normalized.astrology.sun,
@@ -115,30 +115,33 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
       venus: normalized.astrology.venus,
       mars: normalized.astrology.mars,
       dominantElements: normalized.astrology.dominantElements,
-      dominantModalities: normalized.astrology.dominantModalities,
+      houseEmphasis: normalized.astrology.houseEmphasis,
+      majorAspects: normalized.astrology.majorAspects,
     },
     humanDesign: {
       evidenceState: normalized.humanDesign.evidenceState,
       type: normalized.humanDesign.type,
-      strategy: normalized.humanDesign.strategy,
       authority: normalized.humanDesign.authority,
       profile: normalized.humanDesign.profile,
       definedCenters: normalized.humanDesign.definedCenters,
-      channels: normalized.humanDesign.channels,
-      incarnationCross: normalized.humanDesign.incarnationCross,
     },
     numerology: {
       evidenceState: normalized.numerology.evidenceState,
       lifePath: normalized.numerology.lifePath,
       birthdayNumber: normalized.numerology.birthdayNumber,
       expressionNumber: normalized.numerology.expressionNumber,
+      soulUrgeNumber: normalized.numerology.soulUrgeNumber,
+      personalityNumber: normalized.numerology.personalityNumber,
+      maturityNumber: normalized.numerology.maturityNumber,
     },
     behavior: {
       evidenceState: normalized.behavior.evidenceState,
       traits: normalized.behavior.traits,
       decisionStyle: normalized.behavior.decisionStyle,
       stressPattern: normalized.behavior.stressPattern,
+      relationalPattern: normalized.behavior.relationalPattern,
       builderMode: normalized.behavior.builderMode,
+      moralCompass: normalized.behavior.moralCompass,
     },
   };
 }

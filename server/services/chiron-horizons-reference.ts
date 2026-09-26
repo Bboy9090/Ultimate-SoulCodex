@@ -1,3 +1,6 @@
+import {
+  tropicalSignFromLongitude,
+} from "./angular-math";
 import { parseHorizonsLongitude } from "./jpl-horizons-reference";
 
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
@@ -27,28 +30,22 @@ const HORIZONS_SOURCE =
   "NASA/JPL Horizons 2060 Chiron observer quantity 31: geocentric apparent ecliptic-of-date longitude";
 const CHIRON_COMMAND = "DES=1977 UB;";
 
-const ZODIAC_SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
-
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function signFromLongitude(value: number): string {
-  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(value) / 30)];
+function assertExplicitUtcTimestamp(timestamp: string): Date {
+  const raw = timestamp.trim();
+  const date = new Date(raw);
+  if (!/Z$/i.test(raw) || Number.isNaN(date.getTime())) {
+    throw new Error("invalid_input_timestamp");
+  }
+  return date;
 }
 
 function horizonsTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) throw new Error("invalid_input_timestamp");
+  const date = assertExplicitUtcTimestamp(timestamp);
   return date.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
 }
 
 function addOneMinute(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) throw new Error("invalid_input_timestamp");
+  const date = assertExplicitUtcTimestamp(timestamp);
   return new Date(date.getTime() + 60_000).toISOString();
 }
 
@@ -99,11 +96,11 @@ export async function fetchChironHorizonsReference(
     return {
       body: "Chiron",
       longitude,
-      sign: signFromLongitude(longitude),
+      sign: tropicalSignFromLongitude(longitude),
       source: HORIZONS_SOURCE,
       engine: HORIZONS_ENGINE,
       calculatedAt: new Date().toISOString(),
-      inputTimestamp: new Date(inputTimestamp).toISOString(),
+      inputTimestamp: assertExplicitUtcTimestamp(inputTimestamp).toISOString(),
     };
   } finally {
     clearTimeout(timeout);

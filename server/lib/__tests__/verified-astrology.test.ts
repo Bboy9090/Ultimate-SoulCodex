@@ -53,6 +53,23 @@ describe("server verified astrology filter", () => {
     });
   });
 
+  it("recognizes canonical nested placement objects without weakening verification", () => {
+    expect(extractVerifiedAstrology({
+      astrologyData: {
+        placements: {
+          sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+          moon: { sign: "Scorpio", verificationStatus: "verified", provenance: evidence },
+          rising: { sign: "Sagittarius", verificationStatus: "calculated", evidence },
+        },
+      },
+    })).toEqual({
+      sun: "Virgo",
+      moon: "Scorpio",
+      rising: undefined,
+      unresolved: ["Ascendant"],
+    });
+  });
+
   it("builds explicit refusal language for unresolved placements", () => {
     const lines = buildVerifiedAstrologyLines({ moonSign: "Virgo", risingSign: "Scorpio" });
     expect(lines.join("\n")).toContain("Do not infer or interpret these placements");

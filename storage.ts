@@ -235,6 +235,7 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const profile: Profile = { 
       ...insertProfile,
+      birthDate: canonicalBirthDateTimestamp((insertProfile as any).birthDate),
       birthTime: insertProfile.birthTime || null,
       birthLocation: insertProfile.birthLocation || null,
       timezone: insertProfile.timezone || null,
@@ -256,9 +257,15 @@ export class MemStorage implements IStorage {
     if (!existing) {
       throw new Error("Profile not found");
     }
+    const normalizedUpdates: Partial<Profile> = {
+      ...updates,
+      ...(Object.prototype.hasOwnProperty.call(updates, "birthDate")
+        ? { birthDate: canonicalBirthDateTimestamp((updates as any).birthDate) }
+        : {}),
+    };
     const updated: Profile = { 
       ...existing, 
-      ...updates, 
+      ...normalizedUpdates, 
       updatedAt: new Date() 
     };
     this.profiles.set(id, updated);
@@ -1174,6 +1181,32 @@ class DbStorage implements IStorage {
 }
 
 
+function canonicalBirthDateTimestamp(value: unknown): Date {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new RangeError("Birth date must be a valid civil date");
+    }
+    if (
+      value.getUTCHours() !== 0 ||
+      value.getUTCMinutes() !== 0 ||
+      value.getUTCSeconds() !== 0 ||
+      value.getUTCMilliseconds() !== 0
+    ) {
+      throw new RangeError(
+        "Birth date Date objects must already be canonical UTC midnight; use YYYY-MM-DD for civil dates",
+      );
+    }
+    return new Date(value.getTime());
+  }
+
+  if (typeof value === "string" && schema.isValidDateOnly(value.trim())) {
+    return new Date(`${value.trim()}T00:00:00.000Z`);
+  }
+
+  throw new RangeError("Birth date storage requires a real YYYY-MM-DD civil date");
+}
+
+
 const profilesTable = schema.profiles;
 const accessCodesTable = schema.accessCodes;
 const redemptionsTable = schema.accessCodeRedemptions;
@@ -1301,7 +1334,7 @@ class HybridStorage extends MemStorage {
         userId: structured.userId || null,
         sessionId: structured.sessionId || null,
         name: structured.name,
-        birthDate: structured.birthDate,
+        birthDate: canonicalBirthDateTimestamp(structured.birthDate),
         birthTime: structured.birthTime || null,
         birthLocation: structured.birthLocation || null,
         timezone: structured.timezone || null,
@@ -1340,7 +1373,12 @@ class HybridStorage extends MemStorage {
         "humanDesignData", "elementalProfile", "soulArchetype", 
         "personalityData", "archetypeData", "soulCodexData", "isPublic"
       ]) {
-        if (k in structured) updateRow[k] = (structured as any)[k];
+        if (k in structured) {
+          updateRow[k] =
+            k === "birthDate"
+              ? canonicalBirthDateTimestamp((structured as any)[k])
+              : (structured as any)[k];
+        }
       }
       if ("latitude" in structured) updateRow.latitude = structured.latitude != null ? String(structured.latitude) : null;
       if ("longitude" in structured) updateRow.longitude = structured.longitude != null ? String(structured.longitude) : null;

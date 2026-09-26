@@ -62,13 +62,13 @@ export default function SoulCodexReadingDisplay({
 
   // Determine disclosure mode based on reading data
   const getDisclosureMode = (): "reflective" | "technical" | "mixed" => {
-    const hasVerified =
-      reading.meta.calculationStatus === "verified_ephemeris" ||
-      reading.meta.calculationStatus === "estimated_birth_window";
-    const hasLegacy = reading.meta.calculationStatus === "legacy_approximation";
+    const hasVerified = reading.meta.calculationStatus === "verified_ephemeris";
+    const hasMixedEvidence =
+      reading.meta.calculationStatus === "estimated_birth_window" ||
+      reading.meta.calculationStatus === "legacy_approximation";
 
-    if (hasVerified && !hasLegacy) return "technical";
-    if (hasLegacy) return "mixed";
+    if (hasVerified) return "technical";
+    if (hasMixedEvidence) return "mixed";
     return "reflective";
   };
 
@@ -130,6 +130,7 @@ export default function SoulCodexReadingDisplay({
             groundedAction={reading.snapshot.groundedAction}
             calculationConfidence={reading.meta.confidence === "high" ? "High" : reading.meta.confidence === "medium" ? "Moderate" : "Low"}
             verifiedSystems={reading.meta.verifiedSystems || []}
+            generatedAt={reading.meta.generatedAt}
           />
         </SectionContainer>
       )}

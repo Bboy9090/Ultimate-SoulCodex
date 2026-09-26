@@ -14,8 +14,13 @@
  * - Version/provenance
  */
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { EvidenceLayer, LimitationGroup } from "@soulcodex/core";
+import {
+  calculationStatusLabel,
+  inputStatusLabel,
+  interpretationStatusLabel,
+} from "@/lib/evidenceStatusLabels";
 
 interface EvidenceDrawerProps {
   evidenceLayers: EvidenceLayer[];
@@ -33,6 +38,7 @@ export default function EvidenceDrawer({
   calculationMethod,
 }: EvidenceDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const drawerId = useId();
 
   const highConfidence = evidenceLayers.filter((l) => l.confidence === "high");
   const moderateConfidence = evidenceLayers.filter((l) => l.confidence === "moderate");
@@ -48,6 +54,9 @@ export default function EvidenceDrawer({
     >
       {/* Drawer Toggle */}
       <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={drawerId}
         onClick={() => setIsOpen(!isOpen)}
         style={{
           background: "none",
@@ -71,6 +80,9 @@ export default function EvidenceDrawer({
       {/* Drawer Content */}
       {isOpen && (
         <div
+          id={drawerId}
+          role="region"
+          aria-label="Reading evidence and methods"
           style={{
             marginTop: "1.5rem",
             padding: "1.5rem",
@@ -101,7 +113,7 @@ export default function EvidenceDrawer({
                     marginBottom: "0.5rem",
                   }}
                 >
-                  ✓ High Confidence ({highConfidence.length})
+                  ✓ High source support ({highConfidence.length})
                 </div>
                 <div
                   style={{
@@ -126,7 +138,7 @@ export default function EvidenceDrawer({
                     marginBottom: "0.5rem",
                   }}
                 >
-                  ≈ Moderate Confidence ({moderateConfidence.length})
+                  ≈ Moderate source support ({moderateConfidence.length})
                 </div>
                 <div
                   style={{
@@ -151,7 +163,7 @@ export default function EvidenceDrawer({
                     marginBottom: "0.5rem",
                   }}
                 >
-                  ○ Low Confidence ({lowConfidence.length})
+                  ○ Low source support ({lowConfidence.length})
                 </div>
                 <div
                   style={{
@@ -278,28 +290,28 @@ function EvidenceLayerCard({ layer }: EvidenceLayerCardProps) {
       <div style={{ display: "grid", gap: "0.5rem", fontSize: "0.75rem", color: "var(--sc-stone)" }}>
         {layer.inputStatus && (
           <div>
-            <span style={{ opacity: 0.7 }}>Input:</span> {layer.inputStatus}
+            <span style={{ opacity: 0.7 }}>Input:</span> {inputStatusLabel(layer.inputStatus)}
             {layer.inputRemark && <div style={{ opacity: 0.6 }}>→ {layer.inputRemark}</div>}
           </div>
         )}
 
         {layer.calculationStatus && (
           <div>
-            <span style={{ opacity: 0.7 }}>Calculation:</span> {layer.calculationStatus}
+            <span style={{ opacity: 0.7 }}>Calculation:</span> {calculationStatusLabel(layer.calculationStatus)}
             {layer.calculationRemark && <div style={{ opacity: 0.6 }}>→ {layer.calculationRemark}</div>}
           </div>
         )}
 
         {layer.interpretationStatus && (
           <div>
-            <span style={{ opacity: 0.7 }}>Interpretation:</span> {layer.interpretationStatus}
+            <span style={{ opacity: 0.7 }}>Interpretation:</span> {interpretationStatusLabel(layer.interpretationStatus)}
             {layer.interpretationRemark && <div style={{ opacity: 0.6 }}>→ {layer.interpretationRemark}</div>}
           </div>
         )}
 
         {layer.confidence && (
           <div style={{ marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px dashed rgba(255,255,255,0.1)" }}>
-            <span style={{ color: "var(--sc-teal)" }}>◆ Confidence:</span> {layer.confidence}
+            <span style={{ color: "var(--sc-teal)" }}>◆ Source support:</span> {layer.confidence}
             {layer.confidenceReason && (
               <div style={{ opacity: 0.6 }}>({layer.confidenceReason})</div>
             )}

@@ -55,11 +55,18 @@ function topBy(matches: ArchetypeMatch[], mode: RelationshipMode): ArchetypeMatc
   return [...matches].sort((a, b) => b.scores[mode] - a.scores[mode])[0] ?? null;
 }
 
-export function buildCompatibilityProfileInput(profile: any) {
-  const astrology = extractVerifiedAstrology(profile);
+export function buildCompatibilityProfileInput(
+  profile: any,
+  options: { trustedEvidenceContext?: boolean } = {},
+) {
+  const astrology = options.trustedEvidenceContext
+    ? extractVerifiedAstrology(profile)
+    : { sun: undefined, moon: undefined, rising: undefined, unresolved: ["Sun", "Moon", "Ascendant"] };
   return {
     sunSign: astrology.sun,
-    lifePathNumber: deterministicLifePath(profile),
+    lifePathNumber: options.trustedEvidenceContext
+      ? deterministicLifePath(profile)
+      : undefined,
     humanDesignType: undefined as string | undefined,
     unresolved: {
       astrology: astrology.unresolved,
@@ -81,8 +88,12 @@ function formulaInputLifePath(value: number | undefined) {
   return value ?? null;
 }
 
-export function buildMatchResponse(profile: any, mode: RelationshipMode = "love") {
-  const verifiedInput = buildCompatibilityProfileInput(profile);
+export function buildMatchResponse(
+  profile: any,
+  mode: RelationshipMode = "love",
+  options: { trustedEvidenceContext?: boolean } = {},
+) {
+  const verifiedInput = buildCompatibilityProfileInput(profile, options);
   const symbolicSun = symbolicSunSign(profile);
   const evidenceMode: CompatibilityEvidenceMode = verifiedInput.sunSign
     ? "verified"
@@ -164,8 +175,12 @@ export function buildMatchResponse(profile: any, mode: RelationshipMode = "love"
   };
 }
 
-export function buildPersonComparisonResponse(profile: any, otherPerson: any) {
-  const verifiedInput = buildCompatibilityProfileInput(profile);
+export function buildPersonComparisonResponse(
+  profile: any,
+  otherPerson: any,
+  options: { trustedEvidenceContext?: boolean } = {},
+) {
+  const verifiedInput = buildCompatibilityProfileInput(profile, options);
   const savedSymbolicSun = symbolicSunSign(profile);
   const savedSunSign = verifiedInput.sunSign ?? savedSymbolicSun;
   const savedSunEvidenceMode: CompatibilityEvidenceMode = verifiedInput.sunSign
@@ -285,7 +300,10 @@ router.post("/compatibility/archetype-matches", (req, res) => {
     }
 
     const safeMode = MODE_KEYS.includes(mode) ? mode : "love";
-    const result = buildMatchResponse(profile, safeMode);
+    // Request bodies are not an evidence authority. Supplied signs may support
+    // the explicitly symbolic tier, but caller-provided verification metadata
+    // can never promote a placement to verified.
+    const result = buildMatchResponse(profile, safeMode, { trustedEvidenceContext: false });
     res.status(result.available ? 200 : 422).json(result);
   } catch (err: any) {
     res.status(500).json({ message: err?.message || "Compatibility match generation failed" });
@@ -302,7 +320,9 @@ router.post("/compatibility/person", (req, res) => {
       return res.status(400).json({ message: "The other person's details are required." });
     }
 
-    const result = buildPersonComparisonResponse(profile, otherPerson);
+    const result = buildPersonComparisonResponse(profile, otherPerson, {
+      trustedEvidenceContext: false,
+    });
     res.status(result.available ? 200 : 422).json(result);
   } catch (err: any) {
     res.status(500).json({ message: err?.message || "Person compatibility comparison failed" });

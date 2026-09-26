@@ -10,7 +10,7 @@ import {
 } from "@shared/schema";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { generateFoundationOfflineCodexProfile } from "@/lib/foundationOfflineCodex";
-import { apiRequest } from "@/lib/queryClient";
+import { apiFetch, apiRequest } from "@/lib/queryClient";
 import { saveOfflineProfile } from "@/lib/offlineProfileStore";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import {
@@ -47,6 +47,8 @@ const BUILT_IN_LOCATIONS: Record<
   { lat: string; lng: string; timezone: string }
 > = {
   "new york": { lat: "40.7128", lng: "-74.0060", timezone: "America/New_York" },
+  "new york city": { lat: "40.7128", lng: "-74.0060", timezone: "America/New_York" },
+  nyc: { lat: "40.7128", lng: "-74.0060", timezone: "America/New_York" },
   manhattan: { lat: "40.7831", lng: "-73.9712", timezone: "America/New_York" },
   bronx: { lat: "40.8448", lng: "-73.8648", timezone: "America/New_York" },
   "bronx new york": { lat: "40.8448", lng: "-73.8648", timezone: "America/New_York" },
@@ -62,6 +64,15 @@ const BUILT_IN_LOCATIONS: Record<
   paris: { lat: "48.8566", lng: "2.3522", timezone: "Europe/Paris" },
   tokyo: { lat: "35.6762", lng: "139.6503", timezone: "Asia/Tokyo" },
 };
+
+const SAFE_OFFLINE_LOCATION_KEYS = new Set([
+  "new york city",
+  "nyc",
+  "manhattan",
+  "brooklyn",
+  "bronx",
+  "bronx new york",
+]);
 
 function builtInLocation(value: string) {
   const normalized = value
@@ -86,7 +97,7 @@ function builtInLocation(value: string) {
       name,
       location,
     }))
-    .filter(({ index }) => index >= 0)
+    .filter(({ index, name }) => index >= 0 && SAFE_OFFLINE_LOCATION_KEYS.has(name))
     .sort(
       (left, right) =>
         left.index - right.index || right.name.length - left.name.length,
@@ -94,21 +105,71 @@ function builtInLocation(value: string) {
   return match?.location ?? null;
 }
 
+type VerificationAttempt =
+  | { status: "verified"; message: string }
+  | { status: "unresolved"; message: string }
+  | { status: "offline"; message: string }
+  | { status: "failed"; message: string };
+
 async function requestVerificationWhenOnline(
   data: BirthData,
   localProfile: OfflineCodexProfile,
-): Promise<void> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) return;
+): Promise<VerificationAttempt> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return {
+      status: "offline",
+      message: "You are offline, so astronomy verification was not attempted.",
+    };
+  }
 
   try {
-    const response = await apiRequest("POST", "/api/verification/profile", {
+    const payload = {
       birthDate: data.birthDate,
       ...(data.birthTime ? { birthTime: data.birthTime } : {}),
       timezone: data.timezone,
-      latitude: data.latitude,
-      longitude: data.longitude,
+      ...(String(data.latitude ?? "").trim() !== ""
+        ? { latitude: data.latitude }
+        : {}),
+      ...(String(data.longitude ?? "").trim() !== ""
+        ? { longitude: data.longitude }
+        : {}),
+    };
+
+    const response = await apiFetch("/api/verification/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    const verification = await response.json();
+    const verification = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        status: "failed",
+        message:
+          verification?.message ||
+          "Astronomy verification could not be completed safely.",
+      };
+    }
+
+    const evidenceSummary = verification?.evidenceSummary;
+    const verifiedAstrologyBodies = Array.isArray(
+      evidenceSummary?.verifiedAstrologyBodies,
+    )
+      ? evidenceSummary.verifiedAstrologyBodies
+      : [];
+    const humanDesignVerified = evidenceSummary?.humanDesignVerified === true;
+    const hasVerifiedEvidence =
+      evidenceSummary?.status === "verified_evidence_available" &&
+      (verifiedAstrologyBodies.length > 0 || humanDesignVerified);
+
+    if (!hasVerifiedEvidence) {
+      return {
+        status: "unresolved",
+        message:
+          "The evidence check completed, but no supported placement reached verified status. Unresolved values were left unresolved.",
+      };
+    }
+
     const syncedAt = verification.updatedAt || new Date().toISOString();
 
     const currentActive = loadActiveProfile().profile;
@@ -134,11 +195,28 @@ async function requestVerificationWhenOnline(
         }),
       );
     }
+
+    const verifiedLabels = [
+      ...verifiedAstrologyBodies,
+      ...(humanDesignVerified ? ["Human Design core"] : []),
+    ];
+
+    return {
+      status: "verified",
+      message: `Verified evidence merged: ${verifiedLabels.join(", ")}.`,
+    };
   } catch (error) {
     console.warn(
       "[local-first-create] Requested online verification could not complete; local profile remains available",
       error,
     );
+    return {
+      status: "failed",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Astronomy verification could not be completed safely.",
+    };
   }
 }
 
@@ -186,28 +264,54 @@ export default function LocalFirstInputForm() {
 
     setIsLocating(true);
     try {
-      let result = builtInLocation(location);
+      const offline =
+        typeof navigator !== "undefined" && !navigator.onLine;
+      let result = offline ? builtInLocation(location) : null;
 
-      if (!result) {
-        if (typeof navigator !== "undefined" && !navigator.onLine) {
-          toast({
-            title: "Location not found offline",
-            description:
-              "Enter latitude, longitude, and the birth location's IANA timezone manually. The reading can still be generated on this device.",
-            variant: "destructive",
-          });
-          return;
+      if (offline && !result) {
+        toast({
+          title: "Location not found offline",
+          description:
+            "Enter latitude, longitude, and the birth location's IANA timezone manually. The reading can still be generated on this device.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!offline) {
+        const response = await apiFetch("/api/location/resolve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ place: location.trim() }),
+        });
+        const resolved = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (resolved?.code === "location_ambiguous") {
+            toast({
+              title: "Which place do you mean?",
+              description:
+                resolved?.message ||
+                "Add a state, region, or country to the birthplace and try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          throw new Error(
+            resolved?.message || "Birth location could not be resolved.",
+          );
         }
 
-        const response = await apiRequest("POST", "/api/location/resolve", {
-          place: location.trim(),
-        });
-        const resolved = await response.json();
         result = {
           lat: String(resolved.latitude),
           lng: String(resolved.longitude),
           timezone: String(resolved.timezone),
         };
+      }
+
+      if (!result) {
+        throw new Error("Birth location could not be resolved.");
       }
 
       form.setValue("latitude", result.lat, { shouldValidate: true });
@@ -266,21 +370,36 @@ export default function LocalFirstInputForm() {
         );
       }
 
+      let verificationAttempt: VerificationAttempt | null = null;
       if (verifyOnline) {
-        // The user explicitly opted in, so finish the evidence reconciliation
-        // before opening the profile. Navigating while this request was still
-        // in flight allowed the profile query to cache the unresolved local
-        // snapshot even though verified Moon/Rising data arrived moments later.
-        await requestVerificationWhenOnline(data, profile);
+        // Finish reconciliation before opening the profile so the next screen
+        // cannot cache a stale unresolved snapshot.
+        verificationAttempt = await requestVerificationWhenOnline(data, profile);
       }
 
       toast({
-        title: "Soul Codex created on this device",
-        description: verifyOnline
-          ? "Your local reading is ready. Astronomy verification was requested; supported placements will merge back into this same local profile when the evidence check finishes."
-          : exactChartInputsReady
-            ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
-            : "Your local reading is ready. No profile data was uploaded for verification.",
+        title:
+          verificationAttempt?.status === "failed"
+            ? "Codex saved; verification needs attention"
+            : verificationAttempt?.status === "unresolved"
+              ? "Codex saved; evidence remains unresolved"
+              : verificationAttempt?.status === "offline"
+                ? "Codex saved locally"
+                : "Soul Codex created on this device",
+        description:
+          verificationAttempt?.status === "verified"
+            ? `Your local reading is ready. ${verificationAttempt.message}`
+            : verificationAttempt?.status === "unresolved"
+              ? `Your local reading is safe on this device. ${verificationAttempt.message}`
+              : verificationAttempt?.status === "failed"
+                ? `Your local reading is safe on this device. ${verificationAttempt.message}`
+                : verificationAttempt?.status === "offline"
+                  ? `Your local reading is safe on this device. ${verificationAttempt.message}`
+                  : exactChartInputsReady
+                    ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
+                    : "Your local reading is ready. No profile data was uploaded for verification.",
+        variant:
+          verificationAttempt?.status === "failed" ? "destructive" : "default",
       });
       setLocation(`/profile/${profile.id}`);
     } catch (error) {

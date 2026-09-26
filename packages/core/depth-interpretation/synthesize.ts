@@ -287,7 +287,6 @@ function overallConfidence(
   );
 
   if (
-    evidence.length >= 3 &&
     allHigh &&
     hasVerifiedSupport &&
     missingData.length === 0

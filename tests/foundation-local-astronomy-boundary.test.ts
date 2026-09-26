@@ -69,3 +69,29 @@ test("production create and Identity surfaces use the Foundation-safe path and n
   // the production router from ever importing it while it contains sample math.
   assert.match(chartSource, /Math\.random\(\)/);
 });
+
+
+test("Foundation offline identity does not include Tarot without explicit symbolic opt-in", () => {
+  const profile = generateFoundationOfflineCodexProfile(
+    { ...baseInput, birthTime: "11:11" },
+    { id: "local-no-tarot", generatedAt: "2026-08-14T00:00:00.000Z", currentYear: 2026 },
+  );
+
+  assert.equal(Object.prototype.hasOwnProperty.call(profile.archetypeData, "tarotCards"), false);
+});
+
+
+test("root SoulArchetype route does not treat withheld astrology markers as resolved evidence", () => {
+  const rootRoutes = readFileSync("routes.ts", "utf8");
+
+  assert.match(rootRoutes, /trimmed\.toLowerCase\(\) === "unknown"/);
+  assert.match(rootRoutes, /Array\.isArray\(a\.houses\) && a\.houses\.length > 0/);
+  assert.doesNotMatch(
+    rootRoutes,
+    /Birth time unknown — Sun and Moon are calculated; Rising sign and houses are omitted, not estimated\./,
+  );
+  assert.match(
+    rootRoutes,
+    /exact Moon\/Rising and planetary degrees are withheld/,
+  );
+});

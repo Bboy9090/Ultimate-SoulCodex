@@ -5,11 +5,31 @@
  * Only shown in Technical depth mode
  */
 
-import type { BirthData } from "@soulcodex/core";
+import type { AstrologyDataStatus, BirthData } from "@soulcodex/core";
 
 interface TechnicalAppendixProps {
   birthData: BirthData;
-  meta?: any;
+  meta?: {
+    engineVersion?: string;
+    generatedAt?: string;
+    calculationStatus?: AstrologyDataStatus;
+  };
+}
+
+function astrologyStatusLabel(status?: AstrologyDataStatus): string {
+  switch (status) {
+    case "verified_ephemeris":
+      return "Verified ephemeris for this reading";
+    case "estimated_birth_window":
+      return "Estimated birth-window astronomy";
+    case "date_only":
+      return "Date-only astronomy; time-sensitive geometry withheld";
+    case "legacy_approximation":
+      return "Legacy approximation; excluded from verified synthesis";
+    case "unavailable":
+    default:
+      return "Astronomy verification unavailable";
+  }
 }
 
 export default function TechnicalAppendix({ birthData, meta }: TechnicalAppendixProps) {
@@ -59,10 +79,10 @@ export default function TechnicalAppendix({ birthData, meta }: TechnicalAppendix
             Calculation Method
           </div>
           <div style={{ fontSize: "0.85rem", color: "var(--sc-stone)", lineHeight: "1.8" }}>
-            <div>Engine: astronomy-engine</div>
-            <div>House System: Placidus</div>
+            <div>Engine: Soul Codex governed astronomy stack</div>
+            <div>House System: Equal House production policy</div>
             <div>Zodiac: Tropical</div>
-            <div>Ephemeris: SOFA-compliant</div>
+            <div>Astronomy Status: {astrologyStatusLabel(meta?.calculationStatus)}</div>
           </div>
         </div>
 
@@ -91,7 +111,7 @@ export default function TechnicalAppendix({ birthData, meta }: TechnicalAppendix
           lineHeight: "1.6",
         }}
       >
-        <strong style={{ color: "var(--sc-amber)" }}>Note:</strong> This reading synthesizes astrology, numerology, and Human Design. Calculation precision depends on birth time accuracy. Unknown or rounded birth times reduce house and ascendant confidence.
+        <strong style={{ color: "var(--sc-amber)" }}>Note:</strong> This record describes calculation support, not certainty about personality or outcomes. Astrology enters verified surfaces only after the applicable evidence contract passes. Numerology arithmetic is deterministic under the governed reduction policy. Human Design contributes only when its separate verified core contract is present. Unknown or approximate birth time limits time-sensitive chart geometry rather than being silently replaced with invented precision.
       </div>
     </div>
   );

@@ -45,6 +45,24 @@ export interface ShareableProfileView {
   settings: ShareSettings;
 }
 
+function isArgon2PasswordHash(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^\$argon2(?:id|i|d)\$/.test(value)
+  );
+}
+
+function validateProtectedShareSettings(settings: ShareSettings): void {
+  if (settings.passwordProtected) {
+    if (!isArgon2PasswordHash(settings.passwordHash)) {
+      throw new Error('Protected share requires an Argon2 password hash');
+    }
+    return;
+  }
+
+  settings.passwordHash = undefined;
+}
+
 /**
  * Create a shareable link for a profile
  */
@@ -58,9 +76,9 @@ export async function createShareableLink(
   const linkId = randomUUID();
   
   const defaultSettings: ShareSettings = {
-    includeFullProfile: true,
-    includeSections: ['astrology', 'numerology', 'archetype'],
-    includePersonalInfo: true,
+    includeFullProfile: false,
+    includeSections: ['archetype'],
+    includePersonalInfo: false,
     includeCompatibility: false,
     includeTransits: false,
     includeJournal: false,
@@ -72,6 +90,8 @@ export async function createShareableLink(
     ...defaultSettings,
     ...settings
   };
+
+  validateProtectedShareSettings(finalSettings);
 
   // Set expiration if specified
   let expiresAt: Date | undefined;
@@ -123,13 +143,22 @@ export async function getShareableProfile(
     return null;
   }
 
-  // Check password
+  // Check password. A protected link with missing/malformed hash fails closed.
   if (link.settings.passwordProtected) {
+    if (!isArgon2PasswordHash(link.settings.passwordHash)) {
+      return null;
+    }
     if (!password) {
       throw new Error('Password required');
     }
-    // Use argon2 for proper password hashing
-    if (!await argon2.verify(link.settings.passwordHash!, password)) {
+
+    let validPassword = false;
+    try {
+      validPassword = await argon2.verify(link.settings.passwordHash, password);
+    } catch {
+      return null;
+    }
+    if (!validPassword) {
       throw new Error('Invalid password');
     }
   }
@@ -142,7 +171,9 @@ export async function getShareableProfile(
 
   // Get user info
   const user = await storage.getUser(link.userId);
-  const sharedBy = user?.name || profile.name || 'Anonymous';
+  const sharedBy = link.settings.includePersonalInfo
+    ? user?.name || profile.name || 'Anonymous'
+    : 'Anonymous';
 
   // Filter profile data based on settings
   const filteredProfile = filterProfileForSharing(profile, link.settings);
@@ -155,12 +186,111 @@ export async function getShareableProfile(
     lastAccessedAt: link.lastAccessedAt
   });
 
+  const publicSettings: ShareSettings = {
+    ...link.settings,
+    passwordHash: undefined,
+  };
+
   return {
     profile: filteredProfile,
     sharedBy,
     shareDate: link.createdAt,
-    settings: link.settings
+    settings: publicSettings
   };
+}
+
+const ALWAYS_PRIVATE_SHARE_KEYS = new Set([
+  'userid',
+  'sessionid',
+  'birthtime',
+  'birthdatetime',
+  'birthdatetimeutc',
+  'timezone',
+  'resolvedtimezone',
+  'ianatimezone',
+  'latitude',
+  'longitude',
+  'coordinates',
+  'birthcoordinates',
+  'inputtimestamp',
+  'inputtimestamputc',
+]);
+
+const PERSONAL_SHARE_KEYS = new Set([
+  'birthdate',
+  'birthlocation',
+]);
+
+interface ShareRedactions {
+  always: string[];
+  personal: string[];
+  personalName?: string;
+}
+
+function normalizeShareKey(key: string): string {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^$\{\}()|[\]\\]/g, (match) => `\\${match}`);
+}
+
+function redactLiteral(
+  value: string,
+  literal: string,
+  replacement: string,
+): string {
+  if (!literal.trim()) return value;
+  return value.replace(new RegExp(escapeRegExp(literal), 'gi'), replacement);
+}
+
+function sanitizeSharedValue(
+  value: unknown,
+  includePersonalInfo: boolean,
+  redactions: ShareRedactions,
+): unknown {
+  if (typeof value === 'string') {
+    let sanitized = value;
+    for (const literal of redactions.always) {
+      sanitized = redactLiteral(sanitized, literal, '[redacted]');
+    }
+    if (!includePersonalInfo) {
+      for (const literal of redactions.personal) {
+        sanitized = redactLiteral(sanitized, literal, '[redacted]');
+      }
+      if (redactions.personalName) {
+        sanitized = redactLiteral(
+          sanitized,
+          redactions.personalName,
+          'Shared Profile',
+        );
+      }
+    }
+    return sanitized;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) =>
+      sanitizeSharedValue(entry, includePersonalInfo, redactions),
+    );
+  }
+
+  if (!value || typeof value !== 'object' || value instanceof Date) {
+    return value;
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    const normalizedKey = normalizeShareKey(key);
+    if (ALWAYS_PRIVATE_SHARE_KEYS.has(normalizedKey)) continue;
+    if (!includePersonalInfo && PERSONAL_SHARE_KEYS.has(normalizedKey)) continue;
+    sanitized[key] = sanitizeSharedValue(
+      nested,
+      includePersonalInfo,
+      redactions,
+    );
+  }
+  return sanitized;
 }
 
 /**
@@ -214,15 +344,29 @@ function filterProfileForSharing(profile: Profile, settings: ShareSettings): Par
     (filtered as any).soulCodexData = (profile as any).soulCodexData;
   }
 
-  // Never include sensitive data
-  delete (filtered as any).userId;
-  delete (filtered as any).sessionId;
-  delete (filtered as any).latitude;
-  delete (filtered as any).longitude;
-  delete (filtered as any).timezone;
-  delete (filtered as any).birthTime; // Unless explicitly allowed
+  // Apply privacy recursively. Nested astronomy/Human Design evidence can
+  // contain exact instants or coordinates even after top-level fields are removed.
+  const redactions: ShareRedactions = {
+    always: [
+      String((profile as any).birthTime ?? ''),
+      String((profile as any).timezone ?? ''),
+      String((profile as any).latitude ?? ''),
+      String((profile as any).longitude ?? ''),
+      String((profile as any).userId ?? ''),
+      String((profile as any).sessionId ?? ''),
+    ].filter(Boolean),
+    personal: [
+      String((profile as any).birthDate ?? ''),
+      String((profile as any).birthLocation ?? ''),
+    ].filter(Boolean),
+    personalName: String((profile as any).name ?? '') || undefined,
+  };
 
-  return filtered;
+  return sanitizeSharedValue(
+    filtered,
+    settings.includePersonalInfo,
+    redactions,
+  ) as Partial<Profile>;
 }
 
 /**
@@ -257,6 +401,8 @@ export async function updateShareableLink(
     ...link.settings,
     ...settings
   };
+
+  validateProtectedShareSettings(updatedSettings);
 
   // Recalculate expiration if needed
   let expiresAt = link.expiresAt;

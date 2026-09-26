@@ -127,7 +127,14 @@ test("Codex Draw is explicitly symbolic, non-predictive, and does not pretend a 
     assert.match(body.evidence.note, /not.*prediction/i);
     assert.match(body.meaning, /symbolic prompts/i);
     assert.match(body.action, /medical, legal, financial/i);
-    assert.doesNotMatch(JSON.stringify(body), /transit signal/i);
+    assert.match(body.extras.codexInsight, /random draw is a reflection prompt/i);
+
+    const serialized = JSON.stringify(body);
+    assert.doesNotMatch(serialized, /transit signal/i);
+    assert.doesNotMatch(
+      serialized,
+      /this isn't random|confirmation of what you already sense|clear behavioral pattern/i,
+    );
   });
 });
 

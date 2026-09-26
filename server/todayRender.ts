@@ -1,7 +1,10 @@
 import { getPersonalDayLabel } from "@soulcodex/core";
+import { formatInTimeZone } from "date-fns-tz";
 
 export interface TodayCardData {
   codename: string;
+  /** Optional AI-generated observation target; not stored behavioral evidence. */
+  recognitionMoment?: string;
   title: string;
   focus: string;
   doList: string[];
@@ -9,7 +12,7 @@ export interface TodayCardData {
   watchouts: string[];
   decisionAdvice: string;
   moonPhase: string;
-  personalDayNumber: number;
+  personalDayNumber: number | null;
   personalDayLabel: string;
   confidenceLabel: string;
   topTheme?: string;
@@ -18,53 +21,92 @@ export interface TodayCardData {
   memoryCallout?: string;
 }
 
+
+function resolvedTodayCardDate(horoscopeData: any, profile: any, now: Date = new Date()): string {
+  const supplied = horoscopeData?.date;
+  if (typeof supplied === "string" && /^\d{4}-\d{2}-\d{2}$/.test(supplied)) {
+    return supplied;
+  }
+
+  const timezone =
+    typeof profile?.timezone === "string" && profile.timezone.trim()
+      ? profile.timezone.trim()
+      : null;
+
+  if (!timezone) return "Unavailable";
+
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(now);
+    return formatInTimeZone(now, timezone, "yyyy-MM-dd");
+  } catch {
+    return "Unavailable";
+  }
+}
+
 const DAY_DO: Record<number, string[]> = {
-  1: ["Start the one thing I've been circling", "Initiate — I don't wait for permission", "Trust my first instinct today"],
-  2: ["Listen before I speak", "Let a partnership carry some weight", "Resolve one tension with honesty"],
-  3: ["Say what's actually on my mind", "Make something — write, build, draw", "Connect with someone who challenges me"],
-  4: ["Organize one thing that's been messy", "Block time for uninterrupted work", "Finish what I started last week"],
-  5: ["Move — change my environment", "Say yes to something outside my routine", "Clear one thing from the stale pile"],
-  6: ["Support someone without keeping score", "Repair something I've been avoiding", "Create a moment of order at home"],
-  7: ["Go quiet for an hour — no input", "Research or study something deep", "Trust the pattern I keep seeing"],
-  8: ["Make one bold financial or strategic call", "Take responsibility for something I've delayed", "Set a boundary that protects my build"],
-  9: ["Complete or close one chapter", "Give something away — time, knowledge, energy", "Reflect on what this cycle taught me"]
+  1: ["Pick one useful beginning and take its first concrete step", "Choose a small action you can initiate without waiting for perfect certainty", "Write down your first instinct, then check it against the facts"],
+  2: ["Listen long enough to understand before responding", "Ask where collaboration would actually reduce friction", "Name one tension clearly and address the part you can influence"],
+  3: ["Express one idea clearly instead of scattering attention", "Make something concrete — write, build, sketch, or prototype", "Have one conversation that adds a useful perspective"],
+  4: ["Organize one messy area that is slowing progress", "Protect one focused work block", "Finish one existing task before opening another"],
+  5: ["Change one routine deliberately and observe the effect", "Try one low-cost option outside the usual pattern", "Clear one stale commitment, file, or task that no longer helps"],
+  6: ["Offer support without taking over someone else's responsibility", "Repair one avoidable point of friction", "Create one practical improvement in the home or daily routine"],
+  7: ["Reduce input for a while and review what you already know", "Research one question deeply enough to improve a real decision", "Write down the pattern you notice and look for evidence for and against it"],
+  8: ["Review one important financial or strategic decision before acting", "Take responsibility for one delayed obligation", "Set one boundary that protects a real priority"],
+  9: ["Complete or formally close one unfinished item", "Share time, knowledge, or resources only where it is genuinely useful", "Review what this cycle taught you without treating the symbolism as a prediction"]
 };
 
 const DAY_DONT: Record<number, string[]> = {
-  1: ["Defer to others when I know the answer", "Overthink before acting", "Let perfectionism stall my first move"],
-  2: ["Force outcomes before they're ready", "Argue when I should be listening", "Let pride block collaboration"],
-  3: ["Stay silent when I have something real to say", "Suppress creativity to look 'professional'", "Spend the day in pure reaction mode"],
-  4: ["Start something new before the old is done", "Ignore structure because it feels boring", "Skip the plan and wing it today"],
-  5: ["Stay in the same loop expecting different results", "Commit to something I'm not actually ready for", "Let fear of the unknown keep me static"],
-  6: ["Neglect my own needs to fix everyone else", "Avoid a difficult but necessary conversation", "Say yes when I mean no"],
-  7: ["Make a big decision based on noise", "Expose my process before it's ready", "Seek validation for a choice only I can make"],
-  8: ["Back down from something I've already committed to", "Let others define the terms", "Spend energy on the small when the big is waiting"],
-  9: ["Hold on to what's already finished", "Start a new project before closing the current one", "Ignore what this period is trying to teach me"]
+  1: ["Treat urgency as proof that an action is correct", "Keep analyzing after the next useful step is already clear", "Let perfectionism block a low-risk first move"],
+  2: ["Force agreement before the other person has been heard", "Argue past useful information", "Confuse cooperation with abandoning your own position"],
+  3: ["Say more just to fill space", "Hide a useful idea because it is unfinished", "Let constant reaction replace deliberate expression"],
+  4: ["Open several new tasks while important existing work is unfinished", "Reject structure only because it feels repetitive", "Skip a necessary plan for a high-cost decision"],
+  5: ["Change something important only to escape boredom", "Commit before checking the cost and consequences", "Treat novelty as automatically better"],
+  6: ["Take responsibility for problems that are not yours", "Delay a necessary repair conversation indefinitely", "Agree when your actual capacity says otherwise"],
+  7: ["Make a high-stakes decision from noise or isolation alone", "Publish unfinished work before its purpose is clear", "Collect validation instead of testing the reasoning"],
+  8: ["Double down on a commitment only because it already consumed effort", "Accept terms you have not reviewed", "Make a financial move because the day symbolism says to be bold"],
+  9: ["Keep an obligation only because it is familiar", "Start a replacement project before deciding what is actually complete", "Treat closure symbolism as proof that something must end"]
 };
 
 const DAY_WATCHOUTS: Record<number, string[]> = {
-  1: ["Impatience with people moving slower than me", "Starting strong, losing steam by afternoon"],
-  2: ["Over-accommodating — I may lose my own thread", "Emotional undercurrents in group dynamics"],
-  3: ["Scattered energy that spreads thin", "Saying more than I meant to"],
-  4: ["Frustration when results don't match the effort", "Rigidity passing as discipline"],
-  5: ["Impulsive decisions that feel liberating but cost me later", "Restlessness masking avoidance"],
-  6: ["Over-responsibility for others' problems", "Resentment building from unspoken needs"],
-  7: ["Overthinking replacing action", "Isolation deepening rather than refreshing"],
-  8: ["Pressure creating tunnel vision", "Ignoring feedback from people who see what I don't"],
-  9: ["Nostalgia slowing my forward movement", "Completion anxiety — finishing feels like loss"]
+  1: ["Notice whether urgency is turning into impatience", "Check whether an energetic start has a realistic follow-through"],
+  2: ["Notice whether accommodation is erasing your own position", "Check for assumptions about other people's emotions before acting on them"],
+  3: ["Watch for attention spreading across too many ideas", "Pause before saying more than the situation needs"],
+  4: ["Separate slow results from evidence that the method is wrong", "Check whether discipline has become unnecessary rigidity"],
+  5: ["Pause before treating an impulse as liberation", "Ask whether restlessness is pointing to a real problem or simple boredom"],
+  6: ["Check whether support has turned into over-responsibility", "Name needs early instead of assuming resentment proves what others should know"],
+  7: ["Watch for analysis replacing the next useful action", "Make sure solitude is helping rather than cutting off useful feedback"],
+  8: ["Check whether pressure is narrowing the evidence you are willing to see", "Review relevant feedback before increasing commitment"],
+  9: ["Notice whether familiarity is delaying a necessary review", "Treat feelings about completion as information, not proof that you should stay or leave"]
 };
 
+const NEUTRAL_DO = [
+  "Choose one concrete priority and finish the next useful step",
+  "Use observed facts before symbolic interpretation",
+  "Record what actually happens so tomorrow has better evidence",
+];
+
+const NEUTRAL_DONT = [
+  "Invent a personal cycle from missing birth data",
+  "Treat symbolic guidance as a guaranteed prediction",
+  "Force a decision because a placeholder says today is special",
+];
+
+const NEUTRAL_WATCHOUTS = [
+  "Filling missing evidence with certainty",
+  "Confusing a reflection prompt with a measured outcome",
+];
+
 const DECISION_ADVICE: Record<string, string> = {
-  calm_logic:     "My clearest thinking lands between 10am and noon. I lock big decisions into that window.",
-  sleep_on_it:    "I don't finalize anything today that I haven't slept on. My best answer comes tonight.",
-  quiet_instinct: "The first signal I got this morning is probably right. I trust it before the noise builds.",
-  willpower:      "I commit early and hold the line. Second-guessing costs more energy than following through.",
-  gut_yes_no:     "If I can't feel a clear yes, it's a no. I trust the silence.",
-  analysis:       "I map the decision before noon, choose by 2pm. More data after that won't change the call.",
-  gut:            "My intuition is ahead of my logic today. I move on the feeling.",
-  consensus:      "I check my thinking with one trusted person before acting. One voice, not five.",
-  impulse:        "I notice which impulses have energy and which have anxiety. I act on energy. I pause on anxiety.",
-  avoidance:      "I pick the thing I've been avoiding longest. I address it first — the rest is easier after."
+  calm_logic:     "I slow the decision down enough to separate facts, assumptions, and preferences before I commit.",
+  sleep_on_it:    "For a non-urgent decision, I give myself another review after rest instead of forcing certainty now.",
+  quiet_instinct: "I notice my first reaction, then compare it with the facts before treating it as guidance.",
+  willpower:      "I check whether the commitment still matches my goal before I spend more effort defending it.",
+  gut_yes_no:     "I treat a strong yes/no feeling as one input, then check it against consequences and constraints.",
+  analysis:       "I define what information would actually change the decision, then stop collecting data once that threshold is met.",
+  gut:            "I record the intuitive signal and test it against observable evidence before acting on it.",
+  consensus:      "I ask one relevant person for a useful counterpoint, then make the decision from the full evidence I have.",
+  impulse:        "I separate urgency from importance and give high-cost impulses a deliberate review before acting.",
+  avoidance:      "I name what I am avoiding, identify the smallest concrete next step, and decide whether it truly belongs on today's list."
 };
 
 const DAY_TITLE_LABELS: Record<number, string> = {
@@ -96,46 +138,64 @@ export function buildTodayCard(
   profile: any,
   codexSynthesis?: any
 ): TodayCardData {
-  const dayNum = Math.min(9, Math.max(1, horoscopeData?.personalDayNumber ?? 4));
-  const dayLabel = getPersonalDayLabel(dayNum);
-  const moonPhase = (horoscopeData?.moonPhase?.phase ?? "Full Moon").toLowerCase();
+  const rawDay = horoscopeData?.personalDayNumber;
+  const dayNum =
+    Number.isInteger(rawDay) && [1,2,3,4,5,6,7,8,9,11,22,33].includes(rawDay)
+      ? rawDay as number
+      : null;
+  const dayLabel = dayNum === null ? "Unavailable" : getPersonalDayLabel(dayNum);
+  const moonPhaseValue =
+    typeof horoscopeData?.moonPhase?.phase === "string" &&
+    horoscopeData.moonPhase.phase.trim()
+      ? horoscopeData.moonPhase.phase.trim()
+      : "Unavailable";
+  const moonPhase = moonPhaseValue.toLowerCase();
   const moonPrefix = MOON_TITLE_PREFIX[moonPhase] ?? "Focus";
 
   const decisionStyle: string =
-    profile?.signals?.decisionStyle ??
     profile?.userInputs?.decisionStyle ??
     "";
 
   const confidence = profile?.confidence ?? profile?.meta?.confidence;
   const confidenceLabel = confidence?.label ?? confidence?.badge ?? "Unverified";
 
-  const codename = codexSynthesis?.codename ?? profile?.archetype?.name ?? "The Quiet Builder";
-  const topTheme = codexSynthesis?.topThemes?.[0]?.tag ?? "precision";
+  const codename = codexSynthesis?.codename ?? profile?.archetype?.name ?? "Identity unresolved";
+  const topTheme =
+    typeof codexSynthesis?.topThemes?.[0]?.tag === "string" &&
+    codexSynthesis.topThemes[0].tag.trim()
+      ? codexSynthesis.topThemes[0].tag.trim()
+      : undefined;
 
-  const dayThemeDesc = DAY_THEME_DESC[dayNum] ?? "a focused phase for clarity and precision";
   const topTransit = horoscopeData?.personalTransits?.[0];
-  let focus = `Personal Day ${dayNum} — a ${dayLabel.toLowerCase()} phase for ${
-    topTheme.replace(/_/g, " ")
-  }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I stay in my lane and build today."}`;
+  let focus =
+    dayNum === null
+      ? `Personal Day unavailable — I use only the evidence actually present today. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I keep the reflection general instead of inventing a cycle."}`
+      : `Personal Day ${dayNum} — a ${dayLabel.toLowerCase()} reflection${
+          topTheme ? ` with emphasis on ${topTheme.replace(/_/g, " ")}` : ""
+        }. ${topTransit ? topTransit.description?.slice(0, 80) + "." : "I use this as a reflection prompt, not a prediction."}`;
 
   if (focus.length > 160) focus = focus.slice(0, 157) + "…";
 
-  const dayIndex = ((dayNum - 1) % 9) + 1;
+  const dayIndex =
+    dayNum === 11 ? 2 :
+    dayNum === 22 ? 4 :
+    dayNum === 33 ? 6 :
+    dayNum;
 
   return {
     codename,
-    title: `Day ${dayNum} — ${dayLabel}`,
+    title: dayNum === null ? "Today — Evidence First" : `Day ${dayNum} — ${dayLabel}`,
     focus,
-    doList: (DAY_DO[dayIndex] ?? DAY_DO[4]).slice(0, 3),
-    dontList: (DAY_DONT[dayIndex] ?? DAY_DONT[4]).slice(0, 3),
-    watchouts: (DAY_WATCHOUTS[dayIndex] ?? DAY_WATCHOUTS[4]).slice(0, 2),
+    doList: dayIndex === null ? NEUTRAL_DO : (DAY_DO[dayIndex] ?? NEUTRAL_DO).slice(0, 3),
+    dontList: dayIndex === null ? NEUTRAL_DONT : (DAY_DONT[dayIndex] ?? NEUTRAL_DONT).slice(0, 3),
+    watchouts: dayIndex === null ? NEUTRAL_WATCHOUTS : (DAY_WATCHOUTS[dayIndex] ?? NEUTRAL_WATCHOUTS).slice(0, 2),
     decisionAdvice: DECISION_ADVICE[decisionStyle] ?? "I let my decision breathe before committing. Clarity comes after the noise settles.",
-    moonPhase: horoscopeData?.moonPhase?.phase ?? "Full Moon",
+    moonPhase: moonPhaseValue,
     personalDayNumber: dayNum,
     personalDayLabel: dayLabel,
     confidenceLabel,
     topTheme,
-    date: horoscopeData?.date ?? new Date().toISOString().slice(0, 10)
+    date: resolvedTodayCardDate(horoscopeData, profile)
   };
 }
 
