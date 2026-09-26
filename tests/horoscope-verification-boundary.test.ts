@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { calculatePersonalTransitsFromProfile, generateDailyHoroscope } from "../packages/astrology/horoscope";
+import { calculateCurrentPlanets, calculatePersonalTransitsFromProfile, generateDailyHoroscope } from "../packages/astrology/horoscope";
 
 test("daily horoscope personal transits require verified natal geometry", () => {
   const rawLegacyProfile = {
@@ -87,4 +87,23 @@ test("daily horoscope cache requires a stable profile id", () => {
   assert.match(source, /if \(cacheKey\) \{\s*const cached = horoscopeCache\.get\(cacheKey\)/);
   assert.match(source, /if \(cacheKey\) \{\s*horoscopeCache\.set\(cacheKey, result\)/);
   assert.doesNotMatch(source, /profile\.id\}\+\$\{dateKey/);
+});
+
+
+test("daily horoscope current-sky calculation requires a valid date and complete ten-body payload", () => {
+  assert.throws(
+    () => calculateCurrentPlanets(new Date("not-a-date")),
+    /Horoscope sky date must be valid/,
+  );
+
+  const planets = calculateCurrentPlanets(new Date("2026-09-25T12:00:00Z"));
+  assert.equal(planets.length, 10);
+  assert.deepEqual(
+    planets.map((planet) => planet.name),
+    ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"],
+  );
+  for (const planet of planets) {
+    assert.equal(Number.isFinite(planet.longitude), true);
+    assert.equal(Number.isFinite(planet.degree), true);
+  }
 });
