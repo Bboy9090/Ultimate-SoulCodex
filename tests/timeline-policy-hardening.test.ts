@@ -16,6 +16,8 @@ import {
   personalYear as getPackageTimelinePersonalYear,
 } from '../packages/astrology/timeline/numerology';
 import { getAstrologySignals as getPackageTimelineAstrologySignals } from '../packages/astrology/timeline/astrology';
+import { generateTimeline as generateServiceTimeline } from '../services/timeline';
+import { generateTimeline as generatePackageTimeline } from '../packages/astrology/timeline';
 
 test('timeline phase policy maps master Personal Years explicitly', () => {
   assert.equal(timelinePhaseCycleYear(11), 2);
@@ -102,4 +104,43 @@ test('age alone never creates astronomy cycle claims in Timeline scoring', () =>
     getPackageTimelineAstrologySignals(birthDate, currentDate, {}),
     [],
   );
+});
+
+
+test('Timeline confidence follows governed Personal Year evidence, not unused birth-time fields', () => {
+  const input = {
+    profile: {
+      birthDate: '1990-09-17',
+    },
+    currentDateISO: '2026-09-25T12:00:00.000Z',
+  };
+
+  const service = generateServiceTimeline(input as any);
+  const pkg = generatePackageTimeline(input as any);
+
+  assert.equal(service.confidenceLabel, 'Full');
+  assert.equal(service.confidence.badge, 'verified');
+  assert.match(service.confidence.reason, /Personal Year signal/);
+  assert.match(service.confidence.reason, /Time-dependent astrology cycle claims are not included/);
+  assert.doesNotMatch(service.confidence.reason, /Birth time and location are set/);
+
+  assert.equal(pkg.confidence, 'Full');
+  assert.equal(service.phase, pkg.phase);
+});
+
+test('Timeline confidence stays partial when profile evidence is explicitly partial', () => {
+  const input = {
+    profile: {
+      birthDate: '1990-09-17',
+      confidenceLabel: 'partial',
+    },
+    currentDateISO: '2026-09-25T12:00:00.000Z',
+  };
+
+  const service = generateServiceTimeline(input as any);
+  const pkg = generatePackageTimeline(input as any);
+
+  assert.equal(service.confidenceLabel, 'Partial');
+  assert.equal(service.confidence.badge, 'partial');
+  assert.equal(pkg.confidence, 'Partial');
 });
