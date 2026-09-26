@@ -10,7 +10,6 @@ import {
 import type { StoredProfile } from "./ActiveProfileRepository";
 import {
   synthesizeVerifiedFoundationProfile,
-  type VerifiedAstrologyForSynthesis,
 } from "./foundationOfflineCodex";
 
 type PlacementEvidenceRecord = {
