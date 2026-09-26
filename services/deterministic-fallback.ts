@@ -81,7 +81,17 @@ function verifiedHumanDesign(profile: any): {
   authority: string;
 } {
   const hd = profile?.humanDesignData;
-  if (!hd || hd.status !== "verified") {
+  const hasTrustRecord = Boolean(
+    hd?.status === "verified" &&
+    hd?.engine &&
+    hd?.source &&
+    hd?.calculatedAt &&
+    hd?.inputTimestampUtc &&
+    hd?.verificationReceiptId &&
+    hd?.independentSource &&
+    hd?.verifiedAt
+  );
+  if (!hasTrustRecord) {
     return { type: "", strategy: "", authority: "" };
   }
   return {
