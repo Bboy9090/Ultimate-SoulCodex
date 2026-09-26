@@ -46,7 +46,9 @@ function verifiedSign(value: unknown): string | null {
     evidence &&
     typeof evidence.source === "string" && evidence.source.trim() &&
     typeof evidence.engine === "string" && evidence.engine.trim() &&
-    typeof evidence.calculatedAt === "string" && evidence.calculatedAt.trim()
+    typeof evidence.calculatedAt === "string" &&
+    evidence.calculatedAt.trim() &&
+    !Number.isNaN(Date.parse(evidence.calculatedAt))
   );
   return placement.verificationStatus === "verified" &&
     hasEvidence &&
@@ -86,11 +88,11 @@ function verifiedHumanDesign(value: unknown): Record<string, string> {
     hd.status === "verified" &&
     typeof hd.engine === "string" && hd.engine.trim() &&
     typeof hd.source === "string" && hd.source.trim() &&
-    typeof hd.calculatedAt === "string" && hd.calculatedAt.trim() &&
-    typeof hd.inputTimestampUtc === "string" && hd.inputTimestampUtc.trim() &&
+    typeof hd.calculatedAt === "string" && hd.calculatedAt.trim() && !Number.isNaN(Date.parse(hd.calculatedAt)) &&
+    typeof hd.inputTimestampUtc === "string" && hd.inputTimestampUtc.trim() && !Number.isNaN(Date.parse(hd.inputTimestampUtc)) &&
     typeof hd.verificationReceiptId === "string" && hd.verificationReceiptId.trim() &&
     typeof hd.independentSource === "string" && hd.independentSource.trim() &&
-    typeof hd.verifiedAt === "string" && hd.verifiedAt.trim()
+    typeof hd.verifiedAt === "string" && hd.verifiedAt.trim() && !Number.isNaN(Date.parse(hd.verifiedAt))
   );
   if (!hasTrustRecord) return {};
   const candidate = Object.keys(record(hd.candidate)).length
