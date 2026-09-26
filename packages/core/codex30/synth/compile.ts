@@ -21,24 +21,24 @@ export function compileBulletLists(signals: Signal[], themes: ThemeScore[]) {
 
   const tags = themes.slice(0, 8).map(t => t.tag);
 
-  if (tags.includes("precision"))         triggers.push("Sloppy work, vague promises, and people who won't follow through.");
-  if (tags.includes("privacy"))           triggers.push("Intrusion, forced openness, and being observed while you're still building.");
-  if (tags.includes("truth"))             triggers.push("Lies, manipulation, and 'word salad' excuses that waste your time.");
-  if (tags.includes("social_sensitivity"))triggers.push("Noisy environments and chaotic people when you're already at capacity.");
-  if (tags.includes("order"))             triggers.push("Chaos imposed by others when you've built a system that works.");
-  if (tags.includes("freedom"))           triggers.push("Being boxed into someone else's timeline or decision framework.");
-  if (tags.includes("intensity"))         triggers.push("Shallow conversations that go nowhere and energy spent on performance.");
-  if (tags.includes("legacy"))            triggers.push("Short-term thinking that trades the future for comfort right now.");
+  if (tags.includes("precision"))         triggers.push("Reflection prompt: notice whether vague promises or unfinished work create friction for you.");
+  if (tags.includes("privacy"))           triggers.push("Reflection prompt: notice when privacy helps you think clearly versus when withdrawal costs connection.");
+  if (tags.includes("truth"))             triggers.push("Reflection prompt: notice how ambiguity, inconsistency, or perceived dishonesty affects your decisions.");
+  if (tags.includes("social_sensitivity"))triggers.push("Reflection prompt: compare how different social environments affect your attention and energy.");
+  if (tags.includes("order"))             triggers.push("Reflection prompt: notice when structure supports you and when rigidity gets in the way.");
+  if (tags.includes("freedom"))           triggers.push("Reflection prompt: notice where autonomy improves your judgment and where coordination still matters.");
+  if (tags.includes("intensity"))         triggers.push("Reflection prompt: notice when depth is useful and when intensity makes a simple situation heavier.");
+  if (tags.includes("legacy"))            triggers.push("Reflection prompt: compare short-term relief with the longer-term outcome you actually want.");
 
-  prescriptions.push("Pick one build target and finish it. Your nervous system trusts completion over accumulation.");
-  prescriptions.push("Reduce input this week. Less scrolling, more making. Information is not progress.");
-  prescriptions.push("Say no once without explaining yourself. The explanation is optional.");
+  prescriptions.push("Experiment: choose one build target and finish a small, observable piece before adding another.");
+  prescriptions.push("Experiment: reduce one source of input for a day and compare whether focused output improves.");
+  prescriptions.push("Experiment: set one clear boundary in a low-risk situation and observe the result.");
 
   if (tags.includes("precision") || tags.includes("craft")) {
-    prescriptions.push("Do one thing with full attention. Quality over speed this cycle.");
+    prescriptions.push("Experiment: give one task uninterrupted attention and compare quality with your usual pace.");
   }
   if (tags.includes("emotion_depth") || tags.includes("healing")) {
-    prescriptions.push("Process before you produce. Thirty minutes of reflection before output.");
+    prescriptions.push("Experiment: take a short reflection pause before producing or responding, then compare the outcome.");
   }
 
   return {
@@ -50,8 +50,9 @@ export function compileBulletLists(signals: Signal[], themes: ThemeScore[]) {
 }
 
 export function pickCodename(themes: ThemeScore[]): string {
-  const top1 = themes[0]?.tag ?? "legacy";
-  const top2 = themes[1]?.tag ?? "craft";
+  if (themes.length === 0) return "Synthesis Pending";
+  const top1 = themes[0]?.tag;
+  const top2 = themes[1]?.tag;
 
   const map: Record<string, Record<string, string>> = {
     precision: {
@@ -105,5 +106,6 @@ export function pickCodename(themes: ThemeScore[]): string {
     }
   };
 
-  return map[top1]?.[top2] ?? map[top1]?.default ?? "The Quiet Storm Architect";
+  if (!top1) return "Synthesis Pending";
+  return (top2 ? map[top1]?.[top2] : undefined) ?? map[top1]?.default ?? `Symbolic ${top1.replace(/_/g, " ")} theme`;
 }
