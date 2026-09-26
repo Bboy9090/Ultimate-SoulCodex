@@ -1,89 +1,105 @@
 # Gate 1: Evidence Ledger Integration
 
-**Status:** In Development  
-**Branch:** gate1/evidence-ledger-integration  
-**Depends on:** PR #180 (merged)  
+**Status:** Core trust paths implemented; hardening and exact-head validation in progress  
+**Current hardening PR:** #358  
+**Canonical design history:** `governance/release-audits/GATE-1-EVIDENCE-LEDGER-GAP-ANALYSIS.md`
 
-**Canonical Reference:** See `governance/release-audits/GATE-1-EVIDENCE-LEDGER-GAP-ANALYSIS.md` for comprehensive current-state analysis and technical requirements.
-
----
-
-## Phase 1 Final Seam: Canonical Placement Types Extraction (COMPLETED)
-
-**Objective:** Eliminate local type duplication by moving canonical placement verification types to single source.
-
-**Completed Work:**
-- [x] Created `packages/core/placement/types.ts` with canonical types:
-  - `VerificationState`: placement lifecycle (unresolved → calculated → verified)
-  - `PlacementEvidence`: source + engine + timestamps metadata
-  - `PlacementLike`: placement that may not yet be verified
-  - `VerifiedPlacement`: placement passing all checks
-- [x] Exported through `packages/core/index.ts`
-- [x] Updated `client/src/lib/placementVerification.ts` to import (not declare)
-- [x] Updated `packages/astrology/astrology.ts` to import (not declare)
-- [x] Removed local type duplicates
-- [x] All tests pass (385/385)
-
-**Impact:** Authority over placement types now centralized. Subsystems (astrology, numerology, human design) can import canonical types without declaring local versions.
+> The older gap analysis remains useful as design history, but its “missing” inventory is no longer the current production state. This file records the live implementation boundary.
 
 ---
 
-## Gate 1 Evidence Ledger Integration: Full Scope
+## Current Authority
 
-**Requirement:** Complete tracking and validation of verification evidence across all foundational calculation systems (astrology, numerology, Human Design).
+Soul Codex now treats evidence as a promotion requirement, not decoration:
 
-### Evidence Systems to Integrate
+- a populated value is not automatically verified;
+- a copied `verified` label is not sufficient;
+- verified astrology requires source, engine, and a parseable calculation timestamp;
+- verified Human Design requires the approved trust-record fields and verification receipt;
+- deterministic numerology is recorded as calculated provenance, not external verification;
+- unresolved or incomplete evidence fails closed instead of inheriting legacy aliases or generic defaults.
 
-**Astrology:**
-- Sun placement verification evidence (source, engine, calculatedAt) ✓ Partial
-- Moon placement verification evidence (source, engine, calculatedAt) ✓ Partial
-- Ascendant verification evidence (source, engine, calculatedAt) ✓ Partial
-- Independent verification integration with ledger (PENDING)
-- Evidence state transitions (pending → verified) (PENDING)
+Canonical placement lifecycle and evidence types remain in `packages/core/placement/types.ts`.
 
-**Numerology:**
-- Life Path calculation provenance (PENDING)
-- Personal Day calculation provenance (PENDING)
-- Birthday number and other core numerologies (PENDING)
-- Evidence metadata capture in ledger (PENDING)
+---
 
-**Human Design:**
-- Type/Strategy calculation derivation (PENDING)
-- Profile/Line calculation evidence (PENDING)
-- Gate activation evidence (PENDING)
-- Evidence linking to foundational birth data (PENDING)
+## Implemented
 
-**Profile Persistence:**
-- Schema version tracking with evidence (PENDING)
-- Evidence metadata in storage and recovery (PENDING)
-- Deterministic recalculation with evidence validation (PENDING)
-- Migration path for profiles lacking evidence (PENDING)
+### Astrology
 
-## Definition of Done
+- [x] Sun, Moon, Ascendant and supported planetary placements carry explicit verification state.
+- [x] Independently verified placements carry provenance metadata.
+- [x] Production consumers reject `verified` placements that lack evidence-complete provenance.
+- [x] Canonical profile storage downgrades provenance-free `verified` labels.
+- [x] Profile reconciliation rejects provenance-free remote `verified` labels before synthesis.
+- [x] Deterministic horoscope and natal-report paths use evidence-gated placements.
+- [x] Verified longitudes are normalized without IEEE-754 display drift.
+- [x] Missing time/location remains explicit rather than fabricating Moon/Rising.
 
-- [ ] Evidence ledger captures verification metadata for all systems covered by Gate 1
-- [ ] Astrology verification evidence flows into ledger (source, engine, calculatedAt)
-- [ ] Numerology calculation provenance tracked in ledger
-- [ ] Human Design derivation evidence tracked in ledger
-- [ ] Profile persistence round-trip includes complete evidence metadata
-- [ ] Dedicated test suite validates ledger completeness
-- [ ] No evidence silently dropped or upgraded
-- [ ] All workspace tests pass (385/385) ✓ PHASE 1 DONE
-- [ ] Typecheck passes ✓ PHASE 1 DONE
-- [ ] Build passes ✓ PHASE 1 DONE
+### Numerology
 
-## Files to Examine/Modify
+Evidence-backed wrappers exist in `packages/core/evidence-ledger/integrations.ts` for:
 
-- packages/core/placement/types.ts (canonical types) ✓ CREATED
-- packages/astrology/* (verification evidence)
-- packages/numerology/* (calculation provenance)
-- packages/human-design/* (derivation evidence)
-- client/src/lib/ActiveProfileRepository.ts (evidence persistence)
-- server/tests/gate1-foundation.test.ts (evidence validation)
+- [x] Personal Day
+- [x] Personal Year
+- [x] Personal Month
+- [x] Life Path
+- [x] Expression
+- [x] Soul Urge
+- [x] Personality
 
-## Testing Strategy
+Hardening now also guarantees:
 
-- Verify evidence metadata round-trips through storage
-- Verify evidence state transitions are tracked
-- Verify no evidence is silently dropped or promoted
-- Verify numerology and Human Design provenances are captured
+- [x] Master Personal Years 11, 22 and 33 remain valid through Personal Month evidence.
+- [x] Explicit zero/invalid Personal Year inputs fail closed instead of defaulting to the current year.
+- [x] Numerology evidence uses calculated provenance language rather than claiming independent verification.
+
+### Human Design
+
+- [x] Canonical calculation supports explicit unresolved state.
+- [x] `calculateHumanDesignWithEvidence()` emits evidence entries for resolved calculations.
+- [x] Production online verification produces an approved Human Design trust record.
+- [x] A `verified` label without engine/source/timestamps/receipt/independent source is rejected.
+- [x] Storage and reconciliation preserve verified Human Design only when the trust record is complete.
+- [x] Deterministic fallback and natal-report consumers enforce the same trust boundary.
+- [x] Calculated-unverified Human Design cannot drive verified synthesis.
+
+### Profile Persistence
+
+- [x] Canonical storage owns schema versioning and timestamps.
+- [x] Astrology evidence survives save/load round trips.
+- [x] Human Design evidence/trust metadata survives save/load round trips.
+- [x] Provenance-free verification claims are downgraded during save.
+- [x] Malformed evidence timestamps are rejected from verified state.
+- [x] Reconciliation prevents untrusted remote snapshots from bypassing storage safeguards.
+- [x] Legacy aliases cannot promote unresolved placements.
+
+---
+
+## Active Hardening / Remaining Gate Work
+
+- [ ] Keep exact-head Diamond Way, store-candidate, and Xcode parity workflows green after every trust-boundary change.
+- [ ] Extend evidence-wrapper coverage to any remaining production numerology outputs that are still outside the seven canonical wrappers (for example Birthday/Maturity where those outputs are surfaced).
+- [ ] Continue replacing loose `any` profile evidence shapes with shared typed contracts where doing so does not break migration compatibility.
+- [ ] Audit every remaining user-visible consumer for direct `status === "verified"` checks that do not also validate provenance.
+- [ ] Consolidate repeated trust predicates into a shared cross-runtime contract after behavior is locked by regression tests.
+- [ ] Keep historical audit documents clearly marked as historical when their gap inventories have been superseded.
+
+---
+
+## Regression Evidence
+
+Current relevant regression coverage includes:
+
+- `tests/active-profile-contract.test.ts`
+- `tests/profile-verification-reconciliation.test.ts`
+- `tests/deterministic-fallback-evidence-contract.test.ts`
+- `tests/daily-horoscope-evidence-contract.test.ts`
+- `tests/natal-report-contract.test.ts`
+- `tests/primary-synthesis-system-policy.test.ts`
+- `tests/verified-profile-differentiation.test.ts`
+- `tests/verified-profile-differentiation-corpus.test.ts`
+- `packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts`
+- `packages/astrology/__tests__/human-design-phase3.test.ts`
+
+The release rule is simple: existence of data never upgrades trust. Promotion requires the evidence appropriate to that system, and exact-head CI remains the final merge gate.
