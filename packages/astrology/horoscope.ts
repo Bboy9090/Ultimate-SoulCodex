@@ -121,16 +121,36 @@ function longitudeToSign(longitude: number): { sign: string; degree: number } {
 }
 
 export function calculateCurrentPlanets(date: Date = new Date()): PlanetPosition[] {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    throw new RangeError('Horoscope sky date must be valid');
+  }
+
   const planets: PlanetPosition[] = [];
+  const failures: string[] = [];
+
   for (const name of ALL_PLANETS) {
     try {
       const longitude = calculatePlanetLongitude(name, date);
+      if (!Number.isFinite(longitude)) {
+        throw new Error('non_finite_longitude');
+      }
       const { sign, degree } = longitudeToSign(longitude);
-      planets.push({ name, sign, degree: Math.round(degree * 100) / 100, longitude: Math.round(longitude * 100) / 100 });
+      planets.push({
+        name,
+        sign,
+        degree: Math.round(degree * 100) / 100,
+        longitude: Math.round(longitude * 100) / 100,
+      });
     } catch (err) {
       console.error(`[Horoscope] Failed to calculate ${name}:`, err);
+      failures.push(name);
     }
   }
+
+  if (failures.length > 0 || planets.length !== ALL_PLANETS.length) {
+    throw new Error(`horoscope_current_sky_incomplete:${failures.join(',') || 'unknown'}`);
+  }
+
   return planets;
 }
 
