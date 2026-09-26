@@ -371,7 +371,7 @@ describe('Server/Core Numerology Contract', () => {
       assert.ok(serverResult.interpretations.expression);
       assert.strictEqual(
         serverResult.interpretations.expression,
-        `Expression Number ${serverResult.expression}: Your talents and abilities shine through creative manifestation.`
+        `Expression Number ${serverResult.expression}: deterministic Pythagorean name-number mapping, used here as symbolic reflection rather than a measured talent profile.`
       );
     });
 
