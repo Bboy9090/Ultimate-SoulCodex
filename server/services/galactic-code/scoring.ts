@@ -3,7 +3,7 @@
  *
  * Score 10 axes (0-100) based on weighted evidence from:
  * - Astrology (Sun, Moon, Rising, Mercury, Venus, Mars, aspects, elements, houses)
- * - Human Design (Type, Authority, Profile, centers, channels, cross)
+ * - Human Design (verified Type, Authority, Profile, and defined centers)
  * - Numerology (Life Path, Expression, Birthday, etc.)
  * - Behavior (traits, decision style, stress pattern, etc.)
  */
@@ -47,7 +47,6 @@ const HD_WEIGHTS = {
   authority: 7,
   profile: 6,
   definedCenter: 2,
-  incarnationCross: 5,
 };
 
 const NUMEROLOGY_WEIGHTS = {
@@ -262,7 +261,7 @@ export function scoreAxes(normalized: NormalizedGalacticInput): GalacticAxisScor
     }
   }
 
-  // Human Design: verified type, authority, profile, centers, and channels all contribute.
+  // Human Design: only governed verified core fields with an approved semantic map contribute.
   if (normalized.humanDesign.type) {
     applyWeighted(
       axes,
