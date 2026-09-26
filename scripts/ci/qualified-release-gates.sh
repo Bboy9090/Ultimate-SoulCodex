@@ -73,12 +73,12 @@ node --import tsx --test \
   tests/release-manifest-contract.test.ts \
   tests/qualified-release-gate-authority.test.ts \
   tests/assessment-source-boundary.test.ts \
-  tests/aspect-interpretation-fallback-contract.test.ts \\
-  tests/soul-profile-behavioral-evidence-contract.test.ts \\
-  tests/deterministic-fallback-evidence-contract.test.ts \\
-  tests/prompt-sanitization-evidence-contract.test.ts \\
-  tests/daily-horoscope-evidence-contract.test.ts \\
-  tests/daily-insight-system-eligibility.test.ts \\
-  packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts \\
-  packages/core/__tests__/personal-numbers.test.ts
+  tests/aspect-interpretation-fallback-contract.test.ts \
+  tests/soul-profile-behavioral-evidence-contract.test.ts \
+  tests/deterministic-fallback-evidence-contract.test.ts \
+  tests/prompt-sanitization-evidence-contract.test.ts \
+  tests/daily-horoscope-evidence-contract.test.ts \
+  tests/daily-insight-system-eligibility.test.ts \
+  packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts \
+  packages/core/__tests__/personal-numbers.test.ts \
   tests/assessment-interpretation-boundary.test.ts
