@@ -154,7 +154,13 @@ export function calcPersonalYearWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForDate(birthDate);
+  const dateInputState = deriveInputStateForDate(birthDate);
+  const yearValid = Number.isInteger(targetYear) && targetYear > 0;
+  const derivedInputState: InputState = dateInputState !== 'valid'
+    ? dateInputState
+    : yearValid
+      ? 'valid'
+      : 'invalid';
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   if (derivedInputState !== 'valid') {
@@ -170,9 +176,10 @@ export function calcPersonalYearWithEvidence(
           `target_year_${targetYear}`,
         ],
         reasoning: [
-          derivedInputState === 'missing' ? 'Birth date not provided' :
-          derivedInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
-          'Birth date could not be processed',
+          dateInputState === 'missing' ? 'Birth date not provided' :
+          dateInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          !yearValid ? `Target year ${targetYear} must be a positive integer` :
+          'Birth date or target year could not be processed',
         ],
         limitations: [
           'Personal Year cycles annually, changes on birthday',
