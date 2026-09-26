@@ -1,3 +1,4 @@
+import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 export type ClarityConfidence =
   | "verified"
   | "deterministic"
@@ -204,19 +205,7 @@ function verifiedEqualHouses(astrology: AnyRecord): boolean {
 }
 
 function verifiedHumanDesignCore(value: AnyRecord): boolean {
-  const trustComplete = Boolean(
-    value.status === "verified" &&
-    evidenceText(value.engine) &&
-    evidenceText(value.source) &&
-    evidenceTimestamp(value.calculatedAt) &&
-    evidenceTimestamp(value.inputTimestampUtc) &&
-    evidenceText(value.verificationReceiptId) &&
-    evidenceText(value.independentSource) &&
-    evidenceTimestamp(value.verifiedAt)
-  );
-  return trustComplete &&
-    [value.type, value.strategy, value.authority, value.profile]
-      .every((field) => typeof field === "string" && field.trim().length > 0);
+  return hasVerifiedHumanDesignTrust(value);
 }
 
 function appendTheme(base: string, sentence?: string): string {
