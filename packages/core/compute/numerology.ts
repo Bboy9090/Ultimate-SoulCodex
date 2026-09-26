@@ -9,7 +9,7 @@ export const NUMEROLOGY_POLICY = Object.freeze({
   vowels: 'AEIOU',
   yPolicy: 'consonant' as const,
   lifePathFormula: 'birth month + birth day + birth year, then digit-reduce while preserving 11/22/33',
-  nameNormalization: 'Unicode NFKD transliteration to A-Z before Pythagorean letter mapping',
+  nameNormalization: 'Latin-script NFKD normalization plus explicit supported character transliteration to A-Z before Pythagorean letter mapping',
 });
 
 export type NumerologyReduction = {
