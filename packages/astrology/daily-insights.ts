@@ -3,6 +3,8 @@ import { getDailyContext, type DailyContext } from './daily-context';
 import { selectTemplates } from './template-bank';
 import { generateDailyAffirmations, type Affirmation } from './affirmations';
 import crypto from 'crypto';
+import { formatInTimeZone } from 'date-fns-tz';
+import { parseDateOnly } from '@soulcodex/core';
 
 export interface DailyInsightData {
   date: string;
@@ -28,6 +30,39 @@ export interface DailyInsightData {
   };
 }
 
+
+function resolveDailyInsightDate(
+  profile: Profile,
+  referenceInstant: Date,
+  calendarDateISO?: string,
+): string {
+  if (!(referenceInstant instanceof Date) || Number.isNaN(referenceInstant.getTime())) {
+    throw new RangeError('Daily insights require a valid reference instant');
+  }
+
+  if (calendarDateISO) {
+    parseDateOnly(calendarDateISO);
+    return calendarDateISO;
+  }
+
+  const timezone =
+    typeof (profile as any)?.timezone === 'string' && (profile as any).timezone.trim()
+      ? (profile as any).timezone.trim()
+      : null;
+
+  if (!timezone) {
+    throw new RangeError('Daily insights timezone is required when calendarDateISO is omitted');
+  }
+
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format(referenceInstant);
+  } catch {
+    throw new RangeError(`Invalid daily insights timezone: ${timezone}`);
+  }
+
+  return formatInTimeZone(referenceInstant, timezone, 'yyyy-MM-dd');
+}
+
 function extractProfileSummary(profile: Profile) {
   // The daily template selector uses only governed current-day calculations.
   // Do not read stored legacy identity systems into this context.
@@ -43,10 +78,16 @@ export function generateDailyInsights(
   calendarDateISO?: string,
   referenceInstant: Date = new Date(),
 ): { data: DailyInsightData; templateIds: string[]; contentHash: string } {
+  const resolvedCalendarDateISO = resolveDailyInsightDate(
+    profile,
+    referenceInstant,
+    calendarDateISO,
+  );
+
   const dailyContext = getDailyContext(
     profile.birthDate,
     referenceInstant,
-    calendarDateISO,
+    resolvedCalendarDateISO,
   );
   const profileSummary = extractProfileSummary(profile);
   
