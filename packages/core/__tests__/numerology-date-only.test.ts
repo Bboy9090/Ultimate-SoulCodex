@@ -144,3 +144,18 @@ test('name numerology fails closed for unsupported non-Latin scripts', () => {
   assert.equal(normalizeNumerologyName('Алексей'), '');
   assert.throws(() => calcExpression('Алексей'), /canonical A-Z letter/);
 });
+
+
+test('legacy Personal Year month/day signature rejects impossible calendar pairs', () => {
+  assert.throws(() => calcPersonalYear(2, 30, 2026), /valid birth month\/day/);
+  assert.throws(() => calcPersonalYear(4, 31, 2026), /valid birth month\/day/);
+  assert.doesNotThrow(() => calcPersonalYear(2, 29, 2026));
+});
+
+test('Personal Year omitted target year uses UTC year deterministically', () => {
+  const currentUtcYear = new Date().getUTCFullYear();
+  assert.equal(
+    calcPersonalYear('1990-09-17'),
+    calcPersonalYear('1990-09-17', currentUtcYear),
+  );
+});
