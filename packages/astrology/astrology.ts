@@ -19,7 +19,7 @@ import * as geoTz from 'geo-tz';
 
 interface PlanetData {
   sign: string;
-  house: number;
+  house?: number;
   degree: number;
   longitude: number;
   interpretation: {
@@ -28,7 +28,7 @@ interface PlanetData {
     keywords: string[];
     spiritualMeaning: string;
   };
-  houseInterpretation: {
+  houseInterpretation?: {
     title: string;
     description: string;
     themes: string[];
@@ -40,7 +40,7 @@ interface AstrologyData {
   sunSign: string;
   moonSign: string;
   risingSign: string;
-  planets: {
+  planets: Partial<{
     sun: PlanetData;
     moon: PlanetData;
     mercury: PlanetData;
@@ -51,7 +51,7 @@ interface AstrologyData {
     uranus: PlanetData;
     neptune: PlanetData;
     pluto: PlanetData;
-  };
+  }>;
   houses: Array<{
     sign: string;
     degree: number;
@@ -424,30 +424,47 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const moonSign = moonResolved ? moonPos.sign : "Unknown";
   const risingSign = risingResolved ? ascendantData.sign : "Unknown";
   
-  function createPlanetData(planetName: string, pos: { longitude: number; sign: string; degree: number }): PlanetData {
-    const house = calculateHousePosition(pos.longitude, houseCusps);
-    return {
+  function createPlanetData(
+    planetName: string,
+    pos: { longitude: number; sign: string; degree: number },
+    includeHouse: boolean,
+  ): PlanetData {
+    const base: PlanetData = {
       sign: pos.sign,
-      house,
       degree: pos.degree,
       longitude: pos.longitude,
       interpretation: getPlanetSignInterpretation(planetName, pos.sign),
-      houseInterpretation: getHouseInterpretation(house)
+    };
+
+    if (!includeHouse) return base;
+
+    const house = calculateHousePosition(pos.longitude, houseCusps);
+    return {
+      ...base,
+      house,
+      houseInterpretation: getHouseInterpretation(house),
     };
   }
-  
-  const planets = {
-    sun: createPlanetData('sun', sunPos),
-    moon: createPlanetData('moon', moonPos),
-    mercury: createPlanetData('mercury', mercuryPos),
-    venus: createPlanetData('venus', venusPos),
-    mars: createPlanetData('mars', marsPos),
-    jupiter: createPlanetData('jupiter', jupiterPos),
-    saturn: createPlanetData('saturn', saturnPos),
-    uranus: createPlanetData('uranus', uranusPos),
-    neptune: createPlanetData('neptune', neptunePos),
-    pluto: createPlanetData('pluto', plutoPos)
-  };
+
+  // Without an exact civil timestamp, only the date-based Sun candidate is
+  // exposed. Other planetary positions are withheld rather than silently
+  // freezing them at fallback noon. Houses require resolved Rising/location.
+  const planets: AstrologyData["planets"] = moonResolved
+    ? {
+        sun: createPlanetData('sun', sunPos, risingResolved),
+        moon: createPlanetData('moon', moonPos, risingResolved),
+        mercury: createPlanetData('mercury', mercuryPos, risingResolved),
+        venus: createPlanetData('venus', venusPos, risingResolved),
+        mars: createPlanetData('mars', marsPos, risingResolved),
+        jupiter: createPlanetData('jupiter', jupiterPos, risingResolved),
+        saturn: createPlanetData('saturn', saturnPos, risingResolved),
+        uranus: createPlanetData('uranus', uranusPos, risingResolved),
+        neptune: createPlanetData('neptune', neptunePos, risingResolved),
+        pluto: createPlanetData('pluto', plutoPos, risingResolved),
+      }
+    : {
+        sun: createPlanetData('sun', sunPos, false),
+      };
   
   const houses = risingResolved
     ? houseCusps.map((cuspLongitude, index) => ({
