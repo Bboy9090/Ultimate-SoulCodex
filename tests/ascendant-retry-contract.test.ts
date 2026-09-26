@@ -7,6 +7,22 @@ import {
   type ReconciledOfflineProfile,
 } from "../client/src/lib/profileVerificationReconciliation.ts";
 
+const placementEvidence = {
+  source: "independent ephemeris comparison",
+  engine: "ascendant-retry-test-reference@1",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+};
+
+const humanDesignTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 function exactProfile(): ReconciledOfflineProfile {
   const local = generateOfflineCodexProfile(
     {
@@ -24,8 +40,8 @@ function exactProfile(): ReconciledOfflineProfile {
   return {
     ...local,
     verifiedAstrologyData: {
-      sun: { verificationStatus: "verified", sign: "Virgo" },
-      moon: { verificationStatus: "verified", sign: "Virgo" },
+      sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+      moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
       rising: {
         verificationStatus: "pending_independent_verification",
         sign: null,
@@ -54,14 +70,18 @@ test("verified Rising alone still refreshes when the full natal contract is avai
   const profile = exactProfile();
   profile.verifiedAstrologyData = {
     ...profile.verifiedAstrologyData,
-    rising: { verificationStatus: "verified", sign: "Scorpio" },
+    rising: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
   };
   assert.equal(profileNeedsOnlineVerification(profile), true);
 });
 
 test("verified full natal chart and Human Design complete the exact-input verification requirement", () => {
   const profile = exactProfile();
-  const verified = (sign: string) => ({ verificationStatus: "verified", sign });
+  const verified = (sign: string) => ({
+    verificationStatus: "verified",
+    sign,
+    evidence: placementEvidence,
+  });
   const signs = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
     "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
@@ -162,6 +182,7 @@ test("verified full natal chart and Human Design complete the exact-input verifi
     strategy: "To Respond",
     authority: "Sacral",
     profile: "4/6",
+    ...humanDesignTrust,
   };
   assert.equal(profileNeedsOnlineVerification(profile), false);
 });
