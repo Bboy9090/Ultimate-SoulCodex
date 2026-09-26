@@ -205,6 +205,21 @@ const humanDesignTemplates: TemplateVariation[] = [
   },
 ];
 
+
+function stableStringHash(value: unknown): number {
+  const text =
+    typeof value === 'string' || typeof value === 'number'
+      ? String(value)
+      : '';
+
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash >>> 0;
+}
+
 export function selectTemplates(
   dailyContext: DailyContext,
   profileData: any,
@@ -220,9 +235,9 @@ export function selectTemplates(
     humandesign: humanDesignTemplates,
   };
 
-  const seed =
-    parseInt(dailyContext.date.replace(/-/g, ''), 10) +
-    (profileData.id ? String(profileData.id).charCodeAt(0) : 0);
+  const dateSeed = parseInt(dailyContext.date.replace(/-/g, ''), 10);
+  const profileSeed = stableStringHash(profileData?.id);
+  const seed = (dateSeed ^ profileSeed) >>> 0;
 
   const categories = Object.keys(governedByCategory);
   const shuffledCategories = [...categories].sort((a, b) => {
