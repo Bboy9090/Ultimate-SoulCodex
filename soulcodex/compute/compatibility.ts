@@ -5,8 +5,15 @@ function scoreMatch(a: string | undefined, b: string | undefined): number {
   return a.toLowerCase() === b.toLowerCase() ? 90 : 55;
 }
 
-function scoreSame(a: string, b: string): number {
-  return a === b ? 85 : 50;
+function signalOverlap(a: string[] | undefined, b: string[] | undefined): number {
+  if (!a?.length || !b?.length) return 0;
+  const left = new Set(a.map((value) => value.toLowerCase()));
+  return b.filter((value) => left.has(value.toLowerCase())).length;
+}
+
+function scoreSignalSets(a: string[] | undefined, b: string[] | undefined): number {
+  if (!a?.length || !b?.length) return 50;
+  return signalOverlap(a, b) > 0 ? 85 : 50;
 }
 
 function overlapCount(a: string[], b: string[]): number {
@@ -19,18 +26,22 @@ export function compatibility(a: SoulSignals, b: SoulSignals): CompatibilityScor
     label: "Identity",
     score: Math.round((scoreMatch(a.sunSign, b.sunSign) + scoreMatch(a.moonSign, b.moonSign)) / 2),
     note:
-      a.sunSign === b.sunSign
-        ? "You share the same sun sign — you'll understand each other's drive."
-        : "Different sun signs means different core drives; respect that gap.",
+      !a.sunSign || !b.sunSign
+        ? "Verified Sun-sign evidence is incomplete, so this identity comparison stays neutral."
+        : a.sunSign === b.sunSign
+          ? "You share the same Sun sign, so the same symbolic identity lens is active for both profiles."
+          : "Your verified Sun signs differ, so this symbolic identity lens describes different emphases.",
   };
 
   const stress: CompatibilityDimension = {
     label: "Stress",
-    score: scoreSame(a.stressElement, b.stressElement),
+    score: scoreSignalSets(a.stressElement, b.stressElement),
     note:
-      a.stressElement === b.stressElement
-        ? "You stress the same way — you'll get each other, but you can also spiral together."
-        : `One of you goes ${a.stressElement}, the other goes ${b.stressElement} — learn each other's shutdown signals.`,
+      !a.stressElement?.length || !b.stressElement?.length
+        ? "There is not enough shared stress-response evidence yet to compare this dimension."
+        : signalOverlap(a.stressElement, b.stressElement) > 0
+          ? "You share at least one stress-response signal, which can make each other's pressure patterns easier to recognize."
+          : `Your recorded stress-response signals differ (${a.stressElement.join(", ")} vs ${b.stressElement.join(", ")}); learn each other's shutdown and escalation cues.`,
   };
 
   const valuesOverlap = overlapCount(a.nonNegotiables, b.nonNegotiables);
@@ -46,11 +57,13 @@ export function compatibility(a: SoulSignals, b: SoulSignals): CompatibilityScor
 
   const decisions: CompatibilityDimension = {
     label: "Decisions",
-    score: scoreSame(a.decisionStyle, b.decisionStyle),
+    score: scoreSignalSets(a.decisionStyle, b.decisionStyle),
     note:
-      a.decisionStyle === b.decisionStyle
-        ? "You make decisions the same way — fewer surprises."
-        : `One decides by ${a.decisionStyle}, the other by ${b.decisionStyle} — expect friction when stakes are high.`,
+      !a.decisionStyle?.length || !b.decisionStyle?.length
+        ? "There is not enough direct decision-style evidence yet to compare this dimension."
+        : signalOverlap(a.decisionStyle, b.decisionStyle) > 0
+          ? "You share at least one decision-style signal, so part of your decision process should feel familiar to each other."
+          : `Your recorded decision styles differ (${a.decisionStyle.join(", ")} vs ${b.decisionStyle.join(", ")}); agree on a process before high-stakes calls.`,
   };
 
   const overall = Math.round(
@@ -59,9 +72,13 @@ export function compatibility(a: SoulSignals, b: SoulSignals): CompatibilityScor
 
   const friction: string[] = [];
   if (identity.score < 60) friction.push("Core drives differ — you'll need to translate for each other.");
-  if (stress.score < 60) friction.push("You handle pressure differently — don't take the other's shutdown personally.");
+  if (a.stressElement?.length && b.stressElement?.length && stress.score < 60) {
+    friction.push("You handle pressure differently — don't take the other's shutdown personally.");
+  }
   if (values.score < 60) friction.push("Your boundaries don't match — negotiate them before a crisis.");
-  if (decisions.score < 60) friction.push("Decision pace mismatch — agree on a process before big calls.");
+  if (a.decisionStyle?.length && b.decisionStyle?.length && decisions.score < 60) {
+    friction.push("Decision pace mismatch — agree on a process before big calls.");
+  }
 
   const synergy: string[] = [];
   if (identity.score >= 75) synergy.push("Your identities complement each other well.");
