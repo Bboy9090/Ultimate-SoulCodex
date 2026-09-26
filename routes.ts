@@ -14,7 +14,6 @@ import { synthesizeArchetype, generateIntegrationAnalysis, generatePersonalizedI
 import { generateBiography, generateDailyGuidance } from "./services/openai";
 import { calculateHumanDesign } from "@soulcodex/astrology";
 import { generateDailyInsights } from "./services/daily-insights";
-import { calculateCompatibility } from "./services/compatibility";
 import { generateCompatibilityInsights } from "./services/compatibility-insights";
 import { getMatchesByMode, type RelationshipMode } from "./services/archetype-matches";
 import { getMoonPhase, getMoonSign, getCurrentHDGate, calculateUniversalDayNumber, calculatePersonalDayNumber } from "./services/daily-context";
@@ -2292,97 +2291,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Calculate compatibility between two profiles
-  app.post("/api/compatibility", async (req, res) => {
-    try {
-      const { profile1Id, profile2Id } = req.body;
-      
-      if (!profile1Id || !profile2Id) {
-        return res.status(400).json({ message: "Both profile1Id and profile2Id are required" });
-      }
-      
-      if (profile1Id === profile2Id) {
-        return res.status(400).json({ message: "Cannot calculate compatibility with the same profile" });
-      }
-      
-      console.log(`[CalculateCompatibility] Calculating compatibility between ${profile1Id} and ${profile2Id}`);
-      
-      // Check if we already have this compatibility calculated
-      const existingCompatibility = await storage.getCompatibility(profile1Id, profile2Id);
-      if (existingCompatibility) {
-        console.log(`[CalculateCompatibility] Returning cached compatibility`);
-        return res.json(existingCompatibility);
-      }
-      
-      // Get both profiles
-      const [profile1, profile2] = await Promise.all([
-        storage.getProfile(profile1Id),
-        storage.getProfile(profile2Id)
-      ]);
-      
-      if (!profile1) {
-        return res.status(404).json({ message: `Profile ${profile1Id} not found` });
-      }
-      if (!profile2) {
-        return res.status(404).json({ message: `Profile ${profile2Id} not found` });
-      }
-      
-      // Calculate compatibility
-      console.log(`[CalculateCompatibility] Running compatibility analysis`);
-      const compatibilityResult = calculateCompatibility(profile1, profile2);
-      
-      // Store the result
-      const savedCompatibility = await storage.createCompatibility({
-        profile1Id,
-        profile2Id,
-        overallScore: compatibilityResult.overallScore,
-        compatibilityData: compatibilityResult as any,
-      });
-      
-      // Add profile data to response
-      const astro1 = profile1.astrologyData as any;
-      const astro2 = profile2.astrologyData as any;
-      const num1 = profile1.numerologyData as any;
-      const num2 = profile2.numerologyData as any;
-      const hd1 = profile1.humanDesignData as any;
-      const hd2 = profile2.humanDesignData as any;
-      const pers1 = profile1.personalityData as any;
-      const pers2 = profile2.personalityData as any;
-      
-      const response = {
-        ...savedCompatibility,
-        // Surface scoring-honesty fields at the top level too (also in compatibilityData).
-        confidence: (compatibilityResult as any).confidence,
-        systemsUsed: (compatibilityResult as any).systemsUsed,
-        systemsExcluded: (compatibilityResult as any).systemsExcluded,
-        missingDataWarnings: (compatibilityResult as any).missingDataWarnings,
-        profile1: {
-          name: profile1.name,
-          sunSign: astro1?.sunSign,
-          moonSign: astro1?.moonSign,
-          risingSign: astro1?.risingSign,
-          lifePath: num1?.lifePath,
-          hdType: hd1?.type,
-          enneagramType: pers1?.enneagram?.type,
-          mbtiType: pers1?.mbti?.type
-        },
-        profile2: {
-          name: profile2.name,
-          sunSign: astro2?.sunSign,
-          moonSign: astro2?.moonSign,
-          risingSign: astro2?.risingSign,
-          lifePath: num2?.lifePath,
-          hdType: hd2?.type,
-          enneagramType: pers2?.enneagram?.type,
-          mbtiType: pers2?.mbti?.type
-        }
-      };
-      
-      console.log(`[CalculateCompatibility] Compatibility calculated: ${compatibilityResult.overallScore}%`);
-      res.json(response);
-    } catch (error) {
-      return handleError(error, res, "CalculateCompatibility");
-    }
+  // Retired legacy aggregate compatibility endpoint.
+  // The production UI uses the evidence-aware /api/compatibility/archetype-matches
+  // and /api/compatibility/person contracts instead.
+  app.post("/api/compatibility", (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_retired",
+      message:
+        "The legacy aggregate compatibility score is retired. Use the evidence-aware compatibility endpoints.",
+      supportedEndpoints: [
+        "/api/compatibility/archetype-matches",
+        "/api/compatibility/person",
+      ],
+    });
   });
 
   // Get all compatibilities for a specific profile
@@ -2405,120 +2326,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/compatibility/:profileId", async (req, res) => {
-    try {
-      const { profileId } = req.params;
-      
-      console.log(`[GetCompatibilities] Fetching compatibilities for profile ${profileId}`);
-      
-      const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-      
-      const compatibilities = await storage.getProfileCompatibilities(profileId);
-      
-      console.log(`[GetCompatibilities] Found ${compatibilities.length} compatibility analyses`);
-      res.json(compatibilities);
-    } catch (error) {
-      return handleError(error, res, "GetCompatibilities");
-    }
+  // Cached aggregate compatibility records were produced by the retired
+  // legacy scoring engine and must not be presented as current evidence-aware results.
+  app.get("/api/compatibility/:profile1Id/:profile2Id", (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_retired",
+      message:
+        "Stored legacy aggregate compatibility scores are retired and are not served as current results.",
+    });
   });
 
-  // Get specific compatibility between two profiles
-  app.get("/api/compatibility/:profile1Id/:profile2Id", async (req, res) => {
-    try {
-      const { profile1Id, profile2Id } = req.params;
-      
-      console.log(`[GetCompatibility] Fetching compatibility between ${profile1Id} and ${profile2Id}`);
-      
-      const compatibility = await storage.getCompatibility(profile1Id, profile2Id);
-      
-      if (!compatibility) {
-        return res.status(404).json({ message: "Compatibility analysis not found. Please calculate it first." });
-      }
-      
-      // Get profile data to include in response
-      const [profile1, profile2] = await Promise.all([
-        compatibility.profile1Id ? storage.getProfile(compatibility.profile1Id) : Promise.resolve(null),
-        compatibility.profile2Id ? storage.getProfile(compatibility.profile2Id) : Promise.resolve(null)
-      ]);
-      
-      if (!profile1 || !profile2) {
-        return res.status(404).json({ message: "One or both profiles not found" });
-      }
-      
-      const astro1 = profile1.astrologyData as any;
-      const astro2 = profile2.astrologyData as any;
-      const num1 = profile1.numerologyData as any;
-      const num2 = profile2.numerologyData as any;
-      const hd1 = profile1.humanDesignData as any;
-      const hd2 = profile2.humanDesignData as any;
-      const pers1 = profile1.personalityData as any;
-      const pers2 = profile2.personalityData as any;
-      
-      // Check premium status to determine what data to return
-      const userId = (req.user as any)?.id;
-      const sessionId = req.session?.id;
-      let isPremium = false;
-      if ((req.session as any)?.isPremium) {
-        isPremium = true;
-      } else {
-        const entStatus = await entitlementService.getUserPremiumStatus({ userId, sessionId });
-        isPremium = entStatus.isPremium;
-      }
-      
-      // Build base response with profile info
-      let response: any = {
-        profile1Id: compatibility.profile1Id,
-        profile2Id: compatibility.profile2Id,
-        overallScore: compatibility.overallScore,
-        profile1: {
-          name: profile1.name,
-          sunSign: astro1?.sunSign,
-          moonSign: astro1?.moonSign,
-          risingSign: astro1?.risingSign,
-          calculateNumerology: num1?.calculateNumerology,
-          hdType: hd1?.type,
-          enneagramType: pers1?.enneagram?.type,
-          mbtiType: pers1?.mbti?.type
-        },
-        profile2: {
-          name: profile2.name,
-          sunSign: astro2?.sunSign,
-          moonSign: astro2?.moonSign,
-          risingSign: astro2?.risingSign,
-          calculateNumerology: num2?.calculateNumerology,
-          hdType: hd2?.type,
-          enneagramType: pers2?.enneagram?.type,
-          mbtiType: pers2?.mbti?.type
-        },
-        compatibilityData: {} as any
-      };
-      
-      const fullData = compatibility.compatibilityData as any;
-      
-      if (isPremium) {
-        // Premium users get full compatibility data
-        response.compatibilityData = fullData;
-        console.log(`[GetCompatibility] Premium user - returning full data`);
-      } else {
-        // Free users get overview (strengths/challenges/growth) but no detailed category breakdowns
-        response.compatibilityData = {
-          overallScore: fullData.overallScore || compatibility.overallScore,
-          strengths: fullData.strengths || [],
-          challenges: fullData.challenges || [],
-          growthOpportunities: fullData.growthOpportunities || [],
-          relationshipDynamics: fullData.relationshipDynamics || "",
-          categories: {} // Empty - no premium category breakdowns (astrology, numerology, etc.)
-        };
-        console.log(`[GetCompatibility] Free user - returning overview only (no category details)`);
-      }
-      
-      res.json(response);
-    } catch (error) {
-      return handleError(error, res, "GetCompatibility");
-    }
+  app.get("/api/compatibility/:profileId", (_req, res) => {
+    return res.status(410).json({
+      code: "legacy_compatibility_retired",
+      message:
+        "Stored legacy aggregate compatibility scores are retired and are not served as current results.",
+    });
   });
 
   // Push Notification Routes
