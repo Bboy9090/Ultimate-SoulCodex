@@ -1,7 +1,7 @@
+import type { VerifiedAstrologyForSynthesis } from "../../packages/core/verified-synthesis.ts";
 import {
   generateFoundationOfflineCodexProfile,
   synthesizeVerifiedFoundationProfile,
-  type VerifiedAstrologyForSynthesis,
 } from "../../client/src/lib/foundationOfflineCodex";
 
 const SIGNS = [
