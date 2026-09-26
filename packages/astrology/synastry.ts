@@ -1,3 +1,9 @@
+import {
+  TROPICAL_ZODIAC_SIGNS,
+  circularDegreesDelta,
+  normalizeDegrees,
+} from '@soulcodex/core';
+
 /**
  * Synastry Analysis Engine
  * Calculates symbolic astrological comparison patterns between two birth charts.
@@ -85,23 +91,21 @@ interface SynastryResult {
 
 // Convert sign + degree to absolute longitude (0-360°)
 function getAbsoluteLongitude(sign: string, degree: number): number {
-  const signOrder = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-                     'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-  const signIndex = signOrder.indexOf(sign);
+  const signIndex = TROPICAL_ZODIAC_SIGNS.findIndex(
+    (candidate) => candidate === sign,
+  );
   if (signIndex === -1) {
     throw new RangeError(`Unsupported zodiac sign: ${sign}`);
   }
   if (!Number.isFinite(degree) || degree < 0 || degree >= 30) {
     throw new RangeError(`Degree within sign must be finite and in [0, 30): ${degree}`);
   }
-  return signIndex * 30 + degree;
+  return normalizeDegrees(signIndex * 30 + degree);
 }
 
 // Calculate the angular difference between two planets
 function calculateAspectAngle(long1: number, long2: number): number {
-  let diff = Math.abs(long1 - long2);
-  if (diff > 180) diff = 360 - diff;
-  return diff;
+  return circularDegreesDelta(long1, long2);
 }
 
 // Identify the type of aspect and orb
@@ -422,23 +426,36 @@ function calculateHouseOverlays(
 
 // Find which house a given longitude falls into
 function findHouseForLongitude(longitude: number, houseCusps: number[]): number {
+  if (!Number.isFinite(longitude)) {
+    throw new RangeError('House overlay longitude must be finite');
+  }
+  if (
+    houseCusps.length !== 12 ||
+    houseCusps.some((cusp) => !Number.isFinite(cusp))
+  ) {
+    throw new RangeError('House cusps must contain exactly 12 finite longitudes');
+  }
+
+  const normalizedLongitude = normalizeDegrees(longitude);
+  const normalizedCusps = houseCusps.map((cusp) => normalizeDegrees(cusp));
+
   for (let i = 0; i < 12; i++) {
-    const currentCusp = houseCusps[i];
-    const nextCusp = houseCusps[(i + 1) % 12];
-    
-    // Handle wrap-around at 360°/0°
+    const currentCusp = normalizedCusps[i];
+    const nextCusp = normalizedCusps[(i + 1) % 12];
+
     if (nextCusp > currentCusp) {
-      if (longitude >= currentCusp && longitude < nextCusp) {
-        return i + 1; // Houses are 1-indexed
-      }
-    } else {
-      // Wrap-around case (e.g., 12th house crossing 0°)
-      if (longitude >= currentCusp || longitude < nextCusp) {
+      if (normalizedLongitude >= currentCusp && normalizedLongitude < nextCusp) {
         return i + 1;
       }
+    } else if (
+      normalizedLongitude >= currentCusp ||
+      normalizedLongitude < nextCusp
+    ) {
+      return i + 1;
     }
   }
-  return 1; // Default to 1st house if calculation fails
+
+  throw new Error('house_overlay_position_unresolved');
 }
 
 function analyzeHouseOverlay(planet: string, house: number, personName: string): HouseOverlay | null {
