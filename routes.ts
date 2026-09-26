@@ -54,7 +54,7 @@ import { compileBulletLists, pickCodename } from "./soulcodex/codex30/synth/comp
 import { isGeneric, scoreOutput } from "./soulcodex/codex30/synth/quality";
 import { narratorPrompt } from "./soulcodex/codex30/prompts/narrator";
 import { rewritePrompt } from "./soulcodex/codex30/prompts/rewrite";
-import { calcLifePath, getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
+import { calcLifePath, dateOnlyFromStoredValue, getContradictionHint, getBehavioralStatements, checkNarrative, type AntiGenericContext, type MirrorAnswers } from "@soulcodex/core";
 import { VOICE_LAWS } from "./soulcodex/codex30/prompts/voice_laws";
 import { pureText } from "./services/sanitizer";
 
@@ -1106,12 +1106,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
+      let profileBirthDateISO: string | null = null;
+      try {
+        profileBirthDateISO = dateOnlyFromStoredValue(profile.birthDate);
+      } catch (error) {
+        console.error("[GetProfile] Stored birth date is non-canonical; auto-healing is disabled for this profile.", error);
+      }
+
       // Auto-healing: Check for missing data fields
       let needsUpdate = false;
       let updatedData: any = {};
       
       // Check if profile has complete birth data
       const profileHasCompleteData = !!(
+        profileBirthDateISO &&
         profile.birthTime && 
         profile.birthLocation && 
         profile.timezone && 
@@ -1125,7 +1133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const humanDesignData = calculateHumanDesign({
             name: profile.name,
-            birthDate: profile.birthDate,
+            birthDate: profileBirthDateISO!,
             birthTime: profile.birthTime!,
             birthLocation: profile.birthLocation!,
             latitude: profile.latitude!,
@@ -1153,7 +1161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             astrologyData = calculateAstrology({
               name: profile.name,
-              birthDate: profile.birthDate,
+              birthDate: profileBirthDateISO!,
               birthTime: profile.birthTime!,
               birthLocation: profile.birthLocation!,
               latitude: profile.latitude!,
@@ -1167,8 +1175,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        if (!numerologyData) {
-          numerologyData = calculateNumerology(profile.name, profile.birthDate);
+        if (!numerologyData && profileBirthDateISO) {
+          numerologyData = calculateNumerology(profile.name, profileBirthDateISO);
           updatedData.numerologyData = numerologyData;
           needsUpdate = true;
         }
@@ -1204,7 +1212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const enhancedAstrologyData = calculateAstrology({
             name: profile.name,
-            birthDate: profile.birthDate,
+            birthDate: profileBirthDateISO!,
             birthTime: profile.birthTime!,
             birthLocation: profile.birthLocation!,
             latitude: profile.latitude!,
@@ -1220,9 +1228,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for comprehensive numerology data
       const numeroData = profile.numerologyData as any;
-      if (!numeroData || !numeroData.interpretations) {
+      if ((!numeroData || !numeroData.interpretations) && profileBirthDateISO) {
         console.log("Auto-healing: Missing enhanced numerologyData for profile", req.params.id);
-        const enhancedNumerologyData = calculateNumerology(profile.name, profile.birthDate);
+        const enhancedNumerologyData = calculateNumerology(profile.name, profileBirthDateISO);
         updatedData.numerologyData = enhancedNumerologyData;
         needsUpdate = true;
       }
@@ -2933,13 +2941,15 @@ ${contextData}
           return res.status(404).json({ error: "Profile not found or access denied" });
         }
 
-        const savedDate = savedProfile.birthDate instanceof Date
-          ? savedProfile.birthDate
-          : new Date(savedProfile.birthDate as any);
-        if (Number.isNaN(savedDate.getTime())) {
-          return res.status(422).json({ error: "Saved profile birth date is invalid" });
+        let dateOnly: string;
+        try {
+          dateOnly = dateOnlyFromStoredValue(savedProfile.birthDate);
+        } catch {
+          return res.status(422).json({
+            error: "Saved profile birth date is non-canonical; repair the profile before generating a report",
+          });
         }
-        const dateOnly = savedDate.toISOString().slice(0, 10);
+        const savedDate = new Date(`${dateOnly}T00:00:00.000Z`);
 
         reportProfile = {
           ...savedProfile,
@@ -3332,9 +3342,12 @@ ${contextData}
         const date = profileLocalDateKey(profileForToday, today);
         let personalDayNumber: number | null = null;
 
-        if (typeof profileForToday?.birthDate === "string" && profileForToday.birthDate.trim()) {
+        if (profileForToday?.birthDate != null) {
           try {
-            personalDayNumber = calculatePersonalDayNumber(profileForToday.birthDate, date);
+            personalDayNumber = calculatePersonalDayNumber(
+              dateOnlyFromStoredValue(profileForToday.birthDate),
+              date,
+            );
           } catch {
             personalDayNumber = null;
           }
@@ -3693,15 +3706,20 @@ ${thisWeekArrRw.map((t: string) => (typeof t === 'string' && t.startsWith("-")) 
       const hdCandidate = hd?.status === "verified"
         ? (hd.candidate && typeof hd.candidate === "object" ? hd.candidate : hd)
         : {};
-      const dateOnly = savedProfile.birthDate instanceof Date
-        ? savedProfile.birthDate.toISOString().slice(0, 10)
-        : String(savedProfile.birthDate).slice(0, 10);
+      let dateOnly: string | null = null;
+      try {
+        dateOnly = dateOnlyFromStoredValue(savedProfile.birthDate);
+      } catch {
+        dateOnly = null;
+      }
 
       let lifePath: number | null = null;
-      try {
-        lifePath = calcLifePath(dateOnly);
-      } catch {
-        lifePath = null;
+      if (dateOnly) {
+        try {
+          lifePath = calcLifePath(dateOnly);
+        } catch {
+          lifePath = null;
+        }
       }
 
       const evidenceLines = [
