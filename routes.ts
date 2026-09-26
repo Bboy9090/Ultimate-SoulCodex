@@ -2579,12 +2579,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { startDate, endDate } = req.query;
-      const start = startDate ? new Date(startDate as string) : new Date();
-      const end = endDate ? new Date(endDate as string) : (() => {
-        const e = new Date();
-        e.setMonth(e.getMonth() + 1);
-        return e;
-      })();
+      const start =
+        typeof startDate === "string" && startDate.trim()
+          ? startDate.trim()
+          : new Date();
+      const end =
+        typeof endDate === "string" && endDate.trim()
+          ? endDate.trim()
+          : (() => {
+              const e = new Date();
+              e.setUTCMonth(e.getUTCMonth() + 1);
+              return e;
+            })();
 
       const calendar = generateTransitsCalendar(profile, start, end);
       res.json(calendar);
@@ -2605,7 +2611,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      const days = parseInt(req.query.days as string) || 30;
+      const requestedDays = Number.parseInt(String(req.query.days ?? "30"), 10);
+      if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 366) {
+        return res.status(400).json({ message: "days must be an integer from 1 to 366" });
+      }
+      const days = requestedDays;
       const upcoming = getUpcomingSignificantTransits(profile, days);
       res.json({ transits: upcoming, days });
     } catch (error) {
