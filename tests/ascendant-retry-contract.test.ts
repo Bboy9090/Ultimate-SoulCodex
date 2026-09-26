@@ -7,6 +7,12 @@ import {
   type ReconciledOfflineProfile,
 } from "../client/src/lib/profileVerificationReconciliation.ts";
 
+const placementEvidence = {
+  source: "Independent verification fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
+
 function exactProfile(): ReconciledOfflineProfile {
   const local = generateOfflineCodexProfile(
     {
@@ -24,8 +30,8 @@ function exactProfile(): ReconciledOfflineProfile {
   return {
     ...local,
     verifiedAstrologyData: {
-      sun: { verificationStatus: "verified", sign: "Virgo" },
-      moon: { verificationStatus: "verified", sign: "Virgo" },
+      sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
+      moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
       rising: {
         verificationStatus: "pending_independent_verification",
         sign: null,
@@ -54,14 +60,18 @@ test("verified Rising alone still refreshes when the full natal contract is avai
   const profile = exactProfile();
   profile.verifiedAstrologyData = {
     ...profile.verifiedAstrologyData,
-    rising: { verificationStatus: "verified", sign: "Scorpio" },
+    rising: { verificationStatus: "verified", sign: "Scorpio", evidence: placementEvidence },
   };
   assert.equal(profileNeedsOnlineVerification(profile), true);
 });
 
 test("verified full natal chart and Human Design complete the exact-input verification requirement", () => {
   const profile = exactProfile();
-  const verified = (sign: string) => ({ verificationStatus: "verified", sign });
+  const verified = (sign: string) => ({
+    verificationStatus: "verified",
+    sign,
+    evidence: placementEvidence,
+  });
   const signs = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
     "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
