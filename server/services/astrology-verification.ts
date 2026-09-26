@@ -1,3 +1,9 @@
+import {
+  circularDegreesDelta,
+  distanceToNearestThirtyDegreeBoundary,
+  tropicalSignFromLongitude,
+} from "./angular-math";
+
 export type VerifiableBody =
   | "Sun"
   | "Moon"
@@ -67,41 +73,13 @@ export type IndependentVerificationResult =
       longitudeDeltaDegrees: number | null;
     };
 
-function normalizeLongitude(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
 function isValidLongitude(value: number): boolean {
   return Number.isFinite(value) && value >= 0 && value < 360;
 }
 
-const ZODIAC_SIGNS = Object.freeze([
-  "Aries",
-  "Taurus",
-  "Gemini",
-  "Cancer",
-  "Leo",
-  "Virgo",
-  "Libra",
-  "Scorpio",
-  "Sagittarius",
-  "Capricorn",
-  "Aquarius",
-  "Pisces",
-] as const);
-
-function signFromLongitude(longitude: number): string {
-  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(longitude) / 30)];
-}
-
-function circularLongitudeDelta(left: number, right: number): number {
-  const raw = Math.abs(normalizeLongitude(left) - normalizeLongitude(right));
-  return Math.min(raw, 360 - raw);
-}
 
 export function distanceToNearestSignBoundary(longitude: number): number {
-  const withinSign = normalizeLongitude(longitude) % 30;
-  return Math.min(withinSign, 30 - withinSign);
+  return distanceToNearestThirtyDegreeBoundary(longitude);
 }
 
 function normalizedIdentity(value: string): string {
@@ -159,8 +137,8 @@ export function verifyAgainstIndependentReference(
   }
 
   if (
-    candidate.sign !== signFromLongitude(candidate.longitude) ||
-    reference.sign !== signFromLongitude(reference.longitude)
+    candidate.sign !== tropicalSignFromLongitude(candidate.longitude) ||
+    reference.sign !== tropicalSignFromLongitude(reference.longitude)
   ) {
     return {
       status: "rejected",
@@ -170,7 +148,7 @@ export function verifyAgainstIndependentReference(
     };
   }
 
-  const longitudeDeltaDegrees = circularLongitudeDelta(candidate.longitude, reference.longitude);
+  const longitudeDeltaDegrees = circularDegreesDelta(candidate.longitude, reference.longitude);
 
   if (candidate.sign !== reference.sign) {
     return { status: "rejected", sign: null, reason: "sign_disagreement", longitudeDeltaDegrees };
