@@ -112,6 +112,7 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
           type: "Reflector",
           strategy: "Wait a lunar cycle",
           authority: "Lunar Authority",
+          profile: "2/5",
           ...verifiedHumanDesignTrust,
         },
       },
