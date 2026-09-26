@@ -26,6 +26,7 @@ node --import tsx --test \
   tests/jpl-horizons-reference.test.ts \
   tests/astrology-evidence-matrix.test.ts \
   tests/astrology-tolerance-policy.test.ts \
+  tests/angular-math.test.ts \
   tests/astrology-sign-boundary-verification.test.ts \
   tests/planetary-boundary-integrity.test.ts \
   tests/aspect-engine.test.ts \
