@@ -40,6 +40,7 @@ import { entitlementService } from "./services/entitlement-service";
 import { runWithTimeoutAndTiming, TIMEOUT_VALUES } from "./utils/timeout";
 import { geocodeLocation } from "./geocoding";
 import * as geoTz from "geo-tz";
+import { formatInTimeZone } from "date-fns-tz";
 import { resolveGeo } from "./server/geo/index";
 import { computeConfidence } from "./soulcodex/compute/confidence";
 import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
@@ -59,6 +60,29 @@ import { pureText } from "./services/sanitizer";
 
 
 // Utility function for consistent error responses
+function profileLocalDateKey(
+  profile: { timezone?: unknown },
+  now: Date = new Date(),
+): string {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
+    throw new RangeError("Profile-local date requires a valid instant");
+  }
+
+  const timezone =
+    typeof profile?.timezone === "string" && profile.timezone.trim()
+      ? profile.timezone.trim()
+      : "UTC";
+
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone }).format(now);
+  } catch {
+    throw new RangeError(`Invalid profile timezone: ${timezone}`);
+  }
+
+  return formatInTimeZone(now, timezone, "yyyy-MM-dd");
+}
+
+
 function handleError(error: unknown, res: any, context: string) {
   console.error(`[${context}] Error:`, error);
   
@@ -1236,18 +1260,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[GetRituals] Fetching rituals for profile: ${profileId}`);
       
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Parallel fetch of profile and daily insights
-      const [profile, dailyInsightsRecord] = await Promise.all([
-        storage.getProfile(profileId),
-        storage.getDailyInsight(profileId, today)
-      ]);
-      
+      const profile = await storage.getProfile(profileId);
       if (!profile) {
         console.log(`[GetRituals] Profile not found: ${profileId}`);
         return res.status(404).json({ message: "Profile not found" });
       }
+
+      const today = profileLocalDateKey(profile);
+      const dailyInsightsRecord = await storage.getDailyInsight(profileId, today);
       
       const warnings: string[] = [];
       // Ayurveda is registry-disabled until an explicit governed assessment
@@ -1785,17 +1805,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/daily-insights/:profileId", async (req, res) => {
     try {
       const { profileId } = req.params;
-      const today = new Date().toISOString().split('T')[0];
       
-      console.log(`[GetDailyInsights] Fetching insights for profile ${profileId} on ${today}`);
-      
-      // Get the profile
+      // Get the profile before resolving its local calendar date.
       const profile = await storage.getProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
+
+      const today = profileLocalDateKey(profile);
+      console.log(`[GetDailyInsights] Fetching insights for profile ${profileId} on ${today}`);
       
-      // Check if we already have insights for today
+      // Check if we already have insights for the profile-local day.
       let dailyInsight = await storage.getDailyInsight(profileId, today);
       
       if (dailyInsight) {
