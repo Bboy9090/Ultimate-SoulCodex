@@ -42,6 +42,7 @@ node --import tsx --test \
   tests/daily-guidance-authority.test.ts \
   tests/profile-narrative-authority.test.ts \
   tests/verified-synthesis-contract-authority.test.ts \
+  tests/ultimate-codex-synthesis.test.ts \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
   tests/house-production.test.ts \
