@@ -5,11 +5,31 @@
  * Only shown in Technical depth mode
  */
 
-import type { BirthData } from "@soulcodex/core";
+import type { AstrologyDataStatus, BirthData } from "@soulcodex/core";
 
 interface TechnicalAppendixProps {
   birthData: BirthData;
-  meta?: any;
+  meta?: {
+    engineVersion?: string;
+    generatedAt?: string;
+    calculationStatus?: AstrologyDataStatus;
+  };
+}
+
+function astrologyStatusLabel(status?: AstrologyDataStatus): string {
+  switch (status) {
+    case "verified_ephemeris":
+      return "Verified ephemeris for this reading";
+    case "estimated_birth_window":
+      return "Estimated birth-window astronomy";
+    case "date_only":
+      return "Date-only astronomy; time-sensitive geometry withheld";
+    case "legacy_approximation":
+      return "Legacy approximation; excluded from verified synthesis";
+    case "unavailable":
+    default:
+      return "Astronomy verification unavailable";
+  }
 }
 
 export default function TechnicalAppendix({ birthData, meta }: TechnicalAppendixProps) {
@@ -60,9 +80,9 @@ export default function TechnicalAppendix({ birthData, meta }: TechnicalAppendix
           </div>
           <div style={{ fontSize: "0.85rem", color: "var(--sc-stone)", lineHeight: "1.8" }}>
             <div>Engine: Soul Codex governed astronomy stack</div>
-            <div>House System: Equal House (verified production path)</div>
+            <div>House System: Equal House production policy</div>
             <div>Zodiac: Tropical</div>
-            <div>Ephemeris: governed verified-ephemeris contract</div>
+            <div>Astronomy Status: {astrologyStatusLabel(meta?.calculationStatus)}</div>
           </div>
         </div>
 
