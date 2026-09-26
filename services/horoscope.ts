@@ -195,9 +195,13 @@ function hasVerificationEvidence(value: any): boolean {
 
 function placementLongitude(value: any): number | null {
   const candidate = value?.internalCandidate?.longitude ?? value?.longitude;
-  return typeof candidate === 'number' && Number.isFinite(candidate)
-    ? ((candidate % 360) + 360) % 360
-    : null;
+  if (typeof candidate !== 'number' || !Number.isFinite(candidate)) return null;
+
+  // Modulo normalization can introduce IEEE-754 noise (for example
+  // 174.2 -> 174.20000000000005). Keep the verified source longitude
+  // numerically stable without reducing meaningful ephemeris precision.
+  const normalized = ((candidate % 360) + 360) % 360;
+  return Math.round(normalized * 1e12) / 1e12;
 }
 
 export function extractVerifiedNatalPositions(profile: any): Record<string, { longitude: number; sign: string }> {
