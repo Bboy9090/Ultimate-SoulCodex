@@ -33,6 +33,7 @@ node --import tsx --test \
   tests/ascendant-retry-contract.test.ts \
   tests/bobby-big-three-golden.test.ts \
   tests/human-design-trust.test.ts \
+  tests/human-design-gate-boundaries.test.ts \
   tests/profile-verification-reconciliation.test.ts \
   tests/active-profile-contract.test.ts \
   tests/ui-backend-consistency-contract.test.ts \
