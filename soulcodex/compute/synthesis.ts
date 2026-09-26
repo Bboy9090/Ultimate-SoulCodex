@@ -20,6 +20,10 @@ const LIFE_PATH_DESC: Record<number, string> = {
   33: "I absorb the weight of those around me, healing the collective while my own system is near a breaking point.",
 };
 
+function firstSignal<T extends string>(value: T[] | undefined): T | undefined {
+  return Array.isArray(value) ? value.find(Boolean) : undefined;
+}
+
 const SOCIAL_ENERGY_DESC: Record<string, string> = {
   steady:    "I show up with consistent predictability, stabilizing my circle even when my own internal signal is fluctuating.",
   bursts:    "I operate in high-intensity cycles, giving everything until I hit a wall and vanish without warning.",
@@ -125,7 +129,10 @@ function buildStressPattern(s: SoulSignals, arc: Archetype, v: number): string {
     ],
   };
 
-  const pVariants = pressureVariants[s.pressureStyle] || [pressureVariants.adapt[0]];
+  const pressure = firstSignal(s.pressureStyle);
+  const pVariants = (pressure ? pressureVariants[pressure] : undefined) || [
+    "Under pressure, I need more direct behavioral evidence before naming a specific response pattern."
+  ];
   const pNote = pVariants[v % pVariants.length];
   
   return `${notes} ${pNote}`;
@@ -163,13 +170,19 @@ function buildRelationshipPattern(s: SoulSignals, arc: Archetype, v: number): st
     ],
   };
 
-  const sVariants = social[s.socialEnergy] || [social.steady[0]];
-  const dVariants = decision[s.decisionStyle] || [decision.gut[0]];
-  
-  const s1 = sVariants[v % sVariants.length];
-  const d1 = dVariants[v % dVariants.length];
-  
-  return `${s1} ${d1}`;
+  const socialKey = firstSignal(s.socialEnergy);
+  const decisionKey = firstSignal(s.decisionStyle);
+  const sVariants = socialKey ? social[socialKey] : undefined;
+  const dVariants = decisionKey ? decision[decisionKey] : undefined;
+
+  const parts: string[] = [];
+  if (sVariants?.length) parts.push(sVariants[v % sVariants.length]);
+  if (dVariants?.length) parts.push(dVariants[v % dVariants.length]);
+
+  if (parts.length === 0) {
+    return "I have not provided enough direct behavioral evidence to name a stable social or decision rhythm yet.";
+  }
+  return parts.join(" ");
 }
 
 function buildContradiction(s: SoulSignals, v: number): string {
@@ -205,11 +218,11 @@ function buildContradiction(s: SoulSignals, v: number): string {
 function buildLifeConsequence(s: SoulSignals, v: number): string {
   const consequences: string[] = [];
   
-  if (s.pressureStyle === "fight" && s.socialEnergy === "bursts") {
+  if (s.pressureStyle?.includes("fight") && s.socialEnergy?.includes("bursts")) {
     consequences.push("I gain trust quickly through intensity, but I lose it when I vanish to recover from the heat.");
   }
   
-  if (s.pressureStyle === "withdraw" && s.decisionStyle === "analysis") {
+  if (s.pressureStyle?.includes("withdraw") && s.decisionStyle?.includes("analysis")) {
     consequences.push("I mentally exit environments months before I actually leave, making my eventual departure feel sudden to everyone else.");
   }
 
@@ -247,7 +260,7 @@ function buildPatternInterruption(s: SoulSignals, v: number): string {
 }
 
 function buildLoopSentence(s: SoulSignals, v: number): string {
-  const p = s.pressureStyle;
+  const p = firstSignal(s.pressureStyle);
   
   const loops: Record<string, string[]> = {
     fight: [
@@ -286,25 +299,25 @@ function buildPowerMode(s: SoulSignals): string {
 
 function buildGrowthEdges(s: SoulSignals): string[] {
   const edges: string[] = [];
-  if (s.stressElement === "air")
+  if (s.stressElement?.includes("air"))
     edges.push("My mental loops accelerate under pressure, often creating a noise floor that hides the actual solution.");
-  if (s.stressElement === "fire")
+  if (s.stressElement?.includes("fire"))
     edges.push("My intensity triggers a heat response that can burn through bridges before I've even decided I want to cross them.");
-  if (s.stressElement === "water")
+  if (s.stressElement?.includes("water"))
     edges.push("I absorb the emotional frequency of the room, which can flood my system and drown out my own logical signal.");
-  if (s.stressElement === "earth")
+  if (s.stressElement?.includes("earth"))
     edges.push("I anchor so deeply to my current position that I can mistake rigidity for strength, even when the environment has shifted.");
-  if (s.stressElement === "metal")
+  if (s.stressElement?.includes("metal"))
     edges.push("I cut ties the moment I feel a misalignment, protecting my border but often leaving me in a vacuum of my own making.");
 
-  if (s.decisionStyle === "avoidance")
+  if (s.decisionStyle?.includes("avoidance"))
     edges.push("I treat the delay of a decision as a safety mechanism, even when the inaction is creating more risk than the choice.");
-  if (s.decisionStyle === "impulse")
+  if (s.decisionStyle?.includes("impulse"))
     edges.push("I prioritize momentum over accuracy, moving fast to outrun the anxiety of the unknown.");
 
-  if (s.socialEnergy === "sensitive")
+  if (s.socialEnergy?.includes("sensitive"))
     edges.push("I carry the unspoken weight of others' moods, acting as a mirror for the room until my own battery is depleted.");
-  if (s.socialEnergy === "bursts")
+  if (s.socialEnergy?.includes("bursts"))
     edges.push("I vanish without a signal when my energy drops, leaving others to interpret my silence as a statement.");
 
   // Deduplicate and filter
@@ -340,7 +353,10 @@ function buildRecognitionMoment(s: SoulSignals, v: number): string {
     ]
   };
 
-  const pool = recognitionPool[s.pressureStyle] || recognitionPool.adapt;
+  const pressure = firstSignal(s.pressureStyle);
+  const pool = (pressure ? recognitionPool[pressure] : undefined) || [
+    "I need more direct behavioral evidence before naming how I respond when pressure rises."
+  ];
   return pool[v % pool.length];
 }
 
