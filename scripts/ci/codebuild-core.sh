@@ -59,6 +59,7 @@ node --import tsx --test \
   tests/changelog-current-truth.test.ts \
   tests/canonical-doctrine-contract.test.ts \
   tests/codex30-numerology-boundary.test.ts \
+  tests/codex30-governance-boundary.test.ts \
   tests/server-profile-ownership.test.ts \
   tests/natal-report-contract.test.ts \
   tests/pdf-production-path-contract.test.ts \
