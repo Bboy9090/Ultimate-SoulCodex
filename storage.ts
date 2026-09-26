@@ -257,9 +257,15 @@ export class MemStorage implements IStorage {
     if (!existing) {
       throw new Error("Profile not found");
     }
+    const normalizedUpdates: Partial<Profile> = {
+      ...updates,
+      ...(Object.prototype.hasOwnProperty.call(updates, "birthDate")
+        ? { birthDate: canonicalBirthDateTimestamp((updates as any).birthDate) }
+        : {}),
+    };
     const updated: Profile = { 
       ...existing, 
-      ...updates, 
+      ...normalizedUpdates, 
       updatedAt: new Date() 
     };
     this.profiles.set(id, updated);
