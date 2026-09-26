@@ -137,7 +137,7 @@ test('Today Card decision-style guidance never invents clock windows or certaint
         moonPhase: { phase: 'First Quarter', percentage: 50 },
         personalTransits: [],
       },
-      { signals: { decisionStyle } },
+      { userInputs: { decisionStyle } },
     );
 
     assert.doesNotMatch(card.decisionAdvice, /\b(?:10\s?am|noon|2\s?pm|tonight|this morning)\b/i);
@@ -221,4 +221,24 @@ test('Today Card symbolic daily inputs remain reflection prompts rather than beh
   assert.match(routes, /They do not prove what I will do, feel, or experience/);
   assert.match(routes, /Do not predict tomorrow/);
   assert.doesNotMatch(routes, /behavioral confession/);
+});
+
+
+test('Today Card deterministic fallback ignores synthesized decision-style signals', () => {
+  const card = buildTodayCard(
+    {
+      date: '2026-09-25',
+      personalDayNumber: 7,
+      moonPhase: { phase: 'First Quarter', percentage: 50 },
+      personalTransits: [],
+    },
+    {
+      signals: { decisionStyle: 'impulse' },
+    },
+  );
+
+  assert.equal(
+    card.decisionAdvice,
+    'I let my decision breathe before committing. Clarity comes after the noise settles.',
+  );
 });
