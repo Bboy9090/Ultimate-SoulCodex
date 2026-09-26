@@ -172,13 +172,14 @@ export function calcMaturity(dateISO: string, fullName: string): number {
  * This is calculation data only; interpretation belongs in the synthesis layer.
  */
 export function calcCoreNumerology(dateISO: string, fullName: string) {
+  const availability = numerologyNameComponentAvailability(fullName);
   return {
     engineVersion: NUMEROLOGY_ENGINE_VERSION,
     lifePath: calcLifePath(dateISO),
     birthday: calcBirthday(dateISO),
     expression: calcExpression(fullName),
-    soulUrge: calcSoulUrge(fullName),
-    personality: calcPersonality(fullName),
+    soulUrge: availability.vowelCount > 0 ? calcSoulUrge(fullName) : null,
+    personality: availability.consonantCount > 0 ? calcPersonality(fullName) : null,
     maturity: calcMaturity(dateISO, fullName),
   } as const;
 }
