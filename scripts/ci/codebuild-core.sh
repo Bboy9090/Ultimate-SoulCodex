@@ -62,6 +62,7 @@ node --import tsx --test \
   tests/geocoding-ambiguity.test.ts \
   tests/birth-location-consistency.test.ts \
   tests/system-visibility-contract.test.ts \
+  tests/readme-system-truth.test.ts \
   tests/primary-synthesis-system-policy.test.ts \
   tests/server-profile-ownership.test.ts \
   tests/natal-report-contract.test.ts \
