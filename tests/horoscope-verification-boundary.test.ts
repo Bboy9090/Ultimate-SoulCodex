@@ -107,3 +107,14 @@ test("daily horoscope current-sky calculation requires a valid date and complete
     assert.equal(Number.isFinite(planet.degree), true);
   }
 });
+
+
+test("daily horoscope AI prompt treats symbolic sky and numerology as observation experiments", () => {
+  const source = readFileSync("packages/astrology/horoscope.ts", "utf8");
+
+  assert.match(source, /Do not claim it is already happening/);
+  assert.match(source, /reflection lens/);
+  assert.match(source, /not validated predictors of behavior or guaranteed events/);
+  assert.match(source, /do not prove what I will do, feel, encounter, or become/);
+  assert.doesNotMatch(source, /What I might notice today — specific and behavioral/);
+});
