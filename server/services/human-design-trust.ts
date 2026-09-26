@@ -91,6 +91,10 @@ function isValidIsoTimestamp(value: string): boolean {
   return Boolean(value.trim()) && !Number.isNaN(new Date(value).getTime());
 }
 
+function isExplicitUtcTimestamp(value: string): boolean {
+  return isValidIsoTimestamp(value) && /Z$/i.test(value.trim());
+}
+
 const HUMAN_DESIGN_STRATEGY_BY_TYPE = Object.freeze({
   Manifestor: "To Inform",
   Generator: "To Respond",
@@ -160,7 +164,7 @@ export function createHumanDesignTrustRecord(input: {
     };
   }
 
-  if (!isValidIsoTimestamp(input.inputTimestampUtc)) {
+  if (!isExplicitUtcTimestamp(input.inputTimestampUtc)) {
     throw new Error("human_design_input_timestamp_invalid");
   }
 
@@ -200,7 +204,7 @@ export function createVerifiedHumanDesignTrustRecord(input: {
     return createHumanDesignTrustRecord(input);
   }
 
-  if (!isValidIsoTimestamp(input.inputTimestampUtc)) {
+  if (!isExplicitUtcTimestamp(input.inputTimestampUtc)) {
     throw new Error("human_design_input_timestamp_invalid");
   }
 
