@@ -15,7 +15,7 @@ import {
   type EvidenceConfidenceLevel,
 } from './index.js';
 import { calcPersonalDay, calcPersonalMonth, calcPersonalYear, dateOnlyFromLocalDate, isPersonalNumerologyValue, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
-import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality, normalizeNumerologyName, NUMEROLOGY_POLICY } from '../compute/numerology.js';
+import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality, normalizeNumerologyName, numerologyNameComponentAvailability, NUMEROLOGY_POLICY } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
 type InputState = 'valid' | 'partial' | 'missing' | 'invalid';
@@ -401,7 +401,9 @@ export function calcExpressionWithEvidence(
         reasoning: [
           derivedInputState === 'missing' ? 'Full name not provided' :
           derivedInputState === 'invalid' ? `Name "${fullName}" contains no letters` :
-          'Full name could not be processed',
+          availability.vowelCount === 0
+            ? 'No A/E/I/O/U vowels remain after canonical name normalization under the active Y-as-consonant policy'
+            : 'Full name could not be processed',
         ],
         limitations: [
           'Depends on accuracy of full name provided',
@@ -458,7 +460,12 @@ export function calcSoulUrgeWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForName(fullName);
+  const baseInputState = deriveInputStateForName(fullName);
+  const availability = numerologyNameComponentAvailability(fullName);
+  const derivedInputState: InputState =
+    baseInputState === 'valid' && availability.vowelCount === 0
+      ? 'partial'
+      : baseInputState;
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   if (derivedInputState !== 'valid') {
@@ -531,7 +538,12 @@ export function calcPersonalityWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForName(fullName);
+  const baseInputState = deriveInputStateForName(fullName);
+  const availability = numerologyNameComponentAvailability(fullName);
+  const derivedInputState: InputState =
+    baseInputState === 'valid' && availability.consonantCount === 0
+      ? 'partial'
+      : baseInputState;
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   if (derivedInputState !== 'valid') {
@@ -546,7 +558,9 @@ export function calcPersonalityWithEvidence(
         reasoning: [
           derivedInputState === 'missing' ? 'Full name not provided' :
           derivedInputState === 'invalid' ? `Name "${fullName}" contains no letters` :
-          'Full name could not be processed',
+          availability.consonantCount === 0
+            ? 'No consonants remain after canonical name normalization under the active numerology policy'
+            : 'Full name could not be processed',
         ],
         limitations: [
           'Depends on accuracy of full name',
