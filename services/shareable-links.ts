@@ -157,11 +157,16 @@ export async function getShareableProfile(
     lastAccessedAt: link.lastAccessedAt
   });
 
+  const publicSettings: ShareSettings = {
+    ...link.settings,
+    passwordHash: undefined,
+  };
+
   return {
     profile: filteredProfile,
     sharedBy,
     shareDate: link.createdAt,
-    settings: link.settings
+    settings: publicSettings
   };
 }
 
