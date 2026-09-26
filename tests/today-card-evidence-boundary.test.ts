@@ -81,3 +81,21 @@ test('Today Card fallback route uses governed current context instead of hard-co
   assert.match(routes, /calculatePersonalDayNumber\(profile\.birthDate, date\)/);
   assert.match(routes, /const moonPhase = getMoonPhase\(today\)/);
 });
+
+
+test('Today Card does not invent identity codename or theme without synthesis evidence', () => {
+  const card = buildTodayCard(
+    {
+      date: '2026-09-25',
+      personalDayNumber: null,
+      moonPhase: { phase: 'Waxing Crescent', percentage: 18 },
+      personalTransits: [],
+    },
+    {},
+  );
+
+  assert.equal(card.codename, 'Identity unresolved');
+  assert.equal(card.topTheme, undefined);
+  assert.doesNotMatch(card.focus, /precision/i);
+  assert.doesNotMatch(card.codename, /Quiet Builder/);
+});
