@@ -99,3 +99,17 @@ test('Today Card does not invent identity codename or theme without synthesis ev
   assert.doesNotMatch(card.focus, /precision/i);
   assert.doesNotMatch(card.codename, /Quiet Builder/);
 });
+
+
+test('Today Card AI prompt does not inject a synthetic precision theme', () => {
+  const routes = readFileSync('routes.ts', 'utf8');
+
+  assert.doesNotMatch(
+    routes,
+    /base\.topTheme \?\? "precision"/,
+  );
+  assert.match(
+    routes,
+    /TOP THEMES: \$\{themes \|\| "Unavailable — do not infer"\}/,
+  );
+});
