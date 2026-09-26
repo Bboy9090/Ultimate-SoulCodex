@@ -6,6 +6,7 @@ import {
   createHumanDesignTrustRecord,
   createVerifiedHumanDesignTrustRecord,
   getVerifiedHumanDesignField,
+  hasApprovedVerifiedHumanDesignTrust,
   mayUseHumanDesignForCompatibility,
 } from "../server/services/human-design-trust";
 
@@ -157,5 +158,43 @@ test("approved Human Design receipt is exact and complete", () => {
   assert.equal(
     APPROVED_HUMAN_DESIGN_CORE_VERIFICATION.exactCandidateSha,
     "d57b747658668492d72869e8a973d5708e21d09d",
+  );
+});
+
+
+test("approved Human Design trust predicate rejects forged or incoherent records", () => {
+  const record = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+    calculatedAt: "2026-09-26T19:00:00.000Z",
+    candidate: {
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  });
+
+  assert.equal(record.status, "verified");
+  assert.equal(hasApprovedVerifiedHumanDesignTrust(record), true);
+
+  assert.equal(
+    hasApprovedVerifiedHumanDesignTrust({
+      ...record,
+      verificationReceiptId: "forged-receipt",
+    }),
+    false,
+  );
+  assert.equal(
+    hasApprovedVerifiedHumanDesignTrust({
+      ...record,
+      candidate: {
+        type: "Reflector",
+        strategy: "To Respond",
+        authority: "Sacral Authority",
+        profile: "2/5",
+      },
+    }),
+    false,
   );
 });
