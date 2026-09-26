@@ -185,6 +185,7 @@ export function calculateAlignments(planets: PlanetPosition[]): Alignment[] {
 export function calculatePersonalTransitsFromProfile(profile: any, date: Date = new Date()): PersonalTransit[] {
   if (!profile.astrologyData) return [];
   const natalPositions = extractNatalPositions(profile.astrologyData);
+  if (Object.keys(natalPositions).length === 0) return [];
   const activeTransits = calculateActiveTransits(natalPositions, date);
   return activeTransits.transits.map(t => ({
     transitingPlanet: t.planet,
@@ -200,74 +201,87 @@ export function calculatePersonalTransitsFromProfile(profile: any, date: Date = 
   }));
 }
 
+function verifiedNatalSign(profile: any, key: "sun" | "moon" | "rising"): string | null {
+  const placement =
+    profile?.astrologyData?.[key] ??
+    profile?.astrologyData?.placements?.[key];
+  if (!placement || typeof placement !== "object") return null;
+  const status = placement.verificationStatus ?? placement.status;
+  const evidence = placement.provenance ?? placement.evidence;
+  if (status !== "verified") return null;
+  if (!evidence?.source || !evidence?.engine || !evidence?.calculatedAt) return null;
+  return typeof placement.sign === "string" && placement.sign.trim() ? placement.sign : null;
+}
+
 async function generateAIHoroscope(
   profile: any,
   planets: PlanetPosition[],
   alignments: Alignment[],
   personalTransits: PersonalTransit[],
   moonPhase: { phase: string; percentage: number },
+  currentMoonSign: string,
   personalDayNumber: number,
 ): Promise<string> {
   const name = profile.name || 'you';
-  const sunSign = profile.astrologyData?.sunSign || 'Unknown';
-  const moonSign = profile.astrologyData?.moonSign || 'Unknown';
-  const risingSign = profile.astrologyData?.risingSign || '';
-  const hdType = profile.humanDesignData?.type || '';
-  const lifePath = profile.numerologyData?.lifePath || '';
-  const primaryElement = profile.elementalMedicineData?.primaryElement || '';
+  const verifiedSun = verifiedNatalSign(profile, "sun");
+  const verifiedMoon = verifiedNatalSign(profile, "moon");
 
-  const topAlignments = alignments.slice(0, 3).map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`).join(', ');
-  const topTransits = personalTransits.slice(0, 3).map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`).join(', ');
+  const topAlignments = alignments.slice(0, 3)
+    .map(a => `${a.planet1} ${a.aspect} ${a.planet2} (orb ${a.orb}°)`)
+    .join(', ');
+  const topTransits = personalTransits.slice(0, 3)
+    .map(t => `${t.transitingPlanet} ${t.aspect} natal ${t.natalPlanet}`)
+    .join(', ');
 
-  const prompt = `Write a daily horoscope for ${name} (Sun in ${sunSign}, Moon in ${moonSign}).
+  const verifiedNatal = [
+    verifiedSun ? `Verified natal Sun: ${verifiedSun}` : null,
+    verifiedMoon ? `Verified natal Moon: ${verifiedMoon}` : null,
+  ].filter(Boolean).join("\n");
 
-Profile (use where it adds meaning):
-${risingSign ? `Rising: ${risingSign} | ` : ''}${lifePath ? `Life Path: ${lifePath} | ` : ''}${hdType ? `HD: ${hdType} | ` : ''}${primaryElement ? `Element: ${primaryElement}` : ''}
+  const prompt = `Write a daily reflection for ${name}.
 
-Today's sky: ${topAlignments || 'no major alignments'}.
-Personal transits: ${topTransits || 'none exact today'}.
-Moon phase: ${moonPhase.phase} (${moonPhase.percentage}% illuminated).
-Personal day number: ${personalDayNumber}.
+Supported inputs:
+${verifiedNatal || '- Natal Sun/Moon unresolved; do not infer them.'}
+- Today's Moon: ${currentMoonSign} (${moonPhase.phase}, ${moonPhase.percentage}% illuminated)
+- Today's governed sky alignments: ${topAlignments || 'none selected'}
+- Verified-natal personal transits: ${topTransits || 'none available'}
+- Personal Day number: ${personalDayNumber}
 
 FORMAT — use this exact structure:
 
 **Observation**
-What I'm likely experiencing today — specific, behavioral (1-2 sentences)
+What I might notice today — specific and behavioral (1-2 sentences)
 
 **Meaning**
-Why it matters — the pattern or tension driving it (1 sentence)
+What symbolic pattern the supported inputs suggest (1 sentence)
 
 **Action**
-What to do about it — concrete, immediate (1 sentence)
+One concrete reflection or action (1 sentence)
 
 RULES:
-- Write in FIRST PERSON (I/my/me) as if ${name} is reading their own inner voice.
-- Lead with the insight. Reference a placement only when it explains WHY.
-- Use behavioral, concrete language. Describe what I might feel, do, or notice today.
-- BANNED PHRASES (do NOT use): "cosmic signature", "sacred blueprint", "divine timing", "vibrational frequency", "holistic convergence", "incarnation", "celestial", "universe is telling you", "spiritual journey", "cosmic dance", "soul's evolution", "a shift is happening", "energy is present", "a door is opening".
-- Every sentence must describe something real — a behavior, decision, conversation, or habit.
-- No metaphors. No poetic padding. No vague encouragement.
-- Direct and useful.
-
-Return only the horoscope text in the format above.`;
+- Write in FIRST PERSON (I/my/me).
+- Use only supplied inputs.
+- Do not invent unresolved natal placements, Human Design, personality types, elements, motives, trauma, or certainty.
+- Treat numerology/astrology as reflective frameworks, not guaranteed events.
+- No metaphors or mystical filler.
+- Return only the reflection text.`;
 
   if (!isGeminiAvailable()) {
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   }
 
   try {
-    const result = await generateText({ model: 'gemini-2.5-flash', temperature: 0.8, prompt });
+    const result = await generateText({ model: 'gemini-2.5-flash', temperature: 0.7, prompt });
     if (result && result.trim().length > 20) return result.trim();
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   } catch (err) {
     console.error('[Horoscope] AI generation failed, using fallback:', err);
-    return generateFallbackHoroscope(sunSign, moonSign, moonPhase, personalDayNumber, alignments, personalTransits);
+    return generateFallbackHoroscope(currentMoonSign, moonPhase, personalDayNumber, alignments, personalTransits);
   }
 }
 
 function generateFallbackHoroscope(
-  sunSign: string,
-  moonSign: string,
+  currentMoonSign: string,
   moonPhase: { phase: string; percentage: number },
   personalDayNumber: number,
   alignments: Alignment[],
@@ -302,7 +316,7 @@ function generateFallbackHoroscope(
     alignmentNote = ` ${top.interpretation.split('.')[0]}.`;
   }
 
-  return `${dayMessage}${transitNote}${alignmentNote} The ${moonPhase.phase.toLowerCase()} in ${moonSign} reminds me to ${moonPhase.phase.includes('Waxing') ? 'build momentum' : moonPhase.phase.includes('Waning') ? 'release what is not working' : moonPhase.phase.includes('Full') ? 'see clearly what I have been avoiding' : 'plant a seed of intention'}.`;
+  return `${dayMessage}${transitNote}${alignmentNote} Today's ${moonPhase.phase.toLowerCase()} Moon is in ${currentMoonSign}; I can use that symbolism as a reflection prompt rather than a prediction.`;
 }
 
 const horoscopeCache = new Map<string, DailyHoroscope>();
@@ -332,9 +346,18 @@ export async function generateDailyHoroscope(profile: any): Promise<DailyHorosco
   const alignments = calculateAlignments(planets);
   const personalTransits = calculatePersonalTransitsFromProfile(profile, now);
   const moonPhase = getMoonPhase(now);
+  const currentMoonSign = getMoonSign(now);
   const personalDayNumber = calculatePersonalDayNumber(profile.birthDate, dateKey);
 
-  const horoscope = await generateAIHoroscope(profile, planets, alignments, personalTransits, moonPhase, personalDayNumber);
+  const horoscope = await generateAIHoroscope(
+    profile,
+    planets,
+    alignments,
+    personalTransits,
+    moonPhase,
+    currentMoonSign,
+    personalDayNumber,
+  );
 
   const result: DailyHoroscope = {
     date: dateKey,
