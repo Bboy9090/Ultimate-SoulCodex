@@ -111,3 +111,17 @@ test("legacy ritual and blueprint routes preserve disabled systems as inert comp
   assert.match(rootRoutes, /chiron:\s*""/);
   assert.match(rootRoutes, /nodes:\s*""/);
 });
+
+
+test("governed daily template module contains no dormant disabled-system corpus", () => {
+  const governedPackage = readFileSync("packages/astrology/template-bank.ts", "utf8");
+
+  assert.doesNotMatch(
+    governedPackage,
+    /const (?:personality|chinese|ayurveda|vedic|geneKeys|iChing|mayan|chakra|runes|tarot|kabbalah|sacredGeom|sabian|biorhythms|asteroids|arabicParts|fixedStars)Templates/,
+  );
+  assert.doesNotMatch(
+    governedPackage,
+    /birth rune|nakshatra|dosha|hexagram|Sabian Symbol|Part of Fortune|fixed star|Gene Key|biorhythm/i,
+  );
+});
