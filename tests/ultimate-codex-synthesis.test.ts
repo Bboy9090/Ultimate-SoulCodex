@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildUltimateCodexSynthesis } from "../client/src/lib/ultimateCodexSynthesis.ts";
 
+const placementEvidence = {
+  source: "Independent verified synthesis fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T12:00:00.000Z",
+};
+
 function profile(moonSign = "Virgo") {
   const signs: Record<string, string> = {
     sun: "Virgo", moon: moonSign, mercury: "Virgo", venus: "Libra", mars: "Scorpio",
@@ -14,7 +20,12 @@ function profile(moonSign = "Virgo") {
   const planetaryHouses: Record<string, number> = {};
   Object.keys(signs).forEach((key, index) => {
     const sign = signs[key];
-    planets[key] = { verificationStatus: "verified", sign, internalCandidate: { longitude: signStart[sign] + 3 + index } };
+    planets[key] = {
+      verificationStatus: "verified",
+      sign,
+      evidence: placementEvidence,
+      internalCandidate: { longitude: signStart[sign] + 3 + index },
+    };
     planetaryHouses[key] = key === "sun" || key === "moon" || key === "mercury" ? 10 : ((index + 2) % 12) + 1;
   });
 
@@ -23,26 +34,67 @@ function profile(moonSign = "Virgo") {
     verifiedAstrologyData: {
       planets,
       planetaryHouses,
-      rising: { verificationStatus: "verified", sign: "Scorpio", internalCandidate: { longitude: 222 } },
-      midheaven: { verificationStatus: "verified", sign: "Leo", longitude: 130, degree: 10 },
-      northNode: { verificationStatus: "verified", sign: "Taurus", longitude: 48, degree: 18, house: 7 },
-      southNode: { verificationStatus: "verified", sign: "Scorpio", longitude: 228, degree: 18, house: 1 },
-      chiron: { verificationStatus: "verified", sign: "Cancer", longitude: 105, degree: 15, house: 4 },
+      rising: {
+        verificationStatus: "verified",
+        sign: "Scorpio",
+        evidence: placementEvidence,
+        internalCandidate: { longitude: 222 },
+      },
+      midheaven: {
+        verificationStatus: "verified",
+        sign: "Leo",
+        longitude: 130,
+        degree: 10,
+        policyId: "ASTRO-EQUAL-HOUSE-v1",
+        evidenceArtifactId: "equal-house-fixture",
+      },
+      northNode: {
+        verificationStatus: "verified",
+        sign: "Taurus",
+        longitude: 48,
+        degree: 18,
+        house: 7,
+        policyId: "ASTRO-MEAN-NODE-v1",
+        evidenceArtifactId: "mean-node-fixture",
+      },
+      southNode: {
+        verificationStatus: "verified",
+        sign: "Scorpio",
+        longitude: 228,
+        degree: 18,
+        house: 1,
+        policyId: "ASTRO-MEAN-NODE-v1",
+        evidenceArtifactId: "mean-node-fixture",
+      },
+      chiron: {
+        verificationStatus: "verified",
+        sign: "Cancer",
+        longitude: 105,
+        degree: 15,
+        house: 4,
+        policyId: "ASTRO-CHIRON-v1",
+        evidenceArtifactId: "chiron-live-jpl-fixture",
+      },
       houses: Array.from({ length: 12 }, (_, index) => ({
         verificationStatus: "verified",
         house: index + 1,
         sign: zodiac[index],
         degree: 12,
         longitude: index * 30 + 12,
+        policyId: "ASTRO-EQUAL-HOUSE-v1",
+        evidenceArtifactId: "equal-house-fixture",
       })),
       aspects: [
-        { planet1: "sun", planet2: "mars", aspect: "square", orb: 2.1 },
-        { planet1: "moon", planet2: "venus", aspect: "trine", orb: 1.2 },
+        { planet1: "sun", planet2: "mars", aspect: "square", orb: 2.1, policyId: "ASTRO-ASPECT-MAJOR-v1" },
+        { planet1: "moon", planet2: "venus", aspect: "trine", orb: 1.2, policyId: "ASTRO-ASPECT-MAJOR-v1" },
       ],
     },
     numerologyData: { lifePath: 9, birthday: 8, expression: 5, soulUrge: 2, personality: 7, maturity: 5, personalYear: 9 },
     humanDesignData: {
       status: "verified",
+      verificationReceiptId: "HUMAN-DESIGN-CORE-v1-fixture-receipt",
+      independentSource: "independent-hd-fixture",
+      verifiedAt: "2026-09-26T12:00:00.000Z",
       type: "Reflector",
       strategy: "To Wait a Lunar Cycle",
       authority: "Lunar Authority",
@@ -151,4 +203,72 @@ test("verified supporting points alter the Codex fingerprint", () => {
   const b = buildUltimateCodexSynthesis(second);
   assert.notEqual(a.fingerprint, b.fingerprint);
   assert.notEqual(a.codexNumber, b.codexNumber);
+});
+
+
+test("status-only Human Design cannot enter the stable Codex fingerprint", () => {
+  const trusted = profile();
+  const statusOnly = profile();
+  delete statusOnly.humanDesignData.verificationReceiptId;
+  delete statusOnly.humanDesignData.independentSource;
+  delete statusOnly.humanDesignData.verifiedAt;
+
+  const trustedResult = buildUltimateCodexSynthesis(trusted);
+  const statusOnlyResult = buildUltimateCodexSynthesis(statusOnly);
+
+  assert.ok(trustedResult.evidenceSignature.some((value) => value.startsWith("hd:type:")));
+  assert.equal(
+    statusOnlyResult.evidenceSignature.some((value) => value.startsWith("hd:")),
+    false,
+  );
+  assert.ok(statusOnlyResult.unresolved.some((value) => /Human Design/i.test(value)));
+  assert.notEqual(trustedResult.fingerprint, statusOnlyResult.fingerprint);
+});
+
+test("status-only derived astrology cannot enter Ultimate Codex evidence", () => {
+  const candidate = profile();
+
+  for (const row of candidate.verifiedAstrologyData.houses) {
+    delete row.policyId;
+    delete row.evidenceArtifactId;
+  }
+  delete candidate.verifiedAstrologyData.midheaven.policyId;
+  delete candidate.verifiedAstrologyData.midheaven.evidenceArtifactId;
+  delete candidate.verifiedAstrologyData.northNode.policyId;
+  delete candidate.verifiedAstrologyData.northNode.evidenceArtifactId;
+  delete candidate.verifiedAstrologyData.southNode.policyId;
+  delete candidate.verifiedAstrologyData.southNode.evidenceArtifactId;
+  delete candidate.verifiedAstrologyData.chiron.policyId;
+  delete candidate.verifiedAstrologyData.chiron.evidenceArtifactId;
+  for (const aspect of candidate.verifiedAstrologyData.aspects) {
+    delete aspect.policyId;
+  }
+
+  const result = buildUltimateCodexSynthesis(candidate);
+  assert.equal(result.houseCusps.length, 0);
+  assert.equal(result.aspects.length, 0);
+  assert.equal(
+    result.supportingPoints.some((point) =>
+      ["midheaven", "northNode", "southNode", "chiron"].includes(point.key),
+    ),
+    false,
+  );
+  assert.equal(result.coverage, "partial");
+});
+
+test("status-only natal placements and Rising cannot enter Ultimate Codex evidence", () => {
+  const candidate = profile();
+
+  for (const placement of Object.values(candidate.verifiedAstrologyData.planets) as any[]) {
+    delete placement.evidence;
+  }
+  delete candidate.verifiedAstrologyData.rising.evidence;
+
+  const result = buildUltimateCodexSynthesis(candidate);
+  assert.equal(result.placements.length, 0);
+  assert.equal(
+    result.supportingPoints.some((point) => point.key === "rising"),
+    false,
+  );
+  assert.equal(result.coverage, "partial");
 });
