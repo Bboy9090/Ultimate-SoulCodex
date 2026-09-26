@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectTemplates } from "../packages/astrology/template-bank.ts";
+import { moonSignReflection, personalDayReflection, selectTemplates } from "../packages/astrology/template-bank.ts";
 import type { DailyContext } from "../packages/astrology/daily-context.ts";
 
 const context: DailyContext = {
@@ -52,4 +52,46 @@ test("daily guidance never emits disabled legacy symbolic categories", () => {
   for (const template of result.selectedTemplates) {
     assert.ok(["astrology", "numerology"].includes(template.category));
   }
+});
+
+
+test("daily reflection vocabulary stays semantically differentiated", () => {
+  const personalDayThemes = new Set(
+    [1,2,3,4,5,6,7,8,9,11,22,33].map((number) => {
+      const reflection = personalDayReflection(number);
+      assert.ok(reflection.theme.length > 8);
+      assert.ok(reflection.action.length > 12);
+      return `${reflection.theme}|${reflection.action}`;
+    }),
+  );
+  assert.equal(personalDayThemes.size, 12);
+
+  const moonPrompts = new Set(
+    [
+      "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
+      "Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces",
+    ].map((sign) => moonSignReflection(sign)),
+  );
+  assert.equal(moonPrompts.size, 12);
+
+  assert.notEqual(personalDayReflection(1).theme, personalDayReflection(9).theme);
+  assert.notEqual(moonSignReflection("Aries"), moonSignReflection("Pisces"));
+});
+
+test("daily differentiated prompts remain non-predictive", () => {
+  const rendered = [
+    ...[1,2,3,4,5,6,7,8,9,11,22,33].flatMap((number) => {
+      const reflection = personalDayReflection(number);
+      return [reflection.theme, reflection.action];
+    }),
+    ...[
+      "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
+      "Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces",
+    ].map((sign) => moonSignReflection(sign)),
+  ].join(" ");
+
+  assert.doesNotMatch(
+    rendered,
+    /will happen|guaranteed|destined|fated|luck|you are|you always|you never|must happen/i,
+  );
 });
