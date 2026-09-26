@@ -90,6 +90,3 @@ export function circularNodeDeltaDegrees(left: number, right: number): number {
     throw new Error("node_longitude_invalid");
   }
 }
-  const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
-  return Math.min(raw, 360 - raw);
-}
