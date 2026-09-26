@@ -64,7 +64,9 @@ export function buildCompatibilityProfileInput(
     : { sun: undefined, moon: undefined, rising: undefined, unresolved: ["Sun", "Moon", "Ascendant"] };
   return {
     sunSign: astrology.sun,
-    lifePathNumber: deterministicLifePath(profile),
+    lifePathNumber: options.trustedEvidenceContext
+      ? deterministicLifePath(profile)
+      : undefined,
     humanDesignType: undefined as string | undefined,
     unresolved: {
       astrology: astrology.unresolved,
