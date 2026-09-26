@@ -31,6 +31,7 @@ node --import tsx --test \
   tests/planetary-boundary-integrity.test.ts \
   tests/aspect-engine.test.ts \
   tests/astrology-production-verification.test.ts \
+  tests/offline-ephemeris-accuracy.test.ts \
   tests/strict-civil-time.test.ts \
   tests/zoned-instant.test.ts \
   tests/timeline-cycle-reduction.test.ts \
@@ -54,6 +55,7 @@ node --import tsx --test \
   tests/release-identity.test.ts \
   tests/billing-security.test.ts \
   tests/local-first-privacy-contract.test.ts \
+  tests/share-privacy-contract.test.ts \
   tests/location-resolution-contract.test.ts \
   tests/geocoding-ambiguity.test.ts \
   tests/birth-location-consistency.test.ts \
