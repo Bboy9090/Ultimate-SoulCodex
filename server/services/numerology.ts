@@ -7,6 +7,7 @@ import {
   calcMaturity,
   calcPersonalYear,
   normalizeNumerologyName,
+  numerologyNameComponentAvailability,
   parseDateOnly,
 } from '@soulcodex/core';
 
@@ -15,8 +16,8 @@ interface ResolvedNumerologyData {
   lifePath: number;
   birthday: number;
   expression: number;
-  soulUrge: number;
-  personality: number;
+  soulUrge: number | null;
+  personality: number | null;
   maturity: number;
   personalYear: number;
   interpretations: {
@@ -110,8 +111,9 @@ export function calculateNumerology(
   const lifePath = calcLifePath(birthDate);
   const birthday = calcBirthday(birthDate);
   const expression = calcExpression(fullName);
-  const soulUrge = calcSoulUrge(fullName);
-  const personality = calcPersonality(fullName);
+  const availability = numerologyNameComponentAvailability(fullName);
+  const soulUrge = availability.vowelCount > 0 ? calcSoulUrge(fullName) : null;
+  const personality = availability.consonantCount > 0 ? calcPersonality(fullName) : null;
   const maturity = calcMaturity(birthDate, fullName);
   const personalYear = calcPersonalYear(birthDate, targetYear);
 
@@ -128,8 +130,12 @@ export function calculateNumerology(
       lifePath: interpretations.lifePath[lifePath as keyof typeof interpretations.lifePath] || `Life Path ${lifePath} is a deterministic number used here as symbolic reflection.`,
       birthday: `Birthday Number ${birthday}: deterministic reduction of the calendar day, used here as symbolic reflection.`,
       expression: `Expression Number ${expression}: deterministic Pythagorean name-number mapping, used here as symbolic reflection rather than a measured talent profile.`,
-      soulUrge: `Soul Urge ${soulUrge}: deterministic vowel-number mapping, used here as symbolic reflection rather than a factual statement about inner desires.`,
-      personality: `Personality Number ${personality}: deterministic consonant-number mapping, used here as symbolic reflection rather than a factual statement about how others perceive you.`,
+      soulUrge: soulUrge === null
+        ? "Soul Urge unresolved under the active vowel policy; no zero placeholder is assigned."
+        : `Soul Urge ${soulUrge}: deterministic vowel-number mapping, used here as symbolic reflection rather than a factual statement about inner desires.`,
+      personality: personality === null
+        ? "Personality Number unresolved under the active consonant policy; no zero placeholder is assigned."
+        : `Personality Number ${personality}: deterministic consonant-number mapping, used here as symbolic reflection rather than a factual statement about how others perceive you.`,
       maturity: `Maturity Number ${maturity}: deterministic combination of Life Path and Expression, used here as symbolic reflection.`,
       personalYear: `Personal Year ${personalYear} for ${targetYear}: deterministic calendar-year cycle under the Soul Codex numerology policy, used as a reflective timing theme rather than a prediction.`
     }
