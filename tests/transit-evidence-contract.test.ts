@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   extractNatalPositions as extractRootNatal,
   calculateActiveTransits as calculateRootTransits,
@@ -45,10 +46,21 @@ for (const [label, calculate] of [
   ['root', calculateRootTransits],
   ['package', calculatePackageTransits],
 ] as const) {
-  test(`${label} transit engine does not invent a theme with no governed natal evidence`, () => {
-    const result = calculate({}, new Date('2026-09-25T12:00:00Z'));
-    assert.deepEqual(result.transits, []);
-    assert.equal(result.overallIntensity, 0);
-    assert.equal(result.dominantTheme, 'No active governed major transit');
+  test(`${label} transit engine fails closed with no governed natal evidence`, () => {
+    assert.throws(
+      () => calculate({}, new Date('2026-09-25T12:00:00Z')),
+      /transit_verified_natal_positions_required/,
+    );
   });
+}
+
+test('transit interpretation copy separates measured geometry from symbolic meaning', () => {
+  const source = readFileSync('transits.ts', 'utf8');
+
+  assert.match(source, /Reflection prompt:/);
+  assert.match(source, /not a measured physical, psychological, or predictive intensity/);
+  assert.doesNotMatch(
+    source,
+    /Expansion and abundance arrive|Intuition is heightened|Your authentic self emerges effortlessly|Deep healing happens without force|Your efforts are rewarded/,
+  );
 }
