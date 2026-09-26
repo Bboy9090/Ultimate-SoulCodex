@@ -149,3 +149,29 @@ test('profile-local calendar date drives daily numerology while sky context uses
   const server = getServerDailyContext('1990-09-17', instant, '2026-09-25');
   assert.deepEqual(server, newYorkDay);
 });
+
+
+test('daily template rotation uses the full profile id rather than only its first character', () => {
+  const context = {
+    date: '2026-09-26',
+    personalDayNumber: 9,
+    universalDayNumber: 8,
+    moonSign: 'Pisces',
+    moonPhase: 'Full Moon',
+    moonPhasePercentage: 97,
+    currentHDGate: 18,
+    currentHDLine: 3,
+    planetaryHour: null,
+  };
+
+  const first = selectTemplates(context, { id: 'profile-alpha' }, []);
+  const second = selectTemplates(context, { id: 'profile-omega' }, []);
+  const firstAgain = selectTemplates(context, { id: 'profile-alpha' }, []);
+
+  assert.deepEqual(first.templateIds, firstAgain.templateIds);
+  assert.notDeepEqual(
+    first.templateIds,
+    second.templateIds,
+    'different full profile ids should be able to produce different deterministic rotations',
+  );
+});
