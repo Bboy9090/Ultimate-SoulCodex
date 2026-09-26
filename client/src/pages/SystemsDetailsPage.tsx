@@ -13,6 +13,26 @@ import {
 } from "lucide-react";
 import Navigation from "@/components/navigation";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
+import {
+  registryDisplayManifest,
+  type SoulCodexRegistryDisplayState,
+} from "@shared/system-registry";
+
+const registryManifest = registryDisplayManifest();
+
+const registryStateOrder: readonly SoulCodexRegistryDisplayState[] = [
+  "Governed",
+  "Supporting",
+  "Inspect only",
+  "Unavailable",
+];
+
+function registryStateClass(state: SoulCodexRegistryDisplayState): string {
+  if (state === "Governed") return "text-[var(--sc-teal)]";
+  if (state === "Supporting") return "text-[var(--sc-gold-bright)]";
+  if (state === "Inspect only") return "text-[var(--sc-violet)]";
+  return "text-[var(--sc-stone)]";
+}
 
 type Placement = {
   sign?: string | null;
@@ -273,6 +293,71 @@ export default function SystemsDetailsPage() {
                 </div>
               </div>
             )}
+          </section>
+
+          <section className="sc-panel p-5 sm:p-7">
+            <div className="mb-5 flex items-start gap-3">
+              <div className="sc-icon-well"><Database className="h-5 w-5" /></div>
+              <div>
+                <p className="font-semibold text-[var(--sc-ivory)]">System governance atlas</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">
+                  This is the production registry, not a claim that every system is active for this profile. “Governed” means Soul Codex has an approved production policy for that system. Per-profile verification is separate and still has to pass at runtime.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {registryStateOrder.map((state) => {
+                const entries = registryManifest.filter((entry) => entry.state === state);
+                return (
+                  <div key={state} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3">
+                    <p className={`text-xs font-semibold uppercase tracking-[.12em] ${registryStateClass(state)}`}>{state}</p>
+                    <p className="mt-1 font-serif text-2xl text-[var(--sc-ivory)]">{entries.length}</p>
+                    <p className="mt-1 text-[11px] leading-5 text-[var(--sc-stone)]">
+                      {state === "Governed"
+                        ? "Approved production policy; profile evidence must still qualify."
+                        : state === "Supporting"
+                          ? "Explicit user context; not a stable birth-derived identity fact."
+                          : state === "Inspect only"
+                            ? "Visible for technical inspection, excluded from verified synthesis."
+                            : "Quarantined until its own evidence and calculation contract is production-grade."}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {registryStateOrder.map((state) => {
+                const entries = registryManifest.filter((entry) => entry.state === state);
+                return (
+                  <details key={state} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+                    <summary className={`cursor-pointer text-sm font-semibold ${registryStateClass(state)}`}>
+                      {state} systems ({entries.length})
+                    </summary>
+                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      {entries.map((entry) => (
+                        <div key={entry.id} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-[var(--sc-ivory)]">{entry.label}</p>
+                              <p className="mt-1 text-[11px] uppercase tracking-[.1em] text-[var(--sc-stone)]">{entry.family}</p>
+                            </div>
+                            <span className="text-[11px] font-semibold text-[var(--sc-stone)]">
+                              {entry.stableIdentityEligible ? "Stable identity eligible" : "Not in stable identity"}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
+                            <strong className="text-[var(--sc-ivory)]">Evidence contract:</strong> {entry.evidenceContract}
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">{entry.rule}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
           </section>
 
           <section className="sc-panel border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.025)] p-5 sm:p-7">
