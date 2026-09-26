@@ -84,11 +84,25 @@ function isValidIsoTimestamp(value: string): boolean {
 }
 
 const HUMAN_DESIGN_STRATEGY_BY_TYPE = Object.freeze({
-  Manifestor: "To Inform",
-  Generator: "To Respond",
-  "Manifesting Generator": "To Respond & Inform",
-  Projector: "To Wait for Invitation",
-  Reflector: "To Wait a Lunar Cycle",
+  Manifestor: Object.freeze(["to inform", "inform"]),
+  Generator: Object.freeze(["to respond", "respond"]),
+  "Manifesting Generator": Object.freeze([
+    "to respond & inform",
+    "to respond and inform",
+    "respond & inform",
+    "respond and inform",
+  ]),
+  Projector: Object.freeze([
+    "to wait for invitation",
+    "wait for invitation",
+    "wait for the invitation",
+  ]),
+  Reflector: Object.freeze([
+    "to wait a lunar cycle",
+    "wait a lunar cycle",
+    "wait for lunar month",
+    "wait a full lunar cycle",
+  ]),
 } as const);
 
 const HUMAN_DESIGN_AUTHORITIES_BY_TYPE: Readonly<
@@ -122,8 +136,12 @@ function completeVerifiedCandidate(
   if (!(type in HUMAN_DESIGN_STRATEGY_BY_TYPE)) return null;
 
   const supportedType = type as keyof typeof HUMAN_DESIGN_STRATEGY_BY_TYPE;
-  if (strategy !== HUMAN_DESIGN_STRATEGY_BY_TYPE[supportedType]) return null;
-  if (!HUMAN_DESIGN_AUTHORITIES_BY_TYPE[supportedType].includes(authority)) return null;
+  const normalizedStrategy = strategy.toLowerCase().replace(/\s+/g, " ");
+  const normalizedAuthority = authority.toLowerCase().replace(/\s+/g, " ");
+  if (!HUMAN_DESIGN_STRATEGY_BY_TYPE[supportedType].includes(normalizedStrategy as never)) return null;
+  if (!HUMAN_DESIGN_AUTHORITIES_BY_TYPE[supportedType]
+    .map((value) => value.toLowerCase())
+    .includes(normalizedAuthority)) return null;
   if (!/^[1-6]\/[1-6]$/.test(profile)) return null;
 
   return { type, strategy, authority, profile };
