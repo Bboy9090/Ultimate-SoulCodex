@@ -1,3 +1,10 @@
+import {
+  circularDegreesDelta,
+  degreeInTropicalSign,
+  distanceToNearestThirtyDegreeBoundary,
+  normalizeDegrees,
+  tropicalSignFromLongitude,
+} from "./angular-math";
 import { SiderealTime } from "./astronomy-engine-compat";
 
 export type AscendantSign =
@@ -73,21 +80,6 @@ export type AscendantVerificationResult =
         | "calculation_failed";
     };
 
-const SIGNS: readonly AscendantSign[] = [
-  "Aries",
-  "Taurus",
-  "Gemini",
-  "Cancer",
-  "Leo",
-  "Virgo",
-  "Libra",
-  "Scorpio",
-  "Sagittarius",
-  "Capricorn",
-  "Aquarius",
-  "Pisces",
-];
-
 const CANDIDATE_ENGINE = "astronomy-engine@2.1.19-sidereal-time + IAU-2006-obliquity";
 const CANDIDATE_SOURCE =
   "Astronomy Engine apparent sidereal time with an independently coded eastern-horizon intersection";
@@ -111,24 +103,6 @@ function radians(degrees: number): number {
 
 function degrees(radiansValue: number): number {
   return (radiansValue * 180) / Math.PI;
-}
-
-function normalizeDegrees(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-function circularDelta(left: number, right: number): number {
-  const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
-  return Math.min(raw, 360 - raw);
-}
-
-function distanceToNearestSignBoundary(longitude: number): number {
-  const withinSign = normalizeDegrees(longitude) % 30;
-  return Math.min(withinSign, 30 - withinSign);
-}
-
-function signFromLongitude(longitude: number): AscendantSign {
-  return SIGNS[Math.floor(normalizeDegrees(longitude) / 30)];
 }
 
 function hasExplicitUtcOffset(inputTimestamp: string): boolean {
@@ -251,8 +225,8 @@ function evidenceRecord(
   return {
     ...input,
     longitudeDegrees: normalized,
-    sign: signFromLongitude(normalized),
-    degreeInSign: normalized % 30,
+    sign: tropicalSignFromLongitude(normalized),
+    degreeInSign: degreeInTropicalSign(normalized),
     engine,
     source,
     calculatedAt: new Date().toISOString(),
@@ -439,7 +413,7 @@ export function verifyAscendant(
     };
   }
 
-  const longitudeDeltaDegrees = circularDelta(
+  const longitudeDeltaDegrees = circularDegreesDelta(
     candidate.longitudeDegrees,
     reference.longitudeDegrees,
   );
@@ -471,8 +445,8 @@ export function verifyAscendant(
   }
 
   const boundaryDistance = Math.min(
-    distanceToNearestSignBoundary(candidate.longitudeDegrees),
-    distanceToNearestSignBoundary(reference.longitudeDegrees),
+    distanceToNearestThirtyDegreeBoundary(candidate.longitudeDegrees),
+    distanceToNearestThirtyDegreeBoundary(reference.longitudeDegrees),
   );
   if (boundaryDistance <= policy.maximumLongitudeDeltaDegrees) {
     return {
