@@ -39,6 +39,7 @@ node --import tsx --test \
   tests/timeline-cycle-reduction.test.ts \
   tests/numerology-cycle-authority-contract.test.ts \
   tests/daily-template-system-mix.test.ts \
+  tests/daily-guidance-authority.test.ts \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
   tests/house-production.test.ts \
