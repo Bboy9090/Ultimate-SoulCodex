@@ -51,3 +51,43 @@ test('full civil time and coordinates may expose equal-house assignments', () =>
     assert.equal(typeof placement?.house, 'number');
   }
 });
+
+
+test('legacy astrology rejects impossible civil dates and malformed clock times', () => {
+  assert.throws(
+    () => calculateAstrology({ birthDate: '1990-02-31' } as any),
+    /date|day|invalid/i,
+  );
+
+  for (const birthTime of ['9:30', '24:00', '12:60', 'noon']) {
+    assert.throws(
+      () => calculateAstrology({
+        birthDate: '1990-09-17',
+        birthTime,
+        timezone: 'America/New_York',
+      } as any),
+      /birthTime|civil time|invalid/i,
+    );
+  }
+});
+
+test('legacy astrology rejects non-finite and out-of-range coordinates', () => {
+  for (const [latitude, longitude] of [
+    [91, -73.9],
+    [-91, -73.9],
+    [40.8, 181],
+    [40.8, -181],
+    ['not-a-number', -73.9],
+  ] as const) {
+    assert.throws(
+      () => calculateAstrology({
+        birthDate: '1990-09-17',
+        birthTime: '11:11',
+        timezone: 'America/New_York',
+        latitude,
+        longitude,
+      } as any),
+      /latitude|longitude|invalid/i,
+    );
+  }
+});
