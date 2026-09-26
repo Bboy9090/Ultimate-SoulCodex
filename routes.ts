@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { birthDataSchema, enneagramAssessmentSchema, mbtiAssessmentSchema, type Profile, type User, signupSchema, loginSchema } from "./shared/schema";
 import { sendTestNotificationSchema, broadcastNotificationSchema } from "./shared/notification-schemas";
-import { calculateAstrology, getTarotBirthCards } from "./services/astrology";
+import { calculateAstrology } from "./services/astrology";
 import { getAstroProvider } from "./server/astro/provider";
 import { buildPosterSvg, type PosterData as PosterSvgData } from "./server/posterSvg";
 import sharp from "sharp";
@@ -866,15 +866,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         humanDesignData = null;
       }
       
-      // Get Tarot birth cards
-      let tarotCards;
-      try {
-        tarotCards = getTarotBirthCards(birthData.birthDate);
-      } catch (error) {
-        console.error("[CreateProfile] Tarot calculation failed:", error);
-        tarotCards = []; // Non-critical, can continue without tarot cards
-      }
-      
       // Calculate all new mystical systems (30+ total)
       // Systems below are present only as legacy code and are explicitly
       // unavailable in the production system registry. Preserve schema keys
@@ -948,8 +939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shadows: baseArchetypeData.shadows || [],
         guidance: baseArchetypeData.guidance,
         integration: integrationAnalysis,
-        personalizedInsights: personalizedInsights,
-        tarotCards
+        personalizedInsights: personalizedInsights
       };
       
       // Generate biography and guidance (AI-powered with ALL 30+ systems)
@@ -963,7 +953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           numerologyData,
           personalityData: {},
           archetype: baseArchetypeData,
-          // All 15 new advanced systems + tarot for COMPLETE synthesis (30+ systems total)
+          // Legacy symbolic systems remain null and excluded from identity synthesis.
           humanDesignData,
           vedicAstrologyData,
           geneKeysData,
@@ -979,8 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           biorhythmsData,
           asteroidsData,
           arabicPartsData,
-          fixedStarsData,
-          tarotCards // Tarot birth cards
+          fixedStarsData
         }),
         "Your cosmic journey awaits..."
       );
@@ -1155,9 +1144,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const integrationAnalysis = generateIntegrationAnalysis(astrologyData, numerologyData, profile.personalityData, baseArchetypeData);
         const personalizedInsights = generatePersonalizedInsights(astrologyData, numerologyData, profile.personalityData, baseArchetypeData);
         
-        // Get Tarot birth cards if not present
-        const tarotCards = getTarotBirthCards(profile.birthDate);
-        
         // Combine all archetype data with integration and insights
         const enhancedArchetypeData = {
           archetype: baseArchetypeData.title,
@@ -1168,8 +1154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           shadows: baseArchetypeData.shadows || [],
           guidance: baseArchetypeData.guidance,
           integration: integrationAnalysis,
-          personalizedInsights: personalizedInsights,
-          tarotCards: tarotCards
+          personalizedInsights: personalizedInsights
         };
         
         updatedData.archetypeData = enhancedArchetypeData;
@@ -1389,8 +1374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shadows: baseArchetypeData.shadows || [],
         guidance: baseArchetypeData.guidance,
         integration: integrationAnalysis,
-        personalizedInsights: personalizedInsights,
-        tarotCards: (profile.archetypeData as any)?.tarotCards
+        personalizedInsights: personalizedInsights
       };
       
       const updatedProfile = await storage.updateProfile(profileId, {
@@ -1460,8 +1444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shadows: baseArchetypeData.shadows || [],
         guidance: baseArchetypeData.guidance,
         integration: integrationAnalysis,
-        personalizedInsights: personalizedInsights,
-        tarotCards: (profile.archetypeData as any)?.tarotCards
+        personalizedInsights: personalizedInsights
       };
       
       const updatedProfile = await storage.updateProfile(profileId, {
