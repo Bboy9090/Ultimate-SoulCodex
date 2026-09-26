@@ -47,6 +47,14 @@ node --import tsx --test \
   tests/release-identity.test.ts \
   tests/billing-security.test.ts \
   tests/system-visibility-contract.test.ts \
+  tests/verified-profile-differentiation-corpus.test.ts \
+  tests/daily-template-system-mix.test.ts \
+  tests/verified-system-method-summary.test.ts \
+  tests/share-privacy-contract.test.ts \
+  tests/synastry-input-validation.test.ts \
+  tests/assessment-source-boundary.test.ts \
+  tests/assessment-interpretation-boundary.test.ts \
+  tests/readme-system-truth.test.ts \
   tests/changelog-current-truth.test.ts \
   tests/canonical-doctrine-contract.test.ts \
   tests/server-profile-ownership.test.ts \
