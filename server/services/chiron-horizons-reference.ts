@@ -40,15 +40,22 @@ function signFromLongitude(value: number): string {
   return ZODIAC_SIGNS[Math.floor(normalizeLongitude(value) / 30)];
 }
 
+function assertExplicitUtcTimestamp(timestamp: string): Date {
+  const raw = timestamp.trim();
+  const date = new Date(raw);
+  if (!/Z$/i.test(raw) || Number.isNaN(date.getTime())) {
+    throw new Error("invalid_input_timestamp");
+  }
+  return date;
+}
+
 function horizonsTime(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) throw new Error("invalid_input_timestamp");
+  const date = assertExplicitUtcTimestamp(timestamp);
   return date.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
 }
 
 function addOneMinute(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) throw new Error("invalid_input_timestamp");
+  const date = assertExplicitUtcTimestamp(timestamp);
   return new Date(date.getTime() + 60_000).toISOString();
 }
 
@@ -103,7 +110,7 @@ export async function fetchChironHorizonsReference(
       source: HORIZONS_SOURCE,
       engine: HORIZONS_ENGINE,
       calculatedAt: new Date().toISOString(),
-      inputTimestamp: new Date(inputTimestamp).toISOString(),
+      inputTimestamp: assertExplicitUtcTimestamp(inputTimestamp).toISOString(),
     };
   } finally {
     clearTimeout(timeout);
