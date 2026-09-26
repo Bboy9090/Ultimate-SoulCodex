@@ -198,43 +198,7 @@ function normalizeShareKey(key: string): string {
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\const ALWAYS_PRIVATE_SHARE_KEYS = new Set([
-  'userid',
-  'sessionid',
-  'birthtime',
-  'timezone',
-  'latitude',
-  'longitude',
-  'inputtimestamp',
-  'inputtimestamputc',
-]);
-
-const PERSONAL_SHARE_KEYS = new Set([
-  'birthdate',
-  'birthlocation',
-]);
-
-function sanitizeSharedValue(
-  value: unknown,
-  includePersonalInfo: boolean,
-): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeSharedValue(entry, includePersonalInfo));
-  }
-
-  if (!value || typeof value !== 'object' || value instanceof Date) {
-    return value;
-  }
-
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-    const normalizedKey = key.toLowerCase();
-    if (ALWAYS_PRIVATE_SHARE_KEYS.has(normalizedKey)) continue;
-    if (!includePersonalInfo && PERSONAL_SHARE_KEYS.has(normalizedKey)) continue;
-    sanitized[key] = sanitizeSharedValue(nested, includePersonalInfo);
-  }
-  return sanitized;
-}');
+  return value.replace(/[.*+?^$\{\}()|[\]\\]/g, (match) => `\\${match}`);
 }
 
 function redactLiteral(
