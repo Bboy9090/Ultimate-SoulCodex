@@ -9,10 +9,58 @@ const provenance = {
 };
 
 function chart() {
-  const houses = Array.from({ length: 12 }, (_, index) => ({ house: index + 1, sign: "Aries", verificationStatus: "verified" }));
+  const houses = Array.from({ length: 12 }, (_, index) => ({
+    house: index + 1,
+    sign: "Aries",
+    verificationStatus: "verified",
+    policyId: "ASTRO-EQUAL-HOUSE-v1",
+    evidenceArtifactId: "equal-house-fixture",
+    longitude: 0,
+    degree: 0,
+  }));
   const planets = Object.fromEntries(["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"].map(key => [key, { sign: "Virgo", verificationStatus: "verified", evidence: provenance }]));
   const planetaryHouses = Object.fromEntries(Object.keys(planets).map((key, index) => [key, index + 1]));
-  return { houseSystem: "equal", houses, planets, planetaryHouses, rising: { sign: "Scorpio", verificationStatus: "verified", evidence: provenance }, midheaven: { sign: "Leo", verificationStatus: "verified", evidence: provenance }, northNode: { sign: "Aquarius", house: 4, verificationStatus: "verified", evidence: provenance }, southNode: { sign: "Leo", house: 10, verificationStatus: "verified", evidence: provenance }, chiron: { sign: "Cancer", house: 9, verificationStatus: "verified", evidence: provenance, qualificationMethod: "live-jpl-qualified-against-swiss" } };
+  return {
+    houseSystem: "equal",
+    houses,
+    planets,
+    planetaryHouses,
+    rising: { sign: "Scorpio", verificationStatus: "verified", evidence: provenance },
+    midheaven: {
+      sign: "Leo",
+      verificationStatus: "verified",
+      evidence: provenance,
+      policyId: "ASTRO-EQUAL-HOUSE-v1",
+      evidenceArtifactId: "equal-house-fixture",
+    },
+    northNode: {
+      sign: "Aquarius",
+      house: 4,
+      verificationStatus: "verified",
+      evidence: provenance,
+      mode: "mean",
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
+    },
+    southNode: {
+      sign: "Leo",
+      house: 10,
+      verificationStatus: "verified",
+      evidence: provenance,
+      mode: "mean",
+      policyId: "ASTRO-MEAN-NODE-v1",
+      evidenceArtifactId: "mean-node-fixture",
+    },
+    chiron: {
+      sign: "Cancer",
+      house: 9,
+      verificationStatus: "verified",
+      evidence: provenance,
+      policyId: "ASTRO-CHIRON-v1",
+      evidenceArtifactId: "chiron-fixture",
+      qualificationMethod: "live-jpl-qualified-against-swiss",
+    },
+  };
 }
 
 test("verified Equal-house records populate a personal atlas", () => {
@@ -61,4 +109,17 @@ test("status-only placements without provenance never appear in the atlas", () =
   const placements = personalAtlasPlacements(input);
   assert.equal(placements.some(row => row.key === "sun"), false);
   assert.equal(placements.some(row => row.key === "rising"), false);
+});
+
+
+test("verified-status house geometry without policy evidence fails closed", () => {
+  const missingPolicy = chart();
+  delete missingPolicy.houses[0].policyId;
+  assert.deepEqual(personalAtlasPlacements(missingPolicy), []);
+  assert.deepEqual(verifiedHouseCusps(missingPolicy), []);
+
+  const missingArtifact = chart();
+  missingArtifact.houses[0].evidenceArtifactId = "";
+  assert.deepEqual(personalAtlasPlacements(missingArtifact), []);
+  assert.deepEqual(verifiedHouseCusps(missingArtifact), []);
 });
