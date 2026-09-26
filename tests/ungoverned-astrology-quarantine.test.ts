@@ -8,6 +8,8 @@ import { calculateChineseAstrology } from '../services/chinese-astrology';
 import { calculateMayanAstrology } from '../services/mayan-astrology';
 import { calculateKabbalah } from '../services/kabbalah';
 import { calculateAyurveda } from '../services/ayurveda';
+import { calculateArabicParts } from '../services/arabic-parts';
+import { calculateFixedStars } from '../services/fixed-stars';
 
 const routes = fs.readFileSync(new URL('../routes.ts', import.meta.url), 'utf8');
 
@@ -64,5 +66,17 @@ test('legacy symbolic identity calculators match their unavailable registry stat
   assert.throws(
     () => calculateAyurveda('1990-09-17', {}, {}),
     /ayurveda_unavailable/,
+  );
+});
+
+
+test('Arabic Parts and fixed stars remain unavailable until their astronomy contracts are governed', () => {
+  assert.throws(
+    () => calculateArabicParts(0, 10, 20, 30, 40, 50, true),
+    /arabic_parts_unavailable:governed_lot_convention_required/,
+  );
+  assert.throws(
+    () => calculateFixedStars({ Sun: 150 }),
+    /fixed_stars_unavailable:epoch_aware_governed_catalog_required/,
   );
 });
