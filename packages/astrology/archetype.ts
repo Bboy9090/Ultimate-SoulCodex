@@ -497,6 +497,19 @@ export function synthesizeArchetype(
     keywords.push(personalityData.mbti.type.toLowerCase());
   }
 
+  if (keywords.length === 0) {
+    return {
+      title: "Archetype unresolved",
+      description: "No governed identity evidence is available for archetype synthesis. No substitute archetype is assigned.",
+      strengths: [],
+      shadows: [],
+      themes: [],
+      guidance: "Add or verify supported profile evidence before using archetype interpretation.",
+      integration: generateIntegrationAnalysis(rawAstrologyData, numerologyData, personalityData, {}),
+      personalizedInsights: generatePersonalizedInsights(rawAstrologyData, numerologyData, personalityData, {}),
+    };
+  }
+
   // Find best matching archetype
   let bestMatch = archetypes[0];
   let maxMatches = 0;
