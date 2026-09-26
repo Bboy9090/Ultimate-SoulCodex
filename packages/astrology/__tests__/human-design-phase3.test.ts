@@ -898,6 +898,8 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
       // Check all required fields are present
       assert.ok(typeof receipt?.configuredSolarArc === 'number');
       assert.ok(typeof receipt?.actualSolarArc === 'number');
+      assert.ok(typeof receipt?.angularResidualDegrees === 'number');
+      assert.ok(typeof receipt?.angularToleranceDegrees === 'number');
       assert.ok(typeof receipt?.iterationCount === 'number');
       assert.ok(typeof receipt?.finalSearchWindowDays === 'number');
       assert.ok(typeof receipt?.finalToleranceDays === 'number');
@@ -943,10 +945,18 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
 
       const receipt = activationsEntry?.metadata?.solar_arc_receipt;
 
-      // Actual arc should be close to configured (88.0)
       assert.ok(receipt?.actualSolarArc !== undefined);
-      const difference = Math.abs((receipt?.actualSolarArc || 0) - 88.0);
-      assert.ok(difference < 1, `Arc difference ${difference} should be less than 1 degree`);
+      assert.ok(receipt?.angularResidualDegrees !== undefined);
+      assert.ok(receipt?.angularToleranceDegrees !== undefined);
+      assert.ok(
+        (receipt?.angularResidualDegrees ?? Number.POSITIVE_INFINITY) <=
+          (receipt?.angularToleranceDegrees ?? 0),
+        `Arc residual ${receipt?.angularResidualDegrees} must stay within ${receipt?.angularToleranceDegrees} degrees`,
+      );
+      assert.ok(
+        (receipt?.angularToleranceDegrees ?? Number.POSITIVE_INFINITY) <= 0.001,
+        'Solar-arc angular tolerance must remain at or below 0.001 degrees',
+      );
     });
 
     it('should have iteration count within bounds', () => {
