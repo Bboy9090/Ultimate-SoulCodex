@@ -5,14 +5,26 @@ import { numerologySignals }  from "./systems/numerology";
 import { humanDesignSignals } from "./systems/humanDesign";
 import { moralCompassSignals } from "./systems/moralCompass";
 
+function hasVerifiedAstrologyEvidence(chart: any): boolean {
+  if (!chart || chart.verification?.complete !== true) return false;
+
+  const sun = chart.planets?.sun ?? chart.sun;
+  const moon = chart.planets?.moon ?? chart.moon;
+  const placementVerified = (placement: any) =>
+    placement?.verificationStatus === "verified" &&
+    typeof placement?.sign === "string" &&
+    placement.sign.trim().length > 0;
+
+  return placementVerified(sun) && placementVerified(moon);
+}
+
 export function collectSignals(input: Codex30Input): Signal[] {
-  const verified =
-    input?.profile?.meta?.confidence?.badge === "verified" ||
-    input?.profile?.confidence?.badge === "verified";
+  const chart = input.fullChart ?? input.profile;
+  const verifiedAstrology = hasVerifiedAstrologyEvidence(chart);
 
   const all: Signal[] = [
-    ...astrologySignals(input.fullChart ?? input.profile, verified),
-    ...aspectSignals(input.fullChart ?? {}, verified),
+    ...astrologySignals(chart, verifiedAstrology),
+    ...aspectSignals(input.fullChart ?? {}, verifiedAstrology),
     ...numerologySignals(input.profile?.signals ?? input.profile ?? {}),
     ...humanDesignSignals(
       input.profile?.signals?.humanDesign ??
