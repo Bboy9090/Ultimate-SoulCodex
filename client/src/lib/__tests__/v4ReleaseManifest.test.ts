@@ -30,15 +30,10 @@ describe("V4 release manifest", () => {
 
   it("locks every required same-SHA workflow", () => {
     expect(V4_RELEASE_MANIFEST.requiredWorkflows).toEqual([
-      "Ultimate SoulCodex CI",
-      "CI Tests",
-      "Foundation Doctrine Gate",
-      "Gate 4 Lifecycle Validation",
-      "PWA Offline Browser Validation",
-      "Mobile Native Smoke",
-      "Dependency Security Audit",
-      "Railway Container Smoke",
-      "Live Ephemeris Evidence",
+      "Diamond Way Synthesis Gate",
+      "Federation Human Design Differential Audit",
+      "Soul Codex Store Candidate — Android 4.0.1 / iOS 4.0.2",
+      "Xcode Cloud Bootstrap Parity",
     ]);
   });
 
@@ -72,7 +67,7 @@ describe("V4 release manifest", () => {
       canDeclareV4ReleaseCandidate({
         ...completeWebEvidence,
         successfulWorkflows: V4_RELEASE_MANIFEST.requiredWorkflows.filter(
-          (workflow) => workflow !== "Railway Container Smoke",
+          (workflow) => workflow !== "Xcode Cloud Bootstrap Parity",
         ),
       }),
     ).toBe(false);
