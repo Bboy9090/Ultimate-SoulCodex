@@ -112,6 +112,31 @@ function governedNumerologyValue(
   return GOVERNED_NUMEROLOGY_VALUES.has(normalized) ? value : undefined;
 }
 
+const GOVERNED_ELEMENTS = new Set(['fire', 'earth', 'air', 'water']);
+const GOVERNED_ASPECT_PATTERN = /\b(?:square|opposition|trine|sextile|conjunction)\b/i;
+
+function governedElements(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  const governed = values.filter((value) =>
+    GOVERNED_ELEMENTS.has(value.trim().toLowerCase()),
+  );
+  return governed.length > 0 ? governed : [];
+}
+
+function governedHouseEmphasis(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  const governed = values.filter((value) =>
+    /(?:house\s*)?(?:1[0-2]|[1-9])\b/i.test(value),
+  );
+  return governed.length > 0 ? governed : [];
+}
+
+function governedMajorAspects(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  const governed = values.filter((value) => GOVERNED_ASPECT_PATTERN.test(value));
+  return governed.length > 0 ? governed : [];
+}
+
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   const astrologyAllowed = maySystemInfluenceSynthesis(
     'astrologyCore',
@@ -148,13 +173,17 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
           mercury: verifiedAstrologyField(input.astrology, 'mercury') ? governedSign(input.astrology.mercury) : undefined,
           venus: verifiedAstrologyField(input.astrology, 'venus') ? governedSign(input.astrology.venus) : undefined,
           mars: verifiedAstrologyField(input.astrology, 'mars') ? governedSign(input.astrology.mars) : undefined,
-          dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements') ? input.astrology.dominantElements : undefined,
+          dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements')
+            ? governedElements(input.astrology.dominantElements)
+            : undefined,
           dominantModalities: verifiedAstrologyField(input.astrology, 'dominantModalities') ? input.astrology.dominantModalities : undefined,
           houseEmphasis:
             housesAllowed && verifiedAstrologyField(input.astrology, 'houseEmphasis')
-              ? input.astrology.houseEmphasis
+              ? governedHouseEmphasis(input.astrology.houseEmphasis)
               : undefined,
-          majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects') ? input.astrology.majorAspects : undefined,
+          majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects')
+            ? governedMajorAspects(input.astrology.majorAspects)
+            : undefined,
         }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
     humanDesign: humanDesignCore
