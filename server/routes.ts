@@ -28,6 +28,34 @@ import {
   natalReportFilename,
 } from "./lib/natal-report-contract";
 
+function currentYearInTimezone(
+  timezone: string | undefined,
+  now: Date = new Date(),
+): number {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
+    throw new RangeError("Numerology target year requires a valid instant");
+  }
+
+  const resolved = timezone?.trim() || "UTC";
+  let formatter: Intl.DateTimeFormat;
+  try {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: resolved,
+      year: "numeric",
+    });
+  } catch {
+    throw new RangeError(`Invalid profile timezone: ${resolved}`);
+  }
+
+  const yearPart = formatter.formatToParts(now).find((part) => part.type === "year")?.value;
+  const year = Number(yearPart);
+  if (!Number.isInteger(year)) {
+    throw new RangeError("Unable to resolve numerology target year");
+  }
+  return year;
+}
+
+
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
   const parsed = typeof value === "number" ? value : Number.parseFloat(value);
@@ -143,7 +171,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timezone: birthData.timezone,
       });
       const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
-      const numerologyData = calculateNumerology(birthData.name, birthData.birthDate);
+      const numerologyData = calculateNumerology(
+        birthData.name,
+        birthData.birthDate,
+        currentYearInTimezone(birthData.timezone),
+      );
       const archetypeData = synthesizeArchetype(astrologyData, numerologyData, {});
       const biography = await generateBiography({
         name: birthData.name,
