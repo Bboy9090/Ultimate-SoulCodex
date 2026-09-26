@@ -242,3 +242,24 @@ test('Today Card deterministic fallback ignores synthesized decision-style signa
     'I let my decision breathe before committing. Clarity comes after the noise settles.',
   );
 });
+
+
+test('Today card never invents a UTC civil date when profile-local date is unavailable', () => {
+  const supplied = buildTodayCard(
+    { date: '2026-09-25', personalDayNumber: 9, moonPhase: { phase: 'Full Moon' } },
+    {},
+  );
+  assert.equal(supplied.date, '2026-09-25');
+
+  const noTimezone = buildTodayCard(
+    { personalDayNumber: 9, moonPhase: { phase: 'Full Moon' } },
+    {},
+  );
+  assert.equal(noTimezone.date, 'Unavailable');
+
+  const invalidTimezone = buildTodayCard(
+    { personalDayNumber: 9, moonPhase: { phase: 'Full Moon' } },
+    { timezone: 'Mars/Olympus_Mons' },
+  );
+  assert.equal(invalidTimezone.date, 'Unavailable');
+});
