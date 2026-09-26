@@ -40,9 +40,13 @@ export interface RawAnalysisInput {
     soulUrgeNumber?: number;
   };
   humanDesign?: {
+    status?: "verified" | "calculated_unverified" | "unresolved";
     profileType: string;
     strategy: string;
     authority: string;
+    verificationReceiptId?: string;
+    independentSource?: string;
+    verifiedAt?: string;
   };
 }
 
@@ -186,7 +190,13 @@ export function generateSoulCodexReadingV1(input: RawAnalysisInput): SoulCodexRe
   const verifiedSystems: VerifiedSystems = {
     astrology: astrologyOutput,
     numerology: input.numerology,
-    humanDesign: input.humanDesign,
+    humanDesign:
+      input.humanDesign?.status === "verified" &&
+      input.humanDesign.verificationReceiptId?.trim() &&
+      input.humanDesign.independentSource?.trim() &&
+      input.humanDesign.verifiedAt?.trim()
+        ? input.humanDesign
+        : undefined,
   };
 
   // Confidence level based on data completeness
