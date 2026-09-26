@@ -80,9 +80,6 @@ export function circularSeparationDegrees(left: number, right: number): number {
     throw new Error("aspect_longitude_invalid");
   }
 }
-  const raw = Math.abs(normalizeDegrees(left) - normalizeDegrees(right));
-  return Math.min(raw, 360 - raw);
-}
 
 function assertPolicy(policy: AspectPolicy): void {
   if (policy.status !== "approved") throw new Error("aspect_policy_not_approved");
