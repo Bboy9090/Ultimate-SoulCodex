@@ -7,9 +7,26 @@ import {
   natalReportFilename,
 } from "../server/lib/natal-report-contract.ts";
 
+const placementEvidence = {
+  source: "independent ephemeris comparison",
+  engine: "test-reference@1",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+};
+
+const humanDesignTrust = {
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+};
+
 const verifiedSun = {
   sign: "Virgo",
   verificationStatus: "verified",
+  evidence: placementEvidence,
   internalCandidate: { longitude: 174.25 },
 };
 
@@ -82,11 +99,12 @@ test("verified Human Design exposes only verified core fields", () => {
     birthLocation: "Bronx, NY",
     astrologyData: {
       sun: verifiedSun,
-      moon: { sign: "Leo", verificationStatus: "verified", internalCandidate: { longitude: 128.5 } },
-      rising: { sign: "Scorpio", verificationStatus: "verified", internalCandidate: { longitude: 220 } },
+      moon: { sign: "Leo", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 128.5 } },
+      rising: { sign: "Scorpio", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 220 } },
     },
     humanDesignData: {
       status: "verified",
+      ...humanDesignTrust,
       candidate: {
         type: "Reflector",
         strategy: "Wait a lunar cycle",
@@ -104,6 +122,30 @@ test("verified Human Design exposes only verified core fields", () => {
     profile: "2/5",
   });
   assert.match(report.aiText.hdInterpretation, /verified trust record/i);
+});
+
+test("natal PDF rejects label-only verified astrology and Human Design", () => {
+  const report = buildNatalReportInput({
+    name: "Trust Boundary",
+    birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    astrologyData: {
+      sun: { sign: "Virgo", verificationStatus: "verified", internalCandidate: { longitude: 174.25 } },
+    },
+    humanDesignData: {
+      status: "verified",
+      candidate: {
+        type: "Reflector",
+        strategy: "Wait a lunar cycle",
+        authority: "Lunar",
+        profile: "2/5",
+      },
+    },
+  });
+
+  assert.equal((report.astrology as any).sunSign, null);
+  assert.deepEqual(report.humanDesign, {});
+  assert.match(report.aiText.bigThreeSun, /unresolved/i);
+  assert.match(report.aiText.hdInterpretation, /complete trust receipt/i);
 });
 
 test("report filenames cannot inject headers or unsafe path characters", () => {
