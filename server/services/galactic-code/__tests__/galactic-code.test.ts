@@ -9,7 +9,11 @@ import assert from 'node:assert';
 import { generateGalacticCode } from '../generator';
 import { normalizeGalacticInput, extractHashableInput } from '../normalize';
 import { createGalacticFingerprint } from '../fingerprint';
-import { validateInterpretation } from '../prompts';
+import {
+  createDeterministicInterpretation,
+  createInterpretationPrompt,
+  validateInterpretation,
+} from '../prompts';
 import type { GalacticCodeInput } from '../../../../shared/galactic-code/types';
 
 const TRUSTED = { trustedEvidenceContext: true } as const;
@@ -786,4 +790,46 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     assert.strictEqual(resultA.sourceCoverage.humanDesign, 'missing');
     assert.ok(resultA.evidence.every((value) => !value.startsWith('HD ')));
   });
+});
+
+
+test('Galactic Code: interpretation language stays evidence-bounded', () => {
+  const result = generateGalacticCode(testInput, TRUSTED);
+  const interpretationText = JSON.stringify(result.interpretation);
+
+  assert.match(interpretationText, /symbolic synthesis label|reflection hypothesis/i);
+  assert.match(interpretationText, /No stress response is established/i);
+  assert.match(interpretationText, /No relationship style is established/i);
+  assert.match(interpretationText, /No destiny or predetermined mission is inferred/i);
+  assert.doesNotMatch(
+    interpretationText,
+    /You tend to|You show up as|Your strongest connections|Your trajectory suggests|Under pressure, the tendency/i,
+  );
+});
+
+test('Galactic Code: AI prompt forbids behavioral backfill from symbolic systems', () => {
+  const normalized = normalizeGalacticInput(testInput);
+  const result = generateGalacticCode(testInput, TRUSTED);
+  const prompt = createInterpretationPrompt(normalized, result.codename, result.axes);
+
+  assert.match(prompt, /symbolic\/reflection frameworks/i);
+  assert.match(prompt, /do not backfill missing behavior from symbolic systems/i);
+  assert.match(prompt, /stress response.*unless directly supported by explicit assessed behavior/i);
+  assert.match(prompt, /avoid destiny or predetermined mission claims/i);
+});
+
+test('Galactic Code: deterministic fallback does not invent behavior when assessment data is absent', () => {
+  const interpretation = createDeterministicInterpretation(
+    'Test Code',
+    'Observer',
+    'Builder',
+    'Observer',
+    ['Sun virgo', 'Life Path 7'],
+  );
+  const text = JSON.stringify(interpretation);
+
+  assert.match(text, /observe what actually happens under stress/i);
+  assert.match(text, /test against real interactions/i);
+  assert.match(text, /observable value/i);
+  assert.doesNotMatch(text, /natural inclination|you tend to|you show up as|mission is|destiny is/i);
 });
