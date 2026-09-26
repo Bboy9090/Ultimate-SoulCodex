@@ -7,6 +7,12 @@ const SIGNS = [
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ] as const;
 
+const provenance = {
+  source: "Independent verification fixture",
+  engine: "test-independent-engine",
+  calculatedAt: "2026-09-26T00:00:00.000Z",
+};
+
 function verifiedChart() {
   const houses = Array.from({ length: 12 }, (_, index) => ({
     house: index + 1,
@@ -14,22 +20,24 @@ function verifiedChart() {
     longitude: index * 30,
     degree: 0,
     verificationStatus: "verified",
+    evidence: provenance,
     policyId: "ASTRO-EQUAL-HOUSE-v1",
   }));
   return {
     verification: { policyId: "ASTRO-LONGITUDE-v1 + ASTRO-EQUAL-HOUSE-v1" },
     houseSystem: "equal",
     houses,
-    sun: { sign: "Virgo", verificationStatus: "verified" },
-    moon: { sign: "Cancer", verificationStatus: "verified" },
-    rising: { sign: "Scorpio", verificationStatus: "verified" },
+    sun: { sign: "Virgo", verificationStatus: "verified", evidence: provenance },
+    moon: { sign: "Cancer", verificationStatus: "verified", evidence: provenance },
+    rising: { sign: "Scorpio", verificationStatus: "verified", evidence: provenance },
     planets: {
-      sun: { sign: "Virgo", verificationStatus: "verified" },
+      sun: { sign: "Virgo", verificationStatus: "verified", evidence: provenance },
     },
     planetaryHouses: { sun: 11 },
     midheaven: {
       sign: "Leo",
       verificationStatus: "verified",
+      evidence: provenance,
       policyId: "ASTRO-EQUAL-HOUSE-v1",
     },
     northNode: {
@@ -38,6 +46,7 @@ function verifiedChart() {
       mode: "mean",
       policyId: "ASTRO-MEAN-NODE-v1",
       verificationStatus: "verified",
+      evidence: provenance,
     },
     southNode: {
       sign: "Leo",
@@ -45,6 +54,7 @@ function verifiedChart() {
       mode: "mean",
       policyId: "ASTRO-MEAN-NODE-v1",
       verificationStatus: "verified",
+      evidence: provenance,
     },
     chiron: {
       sign: "Cancer",
@@ -52,6 +62,7 @@ function verifiedChart() {
       policyId: "ASTRO-CHIRON-v1",
       qualificationMethod: "live-jpl-qualified-against-swiss",
       verificationStatus: "verified",
+      evidence: provenance,
     },
   };
 }
@@ -84,6 +95,9 @@ test("complete policy-bearing evidence reaches the clarity inspector", () => {
       strategy: "Wait a lunar cycle",
       authority: "Lunar Authority",
       profile: "2/5",
+      verificationReceiptId: "hd-fixture-receipt",
+      independentSource: "independent-hd-fixture",
+      verifiedAt: "2026-09-26T00:00:00.000Z",
     },
   });
 
@@ -98,6 +112,29 @@ test("complete policy-bearing evidence reaches the clarity inspector", () => {
 test("an incomplete Human Design object is never labeled verified", () => {
   const model = buildClarityReadingModel({
     humanDesignData: { status: "verified", type: "Reflector" },
+  });
+  assert.equal(model.signals.some((signal) => signal.id.startsWith("hd-")), false);
+});
+
+
+test("status-only astrology cannot become a verified clarity signal without provenance", () => {
+  const model = buildClarityReadingModel({
+    verifiedAstrologyData: {
+      sun: { sign: "Virgo", verificationStatus: "verified" },
+    },
+  });
+  assert.equal(model.signals.some((signal) => signal.id === "sun" && signal.confidence === "verified"), false);
+});
+
+test("status-only Human Design cannot become verified without a trust receipt", () => {
+  const model = buildClarityReadingModel({
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
   });
   assert.equal(model.signals.some((signal) => signal.id.startsWith("hd-")), false);
 });
