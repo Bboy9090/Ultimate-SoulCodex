@@ -40,8 +40,8 @@ export function calcPersonalDay(birthDate: string, targetDate: Date = new Date()
 
 /**
  * Calculates Personal Year Number based on birth month/day and target year.
- * Personal Year is annual and changes on each birthday.
- * Calculated from: reduced(birth month) + reduced(birth day) + reduced(target year)
+ * Personal Year is an annual calendar-year cycle under Soul Codex policy.
+ * Calculated from: reduced(birth month) + reduced(birth day) + reduced(target calendar year)
  *
  * @example
  * calcPersonalYear("1990-08-15", 2026) // 2026 year cycle for someone born Aug 15
@@ -92,8 +92,8 @@ export function calcPersonalYear(
 
 /**
  * Calculates Personal Month Number based on Personal Year and target month.
- * Personal Month is monthly and cycles 1-9 within the Personal Year.
- * Calculated from: reduced(personal year) + reduced(target month)
+ * Personal Month is a calendar-month cycle derived from the supplied Personal Year.
+ * Calculated from: reduced(personal year) + reduced(target calendar month)
  *
  * @example
  * calcPersonalMonth(6, 7) // Personal Month during July if Personal Year is 6
