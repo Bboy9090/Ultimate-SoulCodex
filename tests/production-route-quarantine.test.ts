@@ -57,3 +57,17 @@ test("production archetype synthesis stays on evidence-aware server service", ()
     "production entry must not import the legacy root archetype service",
   );
 });
+
+
+test("production does not accidentally mount legacy share-link routes", () => {
+  assert.doesNotMatch(
+    serverIndex,
+    /shareable-links|\/api\/share/,
+    "production entry must not mount the legacy share-link service",
+  );
+  assert.doesNotMatch(
+    activeServerRoutes,
+    /shareable-links|\/api\/share/,
+    "production routes must keep social sharing unavailable until a governed privacy router is promoted",
+  );
+});
