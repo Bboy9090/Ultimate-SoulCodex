@@ -53,6 +53,7 @@ export const V4_RELEASE_MANIFEST = {
     "system-governance-stays-inspectable",
     "quarantined-systems-never-masquerade-as-active",
     "legal-support-and-deletion-routes-remain-mounted",
+    "runtime-dependencies-pass-high-severity-audit",
     "no-simulated-premium-analysis-routes",
   ],
   requiredJourney: [
