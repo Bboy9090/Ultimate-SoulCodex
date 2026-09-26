@@ -5,6 +5,7 @@ import {
   SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY,
   registrySystemsAllowedInUltimateCodex,
   registrySystemsExcludedFromUltimateCodex,
+  registrySystemsForUseContext,
 } from "../shared/system-registry.ts";
 
 const legacyTemplateSystems = [
@@ -124,4 +125,35 @@ test("governed daily template module contains no dormant disabled-system corpus"
     governedPackage,
     /birth rune|nakshatra|dosha|hexagram|Sabian Symbol|Part of Fortune|fixed star|Gene Key|biorhythm/i,
   );
+});
+
+
+test("use-context selector prevents system pile-on", () => {
+  const stable = registrySystemsForUseContext("stable-identity").map((entry) => entry.id);
+  const current = registrySystemsForUseContext("current-guidance").map((entry) => entry.id);
+  const supporting = registrySystemsForUseContext("supporting-reflection").map((entry) => entry.id);
+  const technical = registrySystemsForUseContext("technical-inspection").map((entry) => entry.id);
+
+  assert.ok(stable.includes("natal-astrology"));
+  assert.ok(stable.includes("numerology-core"));
+  assert.ok(stable.includes("human-design-core"));
+  assert.equal(stable.includes("numerology-cycles"), false);
+  assert.equal(stable.includes("personality-assessments"), false);
+  assert.equal(stable.includes("gene-keys"), false);
+
+  assert.ok(current.includes("natal-astrology"));
+  assert.ok(current.includes("numerology-core"));
+  assert.ok(current.includes("human-design-core"));
+  assert.ok(current.includes("numerology-cycles"));
+  assert.equal(current.includes("personality-assessments"), false);
+  assert.equal(current.includes("gene-keys"), false);
+
+  assert.deepEqual(
+    supporting.sort(),
+    ["moral-compass", "personality-assessments"].sort(),
+  );
+
+  assert.equal(technical.length, SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY.length);
+  assert.ok(technical.includes("gene-keys"));
+  assert.ok(technical.includes("fixed-stars"));
 });
