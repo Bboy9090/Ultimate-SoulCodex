@@ -152,6 +152,39 @@ test("canonical active Soul Profile contract", async (t) => {
     assert.strictEqual(restored?.humanDesignData?.verificationReceiptId, humanDesignData.verificationReceiptId);
   });
 
+  await t.test("canonical save rejects malformed verification timestamps", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      value: new MemoryStorage(),
+      configurable: true,
+    });
+
+    saveActiveProfile({
+      birthDate: "1990-09-17",
+      astrologyData: {
+        sun: {
+          sign: "Virgo",
+          verificationStatus: "verified",
+          evidence: { source: "reference", engine: "engine", calculatedAt: "not-a-date" },
+        },
+      },
+      humanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        engine: "soulcodex-hd-geocentric-v1",
+        source: "Soul Codex deterministic Human Design core engine",
+        calculatedAt: "not-a-date",
+        inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+        verificationReceiptId: "receipt",
+        independentSource: "reference",
+        verifiedAt: "2026-09-19T23:03:08.000Z",
+      },
+    });
+
+    const restored = loadActiveProfile();
+    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "pending_independent_verification");
+    assert.strictEqual(restored?.humanDesignData?.status, "calculated_unverified");
+  });
+
   await t.test("canonical save preserves verified astrology when provenance is complete", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),
