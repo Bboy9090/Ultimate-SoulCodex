@@ -129,3 +129,30 @@ test('explicit invalid timezone is rejected instead of silently inferred from co
     /Invalid timezone/,
   );
 });
+
+
+test('legacy astrology rejects nonexistent DST wall times', () => {
+  assert.throws(
+    () => calculateAstrology({
+      birthDate: '2024-03-10',
+      birthTime: '02:30',
+      timezone: 'America/New_York',
+      latitude: 40.7128,
+      longitude: -74.0060,
+    } as any),
+    /Birth civil time is nonexistent/,
+  );
+});
+
+test('legacy astrology rejects ambiguous repeated DST wall times', () => {
+  assert.throws(
+    () => calculateAstrology({
+      birthDate: '2024-11-03',
+      birthTime: '01:30',
+      timezone: 'America/New_York',
+      latitude: 40.7128,
+      longitude: -74.0060,
+    } as any),
+    /Birth civil time is ambiguous/,
+  );
+});
