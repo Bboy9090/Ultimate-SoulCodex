@@ -198,12 +198,15 @@ export function registerChatRoutes(app: Express) {
   });
 }
 
-function buildProfileContextPrompt(profile: any): string {
+export function buildProfileContextPrompt(profile: any): string {
   const parts: string[] = [];
   if (profile.name) parts.push(`- Name: ${profile.name}`);
   if (profile.archetype) parts.push(`- Archetype: ${profile.archetype}`);
   parts.push(...buildVerifiedAstrologyLines(profile));
-  if (profile.hdType) parts.push(`- Human Design: ${profile.hdType}`);
+  const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(profile?.humanDesignData)
+    ? profile.humanDesignData
+    : null;
+  if (verifiedHumanDesign?.type) parts.push(`- Human Design: ${verifiedHumanDesign.type}`);
   if (profile.lifePath) parts.push(`- Numerology: Life Path ${profile.lifePath}`);
   if (profile.element) parts.push(`- Element: ${profile.element}`);
   if (profile.role) parts.push(`- Role: ${profile.role}`);
