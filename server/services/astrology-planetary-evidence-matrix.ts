@@ -1,3 +1,4 @@
+import { circularDegreesDelta } from "./angular-math";
 import { calculateAstrology, type AstrologyData, type PlacementVerification } from "./astrology";
 import {
   EPHEMERIS_EVIDENCE_FIXTURES,
@@ -72,11 +73,6 @@ function placementForBody(
   return planets[key];
 }
 
-function circularDelta(left: number, right: number): number {
-  const raw = Math.abs(left - right) % 360;
-  return Math.min(raw, 360 - raw);
-}
-
 function maximum(values: number[]): number | null {
   return values.length > 0 ? Math.max(...values) : null;
 }
@@ -110,7 +106,7 @@ export async function runLivePlanetaryEvidenceMatrix(
         referenceEngine: reference.engine,
         referenceLongitude: reference.longitude,
         referenceSign: reference.sign,
-        longitudeDeltaDegrees: circularDelta(candidate.longitude, reference.longitude),
+        longitudeDeltaDegrees: circularDegreesDelta(candidate.longitude, reference.longitude),
         signAgreement: candidate.sign === reference.sign,
       });
     }
