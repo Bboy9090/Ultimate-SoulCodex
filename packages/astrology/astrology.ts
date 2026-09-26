@@ -185,9 +185,11 @@ function estimateTimezoneFromCoordinates(latitude: number, longitude: number): s
   return 'UTC';
 }
 
-function calculateCelestialPosition(body: Astronomy.Body, birthTime: Date, observer: Astronomy.Observer): { longitude: number; sign: string; degree: number } {
-  const equator = Astro.Equator(body, birthTime, observer, true, true);
-  const ecliptic = Astro.Ecliptic(equator.vec);
+function calculateCelestialPosition(body: Astronomy.Body, birthTime: Date): { longitude: number; sign: string; degree: number } {
+  // Natal zodiac longitudes are geocentric. Observer coordinates belong to
+  // horizon/angle calculations (Ascendant, houses), not planetary longitude.
+  const vector = Astro.GeoVector(body, birthTime, true);
+  const ecliptic = Astro.Ecliptic(vector);
   const longitude = ecliptic.elon;
   
   return {
@@ -397,18 +399,16 @@ export function calculateAstrology(birthData: BirthData): AstrologyData {
   const latitude = parseFloat(String(birthData.latitude ?? 0));
   const longitude = parseFloat(String(birthData.longitude ?? 0));
   
-  const observer = new Astro.Observer(latitude, longitude, 0);
-  
-  const sunPos = calculateCelestialPosition(Astro.Body.Sun, birthTime, observer);
-  const moonPos = calculateCelestialPosition(Astro.Body.Moon, birthTime, observer);
-  const mercuryPos = calculateCelestialPosition(Astro.Body.Mercury, birthTime, observer);
-  const venusPos = calculateCelestialPosition(Astro.Body.Venus, birthTime, observer);
-  const marsPos = calculateCelestialPosition(Astro.Body.Mars, birthTime, observer);
-  const jupiterPos = calculateCelestialPosition(Astro.Body.Jupiter, birthTime, observer);
-  const saturnPos = calculateCelestialPosition(Astro.Body.Saturn, birthTime, observer);
-  const uranusPos = calculateCelestialPosition(Astro.Body.Uranus, birthTime, observer);
-  const neptunePos = calculateCelestialPosition(Astro.Body.Neptune, birthTime, observer);
-  const plutoPos = calculateCelestialPosition(Astro.Body.Pluto, birthTime, observer);
+  const sunPos = calculateCelestialPosition(Astro.Body.Sun, birthTime);
+  const moonPos = calculateCelestialPosition(Astro.Body.Moon, birthTime);
+  const mercuryPos = calculateCelestialPosition(Astro.Body.Mercury, birthTime);
+  const venusPos = calculateCelestialPosition(Astro.Body.Venus, birthTime);
+  const marsPos = calculateCelestialPosition(Astro.Body.Mars, birthTime);
+  const jupiterPos = calculateCelestialPosition(Astro.Body.Jupiter, birthTime);
+  const saturnPos = calculateCelestialPosition(Astro.Body.Saturn, birthTime);
+  const uranusPos = calculateCelestialPosition(Astro.Body.Uranus, birthTime);
+  const neptunePos = calculateCelestialPosition(Astro.Body.Neptune, birthTime);
+  const plutoPos = calculateCelestialPosition(Astro.Body.Pluto, birthTime);
   
   const ascendantData = calculateAscendant(birthTime, latitude, longitude);
   
