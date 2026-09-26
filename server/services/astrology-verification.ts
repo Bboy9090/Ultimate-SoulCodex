@@ -58,6 +58,7 @@ export type IndependentVerificationResult =
         | "same_engine_not_independent"
         | "same_source_not_independent"
         | "timestamp_mismatch"
+        | "sign_longitude_mismatch"
         | "sign_disagreement"
         | "longitude_outside_tolerance"
         | "sign_boundary_within_tolerance"
@@ -71,6 +72,25 @@ function normalizeLongitude(value: number): number {
 
 function isValidLongitude(value: number): boolean {
   return Number.isFinite(value) && value >= 0 && value < 360;
+}
+
+const ZODIAC_SIGNS = Object.freeze([
+  "Aries",
+  "Taurus",
+  "Gemini",
+  "Cancer",
+  "Leo",
+  "Virgo",
+  "Libra",
+  "Scorpio",
+  "Sagittarius",
+  "Capricorn",
+  "Aquarius",
+  "Pisces",
+] as const);
+
+function signFromLongitude(longitude: number): string {
+  return ZODIAC_SIGNS[Math.floor(normalizeLongitude(longitude) / 30)];
 }
 
 function circularLongitudeDelta(left: number, right: number): number {
@@ -120,6 +140,18 @@ export function verifyAgainstIndependentReference(
 
   if (candidate.inputTimestamp !== reference.inputTimestamp) {
     return { status: "rejected", sign: null, reason: "timestamp_mismatch", longitudeDeltaDegrees: null };
+  }
+
+  if (
+    candidate.sign !== signFromLongitude(candidate.longitude) ||
+    reference.sign !== signFromLongitude(reference.longitude)
+  ) {
+    return {
+      status: "rejected",
+      sign: null,
+      reason: "sign_longitude_mismatch",
+      longitudeDeltaDegrees: null,
+    };
   }
 
   const longitudeDeltaDegrees = circularLongitudeDelta(candidate.longitude, reference.longitude);
