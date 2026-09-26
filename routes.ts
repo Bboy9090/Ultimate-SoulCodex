@@ -67,6 +67,7 @@ import { resolveGeo } from "./server/geo/index";
 import { computeConfidence } from "./soulcodex/compute/confidence";
 import { buildTodayCard, buildTodayCardSvg } from "./server/todayRender";
 import { buildNatalReportPdf } from "./server/natalReportPdf";
+import { profileBelongsToActor } from "./server/lib/profile-ownership";
 import { buildCompatibilityReportPdf } from "./server/compatibilityReportPdf";
 import { collectSignals } from "./soulcodex/codex30/registry";
 import { scoreThemes } from "./soulcodex/codex30/synth/score";
@@ -2318,6 +2319,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
 
       if (!p1 || !p2) return res.status(404).json({ error: "Profile not found" });
+
+      const actor = {
+        userId: (req.user as any)?.id ?? (req.session as any)?.userId ?? null,
+        sessionId: req.sessionID ?? null,
+      };
+      if (
+        !profileBelongsToActor(p1, actor) ||
+        !profileBelongsToActor(p2, actor)
+      ) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
 
       const autopsy = await generateRelationshipAutopsy(p1, p2);
       res.json({ ok: true, autopsy });
