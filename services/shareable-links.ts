@@ -169,6 +169,39 @@ const ALWAYS_PRIVATE_SHARE_KEYS = new Set([
   'userid',
   'sessionid',
   'birthtime',
+  'birthdatetime',
+  'birthdatetimeutc',
+  'timezone',
+  'resolvedtimezone',
+  'ianatimezone',
+  'latitude',
+  'longitude',
+  'coordinates',
+  'birthcoordinates',
+  'inputtimestamp',
+  'inputtimestamputc',
+]);
+
+const PERSONAL_SHARE_KEYS = new Set([
+  'birthdate',
+  'birthlocation',
+]);
+
+interface ShareRedactions {
+  always: string[];
+  personal: string[];
+  personalName?: string;
+}
+
+function normalizeShareKey(key: string): string {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\const ALWAYS_PRIVATE_SHARE_KEYS = new Set([
+  'userid',
+  'sessionid',
+  'birthtime',
   'timezone',
   'latitude',
   'longitude',
@@ -199,6 +232,65 @@ function sanitizeSharedValue(
     if (ALWAYS_PRIVATE_SHARE_KEYS.has(normalizedKey)) continue;
     if (!includePersonalInfo && PERSONAL_SHARE_KEYS.has(normalizedKey)) continue;
     sanitized[key] = sanitizeSharedValue(nested, includePersonalInfo);
+  }
+  return sanitized;
+}');
+}
+
+function redactLiteral(
+  value: string,
+  literal: string,
+  replacement: string,
+): string {
+  if (!literal.trim()) return value;
+  return value.replace(new RegExp(escapeRegExp(literal), 'gi'), replacement);
+}
+
+function sanitizeSharedValue(
+  value: unknown,
+  includePersonalInfo: boolean,
+  redactions: ShareRedactions,
+): unknown {
+  if (typeof value === 'string') {
+    let sanitized = value;
+    for (const literal of redactions.always) {
+      sanitized = redactLiteral(sanitized, literal, '[redacted]');
+    }
+    if (!includePersonalInfo) {
+      for (const literal of redactions.personal) {
+        sanitized = redactLiteral(sanitized, literal, '[redacted]');
+      }
+      if (redactions.personalName) {
+        sanitized = redactLiteral(
+          sanitized,
+          redactions.personalName,
+          'Shared Profile',
+        );
+      }
+    }
+    return sanitized;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) =>
+      sanitizeSharedValue(entry, includePersonalInfo, redactions),
+    );
+  }
+
+  if (!value || typeof value !== 'object' || value instanceof Date) {
+    return value;
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    const normalizedKey = normalizeShareKey(key);
+    if (ALWAYS_PRIVATE_SHARE_KEYS.has(normalizedKey)) continue;
+    if (!includePersonalInfo && PERSONAL_SHARE_KEYS.has(normalizedKey)) continue;
+    sanitized[key] = sanitizeSharedValue(
+      nested,
+      includePersonalInfo,
+      redactions,
+    );
   }
   return sanitized;
 }
@@ -256,9 +348,26 @@ function filterProfileForSharing(profile: Profile, settings: ShareSettings): Par
 
   // Apply privacy recursively. Nested astronomy/Human Design evidence can
   // contain exact instants or coordinates even after top-level fields are removed.
+  const redactions: ShareRedactions = {
+    always: [
+      String((profile as any).birthTime ?? ''),
+      String((profile as any).timezone ?? ''),
+      String((profile as any).latitude ?? ''),
+      String((profile as any).longitude ?? ''),
+      String((profile as any).userId ?? ''),
+      String((profile as any).sessionId ?? ''),
+    ].filter(Boolean),
+    personal: [
+      String((profile as any).birthDate ?? ''),
+      String((profile as any).birthLocation ?? ''),
+    ].filter(Boolean),
+    personalName: String((profile as any).name ?? '') || undefined,
+  };
+
   return sanitizeSharedValue(
     filtered,
     settings.includePersonalInfo,
+    redactions,
   ) as Partial<Profile>;
 }
 
