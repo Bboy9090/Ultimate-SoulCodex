@@ -244,6 +244,31 @@ test("verified profile differentiation corpus", { timeout: 120_000 }, async (sui
     }
   });
 
+  await suite.test("same name/date repeated across all eight variants stays evidence-differentiated", () => {
+    for (let base = 0; base < 15; base += 1) {
+      const group = Array.from({ length: 8 }, (_, repeat) => readings[base + repeat * 15]);
+      const localBiographies = new Set(group.map((reading) => reading.local.biography));
+      assert.equal(localBiographies.size, 1, `base fixture ${base} should share the same local name/date biography`);
+
+      const verifiedNarratives = new Set(
+        group.map((reading) => normalize(fingerprint(reading))),
+      );
+      assert.equal(
+        verifiedNarratives.size,
+        group.length,
+        `same name/date group ${base} collapsed after verified chart synthesis`,
+      );
+
+      const signatures = new Set(
+        group.map((reading) => supportedSignature(reading).join("|")),
+      );
+      assert.ok(
+        signatures.size >= 4,
+        `same name/date group ${base} did not produce enough supported chart diversity`,
+      );
+    }
+  });
+
   await suite.test("all 120 verified readings are unique", () => {
     const unique = new Set(readings.map((reading) => normalize(fingerprint(reading))));
     assert.equal(
