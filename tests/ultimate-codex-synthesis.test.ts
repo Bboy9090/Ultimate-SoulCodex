@@ -272,3 +272,47 @@ test("status-only natal placements and Rising cannot enter Ultimate Codex eviden
   );
   assert.equal(result.coverage, "partial");
 });
+
+
+test("unsupported numerology values cannot enter Ultimate Codex coverage or fingerprint", () => {
+  const candidate: any = profile();
+  candidate.numerologyData = {
+    lifePath: 99,
+    birthday: 0,
+    expression: 44,
+    soulUrge: -1,
+    personality: 10,
+    maturity: 100,
+    personalYear: 77,
+  };
+
+  const result = buildUltimateCodexSynthesis(candidate);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(
+    result.evidenceSignature.some((value) => value.startsWith("num:")),
+    false,
+  );
+  assert.ok(result.unresolved.some((value) => /Life Path/i.test(value)));
+  assert.ok(result.unresolved.some((value) => /Birthday number/i.test(value)));
+  assert.ok(result.unresolved.some((value) => /Expression number/i.test(value)));
+  assert.ok(result.unresolved.some((value) => /Soul Urge/i.test(value)));
+  assert.ok(result.unresolved.some((value) => /Personality number/i.test(value)));
+  assert.ok(result.unresolved.some((value) => /Maturity number/i.test(value)));
+});
+
+test("invalid current-cycle numerology never changes the stable Codex identity", () => {
+  const valid = profile();
+  const invalidCycle: any = profile();
+  invalidCycle.numerologyData.personalYear = 99;
+
+  const a = buildUltimateCodexSynthesis(valid);
+  const b = buildUltimateCodexSynthesis(invalidCycle);
+
+  assert.equal(a.fingerprint, b.fingerprint);
+  assert.equal(a.codexNumber, b.codexNumber);
+  assert.equal(
+    b.evidenceSignature.some((value) => value.startsWith("num:personalYear:")),
+    false,
+  );
+});
