@@ -119,6 +119,15 @@ describe('Numerology Evidence Integration - All 7 Calculations', () => {
       assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
       assert.strictEqual(result.evidence.inputState, 'invalid');
     });
+
+    it('should fail closed for explicit invalid target year instead of substituting the current year', () => {
+      const result = calcPersonalYearWithEvidence('1990-08-15', 0);
+
+      assert.strictEqual(result.value, undefined);
+      assert.strictEqual(result.evidence.calculationStatus, 'unresolved');
+      assert.strictEqual(result.evidence.inputState, 'invalid');
+      assert.ok(result.evidence.reasoning.some((reason) => reason.includes('Target year 0')));
+    });
   });
 
   describe('Personal Month Evidence', () => {
