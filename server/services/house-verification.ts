@@ -162,8 +162,10 @@ function angleRecord(
   source: string,
 ): AngleEvidenceRecord {
   const normalized = normalizeDegrees(longitudeDegrees);
+  const canonicalInputTimestamp = new Date(input.inputTimestamp).toISOString();
   return {
     ...input,
+    inputTimestamp: canonicalInputTimestamp,
     longitudeDegrees: normalized,
     sign: signFromLongitude(normalized),
     degreeInSign: degreeInTropicalSign(normalized),
