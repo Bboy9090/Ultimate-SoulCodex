@@ -37,6 +37,7 @@ node --import tsx --test \
   tests/house-production.test.ts \
   tests/equal-house-math-invariants.test.ts \
   tests/lunar-node-production.test.ts \
+  tests/lunar-node-math-invariants.test.ts \
   tests/chiron-production.test.ts \
   tests/bobby-big-three-golden.test.ts \
   tests/human-design-trust.test.ts \
