@@ -224,9 +224,9 @@ function generateEvolutionPath(astrologyData: any, numerologyData: any, archetyp
   let path = `Your evolutionary path follows the ${archetype.title} template, moving from `;
   
   if (archetype.shadows && archetype.shadows.length > 0) {
-    path += `unconscious patterns like ${archetype.shadows[0].toLowerCase()} toward `;
+    path += `possible reactive patterns such as ${archetype.shadows[0].toLowerCase()} toward `;
   } else {
-    path += "unconscious reactive patterns toward ";
+    path += "possible reactive patterns toward ";
   }
   
   if (archetype.strengths && archetype.strengths.length > 0) {
@@ -238,7 +238,7 @@ function generateEvolutionPath(astrologyData: any, numerologyData: any, archetyp
   if (astrologyData?.southNode && astrologyData?.northNode) {
     path += `Astrologically, you're evolving from ${astrologyData.southNode.sign} patterns toward ${astrologyData.northNode.sign} growth.`;
   } else {
-    path += "This evolution involves integrating shadow aspects while developing your highest potential.";
+    path += "Use this as a reflection exercise: notice which listed shadow themes actually fit, then practice the strengths you want to develop.";
   }
   
   return path;
@@ -298,7 +298,7 @@ function generateKeyLessons(astrologyData: any, numerologyData: any, personality
   if (lessons.length === 0) {
     lessons.push("Integrating your cosmic blueprint with earthly service");
     lessons.push("Balancing personal growth with contribution to others");
-    lessons.push("Transforming unconscious patterns into conscious gifts");
+    lessons.push("Noticing reactive patterns and deliberately practicing preferred strengths");
   }
   
   return lessons;
