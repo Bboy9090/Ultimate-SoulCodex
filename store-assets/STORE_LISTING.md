@@ -95,5 +95,5 @@ https://soulcodex.up.railway.app/account-deletion
 ### Both Stores
 - [ ] Final 1024x1024 icon at `assets/icon-master.png`
 - [ ] Run `npm run cap:icons` to generate all sizes
-- [x] Final release payload built and synced from main `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`
+- [ ] Immediately before submission, confirm the signed native payload and release receipt reference the same exact qualified candidate SHA.
 - [ ] Test on physical devices before submission
