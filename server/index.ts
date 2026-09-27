@@ -13,6 +13,7 @@ import { registerLocationResolutionRoutes } from "./routes/location-resolution.j
 import { registerCodexToolRoutes } from "./routes/codex-tools.js";
 import compatibilityRouter from "./routes/compatibility.js";
 import { resolveReleaseIdentity } from "./lib/release-identity.js";
+import { trustedMutationOriginGuard } from "./lib/trusted-mutation-origin.js";
 import {
   registerBillingRawRoutes,
   registerBillingRoutes,
@@ -87,6 +88,11 @@ app.use("/api", apiLimiter, (_req, res, next) => {
 // exact raw webhook bytes, and the retired direct-card endpoint is rejected
 // without accepting payment details into application memory.
 registerBillingRawRoutes(app);
+
+// Production session cookies use SameSite=None for Capacitor compatibility.
+// CORS is not a CSRF control: reject cookie-backed state changes that do not
+// originate from one of the explicitly trusted web/native application origins.
+app.use("/api", trustedMutationOriginGuard(allowedOrigins));
 
 app.use(express.json({ limit: "256kb", strict: true }));
 app.use(express.urlencoded({ extended: false, limit: "64kb" }));
