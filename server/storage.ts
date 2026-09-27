@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import {
   users,
   profiles,
@@ -310,7 +310,7 @@ class PostgresStorage implements IStorage {
   }
   async listPublicProfileShares(profileId: string) {
     const db = await this.db();
-    return await db.select().from(publicProfileShares).where(eq(publicProfileShares.profileId, profileId));
+    return await db.select().from(publicProfileShares).where(eq(publicProfileShares.profileId, profileId)).orderBy(desc(publicProfileShares.createdAt));
   }
   async revokePublicProfileShare(token: string) {
     const db = await this.db();
