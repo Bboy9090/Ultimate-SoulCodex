@@ -36,6 +36,7 @@ node --import tsx --test \
   tests/profile-narrative-authority.test.ts \
   tests/verified-synthesis-contract-authority.test.ts \
   packages/core/__tests__/phase-1-data-integrity.test.ts \
+  tests/human-design-consumer-trust-parity.test.ts \
   packages/astrology/__tests__/human-design-phase3.test.ts \
   tests/active-profile-contract.test.ts \
   tests/ui-backend-consistency-contract.test.ts \
