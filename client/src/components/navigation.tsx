@@ -70,7 +70,7 @@ export default function Navigation() {
                     href={href}
                     data-testid={`link-${label.toLowerCase()}`}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold no-underline transition-colors ${
+                    className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold no-underline transition-colors ${
                       active
                         ? "bg-white/[0.065] text-[var(--sc-ivory)] shadow-[inset_0_0_0_1px_rgba(217,182,111,.1)]"
                         : "text-[var(--sc-stone)] hover:bg-white/[0.035] hover:text-[var(--sc-ivory)]"
@@ -86,7 +86,7 @@ export default function Navigation() {
             {profile && (
               <Link
                 href="/systems"
-                className={`grid h-9 w-9 place-items-center rounded-lg border no-underline transition-colors ${
+                className={`grid h-11 w-11 place-items-center rounded-lg border no-underline transition-colors ${
                   isActive(pathname, "/systems")
                     ? "border-[rgba(114,216,197,.24)] bg-[rgba(114,216,197,.08)] text-[var(--sc-teal)]"
                     : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"
@@ -101,7 +101,7 @@ export default function Navigation() {
 
             <Link
               href="/settings"
-              className={`grid h-9 w-9 place-items-center rounded-lg border no-underline transition-colors ${
+              className={`grid h-11 w-11 place-items-center rounded-lg border no-underline transition-colors ${
                 isActive(pathname, "/settings")
                   ? "border-[rgba(217,182,111,.22)] bg-[rgba(217,182,111,.08)] text-[var(--sc-gold)]"
                   : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"
@@ -121,7 +121,7 @@ export default function Navigation() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] md:hidden" data-testid="button-menu" aria-label="Open navigation menu">
+              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] md:hidden" data-testid="button-menu" aria-label="Open navigation menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
