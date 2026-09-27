@@ -62,3 +62,32 @@ test("README mirrors the active runtime architecture", () => {
   assert.ok(readme.includes("Navigate to `http://localhost:3000`"));
   assert.equal(readme.includes("Navigate to `http://localhost:5000`"), false);
 });
+
+
+test("README developer setup follows the active repository and scripts", () => {
+  assert.match(readme, /git clone https:\/\/github\.com\/Bboy9090\/Ultimate-SoulCodex\.git/);
+  assert.match(readme, /npm run build\s+# Build frontend, PWA assets, and bundled server/);
+  assert.match(readme, /npm run mobile:validate:ios/);
+  assert.match(readme, /npm run mobile:validate:android/);
+  assert.match(readme, /server\/routes\.ts/);
+  assert.match(readme, /production server listens on port 5000/i);
+
+  for (const stale of [
+    /Ultimate-SoulCodex-Engine-of-the-Eternal-Now\.git/,
+    /npm run build:client/,
+    /npm run build:server/,
+    /Routes\*\*: `routes\.ts`/,
+    /Total: 38\/38 tests across 6 suites/,
+    /natal chart, vedic, transits/i,
+    /All features work except persisting new users and payments/i,
+  ]) {
+    assert.doesNotMatch(readme, stale);
+  }
+});
+
+test("README makes CI the release authority rather than historical smoke counts", () => {
+  assert.match(readme, /authoritative release path is the CI gate stack/i);
+  assert.match(readme, /qualified release gates/i);
+  assert.match(readme, /Legacy smoke scripts may remain/i);
+  assert.match(readme, /does not promote a quarantined system/i);
+});
