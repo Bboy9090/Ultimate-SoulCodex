@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { MotionConfig } from "framer-motion";
 import { Switch, Route, useParams } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -108,9 +109,11 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider><Toaster /><Router /></TooltipProvider>
-    </QueryClientProvider>
+    <MotionConfig reducedMotion="user">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider><Toaster /><Router /></TooltipProvider>
+      </QueryClientProvider>
+    </MotionConfig>
   );
 }
 
