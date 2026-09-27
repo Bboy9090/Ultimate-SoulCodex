@@ -7,6 +7,7 @@ import {
 } from "../client/src/lib/v4ReleaseManifest";
 
 const app = readFileSync("client/src/App.tsx", "utf8");
+const diagnostics = readFileSync("client/src/pages/DiagnosticsPage.tsx", "utf8");
 
 test("release manifest matches the active v4.0.1 foundation line", () => {
   assert.equal(V4_RELEASE_MANIFEST.releaseVersion, "4.0.1");
@@ -174,4 +175,30 @@ test("pricing and billing trust are release-critical", () => {
       "premium-entitlement-requires-persistent-server-state",
     ),
   );
+});
+
+
+test("diagnostics exposes the canonical platform release identities", () => {
+  assert.match(diagnostics, /V4_RELEASE_MANIFEST/);
+  assert.match(diagnostics, /Qualified platform identities/);
+  assert.match(diagnostics, /platformReleaseIdentities\.web\.version/);
+  assert.match(diagnostics, /platformReleaseIdentities\.android\.versionName/);
+  assert.match(diagnostics, /platformReleaseIdentities\.android\.versionCode/);
+  assert.match(diagnostics, /platformReleaseIdentities\.ios\.marketingVersion/);
+  assert.match(diagnostics, /platformReleaseIdentities\.ios\.buildNumber/);
+  assert.match(diagnostics, /do not prove a store listing is publicly available/i);
+});
+
+test("diagnostics platform identity panel contains no signing or profile secrets", () => {
+  for (const forbidden of [
+    "ANDROID_KEYSTORE_PASSWORD",
+    "ANDROID_KEY_PASSWORD",
+    "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+    "birthTime",
+    "latitude",
+    "longitude",
+    "verificationReceiptId",
+  ]) {
+    assert.equal(diagnostics.includes(forbidden), false, forbidden);
+  }
 });
