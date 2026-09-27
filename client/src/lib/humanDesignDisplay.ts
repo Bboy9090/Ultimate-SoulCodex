@@ -5,6 +5,37 @@ function finiteNumber(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export function normalizeHumanDesignCenters(value: unknown): { defined: string[]; undefined: string[] } {
+  if (!value || typeof value !== "object") return { defined: [], undefined: [] };
+  const centers = value as AnyRecord;
+
+  if (Array.isArray(centers.defined) || Array.isArray(centers.undefined)) {
+    return {
+      defined: Array.isArray(centers.defined) ? centers.defined.map(String).filter(Boolean) : [],
+      undefined: Array.isArray(centers.undefined) ? centers.undefined.map(String).filter(Boolean) : [],
+    };
+  }
+
+  const defined: string[] = [];
+  const undefinedCenters: string[] = [];
+  for (const [name, row] of Object.entries(centers)) {
+    if (!row || typeof row !== "object") continue;
+    if ((row as AnyRecord).defined === true) defined.push(name);
+    if ((row as AnyRecord).defined === false) undefinedCenters.push(name);
+  }
+  return { defined, undefined: undefinedCenters };
+}
+
+export function humanDesignDefinedChannels(values: unknown): unknown[] {
+  if (!Array.isArray(values)) return [];
+  return values.filter((value) => {
+    if (typeof value === "string") return Boolean(value.trim());
+    if (!value || typeof value !== "object") return false;
+    const defined = (value as AnyRecord).defined;
+    return defined === undefined ? true : defined === true;
+  });
+}
+
 export function humanDesignChannelLabel(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (!value || typeof value !== "object") return String(value ?? "").trim();
@@ -37,7 +68,8 @@ export function humanDesignListLabel(
   kind: "channel" | "gate",
   emptyLabel = "None resolved",
 ): string {
-  if (!Array.isArray(values) || values.length === 0) return emptyLabel;
+  const normalizedValues = kind === "channel" ? humanDesignDefinedChannels(values) : Array.isArray(values) ? values : [];
+  if (normalizedValues.length === 0) return emptyLabel;
   const formatter = kind === "channel" ? humanDesignChannelLabel : humanDesignGateLabel;
-  return values.map(formatter).filter(Boolean).join(", ") || emptyLabel;
+  return normalizedValues.map(formatter).filter(Boolean).join(", ") || emptyLabel;
 }
