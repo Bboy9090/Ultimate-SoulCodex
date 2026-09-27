@@ -114,3 +114,17 @@ test("public share viewer stays out of search indexes and mobile share checks pa
   assert.match(modal, /pb-\[max\(1\.25rem,env\(safe-area-inset-bottom\)\)\]/);
   assert.match(modal, /Share sheet unavailable/);
 });
+
+
+test("share modal traps keyboard focus and never disguises history load failure as empty history", async () => {
+  const source = await readFile(shareModalUrl, "utf8");
+
+  assert.match(source, /dialogRef\.current/);
+  assert.match(source, /event\.key !== "Tab"/);
+  assert.match(source, /event\.preventDefault\(\)/);
+  assert.match(source, /last\.focus\(\)/);
+  assert.match(source, /first\.focus\(\)/);
+  assert.match(source, /setHistoryError\(true\)/);
+  assert.match(source, /Existing links may still be active/);
+  assert.match(source, /!historyError && shareHistory\.length === 0/);
+});
