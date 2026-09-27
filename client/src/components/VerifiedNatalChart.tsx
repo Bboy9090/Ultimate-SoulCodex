@@ -155,7 +155,7 @@ export default function VerifiedNatalChart({
             })}
           </div>
 
-          <details open className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+          <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">
               Placement meanings · planet + sign + house
             </summary>
