@@ -34,7 +34,7 @@ export interface IStorage {
   createAssessment(assessment: InsertAssessment): Promise<Assessment>;
   createPublicProfileShare(profileId: string, token: string, snapshot: unknown): Promise<PublicProfileShare>;
   getPublicProfileShareByToken(token: string): Promise<PublicProfileShare | undefined>;
-  listPublicProfileShares(profileId: string): Promise<PublicProfileShare[]>;
+  listPublicProfileShares(profileId: string, limit?: number): Promise<PublicProfileShare[]>;
   revokePublicProfileShare(token: string): Promise<PublicProfileShare | undefined>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
@@ -187,10 +187,11 @@ export class MemStorage implements IStorage {
   async getPublicProfileShareByToken(token: string) {
     return this.publicShares.get(token);
   }
-  async listPublicProfileShares(profileId: string) {
+  async listPublicProfileShares(profileId: string, limit = 50) {
     return [...this.publicShares.values()]
       .filter((share) => share.profileId === profileId)
-      .sort((a, b) => (b.createdAt?.getTime?.() ?? 0) - (a.createdAt?.getTime?.() ?? 0));
+      .sort((a, b) => (b.createdAt?.getTime?.() ?? 0) - (a.createdAt?.getTime?.() ?? 0))
+      .slice(0, Math.max(1, Math.min(limit, 100)));
   }
   async revokePublicProfileShare(token: string) {
     const existing = this.publicShares.get(token);
@@ -308,9 +309,14 @@ class PostgresStorage implements IStorage {
     const db = await this.db();
     return (await db.select().from(publicProfileShares).where(eq(publicProfileShares.token, token)).limit(1))[0];
   }
-  async listPublicProfileShares(profileId: string) {
+  async listPublicProfileShares(profileId: string, limit = 50) {
     const db = await this.db();
-    return await db.select().from(publicProfileShares).where(eq(publicProfileShares.profileId, profileId)).orderBy(desc(publicProfileShares.createdAt));
+    const boundedLimit = Math.max(1, Math.min(limit, 100));
+    return await db.select()
+      .from(publicProfileShares)
+      .where(eq(publicProfileShares.profileId, profileId))
+      .orderBy(desc(publicProfileShares.createdAt))
+      .limit(boundedLimit);
   }
   async revokePublicProfileShare(token: string) {
     const db = await this.db();
