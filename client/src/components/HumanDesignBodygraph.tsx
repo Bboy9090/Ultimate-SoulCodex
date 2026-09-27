@@ -1,5 +1,6 @@
 import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
+import { humanDesignChannelLabel, humanDesignGateLabel } from "@/lib/humanDesignDisplay";
 
 type AnyRecord = Record<string, any>;
 
@@ -64,14 +65,6 @@ function channelKey(value: unknown): string | null {
   return null;
 }
 
-function channelLabel(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (!value || typeof value !== "object") return String(value ?? "");
-  const row = value as AnyRecord;
-  const gates = Array.isArray(row.gates) ? row.gates.join("-") : "";
-  return [gates, row.name].filter(Boolean).join(" · ") || JSON.stringify(value);
-}
-
 function gateMeta(gate: string | number) {
   return (HD_GATES as Record<number, { name: string; center: string; keywords: string[] }>)[Number(gate)] ?? null;
 }
@@ -123,10 +116,10 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
     .map((value: unknown) => {
       const key = channelKey(value);
       const pair = key ? CHANNELS[key] : null;
-      return key && pair ? { key, pair, label: channelLabel(value) } : null;
+      return key && pair ? { key, pair, label: humanDesignChannelLabel(value) } : null;
     })
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
-  const gates = Array.isArray(data.activatedGates) ? data.activatedGates.map(String) : [];
+  const gates = Array.isArray(data.activatedGates) ? data.activatedGates.map(humanDesignGateLabel).filter(Boolean) : [];
   const activations = activationRows(data);
 
   return (
@@ -216,7 +209,7 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
           <details open className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">Defined channels</summary>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-[var(--sc-stone)]">
-              {channels.length ? channels.map((channel: unknown, index: number) => <li key={index}>{channelLabel(channel)}</li>) : <li>No defined channel was stored.</li>}
+              {channels.length ? channels.map((channel: unknown, index: number) => <li key={index}>{humanDesignChannelLabel(channel)}</li>) : <li>No defined channel was stored.</li>}
             </ul>
           </details>
 
