@@ -271,25 +271,15 @@ export function selectTemplates(
     ? astrologyTemplates
     : astrologyTemplates.filter((template) => !template.id.startsWith('astro-planetary-'));
 
-  const humanDesign = profileData?.humanDesignData;
-  const hasVerifiedPersonalHumanDesign =
-    humanDesign?.status === 'verified' &&
-    typeof humanDesign?.verificationReceiptId === 'string' &&
-    humanDesign.verificationReceiptId.trim().length > 0 &&
-    typeof humanDesign?.independentSource === 'string' &&
-    humanDesign.independentSource.trim().length > 0 &&
-    typeof humanDesign?.verifiedAt === 'string' &&
-    humanDesign.verifiedAt.trim().length > 0;
-
-  // Daily guidance is intentionally selective. Astrology supplies measured sky
-  // context, numerology supplies deterministic calendar symbolism, and Human
-  // Design enters the personalized mix only when the user's natal HD core is
-  // independently verified. We do not add extra systems merely to make the
-  // reading look larger.
+  // Daily guidance is intentionally selective. Astrology supplies measured
+  // current-sky context and numerology supplies deterministic calendar
+  // symbolism. Human Design templates remain available for dedicated verified
+  // surfaces, but this package does not own the canonical natal-HD trust record.
+  // Until a shared trust adapter reaches this layer, automatic daily guidance
+  // fails closed instead of accepting a partial caller-attested receipt.
   const governedByCategory: Record<string, TemplateVariation[]> = {
     astrology: eligibleAstrologyTemplates,
     numerology: numerologyTemplates,
-    ...(hasVerifiedPersonalHumanDesign ? { humandesign: humanDesignTemplates } : {}),
   };
 
   const dateSeed = parseInt(dailyContext.date.replace(/-/g, ''), 10);
