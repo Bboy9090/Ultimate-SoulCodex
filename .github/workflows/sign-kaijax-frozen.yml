@@ -1,0 +1,94 @@
+name: Sign Kai-Jax Frozen Android RC
+
+on:
+  push:
+    branches:
+      - release/google-play-readiness-2026-09-07
+    paths:
+      - ".github/workflows/sign-kaijax-frozen.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  sign-kaijax:
+    name: Sign Kai-Jax 1.0.0 frozen AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      KAIJAX_SHA: 2ff7979402e51b54cf5e6296645d9164de2a7568
+      KAIJAX_REPO: Bboy9090/Legends-of-Kai-Jax-The-memory-Hero
+    steps:
+      - name: Require existing Soul Codex Android signing vault
+        run: |
+          test -n "$ANDROID_KEYSTORE"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+
+      - name: Checkout exact frozen Kai-Jax source
+        run: |
+          git clone --no-checkout "https://github.com/${KAIJAX_REPO}.git" kaijax
+          cd kaijax
+          git checkout --detach "$KAIJAX_SHA"
+          test "$(git rev-parse HEAD)" = "$KAIJAX_SHA"
+
+      - name: Prepare web and Android
+        working-directory: kaijax
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.15.9 --activate
+          pnpm install --filter ./apps/web... --frozen-lockfile
+          pnpm -C apps/web build
+          cd apps/web
+          npx cap sync android
+
+      - name: Decode signing keystore
+        working-directory: kaijax/apps/web/android
+        run: |
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE" | base64 --decode > release-upload.jks
+          test -s release-upload.jks
+          keytool -list \
+            -keystore release-upload.jks \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "ANDROID_KEYSTORE_PATH=$PWD/release-upload.jks" >> "$GITHUB_ENV"
+
+      - name: Build and verify signed Play AAB
+        working-directory: kaijax/apps/web/android
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bundleRelease --stacktrace
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify -verbose -certs "$AAB"
+          sha256sum "$AAB" | tee AAB-SHA256.txt
+          printf '%s\n' "$KAIJAX_SHA" > KAIJAX-FROZEN-SHA.txt
+          keytool -list -v \
+            -keystore release-upload.jks \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            | grep -E 'SHA256:|Alias name:' > SIGNING-CERT-FINGERPRINT.txt
+          cp "$AAB" "Legends-of-Kai-Jax-1.0.0-build1-${KAIJAX_SHA:0:12}.aab"
+
+      - name: Upload signed Kai-Jax release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: kai-jax-1.0.0-signed-aab-2ff7979402e5
+          path: |
+            kaijax/apps/web/android/Legends-of-Kai-Jax-1.0.0-build1-2ff7979402e5.aab
+            kaijax/apps/web/android/AAB-SHA256.txt
+            kaijax/apps/web/android/KAIJAX-FROZEN-SHA.txt
+            kaijax/apps/web/android/SIGNING-CERT-FINGERPRINT.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Remove temporary keystore
+        if: always()
+        working-directory: kaijax/apps/web/android
+        run: rm -f release-upload.jks
