@@ -62,7 +62,7 @@ test("deterministic AI fallback remains stricter than symbolic identity surfaces
       },
     } as any);
 
-    assert.doesNotMatch(result.content, /Virgo|identity|destiny|purpose/i);
+    assert.doesNotMatch(result.content, /Virgo/i);
     assert.match(result.content, /No substitute identity, strength, shadow, motive, destiny, or purpose/i);
   });
 
