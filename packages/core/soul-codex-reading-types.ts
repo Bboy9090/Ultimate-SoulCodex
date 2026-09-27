@@ -69,6 +69,10 @@ export interface HumanDesignOutput {
   strategy: string;
   authority: string;
   type?: string;
+  engine?: string;
+  source?: string;
+  calculatedAt?: string;
+  inputTimestampUtc?: string;
   verificationReceiptId?: string;
   independentSource?: string;
   verifiedAt?: string;
