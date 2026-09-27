@@ -1,8 +1,8 @@
 # Soul Codex Store Submission Packet
 
-Prepared from the shipped app behavior and final release authority on September 23, 2026.
+Prepared from the current shipped-app contract and release process as of September 27, 2026.
 
-Release authority: `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`.
+Release authority is intentionally not hard-coded in this document. At submission time, use the exact-head GitHub Actions release receipt/artifact for the candidate being uploaded and verify its SHA matches the signed binary and deployed backend identity.
 
 This is the canonical operator checklist for App Store Connect and Google Play Console. Store answers must be rechecked whenever data collection, third-party services, authentication, payments, or native permissions change.
 
@@ -170,8 +170,8 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 
 ## Current Release Evidence
 
-- Final main SHA: `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`
-- Railway production deployment: exact same SHA, status SUCCESS
+- Final candidate SHA: take this from the successful exact-head Store Candidate / hardening receipt immediately before submission; do not copy a historical SHA from this document.
+- Railway production deployment: verify the live `/health` release SHA matches that exact candidate before submission.
 - Railway public domain: `soulcodex.up.railway.app`
 - Android signed AAB: built and `jarsigner -verify` passed
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
@@ -189,4 +189,4 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
 6. Use the verified Railway URLs for privacy, support, and account deletion unless a custom domain is attached and verified first.
 7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
-8. For Apple, obtain a fresh signed 4.0.2 (4000009) build from the same final main SHA before submission.
+8. For Apple, obtain a fresh signed 4.0.2 (4000009) build from the same exact qualified candidate SHA used for submission evidence.
