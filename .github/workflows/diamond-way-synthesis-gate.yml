@@ -65,6 +65,9 @@ jobs:
       - name: Daily transit evidence authority contract
         run: node --import tsx --test tests/daily-transit-evidence-authority.test.ts
 
+      - name: Daily guidance differentiation corpus
+        run: node --import tsx --test tests/daily-guidance-differentiation-corpus.test.ts
+
       - name: Typecheck
         run: npm run check
 
