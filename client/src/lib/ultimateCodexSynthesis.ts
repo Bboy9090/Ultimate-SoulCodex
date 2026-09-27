@@ -1,4 +1,5 @@
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
+import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
 import { getVerifiedPlacement } from "./placementVerification";
 import { hasVerifiedHumanDesignTrust } from "./profileVerificationReconciliation";
 
@@ -219,24 +220,6 @@ function numericValue(value: unknown): number | null {
   return Number.isInteger(n) ? n : null;
 }
 
-function normalizeHdCenters(hd: AnyRecord): { defined: string[]; undefined: string[] } {
-  const centers = hd?.centers;
-  if (!centers || typeof centers !== "object") return { defined: [], undefined: [] };
-  if (Array.isArray(centers.defined) || Array.isArray(centers.undefined)) {
-    return {
-      defined: Array.isArray(centers.defined) ? centers.defined.map(String) : [],
-      undefined: Array.isArray(centers.undefined) ? centers.undefined.map(String) : [],
-    };
-  }
-  const defined: string[] = [];
-  const undefinedCenters: string[] = [];
-  for (const [name, value] of Object.entries(centers as AnyRecord)) {
-    if ((value as AnyRecord)?.defined === true) defined.push(name);
-    else if ((value as AnyRecord)?.defined === false) undefinedCenters.push(name);
-  }
-  return { defined, undefined: undefinedCenters };
-}
-
 function fnv1a(value: string, seed = 0x811c9dc5): number {
   let hash = seed >>> 0;
   for (let i = 0; i < value.length; i += 1) {
@@ -414,10 +397,10 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : null;
   const hdProfile = verifiedHd && typeof hd.profile === "string" ? hd.profile.trim() : null;
   const hdDefinition = verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : null;
-  const hdCenters = verifiedHd ? normalizeHdCenters(hd) : { defined: [], undefined: [] };
-  const hdChannels = verifiedHd && Array.isArray(hd.channels) ? hd.channels.map((value: unknown) =>
-    typeof value === "string" ? value : JSON.stringify(value)
-  ) : [];
+  const hdCenters = verifiedHd ? normalizeHumanDesignCenters(hd.centers) : { defined: [], undefined: [] };
+  const hdChannels = verifiedHd
+    ? humanDesignDefinedChannels(hd.channels).map(humanDesignChannelLabel)
+    : [];
   const hdGates = verifiedHd && Array.isArray(hd.activatedGates) ? hd.activatedGates.map(String) : [];
   const hdActivationSignature: string[] = [];
   if (verifiedHd) {
