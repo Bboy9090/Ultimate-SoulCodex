@@ -59,6 +59,7 @@ jobs:
       - name: Verify live backend contract
         env:
           SOUL_CODEX_BACKEND_URL: ${{ env.VITE_API_URL }}
+          SOUL_CODEX_API_CONTRACT: ${{ env.VITE_API_CONTRACT }}
         run: node scripts/ci/verify-live-backend-contract.mjs
 
       - name: Preserve live backend contract receipt
