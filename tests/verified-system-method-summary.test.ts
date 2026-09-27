@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { VerifiedSystems } from "../packages/core/soul-codex-reading-types";
+import { APPROVED_HUMAN_DESIGN_TRUST } from "../packages/core/human-design-trust";
 import { buildVerifiedSystemMethodSummaries } from "../client/src/lib/verifiedSystemMethodSummary";
 
 function verifiedSystems(): VerifiedSystems {
@@ -25,10 +26,14 @@ function verifiedSystems(): VerifiedSystems {
       type: "Reflector",
       profileType: "2/5",
       strategy: "Wait a lunar cycle",
-      authority: "Lunar",
-      verificationReceiptId: "hd-secret-receipt-123",
-      independentSource: "private-independent-source-name",
-      verifiedAt: "2026-09-26T11:11:11.000Z",
+      authority: "Lunar Authority",
+      engine: APPROVED_HUMAN_DESIGN_TRUST.engine,
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+      independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+      verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
     },
   };
 }
@@ -57,9 +62,11 @@ test("method summaries never expose raw verification metadata", () => {
   );
 
   for (const forbidden of [
-    "hd-secret-receipt-123",
-    "private-independent-source-name",
-    "2026-09-26T11:11:11.000Z",
+    APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+    APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+    APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
+    "2026-09-26T18:00:00.000Z",
+    "1990-09-17T15:11:00.000Z",
     "verificationReceiptId",
     "independentSource",
     "verifiedAt",
@@ -122,4 +129,38 @@ test("method language preserves the calculation-versus-interpretation boundary",
     rendered,
     /proves personality|guarantees|destined|fated|scientifically proves/i,
   );
+});
+
+
+test("Human Design disclosure rejects every canonical trust mutation", () => {
+  const mutations: Array<Partial<NonNullable<VerifiedSystems["humanDesign"]>>> = [
+    { engine: "other-engine" },
+    { source: "" },
+    { calculatedAt: "not-a-date" },
+    { inputTimestampUtc: "1990-09-17T11:11:00-04:00" },
+    { verificationReceiptId: "wrong" },
+    { independentSource: "wrong" },
+    { verifiedAt: "2026-09-20T00:00:00.000Z" },
+    { authority: "Sacral Authority" },
+    { profileType: "9/9" },
+  ];
+
+  for (const mutation of mutations) {
+    const systems = verifiedSystems();
+    systems.humanDesign = {
+      ...systems.humanDesign!,
+      ...mutation,
+    };
+
+    const summaries = buildVerifiedSystemMethodSummaries(
+      systems,
+      "verified_ephemeris",
+    );
+
+    assert.equal(
+      summaries.some((summary) => summary.id === "human-design"),
+      false,
+      JSON.stringify(mutation),
+    );
+  }
 });
