@@ -38,6 +38,8 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [shareHistory, setShareHistory] = useState<ShareHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
 
@@ -48,9 +50,15 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
         const response = await apiFetch(`/api/profiles/${profileId}/public-shares`);
         if (!response.ok) throw new Error(`share_history_failed_${response.status}`);
         const history = await response.json();
-        if (!cancelled) setShareHistory(Array.isArray(history) ? history : []);
+        if (!cancelled) {
+          setShareHistory(Array.isArray(history) ? history : []);
+          setHistoryError(false);
+        }
       } catch {
-        if (!cancelled) setShareHistory([]);
+        if (!cancelled) {
+          setShareHistory([]);
+          setHistoryError(true);
+        }
       } finally {
         if (!cancelled) setHistoryLoading(false);
       }
@@ -64,7 +72,28 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
     closeButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = [...dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      )].filter((element) => !element.hasAttribute("aria-hidden"));
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -216,6 +245,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-soul-codex-title"
@@ -317,7 +347,12 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
             {historyLoading && <Loader2 className="h-4 w-4 animate-spin text-[var(--sc-stone)]" aria-label="Loading share history" />}
           </div>
 
-          {!historyLoading && shareHistory.length === 0 && (
+          {!historyLoading && historyError && (
+            <p role="alert" className="rounded-xl border border-[var(--sc-danger)]/30 bg-[var(--sc-danger)]/5 p-3 text-xs leading-5 text-[var(--sc-stone)]">
+              Share history could not be loaded. Existing links may still be active, so do not assume an empty list means nothing is public.
+            </p>
+          )}
+          {!historyLoading && !historyError && shareHistory.length === 0 && (
             <p className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-3 text-xs text-[var(--sc-stone)]">No public links have been created for this profile yet.</p>
           )}
 

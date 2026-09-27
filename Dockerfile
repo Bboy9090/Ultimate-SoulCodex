@@ -38,6 +38,7 @@ COPY --from=builder --chown=node:node /app/package.json /app/package-lock.json .
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/packages ./packages
 COPY --from=builder --chown=node:node /app/dist ./dist
+COPY --from=builder --chown=node:node /app/scripts/ensure-public-share-schema.mjs ./scripts/ensure-public-share-schema.mjs
 
 EXPOSE 3000
 
@@ -45,4 +46,4 @@ EXPOSE 3000
 # image-level health check tied to a hard-coded port because Railway may
 # override PORT at runtime.
 USER node
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "node scripts/ensure-public-share-schema.mjs && node dist/index.js"]

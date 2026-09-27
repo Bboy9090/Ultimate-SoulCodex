@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CloudOff, Compass, Crown, Infinity, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import DepthSoulGuide from "@/components/DepthSoulGuide";
-import HumanDesignBodygraph from "@/components/HumanDesignBodygraph";
 import UltimateCodexPanel from "@/components/UltimateCodexPanel";
-import VerifiedNatalChart from "@/components/VerifiedNatalChart";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
@@ -15,6 +13,18 @@ import { shouldOfferVerification, verificationOutcome, type VerificationAttempt 
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
+
+const HumanDesignBodygraph = lazy(() => import("@/components/HumanDesignBodygraph"));
+const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
+
+function DeepChartFallback({ label }: { label: string }) {
+  return (
+    <div className="sc-panel mb-6 flex min-h-32 items-center justify-center p-6 text-sm text-[var(--sc-stone)]" role="status">
+      <Loader2 className="mr-2 h-4 w-4 animate-spin text-[var(--sc-gold)]" />
+      Loading {label}…
+    </div>
+  );
+}
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
@@ -206,9 +216,19 @@ export default function OfflineProfilePage() {
           </section>
         )}
 
-        {verifiedHumanDesign && <HumanDesignBodygraph data={verifiedHumanDesign as Record<string, any>} />}
+        {verifiedHumanDesign && (
+          <Suspense fallback={<DeepChartFallback label="Human Design bodygraph" />}>
+            <HumanDesignBodygraph data={verifiedHumanDesign as Record<string, any>} />
+          </Suspense>
+        )}
 
-        {verifiedFullNatal && verifiedAstrology && <div className="mb-6"><VerifiedNatalChart astrology={verifiedAstrology as Record<string, any>} synthesis={ultimateCodex} /></div>}
+        {verifiedFullNatal && verifiedAstrology && (
+          <div className="mb-6">
+            <Suspense fallback={<DeepChartFallback label="verified natal wheel" />}>
+              <VerifiedNatalChart astrology={verifiedAstrology as Record<string, any>} synthesis={ultimateCodex} />
+            </Suspense>
+          </div>
+        )}
 
         {verifiedFullNatal && verifiedPlanets && verifiedHouses && verifiedMidheaven && (
           <section className="mb-6 grid gap-4 lg:grid-cols-[1.25fr_.75fr]" data-testid="verified-full-natal-panel">

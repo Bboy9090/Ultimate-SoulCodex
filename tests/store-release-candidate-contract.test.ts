@@ -95,4 +95,14 @@ test("store metadata points at the verified production domain and exact release 
   assert.match(packet, /4\.0\.1 \/ versionCode 4000008/);
   assert.match(packet, /4\.0\.2 \/ build 4000009/);
   assert.match(packet, /do not hard-code them into the source tree/);
+
+  const movingSha = /\b[0-9a-f]{40}\b/i;
+  for (const [name, source] of [
+    ["canonical packet", packet],
+    ["store listing", listing],
+    ["app store metadata", appStore],
+  ] as const) {
+    assert.doesNotMatch(source, movingSha, `${name} must not pin a historical release SHA`);
+    assert.match(source, /exact-head|exact qualified candidate|exact qualified/i);
+  }
 });

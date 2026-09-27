@@ -97,8 +97,8 @@ function builtInLocation(value: string) {
 async function requestVerificationWhenOnline(
   data: BirthData,
   localProfile: OfflineCodexProfile,
-): Promise<void> {
-  if (typeof navigator !== "undefined" && !navigator.onLine) return;
+): Promise<boolean> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) return false;
 
   try {
     const response = await apiRequest("POST", "/api/verification/profile", {
@@ -134,11 +134,13 @@ async function requestVerificationWhenOnline(
         }),
       );
     }
+    return true;
   } catch (error) {
     console.warn(
       "[local-first-create] Requested online verification could not complete; local profile remains available",
       error,
     );
+    return false;
   }
 }
 
@@ -266,18 +268,21 @@ export default function LocalFirstInputForm() {
         );
       }
 
+      let verificationCompleted = false;
       if (verifyOnline) {
         // The user explicitly opted in, so finish the evidence reconciliation
         // before opening the profile. Navigating while this request was still
         // in flight allowed the profile query to cache the unresolved local
         // snapshot even though verified Moon/Rising data arrived moments later.
-        await requestVerificationWhenOnline(data, profile);
+        verificationCompleted = await requestVerificationWhenOnline(data, profile);
       }
 
       toast({
         title: "Soul Codex created on this device",
         description: verifyOnline
-          ? "Your local reading is ready. Astronomy verification was requested; supported placements will merge back into this same local profile when the evidence check finishes."
+          ? verificationCompleted
+            ? "Your local reading is ready. The online verification request completed and supported evidence was reconciled into this same local profile."
+            : "Your local reading is ready, but online verification did not complete. Nothing was guessed or promoted; you can retry verification from the profile when connectivity is available."
           : exactChartInputsReady
             ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
             : "Your local reading is ready. No profile data was uploaded for verification.",

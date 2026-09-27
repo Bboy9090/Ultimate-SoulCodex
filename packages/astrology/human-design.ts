@@ -3,86 +3,8 @@ import { fromZonedTime } from 'date-fns-tz';
 import * as geoTz from 'geo-tz';
 import { createEvidenceEntry, type EvidenceEntry } from '@soulcodex/core';
 
-// Human Design Gates mapped to their correct centers and meanings
-export const HD_GATES = {
-  1: { name: "The Creative", center: "G", keywords: ["Self-expression", "Creativity", "Leadership"] },
-  2: { name: "The Receptive", center: "G", keywords: ["Direction", "Higher knowing", "Love of self"] },
-  3: { name: "Ordering", center: "Sacral", keywords: ["Innovation", "Change", "New order"] },
-  4: { name: "Youthful Folly", center: "Ajna", keywords: ["Answers", "Mental pressure", "Formulas"] },
-  5: { name: "Waiting", center: "Sacral", keywords: ["Fixed rhythms", "Timing", "Patience"] },
-  6: { name: "Conflict", center: "Solar Plexus", keywords: ["Friction", "Intimacy", "Emotions"] },
-  7: { name: "The Army", center: "G", keywords: ["Leadership", "Role", "Interaction"] },
-  8: { name: "Holding Together", center: "Throat", keywords: ["Contribution", "Style", "Uniqueness"] },
-  9: { name: "The Taming Power of the Small", center: "Sacral", keywords: ["Focus", "Determination", "Details"] },
-  10: { name: "Treading", center: "G", keywords: ["Behavior", "Love of self", "Higher principles"] },
-  11: { name: "Peace", center: "Ajna", keywords: ["Ideas", "Peace", "Opinions"] },
-  12: { name: "Standstill", center: "Throat", keywords: ["Caution", "Mood", "Articulation"] },
-  13: { name: "Fellowship", center: "G", keywords: ["Listener", "Secrets", "Fellowship"] },
-  14: { name: "Possession in Great Measure", center: "Sacral", keywords: ["Power skills", "Keys", "Prosperity"] },
-  15: { name: "Modesty", center: "G", keywords: ["Extremes", "Rhythm", "Love of humanity"] },
-  16: { name: "Enthusiasm", center: "Throat", keywords: ["Skills", "Enthusiasm", "Talent"] },
-  17: { name: "Following", center: "Ajna", keywords: ["Opinions", "Following", "Service"] },
-  18: { name: "Work on the Corrupted", center: "Spleen", keywords: ["Correction", "Challenge", "Patterns"] },
-  19: { name: "Approach", center: "Root", keywords: ["Wanting", "Needs", "Approach"] },
-  20: { name: "Contemplation", center: "Throat", keywords: ["The now", "Awareness", "Self-awareness"] },
-  21: { name: "Biting Through", center: "Heart", keywords: ["Control", "Hunter", "Material"] },
-  22: { name: "Grace", center: "Solar Plexus", keywords: ["Grace", "Openness", "Charm"] },
-  23: { name: "Splitting Apart", center: "Throat", keywords: ["Assimilation", "Insight", "Knowing"] },
-  24: { name: "Return", center: "Ajna", keywords: ["Rationalizing", "Return", "Blessing"] },
-  25: { name: "Innocence", center: "G", keywords: ["Spirit", "Innocence", "Higher love"] },
-  26: { name: "The Taming Power of the Great", center: "Heart", keywords: ["The egoist", "Great accumulator", "Pride"] },
-  27: { name: "The Corners of the Mouth", center: "Sacral", keywords: ["Caring", "Nourishment", "Responsibility"] },
-  28: { name: "The Great", center: "Spleen", keywords: ["The game player", "Struggle", "Purpose"] },
-  29: { name: "The Abysmal", center: "Sacral", keywords: ["Saying yes", "Commitment", "Perseverance"] },
-  30: { name: "The Clinging Fire", center: "Solar Plexus", keywords: ["Feelings", "Recognition", "Fatefulness"] },
-  31: { name: "Influence", center: "Throat", keywords: ["Leading", "Influence", "Democracy"] },
-  32: { name: "Duration", center: "Spleen", keywords: ["Continuity", "Endurance", "Transformation"] },
-  33: { name: "Retreat", center: "Throat", keywords: ["Privacy", "Mindfulness", "Retreat"] },
-  34: { name: "The Power of the Great", center: "Sacral", keywords: ["Power", "Strength", "Might"] },
-  35: { name: "Progress", center: "Throat", keywords: ["Change", "Progress", "Experience"] },
-  36: { name: "Darkening of the Light", center: "Solar Plexus", keywords: ["Crisis", "Exploration", "Adventure"] },
-  37: { name: "The Family", center: "Solar Plexus", keywords: ["Friendship", "Community", "Equality"] },
-  38: { name: "Opposition", center: "Root", keywords: ["The fighter", "Opposition", "Individuality"] },
-  39: { name: "Obstruction", center: "Root", keywords: ["Provocation", "Challenge", "Spirit"] },
-  40: { name: "Deliverance", center: "Heart", keywords: ["Aloneness", "Resolve", "Will"] },
-  41: { name: "Decrease", center: "Root", keywords: ["Contraction", "Fantasy", "Imagination"] },
-  42: { name: "Increase", center: "Sacral", keywords: ["Growth", "Finishing", "Completion"] },
-  43: { name: "Breakthrough", center: "Ajna", keywords: ["Insight", "Breakthrough", "Individual knowing"] },
-  44: { name: "Coming to Meet", center: "Spleen", keywords: ["Coming to meet", "Truth", "Intuition"] },
-  45: { name: "Gathering Together", center: "Throat", keywords: ["The gatherer", "Education", "Materialism"] },
-  46: { name: "Pushing Upward", center: "G", keywords: ["The determination of the self", "Serendipity", "Luck"] },
-  47: { name: "Oppression", center: "Ajna", keywords: ["Realizing", "Oppression", "Abstract"] },
-  48: { name: "The Well", center: "Spleen", keywords: ["The well", "Depth", "Wisdom"] },
-  49: { name: "Revolution", center: "Solar Plexus", keywords: ["Revolution", "Principles", "Rejection"] },
-  50: { name: "The Cauldron", center: "Spleen", keywords: ["Values", "Responsibility", "Law"] },
-  51: { name: "The Arousing", center: "Heart", keywords: ["Shock", "Arousing", "Initiative"] },
-  52: { name: "Keeping Still", center: "Root", keywords: ["Stillness", "Inaction", "Meditation"] },
-  53: { name: "Development", center: "Root", keywords: ["Beginnings", "Development", "Maturity"] },
-  54: { name: "The Marrying Maiden", center: "Root", keywords: ["Ambition", "Drive", "Transformation"] },
-  55: { name: "Abundance", center: "Solar Plexus", keywords: ["Spirit", "Abundance", "Moodiness"] },
-  56: { name: "The Wanderer", center: "Throat", keywords: ["Stimulation", "Wanderer", "Storytelling"] },
-  57: { name: "The Gentle", center: "Spleen", keywords: ["Intuitive clarity", "Gentle penetrating", "Instinct"] },
-  58: { name: "The Joyous", center: "Root", keywords: ["Joy", "Aliveness", "Vitality"] },
-  59: { name: "Dispersion", center: "Sacral", keywords: ["Sexuality", "Dispersion", "Intimacy"] },
-  60: { name: "Limitation", center: "Root", keywords: ["Acceptance", "Limitation", "Mutation"] },
-  61: { name: "Inner Truth", center: "Head", keywords: ["Mystery", "Inner truth", "Wonder"] },
-  62: { name: "Small Exceeding", center: "Throat", keywords: ["Details", "Organization", "Expression"] },
-  63: { name: "After Completion", center: "Head", keywords: ["Doubt", "After completion", "Logic"] },
-  64: { name: "Before Completion", center: "Head", keywords: ["Confusion", "Before completion", "Pressure"] }
-};
-
-// Human Design Centers
-export const HD_CENTERS = {
-  "Head": { color: "#FFE4B5", description: "Mental pressure and inspiration" },
-  "Ajna": { color: "#90EE90", description: "Mental awareness and concepts" },
-  "Throat": { color: "#DDA0DD", description: "Communication and manifestation" },
-  "G": { color: "#FFD700", description: "Identity, direction, and love" },
-  "Heart": { color: "#F0E68C", description: "Will, ego, and material world" },
-  "Spleen": { color: "#DEB887", description: "Intuition, instinct, and timing" },
-  "Solar Plexus": { color: "#FFA07A", description: "Emotions and feelings" },
-  "Sacral": { color: "#FA8072", description: "Life force and response" },
-  "Root": { color: "#D2691E", description: "Stress, pressure, and fuel" }
-};
+import { HD_CENTERS, HD_GATES } from "./human-design-display-data";
+export { HD_CENTERS, HD_GATES } from "./human-design-display-data";
 
 const HD_ICHING_MAP = [
   55, 37, 63, 22, 36, 25, 17, 21, 51, 42, 3, 27, 24, 2, 23, 8,
