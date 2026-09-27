@@ -27,6 +27,6 @@ test("terms explain the practical limit of revocation", async () => {
   assert.match(source, /Private Soul Codex profiles are not public by default/);
   assert.match(source, /separate sanitized snapshot/);
   assert.match(source, /until you revoke it/);
-  assert.match(source, /cannot recall copies another person may already have saved or screenshotted/);
+  assert.match(source, /cannot recall\s+copies another person may already have saved or screenshotted/);
   assert.match(source, /September 27, 2026/);
 });
