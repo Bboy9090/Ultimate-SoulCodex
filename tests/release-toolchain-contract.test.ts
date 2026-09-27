@@ -63,6 +63,8 @@ test("iOS export remains App Store scoped with the canonical team", async () => 
 test("store workflow constructs and validates both Capacitor native payloads", async () => {
   const workflow = await text(storeWorkflowPath);
   assert.match(workflow, /pull_request:[\s\S]*release\/ios-4\.0\.0-final-truth-fix/);
+  assert.match(workflow, /actions\/checkout@v5/);
+  assert.match(workflow, /actions\/setup-node@v5/);
   assert.match(workflow, /npm run build:capacitor/);
   assert.match(workflow, /npm run mobile:validate:android/);
   assert.match(workflow, /npm run mobile:validate:ios/);
@@ -81,6 +83,10 @@ test("Google Play production publishing is signed, inspectable, and main-only", 
     assert.match(workflow, new RegExp(secret));
   }
   assert.match(workflow, /keytool -list/);
+  assert.match(workflow, /Detect Google Play publishing credentials/);
+  assert.match(workflow, /id:\s*play/);
+  assert.match(workflow, /steps\.play\.outputs\.available/);
+  assert.match(workflow, /Google Play service-account blocker/);
   assert.match(workflow, /\.\/gradlew --no-daemon bundleRelease/);
   assert.match(workflow, /test -s "\$AAB"/);
   assert.match(workflow, /jarsigner -verify "\$AAB"/);
