@@ -90,6 +90,15 @@ export const profiles = pgTable("soul_profiles", {
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
+export const publicProfileShares = pgTable("public_profile_shares", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  token: varchar("token", { length: 96 }).notNull().unique(),
+  profileId: varchar("profile_id").notNull(),
+  snapshot: jsonb("snapshot").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  revokedAt: timestamp("revoked_at"),
+});
+
 export const assessmentResponses = pgTable("assessment_responses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull(),
@@ -248,6 +257,7 @@ export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Profile = typeof profiles.$inferSelect;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessmentResponses.$inferSelect;
+export type PublicProfileShare = typeof publicProfileShares.$inferSelect;
 export type BirthData = z.infer<typeof birthDataSchema>;
 export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
 export type MBTIAssessment = z.infer<typeof mbtiAssessmentSchema>;
