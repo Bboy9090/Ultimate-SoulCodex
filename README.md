@@ -117,8 +117,8 @@ Calculation paths may be local or server-side depending on the feature. Governed
 
 ```bash
 # 1. Clone
-git clone https://github.com/Bboy9090/Ultimate-SoulCodex-Engine-of-the-Eternal-Now.git
-cd Ultimate-SoulCodex-Engine-of-the-Eternal-Now
+git clone https://github.com/Bboy9090/Ultimate-SoulCodex.git
+cd Ultimate-SoulCodex
 
 # 2. Install
 npm install
@@ -134,13 +134,13 @@ npm run build
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+By default the production server listens on port 5000, so open `http://localhost:5000` unless `PORT` is set to another value.
 
 > **Note on `npm run dev`:** The dev script uses Vite for hot-module reloading. If you're running locally without a Vite-enabled platform environment, use `npm run build && npm start` instead. `npm start` always works after a build.
 
 ### Demo Mode (No Database Required)
 
-Set `DEMO_MODE=true` in your `.env` to run with a seeded demo profile. No PostgreSQL setup needed. All features work except persisting new users and payments.
+Set `DEMO_MODE=true` in your `.env` to run with in-memory development storage. No PostgreSQL setup is required. Demo mode is for development/testing and must not be used as evidence that every production integration or persistence path is available.
 
 ---
 
@@ -255,9 +255,15 @@ Navigate to `http://localhost:3000`
 ### Production Build
 
 ```bash
-npm run build:client  # Build frontend to dist/public/
-npm run build:server  # Build backend to dist/
-npm start             # Run production server
+npm run build         # Build frontend, PWA assets, and bundled server
+npm start             # Run the production server
+```
+
+For native candidates, use the repository's mobile validation scripts after the web build:
+
+```bash
+npm run mobile:validate:ios
+npm run mobile:validate:android
 ```
 
 ### Environment Variables
@@ -276,22 +282,30 @@ npm start             # Run production server
 
 ### Testing
 
-Six smoke test suites verify all core systems. No database or AI keys required for non-AI tests.
+The authoritative release path is the CI gate stack, not a fixed historical smoke-test count.
+
+Core validation includes workspace build/typecheck, the qualified release gates, astronomy verification, unknown-time handling, differentiation corpora, Human Design trust, privacy/security contracts, registry/documentation truth, native routing, and mobile release checks.
+
+Useful local commands:
 
 ```bash
-# Service-level tests (no server needed)
-npx tsx scripts/smoke-astrology.ts       # 7/7 — natal chart, vedic, transits
-npx tsx scripts/smoke-compatibility.ts   # 6/6 — scoring honesty, missing systems
-npx tsx scripts/smoke-unknown-time.ts    # 7/7 — AI unknown-time guards
-
-# Server-level tests (start server first)
-SESSION_SECRET=dev DEMO_MODE=true PORT=5055 npx tsx server/index.ts &
-SMOKE_BASE=http://localhost:5055 npx tsx scripts/smoke-premium.ts      # 7/7
-SMOKE_BASE=http://localhost:5055 npx tsx scripts/smoke-production.ts   # 7/7
-SMOKE_BASE=http://localhost:5055 npx tsx scripts/smoke-ai-live.ts      # 4/4 (needs AI keys)
+npm run build:workspaces
+npm run check:workspaces
+npm run check
+npm test
+bash scripts/ci/qualified-release-gates.sh
+bash scripts/ci/codebuild-core.sh
 ```
 
-**Total: 38/38 tests across 6 suites.**
+Individual targeted tests can be run with Node's test runner and `tsx`, for example:
+
+```bash
+node --import tsx --test tests/daily-template-system-mix.test.ts
+node --import tsx --test tests/verified-profile-differentiation-corpus.test.ts
+node --import tsx --test tests/share-privacy-contract.test.ts
+```
+
+Legacy smoke scripts may remain in the repository for compatibility or historical diagnostics. Their presence does not promote a quarantined system into current production governance.
 
 ## Architecture Overview
 
@@ -299,7 +313,7 @@ The active app structure:
 
 - **Backend**: `server/index.ts` (Express + Vite middleware in dev mode)
 - **Frontend**: `client/src/main.tsx` (React SPA)
-- **Routes**: `routes.ts` (~3900 lines)
+- **Routes**: `server/routes.ts`, with governed specialized routers under `server/routes/`
 - **Packages**: `packages/*` (core, db, ai, astrology)
 
 ### Key Files
@@ -308,22 +322,17 @@ The active app structure:
 - Output schema: `packages/core/soulcodex-v1/schema.ts`
 - Generator pipeline: `packages/core/soulcodex-v1/generate.ts`
 
-## Known Limitations (MVP)
+## Current Product Boundaries
 
-- No fake or randomly generated mystical data
-- Basic personalization (not deeply customized at MVP stage)
-- AI-powered features require API keys (GEMINI_API_KEY or OPENAI_API_KEY)
-- Journal UI page pending implementation
-- Saved insights UI pending implementation
+- Quarantined legacy systems stay out of verified synthesis until independently promoted by the production registry.
+- Exact-time features remain unresolved when the required birth-time/location evidence is insufficient.
+- AI availability depends on configured provider credentials; deterministic and evidence-governed calculation paths remain separate from AI prose.
+- Public store availability is a release event distinct from passing native/store-candidate CI.
+- Legacy share-link code remains outside the production route surface until its governed privacy/social router is intentionally promoted.
 
 ## Next Steps
 
-See `ROADMAP.md` for planned features:
-- Dynamic reading engines
-- Data privacy review
-- Mobile sync capabilities
-- Enhanced journal UI
-- Saved insights interface
+See `ROADMAP.md` for the current quality gates. Near-term work emphasizes evidence transparency, daily usefulness, differentiation, compatibility clarity, accessibility, and exact-head mobile release hardening rather than inflating the number of symbolic systems.
 
 ## Contributing
 
