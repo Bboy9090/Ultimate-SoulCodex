@@ -67,7 +67,7 @@ test("production server does not import the generic legacy template bank", () =>
   assert.doesNotMatch(serverRoutes, /template-bank|daily-insights/);
 });
 
-test("legacy daily template service delegates to a selector that rotates only governed systems", () => {
+test("legacy daily template service delegates to a selector that rotates only governed automatic systems", () => {
   const legacyService = readFileSync("services/template-bank.ts", "utf8");
   const governedPackage = readFileSync("packages/astrology/template-bank.ts", "utf8");
 
@@ -79,7 +79,14 @@ test("legacy daily template service delegates to a selector that rotates only go
 
   assert.match(selector, /numerology:\s*numerologyTemplates/);
   assert.match(selector, /astrology:\s*eligibleAstrologyTemplates/);
-  assert.match(selector, /humandesign:\s*humanDesignTemplates/);
+  // Automatic daily guidance remains fail-closed for Human Design until this
+  // selector consumes the canonical natal-HD trust predicate. Dedicated
+  // verified Human Design surfaces remain governed separately.
+  assert.doesNotMatch(selector, /humandesign:\s*humanDesignTemplates/);
+  assert.match(
+    selector,
+    /fails closed instead of accepting a partial caller-attested receipt/i,
+  );
   assert.doesNotMatch(
     selector,
     /chinese:\s*|ayurveda:\s*|vedic:\s*|genekeys:\s*|iching:\s*|mayan:\s*|chakras:\s*|runes:\s*|tarot:\s*|kabbalah:\s*|sacredgeom:\s*|sabian:\s*|biorhythms:\s*|asteroids:\s*|arabicparts:\s*|fixedstars:\s*/,
