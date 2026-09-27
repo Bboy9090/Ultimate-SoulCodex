@@ -214,6 +214,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
 
       const selection = publicShareSelectionSchema.parse(req.body);
+      const existingShares = await storage.listPublicProfileShares(profile.id);
+      const activeShareCount = existingShares.filter((share) => !share.revokedAt).length;
+      if (activeShareCount >= 10) {
+        return res.status(409).json({
+          message: "This profile already has 10 active public links. Revoke an older link before creating another.",
+          code: "public_share_active_limit",
+        });
+      }
+
       const snapshot = buildPublicProfileProjection(profile, selection);
       if (Object.keys(snapshot.fields).length === 0) {
         return res.status(422).json({ message: "None of the selected fields are currently eligible for public sharing." });
