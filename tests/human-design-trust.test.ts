@@ -140,6 +140,25 @@ test("malformed verified Human Design timestamps fail closed at use time", () =>
   assert.equal(getVerifiedHumanDesignField(record, "authority"), null);
 });
 
+test("approved Human Design wording aliases remain valid behind the full receipt contract", () => {
+  const record = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+    calculatedAt: "2026-09-26T19:00:00.000Z",
+    candidate: {
+      type: "Projector",
+      strategy: "Wait for the invitation",
+      authority: "Splenic Authority",
+      profile: "3/5",
+    },
+  });
+
+  assert.equal(record.status, "verified");
+  assert.equal(hasApprovedVerifiedHumanDesignTrust(record), true);
+  assert.equal(getVerifiedHumanDesignField(record, "strategy"), "Wait for the invitation");
+  assert.equal(mayUseHumanDesignForCompatibility(record), true);
+});
+
 test("incomplete Human Design candidates cannot receive verified promotion", () => {
   for (const candidate of [
     {},
