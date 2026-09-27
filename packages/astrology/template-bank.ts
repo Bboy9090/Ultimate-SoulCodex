@@ -22,6 +22,17 @@ const PERSONAL_DAY_REFLECTIONS: Record<number, { theme: string; action: string }
   33: { theme: 'teaching, care, and service', action: 'help in one specific way that preserves both compassion and boundaries' },
 };
 
+const MOON_PHASE_REFLECTIONS: Record<string, string> = {
+  'New Moon': 'What deserves a clean beginning, and what needs more information before you commit?',
+  'Waxing Crescent': 'What small next step would create useful momentum without overcommitting?',
+  'First Quarter': 'Where is friction asking for a decision, adjustment, or clearer priority?',
+  'Waxing Gibbous': 'What is close enough to refine instead of restarting from zero?',
+  'Full Moon': 'What is now visible enough to evaluate, name, or bring to completion?',
+  'Waning Gibbous': 'What have you learned that is worth sharing, integrating, or simplifying?',
+  'Last Quarter': 'What needs revision, release, or a deliberate change of approach?',
+  'Waning Crescent': 'What would benefit from rest, closure, or less stimulation before the next cycle?',
+};
+
 const MOON_SIGN_REFLECTIONS: Record<string, string> = {
   Aries: 'Where would direct action help, and where would speed create unnecessary friction?',
   Taurus: 'What would become steadier if you simplified the pace or protected a useful routine?',
@@ -49,6 +60,19 @@ export function moonSignReflection(sign: string): string {
     'What real situation today could benefit from a different question or perspective?';
 }
 
+export function moonPhaseReflection(phase: string): string {
+  return MOON_PHASE_REFLECTIONS[phase] ??
+    'What would improve if you treated today as one point in a larger process rather than a verdict?';
+}
+
+export function universalDayReflection(number: number): { theme: string; action: string } {
+  const reflection = personalDayReflection(number);
+  return {
+    theme: reflection.theme,
+    action: `notice where ${reflection.theme} is relevant in shared circumstances, then verify that impression against observable facts`,
+  };
+}
+
 const numerologyTemplates: TemplateVariation[] = [
   {
     id: 'num-personal-1',
@@ -58,7 +82,7 @@ const numerologyTemplates: TemplateVariation[] = [
   {
     id: 'num-personal-2',
     category: 'numerology',
-    template: (ctx) => `Today's Personal Day is ${ctx.personalDayNumber}. It does not predict events, mood, luck, or performance; use the number only as a structured reflection cue.`,
+    template: (ctx) => `Today's Personal Day is ${ctx.personalDayNumber}. Traditional theme: ${personalDayReflection(ctx.personalDayNumber).theme}. Use it as a cue to ${personalDayReflection(ctx.personalDayNumber).action}; it does not predict events, mood, luck, or performance.`,
   },
   {
     id: 'num-personal-3',
@@ -68,7 +92,7 @@ const numerologyTemplates: TemplateVariation[] = [
   {
     id: 'num-personal-4',
     category: 'numerology',
-    template: (ctx) => `Personal Day ${ctx.personalDayNumber} preserves its numerology identity under the Soul Codex reduction policy. Keep any interpretation that helps reflection and discard what does not fit lived experience.`,
+    template: (ctx) => `Personal Day ${ctx.personalDayNumber} preserves its numerology identity under the Soul Codex reduction policy. Its traditional theme is ${personalDayReflection(ctx.personalDayNumber).theme}; keep the reflection only if it helps you ${personalDayReflection(ctx.personalDayNumber).action}.`,
   },
   {
     id: 'num-personal-5',
@@ -78,47 +102,47 @@ const numerologyTemplates: TemplateVariation[] = [
   {
     id: 'num-personal-6',
     category: 'numerology',
-    template: (ctx) => `Personal Day ${ctx.personalDayNumber} is calculated from calendar data, not measured from your psychology or environment. Let it suggest a question, not an answer.`,
+    template: (ctx) => `Personal Day ${ctx.personalDayNumber} is calculated from calendar data, not measured from your psychology or environment. Ask how ${personalDayReflection(ctx.personalDayNumber).theme} applies, then test it by trying to ${personalDayReflection(ctx.personalDayNumber).action}.`,
   },
   {
     id: 'num-personal-7',
     category: 'numerology',
-    template: (ctx) => `Personal Day ${ctx.personalDayNumber}: symbolic timing only. Check decisions against consequences, constraints, and observed behavior before acting.`,
+    template: (ctx) => `Personal Day ${ctx.personalDayNumber}: symbolic timing around ${personalDayReflection(ctx.personalDayNumber).theme}. Before acting, ${personalDayReflection(ctx.personalDayNumber).action} and check the decision against consequences, constraints, and observed behavior.`,
   },
   {
     id: 'num-universal-1',
     category: 'numerology',
-    template: (ctx) => `Universal Day ${ctx.universalDayNumber} is a shared symbolic calendar number. It is not a measurement of collective energy or a prediction for everyone.`,
+    template: (ctx) => `Universal Day ${ctx.universalDayNumber} is a shared symbolic calendar number. Traditional theme: ${universalDayReflection(ctx.universalDayNumber).theme}. ${universalDayReflection(ctx.universalDayNumber).action}. It is not a measurement of collective energy or a prediction for everyone.`,
   },
   {
     id: 'num-universal-2',
     category: 'numerology',
-    template: (ctx) => `Reflection prompt: compare Universal Day ${ctx.universalDayNumber} with what is actually happening around you; do not assume the number describes humanity's mood or events.`,
+    template: (ctx) => `Reflection prompt for Universal Day ${ctx.universalDayNumber}: look for ${universalDayReflection(ctx.universalDayNumber).theme}, then ${universalDayReflection(ctx.universalDayNumber).action}. Do not assume the number describes humanity's mood or events.`,
   },
   {
     id: 'num-universal-3',
     category: 'numerology',
-    template: (ctx) => `Universal Day ${ctx.universalDayNumber} can organize a daily reflection theme, but real-world conditions remain the evidence for decisions.`,
+    template: (ctx) => `Universal Day ${ctx.universalDayNumber} can organize a reflection around ${universalDayReflection(ctx.universalDayNumber).theme}. ${universalDayReflection(ctx.universalDayNumber).action}; real-world conditions remain the evidence for decisions.`,
   },
   {
     id: 'num-universal-4',
     category: 'numerology',
-    template: (ctx) => `The Universal Day calculation is ${ctx.universalDayNumber}. Treat its traditional meaning as optional symbolism, not a collective force.`,
+    template: (ctx) => `The Universal Day calculation is ${ctx.universalDayNumber}. Its optional traditional theme is ${universalDayReflection(ctx.universalDayNumber).theme}; use that theme to ${universalDayReflection(ctx.universalDayNumber).action}, not as evidence of a collective force.`,
   },
   {
     id: 'num-combined',
     category: 'numerology',
-    template: (ctx) => `Personal Day ${ctx.personalDayNumber} and Universal Day ${ctx.universalDayNumber} are two deterministic symbolic labels. Compare their themes without treating the combination as a causal energy.`,
+    template: (ctx) => `Personal Day ${ctx.personalDayNumber} emphasizes ${personalDayReflection(ctx.personalDayNumber).theme}; Universal Day ${ctx.universalDayNumber} emphasizes ${universalDayReflection(ctx.universalDayNumber).theme}. Compare where those themes support or complicate each other without treating the pair as causal energy.`,
   },
   {
     id: 'num-combined-2',
     category: 'numerology',
-    template: (ctx) => `Today's Personal/Universal pair is ${ctx.personalDayNumber}/${ctx.universalDayNumber}. Use it to frame one reflection question, then test that question against observable facts.`,
+    template: (ctx) => `Today's Personal/Universal pair is ${ctx.personalDayNumber}/${ctx.universalDayNumber}. Ask how ${personalDayReflection(ctx.personalDayNumber).theme} interacts with ${universalDayReflection(ctx.universalDayNumber).theme}, then test the answer against observable facts.`,
   },
   {
     id: 'num-combined-3',
     category: 'numerology',
-    template: (ctx) => `Personal ${ctx.personalDayNumber} + Universal ${ctx.universalDayNumber}: symbolic comparison only. No event, opportunity, or collective state is implied by the pair.`,
+    template: (ctx) => `Personal ${ctx.personalDayNumber} + Universal ${ctx.universalDayNumber}: compare ${personalDayReflection(ctx.personalDayNumber).theme} with ${universalDayReflection(ctx.universalDayNumber).theme}. No event, opportunity, or collective state is implied by the pair.`,
   },
 ];
 
@@ -131,12 +155,12 @@ const astrologyTemplates: TemplateVariation[] = [
   {
     id: 'astro-moon-2',
     category: 'astrology',
-    template: (ctx) => `The Moon's current sign is ${ctx.moonSign} and phase is ${ctx.moonPhase}. Use that geometry as a reflection anchor only where it matches lived experience.`,
+    template: (ctx) => `The Moon's current sign is ${ctx.moonSign} and phase is ${ctx.moonPhase}. ${moonSignReflection(ctx.moonSign)} ${moonPhaseReflection(ctx.moonPhase)} Use the geometry as a reflection anchor only where it matches lived experience.`,
   },
   {
     id: 'astro-moon-3',
     category: 'astrology',
-    template: (ctx) => `Current lunar position: ${ctx.moonSign}; phase: ${ctx.moonPhase}. This does not establish how you feel, what will happen, or what decision is correct.`,
+    template: (ctx) => `Current lunar position: ${ctx.moonSign}; phase: ${ctx.moonPhase}. ${moonPhaseReflection(ctx.moonPhase)} ${moonSignReflection(ctx.moonSign)} These questions do not establish how you feel, what will happen, or what decision is correct.`,
   },
   {
     id: 'astro-moon-4',
@@ -146,12 +170,12 @@ const astrologyTemplates: TemplateVariation[] = [
   {
     id: 'astro-moon-5',
     category: 'astrology',
-    template: (ctx) => `The ${ctx.moonPhase} Moon in ${ctx.moonSign} is astronomical context plus optional symbolic interpretation. Keep facts and symbolism separate.`,
+    template: (ctx) => `The ${ctx.moonPhase} Moon in ${ctx.moonSign} is astronomical context plus optional symbolic interpretation. ${moonPhaseReflection(ctx.moonPhase)} ${moonSignReflection(ctx.moonSign)} Keep facts and symbolism separate.`,
   },
   {
     id: 'astro-moon-6',
     category: 'astrology',
-    template: (ctx) => `Moon in ${ctx.moonSign}: measured placement. ${ctx.moonPhase}: measured phase category. Personal interpretation remains a reflection layer, not evidence of behavior.`,
+    template: (ctx) => `Moon in ${ctx.moonSign}: measured placement. ${ctx.moonPhase}: measured phase category. ${moonSignReflection(ctx.moonSign)} ${moonPhaseReflection(ctx.moonPhase)} Personal interpretation remains a reflection layer, not evidence of behavior.`,
   },
   {
     id: 'astro-moon-7',
@@ -181,12 +205,12 @@ const astrologyTemplates: TemplateVariation[] = [
   {
     id: 'astro-lunar-wisdom-1',
     category: 'astrology',
-    template: (ctx) => `The Moon is about ${Math.round(ctx.moonPhasePercentage)}% illuminated in ${ctx.moonSign}. That percentage is astronomical data, not a measure of emotional intensity.`,
+    template: (ctx) => `The Moon is about ${Math.round(ctx.moonPhasePercentage)}% illuminated in ${ctx.moonSign}. ${moonPhaseReflection(ctx.moonPhase)} ${moonSignReflection(ctx.moonSign)} The percentage is astronomical data, not a measure of emotional intensity.`,
   },
   {
     id: 'astro-lunar-wisdom-2',
     category: 'astrology',
-    template: (ctx) => `Lunar illumination is about ${Math.round(ctx.moonPhasePercentage)}% with the Moon in ${ctx.moonSign}. Use any astrological meaning as optional reflection only.`,
+    template: (ctx) => `Lunar illumination is about ${Math.round(ctx.moonPhasePercentage)}% with the Moon in ${ctx.moonSign}. ${moonSignReflection(ctx.moonSign)} ${moonPhaseReflection(ctx.moonPhase)} Use any astrological meaning as optional reflection only.`,
   },
 ];
 
