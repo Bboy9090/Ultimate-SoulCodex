@@ -18,6 +18,7 @@ import type {
   AstrologyOutput,
 } from "./soul-codex-reading-types.js";
 import type { BirthData } from "./types.js";
+import { hasVerifiedHumanDesignTrust } from "./human-design-trust.js";
 
 export interface RawAnalysisInput {
   subjectName: string;
@@ -44,6 +45,11 @@ export interface RawAnalysisInput {
     profileType: string;
     strategy: string;
     authority: string;
+    type?: string;
+    engine?: string;
+    source?: string;
+    calculatedAt?: string;
+    inputTimestampUtc?: string;
     verificationReceiptId?: string;
     independentSource?: string;
     verifiedAt?: string;
@@ -191,10 +197,11 @@ export function generateSoulCodexReadingV1(input: RawAnalysisInput): SoulCodexRe
     astrology: astrologyOutput,
     numerology: input.numerology,
     humanDesign:
-      input.humanDesign?.status === "verified" &&
-      input.humanDesign.verificationReceiptId?.trim() &&
-      input.humanDesign.independentSource?.trim() &&
-      input.humanDesign.verifiedAt?.trim()
+      input.humanDesign &&
+      hasVerifiedHumanDesignTrust({
+        ...input.humanDesign,
+        profile: input.humanDesign.profileType,
+      } as Record<string, unknown>)
         ? input.humanDesign
         : undefined,
   };
