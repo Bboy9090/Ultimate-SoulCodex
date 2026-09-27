@@ -1,1 +1,1 @@
-export { streamChat, isGeminiAvailable } from "../gemini";
+export { streamChat, isGeminiAvailable } from "../../gemini";
