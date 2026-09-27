@@ -24,7 +24,13 @@ export function getVerifiedPlacement(value: PlacementLike | null | undefined): V
   if (state !== "verified") return null;
 
   const evidence = value.provenance ?? value.evidence;
-  if (!evidence?.source || !evidence?.engine || !evidence?.calculatedAt) return null;
+  const sourceValid = typeof evidence?.source === "string" && evidence.source.trim().length > 0;
+  const engineValid = typeof evidence?.engine === "string" && evidence.engine.trim().length > 0;
+  const timestampValid =
+    typeof evidence?.calculatedAt === "string" &&
+    evidence.calculatedAt.trim().length > 0 &&
+    !Number.isNaN(Date.parse(evidence.calculatedAt));
+  if (!sourceValid || !engineValid || !timestampValid) return null;
 
   return {
     sign: value.sign,
