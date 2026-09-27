@@ -10,8 +10,9 @@ import { routeAIRequest } from "../services/ai-router";
 import { buildSoulCodexSystemPrompt } from "../src/ai/soulCodexEngine";
 import type { AIPromptType } from "../src/types/ai";
 import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
+import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
 
-function buildPromptForType(
+export function buildPromptForType(
   type: AIPromptType,
   question: string,
   profile: any,
@@ -20,6 +21,7 @@ function buildPromptForType(
 ): { prompt: string; systemPrompt?: string } {
   const numData = profile?.numerologyData || {};
   const hdData = profile?.humanDesignData || {};
+  const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(hdData) ? hdData : null;
   const elemData = profile?.elementalMedicineData || {};
   const archData = profile?.archetypeData || profile?.archetype || {};
   const verifiedAstrology = extractVerifiedAstrology(profile);
@@ -30,8 +32,8 @@ function buildPromptForType(
     (typeof profile?.archetype === "string" ? profile.archetype : profile?.archetype?.name) ||
     "Unresolved";
   const lifePath = numData?.lifePath || profile?.lifePath || "";
-  const hdType = hdData?.type || profile?.hdType || "";
-  const hdStrategy = hdData?.strategy || "";
+  const hdType = verifiedHumanDesign?.type || "";
+  const hdStrategy = verifiedHumanDesign?.strategy || "";
   const primaryElement = elemData?.primaryElement || archData?.element || profile?.element || "";
   const phase = timeline?.phase || timeline?.currentPhase || "current phase";
   const focus = dailyCard?.focus || "one grounded next step";
