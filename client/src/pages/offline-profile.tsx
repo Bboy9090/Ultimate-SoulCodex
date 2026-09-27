@@ -14,6 +14,7 @@ import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDe
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
+import { humanDesignListLabel } from "@/lib/humanDesignDisplay";
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
@@ -197,8 +198,8 @@ export default function OfflineProfilePage() {
               </div>
               <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
                 <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">Channels &amp; gates</p>
-                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Channels: {Array.isArray(verifiedHumanDesign.channels) && verifiedHumanDesign.channels.length ? verifiedHumanDesign.channels.join(", ") : "None resolved"}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Activated gates: {Array.isArray(verifiedHumanDesign.activatedGates) && verifiedHumanDesign.activatedGates.length ? verifiedHumanDesign.activatedGates.join(", ") : "None resolved"}</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Channels: {humanDesignListLabel(verifiedHumanDesign.channels, "channel")}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Activated gates: {humanDesignListLabel(verifiedHumanDesign.activatedGates, "gate")}</p>
               </div>
             </div>
           </section>
