@@ -1,3 +1,4 @@
+import { humanDesignListLabel } from "@/lib/humanDesignDisplay";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 export type ClarityConfidence =
   | "verified"
@@ -366,10 +367,10 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
       addSignal(signals, "hd-centers", "Defined centers", humanDesign.centers.defined.join(", "), "verified", "verified bodygraph calculation");
     }
     if (Array.isArray(humanDesign.channels)) {
-      addSignal(signals, "hd-channels", "Defined channels", humanDesign.channels.join(", "), "verified", "verified bodygraph calculation");
+      addSignal(signals, "hd-channels", "Defined channels", humanDesignListLabel(humanDesign.channels, "channel"), "verified", "verified bodygraph calculation");
     }
     if (Array.isArray(humanDesign.activatedGates)) {
-      addSignal(signals, "hd-gates", "Activated gates", humanDesign.activatedGates.join(", "), "verified", "verified bodygraph calculation");
+      addSignal(signals, "hd-gates", "Activated gates", humanDesignListLabel(humanDesign.activatedGates, "gate"), "verified", "verified bodygraph calculation");
     }
   }
   addSignal(signals, "enneagram", "Enneagram", personality.enneagram?.type, "supported", "user assessment");
