@@ -431,6 +431,29 @@ function aspectText(aspect: { planet1: string; planet2: string; aspect: string; 
   return `${aspect.planet1} ${aspect.aspect} ${aspect.planet2} · orb ${aspect.orb.toFixed(2)}°`;
 }
 
+function houseFromVerifiedCusps(
+  longitude: number | null,
+  cusps: Array<{ house: number; longitude: number | null }>,
+): number | null {
+  if (longitude === null || cusps.length !== 12) return null;
+
+  const ordered = [...cusps].sort((a, b) => a.house - b.house);
+  if (
+    ordered.some(
+      (cusp, index) =>
+        cusp.house !== index + 1 ||
+        cusp.longitude === null,
+    )
+  ) {
+    return null;
+  }
+
+  const firstLongitude = ordered[0].longitude as number;
+  const offset = normalizeDegrees(longitude - firstLongitude);
+  const index = Math.floor(offset / 30);
+  return index >= 0 && index < 12 ? index + 1 : null;
+}
+
 function isCompleteEqualHouseCuspSet(
   cusps: Array<{ house: number; sign: string; degree: number | null; longitude: number | null }>,
   risingLongitude: number | null,
@@ -466,16 +489,15 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const hd = (profile?.humanDesignData ?? {}) as AnyRecord;
   const personalityData = (profile?.personalityData ?? {}) as AnyRecord;
 
-  const placements: UltimateCodexPlacement[] = [];
+  const placementCandidates: UltimateCodexPlacement[] = [];
   for (const key of PLANETS) {
     const placement = astrology?.planets?.[key] as AnyRecord | undefined;
     if (!hasVerifiedPlacementEvidence(placement)) continue;
-    const house = validHouse(astrology?.planetaryHouses?.[key]);
-    placements.push({
+    placementCandidates.push({
       key,
       label: PLANET_LABELS[key],
       sign: placement.sign,
-      house,
+      house: null,
       degree: placementDegree(placement),
       longitude: placementLongitude(placement),
       element: SIGN_META[placement.sign].element,
@@ -505,15 +527,22 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ? candidateHouseCusps
     : [];
 
+  const placements: UltimateCodexPlacement[] = placementCandidates.map(
+    (placement) => ({
+      ...placement,
+      house: houseFromVerifiedCusps(placement.longitude, houseCusps),
+    }),
+  );
+
   const supportingPoints: UltimateCodexPoint[] = [];
   const pointSpecs = [
-    ["rising", "Rising", astrology?.rising, null],
-    ["midheaven", "Midheaven", astrology?.midheaven, null],
-    ["northNode", "North Node", astrology?.northNode, validHouse(astrology?.northNode?.house)],
-    ["southNode", "South Node", astrology?.southNode, validHouse(astrology?.southNode?.house)],
-    ["chiron", "Chiron", astrology?.chiron, validHouse(astrology?.chiron?.house)],
+    ["rising", "Rising", astrology?.rising, false],
+    ["midheaven", "Midheaven", astrology?.midheaven, false],
+    ["northNode", "North Node", astrology?.northNode, true],
+    ["southNode", "South Node", astrology?.southNode, true],
+    ["chiron", "Chiron", astrology?.chiron, true],
   ] as const;
-  for (const [key, label, point, house] of pointSpecs) {
+  for (const [key, label, point, deriveHouse] of pointSpecs) {
     const qualified =
       key === "rising"
         ? hasVerifiedPlacementEvidence(point)
@@ -523,13 +552,17 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
             ? hasGovernedDerivedPoint(point, "ASTRO-MEAN-NODE-v1")
             : hasGovernedDerivedPoint(point, "ASTRO-CHIRON-v1");
     if (!qualified) continue;
+
+    const longitude = placementLongitude(point);
     supportingPoints.push({
       key,
       label,
       sign: point.sign,
-      house,
+      house: deriveHouse
+        ? houseFromVerifiedCusps(longitude, houseCusps)
+        : null,
       degree: placementDegree(point),
-      longitude: placementLongitude(point),
+      longitude,
     });
   }
 
