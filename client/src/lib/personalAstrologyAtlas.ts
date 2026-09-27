@@ -1,4 +1,5 @@
 import { ATLAS_SIGNS, type AtlasSign } from "./astrologyAtlas";
+import { getVerifiedPlacement } from "./placementVerification";
 
 export const PERSONAL_ATLAS_HOUSE_CONTRACT = "ASTRO-EQUAL-HOUSE-v1";
 
@@ -40,14 +41,21 @@ function atlasSign(value: unknown): AtlasSign | null {
     : null;
 }
 
-function verifiedSign(value: Placement | undefined): AtlasSign | null {
-  if (value?.verificationStatus !== "verified") return null;
-  const evidence = value.provenance ?? value.evidence;
-  const hasProvenance =
-    Boolean(evidence?.source?.trim()) &&
-    Boolean(evidence?.engine?.trim()) &&
-    Boolean(evidence?.calculatedAt?.trim());
-  return hasProvenance ? atlasSign(value.sign) : null;
+function verifiedDirectSign(value: Placement | undefined): AtlasSign | null {
+  const verified = getVerifiedPlacement(value as any);
+  return verified?.sign ? atlasSign(verified.sign) : null;
+}
+
+function governedDerivedSign(
+  value: Placement | undefined,
+  policyId: string,
+): AtlasSign | null {
+  return value?.verificationStatus === "verified" &&
+    value.policyId === policyId &&
+    typeof value.evidenceArtifactId === "string" &&
+    value.evidenceArtifactId.trim()
+    ? atlasSign(value.sign)
+    : null;
 }
 
 function normalizeDegrees(value: number): number {
@@ -89,28 +97,23 @@ export function personalAtlasPlacements(astrology: any): PersonalAtlasPlacement[
   const results: PersonalAtlasPlacement[] = [];
   for (const key of PLANETS) {
     const placement = astrology.planets?.[key] as Placement | undefined;
-    const sign = verifiedSign(placement);
+    const sign = verifiedDirectSign(placement);
     const house = astrology.planetaryHouses?.[key];
     if (sign && validHouse(house)) results.push({ key, label: title(key), sign, house, kind: "planet" });
   }
 
-  const rising = verifiedSign(astrology.rising);
+  const rising = verifiedDirectSign(astrology.rising);
   if (rising) results.push({ key: "rising", label: "Ascendant / Rising", sign: rising, kind: "angle" });
 
   const midheavenRecord = astrology.midheaven as Placement | undefined;
-  const midheaven = verifiedSign(midheavenRecord);
-  if (
-    midheaven &&
-    midheavenRecord?.policyId === PERSONAL_ATLAS_HOUSE_CONTRACT &&
-    typeof midheavenRecord.evidenceArtifactId === "string" &&
-    midheavenRecord.evidenceArtifactId.trim()
-  ) {
+  const midheaven = governedDerivedSign(midheavenRecord, PERSONAL_ATLAS_HOUSE_CONTRACT);
+  if (midheaven) {
     results.push({ key: "midheaven", label: "Midheaven", sign: midheaven, kind: "angle" });
   }
 
   for (const [key, label] of [["northNode", "North Node"], ["southNode", "South Node"]] as const) {
     const placement = astrology[key] as Placement | undefined;
-    const sign = verifiedSign(placement);
+    const sign = verifiedDirectSign(placement);
     if (
       sign &&
       validHouse(placement?.house) &&
@@ -124,14 +127,11 @@ export function personalAtlasPlacements(astrology: any): PersonalAtlasPlacement[
   }
 
   const chiron = astrology.chiron as Placement | undefined;
-  const chironSign = verifiedSign(chiron);
+  const chironSign = governedDerivedSign(chiron, "ASTRO-CHIRON-v1");
   if (
     chironSign &&
     validHouse(chiron?.house) &&
-    chiron?.policyId === "ASTRO-CHIRON-v1" &&
-    chiron?.qualificationMethod === "live-jpl-qualified-against-swiss" &&
-    typeof chiron.evidenceArtifactId === "string" &&
-    chiron.evidenceArtifactId.trim()
+    chiron?.qualificationMethod === "live-jpl-qualified-against-swiss"
   ) {
     results.push({ key: "chiron", label: "Chiron", sign: chironSign, house: chiron.house, kind: "chiron" });
   }
