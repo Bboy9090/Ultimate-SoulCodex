@@ -62,6 +62,10 @@ const verifiedRemote = {
   name: "Robert Example",
   humanDesignData: {
     status: "verified",
+    engine: "soulcodex-hd-geocentric-v1",
+    source: "Soul Codex deterministic Human Design core engine",
+    calculatedAt: "2026-09-26T18:00:00.000Z",
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
     type: "Reflector",
     strategy: "Wait a lunar cycle",
     authority: "Lunar Authority",
@@ -598,6 +602,10 @@ test("canonical angle validation tolerates harmless floating-point roundoff", ()
 test("client Human Design verification gate rejects malformed trust metadata", () => {
   const valid = {
     status: "verified",
+    engine: "soulcodex-hd-geocentric-v1",
+    source: "Soul Codex deterministic Human Design core engine",
+    calculatedAt: "2026-09-26T18:00:00.000Z",
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
     type: "Reflector",
     strategy: "To Wait a Lunar Cycle",
     authority: "Lunar Authority",
