@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import type { Express } from "express";
+import rateLimit from "express-rate-limit";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSession } from "./session";
@@ -79,6 +80,21 @@ function profileNotFound(res: any) {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
+
+  const publicShareReadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 120,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: { message: "Too many public share requests. Please try again later.", code: "public_share_rate_limited" },
+  });
+  const publicShareMutationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: { message: "Too many share changes. Please try again later.", code: "public_share_mutation_rate_limited" },
+  });
 
   app.delete("/api/auth/account", async (req: any, res) => {
     try {
@@ -172,12 +188,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/profiles/:id/public-shares", async (req: any, res) => {
+  app.get("/api/profiles/:id/public-shares", publicShareMutationLimiter, async (req: any, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.id);
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
+
+      const shares = await storage.listPublicProfileShares(profile.id);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.json(shares.map((share) => ({
+        token: share.token,
+        path: `/shared/${share.token}`,
+        snapshot: share.snapshot,
+        createdAt: share.createdAt,
+        revokedAt: share.revokedAt,
+      })));
+    } catch (error) {
+      console.error("Error listing public profile shares:", error);
+      res.status(500).json({ message: "Failed to list public shares" });
+    }
+  });
+
+  app.post("/api/profiles/:id/public-shares", publicShareMutationLimiter, async (req: any, res) => {
     try {
       const profile = await storage.getProfile(req.params.id);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
 
       const selection = publicShareSelectionSchema.parse(req.body);
+      const existingShares = await storage.listPublicProfileShares(profile.id);
+      const activeShareCount = existingShares.filter((share) => !share.revokedAt).length;
+      if (activeShareCount >= 10) {
+        return res.status(409).json({
+          message: "This profile already has 10 active public links. Revoke an older link before creating another.",
+          code: "public_share_active_limit",
+        });
+      }
+
       const snapshot = buildPublicProfileProjection(profile, selection);
       if (Object.keys(snapshot.fields).length === 0) {
         return res.status(422).json({ message: "None of the selected fields are currently eligible for public sharing." });
@@ -200,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/profiles/:id/public-shares/:token", async (req: any, res) => {
+  app.delete("/api/profiles/:id/public-shares/:token", publicShareMutationLimiter, async (req: any, res) => {
     try {
       const share = await storage.getPublicProfileShareByToken(req.params.token);
       if (!share || share.revokedAt || share.profileId !== req.params.id) return profileNotFound(res);
@@ -217,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/public-shares/:token", async (req, res) => {
+  app.get("/api/public-shares/:token", publicShareReadLimiter, async (req, res) => {
     try {
       const token = String(req.params.token ?? "");
       if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return profileNotFound(res);

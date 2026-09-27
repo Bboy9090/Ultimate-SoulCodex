@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Sparkles, ShieldCheck } from "lucide-react";
 import Navigation from "@/components/navigation";
 
 type PublicProjection = {
@@ -13,6 +14,22 @@ type PublicProjection = {
 
 export default function PublicSharedProfilePage() {
   const { token } = useParams();
+
+  useEffect(() => {
+    const existing = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    const previous = existing?.content ?? null;
+    const meta = existing ?? document.createElement("meta");
+    if (!existing) {
+      meta.name = "robots";
+      document.head.appendChild(meta);
+    }
+    meta.content = "noindex,nofollow,noarchive";
+
+    return () => {
+      if (existing && previous !== null) existing.content = previous;
+      else meta.remove();
+    };
+  }, []);
   const { data, isLoading, error } = useQuery<PublicProjection>({
     queryKey: ["public-share", token],
     enabled: Boolean(token),
@@ -61,9 +78,12 @@ export default function PublicSharedProfilePage() {
       <Navigation />
       <main className="mx-auto max-w-3xl px-4 pb-24 pt-28 sm:px-6">
         <section className="sc-panel sc-panel-gold overflow-hidden p-6 sm:p-9">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-[var(--sc-teal)]" />
-            <p className="sc-eyebrow m-0">Public Soul Codex card</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-[var(--sc-teal)]" />
+              <p className="sc-eyebrow m-0">Public Soul Codex card</p>
+            </div>
+            <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.025] px-3 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-[var(--sc-stone)]">Sanitized snapshot</span>
           </div>
           <h1 className="mt-4 font-serif text-4xl text-[var(--sc-ivory)]">
             {typeof fields.displayName === "string" ? fields.displayName : "Shared Soul Codex"}
@@ -83,6 +103,13 @@ export default function PublicSharedProfilePage() {
 
           <div className="mt-6 rounded-xl border border-[var(--sc-line)] bg-black/10 p-4 text-xs leading-5 text-[var(--sc-stone)]">
             Astrology appears here only when the stored placement passed the app’s verified-evidence boundary. Numerology arithmetic may be deterministic while its interpretation remains symbolic.
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--sc-line)] pt-5">
+            <p className="max-w-md text-xs leading-5 text-[var(--sc-stone)]">Want your own private reading? Create a profile first, then choose exactly what—if anything—you want to make public.</p>
+            <Link href="/create" className="sc-button-primary inline-flex items-center">
+              <Sparkles className="mr-2 h-4 w-4" /> Create your Soul Codex
+            </Link>
           </div>
         </section>
       </main>
