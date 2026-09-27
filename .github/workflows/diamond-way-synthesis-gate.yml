@@ -62,6 +62,9 @@ jobs:
       - name: Compatibility evidence authority contract
         run: node --import tsx --test tests/compatibility-evidence-authority.test.ts
 
+      - name: Daily transit evidence authority contract
+        run: node --import tsx --test tests/daily-transit-evidence-authority.test.ts
+
       - name: Typecheck
         run: npm run check
 
