@@ -39,7 +39,7 @@ export default function TermsPage() {
                 opacity: 0.85,
               }}
             >
-              Effective: August 4, 2026
+              Effective: September 27, 2026
             </p>
           </div>
 
@@ -105,7 +105,15 @@ export default function TermsPage() {
             </p>
           </Section>
 
-          <Section title="7. Deletion and Data Control">
+          <Section title="7. Public Sharing, Deletion, and Data Control">
+            <p>
+              Private Soul Codex profiles are not public by default. If you
+              deliberately create a public Soul Codex card, only the fields you
+              select are copied into a separate sanitized snapshot. Treat an
+              active public-card link as public information until you revoke it.
+              Revoking a link disables that public snapshot but cannot recall
+              copies another person may already have saved or screenshotted.
+            </p>
             <p>
               You may clear local profile data through Settings. Account holders
               may request deletion of server-backed account data through the
