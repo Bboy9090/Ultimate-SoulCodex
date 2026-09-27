@@ -59,6 +59,9 @@ jobs:
       - name: Diamond Way qualified release suite
         run: bash scripts/ci/qualified-release-gates.sh
 
+      - name: Compatibility evidence authority contract
+        run: node --import tsx --test tests/compatibility-evidence-authority.test.ts
+
       - name: Typecheck
         run: npm run check
 
