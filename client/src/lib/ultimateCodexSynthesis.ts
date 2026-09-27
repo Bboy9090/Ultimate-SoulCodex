@@ -9,6 +9,7 @@ import {
 } from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
+import { getVerifiedPlacement } from "./placementVerification";
 
 type AnyRecord = Record<string, any>;
 
@@ -175,14 +176,9 @@ function nonEmptyString(value: unknown): value is string {
 function hasVerifiedPlacementEvidence(
   placement: AnyRecord | undefined,
 ): placement is AnyRecord & { sign: keyof typeof SIGN_META } {
-  if (placement?.verificationStatus !== "verified" || !validSign(placement.sign)) {
-    return false;
-  }
-  const evidence = placement.provenance ?? placement.evidence;
   return Boolean(
-    nonEmptyString(evidence?.source) &&
-    nonEmptyString(evidence?.engine) &&
-    nonEmptyString(evidence?.calculatedAt),
+    validSign(placement?.sign) &&
+    getVerifiedPlacement(placement as any),
   );
 }
 
