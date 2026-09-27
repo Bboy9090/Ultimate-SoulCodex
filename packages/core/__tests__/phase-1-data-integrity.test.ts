@@ -11,6 +11,7 @@ import {
   generateSoulCodexReadingV1,
   type RawAnalysisInput,
 } from "../soul-codex-reading-generator-v1.js";
+import { APPROVED_HUMAN_DESIGN_TRUST } from "../human-design-trust.js";
 
 test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
   // Golden fixture: Robert Gonzalez with verified chart
@@ -176,6 +177,69 @@ test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
       const reading = generateSoulCodexReadingV1(unavailableInput);
       assert.strictEqual(reading.verifiedSystems.astrology.status, "unavailable");
     });
+  });
+
+
+  await t.test("canonical Human Design trust is required before reading promotion", async (t) => {
+    const trustedHumanDesign: NonNullable<RawAnalysisInput["humanDesign"]> = {
+      status: "verified",
+      type: "Reflector",
+      profileType: "2/5",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      engine: APPROVED_HUMAN_DESIGN_TRUST.engine,
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+      independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+      verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
+    };
+
+    await t.test("approved verified core is retained", () => {
+      const reading = generateSoulCodexReadingV1({
+        ...verifiedRobertInput,
+        humanDesign: trustedHumanDesign,
+      });
+      assert.strictEqual(reading.verifiedSystems.humanDesign?.type, "Reflector");
+      assert.strictEqual(reading.verifiedSystems.humanDesign?.profileType, "2/5");
+    });
+
+    await t.test("thin legacy verified payload is excluded", () => {
+      const reading = generateSoulCodexReadingV1({
+        ...verifiedRobertInput,
+        humanDesign: {
+          status: "verified",
+          type: "Reflector",
+          profileType: "2/5",
+          strategy: "Wait a lunar cycle",
+          authority: "Lunar Authority",
+          verificationReceiptId: "legacy-receipt",
+          independentSource: "legacy verifier",
+          verifiedAt: "2026-09-19T23:03:08.000Z",
+        },
+      });
+      assert.strictEqual(reading.verifiedSystems.humanDesign, undefined);
+    });
+
+    for (const [label, mutation] of [
+      ["wrong engine", { engine: "other-engine" }],
+      ["malformed calculatedAt", { calculatedAt: "not-a-date" }],
+      ["non-UTC input timestamp", { inputTimestampUtc: "1990-09-17T11:11:00-04:00" }],
+      ["wrong receipt", { verificationReceiptId: "wrong" }],
+      ["wrong independent source", { independentSource: "wrong" }],
+      ["wrong verification instant", { verifiedAt: "2026-09-20T00:00:00.000Z" }],
+      ["incoherent authority", { authority: "Sacral Authority" }],
+      ["incoherent profile", { profileType: "9/9" }],
+    ] as const) {
+      await t.test(label, () => {
+        const reading = generateSoulCodexReadingV1({
+          ...verifiedRobertInput,
+          humanDesign: { ...trustedHumanDesign, ...mutation },
+        });
+        assert.strictEqual(reading.verifiedSystems.humanDesign, undefined);
+      });
+    }
   });
 
   await t.test("Validation: prevents invalid inputs", async (t) => {
