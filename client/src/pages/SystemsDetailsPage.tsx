@@ -15,7 +15,7 @@ import Navigation from "@/components/navigation";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
-import { humanDesignListLabel } from "@/lib/humanDesignDisplay";
+import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
 type Placement = {
   sign?: string | null;
@@ -146,6 +146,7 @@ export default function SystemsDetailsPage() {
   const humanDesign = (profile.humanDesignData ?? {}) as Record<string, any>;
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
+  const humanDesignCenters = normalizeHumanDesignCenters(humanDesign.centers);
 
   const latitude = textValue(profile.latitude);
   const longitude = textValue(profile.longitude);
@@ -262,7 +263,7 @@ export default function SystemsDetailsPage() {
                   <NumberRow label="Definition" value={humanDesign.definition} />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {Array.isArray(humanDesign.centers?.defined) ? humanDesign.centers.defined.join(", ") : "Unresolved"}<br />Open/undefined: {Array.isArray(humanDesign.centers?.undefined) ? humanDesign.centers.undefined.join(", ") : "Unresolved"}</div>
+                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {humanDesignCenters.defined.join(", ") || "None"}<br />Open/undefined: {humanDesignCenters.undefined.join(", ") || "None"}</div>
                   <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
                 </div>
               </div>
