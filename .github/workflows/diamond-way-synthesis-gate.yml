@@ -25,10 +25,10 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -68,6 +68,16 @@ jobs:
 
       - name: Daily guidance differentiation corpus
         run: node --import tsx --test tests/daily-guidance-differentiation-corpus.test.ts
+
+      - name: Reconciled evidence-boundary contracts
+        run: |
+          node --import tsx --test \
+            tests/aspect-interpretation-fallback-contract.test.ts \
+            tests/soul-profile-behavioral-evidence-contract.test.ts \
+            tests/deterministic-fallback-evidence-contract.test.ts \
+            tests/prompt-sanitization-evidence-contract.test.ts \
+            tests/daily-horoscope-evidence-contract.test.ts \
+            tests/daily-insight-system-eligibility.test.ts
 
       - name: Typecheck
         run: npm run check
