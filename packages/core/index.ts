@@ -34,3 +34,5 @@ export * from './regression-fixtures/types.js';
 export { GOLDEN_FIXTURES, getFixtureById, getAllFixtures, getFixturesByTimeVerification } from './regression-fixtures/fixtures.js';
 
 export * from './verified-synthesis.js';
+
+export * from './human-design-trust.js';
