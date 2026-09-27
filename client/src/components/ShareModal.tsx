@@ -13,24 +13,34 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  const shareUrl = `${window.location.origin}/profile/${profileId}`;
+  // Profiles are private, actor-owned resources. Until Soul Codex has a dedicated
+  // public-safe projection, sharing must never imply that a raw profile route is public.
+  const shareUrl = window.location.origin;
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    toast({
-      title: "Copied!",
-      description: "Profile link copied to clipboard",
-    });
-    setTimeout(() => setCopied(false), 2000);
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Soul Codex link copied to clipboard",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Your browser blocked clipboard access. You can copy the link from the field instead.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
+    if (typeof navigator.share === "function") {
       try {
         await navigator.share({
-          title: `${profileName}'s Soul Codex`,
-          text: "Check out my complete cosmic blueprint on Soul Codex",
+          title: "Soul Codex",
+          text: "Explore Soul Codex.",
           url: shareUrl,
         });
       } catch (error) {
@@ -39,22 +49,33 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
         }
       }
     } else {
-      copyToClipboard();
+      void copyToClipboard();
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 space-y-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-soul-codex-title"
+        aria-describedby="share-soul-codex-description"
+        className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 space-y-6"
+      >
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Share Your Soul Codex</h2>
+          <h2 id="share-soul-codex-title" className="text-2xl font-bold">Share Soul Codex</h2>
           <button
             onClick={onClose}
+            aria-label="Close share dialog"
             className="text-muted-foreground hover:text-foreground transition"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        <p id="share-soul-codex-description" className="text-sm leading-6 text-muted-foreground">
+          Your saved profile remains private. Sharing sends only the Soul Codex app link; it does not expose your profile ID, birth inputs, assessments, or verification data.
+        </p>
 
         <div className="space-y-4">
           <div>
@@ -69,7 +90,8 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
                 className="flex-1 bg-transparent text-sm outline-none text-foreground"
               />
               <button
-                onClick={copyToClipboard}
+                onClick={() => void copyToClipboard()}
+                aria-label="Copy Soul Codex link"
                 className="text-primary hover:text-primary/80 transition"
               >
                 {copied ? (
@@ -86,7 +108,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
 
             {/* WhatsApp */}
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Check out my Soul Codex: ${shareUrl}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`Explore Soul Codex: ${shareUrl}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 p-3 rounded-lg border border-muted hover:bg-muted transition"
@@ -112,7 +134,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
 
             {/* Twitter */}
             <a
-              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`Check out my Soul Codex cosmic blueprint!`)}`}
+              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent("Explore Soul Codex")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 p-3 rounded-lg border border-muted hover:bg-muted transition"
