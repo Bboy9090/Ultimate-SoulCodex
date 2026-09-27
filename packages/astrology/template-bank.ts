@@ -1,3 +1,4 @@
+import { hasVerifiedHumanDesignTrust } from '@soulcodex/core';
 import type { DailyContext } from './daily-context';
 
 export interface TemplateVariation {
@@ -273,13 +274,17 @@ export function selectTemplates(
 
   // Daily guidance is intentionally selective. Astrology supplies measured
   // current-sky context and numerology supplies deterministic calendar
-  // symbolism. Human Design templates remain available for dedicated verified
-  // surfaces, but this package does not own the canonical natal-HD trust record.
-  // Until a shared trust adapter reaches this layer, automatic daily guidance
-  // fails closed instead of accepting a partial caller-attested receipt.
+  // symbolism. Human Design is added only when the saved personal core passes
+  // the canonical trust contract; status labels or partial receipts cannot
+  // unlock it.
+  const humanDesignTrusted = hasVerifiedHumanDesignTrust(
+    profileData?.humanDesignData as Record<string, unknown> | null | undefined,
+  );
+
   const governedByCategory: Record<string, TemplateVariation[]> = {
     astrology: eligibleAstrologyTemplates,
     numerology: numerologyTemplates,
+    ...(humanDesignTrusted ? { humandesign: humanDesignTemplates } : {}),
   };
 
   const dateSeed = parseInt(dailyContext.date.replace(/-/g, ''), 10);
