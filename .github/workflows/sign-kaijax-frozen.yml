@@ -32,10 +32,11 @@ jobs:
 
       - name: Checkout exact frozen Kai-Jax source
         run: |
-          git clone --no-checkout "https://github.com/${KAIJAX_REPO}.git" kaijax
-          cd kaijax
-          git checkout --detach "$KAIJAX_SHA"
-          test "$(git rev-parse HEAD)" = "$KAIJAX_SHA"
+          git init kaijax
+          git -C kaijax remote add origin "https://github.com/${KAIJAX_REPO}.git"
+          git -C kaijax fetch --depth=1 origin "$KAIJAX_SHA"
+          git -C kaijax checkout --detach FETCH_HEAD
+          test "$(git -C kaijax rev-parse HEAD)" = "$KAIJAX_SHA"
 
       - name: Prepare web and Android
         working-directory: kaijax
