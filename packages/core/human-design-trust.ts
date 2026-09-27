@@ -67,7 +67,11 @@ export function hasCoherentVerifiedHumanDesignCore(
   const type = nonEmptyText(humanDesignData.type) ? humanDesignData.type.trim() : null;
   const strategy = normalizedHumanDesignText(humanDesignData.strategy);
   const authority = normalizedHumanDesignText(humanDesignData.authority);
-  const profile = nonEmptyText(humanDesignData.profile) ? humanDesignData.profile.trim() : null;
+  const profileValue =
+    nonEmptyText(humanDesignData.profile)
+      ? humanDesignData.profile
+      : humanDesignData.profileType;
+  const profile = nonEmptyText(profileValue) ? profileValue.trim() : null;
 
   if (!type || !strategy || !authority || !profile) return false;
   if (!(type in HUMAN_DESIGN_STRATEGIES)) return false;
