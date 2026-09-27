@@ -184,20 +184,32 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
 
   const handleShare = async () => {
     if (!shareUrl) return;
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({
-          title: "Soul Codex",
-          text: "Explore this shared Soul Codex card.",
-          url: shareUrl,
-        });
-      } catch (error) {
-        if (error instanceof Error && error.name !== "AbortError") {
-          console.error("Share error:", error);
-        }
-      }
-    } else {
+
+    const shareData: ShareData = {
+      title: "Soul Codex",
+      text: "Explore this shared Soul Codex card.",
+      url: shareUrl,
+    };
+
+    const canUseNativeShare =
+      typeof navigator.share === "function" &&
+      (typeof navigator.canShare !== "function" || navigator.canShare(shareData));
+
+    if (!canUseNativeShare) {
       void copyToClipboard();
+      return;
+    }
+
+    try {
+      await navigator.share(shareData);
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      console.error("Share error:", error);
+      toast({
+        title: "Share sheet unavailable",
+        description: "The link is still active. Copy it instead.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -208,7 +220,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
         aria-modal="true"
         aria-labelledby="share-soul-codex-title"
         aria-describedby="share-soul-codex-description"
-        className="max-h-[90vh] w-full max-w-lg space-y-5 overflow-y-auto rounded-2xl border border-[var(--sc-line)] bg-[var(--sc-bg-ink)] p-5 shadow-2xl sm:p-6"
+        className="max-h-[90vh] w-full max-w-lg space-y-5 overflow-y-auto rounded-2xl border border-[var(--sc-line)] bg-[var(--sc-bg-ink)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:p-6"
       >
         <div className="flex items-center justify-between gap-4">
           <div>
