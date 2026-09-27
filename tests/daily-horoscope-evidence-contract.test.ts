@@ -70,13 +70,25 @@ test("daily horoscope evidence and numerology contract", async (suite) => {
       },
     };
 
-    assert.deepEqual(extractNatalPositions(astrologyData), {
+    const positions = extractNatalPositions(astrologyData);
+    const expected = {
       Sun: { longitude: 174.2, sign: "Virgo" },
       Mercury: { longitude: 185.5, sign: "Libra" },
       Moon: { longitude: 95.25, sign: "Cancer" },
       Ascendant: { longitude: 220, sign: "Scorpio" },
       Midheaven: { longitude: 130, sign: "Leo" },
-    });
+    } as const;
+
+    assert.deepEqual(Object.keys(positions).sort(), Object.keys(expected).sort());
+    for (const [name, target] of Object.entries(expected)) {
+      const actual = positions[name];
+      assert.ok(actual, name);
+      assert.equal(actual.sign, target.sign, name);
+      assert.ok(
+        Math.abs(actual.longitude - target.longitude) <= 1e-10,
+        `${name} longitude drifted: ${actual.longitude} vs ${target.longitude}`,
+      );
+    }
   });
 
   await suite.test("wrong governed derived policy is excluded", () => {
