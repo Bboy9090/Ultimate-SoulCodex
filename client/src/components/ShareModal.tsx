@@ -133,18 +133,20 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
     }
   };
 
-  const revokePublicShare = async () => {
-    if (!shareToken) return;
+  const revokePublicShare = async (tokenToRevoke: string | null = shareToken) => {
+    if (!tokenToRevoke) return;
     setRevoking(true);
     try {
-      const response = await apiFetch(`/api/profiles/${profileId}/public-shares/${shareToken}`, {
+      const response = await apiFetch(`/api/profiles/${profileId}/public-shares/${tokenToRevoke}`, {
         method: "DELETE",
       });
       if (!response.ok && response.status !== 204) throw new Error(`share_revoke_failed_${response.status}`);
-      setShareToken(null);
-      setCopied(false);
+      if (shareToken === tokenToRevoke) {
+        setShareToken(null);
+        setCopied(false);
+      }
       setShareHistory((current) => current.map((item) =>
-        item.token === shareToken ? { ...item, revokedAt: new Date().toISOString() } : item
+        item.token === tokenToRevoke ? { ...item, revokedAt: new Date().toISOString() } : item
       ));
       toast({
         title: "Public link revoked",
@@ -285,7 +287,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
               <Button onClick={() => void handleShare()} variant="secondary">
                 <Share2 className="mr-2 h-4 w-4" /> Share link
               </Button>
-              <Button onClick={() => void revokePublicShare()} disabled={revoking} variant="outline">
+              <Button onClick={() => void revokePublicShare(shareToken)} disabled={revoking} variant="outline">
                 {revoking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                 Revoke link
               </Button>
@@ -329,8 +331,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
                         size="sm"
                         variant="outline"
                         onClick={async () => {
-                          setShareToken(item.token);
-                          await revokePublicShare();
+                          await revokePublicShare(item.token);
                         }}
                       >
                         <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Revoke
