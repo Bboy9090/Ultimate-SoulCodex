@@ -21,7 +21,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: soulcodex-store-4-0-0
+  # Keep release qualification isolated per PR/branch. A draft PR must never
+  # cancel or block a main-store run, while a newer commit on the same PR
+  # should supersede its own stale qualification.
+  group: soulcodex-store-4-0-0-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
