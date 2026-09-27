@@ -9,7 +9,7 @@ Do not duplicate or independently edit store copy here. Use the canonical packet
 
 - Android: `4.0.1` / versionCode `4000008` / `app.soulcodex.main`
 - iOS: `4.0.2` / build `4000009` / `app.soulcodex.ios`
-- Release authority: `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`
+- Release authority: use the successful exact-head Store Candidate / hardening receipt for the binary being submitted; do not hard-code a moving SHA here.
 
 ## Verified public URLs
 
