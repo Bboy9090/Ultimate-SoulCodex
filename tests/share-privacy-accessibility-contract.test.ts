@@ -98,3 +98,19 @@ test("public share management exposes owned history and dedicated abuse controls
   assert.match(modal, /Revoked/);
   assert.match(modal, /revokePublicShare\(item\.token\)/);
 });
+
+
+test("public share viewer stays out of search indexes and mobile share checks payload capability", async () => {
+  const [page, modal] = await Promise.all([
+    readFile(publicPageUrl, "utf8"),
+    readFile(shareModalUrl, "utf8"),
+  ]);
+
+  assert.match(page, /noindex,nofollow,noarchive/);
+  assert.match(page, /meta\[name="robots"\]/);
+  assert.match(page, /Create your Soul Codex/);
+
+  assert.match(modal, /typeof navigator\.canShare !== "function" \|\| navigator\.canShare\(shareData\)/);
+  assert.match(modal, /pb-\[max\(1\.25rem,env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(modal, /Share sheet unavailable/);
+});
