@@ -8,6 +8,7 @@ import {
   tropicalSignFromLongitude,
 } from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
+import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 
 type AnyRecord = Record<string, any>;
 
@@ -251,15 +252,6 @@ function canonicalAspectBodies(
 
 function roundedHundredth(value: number): number {
   return Math.round(value * 100) / 100;
-}
-
-function hasVerifiedHumanDesignTrust(hd: AnyRecord): boolean {
-  return Boolean(
-    hd?.status === "verified" &&
-    nonEmptyString(hd?.verificationReceiptId) &&
-    nonEmptyString(hd?.independentSource) &&
-    nonEmptyString(hd?.verifiedAt),
-  );
 }
 
 function finiteNumber(value: unknown): number | null {
