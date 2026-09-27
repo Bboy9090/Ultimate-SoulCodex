@@ -15,6 +15,7 @@ import Navigation from "@/components/navigation";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
+import { humanDesignListLabel } from "@/lib/humanDesignDisplay";
 
 type Placement = {
   sign?: string | null;
@@ -262,7 +263,7 @@ export default function SystemsDetailsPage() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {Array.isArray(humanDesign.centers?.defined) ? humanDesign.centers.defined.join(", ") : "Unresolved"}<br />Open/undefined: {Array.isArray(humanDesign.centers?.undefined) ? humanDesign.centers.undefined.join(", ") : "Unresolved"}</div>
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {Array.isArray(humanDesign.channels) && humanDesign.channels.length ? humanDesign.channels.join(", ") : "None resolved"}<br />Activated gates: {Array.isArray(humanDesign.activatedGates) && humanDesign.activatedGates.length ? humanDesign.activatedGates.join(", ") : "None resolved"}</div>
+                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
                 </div>
               </div>
             ) : (
