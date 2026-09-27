@@ -4,3 +4,5 @@ export type {
   PlacementLike,
   VerifiedPlacement
 } from './types.js';
+
+export { getVerifiedPlacement } from './verification.js';
