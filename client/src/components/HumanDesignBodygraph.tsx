@@ -1,6 +1,6 @@
 import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
-import { humanDesignChannelLabel, humanDesignGateLabel } from "@/lib/humanDesignDisplay";
+import { humanDesignChannelLabel, humanDesignDefinedChannels, humanDesignGateLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
 type AnyRecord = Record<string, any>;
 
@@ -27,30 +27,6 @@ const CHANNELS: Record<string, [string, string]> = {
   "30-41": ["Solar Plexus", "Root"], "32-54": ["Spleen", "Root"], "34-57": ["Sacral", "Spleen"], "35-36": ["Throat", "Solar Plexus"],
   "37-40": ["Solar Plexus", "Heart"], "39-55": ["Root", "Solar Plexus"], "42-53": ["Sacral", "Root"], "47-64": ["Ajna", "Head"],
 };
-
-function normalizeCenters(hd: AnyRecord) {
-  const centers = hd?.centers;
-  const defined = new Set<string>();
-  const undefinedCenters = new Set<string>();
-
-  if (centers && typeof centers === "object") {
-    if (Array.isArray(centers.defined) || Array.isArray(centers.undefined)) {
-      for (const name of centers.defined ?? []) defined.add(String(name));
-      for (const name of centers.undefined ?? []) undefinedCenters.add(String(name));
-    } else {
-      for (const [name, value] of Object.entries(centers as AnyRecord)) {
-        if ((value as AnyRecord)?.defined === true) defined.add(name);
-        if ((value as AnyRecord)?.defined === false) undefinedCenters.add(name);
-      }
-    }
-  }
-
-  for (const name of Object.keys(CENTER_POSITIONS)) {
-    if (!defined.has(name) && !undefinedCenters.has(name)) undefinedCenters.add(name);
-  }
-
-  return { defined, undefined: undefinedCenters };
-}
 
 function channelKey(value: unknown): string | null {
   if (typeof value === "string") {
@@ -110,8 +86,12 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
     );
   }
 
-  const centers = normalizeCenters(data);
-  const channels = Array.isArray(data.channels) ? data.channels : [];
+  const normalizedCenters = normalizeHumanDesignCenters(data.centers);
+  const centers = {
+    defined: new Set(normalizedCenters.defined),
+    undefined: new Set(normalizedCenters.undefined),
+  };
+  const channels = humanDesignDefinedChannels(data.channels);
   const drawableChannels = channels
     .map((value: unknown) => {
       const key = channelKey(value);
