@@ -25,6 +25,10 @@ test("Soul Codex platform release identities are aligned", async () => {
   assert.match(project, /MARKETING_VERSION = 4\.0\.2;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
   assert.match(manifest, /releaseVersion:\s*"4\.0\.1"/);
+  assert.match(manifest, /platformReleaseIdentities:/);
+  assert.match(manifest, /web:[\s\S]*version:\s*"4\.0\.1"/);
+  assert.match(manifest, /android:[\s\S]*versionName:\s*"4\.0\.1"[\s\S]*versionCode:\s*4000008[\s\S]*applicationId:\s*"app\.soulcodex\.main"/);
+  assert.match(manifest, /ios:[\s\S]*marketingVersion:\s*"4\.0\.2"[\s\S]*buildNumber:\s*4000009[\s\S]*bundleId:\s*"app\.soulcodex\.ios"/);
   assert.match(dockerfile, /SOUL_CODEX_RELEASE_VERSION=4\.0\.1/);
   assert.match(serverIdentity, /DEFAULT_FOUNDATION_RELEASE_VERSION = "4\.0\.1"/);
   assert.match(clientIdentity, /DEFAULT_CLIENT_RELEASE_VERSION = "4\.0\.1"/);
