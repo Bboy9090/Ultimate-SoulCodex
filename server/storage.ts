@@ -34,6 +34,7 @@ export interface IStorage {
   createAssessment(assessment: InsertAssessment): Promise<Assessment>;
   createPublicProfileShare(profileId: string, token: string, snapshot: unknown): Promise<PublicProfileShare>;
   getPublicProfileShareByToken(token: string): Promise<PublicProfileShare | undefined>;
+  listPublicProfileShares(profileId: string): Promise<PublicProfileShare[]>;
   revokePublicProfileShare(token: string): Promise<PublicProfileShare | undefined>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
@@ -186,6 +187,11 @@ export class MemStorage implements IStorage {
   async getPublicProfileShareByToken(token: string) {
     return this.publicShares.get(token);
   }
+  async listPublicProfileShares(profileId: string) {
+    return [...this.publicShares.values()]
+      .filter((share) => share.profileId === profileId)
+      .sort((a, b) => (b.createdAt?.getTime?.() ?? 0) - (a.createdAt?.getTime?.() ?? 0));
+  }
   async revokePublicProfileShare(token: string) {
     const existing = this.publicShares.get(token);
     if (!existing) return undefined;
@@ -301,6 +307,10 @@ class PostgresStorage implements IStorage {
   async getPublicProfileShareByToken(token: string) {
     const db = await this.db();
     return (await db.select().from(publicProfileShares).where(eq(publicProfileShares.token, token)).limit(1))[0];
+  }
+  async listPublicProfileShares(profileId: string) {
+    const db = await this.db();
+    return await db.select().from(publicProfileShares).where(eq(publicProfileShares.profileId, profileId));
   }
   async revokePublicProfileShare(token: string) {
     const db = await this.db();
