@@ -5,6 +5,7 @@ import Navigation from "../components/navigation";
 import FeatureState from "../components/FeatureState";
 import { apiFetch } from "../lib/queryClient";
 import { getClientReleaseIdentity } from "../lib/releaseIdentity";
+import { V4_RELEASE_MANIFEST } from "../lib/v4ReleaseManifest";
 
 type BackendIdentity = {
   status?: string;
@@ -133,6 +134,42 @@ export default function DiagnosticsPage() {
               <p className="mt-5 text-sm text-[var(--sc-stone)]">No backend identity received.</p>
             )}
           </article>
+        </section>
+
+        <section className="sc-panel mt-4 p-6" data-release-platform-identities>
+          <div className="sc-eyebrow">Qualified platform identities</div>
+          <h2 className="mt-2 font-serif text-2xl font-semibold">Intended release versions</h2>
+          <p className="mb-0 mt-3 max-w-3xl text-xs leading-5 text-[var(--sc-stone)]">
+            These are non-secret release-manifest values. They describe the versions this source tree is qualified against; they do not prove a store listing is publicly available.
+          </p>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <article className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--sc-teal)]">Web / API</div>
+              <dl className="mt-4 space-y-3 text-xs">
+                <Row label="Version" value={V4_RELEASE_MANIFEST.platformReleaseIdentities.web.version} />
+                <Row label="API contract" value={V4_RELEASE_MANIFEST.platformReleaseIdentities.web.apiContract} mono />
+              </dl>
+            </article>
+
+            <article className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--sc-teal)]">Android</div>
+              <dl className="mt-4 space-y-3 text-xs">
+                <Row label="Version" value={V4_RELEASE_MANIFEST.platformReleaseIdentities.android.versionName} />
+                <Row label="versionCode" value={String(V4_RELEASE_MANIFEST.platformReleaseIdentities.android.versionCode)} mono />
+                <Row label="Application ID" value={V4_RELEASE_MANIFEST.platformReleaseIdentities.android.applicationId} mono />
+              </dl>
+            </article>
+
+            <article className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--sc-teal)]">iOS</div>
+              <dl className="mt-4 space-y-3 text-xs">
+                <Row label="Version" value={V4_RELEASE_MANIFEST.platformReleaseIdentities.ios.marketingVersion} />
+                <Row label="Build" value={String(V4_RELEASE_MANIFEST.platformReleaseIdentities.ios.buildNumber)} mono />
+                <Row label="Bundle ID" value={V4_RELEASE_MANIFEST.platformReleaseIdentities.ios.bundleId} mono />
+              </dl>
+            </article>
+          </div>
         </section>
 
         {state.error ? (
