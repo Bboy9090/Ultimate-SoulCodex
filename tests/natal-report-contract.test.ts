@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildNatalReportPdf } from "../server/natalReportPdf.ts";
+import { APPROVED_HUMAN_DESIGN_TRUST } from "../packages/core/human-design-trust.ts";
 import {
   buildNatalReportInput,
   natalReportFilename,
@@ -81,7 +82,7 @@ test("truth-safe premium payload renders real PDF bytes", async () => {
   assert.ok(pdf.length > 5_000, `expected a substantial report, got ${pdf.length} bytes`);
 });
 
-test("verified Human Design exposes only verified core fields", () => {
+test("verified Human Design exposes only approved flat core fields", () => {
   const report = buildNatalReportInput({
     name: "HD Test",
     birthDate: new Date("1990-09-17T00:00:00.000Z"),
@@ -94,23 +95,29 @@ test("verified Human Design exposes only verified core fields", () => {
     },
     humanDesignData: {
       status: "verified",
-      candidate: {
-        type: "Reflector",
-        strategy: "Wait a lunar cycle",
-        authority: "Lunar",
-        profile: "2/5",
-        incarnationCross: "must-not-pass-through",
-      },
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      engine: APPROVED_HUMAN_DESIGN_TRUST.engine,
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+      independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+      verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
+      incarnationCross: "must-not-pass-through",
     },
   });
 
   assert.deepEqual(report.humanDesign, {
     type: "Reflector",
     strategy: "Wait a lunar cycle",
-    authority: "Lunar",
+    authority: "Lunar Authority",
     profile: "2/5",
   });
-  assert.match(report.aiText.hdInterpretation, /verified trust record/i);
+  assert.match(report.aiText.hdInterpretation, /approved verification trust contract/i);
+  assert.doesNotMatch(JSON.stringify(report.humanDesign), /incarnationCross/);
 });
 
 test("report filenames cannot inject headers or unsafe path characters", () => {
@@ -209,4 +216,46 @@ test("legacy natal-report request path requires strict date-only caller input", 
   assert.match(route, /parseDateOnly\(dateOnly\)/);
   assert.doesNotMatch(route, /String\(rawBirthDate\)\.slice\(0, 10\)/);
   assert.doesNotMatch(route, /rawBirthDate\.toISOString\(\)\.slice\(0, 10\)/);
+});
+
+
+test("natal report rejects malformed placement verification timestamps", () => {
+  const report = buildNatalReportInput({
+    name: "Bad Timestamp",
+    birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    astrologyData: {
+      sun: {
+        ...verifiedSun,
+        evidence: {
+          ...placementEvidence,
+          calculatedAt: "not-a-date",
+        },
+      },
+    },
+  });
+
+  assert.equal((report.astrology as any).sunSign, null);
+  assert.deepEqual((report.astrology as any).planets, {});
+  assert.match(report.aiText.bigThreeSun, /unresolved/i);
+});
+
+test("status-only Human Design is withheld from natal reports", () => {
+  const report = buildNatalReportInput({
+    name: "Forged HD",
+    birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  });
+
+  assert.deepEqual(report.humanDesign, {});
+  assert.match(report.aiText.hdInterpretation, /not independently verified under the approved trust contract/i);
+  assert.match(
+    report.aiText.whatStandsOut.join(" "),
+    /missing approved trust metadata/i,
+  );
 });
