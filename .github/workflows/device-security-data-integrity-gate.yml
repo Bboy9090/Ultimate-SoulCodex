@@ -33,9 +33,18 @@ jobs:
       - name: Build workspaces
         run: npm run build:workspaces
 
-      - name: Security, privacy, persistence, and differentiation regression suite
-        run: |
-          node --import tsx --test             tests/trusted-mutation-origin.test.ts             tests/production-schema-preflight.test.ts             tests/public-profile-projection.test.ts             tests/share-privacy-accessibility-contract.test.ts             tests/storage-public-share-deletion.test.ts             tests/verified-profile-differentiation-corpus.test.ts             server/tests/gate1-foundation.test.ts
+      - name: Security, privacy, persistence, reconciliation, and differentiation regressions
+        run: >-
+          node --import tsx --test
+          tests/trusted-mutation-origin.test.ts
+          tests/production-schema-preflight.test.ts
+          tests/public-profile-projection.test.ts
+          tests/share-privacy-accessibility-contract.test.ts
+          tests/storage-public-share-deletion.test.ts
+          tests/privacy-public-share-truth.test.ts
+          tests/profile-verification-reconciliation.test.ts
+          tests/verified-profile-differentiation-corpus.test.ts
+          server/tests/gate1-foundation.test.ts
 
       - name: Reject destructive public-share startup schema operations
         shell: bash
@@ -76,7 +85,9 @@ jobs:
             echo "policy=public-share-schema-preflight-is-idempotent-and-non-destructive"
             echo "policy=account-deletion-removes-public-shares"
             echo "policy=public-share-projection-excludes-private-birth-and-assessment-data"
+            echo "policy=public-share-disclosures-match-product"
             echo "policy=canonical-offline-profile-persistence-regression"
+            echo "policy=partial-verification-cannot-downgrade-local-profile"
             echo "policy=verified-profile-differentiation-corpus"
             echo "policy=ios-android-release-config-validation"
           } > DEVICE-SECURITY-DATA-INTEGRITY-RECEIPT.txt
