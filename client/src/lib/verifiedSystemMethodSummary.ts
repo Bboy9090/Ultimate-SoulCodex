@@ -23,10 +23,9 @@ export function hasVerifiedHumanDesignEvidence(
   const humanDesign = systems.humanDesign;
   if (!humanDesign) return false;
 
-  return hasVerifiedHumanDesignTrust({
-    ...humanDesign,
-    profile: humanDesign.profileType,
-  } as Record<string, unknown>);
+  return hasVerifiedHumanDesignTrust(
+    humanDesign as unknown as Record<string, unknown>,
+  );
 }
 
 export function buildVerifiedSystemMethodSummaries(
