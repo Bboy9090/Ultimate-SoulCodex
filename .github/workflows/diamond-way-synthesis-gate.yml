@@ -5,6 +5,7 @@ on:
     branches:
       - feature/diamond-way-differentiation
       - feature/diamond-way-completeness-audit
+      - accuracy/strict-civil-time
   pull_request:
     branches:
       - main
