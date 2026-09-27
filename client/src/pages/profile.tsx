@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Crown, Shield, Sparkles } from "lucide-react";
+import { ArrowLeft, Crown, Share2, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
+import { ShareModal } from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
 
@@ -49,6 +50,7 @@ function explainLabel(label: string, kind: "strength" | "growth"): HumanDepthIte
 
 export default function ProfilePage() {
   const { id } = useParams();
+  const [shareOpen, setShareOpen] = useState(false);
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: Boolean(id),
@@ -216,12 +218,20 @@ export default function ProfilePage() {
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href={`/reading/${id}`} className="sc-button-primary">Open full Quick / Standard / Deep Dive reading</Link>
+          <Button type="button" variant="secondary" onClick={() => setShareOpen(true)}><Share2 className="mr-2 h-4 w-4" />Create public card</Button>
           <NatalReportDownloadButton
             profileId={String(id)}
             profileName={profile.name}
             isPremium={Boolean(profile.isPremium)}
           />
         </div>
+        {shareOpen && (
+          <ShareModal
+            profileId={String(id)}
+            profileName={profile.name}
+            onClose={() => setShareOpen(false)}
+          />
+        )}
       </main>
     </div>
   );
