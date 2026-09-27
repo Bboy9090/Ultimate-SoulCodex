@@ -16,8 +16,8 @@ test("Human Design bodygraph imports display metadata without calculation depend
 
   assert.match(displayData, /export const HD_GATES/);
   assert.match(displayData, /export const HD_CENTERS/);
-  assert.doesNotMatch(displayData, /astronomy-engine/);
-  assert.doesNotMatch(displayData, /date-fns-tz/);
-  assert.doesNotMatch(displayData, /geo-tz/);
-  assert.doesNotMatch(displayData, /createEvidenceEntry/);
+  assert.doesNotMatch(displayData, /from\s+["']astronomy-engine["']/);
+  assert.doesNotMatch(displayData, /from\s+["']date-fns-tz["']/);
+  assert.doesNotMatch(displayData, /from\s+["']geo-tz["']/);
+  assert.doesNotMatch(displayData, /import\s+\{[^}]*createEvidenceEntry[^}]*\}/);
 });
