@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, Copy, Check, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -9,9 +9,25 @@ interface ShareModalProps {
   onClose: () => void;
 }
 
-export function ShareModal({ profileId, profileName, onClose }: ShareModalProps) {
+export function ShareModal({ onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [onClose]);
 
   // Profiles are private, actor-owned resources. Until Soul Codex has a dedicated
   // public-safe projection, sharing must never imply that a raw profile route is public.
@@ -65,6 +81,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
         <div className="flex items-center justify-between">
           <h2 id="share-soul-codex-title" className="text-2xl font-bold">Share Soul Codex</h2>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             aria-label="Close share dialog"
             className="text-muted-foreground hover:text-foreground transition"
