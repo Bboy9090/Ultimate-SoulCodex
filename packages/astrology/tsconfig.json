@@ -7,14 +7,19 @@
     "baseUrl": ".",
     "skipLibCheck": true,
     "paths": {
-      "@soulcodex/db": ["../db"],
-      "@soulcodex/db/*": ["../db/*"]
+      "@soulcodex/db": [
+        "../db"
+      ],
+      "@soulcodex/db/*": [
+        "../db/*"
+      ]
     }
   },
   "include": [
     "index.ts",
     "astrology.ts",
     "human-design.ts",
+    "human-design-display-data.ts",
     "gene-keys.ts",
     "i-ching.ts",
     "vedic-astrology.ts",
