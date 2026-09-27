@@ -177,7 +177,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAssessment({ profileId, assessmentType: "enneagram", responses: assessment.responses, calculatedType: enneagramResult?.type?.toString() || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), enneagram: enneagramResult };
       const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData);
-      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData, archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards } });
+      const biography = await generateBiography({
+        name: profile.name,
+        archetypeTitle: archetypeData.title,
+        astrologyData: profile.astrologyData,
+        numerologyData: profile.numerologyData,
+        personalityData: updatedPersonalityData,
+        archetype: archetypeData,
+      });
+      const dailyGuidance = await generateDailyGuidance({
+        name: profile.name,
+        archetypeTitle: archetypeData.title,
+        astrologyData: profile.astrologyData,
+        numerologyData: profile.numerologyData,
+        personalityData: updatedPersonalityData,
+        archetype: archetypeData,
+      });
+      const updatedProfile = await storage.updateProfile(profileId, {
+        personalityData: updatedPersonalityData,
+        archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards },
+        biography,
+        dailyGuidance,
+      });
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error processing Enneagram assessment:", error);
@@ -195,7 +216,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAssessment({ profileId, assessmentType: "mbti", responses: assessment.responses, calculatedType: mbtiResult?.type || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), mbti: mbtiResult };
       const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData);
-      const updatedProfile = await storage.updateProfile(profileId, { personalityData: updatedPersonalityData, archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards } });
+      const biography = await generateBiography({
+        name: profile.name,
+        archetypeTitle: archetypeData.title,
+        astrologyData: profile.astrologyData,
+        numerologyData: profile.numerologyData,
+        personalityData: updatedPersonalityData,
+        archetype: archetypeData,
+      });
+      const dailyGuidance = await generateDailyGuidance({
+        name: profile.name,
+        archetypeTitle: archetypeData.title,
+        astrologyData: profile.astrologyData,
+        numerologyData: profile.numerologyData,
+        personalityData: updatedPersonalityData,
+        archetype: archetypeData,
+      });
+      const updatedProfile = await storage.updateProfile(profileId, {
+        personalityData: updatedPersonalityData,
+        archetypeData: { ...archetypeData, tarotCards: (profile.archetypeData as any)?.tarotCards },
+        biography,
+        dailyGuidance,
+      });
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error processing MBTI assessment:", error);
