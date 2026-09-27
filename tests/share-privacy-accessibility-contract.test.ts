@@ -90,7 +90,7 @@ test("public share management exposes owned history and dedicated abuse controls
   assert.match(routes, /public_share_active_limit/);
   assert.match(routes, /app\.get\("\/api\/profiles\/:id\/public-shares"/);
 
-  assert.match(storage, /listPublicProfileShares\(profileId: string\)/);
+  assert.match(storage, /listPublicProfileShares\(profileId: string, limit\?: number\)/);
   assert.match(storage, /orderBy\(desc\(publicProfileShares\.createdAt\)\)/);
 
   assert.match(modal, /Your public links/);
