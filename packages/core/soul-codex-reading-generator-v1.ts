@@ -198,10 +198,9 @@ export function generateSoulCodexReadingV1(input: RawAnalysisInput): SoulCodexRe
     numerology: input.numerology,
     humanDesign:
       input.humanDesign &&
-      hasVerifiedHumanDesignTrust({
-        ...input.humanDesign,
-        profile: input.humanDesign.profileType,
-      } as Record<string, unknown>)
+      hasVerifiedHumanDesignTrust(
+        input.humanDesign as Record<string, unknown>,
+      )
         ? input.humanDesign
         : undefined,
   };
