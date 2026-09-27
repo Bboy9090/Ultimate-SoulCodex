@@ -49,6 +49,10 @@ function validIsoLikeTimestamp(value: unknown): value is string {
   return nonEmptyText(value) && !Number.isNaN(Date.parse(value));
 }
 
+function explicitUtcTimestamp(value: unknown): value is string {
+  return validIsoLikeTimestamp(value) && /Z$/i.test(value.trim());
+}
+
 function normalizedHumanDesignText(value: unknown): string | null {
   return nonEmptyText(value)
     ? value.trim().toLowerCase().replace(/\s+/g, " ")
@@ -81,7 +85,7 @@ export function hasVerifiedHumanDesignTrust(
     humanDesignData.engine === APPROVED_HUMAN_DESIGN_TRUST.engine &&
     nonEmptyText(humanDesignData.source) &&
     validIsoLikeTimestamp(humanDesignData.calculatedAt) &&
-    validIsoLikeTimestamp(humanDesignData.inputTimestampUtc) &&
+    explicitUtcTimestamp(humanDesignData.inputTimestampUtc) &&
     humanDesignData.verificationReceiptId === APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId &&
     humanDesignData.independentSource === APPROVED_HUMAN_DESIGN_TRUST.independentSource &&
     humanDesignData.verifiedAt === APPROVED_HUMAN_DESIGN_TRUST.verifiedAt
