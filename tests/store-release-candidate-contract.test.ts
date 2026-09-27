@@ -55,6 +55,11 @@ test("store workflow binds exact release branch and Play production upload", asy
     assert.match(workflow, new RegExp(secret));
   }
   assert.match(workflow, /release\/store-4\.0\.0-federation-final/);
+  assert.match(workflow, /actions\/checkout@v5/);
+  assert.match(workflow, /actions\/setup-node@v5/);
+  assert.match(workflow, /actions\/setup-java@v5/);
+  assert.match(workflow, /Detect Google Play publishing credentials/);
+  assert.match(workflow, /steps\.play\.outputs\.available/);
   assert.match(workflow, /r0adkll\/upload-google-play@v1\.1\.3/);
   assert.match(workflow, /packageName:\s*app\.soulcodex\.main/);
   assert.match(workflow, /track:\s*production/);
