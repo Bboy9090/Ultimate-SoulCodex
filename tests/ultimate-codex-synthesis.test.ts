@@ -495,3 +495,59 @@ test("sub-hundredth governed cusp precision noise does not change the stable Cod
   assert.equal(a.fingerprint, b.fingerprint);
   assert.equal(a.codexNumber, b.codexNumber);
 });
+
+
+test("stored house labels cannot alter the stable Codex when verified geometry is unchanged", () => {
+  const canonical: any = profile();
+  const tampered: any = profile();
+
+  for (const key of Object.keys(tampered.verifiedAstrologyData.planetaryHouses)) {
+    tampered.verifiedAstrologyData.planetaryHouses[key] =
+      ((tampered.verifiedAstrologyData.planetaryHouses[key] + 5) % 12) + 1;
+  }
+  tampered.verifiedAstrologyData.northNode.house = 12;
+  tampered.verifiedAstrologyData.southNode.house = 6;
+  tampered.verifiedAstrologyData.chiron.house = 2;
+
+  const a = buildUltimateCodexSynthesis(canonical);
+  const b = buildUltimateCodexSynthesis(tampered);
+
+  assert.equal(a.fingerprint, b.fingerprint);
+  assert.equal(a.codexNumber, b.codexNumber);
+  assert.deepEqual(
+    b.placements.map(({ key, house }) => ({ key, house })),
+    a.placements.map(({ key, house }) => ({ key, house })),
+  );
+  assert.deepEqual(
+    b.supportingPoints.map(({ key, house }) => ({ key, house })),
+    a.supportingPoints.map(({ key, house }) => ({ key, house })),
+  );
+});
+
+test("invalid Equal House geometry strips all derived house membership", () => {
+  const candidate: any = profile();
+
+  candidate.verifiedAstrologyData.houses[4].longitude += 4;
+  for (const key of Object.keys(candidate.verifiedAstrologyData.planetaryHouses)) {
+    candidate.verifiedAstrologyData.planetaryHouses[key] = 10;
+  }
+  candidate.verifiedAstrologyData.northNode.house = 7;
+  candidate.verifiedAstrologyData.southNode.house = 1;
+  candidate.verifiedAstrologyData.chiron.house = 4;
+
+  const result = buildUltimateCodexSynthesis(candidate);
+
+  assert.equal(result.houseCusps.length, 0);
+  assert.equal(result.placements.every((placement) => placement.house === null), true);
+  assert.equal(
+    result.supportingPoints
+      .filter((point) => ["northNode", "southNode", "chiron"].includes(point.key))
+      .every((point) => point.house === null),
+    true,
+  );
+  assert.equal(result.stelliums.some((cluster) => cluster.kind === "house"), false);
+  assert.equal(
+    result.evidenceSignature.some((value) => /:H(?:[1-9]|1[0-2])$/.test(value)),
+    false,
+  );
+});
