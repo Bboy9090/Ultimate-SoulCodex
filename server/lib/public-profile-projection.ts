@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { Profile } from "@shared/schema";
 
 export type PublicShareField =
@@ -8,10 +9,20 @@ export type PublicShareField =
   | "lifePath"
   | "archetypeTitle";
 
-export interface PublicShareSelection {
-  fields: PublicShareField[];
-  displayName?: string;
-}
+export const publicShareSelectionSchema = z.object({
+  fields: z.array(z.enum(["displayName", "sunSign", "moonSign", "risingSign", "lifePath", "archetypeTitle"])).min(1).max(6),
+  displayName: z.string().trim().min(1).max(80).optional(),
+}).superRefine((value, context) => {
+  if (value.fields.includes("displayName") && !value.displayName) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["displayName"],
+      message: "displayName is required when displayName is selected",
+    });
+  }
+});
+
+export type PublicShareSelection = z.infer<typeof publicShareSelectionSchema>;
 
 export interface PublicProfileProjection {
   version: 1;
