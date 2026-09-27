@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "Soul Codex",
   webDir: "dist/public",
 
-  backgroundColor: "#0B0720",
+  backgroundColor: "#07060B",
 
   server: {
     androidScheme: "https",
@@ -13,7 +13,7 @@ const config: CapacitorConfig = {
 
   ios: {
     scheme: "Soul Codex",
-    backgroundColor: "#0B0720",
+    backgroundColor: "#07060B",
     contentInset: "automatic",
     preferredContentMode: "mobile",
     allowsLinkPreview: false,
