@@ -12,6 +12,14 @@ interface ShareModalProps {
 
 type ShareField = "displayName" | "sunSign" | "moonSign" | "risingSign" | "lifePath" | "archetypeTitle";
 
+type ShareHistoryItem = {
+  token: string;
+  path: string;
+  snapshot: { version: 1; fields: Partial<Record<ShareField, string | number>> };
+  createdAt: string | null;
+  revokedAt: string | null;
+};
+
 const FIELD_OPTIONS: Array<{ id: ShareField; label: string; description: string }> = [
   { id: "displayName", label: "Display name", description: "A name or alias you type for the public card." },
   { id: "sunSign", label: "Verified Sun sign", description: "Included only when the stored placement has complete verification evidence." },
@@ -28,8 +36,28 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareHistory, setShareHistory] = useState<ShareHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadHistory = async () => {
+      try {
+        const response = await apiFetch(`/api/profiles/${profileId}/public-shares`);
+        if (!response.ok) throw new Error(`share_history_failed_${response.status}`);
+        const history = await response.json();
+        if (!cancelled) setShareHistory(Array.isArray(history) ? history : []);
+      } catch {
+        if (!cancelled) setShareHistory([]);
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    };
+    void loadHistory();
+    return () => { cancelled = true; };
+  }, [profileId]);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -83,6 +111,13 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
       if (!response.ok) throw new Error(`share_create_failed_${response.status}`);
       const result = await response.json();
       setShareToken(result.token);
+      setShareHistory((current) => [{
+        token: result.token,
+        path: result.path,
+        snapshot: result.snapshot,
+        createdAt: new Date().toISOString(),
+        revokedAt: null,
+      }, ...current]);
       toast({
         title: "Public link created",
         description: "Only the fields you selected were copied into the public snapshot.",
@@ -108,6 +143,9 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
       if (!response.ok && response.status !== 204) throw new Error(`share_revoke_failed_${response.status}`);
       setShareToken(null);
       setCopied(false);
+      setShareHistory((current) => current.map((item) =>
+        item.token === shareToken ? { ...item, revokedAt: new Date().toISOString() } : item
+      ));
       toast({
         title: "Public link revoked",
         description: "That shared snapshot is no longer available.",
@@ -254,6 +292,56 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
             </div>
           </div>
         )}
+
+
+        <section aria-labelledby="share-history-title" className="space-y-3 border-t border-[var(--sc-line)] pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 id="share-history-title" className="font-serif text-lg text-[var(--sc-ivory)]">Your public links</h3>
+              <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Active and revoked snapshots for this profile.</p>
+            </div>
+            {historyLoading && <Loader2 className="h-4 w-4 animate-spin text-[var(--sc-stone)]" aria-label="Loading share history" />}
+          </div>
+
+          {!historyLoading && shareHistory.length === 0 && (
+            <p className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-3 text-xs text-[var(--sc-stone)]">No public links have been created for this profile yet.</p>
+          )}
+
+          <div className="space-y-2">
+            {shareHistory.map((item) => {
+              const active = !item.revokedAt;
+              const fieldNames = Object.keys(item.snapshot?.fields ?? {});
+              return (
+                <div key={item.token} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={active ? "text-xs font-semibold text-[var(--sc-teal)]" : "text-xs font-semibold text-[var(--sc-stone)]"}>
+                          {active ? "Active" : "Revoked"}
+                        </span>
+                        <span className="text-[10px] text-[var(--sc-stone)]">{fieldNames.length} field{fieldNames.length === 1 ? "" : "s"}</span>
+                      </div>
+                      <p className="mt-1 truncate text-[11px] text-[var(--sc-stone)]">{item.path}</p>
+                    </div>
+                    {active && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          setShareToken(item.token);
+                          await revokePublicShare();
+                        }}
+                      >
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Revoke
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <Button onClick={onClose} variant="outline" className="w-full">Close</Button>
       </div>
