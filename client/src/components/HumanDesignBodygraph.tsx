@@ -1,4 +1,4 @@
-import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology";
+import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology/human-design-display-data";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, humanDesignGateLabel, humanDesignGateNumber, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
