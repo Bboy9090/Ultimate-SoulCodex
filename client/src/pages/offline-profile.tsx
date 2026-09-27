@@ -14,7 +14,7 @@ import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDe
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
-import { humanDesignListLabel } from "@/lib/humanDesignDisplay";
+import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
@@ -92,6 +92,7 @@ export default function OfflineProfilePage() {
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, unknown>;
   const verifiedHumanDesign = hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
+  const verifiedHumanDesignCenters = normalizeHumanDesignCenters(verifiedHumanDesign?.centers);
   const ultimateCodex = useMemo(
     () => buildUltimateCodexSynthesis(reconciledProfile ?? {}),
     [reconciledProfile],
@@ -193,8 +194,8 @@ export default function OfflineProfilePage() {
               <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
                 <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">Definition &amp; centers</p>
                 <p className="mt-2 text-sm font-semibold text-[var(--sc-ivory)]">{String(verifiedHumanDesign.definition ?? "Unresolved")}</p>
-                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Defined: {Array.isArray((verifiedHumanDesign.centers as any)?.defined) ? (verifiedHumanDesign.centers as any).defined.join(", ") : "Unresolved"}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Open/undefined: {Array.isArray((verifiedHumanDesign.centers as any)?.undefined) ? (verifiedHumanDesign.centers as any).undefined.join(", ") : "Unresolved"}</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Defined: {verifiedHumanDesignCenters.defined.join(", ") || "None"}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Open/undefined: {verifiedHumanDesignCenters.undefined.join(", ") || "None"}</p>
               </div>
               <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
                 <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">Channels &amp; gates</p>

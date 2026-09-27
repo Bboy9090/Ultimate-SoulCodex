@@ -1,4 +1,4 @@
-import { humanDesignListLabel } from "@/lib/humanDesignDisplay";
+import { humanDesignDefinedChannels, humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 export type ClarityConfidence =
   | "verified"
@@ -363,12 +363,24 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     addSignal(signals, "hd-authority", "Authority", humanDesign.authority, "verified", "HUMAN-DESIGN-CORE-v1");
     addSignal(signals, "hd-profile", "Profile", humanDesign.profile, "verified", "HUMAN-DESIGN-CORE-v1");
     addSignal(signals, "hd-definition", "Definition", humanDesign.definition, "verified", "verified bodygraph calculation");
-    if (Array.isArray(humanDesign.centers?.defined)) {
-      addSignal(signals, "hd-centers", "Defined centers", humanDesign.centers.defined.join(", "), "verified", "verified bodygraph calculation");
-    }
-    if (Array.isArray(humanDesign.channels)) {
-      addSignal(signals, "hd-channels", "Defined channels", humanDesignListLabel(humanDesign.channels, "channel"), "verified", "verified bodygraph calculation");
-    }
+    const hdCenters = normalizeHumanDesignCenters(humanDesign.centers);
+    addSignal(
+      signals,
+      "hd-centers",
+      "Defined centers",
+      hdCenters.defined.join(", ") || "None",
+      "verified",
+      "verified bodygraph calculation",
+    );
+    const hdChannels = humanDesignDefinedChannels(humanDesign.channels);
+    addSignal(
+      signals,
+      "hd-channels",
+      "Defined channels",
+      humanDesignListLabel(hdChannels, "channel", "None"),
+      "verified",
+      "verified bodygraph calculation",
+    );
     if (Array.isArray(humanDesign.activatedGates)) {
       addSignal(signals, "hd-gates", "Activated gates", humanDesignListLabel(humanDesign.activatedGates, "gate"), "verified", "verified bodygraph calculation");
     }

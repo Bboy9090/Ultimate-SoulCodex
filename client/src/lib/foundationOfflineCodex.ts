@@ -15,6 +15,7 @@ import {
 import type { BirthData } from "@shared/schema";
 import { maySystemInfluenceSynthesis } from "@shared/system-visibility";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
+import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
 
 type Pattern = {
   drive: string;
@@ -917,15 +918,8 @@ export function synthesizeVerifiedFoundationProfile(
     const authority = typeof humanDesign?.authority === "string" ? humanDesign.authority : null;
     const profile = typeof humanDesign?.profile === "string" ? humanDesign.profile : null;
     const definition = typeof humanDesign?.definition === "string" ? humanDesign.definition : null;
-    const centers = humanDesign?.centers && typeof humanDesign.centers === "object"
-      ? humanDesign.centers as { defined?: unknown; undefined?: unknown }
-      : null;
-    const definedCenters = Array.isArray(centers?.defined)
-      ? centers.defined.filter((value): value is string => typeof value === "string")
-      : [];
-    const channels = Array.isArray(humanDesign?.channels)
-      ? humanDesign.channels.filter((value): value is string => typeof value === "string")
-      : [];
+    const definedCenters = normalizeHumanDesignCenters(humanDesign?.centers).defined;
+    const channels = humanDesignDefinedChannels(humanDesign?.channels).map(humanDesignChannelLabel);
     const activatedGates = Array.isArray(humanDesign?.activatedGates)
       ? humanDesign.activatedGates.filter((value): value is number | string => typeof value === "number" || typeof value === "string")
       : [];
