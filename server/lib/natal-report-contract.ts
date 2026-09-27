@@ -1,4 +1,10 @@
-import { dateOnlyFromStoredValue } from "@soulcodex/core";
+import {
+  dateOnlyFromStoredValue,
+  degreeInTropicalSign,
+  getVerifiedPlacement,
+  hasVerifiedHumanDesignTrust,
+  normalizeDegrees,
+} from "@soulcodex/core";
 import type { NatalReportInput } from "../natalReportPdf";
 
 type PlacementLike = {
@@ -41,19 +47,8 @@ function record(value: unknown): Record<string, any> {
 }
 
 function verifiedSign(value: unknown): string | null {
-  const placement = record(value) as PlacementLike;
-  const evidence = placement.provenance ?? placement.evidence;
-  const hasEvidence =
-    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
-    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
-    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
-
-  return placement.verificationStatus === "verified" &&
-    hasEvidence &&
-    typeof placement.sign === "string" &&
-    placement.sign.trim()
-    ? placement.sign.trim()
-    : null;
+  const verified = getVerifiedPlacement(record(value) as any);
+  return verified?.sign?.trim() || null;
 }
 
 function placementReason(value: unknown, fallback: string): string {
@@ -66,7 +61,7 @@ function verifiedPlanet(value: unknown): Record<string, number | string> | undef
   const sign = verifiedSign(placement);
   const rawLongitude = placement.internalCandidate?.longitude;
   const longitude = typeof rawLongitude === "number" && Number.isFinite(rawLongitude)
-    ? ((rawLongitude % 360) + 360) % 360
+    ? normalizeDegrees(rawLongitude)
     : null;
 
   // The PDF placement table prints a degree. Do not manufacture 0° when the
@@ -76,18 +71,17 @@ function verifiedPlanet(value: unknown): Record<string, number | string> | undef
   return {
     sign,
     longitude,
-    degree: longitude % 30,
+    degree: degreeInTropicalSign(longitude),
   };
 }
 
 function verifiedHumanDesign(value: unknown): Record<string, string> {
   const hd = record(value);
-  if (hd.status !== "verified") return {};
-  const candidate = record(hd.candidate);
-  const result: Record<string, string> = {};
+  if (!hasVerifiedHumanDesignTrust(hd)) return {};
 
+  const result: Record<string, string> = {};
   for (const field of ["type", "strategy", "authority", "profile"] as const) {
-    const entry = candidate[field];
+    const entry = hd[field];
     if (typeof entry === "string" && entry.trim()) result[field] = entry.trim();
   }
   return result;
@@ -118,9 +112,9 @@ function reportHighlights(astrology: Record<string, any>, numerology: Record<str
   highlights.push(moon ? `Moon verified: ${moon}.` : `Moon unresolved: ${placementReason(astrology.moon, "verified birth-time evidence or independent verification is incomplete")}`);
   highlights.push(rising ? `Ascendant verified: ${rising}.` : `Ascendant unresolved: ${placementReason(astrology.rising, "verified birth time, coordinates, or independent verification is incomplete")}`);
   if (lifePath !== null) highlights.push(`Life Path ${lifePath} is a deterministic numerology calculation; its meaning remains interpretive.`);
-  highlights.push(humanDesign.status === "verified"
-    ? "Human Design core fields carry a verified trust record and may be displayed."
-    : "Human Design is unresolved or calculated-unverified and is deliberately withheld from authoritative report fields.");
+  highlights.push(hasVerifiedHumanDesignTrust(humanDesign)
+    ? "Human Design core fields carry the approved verification trust record and may be displayed."
+    : "Human Design is unresolved, calculated-unverified, or missing approved trust metadata and is deliberately withheld from authoritative report fields.");
 
   return highlights;
 }
@@ -163,9 +157,9 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
       ? `Your saved Soul Codex archetype is ${archetypeTitle}. Treat this as a symbolic synthesis to compare with lived experience, not as a factual diagnosis.`
       : "This report separates verified astronomical evidence, deterministic calculations, and symbolic interpretation so uncertainty remains visible instead of being filled with guesses.";
 
-  const humanDesignText = humanDesignRecord.status === "verified"
-    ? "Human Design core fields shown here come from a verified trust record. Their interpretive meaning remains symbolic rather than scientific diagnosis."
-    : "Human Design is not independently verified for this profile, so candidate Type, Strategy, Authority, Profile, channels, centers, and advanced values are intentionally omitted rather than presented as facts.";
+  const humanDesignText = hasVerifiedHumanDesignTrust(humanDesignRecord)
+    ? "Human Design core fields shown here passed the approved verification trust contract. Their interpretive meaning remains symbolic rather than scientific diagnosis."
+    : "Human Design is not independently verified under the approved trust contract for this profile, so candidate Type, Strategy, Authority, Profile, channels, centers, and advanced values are intentionally omitted rather than presented as facts.";
 
   return {
     name: profile.name,
