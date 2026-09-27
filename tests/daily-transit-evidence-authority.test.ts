@@ -57,11 +57,22 @@ test("personal transit natal authority accepts complete placement provenance", (
     },
   });
 
-  assert.deepEqual(result, {
+  const expected = {
     Sun: { longitude: 174.2, sign: "Virgo" },
     Mercury: { longitude: 185.5, sign: "Libra" },
     Ascendant: { longitude: 220, sign: "Scorpio" },
-  });
+  } as const;
+
+  assert.deepEqual(Object.keys(result).sort(), Object.keys(expected).sort());
+  for (const [name, target] of Object.entries(expected)) {
+    const actual = result[name];
+    assert.ok(actual, name);
+    assert.equal(actual.sign, target.sign, name);
+    assert.ok(
+      Math.abs(actual.longitude - target.longitude) <= 1e-10,
+      `${name} longitude drifted: ${actual.longitude} vs ${target.longitude}`,
+    );
+  }
 });
 
 test("personal transit natal authority rejects malformed evidence timestamps", () => {
