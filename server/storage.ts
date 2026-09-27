@@ -6,12 +6,14 @@ import {
   assessmentResponses,
   accessCodeRedemptions,
   localUsers,
+  publicProfileShares,
   type User,
   type InsertUser,
   type Profile,
   type InsertProfile,
   type Assessment,
   type InsertAssessment,
+  type PublicProfileShare,
 } from "@shared/schema";
 
 function appleUsername(subject: string) {
@@ -30,6 +32,9 @@ export interface IStorage {
   updateProfile(id: string, updates: Partial<Profile>): Promise<Profile>;
   getAssessment(profileId: string, type: string): Promise<Assessment | undefined>;
   createAssessment(assessment: InsertAssessment): Promise<Assessment>;
+  createPublicProfileShare(profileId: string, token: string, snapshot: unknown): Promise<PublicProfileShare>;
+  getPublicProfileShareByToken(token: string): Promise<PublicProfileShare | undefined>;
+  revokePublicProfileShare(token: string): Promise<PublicProfileShare | undefined>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
 }
@@ -38,6 +43,7 @@ export class MemStorage implements IStorage {
   private users = new Map<string, User>();
   private profiles = new Map<string, Profile>();
   private assessments = new Map<string, Assessment>();
+  private publicShares = new Map<string, PublicProfileShare>();
 
   async getUser(id: string) { return this.users.get(id); }
   async getUserByUsername(username: string) {
@@ -165,12 +171,37 @@ export class MemStorage implements IStorage {
     this.assessments.set(assessment.id, assessment);
     return assessment;
   }
+  async createPublicProfileShare(profileId: string, token: string, snapshot: unknown): Promise<PublicProfileShare> {
+    const share = {
+      id: randomUUID(),
+      token,
+      profileId,
+      snapshot,
+      createdAt: new Date(),
+      revokedAt: null,
+    } satisfies PublicProfileShare;
+    this.publicShares.set(token, share);
+    return share;
+  }
+  async getPublicProfileShareByToken(token: string) {
+    return this.publicShares.get(token);
+  }
+  async revokePublicProfileShare(token: string) {
+    const existing = this.publicShares.get(token);
+    if (!existing) return undefined;
+    const revoked = { ...existing, revokedAt: new Date() } satisfies PublicProfileShare;
+    this.publicShares.set(token, revoked);
+    return revoked;
+  }
   async deleteSessionData(sessionId: string): Promise<void> {
     const profileIds = [...this.profiles.values()]
       .filter((profile) => profile.sessionId === sessionId)
       .map((profile) => profile.id);
     for (const [id, assessment] of this.assessments) {
       if (profileIds.includes(assessment.profileId)) this.assessments.delete(id);
+    }
+    for (const [token, share] of this.publicShares) {
+      if (profileIds.includes(share.profileId)) this.publicShares.delete(token);
     }
     for (const [id, profile] of this.profiles) {
       if (profile.sessionId === sessionId) this.profiles.delete(id);
@@ -182,6 +213,9 @@ export class MemStorage implements IStorage {
       .map((profile) => profile.id);
     for (const [id, assessment] of this.assessments) {
       if (profileIds.includes(assessment.profileId)) this.assessments.delete(id);
+    }
+    for (const [token, share] of this.publicShares) {
+      if (profileIds.includes(share.profileId)) this.publicShares.delete(token);
     }
     for (const [id, profile] of this.profiles) {
       if (profile.userId === userId) this.profiles.delete(id);
@@ -260,11 +294,29 @@ class PostgresStorage implements IStorage {
     const db = await this.db();
     return (await db.insert(assessmentResponses).values(insertAssessment).returning())[0];
   }
+  async createPublicProfileShare(profileId: string, token: string, snapshot: unknown): Promise<PublicProfileShare> {
+    const db = await this.db();
+    return (await db.insert(publicProfileShares).values({ profileId, token, snapshot }).returning())[0];
+  }
+  async getPublicProfileShareByToken(token: string) {
+    const db = await this.db();
+    return (await db.select().from(publicProfileShares).where(eq(publicProfileShares.token, token)).limit(1))[0];
+  }
+  async revokePublicProfileShare(token: string) {
+    const db = await this.db();
+    return (await db.update(publicProfileShares)
+      .set({ revokedAt: new Date() })
+      .where(eq(publicProfileShares.token, token))
+      .returning())[0];
+  }
   async deleteSessionData(sessionId: string): Promise<void> {
     const db = await this.db();
     const ownedProfiles = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.sessionId, sessionId));
     const ids = ownedProfiles.map((row) => row.id);
-    if (ids.length) await db.delete(assessmentResponses).where(inArray(assessmentResponses.profileId, ids));
+    if (ids.length) {
+      await db.delete(assessmentResponses).where(inArray(assessmentResponses.profileId, ids));
+      await db.delete(publicProfileShares).where(inArray(publicProfileShares.profileId, ids));
+    }
     await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.sessionId, sessionId));
     await db.delete(profiles).where(eq(profiles.sessionId, sessionId));
   }
@@ -272,7 +324,10 @@ class PostgresStorage implements IStorage {
     const db = await this.db();
     const ownedProfiles = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.userId, userId));
     const ids = ownedProfiles.map((row) => row.id);
-    if (ids.length) await db.delete(assessmentResponses).where(inArray(assessmentResponses.profileId, ids));
+    if (ids.length) {
+      await db.delete(assessmentResponses).where(inArray(assessmentResponses.profileId, ids));
+      await db.delete(publicProfileShares).where(inArray(publicProfileShares.profileId, ids));
+    }
     await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
     await db.delete(profiles).where(eq(profiles.userId, userId));
     await db.delete(localUsers).where(eq(localUsers.id, userId));
