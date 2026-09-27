@@ -132,3 +132,15 @@ test("Store Candidate isolates concurrency by PR or branch", () => {
   );
   assert.match(store, /cancel-in-progress:\s+true/);
 });
+
+
+test("Store Candidate passes the declared API contract to the live verifier", () => {
+  assert.match(
+    store,
+    /SOUL_CODEX_API_CONTRACT:\s+\$\{\{\s*env\.VITE_API_CONTRACT\s*\}\}/,
+  );
+  assert.match(
+    store,
+    /SOUL_CODEX_BACKEND_URL:\s+\$\{\{\s*env\.VITE_API_URL\s*\}\}/,
+  );
+});
