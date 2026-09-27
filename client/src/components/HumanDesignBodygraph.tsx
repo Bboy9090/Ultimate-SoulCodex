@@ -1,5 +1,5 @@
 import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology";
-import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
+import { hasVerifiedHumanDesignTrust } from "@/lib/humanDesignTrust";
 
 type AnyRecord = Record<string, any>;
 
