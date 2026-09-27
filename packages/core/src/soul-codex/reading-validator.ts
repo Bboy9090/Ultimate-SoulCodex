@@ -21,10 +21,11 @@ const VAGUE_PATTERNS = [
   /energies are shifting/i,
   /the universe is/i,
   /soon you will/i,
-  /may feel/i,
-  /might experience/i,
-  /possibly/i,
-  /perhaps/i,
+  /trust the process/i,
+  /step into your power/i,
+  /everything happens for a reason/i,
+  /your higher self knows/i,
+  /embrace the journey/i,
 ];
 
 function hasVagueLanguage(text: string): boolean {
@@ -149,18 +150,50 @@ function checkUnknownBirthTimeRestrictions(reading: SoulCodexReading): string[] 
   return errors;
 }
 
+function normalizedMeaningfulWords(text: string): Set<string> {
+  const stopWords = new Set([
+    "a", "an", "and", "are", "as", "at", "be", "because", "but", "by", "for",
+    "from", "has", "have", "in", "into", "is", "it", "of", "on", "or", "that",
+    "the", "this", "to", "was", "were", "with", "you", "your",
+  ]);
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 2 && !stopWords.has(word)),
+  );
+}
+
+function overlapRatio(a: string, b: string): number {
+  const left = normalizedMeaningfulWords(a);
+  const right = normalizedMeaningfulWords(b);
+  if (left.size === 0 || right.size === 0) return 0;
+  let shared = 0;
+  for (const word of left) {
+    if (right.has(word)) shared += 1;
+  }
+  return shared / Math.min(left.size, right.size);
+}
+
 function checkNoDuplicateInsights(reading: SoulCodexReading): string[] {
   const errors: string[] = [];
   const seenSummaries = new Map<string, string>();
 
   reading.engines.forEach((engine) => {
-    const summary = engine.summary.toLowerCase();
+    const summary = engine.summary.toLowerCase().trim();
     if (seenSummaries.has(summary)) {
       errors.push(
-        `Duplicate insight: "${engine.title}" and "${seenSummaries.get(summary)}" have nearly identical summaries`
+        `Duplicate insight: "${engine.title}" and "${seenSummaries.get(summary)}" have identical summaries`
       );
     }
     seenSummaries.set(summary, engine.title);
+
+    if (overlapRatio(reading.snapshot.centralPattern, engine.summary) >= 0.8) {
+      errors.push(
+        `Duplicate insight: snapshot central pattern and "${engine.title}" summary repeat the same core language`,
+      );
+    }
   });
 
   return errors;

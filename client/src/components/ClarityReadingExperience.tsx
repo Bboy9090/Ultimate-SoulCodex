@@ -54,12 +54,16 @@ function DepthChapterCard({
   index,
   fit,
   onFit,
+  expanded,
+  onToggleExpanded,
 }: {
   chapter: DepthChapter;
   depth: ReadingDepth;
   index: number;
   fit?: ReadingFit;
   onFit: (fit: ReadingFit) => void;
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }) {
   const Icon = chapterIcons[index] ?? Sparkles;
   const showStandard = depth === "standard" || depth === "deep";
@@ -82,6 +86,18 @@ function DepthChapterCard({
         <p className="relative mb-4 leading-7 text-[var(--sc-ivory-soft)]">{chapter.observation}</p>
 
         {showStandard && (
+          <button
+            type="button"
+            onClick={onToggleExpanded}
+            aria-expanded={expanded}
+            className="relative mb-1 inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-[var(--sc-line)] bg-white/[0.025] px-4 py-2.5 text-left text-sm font-semibold text-[var(--sc-ivory-soft)] transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)]"
+          >
+            <span>{expanded ? "Hide chapter detail" : depth === "deep" ? "Open deep chapter" : "Open chapter detail"}</span>
+            <ChevronDown aria-hidden="true" className={`h-4 w-4 text-[var(--sc-gold)] transition ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        )}
+
+        {showStandard && expanded && (
           <div className="relative space-y-5 border-t border-[var(--sc-line)] pt-5">
             <section>
               <h3 className="mb-2 text-sm font-bold uppercase tracking-[0.13em] text-[var(--sc-violet)]">What this means in plain language</h3>
@@ -110,7 +126,7 @@ function DepthChapterCard({
           </div>
         )}
 
-        {showDeep && (
+        {showDeep && expanded && (
           <div className="relative mt-5 space-y-5 border-t border-[var(--sc-line)] pt-5">
             <section>
               <h3 className="mb-2 font-semibold text-[var(--sc-violet)]">How other people may experience it</h3>
@@ -135,6 +151,7 @@ function DepthChapterCard({
           </div>
         )}
 
+        {(depth === "quick" || expanded) && (
         <section className="relative mt-5 border-t border-[var(--sc-line)] pt-5" aria-label={`Does ${chapter.title.toLowerCase()} fit your experience?`}>
           <p className="mb-3 text-sm font-semibold text-[var(--sc-ivory-soft)]">Does this fit your experience?</p>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Reading fit feedback">
@@ -152,6 +169,7 @@ function DepthChapterCard({
           </div>
           {fit && <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">Saved on this device. Your response corrects the interpretation; it does not rewrite your birth data or pretend the app knows more than you do.</p>}
         </section>
+        )}
       </div>
     </article>
   );
@@ -159,6 +177,7 @@ function DepthChapterCard({
 
 export default function ClarityReadingExperience({ profileId, profileName, model, offline = false }: ClarityReadingExperienceProps) {
   const [depth, setDepth] = useState<ReadingDepth>("standard");
+  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(() => new Set());
   const [fits, setFits] = useState<FitMap>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -168,6 +187,20 @@ export default function ClarityReadingExperience({ profileId, profileName, model
     }
   });
   const chapters = useMemo(() => buildDepthChapters(model, fits), [model, fits]);
+
+  const toggleChapter = (chapterId: string) => {
+    setExpandedChapters((current) => {
+      const next = new Set(current);
+      if (next.has(chapterId)) next.delete(chapterId);
+      else next.add(chapterId);
+      return next;
+    });
+  };
+
+  const changeDepth = (nextDepth: ReadingDepth) => {
+    setDepth(nextDepth);
+    if (nextDepth === "quick") setExpandedChapters(new Set());
+  };
 
   const recordFit = (chapterId: string, fit: ReadingFit) => {
     const next = { ...fits, [chapterId]: fit };
@@ -214,7 +247,7 @@ export default function ClarityReadingExperience({ profileId, profileName, model
         <p className="mb-3 text-sm font-semibold text-[var(--sc-ivory-soft)]">Choose how far to go</p>
         <div className="grid gap-2 sm:grid-cols-3" role="group" aria-label="Choose reading depth">
           {(["quick", "standard", "deep"] as ReadingDepth[]).map((option) => (
-            <button key={option} type="button" onClick={() => setDepth(option)} aria-pressed={depth === option} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold capitalize transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)] ${depth === option ? "border-[var(--sc-line-gold)] bg-[linear-gradient(145deg,rgba(217,182,111,.18),rgba(154,116,220,.06))] text-[var(--sc-gold-bright)] shadow-[0_8px_24px_rgba(217,182,111,.12)]" : "border-[var(--sc-line)] bg-white/[0.02] text-[var(--sc-stone)] hover:bg-white/[0.05]"}`}>
+            <button key={option} type="button" onClick={() => changeDepth(option)} aria-pressed={depth === option} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold capitalize transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)] ${depth === option ? "border-[var(--sc-line-gold)] bg-[linear-gradient(145deg,rgba(217,182,111,.18),rgba(154,116,220,.06))] text-[var(--sc-gold-bright)] shadow-[0_8px_24px_rgba(217,182,111,.12)]" : "border-[var(--sc-line)] bg-white/[0.02] text-[var(--sc-stone)] hover:bg-white/[0.05]"}`}>
               {option === "quick" ? "Quick insight" : option === "standard" ? "Standard reading" : "Deep dive"}
             </button>
           ))}
@@ -230,6 +263,8 @@ export default function ClarityReadingExperience({ profileId, profileName, model
             index={index}
             fit={fits[chapter.id]}
             onFit={(fit) => recordFit(chapter.id, fit)}
+            expanded={expandedChapters.has(chapter.id)}
+            onToggleExpanded={() => toggleChapter(chapter.id)}
           />
         ))}
       </section>

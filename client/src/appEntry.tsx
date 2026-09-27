@@ -28,6 +28,22 @@ function BootReadyMarker() {
       window.prompt = nativeDialogs.prompt;
       window.__SOULCODEX_NATIVE_DIALOGS__ = null;
     }
+
+    const restoreVisiblePaint = () => {
+      if (document.visibilityState !== "visible") return;
+      document.documentElement.dataset.soulcodexVisible = "true";
+      requestAnimationFrame(() => {
+        document.documentElement.dataset.soulcodexVisible = "settled";
+      });
+    };
+    document.addEventListener("visibilitychange", restoreVisiblePaint);
+    window.addEventListener("pageshow", restoreVisiblePaint);
+    restoreVisiblePaint();
+
+    return () => {
+      document.removeEventListener("visibilitychange", restoreVisiblePaint);
+      window.removeEventListener("pageshow", restoreVisiblePaint);
+    };
   }, []);
   return null;
 }

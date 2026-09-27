@@ -257,8 +257,9 @@ check(
   "Universal compatibility labels model values as symbolic scores rather than relationship probabilities",
   files.compatibilityExplorer.includes("Highest symbolic fit") &&
     files.compatibilityExplorer.includes("Highest symbolic friction") &&
-    files.compatibilityExplorer.includes("not relationship probability") &&
-    files.compatibilityExplorer.includes("symbolic score"),
+    files.compatibilityExplorer.includes("Ordered symbolic themes") &&
+    files.compatibilityExplorer.includes("not percentages, probabilities, or measured relationship outcomes") &&
+    files.compatibilityExplorer.includes("Inspect exact symbolic model values"),
 );
 check(
   "COMPAT-04",
