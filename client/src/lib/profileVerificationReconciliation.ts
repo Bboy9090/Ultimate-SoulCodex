@@ -15,6 +15,7 @@ import {
   synthesizeVerifiedFoundationProfile,
 } from "./foundationOfflineCodex";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
+import { getVerifiedPlacement } from "./placementVerification";
 
 type PlacementEvidenceRecord = {
   source?: string | null;
@@ -139,16 +140,11 @@ function validZodiacSign(value: unknown): value is TropicalZodiacSign {
 function verifiedPlacementSign(
   placement: PlacementRecord | null | undefined,
 ): string | null {
-  const state = placement?.verificationStatus ?? placement?.status;
-  if (state !== "verified" || !validZodiacSign(placement?.sign)) return null;
-
-  const evidence = placement?.provenance ?? placement?.evidence;
-  const hasEvidence =
-    typeof evidence?.source === "string" && evidence.source.trim().length > 0 &&
-    typeof evidence?.engine === "string" && evidence.engine.trim().length > 0 &&
-    typeof evidence?.calculatedAt === "string" && evidence.calculatedAt.trim().length > 0;
-
-  return hasEvidence ? placement!.sign!.trim() : null;
+  if (!validZodiacSign(placement?.sign)) return null;
+  const verified = getVerifiedPlacement(placement as any);
+  return verified?.sign && validZodiacSign(verified.sign)
+    ? verified.sign.trim()
+    : null;
 }
 
 export function getVerifiedAstrologySign(
