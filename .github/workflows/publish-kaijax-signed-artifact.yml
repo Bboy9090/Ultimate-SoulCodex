@@ -1,0 +1,45 @@
+name: Publish Kai-Jax Signed Artifact
+
+on:
+  push:
+    branches:
+      - release/google-play-readiness-2026-09-07
+    paths:
+      - ".github/workflows/publish-kaijax-signed-artifact.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download existing verified signed artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          ARTIFACT_ID: "10939438673"
+        run: |
+          set -euo pipefail
+          gh api             -H "Accept: application/vnd.github+json"             "/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > kaijax-signed.zip
+          test -s kaijax-signed.zip
+          mkdir extracted
+          unzip -q kaijax-signed.zip -d extracted
+          test -s extracted/Legends-of-Kai-Jax-1.0.0-build1-2ff7979402e5.aab
+          test -s extracted/AAB-SHA256.txt
+          test -s extracted/KAIJAX-FROZEN-SHA.txt
+          test -s extracted/SIGNING-CERT-FINGERPRINT.txt
+          (cd extracted && sha256sum -c <(sed 's#app/build/outputs/bundle/release/app-release.aab#Legends-of-Kai-Jax-1.0.0-build1-2ff7979402e5.aab#' AAB-SHA256.txt))
+
+      - name: Create private draft release and upload verified files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="kai-jax-android-rc-2ff7979402e5"
+          if ! gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG"               --repo "$REPOSITORY"               --target release/google-play-readiness-2026-09-07               --title "Kai-Jax Android RC 1.0.0 build 1 (2ff7979402e5)"               --notes "Carrier release only. Signed AAB is built from exact frozen Kai-Jax source 2ff7979402e51b54cf5e6296645d9164de2a7568 and verified by jarsigner. Do not publish this release publicly."               --draft
+          fi
+          gh release upload "$TAG"             extracted/Legends-of-Kai-Jax-1.0.0-build1-2ff7979402e5.aab             extracted/AAB-SHA256.txt             extracted/KAIJAX-FROZEN-SHA.txt             extracted/SIGNING-CERT-FINGERPRINT.txt             --repo "$REPOSITORY"             --clobber
