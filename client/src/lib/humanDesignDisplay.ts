@@ -50,6 +50,20 @@ export function humanDesignChannelLabel(value: unknown): string {
   return [gatePair || key, name].filter(Boolean).join(" · ") || "Structured channel";
 }
 
+export function humanDesignGateNumber(value: unknown): number | null {
+  const primitive = finiteNumber(value);
+  if (primitive !== null) {
+    const whole = Math.trunc(primitive);
+    return whole >= 1 && whole <= 64 ? whole : null;
+  }
+  if (!value || typeof value !== "object") return null;
+  const row = value as AnyRecord;
+  const gate = finiteNumber(row.gate ?? row.number ?? row.id);
+  if (gate === null) return null;
+  const whole = Math.trunc(gate);
+  return whole >= 1 && whole <= 64 ? whole : null;
+}
+
 export function humanDesignGateLabel(value: unknown): string {
   const primitive = finiteNumber(value);
   if (primitive !== null) return String(primitive);
