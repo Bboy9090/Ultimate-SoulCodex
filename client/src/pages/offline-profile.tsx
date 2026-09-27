@@ -92,6 +92,7 @@ export default function OfflineProfilePage() {
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, unknown>;
   const verifiedHumanDesign = hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
+  const verifiedHumanDesignCenters = normalizeHumanDesignCenters(verifiedHumanDesign?.centers);
   const ultimateCodex = useMemo(
     () => buildUltimateCodexSynthesis(reconciledProfile ?? {}),
     [reconciledProfile],
