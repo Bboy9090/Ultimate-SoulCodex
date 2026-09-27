@@ -26,7 +26,7 @@ describe('Numerology Evidence Integration - Canonical 9 Calculations', () => {
       assert.strictEqual(result1.evidence.engine, 'numerology');
       assert.strictEqual(result1.evidence.claim, 'Personal Day');
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-day');
-      assert.ok(['personal-numerology-v2', 'pythagorean-v2'].includes(result1.evidence.formulaVersion));
+      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
       assert.strictEqual(result1.evidence.calculationStatus, 'resolved');
     });
 
@@ -93,7 +93,7 @@ describe('Numerology Evidence Integration - Canonical 9 Calculations', () => {
       assert.strictEqual(result1.evidence.value, result1.value);
       assert.strictEqual(result1.evidence.engine, 'numerology');
       assert.strictEqual(result1.evidence.formulaId, 'numerology.personal-year');
-      assert.ok(['personal-numerology-v2', 'pythagorean-v2'].includes(result1.evidence.formulaVersion));
+      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
     });
 
     it('documents the calendar-year boundary policy', () => {
@@ -200,7 +200,7 @@ describe('Numerology Evidence Integration - Canonical 9 Calculations', () => {
       assert.strictEqual(result1.value, result2.value);
       assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33].includes(result1.value));
       assert.strictEqual(result1.evidence.formulaId, 'numerology.life-path');
-      assert.ok(['personal-numerology-v2', 'pythagorean-v2'].includes(result1.evidence.formulaVersion));
+      assert.strictEqual(result1.evidence.formulaVersion, '1.0.0');
     });
 
     it('should fail closed for missing birth date', () => {
