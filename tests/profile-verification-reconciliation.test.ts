@@ -3,6 +3,7 @@ import test from "node:test";
 import { birthDataSchema } from "../shared/schema.ts";
 import { profileVerificationRequestSchema } from "../server/routes/profile-verification.ts";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
+import { APPROVED_HUMAN_DESIGN_TRUST } from "../packages/core/human-design-trust.ts";
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
   getVerifiedAstrologySign,
@@ -428,16 +429,7 @@ test("missing exact Ascendant inputs do not create an endless migration loop", (
 test("verified Human Design is reconciled into active and offline profiles", () => {
   const remoteWithHumanDesign = {
     ...verifiedRemote,
-    humanDesignData: {
-      status: "verified",
-      type: "Reflector",
-      strategy: "Wait a lunar cycle",
-      authority: "Lunar Authority",
-      profile: "2/5",
-      verificationReceiptId: "35474994858:human-design-repair-audit",
-      independentSource: "free-human-design@1.0.1 differential verifier",
-      verifiedAt: "2026-09-19T23:03:08.000Z",
-    },
+    humanDesignData: { ...verifiedRemote.humanDesignData },
   };
 
   const active = reconcileActiveProfile(
@@ -602,7 +594,7 @@ test("canonical angle validation tolerates harmless floating-point roundoff", ()
 test("client Human Design verification gate rejects malformed trust metadata", () => {
   const valid = {
     status: "verified",
-    engine: "soulcodex-hd-geocentric-v1",
+    engine: APPROVED_HUMAN_DESIGN_TRUST.engine,
     source: "Soul Codex deterministic Human Design core engine",
     calculatedAt: "2026-09-26T18:00:00.000Z",
     inputTimestampUtc: "1990-09-17T15:11:00.000Z",
@@ -610,9 +602,9 @@ test("client Human Design verification gate rejects malformed trust metadata", (
     strategy: "To Wait a Lunar Cycle",
     authority: "Lunar Authority",
     profile: "2/5",
-    verificationReceiptId: "receipt",
-    independentSource: "independent verifier",
-    verifiedAt: "2026-09-19T23:03:08.000Z",
+    verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+    independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+    verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
   };
 
   assert.equal(getVerifiedHumanDesignRecord(valid)?.type, "Reflector");
