@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { moonSignReflection, personalDayReflection, selectTemplates } from "../packages/astrology/template-bank.ts";
 import type { DailyContext } from "../packages/astrology/daily-context.ts";
+import { APPROVED_HUMAN_DESIGN_TRUST } from "../packages/core/human-design-trust.ts";
 
 const context: DailyContext = {
   date: "2026-09-26",
@@ -24,20 +25,64 @@ test("daily guidance does not force Human Design into an unverified profile", ()
   assert.equal(result.templateIds.some((id) => id.startsWith("hd-")), false);
 });
 
-test("daily guidance adds Human Design only when the personal HD core is verified", () => {
+test("daily guidance adds Human Design only when the personal HD core passes canonical trust", () => {
   const result = selectTemplates(context, {
     id: "verified-hd-profile",
     humanDesignData: {
       status: "verified",
-      verificationReceiptId: "hd-receipt-1",
-      independentSource: "independent-hd-verifier",
-      verifiedAt: "2026-09-26T08:00:00.000Z",
+      type: "Reflector",
+      profile: "2/5",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      engine: APPROVED_HUMAN_DESIGN_TRUST.engine,
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+      independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+      verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
     },
   });
   const categories = result.selectedTemplates.map((template) => template.category).sort();
 
   assert.deepEqual(categories, ["astrology", "humandesign", "numerology"]);
   assert.equal(result.selectedTemplates.length, 3);
+});
+
+test("daily guidance rejects status-only or partial Human Design trust", () => {
+  for (const humanDesignData of [
+    { status: "verified" },
+    {
+      status: "verified",
+      verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+      independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+      verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
+    },
+    {
+      status: "verified",
+      type: "Reflector",
+      profile: "2/5",
+      strategy: "Wait a lunar cycle",
+      authority: "Sacral Authority",
+      engine: APPROVED_HUMAN_DESIGN_TRUST.engine,
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+      independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+      verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
+    },
+  ]) {
+    const result = selectTemplates(context, {
+      id: "spoofed-hd-profile",
+      humanDesignData,
+    });
+    assert.equal(
+      result.selectedTemplates.some((template) => template.category === "humandesign"),
+      false,
+      JSON.stringify(humanDesignData),
+    );
+  }
 });
 
 test("daily guidance never emits disabled legacy symbolic categories", () => {
