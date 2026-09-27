@@ -95,9 +95,13 @@ function profile(moonSign = "Virgo") {
     numerologyData: { lifePath: 9, birthday: 8, expression: 5, soulUrge: 2, personality: 7, maturity: 5, personalYear: 9 },
     humanDesignData: {
       status: "verified",
-      verificationReceiptId: "HUMAN-DESIGN-CORE-v1-fixture-receipt",
-      independentSource: "independent-hd-fixture",
-      verifiedAt: "2026-09-26T12:00:00.000Z",
+      engine: "soulcodex-hd-geocentric-v1",
+      source: "Soul Codex deterministic Human Design core engine",
+      calculatedAt: "2026-09-26T18:00:00.000Z",
+      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+      verificationReceiptId: "35474994858:human-design-repair-audit",
+      independentSource: "free-human-design@1.0.1 differential verifier",
+      verifiedAt: "2026-09-19T23:03:08.000Z",
       type: "Reflector",
       strategy: "To Wait a Lunar Cycle",
       authority: "Lunar Authority",
@@ -208,6 +212,16 @@ test("verified supporting points alter the Codex fingerprint", () => {
   assert.notEqual(a.codexNumber, b.codexNumber);
 });
 
+
+test("Ultimate Codex rejects otherwise complete Human Design when input time is not explicit UTC", () => {
+  const candidate: any = profile();
+  candidate.humanDesignData.inputTimestampUtc = "1990-09-17T11:11:00-04:00";
+
+  const result = buildUltimateCodexSynthesis(candidate);
+
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:")), false);
+  assert.ok(result.unresolved.some((value) => /Human Design/i.test(value)));
+});
 
 test("status-only Human Design cannot enter the stable Codex fingerprint", () => {
   const trusted = profile();
