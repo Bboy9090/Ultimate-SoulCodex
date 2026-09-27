@@ -1,6 +1,7 @@
-import type {
-  AstrologyDataStatus,
-  VerifiedSystems,
+import {
+  hasVerifiedHumanDesignTrust,
+  type AstrologyDataStatus,
+  type VerifiedSystems,
 } from "@soulcodex/core";
 
 export type VerifiedSystemMethodId =
@@ -16,18 +17,16 @@ export interface VerifiedSystemMethodSummary {
   interpretationBoundary: string;
 }
 
-function hasVerifiedHumanDesignEvidence(
+export function hasVerifiedHumanDesignEvidence(
   systems: VerifiedSystems,
 ): boolean {
   const humanDesign = systems.humanDesign;
-  return (
-    humanDesign?.status === "verified" &&
-    Boolean(
-      humanDesign.verificationReceiptId?.trim() &&
-      humanDesign.independentSource?.trim() &&
-      humanDesign.verifiedAt?.trim(),
-    )
-  );
+  if (!humanDesign) return false;
+
+  return hasVerifiedHumanDesignTrust({
+    ...humanDesign,
+    profile: humanDesign.profileType,
+  } as Record<string, unknown>);
 }
 
 export function buildVerifiedSystemMethodSummaries(
