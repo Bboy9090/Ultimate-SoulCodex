@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { X, Copy, Check, Share2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Copy, Loader2, Share2, ShieldCheck, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/queryClient";
 
 interface ShareModalProps {
   profileId: string;
@@ -9,8 +10,24 @@ interface ShareModalProps {
   onClose: () => void;
 }
 
-export function ShareModal({ onClose }: ShareModalProps) {
+type ShareField = "displayName" | "sunSign" | "moonSign" | "risingSign" | "lifePath" | "archetypeTitle";
+
+const FIELD_OPTIONS: Array<{ id: ShareField; label: string; description: string }> = [
+  { id: "displayName", label: "Display name", description: "A name or alias you type for the public card." },
+  { id: "sunSign", label: "Verified Sun sign", description: "Included only when the stored placement has complete verification evidence." },
+  { id: "moonSign", label: "Verified Moon sign", description: "Included only when the stored placement has complete verification evidence." },
+  { id: "risingSign", label: "Verified Rising sign", description: "Included only when the stored placement has complete verification evidence." },
+  { id: "lifePath", label: "Life Path", description: "Deterministic numerology value only; no private birth date is shared." },
+  { id: "archetypeTitle", label: "Archetype title", description: "Symbolic title only; biography and private interpretation remain excluded." },
+];
+
+export function ShareModal({ profileId, profileName, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const [selected, setSelected] = useState<Set<ShareField>>(() => new Set());
+  const [displayName, setDisplayName] = useState(profileName);
+  const [creating, setCreating] = useState(false);
+  const [revoking, setRevoking] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
 
@@ -29,17 +46,91 @@ export function ShareModal({ onClose }: ShareModalProps) {
     };
   }, [onClose]);
 
-  // Profiles are private, actor-owned resources. Until Soul Codex has a dedicated
-  // public-safe projection, sharing must never imply that a raw profile route is public.
-  const shareUrl = window.location.origin;
+  const shareUrl = useMemo(
+    () => shareToken ? `${window.location.origin}/shared/${shareToken}` : null,
+    [shareToken],
+  );
+
+  const toggleField = (field: ShareField) => {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(field)) next.delete(field);
+      else next.add(field);
+      return next;
+    });
+  };
+
+  const createPublicShare = async () => {
+    if (selected.size === 0) {
+      toast({
+        title: "Choose what to share",
+        description: "Nothing is public by default. Select at least one field first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const response = await apiFetch(`/api/profiles/${profileId}/public-shares`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fields: [...selected],
+          ...(selected.has("displayName") ? { displayName } : {}),
+        }),
+      });
+      if (!response.ok) throw new Error(`share_create_failed_${response.status}`);
+      const result = await response.json();
+      setShareToken(result.token);
+      toast({
+        title: "Public link created",
+        description: "Only the fields you selected were copied into the public snapshot.",
+      });
+    } catch {
+      toast({
+        title: "Could not create public link",
+        description: "Your private profile remains unchanged and private.",
+        variant: "destructive",
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const revokePublicShare = async () => {
+    if (!shareToken) return;
+    setRevoking(true);
+    try {
+      const response = await apiFetch(`/api/profiles/${profileId}/public-shares/${shareToken}`, {
+        method: "DELETE",
+      });
+      if (!response.ok && response.status !== 204) throw new Error(`share_revoke_failed_${response.status}`);
+      setShareToken(null);
+      setCopied(false);
+      toast({
+        title: "Public link revoked",
+        description: "That shared snapshot is no longer available.",
+      });
+    } catch {
+      toast({
+        title: "Could not revoke link",
+        description: "Try again before assuming the public link is disabled.",
+        variant: "destructive",
+      });
+    } finally {
+      setRevoking(false);
+    }
+  };
 
   const copyToClipboard = async () => {
+    if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       toast({
         title: "Copied!",
-        description: "Soul Codex link copied to clipboard",
+        description: "Public Soul Codex link copied to clipboard",
       });
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -52,15 +143,16 @@ export function ShareModal({ onClose }: ShareModalProps) {
   };
 
   const handleShare = async () => {
+    if (!shareUrl) return;
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({
           title: "Soul Codex",
-          text: "Explore Soul Codex.",
+          text: "Explore this shared Soul Codex card.",
           url: shareUrl,
         });
       } catch (error) {
-        if (error instanceof Error && error.message !== "AbortError") {
+        if (error instanceof Error && error.name !== "AbortError") {
           console.error("Share error:", error);
         }
       }
@@ -70,111 +162,100 @@ export function ShareModal({ onClose }: ShareModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-soul-codex-title"
         aria-describedby="share-soul-codex-description"
-        className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 space-y-6"
+        className="max-h-[90vh] w-full max-w-lg space-y-5 overflow-y-auto rounded-2xl border border-[var(--sc-line)] bg-[var(--sc-bg-ink)] p-5 shadow-2xl sm:p-6"
       >
-        <div className="flex items-center justify-between">
-          <h2 id="share-soul-codex-title" className="text-2xl font-bold">Share Soul Codex</h2>
-          <button
-            ref={closeButtonRef}
-            onClick={onClose}
-            aria-label="Close share dialog"
-            className="text-muted-foreground hover:text-foreground transition"
-          >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="sc-eyebrow">Privacy-first sharing</p>
+            <h2 id="share-soul-codex-title" className="mt-1 font-serif text-2xl font-bold text-[var(--sc-ivory)]">Create a public Soul Codex card</h2>
+          </div>
+          <button ref={closeButtonRef} onClick={onClose} aria-label="Close share dialog" className="rounded-lg p-2 text-[var(--sc-stone)] hover:text-[var(--sc-ivory)]">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <p id="share-soul-codex-description" className="text-sm leading-6 text-muted-foreground">
-          Your saved profile remains private. Sharing sends only the Soul Codex app link; it does not expose your profile ID, birth inputs, assessments, or verification data.
+        <p id="share-soul-codex-description" className="text-sm leading-6 text-[var(--sc-stone)]">
+          Nothing is shared automatically. Choose each field below. Birth date, birth time, birthplace, timezone, coordinates, assessment answers, private profile ID, evidence internals, biography, and daily guidance are never included in this public card.
         </p>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Share Link
-            </label>
-            <div className="flex items-center gap-2 bg-muted rounded-lg p-3">
-              <input
-                type="text"
-                value={shareUrl}
-                readOnly
-                className="flex-1 bg-transparent text-sm outline-none text-foreground"
-              />
-              <button
-                onClick={() => void copyToClipboard()}
-                aria-label="Copy Soul Codex link"
-                className="text-primary hover:text-primary/80 transition"
-              >
-                {copied ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <Copy className="h-5 w-5" />
-                )}
+        {!shareToken ? (
+          <>
+            <div className="space-y-2">
+              {FIELD_OPTIONS.map((option) => {
+                const checked = selected.has(option.id);
+                return (
+                  <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-3">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleField(option.id)}
+                      className="mt-1 h-4 w-4"
+                    />
+                    <span>
+                      <strong className="block text-sm text-[var(--sc-ivory)]">{option.label}</strong>
+                      <span className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">{option.description}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {selected.has("displayName") && (
+              <div>
+                <label htmlFor="public-share-display-name" className="mb-2 block text-sm font-medium text-[var(--sc-ivory)]">Public display name or alias</label>
+                <input
+                  id="public-share-display-name"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  maxLength={80}
+                  className="w-full rounded-xl border border-[var(--sc-line)] bg-black/20 px-3 py-2.5 text-sm text-[var(--sc-ivory)]"
+                />
+              </div>
+            )}
+
+            <Button onClick={() => void createPublicShare()} disabled={creating || selected.size === 0} className="w-full">
+              {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+              Create revocable public link
+            </Button>
+          </>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[rgba(114,216,197,.22)] bg-[rgba(114,216,197,.05)] p-4">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" />
+                <div>
+                  <p className="font-semibold text-[var(--sc-ivory)]">Sanitized public snapshot active</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">This link contains a frozen copy of only the fields you selected. It does not grant access to your private profile.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-[var(--sc-line)] bg-black/20 p-3">
+              <input type="text" value={shareUrl ?? ""} readOnly aria-label="Public Soul Codex link" className="min-w-0 flex-1 bg-transparent text-xs text-[var(--sc-ivory)] outline-none" />
+              <button onClick={() => void copyToClipboard()} aria-label="Copy public Soul Codex link" className="rounded-lg p-2 text-[var(--sc-gold-bright)]">
+                {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
               </button>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Share on social platforms:</p>
-
-            {/* WhatsApp */}
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Explore Soul Codex: ${shareUrl}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 rounded-lg border border-muted hover:bg-muted transition"
-            >
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-9.746 9.798c0 2.657.708 5.25 2.056 7.555L2.707 22l8.127-2.134a9.849 9.849 0 004.376 1.111h.004c5.44 0 9.854-4.414 9.854-9.854 0-2.633-.704-5.116-2.044-7.262A9.846 9.846 0 0011.576 6.979z" />
-              </svg>
-              <span>Share on WhatsApp</span>
-            </a>
-
-            {/* Facebook */}
-            <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 rounded-lg border border-muted hover:bg-muted transition"
-            >
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span>Share on Facebook</span>
-            </a>
-
-            {/* Twitter */}
-            <a
-              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent("Explore Soul Codex")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 rounded-lg border border-muted hover:bg-muted transition"
-            >
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2s9 5 20 5a9.5 9.5 0 00-9-5.5c4.75 2.25 7-7 7-7s1.1 5 5.5 8.3a4.5 4.5 0 00.5-4 10.9 10.9 0 01-3.14 1.53" />
-              </svg>
-              <span>Share on Twitter/X</span>
-            </a>
-
-            {/* Native Share */}
-            {typeof navigator.share === "function" && (
-              <Button onClick={handleShare} className="w-full" variant="secondary">
-                <Share2 className="mr-2 h-4 w-4" />
-                More Share Options
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button onClick={() => void handleShare()} variant="secondary">
+                <Share2 className="mr-2 h-4 w-4" /> Share link
               </Button>
-            )}
+              <Button onClick={() => void revokePublicShare()} disabled={revoking} variant="outline">
+                {revoking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                Revoke link
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <Button onClick={onClose} variant="outline" className="w-full">
-          Close
-        </Button>
+        <Button onClick={onClose} variant="outline" className="w-full">Close</Button>
       </div>
     </div>
   );
