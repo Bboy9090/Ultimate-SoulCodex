@@ -14,8 +14,8 @@ import {
   type EvidenceEntry,
   type EvidenceConfidenceLevel,
 } from './index.js';
-import { calcPersonalDay, calcPersonalMonth, calcPersonalYear, dateOnlyFromLocalDate, isPersonalNumerologyValue, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
-import { calcLifePath, calcExpression, calcSoulUrge, calcPersonality, normalizeNumerologyName, numerologyNameComponentAvailability, NUMEROLOGY_POLICY } from '../compute/numerology.js';
+import { calcPersonalDay, calcPersonalMonth, calcPersonalYear, dateOnlyFromLocalDate, isPersonalNumerologyValue, PERSONAL_NUMEROLOGY_POLICY, PERSONAL_YEAR_BOUNDARY_POLICY } from '../compute/personal-numbers.js';
+import { NUMEROLOGY_ENGINE_VERSION, calcBirthday, calcExpression, calcLifePath, calcMaturity, calcPersonality, calcSoulUrge, normalizeNumerologyName, numerologyNameComponentAvailability, NUMEROLOGY_POLICY } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
 
 type InputState = 'valid' | 'partial' | 'missing' | 'invalid';
@@ -153,7 +153,10 @@ export function calcPersonalYearWithEvidence(
   value?: number;
   evidence: EvidenceEntry;
 } {
-  const derivedInputState = deriveInputStateForDate(birthDate);
+  const dateInputState = deriveInputStateForDate(birthDate);
+  const yearValid = Number.isInteger(targetYear) && targetYear >= 1 && targetYear <= 9999;
+  const derivedInputState: InputState =
+    dateInputState !== 'valid' ? dateInputState : yearValid ? 'valid' : 'invalid';
   const { confidence, label } = confidenceForInputState(derivedInputState);
 
   if (derivedInputState !== 'valid') {
@@ -169,9 +172,10 @@ export function calcPersonalYearWithEvidence(
           `target_year_${targetYear}`,
         ],
         reasoning: [
-          derivedInputState === 'missing' ? 'Birth date not provided' :
-          derivedInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
-          'Birth date could not be processed',
+          dateInputState === 'missing' ? 'Birth date not provided' :
+          dateInputState === 'invalid' ? `Birth date "${birthDate}" is not in valid YYYY-MM-DD format` :
+          !yearValid ? `Target year ${targetYear} must be an integer from 1 to 9999` :
+          'Birth date or target year could not be processed',
         ],
         limitations: [
           `Personal Year uses the ${PERSONAL_YEAR_BOUNDARY_POLICY} convention (January 1 through December 31)`,
@@ -611,3 +615,161 @@ export function calcPersonalityWithEvidence(
 
   return { value: personalityValue, evidence };
 }
+
+export function calcBirthdayWithEvidence(
+  birthDate: string
+): {
+  value?: number;
+  evidence: EvidenceEntry;
+} {
+  const derivedInputState = deriveInputStateForDate(birthDate);
+  const { confidence, label } = confidenceForInputState(derivedInputState);
+
+  if (derivedInputState !== 'valid') {
+    return {
+      evidence: createEvidenceEntry(
+        'numerology',
+        'Birthday Number',
+        'UNRESOLVED',
+        confidence,
+        label,
+        {
+          inputsUsed: [`birth_date_${birthDate || 'missing'}`],
+          reasoning: [
+            derivedInputState === 'missing'
+              ? 'Birth date not provided'
+              : `Birth date "${birthDate}" is not a valid calendar date in YYYY-MM-DD format`,
+          ],
+          limitations: [
+            'Birthday Number uses only the entered calendar day of month',
+            'Interpretation remains symbolic even though the calculation is deterministic',
+          ],
+          formulaId: 'numerology.birthday',
+          formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+          calculationStatus: 'unresolved',
+          inputState: derivedInputState,
+          calculatedAt: new Date().toISOString(),
+        }
+      ),
+    };
+  }
+
+  const { day } = parseDateOnly(birthDate);
+  const value = calcBirthday(birthDate);
+  return {
+    value,
+    evidence: createEvidenceEntry(
+      'numerology',
+      'Birthday Number',
+      value,
+      confidence,
+      label,
+      {
+        inputsUsed: [`birth_day_${day}`],
+        reasoning: [
+          `Birth day of month = ${day}`,
+          'Day reduced under the canonical policy with master numbers preserved',
+          `Birthday Number = ${value}`,
+        ],
+        limitations: [
+          'Birthday Number uses only the entered calendar day of month',
+          'Interpretation remains symbolic even though the calculation is deterministic',
+        ],
+        formulaId: 'numerology.birthday',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+        calculationStatus: 'resolved',
+        inputState: derivedInputState,
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+  };
+}
+
+export function calcMaturityWithEvidence(
+  birthDate: string,
+  fullName: string
+): {
+  value?: number;
+  evidence: EvidenceEntry;
+} {
+  const dateState = deriveInputStateForDate(birthDate);
+  const nameState = deriveInputStateForName(fullName);
+  const derivedInputState: InputState =
+    dateState === 'valid' && nameState === 'valid'
+      ? 'valid'
+      : dateState === 'missing' || nameState === 'missing'
+        ? 'missing'
+        : 'invalid';
+  const { confidence, label } = confidenceForInputState(derivedInputState);
+
+  if (derivedInputState !== 'valid') {
+    return {
+      evidence: createEvidenceEntry(
+        'numerology',
+        'Maturity Number',
+        'UNRESOLVED',
+        confidence,
+        label,
+        {
+          inputsUsed: [
+            `birth_date_${birthDate || 'missing'}`,
+            `full_name_${fullName ? normalizeNumerologyName(fullName).length : 0}_letters`,
+          ],
+          reasoning: [
+            dateState !== 'valid' ? 'A valid birth date is required' : '',
+            nameState !== 'valid' ? 'A valid name containing supported letters is required' : '',
+          ].filter(Boolean),
+          limitations: [
+            'Maturity Number depends on both Life Path and Expression inputs',
+            'Name changes alter the Expression component',
+            'Interpretation remains symbolic even though the calculation is deterministic',
+          ],
+          formulaId: 'numerology.maturity',
+          formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+          calculationStatus: 'unresolved',
+          inputState: derivedInputState,
+          calculatedAt: new Date().toISOString(),
+        }
+      ),
+    };
+  }
+
+  const normalizedName = normalizeNumerologyName(fullName);
+  const lifePath = calcLifePath(birthDate);
+  const expression = calcExpression(fullName);
+  const value = calcMaturity(birthDate, fullName);
+
+  return {
+    value,
+    evidence: createEvidenceEntry(
+      'numerology',
+      'Maturity Number',
+      value,
+      confidence,
+      label,
+      {
+        inputsUsed: [
+          `birth_date_${birthDate}`,
+          `full_name_${normalizedName.length}_letters`,
+        ],
+        reasoning: [
+          `Life Path component = ${lifePath}`,
+          `Expression component = ${expression}`,
+          'Components combined under the canonical policy with master numbers preserved',
+          `Maturity Number = ${value}`,
+        ],
+        limitations: [
+          'Maturity Number depends on both Life Path and Expression inputs',
+          'Name changes alter the Expression component',
+          'Interpretation remains symbolic even though the calculation is deterministic',
+        ],
+        formulaId: 'numerology.maturity',
+        formulaVersion: NUMEROLOGY_ENGINE_VERSION,
+        calculationStatus: 'resolved',
+        inputState: derivedInputState,
+        calculatedAt: new Date().toISOString(),
+      }
+    ),
+  };
+}
+
