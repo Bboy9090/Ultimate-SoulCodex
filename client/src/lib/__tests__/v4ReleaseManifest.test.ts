@@ -21,6 +21,25 @@ describe("V4 release manifest", () => {
     expect(V4_RELEASE_MANIFEST.releaseScope).toBe("foundation-web");
   });
 
+  it("locks the intentional platform release split", () => {
+    expect(V4_RELEASE_MANIFEST.platformReleaseIdentities).toEqual({
+      web: {
+        version: "4.0.1",
+        apiContract: "foundation-v4",
+      },
+      android: {
+        versionName: "4.0.1",
+        versionCode: 4000008,
+        applicationId: "app.soulcodex.main",
+      },
+      ios: {
+        marketingVersion: "4.0.2",
+        buildNumber: 4000009,
+        bundleId: "app.soulcodex.ios",
+      },
+    });
+  });
+
   it("records the owner-authorized reopening of native distribution without upgrading web evidence", () => {
     expect(V4_RELEASE_MANIFEST.nativeDistribution.scopeReopenedByOwner).toBe(true);
     expect(V4_RELEASE_MANIFEST.nativeDistribution.scopeReopenedOn).toBe("2026-08-15");
