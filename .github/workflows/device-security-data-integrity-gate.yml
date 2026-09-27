@@ -1,0 +1,89 @@
+name: Device Security Data Integrity Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: device-security-data-integrity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hardening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build workspaces
+        run: npm run build:workspaces
+
+      - name: Security, privacy, persistence, and differentiation regression suite
+        run: |
+          node --import tsx --test             tests/trusted-mutation-origin.test.ts             tests/production-schema-preflight.test.ts             tests/public-profile-projection.test.ts             tests/share-privacy-accessibility-contract.test.ts             tests/storage-public-share-deletion.test.ts             tests/verified-profile-differentiation-corpus.test.ts             server/tests/gate1-foundation.test.ts
+
+      - name: Reject destructive public-share startup schema operations
+        shell: bash
+        run: |
+          if grep -Eiq 'DROP[[:space:]]+TABLE|ALTER[[:space:]]+TABLE.+DROP' scripts/ensure-public-share-schema.mjs; then
+            echo "Destructive schema operation detected in production preflight."
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
+
+      - name: Validate iOS release configuration
+        env:
+          VITE_API_URL: https://soulcodex.up.railway.app
+          VITE_RELEASE_VERSION: 4.0.2
+          VITE_RELEASE_SHA: ${{ github.sha }}
+          VITE_API_CONTRACT: foundation-v4
+        run: npm run mobile:validate:ios
+
+      - name: Validate Android release configuration
+        env:
+          VITE_API_URL: https://soulcodex.up.railway.app
+          VITE_RELEASE_VERSION: 4.0.1
+          VITE_RELEASE_SHA: ${{ github.sha }}
+          VITE_API_CONTRACT: foundation-v4
+        run: npm run mobile:validate:android
+
+      - name: Write hardening receipt
+        shell: bash
+        run: |
+          {
+            echo "SHA=$GITHUB_SHA"
+            echo "policy=session-backed-mutations-require-trusted-origin"
+            echo "policy=public-share-schema-preflight-is-idempotent-and-non-destructive"
+            echo "policy=account-deletion-removes-public-shares"
+            echo "policy=public-share-projection-excludes-private-birth-and-assessment-data"
+            echo "policy=canonical-offline-profile-persistence-regression"
+            echo "policy=verified-profile-differentiation-corpus"
+            echo "policy=ios-android-release-config-validation"
+          } > DEVICE-SECURITY-DATA-INTEGRITY-RECEIPT.txt
+
+      - name: Upload hardening receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-security-data-integrity-receipt
+          path: DEVICE-SECURITY-DATA-INTEGRITY-RECEIPT.txt
+          retention-days: 90
