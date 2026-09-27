@@ -80,12 +80,7 @@ export default function VerifiedSystemsPanel({
   const showMoon = showVerifiedAstrology;
   const showAscendant = showVerifiedAstrology;
   const showVerifiedHumanDesign =
-    systems.humanDesign?.status === "verified" &&
-    Boolean(
-      systems.humanDesign.verificationReceiptId?.trim() &&
-      systems.humanDesign.independentSource?.trim() &&
-      systems.humanDesign.verifiedAt?.trim(),
-    );
+    methodSummaryById.has("human-design");
 
   return (
     <div
