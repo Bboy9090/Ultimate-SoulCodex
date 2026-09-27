@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -26,6 +27,10 @@ import {
   buildNatalReportInput,
   natalReportFilename,
 } from "./lib/natal-report-contract";
+import {
+  buildPublicProfileProjection,
+  publicShareSelectionSchema,
+} from "./lib/public-profile-projection";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -164,6 +169,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting profile:", error);
       res.status(500).json({ message: "Failed to get profile" });
+    }
+  });
+
+  app.post("/api/profiles/:id/public-shares", async (req: any, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.id);
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
+
+      const selection = publicShareSelectionSchema.parse(req.body);
+      const snapshot = buildPublicProfileProjection(profile, selection);
+      if (Object.keys(snapshot.fields).length === 0) {
+        return res.status(422).json({ message: "None of the selected fields are currently eligible for public sharing." });
+      }
+
+      const token = randomBytes(32).toString("base64url");
+      await storage.createPublicProfileShare(profile.id, token, snapshot);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.status(201).json({
+        token,
+        path: `/shared/${token}`,
+        snapshot,
+      });
+    } catch (error: any) {
+      if (error?.name === "ZodError") {
+        return res.status(400).json({ message: "Invalid public share selection", issues: error.issues });
+      }
+      console.error("Error creating public profile share:", error);
+      res.status(500).json({ message: "Failed to create public share" });
+    }
+  });
+
+  app.delete("/api/profiles/:id/public-shares/:token", async (req: any, res) => {
+    try {
+      const share = await storage.getPublicProfileShareByToken(req.params.token);
+      if (!share || share.revokedAt || share.profileId !== req.params.id) return profileNotFound(res);
+
+      const profile = await storage.getProfile(share.profileId);
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
+
+      await storage.revokePublicProfileShare(share.token);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error revoking public profile share:", error);
+      res.status(500).json({ message: "Failed to revoke public share" });
+    }
+  });
+
+  app.get("/api/public-shares/:token", async (req, res) => {
+    try {
+      const token = String(req.params.token ?? "");
+      if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return profileNotFound(res);
+
+      const share = await storage.getPublicProfileShareByToken(token);
+      if (!share || share.revokedAt) return profileNotFound(res);
+
+      res.setHeader("Cache-Control", "no-store, max-age=0");
+      res.json(share.snapshot);
+    } catch (error) {
+      console.error("Error loading public profile share:", error);
+      res.status(500).json({ message: "Failed to load public share" });
     }
   });
 

@@ -30,6 +30,7 @@ const DiagnosticsPage = lazy(() => import("./pages/DiagnosticsPage"));
 const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const ConnectionsPage = lazy(() => import("./pages/ConnectionsPage"));
+const PublicSharedProfilePage = lazy(() => import("./pages/PublicSharedProfilePage"));
 
 function RouteLoadingFallback() {
   return (
@@ -90,6 +91,7 @@ function Router() {
       <Route path="/systems" component={SystemsDetailsPage} />
       <Route path="/reading/:id" component={ReadingRoute} />
       <Route path="/profile/:id" component={ProfileRoute} />
+      <Route path="/shared/:token" component={PublicSharedProfilePage} />
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/support" component={SupportPage} />
