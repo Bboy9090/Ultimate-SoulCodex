@@ -1,3 +1,4 @@
+import { APPROVED_HUMAN_DESIGN_TRUST } from "../packages/core/human-design-trust.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
@@ -170,11 +171,15 @@ test("verified full natal chart and Human Design complete the exact-input verifi
     status: "verified",
     type: "Generator",
     strategy: "To Respond",
-    authority: "Sacral",
+    authority: "Sacral Authority",
     profile: "4/6",
-    verificationReceiptId: "hd-retry-fixture",
-    independentSource: "independent-hd-fixture",
-    verifiedAt: "2026-09-26T00:00:00.000Z",
+    engine: APPROVED_HUMAN_DESIGN_TRUST.engine,
+    source: "Soul Codex deterministic Human Design core engine",
+    calculatedAt: "2026-09-26T18:00:00.000Z",
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+    verificationReceiptId: APPROVED_HUMAN_DESIGN_TRUST.verificationReceiptId,
+    independentSource: APPROVED_HUMAN_DESIGN_TRUST.independentSource,
+    verifiedAt: APPROVED_HUMAN_DESIGN_TRUST.verifiedAt,
   };
   assert.equal(profileNeedsOnlineVerification(profile), false);
 });
