@@ -14,6 +14,7 @@ import type { StoredProfile } from "./ActiveProfileRepository";
 import {
   synthesizeVerifiedFoundationProfile,
 } from "./foundationOfflineCodex";
+import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 
 type PlacementEvidenceRecord = {
   source?: string | null;
@@ -164,21 +165,7 @@ function validHouseNumber(value: unknown): value is number {
 export function getVerifiedHumanDesignRecord(
   value: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> | null {
-  if (!value || value.status !== "verified") return null;
-  for (const field of ["type", "strategy", "authority", "profile"] as const) {
-    if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
-  }
-  for (const field of ["verificationReceiptId", "independentSource"] as const) {
-    if (typeof value[field] !== "string" || !String(value[field]).trim()) return null;
-  }
-  if (
-    typeof value.verifiedAt !== "string" ||
-    !value.verifiedAt.trim() ||
-    Number.isNaN(new Date(value.verifiedAt).getTime())
-  ) {
-    return null;
-  }
-  return value;
+  return hasVerifiedHumanDesignTrust(value) ? value : null;
 }
 
 function validVerifiedPoint(
