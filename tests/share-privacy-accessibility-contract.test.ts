@@ -73,3 +73,28 @@ test("server public-share API stores sanitized snapshots and treats revoked link
   assert.match(source, /if \(!share \|\| share\.revokedAt\) return profileNotFound\(res\)/);
   assert.match(source, /Cache-Control", "no-store, max-age=0"/);
 });
+
+
+test("public share management exposes owned history and dedicated abuse controls", async () => {
+  const [routes, storage, modal] = await Promise.all([
+    readFile(routesUrl, "utf8"),
+    readFile(new URL("../server/storage.ts", import.meta.url), "utf8"),
+    readFile(shareModalUrl, "utf8"),
+  ]);
+
+  assert.match(routes, /publicShareReadLimiter/);
+  assert.match(routes, /publicShareMutationLimiter/);
+  assert.match(routes, /limit: 120/);
+  assert.match(routes, /limit: 30/);
+  assert.match(routes, /activeShareCount >= 10/);
+  assert.match(routes, /public_share_active_limit/);
+  assert.match(routes, /app\.get\("\/api\/profiles\/:id\/public-shares"/);
+
+  assert.match(storage, /listPublicProfileShares\(profileId: string\)/);
+  assert.match(storage, /orderBy\(desc\(publicProfileShares\.createdAt\)\)/);
+
+  assert.match(modal, /Your public links/);
+  assert.match(modal, /Active/);
+  assert.match(modal, /Revoked/);
+  assert.match(modal, /revokePublicShare\(item\.token\)/);
+});
