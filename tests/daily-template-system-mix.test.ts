@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { moonSignReflection, personalDayReflection, selectTemplates } from "../packages/astrology/template-bank.ts";
+import { moonPhaseReflection, moonSignReflection, personalDayReflection, selectTemplates, universalDayReflection } from "../packages/astrology/template-bank.ts";
 import type { DailyContext } from "../packages/astrology/daily-context.ts";
 import { APPROVED_HUMAN_DESIGN_TRUST } from "../packages/core/human-design-trust.ts";
 
@@ -119,8 +119,27 @@ test("daily reflection vocabulary stays semantically differentiated", () => {
   );
   assert.equal(moonPrompts.size, 12);
 
+  const moonPhasePrompts = new Set(
+    [
+      "New Moon","Waxing Crescent","First Quarter","Waxing Gibbous",
+      "Full Moon","Waning Gibbous","Last Quarter","Waning Crescent",
+    ].map((phase) => moonPhaseReflection(phase)),
+  );
+  assert.equal(moonPhasePrompts.size, 8);
+
+  const universalDayThemes = new Set(
+    [1,2,3,4,5,6,7,8,9,11,22,33].map((number) => {
+      const reflection = universalDayReflection(number);
+      assert.ok(reflection.theme.length > 8);
+      assert.ok(reflection.action.length > 20);
+      return `${reflection.theme}|${reflection.action}`;
+    }),
+  );
+  assert.equal(universalDayThemes.size, 12);
+
   assert.notEqual(personalDayReflection(1).theme, personalDayReflection(9).theme);
   assert.notEqual(moonSignReflection("Aries"), moonSignReflection("Pisces"));
+  assert.notEqual(moonPhaseReflection("New Moon"), moonPhaseReflection("Full Moon"));
 });
 
 test("daily differentiated prompts remain non-predictive", () => {
@@ -133,10 +152,33 @@ test("daily differentiated prompts remain non-predictive", () => {
       "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
       "Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces",
     ].map((sign) => moonSignReflection(sign)),
+    ...[
+      "New Moon","Waxing Crescent","First Quarter","Waxing Gibbous",
+      "Full Moon","Waning Gibbous","Last Quarter","Waning Crescent",
+    ].map((phase) => moonPhaseReflection(phase)),
+    ...[1,2,3,4,5,6,7,8,9,11,22,33].flatMap((number) => {
+      const reflection = universalDayReflection(number);
+      return [reflection.theme, reflection.action];
+    }),
   ].join(" ");
 
   assert.doesNotMatch(
     rendered,
     /will happen|guaranteed|destined|fated|luck|you are|you always|you never|must happen/i,
   );
+});
+
+
+test("active daily templates preserve context-specific substance", () => {
+  const personalOne = personalDayReflection(1);
+  const personalNine = personalDayReflection(9);
+  const universalOne = universalDayReflection(1);
+  const universalNine = universalDayReflection(9);
+
+  assert.notEqual(personalOne.action, personalNine.action);
+  assert.notEqual(universalOne.action, universalNine.action);
+  assert.match(moonSignReflection("Virgo"), /practical detail|small correction/i);
+  assert.match(moonSignReflection("Scorpio"), /honesty|depth|boundaries/i);
+  assert.match(moonPhaseReflection("Full Moon"), /visible|evaluate|completion/i);
+  assert.match(moonPhaseReflection("Waning Crescent"), /rest|closure|less stimulation/i);
 });
