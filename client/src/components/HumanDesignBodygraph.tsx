@@ -1,6 +1,6 @@
 import { HD_CENTERS, HD_GATES } from "@soulcodex/astrology";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
-import { humanDesignChannelLabel, humanDesignDefinedChannels, humanDesignGateLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
+import { humanDesignChannelLabel, humanDesignDefinedChannels, humanDesignGateLabel, humanDesignGateNumber, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
 type AnyRecord = Record<string, any>;
 
@@ -99,7 +99,15 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
       return key && pair ? { key, pair, label: humanDesignChannelLabel(value) } : null;
     })
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
-  const gates = Array.isArray(data.activatedGates) ? data.activatedGates.map(humanDesignGateLabel).filter(Boolean) : [];
+  const gates = Array.isArray(data.activatedGates)
+    ? data.activatedGates
+        .map((value: unknown) => ({
+          value,
+          label: humanDesignGateLabel(value),
+          gateNumber: humanDesignGateNumber(value),
+        }))
+        .filter((row: { label: string }) => Boolean(row.label))
+    : [];
   const activations = activationRows(data);
 
   return (
@@ -197,12 +205,12 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">Activated gates · names, centers, and keywords</summary>
             {gates.length ? (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {gates.map((gate) => {
-                  const meta = gateMeta(gate);
+                {gates.map((gate, index) => {
+                  const meta = gate.gateNumber ? gateMeta(gate.gateNumber) : null;
                   return (
-                    <div key={gate} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
+                    <div key={`${gate.label}-${index}`} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <strong className="text-sm text-[var(--sc-ivory)]">Gate {gate}{meta ? " · " + meta.name : ""}</strong>
+                        <strong className="text-sm text-[var(--sc-ivory)]">Gate {gate.label}{meta ? " · " + meta.name : ""}</strong>
                         {meta && <span className="text-[10px] uppercase tracking-[.08em] text-[var(--sc-gold)]">{meta.center}</span>}
                       </div>
                       <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
