@@ -6,6 +6,22 @@ export const V4_RELEASE_MANIFEST = {
   releaseScope: "foundation-web",
   apiContract: "foundation-v4",
   compatibilityFormulaVersion: "foundation-compatibility-v2",
+  platformReleaseIdentities: {
+    web: {
+      version: "4.0.1",
+      apiContract: "foundation-v4",
+    },
+    android: {
+      versionName: "4.0.1",
+      versionCode: 4000008,
+      applicationId: "app.soulcodex.main",
+    },
+    ios: {
+      marketingVersion: "4.0.2",
+      buildNumber: 4000009,
+      bundleId: "app.soulcodex.ios",
+    },
+  },
   nativeDistribution: {
     scopeReopenedByOwner: true,
     scopeReopenedOn: "2026-08-15",
