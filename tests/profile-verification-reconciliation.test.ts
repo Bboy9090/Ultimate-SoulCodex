@@ -628,3 +628,54 @@ test("client Human Design verification gate rejects malformed trust metadata", (
     assert.equal(getVerifiedHumanDesignRecord(invalid), null);
   }
 });
+
+
+test("reconciliation requires parseable placement verification timestamps", () => {
+  const valid = {
+    verificationStatus: "verified",
+    sign: "Virgo",
+    evidence: {
+      source: "Independent verification fixture",
+      engine: "test-independent-engine",
+      calculatedAt: "2026-09-26T00:00:00.000Z",
+    },
+  };
+
+  assert.equal(
+    getVerifiedAstrologySign({ sun: valid }, "sun"),
+    "Virgo",
+  );
+
+  for (const calculatedAt of ["", "not-a-date", "2026-13-40T99:99:99Z"]) {
+    assert.equal(
+      getVerifiedAstrologySign(
+        {
+          sun: {
+            ...valid,
+            evidence: { ...valid.evidence, calculatedAt },
+          },
+        },
+        "sun",
+      ),
+      null,
+      calculatedAt,
+    );
+  }
+});
+
+test("legacy status aliases cannot bypass the canonical placement evidence contract", () => {
+  const astrology = {
+    sun: {
+      status: "verified",
+      sign: "Virgo",
+      evidence: {
+        source: "Independent verification fixture",
+        engine: "test-independent-engine",
+        calculatedAt: "not-a-date",
+      },
+    },
+  };
+
+  assert.equal(getVerifiedAstrologySign(astrology, "sun"), null);
+  assert.equal(hasVerifiedSunAndMoon(astrology), false);
+});
