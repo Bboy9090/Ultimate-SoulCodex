@@ -25,3 +25,14 @@ test("share modal exposes accessible dialog semantics and guarded clipboard beha
   assert.match(source, /await navigator\.clipboard\.writeText\(shareUrl\)/);
   assert.match(source, /typeof navigator\.share === "function"/);
 });
+
+
+test("share dialog manages keyboard focus lifecycle", async () => {
+  const source = await readFile(shareModalUrl, "utf8");
+
+  assert.match(source, /closeButtonRef\.current\?\.focus\(\)/);
+  assert.match(source, /event\.key === "Escape"/);
+  assert.match(source, /document\.addEventListener\("keydown", handleKeyDown\)/);
+  assert.match(source, /document\.removeEventListener\("keydown", handleKeyDown\)/);
+  assert.match(source, /previouslyFocused\?\.focus\(\)/);
+});
