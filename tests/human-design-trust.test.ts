@@ -6,6 +6,7 @@ import {
   createHumanDesignTrustRecord,
   createVerifiedHumanDesignTrustRecord,
   getVerifiedHumanDesignField,
+  hasApprovedVerifiedHumanDesignTrust,
   mayUseHumanDesignForCompatibility,
 } from "../server/services/human-design-trust";
 
@@ -89,6 +90,54 @@ test("qualified Human Design core becomes verified only through the approved rec
   assert.equal(mayUseHumanDesignForCompatibility(record), true);
   assert.match(record.limitations.join(" "), /Variables/i);
   assert.match(record.limitations.join(" "), /Incarnation Cross/i);
+});
+
+test("status-only Human Design cannot bypass the approved trust receipt", () => {
+  const spoofed = {
+    status: "verified",
+    engine: "soulcodex-hd-geocentric-v1",
+    source: "Soul Codex deterministic Human Design core engine",
+    calculatedAt: "2026-09-19T23:03:08.000Z",
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+    birthTimeKnown: true,
+    candidate: {
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+    verificationReceiptId: "caller-made-up",
+    independentSource: "free-human-design@1.0.1 differential verifier",
+    verifiedAt: "2026-09-19T23:03:08.000Z",
+    limitations: [],
+  } as any;
+
+  assert.equal(hasApprovedVerifiedHumanDesignTrust(spoofed), false);
+  assert.equal(getVerifiedHumanDesignField(spoofed, "type"), null);
+  assert.equal(mayUseHumanDesignForCompatibility(spoofed), false);
+});
+
+test("malformed verified Human Design timestamps fail closed at use time", () => {
+  const record = createVerifiedHumanDesignTrustRecord({
+    birthTimeKnown: true,
+    inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+    calculatedAt: "2026-09-19T23:03:08.000Z",
+    candidate: {
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+    },
+  }) as any;
+
+  record.calculatedAt = "not-a-date";
+  assert.equal(hasApprovedVerifiedHumanDesignTrust(record), false);
+  assert.equal(mayUseHumanDesignForCompatibility(record), false);
+
+  record.calculatedAt = "2026-09-19T23:03:08.000Z";
+  record.inputTimestampUtc = "1990-09-17T11:11:00-04:00";
+  assert.equal(hasApprovedVerifiedHumanDesignTrust(record), false);
+  assert.equal(getVerifiedHumanDesignField(record, "authority"), null);
 });
 
 test("incomplete Human Design candidates cannot receive verified promotion", () => {
