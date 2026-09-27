@@ -194,14 +194,14 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
             ))}
           </div>
 
-          <details open className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+          <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">Defined channels</summary>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-[var(--sc-stone)]">
               {channels.length ? channels.map((channel: unknown, index: number) => <li key={index}>{humanDesignChannelLabel(channel)}</li>) : <li>No defined channel was stored.</li>}
             </ul>
           </details>
 
-          <details open className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+          <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">Activated gates · names, centers, and keywords</summary>
             {gates.length ? (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
