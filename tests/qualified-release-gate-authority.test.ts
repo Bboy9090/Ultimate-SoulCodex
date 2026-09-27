@@ -118,3 +118,17 @@ test("live backend verifier preserves release trust boundaries", () => {
   assert.match(backendVerifier, /forbidden overallScore/);
   assert.match(backendVerifier, /exactCandidateShaRequiredPreMerge: false/);
 });
+
+
+test("Store Candidate isolates concurrency by PR or branch", () => {
+  assert.match(
+    store,
+    /group:\s+soulcodex-store-4-0-0-\$\{\{\s*github\.event\.pull_request\.number\s*\|\|\s*github\.ref\s*\}\}/,
+  );
+  assert.doesNotMatch(
+    store,
+    /group:\s+soulcodex-store-4-0-0\s*$/m,
+    "Store qualification must not use one global concurrency group across main and unrelated PRs",
+  );
+  assert.match(store, /cancel-in-progress:\s+true/);
+});
