@@ -335,6 +335,19 @@ export function reconcileActiveProfile(
   const sunSign = getVerifiedAstrologySign(astrology, "sun");
   const moonSign = getVerifiedAstrologySign(astrology, "moon");
   const risingSign = getVerifiedAstrologySign(astrology, "rising");
+  const localAstrology =
+    local.astrologyData && typeof local.astrologyData === "object"
+      ? local.astrologyData
+      : {};
+  const mergedAstrologyData = astrology
+    ? {
+        ...localAstrology,
+        ...astrology,
+        sunSign: sunSign ?? localAstrology.sunSign ?? local.sunSign ?? null,
+        moonSign: moonSign ?? localAstrology.moonSign ?? local.moonSign ?? null,
+        risingSign: risingSign ?? localAstrology.risingSign ?? local.risingSign ?? null,
+      }
+    : local.astrologyData;
 
   return {
     ...local,
@@ -356,10 +369,10 @@ export function reconcileActiveProfile(
       (remote.longitude === null || remote.longitude === undefined
         ? undefined
         : String(remote.longitude)),
-    sunSign,
-    moonSign,
-    risingSign,
-    astrologyData: astrology ?? local.astrologyData,
+    sunSign: sunSign ?? local.sunSign ?? null,
+    moonSign: moonSign ?? local.moonSign ?? null,
+    risingSign: risingSign ?? local.risingSign ?? null,
+    astrologyData: mergedAstrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
     humanDesignData: hasVerifiedHumanDesignTrust(remote.humanDesignData)
       ? remote.humanDesignData
