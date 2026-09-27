@@ -238,23 +238,58 @@ export function calculateActiveTransits(
   };
 }
 
-// Helper to extract only independently verified natal positions.
-function verifiedNatalLongitude(placement: any): number | null {
-  if (!placement || placement.verificationStatus !== 'verified') return null;
+// Helper to extract only evidence-qualified natal positions.
+// A caller-provided "verified" label is never enough by itself.
+function hasCompletePlacementEvidence(placement: any): boolean {
+  if (!placement || placement.verificationStatus !== 'verified') return false;
+  const evidence = placement.provenance ?? placement.evidence;
+  return Boolean(
+    typeof evidence?.source === 'string' &&
+    evidence.source.trim() &&
+    typeof evidence?.engine === 'string' &&
+    evidence.engine.trim() &&
+    typeof evidence?.calculatedAt === 'string' &&
+    evidence.calculatedAt.trim() &&
+    Number.isFinite(Date.parse(evidence.calculatedAt))
+  );
+}
+
+function hasGovernedDerivedEvidence(placement: any, policyId: string): boolean {
+  return Boolean(
+    placement?.verificationStatus === 'verified' &&
+    placement?.policyId === policyId &&
+    typeof placement?.evidenceArtifactId === 'string' &&
+    placement.evidenceArtifactId.trim()
+  );
+}
+
+function verifiedNatalLongitude(
+  placement: any,
+  evidenceMode: 'placement' | 'equal-house-derived' = 'placement',
+): number | null {
+  const evidenceQualified =
+    evidenceMode === 'equal-house-derived'
+      ? hasGovernedDerivedEvidence(placement, 'ASTRO-EQUAL-HOUSE-v1')
+      : hasCompletePlacementEvidence(placement);
+
+  if (!evidenceQualified) return null;
+
   const candidate = Number(
     placement.longitude ??
     placement.internalCandidate?.longitude ??
+    placement.provenance?.longitude ??
     placement.evidence?.longitude,
   );
   return Number.isFinite(candidate) ? ((candidate % 360) + 360) % 360 : null;
 }
 
 function addVerifiedNatalPosition(
-  positions: Record<string, { longitude: number, sign: string }>,
+  positions: Record<string, { longitude: number; sign: string }>,
   name: string,
   placement: any,
+  evidenceMode: 'placement' | 'equal-house-derived' = 'placement',
 ): void {
-  const longitude = verifiedNatalLongitude(placement);
+  const longitude = verifiedNatalLongitude(placement, evidenceMode);
   const sign = typeof placement?.sign === 'string' ? placement.sign : null;
   if (longitude === null || !sign) return;
   positions[name] = { longitude, sign };
@@ -280,7 +315,7 @@ export function extractNatalPositions(astrologyData: any): Record<string, { long
     'Ascendant',
     astrologyData?.rising ?? astrologyData?.ascendant,
   );
-  addVerifiedNatalPosition(positions, 'Midheaven', astrologyData?.midheaven);
+  addVerifiedNatalPosition(positions, 'Midheaven', astrologyData?.midheaven, 'equal-house-derived');
 
   return positions;
 }
