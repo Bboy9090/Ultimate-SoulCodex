@@ -565,3 +565,39 @@ test("verified Human Design is reconciled into active and offline profiles", () 
     true,
   );
 });
+
+
+test("partial verification never erases existing local astrology context", () => {
+  const active = reconcileActiveProfile(
+    {
+      id: "local-partial",
+      birthDate: "1990-09-17",
+      sunSign: "Virgo",
+      moonSign: "Libra",
+      risingSign: "Scorpio",
+      astrologyData: {
+        sunSign: "Virgo",
+        moonSign: "Libra",
+        risingSign: "Scorpio",
+        localCandidateNote: "preserve-me",
+      },
+    },
+    {
+      astrologyData: {
+        sun: { verificationStatus: "pending_independent_verification", sign: null },
+        moon: { verificationStatus: "pending_ephemeris", sign: null },
+        rising: { verificationStatus: "requires_verified_birth_time", sign: null },
+        verification: { policyId: "ASTRO-LONGITUDE-v1" },
+      },
+    },
+    "2026-09-27T20:40:00.000Z",
+  );
+
+  assert.equal(active.sunSign, "Virgo");
+  assert.equal(active.moonSign, "Libra");
+  assert.equal(active.risingSign, "Scorpio");
+  assert.equal(active.astrologyData?.sunSign, "Virgo");
+  assert.equal(active.astrologyData?.moonSign, "Libra");
+  assert.equal(active.astrologyData?.risingSign, "Scorpio");
+  assert.equal(active.astrologyData?.localCandidateNote, "preserve-me");
+});
