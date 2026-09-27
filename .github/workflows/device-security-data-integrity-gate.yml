@@ -43,6 +43,7 @@ jobs:
           tests/storage-public-share-deletion.test.ts
           tests/privacy-public-share-truth.test.ts
           tests/profile-verification-reconciliation.test.ts
+          tests/local-first-verification-failure-truth.test.ts
           tests/verified-profile-differentiation-corpus.test.ts
           server/tests/gate1-foundation.test.ts
 
