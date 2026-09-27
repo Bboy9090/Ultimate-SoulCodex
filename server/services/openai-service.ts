@@ -44,9 +44,11 @@ ${data.archetype?.themes?.join(", ") || "No verified themes supplied"}
 
 Rules:
 1. Use only supplied profile facts.
-2. Do not invent or infer unresolved astrology, biography, motives, trauma, or confidence.
-3. Describe observable patterns and practical meaning.
-4. Return only the biographical text.`;
+2. Treat astrology, numerology, archetype, Enneagram, and MBTI meanings as symbolic or assessed reflection frameworks, not scientific diagnoses or fixed destiny.
+3. Do not invent or infer unresolved astrology, biography, motives, trauma, or confidence.
+4. Prefer calibrated language such as "may", "can", or "one pattern to test" when moving from supplied data to interpretation.
+5. Describe observable patterns and practical meaning.
+6. Return only the biographical text.`;
 
     const result = await generateText({ prompt, temperature: 0.8 });
     return result || generateFallbackBiography(data);
@@ -67,7 +69,7 @@ Supported profile:
 ${astrologyPromptLines(data).join("\n")}
 - Life Path: ${data.numerologyData?.lifePath || "Unresolved"}
 
-Use only supported data. Do not infer unresolved astrology. Return 2-3 grounded sentences.`;
+Use only supported data. Treat symbolic and assessed systems as reflection prompts rather than fixed identity. Do not infer unresolved astrology. Use calibrated language and return 2-3 grounded sentences.`;
 
     const result = await generateText({ prompt, temperature: 0.7 });
     return result || generateFallbackGuidance(data);
