@@ -161,7 +161,7 @@ function validHouseNumber(value: unknown): value is number {
 export function getVerifiedHumanDesignRecord(
   value: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> | null {
-  return hasVerifiedHumanDesignTrust(value) ? value : null;
+  return hasVerifiedHumanDesignTrust(value) ? (value ?? null) : null;
 }
 
 function validVerifiedPoint(
