@@ -17,26 +17,55 @@ const deletionItems = [
 export default function AccountDeletionPage() {
   const [confirmation, setConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [serverDeleted, setServerDeleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canDelete = confirmation.trim().toUpperCase() === DELETE_CONFIRMATION;
+  const canSubmit = serverDeleted || canDelete;
+
+  const clearThisDeviceAfterDeletion = async (): Promise<boolean> => {
+    try {
+      await clearOfflineProfiles();
+      queryClient.clear();
+      localStorage.clear();
+      sessionStorage.clear();
+
+      if ("caches" in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+      }
+
+      return true;
+    } catch (cause) {
+      console.warn("[AccountDeletion] local cleanup incomplete after server deletion", cause);
+      setError(
+        "Your server-backed account was deleted, but this device could not finish clearing local Soul Codex data. Retry the local cleanup below before treating device deletion as complete.",
+      );
+      return false;
+    }
+  };
 
   const deleteAccount = async () => {
-    if (!canDelete || isDeleting) return;
+    if (!canSubmit || isDeleting) return;
     setError(null);
     setIsDeleting(true);
-    try {
-      await apiRequest("DELETE", "/api/auth/account");
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Deletion failed. Please try again.");
+
+    if (!serverDeleted) {
+      try {
+        await apiRequest("DELETE", "/api/auth/account");
+        setServerDeleted(true);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Deletion failed. Please try again.");
+        setIsDeleting(false);
+        return;
+      }
+    }
+
+    const localCleared = await clearThisDeviceAfterDeletion();
+    if (!localCleared) {
       setIsDeleting(false);
       return;
     }
 
-    try { await clearOfflineProfiles(); }
-    catch (cause) { console.warn("[AccountDeletion] offline profile cleanup incomplete after server deletion", cause); }
-    queryClient.clear();
-    try { localStorage.clear(); } catch {}
-    try { sessionStorage.clear(); } catch {}
     window.location.replace("/?accountDeleted=1");
   };
 
@@ -66,11 +95,15 @@ export default function AccountDeletionPage() {
             <p className="delete-label">Final confirmation</p>
             <h2>This cannot be undone.</h2>
             <label htmlFor="delete-confirmation">Type <strong>{DELETE_CONFIRMATION}</strong> to unlock permanent deletion.</label>
-            <input id="delete-confirmation" value={confirmation} onChange={event => setConfirmation(event.target.value)} autoCapitalize="characters" autoComplete="off" aria-describedby="delete-help" />
-            <p id="delete-help">The delete button remains disabled until the confirmation text matches.</p>
+            <input id="delete-confirmation" value={confirmation} onChange={event => setConfirmation(event.target.value)} autoCapitalize="characters" autoComplete="off" aria-describedby="delete-help" disabled={serverDeleted} />
+            <p id="delete-help">{serverDeleted
+              ? "Server deletion completed. The remaining action only retries cleanup of Soul Codex data on this device."
+              : "The delete button remains disabled until the confirmation text matches."}</p>
             {error && <p role="alert" className="delete-error">{error}</p>}
-            <button type="button" onClick={deleteAccount} disabled={!canDelete || isDeleting} data-testid="button-delete-account">
-              <IconLock size={16}/>{isDeleting ? "Deleting account…" : "Permanently Delete My Data"}
+            <button type="button" onClick={deleteAccount} disabled={!canSubmit || isDeleting} data-testid="button-delete-account">
+              <IconLock size={16}/>{isDeleting
+                ? serverDeleted ? "Clearing this device…" : "Deleting account…"
+                : serverDeleted ? "Retry Clearing This Device" : "Permanently Delete My Data"}
             </button>
           </article>
         </section>
