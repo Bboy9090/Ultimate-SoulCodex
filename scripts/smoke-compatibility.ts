@@ -11,20 +11,60 @@
 import { calculateCompatibility } from "../services/compatibility";
 
 type P = Record<string, any>;
-const known = (name: string, sun: string, moon: string, rising: string, lifePath: number, hdType: string, withPersonality = false): P => ({
-  name, birthTime: "14:30",
-  astrologyData: { sunSign: sun, moonSign: moon, risingSign: rising },
-  numerologyData: { lifePath },
-  humanDesignData: { type: hdType, authority: "Sacral" },
-  personalityData: withPersonality ? { enneagram: { type: 5 }, mbti: { type: "INTJ" } } : undefined,
-});
-const unknown = (name: string, sun: string, moon: string, lifePath: number): P => ({
-  name, // no birthTime
-  astrologyData: { sunSign: sun, moonSign: moon }, // no rising
-  numerologyData: { lifePath },
-  // no humanDesignData
+
+const placementEvidence = {
+  source: "independent ephemeris comparison",
+  engine: "compatibility-smoke@1",
+  calculatedAt: "2026-09-28T14:00:00.000Z",
+};
+
+const verifiedHd = (type: "Generator" | "Projector") => ({
+  status: "verified",
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-28T14:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  birthTimeKnown: true,
+  candidate: type === "Generator"
+    ? { type, strategy: "to respond", authority: "Sacral Authority", profile: "2/4" }
+    : { type, strategy: "to wait for invitation", authority: "Splenic Authority", profile: "5/1" },
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+  limitations: [],
 });
 
+const known = (
+  name: string,
+  sun: string,
+  moon: string,
+  rising: string,
+  birthDate: string,
+  hdType: "Generator" | "Projector",
+  withPersonality = false,
+): P => ({
+  name,
+  birthDate,
+  birthTime: "14:30",
+  verifiedAstrologyData: {
+    sun: { sign: sun, verificationStatus: "verified", evidence: placementEvidence },
+    moon: { sign: moon, verificationStatus: "verified", evidence: placementEvidence },
+    rising: { sign: rising, verificationStatus: "verified", evidence: placementEvidence },
+    planets: {
+      sun: { sign: sun, verificationStatus: "verified", evidence: placementEvidence },
+      moon: { sign: moon, verificationStatus: "verified", evidence: placementEvidence },
+    },
+  },
+  humanDesignData: verifiedHd(hdType),
+  personalityData: withPersonality ? { enneagram: { type: 5 }, mbti: { type: "INTJ" } } : undefined,
+});
+
+const rawUnverified = (name: string, birthDate: string): P => ({
+  name,
+  birthDate,
+  astrologyData: { sunSign: "Scorpio", moonSign: "Leo", risingSign: "Pisces" },
+  humanDesignData: { type: "Generator", authority: "Sacral Authority" },
+});
 let failed = 0;
 const results: Array<{ name: string; pass: boolean; detail: string }> = [];
 function check(name: string, fn: () => { pass: boolean; detail: string }) {
@@ -38,58 +78,81 @@ const hasNoConstantInUsed = (r: any) =>
   (r.systemsUsed || []).every((s: any) => !["spiritual"].includes(s.system)); // spiritual is the constant-prone one
 const weightsSum = (r: any) => (r.systemsUsed || []).reduce((a: number, s: any) => a + s.weight, 0);
 
-// 1. known × known (no personality/moral/spiritual data)
-check("1. known × known", () => {
-  const r = calculateCompatibility(known("A", "Scorpio", "Leo", "Pisces", 8, "Generator") as any, known("B", "Taurus", "Cancer", "Virgo", 3, "Projector") as any);
+// 1. verified core systems are admitted; advanced spiritual systems stay excluded
+check("1. verified core systems admitted", () => {
+  const r = calculateCompatibility(
+    known("Alice Example", "Scorpio", "Leo", "Pisces", "1990-09-17", "Generator") as any,
+    known("Bob Example", "Taurus", "Cancer", "Virgo", "1991-04-23", "Projector") as any,
+  );
   const used = usedKeys(r), excl = exclKeys(r);
   const pass = used.includes("astrology") && used.includes("numerology") && used.includes("humanDesign")
-    && excl.includes("spiritual") && excl.includes("personality")
-    && r.confidence?.label === "Partial" && hasNoConstantInUsed(r);
+    && excl.includes("spiritual") && r.confidence?.label === "Partial";
   return { pass, detail: `score=${r.overallScore} used=[${used}] conf=${r.confidence?.label}` };
 });
 
-// 2. known × unknown (HD must be excluded for birth-time reason, not scored 0)
-check("2. known × unknown", () => {
-  const r = calculateCompatibility(known("A", "Scorpio", "Leo", "Pisces", 8, "Generator") as any, unknown("B", "Taurus", "Cancer", 3) as any);
+// 2. naked astrology and unverified HD are rejected, while canonical numerology survives
+check("2. raw symbolic inputs excluded", () => {
+  const r = calculateCompatibility(
+    rawUnverified("Raw A", "1990-09-17") as any,
+    rawUnverified("Raw B", "1991-04-23") as any,
+  );
   const used = usedKeys(r), excl = exclKeys(r);
-  const hdReason = (r.systemsExcluded || []).find((s: any) => s.system === "humanDesign")?.reason || "";
-  const pass = used.includes("astrology") && used.includes("numerology") && !used.includes("humanDesign")
-    && /birth time/i.test(hdReason) && r.confidence?.label === "Partial";
-  return { pass, detail: `score=${r.overallScore} used=[${used}] hdReason="${hdReason.slice(0, 40)}..."` };
+  const pass = !used.includes("astrology") && used.includes("numerology") && !used.includes("humanDesign")
+    && excl.includes("astrology") && excl.includes("humanDesign") && r.confidence?.label === "Limited";
+  return { pass, detail: `score=${r.overallScore} used=[${used}] excluded=[${excl}]` };
 });
 
-// 3. unknown × unknown
-check("3. unknown × unknown", () => {
-  const r = calculateCompatibility(unknown("A", "Scorpio", "Leo", 8) as any, unknown("B", "Taurus", "Cancer", 3) as any);
-  const used = usedKeys(r);
-  const pass = used.includes("astrology") && used.includes("numerology") && !used.includes("humanDesign") && hasNoConstantInUsed(r);
-  return { pass, detail: `score=${r.overallScore} used=[${used}] conf=${r.confidence?.label}` };
+// 3. missing Moon/Rising do not inject neutral placeholder points
+check("3. partial verified astrology re-normalizes", () => {
+  const a = known("A", "Scorpio", "Leo", "Pisces", "1990-09-17", "Generator") as any;
+  const b = known("B", "Taurus", "Cancer", "Virgo", "1991-04-23", "Projector") as any;
+  delete a.verifiedAstrologyData.moon;
+  delete a.verifiedAstrologyData.rising;
+  delete a.verifiedAstrologyData.planets.moon;
+  delete b.verifiedAstrologyData.moon;
+  delete b.verifiedAstrologyData.rising;
+  delete b.verifiedAstrologyData.planets.moon;
+  const r = calculateCompatibility(a, b);
+  const pass = usedKeys(r).includes("astrology")
+    && r.categories.astrology.details.sunMoonHarmony.score === Math.round(r.categories.astrology.details.elementCompatibility.score / 2);
+  return { pass, detail: `astro=${r.categories.astrology.score} sun=${r.categories.astrology.details.elementCompatibility.score} moon=${r.categories.astrology.details.sunMoonHarmony.score}` };
 });
 
-// 4. missing advanced systems → spiritual always excluded, never a constant in the score
-check("4. advanced systems excluded", () => {
-  const r = calculateCompatibility(known("A", "Scorpio", "Leo", "Pisces", 8, "Generator") as any, known("B", "Taurus", "Cancer", "Virgo", 3, "Projector") as any);
-  const pass = exclKeys(r).includes("spiritual") && !usedKeys(r).includes("spiritual");
-  return { pass, detail: `spiritual excluded=${exclKeys(r).includes("spiritual")}` };
+// 4. missing name-derived numerology cannot become 0-vs-0 = 100
+check("4. missing name numerology cannot inflate score", () => {
+  const a = known("", "Scorpio", "Leo", "Pisces", "1990-09-17", "Generator") as any;
+  const b = known("", "Taurus", "Cancer", "Virgo", "1991-04-23", "Projector") as any;
+  const r = calculateCompatibility(a, b);
+  const pass = r.categories.numerology.details.expressionHarmony.score === 0
+    && r.categories.numerology.details.soulUrgeAlignment.score === 0
+    && r.categories.numerology.score === r.categories.numerology.details.lifePathCompatibility.score;
+  return { pass, detail: `num=${r.categories.numerology.score} expression=${r.categories.numerology.details.expressionHarmony.score}` };
 });
 
-// 5. personality absent → excluded; present → used
+// 5. personality changes coverage only when actually supplied
 check("5. personality absent vs present", () => {
-  const absent = calculateCompatibility(known("A", "Scorpio", "Leo", "Pisces", 8, "Generator") as any, known("B", "Taurus", "Cancer", "Virgo", 3, "Projector") as any);
-  const present = calculateCompatibility(known("A", "Scorpio", "Leo", "Pisces", 8, "Generator", true) as any, known("B", "Taurus", "Cancer", "Virgo", 3, "Projector", true) as any);
-  const pass = exclKeys(absent).includes("personality") && usedKeys(present).includes("personality") && present.confidence?.label === "Verified";
-  return { pass, detail: `absent: excluded=${exclKeys(absent).includes("personality")} | present: used=${usedKeys(present).includes("personality")} conf=${present.confidence?.label}` };
+  const absent = calculateCompatibility(
+    known("Alice Example", "Scorpio", "Leo", "Pisces", "1990-09-17", "Generator") as any,
+    known("Bob Example", "Taurus", "Cancer", "Virgo", "1991-04-23", "Projector") as any,
+  );
+  const present = calculateCompatibility(
+    known("Alice Example", "Scorpio", "Leo", "Pisces", "1990-09-17", "Generator", true) as any,
+    known("Bob Example", "Taurus", "Cancer", "Virgo", "1991-04-23", "Projector", true) as any,
+  );
+  const pass = exclKeys(absent).includes("personality") && usedKeys(present).includes("personality")
+    && present.confidence?.label === "High coverage";
+  return { pass, detail: `absent=${absent.confidence?.label} present=${present.confidence?.label}` };
 });
 
-// 6 & 7. numerology + astrology present are always used; weights normalize ~100
-check("6/7. astrology+numerology used, weights ~100%", () => {
-  const r = calculateCompatibility(known("A", "Scorpio", "Leo", "Pisces", 8, "Generator") as any, unknown("B", "Taurus", "Cancer", 3) as any);
-  const used = usedKeys(r);
+// 6. normalized weights sum to approximately 100
+check("6. admitted weights normalize", () => {
+  const r = calculateCompatibility(
+    known("Alice Example", "Scorpio", "Leo", "Pisces", "1990-09-17", "Generator") as any,
+    known("Bob Example", "Taurus", "Cancer", "Virgo", "1991-04-23", "Projector") as any,
+  );
   const wsum = weightsSum(r);
-  const pass = used.includes("astrology") && used.includes("numerology") && wsum >= 99 && wsum <= 101;
-  return { pass, detail: `used=[${used}] weightsSum=${wsum}%` };
+  return { pass: wsum >= 99 && wsum <= 101, detail: `weightsSum=${wsum}%` };
 });
-
 console.log("\n=== Soul Codex compatibility smoke test ===");
 for (const r of results) console.log(`${r.pass ? "PASS" : "FAIL"}  ${r.name.padEnd(42)} ${r.detail}`);
 console.log(`\n${results.length - failed}/${results.length} passed${failed ? ` — ${failed} FAILED` : ""}\n`);
