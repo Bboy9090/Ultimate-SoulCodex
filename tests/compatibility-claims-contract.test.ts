@@ -4,6 +4,8 @@ import { buildMatchResponse } from "../routes/compatibility";
 import { calculateArchetypeMatches } from "../services/archetype-matches";
 
 const engineSource = fs.readFileSync("services/archetype-matches.ts", "utf8");
+const productionServer = fs.readFileSync("server/index.ts", "utf8");
+const productionRoutes = fs.readFileSync("server/routes.ts", "utf8");
 
 const verifiedEvidence = {
   source: "independent ephemeris comparison",
@@ -63,6 +65,13 @@ describe("compatibility evidence framing", () => {
         }
       }
     }
+  });
+
+  it("keeps retired soulmate/synastry compatibility outside the production route tree", () => {
+    expect(productionServer).toContain('from "./routes.js"');
+    expect(productionRoutes).not.toContain('from "../services/compatibility"');
+    expect(productionRoutes).not.toContain('from "./services/compatibility"');
+    expect(productionRoutes).not.toContain("calculateDetailedSynastry");
   });
 
   it("labels even verified-input results as a symbolic relationship model", () => {
