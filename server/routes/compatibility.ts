@@ -171,7 +171,7 @@ export function buildMatchResponse(profile: any, mode: RelationshipMode = "love"
           : "Saved symbolic Sun sign used as tradition-based reflection, not verified astronomy",
         "Traditional element, modality, and ruler associations",
         ...(verifiedInput.lifePathNumber ? ["Deterministic Life Path resonance; master numbers remain preserved as source values"] : []),
-        "High-flow and high-friction symbolic sign-pair rules",
+        "Aspect-distance and ruler-association symbolic rules",
       ],
       modes: MODE_KEYS,
     },
