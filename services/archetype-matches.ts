@@ -317,26 +317,26 @@ const TRINE_TEXT: Record<string, ModeText> = {
   "Fire-Fire": {
     love:       { headline: "Two fire signs with a tradition-based theme of shared momentum", why: "This model associates two Fire signs with shared momentum, boldness, and a preference for movement over hesitation.", tension: "We can compete more than we connect. One of us needs to hold the fire while the other burns." },
     attraction: { headline: "A symbolic theme of fast-moving attraction", why: "Traditional Fire-sign symbolism frames this pairing as potentially quick to notice and quick to activate.", tension: "We burn through each other fast if there's no real depth underneath." },
-    friendship: { headline: "The friend who makes every plan feel electric", why: "You push me to be bolder, move faster, aim higher — and I do the same for you. We make the other brave.", tension: "We can egg each other into chaos. Someone needs to ask 'is this actually a good idea?'" },
+    friendship: { headline: "A symbolic theme of shared momentum", why: "Fire-sign symbolism emphasizes activity, initiative, and mutual stimulation as possible themes rather than guaranteed effects.", tension: "We can egg each other into chaos. Someone needs to ask 'is this actually a good idea?'" },
     growth:     { headline: "The mirror who shows me my own impatience", why: "Watching you operate teaches me what I look like from the outside. Every friction point is a lesson about my own fire.", tension: "Two fires without containment. We must consciously choose depth over speed." },
   },
   "Earth-Earth": {
     love:       { headline: "A symbolic theme of steadiness and continuity", why: "I don't have to explain why consistency matters to you. We're both in it for the long arc, not the highlight reel.", tension: "Neither of us moves first. Stubbornness squared can quietly calcify the bond." },
     attraction: { headline: "A symbolic theme of gradual attraction", why: "The attraction isn't instant — it's tactile, physical, cumulative. You grow more magnetic every time I see you.", tension: "We can get too comfortable. The spark needs stoking; it won't maintain itself." },
-    friendship: { headline: "The friend who shows up without being asked", why: "You're there in the practical ways that actually count. No performance, no fanfare — just present.", tension: "We can both resist change together, which is comfortable but stagnating." },
-    growth:     { headline: "The challenge to move before everything is 'ready'", why: "You reveal my rigidity by being just as rigid. The growth is in learning to choose evolution even when it's uncertain.", tension: "Inertia loves company. We can keep each other stuck." },
+    friendship: { headline: "A symbolic theme of practical steadiness", why: "Earth-sign symbolism emphasizes consistency and practical support as a theme to compare with lived behavior.", tension: "We can both resist change together, which is comfortable but stagnating." },
+    growth:     { headline: "The challenge to move before everything is 'ready'", why: "This model uses shared Earth symbolism as a prompt to examine flexibility, routine, and resistance to change.", tension: "Inertia loves company. We can keep each other stuck." },
   },
   "Air-Air": {
     love:       { headline: "The mind as the meeting place", why: "Our conversations are where this bond lives. You excite a part of my thinking that doesn't usually get this much room.", tension: "We can intellectualize our way around real emotional intimacy." },
     attraction: { headline: "Witty, quick, and almost dangerously stimulating", why: "You intrigue me before you even try. The way your mind works makes me want to stay in the conversation.", tension: "Once the novelty fades, there has to be something beyond the banter." },
     friendship: { headline: "A symbolic theme of conversational ease", why: "We can pick up mid-thought after months apart. The rapport is just there — natural, sharp, easy.", tension: "We both drift. Making time for each other requires more intention than it looks like." },
-    growth:     { headline: "Who grounds this when we both float?", why: "You help me articulate what I've been circling for years. But you also reflect back my tendency to avoid sitting in discomfort.", tension: "Two Air signs can analyze every feeling without actually processing one." },
+    growth:     { headline: "Who grounds this when we both float?", why: "This model uses shared Air symbolism as a prompt to examine communication, analysis, and avoidance of discomfort.", tension: "Two Air signs can analyze every feeling without actually processing one." },
   },
   "Water-Water": {
     love:       { headline: "A symbolic theme of emotional attunement", why: "Traditional Water-sign symbolism frames this pairing as potentially sensitive to emotional nuance; real understanding still depends on communication.", tension: "Two oceans can merge into something that loses all edges. We need individual space to stay vivid." },
-    attraction: { headline: "A symbolic theme of subtle attraction", why: "This model treats two Water signs as potentially drawn to emotional subtlety and depth; it does not establish subconscious or fated attraction.", tension: "We can spiral together into intensity that blocks out the world." },
-    friendship: { headline: "A loyalty that carries across years without effort", why: "You already know what I'm holding. I know what you carry. This friendship holds that weight without needing to name it.", tension: "Shared avoidance is a risk. We need to call each other forward, not just validate." },
-    growth:     { headline: "A symbolic theme of reflective emotional growth", why: "You reflect things back to me that I could only see in someone who's navigated the same depths.", tension: "We can reinforce each other's wounds instead of healing them." },
+    attraction: { headline: "A symbolic theme of subtle attraction", why: "This model treats two Water signs as potentially drawn to emotional subtlety and depth; it does not establish hidden attraction or any predetermined bond.", tension: "We can spiral together into intensity that blocks out the world." },
+    friendship: { headline: "A symbolic theme of emotional continuity", why: "Traditional Water-sign symbolism emphasizes sensitivity and emotional continuity; actual mutual understanding still requires communication.", tension: "Shared avoidance is a risk. We need to call each other forward, not just validate." },
+    growth:     { headline: "A symbolic theme of reflective emotional growth", why: "This model uses shared Water symbolism as a prompt to examine emotional reflection and boundaries.", tension: "We can reinforce each other's wounds instead of healing them." },
   },
 };
 
@@ -365,7 +365,7 @@ const OPPOSITION_TEXT: Record<string, ModeText> = {
   "Earth-Water": {
     love:       { headline: "A symbolic theme of structure meeting emotional depth", why: "This model treats the polarity as potentially complementary; it does not predict durability, depth, or relationship outcome.", tension: "Your emotional tides can overwhelm my need for predictability. I can make you feel dismissed." },
     attraction: { headline: "The one I keep returning to without fully understanding why", why: "There is a pull in you that bypasses my defenses. The attraction isn't rational — it's structural.", tension: "The initial draw can fade into frustration if we don't learn each other's languages." },
-    friendship: { headline: "A symbolic theme of perspective-changing friendship", why: "You've changed the way I see myself. I don't think either of us walks away from this the same.", tension: "Our worldviews can clash in ways that require real grace to navigate." },
+    friendship: { headline: "A symbolic theme of perspective-changing friendship", why: "This model frames contrast as a possible prompt for perspective change; it does not establish transformation.", tension: "Our worldviews can clash in ways that require real grace to navigate." },
     growth:     { headline: "The tension between us is exactly where I need to grow", why: "You represent the part of life I've avoided. That's not comfortable — and it's also not avoidable if I want to keep evolving.", tension: "Growth only happens if we see the friction as data, not failure." },
   },
 };
@@ -398,9 +398,9 @@ const SQUARE_TEXT: Record<string, ModeText> = {
 };
 
 const CONJUNCTION_TEXT: ModeText = {
-  love:       { headline: "My own reflection — familiar and rarely simple", why: "I recognize myself in you immediately. That's comforting and also where the complexity lives — I know both your gifts and your defenses.", tension: "What I haven't resolved in myself I'll see clearly in you." },
+  love:       { headline: "My own reflection — familiar and rarely simple", why: "Same-sign symbolism emphasizes familiarity and mirroring; whether that feels comfortable, difficult, or neutral depends on the people involved.", tension: "What I haven't resolved in myself I'll see clearly in you." },
   attraction: { headline: "The pull of recognition — I know this energy", why: "The model associates same-sign pairings with familiarity, which some people may experience as attraction. Whether it deepens depends on whether we're actually curious about who each other is.", tension: "Familiarity can slide into comfort without chemistry if we're not intentional." },
-  friendship: { headline: "The friend who understands my inner world without explanation", why: "The model associates same-sign pairings with overlapping symbolic themes; real ease depends on lived compatibility.", tension: "We can avoid growth by only reflecting each other's existing patterns." },
+  friendship: { headline: "A symbolic theme of familiar communication", why: "The model associates same-sign pairings with overlapping symbolic themes; real ease depends on lived compatibility.", tension: "We can avoid growth by only reflecting each other's existing patterns." },
   growth:     { headline: "The hardest growth comes from those who mirror me most clearly", why: "You show me things about myself I wouldn't see otherwise. Not because you're different — because you're the same.", tension: "We can reinforce each other's blind spots instead of illuminating them." },
 };
 
