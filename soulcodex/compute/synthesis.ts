@@ -1,9 +1,6 @@
 import type { SoulSignals, Synthesis, Archetype } from "../types";
 import { stressNotes } from "./elements";
 import { deriveMoralCode } from "./moral";
-import { analyzeSynergy } from "./synergy";
-import { rankCoreDrivers } from "./dominance";
-import { generateBehaviorPredictions } from "./predictive";
 
 const LIFE_PATH_DESC: Record<number, string> = {
   1:  "I clear paths by initiating immediately, even when the direction is unknown, often leaving unfinished logic behind.",
