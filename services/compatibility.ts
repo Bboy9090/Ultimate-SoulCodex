@@ -215,14 +215,21 @@ function calculateAstrologyCompatibility(profile1: any, profile2: any): Compatib
     astro2.southNode?.sign
   );
 
-  // If we have synastry results, use them to enhance the score and aspects
-  let astroScore = Math.round(
-    sunScore * 0.25 +
-    moonScore * 0.30 +
-    risingScore * 0.15 +
-    venusMarsScore * 0.20 +
-    (karmicConnection.hasConnection ? 10 : 0)
-  );
+  // Score only verified dimensions that actually exist. Missing Moon/Rising/Venus/Mars
+  // contribute no neutral placeholder points and do not dilute or inflate the result.
+  const astroDimensions: Array<{ score: number; weight: number }> = [
+    { score: sunScore, weight: 0.25 },
+    ...(astro1.moonSign && astro2.moonSign ? [{ score: moonScore, weight: 0.30 }] : []),
+    ...(astro1.risingSign && astro2.risingSign ? [{ score: risingScore, weight: 0.15 }] : []),
+    ...(venusSign1 && marsSign1 && venusSign2 && marsSign2 ? [{ score: venusMarsScore, weight: 0.20 }] : []),
+  ];
+  const astroWeight = astroDimensions.reduce((sum, row) => sum + row.weight, 0);
+  let astroScore = astroWeight > 0
+    ? Math.round(astroDimensions.reduce((sum, row) => sum + row.score * row.weight, 0) / astroWeight)
+    : 0;
+  if (karmicConnection.hasConnection) {
+    astroScore = Math.min(100, astroScore + 10);
+  }
 
   const aspectsList: Array<{ aspect: string; description: string; impact: 'positive' | 'challenging' | 'neutral' }> = [];
 
@@ -384,23 +391,35 @@ function calculateNumerologyCompatibility(profile1: any, profile2: any): Compati
     return { score: 0, lifePathCompatibility: { score: 0, description: 'Data unavailable' }, expressionCompatibility: { score: 0, description: 'Data unavailable' }, personalityNumbers: { score: 0, description: 'Data unavailable' } };
   }
 
-  // Life Path Compatibility (Life Purpose)
+  // Life Path is canonical date-derived data and is required for this layer.
   const lifePathScore = calculateNumberCompatibility(num1.lifePath, num2.lifePath);
   const lifePathDesc = getLifePathCompatibilityDescription(num1.lifePath, num2.lifePath, lifePathScore);
 
-  // Expression Number Compatibility (How you express yourself)
-  const expressionScore = calculateNumberCompatibility(num1.expression || 0, num2.expression || 0);
-  const expressionDesc = getExpressionCompatibilityDescription(expressionScore);
+  const hasExpression = Number.isInteger(num1.expression) && Number.isInteger(num2.expression);
+  const expressionScore = hasExpression
+    ? calculateNumberCompatibility(num1.expression, num2.expression)
+    : 0;
+  const expressionDesc = hasExpression
+    ? getExpressionCompatibilityDescription(expressionScore)
+    : "Expression compatibility unavailable — a valid name is required for both people.";
 
-  // Personality Number Compatibility (Outer persona)
-  const personalityScore = calculateNumberCompatibility(num1.personality || 0, num2.personality || 0);
-  const personalityDesc = getPersonalityCompatibilityDescription(personalityScore);
+  const hasPersonality = Number.isInteger(num1.personality) && Number.isInteger(num2.personality);
+  const personalityScore = hasPersonality
+    ? calculateNumberCompatibility(num1.personality, num2.personality)
+    : 0;
+  const personalityDesc = hasPersonality
+    ? getPersonalityCompatibilityDescription(personalityScore)
+    : "Personality-number compatibility unavailable — a valid name is required for both people.";
 
-  const numerologyScore = Math.round(
-    lifePathScore * 0.50 +
-    expressionScore * 0.30 +
-    personalityScore * 0.20
-  );
+  const numDimensions: Array<{ score: number; weight: number }> = [
+    { score: lifePathScore, weight: 0.50 },
+    ...(hasExpression ? [{ score: expressionScore, weight: 0.30 }] : []),
+    ...(hasPersonality ? [{ score: personalityScore, weight: 0.20 }] : []),
+  ];
+  const numWeight = numDimensions.reduce((sum, row) => sum + row.weight, 0);
+  const numerologyScore = numWeight > 0
+    ? Math.round(numDimensions.reduce((sum, row) => sum + row.score * row.weight, 0) / numWeight)
+    : 0;
 
   return {
     score: numerologyScore,
@@ -467,19 +486,27 @@ function calculateHumanDesignCompatibility(profile1: any, profile2: any): Compat
   const authorityScore = calculateAuthorityCompatibility(hd1.authority, hd2.authority);
   const authorityDesc = getAuthorityDescription(hd1.authority, hd2.authority, authorityScore);
 
-  // Center Dynamics (defined vs undefined)
-  const centerScore = calculateCenterDynamics(hd1.centers, hd2.centers);
-  const centerDesc = getCenterDynamicsDescription(centerScore);
+  const hasCenters = Boolean(hd1.centers && hd2.centers);
+  const centerScore = hasCenters ? calculateCenterDynamics(hd1.centers, hd2.centers) : 0;
+  const centerDesc = hasCenters
+    ? getCenterDynamicsDescription(centerScore)
+    : "Center dynamics unavailable — verified center data is missing.";
 
-  // Channel Connections (electromagnetic connections)
-  const channelConnections = findChannelConnections(hd1.gates || [], hd2.gates || []);
+  const hasGates = Array.isArray(hd1.gates) && Array.isArray(hd2.gates);
+  const channelConnections = hasGates
+    ? findChannelConnections(hd1.gates, hd2.gates)
+    : { count: 0, description: "Channel connections unavailable — verified gate data is missing." };
 
-  const hdScore = Math.round(
-    typeScore * 0.30 +
-    authorityScore * 0.25 +
-    centerScore * 0.25 +
-    (channelConnections.count > 0 ? 20 : 0)
-  );
+  const hdDimensions: Array<{ score: number; weight: number }> = [
+    { score: typeScore, weight: 0.30 },
+    { score: authorityScore, weight: 0.25 },
+    ...(hasCenters ? [{ score: centerScore, weight: 0.25 }] : []),
+    ...(hasGates ? [{ score: channelConnections.count > 0 ? 100 : 60, weight: 0.20 }] : []),
+  ];
+  const hdWeight = hdDimensions.reduce((sum, row) => sum + row.weight, 0);
+  const hdScore = hdWeight > 0
+    ? Math.round(hdDimensions.reduce((sum, row) => sum + row.score * row.weight, 0) / hdWeight)
+    : 0;
 
   return {
     score: Math.min(100, hdScore),
@@ -1082,55 +1109,53 @@ function createCompatibilitySynthesis(
   num: CompatibilityResult['numerology'],
   hd: CompatibilityResult['humanDesign'],
   pers: CompatibilityResult['personality'],
-  moralCompass?: { score: number; description: string; alignment: string[] }
+  moralCompass: { score: number; description: string; alignment: string[] } | undefined,
+  available: Record<string, boolean>,
 ): CompatibilityResult['synthesis'] {
   const strengths: string[] = [];
   const challenges: string[] = [];
   const growthOpportunities: string[] = [];
 
   // Identify strengths
-  if (astro.moonCompatibility.score >= 85) strengths.push('Deep emotional understanding');
-  if (astro.venusMarsChemistry.score >= 85) strengths.push('Strong romantic chemistry');
-  if (astro.karmicConnection.hasConnection) strengths.push('Karmic soul connection');
-  if (num.lifePathCompatibility.score >= 85) strengths.push('Aligned life purposes');
-  if (hd.channelConnections.count > 0) strengths.push('Energetic activation and chemistry');
-  if (pers.enneagramCompatibility.score >= 85) strengths.push('Compatible core motivations');
-  if (moralCompass && moralCompass.score >= 80) strengths.push('Shared values and ethical alignment');
+  if (available.astrology && astro.moonCompatibility.score >= 85) strengths.push('Strong symbolic Moon-sign resonance');
+  if (available.astrology && astro.venusMarsChemistry.score >= 85) strengths.push('Strong symbolic Venus/Mars resonance');
+  if (available.astrology && astro.karmicConnection.hasConnection) strengths.push('Verified node-sign resonance in the symbolic model');
+  if (available.numerology && num.lifePathCompatibility.score >= 85) strengths.push('Life Path themes align in the numerology model');
+  if (available.humanDesign && hd.channelConnections.count > 0) strengths.push('Verified Human Design gate/channel resonance');
+  if (available.personality && pers.enneagramCompatibility.score >= 85) strengths.push('Reported personality frameworks show compatible themes');
+  if (available.moralCompass && moralCompass && moralCompass.score >= 80) strengths.push('Reported values show alignment');
 
   // Identify challenges
-  if (astro.sunCompatibility.score < 70) challenges.push('Different core values require understanding');
-  if (num.score < 70) challenges.push('Different life rhythms and expressions');
-  if (hd.typeInteraction.score < 70) challenges.push('Different energetic strategies');
-  if (pers.mbtiCompatibility.score < 70) challenges.push('Different communication and thinking styles');
+  if (available.astrology && astro.sunCompatibility.score < 70) challenges.push('Sun-sign symbolism suggests different styles of approach');
+  if (available.numerology && num.score < 70) challenges.push('Numerology themes differ in this symbolic model');
+  if (available.humanDesign && hd.typeInteraction.score < 70) challenges.push('Verified Human Design types use different strategy language');
+  if (available.personality && pers.mbtiCompatibility.score < 70) challenges.push('Reported MBTI frameworks describe different processing styles');
 
   // Growth opportunities
-  if (astro.score >= 75 && pers.score < 70) {
-    growthOpportunities.push('Strong spiritual connection can bridge personality differences');
+  if (available.humanDesign && hd.channelConnections.count > 0) {
+    growthOpportunities.push('Human Design channel resonance can be used as a reflection prompt, not a relationship prediction');
   }
-  if (hd.channelConnections.count > 0) {
-    growthOpportunities.push('Electromagnetic connections create powerful transformation potential');
-  }
-  if (num.lifePathCompatibility.score >= 80) {
-    growthOpportunities.push('Shared life purpose creates foundation for long-term partnership');
+  if (available.numerology && num.lifePathCompatibility.score >= 80) {
+    growthOpportunities.push('Shared Life Path themes may offer useful reflection on priorities');
   }
 
-  // Determine relationship type
-  const avgScore = (astro.score + num.score + hd.score + pers.score) / 4;
-  let relationshipType = '';
-  if (avgScore >= 85) relationshipType = 'Soul Mate Connection';
-  else if (avgScore >= 75) relationshipType = 'Highly Compatible Partnership';
-  else if (avgScore >= 65) relationshipType = 'Growth-Oriented Relationship';
-  else relationshipType = 'Challenging but Transformative Connection';
+  const admittedScores = [
+    ...(available.astrology ? [astro.score] : []),
+    ...(available.numerology ? [num.score] : []),
+    ...(available.humanDesign ? [hd.score] : []),
+    ...(available.personality ? [pers.score] : []),
+    ...(available.moralCompass && moralCompass ? [moralCompass.score] : []),
+  ];
+  const avgScore = admittedScores.length
+    ? admittedScores.reduce((sum, score) => sum + score, 0) / admittedScores.length
+    : 0;
+  const relationshipType = admittedScores.length
+    ? 'Symbolic compatibility reflection'
+    : 'Compatibility unavailable from current evidence';
 
-  // Long-term potential
-  let longTermPotential = '';
-  if (num.lifePathCompatibility.score >= 80 && astro.moonCompatibility.score >= 80) {
-    longTermPotential = 'Excellent long-term potential. Shared life purpose and emotional compatibility create strong foundation.';
-  } else if (avgScore >= 75) {
-    longTermPotential = 'Strong long-term potential with conscious effort and mutual growth.';
-  } else {
-    longTermPotential = 'Long-term success requires significant compromise and personal development from both partners.';
-  }
+  const longTermPotential = admittedScores.length
+    ? 'These scores describe traditional symbolic or self-reported frameworks; they do not measure or predict relationship durability.'
+    : 'No supported compatibility layers are available yet.'
 
   return {
     strengths: strengths.length > 0 ? strengths : ['Every relationship has unique gifts to discover'],
@@ -1227,8 +1252,6 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
   const kabbalah = calculateKabbalahCompatibility(profile1, profile2);
   const tarot = calculateTarotCompatibility(profile1, profile2);
 
-  const synthesis = createCompatibilitySynthesis(astrology, numerology, humanDesign, personality, moralCompass);
-
   // ── Availability-aware scoring ──
   // Missing systems lower CONFIDENCE; they never poison (0) or inflate (constant)
   // the score. The overall score is a weighted average re-normalized over only
@@ -1254,6 +1277,15 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
     moralCompass: !!(_m1 && _m2),
     spiritual: spiritualAvailable,
   };
+
+  const synthesis = createCompatibilitySynthesis(
+    astrology,
+    numerology,
+    humanDesign,
+    personality,
+    moralCompass,
+    available,
+  );
 
   const BASE_WEIGHTS: Record<string, number> = {
     astrology: 0.25, numerology: 0.18, humanDesign: 0.18, personality: 0.18, moralCompass: 0.08, spiritual: 0.13,
