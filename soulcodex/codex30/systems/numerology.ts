@@ -20,12 +20,13 @@ export function numerologySignals(inputs: any): Signal[] {
   if (lp == null) return [];
 
   const n = Number(lp);
-  const tags = LP_TAGS[n] ?? ["legacy", "craft"];
+  if (!Number.isInteger(n) || !LP_TAGS[n]) return [];
+  const tags = LP_TAGS[n];
 
   return [{
     id: `num.lifepath.${n}`,
     system: "numerology",
-    label: `Life Path ${n} is the long-game assignment I keep getting until I master it.`,
+    label: `Life Path ${n} is a deterministic numerology result. Its meaning is a symbolic theme to compare with lived experience, not a life assignment.`,
     evidence: [`Life Path ${n}`],
     intensity: 0.85,
     polarity: "neutral",
