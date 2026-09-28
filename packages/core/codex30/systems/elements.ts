@@ -15,11 +15,11 @@ export function elementSignals(userInputs: any): Signal[] {
   return [{
     id: `elem.stress.${el}`,
     system: "elements",
-    label: `Under stress, I default into ${el.toUpperCase()} patterns — my nervous system's autopilot under pressure.`,
+    label: `The selected ${el.toUpperCase()} stress element is a symbolic reflection prompt about pressure responses, not a nervous-system diagnosis or automatic behavior.`,
     evidence: [`Stress element: ${el}`],
     intensity: 0.8,
     polarity: "neutral",
-    confidence: "high",
+    confidence: "medium",
     tags: ELEMENT_TAGS[el] ?? ["discipline"]
   }];
 }
