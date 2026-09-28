@@ -187,6 +187,50 @@ test("Depth synthesis", async (suite) => {
   });
 
 
+  await suite.test("behavioral evidence outranks a higher raw symbolic priority", () => {
+    const symbolicSeed: DepthSynthesisSeed = {
+      evidence: evidence("astrology.symbolic-visible", {
+        system: "astrology",
+        field: "sun",
+        value: "Virgo",
+        confidence: "high",
+        provenanceStatus: "externally-verified",
+      }),
+      label: "verified Virgo symbolism",
+      priority: 999,
+      claimKind: "derived",
+      facets: {
+        visiblePattern: "Symbolic astrology would describe precision first.",
+      },
+      tensionAxes: ["analysis"],
+    };
+
+    const behavioralSeed: DepthSynthesisSeed = {
+      evidence: evidence("mirror.visible-pattern", {
+        system: "mirror",
+        field: "reportedPattern",
+        value: "checks details before committing",
+        confidence: "high",
+        provenanceStatus: "partially-verified",
+      }),
+      label: "reported visible behavior",
+      priority: 1,
+      claimKind: "observed",
+      facets: {
+        visiblePattern: "You report checking details before committing.",
+      },
+      tensionAxes: ["analysis"],
+    };
+
+    const result = synthesizeDepthInterpretationV1(input([symbolicSeed, behavioralSeed]));
+
+    assert.equal(result.visiblePattern.summary, "You report checking details before committing.");
+    assert.deepEqual(result.visiblePattern.evidenceIds, [
+      "mirror.visible-pattern",
+      "astrology.symbolic-visible",
+    ]);
+  });
+
   await suite.test("does not let verified symbolic data verify a protective function", () => {
     const symbolicSeed: DepthSynthesisSeed = {
       evidence: evidence("astrology.moon-saturn", {
