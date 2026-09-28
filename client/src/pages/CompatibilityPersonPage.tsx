@@ -170,7 +170,7 @@ export default function CompatibilityPersonPage() {
             One person. Four signals. No universal verdict.
           </h1>
           <p className="sc-lede mt-5">
-            {profileName(profile)} stays loaded. Add only the other person’s symbolic Sun sign. The current Foundation model uses your supported Sun evidence and deterministic Life Path when available.
+            {profileName(profile)} stays loaded. Add only the other person’s symbolic Sun sign. The current Foundation model sends only your supported Sun symbol for this privacy-minimized comparison. Deterministic numerology stays out until it can be proven at a server-owned boundary.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
