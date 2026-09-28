@@ -126,7 +126,7 @@ check(
 );
 check(
   "PRIVACY-05",
-  "Compatibility uploads are minimized to Sun evidence and Life Path instead of the full saved profile",
+  "Compatibility uploads are minimized to a symbolic Sun projection to Sun evidence only instead of the full saved profile",
   files.compatibilityPayload.includes("minimum server payload required by Foundation compatibility") &&
     files.compatibilityExplorer.includes("buildCompatibilityProfilePayload") &&
     files.compatibilityExplorer.includes("profile: compatibilityProfile") &&
