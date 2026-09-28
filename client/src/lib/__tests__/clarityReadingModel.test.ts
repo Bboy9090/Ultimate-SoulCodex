@@ -64,6 +64,44 @@ describe("clarityReadingModel", () => {
     expect(model.limitations[0]).toMatch(/No independently verified/);
   });
 
+  it("excludes malformed core numerology instead of labeling it deterministic", () => {
+    const model = buildClarityReadingModel({
+      numerologyData: { lifePath: 99, expression: -4, soulUrge: "banana" },
+    });
+
+    expect(model.signals.some((signal) => signal.id === "life-path")).toBe(false);
+    expect(model.signals.some((signal) => signal.id === "expression")).toBe(false);
+    expect(model.signals.some((signal) => signal.id === "soul-urge")).toBe(false);
+  });
+
+  it("rejects an unsupported saved Sun sign and exposes three separate trust labels", () => {
+    const invalid = buildClarityReadingModel({
+      astrologyData: { sunSign: "Ophiuchus" },
+    });
+    expect(invalid.signals.some((signal) => signal.id === "sun-symbolic")).toBe(false);
+
+    const valid = buildClarityReadingModel({
+      astrologyData: { sunSign: "Virgo" },
+      numerologyData: { lifePath: 9 },
+    });
+    expect(valid.signals).toContainEqual(
+      expect.objectContaining({
+        id: "sun-symbolic",
+        calculationCertainty: "unverified",
+        evidenceStatus: "symbolic-only",
+        interpretationConfidence: "low",
+      }),
+    );
+    expect(valid.signals).toContainEqual(
+      expect.objectContaining({
+        id: "life-path",
+        calculationCertainty: "deterministic",
+        evidenceStatus: "calculated",
+        interpretationConfidence: "not-applicable",
+      }),
+    );
+  });
+
   it("does not invent Moon or Rising signals when they are missing", () => {
     const model = buildClarityReadingModel({
       astrologyData: { sunSign: "Virgo" },
