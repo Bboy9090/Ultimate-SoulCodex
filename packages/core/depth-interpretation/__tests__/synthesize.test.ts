@@ -186,6 +186,68 @@ test("Depth synthesis", async (suite) => {
     );
   });
 
+
+  await suite.test("does not let verified symbolic data verify a protective function", () => {
+    const symbolicSeed: DepthSynthesisSeed = {
+      evidence: evidence("astrology.moon-saturn", {
+        system: "astrology",
+        field: "verifiedMoonSaturnPattern",
+        value: "Virgo Moon + Capricorn Saturn",
+        confidence: "high",
+        provenanceStatus: "externally-verified",
+      }),
+      label: "verified Moon-Saturn symbolism",
+      priority: 150,
+      claimKind: "derived",
+      facets: {
+        hiddenNeed: "The symbolic pattern may emphasize steadiness before exposure.",
+        protectiveFunction: "The symbolic pattern may emphasize self-protection through structure.",
+      },
+      tensionAxes: ["structure"],
+      limitations: ["Astronomical placements are verified; psychological meaning is symbolic."],
+    };
+
+    const result = synthesizeDepthInterpretationV1(input([symbolicSeed]));
+
+    assert.equal(result.evidence[0]?.confidence, "high");
+    assert.equal(result.protectiveFunction.confidence, "moderate");
+    assert.equal(result.protectiveFunction.claimKind, "inferred");
+    assert.match(result.protectiveFunction.explanation, /symbolic hypothesis/i);
+    assert.ok(
+      result.protectiveFunction.limitations.some((item) =>
+        item.includes("does not by itself verify")
+      )
+    );
+    assert.equal(result.hiddenNeed.confidence, "moderate");
+    assert.equal(result.hiddenNeed.claimKind, "inferred");
+  });
+
+  await suite.test("behavioral support can retain high confidence for protective function", () => {
+    const behavioralSeed: DepthSynthesisSeed = {
+      evidence: evidence("mirror.protective-pattern", {
+        system: "mirror",
+        field: "reportedPattern",
+        value: "withdraws when standards shift",
+        confidence: "high",
+        provenanceStatus: "partially-verified",
+      }),
+      label: "reported protective pattern",
+      priority: 160,
+      claimKind: "observed",
+      facets: {
+        protectiveFunction: "Withdrawal appears to preserve control when expectations become unstable.",
+      },
+      tensionAxes: ["stability"],
+      limitations: ["Observed pattern still may vary by context."],
+    };
+
+    const result = synthesizeDepthInterpretationV1(input([behavioralSeed]));
+
+    assert.equal(result.protectiveFunction.confidence, "high");
+    assert.equal(result.protectiveFunction.claimKind, "observed");
+    assert.doesNotMatch(result.protectiveFunction.explanation, /symbolic hypothesis/i);
+  });
+
   await suite.test("serializes deterministically for identical input", () => {
     const normalizedInput = input([
       completeSeed(),
