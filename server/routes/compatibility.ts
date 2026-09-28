@@ -4,6 +4,7 @@ import {
   type ArchetypeMatch,
   type RelationshipMode,
 } from "../../services/archetype-matches";
+import { calcLifePath } from "@soulcodex/core";
 import { extractVerifiedAstrology } from "../lib/verified-astrology";
 
 const router = Router();
@@ -19,13 +20,19 @@ export const COMPATIBILITY_FORMULA_VERSION = "foundation-compatibility-v2";
 export type CompatibilityEvidenceMode = "verified" | "symbolic" | "unavailable";
 
 export function deterministicLifePath(profile: any): number | undefined {
-  const raw =
-    profile?.lifePathNumber ??
-    profile?.numerologyData?.lifePathNumber ??
-    profile?.numerologyData?.lifePath ??
-    profile?.numerology?.lifePath?.value;
-  const parsed = Number(raw);
-  return Number.isInteger(parsed) && SUPPORTED_LIFE_PATHS.has(parsed) ? parsed : undefined;
+  const birthDate =
+    typeof profile?.birthDate === "string"
+      ? profile.birthDate.slice(0, 10)
+      : profile?.birthDate instanceof Date
+        ? profile.birthDate.toISOString().slice(0, 10)
+        : undefined;
+  if (!birthDate) return undefined;
+  try {
+    const calculated = calcLifePath(birthDate);
+    return SUPPORTED_LIFE_PATHS.has(calculated) ? calculated : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function validSymbolicSign(value: unknown): string | undefined {
