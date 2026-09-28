@@ -25,8 +25,6 @@
 //     HD types and the four elements. These are interpretive rules, not
 //     scientific energy measurements.
 //
-//  5. Sign-Pair Special Overrides — small tradition-based bonuses/penalties for
-//     selected familiar pairings and fixed-square combinations.
 
 export type RelationshipMode = "love" | "attraction" | "friendship" | "growth";
 
@@ -267,46 +265,6 @@ function hdAffinityBonus(hdType: string | undefined, element: string, mode: Rela
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LAYER 5: Sign-Pair Special Overrides
-//
-// A small set of familiar tradition-based pairings receives configured
-// bonus/penalty refinements. These heuristics are not evidence that a real
-// couple will be compatible or incompatible.
-// ─────────────────────────────────────────────────────────────────────────────
-const LEGENDARY_LOVE_PAIRS = new Set([
-  "Taurus-Cancer", "Cancer-Taurus",
-  "Scorpio-Pisces", "Pisces-Scorpio",
-  "Leo-Sagittarius", "Sagittarius-Leo",
-  "Virgo-Capricorn", "Capricorn-Virgo",
-  "Gemini-Aquarius", "Aquarius-Gemini",
-  "Cancer-Scorpio", "Scorpio-Cancer",
-  "Aries-Leo", "Leo-Aries",
-  "Aquarius-Libra", "Libra-Aquarius",
-  "Pisces-Cancer", "Cancer-Pisces",
-  "Sagittarius-Aries", "Aries-Sagittarius",
-  "Capricorn-Taurus", "Taurus-Capricorn",
-  "Libra-Gemini", "Gemini-Libra",
-]);
-
-const FIXED_SQUARES = new Set([
-  "Taurus-Leo", "Leo-Taurus",
-  "Taurus-Aquarius", "Aquarius-Taurus",
-  "Leo-Scorpio", "Scorpio-Leo",
-  "Scorpio-Aquarius", "Aquarius-Scorpio",
-]);
-
-function pairSpecialBonus(name1: string, name2: string): Scores4 {
-  const key = `${name1}-${name2}`;
-  if (FIXED_SQUARES.has(key)) {
-    return { love: -7, attraction: -2, friendship: -5, growth: 4 };
-  }
-  if (LEGENDARY_LOVE_PAIRS.has(key)) {
-    return { love: 6, attraction: 3, friendship: 4, growth: 2 };
-  }
-  return { love: 0, attraction: 0, friendship: 0, growth: 0 };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // DESCRIPTIVE TEXT — first-person, behavioral, mode-differentiated
 // Keyed by element pair and arc distance type
 // ─────────────────────────────────────────────────────────────────────────────
@@ -473,10 +431,8 @@ export function calculateArchetypeMatches(
     const dist   = signDistance(user, target);
     const base   = ASPECT_BASE[dist];
     const planet = planetSynergy(user.rulingPlanet, target.rulingPlanet);
-    const pair   = pairSpecialBonus(user.name, target.name);
-
     function calc(m: RelationshipMode): number {
-      const raw = base[m] + planet[m] + lpResonance(lifePathNumber, target.numerologicalRuler, m) + hdAffinityBonus(hdType, target.element, m) + pair[m];
+      const raw = base[m] + planet[m] + lpResonance(lifePathNumber, target.numerologicalRuler, m) + hdAffinityBonus(hdType, target.element, m);
       return Math.max(20, Math.min(99, Math.round(raw)));
     }
 
