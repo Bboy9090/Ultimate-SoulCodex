@@ -8,7 +8,6 @@ import {
   type Sections,
   type SoulCodexOutputV1,
 } from "./schema.js";
-import { buildCodexReadingBadges, type ConfidenceResult } from "../compute/confidence.js";
 import { runSoulCodexEngine } from "./engine/index.js";
 export { runSoulCodexEngine };
 
@@ -126,12 +125,6 @@ function asYyyyMmDd(input: any): string | undefined {
   if (typeof input === "string") return input.slice(0, 10);
   if (input instanceof Date) return input.toISOString().slice(0, 10);
   return undefined;
-}
-
-function normalizeConfidence(profile: AnyProfile): ConfidenceResult | null {
-  const conf = profile?.confidence ?? profile?.meta?.confidence ?? null;
-  if (!conf) return null;
-  return buildCodexReadingBadges(conf);
 }
 
 function buildConfidenceMatrix(profile: AnyProfile): ConfidenceMatrix {
