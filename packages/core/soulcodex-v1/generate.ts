@@ -14,6 +14,70 @@ export { runSoulCodexEngine };
 
 type AnyProfile = Record<string, any>;
 
+const VALID_ZODIAC_SIGNS = new Set([
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]);
+const VALID_CORE_NUMBERS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33]);
+
+function evidenceText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function evidenceTimestamp(value: unknown): value is string {
+  return evidenceText(value) && !Number.isNaN(Date.parse(value));
+}
+
+function verifiedPlacement(value: unknown): AnyProfile | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const placement = value as AnyProfile;
+  const evidence = placement.provenance ?? placement.evidence;
+  const directEvidence = Boolean(
+    evidenceText(evidence?.source) &&
+    evidenceText(evidence?.engine) &&
+    evidenceTimestamp(evidence?.calculatedAt)
+  );
+  const governedEvidence = Boolean(
+    evidenceText(placement.policyId) &&
+    evidenceText(placement.evidenceArtifactId)
+  );
+  return placement.verificationStatus === "verified" &&
+    VALID_ZODIAC_SIGNS.has(placement.sign) &&
+    (directEvidence || governedEvidence)
+      ? placement
+      : undefined;
+}
+
+function verifiedAstrology(profile: AnyProfile): AnyProfile {
+  const source = profile?.verifiedAstrologyData ?? profile?.astrologyData ?? profile?.astrology ?? {};
+  const sun = verifiedPlacement(source?.sun ?? source?.planets?.sun);
+  const moon = verifiedPlacement(source?.moon ?? source?.planets?.moon);
+  const rising = verifiedPlacement(source?.rising);
+  return { sun, moon, rising };
+}
+
+function hasVerifiedHumanDesignTrust(value: AnyProfile): boolean {
+  return Boolean(
+    value?.status === "verified" &&
+    evidenceText(value?.type) &&
+    evidenceText(value?.strategy) &&
+    evidenceText(value?.authority) &&
+    evidenceText(value?.profile) &&
+    evidenceText(value?.engine) &&
+    evidenceText(value?.source) &&
+    evidenceTimestamp(value?.calculatedAt) &&
+    evidenceText(value?.inputTimestampUtc) &&
+    evidenceText(value?.verificationReceiptId) &&
+    evidenceText(value?.independentSource) &&
+    evidenceTimestamp(value?.verifiedAt)
+  );
+}
+
+function governedCoreNumber(value: unknown): number | undefined {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && VALID_CORE_NUMBERS.has(parsed) ? parsed : undefined;
+}
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -71,22 +135,22 @@ function normalizeConfidence(profile: AnyProfile): ConfidenceResult | null {
 }
 
 function buildConfidenceMatrix(profile: AnyProfile): ConfidenceMatrix {
-  const conf = normalizeConfidence(profile);
-  const badge = conf?.badge ?? "unverified";
+  const astro = verifiedAstrology(profile);
+  const verifiedAstroCount = [astro.sun, astro.moon, astro.rising].filter(Boolean).length;
+  const astrology: ConfidenceMatrix["astrology"] =
+    verifiedAstroCount === 3 ? "verified" : verifiedAstroCount > 0 ? "partial" : "unverified";
 
-  // Numerology requires only birth date (date-only is stable).
   const birthDate = asYyyyMmDd(profile?.birthDate ?? profile?.birth?.birthDate ?? profile?.signals?.birthDate);
   const numerology: ConfidenceMatrix["numerology"] = birthDate ? "verified" : "unverified";
 
-  // Astrology + Human Design both require time+geo to be fully verified; reuse computed badge.
-  const astrology: ConfidenceMatrix["astrology"] = badge;
-  const human_design: ConfidenceMatrix["human_design"] = badge;
+  const hd = profile?.humanDesignData ?? profile?.humanDesign ?? {};
+  const human_design: ConfidenceMatrix["human_design"] =
+    hasVerifiedHumanDesignTrust(hd) ? "verified" : "unverified";
 
-  // Overall is a coarse quality signal (high when we have verified chart layer + date).
   const overall: ConfidenceMatrix["overall"] =
     astrology === "verified" && human_design === "verified" && numerology === "verified"
       ? "high"
-      : numerology === "verified" && (astrology === "verified" || astrology === "partial")
+      : numerology === "verified" && (astrology === "verified" || astrology === "partial" || human_design === "verified")
         ? "medium"
         : "low";
 
@@ -94,17 +158,18 @@ function buildConfidenceMatrix(profile: AnyProfile): ConfidenceMatrix {
 }
 
 function buildCoreSystem(profile: AnyProfile): CoreSystem {
-  const astro = profile?.astrologyData ?? profile?.astrology ?? {};
-  const hd = profile?.humanDesignData ?? profile?.humanDesign ?? {};
+  const astro = verifiedAstrology(profile);
+  const hdRaw = profile?.humanDesignData ?? profile?.humanDesign ?? {};
+  const hd = hasVerifiedHumanDesignTrust(hdRaw) ? hdRaw : {};
   const num = profile?.numerologyData ?? profile?.numerology ?? {};
 
-  const sunSign = astro?.sunSign;
-  const moonSign = astro?.moonSign;
-  const risingSign = astro?.risingSign;
+  const sunSign = astro.sun?.sign;
+  const moonSign = astro.moon?.sign;
+  const risingSign = astro.rising?.sign;
 
-  const sunDeg = formatDeg(astro?.planets?.sun?.degree ?? astro?.planets?.sun?.longitude);
-  const moonDeg = formatDeg(astro?.planets?.moon?.degree ?? astro?.planets?.moon?.longitude);
-  const risingDeg = formatDeg(astro?.ascendant?.degree ?? astro?.ascendant?.longitude);
+  const sunDeg = formatDeg(astro.sun?.degree ?? astro.sun?.internalCandidate?.longitude);
+  const moonDeg = formatDeg(astro.moon?.degree ?? astro.moon?.internalCandidate?.longitude);
+  const risingDeg = formatDeg(astro.rising?.degree ?? astro.rising?.internalCandidate?.longitude);
 
   const coreAstro = {
     sun: sunSign ? `${sunSign}${sunDeg ? ` ${sunDeg}` : ""}` : undefined,
@@ -129,9 +194,9 @@ function buildCoreSystem(profile: AnyProfile): CoreSystem {
     not_self_theme: hd?.notSelfTheme ?? hd?.not_self_theme ?? undefined,
   };
 
-  const lifePath = num?.lifePath ?? num?.lifePathNumber;
+  const lifePath = governedCoreNumber(num?.lifePath ?? num?.lifePathNumber);
   const coreNum = {
-    life_path: typeof lifePath === "number" ? lifePath : lifePath ? parseInt(String(lifePath), 10) : undefined,
+    life_path: lifePath,
   };
 
   return {
@@ -257,11 +322,15 @@ export function generateSoulCodexOutputV1(input: {
   const core = buildCoreSystem(input.profile);
   const toneMode = input.toneMode ?? "clean";
 
+  // The legacy v1 trait matrix maps mere source presence to generic traits
+  // (for example any Sun signal to the same "precision_drive"). Feeding symbolic
+  // systems into that matrix would flatten different charts into repetitive prose.
+  // Keep v1 behavioral until a value-specific governed matrix replaces it.
   const engine = runSoulCodexEngine({
     toneMode,
-    astrology: (input.profile?.astrologyData ?? input.profile?.astrology ?? null) as any,
-    human_design: (input.profile?.humanDesignData ?? input.profile?.humanDesign ?? null) as any,
-    numerology: (input.profile?.numerologyData ?? input.profile?.numerology ?? null) as any,
+    astrology: null,
+    human_design: null,
+    numerology: null,
     mirror: (input.profile?.mirror ?? input.profile?.mirrorAnswers ?? null) as any,
   });
 
