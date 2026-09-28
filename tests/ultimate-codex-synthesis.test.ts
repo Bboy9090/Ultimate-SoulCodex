@@ -100,10 +100,25 @@ test("Ultimate Codex detects verified stellium-style clusters and contradictions
   assert.match(result.codexNumber, /^\d{12}$/);
   assert.match(result.codexId, /^GCX-/);
   assert.ok(result.derivedArchetype);
+  assert.match(result.derivedArchetype!, /Reflector/);
+  assert.match(result.derivedArchetype!, /Life Path 9/);
+  const astroIndex = result.identitySignature.indexOf("Virgo");
+  const hdIndex = result.identitySignature.indexOf("Reflector");
+  const numIndex = result.identitySignature.indexOf("Life Path 9");
+  assert.ok(astroIndex >= 0 && hdIndex > astroIndex && numIndex > hdIndex);
   assert.ok(result.systemSummary.some((row) => row.system === "Numerology" && /deterministic stable core/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Astrocartography" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Palmistry" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Personality assessments" && /not assessed \/ excluded/.test(row.status)));
+});
+
+test("Ultimate Codex does not let astrology monopolize the derived archetype headline", () => {
+  const result = buildUltimateCodexSynthesis(profile());
+  const parts = result.derivedArchetype?.split(" · ")[0].split(" × ") ?? [];
+  assert.equal(parts.length, 3);
+  assert.ok(parts.some((part) => /Virgo/.test(part)));
+  assert.ok(parts.some((part) => /Reflector/.test(part)));
+  assert.ok(parts.some((part) => /Life Path 9/.test(part)));
 });
 
 test("Ultimate Codex fingerprint changes when governed chart evidence changes", () => {
