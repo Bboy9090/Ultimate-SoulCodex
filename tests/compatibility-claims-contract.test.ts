@@ -29,6 +29,13 @@ describe("compatibility evidence framing", () => {
     expect(engineSource).toContain("not empirical relationship-effect estimates");
   });
 
+  it("does not use hidden favorite-pair bonuses or duplicate square penalties", () => {
+    expect(engineSource).not.toContain("LEGENDARY_LOVE_PAIRS");
+    expect(engineSource).not.toContain("FIXED_SQUARES");
+    expect(engineSource).not.toContain("pairSpecialBonus");
+    expect(engineSource).not.toContain("Sign-Pair Special Overrides");
+  });
+
   it("keeps every sign-pair narrative explicitly symbolic and non-predictive", () => {
     const signs = [
       "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
