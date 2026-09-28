@@ -277,8 +277,23 @@ function prepareSeeds(input: DepthSynthesisInputV1): {
     seeds.push(seed);
   }
 
+  const evidenceTier = (seed: DepthSynthesisSeed): number => {
+    const behavioral =
+      seed.claimKind === "observed" ||
+      seed.evidence.system === "user-stated" ||
+      seed.evidence.system === "mirror" ||
+      seed.evidence.system === "tracker";
+    if (behavioral) return 4;
+    if (seed.evidence.provenanceStatus === "externally-verified") return 3;
+    if (seed.evidence.provenanceStatus === "partially-verified") return 3;
+    if ((seed.claimKind ?? "inferred") === "derived") return 2;
+    return 1;
+  };
+
   seeds.sort(
     (a, b) =>
+      evidenceTier(b) - evidenceTier(a) ||
+      confidenceRank(b.evidence.confidence) - confidenceRank(a.evidence.confidence) ||
       (b.priority ?? 0) - (a.priority ?? 0) ||
       a.evidence.id.localeCompare(b.evidence.id) ||
       a.label.localeCompare(b.label),
