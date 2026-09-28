@@ -327,7 +327,7 @@ function calculateAbsoluteLongitude(sign: string, degreeInSign: number): number 
 }
 
 // Convert zodiac degrees to Human Design gate and line
-function degreeToGateAndLine(degree: number): { gate: number; line: number } {
+export function degreeToGateAndLine(degree: number): { gate: number; line: number } {
   const normalized = ((degree % 360) + 360) % 360;
   const radiansPosition = normalized * Math.PI / 180;
   const circle = Math.PI * 2;
