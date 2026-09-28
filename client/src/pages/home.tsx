@@ -1,6 +1,14 @@
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import Navigation from "@/components/navigation";
 import { useActiveProfile } from "../hooks/useActiveProfile";
+import {
+  compatibilityLink,
+  connectionComparableSunSign,
+  hasComparableConnectionData,
+  loadConnections,
+  type SavedConnection,
+} from "../lib/connectionRepository";
 import {
   ArrowRight,
   BookOpen,
@@ -9,6 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 
 function getProfileIdentity(profile: any) {
@@ -19,9 +28,52 @@ function getProfileIdentity(profile: any) {
 
 export default function Home() {
   const { profile } = useActiveProfile();
+  const [connections, setConnections] = useState<SavedConnection[]>([]);
+
+  useEffect(() => {
+    const refreshConnections = () => setConnections(loadConnections());
+    refreshConnections();
+    window.addEventListener("soulcodex:connections-updated", refreshConnections);
+    window.addEventListener("storage", refreshConnections);
+    return () => {
+      window.removeEventListener("soulcodex:connections-updated", refreshConnections);
+      window.removeEventListener("storage", refreshConnections);
+    };
+  }, []);
   const { id, name } = getProfileIdentity(profile);
   const identityHref = id ? `/profile/${id}` : "/create";
   const readingHref = id ? `/reading/${id}` : "/create";
+  const leadConnection = connections.find(hasComparableConnectionData) ?? connections[0] ?? null;
+  const circlePreview = connections.slice(0, 4);
+
+  const todayMoves = [
+    {
+      label: "You",
+      title: profile ? "Continue your pattern" : "Create your identity",
+      description: profile
+        ? "Return to the reading without reopening every system at once."
+        : "Start with your own profile so daily and relationship context has a grounded anchor.",
+      href: profile ? readingHref : identityHref,
+    },
+    {
+      label: "Timing",
+      title: "Check the current cycle",
+      description: "Open Timeline for the current symbolic timing context and keep lived events separate from interpretation.",
+      href: "/timeline",
+    },
+    {
+      label: "People",
+      title: leadConnection ? `Check in with ${leadConnection.name}` : "Build your circle",
+      description: leadConnection
+        ? hasComparableConnectionData(leadConnection)
+          ? "Open the relationship lens using only the chart facts currently saved for this person."
+          : "This person is saved locally. Add known chart facts before asking Soul Codex to compare you."
+        : "Save friends, partners, or family locally so relationship tools become one tap away.",
+      href: leadConnection && hasComparableConnectionData(leadConnection)
+        ? compatibilityLink(leadConnection)
+        : "/connections",
+    },
+  ] as const;
 
   const destinations = [
     {
@@ -143,6 +195,84 @@ export default function Home() {
             </div>
             <Link href={profile ? readingHref : identityHref} className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
               {profile ? "Continue reading" : "Create profile"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+
+        <section className="mb-5 grid gap-4 lg:grid-cols-[1.15fr_.85fr]" aria-label="Daily and social context">
+          <div className="sc-panel p-5 sm:p-6">
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <p className="sc-eyebrow">Today</p>
+                <h2 className="mt-2 font-serif text-2xl font-semibold text-[var(--sc-ivory)]">Three useful ways back in.</h2>
+              </div>
+              <span className="text-xs text-[var(--sc-stone)]">No forecast required</span>
+            </div>
+            <div className="grid gap-2.5">
+              {todayMoves.map((move) => (
+                <Link
+                  key={move.label}
+                  href={move.href}
+                  className="group rounded-xl border border-white/[0.065] bg-white/[0.02] p-4 text-[var(--sc-ivory)] no-underline transition hover:bg-white/[0.04]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="m-0 text-[10px] font-bold uppercase tracking-[.16em] text-[var(--sc-stone)]">{move.label}</p>
+                      <h3 className="mt-1.5 font-serif text-lg font-semibold">{move.title}</h3>
+                      <p className="mb-0 mt-2 text-[13px] leading-6 text-[var(--sc-stone)]">{move.description}</p>
+                    </div>
+                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[var(--sc-gold)] transition group-hover:translate-x-0.5" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="sc-panel p-5 sm:p-6" data-testid="home-circle-panel">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="sc-eyebrow">Your circle</p>
+                <h2 className="mt-2 font-serif text-2xl font-semibold text-[var(--sc-ivory)]">
+                  {connections.length ? `${connections.length} saved ${connections.length === 1 ? "person" : "people"}` : "People become part of the environment."}
+                </h2>
+              </div>
+              <UsersRound className="h-5 w-5 text-[var(--sc-teal)]" />
+            </div>
+
+            {circlePreview.length ? (
+              <div className="grid gap-2">
+                {circlePreview.map((connection) => {
+                  const sun = connectionComparableSunSign(connection);
+                  const comparable = hasComparableConnectionData(connection);
+                  const href = comparable ? compatibilityLink(connection) : "/connections";
+                  return (
+                    <Link
+                      key={connection.id}
+                      href={href}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.018] px-3.5 py-3 text-[var(--sc-ivory)] no-underline hover:bg-white/[0.04]"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{connection.name}</p>
+                        <p className="mt-1 text-xs text-[var(--sc-stone)]">
+                          {sun ? `${sun} Sun` : "Chart facts incomplete"} · {connection.placements?.length ?? 0} saved placements
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-[11px] font-semibold text-[var(--sc-gold-bright)]">{comparable ? "Compare" : "Complete"}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-white/[0.09] bg-white/[0.012] p-4">
+                <p className="m-0 text-sm leading-6 text-[var(--sc-stone)]">
+                  Add someone you actually know. Soul Codex keeps the person private on this device and leaves unknown chart facts unknown.
+                </p>
+              </div>
+            )}
+
+            <Link href="/connections" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
+              {connections.length ? "Open all people" : "Add your first person"}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
