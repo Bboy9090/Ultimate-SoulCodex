@@ -1,4 +1,13 @@
 import {
+  calcBirthday,
+  calcExpression,
+  calcLifePath,
+  calcMaturity,
+  calcPersonality,
+  calcSoulUrge,
+} from "../compute/numerology.js";
+import { calcPersonalYear } from "../compute/personal-numbers.js";
+import {
   synthesizeDepthInterpretationV1,
   validateDepthInterpretationV1,
   type BirthTimeStatus,
@@ -25,9 +34,9 @@ export interface OfflineAstrologyData {
   planets: Record<string, { sign: string; house: number; degree: number }>;
   houses: Array<{ sign: string; degree: number }>;
   aspects: Array<{ planet1: string; planet2: string; aspect: string; orb: number }>;
-  northNode: { sign: string; house: number; degree: number };
-  southNode: { sign: string; house: number; degree: number };
-  chiron: { sign: string; house: number; degree: number };
+  northNode: { sign: string; house: number; degree: number } | null;
+  southNode: { sign: string; house: number; degree: number } | null;
+  chiron: { sign: string; house: number; degree: number } | null;
 }
 
 export interface OfflineNumerologyData {
@@ -172,97 +181,31 @@ function parseTime(value?: string): { hours: number; minutes: number; known: boo
   return { hours, minutes, known: true };
 }
 
-function reduceNumber(input: number): number {
-  let value = Math.abs(Math.trunc(input));
-  while (value > 9 && value !== 11 && value !== 22 && value !== 33) {
-    value = String(value).split("").reduce((sum, digit) => sum + Number(digit), 0);
-  }
-  return value;
-}
-
-function nameNumber(name: string, mode: "all" | "vowels" | "consonants"): number {
-  const vowels = new Set(["A", "E", "I", "O", "U"]);
-  const total = name.toUpperCase().split("").reduce((sum, character) => {
-    const code = character.charCodeAt(0) - 64;
-    if (code < 1 || code > 26) return sum;
-    const value = ((code - 1) % 9) + 1;
-    const isVowel = vowels.has(character);
-    if (mode === "vowels" && !isVowel) return sum;
-    if (mode === "consonants" && isVowel) return sum;
-    return sum + value;
-  }, 0);
-  return reduceNumber(total);
-}
-
-function calculateSunSign(month: number, day: number): string {
-  const boundaries: Array<[number, number, string]> = [
-    [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"],
-    [4, 20, "Taurus"], [5, 21, "Gemini"], [6, 21, "Cancer"],
-    [7, 23, "Leo"], [8, 23, "Virgo"], [9, 23, "Libra"],
-    [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
-  ];
-  const current = boundaries.find(([boundaryMonth]) => boundaryMonth === month);
-  const nextSign = current?.[2] ?? "Capricorn";
-  const previousSign = SIGNS[(SIGNS.indexOf(nextSign as (typeof SIGNS)[number]) + 11) % 12];
-  return day >= (current?.[1] ?? 22) ? nextSign : previousSign;
-}
-
-function stableHash(value: string): number {
-  let hash = 2166136261;
-  for (const character of value) {
-    hash ^= character.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 function calculateAstrology(input: OfflineBirthInput): OfflineAstrologyData {
   const date = parseDate(input.birthDate);
-  const time = parseTime(input.birthTime);
-  const latitude = Number(input.latitude ?? 0);
   const sunSign = calculateSunSign(date.month, date.day);
-  const dayIndex = Math.floor((Date.UTC(date.year, date.month - 1, date.day) - Date.UTC(date.year, 0, 0)) / 86_400_000);
-  const moonSign = SIGNS[(dayIndex + time.hours) % 12];
-  const risingSign = SIGNS[(Math.floor((time.hours * 60 + time.minutes) / 120) + Math.floor(latitude / 10) + 24) % 12];
-  const sunIndex = SIGNS.indexOf(sunSign as (typeof SIGNS)[number]);
-  const risingIndex = SIGNS.indexOf(risingSign);
-  const seed = stableHash(`${input.birthDate}|${input.birthTime ?? "unknown"}|${latitude}|${input.longitude ?? 0}`);
-  const planet = (offset: number, house: number, degree: number) => ({ sign: SIGNS[(sunIndex + offset) % 12], house, degree });
-  const planets = {
-    sun: { sign: sunSign, house: 1, degree: 15.5 },
-    moon: { sign: moonSign, house: 4, degree: 23.2 },
-    mercury: planet(1, 3, 8.7), venus: planet(2, 2, 19.3), mars: planet(3, 6, 12.8),
-    jupiter: planet(4, 9, 26.1), saturn: planet(5, 10, 4.9), uranus: planet(6, 11, 18.4),
-    neptune: planet(7, 12, 21.7), pluto: planet(8, 8, 14.2),
-  };
-  const houses = Array.from({ length: 12 }, (_, index) => ({
-    sign: SIGNS[(risingIndex + index) % 12],
-    degree: Number((((seed % 3000) / 100 + index * 30) % 360).toFixed(2)),
-  }));
-  const moonIndex = SIGNS.indexOf(moonSign);
-  const northNode = { sign: SIGNS[(moonIndex + 6) % 12], house: 5, degree: 11.3 };
+
   return {
-    sunSign, moonSign, risingSign, planets, houses,
-    aspects: [
-      { planet1: "sun", planet2: "moon", aspect: "sextile", orb: 2.3 },
-      { planet1: "venus", planet2: "mars", aspect: "trine", orb: 1.8 },
-      { planet1: "jupiter", planet2: "saturn", aspect: "square", orb: 3.1 },
-    ],
-    northNode,
-    southNode: { sign: SIGNS[(SIGNS.indexOf(northNode.sign) + 6) % 12], house: 11, degree: 11.3 },
-    chiron: { sign: SIGNS[(sunIndex + 9) % 12], house: 7, degree: 16.8 },
+    sunSign,
+    moonSign: "",
+    risingSign: "",
+    planets: {},
+    houses: [],
+    aspects: [],
+    northNode: null,
+    southNode: null,
+    chiron: null,
   };
 }
 
 function calculateNumerology(input: OfflineBirthInput, currentYear: number): OfflineNumerologyData {
-  const { year, month, day } = parseDate(input.birthDate);
-  const lifePath = reduceNumber(day + month + year);
-  const birthday = reduceNumber(day);
-  const expression = nameNumber(input.name, "all");
-  const soulUrge = nameNumber(input.name, "vowels");
-  const personality = nameNumber(input.name, "consonants");
-  const maturity = reduceNumber(lifePath + expression);
-  const personalYear = reduceNumber(day + month + currentYear);
+  const lifePath = calcLifePath(input.birthDate);
+  const birthday = calcBirthday(input.birthDate);
+  const expression = calcExpression(input.name);
+  const soulUrge = calcSoulUrge(input.name);
+  const personality = calcPersonality(input.name);
+  const maturity = calcMaturity(input.birthDate, input.name);
+  const personalYear = calcPersonalYear(input.birthDate, currentYear);
   return {
     lifePath, birthday, expression, soulUrge, personality, maturity, personalYear,
     interpretations: {
@@ -379,7 +322,7 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
   const soulUrge = LIFE_PATH_TRAITS[numerology.soulUrge] ?? null;
   const seeds: DepthSynthesisSeed[] = [
     {
-      evidence: makeEvidence({ id: "offline.astrology.sun", system: "astrology", field: "sunSign", value: astrology.sunSign, confidence: "moderate", timeSensitivity: "none", notes: ["Sun-sign boundary calculation is local and deterministic."] }),
+      evidence: makeEvidence({ id: "offline.astrology.sun", system: "astrology", field: "sunSign", value: astrology.sunSign, confidence: "moderate", timeSensitivity: "none", notes: ["Calendar Sun-sign lookup is provisional and must not override ephemeris verification near sign-change boundaries."] }),
       label: `${astrology.sunSign} Sun symbolism`, priority: 100, claimKind: "derived",
       facets: {
         claritySummary: `A central pattern emphasizes ${sign.drive}.`, visiblePattern: `Others may first notice ${sign.gift}.`,
@@ -447,7 +390,7 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       ...(birthTimeStatus === "unknown" ? ["Exact birth time is unknown; Rising sign, houses, angles, Moon degree, and time-sensitive Human Design claims are unavailable."] : []),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
       "Human Design core is withheld from this offline profile until its qualified engine result is explicitly reconciled.",
-      "Moon, Rising, houses, planetary placements, nodes, aspects, and Chiron are withheld from local interpretation until verified astronomy is explicitly reconciled.",
+      "Moon, Rising, houses, planetary placements, nodes, aspects, and Chiron are not generated by this legacy offline path and remain unavailable until verified astronomy is explicitly reconciled.",
     ],
   });
   const validation = validateDepthInterpretationV1(interpretation, { birthTimeStatus });
