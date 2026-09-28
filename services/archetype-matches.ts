@@ -315,57 +315,57 @@ type ModeText = Record<RelationshipMode, TextEntry>;
 
 const TRINE_TEXT: Record<string, ModeText> = {
   "Fire-Fire": {
-    love:       { headline: "Two fires who recognize each other's hunger", why: "I feel instantly seen when you walk into a room — we share the same restless aliveness, the need to push past ordinary.", tension: "We can compete more than we connect. One of us needs to hold the fire while the other burns." },
-    attraction: { headline: "A combustion that starts from across the room", why: "There's nothing slow about how you pull me in. The energy between us ignites before words do.", tension: "We burn through each other fast if there's no real depth underneath." },
+    love:       { headline: "Two fire signs with a tradition-based theme of shared momentum", why: "This model associates two Fire signs with shared momentum, boldness, and a preference for movement over hesitation.", tension: "We can compete more than we connect. One of us needs to hold the fire while the other burns." },
+    attraction: { headline: "A symbolic theme of fast-moving attraction", why: "Traditional Fire-sign symbolism frames this pairing as potentially quick to notice and quick to activate.", tension: "We burn through each other fast if there's no real depth underneath." },
     friendship: { headline: "The friend who makes every plan feel electric", why: "You push me to be bolder, move faster, aim higher — and I do the same for you. We make the other brave.", tension: "We can egg each other into chaos. Someone needs to ask 'is this actually a good idea?'" },
     growth:     { headline: "The mirror who shows me my own impatience", why: "Watching you operate teaches me what I look like from the outside. Every friction point is a lesson about my own fire.", tension: "Two fires without containment. We must consciously choose depth over speed." },
   },
   "Earth-Earth": {
-    love:       { headline: "Built to last — loyalty speaks the same language", why: "I don't have to explain why consistency matters to you. We're both in it for the long arc, not the highlight reel.", tension: "Neither of us moves first. Stubbornness squared can quietly calcify the bond." },
-    attraction: { headline: "A slow burn that deepens the longer you stay", why: "The attraction isn't instant — it's tactile, physical, cumulative. You grow more magnetic every time I see you.", tension: "We can get too comfortable. The spark needs stoking; it won't maintain itself." },
+    love:       { headline: "A symbolic theme of steadiness and continuity", why: "I don't have to explain why consistency matters to you. We're both in it for the long arc, not the highlight reel.", tension: "Neither of us moves first. Stubbornness squared can quietly calcify the bond." },
+    attraction: { headline: "A symbolic theme of gradual attraction", why: "The attraction isn't instant — it's tactile, physical, cumulative. You grow more magnetic every time I see you.", tension: "We can get too comfortable. The spark needs stoking; it won't maintain itself." },
     friendship: { headline: "The friend who shows up without being asked", why: "You're there in the practical ways that actually count. No performance, no fanfare — just present.", tension: "We can both resist change together, which is comfortable but stagnating." },
     growth:     { headline: "The challenge to move before everything is 'ready'", why: "You reveal my rigidity by being just as rigid. The growth is in learning to choose evolution even when it's uncertain.", tension: "Inertia loves company. We can keep each other stuck." },
   },
   "Air-Air": {
     love:       { headline: "The mind as the meeting place", why: "Our conversations are where this bond lives. You excite a part of my thinking that doesn't usually get this much room.", tension: "We can intellectualize our way around real emotional intimacy." },
     attraction: { headline: "Witty, quick, and almost dangerously stimulating", why: "You intrigue me before you even try. The way your mind works makes me want to stay in the conversation.", tension: "Once the novelty fades, there has to be something beyond the banter." },
-    friendship: { headline: "The most effortless friendship I have", why: "We can pick up mid-thought after months apart. The rapport is just there — natural, sharp, easy.", tension: "We both drift. Making time for each other requires more intention than it looks like." },
+    friendship: { headline: "A symbolic theme of conversational ease", why: "We can pick up mid-thought after months apart. The rapport is just there — natural, sharp, easy.", tension: "We both drift. Making time for each other requires more intention than it looks like." },
     growth:     { headline: "Who grounds this when we both float?", why: "You help me articulate what I've been circling for years. But you also reflect back my tendency to avoid sitting in discomfort.", tension: "Two Air signs can analyze every feeling without actually processing one." },
   },
   "Water-Water": {
-    love:       { headline: "Oceanic — understanding each other without speaking", why: "The emotional attunement between us is almost unsettling in its depth. I don't have to translate myself with you.", tension: "Two oceans can merge into something that loses all edges. We need individual space to stay vivid." },
-    attraction: { headline: "Psychic pull — slow, real, and hard to explain", why: "The attraction builds before I can articulate it. It's almost subconscious — like something older than logic drawing me toward you.", tension: "We can spiral together into intensity that blocks out the world." },
+    love:       { headline: "A symbolic theme of emotional attunement", why: "Traditional Water-sign symbolism frames this pairing as potentially sensitive to emotional nuance; real understanding still depends on communication.", tension: "Two oceans can merge into something that loses all edges. We need individual space to stay vivid." },
+    attraction: { headline: "A symbolic theme of subtle attraction", why: "This model treats two Water signs as potentially drawn to emotional subtlety and depth; it does not establish subconscious or fated attraction.", tension: "We can spiral together into intensity that blocks out the world." },
     friendship: { headline: "A loyalty that carries across years without effort", why: "You already know what I'm holding. I know what you carry. This friendship holds that weight without needing to name it.", tension: "Shared avoidance is a risk. We need to call each other forward, not just validate." },
-    growth:     { headline: "A shared healing that's only possible with a mirror this clear", why: "You reflect things back to me that I could only see in someone who's navigated the same depths.", tension: "We can reinforce each other's wounds instead of healing them." },
+    growth:     { headline: "A symbolic theme of reflective emotional growth", why: "You reflect things back to me that I could only see in someone who's navigated the same depths.", tension: "We can reinforce each other's wounds instead of healing them." },
   },
 };
 
 const SEXTILE_TEXT: Record<string, ModeText> = {
   "Fire-Air": {
-    love:       { headline: "You feed my fire; I ignite your ideas", why: "The bond expands both of us. Your curiosity gives my instincts somewhere to go; my urgency gives your ideas momentum.", tension: "Your need to analyze can cool what I need to stay in motion." },
-    attraction: { headline: "Intellectual spark before physical pull — in the best way", why: "You intrigue my mind first, then everything else follows. That order makes it sustainable.", tension: "If the spark is only mental, neither of us will maintain interest long-term." },
+    love:       { headline: "You feed my fire; I ignite your ideas", why: "This model associates the pairing with complementary momentum. Your curiosity gives my instincts somewhere to go; my urgency gives your ideas momentum.", tension: "Your need to analyze can cool what I need to stay in motion." },
+    attraction: { headline: "A symbolic theme of mental stimulation", why: "You intrigue my mind first, then everything else follows. That order makes it sustainable.", tension: "If the spark is only mental, neither of us will maintain interest long-term." },
     friendship: { headline: "The friend who makes me smarter and braver at the same time", why: "We talk, we laugh, we plan things we actually do. This friendship moves.", tension: "You can get lost in theory while I'm already doing. We work best when we sync the pace." },
     growth:     { headline: "I learn to think before I act; you learn to move before it's perfect", why: "The friction between your reasoning and my instinct is exactly where I grow most.", tension: "If neither of us bends, we get stuck in a loop of planning versus doing." },
   },
   "Earth-Water": {
-    love:       { headline: "Water nourishes my earth — this is the most natural love", why: "You give me something I can't give myself: emotional depth inside a reliable container. I give you the safety to feel.", tension: "Your waves can erode my banks if I don't maintain my own groundedness." },
+    love:       { headline: "Earth–Water symbolism emphasizes support and containment", why: "This tradition pairs Earth structure with Water sensitivity as a possible complementary theme; whether that feels supportive must be tested in the actual relationship.", tension: "Your waves can erode my banks if I don't maintain my own groundedness." },
     attraction: { headline: "Quiet, intimate, and increasingly impossible to ignore", why: "The attraction between us is unhurried and accumulative. Every conversation adds another layer I want to explore.", tension: "We can stay in the 'comfortable' phase without ever becoming truly vulnerable." },
-    friendship: { headline: "The most loyal friendship either of us will ever have", why: "You show up for me in the emotional ways; I show up for you in the practical ones. It balances without effort.", tension: "My rigidity and your moodiness can create distance that neither of us names." },
-    growth:     { headline: "Practical wisdom meets emotional truth — that combination changes both of us", why: "You give my structure a soul. I give your emotion a form. This exchange is irreversible.", tension: "I can suppress what you need to feel; you can destabilize what I need to build." },
+    friendship: { headline: "A symbolic theme of practical and emotional support", why: "You show up for me in the emotional ways; I show up for you in the practical ones. It balances without effort.", tension: "My rigidity and your moodiness can create distance that neither of us names." },
+    growth:     { headline: "A symbolic theme of structure meeting sensitivity", why: "You give my structure a soul. I give your emotion a form. This exchange is irreversible.", tension: "I can suppress what you need to feel; you can destabilize what I need to build." },
   },
 };
 
 const OPPOSITION_TEXT: Record<string, ModeText> = {
   "Fire-Air": {
-    love:       { headline: "We complete each other's circuitry", why: "You hold what I've been reaching toward. This isn't easy love — it requires real effort — but it produces something neither of us could build alone.", tension: "We can spend years trying to change each other instead of learning from each other." },
-    attraction: { headline: "Magnetic and immediate — the pull is hard to explain", why: "The moment you're in the room I'm aware of you. There's a charge that exists before either of us decides anything.", tension: "Magnetism and sustainability aren't the same thing. The pull alone won't carry this." },
+    love:       { headline: "Opposition symbolism emphasizes contrast and complement", why: "You hold what I've been reaching toward. This isn't easy love — it requires real effort — but it produces something neither of us could build alone.", tension: "We can spend years trying to change each other instead of learning from each other." },
+    attraction: { headline: "Opposition symbolism can emphasize noticeable contrast", why: "Traditional opposition symbolism treats contrast as potentially noticeable or stimulating; it does not establish mutual attraction.", tension: "Magnetism and sustainability aren't the same thing. The pull alone won't carry this." },
     friendship: { headline: "The friend who challenges every assumption I hold", why: "You are the most interesting disagreement in my life. The friction is generative — when I'm secure enough to stay with it.", tension: "If we compete more than we collaborate, this becomes exhausting fast." },
-    growth:     { headline: "The most accelerated growth comes from exactly this polarity", why: "You are what I've most resisted becoming. That's the point. The integration of your approach is what I actually need.", tension: "Growth that comes from conflict only works if we choose curiosity over defensiveness." },
+    growth:     { headline: "A symbolic theme of growth through contrast", why: "You are what I've most resisted becoming. That's the point. The integration of your approach is what I actually need.", tension: "Growth that comes from conflict only works if we choose curiosity over defensiveness." },
   },
   "Earth-Water": {
-    love:       { headline: "The enduring pair — structure and depth that holds", why: "You offer what I've always needed and couldn't find in someone who was just like me. This runs long and deep.", tension: "Your emotional tides can overwhelm my need for predictability. I can make you feel dismissed." },
+    love:       { headline: "A symbolic theme of structure meeting emotional depth", why: "This model treats the polarity as potentially complementary; it does not predict durability, depth, or relationship outcome.", tension: "Your emotional tides can overwhelm my need for predictability. I can make you feel dismissed." },
     attraction: { headline: "The one I keep returning to without fully understanding why", why: "There is a pull in you that bypasses my defenses. The attraction isn't rational — it's structural.", tension: "The initial draw can fade into frustration if we don't learn each other's languages." },
-    friendship: { headline: "One of those rare friendships that actually transforms both people", why: "You've changed the way I see myself. I don't think either of us walks away from this the same.", tension: "Our worldviews can clash in ways that require real grace to navigate." },
+    friendship: { headline: "A symbolic theme of perspective-changing friendship", why: "You've changed the way I see myself. I don't think either of us walks away from this the same.", tension: "Our worldviews can clash in ways that require real grace to navigate." },
     growth:     { headline: "The tension between us is exactly where I need to grow", why: "You represent the part of life I've avoided. That's not comfortable — and it's also not avoidable if I want to keep evolving.", tension: "Growth only happens if we see the friction as data, not failure." },
   },
 };
@@ -373,13 +373,13 @@ const OPPOSITION_TEXT: Record<string, ModeText> = {
 const SQUARE_TEXT: Record<string, ModeText> = {
   "Fire-Water": {
     love:       { headline: "Steam or flood — the energy between us is never neutral", why: "Your emotional depth draws me in; my heat warms your guarded interior. But this requires constant calibration.", tension: "I can overwhelm your sensitivity; you can dampen what I need to stay lit." },
-    attraction: { headline: "The heat between us is real — and complicated", why: "There's undeniable pull here. The friction is the attraction. But it never fully resolves.", tension: "Without structure, passion becomes volatility." },
+    attraction: { headline: "A symbolic theme of friction and attraction", why: "This model can frame Fire–Water tension as stimulating or difficult; actual attraction cannot be inferred from the signs alone.", tension: "Without structure, passion becomes volatility." },
     friendship: { headline: "I can pull you out of spirals; you help me feel more deeply", why: "We serve each other in the ways we most struggle — when it's working, it's invaluable.", tension: "When it's not working, we can hurt each other without meaning to." },
-    growth:     { headline: "You reveal my emotional underdevelopment — and I reveal your fear of action", why: "The discomfort in this relationship is a precise map of my unlived edges. It's hard and also necessary.", tension: "We can wound each other where we're already tender. Awareness is the only protection." },
+    growth:     { headline: "You reveal my emotional underdevelopment — and I reveal your fear of action", why: "This model treats friction as a possible prompt for reflection; discomfort is not inherently necessary or beneficial.", tension: "We can wound each other where we're already tender. Awareness is the only protection." },
   },
   "Earth-Air": {
     love:       { headline: "Your ideas pull me out of my routine; my roots fascinate you", why: "There's genuine intrigue here — but converting intrigue into intimacy requires both of us to stretch.", tension: "You want freedom and movement; I want roots and continuity." },
-    attraction: { headline: "A mental spark that takes time to translate into something physical", why: "Your mind attracts me first. The rest follows slowly — but when it does, it's worth the wait.", tension: "If neither of us initiates what's physical, this stays in the head." },
+    attraction: { headline: "A mental spark that takes time to translate into something physical", why: "Your mind attracts me first. The model leaves physical attraction unresolved rather than assuming it follows from mental interest.", tension: "If neither of us initiates what's physical, this stays in the head." },
     friendship: { headline: "Good at building things together — projects, systems, plans", why: "We complement each other in practical ways. You see the vision; I see the path.", tension: "I can feel unmoored by your constant shifting; you can find my steadiness suffocating." },
     growth:     { headline: "You teach me to think beyond tradition; I teach you to commit", why: "This friction is the curriculum. The very things that irritate me about you are the things I most need to integrate.", tension: "If neither of us leads with curiosity, this becomes a standoff." },
   },
@@ -399,8 +399,8 @@ const SQUARE_TEXT: Record<string, ModeText> = {
 
 const CONJUNCTION_TEXT: ModeText = {
   love:       { headline: "My own reflection — familiar and rarely simple", why: "I recognize myself in you immediately. That's comforting and also where the complexity lives — I know both your gifts and your defenses.", tension: "What I haven't resolved in myself I'll see clearly in you." },
-  attraction: { headline: "The pull of recognition — I know this energy", why: "There's an instant familiarity that reads as attraction. Whether it deepens depends on whether we're actually curious about who each other is.", tension: "Familiarity can slide into comfort without chemistry if we're not intentional." },
-  friendship: { headline: "The friend who understands my inner world without explanation", why: "We share the same reference points, the same drives. There's an ease here that's rare.", tension: "We can avoid growth by only reflecting each other's existing patterns." },
+  attraction: { headline: "The pull of recognition — I know this energy", why: "The model associates same-sign pairings with familiarity, which some people may experience as attraction. Whether it deepens depends on whether we're actually curious about who each other is.", tension: "Familiarity can slide into comfort without chemistry if we're not intentional." },
+  friendship: { headline: "The friend who understands my inner world without explanation", why: "The model associates same-sign pairings with overlapping symbolic themes; real ease depends on lived compatibility.", tension: "We can avoid growth by only reflecting each other's existing patterns." },
   growth:     { headline: "The hardest growth comes from those who mirror me most clearly", why: "You show me things about myself I wouldn't see otherwise. Not because you're different — because you're the same.", tension: "We can reinforce each other's blind spots instead of illuminating them." },
 };
 
@@ -408,7 +408,7 @@ const QUINCUNX_TEXT: ModeText = {
   love:       { headline: "An unexpected pull that doesn't have a category", why: "We don't naturally fit each other's patterns — which can create either fascination or exhaustion, sometimes both at once.", tension: "Without shared element or modality, we have to build understanding from scratch every time." },
   attraction: { headline: "Interesting precisely because I can't quite read you", why: "The mystery is the draw. You don't operate the way I expect, and that keeps my attention.", tension: "Mystery without depth eventually becomes frustration." },
   friendship: { headline: "A friendship that requires ongoing translation", why: "We can offer each other entirely new frameworks — but it takes real effort to stay connected.", tension: "The adjustment never fully ends. We always need more patience than feels natural." },
-  growth:     { headline: "Maximum discomfort — maximum potential", why: "Nothing about this is automatic. That's precisely where the growth is: in learning to stay present when I'm confused.", tension: "Without shared footing, growth can stall into mutual incomprehension." },
+  growth:     { headline: "High adjustment in the symbolic model", why: "This model assigns more adjustment to the pairing; whether that produces growth depends on the people and circumstances.", tension: "Without shared footing, growth can stall into mutual incomprehension." },
 };
 
 function getText(
@@ -493,9 +493,9 @@ export function calculateArchetypeMatches(
       sign: target,
       score: scores[mode],
       scores,
-      headline: text.headline,
-      why:      text.why,
-      tension:  text.tension,
+      headline: `Symbolic theme · ${text.headline}`,
+      why: `Tradition-based model only: ${text.why} Treat this as a reflection prompt, not evidence about what either person feels or how the relationship will turn out.`,
+      tension: `${text.tension} This is a symbolic watch point, not a prediction.`,
     };
   });
 }
