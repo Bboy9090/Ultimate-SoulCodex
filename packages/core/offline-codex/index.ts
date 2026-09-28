@@ -5,6 +5,7 @@ import {
   calcMaturity,
   calcPersonality,
   calcSoulUrge,
+  reduceNumerology,
 } from "../compute/numerology.js";
 import { calcPersonalYear } from "../compute/personal-numbers.js";
 import {
@@ -179,6 +180,19 @@ function parseTime(value?: string): { hours: number; minutes: number; known: boo
   const minutes = Number(match[2]);
   if (hours > 23 || minutes > 59) return { hours: 12, minutes: 0, known: false };
   return { hours, minutes, known: true };
+}
+
+function reduceNumber(input: number): number {
+  return reduceNumerology(Math.abs(Math.trunc(input))).value;
+}
+
+function stableHash(value: string): number {
+  let hash = 2166136261;
+  for (const character of value) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 function calculateSunSign(month: number, day: number): string {
