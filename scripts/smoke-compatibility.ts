@@ -114,7 +114,8 @@ check("3. partial verified astrology re-normalizes", () => {
   delete b.verifiedAstrologyData.planets.moon;
   const r = calculateCompatibility(a, b);
   const pass = usedKeys(r).includes("astrology")
-    && r.categories.astrology.details.sunMoonHarmony.score === Math.round(r.categories.astrology.details.elementCompatibility.score / 2);
+    && r.categories.astrology.details.sunMoonHarmony.score === r.categories.astrology.details.elementCompatibility.score
+    && r.categories.astrology.details.sunMoonHarmony.coverage === "Sun verified; Moon excluded";
   return { pass, detail: `astro=${r.categories.astrology.score} sun=${r.categories.astrology.details.elementCompatibility.score} moon=${r.categories.astrology.details.sunMoonHarmony.score}` };
 });
 
