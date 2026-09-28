@@ -408,6 +408,17 @@ function guard(value: string, key: string): string {
   return FIELD_FALLBACK[key] ?? value;
 }
 
+function reflectionPrompt(value: string, basis: "symbolic" | "self-report" | "goal"): string {
+  const cleaned = cleanup(value);
+  const label =
+    basis === "symbolic"
+      ? "Symbolic reflection"
+      : basis === "goal"
+        ? "Goal reflection"
+        : "Self-report reflection";
+  return `${label}: Does this fit your lived experience? ${cleaned}`;
+}
+
 export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesis {
   // Deterministic variety key based on the unique seed (name)
   const seedStr = signals.seed + (signals.sunSign || "") + (signals.lifePath || 0);
@@ -420,27 +431,34 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
 
   const syn: Synthesis = {
     codename:            `${archetype.name.split(' ')[0]} ${archetype.role}`,
-    myPattern:           guard(cleanup(buildMyPattern(signals, archetype, vIdx)), "myPattern"),
-    stressPattern:       guard(cleanup(buildStressPattern(signals, archetype, vIdx)), "stressPattern"),
-    relationshipPattern: guard(cleanup(buildRelationshipPattern(signals, archetype, vIdx)), "relationshipPattern"),
-    recognitionMoment:   guard(cleanup(buildRecognitionMoment(signals, vIdx)), "recognitionMoment"),
+    myPattern:           guard(reflectionPrompt(buildMyPattern(signals, archetype, vIdx), "symbolic"), "myPattern"),
+    stressPattern:       guard(reflectionPrompt(buildStressPattern(signals, archetype, vIdx), "self-report"), "stressPattern"),
+    relationshipPattern: guard(reflectionPrompt(buildRelationshipPattern(signals, archetype, vIdx), "self-report"), "relationshipPattern"),
+    recognitionMoment:   guard(reflectionPrompt(buildRecognitionMoment(signals, vIdx), "self-report"), "recognitionMoment"),
     moralCode:           deriveMoralCode(signals.pressureStyle, signals.nonNegotiables),
-    powerMode:           guard(cleanup(buildPowerMode(signals)), "powerMode"),
-    growthEdges:         buildGrowthEdges(signals).map(cleanup).filter(e => e.split(/\s+/).filter(Boolean).length >= 3),
-    contradiction:       guard(cleanup(buildContradiction(signals, vIdx)), "contradiction"),
-    lifeConsequence:     guard(cleanup(buildLifeConsequence(signals, vIdx)), "lifeConsequence"),
-    patternInterruption: guard(cleanup(buildPatternInterruption(signals, vIdx)), "patternInterruption"),
-    loopSentence:        guard(cleanup(buildLoopSentence(signals, vIdx)), "loopSentence"),
-    synergy:             analyzeSynergy(signals),
-    coreDrivers:         rankCoreDrivers(signals),
+    powerMode:           guard(reflectionPrompt(buildPowerMode(signals), "goal"), "powerMode"),
+    growthEdges:         buildGrowthEdges(signals)
+      .map((edge) => reflectionPrompt(edge, "self-report"))
+      .filter(e => e.split(/\s+/).filter(Boolean).length >= 3),
+    contradiction:       guard(reflectionPrompt(buildContradiction(signals, vIdx), "self-report"), "contradiction"),
+    lifeConsequence:     guard(reflectionPrompt(buildLifeConsequence(signals, vIdx), "self-report"), "lifeConsequence"),
+    patternInterruption: guard(reflectionPrompt(buildPatternInterruption(signals, vIdx), "self-report"), "patternInterruption"),
+    loopSentence:        guard(reflectionPrompt(buildLoopSentence(signals, vIdx), "self-report"), "loopSentence"),
+    // The legacy SoulSignals shape cannot prove the evidence provenance required
+    // for cross-system dominance, synergy, or predictive behavior claims.
+    synergy:             [],
+    coreDrivers:         [],
   };
 
   // Clean up moral code notes as well, with a guard so it is never a stub.
-  syn.moralCode.notes = guard(cleanup(syn.moralCode.notes), "moralNotes");
+  syn.moralCode.notes = guard(
+    reflectionPrompt(syn.moralCode.notes, "self-report"),
+    "moralNotes",
+  );
 
   // Guarantee at least one growth edge.
   if (syn.growthEdges.length === 0) {
-    syn.growthEdges = [FIELD_FALLBACK.growthEdge];
+    syn.growthEdges = [reflectionPrompt(FIELD_FALLBACK.growthEdge, "self-report")];
   }
 
   // Final deduplication check across semantic groups
@@ -451,11 +469,9 @@ export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesi
     return synthesize({ ...signals, seed: signals.seed + "1" }, archetype);
   }
 
-  // Layer 7: Generate behavior predictions based on core drivers
-  const coreDriversForPrediction = syn.coreDrivers || [];
-  if (coreDriversForPrediction.length > 0) {
-    syn.predictions = generateBehaviorPredictions(signals, coreDriversForPrediction);
-  }
+  // Predictive behavior is deliberately unavailable on this legacy shape.
+  // A future evidence-aware path may re-enable it only with explicit provenance.
+  syn.predictions = [];
 
   return syn;
 }
