@@ -1084,13 +1084,33 @@ function chooseGovernedTemplates(
   return selected;
 }
 
+function stableGuidanceSeed(dailyContext: DailyContext, profileData: any): number {
+  const source = [
+    dailyContext.date,
+    dailyContext.personalDayNumber,
+    dailyContext.universalDayNumber,
+    dailyContext.moonSign,
+    dailyContext.moonPhase,
+    dailyContext.moonPhasePercentage,
+    dailyContext.currentHDGate,
+    dailyContext.currentHDLine,
+    profileData?.id ?? "",
+  ].join("|");
+
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 export function selectTemplates(
   dailyContext: DailyContext,
   profileData: any,
   lastUsedIds: string[] = []
 ): { selectedTemplates: TemplateVariation[]; templateIds: string[] } {
-  const seed = parseInt(dailyContext.date.replace(/-/g, ''), 10) +
-    (profileData.id ? String(profileData.id).charCodeAt(0) : 0);
+  const seed = stableGuidanceSeed(dailyContext, profileData);
 
   // Daily feed policy: use systems because they add day-specific, qualified
   // signal—not because the repository happens to contain an implementation.
