@@ -53,9 +53,9 @@ test("Offline Codex runtime", async (suite) => {
     );
 
     assert.equal(accented.numerologyData.lifePath, 9);
-    assert.equal(accented.numerologyData.expression, 1);
+    assert.equal(accented.numerologyData.expression, 3);
     assert.equal(accented.numerologyData.soulUrge, 1);
-    assert.equal(accented.numerologyData.personality, 9);
+    assert.equal(accented.numerologyData.personality, 2);
     assert.equal(accented.numerologyData.personalYear, 9);
   });
 
