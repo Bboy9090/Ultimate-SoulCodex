@@ -157,14 +157,40 @@ function layerFromFacet(
       ? `This layer is supported by ${labels[0]}. It describes the supplied pattern as reflective context rather than a permanent fact about the person.`
       : `This layer combines ${labels[0]} with ${labels[1]}. Their overlap is supporting context, not independent proof.`;
 
+  const evidenceConfidence = conservativeConfidence(evidence);
+  const psychologicalInference =
+    facet === "hiddenNeed" || facet === "protectiveFunction";
+  const hasBehavioralSupport = selected.some(
+    (seed) =>
+      seed.claimKind === "observed" ||
+      seed.evidence.system === "user-stated" ||
+      seed.evidence.system === "mirror" ||
+      seed.evidence.system === "tracker",
+  );
+  const confidence =
+    psychologicalInference && !hasBehavioralSupport && evidenceConfidence === "high"
+      ? "moderate"
+      : evidenceConfidence;
+
   return {
     title: FACET_TITLES[facet],
     summary,
-    explanation,
-    claimKind,
+    explanation:
+      psychologicalInference && !hasBehavioralSupport
+        ? `${explanation} The source calculation may be verified while this psychological meaning remains a symbolic hypothesis.`
+        : explanation,
+    claimKind:
+      psychologicalInference && !hasBehavioralSupport && claimKind === "derived"
+        ? "inferred"
+        : claimKind,
     evidenceIds: unique(evidence.map((item) => item.id)),
-    confidence: conservativeConfidence(evidence),
-    limitations,
+    confidence,
+    limitations: unique([
+      ...limitations,
+      ...(psychologicalInference && !hasBehavioralSupport
+        ? ["Verified source data does not by itself verify a hidden need or protective function."]
+        : []),
+    ]),
   };
 }
 
