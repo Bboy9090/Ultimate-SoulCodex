@@ -81,6 +81,13 @@ function formulaInputLifePath(value: number | undefined) {
   return value ?? null;
 }
 
+function callerSuppliedCompatibilityProfile(profile: any) {
+  const symbolicSun = symbolicSunSign(profile);
+  return {
+    astrologyData: symbolicSun ? { sunSign: symbolicSun } : {},
+  };
+}
+
 export function buildMatchResponse(profile: any, mode: RelationshipMode = "love") {
   const verifiedInput = buildCompatibilityProfileInput(profile);
   const symbolicSun = symbolicSunSign(profile);
@@ -281,11 +288,14 @@ router.post("/compatibility/archetype-matches", (req, res) => {
   try {
     const { profile, mode = "love" } = req.body ?? {};
     if (!profile || typeof profile !== "object") {
-      return res.status(400).json({ message: "A saved profile is required. Do not resubmit naked sign strings." });
+      return res.status(400).json({ message: "A saved profile projection is required. Do not resubmit naked sign strings." });
     }
 
     const safeMode = MODE_KEYS.includes(mode) ? mode : "love";
-    const result = buildMatchResponse(profile, safeMode);
+    // This endpoint receives a caller-supplied privacy projection rather than a
+    // server-owned profile record. Never allow that payload to self-attest
+    // verified astronomy or deterministic numerology.
+    const result = buildMatchResponse(callerSuppliedCompatibilityProfile(profile), safeMode);
     res.status(result.available ? 200 : 422).json(result);
   } catch (err: any) {
     res.status(500).json({ message: err?.message || "Compatibility match generation failed" });
@@ -296,13 +306,14 @@ router.post("/compatibility/person", (req, res) => {
   try {
     const { profile, otherPerson } = req.body ?? {};
     if (!profile || typeof profile !== "object") {
-      return res.status(400).json({ message: "A saved profile is required." });
+      return res.status(400).json({ message: "A saved profile projection is required." });
     }
     if (!otherPerson || typeof otherPerson !== "object") {
       return res.status(400).json({ message: "The other person's details are required." });
     }
 
-    const result = buildPersonComparisonResponse(profile, otherPerson);
+    // As above, the caller projection is symbolic-only at this trust boundary.
+    const result = buildPersonComparisonResponse(callerSuppliedCompatibilityProfile(profile), otherPerson);
     res.status(result.available ? 200 : 422).json(result);
   } catch (err: any) {
     res.status(500).json({ message: err?.message || "Person compatibility comparison failed" });
