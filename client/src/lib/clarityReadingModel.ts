@@ -7,12 +7,19 @@ export type ClarityConfidence =
   | "tentative"
   | "unavailable";
 
+export type CalculationCertainty = "verified" | "deterministic" | "user-stated" | "unverified";
+export type EvidenceStatus = "verified-source" | "calculated" | "user-assessed" | "symbolic-only" | "unresolved";
+export type InterpretationConfidence = "high" | "moderate" | "low" | "not-applicable";
+
 export interface ClaritySignal {
   id: string;
   label: string;
   value: string;
   confidence: ClarityConfidence;
   source: string;
+  calculationCertainty: CalculationCertainty;
+  evidenceStatus: EvidenceStatus;
+  interpretationConfidence: InterpretationConfidence;
 }
 
 export interface ClarityReadingModel {
@@ -137,6 +144,45 @@ function makeProgressiveSections(summary: string, values: ProgressiveSections) {
   };
 }
 
+function receiptForSignal(
+  confidence: ClarityConfidence,
+  source: string,
+): Pick<ClaritySignal, "calculationCertainty" | "evidenceStatus" | "interpretationConfidence"> {
+  if (confidence === "verified") {
+    return {
+      calculationCertainty: "verified",
+      evidenceStatus: "verified-source",
+      interpretationConfidence: "not-applicable",
+    };
+  }
+  if (confidence === "deterministic") {
+    return {
+      calculationCertainty: "deterministic",
+      evidenceStatus: "calculated",
+      interpretationConfidence: "not-applicable",
+    };
+  }
+  if (source.toLowerCase().includes("user assessment")) {
+    return {
+      calculationCertainty: "user-stated",
+      evidenceStatus: "user-assessed",
+      interpretationConfidence: "moderate",
+    };
+  }
+  if (confidence === "supported") {
+    return {
+      calculationCertainty: "unverified",
+      evidenceStatus: "symbolic-only",
+      interpretationConfidence: "low",
+    };
+  }
+  return {
+    calculationCertainty: "unverified",
+    evidenceStatus: "unresolved",
+    interpretationConfidence: "low",
+  };
+}
+
 function addSignal(
   signals: ClaritySignal[],
   id: string,
@@ -148,12 +194,14 @@ function addSignal(
   if (signals.some((signal) => signal.id === id)) return;
   if (typeof value !== "string" && typeof value !== "number") return;
   const clean = String(value).trim();
-  if (clean) signals.push({ id, label, value: clean, confidence, source });
+  if (clean) signals.push({ id, label, value: clean, confidence, source, ...receiptForSignal(confidence, source) });
 }
 
-function parsedNumber(value: unknown): number | undefined {
+const SUPPORTED_CORE_NUMBERS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33]);
+
+function validatedCoreNumber(value: unknown): number | undefined {
   const parsed = Number(value);
-  return Number.isInteger(parsed) ? parsed : undefined;
+  return Number.isInteger(parsed) && SUPPORTED_CORE_NUMBERS.has(parsed) ? parsed : undefined;
 }
 
 function evidenceText(value: unknown): value is string {
@@ -230,8 +278,9 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   const personality = (profile.personalityData ?? {}) as AnyRecord;
   const archetype = (profile.archetypeData ?? {}) as AnyRecord;
   const depth = (profile.depthInterpretation ?? {}) as AnyRecord;
-  const expression = parsedNumber(numerology.expression ?? profile.personalNumbers?.expression);
-  const soulUrge = parsedNumber(numerology.soulUrge ?? profile.personalNumbers?.soulUrge);
+  const lifePath = validatedCoreNumber(numerology.lifePath ?? profile.personalNumbers?.lifePath);
+  const expression = validatedCoreNumber(numerology.expression ?? profile.personalNumbers?.expression);
+  const soulUrge = validatedCoreNumber(numerology.soulUrge ?? profile.personalNumbers?.soulUrge);
   const expressionTheme = expression ? EXPRESSION_THEMES[expression] : undefined;
   const soulTheme = soulUrge ? SOUL_URGE_THEMES[soulUrge] : undefined;
 
@@ -323,10 +372,14 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   addSignal(signals, "sun", "Sun", verifiedSign("sun"), "verified", "independent astronomy");
   addSignal(signals, "moon", "Moon", verifiedSign("moon"), "verified", "independent astronomy");
   addSignal(signals, "rising", "Rising", verifiedSign("rising"), "verified", "independent astronomy");
-  if (!signals.some((signal) => signal.id === "sun")) {
+  if (
+    !signals.some((signal) => signal.id === "sun") &&
+    typeof astrology.sunSign === "string" &&
+    ZODIAC_SIGNS.has(astrology.sunSign)
+  ) {
     addSignal(signals, "sun-symbolic", "Sun", astrology.sunSign, "supported", "saved symbolic profile");
   }
-  addSignal(signals, "life-path", "Life Path", numerology.lifePath, "deterministic", "birth-date calculation");
+  addSignal(signals, "life-path", "Life Path", lifePath, "deterministic", "birth-date calculation");
   addSignal(signals, "expression", "Expression", expression, "deterministic", "name calculation");
   addSignal(signals, "soul-urge", "Soul Urge", soulUrge, "deterministic", "name-vowel calculation");
   const equalHousesVerified = verifiedEqualHouses(verified);
@@ -390,6 +443,7 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
 
   const limitations = [
     "Symbolic overlap is supporting context, not independent proof.",
+    "Only governed core numerology values (1-9, 11, 22, 33) are admitted as deterministic signals; malformed or unsupported values are excluded.",
     "Numerology values are deterministic calculations from supplied birth/name data; their personality meanings remain symbolic interpretation.",
     "Unknown or approximate birth time must not be promoted into verified Moon, Rising, house, Human Design, or timing claims.",
     "Verified geometry and Human Design calculations can support reflection; their psychological meanings remain symbolic rather than scientific diagnoses.",
