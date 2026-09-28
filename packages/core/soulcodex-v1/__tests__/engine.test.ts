@@ -21,6 +21,79 @@ test("fixture generates valid SoulCodexOutputV1", () => {
   soulCodexOutputV1Schema.parse(out);
 });
 
+test("v1 generator excludes raw unverified symbolic systems", () => {
+  const out = generateSoulCodexOutputV1({
+    profile: {
+      birthDate: "1990-09-17",
+      astrologyData: {
+        sunSign: "Virgo",
+        moonSign: "Scorpio",
+        risingSign: "Capricorn",
+      },
+      humanDesignData: {
+        type: "Reflector",
+        strategy: "Wait a lunar cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+      numerologyData: { lifePath: 99 },
+    },
+    profileId: "unverified-boundary",
+    toneMode: "clean",
+  });
+
+  assert.equal(out.core_system.astrology.sun, undefined);
+  assert.equal(out.core_system.astrology.moon, undefined);
+  assert.equal(out.core_system.astrology.rising, undefined);
+  assert.equal(out.core_system.human_design.type, undefined);
+  assert.equal(out.core_system.numerology.life_path, undefined);
+  assert.equal(out.confidence.astrology, "unverified");
+  assert.equal(out.confidence.human_design, "unverified");
+});
+
+test("v1 generator admits only evidence-bearing astrology and HD trust", () => {
+  const placementEvidence = {
+    source: "independent ephemeris comparison",
+    engine: "v1-boundary-test@1",
+    calculatedAt: "2026-09-28T12:00:00.000Z",
+  };
+  const out = generateSoulCodexOutputV1({
+    profile: {
+      birthDate: "1990-09-17",
+      verifiedAstrologyData: {
+        sun: { sign: "Virgo", verificationStatus: "verified", evidence: placementEvidence },
+        moon: { sign: "Scorpio", verificationStatus: "verified", evidence: placementEvidence },
+        rising: { sign: "Capricorn", verificationStatus: "verified", evidence: placementEvidence },
+      },
+      humanDesignData: {
+        status: "verified",
+        type: "Reflector",
+        strategy: "Wait a lunar cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+        engine: "soulcodex-hd-geocentric-v1",
+        source: "Soul Codex deterministic Human Design core engine",
+        calculatedAt: "2026-09-28T12:00:00.000Z",
+        inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+        verificationReceiptId: "test:human-design-receipt",
+        independentSource: "independent differential verifier",
+        verifiedAt: "2026-09-28T12:01:00.000Z",
+      },
+      numerologyData: { lifePath: 9 },
+    },
+    profileId: "verified-boundary",
+    toneMode: "clean",
+  });
+
+  assert.match(out.core_system.astrology.sun ?? "", /^Virgo/);
+  assert.match(out.core_system.astrology.moon ?? "", /^Scorpio/);
+  assert.match(out.core_system.astrology.rising ?? "", /^Capricorn/);
+  assert.equal(out.core_system.human_design.type, "Reflector");
+  assert.equal(out.core_system.numerology.life_path, 9);
+  assert.equal(out.confidence.astrology, "verified");
+  assert.equal(out.confidence.human_design, "verified");
+});
+
 test("contradiction filtering blocks expected trait keys", () => {
   const libs = loadEngineLibraries();
   const sample = [
