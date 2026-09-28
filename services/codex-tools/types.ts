@@ -1,3 +1,4 @@
+import { calcLifePath } from "@soulcodex/core";
 import { hasApprovedVerifiedHumanDesignTrust } from "../../server/services/human-design-trust";
 
 /**
@@ -17,6 +18,7 @@ export interface CodexToolResult {
 export interface ProfileInput {
   name?: string;
   astrologyData?: any;
+  verifiedAstrologyData?: any;
   numerologyData?: any;
   humanDesignData?: any;
   elementalMedicineData?: any;
@@ -28,8 +30,54 @@ export interface ProfileInput {
   [key: string]: any;
 }
 
+const ZODIAC_SIGNS = new Set([
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]);
+
+function evidenceText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function verifiedAstrologySign(value: any): string {
+  if (!value || typeof value !== "object") return "";
+  const evidence = value.provenance ?? value.evidence;
+  const hasDirectEvidence = Boolean(
+    evidenceText(evidence?.source) &&
+    evidenceText(evidence?.engine) &&
+    evidenceText(evidence?.calculatedAt) &&
+    !Number.isNaN(Date.parse(evidence.calculatedAt))
+  );
+  const hasGovernedEvidence = Boolean(
+    evidenceText(value?.policyId) &&
+    evidenceText(value?.evidenceArtifactId)
+  );
+  return value.verificationStatus === "verified" &&
+    ZODIAC_SIGNS.has(value.sign) &&
+    (hasDirectEvidence || hasGovernedEvidence)
+      ? value.sign
+      : "";
+}
+
+function canonicalLifePath(profile: ProfileInput, numData: any): number | "" {
+  const birthDate =
+    typeof profile?.birthDate === "string"
+      ? profile.birthDate.slice(0, 10)
+      : profile?.birthDate instanceof Date
+        ? profile.birthDate.toISOString().slice(0, 10)
+        : null;
+  if (!birthDate) return "";
+  try {
+    const expected = calcLifePath(birthDate);
+    const supplied = Number(numData?.lifePath ?? profile?.lifePath);
+    return supplied === expected ? expected : "";
+  } catch {
+    return "";
+  }
+}
+
 export function extractCore(profile: ProfileInput) {
-  const astro = profile?.astrologyData || {};
+  const astro = profile?.verifiedAstrologyData || profile?.astrologyData || {};
   const numData = profile?.numerologyData || {};
   const hdData = profile?.humanDesignData || {};
   const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(hdData) ? hdData : null;
@@ -44,10 +92,10 @@ export function extractCore(profile: ProfileInput) {
 
   return {
     name: profile?.name || "You",
-    sunSign: astro?.sunSign || profile?.sunSign || "",
-    moonSign: astro?.moonSign || profile?.moonSign || "",
-    risingSign: astro?.risingSign || profile?.risingSign || "",
-    lifePath: numData?.lifePath || profile?.lifePath || "",
+    sunSign: verifiedAstrologySign(astro?.sun ?? astro?.planets?.sun),
+    moonSign: verifiedAstrologySign(astro?.moon ?? astro?.planets?.moon),
+    risingSign: verifiedAstrologySign(astro?.rising),
+    lifePath: canonicalLifePath(profile, numData),
     hdType: verifiedHumanDesignFields.type || "",
     hdStrategy: verifiedHumanDesignFields.strategy || "",
     hdAuthority: verifiedHumanDesignFields.authority || "",
