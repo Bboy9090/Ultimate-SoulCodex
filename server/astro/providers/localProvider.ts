@@ -17,7 +17,10 @@ export const localAstroProvider: AstroProvider = {
     const notes: string[] = [];
 
     if (normalizedReq.timeUnknown || !normalizedReq.time24) {
-      notes.push("Birth time unknown: Rising sign and houses omitted.");
+      notes.push("Birth time unknown: Moon, Rising sign, and houses are withheld rather than calculated from a placeholder time.");
+    }
+    if (!normalizedReq.timezone) {
+      notes.push("Timezone unavailable: Moon is withheld because the local birth time cannot be converted to a reliable instant.");
     }
 
     if (normalizedReq.lat === undefined || normalizedReq.lon === undefined) {
@@ -83,9 +86,22 @@ export const localAstroProvider: AstroProvider = {
   },
 };
 
+const CONVENTIONAL_SUN_BOUNDARIES = new Set([
+  "01-20", "02-19", "03-21", "04-20", "05-21", "06-21",
+  "07-23", "08-23", "09-23", "10-23", "11-22", "12-22",
+]);
+
+function isConventionalSunBoundaryDate(dateISO: string): boolean {
+  const match = /^\d{4}-(\d{2})-(\d{2})$/.exec(dateISO);
+  return Boolean(match && CONVENTIONAL_SUN_BOUNDARIES.has(`${match[1]}-${match[2]}`));
+}
+
 function computeBasic(req: AstroRequest): Pick<AstroResult, "sun" | "moon"> {
-  const safeBirthTime = normalizeTime24(req.time24) ?? "12:00";
-  const safeTimezone = normalizeTimezone(req.timezone) ?? "UTC";
+  const normalizedTime = normalizeTime24(req.time24);
+  const normalizedTimezone = normalizeTimezone(req.timezone);
+  const hasReliableInstant = !req.timeUnknown && Boolean(normalizedTime && normalizedTimezone);
+  const safeBirthTime = normalizedTime ?? "12:00";
+  const safeTimezone = normalizedTimezone ?? "UTC";
   const safeLat = normalizeCoordinate(req.lat) ?? 0;
   const safeLon = normalizeCoordinate(req.lon) ?? 0;
 
@@ -99,7 +115,12 @@ function computeBasic(req: AstroRequest): Pick<AstroResult, "sun" | "moon"> {
       longitude: safeLon,
       timezone: safeTimezone,
     });
-    return { sun: data.sunSign, moon: data.moonSign };
+    return {
+      sun: !hasReliableInstant && isConventionalSunBoundaryDate(req.dateISO)
+        ? "Unknown"
+        : data.sunSign,
+      moon: hasReliableInstant ? data.moonSign : "Unknown",
+    };
   } catch {
     return { sun: "Unknown", moon: "Unknown" };
   }
