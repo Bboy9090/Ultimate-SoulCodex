@@ -1401,15 +1401,21 @@ export function calculateCompatibility(profile1: Profile, profile2: Profile): an
               : `Different modalities (${modality1} and ${modality2}) create diverse approaches to life's challenges.`
           },
           sunMoonHarmony: {
-            score: Math.round((astrology.sunCompatibility.score + astrology.moonCompatibility.score) / 2),
+            score: astro1?.moonSign && astro2?.moonSign
+              ? Math.round((astrology.sunCompatibility.score + astrology.moonCompatibility.score) / 2)
+              : astrology.sunCompatibility.score,
+            coverage: astro1?.moonSign && astro2?.moonSign ? "Sun + Moon verified" : "Sun verified; Moon excluded",
             insights: [
               astrology.sunCompatibility.description,
-              astrology.moonCompatibility.description
+              ...(astro1?.moonSign && astro2?.moonSign ? [astrology.moonCompatibility.description] : [])
             ]
           },
           risingSignSynergy: {
-            score: astrology.risingCompatibility.score,
-            insights: [astrology.risingCompatibility.description]
+            score: astro1?.risingSign && astro2?.risingSign ? astrology.risingCompatibility.score : 0,
+            coverage: astro1?.risingSign && astro2?.risingSign ? "Rising verified" : "Rising excluded",
+            insights: astro1?.risingSign && astro2?.risingSign
+              ? [astrology.risingCompatibility.description]
+              : ["Rising comparison unavailable because one or both placements are not verified."]
           },
           aspects: {
             harmonious: astrology.venusMarsChemistry.score >= 70 ? 3 : 1,
