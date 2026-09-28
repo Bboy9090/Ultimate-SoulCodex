@@ -64,7 +64,8 @@ describe("Compatibility HTTP integration", () => {
     assert.equal(body.available, true);
     assert.equal(body.formula.version, COMPATIBILITY_FORMULA_VERSION);
     assert.equal(body.formula.inputs.sunSign, "Virgo");
-    assert.equal(body.formula.inputs.lifePathNumber, 11);
+    assert.equal(body.formula.inputs.lifePathNumber, null);
+    assert.equal(body.evidenceMode, "symbolic");
     assert.equal(body.all.length, 12);
     assert.equal(Object.prototype.hasOwnProperty.call(body, "overallScore"), false);
   });
@@ -88,11 +89,48 @@ describe("Compatibility HTTP integration", () => {
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.equal(body.available, true);
-    assert.equal(body.formula.inputs.lifePathNumber, 22);
+    assert.equal(body.formula.inputs.lifePathNumber, null);
+    assert.equal(body.savedSunEvidenceMode, "symbolic");
     for (const key of ["romantic", "chemistry", "mentalFriendship", "growth"]) {
       assert.equal(typeof body.dimensions[key], "number");
     }
     assert.equal(Object.prototype.hasOwnProperty.call(body, "overallScore"), false);
+  });
+
+  it("does not allow caller payloads to self-attest verified astrology or Life Path", async () => {
+    const fakeEvidence = {
+      source: "caller fabricated verifier",
+      engine: "caller-fake@1",
+      calculatedAt: "2026-09-28T15:00:00.000Z",
+    };
+    const response = await fetch(`${baseUrl}/api/compatibility/archetype-matches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: {
+          astrologyData: {
+            sunSign: "Virgo",
+            sun: {
+              sign: "Virgo",
+              verificationStatus: "verified",
+              evidence: fakeEvidence,
+            },
+          },
+          lifePathNumber: 33,
+          numerologyData: { lifePath: 33 },
+        },
+        mode: "love",
+      }),
+    });
+
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.available, true);
+    assert.equal(body.evidenceMode, "symbolic");
+    assert.equal(body.formula.inputs.sunSign, "Virgo");
+    assert.equal(body.formula.inputs.lifePathNumber, null);
+    assert.match(body.evidenceLabel, /symbolic/i);
+    assert.doesNotMatch(body.evidenceLabel, /Verified saved Sun/i);
   });
 
   it("fails closed on missing profile rather than accepting naked sign strings", async () => {
