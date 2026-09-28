@@ -12,7 +12,6 @@ import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDe
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
-import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
 const HumanDesignBodygraph = lazy(() => import("@/components/HumanDesignBodygraph"));
 const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
@@ -102,7 +101,6 @@ export default function OfflineProfilePage() {
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, unknown>;
   const verifiedHumanDesign = hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
-  const verifiedHumanDesignCenters = normalizeHumanDesignCenters(verifiedHumanDesign?.centers);
   const ultimateCodex = useMemo(
     () => buildUltimateCodexSynthesis(reconciledProfile ?? {}),
     [reconciledProfile],
@@ -183,35 +181,24 @@ export default function OfflineProfilePage() {
         <UltimateCodexPanel synthesis={ultimateCodex} />
 
         {verifiedHumanDesign && (
-          <section className="sc-panel mb-6 p-6" data-testid="verified-human-design-panel">
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="verified-human-design-panel">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="sc-eyebrow">Verified Human Design core</p>
-                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Your decision-making architecture</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">Calculated from your exact birth date, time, birthplace timezone, and coordinates. This is a symbolic self-reflection system, not a scientific or diagnostic assessment.</p>
+                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Decision architecture snapshot</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+                  The verified core is summarized here. Open the bodygraph below for definition, centers, channels, gates, and activation detail.
+                </p>
               </div>
               <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> verified core</span>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[["Type", verifiedHumanDesign.type], ["Strategy", verifiedHumanDesign.strategy], ["Authority", verifiedHumanDesign.authority], ["Profile", verifiedHumanDesign.profile]].map(([label, value]) => (
-                <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
-                  <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p>
+                <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] px-3 py-2.5">
+                  <p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p>
                   <p className="mt-1 text-sm font-semibold text-[var(--sc-ivory)]">{String(value ?? "Unresolved")}</p>
                 </div>
               ))}
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
-                <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">Definition &amp; centers</p>
-                <p className="mt-2 text-sm font-semibold text-[var(--sc-ivory)]">{String(verifiedHumanDesign.definition ?? "Unresolved")}</p>
-                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Defined: {verifiedHumanDesignCenters.defined.join(", ") || "None"}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Open/undefined: {verifiedHumanDesignCenters.undefined.join(", ") || "None"}</p>
-              </div>
-              <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
-                <p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">Channels &amp; gates</p>
-                <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Channels: {humanDesignListLabel(verifiedHumanDesign.channels, "channel")}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Activated gates: {humanDesignListLabel(verifiedHumanDesign.activatedGates, "gate")}</p>
-              </div>
             </div>
           </section>
         )}
