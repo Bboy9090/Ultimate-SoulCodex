@@ -1084,8 +1084,13 @@ function chooseGovernedTemplates(
   return selected;
 }
 
-function stableGuidanceSeed(dailyContext: DailyContext, profileData: any): number {
+function stableGuidanceSeed(
+  dailyContext: DailyContext,
+  profileData: any,
+  salt: string,
+): number {
   const source = [
+    salt,
     dailyContext.date,
     dailyContext.personalDayNumber,
     dailyContext.universalDayNumber,
@@ -1110,19 +1115,21 @@ export function selectTemplates(
   profileData: any,
   lastUsedIds: string[] = []
 ): { selectedTemplates: TemplateVariation[]; templateIds: string[] } {
-  const seed = stableGuidanceSeed(dailyContext, profileData);
+  const numerologySeed = stableGuidanceSeed(dailyContext, profileData, "numerology");
+  const astrologySeed = stableGuidanceSeed(dailyContext, profileData, "astrology");
+  const humanDesignSeed = stableGuidanceSeed(dailyContext, profileData, "humandesign");
 
   // Daily feed policy: use systems because they add day-specific, qualified
   // signal—not because the repository happens to contain an implementation.
   // Static/legacy systems remain explorable elsewhere and never enter this
   // automatic feed by random rotation.
   const selected: TemplateVariation[] = [
-    ...chooseGovernedTemplates(governedDailyNumerology, 2, seed, lastUsedIds),
-    ...chooseGovernedTemplates(governedDailyAstrology, profileData.hdVerified ? 1 : 2, seed + 31, lastUsedIds),
+    ...chooseGovernedTemplates(governedDailyNumerology, 2, numerologySeed, lastUsedIds),
+    ...chooseGovernedTemplates(governedDailyAstrology, profileData.hdVerified ? 1 : 2, astrologySeed, lastUsedIds),
   ];
 
   if (profileData.hdVerified) {
-    selected.push(...chooseGovernedTemplates(governedDailyHumanDesign, 1, seed + 67, lastUsedIds));
+    selected.push(...chooseGovernedTemplates(governedDailyHumanDesign, 1, humanDesignSeed, lastUsedIds));
   }
 
   return {
