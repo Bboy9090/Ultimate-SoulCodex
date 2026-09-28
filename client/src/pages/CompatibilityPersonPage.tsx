@@ -46,6 +46,13 @@ const DIMENSIONS = [
   { key: "growth", label: "Growth & repair", detail: "Friction, adaptation, recurring lessons, boundaries, and repair pressure." },
 ] as const;
 
+function symbolicBand(score: number): string {
+  if (score >= 80) return "strong resonance";
+  if (score >= 65) return "supportive resonance";
+  if (score >= 50) return "mixed resonance";
+  return "more adjustment";
+}
+
 function profileName(profile: any) {
   return profile?.name || profile?.firstName || profile?.codename || "Your saved Identity";
 }
@@ -271,14 +278,29 @@ export default function CompatibilityPersonPage() {
                     <article className="sc-panel min-w-0 p-5" key={dimension.key}>
                       <div className="flex items-start justify-between gap-4">
                         <h3 className="m-0 font-serif text-lg font-semibold">{dimension.label}</h3>
-                        <span className="rounded-full border border-[rgba(217,182,111,.22)] px-2.5 py-1 text-sm font-semibold text-[var(--sc-gold-bright)]" aria-label={`${dimension.label} symbolic model score ${dimensionScores[dimension.key]}`}>
-                          {dimensionScores[dimension.key]}
+                        <span className="rounded-full border border-[rgba(217,182,111,.22)] px-2.5 py-1 text-sm font-semibold text-[var(--sc-gold-bright)]" aria-label={`${dimension.label} symbolic model band ${symbolicBand(dimensionScores[dimension.key])}`}>
+                          {symbolicBand(dimensionScores[dimension.key])}
                         </span>
                       </div>
                       <p className="mb-0 mt-3 text-sm leading-6 text-[var(--sc-stone)]">{dimension.detail}</p>
                     </article>
                   ))}
                 </section>
+
+                <details className="sc-panel p-5">
+                  <summary className="cursor-pointer text-sm font-semibold text-[var(--sc-ivory)]">Inspect exact symbolic model values</summary>
+                  <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">
+                    These values only order this symbolic model. They are not percentages, probabilities, or measured relationship outcomes.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {DIMENSIONS.map((dimension) => (
+                      <div key={`inspect-${dimension.key}`} className="flex items-center justify-between rounded-lg border border-white/[0.07] px-3 py-2 text-sm">
+                        <span>{dimension.label}</span>
+                        <span className="font-mono text-[var(--sc-stone)]">{dimensionScores[dimension.key]}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
 
                 {result.interpretation ? (
                   <section className="sc-panel p-6">
