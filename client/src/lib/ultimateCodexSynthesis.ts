@@ -479,21 +479,45 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ? primaryStellium.key
     : placements.find((p) => p.key === "sun")?.sign ?? placements[0]?.sign ?? null;
   const risingPoint = supportingPoints.find((point) => point.key === "rising");
-  const identityParts = unique([
-    leadSign && validSign(leadSign) ? `${leadSign} ${SIGN_META[leadSign].word}` : null,
+  const astrologyIdentity =
+    leadSign && validSign(leadSign) ? `${leadSign} ${SIGN_META[leadSign].word}` : null;
+  const humanDesignIdentity =
+    hdType && HD_WORD[hdType] ? `${hdType} ${HD_WORD[hdType]}${hdProfile ? ` ${hdProfile}` : ""}` : null;
+  const numerologyIdentity =
+    lifePath && LIFE_PATH_WORD[lifePath] ? `Life Path ${lifePath} ${LIFE_PATH_WORD[lifePath]}` : null;
+  const secondaryAstrologyIdentity = unique([
     risingPoint ? `${risingPoint.sign} Rising` : null,
     primaryStellium ? primaryStellium.label.replace(" · ", " / ") : null,
-    hdType && HD_WORD[hdType] ? `${hdType} ${HD_WORD[hdType]}${hdProfile ? ` ${hdProfile}` : ""}` : null,
-    lifePath && LIFE_PATH_WORD[lifePath] ? `Life Path ${lifePath} ${LIFE_PATH_WORD[lifePath]}` : null,
     dominantElement ? `${dominantElement} emphasis` : null,
+  ]);
+
+  // Cross-system representatives come first. No single symbolic family may take
+  // every headline slot merely because it emits more internal details.
+  const identityParts = unique([
+    astrologyIdentity,
+    humanDesignIdentity,
+    numerologyIdentity,
+    ...secondaryAstrologyIdentity,
   ]);
   const identitySignature = identityParts.length
     ? identityParts.join(" · ")
     : "Governed identity signature unavailable from current evidence";
+
+  const archetypeRepresentatives = unique([
+    astrologyIdentity,
+    humanDesignIdentity,
+    numerologyIdentity,
+  ]);
+  const derivedArchetypeParts = archetypeRepresentatives.length >= 2
+    ? archetypeRepresentatives
+    : unique([
+        ...archetypeRepresentatives,
+        ...secondaryAstrologyIdentity,
+      ]).slice(0, 3);
   const derivedArchetype =
-    coverage === "insufficient" || identityParts.length < 2
+    coverage === "insufficient" || derivedArchetypeParts.length < 2
       ? null
-      : `${identityParts.slice(0, 3).join(" × ")} · ${(fingerprint ?? hashedIdentity.fingerprint).slice(0, 4).toUpperCase()}`;
+      : `${derivedArchetypeParts.slice(0, 3).join(" × ")} · ${(fingerprint ?? hashedIdentity.fingerprint).slice(0, 4).toUpperCase()}`;
 
   const resonances: string[] = [];
   if (dominantElement && lifePath && LIFE_PATH_AXIS[lifePath]) {
