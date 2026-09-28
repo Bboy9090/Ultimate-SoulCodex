@@ -28,10 +28,35 @@ test("Offline Codex runtime", async (suite) => {
 
     assert.deepStrictEqual(first, second);
     assert.equal(first.astrologyData.sunSign, "Virgo");
+    assert.equal(first.astrologyData.moonSign, "");
+    assert.equal(first.astrologyData.risingSign, "");
+    assert.deepStrictEqual(first.astrologyData.planets, {});
+    assert.deepStrictEqual(first.astrologyData.houses, []);
+    assert.deepStrictEqual(first.astrologyData.aspects, []);
+    assert.equal(first.astrologyData.northNode, null);
+    assert.equal(first.astrologyData.southNode, null);
+    assert.equal(first.astrologyData.chiron, null);
     assert.equal(first.numerologyData.lifePath, 9);
     assert.equal(first.localOnly, true);
     assert.equal(first.syncStatus, "local-only");
     assert.equal(isOfflineCodexProfile(first), true);
+  });
+
+  await suite.test("uses the canonical numerology engine for normalized names", () => {
+    const accented = generateOfflineCodexProfile(
+      { ...birthInput, name: "José Núñez" },
+      {
+        id: "local-canonical-numerology",
+        generatedAt: "2026-07-24T20:00:00.000Z",
+        currentYear: 2026,
+      },
+    );
+
+    assert.equal(accented.numerologyData.lifePath, 9);
+    assert.equal(accented.numerologyData.expression, 1);
+    assert.equal(accented.numerologyData.soulUrge, 1);
+    assert.equal(accented.numerologyData.personality, 9);
+    assert.equal(accented.numerologyData.personalYear, 9);
   });
 
   await suite.test("produces a contract-valid evidence-linked depth interpretation", () => {
