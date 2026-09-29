@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - accuracy/strict-civil-time
       - release/ios-4.0.0-final-truth-fix
       - feature/profile-atlas-and-connections
       - release/store-4.0.0-federation-final

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - release/4.0.1-runtime-identity-finalization
+      - accuracy/strict-civil-time
   pull_request:
     branches:
       - main

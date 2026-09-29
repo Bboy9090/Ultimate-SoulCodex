@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fed-human-design-differential-audit
+      - accuracy/strict-civil-time
   pull_request:
     paths:
       - "packages/astrology/human-design.ts"
