@@ -68,6 +68,12 @@ test("store workflow binds exact release branch and Play production upload", asy
   assert.match(workflow, /iOS marketingVersion=4\.0\.2/);
   assert.match(workflow, /iOS build=4000009/);
   assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
+  assert.match(
+    workflow,
+    /group:\s*soulcodex-store-\\?\$\{\{\s*github\.event\.pull_request\.number\s*\|\|\s*github\.ref\s*\}\}/,
+  );
+  assert.doesNotMatch(workflow, /group:\s*soulcodex-store-4-0-0\s*$/m);
+  assert.match(workflow, /cancel-in-progress:\s*true/);
 });
 
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
