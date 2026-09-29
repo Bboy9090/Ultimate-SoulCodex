@@ -20,6 +20,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -370,7 +371,9 @@ export default function LocalFirstInputForm() {
                         <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><Clock className="h-4 w-4" /> Birth time <span className="ml-auto text-[11px] font-normal text-[var(--sc-stone)]">optional when unknown</span></FormLabel>
                         <FormControl><Input {...field} className={inputClass} type="time" data-testid="input-birth-time" /></FormControl>
                         <FormMessage />
-                        <p className="text-xs leading-5 text-[var(--sc-stone)]">Leave this blank if you do not know it. Exact time unlocks time-sensitive calculation candidates; it is never invented.</p>
+                        <FormDescription className="text-xs leading-5 text-[var(--sc-stone)]">
+                          Leave this blank if you do not know it. Exact time unlocks time-sensitive calculation candidates; it is never invented.
+                        </FormDescription>
                       </FormItem>
                     )}
                   />
@@ -384,14 +387,14 @@ export default function LocalFirstInputForm() {
                       <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><MapPin className="h-4 w-4" /> Birth location</FormLabel>
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <FormControl><Input {...field} className={inputClass} placeholder="City, state/province, country" data-testid="input-birth-location" /></FormControl>
-                        <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.06)] px-5 text-sm font-semibold text-[var(--sc-gold-bright)] transition hover:bg-[rgba(217,182,111,.12)] disabled:opacity-60" onClick={resolveLocation} disabled={isLocating} data-testid="button-location-lookup">
+                        <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.06)] px-5 text-sm font-semibold text-[var(--sc-gold-bright)] transition hover:bg-[rgba(217,182,111,.12)] disabled:opacity-60" onClick={resolveLocation} disabled={isLocating} aria-busy={isLocating} data-testid="button-location-lookup">
                           {isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}Resolve place
                         </button>
                       </div>
                       <FormMessage />
-                      <p className="text-xs leading-5 text-[var(--sc-stone)]">
+                      <FormDescription className="text-xs leading-5 text-[var(--sc-stone)]">
                         Built-in cities resolve on-device. Otherwise, pressing Resolve place sends only the entered place text to Soul Codex&apos;s location resolver; coordinates determine the birth location&apos;s IANA timezone. Your current device timezone is never substituted for a remote birthplace.
-                      </p>
+                      </FormDescription>
                     </FormItem>
                   )}
                 />
@@ -411,7 +414,7 @@ export default function LocalFirstInputForm() {
                   </div>
                 </div>
 
-                <div className={`rounded-2xl border p-4 ${exactChartInputsReady ? "border-[rgba(114,216,197,.28)] bg-[rgba(114,216,197,.05)]" : "border-[var(--sc-line)] bg-white/[0.02]"}`} data-testid="chart-input-readiness">
+                <div className={`rounded-2xl border p-4 ${exactChartInputsReady ? "border-[rgba(114,216,197,.28)] bg-[rgba(114,216,197,.05)]" : "border-[var(--sc-line)] bg-white/[0.02]"}`} data-testid="chart-input-readiness" role="status" aria-live="polite">
                   <div className="flex gap-3">
                     <ShieldCheck className={`mt-0.5 h-5 w-5 shrink-0 ${exactChartInputsReady ? "text-[var(--sc-teal)]" : "text-[var(--sc-stone)]"}`} />
                     <div>
@@ -434,11 +437,12 @@ export default function LocalFirstInputForm() {
                     type="checkbox"
                     checked={verifyOnline}
                     onChange={(event) => setVerifyOnline(event.target.checked)}
-                    className="mt-1 h-4 w-4 accent-[var(--sc-gold)]"
+                    aria-describedby="verify-online-description"
+                    className="mt-1 h-6 w-6 shrink-0 accent-[var(--sc-gold)]"
                   />
                   <span>
                     <span className="block text-sm font-semibold text-[var(--sc-ivory)]">Verify supported placements online after creation</span>
-                    <span className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">
+                    <span id="verify-online-description" className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">
                       Optional. Soul Codex sends only birth date, optional birth time, timezone, and coordinates to the astronomy verification endpoint. It does not create a server profile or invoke AI generation for this check.
                       Leave this off to keep profile creation entirely on-device.
                     </span>
