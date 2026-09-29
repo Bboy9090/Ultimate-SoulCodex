@@ -63,6 +63,16 @@ function validateProtectedShareSettings(settings: ShareSettings): void {
   settings.passwordHash = undefined;
 }
 
+function publicShareableLink(link: ShareableLink): ShareableLink {
+  return {
+    ...link,
+    settings: {
+      ...link.settings,
+      passwordHash: undefined,
+    },
+  };
+}
+
 /**
  * Create a shareable link for a profile
  */
@@ -116,7 +126,7 @@ export async function createShareableLink(
   // Save to storage (you'll need to add this method to storage)
   await storage.createShareableLink(shareableLink);
 
-  return shareableLink;
+  return publicShareableLink(shareableLink);
 }
 
 /**
@@ -422,12 +432,12 @@ export async function updateShareableLink(
 
   await storage.updateShareableLink(linkId, updated);
 
-  return {
+  return publicShareableLink({
     ...link,
     ...updated,
     settings: updatedSettings,
     expiresAt
-  } as ShareableLink;
+  } as ShareableLink);
 }
 
 /**
@@ -447,7 +457,8 @@ export async function getUserShareableLinks(
   storage: IStorage,
   userId: string
 ): Promise<ShareableLink[]> {
-  return await storage.getShareableLinksByUser(userId);
+  const links = await storage.getShareableLinksByUser(userId);
+  return links.map(publicShareableLink);
 }
 
 export default {
