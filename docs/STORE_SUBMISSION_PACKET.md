@@ -33,7 +33,7 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 
 ### Promotional text — iOS
 
-`One clear blueprint across astrology, numerology, Human Design, daily timing, compatibility, and behavioral patterns.`
+`Evidence-aware astrology, numerology, qualified Human Design context, daily timing, and symbolic compatibility in one clear experience.`
 
 ### Short description — Google Play
 
@@ -41,39 +41,41 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 
 ### Full description
 
-Soul Codex maps your personality patterns using astrology, numerology, Human Design, timing, and behavioral analysis — in plain language you can actually use.
+Soul Codex is an evidence-aware self-reflection app built around governed astrology, deterministic numerology, qualified Human Design context, daily timing, and symbolic compatibility.
 
-Not a pile of disconnected horoscopes. One sharp, integrated reading that explains how you think, react, and relate.
+It does not force every system into every reading. A system appears only when its calculation, evidence, privacy, interpretation, and release contracts support the job.
 
 What you get:
 
-- Your Soul Archetype — one identity synthesis across multiple systems
-- Sun, Moon, and Rising sign analysis
-- Life Path number and personal-year timing
-- Human Design type, authority, and profile
-- Daily personalized guidance based on your chart and current timing
-- Compatibility readings showing where two people naturally match or clash
-- An AI Soul Guide that answers questions using your profile context
+- A reusable Identity built from supported profile evidence
+- Sun, Moon, Rising, houses, aspects, Nodes, and qualified Chiron only when the relevant astronomy verification contracts pass
+- Deterministic Life Path and other supported numerology values, with symbolic meaning kept separate from arithmetic fact
+- Human Design core fields only when the verified-core evidence contract passes
+- Selective daily reflection using context-qualified timing inputs rather than system pile-on
+- Compatibility views that organize symbolic relationship themes without presenting a probability of relationship success
+- Reading layers that separate calculated evidence, symbolic interpretation, limitations, and unresolved data
 
 How it works:
 
-1. Enter your birth data. Date is required; time and location improve precision.
-2. Answer a few questions about decisions, stress, energy, and relationships.
-3. Soul Codex blends the systems into one reading.
-4. Explore your archetype, patterns, daily signal, compatibility, and growth direction.
+1. Enter the birth information you actually know.
+2. Soul Codex calculates only the systems supported by those inputs.
+3. Missing or unsafe inputs stay unresolved instead of being guessed.
+4. Explore Identity, Reading, Today, Compatibility, and Timeline with evidence and limitations available for inspection.
 
 What makes it different:
 
-- It clearly labels uncertainty instead of guessing when birth details are missing.
-- It synthesizes multiple systems instead of presenting disconnected results.
-- It uses direct language instead of burying the reading in jargon.
-- It is free to start, with no account required for the initial experience.
+- Verified calculations and symbolic interpretations are visibly separated.
+- Repeated themes across systems are treated as resonance, not extra proof.
+- Exact-time systems fail closed when exact-time evidence is missing or ambiguous.
+- Unsupported legacy systems remain quarantined rather than appearing as filler.
+- Plain language comes first; technical evidence remains inspectable.
+- Planned premium systems are not sold as implemented work.
 
 Soul Codex is intended for self-reflection and entertainment. It does not provide medical, legal, financial, or other professional advice.
 
 ### iOS keywords
 
-`astrology,numerology,human design,birth chart,personality,zodiac,compatibility,daily reading`
+`astrology,numerology,human design,birth chart,self reflection,zodiac,compatibility,daily reading`
 
 ## Asset Inventory
 
@@ -93,7 +95,7 @@ Use real screens from the final native build. Do not place claims in the artwork
 | Order | Screen | Caption |
 |---|---|---|
 | 1 | Onboarding / start | Know How You're Wired |
-| 2 | Profile / blueprint | One Blueprint. Every System. |
+| 2 | Profile / blueprint | One Blueprint. Supported Systems. |
 | 3 | Today | Your Daily Signal |
 | 4 | Compatibility | See Where You Match — and Clash |
 | 5 | Soul Guide | Ask From Your Actual Profile |
@@ -177,7 +179,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
 - Android manifest native permission surface: `android.permission.INTERNET` only
 - iOS simulator Release and generic-device archive qualification: passed
-- Google Play developer account: active at `harebugz23@gmail.com`
+- Google Play developer account: active
 - Automated Google Play publishing remains optional; the missing `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` blocks only the CI upload path, not manual Play Console AAB upload
 
 ## Remaining Store-Owner Gates
