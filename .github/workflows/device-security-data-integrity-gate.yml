@@ -42,6 +42,7 @@ jobs:
           tests/share-privacy-accessibility-contract.test.ts
           tests/pwa-update-lifecycle-contract.test.ts
           tests/public-api-error-privacy.test.ts
+          tests/safe-diagnostics-security-headers.test.ts
           tests/storage-public-share-deletion.test.ts
           tests/account-deletion-local-cleanup-truth.test.ts
           tests/privacy-public-share-truth.test.ts
@@ -98,6 +99,8 @@ jobs:
             echo "policy=public-share-projection-excludes-private-birth-and-assessment-data"
             echo "policy=pwa-updates-preserve-current-and-previous-shells"
             echo "policy=client-api-errors-never-echo-arbitrary-response-bodies"
+            echo "policy=support-diagnostics-exclude-private-profile-material"
+            echo "policy=unused-camera-microphone-geolocation-disabled"
             echo "policy=public-share-disclosures-match-product"
             echo "policy=canonical-offline-profile-persistence-regression"
             echo "policy=partial-verification-cannot-downgrade-local-profile"
