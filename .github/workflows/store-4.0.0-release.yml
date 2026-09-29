@@ -21,7 +21,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: soulcodex-store-4-0-0
+  # Isolate parallel PR/ref qualifications. A single global key caused unrelated
+  # Soul Codex lanes to cancel one another during long native Android/iOS builds.
+  group: soulcodex-store-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
