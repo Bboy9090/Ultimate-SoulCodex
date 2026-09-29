@@ -58,12 +58,12 @@ export function validateEngineAgreement(
     if (values.length === 1) {
       // All engines agree on value
       agreementLevel = 'full';
-      const avgConfidence =
-        claimEntries.reduce((sum, e) => sum + e.confidence, 0) / claimEntries.length;
+      const agreementScore = scoreAgreement(claimEntries);
       reasonsForAgreement = [
-        `All ${engines.length} engines agree on this claim`,
-        `Average confidence: ${Math.round(avgConfidence)}%`,
-        ...claimEntries.flatMap(e => e.reasoning),
+        `All ${engines.length} engines produce the same claim value`,
+        'Cross-system agreement is treated as resonance/corroboration, not independent proof or a confidence multiplier',
+        ...claimEntries.flatMap((entry) => entry.reasoning),
+        ...agreementScore.reasoning,
       ];
       fullyAgreedClaims++;
 
@@ -71,7 +71,7 @@ export function validateEngineAgreement(
         claim: claimEntries[0].claim,
         engines,
         agreementLevel,
-        confidence: Math.round(avgConfidence),
+        confidence: agreementScore.confidence,
         reasonsForAgreement,
       });
     } else {
@@ -89,7 +89,7 @@ export function validateEngineAgreement(
         reasonsForAgreement: [
           `${engines.length} engines analyzed this claim`,
           `${values.length} different conclusions`,
-          `Confidence in agreement: ${Math.round(agreementScore.confidence)}%`,
+          'Agreement support is an internal ranking signal, not a probability or vote count',
         ],
         divergenceExplanation: conflicts[0]?.explanation,
       });
