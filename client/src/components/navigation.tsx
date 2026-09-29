@@ -145,6 +145,7 @@ export default function Navigation() {
                         key={label}
                         href={href}
                         data-testid={`link-${label.toLowerCase()}-mobile`}
+                        aria-current={active ? "page" : undefined}
                         className={`flex min-h-12 items-center gap-3 rounded-xl border px-3.5 text-sm font-semibold no-underline ${
                           active
                             ? "border-[rgba(217,182,111,.2)] bg-[rgba(217,182,111,.07)] text-[var(--sc-ivory)]"
@@ -162,7 +163,11 @@ export default function Navigation() {
                       Underlying systems
                     </Link>
                   )}
-                  <Link href="/settings" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
+                  <Link
+                    href="/settings"
+                    aria-current={isActive(pathname, "/settings") ? "page" : undefined}
+                    className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline"
+                  >
                     <Settings className="h-4.5 w-4.5 text-[var(--sc-stone)]" strokeWidth={1.8} />
                     Settings
                   </Link>
