@@ -27,6 +27,7 @@ export { calculateConfidenceLabel, isHighConfidence, isLowConfidence, confidence
 
 export {
   formatConfidenceAsPercent,
+  formatConfidenceAsSupportLabel,
   formatConfidenceExplanation,
   formatEvidenceEntry,
   formatValue,
