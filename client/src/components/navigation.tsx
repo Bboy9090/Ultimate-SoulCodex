@@ -125,7 +125,7 @@ export default function Navigation() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[min(88vw,360px)] border-l border-white/[0.07] bg-[var(--sc-ink)]/[.98] px-5 text-[var(--sc-ivory)] backdrop-blur-2xl">
+            <SheetContent className="w-[min(88vw,360px)] border-l border-white/[0.07] bg-[var(--sc-ink)]/[.98] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[var(--sc-ivory)] backdrop-blur-2xl">
               <div className="mt-[max(2rem,env(safe-area-inset-top))]">
                 <div className="mb-7 flex items-center gap-3 border-b border-white/[0.07] pb-5">
                   <span className="grid h-10 w-10 place-items-center rounded-full border border-[rgba(217,182,111,.25)] bg-[rgba(217,182,111,.06)] text-[var(--sc-gold-bright)]">
@@ -158,7 +158,7 @@ export default function Navigation() {
                     );
                   })}
                   {profile && (
-                    <Link href="/systems" data-testid="link-underlying-systems-mobile" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
+                    <Link href="/systems" aria-current={isActive(pathname, "/systems") ? "page" : undefined} data-testid="link-underlying-systems-mobile" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
                       <Database className="h-4.5 w-4.5 text-[var(--sc-stone)]" strokeWidth={1.8} />
                       Underlying systems
                     </Link>
