@@ -248,21 +248,28 @@ export function generateDailyAffirmations(profile: Profile, count: number = 3, d
   // Affirmations are self-directed prompts, not claims that a symbolic system
   // caused an outcome. Build them only from governed/profile-qualified inputs.
   const candidates: Affirmation[] = [
-    { text: 'I can separate what I know from what I am interpreting, and act on the clearest evidence available.', category: 'power', focus: 'Clarity' },
-    { text: 'I can choose one concrete action today and judge it by the result rather than by expectation.', category: 'transformation', focus: 'Action' },
-    { text: 'I can change my mind when new evidence gives me a better direction.', category: 'peace', focus: 'Flexibility' },
+    { text: 'I can separate facts from interpretation and act on the clearest evidence available.', category: 'power', focus: 'Clarity' },
+    { text: 'I can choose one concrete action and judge it by the result.', category: 'transformation', focus: 'Action' },
+    { text: 'I can change direction when new evidence gives me a better option.', category: 'peace', focus: 'Flexibility' },
+    { text: 'I do not need every answer before taking the next sensible step.', category: 'peace', focus: 'Momentum' },
+    { text: 'I can notice a pattern without turning it into a permanent identity.', category: 'power', focus: 'Perspective' },
+    { text: 'I can protect my attention by choosing what deserves a response.', category: 'power', focus: 'Boundaries' },
+    { text: 'I can test an idea in real life instead of forcing myself to believe it.', category: 'transformation', focus: 'Experiment' },
+    { text: 'I can let useful feedback update the story I tell about myself.', category: 'transformation', focus: 'Revision' },
+    { text: 'I can leave an interpretation behind when it does not match my experience.', category: 'peace', focus: 'Agency' },
+    { text: 'I can make room for uncertainty without giving up on clear action.', category: 'peace', focus: 'Uncertainty' },
   ];
 
   if (validLifePath) {
     candidates.push({
-      text: `I can use Life Path ${lifePath} as a symbolic reflection lens without letting a number make decisions for me.`,
+      text: `Life Path ${lifePath} can offer one symbolic angle; I still make decisions from evidence, context, and experience.`,
       category: 'power',
       focus: 'Numerology lens',
     });
   }
   if (verifiedAstrology.sun) {
     candidates.push({
-      text: `My verified natal Sun is ${verifiedAstrology.sun}; I can explore its symbolism while keeping lived experience as the final check.`,
+      text: `My verified natal Sun is ${verifiedAstrology.sun}; I can explore the symbolism without turning it into a fixed story about myself.`,
       category: 'transformation',
       focus: 'Natal reflection',
     });
