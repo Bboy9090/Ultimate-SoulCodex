@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   groupEvidenceByEngine,
-  formatConfidenceAsPercent,
+  formatConfidenceAsSupportLabel,
   formatConfidenceExplanation,
   type EvidenceEntry,
   type EngineType,
@@ -70,8 +70,24 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
           const engineEntries = grouped[engine];
           if (!engineEntries || engineEntries.length === 0) return null;
 
-          const avgConfidence =
-            engineEntries.reduce((sum, e) => sum + e.confidence, 0) / engineEntries.length;
+          const supportCounts = engineEntries.reduce<Record<string, number>>(
+            (counts, entry) => {
+              counts[entry.confidenceLabel] = (counts[entry.confidenceLabel] ?? 0) + 1;
+              return counts;
+            },
+            {},
+          );
+          const supportSummary = [
+            'verified',
+            'high',
+            'moderate',
+            'partial',
+            'low',
+            'unverified',
+          ]
+            .filter((label) => (supportCounts[label] ?? 0) > 0)
+            .map((label) => `${supportCounts[label]} ${label}`)
+            .join(' · ');
 
           return (
             <div
@@ -127,12 +143,15 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
                 </div>
                 <div
                   style={{
-                    fontSize: compact ? '0.8rem' : '0.9rem',
-                    fontWeight: 600,
-                    color: avgConfidence >= 80 ? 'var(--sc-teal)' : 'var(--sc-gold)',
+                    maxWidth: compact ? '11rem' : '16rem',
+                    textAlign: 'right',
+                    fontSize: compact ? '0.68rem' : '0.72rem',
+                    color: 'var(--sc-stone)',
+                    lineHeight: 1.35,
                   }}
+                  aria-label={`Source support mix: ${supportSummary}`}
                 >
-                  {formatConfidenceAsPercent(avgConfidence)}
+                  {supportSummary}
                 </div>
               </div>
 
@@ -165,13 +184,13 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
                     </div>
                     <div
                       style={{
-                        fontSize: compact ? '0.7rem' : '0.75rem',
-                        color: 'var(--sc-stone)',
+                        fontSize: compact ? '0.68rem' : '0.72rem',
+                        color: 'var(--sc-teal)',
                         marginLeft: '0.5rem',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {formatConfidenceAsPercent(entry.confidence)}
+                      {formatConfidenceAsSupportLabel(entry.confidenceLabel)}
                     </div>
                   </div>
 
@@ -189,7 +208,10 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
                       }}
                     >
                       <div>
-                        <strong>Status:</strong> {entry.confidenceLabel}
+                        <strong>Support:</strong> {formatConfidenceAsSupportLabel(entry.confidenceLabel)}
+                      </div>
+                      <div>
+                        {formatConfidenceExplanation(entry.confidenceLabel)}
                       </div>
                       {entry.reasoning.length > 0 && (
                         <div>
@@ -228,7 +250,7 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
           fontStyle: 'italic',
         }}
       >
-        Evidence levels: verified (100%), high (85%), moderate (70%), partial (55%), low (35%), unverified (15%)
+        Source-support tiers describe provenance, calculation quality, and limitations. They are not probabilities that a symbolic interpretation is true.
       </div>
     </div>
   );
