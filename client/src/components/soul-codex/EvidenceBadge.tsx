@@ -80,6 +80,7 @@ export default function EvidenceBadge({
 
   return (
     <span
+      aria-label={`${displayLabel}${count ? `, ${count} supporting layers` : ""}: ${displayTooltip}`}
       style={{
         display: "inline-flex",
         alignItems: "center",
