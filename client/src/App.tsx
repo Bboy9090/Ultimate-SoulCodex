@@ -76,8 +76,16 @@ function TimelineRoute() {
 
 function Router() {
   return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <Switch>
+    <>
+      <a
+        href="#main-content"
+        className="sr-only fixed left-3 top-3 z-[100] rounded-lg bg-[var(--sc-gold-bright)] px-4 py-3 font-semibold text-[#170f07] focus:not-sr-only"
+      >
+        Skip to main content
+      </a>
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <div id="main-content" tabIndex={-1}>
+          <Switch>
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
       {/* Backward-compatible alias for older onboarding/deep links. */}
@@ -102,8 +110,10 @@ function Router() {
       <Route path="/account-deletion" component={AccountDeletionPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
-      </Switch>
-    </Suspense>
+          </Switch>
+        </div>
+      </Suspense>
+    </>
   );
 }
 
