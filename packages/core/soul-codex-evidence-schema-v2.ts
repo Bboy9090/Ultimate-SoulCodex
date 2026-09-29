@@ -7,9 +7,9 @@
  * Example:
  * Sun sign: Virgo
  * - Input source: User-entered birth date
- * - Calculation: Deterministic ephemeris
- * - Interpretation: Direct (no synthesis)
- * - Confidence: High
+ * - Calculation: Governed astronomy calculation
+ * - Interpretation: Direct symbolic interpretation (no cross-system synthesis)
+ * - Source support: High
  *
  * Expression Number: 4
  * - Input source: Self-reported name (Robert Gonzalez)
@@ -33,7 +33,7 @@ export type CalculationStatus =
   | "not_calculated";     // raw data, no computation
 
 export type InterpretationStatus =
-  | "direct"              // fixed meaning (Sun in Virgo = specific symbol)
+  | "direct"              // one-system symbolic interpretation; not a fixed psychological fact
   | "synthesized"         // combination of systems (Virgo + Life Path 9)
   | "provisional"         // applies if conditions change (Moon if time verified)
   | "reflective"          // about patterns, not identity;
@@ -56,10 +56,11 @@ export interface EvidenceLayer {
   interpretationStatus: InterpretationStatus;
   interpretationRemark?: string; // "Symbolizes practical precision"
 
-  // Overall confidence in this layer
+  // Source/calculation support tier for this layer. This is not a probability
+  // that the symbolic interpretation is psychologically "true".
   confidence: "high" | "moderate" | "low";
 
-  // Why confidence is at this level
+  // Why source/calculation support is at this level
   confidenceReason?: string; // "Complete birth data available"
 
   // Time sensitivity: does this change if inputs change?
@@ -104,7 +105,7 @@ export interface LimitationGroup {
  * Phase 2 Rule: Replace "35 recorded limitations" with grouped categories
  *
  * Instead of: "Recorded limitations: 35" (sounds catastrophic)
- * Show: "5 active limitations" (grouped and manageable)
+ * Show: "5 active limitation categories" (grouped and manageable)
  *
  * Categories:
  * 1. Missing birth-time verification (2 limitations)
@@ -125,7 +126,11 @@ export interface SoulCodexReadingAudit {
   dataSources: {
     astrology?: "ephemeris" | "legacy" | "unavailable";
     numerology?: "confirmed" | "provisional" | "unavailable";
-    humanDesign?: "self_reported" | "unavailable";
+    humanDesign?:
+      | "verified_core"
+      | "calculated_unverified"
+      | "self_reported"
+      | "unavailable";
   };
 
   // Calculation details
