@@ -46,6 +46,7 @@ jobs:
           tests/store-release-candidate-contract.test.ts
           tests/offline-profile-lazy-chart-contract.test.ts
           tests/human-design-bodygraph-bundle-boundary.test.ts
+          tests/accessibility-device-acceptance-contract.test.ts
           tests/profile-verification-reconciliation.test.ts
           tests/local-first-verification-failure-truth.test.ts
           tests/verified-profile-differentiation-corpus.test.ts
@@ -58,6 +59,9 @@ jobs:
             echo "Destructive schema operation detected in production preflight."
             exit 1
           fi
+
+      - name: Audit production dependencies for high-severity vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Typecheck
         run: npm run check
