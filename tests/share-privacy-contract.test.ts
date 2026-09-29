@@ -416,3 +416,68 @@ test('share routes hash plaintext passwords server-side and ignore client passwo
   assert.match(createRoute, /at least 8 characters/);
   assert.match(updateRoute, /at least 8 characters/);
 });
+
+
+test('share settings reject unsupported sections and invalid lifecycle limits', async () => {
+  let writes = 0;
+  const storage = {
+    createShareableLink: async () => { writes += 1; },
+  };
+
+  await assert.rejects(
+    () => createShareableLink(
+      storage as any,
+      'profile-1',
+      'user-1',
+      { includeSections: ['archetype', 'raw-private-data'] as any },
+    ),
+    /Unsupported share section/,
+  );
+
+  for (const viewCountLimit of [0, -1, 1.5, 1_000_001]) {
+    await assert.rejects(
+      () => createShareableLink(
+        storage as any,
+        'profile-1',
+        'user-1',
+        { viewCountLimit },
+      ),
+      /viewCountLimit/,
+    );
+  }
+
+  for (const expiresInDays of [-1, 1.5, 3651]) {
+    await assert.rejects(
+      () => createShareableLink(
+        storage as any,
+        'profile-1',
+        'user-1',
+        { expiresInDays },
+      ),
+      /expiresInDays/,
+    );
+  }
+
+  assert.equal(writes, 0);
+});
+
+test('share settings deduplicate approved sections and allow zero-day expiry as no expiry', async () => {
+  let persisted: any = null;
+  const storage = {
+    createShareableLink: async (link: any) => { persisted = link; },
+  };
+
+  const created = await createShareableLink(
+    storage as any,
+    'profile-1',
+    'user-1',
+    {
+      includeSections: ['archetype', 'archetype', 'numerology'],
+      expiresInDays: 0,
+    },
+  );
+
+  assert.deepEqual(created.settings.includeSections, ['archetype', 'numerology']);
+  assert.equal(created.expiresAt, undefined);
+  assert.equal(persisted?.expiresAt, undefined);
+});
