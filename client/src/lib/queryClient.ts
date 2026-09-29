@@ -1,7 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { resolveApiUrlWithBase } from "./api-url";
 
-const configuredApiBase = import.meta.env.VITE_API_URL || "";
+const configuredApiBase = import.meta.env?.VITE_API_URL || "";
 
 export function resolveApiUrl(url: string): string {
   return resolveApiUrlWithBase(url, configuredApiBase);
