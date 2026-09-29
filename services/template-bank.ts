@@ -1118,6 +1118,45 @@ function stableGuidanceSeed(
   return hash >>> 0;
 }
 
+function dailyClosingCue(
+  dailyContext: DailyContext,
+  profileData: any,
+  templateId: string,
+): string {
+  const seed = stableGuidanceSeed(
+    dailyContext,
+    profileData,
+    `closing:${templateId}`,
+  );
+  const cues = [
+    "Write down one result before the day ends.",
+    "Compare the idea with one event you can verify.",
+    "Turn the theme into one small action and watch the outcome.",
+    "Notice what changes when you ignore the symbolism completely.",
+    "Use one real decision as the test case.",
+    "Keep a note only if the idea improves a concrete choice.",
+    "Check the claim against behavior, timing, and context.",
+    "Ask what evidence would make you reject this interpretation.",
+    "Try it once, then revise from the result.",
+    "Name one fact that matters more than the symbolic cue.",
+    "Use the lens briefly, then return to the actual problem in front of you.",
+    "End the experiment if it adds noise instead of clarity.",
+  ] as const;
+  return cues[seed % cues.length];
+}
+
+function withDailyVariation(
+  templates: TemplateVariation[],
+  dailyContext: DailyContext,
+  profileData: any,
+): TemplateVariation[] {
+  return templates.map((template) => ({
+    ...template,
+    template: (context: any) =>
+      `${template.template(context)} ${dailyClosingCue(dailyContext, profileData, template.id)}`,
+  }));
+}
+
 export function selectTemplates(
   dailyContext: DailyContext,
   profileData: any,
@@ -1140,8 +1179,14 @@ export function selectTemplates(
     selected.push(...chooseGovernedTemplates(governedDailyHumanDesign, 1, humanDesignSeed, lastUsedIds));
   }
 
+  const finalTemplates = selected.slice(0, 4);
+
   return {
-    selectedTemplates: selected.slice(0, 4),
-    templateIds: selected.slice(0, 4).map((template) => template.id),
+    selectedTemplates: withDailyVariation(
+      finalTemplates,
+      dailyContext,
+      profileData,
+    ),
+    templateIds: finalTemplates.map((template) => template.id),
   };
 }
