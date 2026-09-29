@@ -11,6 +11,8 @@ import {
   isHighConfidence,
   isLowConfidence,
   formatConfidenceAsPercent,
+  formatConfidenceAsSupportLabel,
+  formatConfidenceExplanation,
   formatEvidenceEntry,
   formatSummaryAsText,
   type EvidenceEntry,
@@ -191,7 +193,7 @@ test('formatEvidenceEntry', () => {
 
   assert.equal(formatted.claim, 'Personal Year');
   assert.equal(formatted.value, '5');
-  assert.equal(formatted.confidence, '90% (high)');
+  assert.equal(formatted.confidence, 'High source support');
   assert.equal(formatted.inputs, 'birth_date_verified');
   assert.equal(formatted.reasoning, 'Sum reduced to single digit');
   assert.equal(formatted.limitations, 'No birth time');
@@ -207,7 +209,7 @@ test('formatSummaryAsText', () => {
   const text = formatSummaryAsText(summary);
 
   assert.ok(text.includes('Total Claims: 2'));
-  assert.ok(text.includes('Average Confidence: 60%'));
+  assert.ok(text.includes('Support tiers describe provenance/calculation support, not probability.'));
   assert.ok(text.includes('Low Confidence Claims'));
   assert.ok(text.includes('numerology'));
 });
@@ -233,4 +235,32 @@ test('deterministic output - same inputs produce same results', () => {
   assert.deepEqual(entry1.inputsUsed, entry2.inputsUsed);
   assert.deepEqual(entry1.reasoning, entry2.reasoning);
   assert.deepEqual(entry1.limitations, entry2.limitations);
+});
+
+
+test('formatConfidenceAsSupportLabel keeps user-facing confidence non-probabilistic', () => {
+  assert.equal(formatConfidenceAsSupportLabel('verified'), 'Verified source support');
+  assert.equal(formatConfidenceAsSupportLabel('high'), 'High source support');
+  assert.equal(formatConfidenceAsSupportLabel('moderate'), 'Moderate source support');
+  assert.equal(formatConfidenceAsSupportLabel('partial'), 'Partial source support');
+  assert.equal(formatConfidenceAsSupportLabel('low'), 'Low source support');
+  assert.equal(formatConfidenceAsSupportLabel('unverified'), 'Unverified source support');
+
+  for (const label of ['verified', 'high', 'moderate', 'partial', 'low', 'unverified'] as const) {
+    const rendered = `${formatConfidenceAsSupportLabel(label)} ${formatConfidenceExplanation(label)}`;
+    assert.equal(rendered.includes('%'), false, label);
+    assert.doesNotMatch(rendered, /probability of psychological truth|chance that|percent true/i);
+  }
+});
+
+test('formatSummaryAsText never exposes internal confidence weights as truth percentages', () => {
+  const entries: EvidenceEntry[] = [
+    createEvidenceEntry('astrology', 'Sun Sign', 'Virgo', 95, 'verified'),
+    createEvidenceEntry('numerology', 'Life Path', 9, 85, 'high'),
+  ];
+  const text = formatSummaryAsText(summarizeEvidenceLedger(entries));
+
+  assert.doesNotMatch(text, /Average Confidence:/);
+  assert.doesNotMatch(text, /\b\d{1,3}%\b/);
+  assert.match(text, /not probability/i);
 });
