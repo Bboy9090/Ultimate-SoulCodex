@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createShareableLink, getShareableProfile, updateShareableLink } from '../services/shareable-links';
+import { createShareableLink, getShareableProfile, updateShareableLink, getUserShareableLinks } from '../services/shareable-links';
 
 const service = fs.readFileSync(new URL('../services/shareable-links.ts', import.meta.url), 'utf8');
 const routes = fs.readFileSync(new URL('../routes.ts', import.meta.url), 'utf8');
@@ -299,4 +299,97 @@ test('share updates cannot enable password protection without an Argon2 hash', a
     /Argon2 password hash/,
   );
   assert.equal(writes, 0);
+});
+
+
+test('protected share creation persists Argon2 hash but never returns it', async () => {
+  let persisted: any = null;
+  const hash = '$argon2id$v=19$m=65536,t=3,p=4$ZmFrZXNhbHQ$ZmFrZWhhc2g';
+  const storage = {
+    createShareableLink: async (link: any) => { persisted = link; },
+  };
+
+  const created = await createShareableLink(
+    storage as any,
+    'profile-1',
+    'user-1',
+    {
+      passwordProtected: true,
+      passwordHash: hash,
+    },
+  );
+
+  assert.equal(persisted?.settings?.passwordHash, hash);
+  assert.equal(created.settings.passwordHash, undefined);
+  assert.doesNotMatch(JSON.stringify(created), /ZmFrZWhhc2g/);
+});
+
+test('share updates persist protected hash but return a redacted link object', async () => {
+  const hash = '$argon2id$v=19$m=65536,t=3,p=4$ZmFrZXNhbHQ$ZmFrZWhhc2g';
+  const existing = {
+    id: 'share-1',
+    profileId: 'profile-1',
+    userId: 'user-1',
+    token: 'token',
+    url: 'https://example.test/share/token',
+    settings: {
+      includeFullProfile: false,
+      includeSections: ['archetype'],
+      includePersonalInfo: false,
+      includeCompatibility: false,
+      includeTransits: false,
+      includeJournal: false,
+      passwordProtected: false,
+      allowComments: false,
+    },
+    createdAt: new Date(),
+    accessCount: 0,
+    isActive: true,
+  };
+
+  let persisted: any = null;
+  const storage = {
+    getShareableLink: async () => existing,
+    updateShareableLink: async (_id: string, update: any) => { persisted = update; },
+  };
+
+  const updated = await updateShareableLink(
+    storage as any,
+    existing.id,
+    { passwordProtected: true, passwordHash: hash },
+  );
+
+  assert.equal(persisted?.settings?.passwordHash, hash);
+  assert.equal(updated.settings.passwordHash, undefined);
+  assert.doesNotMatch(JSON.stringify(updated), /ZmFrZWhhc2g/);
+});
+
+test('share-link list responses redact stored password hashes', async () => {
+  const storage = {
+    getShareableLinksByUser: async () => [{
+      id: 'share-1',
+      profileId: 'profile-1',
+      userId: 'user-1',
+      token: 'token',
+      url: 'https://example.test/share/token',
+      settings: {
+        includeFullProfile: false,
+        includeSections: ['archetype'],
+        includePersonalInfo: false,
+        includeCompatibility: false,
+        includeTransits: false,
+        includeJournal: false,
+        passwordProtected: true,
+        passwordHash: '$argon2id$private-material',
+        allowComments: false,
+      },
+      createdAt: new Date(),
+      accessCount: 0,
+      isActive: true,
+    }],
+  };
+
+  const links = await getUserShareableLinks(storage as any, 'user-1');
+  assert.equal(links[0]?.settings.passwordHash, undefined);
+  assert.doesNotMatch(JSON.stringify(links), /private-material/);
 });
