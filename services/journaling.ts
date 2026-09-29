@@ -216,7 +216,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-003',
     category: 'shadow-work',
     title: 'Hidden Anger',
-    question: 'Where am I holding anger that I haven\'t expressed? What is it protecting?',
+    question: 'Where did anger show up recently? What boundary, value, or unmet condition was present in that moment?',
     tags: ['anger', 'emotions', 'protection'],
     intensity: 'deep',
     suggestedDuration: 20
@@ -243,7 +243,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-006',
     category: 'shadow-work',
     title: 'The Inner Critic',
-    question: 'What does my inner critic say? Whose voice is it really?',
+    question: 'What does my inner critic say? What evidence supports that message, and what evidence contradicts it?',
     tags: ['inner-critic', 'self-talk', 'healing'],
     intensity: 'deep',
     suggestedDuration: 15
@@ -260,8 +260,8 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
   {
     id: 'shadow-008',
     category: 'shadow-work',
-    title: 'The Victim Story',
-    question: 'What victim stories do I tell? How do they keep me stuck?',
+    title: 'The Stuck Story',
+    question: 'What story do I repeat when I feel stuck? Which facts support it, and which facts complicate it?',
     tags: ['victimhood', 'empowerment', 'narrative'],
     intensity: 'deep',
     suggestedDuration: 20
@@ -279,7 +279,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-010',
     category: 'shadow-work',
     title: 'The Perfectionist',
-    question: 'Where does perfectionism show up? What is it protecting me from?',
+    question: 'Where does perfectionism slow me down? What decision, feedback, or uncertainty am I postponing when I keep refining?',
     tags: ['perfectionism', 'vulnerability', 'acceptance'],
     intensity: 'deep',
     suggestedDuration: 15
@@ -288,7 +288,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-011',
     category: 'shadow-work',
     title: 'Abandonment Fears',
-    question: 'What am I afraid of losing? How does this fear control my behavior?',
+    question: 'What am I afraid of losing? Which choices change when that fear is present?',
     tags: ['fear', 'abandonment', 'attachment'],
     intensity: 'deep',
     suggestedDuration: 20
@@ -297,7 +297,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-012',
     category: 'shadow-work',
     title: 'The People Pleaser',
-    question: 'Where do I abandon myself to please others? What would happen if I stopped?',
+    question: 'Where do I agree before checking what I actually want? What would a more accurate answer sound like?',
     tags: ['people-pleasing', 'boundaries', 'self-love'],
     intensity: 'deep',
     suggestedDuration: 15
@@ -315,7 +315,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-014',
     category: 'shadow-work',
     title: 'The Saboteur',
-    question: 'How do I sabotage myself? What am I protecting myself from by staying small?',
+    question: 'Where do I interrupt my own progress? What short-term payoff do I get from stopping there?',
     tags: ['self-sabotage', 'fear', 'growth'],
     intensity: 'deep',
     suggestedDuration: 20
@@ -333,7 +333,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-016',
     category: 'shadow-work',
     title: 'The Martyr',
-    question: 'Where do I play the martyr? How does this serve me?',
+    question: 'Where do I take on more than I agreed to? What makes it hard to renegotiate the load directly?',
     tags: ['martyrdom', 'self-sacrifice', 'boundaries'],
     intensity: 'deep',
     suggestedDuration: 15
@@ -342,7 +342,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-017',
     category: 'shadow-work',
     title: 'Hidden Power',
-    question: 'What power do I refuse to claim? Why am I afraid of my own power?',
+    question: 'Where do I hold back even when I have enough information to act? What consequence am I anticipating?',
     tags: ['power', 'fear', 'empowerment'],
     intensity: 'deep',
     suggestedDuration: 20
@@ -360,7 +360,7 @@ export const JOURNAL_PROMPTS: JournalPrompt[] = [
     id: 'shadow-019',
     category: 'shadow-work',
     title: 'Unacknowledged Needs',
-    question: 'What needs do I have that I refuse to acknowledge? Why?',
+    question: 'Which need have I not stated clearly yet? What makes it difficult to name directly?',
     tags: ['needs', 'self-care', 'vulnerability'],
     intensity: 'moderate',
     suggestedDuration: 15
