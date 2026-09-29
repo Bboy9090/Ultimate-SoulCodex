@@ -35,7 +35,7 @@ const PublicSharedProfilePage = lazy(() => import("./pages/PublicSharedProfilePa
 
 function RouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[#08060d] text-[#f5ead7] grid place-items-center px-6">
+    <div className="min-h-screen bg-[#08060d] text-[#f5ead7] grid place-items-center px-6" role="status" aria-live="polite" aria-label="Soul Codex route is loading">
       <div className="text-center">
         <div className="font-serif text-xl font-semibold">Soul Codex</div>
         <div className="mt-2 text-sm opacity-60">Opening…</div>
