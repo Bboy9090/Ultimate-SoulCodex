@@ -128,3 +128,13 @@ test("share modal traps keyboard focus and never disguises history load failure 
   assert.match(source, /Existing links may still be active/);
   assert.match(source, /!historyError && shareHistory\.length === 0/);
 });
+
+
+test("public shared card distinguishes offline failure from revoked or invalid links", async () => {
+  const page = await readFile(publicPageUrl, "utf8");
+
+  assert.match(page, /const offline = typeof navigator !== "undefined" && !navigator\.onLine/);
+  assert.match(page, /Connection required/);
+  assert.match(page, /deliberately not cached with private app data/);
+  assert.match(page, /This link may have been revoked, mistyped, or never created/);
+});

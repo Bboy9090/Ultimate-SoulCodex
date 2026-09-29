@@ -51,15 +51,43 @@ export function registerSoulCodexServiceWorker(): void {
     navigator.serviceWorker
       .register(script, { scope, updateViaCache: "none" })
       .then((registration) => {
+        const activateWaitingWorker = () => {
+          registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+        };
+
+        const activateWhenSafe = () => {
+          if (document.visibilityState === "hidden") activateWaitingWorker();
+        };
+
         const requestUpdate = () => {
           void registration.update().catch((error) => {
             console.warn("[pwa] Service worker update check failed", error);
           });
         };
 
+        registration.addEventListener("updatefound", () => {
+          const installing = registration.installing;
+          if (!installing) return;
+
+          installing.addEventListener("statechange", () => {
+            if (installing.state !== "installed") return;
+            if (!navigator.serviceWorker.controller) {
+              activateWaitingWorker();
+              return;
+            }
+            activateWhenSafe();
+          });
+        });
+
+        // A worker can already be waiting when this page loads.
+        if (registration.waiting && !navigator.serviceWorker.controller) {
+          activateWaitingWorker();
+        }
+
         window.addEventListener("online", requestUpdate);
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible") requestUpdate();
+          else activateWhenSafe();
         });
       })
       .catch((error) => {
