@@ -67,13 +67,32 @@ function sourceInterpretation(): DepthInterpretationV1 {
 function proseResponse(
   source: DepthInterpretationV1,
 ): SoulGuideDepthProseResponse {
+  const summaryOpeners = [
+    "A useful reading of",
+    "One supported angle on",
+    "The evidence around",
+    "A practical way to frame",
+    "The clearest signal for",
+    "One possibility within",
+    "A bounded interpretation of",
+  ];
+  const explanationOpeners = [
+    "Compare this with a recent decision before keeping it",
+    "Use lived experience to confirm or revise this layer",
+    "Look for one observable example that supports or challenges it",
+    "Treat this as provisional until behavior gives you a clearer answer",
+    "Test this against what actually happened rather than the label alone",
+    "Keep the claim only where the supplied evidence matches experience",
+    "A concrete example should decide whether this interpretation survives",
+  ];
+
   return Object.fromEntries(
-    DEPTH_INTERPRETATION_LAYER_KEYS.map((key) => [
+    DEPTH_INTERPRETATION_LAYER_KEYS.map((key, index) => [
       key,
       {
         title: source[key].title,
-        summary: `Clear rewrite for ${key}.`,
-        explanation: `The supplied signals may support this ${key} pattern, while lived experience remains authoritative.`,
+        summary: `${summaryOpeners[index % summaryOpeners.length]} ${key} may be useful here.`,
+        explanation: `${explanationOpeners[index % explanationOpeners.length]}; the supplied signals remain the only evidence boundary.`,
       },
     ]),
   ) as unknown as SoulGuideDepthProseResponse;
@@ -260,7 +279,30 @@ test("Layered Soul Guide", async (suite) => {
     }
 
     assert.ok(fallback.markdown.includes("**Evidence:** mirror.driver"));
-    assert.ok(fallback.markdown.includes("Lived experience remains"));
+    assert.ok(fallback.markdown.includes("Use lived experience to keep, revise, or reject"));
+  });
+
+
+
+  await suite.test("parser rejects cross-layer repetitive prose", () => {
+    const source = sourceInterpretation();
+    const prose = proseResponse(source);
+
+    for (const key of DEPTH_INTERPRETATION_LAYER_KEYS) {
+      prose[key].summary = "This pattern may help you understand the situation more clearly.";
+      prose[key].explanation = "This pattern may help you understand the situation more clearly by noticing what happens next.";
+    }
+
+    const result = parseDepthSoulGuideResponse(JSON.stringify(prose), source);
+
+    assert.equal(result.interpretation, null);
+    assert.ok(
+      result.findings.some(
+        (finding) =>
+          finding.code === "repeated-layer-summary" ||
+          finding.code === "repeated-opening-stem",
+      ),
+    );
   });
 
   await suite.test("unknown-time degradation survives safe prose rewriting", () => {
