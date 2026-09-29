@@ -1043,25 +1043,33 @@ function getFixedStarsWisdom(): string {
 }
 
 const governedDailyNumerology: TemplateVariation[] = [
-  { id: 'daily-num-1', category: 'numerology', template: (ctx) => `Personal Day ${ctx.personalDayNumber} is a symbolic planning lens. Pick one task that matches ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()} and judge the lens by the result.` },
-  { id: 'daily-num-2', category: 'numerology', template: (ctx) => `Use Personal Day ${ctx.personalDayNumber} as an experiment: ${getPersonalDayAction(ctx.personalDayNumber)} Record what actually changes instead of treating the number as a prediction.` },
-  { id: 'daily-num-3', category: 'numerology', template: (ctx) => `Personal Day ${ctx.personalDayNumber} suggests a ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()} theme. Keep it only if it helps you make one clearer decision today.` },
-  { id: 'daily-num-4', category: 'numerology', template: (ctx) => `Universal Day ${ctx.universalDayNumber} is a traditional collective-number lens, not an empirical forecast. Compare ${getUniversalDayTheme(ctx.universalDayNumber).toLowerCase()} with what you actually observe.` },
-  { id: 'daily-num-5', category: 'numerology', template: (ctx) => `Today combines Personal Day ${ctx.personalDayNumber} with Universal Day ${ctx.universalDayNumber}. Use the contrast as a reflection prompt, then prioritize observable conditions over symbolism.` },
+  { id: 'daily-num-1', category: 'numerology', template: (ctx) => `Today's number cue is Personal Day ${ctx.personalDayNumber}: ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()}. Pick one concrete task that fits that theme and see whether it helps.` },
+  { id: 'daily-num-2', category: 'numerology', template: (ctx) => `Try a one-day experiment with Personal Day ${ctx.personalDayNumber}. ${getPersonalDayAction(ctx.personalDayNumber)} Keep the result, not the superstition.` },
+  { id: 'daily-num-3', category: 'numerology', template: (ctx) => `Decision filter: if ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()} makes today's choice clearer, use it. If not, drop the number and follow the evidence in front of you.` },
+  { id: 'daily-num-4', category: 'numerology', template: (ctx) => `Universal Day ${ctx.universalDayNumber} traditionally points to ${getUniversalDayTheme(ctx.universalDayNumber).toLowerCase()}. Notice whether that theme is actually present around you before giving it meaning.` },
+  { id: 'daily-num-5', category: 'numerology', template: (ctx) => `Personal ${ctx.personalDayNumber} and Universal ${ctx.universalDayNumber} create two different symbolic cues today. Choose the one that produces a useful action instead of forcing both to fit.` },
+  { id: 'daily-num-6', category: 'numerology', template: (ctx) => `For planning, Personal Day ${ctx.personalDayNumber} can frame the question: “What deserves effort first?” Let ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()} be one option, not the answer.` },
+  { id: 'daily-num-7', category: 'numerology', template: (ctx) => `Use the number lightly today. Personal Day ${ctx.personalDayNumber} highlights ${getPersonalDayTheme(ctx.personalDayNumber).toLowerCase()}; your actual schedule, obligations, and results outrank the symbolism.` },
+  { id: 'daily-num-8', category: 'numerology', template: (ctx) => `End-of-day check: did the Personal Day ${ctx.personalDayNumber} theme help you notice something useful? If yes, keep the insight. If no, mark it as noise and move on.` },
 ];
 
 const governedDailyAstrology: TemplateVariation[] = [
-  { id: 'daily-astro-1', category: 'astrology', template: (ctx) => `Current Moon: ${ctx.moonSign}, ${ctx.moonPhase}. Treat that calculated sky state as a symbolic reflection prompt, not proof of a mood or event.` },
-  { id: 'daily-astro-2', category: 'astrology', template: (ctx) => `${ctx.moonPhase} is the current lunar phase. If useful, use it to review ${ctx.moonPhase.includes('Waxing') ? 'what you are building' : ctx.moonPhase.includes('Waning') ? 'what you can simplify or release' : 'what has become visible'}; verify the insight against the day itself.` },
-  { id: 'daily-astro-3', category: 'astrology', template: (ctx) => `The Moon is currently in ${ctx.moonSign}. Use that sign only as a symbolic vocabulary for reflection; it does not establish how you feel.` },
-  { id: 'daily-astro-4', category: 'astrology', template: (ctx) => `Current lunar illumination is about ${Math.round(ctx.moonPhasePercentage)}%. That astronomical fact can anchor a phase reflection without turning the sky into a behavioral diagnosis.` },
-  { id: 'daily-astro-5', category: 'astrology', template: (ctx) => `Calculated sky context: Moon in ${ctx.moonSign} during ${ctx.moonPhase}. Ask one concrete question about your actual day before applying any symbolic interpretation.` },
+  { id: 'daily-astro-1', category: 'astrology', template: (ctx) => `Sky check: the Moon is in ${ctx.moonSign} during ${ctx.moonPhase}. That is the astronomy; any personal meaning is optional and should match lived experience.` },
+  { id: 'daily-astro-2', category: 'astrology', template: (ctx) => `${ctx.moonPhase} can be used as a timing metaphor for ${ctx.moonPhase.includes('Waxing') ? 'building' : ctx.moonPhase.includes('Waning') ? 'editing or releasing' : 'taking stock'}. Pick one real project and see whether that metaphor adds clarity.` },
+  { id: 'daily-astro-3', category: 'astrology', template: (ctx) => `Moon in ${ctx.moonSign} gives you a symbolic vocabulary, not a mood report. Compare the sign's themes with what you are actually feeling before accepting any connection.` },
+  { id: 'daily-astro-4', category: 'astrology', template: (ctx) => `Lunar illumination is about ${Math.round(ctx.moonPhasePercentage)}% today. Use that measurable phase marker to pace a review, reset, or build step without turning it into a personality claim.` },
+  { id: 'daily-astro-5', category: 'astrology', template: (ctx) => `One question for today's sky: with the Moon in ${ctx.moonSign}, what are you noticing that you can verify directly? Start there; interpret second.` },
+  { id: 'daily-astro-6', category: 'astrology', template: (ctx) => `Current lunar context is ${ctx.moonPhase} in ${ctx.moonSign}. If the symbolism is useful, turn it into one testable action. If it is not useful, leave it alone.` },
+  { id: 'daily-astro-7', category: 'astrology', template: (ctx) => `Treat today's Moon placement like a lens you can put down. ${ctx.moonSign} may suggest a theme, but your behavior, environment, and evidence decide whether it belongs in the reading.` },
+  { id: 'daily-astro-8', category: 'astrology', template: (ctx) => `Astronomy gives us ${ctx.moonPhase}, Moon in ${ctx.moonSign}, about ${Math.round(ctx.moonPhasePercentage)}% illuminated. Use those facts as context, then build the meaning from what is actually happening.` },
 ];
 
 const governedDailyHumanDesign: TemplateVariation[] = [
-  { id: 'daily-hd-1', category: 'humandesign', template: (ctx) => `Human Design transit lens: Gate ${ctx.currentHDGate}.${ctx.currentHDLine}. Because your saved Human Design core is verified, you can compare this symbolic transit theme with lived decisions without treating it as a command.` },
-  { id: 'daily-hd-2', category: 'humandesign', template: (ctx) => `Gate ${ctx.currentHDGate}, Line ${ctx.currentHDLine} is today's calculated Human Design solar position. Use it as an experiment alongside your verified core, not as evidence that a specific event must occur.` },
-  { id: 'daily-hd-3', category: 'humandesign', template: (ctx) => `Today's Human Design gate is ${ctx.currentHDGate}.${ctx.currentHDLine}. Test one interpretation against observable behavior and discard it if it does not fit.` },
+  { id: 'daily-hd-1', category: 'humandesign', template: (ctx) => `Today's verified transit position is Gate ${ctx.currentHDGate}.${ctx.currentHDLine}. Compare one gate theme with a real decision and keep only what proves useful.` },
+  { id: 'daily-hd-2', category: 'humandesign', template: (ctx) => `Human Design check-in: Gate ${ctx.currentHDGate}, Line ${ctx.currentHDLine}. Treat it as a symbolic experiment beside your verified core, never as an instruction.` },
+  { id: 'daily-hd-3', category: 'humandesign', template: (ctx) => `Gate ${ctx.currentHDGate}.${ctx.currentHDLine} is the calculated solar transit. Look for observable behavior first; use the gate language only if it describes something real.` },
+  { id: 'daily-hd-4', category: 'humandesign', template: (ctx) => `Before reading meaning into Gate ${ctx.currentHDGate}.${ctx.currentHDLine}, name the decision already in front of you. Then ask whether the transit theme improves that decision or merely decorates it.` },
+  { id: 'daily-hd-5', category: 'humandesign', template: (ctx) => `Use Gate ${ctx.currentHDGate}, Line ${ctx.currentHDLine} as a controlled comparison: one theme, one behavior, one outcome. No fit means no claim.` },
 ];
 
 function chooseGovernedTemplates(
