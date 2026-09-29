@@ -55,23 +55,25 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting()),
+      .then((cache) => cache.addAll(PRECACHE_URLS)),
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
-            .map((key) => caches.delete(key)),
-        ),
-      )
-      .then(() => self.clients.claim()),
+    caches.keys().then(async (keys) => {
+      const shellKeys = keys
+        .filter((key) => key.startsWith(CACHE_PREFIX))
+        .sort()
+        .reverse();
+      const keep = new Set([CACHE_NAME, ...shellKeys.filter((key) => key !== CACHE_NAME).slice(0, 1)]);
+      await Promise.all(
+        shellKeys
+          .filter((key) => !keep.has(key))
+          .map((key) => caches.delete(key)),
+      );
+      await self.clients.claim();
+    }),
   );
 });
 
