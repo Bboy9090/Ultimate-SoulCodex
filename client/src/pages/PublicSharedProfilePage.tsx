@@ -49,14 +49,21 @@ export default function PublicSharedProfilePage() {
   }
 
   if (error || !data) {
+    const offline = typeof navigator !== "undefined" && !navigator.onLine;
     return (
       <div className="sc-app-shell">
         <Navigation />
         <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-4">
           <div className="sc-panel p-8 text-center">
             <ShieldCheck className="mx-auto mb-4 h-10 w-10 text-[var(--sc-stone)]" />
-            <h1 className="font-serif text-2xl text-[var(--sc-ivory)]">Shared card unavailable</h1>
-            <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">This link may have been revoked, mistyped, or never created.</p>
+            <h1 className="font-serif text-2xl text-[var(--sc-ivory)]">
+              {offline ? "Connection required" : "Shared card unavailable"}
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
+              {offline
+                ? "Public Soul Codex cards are deliberately not cached with private app data. Reconnect to verify this link and load its sanitized snapshot."
+                : "This link may have been revoked, mistyped, or never created."}
+            </p>
             <Link href="/" className="sc-button-primary mt-5 inline-flex"><ArrowLeft className="mr-2 h-4 w-4" /> Soul Codex home</Link>
           </div>
         </main>
