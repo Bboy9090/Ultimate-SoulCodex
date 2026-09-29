@@ -32,7 +32,7 @@ import { finalOutputGuard, routeAIRequest } from "./services/ai-router";
 import { generateRelationshipAutopsy } from "./services/relationship-autopsy";
 import { generateTransitsCalendar, getUpcomingSignificantTransits } from "./services/transits-calendar";
 import { generateProfilePDF, generateTransitsPDF, renderPDF } from "./services/pdf-generator";
-import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks } from "./services/shareable-links";
+import { createShareableLink, getShareableProfile, updateShareableLink, deactivateShareableLink, getUserShareableLinks, hashPassword as hashSharePassword } from "./services/shareable-links";
 import { checkAndNotifySignificantTransits, getUpcomingTransitNotifications } from "./services/transit-notifications";
 
 import { SubscriptionService } from "./services/subscription-service";
@@ -3067,7 +3067,7 @@ ${contextData}
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      const { profileId, settings } = req.body;
+      const { profileId, settings, password } = req.body;
       if (!profileId) {
         return res.status(400).json({ message: "profileId is required" });
       }
@@ -3077,7 +3077,19 @@ ${contextData}
         return res.status(404).json({ message: "Profile not found or access denied" });
       }
 
-      const shareableLink = await createShareableLink(storage, profileId, userId, settings);
+      const safeSettings = {
+        ...(settings ?? {}),
+        passwordHash: undefined,
+      };
+
+      if (safeSettings.passwordProtected) {
+        if (typeof password !== "string" || password.length < 8) {
+          return res.status(400).json({ message: "A share password of at least 8 characters is required" });
+        }
+        safeSettings.passwordHash = await hashSharePassword(password);
+      }
+
+      const shareableLink = await createShareableLink(storage, profileId, userId, safeSettings);
       res.json({ message: "Shareable link created", link: shareableLink });
     } catch (error) {
       return handleError(error, res, "CreateShareableLink");
@@ -3128,14 +3140,32 @@ ${contextData}
       }
 
       const { id } = req.params;
-      const { settings } = req.body;
+      const { settings, password } = req.body;
 
       const existingLink = await storage.getShareableLink(id);
       if (!existingLink || existingLink.userId !== userId) {
         return res.status(404).json({ message: "Shareable link not found" });
       }
 
-      const updated = await updateShareableLink(storage, id, settings);
+      const safeSettings = {
+        ...(settings ?? {}),
+        passwordHash: undefined,
+      };
+
+      if (typeof password === "string" && password.length > 0) {
+        if (password.length < 8) {
+          return res.status(400).json({ message: "A share password of at least 8 characters is required" });
+        }
+        safeSettings.passwordProtected = true;
+        safeSettings.passwordHash = await hashSharePassword(password);
+      } else if (
+        safeSettings.passwordProtected === true &&
+        !existingLink.settings.passwordProtected
+      ) {
+        return res.status(400).json({ message: "A share password of at least 8 characters is required" });
+      }
+
+      const updated = await updateShareableLink(storage, id, safeSettings);
       res.json({ message: "Shareable link updated", link: updated });
     } catch (error) {
       return handleError(error, res, "UpdateShareableLink");
