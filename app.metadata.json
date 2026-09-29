@@ -1,28 +1,28 @@
 {
-  "appId": "com.bobbysworld.soulcodex",
+  "appId": "app.soulcodex.main",
   "appName": "Soul Codex",
-  "appVersion": "1.0.0",
-  "appDescription": "A personal insight and journaling app for self-discovery",
-  "appTagline": "Your personal identity operating system",
+  "appVersion": "4.0.1",
+  "appDescription": "Evidence-aware symbolic self-reflection using governed astrology, numerology, and qualified Human Design context.",
+  "appTagline": "Know How You're Wired",
   "author": "Bobby's World",
   "authorUrl": "https://bobbysworld.dev",
   "repositoryUrl": "https://github.com/Bboy9090/Ultimate-SoulCodex",
-  "homepage": "https://soulcodex.app",
+  "homepage": "https://soulcodex.up.railway.app",
   "license": "PROPRIETARY",
   "platform": {
     "web": {
       "enabled": true,
-      "url": "https://soulcodex.app",
+      "url": "https://soulcodex.up.railway.app",
       "pwa": true
     },
     "ios": {
-      "enabled": false,
-      "bundleId": "com.bobbysworld.soulcodex",
+      "enabled": true,
+      "bundleId": "app.soulcodex.ios",
       "appStoreId": null
     },
     "android": {
-      "enabled": false,
-      "packageName": "com.bobbysworld.soulcodex",
+      "enabled": true,
+      "packageName": "app.soulcodex.main",
       "playStoreId": null
     },
     "windows": {
@@ -38,11 +38,11 @@
   "features": {
     "profileOnboarding": {
       "enabled": true,
-      "description": "Create your profile with birth data and behavioral patterns"
+      "description": "Create a reusable profile from birth data. Missing or unsafe inputs remain unresolved rather than guessed."
     },
     "readingDashboard": {
       "enabled": true,
-      "description": "Multi-system synthesis of astrology, numerology, Human Design, Gene Keys"
+      "description": "Evidence-aware synthesis of governed astrology and deterministic numerology, with Human Design shown only when its verified-core contract passes."
     },
     "journalSystem": {
       "enabled": true,
@@ -56,20 +56,20 @@
     },
     "compatibility": {
       "enabled": true,
-      "description": "Relationship synastry analysis between two charts"
+      "description": "Symbolic relationship-theme comparison using only the supported evidence available to the active Foundation model."
     },
     "dailyContext": {
       "enabled": true,
-      "description": "Daily transits, Gene Key, Tarot card, I Ching reading"
+      "description": "Context-qualified daily reflection using governed timing inputs; unsupported legacy Tarot, I Ching, and Gene Keys fallbacks are excluded."
     },
     "aiSynthesis": {
       "enabled": true,
       "requiresApiKey": true,
-      "description": "AI-powered reading narrative generation"
+      "description": "AI-assisted narrative generation constrained by supported profile evidence and interpretation boundaries."
     },
     "pdfExport": {
       "enabled": true,
-      "description": "Export readings to PDF"
+      "description": "Download governed profile/report output when the relevant entitlement and release gate are satisfied."
     }
   },
   "requirements": {
@@ -126,43 +126,43 @@
   "screens": [
     {
       "route": "/",
-      "name": "Landing Page",
-      "description": "Welcome page for new users"
+      "name": "Home",
+      "description": "Foundation entry and product overview"
     },
     {
-      "route": "/start",
-      "name": "Onboarding",
+      "route": "/create",
+      "name": "Create Identity",
       "description": "Profile creation flow"
     },
     {
       "route": "/profile",
-      "name": "Profile Page",
-      "description": "Complete birth chart and multi-system reading"
+      "name": "Identity",
+      "description": "Saved evidence-aware identity view"
+    },
+    {
+      "route": "/reading",
+      "name": "Reading",
+      "description": "Quick / Standard / Deep Dive reflective reading"
     },
     {
       "route": "/today",
-      "name": "Today Page",
-      "description": "Daily context, transits, and guidance"
+      "name": "Today",
+      "description": "Context-qualified daily reflection"
     },
     {
-      "route": "/codex",
-      "name": "Codex Reading",
-      "description": "AI-synthesized narrative reading"
-    },
-    {
-      "route": "/guide",
-      "name": "Soul Guide",
-      "description": "Interactive AI chat assistant"
-    },
-    {
-      "route": "/compat",
+      "route": "/compatibility",
       "name": "Compatibility",
-      "description": "Relationship synastry analysis"
+      "description": "Symbolic relationship-theme exploration"
     },
     {
       "route": "/timeline",
       "name": "Timeline",
-      "description": "Life transit timeline view"
+      "description": "Timing and tracked-pattern context"
+    },
+    {
+      "route": "/guide",
+      "name": "Soul Guide",
+      "description": "AI-assisted profile-grounded reflection when available"
     }
   ],
   "buildArtifacts": {
@@ -201,15 +201,14 @@
     ]
   },
   "knownLimitations": [
-    "Journal UI page pending implementation",
-    "Saved insights UI pending implementation",
-    "No mobile native apps (PWA-first for MVP)",
-    "English only (no i18n/localization)",
-    "AI features require API keys"
+    "Purchasing is not enabled in the current native release candidate.",
+    "Systems that have not passed calculation, evidence, privacy, interpretation, and release contracts remain quarantined.",
+    "Exact-time astrology and verified Human Design remain unresolved when their required evidence is missing.",
+    "English only (no i18n/localization)."
   ],
   "releaseDate": null,
-  "minimumVersion": "1.0.0",
-  "releaseNotes": "Reforged MVP foundation with profile onboarding, reading dashboard, journal system backend, and saved insights schema.",
+  "minimumVersion": "4.0.1",
+  "releaseNotes": "Foundation release with evidence-aware astrology, deterministic numerology, qualified Human Design support, selective daily guidance, and symbolic compatibility.",
   "supportContact": {
     "email": "support@bobbysworld.dev",
     "github": "https://github.com/Bboy9090/Ultimate-SoulCodex/issues"
