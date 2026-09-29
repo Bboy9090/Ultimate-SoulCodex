@@ -449,7 +449,7 @@ export default function LocalFirstInputForm() {
                   </span>
                 </label>
 
-                <button type="submit" className="sc-button-primary h-14 w-full justify-center text-[15px]" disabled={isCreating} data-testid="button-create-profile">
+                <button type="submit" className="sc-button-primary h-14 w-full justify-center text-[15px]" disabled={isCreating} aria-busy={isCreating} data-testid="button-create-profile">
                   {isCreating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Building your Codex...</> : <>Create my Soul Codex <ArrowRight className="ml-2 h-4 w-4" /></>}
                 </button>
               </form>
