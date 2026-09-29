@@ -13,49 +13,51 @@ Astrology, numerology, and Human Design synthesized into one clear reading.
 
 ## Full Description
 
-Soul Codex maps your personality patterns using astrology, numerology, Human Design, timing, and behavioral analysis — in plain language you can actually use.
+Soul Codex is an evidence-aware self-reflection app built around governed astrology, deterministic numerology, qualified Human Design context, daily timing, and symbolic compatibility.
 
-Not a pile of disconnected horoscopes. One sharp, integrated reading that explains how you think, react, and relate.
+It does not force every system into every reading. A system appears only when its own calculation, evidence, privacy, interpretation, and release contracts support the job.
 
 **What you get:**
-- Your Soul Archetype — a single identity synthesis across all systems
-- Sun, Moon, and Rising sign analysis
-- Life Path number and personal year timing
-- Human Design type, authority, and profile
-- Daily personalized guidance based on your chart and current transits
-- Compatibility readings that show where two people naturally match or clash
-- AI Soul Guide chat that answers questions tied to your specific profile
+- A reusable Identity built from supported profile evidence
+- Sun, Moon, Rising, houses, aspects, Nodes, and qualified Chiron only when the relevant astronomy verification contracts pass
+- Deterministic Life Path and other supported numerology values, with symbolic meaning kept separate from arithmetic fact
+- Human Design core fields only when the verified-core evidence contract passes
+- Selective daily reflection using context-qualified timing inputs rather than system pile-on
+- Compatibility views that organize symbolic relationship themes without presenting a probability of relationship success
+- Reading layers that separate calculated evidence, symbolic interpretation, limitations, and unresolved data
 
 **How it works:**
-1. Enter your birth data (date required, time and location optional)
-2. Answer a few pattern questions about how you handle stress, decisions, and people
-3. The systems are blended into one reading
-4. Read what fits — your archetype, patterns, daily signal, and growth direction
+1. Enter the birth information you actually know.
+2. Soul Codex calculates only the systems supported by those inputs.
+3. Missing or unsafe inputs stay unresolved instead of being guessed.
+4. Explore Identity, Reading, Today, Compatibility, and Timeline with evidence and limitations available for inspection.
 
 **What makes it different:**
-- Honest about what it knows and doesn't know — if your birth time is missing, it says so instead of guessing
-- Multi-system synthesis, not isolated readings
-- Plain language, not jargon
-- Free to start, no account required
+- Verified calculations and symbolic interpretations are visibly separated
+- Repeated themes across systems are treated as resonance, not extra proof
+- Exact-time systems fail closed when exact-time evidence is missing or ambiguous
+- Unsupported legacy systems remain quarantined rather than appearing as filler
+- Plain language first; technical evidence remains inspectable
+- Free Foundation experience available before any premium purchase path is enabled
 
-**Free tier includes:**
-- Sun, Moon, and Rising signs
-- Life Path number
-- Soul Archetype
-- Today's card
-- Quick compatibility check
+Soul Codex is intended for self-reflection and entertainment. It does not provide medical, legal, financial, or other professional advice.
 
-**Premium includes everything above plus:**
-- Full chart with houses and aspects
-- Complete Human Design profile
-- Full Soul Codex reading
-- Daily personalized guidance
-- Soul Guide AI chat
-- Compatibility deep-dives
-- Timeline and life current tracker
+## Current Access
+
+**Foundation available now:**
+- Reusable local-first profile
+- Evidence-aware astrology when verification requirements are satisfied
+- Deterministic numerology with symbolic interpretation boundaries
+- Reading, Today, Compatibility, and Timeline using the same saved Identity
+- Inspectable evidence, uncertainty, exclusions, and limitations
+
+**Planned expansion — not currently sold as an implemented entitlement:**
+- Additional report/export tools
+- Additional governed systems only after their individual release gates pass
+- Premium purchase access only after native purchase certification and entitlement verification are complete
 
 ## Keywords (iOS, 100 chars max)
-astrology,numerology,human design,birth chart,personality,soul,zodiac,compatibility,daily reading
+astrology,numerology,human design,birth chart,self reflection,zodiac,compatibility,daily reading
 
 ## Category
 Primary: Lifestyle
@@ -79,21 +81,21 @@ https://soulcodex.up.railway.app/account-deletion
 
 ### iOS (App Store Connect)
 - [x] App icon: `app-store-icon-1024.png` — 1024x1024 RGB PNG, no alpha
-- [ ] Screenshots: iPhone 6.7" (1290x2796), iPhone 6.5" (1242x2688), iPad 12.9" (2048x2732)
-- [ ] Minimum 3 screenshots per device size
+- [ ] Confirm final iPhone screenshots come from the exact release build and use registry-truthful captions
+- [ ] Confirm iPad screenshots if iPad remains supported
 - [x] Privacy policy URL
 - [x] Support URL
-- [x] Apple Developer account ($99/year)
+- [x] Apple Developer account
 
 ### Android (Google Play Console)
 - [x] App icon: `play-store-icon-512.png` — 512x512 RGB PNG, no alpha
 - [x] Feature graphic: `play-feature-graphic-1024x500.png` (1024x500 PNG)
-- [ ] Screenshots: phone (min 2, 320-3840px per side), tablet (optional)
+- [ ] Confirm final phone screenshots come from the exact release build and use registry-truthful captions
 - [x] Privacy policy URL
-- [x] Google Play Developer account active (`harebugz23@gmail.com`)
+- [x] Google Play Developer account active
 
 ### Both Stores
-- [ ] Final 1024x1024 icon at `assets/icon-master.png`
-- [ ] Run `npm run cap:icons` to generate all sizes
-- [x] Final release payload built and synced from main `29d5aadeb7b61bdfd7f14ebf3b1acb551fa3b6c1`
+- [ ] Final visual assets must match the exact release candidate
+- [ ] Run the required icon/sync pipeline before final archive/AAB production
 - [ ] Test on physical devices before submission
+- [ ] Verify the artifact release SHA against the current promoted release authority before upload
