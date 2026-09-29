@@ -2,7 +2,8 @@
  * Cross-Engine Validation Types
  *
  * Types for comparing and validating outputs across multiple Soul Codex engines.
- * Surfaces agreements, conflicts, and confidence when engines align or diverge.
+ * Surfaces agreements, conflicts, and internal support signals when engines align or diverge.
+ * Cross-system agreement is resonance/corroboration, not a vote that increases truth probability.
  */
 
 import type { EvidenceEntry, EngineType } from '../evidence-ledger/types.js';
@@ -13,7 +14,7 @@ export interface EngineAgreement {
   claim: string;
   engines: EngineType[];
   agreementLevel: AgreementLevel;
-  confidence: number; // 0-100, aggregate confidence when engines agree
+  confidence: number; // 0-100 internal aggregate support index; not a truth probability
   reasonsForAgreement: string[];
   divergenceExplanation?: string; // Why engines diverge if not full agreement
 }
@@ -23,7 +24,7 @@ export interface ValidationResult {
   agreements: EngineAgreement[];
   conflicts: ConflictAnalysis[];
   overallAgreementScore: number; // 0-100, percentage of claims with full agreement
-  overallConfidence: number; // 0-100, weighted confidence across all engines
+  overallConfidence: number; // 0-100 internal aggregate support index across entries
   timestamp: string;
   version: string;
 }
@@ -54,7 +55,7 @@ export interface ValidationReport {
   enginePerformance: {
     engine: EngineType;
     claimsContributed: number;
-    averageConfidence: number;
+    averageConfidence: number; // internal support average; not a user-facing probability
     agreementRate: number; // % of claims where this engine agreed with others
   }[];
   keyFindings: string[];
