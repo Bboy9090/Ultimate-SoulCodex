@@ -111,7 +111,7 @@ test('analyzeConflicts - low confidence', () => {
   assert.ok(conflicts.some(c => c.explanation.includes('Confidence')));
 });
 
-test('scoreAgreement - multiple high-confidence engines', () => {
+test('scoreAgreement - multiple agreeing engines do not receive a count bonus', () => {
   const entries: EvidenceEntry[] = [
     createEvidenceEntry('numerology', 'Year', 5, 95, 'verified', {
       inputsUsed: ['birth_date_verified'],
@@ -124,9 +124,11 @@ test('scoreAgreement - multiple high-confidence engines', () => {
 
   const score = scoreAgreement(entries);
 
-  assert.ok(score.confidence > 90);
+  assert.equal(score.confidence, 91); // Rounded average only; no engine-count bonus.
   assert.equal(score.engineCount, 3);
-  assert.ok(score.reasoning.length > 0);
+  assert.ok(score.reasoning.some((reason) => reason.includes('not extra proof')));
+  assert.ok(score.reasoning.some((reason) => reason.includes('No bonus is awarded')));
+  assert.equal(score.reasoning.some((reason) => /\+\d+ confidence|% spread/.test(reason)), false);
 });
 
 test('scoreAgreement - mixed confidence variance penalty', () => {
@@ -142,7 +144,7 @@ test('scoreAgreement - mixed confidence variance penalty', () => {
   assert.ok(score.reasoning.some(r => r.includes('variance')));
 });
 
-test('scoreAgreement - verified inputs bonus', () => {
+test('scoreAgreement - verified labels are not double-counted as a bonus', () => {
   const entries: EvidenceEntry[] = [
     createEvidenceEntry('numerology', 'Test', 5, 85, 'verified', {
       inputsUsed: ['birth_date_verified'],
@@ -154,10 +156,10 @@ test('scoreAgreement - verified inputs bonus', () => {
 
   const score = scoreAgreement(entries);
 
-  assert.ok(score.confidence >= 90); // Base 85 + bonuses
+  assert.equal(score.confidence, 85); // Entry support already reflects verification quality.
 });
 
-test('scoreDisagreement - penalty increases with more disagreers', () => {
+test('scoreDisagreement - disagreement penalty does not scale with engine count', () => {
   const entries2 = [
     createEvidenceEntry('numerology', 'Test', 'A', 80, 'high'),
     createEvidenceEntry('astrology', 'Test', 'B', 80, 'high'),
@@ -172,7 +174,8 @@ test('scoreDisagreement - penalty increases with more disagreers', () => {
   const score2 = scoreDisagreement(entries2);
   const score3 = scoreDisagreement(entries3);
 
-  assert.ok(score3 < score2);
+  assert.equal(score2, 70);
+  assert.equal(score3, 70);
 });
 
 test('validateEngineAgreement - calculates overall agreement score', () => {
@@ -219,4 +222,37 @@ test('validateEngineAgreement - deterministic with same inputs', () => {
 
   assert.equal(result1.overallAgreementScore, result2.overallAgreementScore);
   assert.equal(result1.overallConfidence, result2.overallConfidence);
+});
+
+
+test('scoreAgreement - adding another identical-support engine cannot inflate support', () => {
+  const two = [
+    createEvidenceEntry('numerology', 'Theme', 'A', 80, 'high'),
+    createEvidenceEntry('astrology', 'Theme', 'A', 80, 'high'),
+  ];
+  const three = [
+    ...two,
+    createEvidenceEntry('pattern', 'Theme', 'A', 80, 'high'),
+  ];
+
+  const score2 = scoreAgreement(two);
+  const score3 = scoreAgreement(three);
+
+  assert.equal(score2.confidence, 80);
+  assert.equal(score3.confidence, 80);
+});
+
+test('validateEngineAgreement - user-visible reasons do not expose confidence percentages', () => {
+  const entries = [
+    createEvidenceEntry('numerology', 'Theme', 'A', 85, 'high'),
+    createEvidenceEntry('astrology', 'Theme', 'A', 85, 'high'),
+  ];
+
+  const result = validateEngineAgreement(entries);
+  const rendered = result.agreements.flatMap((agreement) => agreement.reasonsForAgreement).join(' ');
+
+  assert.doesNotMatch(rendered, /Average confidence|Confidence in agreement/i);
+  assert.doesNotMatch(rendered, /\b\d{1,3}%\b/);
+  assert.match(rendered, /resonance\/corroboration/i);
+  assert.match(rendered, /not independent proof/i);
 });
