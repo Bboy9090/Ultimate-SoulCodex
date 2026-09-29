@@ -64,6 +64,7 @@ node --import tsx --test \
   tests/assessment-interpretation-boundary.test.ts \
   tests/readme-system-truth.test.ts \
   tests/store-release-candidate-contract.test.ts \
+  tests/production-frontend-authority.test.ts \
   tests/roadmap-current-truth.test.ts \
   tests/changelog-current-truth.test.ts \
   tests/canonical-doctrine-contract.test.ts \
