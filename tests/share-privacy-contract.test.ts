@@ -393,3 +393,26 @@ test('share-link list responses redact stored password hashes', async () => {
   assert.equal(links[0]?.settings.passwordHash, undefined);
   assert.doesNotMatch(JSON.stringify(links), /private-material/);
 });
+
+
+test('share routes hash plaintext passwords server-side and ignore client passwordHash input', () => {
+  const createStart = routes.indexOf('app.post("/api/share/create"');
+  const publicStart = routes.indexOf('app.get("/api/share/:token"');
+  const updateStart = routes.indexOf('app.put("/api/share/links/:id"');
+  const deleteStart = routes.indexOf('app.delete("/api/share/links/:id"');
+
+  assert.ok(createStart >= 0);
+  assert.ok(publicStart > createStart);
+  assert.ok(updateStart >= 0);
+  assert.ok(deleteStart > updateStart);
+
+  const createRoute = routes.slice(createStart, publicStart);
+  const updateRoute = routes.slice(updateStart, deleteStart);
+
+  assert.match(createRoute, /hashSharePassword\(password\)/);
+  assert.match(updateRoute, /hashSharePassword\(password\)/);
+  assert.match(createRoute, /passwordHash:\s*undefined/);
+  assert.match(updateRoute, /passwordHash:\s*undefined/);
+  assert.match(createRoute, /at least 8 characters/);
+  assert.match(updateRoute, /at least 8 characters/);
+});
