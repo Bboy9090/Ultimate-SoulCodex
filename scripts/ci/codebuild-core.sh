@@ -59,6 +59,7 @@ node --import tsx --test \
   tests/share-privacy-contract.test.ts \
   tests/synastry-input-validation.test.ts \
   tests/compatibility-score-presentation.test.ts \
+  tests/legacy-compatibility-retirement.test.ts \
   tests/assessment-source-boundary.test.ts \
   tests/assessment-interpretation-boundary.test.ts \
   tests/readme-system-truth.test.ts \
