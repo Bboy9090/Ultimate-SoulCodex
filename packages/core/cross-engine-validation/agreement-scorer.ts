@@ -1,14 +1,15 @@
 /**
  * Agreement Scorer
  *
- * Calculates confidence scores when engines agree or partially agree.
- * Higher when multiple high-confidence engines concur.
+ * Calculates an internal support index for cross-engine agreement.
+ * Multiple engines may reveal resonance/corroboration, but engine count itself
+ * never increases epistemic certainty.
  */
 
 import type { EvidenceEntry } from '../evidence-ledger/types.js';
 
 export interface AgreementScore {
-  confidence: number; // 0-100
+  confidence: number; // 0-100 internal support index; not a truth probability
   reasoning: string[];
   engineCount: number;
   averageConfidence: number;
