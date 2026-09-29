@@ -1128,19 +1128,49 @@ function dailyClosingCue(
     profileData,
     `closing:${templateId}`,
   );
+
+  if (templateId.startsWith("daily-num-")) {
+    const personalTheme = getPersonalDayTheme(
+      dailyContext.personalDayNumber,
+    ).toLowerCase();
+    const universalTheme = getUniversalDayTheme(
+      dailyContext.universalDayNumber,
+    ).toLowerCase();
+    const cues = [
+      `Use ${personalTheme} as the test theme and record one concrete result.`,
+      `Compare ${personalTheme} with ${universalTheme}; keep whichever one actually helps a decision.`,
+      `Before the day ends, note whether ${personalTheme} showed up in behavior or only in the wording.`,
+      `Choose one task where ${personalTheme} is relevant and judge the idea by what changes.`,
+      `Let ${universalTheme} be background context while your real obligations set the priority.`,
+      `Ask whether ${personalTheme} improved focus, timing, or follow-through in one specific situation.`,
+      `If ${personalTheme} does not fit the day, treat that mismatch as useful information.`,
+      `Use one real outcome to decide whether ${universalTheme} added anything beyond the label.`,
+    ] as const;
+    return cues[seed % cues.length];
+  }
+
+  if (templateId.startsWith("daily-astro-")) {
+    const cues = [
+      `Use one event from this ${dailyContext.moonPhase} with the Moon in ${dailyContext.moonSign} as the comparison point.`,
+      `Notice whether ${dailyContext.moonSign} language clarifies anything during this ${dailyContext.moonPhase}; if not, drop it.`,
+      `Compare the ${dailyContext.moonPhase} metaphor with one project that is actually moving today.`,
+      `With the Moon in ${dailyContext.moonSign}, start from what you can observe and add symbolism only if it earns its place.`,
+      `Use the current ${dailyContext.moonPhase} as a pacing cue, then let real timing decide the next step.`,
+      `Check whether the ${dailyContext.moonSign} symbolism describes the situation better than plain language does.`,
+      `At about ${Math.round(dailyContext.moonPhasePercentage)}% illumination, the measurable sky state is enough; personal meaning remains optional.`,
+      `Treat ${dailyContext.moonSign} during ${dailyContext.moonPhase} as context, not a conclusion.`,
+    ] as const;
+    return cues[seed % cues.length];
+  }
+
+  const lineTheme = getHDLineTheme(dailyContext.currentHDLine);
   const cues = [
-    "Write down one result before the day ends.",
-    "Compare the idea with one event you can verify.",
-    "Turn the theme into one small action and watch the outcome.",
-    "Notice what changes when you ignore the symbolism completely.",
-    "Use one real decision as the test case.",
-    "Keep a note only if the idea improves a concrete choice.",
-    "Check the claim against behavior, timing, and context.",
-    "Ask what evidence would make you reject this interpretation.",
-    "Try it once, then revise from the result.",
-    "Name one fact that matters more than the symbolic cue.",
-    "Use the lens briefly, then return to the actual problem in front of you.",
-    "End the experiment if it adds noise instead of clarity.",
+    `For this transit, compare Gate ${dailyContext.currentHDGate} with one choice ${lineTheme}.`,
+    `Use the Line ${dailyContext.currentHDLine} theme ${lineTheme} only where a real behavior supports it.`,
+    `Test Gate ${dailyContext.currentHDGate} against one observable outcome and revise the interpretation afterward.`,
+    `Let ${lineTheme} be a question for the day, not a rule for the day.`,
+    `One decision is enough to test whether Gate ${dailyContext.currentHDGate} adds useful language.`,
+    `If the Line ${dailyContext.currentHDLine} theme does not fit lived experience, the mismatch wins.`,
   ] as const;
   return cues[seed % cues.length];
 }
