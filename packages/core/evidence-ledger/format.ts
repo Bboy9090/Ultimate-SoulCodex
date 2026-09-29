@@ -4,23 +4,55 @@
  * Helpers for presenting evidence to users in a readable way.
  */
 
-import type { EvidenceEntry, EvidenceSummary } from './types.js';
+import type {
+  EvidenceConfidenceLevel,
+  EvidenceEntry,
+  EvidenceSummary,
+} from './types.js';
 
+/**
+ * Internal diagnostic formatter.
+ *
+ * Numeric confidence weights are useful for engine ranking and threshold logic,
+ * but they are not empirical probabilities that a symbolic interpretation is
+ * "true". User-facing surfaces should prefer formatConfidenceAsSupportLabel().
+ */
 export function formatConfidenceAsPercent(confidence: number): string {
   return `${Math.round(confidence)}%`;
 }
 
-export function formatConfidenceExplanation(label: string): string {
-  const explanations: Record<string, string> = {
-    verified:
-      'Verified from reliable sources (birth certificate, exact birth time). Highest confidence.',
-    high: 'Calculated from verified inputs with strong patterns.',
-    moderate: 'Calculated from verified core data with some estimation.',
-    partial: 'Estimated inputs or limited historical patterns.',
-    low: 'Multiple unknowns or weak pattern matches.',
-    unverified: 'Not enough reliable data to form confident conclusion.',
+export function formatConfidenceAsSupportLabel(
+  label: EvidenceConfidenceLevel,
+): string {
+  const labels: Record<EvidenceConfidenceLevel, string> = {
+    verified: 'Verified source support',
+    high: 'High source support',
+    moderate: 'Moderate source support',
+    partial: 'Partial source support',
+    low: 'Low source support',
+    unverified: 'Unverified source support',
   };
-  return explanations[label] || 'Confidence level unknown';
+  return labels[label];
+}
+
+export function formatConfidenceExplanation(
+  label: EvidenceConfidenceLevel,
+): string {
+  const explanations: Record<EvidenceConfidenceLevel, string> = {
+    verified:
+      'The relevant calculation or source evidence passed its approved verification contract.',
+    high:
+      'The claim has strong source/calculation support, but the label is not a probability of psychological truth.',
+    moderate:
+      'The claim has usable support with meaningful limitations or incomplete verification.',
+    partial:
+      'Only part of the required evidence is available or independently qualified.',
+    low:
+      'The claim has substantial evidence limitations and should be treated cautiously.',
+    unverified:
+      'The claim has not passed a verification contract and should not be presented as established fact.',
+  };
+  return explanations[label];
 }
 
 export function formatEvidenceEntry(entry: EvidenceEntry): {
@@ -34,7 +66,7 @@ export function formatEvidenceEntry(entry: EvidenceEntry): {
   return {
     claim: entry.claim,
     value: formatValue(entry.value),
-    confidence: `${formatConfidenceAsPercent(entry.confidence)} (${entry.confidenceLabel})`,
+    confidence: formatConfidenceAsSupportLabel(entry.confidenceLabel),
     inputs: entry.inputsUsed.join(', ') || 'No inputs tracked',
     reasoning: entry.reasoning.join(' → ') || 'No reasoning provided',
     limitations: entry.limitations.join('; ') || 'No known limitations',
@@ -52,10 +84,10 @@ export function formatSummaryAsText(summary: EvidenceSummary): string {
   const lines: string[] = [];
 
   lines.push(`Total Claims: ${summary.totalClaims}`);
-  lines.push(`Average Confidence: ${formatConfidenceAsPercent(summary.averageConfidence)}`);
+  lines.push('Support tiers describe provenance/calculation support, not probability.');
   lines.push('');
 
-  lines.push('By Confidence Level:');
+  lines.push('By Support Tier:');
   for (const [level, count] of Object.entries(summary.byConfidenceLevel)) {
     if (count > 0) {
       lines.push(`  ${level}: ${count}`);
@@ -73,7 +105,7 @@ export function formatSummaryAsText(summary: EvidenceSummary): string {
     lines.push(`Low Confidence Claims (${summary.lowConfidenceClaims.length}):`);
     for (const claim of summary.lowConfidenceClaims.slice(0, 5)) {
       lines.push(
-        `  - ${claim.claim} (${formatConfidenceAsPercent(claim.confidence)}, ${claim.confidenceLabel})`
+        `  - ${claim.claim} (${formatConfidenceAsSupportLabel(claim.confidenceLabel)})`
       );
     }
   }
