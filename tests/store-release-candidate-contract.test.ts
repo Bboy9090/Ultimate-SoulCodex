@@ -106,3 +106,18 @@ test("store metadata points at the verified production domain and exact release 
     assert.match(source, /exact-head|exact qualified candidate|exact qualified/i);
   }
 });
+
+
+test("Store Candidate concurrency is isolated per PR or ref", async () => {
+  const workflow = await readFile(
+    new URL("../.github/workflows/store-4.0.0-release.yml", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    workflow,
+    /group:\s*soulcodex-store-4-0-0-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/,
+  );
+  assert.match(workflow, /cancel-in-progress:\s*true/);
+  assert.doesNotMatch(workflow, /group:\s*soulcodex-store-4-0-0\s*$/m);
+});
