@@ -100,3 +100,47 @@ test("store metadata points at the verified production domain and exact release 
   assert.match(packet, /4\.0\.2 \/ build 4000009/);
   assert.match(packet, /do not hard-code them into the source tree/);
 });
+
+
+test("store-facing capability claims stay aligned with the governed system registry", async () => {
+  const appMetadata = JSON.parse(await text("app.metadata.json"));
+  const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
+  const listing = await text("store-assets/STORE_LISTING.md");
+  const pricing = await text("client/src/pages/PricingPage.tsx");
+
+  assert.equal(appMetadata.appVersion, "4.0.1");
+  assert.equal(appMetadata.platform.android.enabled, true);
+  assert.equal(appMetadata.platform.android.packageName, "app.soulcodex.main");
+  assert.equal(appMetadata.platform.ios.enabled, true);
+  assert.equal(appMetadata.platform.ios.bundleId, "app.soulcodex.ios");
+  assert.equal(appMetadata.platform.web.url, "https://soulcodex.up.railway.app");
+
+  const publicCopy = [
+    appMetadata.appDescription,
+    ...Object.values(appMetadata.features).map((feature: any) => feature?.description ?? ""),
+    packet,
+    listing,
+  ].join("\n");
+
+  for (const forbidden of [
+    "Multi-system synthesis of astrology, numerology, Human Design, Gene Keys",
+    "Daily transits, Gene Key, Tarot card, I Ching reading",
+    "One Blueprint. Every System.",
+    "Today's card",
+    "Premium includes everything above plus",
+  ]) {
+    assert.equal(publicCopy.includes(forbidden), false, forbidden);
+  }
+
+  assert.match(packet, /Repeated themes across systems are treated as resonance, not extra proof/i);
+  assert.match(listing, /without presenting a probability of relationship success/i);
+  assert.match(packet, /Planned premium systems are not sold as implemented work/i);
+  assert.match(pricing, /Planned work is not sold as implemented work/);
+});
+
+test("store metadata does not publish private operator account addresses", async () => {
+  const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
+  const listing = await text("store-assets/STORE_LISTING.md");
+  assert.doesNotMatch(packet, /harebugz23@gmail\.com/i);
+  assert.doesNotMatch(listing, /harebugz23@gmail\.com/i);
+});
