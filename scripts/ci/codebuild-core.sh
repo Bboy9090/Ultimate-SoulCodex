@@ -51,6 +51,7 @@ node --import tsx --test \
   tests/billing-security.test.ts \
   tests/system-visibility-contract.test.ts \
   tests/evidence-presentation-boundary.test.ts \
+  tests/evidence-accessibility-contract.test.ts \
   tests/verified-profile-differentiation-corpus.test.ts \
   tests/daily-template-system-mix.test.ts \
   tests/verified-system-method-summary.test.ts \
