@@ -3099,9 +3099,11 @@ ${contextData}
   app.get("/api/share/:token", async (req, res) => {
     try {
       const { token } = req.params;
-      const { password } = req.query;
 
-      const shareableProfile = await getShareableProfile(storage, token, password as string | undefined);
+      // Never accept share passwords in a query string. Protected links are
+      // unlocked through the POST endpoint below so secrets do not enter URL
+      // history, proxy logs, or analytics.
+      const shareableProfile = await getShareableProfile(storage, token);
       if (!shareableProfile) {
         return res.status(404).json({ message: "Shareable link not found or expired" });
       }
@@ -3115,6 +3117,32 @@ ${contextData}
         return res.status(401).json({ message: "Invalid password" });
       }
       return handleError(error, res, "GetShareableProfile");
+    }
+  });
+
+  app.post("/api/share/:token/unlock", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { password } = req.body ?? {};
+
+      if (typeof password !== "string" || password.length === 0) {
+        return res.status(400).json({ message: "Password is required" });
+      }
+
+      const shareableProfile = await getShareableProfile(storage, token, password);
+      if (!shareableProfile) {
+        return res.status(404).json({ message: "Shareable link not found or expired" });
+      }
+
+      res.json(shareableProfile);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Password required') {
+        return res.status(401).json({ message: "Password required", requiresPassword: true });
+      }
+      if (error instanceof Error && error.message === 'Invalid password') {
+        return res.status(401).json({ message: "Invalid password" });
+      }
+      return handleError(error, res, "UnlockShareableProfile");
     }
   });
 
