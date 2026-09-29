@@ -70,7 +70,8 @@ ${JSON.stringify(source, null, 2)}
 - **Signal before adjective.** Prefer specific supported interactions from the source over broad identity labels.
 - **Resonance must be earned.** When multiple supported layers reinforce one another, name the interaction. Do not imply agreement when the source contains only one signal.
 - **Protect the tension.** The contradiction layer must preserve both supported sides of a tension instead of flattening them into a generic trait.
-- **One layer, one job.** Do not recycle the same sentence, metaphor, or advice across multiple layers.
+- **One layer, one job.** Do not recycle the same sentence, metaphor, advice, six-word opening, or sentence skeleton across multiple layers.
+- **Vary the architecture.** Mix direct observations, contrasts, questions, concrete examples from supplied evidence, and bounded actions. Do not start several layers with the same phrase such as "This pattern," "You may," or "The supplied signals."
 - **Use concrete language.** Prefer an observable behavior, decision, boundary, or question over vague words such as "alignment," "purpose," "intuition," "discernment," "sensitivity," or "balance" unless the source itself specifically supports that language.
 - **No horoscope filler.** Avoid "trust the universe," "everything happens for a reason," "step into your power," "your higher self knows," and similar portable phrases.
 - **Make the action testable.** The action layer should offer one bounded next move or reflection experiment that a user could actually try.

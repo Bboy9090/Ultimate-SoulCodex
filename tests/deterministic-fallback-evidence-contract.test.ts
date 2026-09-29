@@ -122,6 +122,30 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
     assert.match(result.content, /symbolic experiment/i);
   });
 
+
+
+  await suite.test("fallback avoids canned psychological monologues and protection scripts", () => {
+    const result = deterministicFallback({
+      prompt: "",
+      promptType: "soul_guide",
+      profile: {
+        astrologyData: {
+          sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+          moon: { sign: "Cancer", verificationStatus: "verified", evidence },
+        },
+        archetypeData: { themes: ["precision", "service"] },
+      },
+      dailyCard: { focus: "Finish one bounded task" },
+    } as any);
+
+    assert.doesNotMatch(
+      result.content,
+      /protect my soft interior|mirror of my environment|designed to impact|nervous system in search of an anchor|what is this pattern trying to preserve/i,
+    );
+    assert.match(result.content, /Verified natal Sun: Virgo/i);
+    assert.match(result.content, /Verified natal Moon: Cancer/i);
+  });
+
   await suite.test("biography fallback with missing evidence explicitly withholds invented identity claims", () => {
     const result = deterministicFallback({
       prompt: "",
