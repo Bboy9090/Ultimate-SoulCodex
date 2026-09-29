@@ -1118,6 +1118,71 @@ function stableGuidanceSeed(
   return hash >>> 0;
 }
 
+function dailyOpeningCue(
+  dailyContext: DailyContext,
+  profileData: any,
+  templateId: string,
+): string {
+  const seed = stableGuidanceSeed(
+    dailyContext,
+    profileData,
+    `opening:${templateId}`,
+  );
+
+  if (templateId.startsWith("daily-num-")) {
+    const theme = getPersonalDayTheme(
+      dailyContext.personalDayNumber,
+    ).toLowerCase();
+    const cues = [
+      `Planning cue for ${theme}:`,
+      `Today's number experiment starts here:`,
+      `For one practical decision today:`,
+      `Use this only if it helps:`,
+      `A lightweight planning prompt for today:`,
+      `Before assigning meaning to the number:`,
+      `For today's ${theme} theme:`,
+      `One way to test the numerology:`,
+      `Keep the number in perspective:`,
+      `For a bounded experiment today:`,
+      `Start with the real task first:`,
+      `Use the theme as a question:`,
+    ] as const;
+    return cues[seed % cues.length];
+  }
+
+  if (templateId.startsWith("daily-astro-")) {
+    const cues = [
+      `Start with the sky facts:`,
+      `Today's lunar context, without assumptions:`,
+      `For one grounded Moon check:`,
+      `Use the Moon as context only:`,
+      `A factual sky note for today:`,
+      `Before interpreting the lunar symbolism:`,
+      `One astronomy-first prompt for today:`,
+      `For this ${dailyContext.moonPhase} phase:`,
+      `With the Moon in ${dailyContext.moonSign}:`,
+      `Keep observation ahead of interpretation:`,
+      `Use today's lunar data lightly:`,
+      `For a concrete sky-to-life comparison:`,
+    ] as const;
+    return cues[seed % cues.length];
+  }
+
+  const cues = [
+    `For one Human Design experiment:`,
+    `Today's transit check begins with evidence:`,
+    `Use this gate as a question:`,
+    `For a single real-world comparison:`,
+    `Keep the transit secondary to behavior:`,
+    `Before reading meaning into the gate:`,
+    `One bounded HD test for today:`,
+    `Start with the decision already present:`,
+    `Use Gate ${dailyContext.currentHDGate} provisionally:`,
+    `For today's Line ${dailyContext.currentHDLine} check:`,
+  ] as const;
+  return cues[seed % cues.length];
+}
+
 function dailyClosingCue(
   dailyContext: DailyContext,
   profileData: any,
@@ -1183,7 +1248,7 @@ function withDailyVariation(
   return templates.map((template) => ({
     ...template,
     template: (context: any) =>
-      `${template.template(context)} ${dailyClosingCue(dailyContext, profileData, template.id)}`,
+      `${dailyOpeningCue(dailyContext, profileData, template.id)} ${template.template(context)} ${dailyClosingCue(dailyContext, profileData, template.id)}`,
   }));
 }
 
