@@ -144,3 +144,21 @@ test("store metadata does not publish private operator account addresses", async
   assert.doesNotMatch(packet, /harebugz23@gmail\.com/i);
   assert.doesNotMatch(listing, /harebugz23@gmail\.com/i);
 });
+
+
+test("stale screenshot claims cannot be treated as submission-ready", async () => {
+  const screenshotReadme = await text("store-assets/screenshots/README.md");
+  const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
+
+  assert.match(screenshotReadme, /One Blueprint\. Supported Systems\./);
+  assert.match(
+    screenshotReadme,
+    /02-one-blueprint-every-system\.png[\s\S]*must \*\*not\*\* be submitted as-is/i,
+  );
+  assert.match(
+    screenshotReadme,
+    /recaptured from the exact promoted native build/i,
+  );
+  assert.match(packet, /One Blueprint\. Supported Systems\./);
+  assert.doesNotMatch(packet, /One Blueprint\. Every System\./);
+});
