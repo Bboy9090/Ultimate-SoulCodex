@@ -11,7 +11,9 @@ test("service worker update lifecycle avoids forced mid-session takeover", async
     readFile(registrationUrl, "utf8"),
   ]);
 
-  assert.doesNotMatch(generator, /cache\.addAll\(PRECACHE_URLS\)[\s\S]*?self\.skipWaiting\(\)/);
+  const installBlock = generator.match(/self\.addEventListener\("install"[\s\S]*?\n\}\);/)?.[0] ?? "";
+  assert.match(installBlock, /cache\.addAll\(PRECACHE_URLS\)/);
+  assert.doesNotMatch(installBlock, /self\.skipWaiting\(\)/);
   assert.match(generator, /const previousShell = shellKeys\.filter\(\(key\) => key !== CACHE_NAME\)\.slice\(-1\)/);
   assert.match(generator, /const keep = new Set\(\[CACHE_NAME, \.\.\.previousShell\]\)/);
   assert.match(generator, /if \(event\.data\?\.type === "SKIP_WAITING"\) self\.skipWaiting\(\)/);
