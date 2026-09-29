@@ -26,66 +26,40 @@ export function scoreAgreement(entries: EvidenceEntry[]): AgreementScore {
     };
   }
 
-  const engineCount = new Set(entries.map(e => e.engine)).size;
+  const engineCount = new Set(entries.map((entry) => entry.engine)).size;
   const averageConfidence =
-    entries.reduce((sum, e) => sum + e.confidence, 0) / entries.length;
-  const hasHighConfidenceEngine = entries.some(e => e.confidence >= 80);
-  const verifiedEntries = entries.filter(e => e.confidenceLabel === 'verified');
-  const highEntries = entries.filter(e =>
-    ['verified', 'high'].includes(e.confidenceLabel)
+    entries.reduce((sum, entry) => sum + entry.confidence, 0) / entries.length;
+  const hasHighConfidenceEngine = entries.some((entry) => entry.confidence >= 80);
+
+  // Agreement is useful for organizing resonance/corroboration, but engine
+  // count must not mechanically increase epistemic certainty. Each entry's
+  // own support score already reflects its input and verification quality.
+  let supportScore = averageConfidence;
+  const reasoning: string[] = [
+    engineCount > 1
+      ? `${engineCount} engines express the same claim; treated as resonance/corroboration, not extra proof`
+      : 'Only one engine contributes to this claim',
+  ];
+
+  // Mixed source-support levels justify a conservative aggregate, but the
+  // penalty depends on support variance rather than the number of engines.
+  const confidenceRange =
+    Math.max(...entries.map((entry) => entry.confidence)) -
+    Math.min(...entries.map((entry) => entry.confidence));
+  if (confidenceRange > 40) {
+    supportScore = Math.max(0, supportScore - 15);
+    reasoning.push('Wide source-support variance detected; aggregate support reduced conservatively');
+  } else if (confidenceRange > 20) {
+    supportScore = Math.max(0, supportScore - 5);
+    reasoning.push('Moderate source-support variance detected; aggregate support reduced conservatively');
+  }
+
+  reasoning.push(
+    'No bonus is awarded for engine count, repeated symbolic agreement, verification labels already represented in entry support, or reasoning length',
   );
 
-  let baseScore = averageConfidence;
-  const reasoning: string[] = [];
-
-  // Bonus for multiple independent engines agreeing
-  if (engineCount >= 3) {
-    baseScore = Math.min(100, baseScore + 10);
-    reasoning.push(`${engineCount} independent engines agree (+10 confidence)`);
-  } else if (engineCount === 2) {
-    baseScore = Math.min(100, baseScore + 5);
-    reasoning.push('2 engines agree (+5 confidence)');
-  }
-
-  // Bonus for verified inputs
-  if (verifiedEntries.length === entries.length) {
-    baseScore = Math.min(100, baseScore + 10);
-    reasoning.push('All inputs verified (+10 confidence)');
-  } else if (verifiedEntries.length > 0) {
-    const bonus = Math.min(5, verifiedEntries.length * 2);
-    baseScore = Math.min(100, baseScore + bonus);
-    reasoning.push(`${verifiedEntries.length} engines use verified inputs (+${bonus} confidence)`);
-  }
-
-  // Bonus for consistency across high-confidence engines
-  if (highEntries.length === entries.length) {
-    baseScore = Math.min(100, baseScore + 5);
-    reasoning.push('All engines report high+ confidence (+5 confidence)');
-  }
-
-  // Penalty if engines have mixed confidence
-  const confidenceRange = Math.max(...entries.map(e => e.confidence)) -
-    Math.min(...entries.map(e => e.confidence));
-  if (confidenceRange > 40) {
-    baseScore = Math.max(0, baseScore - 15);
-    reasoning.push(`High confidence variance (-15 confidence): ${confidenceRange}% spread`);
-  } else if (confidenceRange > 20) {
-    baseScore = Math.max(0, baseScore - 5);
-    reasoning.push(`Confidence variance (-5 confidence): ${confidenceRange}% spread`);
-  }
-
-  // Check reasoning depth (more reasoning = more thought went into it)
-  const avgReasoningSteps = entries.reduce((sum, e) => sum + e.reasoning.length, 0) /
-    entries.length;
-  if (avgReasoningSteps >= 3) {
-    baseScore = Math.min(100, baseScore + 5);
-    reasoning.push(
-      `Deep reasoning documented (+5 confidence): avg ${Math.round(avgReasoningSteps)} steps`
-    );
-  }
-
   return {
-    confidence: Math.round(Math.max(0, Math.min(100, baseScore))),
+    confidence: Math.round(Math.max(0, Math.min(100, supportScore))),
     reasoning,
     engineCount,
     averageConfidence: Math.round(averageConfidence),
@@ -96,15 +70,11 @@ export function scoreAgreement(entries: EvidenceEntry[]): AgreementScore {
 export function scoreDisagreement(entries: EvidenceEntry[]): number {
   if (entries.length < 2) return 0;
 
-  // When engines disagree, lower score reflects uncertainty
   const averageConfidence =
-    entries.reduce((sum, e) => sum + e.confidence, 0) / entries.length;
+    entries.reduce((sum, entry) => sum + entry.confidence, 0) / entries.length;
 
-  // Disagreement penalty
-  const penalty = Math.min(
-    30,
-    10 * (entries.length - 1) // Penalty increases with more disagreeing engines
-  );
-
-  return Math.max(0, Math.round(averageConfidence - penalty));
+  // Conflict is represented once. Additional symbolic engines must not
+  // mechanically make disagreement "more uncertain" simply by existing.
+  const conflictAdjustment = 10;
+  return Math.max(0, Math.round(averageConfidence - conflictAdjustment));
 }
