@@ -274,24 +274,28 @@ function codexReadingFallback(profile: any): FallbackResult {
   sections.push(`## 🧬 THE SOUL BLUEPRINT`);
   sections.push(`${nuance}`);
   sections.push("");
-  sections.push(`### IDENTITY ARCHITECTURE`);
-  sections.push(`As a ${d.archetype}${d.sunSign ? ` with a ${d.sunSign} Sun` : ""}, you are designed for ${d.themes[0] || "high-fidelity execution"}. You see the gaps before others even see the structure.`);
+  sections.push(`### PROFILE MATERIAL`);
+  sections.push(
+    d.themes[0]
+      ? `The saved profile includes "${d.themes[0]}" as a theme${d.sunSign ? `, alongside a verified ${d.sunSign} Sun` : ""}. Treat that combination as material to test, not a fixed identity statement.`
+      : `This fallback has ${d.sunSign ? `a verified ${d.sunSign} Sun but ` : ""}no evidence-backed theme strong enough for an identity claim.`,
+  );
 
   if (d.moonSign) {
     sections.push(
-      `**Emotional Lens**: Your verified ${d.moonSign} Moon can be used as a symbolic lens for emotional processing. Keep only the interpretation that matches observed experience; the placement itself does not prove a behavior.`
+      `**Moon context**: Your verified ${d.moonSign} Moon can be used as a symbolic lens for emotional processing. Keep only the interpretation that matches observed experience; the placement itself does not prove a behavior.`
     );
   }
 
   if (d.hdType) {
     sections.push(
-      `**System Logic**: Verified Human Design core: ${d.hdType}${d.hdStrategy ? ` · ${d.hdStrategy}` : ""}${d.hdAuthority ? ` · ${d.hdAuthority}` : ""}. Treat the system as a symbolic experiment and compare it against lived decisions.`
+      `**HD context**: Verified Human Design core: ${d.hdType}${d.hdStrategy ? ` · ${d.hdStrategy}` : ""}${d.hdAuthority ? ` · ${d.hdAuthority}` : ""}. Treat the system as a symbolic experiment and compare it against lived decisions.`
     );
   }
 
   if (d.lifePath) {
     sections.push(
-      `**Long-Game**: Life Path ${d.lifePath} is a deterministic numerology result. Its interpretation is symbolic; use it as a planning lens rather than a prediction.`
+      `**Numerology context**: Life Path ${d.lifePath} is a deterministic numerology result. Its interpretation is symbolic; use it as a planning lens rather than a prediction.`
     );
   }
 
@@ -338,8 +342,8 @@ function biographyFallback(profile: any): FallbackResult {
     how_i_move: d.hdType
       ? `My verified Human Design core is ${d.hdType}${d.hdStrategy ? ` with strategy ${d.hdStrategy}` : ""}; I use it as an experiment, not a command.`
       : `No verified Human Design movement strategy is available in this fallback.`,
-    what_i_wont_tolerate: "Vagueness, generic advice, and misaligned energy.",
-    what_im_building: `A legacy of ${d.themes[1] || "truth"} and ${d.themes[2] || "impact"}.`
+    what_i_wont_tolerate: "Vagueness, generic advice, and claims that outrun the evidence.",
+    what_im_building: `Work that can be checked against ${d.themes[1] || "clear evidence"} and ${d.themes[2] || "real outcomes"}.`
   };
 
   return {
@@ -352,7 +356,7 @@ function compatibilityFallback(profile: any): FallbackResult {
   return {
     title: "Compatibility Failsafe",
     content:
-      "Compatibility analysis requires a dual-profile sync. Ensure both soul blueprints are fully loaded into the Codex to reveal the friction points and harmonic resonances between your specific placements.",
+      "Compatibility needs two evidence-qualified profiles. Until both are available, this fallback will not manufacture friction, chemistry, or relationship conclusions.",
   };
 }
 
