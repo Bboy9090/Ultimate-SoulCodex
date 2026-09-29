@@ -99,25 +99,34 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
                 border: '1px solid rgba(255,255,255,0.05)',
               }}
             >
-              <div
+              <button
+                type="button"
+                aria-expanded={engineEntries.every((entry) => expandedEntries.has(entry.id))}
+                aria-label={`Toggle evidence details for ${engine.replace('-', ' ')}`}
+                onClick={() => {
+                  const updated = new Set(expandedEntries);
+                  const allExpanded = engineEntries.every((entry) => updated.has(entry.id));
+                  engineEntries.forEach((entry) => {
+                    if (allExpanded) {
+                      updated.delete(entry.id);
+                    } else {
+                      updated.add(entry.id);
+                    }
+                  });
+                  setExpandedEntries(updated);
+                }}
                 style={{
+                  width: '100%',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   cursor: 'pointer',
-                }}
-                onClick={() => {
-                  // Toggle all entries for this engine
-                  const updated = new Set(expandedEntries);
-                  const allExpanded = engineEntries.every(e => updated.has(e.id));
-                  engineEntries.forEach(e => {
-                    if (allExpanded) {
-                      updated.delete(e.id);
-                    } else {
-                      updated.add(e.id);
-                    }
-                  });
-                  setExpandedEntries(updated);
+                  background: 'none',
+                  border: 0,
+                  padding: 0,
+                  color: 'inherit',
+                  textAlign: 'left',
+                  font: 'inherit',
                 }}
               >
                 <div>
@@ -153,7 +162,7 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
                 >
                   {supportSummary}
                 </div>
-              </div>
+              </button>
 
               {engineEntries.map(entry => (
                 <div
@@ -164,14 +173,24 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
                     borderLeft: '2px solid rgba(212,168,95,0.2)',
                   }}
                 >
-                  <div
+                  <button
+                    type="button"
+                    aria-expanded={expandedEntries.has(entry.id)}
+                    aria-controls={`evidence-detail-${entry.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`}
+                    onClick={() => toggleExpanded(entry.id)}
                     style={{
+                      width: '100%',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'flex-start',
                       cursor: 'pointer',
+                      background: 'none',
+                      border: 0,
+                      padding: 0,
+                      color: 'inherit',
+                      textAlign: 'left',
+                      font: 'inherit',
                     }}
-                    onClick={() => toggleExpanded(entry.id)}
                   >
                     <div
                       style={{
@@ -192,10 +211,13 @@ export default function EvidenceViewer({ entries, compact = false }: EvidenceVie
                     >
                       {formatConfidenceAsSupportLabel(entry.confidenceLabel)}
                     </div>
-                  </div>
+                  </button>
 
                   {expandedEntries.has(entry.id) && (
                     <div
+                      id={`evidence-detail-${entry.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`}
+                      role="region"
+                      aria-label={`Evidence details for ${entry.claim}`}
                       style={{
                         marginTop: '0.5rem',
                         paddingTop: '0.5rem',
