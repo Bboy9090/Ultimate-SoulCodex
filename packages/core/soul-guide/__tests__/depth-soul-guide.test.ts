@@ -263,6 +263,29 @@ test("Layered Soul Guide", async (suite) => {
     assert.ok(fallback.markdown.includes("Lived experience remains"));
   });
 
+
+
+  await suite.test("parser rejects cross-layer repetitive prose", () => {
+    const source = sourceInterpretation();
+    const prose = proseResponse(source);
+
+    for (const key of DEPTH_INTERPRETATION_LAYER_KEYS) {
+      prose[key].summary = "This pattern may help you understand the situation more clearly.";
+      prose[key].explanation = "This pattern may help you understand the situation more clearly by noticing what happens next.";
+    }
+
+    const result = parseDepthSoulGuideResponse(JSON.stringify(prose), source);
+
+    assert.equal(result.interpretation, null);
+    assert.ok(
+      result.findings.some(
+        (finding) =>
+          finding.code === "repeated-layer-summary" ||
+          finding.code === "repeated-opening-stem",
+      ),
+    );
+  });
+
   await suite.test("unknown-time degradation survives safe prose rewriting", () => {
     const source = sourceInterpretation();
     source.missingData = [
