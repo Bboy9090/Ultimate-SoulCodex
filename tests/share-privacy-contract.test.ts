@@ -481,3 +481,22 @@ test('share settings deduplicate approved sections and allow zero-day expiry as 
   assert.equal(created.expiresAt, undefined);
   assert.equal(persisted?.expiresAt, undefined);
 });
+
+
+test('protected share passwords never travel in URL query parameters', () => {
+  const getStart = routes.indexOf('app.get("/api/share/:token"');
+  const unlockStart = routes.indexOf('app.post("/api/share/:token/unlock"');
+  const listStart = routes.indexOf('app.get("/api/share/links"');
+
+  assert.ok(getStart >= 0);
+  assert.ok(unlockStart > getStart);
+  assert.ok(listStart > unlockStart);
+
+  const getRoute = routes.slice(getStart, unlockStart);
+  const unlockRoute = routes.slice(unlockStart, listStart);
+
+  assert.doesNotMatch(getRoute, /req\.query/);
+  assert.doesNotMatch(getRoute, /password\s+as\s+string/);
+  assert.match(unlockRoute, /req\.body/);
+  assert.match(unlockRoute, /getShareableProfile\(storage, token, password\)/);
+});
