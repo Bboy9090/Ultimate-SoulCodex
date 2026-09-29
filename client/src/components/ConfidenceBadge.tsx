@@ -20,21 +20,21 @@ export const BADGE_CONFIG: Record<string, {
     bg: "rgba(255, 215, 0, 0.12)",
     border: "rgba(255, 215, 0, 0.4)",
     label: "Verified",
-    tooltip: "Full birth data confirmed — Rising sign and house layers are locked.",
+    tooltip: "The relevant calculation passed its verification contract. Symbolic meaning remains interpretation.",
   },
   partial: {
     color: "var(--sc-stone)",
     bg: "rgba(224, 204, 255, 0.12)",
     border: "rgba(224, 204, 255, 0.3)",
     label: "Partial",
-    tooltip: "Precision data missing — Sun and Moon are stable, but Rising sign is estimated.",
+    tooltip: "Some precision or verification requirements are incomplete. Time-sensitive layers stay omitted or unresolved rather than estimated.",
   },
   unverified: {
     color: "rgba(255, 255, 255, 0.45)",
     bg: "rgba(255, 255, 255, 0.05)",
     border: "rgba(255, 255, 255, 0.2)",
     label: "Unverified",
-    tooltip: "Missing birth record — using general archetype fallbacks.",
+    tooltip: "Verification requirements are not satisfied. Unsupported placements remain unresolved; no generic archetype fallback is substituted.",
   },
 };
 
@@ -68,7 +68,7 @@ export default function ConfidenceBadge({
         <span
           role="status"
           tabIndex={0}
-          aria-label={`Confidence level: ${label ?? cfg.label}. ${reason || cfg.tooltip}`}
+          aria-label={`Evidence status: ${label ?? cfg.label}. ${reason || cfg.tooltip}`}
           style={{
             display: "inline-flex", alignItems: "center", gap: "0.32rem",
             background: cfg.bg, border: `1px solid ${cfg.border}`,

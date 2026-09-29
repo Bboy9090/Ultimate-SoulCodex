@@ -82,3 +82,14 @@ test("production cannot mount legacy reading confidence generators", () => {
     );
   }
 });
+
+
+test("production cannot mount SoulCodex-v1 confidence synthesis", () => {
+  for (const source of [serverIndex, activeServerRoutes]) {
+    assert.doesNotMatch(
+      source,
+      /soulcodex-v1|generateSoulCodexOutputV1|buildCodexReadingBadges|computeConfidence/,
+      "production server must not use legacy profile-level confidence to authorize astrology or Human Design",
+    );
+  }
+});
