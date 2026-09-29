@@ -1130,55 +1130,43 @@ function dailyOpeningCue(
   );
 
   if (templateId.startsWith("daily-num-")) {
-    const theme = getPersonalDayTheme(
+    const personalTheme = getPersonalDayTheme(
       dailyContext.personalDayNumber,
     ).toLowerCase();
+    const universalTheme = getUniversalDayTheme(
+      dailyContext.universalDayNumber,
+    ).toLowerCase();
     const cues = [
-      `Planning cue for ${theme}:`,
-      `Today's number experiment starts here:`,
-      `For one practical decision today:`,
-      `Use this only if it helps:`,
-      `A lightweight planning prompt for today:`,
-      `Before assigning meaning to the number:`,
-      `For today's ${theme} theme:`,
-      `One way to test the numerology:`,
-      `Keep the number in perspective:`,
-      `For a bounded experiment today:`,
-      `Start with the real task first:`,
-      `Use the theme as a question:`,
+      `${personalTheme} is today's planning theme:`,
+      `Today's ${personalTheme} cue is optional:`,
+      `For ${personalTheme}, test one real choice:`,
+      `${universalTheme} is the collective-number backdrop:`,
+      `Compare ${personalTheme} with ${universalTheme} today:`,
+      `Before acting on ${personalTheme}, check reality:`,
     ] as const;
     return cues[seed % cues.length];
   }
 
   if (templateId.startsWith("daily-astro-")) {
     const cues = [
-      `Start with the sky facts:`,
-      `Today's lunar context, without assumptions:`,
-      `For one grounded Moon check:`,
-      `Use the Moon as context only:`,
-      `A factual sky note for today:`,
-      `Before interpreting the lunar symbolism:`,
-      `One astronomy-first prompt for today:`,
-      `For this ${dailyContext.moonPhase} phase:`,
-      `With the Moon in ${dailyContext.moonSign}:`,
-      `Keep observation ahead of interpretation:`,
-      `Use today's lunar data lightly:`,
-      `For a concrete sky-to-life comparison:`,
+      `${dailyContext.moonSign} Moon during ${dailyContext.moonPhase} gives context:`,
+      `${dailyContext.moonPhase} with the Moon in ${dailyContext.moonSign}:`,
+      `Today's ${dailyContext.moonSign} Moon is ${dailyContext.moonPhase}:`,
+      `At ${Math.round(dailyContext.moonPhasePercentage)}% illumination, ${dailyContext.moonSign} Moon context:`,
+      `${dailyContext.moonSign} and ${dailyContext.moonPhase} are today's sky facts:`,
+      `During this ${dailyContext.moonPhase}, ${dailyContext.moonSign} frames the lens:`,
     ] as const;
     return cues[seed % cues.length];
   }
 
+  const lineTheme = getHDLineTheme(dailyContext.currentHDLine);
   const cues = [
-    `For one Human Design experiment:`,
-    `Today's transit check begins with evidence:`,
-    `Use this gate as a question:`,
-    `For a single real-world comparison:`,
-    `Keep the transit secondary to behavior:`,
-    `Before reading meaning into the gate:`,
-    `One bounded HD test for today:`,
-    `Start with the decision already present:`,
-    `Use Gate ${dailyContext.currentHDGate} provisionally:`,
-    `For today's Line ${dailyContext.currentHDLine} check:`,
+    `Line ${dailyContext.currentHDLine} ${lineTheme} frames today's HD test:`,
+    `Gate ${dailyContext.currentHDGate} with ${lineTheme} is provisional:`,
+    `Today's ${lineTheme} line theme stays testable:`,
+    `For ${lineTheme}, compare one observable decision:`,
+    `Gate ${dailyContext.currentHDGate} and ${lineTheme} meet today:`,
+    `${lineTheme} is today's Human Design question:`,
   ] as const;
   return cues[seed % cues.length];
 }
