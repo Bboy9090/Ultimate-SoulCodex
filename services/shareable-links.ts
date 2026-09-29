@@ -52,6 +52,51 @@ function isArgon2PasswordHash(value: unknown): value is string {
   );
 }
 
+const ALLOWED_SHARE_SECTIONS = new Set([
+  'astrology',
+  'numerology',
+  'archetype',
+  'elemental',
+  'moral-compass',
+  'parental',
+]);
+
+const MAX_SHARE_EXPIRY_DAYS = 3650;
+const MAX_SHARE_VIEW_COUNT = 1_000_000;
+
+function validateShareSettings(settings: ShareSettings): void {
+  if (!Array.isArray(settings.includeSections)) {
+    throw new RangeError('Share includeSections must be an array');
+  }
+
+  const uniqueSections = new Set<string>();
+  for (const section of settings.includeSections) {
+    if (typeof section !== 'string' || !ALLOWED_SHARE_SECTIONS.has(section)) {
+      throw new RangeError(`Unsupported share section: ${String(section)}`);
+    }
+    uniqueSections.add(section);
+  }
+  settings.includeSections = [...uniqueSections];
+
+  if (
+    settings.viewCountLimit !== undefined &&
+    (!Number.isInteger(settings.viewCountLimit) ||
+      settings.viewCountLimit < 1 ||
+      settings.viewCountLimit > MAX_SHARE_VIEW_COUNT)
+  ) {
+    throw new RangeError(`Share viewCountLimit must be an integer from 1-${MAX_SHARE_VIEW_COUNT}`);
+  }
+
+  if (
+    settings.expiresInDays !== undefined &&
+    (!Number.isInteger(settings.expiresInDays) ||
+      settings.expiresInDays < 0 ||
+      settings.expiresInDays > MAX_SHARE_EXPIRY_DAYS)
+  ) {
+    throw new RangeError(`Share expiresInDays must be an integer from 0-${MAX_SHARE_EXPIRY_DAYS}`);
+  }
+}
+
 function validateProtectedShareSettings(settings: ShareSettings): void {
   if (settings.passwordProtected) {
     if (!isArgon2PasswordHash(settings.passwordHash)) {
@@ -101,6 +146,7 @@ export async function createShareableLink(
     ...settings
   };
 
+  validateShareSettings(finalSettings);
   validateProtectedShareSettings(finalSettings);
 
   // Set expiration if specified
@@ -412,6 +458,7 @@ export async function updateShareableLink(
     ...settings
   };
 
+  validateShareSettings(updatedSettings);
   validateProtectedShareSettings(updatedSettings);
 
   // Recalculate expiration if needed
