@@ -62,11 +62,9 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then(async (keys) => {
-      const shellKeys = keys
-        .filter((key) => key.startsWith(CACHE_PREFIX))
-        .sort()
-        .reverse();
-      const keep = new Set([CACHE_NAME, ...shellKeys.filter((key) => key !== CACHE_NAME).slice(0, 1)]);
+      const shellKeys = keys.filter((key) => key.startsWith(CACHE_PREFIX));
+      const previousShell = shellKeys.filter((key) => key !== CACHE_NAME).slice(-1);
+      const keep = new Set([CACHE_NAME, ...previousShell]);
       await Promise.all(
         shellKeys
           .filter((key) => !keep.has(key))
