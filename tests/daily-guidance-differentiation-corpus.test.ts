@@ -103,3 +103,84 @@ test("recent-template avoidance changes presentation while preserving system pol
     new Set(["numerology", "astrology"]),
   );
 });
+
+
+function normalizeForRepetition(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\d+(?:\.\d+)?/g, "#")
+    .replace(/[^a-z#\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function openingStem(text: string, words = 6): string {
+  return normalizeForRepetition(text).split(" ").slice(0, words).join(" ");
+}
+
+test("rendered daily copy resists repetitive stems and generic caveat loops", () => {
+  const rendered: string[] = [];
+  const openingCounts = new Map<string, number>();
+  const normalizedCounts = new Map<string, number>();
+
+  for (let index = 0; index < 120; index += 1) {
+    const context = contextFor(index);
+    const profile = { id: `copy-corpus-${index % 7}`, hdVerified: index % 4 === 0 };
+    const result = selectTemplates(context, profile, []);
+
+    for (const template of result.selectedTemplates) {
+      const text = template.template({ ...context, profile });
+      rendered.push(text);
+
+      const opening = openingStem(text);
+      openingCounts.set(opening, (openingCounts.get(opening) ?? 0) + 1);
+
+      const normalized = normalizeForRepetition(text);
+      normalizedCounts.set(normalized, (normalizedCounts.get(normalized) ?? 0) + 1);
+    }
+  }
+
+  const exactDuplicateMax = Math.max(...normalizedCounts.values());
+  const openingStemMax = Math.max(...openingCounts.values());
+  const corpusText = rendered.join("\n").toLowerCase();
+
+  assert.ok(
+    exactDuplicateMax <= 6,
+    `rendered daily copy repeats the same normalized sentence too often: ${exactDuplicateMax}`,
+  );
+  assert.ok(
+    openingStemMax <= 18,
+    `one six-word opening stem dominates the corpus: ${openingStemMax}`,
+  );
+
+  for (const phrase of [
+    "reflection prompt",
+    "symbolic reflection",
+    "not proof of a mood",
+    "verify the insight against the day",
+    "observable behavior and discard it",
+  ]) {
+    const count = corpusText.split(phrase).length - 1;
+    assert.ok(count <= 3, `generic caveat phrase "${phrase}" repeated ${count} times`);
+  }
+});
+
+test("rendered guidance changes substance across adjacent days", () => {
+  let previous = "";
+  let unchanged = 0;
+
+  for (let index = 0; index < 120; index += 1) {
+    const context = contextFor(index);
+    const profile = { id: "adjacent-day-profile", hdVerified: false };
+    const result = selectTemplates(context, profile, []);
+    const text = result.selectedTemplates
+      .map((template) => template.template({ ...context, profile }))
+      .join(" ");
+
+    const normalized = normalizeForRepetition(text);
+    if (normalized === previous) unchanged += 1;
+    previous = normalized;
+  }
+
+  assert.equal(unchanged, 0, "adjacent daily guidance should never collapse to identical normalized copy");
+});
