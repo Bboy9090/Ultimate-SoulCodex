@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const source = fs.readFileSync(new URL('../routes.ts', import.meta.url), 'utf8');
+const productionIndex = fs.readFileSync(new URL('../server/index.ts', import.meta.url), 'utf8');
+const productionRoutes = fs.readFileSync(new URL('../server/routes.ts', import.meta.url), 'utf8');
+const productionCompatibility = fs.readFileSync(new URL('../server/routes/compatibility.ts', import.meta.url), 'utf8');
 
 test('root router does not import the retired aggregate compatibility engine', () => {
   assert.doesNotMatch(source, /from "\.\/services\/compatibility"/);
@@ -21,4 +24,21 @@ test('fallback archetype-match route cannot accept naked sign inputs', () => {
   assert.match(source, /A saved profile is required\. Do not resubmit naked sign strings\./);
   assert.match(source, /buildMatchResponse\(profile, safeMode, \{[\s\S]*trustedEvidenceContext: false/);
   assert.doesNotMatch(source, /getMatchesByMode\(sunSign/);
+});
+
+
+test('production server mounts only the evidence-aware compatibility router', () => {
+  assert.match(productionIndex, /import compatibilityRouter from "\.\/routes\/compatibility\.js"/);
+  assert.match(productionIndex, /app\.use\("\/api", compatibilityRouter\)/);
+
+  assert.doesNotMatch(productionIndex, /services\/compatibility|calculateCompatibility/);
+  assert.doesNotMatch(productionRoutes, /services\/compatibility|calculateCompatibility\(/);
+  assert.doesNotMatch(productionRoutes, /app\.(?:get|post)\("\/api\/compatibility/);
+});
+
+test('active compatibility router cannot delegate to the retired aggregate engine', () => {
+  assert.doesNotMatch(productionCompatibility, /services\/compatibility|calculateCompatibility\(/);
+  assert.match(productionCompatibility, /COMPATIBILITY_FORMULA_VERSION/);
+  assert.match(productionCompatibility, /evidenceMode/);
+  assert.match(productionCompatibility, /symbolic relationship model/);
 });
