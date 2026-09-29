@@ -199,6 +199,66 @@ function parseProseResponse(
   return complete ? prose : null;
 }
 
+function normalizeRepetitionText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\d+(?:\.\d+)?/g, "#")
+    .replace(/[^a-z#\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function openingStem(value: string, words = 6): string {
+  return normalizeRepetitionText(value).split(" ").slice(0, words).join(" ");
+}
+
+function scanCrossLayerRepetition(
+  prose: SoulGuideDepthProseResponse,
+  findings: SoulGuideDepthParseFinding[],
+): void {
+  const summaryCounts = new Map<string, DepthInterpretationLayerKey[]>();
+  const openingCounts = new Map<string, DepthInterpretationLayerKey[]>();
+
+  for (const key of DEPTH_INTERPRETATION_LAYER_KEYS) {
+    const layer = prose[key];
+    const normalizedSummary = normalizeRepetitionText(layer.summary);
+    if (normalizedSummary) {
+      const keys = summaryCounts.get(normalizedSummary) ?? [];
+      keys.push(key);
+      summaryCounts.set(normalizedSummary, keys);
+    }
+
+    for (const value of [layer.summary, layer.explanation]) {
+      const stem = openingStem(value);
+      if (!stem) continue;
+      const keys = openingCounts.get(stem) ?? [];
+      keys.push(key);
+      openingCounts.set(stem, keys);
+    }
+  }
+
+  for (const [summary, keys] of summaryCounts) {
+    if (keys.length < 2) continue;
+    addFinding(
+      findings,
+      "repeated-layer-summary",
+      keys.join(","),
+      `Soul Guide prose repeats the same summary across ${keys.length} layers: "${summary}".`,
+    );
+  }
+
+  for (const [stem, keys] of openingCounts) {
+    const distinctKeys = [...new Set(keys)];
+    if (distinctKeys.length < 3) continue;
+    addFinding(
+      findings,
+      "repeated-opening-stem",
+      distinctKeys.join(","),
+      `Soul Guide prose reuses the opening stem "${stem}" across ${distinctKeys.length} layers.`,
+    );
+  }
+}
+
 function mergeLockedInterpretation(
   source: DepthInterpretationV1,
   prose: SoulGuideDepthProseResponse,
@@ -248,6 +308,11 @@ export function parseDepthSoulGuideResponse(
 
   const prose = parseProseResponse(parsed, findings);
   if (!prose || findings.length > 0) {
+    return { interpretation: null, findings };
+  }
+
+  scanCrossLayerRepetition(prose, findings);
+  if (findings.length > 0) {
     return { interpretation: null, findings };
   }
 
