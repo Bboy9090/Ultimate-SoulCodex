@@ -20,6 +20,7 @@ import {
 
 export interface OfflineBirthInput {
   name: string;
+  fullBirthName?: string;
   birthDate: string;
   birthTime?: string;
   birthLocation: string;
@@ -43,11 +44,20 @@ export interface OfflineAstrologyData {
 export interface OfflineNumerologyData {
   lifePath: number;
   birthday: number;
-  expression: number;
-  soulUrge: number;
-  personality: number;
-  maturity: number;
+  expression: number | null;
+  soulUrge: number | null;
+  personality: number | null;
+  maturity: number | null;
   personalYear: number;
+  evidenceStates: {
+    lifePath: "verified";
+    birthday: "verified";
+    expression: "verified" | "unavailable";
+    soulUrge: "verified" | "unavailable";
+    personality: "verified" | "unavailable";
+    maturity: "verified" | "unavailable";
+    personalYear: "verified";
+  };
   interpretations: Record<string, string>;
 }
 
@@ -66,6 +76,7 @@ export interface OfflineCodexProfile {
   userId: null;
   sessionId: null;
   name: string;
+  fullBirthName?: string | null;
   birthDate: string;
   birthTime: string | null;
   birthLocation: string;
