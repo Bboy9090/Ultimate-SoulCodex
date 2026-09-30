@@ -219,7 +219,7 @@ function numerologyTension(expression: number | undefined, soulUrge: number | un
   const soulTheme = soulUrge ? SOUL_URGE_THEMES[soulUrge] : undefined;
   if (!expression || !soulUrge || !expressionTheme || !soulTheme) return undefined;
 
-  return `Expression ${expression} (${expressionTheme.label}) emphasizes ${expressionTheme.drive} and a pull to ${expressionTheme.pull}. Soul Urge ${soulUrge} (${soulTheme.label}) emphasizes ${soulTheme.drive} and a pull to ${soulTheme.pull}. Both can be active at once. The useful tension is deciding which responsibility is chosen, which boundary protects autonomy, and whether one side is being used to silence the other.`;
+  return `Two different pulls may be active at once: ${expressionTheme.pull} and ${soulTheme.pull}. The useful question is which one you are choosing on purpose, and which one is quietly making the decision for you.`;
 }
 
 export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingModel {
@@ -247,7 +247,7 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     sectionText(depth.claritySummary),
     profile.biography,
     archetype.description,
-  ) ?? "The available profile contains calculated and symbolic signals that should be tested against lived experience rather than treated as fixed identity.";
+  ) ?? "Start with the pattern you can actually recognize in your life. Keep what fits; discard what does not.";
 
   const baseVisible = firstSupportedText(
     sectionText(depth.visiblePattern),
@@ -285,33 +285,33 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     visiblePattern: appendTheme(
       baseVisible,
       expression && expressionTheme
-        ? `Expression ${expression} adds a deterministic name-number theme of ${expressionTheme.drive}; in practice, that may make the visible pattern more self-directed when ownership of the outcome matters.`
+        ? `Expression ${expression} points toward ${expressionTheme.drive}. Notice whether ownership sharpens your focus when the outcome matters.`
         : undefined,
     ),
     protectiveFunction: appendTheme(
       baseProtective,
       soulUrge && soulTheme
-        ? `Soul Urge ${soulUrge} adds an inner theme of ${soulTheme.drive}. As symbolic interpretation, that can make protection focus on the ability to ${soulTheme.pull}.`
+        ? `Soul Urge ${soulUrge} points toward ${soulTheme.drive}. Notice whether you protect room to ${soulTheme.pull} when pressure rises.`
         : undefined,
     ),
     gift: appendTheme(
       baseGift,
       expression && expressionTheme
-        ? `The Expression ${expression} contribution is strongest when ${expressionTheme.drive} becomes deliberate skill rather than ${expressionTheme.risk}.`
+        ? `Expression ${expression} is strongest when ${expressionTheme.drive} becomes a chosen skill instead of ${expressionTheme.risk}.`
         : undefined,
     ),
     cost: appendTheme(
       baseCost,
       expressionTheme || soulTheme
-        ? `The name-number layer adds another tradeoff: ${[expressionTheme?.risk, soulTheme?.risk].filter(Boolean).join("; ")}.`
+        ? `Watch for the tradeoff: ${[expressionTheme?.risk, soulTheme?.risk].filter(Boolean).join("; ")}.`
         : undefined,
     ),
     relationshipImpact: appendTheme(
       baseRelationship,
       expression && soulUrge && expressionTheme && soulTheme
-        ? `Expression ${expression} may push toward ${expressionTheme.pull}, while Soul Urge ${soulUrge} may push toward ${soulTheme.pull}. Relationships can expose the difference between choosing both consciously and letting one side become an unspoken demand.`
+        ? `One side may pull toward ${expressionTheme.pull}; another toward ${soulTheme.pull}. Relationships make it easier to see which pull you are choosing and which one has become an unspoken demand.`
         : soulUrge && soulTheme
-          ? `Soul Urge ${soulUrge} adds a relationship theme of ${soulTheme.drive}, with the risk of ${soulTheme.risk}.`
+          ? `Soul Urge ${soulUrge} points toward ${soulTheme.drive}. In relationships, watch for ${soulTheme.risk}.`
           : undefined,
     ),
   });
