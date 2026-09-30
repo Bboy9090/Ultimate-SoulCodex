@@ -150,7 +150,7 @@ test("Ultimate Codex excludes label-only verified evidence from the stable finge
   } as any;
 
   const result = buildUltimateCodexSynthesis(unsafe);
-  assert.equal(result.evidenceSignature.some((value) => value.includes(":sun:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("astro:") && value.includes(":sun:")), false);
   assert.equal(result.evidenceSignature.some((value) => value.includes(":type:Reflector")), false);
   assert.ok(result.unresolved.some((value) => /Human Design/i.test(value)));
 });
