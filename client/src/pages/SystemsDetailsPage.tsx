@@ -12,10 +12,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import Navigation from "@/components/navigation";
+import UltimateCodexPanel from "@/components/UltimateCodexPanel";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
+import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 type Placement = {
   sign?: string | null;
@@ -147,6 +149,7 @@ export default function SystemsDetailsPage() {
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
   const humanDesignCenters = normalizeHumanDesignCenters(humanDesign.centers);
+  const ultimateCodex = buildUltimateCodexSynthesis(profile as Record<string, unknown>);
 
   const latitude = textValue(profile.latitude);
   const longitude = textValue(profile.longitude);
@@ -165,6 +168,10 @@ export default function SystemsDetailsPage() {
             Soul Codex keeps the main experience synthesis-first. This page is for the moment you think, “Wait, what did it calculate for my Moon, Rising, or Life Path?” It shows what was calculated, what was verified, what was withheld, and why.
           </p>
         </header>
+
+        <div className="mx-auto max-w-5xl">
+          <UltimateCodexPanel synthesis={ultimateCodex} />
+        </div>
 
         <div className="mx-auto max-w-5xl space-y-5">
           <Link href="/systems/atlas" className="sc-panel block p-5">
