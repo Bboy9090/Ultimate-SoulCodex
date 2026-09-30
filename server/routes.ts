@@ -7,6 +7,10 @@ import { setupSession } from "./session";
 import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
 import { profileBelongsToActor } from "./lib/profile-ownership";
 import {
+  durableFeatureUnavailable,
+  DURABLE_STORAGE_UNAVAILABLE_RESPONSE,
+} from "./lib/persistence-capabilities";
+import {
   birthDataSchema,
   enneagramAssessmentSchema,
   mbtiAssessmentSchema,
@@ -77,6 +81,12 @@ function profileNotFound(res: any) {
   return res.status(404).json({ message: "Profile not found" });
 }
 
+function requireDurableFeature(res: any): boolean {
+  if (!durableFeatureUnavailable()) return true;
+  res.status(503).json(DURABLE_STORAGE_UNAVAILABLE_RESPONSE);
+  return false;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
@@ -120,6 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles", async (req: any, res) => {
+    if (!requireDurableFeature(res)) return;
     try {
       const birthData = birthDataSchema.parse(req.body);
       const verifiedAstrologyData = await calculateVerifiedAstrology({
@@ -189,6 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/profiles/:id/public-shares", publicShareMutationLimiter, async (req: any, res) => {
+    if (!requireDurableFeature(res)) return;
     try {
       const profile = await storage.getProfile(req.params.id);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
@@ -209,6 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles/:id/public-shares", publicShareMutationLimiter, async (req: any, res) => {
+    if (!requireDurableFeature(res)) return;
     try {
       const profile = await storage.getProfile(req.params.id);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
@@ -246,6 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/profiles/:id/public-shares/:token", publicShareMutationLimiter, async (req: any, res) => {
+    if (!requireDurableFeature(res)) return;
     try {
       const share = await storage.getPublicProfileShareByToken(req.params.token);
       if (!share || share.revokedAt || share.profileId !== req.params.id) return profileNotFound(res);
@@ -279,6 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles/:id/enneagram", async (req: any, res) => {
+    if (!requireDurableFeature(res)) return;
     try {
       const assessment = enneagramAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
@@ -318,6 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/profiles/:id/mbti", async (req: any, res) => {
+    if (!requireDurableFeature(res)) return;
     try {
       const assessment = mbtiAssessmentSchema.parse(req.body);
       const profileId = req.params.id;
