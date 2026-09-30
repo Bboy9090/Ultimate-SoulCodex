@@ -1,3 +1,11 @@
+import {
+  calcBirthday,
+  calcExpression,
+  calcLifePath,
+  calcMaturity,
+  calcPersonality,
+  calcSoulUrge,
+} from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
 import { getSynthesisPlacement, getVerifiedPlacement } from "./placementVerification";
@@ -217,8 +225,53 @@ function placementDegree(placement: AnyRecord | undefined): number | null {
 }
 
 function numericValue(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isInteger(n) ? n : null;
+}
+
+function canonicalNumerology(profile: AnyRecord, numerology: AnyRecord) {
+  const birthDate = typeof profile?.birthDate === "string" ? profile.birthDate.slice(0, 10) : null;
+  const fullBirthName = typeof profile?.fullBirthName === "string" && profile.fullBirthName.trim()
+    ? profile.fullBirthName.trim()
+    : null;
+
+  let lifePath: number | null = null;
+  let birthday: number | null = null;
+  let expression: number | null = null;
+  let soulUrge: number | null = null;
+  let personality: number | null = null;
+  let maturity: number | null = null;
+
+  if (birthDate) {
+    try {
+      lifePath = calcLifePath(birthDate);
+      birthday = calcBirthday(birthDate);
+    } catch {
+      lifePath = null;
+      birthday = null;
+    }
+  }
+
+  if (birthDate && fullBirthName) {
+    try {
+      expression = calcExpression(fullBirthName);
+      soulUrge = calcSoulUrge(fullBirthName);
+      personality = calcPersonality(fullBirthName);
+      maturity = calcMaturity(birthDate, fullBirthName);
+    } catch {
+      expression = null;
+      soulUrge = null;
+      personality = null;
+      maturity = null;
+    }
+  }
+
+  const personalYear = numerology?.evidenceStates?.personalYear === "verified"
+    ? numericValue(numerology.personalYear ?? numerology.personalYearNumber)
+    : null;
+
+  return { lifePath, birthday, expression, soulUrge, personality, maturity, personalYear };
 }
 
 function fnv1a(value: string, seed = 0x811c9dc5): number {
@@ -384,16 +437,18 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const dominantModality = topKey(modalityCounts);
   const stelliums = findStelliums(placements);
 
-  // Normalize only documented producer aliases. Alias handling prevents the same
-  // deterministic number from changing coverage or fingerprint merely because
-  // a legacy producer used a different field name.
-  const lifePath = numericValue(numerology.lifePath ?? numerology.lifePathNumber);
-  const birthday = numericValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
-  const expression = numericValue(numerology.expression ?? numerology.expressionNumber);
-  const soulUrge = numericValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
-  const personality = numericValue(numerology.personality ?? numerology.personalityNumber);
-  const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
-  const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
+  // Deterministic numerology is recomputed from its required source inputs.
+  // Stored numbers are a cache, not authority. Missing full birth name means
+  // name-based numerology is unavailable rather than inferred from display name.
+  const {
+    lifePath,
+    birthday,
+    expression,
+    soulUrge,
+    personality,
+    maturity,
+    personalYear,
+  } = canonicalNumerology(profile, numerology);
 
   const verifiedHd = hasVerifiedHumanDesignTrust(hd);
   const stableHdComponent = (key: string): string | null => {
