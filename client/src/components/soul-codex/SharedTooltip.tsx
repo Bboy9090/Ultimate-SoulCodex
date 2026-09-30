@@ -55,12 +55,12 @@ const tooltips: Record<TooltipPattern, { label: string; explanation: string }> =
   "human-design-profile": {
     label: "Human Design Profile",
     explanation:
-      "Individual life strategy determined by birth time, date, and location. Example: Reflector 2/5.",
+      "A Human Design Profile is a symbolic bodygraph component calculated from birth inputs. With unknown time, it is used only if it remains identical across the complete supported time range; otherwise it stays conditional."
   },
   "life-path-number": {
     label: "Life Path Number",
     explanation:
-      "Calculated from birth date numerology. Represents core life purpose and principal lessons.",
+      "Calculated deterministically from the birth date under Soul Codex's numerology rules. Its life-purpose or lesson language is symbolic interpretation, not an established fact."
   },
   "astrological-house": {
     label: "Astrological House",
