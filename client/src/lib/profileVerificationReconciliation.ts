@@ -1,6 +1,7 @@
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
 import {
+  synthesizeRangeStableFoundationProfile,
   synthesizeVerifiedFoundationProfile,
   type VerifiedAstrologyForSynthesis,
 } from "./foundationOfflineCodex";
@@ -500,7 +501,14 @@ export function reconcileOfflineProfile(
             ? remote.humanDesignData ?? undefined
             : undefined,
         )
-      : null;
+      : remote.astrologyData && hasCompletedUnknownTimeRange(remote.astrologyData)
+        ? synthesizeRangeStableFoundationProfile(
+            mergedLocal,
+            remote.astrologyData as VerifiedAstrologyForSynthesis,
+            syncedAt,
+            remote.humanDesignData ?? undefined,
+          )
+        : null;
 
   return {
     ...local,
