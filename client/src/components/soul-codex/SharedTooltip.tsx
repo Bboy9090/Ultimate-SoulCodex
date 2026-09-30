@@ -39,18 +39,18 @@ const tooltips: Record<TooltipPattern, { label: string; explanation: string }> =
       "Full synthesis: astrology + numerology + human design. All major systems verified and integrated.",
   },
   "estimated-calculation": {
-    label: "Estimated Calculation",
+    label: "Estimated / Non-Authoritative",
     explanation:
-      "Calculated from available data without full verification. May change with additional information.",
+      "A historical or incomplete-input estimate. Soul Codex does not use this state in certified chart data or main synthesis; supported range analysis must replace estimation where possible.",
   },
   "verified-ephemeris": {
     label: "Verified Ephemeris",
     explanation: "Calculated from precise birth time and location. Most accurate astronomical position.",
   },
   "legacy-approximation": {
-    label: "Legacy Approximation",
+    label: "Legacy Approximation — Excluded",
     explanation:
-      "Simplified calculation when birth time is unavailable. Less accurate than verified ephemeris.",
+      "Retained only for legacy inspection. Approximate noon, midnight, default-location, or simplified chart values are excluded from certified data and synthesis.",
   },
   "human-design-profile": {
     label: "Human Design Profile",
