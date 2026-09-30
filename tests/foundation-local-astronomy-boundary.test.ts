@@ -39,6 +39,9 @@ test("known birth time does not authorize fabricated local Moon, Rising, planets
   assert.match(serialized, /Sun sign candidate .* excluded from synthesis/);
   assert.match(serialized, /Moon sign is unavailable in local mode/);
   assert.match(serialized, /Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable/);
+  assert.match(profile.archetypeData.title, /Foundation Numerology Signature/);
+  assert.doesNotMatch(profile.archetypeData.title, /Virgo/);
+  assert.doesNotMatch(profile.archetypeData.strengths.join(" "), /discernment and useful problem solving/);
 });
 
 test("blank birth time remains an explicit unknown state without changing the no-fabrication boundary", () => {
@@ -53,6 +56,23 @@ test("blank birth time remains an explicit unknown state without changing the no
   assert.deepEqual(profile.astrologyData.planets, {});
   assert.deepEqual(profile.astrologyData.houses, []);
   assert.deepEqual(profile.astrologyData.aspects, []);
+});
+
+test("local calendar Sun stays unresolved near ingress and never shapes local synthesis", () => {
+  const profile = generateFoundationOfflineCodexProfile(
+    {
+      ...baseInput,
+      birthDate: "1987-01-19",
+      birthTime: "",
+    },
+    { id: "local-ingress", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
+  );
+
+  assert.equal(profile.astrologyData.sunSign, "");
+  assert.match(profile.biography, /Sun remains unresolved locally/);
+  assert.match(profile.archetypeData.title, /Foundation Numerology Signature/);
+  assert.doesNotMatch(profile.archetypeData.title, /Capricorn|Aquarius/);
+  assert.match(JSON.stringify(profile.depthInterpretation), /Sun sign is unresolved locally near a sign-ingress boundary/);
 });
 
 test("production create and Identity surfaces use the Foundation-safe path and never render the random chart", () => {
