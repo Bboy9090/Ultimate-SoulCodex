@@ -23,7 +23,7 @@ test("local-first creation uses the minimal astronomy-only verification endpoint
 });
 
 test("local-first creation copy discloses the upload boundary in plain language", () => {
-  assert.match(createSource, /Online astronomy verification happens only when you explicitly choose it\./);
+  assert.match(createSource, /Three short steps: identity basics, birth details, then an optional verification choice\./);
   assert.match(createSource, /does not create a server profile or invoke AI generation for this check\./);
   assert.match(createSource, /Leave this off to keep profile creation entirely on-device\./);
   assert.match(createSource, /No profile data was uploaded for verification\./);
@@ -60,4 +60,18 @@ test("offline profile verification sends only calculation inputs and explains th
   assert.match(profileSource, /It does not create a server profile or invoke AI generation\./);
   assert.match(profileSource, /Merely opening this local profile does not upload it\./);
   assert.match(profileSource, /until you explicitly request independent astronomical verification and it succeeds\./);
+});
+
+
+test("first-time profile creation uses three progressive steps instead of one dense form", () => {
+  assert.match(createSource, /const \[step, setStep\] = useState<1 \| 2 \| 3>\(1\)/);
+  assert.match(createSource, /Step \{step\} of 3/);
+  assert.match(createSource, /Identity basics/);
+  assert.match(createSource, /Birth details/);
+  assert.match(createSource, /Verify and create/);
+  assert.match(createSource, /data-testid="button-onboarding-next"/);
+  assert.match(createSource, /form\.trigger\(\["name", "birthDate"\]\)/);
+  assert.match(createSource, /form\.trigger\(\["birthLocation"\]\)/);
+  assert.match(createSource, /step === 3/);
+  assert.match(createSource, /data-testid="button-create-profile"/);
 });
