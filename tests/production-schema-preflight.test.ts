@@ -22,3 +22,15 @@ test("production image runs schema preflight before starting the API", async () 
   assert.match(docker, /ensure-public-share-schema\.mjs/);
   assert.match(docker, /node.*ensure-public-share-schema\.mjs.*&&.*node.*dist\/index\.js/);
 });
+
+
+test("schema preflight preserves the supported no-database production mode", async () => {
+  const source = await readFile(scriptUrl, "utf8");
+
+  assert.match(
+    source,
+    /DATABASE_URL is not configured; server will use MemStorage/,
+  );
+  assert.match(source, /process\.exit\(0\)/);
+  assert.doesNotMatch(source, /DATABASE_URL is required/);
+});
