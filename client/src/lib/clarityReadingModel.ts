@@ -1,3 +1,4 @@
+import { calcExpression, calcLifePath, calcSoulUrge } from "@soulcodex/core";
 import { humanDesignDefinedChannels, humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 import { getSynthesisPlacement } from "./placementVerification";
@@ -287,9 +288,22 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   const personality = (profile.personalityData ?? {}) as AnyRecord;
   const archetype = (profile.archetypeData ?? {}) as AnyRecord;
   const depth = (profile.depthInterpretation ?? {}) as AnyRecord;
-  const lifePath = validatedCoreNumber(numerology.lifePath ?? profile.personalNumbers?.lifePath);
-  const expression = validatedCoreNumber(numerology.expression ?? profile.personalNumbers?.expression);
-  const soulUrge = validatedCoreNumber(numerology.soulUrge ?? profile.personalNumbers?.soulUrge);
+  const birthDate = typeof profile.birthDate === "string" ? profile.birthDate.slice(0, 10) : null;
+  const fullBirthName = typeof profile.fullBirthName === "string" && profile.fullBirthName.trim()
+    ? profile.fullBirthName.trim()
+    : null;
+  let lifePath: number | undefined;
+  let expression: number | undefined;
+  let soulUrge: number | undefined;
+  try {
+    lifePath = birthDate ? validatedCoreNumber(calcLifePath(birthDate)) : undefined;
+    expression = fullBirthName ? validatedCoreNumber(calcExpression(fullBirthName)) : undefined;
+    soulUrge = fullBirthName ? validatedCoreNumber(calcSoulUrge(fullBirthName)) : undefined;
+  } catch {
+    lifePath = undefined;
+    expression = undefined;
+    soulUrge = undefined;
+  }
   const expressionTheme = expression ? EXPRESSION_THEMES[expression] : undefined;
   const soulTheme = soulUrge ? SOUL_URGE_THEMES[soulUrge] : undefined;
 
@@ -457,7 +471,7 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   const limitations = [
     "Symbolic overlap is supporting context, not independent proof.",
     "Only governed core numerology values (1-9, 11, 22, 33) are admitted as deterministic signals; malformed or unsupported values are excluded.",
-    "Numerology values are deterministic calculations from supplied birth/name data; their personality meanings remain symbolic interpretation.",
+    "Date numerology is recomputed from birth date; name numerology is recomputed only from the explicit full birth name. Stored numbers alone are not authority; their meanings remain symbolic interpretation.",
     "Unknown birth time may contribute only placements proven stable across the complete supported range. Conditional branches never become main-reading facts.",
     "Verified geometry and Human Design calculations can support reflection; their psychological meanings remain symbolic rather than scientific diagnoses.",
     "Lived experience is the final correction layer.",
