@@ -161,6 +161,16 @@ export default function SystemsDetailsPage() {
   const humanDesign = (profile.humanDesignData ?? {}) as Record<string, any>;
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
+  const humanDesignRange = humanDesign.status === "range_analyzed" && humanDesign.components ? humanDesign.components : null;
+  const stableHdEntries = humanDesignRange
+    ? Object.entries(humanDesignRange).filter(([, value]: any) =>
+        value?.evidenceState === "stable_across_range" &&
+        value?.rangeEvidence?.resolutionMinutes === 1 &&
+        value?.rangeEvidence?.testedValues === 1440)
+    : [];
+  const conditionalHdEntries = humanDesignRange
+    ? Object.entries(humanDesignRange).filter(([, value]: any) => value?.evidenceState === "conditional")
+    : [];
   const humanDesignCenters = normalizeHumanDesignCenters(humanDesign.centers);
 
   const latitude = textValue(profile.latitude);
@@ -282,12 +292,32 @@ export default function SystemsDetailsPage() {
                   <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
                 </div>
               </div>
+            ) : stableHdEntries.length > 0 || conditionalHdEntries.length > 0 ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-[rgba(217,182,111,.22)] bg-[rgba(217,182,111,.04)] p-4">
+                  <p className="text-sm font-semibold text-[var(--sc-ivory)]">Human Design partially available from full-day range analysis</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Stable components may support synthesis with range provenance. Changing components remain conditional and are not promoted into the main reading.</p>
+                </div>
+                {stableHdEntries.length > 0 && (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {stableHdEntries.map(([key, value]: any) => (
+                      <NumberRow key={key} label={key.replace(/([A-Z])/g, " $1")} value={value.value || "None"} />
+                    ))}
+                  </div>
+                )}
+                {conditionalHdEntries.length > 0 && (
+                  <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.035] p-4 text-xs leading-6 text-[var(--sc-stone)]">
+                    <strong className="text-[var(--sc-ivory)]">Conditional until birth time:</strong>{" "}
+                    {conditionalHdEntries.map(([key]) => key.replace(/([A-Z])/g, " $1")).join(", ")}.
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[0.035] p-4">
                 <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-200/80" />
                 <div>
-                  <p className="text-sm font-semibold text-[var(--sc-ivory)]">Not promoted as verified Human Design evidence</p>
-                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Stored status: {humanDesignStatus}. Candidate fields may exist internally, but this inspector will not relabel them as authoritative chart facts.</p>
+                  <p className="text-sm font-semibold text-[var(--sc-ivory)]">Human Design unavailable under the current evidence</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Stored status: {humanDesignStatus}. Soul Codex will not guess missing components or relabel incomplete data as verified.</p>
                 </div>
               </div>
             )}
