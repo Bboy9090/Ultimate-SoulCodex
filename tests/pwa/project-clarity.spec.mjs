@@ -25,8 +25,8 @@ async function createProfile(page) {
 
 test("Project Clarity reuses one saved profile across home, identity, timeline, and compatibility", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("link-home")).toBeVisible();
-  await expect(page.locator("main")).toContainText(/Soul Codex|identity|reading/i);
+  await page.waitForURL(/\/create$/);
+  await expect(page.getByTestId("input-name")).toBeVisible();
 
   await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /Compatibility starts with one saved identity\./i })).toBeVisible();
