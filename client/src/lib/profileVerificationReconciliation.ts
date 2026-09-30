@@ -206,6 +206,24 @@ export function getSynthesisAstrologySign(
   return null;
 }
 
+function rangeAnalyzedHumanDesign(value: Record<string, unknown> | null | undefined): boolean {
+  if (!value || value.status !== "range_analyzed") return false;
+  const components = (value as any).components;
+  if (!components || typeof components !== "object") return false;
+  return ["type", "strategy", "authority", "profile", "definition", "centers", "channels", "gates", "incarnationCross"]
+    .every((key) => {
+      const component = components[key];
+      return component &&
+        ["stable_across_range", "conditional", "unavailable"].includes(String(component.evidenceState)) &&
+        component.rangeEvidence?.resolutionMinutes === 1 &&
+        component.rangeEvidence?.testedValues === 1440;
+    });
+}
+
+function acceptedHumanDesignEvidence(value: Record<string, unknown> | null | undefined): boolean {
+  return hasVerifiedHumanDesignTrust(value) || rangeAnalyzedHumanDesign(value);
+}
+
 function hasCompletedUnknownTimeRange(
   astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
 ): boolean {
@@ -467,7 +485,7 @@ export function reconcileOfflineProfile(
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData && typeof remote.humanDesignData === "object"
+    humanDesignData: acceptedHumanDesignEvidence(remote.humanDesignData)
       ? remote.humanDesignData
       : local.humanDesignData,
   };
@@ -487,7 +505,7 @@ export function reconcileOfflineProfile(
   return {
     ...local,
     numerologyData,
-    humanDesignData: remote.humanDesignData && typeof remote.humanDesignData === "object"
+    humanDesignData: acceptedHumanDesignEvidence(remote.humanDesignData)
       ? remote.humanDesignData
       : local.humanDesignData,
     archetypeData:
