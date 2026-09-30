@@ -444,26 +444,36 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     addSignal(signals, "hd-profile", "Profile", humanDesign.profile, "verified", "HUMAN-DESIGN-CORE-v1");
     addSignal(signals, "hd-definition", "Definition", humanDesign.definition, "verified", "verified bodygraph calculation");
     const hdCenters = normalizeHumanDesignCenters(humanDesign.centers);
-    addSignal(
-      signals,
-      "hd-centers",
-      "Defined centers",
-      hdCenters.defined.join(", ") || "None",
-      "verified",
-      "verified bodygraph calculation",
-    );
+    addSignal(signals, "hd-centers", "Defined centers", hdCenters.defined.join(", ") || "None", "verified", "verified bodygraph calculation");
     const hdChannels = humanDesignDefinedChannels(humanDesign.channels);
-    addSignal(
-      signals,
-      "hd-channels",
-      "Defined channels",
-      humanDesignListLabel(hdChannels, "channel", "None"),
-      "verified",
-      "verified bodygraph calculation",
-    );
+    addSignal(signals, "hd-channels", "Defined channels", humanDesignListLabel(hdChannels, "channel", "None"), "verified", "verified bodygraph calculation");
     if (Array.isArray(humanDesign.activatedGates)) {
       addSignal(signals, "hd-gates", "Activated gates", humanDesignListLabel(humanDesign.activatedGates, "gate"), "verified", "verified bodygraph calculation");
     }
+  } else if (humanDesign.status === "range_analyzed" && humanDesign.components) {
+    const stableComponent = (key: string): AnyRecord | null => {
+      const component = humanDesign.components?.[key];
+      return component?.evidenceState === "stable_across_range" &&
+        component?.rangeEvidence?.resolutionMinutes === 1 &&
+        component?.rangeEvidence?.testedValues === 1440
+        ? component
+        : null;
+    };
+    const addStableHd = (key: string, id: string, label: string, emptyLabel?: string) => {
+      const component = stableComponent(key);
+      if (!component) return;
+      const value = typeof component.value === "string" ? component.value : "";
+      addSignal(signals, id, label, value || emptyLabel, "stable", "full-day Human Design range analysis");
+    };
+    addStableHd("type", "hd-type", "Human Design type");
+    addStableHd("strategy", "hd-strategy", "Strategy");
+    addStableHd("authority", "hd-authority", "Authority");
+    addStableHd("profile", "hd-profile", "Profile");
+    addStableHd("definition", "hd-definition", "Definition");
+    addStableHd("centers", "hd-centers", "Defined centers", "None");
+    addStableHd("channels", "hd-channels", "Defined channels", "None");
+    addStableHd("gates", "hd-gates", "Activated gates", "None");
+    addStableHd("incarnationCross", "hd-incarnation-cross", "Incarnation Cross");
   }
   addSignal(signals, "enneagram", "Enneagram", personality.enneagram?.type, "supported", "user assessment");
   addSignal(signals, "mbti", "MBTI", personality.mbti?.type, "supported", "user assessment");
@@ -473,7 +483,7 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     "Only governed core numerology values (1-9, 11, 22, 33) are admitted as deterministic signals; malformed or unsupported values are excluded.",
     "Date numerology is recomputed from birth date; name numerology is recomputed only from the explicit full birth name. Stored numbers alone are not authority; their meanings remain symbolic interpretation.",
     "Unknown birth time may contribute only placements proven stable across the complete supported range. Conditional branches never become main-reading facts.",
-    "Verified geometry and Human Design calculations can support reflection; their psychological meanings remain symbolic rather than scientific diagnoses.",
+    "Verified or full-range-stable geometry/Human Design components can support reflection with their provenance intact; their psychological meanings remain symbolic rather than scientific diagnoses.",
     "Lived experience is the final correction layer.",
   ];
   if (!signals.some((signal) => signal.confidence === "verified" || signal.confidence === "stable")) {
