@@ -10,7 +10,19 @@ export { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 type PlacementRecord = {
   status?: string;
   verificationStatus?: string;
+  evidenceState?: "verified" | "stable_across_range" | "conditional" | "unavailable";
   sign?: string | null;
+  rangeEvidence?: {
+    resolutionMinutes?: number;
+    testedValues?: number;
+    rangeStartLocal?: string;
+    rangeEndLocal?: string;
+  } | null;
+  conditionalValues?: Array<{
+    value?: string;
+    startLocalTime?: string | null;
+    endLocalTime?: string | null;
+  }> | null;
   evidence?: {
     source?: string | null;
     engine?: string | null;
@@ -166,6 +178,46 @@ export function getVerifiedAstrologySign(
   return validZodiacSign(placement.sign)
     ? placement.sign.trim()
     : null;
+}
+
+function hasCompleteRangeEvidence(placement: PlacementRecord | undefined): boolean {
+  return Boolean(
+    placement?.rangeEvidence?.resolutionMinutes === 1 &&
+    placement?.rangeEvidence?.testedValues === 1440 &&
+    nonEmptyText(placement?.rangeEvidence?.rangeStartLocal) &&
+    nonEmptyText(placement?.rangeEvidence?.rangeEndLocal)
+  );
+}
+
+export function getSynthesisAstrologySign(
+  astrology: RemoteProfileSnapshot["astrologyData"],
+  body: "sun" | "moon" | "rising",
+): string | null {
+  const verified = getVerifiedAstrologySign(astrology, body);
+  if (verified) return verified;
+  const placement = astrology?.[body];
+  if (
+    placement?.evidenceState === "stable_across_range" &&
+    hasCompleteRangeEvidence(placement) &&
+    validZodiacSign(placement.sign)
+  ) {
+    return placement.sign.trim();
+  }
+  return null;
+}
+
+function hasCompletedUnknownTimeRange(
+  astrology: RemoteProfileSnapshot["astrologyData"] | undefined,
+): boolean {
+  if (!astrology) return false;
+  return ["sun", "moon"].every((body) => {
+    const placement = astrology[body as "sun" | "moon"];
+    return Boolean(
+      placement &&
+      (placement.evidenceState === "stable_across_range" || placement.evidenceState === "conditional") &&
+      hasCompleteRangeEvidence(placement)
+    );
+  });
 }
 
 function normalizeLongitude(value: number): number {
@@ -332,9 +384,9 @@ export function reconcileActiveProfile(
   syncedAt = new Date().toISOString(),
 ): StoredProfile {
   const astrology = remote.astrologyData;
-  const sunSign = getVerifiedAstrologySign(astrology, "sun");
-  const moonSign = getVerifiedAstrologySign(astrology, "moon");
-  const risingSign = getVerifiedAstrologySign(astrology, "rising");
+  const sunSign = getSynthesisAstrologySign(astrology, "sun");
+  const moonSign = getSynthesisAstrologySign(astrology, "moon");
+  const risingSign = getSynthesisAstrologySign(astrology, "rising");
   const localAstrology =
     local.astrologyData && typeof local.astrologyData === "object"
       ? local.astrologyData
@@ -343,9 +395,9 @@ export function reconcileActiveProfile(
     ? {
         ...localAstrology,
         ...astrology,
-        sunSign: sunSign ?? localAstrology.sunSign ?? local.sunSign ?? null,
-        moonSign: moonSign ?? localAstrology.moonSign ?? local.moonSign ?? null,
-        risingSign: risingSign ?? localAstrology.risingSign ?? local.risingSign ?? null,
+        sunSign: sunSign,
+        moonSign: moonSign,
+        risingSign: risingSign,
       }
     : local.astrologyData;
 
@@ -369,19 +421,23 @@ export function reconcileActiveProfile(
       (remote.longitude === null || remote.longitude === undefined
         ? undefined
         : String(remote.longitude)),
-    sunSign: sunSign ?? local.sunSign ?? null,
-    moonSign: moonSign ?? local.moonSign ?? null,
-    risingSign: risingSign ?? local.risingSign ?? null,
+    sunSign,
+    moonSign,
+    risingSign,
     astrologyData: mergedAstrologyData,
     numerologyData: remote.numerologyData ?? local.numerologyData,
-    humanDesignData: hasVerifiedHumanDesignTrust(remote.humanDesignData)
-      ? remote.humanDesignData
-      : local.humanDesignData,
+    humanDesignData:
+      remote.humanDesignData && typeof remote.humanDesignData === "object"
+        ? remote.humanDesignData
+        : local.humanDesignData,
     humanDesignType:
       hasVerifiedHumanDesignTrust(remote.humanDesignData) &&
       typeof remote.humanDesignData?.type === "string"
         ? remote.humanDesignData.type
-        : local.humanDesignType,
+        : remote.humanDesignData?.status === "range_analyzed" &&
+            (remote.humanDesignData as any)?.components?.type?.evidenceState === "stable_across_range"
+          ? String((remote.humanDesignData as any).components.type.value)
+          : undefined,
     archetype: remote.archetypeData?.title ?? local.archetype,
     confidence: {
       ...(local.confidence && typeof local.confidence === "object"
@@ -471,11 +527,13 @@ export function reconcileOfflineProfile(
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
 ): boolean {
+  if (!hasExactAscendantInputs(profile)) {
+    return !hasCompletedUnknownTimeRange(profile.verifiedAstrologyData);
+  }
+
   if (!hasVerifiedSunAndMoon(profile.verifiedAstrologyData)) {
     return true;
   }
-
-  if (!hasExactAscendantInputs(profile)) return false;
 
   if (
     (profile.remoteSync?.verificationVersion ?? 0) <
