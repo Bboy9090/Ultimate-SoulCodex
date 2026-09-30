@@ -98,6 +98,7 @@ async function requestVerificationWhenOnline(
   data: BirthData,
   localProfile: OfflineCodexProfile,
 ): Promise<boolean> {
+  if (!isValidIanaTimezone(data.timezone)) return false;
   if (typeof navigator !== "undefined" && !navigator.onLine) return false;
 
   try {
@@ -169,6 +170,7 @@ export default function LocalFirstInputForm() {
   const timezone = form.watch("timezone");
   const latitude = form.watch("latitude");
   const longitude = form.watch("longitude");
+  const onlineEvidenceInputsReady = isValidIanaTimezone(timezone);
   const exactChartInputsReady = Boolean(
     birthTime &&
       isValidIanaTimezone(timezone) &&
@@ -271,7 +273,7 @@ export default function LocalFirstInputForm() {
       }
 
       let verificationCompleted = false;
-      if (verifyOnline) {
+      if (verifyOnline && onlineEvidenceInputsReady) {
         // The user explicitly opted in, so finish the evidence reconciliation
         // before opening the profile. Navigating while this request was still
         // in flight allowed the profile query to cache the unresolved local
@@ -281,7 +283,7 @@ export default function LocalFirstInputForm() {
 
       toast({
         title: "Soul Codex created on this device",
-        description: verifyOnline
+        description: verifyOnline && onlineEvidenceInputsReady
           ? verificationCompleted
             ? "Your local reading is ready. The online verification request completed and supported evidence was reconciled into this same local profile."
             : "Your local reading is ready, but online verification did not complete. Nothing was guessed or promoted; you can retry verification from the profile when connectivity is available."
@@ -449,15 +451,18 @@ export default function LocalFirstInputForm() {
                     id="verify-online"
                     data-testid="checkbox-online-verification"
                     type="checkbox"
-                    checked={verifyOnline}
+                    checked={verifyOnline && onlineEvidenceInputsReady}
+                    disabled={!onlineEvidenceInputsReady}
                     onChange={(event) => setVerifyOnline(event.target.checked)}
-                    className="mt-1 h-4 w-4 accent-[var(--sc-gold)]"
+                    className="mt-1 h-4 w-4 accent-[var(--sc-gold)] disabled:opacity-40"
                   />
                   <span>
                     <span className="block text-sm font-semibold text-[var(--sc-ivory)]">Verify supported placements online after creation</span>
                     <span className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">
-                      Optional. Soul Codex sends only birth date, optional birth time, timezone, and coordinates to the astronomy verification endpoint. It does not create a server profile or invoke AI generation for this check.
-                      Leave this off to keep profile creation entirely on-device.
+                      {onlineEvidenceInputsReady
+                        ? "Optional. Soul Codex sends only birth date, optional birth time, birthplace timezone, and available coordinates to the evidence endpoint. Unknown time triggers a full-day range analysis; missing coordinates keep location-sensitive layers unavailable. It does not create a server profile or invoke AI generation."
+                        : "Add the birthplace timezone—usually by resolving the nearest known birth city—before online evidence analysis can run. Soul Codex will not substitute your device timezone or a default city."}
+                      {" "}Leave this off to keep profile creation entirely on-device.
                     </span>
                   </span>
                 </label>
