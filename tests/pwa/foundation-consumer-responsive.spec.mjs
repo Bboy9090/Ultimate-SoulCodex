@@ -60,6 +60,7 @@ async function createLocalProfile(page) {
     await page.getByTestId("input-name").fill("Responsive Journey Test");
     await page.getByTestId("input-birth-date").fill("1990-09-17");
     await page.getByTestId("input-birth-time").fill("11:11");
+    await page.getByTestId("button-onboarding-next").click();
     await page.getByTestId("input-birth-location").fill("Bronx, New York");
     await page.getByTestId("button-location-lookup").click();
     await page.getByTestId("button-onboarding-next").click();
