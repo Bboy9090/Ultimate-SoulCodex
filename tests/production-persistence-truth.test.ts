@@ -49,3 +49,13 @@ test("server routes gate durable profile and share mutations in ephemeral produc
   assert.match(auth, /app\.post\("\/api\/auth\/apple"[\s\S]*?durableFeatureUnavailable\(\)/);
   assert.match(auth, /DURABLE_STORAGE_UNAVAILABLE_RESPONSE/);
 });
+
+
+test("diagnostics surfaces backend persistence durability", async () => {
+  const source = await readFile(new URL("../client/src/pages/DiagnosticsPage.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /Server persistence/);
+  assert.match(source, /durable \(Postgres\)/);
+  assert.match(source, /ephemeral \(memory\)/);
+  assert.match(source, /durable account\/share features are unavailable/);
+});
