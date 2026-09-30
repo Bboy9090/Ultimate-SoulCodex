@@ -1,9 +1,6 @@
 import type { SoulSignals, Synthesis, Archetype } from "../types";
 import { stressNotes } from "./elements";
 import { deriveMoralCode } from "./moral";
-import { analyzeSynergy } from "./synergy";
-import { rankCoreDrivers } from "./dominance";
-import { generateBehaviorPredictions } from "./predictive";
 
 const LIFE_PATH_DESC: Record<number, string> = {
   1:  "I clear paths by initiating immediately, even when the direction is unknown, often leaving unfinished logic behind.",
@@ -408,55 +405,88 @@ function guard(value: string, key: string): string {
   return FIELD_FALLBACK[key] ?? value;
 }
 
+const REFLECTION_OPENERS: Record<"symbolic" | "self-report" | "goal", readonly string[]> = {
+  symbolic: [
+    "Treat this as symbolic language to test against experience:",
+    "One symbolic interpretation to compare with real life:",
+    "Use this placement-derived idea as a lens, not a fact:",
+  ],
+  "self-report": [
+    "Compare this pattern with behavior you have actually observed:",
+    "Use your recorded answers to test whether this description fits:",
+    "Check this interpretation against specific lived examples:",
+    "Keep, revise, or reject this based on what you actually do:",
+  ],
+  goal: [
+    "Use this stated goal as a planning prompt:",
+    "Compare this goal-based interpretation with your actual priorities:",
+    "Treat this as a direction to test through action:",
+  ],
+};
+
+function reflectionPrompt(
+  value: string,
+  basis: "symbolic" | "self-report" | "goal",
+  key: string,
+): string {
+  const cleaned = cleanup(value);
+  const options = REFLECTION_OPENERS[basis];
+  let hash = 2166136261;
+  const seed = `${key}::${cleaned}`;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  const opener = options[(hash >>> 0) % options.length];
+  return `${opener} ${cleaned}`;
+}
+
 export function synthesize(signals: SoulSignals, archetype: Archetype): Synthesis {
-  // Deterministic variety key based on the unique seed (name)
   const seedStr = signals.seed + (signals.sunSign || "") + (signals.lifePath || 0);
   let hash = 0;
   for (let i = 0; i < seedStr.length; i++) {
     hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
-    hash |= 0; // Convert to 32bit integer
+    hash |= 0;
   }
-  const vIdx = Math.abs(hash) % 3; // 0, 1, or 2
+  const vIdx = Math.abs(hash) % 3;
 
   const syn: Synthesis = {
     codename:            `${archetype.name.split(' ')[0]} ${archetype.role}`,
-    myPattern:           guard(cleanup(buildMyPattern(signals, archetype, vIdx)), "myPattern"),
-    stressPattern:       guard(cleanup(buildStressPattern(signals, archetype, vIdx)), "stressPattern"),
-    relationshipPattern: guard(cleanup(buildRelationshipPattern(signals, archetype, vIdx)), "relationshipPattern"),
-    recognitionMoment:   guard(cleanup(buildRecognitionMoment(signals, vIdx)), "recognitionMoment"),
+    myPattern:           guard(reflectionPrompt(buildMyPattern(signals, archetype, vIdx), "symbolic", "myPattern"), "myPattern"),
+    stressPattern:       guard(reflectionPrompt(buildStressPattern(signals, archetype, vIdx), "self-report", "stressPattern"), "stressPattern"),
+    relationshipPattern: guard(reflectionPrompt(buildRelationshipPattern(signals, archetype, vIdx), "self-report", "relationshipPattern"), "relationshipPattern"),
+    recognitionMoment:   guard(reflectionPrompt(buildRecognitionMoment(signals, vIdx), "self-report", "recognitionMoment"), "recognitionMoment"),
     moralCode:           deriveMoralCode(signals.pressureStyle, signals.nonNegotiables),
-    powerMode:           guard(cleanup(buildPowerMode(signals)), "powerMode"),
-    growthEdges:         buildGrowthEdges(signals).map(cleanup).filter(e => e.split(/\s+/).filter(Boolean).length >= 3),
-    contradiction:       guard(cleanup(buildContradiction(signals, vIdx)), "contradiction"),
-    lifeConsequence:     guard(cleanup(buildLifeConsequence(signals, vIdx)), "lifeConsequence"),
-    patternInterruption: guard(cleanup(buildPatternInterruption(signals, vIdx)), "patternInterruption"),
-    loopSentence:        guard(cleanup(buildLoopSentence(signals, vIdx)), "loopSentence"),
-    synergy:             analyzeSynergy(signals),
-    coreDrivers:         rankCoreDrivers(signals),
+    powerMode:           guard(reflectionPrompt(buildPowerMode(signals), "goal", "powerMode"), "powerMode"),
+    growthEdges:         buildGrowthEdges(signals)
+      .map((edge, index) => reflectionPrompt(edge, "self-report", `growthEdge-${index}`))
+      .filter(e => e.split(/\s+/).filter(Boolean).length >= 3),
+    contradiction:       guard(reflectionPrompt(buildContradiction(signals, vIdx), "self-report", "contradiction"), "contradiction"),
+    lifeConsequence:     guard(reflectionPrompt(buildLifeConsequence(signals, vIdx), "self-report", "lifeConsequence"), "lifeConsequence"),
+    patternInterruption: guard(reflectionPrompt(buildPatternInterruption(signals, vIdx), "self-report", "patternInterruption"), "patternInterruption"),
+    loopSentence:        guard(reflectionPrompt(buildLoopSentence(signals, vIdx), "self-report", "loopSentence"), "loopSentence"),
+    synergy:             [],
+    coreDrivers:         [],
   };
 
-  // Clean up moral code notes as well, with a guard so it is never a stub.
-  syn.moralCode.notes = guard(cleanup(syn.moralCode.notes), "moralNotes");
+  syn.moralCode.notes = guard(
+    reflectionPrompt(syn.moralCode.notes, "self-report", "moralNotes"),
+    "moralNotes",
+  );
 
-  // Guarantee at least one growth edge.
   if (syn.growthEdges.length === 0) {
-    syn.growthEdges = [FIELD_FALLBACK.growthEdge];
+    syn.growthEdges = [
+      reflectionPrompt(FIELD_FALLBACK.growthEdge, "self-report", "growthEdge-fallback"),
+    ];
   }
 
-  // Final deduplication check across semantic groups
   const lines = [syn.myPattern, syn.stressPattern, syn.relationshipPattern, syn.contradiction];
   const unique = Array.from(new Set(lines));
   if (unique.length < lines.length) {
-    // If we have a direct duplicate, adjust the seed slightly and retry once
     return synthesize({ ...signals, seed: signals.seed + "1" }, archetype);
   }
 
-  // Layer 7: Generate behavior predictions based on core drivers
-  const coreDriversForPrediction = syn.coreDrivers || [];
-  if (coreDriversForPrediction.length > 0) {
-    syn.predictions = generateBehaviorPredictions(signals, coreDriversForPrediction);
-  }
-
+  syn.predictions = [];
   return syn;
 }
 
