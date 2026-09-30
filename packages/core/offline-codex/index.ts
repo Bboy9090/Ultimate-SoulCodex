@@ -370,8 +370,8 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       limitations: ["Numerology is a symbolic framework and should be tested against lived experience."],
     },
     ...(expression ? [{
-      evidence: makeEvidence({ id: "offline.numerology.expression", system: "numerology", field: "expression", value: numerology.expression, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from the supplied name."] }),
-      label: "Expression " + numerology.expression + " " + (NUMBER_LABELS[numerology.expression] ?? expression.theme), priority: 108, claimKind: "derived" as const,
+      evidence: makeEvidence({ id: "offline.numerology.expression", system: "numerology", field: "expression", value: numerology.expression!, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from the explicit full birth name."] }),
+      label: "Expression " + numerology.expression + " " + (NUMBER_LABELS[numerology.expression!] ?? expression.theme), priority: 108, claimKind: "derived" as const,
       facets: {
         visiblePattern: "Expression " + numerology.expression + " adds " + expression.drive + " as a symbolic outward-development theme.",
         gift: "The Expression layer can become " + expression.drive + " when it is chosen rather than performed.",
@@ -382,8 +382,8 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       limitations: ["The Expression number is deterministic from the supplied name; its personality meaning remains symbolic interpretation."],
     }] : []),
     ...(soulUrge ? [{
-      evidence: makeEvidence({ id: "offline.numerology.soul-urge", system: "numerology", field: "soulUrge", value: numerology.soulUrge, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from vowels in the supplied name."] }),
-      label: "Soul Urge " + numerology.soulUrge + " " + (NUMBER_LABELS[numerology.soulUrge] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
+      evidence: makeEvidence({ id: "offline.numerology.soul-urge", system: "numerology", field: "soulUrge", value: numerology.soulUrge!, confidence: "moderate", timeSensitivity: "none", notes: ["Calculated deterministically from vowels in the explicit full birth name."] }),
+      label: "Soul Urge " + numerology.soulUrge + " " + (NUMBER_LABELS[numerology.soulUrge!] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
       facets: {
         hiddenNeed: "Soul Urge " + numerology.soulUrge + " adds " + soulUrge.drive + " as a symbolic inner-motivation theme.",
         protectiveFunction: "Protection may become organized around preserving room for " + soulUrge.drive + ".",
