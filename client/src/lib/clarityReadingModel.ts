@@ -1,14 +1,16 @@
 import { humanDesignDefinedChannels, humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
+import { getSynthesisPlacement } from "./placementVerification";
 export type ClarityConfidence =
   | "verified"
   | "deterministic"
+  | "stable"
   | "supported"
   | "tentative"
   | "unavailable";
 
-export type CalculationCertainty = "verified" | "deterministic" | "user-stated" | "unverified";
-export type EvidenceStatus = "verified-source" | "calculated" | "user-assessed" | "symbolic-only" | "unresolved";
+export type CalculationCertainty = "verified" | "range-stable" | "deterministic" | "user-stated" | "unverified";
+export type EvidenceStatus = "verified-source" | "stable-across-range" | "calculated" | "user-assessed" | "symbolic-only" | "unresolved";
 export type InterpretationConfidence = "high" | "moderate" | "low" | "not-applicable";
 
 export interface ClaritySignal {
@@ -152,6 +154,13 @@ function receiptForSignal(
     return {
       calculationCertainty: "verified",
       evidenceStatus: "verified-source",
+      interpretationConfidence: "not-applicable",
+    };
+  }
+  if (confidence === "stable") {
+    return {
+      calculationCertainty: "range-stable",
+      evidenceStatus: "stable-across-range",
       interpretationConfidence: "not-applicable",
     };
   }
@@ -366,19 +375,23 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   });
 
   const signals: ClaritySignal[] = [];
-  const verifiedSign = (key: "sun" | "moon" | "rising") => {
-    return verifiedPlacement(verified[key])?.sign;
+  const addAstrologySignal = (key: "sun" | "moon" | "rising", label: string) => {
+    const placement = getSynthesisPlacement(verified[key]);
+    if (!placement) return;
+    addSignal(
+      signals,
+      key,
+      label,
+      placement.sign,
+      placement.evidenceState === "verified" ? "verified" : "stable",
+      placement.evidenceState === "verified"
+        ? "independent astronomy"
+        : "full-day minute-range astronomy",
+    );
   };
-  addSignal(signals, "sun", "Sun", verifiedSign("sun"), "verified", "independent astronomy");
-  addSignal(signals, "moon", "Moon", verifiedSign("moon"), "verified", "independent astronomy");
-  addSignal(signals, "rising", "Rising", verifiedSign("rising"), "verified", "independent astronomy");
-  if (
-    !signals.some((signal) => signal.id === "sun") &&
-    typeof astrology.sunSign === "string" &&
-    ZODIAC_SIGNS.has(astrology.sunSign)
-  ) {
-    addSignal(signals, "sun-symbolic", "Sun", astrology.sunSign, "supported", "saved symbolic profile");
-  }
+  addAstrologySignal("sun", "Sun");
+  addAstrologySignal("moon", "Moon");
+  addAstrologySignal("rising", "Rising");
   addSignal(signals, "life-path", "Life Path", lifePath, "deterministic", "birth-date calculation");
   addSignal(signals, "expression", "Expression", expression, "deterministic", "name calculation");
   addSignal(signals, "soul-urge", "Soul Urge", soulUrge, "deterministic", "name-vowel calculation");
@@ -445,12 +458,12 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     "Symbolic overlap is supporting context, not independent proof.",
     "Only governed core numerology values (1-9, 11, 22, 33) are admitted as deterministic signals; malformed or unsupported values are excluded.",
     "Numerology values are deterministic calculations from supplied birth/name data; their personality meanings remain symbolic interpretation.",
-    "Unknown or approximate birth time must not be promoted into verified Moon, Rising, house, Human Design, or timing claims.",
+    "Unknown birth time may contribute only placements proven stable across the complete supported range. Conditional branches never become main-reading facts.",
     "Verified geometry and Human Design calculations can support reflection; their psychological meanings remain symbolic rather than scientific diagnoses.",
     "Lived experience is the final correction layer.",
   ];
-  if (!signals.some((signal) => signal.confidence === "verified")) {
-    limitations.unshift("No independently verified astronomical signal is available in this reading model.");
+  if (!signals.some((signal) => signal.confidence === "verified" || signal.confidence === "stable")) {
+    limitations.unshift("No independently verified or full-range-stable astronomical signal is available in this reading model.");
   }
 
   return {
