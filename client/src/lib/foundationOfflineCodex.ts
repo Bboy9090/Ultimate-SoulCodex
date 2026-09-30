@@ -1010,7 +1010,14 @@ export function synthesizeRangeStableFoundationProfile(
     : null;
   const stableHd = hdComponents && typeof hdComponents === "object"
     ? Object.entries(hdComponents)
-        .filter(([, value]: any) => value?.evidenceState === "stable_across_range" && value?.value)
+        .filter(([, value]: any) =>
+          value?.evidenceState === "stable_across_range" &&
+          value?.value &&
+          value?.rangeEvidence?.resolutionMinutes === 1 &&
+          value?.rangeEvidence?.testedValues === 1440 &&
+          typeof value?.rangeEvidence?.rangeStartLocal === "string" &&
+          typeof value?.rangeEvidence?.rangeEndLocal === "string"
+        )
         .map(([key, value]: any) => `${key}: ${value.value}`)
     : [];
   if (stableHd.length) {
@@ -1547,15 +1554,32 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
 
   if (verifiedAstrologyData) {
     try {
-      repairedNarrative = synthesizeVerifiedFoundationProfile(
-        rebuilt,
-        verifiedAstrologyData,
-        repairedAt,
-        profile.humanDesignData ?? undefined,
-      );
+      const hasCompleteRange = ["sun", "moon"].every((key) => {
+        const placement = (verifiedAstrologyData as any)?.[key];
+        return (
+          ["stable_across_range", "conditional"].includes(String(placement?.evidenceState)) &&
+          placement?.rangeEvidence?.resolutionMinutes === 1 &&
+          placement?.rangeEvidence?.testedValues === 1440 &&
+          typeof placement?.rangeEvidence?.rangeStartLocal === "string" &&
+          typeof placement?.rangeEvidence?.rangeEndLocal === "string"
+        );
+      });
+      repairedNarrative = hasCompleteRange
+        ? synthesizeRangeStableFoundationProfile(
+            rebuilt,
+            verifiedAstrologyData,
+            repairedAt,
+            profile.humanDesignData ?? undefined,
+          )
+        : synthesizeVerifiedFoundationProfile(
+            rebuilt,
+            verifiedAstrologyData,
+            repairedAt,
+            profile.humanDesignData ?? undefined,
+          );
     } catch {
-      // Do not discard verified evidence or corrupt a stored profile when a
-      // legacy snapshot cannot be safely re-synthesized.
+      // Do not discard verified/range-stable evidence or corrupt a stored
+      // profile when a legacy snapshot cannot be safely re-synthesized.
       return profile;
     }
   }
