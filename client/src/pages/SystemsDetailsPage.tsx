@@ -12,18 +12,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import Navigation from "@/components/navigation";
+import type { PlacementLike } from "@soulcodex/core";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
-type Placement = {
-  sign?: string | null;
-  verificationStatus?: string;
-  status?: string;
-  evidenceState?: "verified" | "stable_across_range" | "conditional" | "unavailable";
-  rangeEvidence?: { resolutionMinutes?: number; testedValues?: number };
-  conditionalValues?: Array<{ value?: string; startLocalTime?: string; endLocalTime?: string }>;
+type Placement = PlacementLike & {
   reason?: string;
   internalCandidate?: {
     sign?: string;
