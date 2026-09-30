@@ -271,6 +271,7 @@ export function generateFoundationOfflineCodexProfile(
     throw new Error(`Calculated Life Path ${lifePath} is outside the governed numerology set.`);
   }
   const archetypeData = archetypeFor(sunSign, lifePath, expression, soulUrge);
+  archetypeData.description = `Local calendar Sun candidate: ${sunSign}. This candidate is not allowed to drive identity synthesis until online ephemeris evidence verifies it or proves it stable across the full unknown-time range. ${archetypeData.description}`;
 
   const numerologyData = {
     lifePath,
@@ -313,7 +314,6 @@ export function generateFoundationOfflineCodexProfile(
     generatedAt,
     birthTimeStatus: input.birthTime ? "known" : "unknown",
     seeds: [
-      makeSeed("offline.astrology.sun", "astrology", "sunSign", sunSign, `${sunSign} Sun symbolism`, signPattern, 100),
       makeSeed("offline.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 95),
       ...(expressionPattern
         ? [makeSeed("offline.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 92)]
@@ -323,7 +323,8 @@ export function generateFoundationOfflineCodexProfile(
         : []),
     ],
     missingData: [
-      "Moon sign is unavailable in local mode until independently verified astronomy is requested.",
+      `Sun sign candidate (${sunSign}) is retained for display only and excluded from synthesis until verified or stable across the full-day range.`,
+      "Moon sign is unavailable in local mode until independently verified or range-stable astronomy is requested.",
       "Rising sign is unavailable in local mode until exact birth time, coordinates, timezone, and independent astronomy verification are available.",
       "Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable in local mode.",
       "Human Design is unavailable without its separate calculation and evidence contract.",
@@ -368,7 +369,7 @@ export function generateFoundationOfflineCodexProfile(
     numerologyData,
     personalityData: {},
     archetypeData,
-    biography: `${input.name.trim()}'s local Codex uses only supported local evidence in this first-pass synthesis. Life Path ${lifePath}, Birthday ${birthday}, and Personal Year ${yearNumber} are date-based deterministic calculations. ${fullBirthName ? `Expression ${expression}, Soul Urge ${soulUrge}, Personality ${personality}, and Maturity ${maturity} use the supplied full birth name.` : "Name-based numerology is unavailable because a full birth name was not supplied."} Their meanings remain symbolic. Moon, Rising, planets, houses, aspects, nodes, and Chiron are deliberately absent rather than approximated.`,
+    biography: `${input.name.trim()}'s local Codex begins with deterministic numerology only. Life Path ${lifePath}, Birthday ${birthday}, and Personal Year ${yearNumber} are date-based calculations. ${fullBirthName ? `Expression ${expression}, Soul Urge ${soulUrge}, Personality ${personality}, and Maturity ${maturity} use the supplied full birth name.` : "Name-based numerology is unavailable because a full birth name was not supplied."} The local ${sunSign} Sun value is retained only as a calendar candidate and does not influence personality synthesis until verified or stable across the full-day range. Time-sensitive astronomy remains absent rather than approximated.`,
     dailyGuidance: `${pathPattern.action} ${signPattern.action}`,
     depthInterpretation,
     localOnly: true,
