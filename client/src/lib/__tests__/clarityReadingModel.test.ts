@@ -32,7 +32,8 @@ describe("clarityReadingModel", () => {
         sunSign: "Leo",
         moonSign: "Gemini",
       },
-      numerologyData: { lifePath: 9 },
+      birthDate: "1990-09-17",
+      numerologyData: { lifePath: 4 },
       archetypeData: { title: "Sacred Guardian" },
     });
 
@@ -48,20 +49,18 @@ describe("clarityReadingModel", () => {
     );
   });
 
-  it("labels local symbolic Sun as supported rather than verified", () => {
+  it("does not let a local calendar Sun candidate enter Clarity synthesis", () => {
     const model = buildClarityReadingModel({
+      birthDate: "1990-09-17",
       astrologyData: { sunSign: "Virgo" },
-      numerologyData: { lifePath: 9 },
+      numerologyData: { lifePath: 4 },
     });
 
+    expect(model.signals.some((signal) => signal.id === "sun-symbolic")).toBe(false);
     expect(model.signals).toContainEqual(
-      expect.objectContaining({
-        id: "sun-symbolic",
-        value: "Virgo",
-        confidence: "supported",
-      }),
+      expect.objectContaining({ id: "life-path", value: "9", confidence: "deterministic" }),
     );
-    expect(model.limitations[0]).toMatch(/No independently verified/);
+    expect(model.limitations[0]).toMatch(/No independently verified or full-range-stable/);
   });
 
   it("excludes malformed core numerology instead of labeling it deterministic", () => {
@@ -74,30 +73,52 @@ describe("clarityReadingModel", () => {
     expect(model.signals.some((signal) => signal.id === "soul-urge")).toBe(false);
   });
 
-  it("rejects an unsupported saved Sun sign and exposes three separate trust labels", () => {
-    const invalid = buildClarityReadingModel({
-      astrologyData: { sunSign: "Ophiuchus" },
+  it("separates verified, stable-range, and deterministic evidence labels", () => {
+    const rangeEvidence = {
+      resolutionMinutes: 1,
+      rangeStartLocal: "1990-09-17T00:00",
+      rangeEndLocal: "1990-09-17T23:59",
+      timezone: "America/New_York",
+      testedValues: 1440,
+    };
+    const model = buildClarityReadingModel({
+      birthDate: "1990-09-17",
+      verifiedAstrologyData: {
+        sun: {
+          sign: "Virgo",
+          verificationStatus: "calculated",
+          evidenceState: "stable_across_range",
+          rangeEvidence,
+        },
+        moon: {
+          sign: null,
+          verificationStatus: "unresolved",
+          evidenceState: "conditional",
+          rangeEvidence,
+          conditionalValues: [
+            { value: "Virgo", startLocalTime: "00:00", endLocalTime: "12:00" },
+            { value: "Libra", startLocalTime: "12:01", endLocalTime: "23:59" },
+          ],
+        },
+      },
+      numerologyData: { lifePath: 44 },
     });
-    expect(invalid.signals.some((signal) => signal.id === "sun-symbolic")).toBe(false);
-
-    const valid = buildClarityReadingModel({
-      astrologyData: { sunSign: "Virgo" },
-      numerologyData: { lifePath: 9 },
-    });
-    expect(valid.signals).toContainEqual(
+    expect(model.signals).toContainEqual(
       expect.objectContaining({
-        id: "sun-symbolic",
-        calculationCertainty: "unverified",
-        evidenceStatus: "symbolic-only",
-        interpretationConfidence: "low",
+        id: "sun",
+        confidence: "stable",
+        calculationCertainty: "range-stable",
+        evidenceStatus: "stable-across-range",
+        interpretationConfidence: "not-applicable",
       }),
     );
-    expect(valid.signals).toContainEqual(
+    expect(model.signals.some((signal) => signal.id === "moon")).toBe(false);
+    expect(model.signals).toContainEqual(
       expect.objectContaining({
         id: "life-path",
+        value: "9",
         calculationCertainty: "deterministic",
         evidenceStatus: "calculated",
-        interpretationConfidence: "not-applicable",
       }),
     );
   });
@@ -107,6 +128,7 @@ describe("clarityReadingModel", () => {
       astrologyData: { sunSign: "Virgo" },
     });
 
+    expect(model.signals.some((signal) => signal.id === "sun")).toBe(false);
     expect(model.signals.some((signal) => signal.id === "moon")).toBe(false);
     expect(model.signals.some((signal) => signal.id === "rising")).toBe(false);
   });
