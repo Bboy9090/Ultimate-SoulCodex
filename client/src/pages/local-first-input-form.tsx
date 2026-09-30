@@ -155,6 +155,7 @@ export default function LocalFirstInputForm() {
     resolver: zodResolver(birthDataSchema),
     defaultValues: {
       name: "",
+      fullBirthName: "",
       birthDate: "",
       birthTime: "",
       birthLocation: "",
@@ -343,9 +344,22 @@ export default function LocalFirstInputForm() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><User className="h-4 w-4" /> Full name</FormLabel>
-                      <FormControl><Input {...field} className={inputClass} placeholder="Enter your full name" data-testid="input-name" /></FormControl>
+                      <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><User className="h-4 w-4" /> Display name</FormLabel>
+                      <FormControl><Input {...field} className={inputClass} placeholder="Name or alias for this profile" data-testid="input-name" /></FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fullBirthName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><User className="h-4 w-4" /> Full birth name <span className="ml-auto text-[11px] font-normal text-[var(--sc-stone)]">optional if unknown</span></FormLabel>
+                      <FormControl><Input {...field} className={inputClass} placeholder="Full name at birth, if known" data-testid="input-full-birth-name" /></FormControl>
+                      <FormMessage />
+                      <p className="text-xs leading-5 text-[var(--sc-stone)]">Used only for name-based numerology: Expression/Destiny, Soul Urge, Personality Number, and Maturity. Leave blank if you do not know the full birth name; those values will stay unavailable rather than being approximated from a nickname.</p>
                     </FormItem>
                   )}
                 />
@@ -383,14 +397,14 @@ export default function LocalFirstInputForm() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><MapPin className="h-4 w-4" /> Birth location</FormLabel>
                       <div className="flex flex-col gap-2 sm:flex-row">
-                        <FormControl><Input {...field} className={inputClass} placeholder="City, state/province, country" data-testid="input-birth-location" /></FormControl>
+                        <FormControl><Input {...field} className={inputClass} placeholder="Nearest known city, state/province, country" data-testid="input-birth-location" /></FormControl>
                         <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.06)] px-5 text-sm font-semibold text-[var(--sc-gold-bright)] transition hover:bg-[rgba(217,182,111,.12)] disabled:opacity-60" onClick={resolveLocation} disabled={isLocating} data-testid="button-location-lookup">
                           {isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}Resolve place
                         </button>
                       </div>
                       <FormMessage />
                       <p className="text-xs leading-5 text-[var(--sc-stone)]">
-                        Built-in cities resolve on-device. Otherwise, pressing Resolve place sends only the entered place text to Soul Codex&apos;s location resolver; coordinates determine the birth location&apos;s IANA timezone. Your current device timezone is never substituted for a remote birthplace.
+                        If the exact birthplace is unknown, enter the nearest known city when available. Leave it blank rather than guessing. Built-in cities resolve on-device; otherwise Resolve place sends only the entered place text to Soul Codex&apos;s location resolver. Your current device timezone or location is never substituted for the birthplace.
                       </p>
                     </FormItem>
                   )}
@@ -421,7 +435,9 @@ export default function LocalFirstInputForm() {
                       <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                         {exactChartInputsReady
                           ? "You supplied birth time, birth-place timezone, latitude, and longitude. Soul Codex can calculate Moon and Rising candidates. Independent online verification is the only remaining step before those values are promoted as chart facts."
-                          : "Moon and Rising require an exact birth time plus the birth location's timezone and coordinates. Missing pieces stay unresolved rather than being guessed."}
+                          : birthTime
+                            ? "Planetary zodiac positions can still be calculated when the birth instant is known, but Ascendant, houses, Midheaven, and other location-sensitive geometry require the birthplace timezone and coordinates. Add the nearest known city to unlock those layers."
+                            : "With birth time unknown, Soul Codex can use a full-day range sweep when the birth-place timezone is known. Stable placements may be used with range provenance; changing placements branch by time window. Missing location/timezone stays unavailable rather than guessed."}
                       </p>
                     </div>
                   </div>
