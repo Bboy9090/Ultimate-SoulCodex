@@ -13,6 +13,7 @@ import { registerLocationResolutionRoutes } from "./routes/location-resolution.j
 import { registerCodexToolRoutes } from "./routes/codex-tools.js";
 import compatibilityRouter from "./routes/compatibility.js";
 import { resolveReleaseIdentity } from "./lib/release-identity.js";
+import { checkPersistenceReadiness } from "./lib/persistence-readiness.js";
 import { trustedMutationOriginGuard } from "./lib/trusted-mutation-origin.js";
 import {
   registerBillingRawRoutes,
@@ -126,6 +127,18 @@ app.get("/health", (_req, res) => {
   res.status(200).json(resolveReleaseIdentity());
 });
 
+app.get("/ready", async (_req, res) => {
+  const identity = resolveReleaseIdentity();
+  const persistence = await checkPersistenceReadiness();
+  res.status(persistence.ready ? 200 : 503).json({
+    status: persistence.ready ? "ready" : "not_ready",
+    appVersion: identity.appVersion,
+    releaseSha: identity.releaseSha,
+    apiContract: identity.apiContract,
+    persistence,
+  });
+});
+
 (async () => {
   try {
     const server = await registerRoutes(app);
@@ -157,7 +170,7 @@ app.get("/health", (_req, res) => {
       );
 
       app.get("*", (req, res, next) => {
-        if (req.path === "/health" || req.path.startsWith("/api/")) {
+        if (req.path === "/health" || req.path === "/ready" || req.path.startsWith("/api/")) {
           next();
           return;
         }
@@ -201,7 +214,8 @@ app.get("/health", (_req, res) => {
     server.listen(port, "0.0.0.0", () => {
       const identity = resolveReleaseIdentity();
       console.log(`Soul Codex server running on port ${port}`);
-      console.log(`Health check: http://localhost:${port}/health`);
+      console.log(`Liveness: http://localhost:${port}/health`);
+      console.log(`Readiness: http://localhost:${port}/ready`);
       console.log(`Release: ${identity.appVersion} ${identity.releaseSha} ${identity.apiContract}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
