@@ -47,5 +47,5 @@ test("server routes gate durable profile and share mutations in ephemeral produc
   assert.match(routes, /app\.post\("\/api\/profiles\/:id\/public-shares"[\s\S]*?!requireDurableFeature\(res\)/);
   assert.match(routes, /app\.delete\("\/api\/profiles\/:id\/public-shares\/:token"[\s\S]*?!requireDurableFeature\(res\)/);
   assert.match(auth, /app\.post\("\/api\/auth\/apple"[\s\S]*?durableFeatureUnavailable\(\)/);
-  assert.match(auth, /durable_storage_unavailable/);
+  assert.match(auth, /DURABLE_STORAGE_UNAVAILABLE_RESPONSE/);
 });
