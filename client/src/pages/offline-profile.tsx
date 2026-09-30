@@ -47,6 +47,10 @@ export default function OfflineProfilePage() {
 
   const requestOnlineVerification = async () => {
     if (!reconciledProfile || verificationAttempt === "running" || !profileNeedsOnlineVerification(reconciledProfile)) return;
+    if (!reconciledProfile.timezone?.trim()) {
+      setVerificationAttempt("deferred");
+      return;
+    }
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       setVerificationAttempt("deferred");
       return;
@@ -142,6 +146,7 @@ export default function OfflineProfilePage() {
         .filter(([, value]: any) => value?.evidenceState === "conditional")
     : [];
   const needsOnlineVerification = profileNeedsOnlineVerification(reconciledProfile);
+  const canRequestOnlineEvidence = Boolean(reconciledProfile.timezone?.trim());
   const readingHref = `/reading/${profile.id}`;
   const identityTitle =
     ultimateCodex.derivedArchetype ??
@@ -175,7 +180,7 @@ export default function OfflineProfilePage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href={readingHref} className="sc-button-primary">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 <Link href="/compatibility" className="sc-button-secondary">Explore compatibility</Link>
-                {shouldOfferVerification(needsOnlineVerification, verificationAttempt) && (
+                {shouldOfferVerification(needsOnlineVerification, verificationAttempt) && canRequestOnlineEvidence && (
                   <button
                     type="button"
                     className="flex h-11 items-center rounded-xl border border-[rgba(114,216,197,.25)] bg-[rgba(114,216,197,.04)] px-5 text-sm font-semibold text-[#bdeee0] transition hover:bg-[rgba(114,216,197,.08)] disabled:opacity-60"
@@ -187,7 +192,12 @@ export default function OfflineProfilePage() {
                   </button>
                 )}
               </div>
-              {needsOnlineVerification && verificationAttempt !== "complete" && (
+              {needsOnlineVerification && !canRequestOnlineEvidence && (
+                <p className="mt-3 max-w-2xl text-xs leading-5 text-[var(--sc-stone)]">
+                  Add the nearest known birth city or a valid birthplace timezone to unlock online astronomy/range analysis. Soul Codex will not use your device timezone or invent a location.
+                </p>
+              )}
+              {needsOnlineVerification && canRequestOnlineEvidence && verificationAttempt !== "complete" && (
                 <p className="mt-3 max-w-2xl text-xs leading-5 text-[var(--sc-stone)]">Optional. Choosing Verify online sends only the birth date, optional birth time, birthplace timezone, and coordinates needed for exact verification or a full-day unknown-time range analysis. It does not send your name or birthplace label. It does not create a server profile or invoke AI generation. Merely opening this local profile does not upload it.</p>
               )}
             </div>
