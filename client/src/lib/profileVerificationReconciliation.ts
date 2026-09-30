@@ -365,6 +365,10 @@ export function hasVerifiedFullNatalChart(
   return true;
 }
 
+function hasExactBirthInstant(profile: ReconciledOfflineProfile): boolean {
+  return Boolean(profile.birthTime && profile.timezone);
+}
+
 function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
   return Boolean(
     profile.birthTime &&
@@ -527,14 +531,18 @@ export function reconcileOfflineProfile(
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
 ): boolean {
-  if (!hasExactAscendantInputs(profile)) {
+  // Unknown birth time: one complete minute-resolution range analysis is the
+  // terminal astronomy state. Conditional Moon/Rising branches are not errors.
+  if (!hasExactBirthInstant(profile)) {
     return !hasCompletedUnknownTimeRange(profile.verifiedAstrologyData);
   }
 
-  if (!hasVerifiedSunAndMoon(profile.verifiedAstrologyData)) {
-    return true;
-  }
+  // Exact birth instant but missing coordinates: planetary zodiac positions can
+  // be verified, while location-sensitive geometry remains intentionally locked.
+  if (!hasVerifiedSunAndMoon(profile.verifiedAstrologyData)) return true;
+  if (!hasExactAscendantInputs(profile)) return false;
 
+  // Exact instant + coordinates: qualify the full governed natal/HD contracts.
   if (
     (profile.remoteSync?.verificationVersion ?? 0) <
     CURRENT_ASTROLOGY_VERIFICATION_VERSION
