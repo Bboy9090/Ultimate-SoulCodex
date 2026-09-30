@@ -237,6 +237,9 @@ export function connectionProfileSummary(connection: Pick<SavedConnection, "name
     if (placements.length > 4) evidence.push(`${placements.length - 4} more saved placements`);
   }
   if (evidence.length === 0) {
+    if (connection.birthDate) {
+      return `${name}: birthday ${connection.birthDate} is saved, but the Sun sign is unresolved because the date is near a sign-ingress boundary. Add birth time plus timezone/location, or a verified Sun placement, to resolve the branch before chart comparison.`;
+    }
     return `${name} is saved as a contact only. Add a birthday or a known Sun placement before Soul Codex compares charts for this person.`;
   }
   const missing = placements.length > 0
