@@ -451,7 +451,7 @@ export default function LocalFirstInputForm() {
                     id="verify-online"
                     data-testid="checkbox-online-verification"
                     type="checkbox"
-                    checked={verifyOnline && onlineEvidenceInputsReady}
+                    checked={verifyOnline}
                     disabled={!onlineEvidenceInputsReady}
                     onChange={(event) => setVerifyOnline(event.target.checked)}
                     className="mt-1 h-4 w-4 accent-[var(--sc-gold)] disabled:opacity-40"
@@ -460,7 +460,7 @@ export default function LocalFirstInputForm() {
                     <span className="block text-sm font-semibold text-[var(--sc-ivory)]">Verify supported placements online after creation</span>
                     <span className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">
                       {onlineEvidenceInputsReady
-                        ? "Optional. Soul Codex sends only birth date, optional birth time, birthplace timezone, and available coordinates to the evidence endpoint. Unknown time triggers a full-day range analysis; missing coordinates keep location-sensitive layers unavailable. It does not create a server profile or invoke AI generation."
+                        ? "Optional. Soul Codex sends only birth date, optional birth time, birthplace timezone, and available coordinates to the evidence endpoint. Unknown time triggers a full-day range analysis; missing coordinates keep location-sensitive layers unavailable. It does not create a server profile or invoke AI generation for this check."
                         : "Add the birthplace timezone—usually by resolving the nearest known birth city—before online evidence analysis can run. Soul Codex will not substitute your device timezone or a default city."}
                       {" "}Leave this off to keep profile creation entirely on-device.
                     </span>
