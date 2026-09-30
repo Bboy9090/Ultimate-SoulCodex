@@ -326,9 +326,9 @@ function findStelliums(placements: UltimateCodexPlacement[]): UltimateCodexStell
     result.push({
       kind: "sign",
       key: sign,
-      label: `${sign} sign cluster · ${planetKeys.length} verified natal planets`,
+      label: `${sign} sign cluster · ${planetKeys.length} synthesis-eligible natal placements`,
       planetKeys,
-      rule: "Soul Codex flags 3+ verified natal planets in one sign as a stellium-style concentration. Definitions vary across astrological traditions.",
+      rule: "Soul Codex flags 3+ verified or full-day-stable natal sign placements as a stellium-style concentration. Range-stable placements retain their provenance; definitions vary across astrological traditions.",
     });
   }
   for (const [house, planetKeys] of houseGroups) {
@@ -435,6 +435,8 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   }
   const dominantElement = topKey(elementCounts);
   const dominantModality = topKey(modalityCounts);
+  const verifiedPlacementCount = placements.filter((placement) => placement.evidenceState === "verified").length;
+  const stablePlacementCount = placements.filter((placement) => placement.evidenceState === "stable_across_range").length;
   const stelliums = findStelliums(placements);
 
   // Deterministic numerology is recomputed from its required source inputs.
@@ -516,10 +518,10 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const hashedIdentity = identityHash(evidenceSignature);
 
   const unresolved: string[] = [];
-  if (placements.length < PLANETS.length) unresolved.push(`${PLANETS.length - placements.length} natal planet placement(s) are not verified and are excluded.`);
+  if (placements.length < PLANETS.length) unresolved.push(`${PLANETS.length - placements.length} natal planet placement(s) are neither verified nor stable across the full range and are excluded.`);
   if (houseCusps.length < 12) unresolved.push(`${12 - houseCusps.length} house cusp(s) are not verified and are excluded.`);
   for (const [key, label] of [["rising","Rising"],["midheaven","Midheaven"],["northNode","North Node"],["southNode","South Node"],["chiron","Chiron"]] as const) {
-    if (!supportingPoints.some((point) => point.key === key)) unresolved.push(`${label} is unresolved or not verified and is excluded.`);
+    if (!supportingPoints.some((point) => point.key === key)) unresolved.push(`${label} is unavailable or conditional under the current evidence and is excluded from the main synthesis.`);
   }
   if (!hdType) unresolved.push("Human Design Type is unavailable or conditional and does not influence combined identity synthesis.");
   if (!hdAuthority) unresolved.push("Human Design Authority is unavailable or conditional and does not influence combined identity synthesis.");
@@ -662,8 +664,15 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const systemSummary = [
     {
       system: "Natal planets / Big Three",
-      status: placements.length === 10 && supportingPoints.some((point) => point.key === "rising") ? "verified" : placements.length ? "partial verified" : "unresolved",
-      detail: `${placements.length}/10 verified natal planets · Rising ${supportingPoints.some((point) => point.key === "rising") ? "verified" : "unresolved"}`,
+      status:
+        verifiedPlacementCount === 10 && supportingPoints.some((point) => point.key === "rising" && (astrology?.rising?.verificationStatus === "verified"))
+          ? "verified"
+          : placements.length
+            ? stablePlacementCount
+              ? "mixed verified / stable across range"
+              : "partial verified"
+            : "unresolved",
+      detail: `${verifiedPlacementCount} verified · ${stablePlacementCount} stable across range · ${PLANETS.length - placements.length} excluded natal planets · Rising ${supportingPoints.some((point) => point.key === "rising") ? ((astrology?.rising?.verificationStatus === "verified") ? "verified" : "stable across range") : "conditional/unavailable"}`,
     },
     {
       system: "Houses / Midheaven",
@@ -775,4 +784,4 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
 }
 
 export const ULTIMATE_CODEX_STELLIUM_RULE =
-  "Soul Codex flags 3+ verified natal planets in one sign or verified house as a stellium-style concentration; traditions vary, so the UI names the rule instead of pretending there is one universal definition.";
+  "Soul Codex flags 3+ synthesis-eligible natal sign placements (verified or stable across the full unknown-time range), or 3+ verified planets in one verified house, as a stellium-style concentration; provenance stays visible and traditions vary.";
