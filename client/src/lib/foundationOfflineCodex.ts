@@ -71,7 +71,7 @@ function parseDate(dateISO: string) {
   return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
 }
 
-function sunSignForDate(dateISO: string): string {
+function sunSignForDate(dateISO: string): string | null {
   const { month, day } = parseDate(dateISO);
   const boundaries: Array<[number, number, string]> = [
     [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"], [4, 20, "Taurus"],
@@ -79,9 +79,11 @@ function sunSignForDate(dateISO: string): string {
     [9, 23, "Libra"], [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
   ];
   const current = boundaries.find(([candidate]) => candidate === month);
+  const boundaryDay = current?.[1] ?? 22;
+  if (Math.abs(day - boundaryDay) <= 1) return null;
   const next = current?.[2] ?? "Capricorn";
   const previous = SIGNS[(SIGNS.indexOf(next as (typeof SIGNS)[number]) + 11) % 12];
-  return day >= (current?.[1] ?? 22) ? next : previous;
+  return day > boundaryDay ? next : previous;
 }
 
 function reduceNumber(input: number): number {
@@ -201,6 +203,35 @@ function archetypeFor(
   };
 }
 
+function numerologyOnlyArchetype(
+  lifePath: number,
+  expression?: number | null,
+  soulUrge?: number | null,
+) {
+  const path = numerologyPatternFor(lifePath);
+  const expressionPattern = numerologyPatternFor(expression);
+  const soulUrgePattern = numerologyPatternFor(soulUrge);
+  const labels = [
+    path ? `Life Path ${lifePath}` : null,
+    expressionPattern ? `Expression ${expression}` : null,
+    soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
+  ].filter((value): value is string => Boolean(value));
+  const code = preliminarySignatureCode([lifePath, expressionPattern ? expression : null, soulUrgePattern ? soulUrge : null]);
+  return {
+    title: `Foundation Numerology Signature · ${labels.join(" / ") || "numerology unresolved"} · ${code}`,
+    description: `Preliminary local synthesis uses deterministic numerology only: ${labels.join(", ") || "no supported number"}. Astrology remains outside synthesis until verified or stable across the supported range.`,
+    strengths: Array.from(new Set([path?.gift, expressionPattern?.gift, soulUrgePattern?.gift].filter((value): value is string => Boolean(value)))),
+    shadows: Array.from(new Set([path?.shadow, expressionPattern?.shadow, soulUrgePattern?.shadow].filter((value): value is string => Boolean(value)))),
+    themes: [...labels, "Preliminary local numerology synthesis"],
+    guidance: [path?.action, expressionPattern?.action, soulUrgePattern?.action].filter((value): value is string => Boolean(value)).slice(0, 3).join(" "),
+    tarotCards: {
+      card1: "Unresolved locally",
+      card2: "Unresolved locally",
+      interpretation: "Tarot birth-card interpretation is not used as evidence in the Foundation local profile.",
+    },
+  };
+}
+
 function evidence(input: Omit<InterpretationEvidenceRef, "provenanceStatus" | "notes"> & { notes?: string[] }): InterpretationEvidenceRef {
   return {
     ...input,
@@ -255,7 +286,6 @@ export function generateFoundationOfflineCodexProfile(
   const generatedAt = options.generatedAt ?? new Date().toISOString();
   const currentYear = options.currentYear ?? new Date(generatedAt).getUTCFullYear();
   const sunSign = sunSignForDate(input.birthDate);
-  const signPattern = SIGN_PATTERNS[sunSign];
   const lifePath = calcLifePath(input.birthDate);
   const birthday = calcBirthday(input.birthDate);
   const fullBirthName = input.fullBirthName?.trim() || null;
@@ -270,8 +300,11 @@ export function generateFoundationOfflineCodexProfile(
   if (!pathPattern) {
     throw new Error(`Calculated Life Path ${lifePath} is outside the governed numerology set.`);
   }
-  const archetypeData = archetypeFor(sunSign, lifePath, expression, soulUrge);
-  archetypeData.description = `Local calendar Sun candidate: ${sunSign}. This candidate is not allowed to drive identity synthesis until online ephemeris evidence verifies it or proves it stable across the full unknown-time range. ${archetypeData.description}`;
+  const archetypeData = numerologyOnlyArchetype(lifePath, expression, soulUrge);
+  archetypeData.description = `${sunSign
+    ? `Local calendar Sun candidate: ${sunSign}. It is display-only and does not influence identity synthesis.`
+    : "Sun sign unresolved locally because this date is near a sign-ingress boundary."
+  } ${archetypeData.description}`;
 
   const numerologyData: OfflineCodexProfile["numerologyData"] = {
     lifePath,
@@ -323,7 +356,7 @@ export function generateFoundationOfflineCodexProfile(
         : []),
     ],
     missingData: [
-      `Sun sign candidate (${sunSign}) is retained for display only and excluded from synthesis until verified or stable across the full-day range.`,
+      sunSign ? `Sun sign candidate (${sunSign}) is retained for display only and excluded from synthesis until verified or stable across the full-day range.` : "Sun sign is unresolved locally near a sign-ingress boundary and requires full-day range verification.",
       "Moon sign is unavailable in local mode until independently verified or range-stable astronomy is requested.",
       "Rising sign is unavailable in local mode until exact birth time, coordinates, timezone, and independent astronomy verification are available.",
       "Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable in local mode.",
@@ -341,7 +374,7 @@ export function generateFoundationOfflineCodexProfile(
   }
 
   const unresolvedAstrology = {
-    sunSign,
+    sunSign: sunSign ?? "",
     moonSign: "",
     risingSign: "",
     planets: {},
@@ -369,8 +402,8 @@ export function generateFoundationOfflineCodexProfile(
     numerologyData,
     personalityData: {},
     archetypeData,
-    biography: `${input.name.trim()}'s local Codex begins with deterministic numerology only. Life Path ${lifePath}, Birthday ${birthday}, and Personal Year ${yearNumber} are date-based calculations. ${fullBirthName ? `Expression ${expression}, Soul Urge ${soulUrge}, Personality ${personality}, and Maturity ${maturity} use the supplied full birth name.` : "Name-based numerology is unavailable because a full birth name was not supplied."} The local ${sunSign} Sun value is retained only as a calendar candidate and does not influence personality synthesis until verified or stable across the full-day range. Time-sensitive astronomy remains absent rather than approximated.`,
-    dailyGuidance: `${pathPattern.action} ${signPattern.action}`,
+    biography: `${input.name.trim()}'s local Codex begins with deterministic numerology only. Life Path ${lifePath}, Birthday ${birthday}, and Personal Year ${yearNumber} are date-based calculations. ${fullBirthName ? `Expression ${expression}, Soul Urge ${soulUrge}, Personality ${personality}, and Maturity ${maturity} use the supplied full birth name.` : "Name-based numerology is unavailable because a full birth name was not supplied."} ${sunSign ? `The local ${sunSign} Sun is retained only as a display candidate and does not influence synthesis.` : "The Sun remains unresolved locally because this date is near an ingress boundary."} Time-sensitive astronomy remains absent rather than approximated.`,
+    dailyGuidance: [pathPattern.action, expressionPattern?.action, soulUrgePattern?.action].filter((value): value is string => Boolean(value)).join(" "),
     depthInterpretation,
     localOnly: true,
     syncStatus: "local-only",
