@@ -12,6 +12,7 @@ const files = {
   localFirst: read("client/src/pages/local-first-input-form.tsx"),
   offlineProfile: read("client/src/pages/offline-profile.tsx"),
   foundationOffline: read("client/src/lib/foundationOfflineCodex.ts"),
+  unknownTimeRange: read("server/services/unknown-time-range.ts"),
   verificationRoute: read("server/routes/profile-verification.ts"),
   schema: read("shared/schema.ts"),
   billing: read("server/billing.ts"),
@@ -55,6 +56,7 @@ check("PRIVACY-05", "Compatibility uploads are minimized to a symbolic Sun proje
 check("PRIVACY-06", "Astronomy verification is evidence-only", files.verificationRoute.includes('app.post("/api/verification/profile"') && files.verificationRoute.includes("persistedProfile: false") && files.verificationRoute.includes("aiGeneration: false") && !/^import .*storage/im.test(files.verificationRoute) && !/^import .*openai/im.test(files.verificationRoute));
 
 check("TRUTH-01", "Local generation does not fabricate time-dependent astronomy", files.foundationOffline.includes('moonSign: ""') && files.foundationOffline.includes('risingSign: ""') && files.foundationOffline.includes("planets: {}") && files.foundationOffline.includes("houses: []") && files.foundationOffline.includes("aspects: []"));
+check("TRUTH-RANGE-01", "Unknown-time range analysis and full-birth-name numerology boundaries are present", files.unknownTimeRange.includes("minute < 1440") && files.unknownTimeRange.includes('"stable_across_range"') && files.unknownTimeRange.includes('"conditional"') && files.foundationOffline.includes("fullBirthName") && files.foundationOffline.includes("Name-based numerology is unavailable"));
 check("TRUTH-02", "Unknown birth time remains explicit", files.schema.includes('z.literal("")') && files.schema.includes("birthTime: birthTimeSchema") && files.localFirst.includes("Unknown time is better than invented precision."));
 
 check("BILLING-01", "Client does not collect raw payment fields", !/\b(cardNumber|expiryDate|cvv|cvc)\b/.test(files.premiumModal));
