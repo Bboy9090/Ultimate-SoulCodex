@@ -223,29 +223,44 @@ export default function OfflineProfilePage() {
               <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-3 py-1 text-xs font-semibold text-[var(--sc-stone)]">1,440-minute sweep</span>
             </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-3">
-              <div className="rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.035)] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-teal)]">Usable now</p>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-[rgba(114,216,197,.24)] bg-[rgba(114,216,197,.045)] p-4" data-testid="evidence-state-verified">
+                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-teal)]">Verified</p>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Exact required input exists and the calculation/verification contract completed.</p>
                 <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
-                  {synthesisSun && <p>Sun: <strong>{synthesisSun}</strong>{verifiedSun ? " · verified" : " · stable across range"}</p>}
-                  {synthesisMoon && <p>Moon: <strong>{synthesisMoon}</strong>{verifiedMoon ? " · verified" : " · stable across range"}</p>}
-                  {Object.entries((verifiedAstrology as any)?.planets ?? {})
-                    .filter(([key, value]: any) => !["sun","moon"].includes(key) && value?.evidenceState === "stable_across_range" && value?.sign)
-                    .map(([key, value]: any) => <p key={key}><span className="capitalize">{key}</span>: <strong>{value.sign}</strong> · stable across range</p>)}
-                  <p>Life Path: <strong>{numerology.lifePath}</strong> · date-based</p>
-                  <p>Birthday: <strong>{numerology.birthday}</strong> · date-based</p>
-                  <p>Personal Year: <strong>{numerology.personalYear}</strong> · date-based</p>
-                  {stableHdEntries.map(([key, value]: any) => <p key={key}><span className="capitalize">{key}</span>: <strong>{String(value.value)}</strong> · HD stable across range</p>)}
+                  {verifiedSun && <p>Sun: <strong>{verifiedSun}</strong></p>}
+                  {verifiedMoon && <p>Moon: <strong>{verifiedMoon}</strong></p>}
+                  {verifiedRising && <p>Ascendant: <strong>{verifiedRising}</strong></p>}
+                  <p>Life Path: <strong>{numerology.lifePath}</strong> · deterministic from birth date</p>
+                  <p>Birthday: <strong>{numerology.birthday}</strong> · deterministic from birth date</p>
+                  <p>Personal Year: <strong>{numerology.personalYear}</strong> · deterministic date cycle</p>
+                  {verifiedHumanDesign && <p>Human Design core: <strong>{String(verifiedHumanDesign.type ?? "verified")}</strong></p>}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.035] p-4">
+              <div className="rounded-2xl border border-[rgba(217,182,111,.24)] bg-[rgba(217,182,111,.04)] p-4" data-testid="evidence-state-stable-range">
+                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-gold-bright)]">Stable across range</p>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Birth time is missing, but the value stayed identical across all 1,440 tested minutes. It may influence synthesis with range provenance.</p>
+                <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
+                  {synthesisSun && !verifiedSun && <p>Sun: <strong>{synthesisSun}</strong></p>}
+                  {synthesisMoon && !verifiedMoon && <p>Moon: <strong>{synthesisMoon}</strong></p>}
+                  {synthesisRising && !verifiedRising && <p>Ascendant: <strong>{synthesisRising}</strong></p>}
+                  {Object.entries((verifiedAstrology as any)?.planets ?? {})
+                    .filter(([key, value]: any) => !["sun","moon"].includes(key) && value?.evidenceState === "stable_across_range" && value?.sign)
+                    .map(([key, value]: any) => <p key={key}><span className="capitalize">{key}</span>: <strong>{value.sign}</strong></p>)}
+                  {stableHdEntries.map(([key, value]: any) => <p key={key}>Human Design · <span className="capitalize">{key}</span>: <strong>{String(value.value)}</strong></p>)}
+                  {!synthesisSun && !synthesisMoon && stableHdEntries.length === 0 && <p>No range-stable supported fields were found.</p>}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.035] p-4" data-testid="evidence-state-conditional">
                 <p className="text-xs font-semibold uppercase tracking-[.12em] text-amber-300">Conditional</p>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Multiple legitimate values exist. These are rectification branches only and do not enter the main synthesis.</p>
                 <div className="mt-3 space-y-3 text-sm text-[var(--sc-ivory-soft)]">
                   {conditionalAstrology.length === 0 && conditionalHdEntries.length === 0 ? <p>No range-changing supported fields were found.</p> : null}
                   {conditionalAstrology.map((item) => (
                     <div key={item.key}>
-                      <p className="font-semibold capitalize">{item.key}</p>
+                      <p className="font-semibold capitalize">{item.key}{item.key === "rising" ? " · rectification evidence" : ""}</p>
                       <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                         {item.values.map((value) => `${value.value ?? "?"} ${value.startLocalTime ?? ""}–${value.endLocalTime ?? ""}`).join(" · ")}
                       </p>
@@ -254,21 +269,26 @@ export default function OfflineProfilePage() {
                   {conditionalHdEntries.map(([key, value]: any) => (
                     <div key={key}>
                       <p className="font-semibold">Human Design · <span className="capitalize">{key}</span></p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Changes across the day; excluded from synthesis until birth time is known.</p>
+                      <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
+                        {Array.isArray(value?.conditionalValues) && value.conditionalValues.length
+                          ? value.conditionalValues.map((branch: any) => `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`).join(" · ")
+                          : "Changes across the day."}
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-stone)]">Locked until missing input</p>
+              <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4" data-testid="evidence-state-unavailable">
+                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-stone)]">Unavailable</p>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Required information is missing. These fields contribute nothing until the missing input is added.</p>
                 <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
-                  <p>Houses: unresolved until exact birth time.</p>
-                  <p>Midheaven: unresolved until exact birth time.</p>
-                  <p>Exact Ascendant: add birth time to certify one branch.</p>
+                  <p>Houses: add an exact birth time.</p>
+                  <p>Midheaven: add an exact birth time.</p>
+                  <p>One certified Ascendant: add an exact birth time to collapse the rectification branches.</p>
                   {!profile.fullBirthName && <p>Expression, Soul Urge, Personality Number, and Maturity: add the full birth name.</p>}
-                  {conditionalHdEntries.length > 0 && <p>Changing Human Design components: add birth time to resolve the branch.</p>}
-                  {!profile.birthLocation && <p>Location-sensitive astronomy: add the nearest known birth city.</p>}
+                  {conditionalHdEntries.length > 0 && <p>Changing Human Design components: add birth time to collapse the conditional branches.</p>}
+                  {!profile.birthLocation && <p>Location-sensitive astronomy: add the nearest known birth city; Soul Codex will not insert one.</p>}
                 </div>
               </div>
             </div>
