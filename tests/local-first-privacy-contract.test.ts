@@ -61,3 +61,13 @@ test("offline profile verification sends only calculation inputs and explains th
   assert.match(profileSource, /Merely opening this local profile does not upload it\./);
   assert.match(profileSource, /until you explicitly request independent astronomical verification and it succeeds\./);
 });
+
+
+test("local profile front-loads daily guidance before supporting copy", () => {
+  assert.match(profileSource, /function splitDailyGuidance\(value: string\)/);
+  assert.match(profileSource, /data-testid="daily-guidance-card"/);
+  assert.match(profileSource, /data-testid="daily-guidance-headline"/);
+  assert.match(profileSource, /dailyGuidance\.headline/);
+  assert.match(profileSource, /dailyGuidance\.detail/);
+  assert.doesNotMatch(profileSource, /<p className="text-sm leading-7 text-\[var\(--sc-ivory-soft\)\]">\{profile\.dailyGuidance\}<\/p>/);
+});
