@@ -3,8 +3,8 @@ import { createRequire } from "node:module";
 
 const databaseUrl = process.env.DATABASE_URL?.trim();
 if (!databaseUrl) {
-  console.error("[schema-preflight] DATABASE_URL is required");
-  process.exit(1);
+  console.log("[schema-preflight] skipped: DATABASE_URL is not configured; server will use MemStorage");
+  process.exit(0);
 }
 
 const rootRequire = createRequire(import.meta.url);
