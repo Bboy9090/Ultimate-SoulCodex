@@ -4,6 +4,7 @@ import test from "node:test";
 
 const createSource = readFileSync("client/src/pages/local-first-input-form.tsx", "utf8");
 const profileSource = readFileSync("client/src/pages/offline-profile.tsx", "utf8");
+const homeSource = readFileSync("client/src/pages/home.tsx", "utf8");
 
 test("local profile creation keeps online verification opt-in and off by default", () => {
   assert.match(createSource, /const \[verifyOnline, setVerifyOnline\] = useState\(false\)/);
@@ -74,4 +75,12 @@ test("first-time profile creation uses three progressive steps instead of one de
   assert.match(createSource, /form\.trigger\(\["birthLocation"\]\)/);
   assert.match(createSource, /step === 3/);
   assert.match(createSource, /data-testid="button-create-profile"/);
+});
+
+
+test("fresh installs enter the stepped onboarding flow after profile hydration", () => {
+  assert.match(homeSource, /const \{ profile, isHydrated, isEmpty \} = useActiveProfile\(\)/);
+  assert.match(homeSource, /if \(isHydrated && isEmpty\) setLocation\("\/create"\)/);
+  assert.match(homeSource, /if \(!isHydrated \|\| isEmpty\)/);
+  assert.match(homeSource, /Opening profile setup/);
 });
