@@ -315,10 +315,10 @@ export function generateFoundationOfflineCodexProfile(
     birthTimeStatus: input.birthTime ? "known" : "unknown",
     seeds: [
       makeSeed("offline.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 95),
-      ...(expressionPattern
+      ...(expression !== null && expressionPattern
         ? [makeSeed("offline.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 92)]
         : []),
-      ...(soulUrgePattern
+      ...(soulUrge !== null && soulUrgePattern
         ? [makeSeed("offline.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 91)]
         : []),
     ],
