@@ -75,7 +75,7 @@ const tooltips: Record<TooltipPattern, { label: string; explanation: string }> =
   "date-only-limitation": {
     label: "Date Only (No Time)",
     explanation:
-      "When birth time is unknown, moon sign and rising sign cannot be calculated. Sun sign remains accurate.",
+      "When birth time is unknown, Soul Codex evaluates the full supported time range. Placements that stay identical may be used as stable-across-range evidence; placements that change are shown as conditional branches. Ascendant, houses, and Midheaven are not guessed."
   },
 };
 
