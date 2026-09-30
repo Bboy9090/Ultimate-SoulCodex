@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Navigation from "@/components/navigation";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
-import { getVerifiedPlacement } from "@/lib/placementVerification";
+import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 
@@ -21,6 +21,9 @@ type Placement = {
   sign?: string | null;
   verificationStatus?: string;
   status?: string;
+  evidenceState?: "verified" | "stable_across_range" | "conditional" | "unavailable";
+  rangeEvidence?: { resolutionMinutes?: number; testedValues?: number };
+  conditionalValues?: Array<{ value?: string; startLocalTime?: string; endLocalTime?: string }>;
   reason?: string;
   internalCandidate?: {
     sign?: string;
@@ -51,6 +54,8 @@ function PlacementRow({
   legacyValue?: unknown;
 }) {
   const verified = textValue(getVerifiedPlacement(placement)?.sign);
+  const synthesisPlacement = getSynthesisPlacement(placement);
+  const stable = synthesisPlacement?.evidenceState === "stable_across_range" ? textValue(synthesisPlacement.sign) : null;
   const candidate = textValue(placement?.internalCandidate?.sign);
   const legacy = textValue(legacyValue);
 
@@ -63,6 +68,16 @@ function PlacementRow({
     value = verified;
     state = "Verified chart fact";
     stateClass = "text-[var(--sc-teal)]";
+  } else if (stable) {
+    value = stable;
+    state = "Stable across full-day range";
+    stateClass = "text-[var(--sc-gold-bright)]";
+    explanation = placement?.reason || "This sign stayed identical across every supported birth-time value in the full-day range. It may influence synthesis with range provenance but is not relabeled independently verified.";
+  } else if (placement?.evidenceState === "conditional") {
+    value = "Multiple possibilities";
+    state = "Conditional · branch only";
+    stateClass = "text-amber-300";
+    explanation = placement?.reason || "This placement changes across the supported birth-time range and is excluded from the main synthesis.";
   } else if (candidate) {
     value = candidate;
     state = "Calculated candidate · not promoted";
@@ -76,7 +91,7 @@ function PlacementRow({
     stateClass = "text-[var(--sc-violet)]";
     explanation =
       label === "Sun"
-        ? "This Sun sign is available from the local date-based Foundation calculation. It can support symbolic reflection but is not labeled independently verified here."
+        ? "This is a local calendar Sun candidate only. It is excluded from personality synthesis until ephemeris evidence independently verifies it or proves it stable across the full supported time range."
         : "This value exists in saved profile data but does not carry the current verified placement contract, so it is not promoted as verified evidence.";
   }
 
@@ -201,7 +216,7 @@ export default function SystemsDetailsPage() {
                 <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                   {exactTimedInputs
                     ? "Moon and Ascendant candidates can be calculated from the saved inputs. If either remains unresolved below, the remaining problem is evidence/verification, not missing birth data."
-                    : "Moon/Rising stay unresolved when exact time, birth-place timezone, or coordinates are missing. Soul Codex does not manufacture the missing precision."}
+                    : "Missing inputs reduce scope rather than honesty. With a known birthplace timezone and unknown time, Soul Codex can run a full-day range analysis: invariant placements become stable-across-range evidence, changing placements stay conditional, and location/time-sensitive geometry remains unavailable until its required inputs exist."}
                 </p>
               </div>
             </div>
@@ -239,7 +254,7 @@ export default function SystemsDetailsPage() {
               <NumberRow label="Maturity" value={numerology.maturity} />
               <NumberRow label="Personal Year" value={numerology.personalYear} />
             </div>
-            <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path, Birthday, Expression, Soul Urge, Personality, and Maturity are stable deterministic inputs for the governed identity layer. Personal Year is a changing cycle and is kept out of the permanent Codex fingerprint.</p>
+            <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path and Birthday are deterministic from birth date. Expression, Soul Urge, Personality Number, and Maturity require the explicit full birth name and remain unavailable when it is missing. Personal Year is a date-based changing cycle and is kept out of the permanent Codex fingerprint.</p>
             <div className="mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 text-xs leading-6 text-[var(--sc-stone)]">
               <strong className="text-[var(--sc-ivory)]">Why another app might show a different Life Path:</strong> systems can differ in date normalization, reduction order, and treatment of master numbers. Soul Codex preserves 11, 22, and 33 where the current formula defines them instead of silently reducing them.
             </div>
