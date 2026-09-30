@@ -4,7 +4,6 @@ import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CloudOff, Compass, Crown, Infinity, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import DepthSoulGuide from "@/components/DepthSoulGuide";
-import UltimateCodexPanel from "@/components/UltimateCodexPanel";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
@@ -178,7 +177,24 @@ export default function OfflineProfilePage() {
           <div className="sc-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="sc-icon-well"><Compass className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div></div><p className="text-sm leading-7 text-[var(--sc-ivory-soft)]">{profile.dailyGuidance}</p><div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div></div>
         </section>
 
-        <UltimateCodexPanel synthesis={ultimateCodex} />
+        <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="underlying-systems-handoff">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-2 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[var(--sc-teal)]" />
+                <p className="sc-eyebrow m-0">Underlying systems</p>
+              </div>
+              <h2 className="font-serif text-2xl font-medium text-[var(--sc-ivory)]">Keep the main reading clear. Inspect the machinery when you want it.</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">
+                Codex ID, fingerprint, system coverage, verification ledgers, and unresolved technical details now live in the Systems inspector instead of interrupting the main narrative.
+              </p>
+            </div>
+            <Link href="/systems" className="sc-button-secondary shrink-0 self-start sm:self-auto">
+              View underlying systems
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </section>
 
         {verifiedHumanDesign && (
           <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="verified-human-design-panel">
