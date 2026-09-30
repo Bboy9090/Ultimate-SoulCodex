@@ -244,6 +244,7 @@ export default function LocalFirstInputForm() {
         id: profile.id,
         name: profile.name,
         codename: profile.name,
+        fullBirthName: profile.fullBirthName ?? undefined,
         birthDate: profile.birthDate,
         birthTime: profile.birthTime ?? undefined,
         birthLocation: profile.birthLocation,
