@@ -24,27 +24,53 @@ Raw input
 
 State may only be promoted by the calculation and verification layers. Interpretation and presentation may render state, but may not originate or upgrade it.
 
-## Required states
+## Canonical evidence states
 
-At minimum, systems must support:
+Every calculated or derived system value must resolve to exactly one of these user-facing evidence states:
 
-- `unresolved`
-- `pending_independent_verification`
-- `partial`
-- `verified`
+- `verified` — exact required input exists, the calculation completed, and the domain verification contract passed.
+- `stable_across_range` — one or more inputs are missing or uncertain, but an exhaustive supported range sweep shows the result is identical across every plausible value tested. This state may contribute to synthesis, but must retain range provenance and must never be relabeled verified.
+- `conditional` — multiple legitimate values occur across the supported uncertainty range. Conditional values may be displayed only as explicit branches with their time/input windows. They do not contribute to the main synthesis.
+- `unavailable` — required information is missing or the supported range cannot be evaluated completely. The value contributes nothing.
 
-Additional domain-specific states may be added, but none may silently collapse into `verified`.
+Lifecycle states such as `pending_independent_verification`, `calculated`, or `unresolved` may exist internally, but presentation and synthesis must map them into the four evidence states above. They may never silently collapse into `verified`.
 
-## Rules
+## Permanent rules
 
-1. A populated field is not automatically verified.
-2. Birth time and location do not by themselves verify Moon, Ascendant, houses, or Human Design.
-3. A profile-level label cannot override weaker placement-level evidence.
-4. AI synthesis must skip unresolved inputs or state their uncertainty explicitly.
-5. UI components may display verification state but cannot manufacture it.
-6. Fallbacks must be labeled and must never impersonate calculated truth.
-7. Verification requires evidence appropriate to the domain, including source, engine or method, and calculation timestamp when applicable.
-8. Regression tests must fail when uncertainty is promoted without evidence.
+1. Unknown information never becomes invented certainty.
+2. Missing birth time reduces scope; it does not authorize a default noon/midnight chart, a guessed Rising sign, or a fake Human Design result.
+3. When birth time is unknown and date/timezone are sufficient, Soul Codex performs a full supported 24-hour range analysis at minute resolution.
+4. A planetary sign that is identical across every tested birth minute may be used as `stable_across_range`. A planetary sign that changes must be `conditional` and expose each legitimate time window.
+5. Ascendant, houses, Midheaven, and other time-sensitive angles are never promoted from a guessed time. Possible Ascendants may be shown only as rectification branches.
+6. Rectification is evidence gathering, not certification. Behavioral resemblance can help test a time window but cannot upgrade chart state by itself.
+7. Human Design is evaluated component by component across the full supported range when birth time is unknown. Type, Strategy, Authority, Profile, Definition, Centers, Channels, Gates, and Incarnation Cross may be used only if that component is invariant across the entire range. Changing components remain conditional and excluded from synthesis.
+8. Date-based numerology (Life Path, Birthday Number, Personal Year, and other date-only values) may be calculated deterministically when the birth date is known. Name-based numerology (Expression/Destiny, Soul Urge, Personality, Maturity where name-dependent) is unavailable until the required full birth name exists.
+9. Missing birthplace never triggers a default city. Location-sensitive astronomy remains unavailable and the product asks for the nearest known city or coordinates.
+10. A profile-level confidence badge cannot override weaker field-level evidence.
+11. Interpretation and presentation may consume evidence state but may not originate or upgrade it.
+12. `verified` and `stable_across_range` may influence the main synthesis. `conditional` may only create labeled branches. `unavailable` contributes nothing.
+13. Psychological prose must inherit evidence scope. A verified or range-stable astronomical symbol may support symbolic interpretation, but it does not become verified psychology.
+14. Every incomplete reading should explain what remains available now and what additional input would unlock.
+15. Regression tests must fail when an unavailable or conditional value influences the main synthesis, when a stable-across-range value loses its provenance, or when a fallback/default input is silently inserted.
+
+## Required unknown-time flow
+
+```text
+Birth date known
++ birth time unknown
++ location/timezone sufficient
+
+→ calculate the complete supported 24-hour range
+→ identify invariant placements/components
+→ mark invariants stable_across_range
+→ identify changing placements/components
+→ mark changing values conditional
+→ expose branch windows for conditional values
+→ exclude conditional/unavailable values from main synthesis
+→ explain what exact birth time would unlock
+```
+
+If location/timezone is insufficient for a domain, that domain remains `unavailable`; Soul Codex does not invent a location or UTC offset.
 
 ## Applies to
 
