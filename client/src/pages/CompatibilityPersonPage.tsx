@@ -46,6 +46,48 @@ const DIMENSIONS = [
   { key: "growth", label: "Growth & repair", detail: "Friction, adaptation, recurring lessons, boundaries, and repair pressure." },
 ] as const;
 
+function dimensionPunchline(
+  key: (typeof DIMENSIONS)[number]["key"],
+  score: number,
+): string {
+  const high = score >= 80;
+  const medium = score >= 65;
+  const mixed = score >= 50;
+
+  const lines = {
+    romantic: high
+      ? "This connection wants steadiness, trust, and room to deepen."
+      : medium
+        ? "There is real relationship potential here, but it needs consistency."
+        : mixed
+          ? "The bond can work, but emotional rhythm may need negotiation."
+          : "This pairing may ask for more adjustment than ease.",
+    chemistry: high
+      ? "The pull is immediate. The question is whether intensity can stay grounded."
+      : medium
+        ? "There is noticeable attraction without needing constant friction."
+        : mixed
+          ? "Chemistry may come in waves instead of staying constant."
+          : "Attraction may need context, timing, or shared experience to build.",
+    mentalFriendship: high
+      ? "Conversation can move fast here without losing the thread."
+      : medium
+        ? "You can usually find common ground if both people stay curious."
+        : mixed
+          ? "Communication may click in some areas and miss in others."
+          : "Different mental rhythms may require more translation than usual.",
+    growth: high
+      ? "This connection can challenge both people without automatically destabilizing them."
+      : medium
+        ? "There is useful friction here if repair stays mutual."
+        : mixed
+          ? "Growth is possible, but recurring pressure points may need explicit repair."
+          : "This pairing may expose hard lessons faster than either person prefers.",
+  } as const;
+
+  return lines[key];
+}
+
 function profileName(profile: any) {
   return profile?.name || profile?.firstName || profile?.codename || "Your saved Identity";
 }
@@ -263,7 +305,7 @@ export default function CompatibilityPersonPage() {
                 <section className="sc-panel sc-panel-gold p-6">
                   <div className="sc-eyebrow">Symbolic comparison</div>
                   <h2 className="mt-3 font-serif text-3xl font-semibold">{result.person.name} · {result.person.sunSign}</h2>
-                  {result.evidenceLabel ? <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{result.evidenceLabel}</p> : null}
+                  <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">Four independent signals. No single score gets to define the relationship.</p>
                 </section>
 
                 <section className="grid gap-3 sm:grid-cols-2" aria-label="Compatibility dimensions">
@@ -275,7 +317,8 @@ export default function CompatibilityPersonPage() {
                           {dimensionScores[dimension.key]}
                         </span>
                       </div>
-                      <p className="mb-0 mt-3 text-sm leading-6 text-[var(--sc-stone)]">{dimension.detail}</p>
+                      <p className="mb-0 mt-3 text-base leading-7 text-[var(--sc-ivory-soft)]">{dimensionPunchline(dimension.key, dimensionScores[dimension.key])}</p>
+                      <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{dimension.detail}</p>
                     </article>
                   ))}
                 </section>
@@ -284,7 +327,7 @@ export default function CompatibilityPersonPage() {
                   <section className="sc-panel p-6">
                     <div className="sc-eyebrow">Pattern to inspect</div>
                     <h2 className="mt-3 font-serif text-3xl font-semibold">{result.interpretation.headline}</h2>
-                    <p className="mt-4 leading-7 text-[var(--sc-stone)]">{result.interpretation.why}</p>
+                    <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--sc-ivory-soft)]">{result.interpretation.why}</p>
                     {result.interpretation.tension ? (
                       <div className="mt-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
                         <strong className="text-amber-400">Watch point</strong>

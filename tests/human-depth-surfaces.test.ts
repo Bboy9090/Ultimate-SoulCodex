@@ -43,7 +43,11 @@ describe("Human Depth interpretation surfaces", () => {
     expect(person).toContain("Pattern to inspect");
     expect(person).toContain("Watch point");
     expect(person).toContain("EvidenceLimitations");
-    expect(evidence).toContain("Evidence & limitations");
+    expect(evidence).toContain("View Evidence Trace");
+    expect(person).toContain("dimensionPunchline");
+    expect(person).toContain("The pull is immediate");
+    expect(person).toContain("Conversation can move fast");
+    expect(person).toContain("Four independent signals. No single score gets to define the relationship.");
     expect(person).not.toContain("overallScore");
   });
 
