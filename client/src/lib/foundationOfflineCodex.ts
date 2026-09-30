@@ -273,7 +273,7 @@ export function generateFoundationOfflineCodexProfile(
   const archetypeData = archetypeFor(sunSign, lifePath, expression, soulUrge);
   archetypeData.description = `Local calendar Sun candidate: ${sunSign}. This candidate is not allowed to drive identity synthesis until online ephemeris evidence verifies it or proves it stable across the full unknown-time range. ${archetypeData.description}`;
 
-  const numerologyData = {
+  const numerologyData: OfflineCodexProfile["numerologyData"] = {
     lifePath,
     birthday,
     expression,
@@ -1136,10 +1136,10 @@ export function synthesizeVerifiedFoundationProfile(
     ...(pathPattern
       ? [makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100)]
       : []),
-    ...(expressionPattern
+    ...(expression !== null && expressionPattern
       ? [makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 96)]
       : []),
-    ...(soulUrgePattern
+    ...(soulUrge !== null && soulUrgePattern
       ? [makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 95)]
       : []),
     verifiedPlacementSeed({
