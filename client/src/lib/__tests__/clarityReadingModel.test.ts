@@ -247,7 +247,9 @@ describe("clarityReadingModel", () => {
         relationshipImpact: { summary: "You may help before asking whether help is wanted." },
         action: { summary: "Ask one direct question before solving the problem." },
       },
-      numerologyData: { lifePath: 9, expression: 4, soulUrge: 5 },
+      birthDate: "1990-09-17",
+      fullBirthName: "Paul Ray",
+      numerologyData: { lifePath: 44, expression: 99, soulUrge: 99 },
     });
 
     expect(model.title).toBe("The Quiet Guardian");
@@ -272,8 +274,10 @@ describe("clarityReadingModel", () => {
 
   it("turns Expression 1 and Soul Urge 6 into a visible independence-versus-responsibility tension", () => {
     const model = buildClarityReadingModel({
+      birthDate: "1990-09-17",
+      fullBirthName: "Jax White",
       astrologyData: { sunSign: "Virgo" },
-      numerologyData: { lifePath: 9, expression: 1, soulUrge: 6 },
+      numerologyData: { lifePath: 44, expression: 99, soulUrge: 99 },
       depthInterpretation: {
         claritySummary: { summary: "Precision and service are prominent symbolic themes." },
         behavior: { summary: "You tend to look for the weak link before you commit." },
