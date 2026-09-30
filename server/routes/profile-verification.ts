@@ -199,9 +199,20 @@ export function registerProfileVerificationRoutes(app: Express) {
           latitude: parsed.data.latitude,
           longitude: parsed.data.longitude,
         });
+        const componentStates = humanDesignRange.components
+          ? Object.values(humanDesignRange.components).map((component) => component.evidenceState)
+          : [];
+        const humanDesignEvidenceState =
+          componentStates.length === 0
+            ? "unavailable"
+            : componentStates.every((state) => state === "stable_across_range")
+              ? "stable_across_range"
+              : componentStates.some((state) => state === "conditional")
+                ? "conditional"
+                : "unavailable";
         humanDesignData = {
           status: "range_analyzed",
-          evidenceState: "conditional",
+          evidenceState: humanDesignEvidenceState,
           components: humanDesignRange.components,
           reason: humanDesignRange.reason ??
             "Only Human Design components stable across every possible birth minute may be used; conditional components remain excluded from synthesis.",
@@ -275,6 +286,23 @@ export function registerProfileVerificationRoutes(app: Express) {
               astrology: astrologyRange,
               humanDesign: humanDesignRange,
             },
+        evidenceModel: {
+          states: ["verified", "stable_across_range", "conditional", "unavailable"],
+          synthesisRules: {
+            verified: "use",
+            stable_across_range: "use_with_range_provenance",
+            conditional: "branch_only",
+            unavailable: "exclude",
+          },
+        },
+        unlocks: [
+          ...(!exactBirthTime
+            ? ["Add an exact birth time to collapse conditional branches and unlock exact degrees, Ascendant, houses, Midheaven, and time-sensitive Human Design components."]
+            : []),
+          ...(parsed.data.latitude === undefined || parsed.data.longitude === undefined
+            ? ["Add the nearest known birth city or coordinates to unlock location-sensitive astronomy. Soul Codex will not insert a default birthplace."]
+            : []),
+        ],
         updatedAt,
         processing: {
           persistedProfile: false,
