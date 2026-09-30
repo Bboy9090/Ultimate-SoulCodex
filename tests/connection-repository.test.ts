@@ -49,7 +49,8 @@ test("birthday derives concrete Sun sign data for saved people", () => {
   assert.equal(person.sunSign, "Virgo");
   assert.equal(connectionComparableSunSign(person), "Virgo");
   assert.equal(hasComparableConnectionData(person), true);
-  assert.equal(deriveConnectionSunSignFromBirthDate("1987-01-19"), "Capricorn");
+  assert.equal(deriveConnectionSunSignFromBirthDate("1987-01-19"), undefined);
+  assert.equal(deriveConnectionSunSignFromBirthDate("1990-09-17"), "Virgo");
   assert.throws(() => deriveConnectionSunSignFromBirthDate("1990-02-31"), RangeError);
 });
 
@@ -178,13 +179,15 @@ test("people profile summaries stay evidence-bound instead of generic", () => {
   assert.match(contactSummary, /Add a birthday or a known Sun placement/);
 });
 
-test("people profile summaries do not invent missing time-sensitive systems", () => {
+test("people profile summaries do not invent missing time-sensitive systems or ingress-day Sun certainty", () => {
   const [person] = parseConnections(JSON.stringify({
     version: 1,
     connections: [{ id: "1", name: "Date Only", birthDate: "1987-01-19", createdAt: "now", updatedAt: "now" }],
   }));
   const summary = connectionProfileSummary(person);
-  assert.match(summary, /Capricorn Sun from birthday 1987-01-19/);
-  assert.match(summary, /Moon, Rising, houses, Human Design, and other time-sensitive systems stay unavailable/);
+  assert.equal(person.sunSign, undefined);
+  assert.equal(hasComparableConnectionData(person), false);
+  assert.match(summary, /saved as a contact only/);
+  assert.doesNotMatch(summary, /Capricorn Sun|Aquarius Sun/);
   assert.doesNotMatch(summary, /deeply intuitive|old soul|unique individual|the universe|destined|scientifically proves/i);
 });
