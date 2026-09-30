@@ -463,7 +463,7 @@ export function reconcileOfflineProfile(
   const mergedLocal: OfflineCodexProfile = {
     ...local,
     numerologyData,
-    humanDesignData: hasVerifiedHumanDesignTrust(remote.humanDesignData)
+    humanDesignData: remote.humanDesignData && typeof remote.humanDesignData === "object"
       ? remote.humanDesignData
       : local.humanDesignData,
   };
@@ -483,7 +483,7 @@ export function reconcileOfflineProfile(
   return {
     ...local,
     numerologyData,
-    humanDesignData: hasVerifiedHumanDesignTrust(remote.humanDesignData)
+    humanDesignData: remote.humanDesignData && typeof remote.humanDesignData === "object"
       ? remote.humanDesignData
       : local.humanDesignData,
     archetypeData:
