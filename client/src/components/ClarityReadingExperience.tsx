@@ -35,6 +35,7 @@ type FitMap = Record<string, ReadingFit | undefined>;
 const confidenceClass: Record<ClarityConfidence, string> = {
   verified: "border-[rgba(114,216,197,.25)] bg-[rgba(114,216,197,.1)] text-[#bdeee0]",
   deterministic: "border-[rgba(100,151,217,.25)] bg-[rgba(100,151,217,.1)] text-[#bcd8f5]",
+  stable: "border-[rgba(217,182,111,.28)] bg-[rgba(217,182,111,.08)] text-[var(--sc-gold-bright)]",
   supported: "border-[rgba(154,116,220,.25)] bg-[rgba(154,116,220,.1)] text-[#d6c8f5]",
   tentative: "border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.1)] text-[#ead9b9]",
   unavailable: "border-[var(--sc-line)] bg-white/5 text-[var(--sc-stone)]",
