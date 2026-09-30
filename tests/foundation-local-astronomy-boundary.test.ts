@@ -33,9 +33,10 @@ test("known birth time does not authorize fabricated local Moon, Rising, planets
   assert.equal(profile.astrologyData.chiron, null);
 
   const serialized = evidenceIds(profile);
-  assert.match(serialized, /offline\.astrology\.sun/);
+  assert.doesNotMatch(serialized, /offline\.astrology\.sun/);
   assert.doesNotMatch(serialized, /offline\.astrology\.moon/);
   assert.doesNotMatch(serialized, /offline\.astrology\.rising/);
+  assert.match(serialized, /Sun sign candidate .* excluded from synthesis/);
   assert.match(serialized, /Moon sign is unavailable in local mode/);
   assert.match(serialized, /Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable/);
 });
@@ -68,4 +69,21 @@ test("production create and Identity surfaces use the Foundation-safe path and n
   // The legacy component still exists for archival/refactor purposes, so guard
   // the production router from ever importing it while it contains sample math.
   assert.match(chartSource, /Math\.random\(\)/);
+});
+
+
+test("missing full birth name leaves name-based numerology unavailable instead of using display name", () => {
+  const profile = generateFoundationOfflineCodexProfile(
+    { ...baseInput, birthTime: "" },
+    { id: "local-no-birth-name", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
+  );
+
+  assert.equal(profile.numerologyData.lifePath, 9);
+  assert.equal(profile.numerologyData.birthday, 8);
+  assert.equal(profile.numerologyData.expression, null);
+  assert.equal(profile.numerologyData.soulUrge, null);
+  assert.equal(profile.numerologyData.personality, null);
+  assert.equal(profile.numerologyData.maturity, null);
+  assert.equal(profile.numerologyData.evidenceStates.expression, "unavailable");
+  assert.doesNotMatch(JSON.stringify(profile.depthInterpretation), /offline\.numerology\.expression/);
 });
