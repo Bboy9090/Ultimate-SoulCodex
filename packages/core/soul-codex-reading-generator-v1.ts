@@ -117,44 +117,53 @@ function buildAstrologyOutput(
     };
   }
 
-  // For estimated_birth_window: show range or possibilities
+  // Legacy estimated-window payloads cannot represent the canonical
+  // verified/stable/conditional/unavailable state model. Do not promote their
+  // single-value Moon/Rising fields. The supported unknown-time range engine is
+  // responsible for explicit branches and stable-across-range placements.
   if (ephemeris.status === "estimated_birth_window") {
     return {
       status: "estimated_birth_window",
-      sunSign: ephemeris.sunSign,
-      sunDegree: ephemeris.sunDegree,
-      moonSign: ephemeris.moonSign || "",
-      moonDegree: ephemeris.moonDegree || 0,
-      ascendant: ephemeris.ascendant,
-      ascendantDegree: ephemeris.ascendantDegree,
-      remark: ephemeris.remark || "Moon/Ascendant dependent on exact birth time",
+      sunSign: "",
+      sunDegree: 0,
+      moonSign: "",
+      moonDegree: 0,
+      ascendant: undefined,
+      ascendantDegree: undefined,
+      houses: undefined,
+      remark: "Legacy estimated-window data is excluded from synthesis. Use the full-day range verifier to expose stable placements and conditional branches.",
     };
   }
 
-  // For date_only: only Sun is reliable
+  // A naked date-only Sun cannot prove that the Sun stayed in one sign across
+  // the full civil day, especially on ingress dates. This legacy contract lacks
+  // range provenance, so it cannot populate certified chart data.
   if (ephemeris.status === "date_only") {
     return {
       status: "date_only",
-      sunSign: ephemeris.sunSign,
-      sunDegree: ephemeris.sunDegree,
-      moonSign: "", // Do not guess
+      sunSign: "",
+      sunDegree: 0,
+      moonSign: "",
       moonDegree: 0,
-      ascendant: undefined, // Do not guess
-      remark: "Birth time required for Moon and Ascendant",
+      ascendant: undefined,
+      houses: undefined,
+      remark: "Date-only legacy input is not synthesis-eligible. Use the full-day range verifier to certify stable placements and branch changing ones.",
     };
   }
 
-  // Legacy approximation is the lowest fallback
+  // Legacy approximations are retained only for migration/inspection. They never
+  // populate certified chart data or synthesis.
   if (ephemeris.status === "legacy_approximation") {
     return {
       status: "legacy_approximation",
-      sunSign: ephemeris.sunSign,
-      sunDegree: ephemeris.sunDegree,
-      moonSign: ephemeris.moonSign || "",
-      moonDegree: ephemeris.moonDegree || 0,
-      ascendant: ephemeris.ascendant,
-      ascendantDegree: ephemeris.ascendantDegree,
-      remark: "Calculated from birth date only using simplified formula. Birth time discovery recommended.",
+      sunSign: "",
+      sunDegree: 0,
+      moonSign: "",
+      moonDegree: 0,
+      ascendant: undefined,
+      ascendantDegree: undefined,
+      houses: undefined,
+      remark: "Legacy approximation excluded from synthesis. No default noon, midnight, location, Moon, Rising, or house value is promoted.",
     };
   }
 
@@ -185,16 +194,21 @@ export function generateSoulCodexReadingV1(input: RawAnalysisInput): SoulCodexRe
   // Build verified systems
   const verifiedSystems: VerifiedSystems = {
     astrology: astrologyOutput,
-    numerology: input.numerology,
-    humanDesign: input.humanDesign,
+    numerology: input.numerology
+      ? {
+          lifePathNumber: input.numerology.lifePathNumber,
+          birthdayNumber: input.numerology.birthdayNumber,
+        }
+      : undefined,
+    // Raw Phase-1 Human Design inputs carry no verification receipt and cannot
+    // prove stability across an unknown-time range. Keep them out of synthesis.
+    humanDesign: undefined,
   };
 
   // Confidence level based on data completeness
   let confidence: "high" | "moderate" | "low" = "low";
   if (astrologyOutput.status === "verified_ephemeris") {
     confidence = "high";
-  } else if (astrologyOutput.status === "estimated_birth_window") {
-    confidence = "moderate";
   }
 
   // Build reading stub (interpretations come after verification)
