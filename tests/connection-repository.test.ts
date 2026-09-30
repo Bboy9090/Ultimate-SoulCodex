@@ -187,7 +187,8 @@ test("people profile summaries do not invent missing time-sensitive systems or i
   const summary = connectionProfileSummary(person);
   assert.equal(person.sunSign, undefined);
   assert.equal(hasComparableConnectionData(person), false);
-  assert.match(summary, /saved as a contact only/);
+  assert.match(summary, /Sun sign is unresolved/);
+  assert.match(summary, /Add birth time plus timezone\/location/);
   assert.doesNotMatch(summary, /Capricorn Sun|Aquarius Sun/);
   assert.doesNotMatch(summary, /deeply intuitive|old soul|unique individual|the universe|destined|scientifically proves/i);
 });
