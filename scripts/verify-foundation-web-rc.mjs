@@ -15,6 +15,7 @@ const files = {
   localFirst: read("client/src/pages/local-first-input-form.tsx"),
   offlineProfile: read("client/src/pages/offline-profile.tsx"),
   foundationOffline: read("client/src/lib/foundationOfflineCodex.ts"),
+  unknownTimeRange: read("server/services/unknown-time-range.ts"),
   verificationRoute: read("server/routes/profile-verification.ts"),
   schema: read("shared/schema.ts"),
   billing: read("server/billing.ts"),
@@ -155,7 +156,19 @@ check(
     files.foundationOffline.includes("planets: {}") &&
     files.foundationOffline.includes("houses: []") &&
     files.foundationOffline.includes("aspects: []") &&
-    files.foundationOffline.includes("Moon, Rising, planets, houses, aspects, nodes, and Chiron are deliberately absent rather than approximated."),
+    files.foundationOffline.includes("calendar Sun candidate") &&
+    files.foundationOffline.includes("excluded from personality synthesis"),
+);
+check(
+  "TRUTH-RANGE-01",
+  "Unknown-time verification uses a complete minute-resolution range model with branch-only conditional evidence",
+  files.unknownTimeRange.includes("minute < 1440") &&
+    files.unknownTimeRange.includes('evidenceState: "stable_across_range"') &&
+    files.unknownTimeRange.includes('evidenceState: "conditional"') &&
+    files.unknownTimeRange.includes("testedValues: values.length") &&
+    files.unknownTimeRange.includes("Houses require an exact birth time") &&
+    files.foundationOffline.includes("fullBirthName") &&
+    files.foundationOffline.includes("Name-based numerology is unavailable"),
 );
 check(
   "TRUTH-02",
