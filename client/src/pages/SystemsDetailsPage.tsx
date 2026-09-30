@@ -100,6 +100,14 @@ function PlacementRow({
         <span className={`text-xs font-semibold ${stateClass}`}>{state}</span>
       </div>
       <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">{explanation}</p>
+      {placement?.evidenceState === "conditional" && Array.isArray(placement.conditionalValues) && placement.conditionalValues.length > 0 && (
+        <div className="mt-2 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] px-3 py-2 text-[11px] leading-5 text-amber-100/80">
+          <strong>Rectification branches:</strong>{" "}
+          {placement.conditionalValues.map((branch) =>
+            `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`
+          ).join(" · ")}
+        </div>
+      )}
       {candidate && typeof placement?.internalCandidate?.longitude === "number" && (
         <p className="mt-2 text-[11px] text-[var(--sc-stone)]">
           Candidate longitude: {placement.internalCandidate.longitude.toFixed(4)}°
@@ -302,8 +310,20 @@ export default function SystemsDetailsPage() {
                 )}
                 {conditionalHdEntries.length > 0 && (
                   <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.035] p-4 text-xs leading-6 text-[var(--sc-stone)]">
-                    <strong className="text-[var(--sc-ivory)]">Conditional until birth time:</strong>{" "}
-                    {conditionalHdEntries.map(([key]) => key.replace(/([A-Z])/g, " $1")).join(", ")}.
+                    <strong className="text-[var(--sc-ivory)]">Conditional until birth time · branch-only:</strong>
+                    <div className="mt-2 space-y-2">
+                      {conditionalHdEntries.map(([key, value]: any) => (
+                        <div key={key}>
+                          <span className="font-semibold capitalize text-[var(--sc-ivory-soft)]">{key.replace(/([A-Z])/g, " $1")}:</span>{" "}
+                          {Array.isArray(value?.conditionalValues) && value.conditionalValues.length
+                            ? value.conditionalValues.map((branch: any) =>
+                                `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`
+                              ).join(" · ")
+                            : "Changes across the supported day."}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-2">These windows are rectification evidence, not certified Human Design data, and do not enter the main synthesis.</p>
                   </div>
                 )}
               </div>
