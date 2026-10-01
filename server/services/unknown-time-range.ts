@@ -58,13 +58,13 @@ type RangeValueRow<T> = {
   utcOffsetMinutes: number | null;
 };
 
-type CivilInstantSample = {
+export type CivilInstantSample = {
   minute: number;
   utcIso: string;
   utcOffsetMinutes: number | null;
 };
 
-type CivilInstantPlan = {
+export type CivilInstantPlan = {
   samples: CivilInstantSample[];
   validLocalMinutes: number;
   nonexistentLocalMinutes: number;
@@ -72,7 +72,7 @@ type CivilInstantPlan = {
   invalidLocalMinutes: number;
 };
 
-function enumerateCivilInstants(birthDate: string, timezone: string): CivilInstantPlan {
+export function enumerateCivilInstants(birthDate: string, timezone: string): CivilInstantPlan {
   const samples: CivilInstantSample[] = [];
   let validLocalMinutes = 0;
   let nonexistentLocalMinutes = 0;
