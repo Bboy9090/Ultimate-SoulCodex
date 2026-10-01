@@ -9,7 +9,7 @@ export const NUMEROLOGY_POLICY = Object.freeze({
   vowels: 'AEIOU',
   yPolicy: 'consonant' as const,
   lifePathFormula: 'birth month + birth day + birth year, then digit-reduce while preserving 11/22/33',
-  nameNormalization: 'Unicode NFKD transliteration to A-Z before Pythagorean letter mapping',
+  nameNormalization: 'Latin-script normalization to A-Z; unsupported letters require an explicit Latin transliteration before Pythagorean mapping',
 });
 
 export type NumerologyReduction = {
@@ -83,16 +83,52 @@ const PRE_NORMALIZATION_TRANSLITERATION: Readonly<Record<string, string>> = Obje
  * Normalize a human name to the canonical A-Z stream used for numerology.
  * Diacritics and punctuation do not silently change letter values.
  */
-export function normalizeNumerologyName(fullName: string): string {
+export interface NumerologyNameAnalysis {
+  normalized: string;
+  unsupportedLetters: string[];
+}
+
+export function analyzeNumerologyName(fullName: string): NumerologyNameAnalysis {
   const transliterated = [...fullName]
     .map((character) => PRE_NORMALIZATION_TRANSLITERATION[character] ?? character)
     .join('');
 
-  return transliterated
+  const decomposed = transliterated
     .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase()
-    .replace(/[^A-Z]/g, '');
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const unsupportedLetters = [...new Set(
+    [...decomposed].filter(
+      (character) => /\p{L}/u.test(character) && !/[A-Za-z]/.test(character),
+    ),
+  )];
+
+  return {
+    normalized: decomposed.toUpperCase().replace(/[^A-Z]/g, ''),
+    unsupportedLetters,
+  };
+}
+
+export function normalizeNumerologyName(fullName: string): string {
+  return analyzeNumerologyName(fullName).normalized;
+}
+
+export function isNumerologyNameSupported(fullName: string): boolean {
+  const analysis = analyzeNumerologyName(fullName);
+  return analysis.normalized.length > 0 && analysis.unsupportedLetters.length === 0;
+}
+
+function requireSupportedNumerologyName(fullName: string): string {
+  const analysis = analyzeNumerologyName(fullName);
+  if (analysis.unsupportedLetters.length > 0) {
+    throw new RangeError(
+      'Name contains letters outside the configured Latin Pythagorean mapping; provide an explicit Latin transliteration',
+    );
+  }
+  if (!analysis.normalized) {
+    throw new RangeError('Name must contain at least one supported Latin letter');
+  }
+  return analysis.normalized;
 }
 
 function getLetterValue(letter: string): number {
@@ -100,7 +136,7 @@ function getLetterValue(letter: string): number {
 }
 
 function sumNameLetters(fullName: string, include: (letter: string) => boolean): number {
-  return [...normalizeNumerologyName(fullName)]
+  return [...requireSupportedNumerologyName(fullName)]
     .filter(include)
     .reduce((total, letter) => total + getLetterValue(letter), 0);
 }
