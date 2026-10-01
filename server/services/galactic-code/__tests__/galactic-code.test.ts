@@ -392,6 +392,20 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
   });
 
+
+  await t.test('changed verified Human Design channels change fingerprint', () => {
+    const changedInput: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: {
+        ...testInput.humanDesign,
+        channels: ['Channel 57-20'],
+      },
+    };
+
+    const result = generateGalacticCode(changedInput, TRUSTED);
+    assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
+  });
+
   await t.test('changed Authority produces different fingerprint', () => {
     const changedInput: GalacticCodeInput = {
       ...testInput,
