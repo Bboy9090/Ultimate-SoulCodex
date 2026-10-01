@@ -245,6 +245,11 @@ export function registerProfileVerificationRoutes(app: Express) {
           }
 
           const inputTimestampUtc = civilTime.utc.toISOString();
+          const utcOffsetMinutes = civilTime.candidateUtcOffsetsMinutes[0];
+          if (!Number.isFinite(utcOffsetMinutes)) {
+            throw new Error("human_design_timezone_offset_missing");
+          }
+
           const trust = createVerifiedHumanDesignTrustRecord({
             birthTimeKnown: true,
             inputTimestampUtc,
@@ -254,6 +259,12 @@ export function registerProfileVerificationRoutes(app: Express) {
               strategy: humanDesign.strategy,
               authority: humanDesign.authority,
               profile: humanDesign.profile,
+            },
+            timeConversion: {
+              timezone: civilTime.timezone,
+              utcOffsetMinutes,
+              conversionMethod: civilTime.conversionMethod,
+              runtimeTzdbVersion: civilTime.runtimeTzdbVersion,
             },
           });
           if (trust.status !== "verified") {
@@ -279,6 +290,7 @@ export function registerProfileVerificationRoutes(app: Express) {
             independentSource: trust.independentSource,
             verifiedAt: trust.verifiedAt,
             limitations: trust.limitations,
+            timeConversion: trust.timeConversion,
           };
         }
       }
