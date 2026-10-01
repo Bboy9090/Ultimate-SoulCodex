@@ -115,6 +115,7 @@ export class MemStorage implements IStorage {
       id: randomUUID(),
       userId: insertProfile.userId ?? null,
       sessionId: insertProfile.sessionId ?? null,
+      fullBirthName: insertProfile.fullBirthName ?? null,
       birthTime: insertProfile.birthTime ?? null,
       birthLocation: insertProfile.birthLocation ?? null,
       timezone: insertProfile.timezone ?? null,
