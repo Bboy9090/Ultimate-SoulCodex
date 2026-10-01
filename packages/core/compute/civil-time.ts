@@ -1,4 +1,4 @@
-import { formatInTimeZone, fromZonedTime, getTimezoneOffset } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 export type CivilTimeStatus = 'valid' | 'nonexistent' | 'ambiguous' | 'invalid';
 
@@ -69,8 +69,16 @@ function sameWallClock(utc: Date, timezone: string, localTimestamp: string): boo
   return formatInTimeZone(utc, timezone, LOCAL_PATTERN) === localTimestamp;
 }
 
+function parseOffsetMinutes(value: string): number {
+  if (value === 'Z') return 0;
+  const match = /^([+-])(\d{2}):(\d{2})$/.exec(value);
+  if (!match) throw new RangeError('timezone_offset_unparseable');
+  const sign = match[1] === '-' ? -1 : 1;
+  return sign * (Number(match[2]) * 60 + Number(match[3]));
+}
+
 function offsetMinutes(timezone: string, instant: Date): number {
-  return getTimezoneOffset(timezone, instant) / 60_000;
+  return parseOffsetMinutes(formatInTimeZone(instant, timezone, 'XXX'));
 }
 
 export function resolveCivilTimeStrict(
@@ -124,21 +132,21 @@ export function resolveCivilTimeStrict(
     const observedOffsets = new Set<number>();
     for (const hours of probeHours) {
       observedOffsets.add(
-        getTimezoneOffset(
+        offsetMinutes(
           timezone,
           new Date(primary.getTime() + hours * 60 * 60 * 1000),
         ),
       );
     }
 
-    const primaryOffset = getTimezoneOffset(timezone, primary);
+    const primaryOffsetMinutes = offsetMinutes(timezone, primary);
     const matches = new Map<number, Date>();
     matches.set(primary.getTime(), primary);
 
-    for (const observedOffset of observedOffsets) {
-      const delta = primaryOffset - observedOffset;
-      if (delta === 0) continue;
-      const alternate = new Date(primary.getTime() + delta);
+    for (const observedOffsetMinutes of observedOffsets) {
+      const deltaMinutes = primaryOffsetMinutes - observedOffsetMinutes;
+      if (deltaMinutes === 0) continue;
+      const alternate = new Date(primary.getTime() + deltaMinutes * 60_000);
       if (sameWallClock(alternate, timezone, localTimestamp)) {
         matches.set(alternate.getTime(), alternate);
       }
