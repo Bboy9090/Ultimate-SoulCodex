@@ -15,18 +15,14 @@ import { createGalacticFingerprint } from './fingerprint';
 import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
 import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
-
-
-const ZODIAC_SIGNS = new Set([
-  'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
-  'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
-]);
+import {
+  canonicalNumberPattern,
+  canonicalSignPattern,
+} from '../../../shared/symbolic-vocabulary';
 
 const HUMAN_DESIGN_TYPES = new Set([
   'manifestor', 'generator', 'manifesting generator', 'projector', 'reflector',
 ]);
-
-const NUMEROLOGY_VALUES = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33]);
 
 function canonicalText(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -36,7 +32,7 @@ function canonicalText(value: unknown): string | null {
 
 function canonicalSign(value: unknown): string | undefined {
   const normalized = canonicalText(value);
-  return normalized && ZODIAC_SIGNS.has(normalized) ? normalized : undefined;
+  return normalized && canonicalSignPattern(normalized) ? normalized : undefined;
 }
 
 function canonicalHumanDesignType(value: unknown): string | undefined {
@@ -53,7 +49,9 @@ function canonicalProfile(value: unknown): string | undefined {
 function canonicalNumerologyValue(value: unknown): number | undefined {
   if (typeof value === 'string' && !/^\d+$/.test(value.trim())) return undefined;
   const numeric = typeof value === 'number' ? value : Number(value);
-  return Number.isInteger(numeric) && NUMEROLOGY_VALUES.has(numeric) ? numeric : undefined;
+  return Number.isInteger(numeric) && canonicalNumberPattern(numeric)
+    ? numeric
+    : undefined;
 }
 
 function filterCanonical(values: string[] | undefined, allowed: ReadonlySet<string>): string[] | undefined {
