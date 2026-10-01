@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import { calculateActiveTransits, extractNatalPositions, type Transit } from '../transits';
+import { calculateActiveTransits, type Transit } from '../transits';
 import type { Profile } from '../shared/schema';
 import { sendToUser, type PushNotificationPayload } from '../push-notifications';
 import { storage } from '../storage';
@@ -13,6 +13,37 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { parseDateOnly, resolveCivilTimeStrict } from '@soulcodex/core';
 
 const MAX_UPCOMING_NOTIFICATION_DAYS = 366;
+
+function verifiedPlacement(value: any): { longitude: number; sign: string } | null {
+  if (!value || typeof value !== 'object') return null;
+  const status = value.verificationStatus ?? value.status;
+  const evidence = value.provenance ?? value.evidence;
+  if (status !== 'verified') return null;
+  if (!evidence?.source || !evidence?.engine || !evidence?.calculatedAt) return null;
+  if (!Number.isFinite(value.longitude) || typeof value.sign !== 'string' || !value.sign.trim()) {
+    return null;
+  }
+  return { longitude: value.longitude, sign: value.sign };
+}
+
+export function extractVerifiedTransitNatalPositions(
+  astrologyData: any,
+): Record<string, { longitude: number; sign: string }> {
+  const positions: Record<string, { longitude: number; sign: string }> = {};
+
+  for (const [planet, value] of Object.entries(astrologyData?.planets ?? {})) {
+    const verified = verifiedPlacement(value);
+    if (!verified) continue;
+    positions[planet.charAt(0).toUpperCase() + planet.slice(1)] = verified;
+  }
+
+  for (const [label, key] of [['Ascendant', 'ascendant'], ['Midheaven', 'midheaven']] as const) {
+    const verified = verifiedPlacement(astrologyData?.[key]);
+    if (verified) positions[label] = verified;
+  }
+
+  return positions;
+}
 
 function notificationTimezone(profile: Profile): string {
   const timezone =
@@ -71,7 +102,7 @@ export async function checkAndNotifySignificantTransits(
   userId: string
 ): Promise<number> {
   const astrologyData = profile.astrologyData as any;
-  const natalPlanets = extractNatalPositions(astrologyData);
+  const natalPlanets = extractVerifiedTransitNatalPositions(astrologyData);
   const today = new Date();
   const activeTransits = calculateActiveTransits(natalPlanets, today);
 
@@ -251,7 +282,7 @@ export async function getUpcomingTransitNotifications(
   }
 
   const astrologyData = profile.astrologyData as any;
-  const natalPlanets = extractNatalPositions(astrologyData);
+  const natalPlanets = extractVerifiedTransitNatalPositions(astrologyData);
   const timezone = notificationTimezone(profile);
   const todayISO = formatInTimeZone(new Date(), timezone, 'yyyy-MM-dd');
   const startOrdinal = dateOnlyOrdinal(todayISO);
