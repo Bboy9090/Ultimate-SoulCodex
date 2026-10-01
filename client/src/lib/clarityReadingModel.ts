@@ -63,7 +63,7 @@ const FALLBACKS = {
   visiblePattern:
     "Notice the behavior that appears first under pressure. That visible move is useful evidence, but it is not the whole person.",
   protectiveFunction:
-    "Ask what the pattern prevents, preserves, or helps you avoid. Protection explains the behavior without excusing its cost.",
+    "No protective function is established from the current behavioral evidence. Symbolic systems may suggest reflection prompts, but they do not verify what you are protecting.",
   gift:
     "The gift is not the automatic pattern itself. It is the deliberate skill that remains after fear, performance, and overuse are removed.",
   cost:
@@ -321,6 +321,24 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     archetype.description,
   ) ?? "The available profile contains calculated and symbolic signals that should be tested against lived experience rather than treated as fixed identity.";
 
+  const depthEvidence = Array.isArray(depth.evidence) ? depth.evidence as AnyRecord[] : [];
+  const protectiveEvidenceIds = Array.isArray(depth.protectiveFunction?.evidenceIds)
+    ? depth.protectiveFunction.evidenceIds.filter((value: unknown): value is string => typeof value === "string")
+    : [];
+  const behavioralEvidenceIds = new Set(
+    depthEvidence
+      .filter((entry) =>
+        entry &&
+        typeof entry === "object" &&
+        ["user-stated", "mirror", "tracker"].includes(String(entry.system))
+      )
+      .map((entry) => String(entry.id ?? ""))
+      .filter(Boolean),
+  );
+  const protectiveBehavioralSupport =
+    depth.protectiveFunction?.claimKind === "observed" ||
+    protectiveEvidenceIds.some((id: string) => behavioralEvidenceIds.has(id));
+
   const baseVisible = firstSupportedText(
     sectionText(depth.visiblePattern),
     sectionText(depth.behavior),
@@ -328,12 +346,9 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     archetype.strengths?.[0],
     archetype.gifts?.[0],
   ) ?? FALLBACKS.visiblePattern;
-  const baseProtective = firstSupportedText(
-    sectionText(depth.protectiveFunction),
-    sectionText(depth.hiddenNeed),
-    sectionText(archetype.protectiveFunction),
-    sectionText(archetype.hiddenNeed),
-  ) ?? FALLBACKS.protectiveFunction;
+  const baseProtective = protectiveBehavioralSupport
+    ? firstSupportedText(sectionText(depth.protectiveFunction)) ?? FALLBACKS.protectiveFunction
+    : FALLBACKS.protectiveFunction;
   const baseGift = firstSupportedText(
     sectionText(depth.gift),
     sectionText(depth.healthyExpression),
@@ -360,12 +375,7 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
         ? `Expression ${expression} adds a deterministic name-number theme of ${expressionTheme.drive}; in practice, that may make the visible pattern more self-directed when ownership of the outcome matters.`
         : undefined,
     ),
-    protectiveFunction: appendTheme(
-      baseProtective,
-      soulUrge && soulTheme
-        ? `Soul Urge ${soulUrge} adds an inner theme of ${soulTheme.drive}. As symbolic interpretation, that can make protection focus on the ability to ${soulTheme.pull}.`
-        : undefined,
-    ),
+    protectiveFunction: baseProtective,
     gift: appendTheme(
       baseGift,
       expression && expressionTheme
