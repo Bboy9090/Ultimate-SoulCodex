@@ -124,6 +124,7 @@ export function extractHashableInput(normalized: NormalizedGalacticInput): unkno
       authority: normalized.humanDesign.authority,
       profile: normalized.humanDesign.profile,
       definedCenters: normalized.humanDesign.definedCenters,
+      channels: normalized.humanDesign.channels,
     },
     numerology: {
       evidenceState: normalized.numerology.evidenceState,
