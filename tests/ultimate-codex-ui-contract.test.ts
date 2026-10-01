@@ -54,3 +54,16 @@ test("combined Codex separates cross-system reinforcement tension jobs and exper
   assert.match(panel, /Unresolved ledger/);
   assert.match(panel, /not scientific measurements of a soul/i);
 });
+
+
+test("Systems inspector exposes separate and combined multi-system views", () => {
+  assert.match(systems, /aria-label="System view navigation"/);
+  assert.match(systems, /href="#combined-synthesis"/);
+  assert.match(systems, /href="#astrology-system"/);
+  assert.match(systems, /href="#numerology-system"/);
+  assert.match(systems, /href="#human-design-system"/);
+  assert.match(systems, /id="combined-synthesis"/);
+  assert.match(systems, /id="astrology-system"/);
+  assert.match(systems, /id="numerology-system"/);
+  assert.match(systems, /id="human-design-system"/);
+});
