@@ -52,7 +52,7 @@ const testInput: GalacticCodeInput = {
     expressionNumber: 8,
     soulUrgeNumber: 3,
     personalityNumber: 5,
-    maturityNumber: 12,
+    maturityNumber: 3,
     coverage: 'partial',
   },
   behavior: {
@@ -154,6 +154,40 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
     };
 
     assert.throws(() => generateGalacticCode(sunOnlyInput));
+  });
+
+
+  await t.test('noncanonical values cannot satisfy the 2-of-3 synthesis minimum', () => {
+    const cases: GalacticCodeInput[] = [
+      {
+        profileId: 'bad-astro',
+        astrology: { evidenceState: 'verified', sun: 'Ophiuchus', coverage: 'complete' },
+        humanDesign: { coverage: 'missing' } as any,
+        numerology: { evidenceState: 'deterministic', lifePath: 7, coverage: 'partial' },
+        behavior: { traits: [] },
+      },
+      {
+        profileId: 'bad-hd',
+        astrology: { coverage: 'missing' } as any,
+        humanDesign: { evidenceState: 'verified', type: 'Wizard', coverage: 'complete' },
+        numerology: { evidenceState: 'deterministic', lifePath: 7, coverage: 'partial' },
+        behavior: { traits: [] },
+      },
+      {
+        profileId: 'bad-num',
+        astrology: { evidenceState: 'verified', sun: 'Virgo', coverage: 'partial' },
+        humanDesign: { coverage: 'missing' } as any,
+        numerology: { evidenceState: 'deterministic', lifePath: 99, coverage: 'complete' },
+        behavior: { traits: [] },
+      },
+    ];
+
+    for (const input of cases) {
+      assert.throws(
+        () => generateGalacticCode(input),
+        /requires at least 2 of 3 systems/,
+      );
+    }
   });
 });
 
@@ -262,6 +296,53 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
 
     const result = generateGalacticCode(changedInput);
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
+  });
+
+
+  await t.test('every governed scoring field participates in fingerprint identity', () => {
+    const variants: GalacticCodeInput[] = [
+      {
+        ...testInput,
+        astrology: { ...testInput.astrology, houseEmphasis: ['House 10'] },
+      },
+      {
+        ...testInput,
+        astrology: { ...testInput.astrology, majorAspects: ['Sun square Moon'] },
+      },
+      {
+        ...testInput,
+        numerology: { ...testInput.numerology, soulUrgeNumber: 9 },
+      },
+      {
+        ...testInput,
+        numerology: { ...testInput.numerology, personalityNumber: 8 },
+      },
+      {
+        ...testInput,
+        numerology: { ...testInput.numerology, maturityNumber: 7 },
+      },
+      {
+        ...testInput,
+        behavior: { ...testInput.behavior, relationalPattern: 'Highly collaborative' },
+      },
+      {
+        ...testInput,
+        behavior: { ...testInput.behavior, moralCompass: 'Duty and stewardship' },
+      },
+      {
+        ...testInput,
+        birthTime: '05:16',
+      },
+    ];
+
+    for (const variant of variants) {
+      const result = generateGalacticCode(variant);
+      assert.notStrictEqual(
+        result.fingerprint,
+        baseResult.fingerprint,
+        'governed result-changing input must change the fingerprint',
+      );
+    }
   });
 });
 
@@ -384,7 +465,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
         expressionNumber: 9,
         soulUrgeNumber: 7,
         personalityNumber: 2,
-        maturityNumber: 12,
+        maturityNumber: 3,
         coverage: 'partial',
       },
       behavior: {
