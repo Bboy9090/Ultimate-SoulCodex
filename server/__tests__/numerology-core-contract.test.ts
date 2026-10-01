@@ -369,6 +369,21 @@ describe('Server/Core Numerology Contract', () => {
     });
   });
 
+  describe('Calibrated symbolic interpretation', () => {
+    it('does not present Life Path as a fixed mission, purpose, or destiny', () => {
+      const result = calculateNumerology('Albert Einstein', '1879-03-14');
+
+      assert.strictEqual(result.status, 'resolved');
+      assert.match(result.interpretations.lifePath, /deterministic calculation/i);
+      assert.match(result.interpretations.lifePath, /symbolic vocabulary/i);
+      assert.match(result.interpretations.lifePath, /reflection prompt/i);
+      assert.doesNotMatch(
+        result.interpretations.lifePath,
+        /you are here to|your purpose involves|you're meant to|your mission is|you're here to/i,
+      );
+    });
+  });
+
   describe('Interpretation Layer (Server-Added Value)', () => {
     it('should include interpretation text for valid lifePath', () => {
       const serverResult = calculateNumerology('John Smith', '1990-08-15');
