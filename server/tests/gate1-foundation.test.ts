@@ -6,9 +6,9 @@ import {
   calcPersonalMonth,
   calcPersonalDay,
 } from "../../packages/core/compute/personal-numbers";
+import { resolveCivilTimeStrict } from "../../packages/core/compute/civil-time";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import type { BirthData } from "../services/astrology-production";
-import { fromZonedTime } from "date-fns-tz";
 import {
   saveActiveProfile,
   loadActiveProfile,
@@ -130,65 +130,55 @@ describe("Gate 1: Foundation Regression Suite", () => {
       assert.strictEqual(result.rising.verificationStatus, "requires_verified_birth_time");
     });
 
-    it("converts DST spring forward (2023-03-12 02:30) to library's deterministic UTC conversion and calculation", () => {
+    it("rejects nonexistent DST spring-forward local time instead of normalizing it", () => {
       const dstSpringForward: BirthData = {
         birthDate: "2023-03-12",
-        birthTime: "02:30", // On spring-forward date, 02:30 doesn't exist in EST (clocks jump 02:00→03:00); library interprets as EDT
+        birthTime: "02:30",
         timezone: "America/New_York",
         latitude: 40.7128,
         longitude: -74.006,
       };
 
-      // EXACT ASSERTION: Verify library's deterministic policy for spring-forward ambiguous times
-      // On 2023-03-12, EDT begins when clocks spring forward at 02:00 EST → 03:00 EDT
-      // The time 02:30 doesn't exist; the library interprets it as 02:30 EDT (UTC-4), giving 06:30 UTC
-      const utcTime = fromZonedTime("2023-03-12T02:30:00", "America/New_York");
-      assert.strictEqual(utcTime.getUTCHours(), 6, "Spring forward: 02:30 interpreted as EDT gives 06:30 UTC");
-      assert.strictEqual(utcTime.getUTCMinutes(), 30);
-      assert.strictEqual(utcTime.getUTCDate(), 12, "Date should not shift");
+      const resolved = resolveCivilTimeStrict(
+        dstSpringForward.birthDate,
+        dstSpringForward.birthTime!,
+        dstSpringForward.timezone!,
+      );
+      assert.strictEqual(resolved.status, "nonexistent");
+      assert.strictEqual(resolved.utc, null);
 
-      // Call multiple times to verify deterministic calculation
-      const result1 = calculateAstrology(dstSpringForward);
-      const result2 = calculateAstrology(dstSpringForward);
-      const result3 = calculateAstrology(dstSpringForward);
-
-      // EXACT ASSERTIONS: All three calls must produce identical results (determinism guarantee)
-      assert.strictEqual(result1.sun.sign, result2.sun.sign);
-      assert.strictEqual(result2.sun.sign, result3.sun.sign);
-      assert.strictEqual(result1.sun.degree, result2.sun.degree);
-      assert.strictEqual(result2.sun.degree, result3.sun.degree);
+      const result = calculateAstrology(dstSpringForward);
+      assert.strictEqual(result.sun.sign, null);
+      assert.strictEqual(result.sun.verificationStatus, "pending_ephemeris");
+      assert.strictEqual(result.moon.sign, null);
+      assert.strictEqual(result.moon.verificationStatus, "pending_ephemeris");
+      assert.strictEqual(result.moon.internalCandidate, undefined);
     });
 
-    it("converts DST fall back (2023-11-05 01:30 ambiguous) with the pinned library's deterministic EDT occurrence: 05:30 UTC", () => {
+    it("rejects repeated DST fall-back local time instead of choosing one occurrence", () => {
       const dstFallBack: BirthData = {
         birthDate: "2023-11-05",
-        birthTime: "01:30", // Ambiguous: occurs twice (EDT at 05:30 UTC, then EST at 06:30 UTC after transition)
+        birthTime: "01:30",
         timezone: "America/New_York",
         latitude: 40.7128,
         longitude: -74.006,
       };
 
-      // EXACT ASSERTION: Lock the active date-fns-tz fall-back ambiguity policy.
-      // When 01:30 local time occurs twice on 2023-11-05 (due to DST transition at 02:00),
-      // Pinned date-fns-tz 3.2.0 chooses EDT (first occurrence, pre-transition) = UTC-4,
-      // yielding 05:30 UTC.
-      // The important release contract is deterministic handling rather than an undocumented,
-      // version-stale assertion that contradicts the actual conversion dependency.
-      const utcTime = fromZonedTime("2023-11-05T01:30:00", "America/New_York");
-      assert.strictEqual(utcTime.getUTCHours(), 5, "Fall-back ambiguous 01:30 follows the pinned EDT occurrence policy (05:30 UTC)");
-      assert.strictEqual(utcTime.getUTCMinutes(), 30);
-      assert.strictEqual(utcTime.getUTCDate(), 5, "Date should remain November 5");
+      const resolved = resolveCivilTimeStrict(
+        dstFallBack.birthDate,
+        dstFallBack.birthTime!,
+        dstFallBack.timezone!,
+      );
+      assert.strictEqual(resolved.status, "ambiguous");
+      assert.strictEqual(resolved.utc, null);
+      assert.strictEqual(resolved.candidates.length, 2);
 
-      // Call multiple times to verify Soul Codex consistently applies this policy
-      const result1 = calculateAstrology(dstFallBack);
-      const result2 = calculateAstrology(dstFallBack);
-      const result3 = calculateAstrology(dstFallBack);
-
-      // EXACT ASSERTIONS: All three calls must produce identical results (policy determinism guarantee)
-      assert.strictEqual(result1.sun.sign, result2.sun.sign);
-      assert.strictEqual(result2.sun.sign, result3.sun.sign);
-      assert.strictEqual(result1.sun.degree, result2.sun.degree);
-      assert.strictEqual(result2.sun.degree, result3.sun.degree);
+      const result = calculateAstrology(dstFallBack);
+      assert.strictEqual(result.sun.sign, null);
+      assert.strictEqual(result.sun.verificationStatus, "pending_ephemeris");
+      assert.strictEqual(result.moon.sign, null);
+      assert.strictEqual(result.moon.verificationStatus, "pending_ephemeris");
+      assert.strictEqual(result.moon.internalCandidate, undefined);
     });
 
     it("converts extreme timezone (UTC+14 Kiritimati 2000-08-15 12:00) to exact UTC 22:00 on previous day", () => {
@@ -204,10 +194,12 @@ describe("Gate 1: Foundation Regression Suite", () => {
       // Input: "2000-08-15T12:00:00" in Pacific/Kiritimati (UTC+14 after 1995 timezone change)
       // Expected: 22:00 UTC on 2000-08-14 (previous day)
       // Calculation: 12:00 local (UTC+14) = 12:00 - 14:00 = -2:00 = 22:00 previous day
-      const utcTime = fromZonedTime("2000-08-15T12:00:00", "Pacific/Kiritimati");
-      assert.strictEqual(utcTime.getUTCHours(), 22, "UTC+14: 12:00 local should convert to 22:00 UTC");
-      assert.strictEqual(utcTime.getUTCMinutes(), 0);
-      assert.strictEqual(utcTime.getUTCDate(), 14, "UTC+14 day boundary: should roll back to August 14");
+      const resolved = resolveCivilTimeStrict("2000-08-15", "12:00", "Pacific/Kiritimati");
+      assert.strictEqual(resolved.status, "valid");
+      assert.ok(resolved.utc);
+      assert.strictEqual(resolved.utc!.getUTCHours(), 22, "UTC+14: 12:00 local should convert to 22:00 UTC");
+      assert.strictEqual(resolved.utc!.getUTCMinutes(), 0);
+      assert.strictEqual(resolved.utc!.getUTCDate(), 14, "UTC+14 day boundary: should roll back to August 14");
 
       // Call multiple times to verify consistent conversion with no day-boundary errors
       const result1 = calculateAstrology(utcPlus14);
