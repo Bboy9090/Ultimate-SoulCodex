@@ -18,11 +18,11 @@ import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
 import { canonicalNumberPattern, canonicalSignPattern } from '../../../shared/symbolic-vocabulary';
 
 const HD_CORE = {
-  manifestor: { strategy: 'to inform', authorities: ['emotional authority', 'splenic authority', 'ego authority'] },
-  generator: { strategy: 'to respond', authorities: ['emotional authority', 'sacral authority'] },
-  'manifesting generator': { strategy: 'to respond & inform', authorities: ['emotional authority', 'sacral authority'] },
-  projector: { strategy: 'to wait for invitation', authorities: ['emotional authority', 'splenic authority', 'ego authority', 'self-projected authority', 'mental authority'] },
-  reflector: { strategy: 'to wait a lunar cycle', authorities: ['lunar authority'] },
+  manifestor: { strategies: ['to inform'], authorities: ['emotional', 'splenic', 'ego'] },
+  generator: { strategies: ['to respond'], authorities: ['emotional', 'sacral'] },
+  'manifesting generator': { strategies: ['to respond & inform', 'to respond and inform'], authorities: ['emotional', 'sacral'] },
+  projector: { strategies: ['to wait for invitation', 'to be invited'], authorities: ['emotional', 'splenic', 'ego', 'self-projected', 'mental'] },
+  reflector: { strategies: ['to wait a lunar cycle'], authorities: ['lunar'] },
 } as const;
 
 function governedSign(value: string | undefined): string | undefined {
@@ -37,9 +37,12 @@ function governedHumanDesign(input: GalacticCodeInput['humanDesign']) {
   const type = input.type?.trim().toLowerCase() as keyof typeof HD_CORE | undefined;
   if (!type || !HD_CORE[type]) return null;
   const strategy = input.strategy?.trim().toLowerCase();
-  const authority = input.authority?.trim().toLowerCase();
+  const authority = input.authority
+    ?.trim()
+    .toLowerCase()
+    .replace(/\s+authority$/, '');
   const profile = input.profile?.trim();
-  if (!strategy || strategy !== HD_CORE[type].strategy) return null;
+  if (!strategy || !(HD_CORE[type].strategies as readonly string[]).includes(strategy)) return null;
   if (!authority || !(HD_CORE[type].authorities as readonly string[]).includes(authority)) return null;
   if (!profile || !/^[1-6]\/[1-6]$/.test(profile)) return null;
   return input;
