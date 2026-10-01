@@ -278,14 +278,17 @@ describe('Server/Core Numerology Contract', () => {
   });
 
   describe('Fail-Closed Boundary: Invalid Inputs Return Unresolved', () => {
-    it('should return unresolved status for empty name', () => {
+    it('should keep date numerology resolved when full birth name is unavailable', () => {
       const serverResult = calculateNumerology('', '1990-08-15');
 
-      assert.strictEqual(serverResult.status, 'unresolved');
-      assert.ok(serverResult.reason);
-      assert.ok(serverResult.reason.includes('Name'));
-      assert.strictEqual(serverResult.lifePath, undefined);
-      assert.strictEqual(serverResult.expression, undefined);
+      assert.strictEqual(serverResult.status, 'resolved');
+      assert.strictEqual(serverResult.lifePath, calcLifePath('1990-08-15'));
+      assert.strictEqual(serverResult.birthday, calcBirthday('1990-08-15'));
+      assert.strictEqual(serverResult.personalYear, calcPersonalYear('1990-08-15'));
+      assert.strictEqual(serverResult.expression, null);
+      assert.strictEqual(serverResult.soulUrge, null);
+      assert.strictEqual(serverResult.personality, null);
+      assert.strictEqual(serverResult.maturity, null);
     });
 
     it('should return unresolved status for malformed date', () => {
@@ -298,15 +301,14 @@ describe('Server/Core Numerology Contract', () => {
       assert.strictEqual(serverResult.personalYear, undefined);
     });
 
-    it('should return unresolved status for punctuation-only name', () => {
+    it('should withhold name numerology for a birth-name value with no usable letters', () => {
       const serverResult = calculateNumerology('!@#$%^&*()', '1990-08-15');
 
-      assert.strictEqual(serverResult.status, 'unresolved');
-      assert.ok(serverResult.reason);
-      assert.ok(serverResult.reason.includes('Name'));
-      assert.strictEqual(serverResult.expression, undefined);
-      assert.strictEqual(serverResult.personality, undefined);
-      assert.strictEqual(serverResult.soulUrge, undefined);
+      assert.strictEqual(serverResult.status, 'resolved');
+      assert.strictEqual(serverResult.expression, null);
+      assert.strictEqual(serverResult.personality, null);
+      assert.strictEqual(serverResult.soulUrge, null);
+      assert.strictEqual(serverResult.maturity, null);
     });
 
     it('should reject Feb 29 in non-leap year (2023-02-29)', () => {
@@ -354,6 +356,19 @@ describe('Server/Core Numerology Contract', () => {
     });
   });
 
+  describe('Full birth name boundary', () => {
+    it('never substitutes a display alias for missing birth-name numerology', () => {
+      const noBirthName = calculateNumerology(undefined, '1990-08-15');
+      const aliasAsIfBirthName = calculateNumerology('BJ', '1990-08-15');
+
+      assert.strictEqual(noBirthName.status, 'resolved');
+      assert.strictEqual(aliasAsIfBirthName.status, 'resolved');
+      assert.strictEqual(noBirthName.expression, null);
+      assert.notStrictEqual(aliasAsIfBirthName.expression, null);
+      assert.strictEqual(noBirthName.interpretations.expression, 'Expression unavailable: full birth name was not supplied.');
+    });
+  });
+
   describe('Interpretation Layer (Server-Added Value)', () => {
     it('should include interpretation text for valid lifePath', () => {
       const serverResult = calculateNumerology('John Smith', '1990-08-15');
@@ -371,7 +386,7 @@ describe('Server/Core Numerology Contract', () => {
       assert.ok(serverResult.interpretations.expression);
       assert.strictEqual(
         serverResult.interpretations.expression,
-        `Expression Number ${serverResult.expression}: Your talents and abilities shine through creative manifestation.`
+        `Expression Number ${serverResult.expression}: deterministic from the supplied full birth name; interpretation is symbolic.`
       );
     });
 
