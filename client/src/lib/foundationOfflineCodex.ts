@@ -15,56 +15,11 @@ import {
 } from "@soulcodex/core";
 import type { BirthData } from "@shared/schema";
 import { maySystemInfluenceSynthesis } from "@shared/system-visibility";
+import { canonicalNumberPattern, canonicalSignPattern, type CanonicalSymbolicPattern } from "@shared/symbolic-vocabulary";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
 
-type Pattern = {
-  drive: string;
-  gift: string;
-  shadow: string;
-  relationship: string;
-  action: string;
-  axes: DepthTensionAxis[];
-};
-
-const SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
-] as const;
-
-const SIGN_PATTERNS: Record<string, Pattern> = {
-  Aries: pattern("initiating action directly", "courage and momentum", "moving faster than context", "may need honesty and room for direct action", "Separate urgency from importance before acting.", ["speed", "directness"]),
-  Taurus: pattern("building stability", "patience and follow-through", "holding position after conditions change", "may need consistency and tangible trust", "Identify one place where flexibility protects the larger commitment.", ["stability", "consistency"]),
-  Gemini: pattern("connecting information and ideas", "adaptability and verbal perspective", "scattering attention", "may need conversation and mental responsiveness", "Finish one question before opening another.", ["analysis", "freedom"]),
-  Cancer: pattern("protecting emotional safety", "care and responsiveness", "carrying other people's needs", "may need reciprocity and reliable belonging", "Name the need before managing the whole atmosphere.", ["sensitivity", "partnership"]),
-  Leo: pattern("expressing identity visibly", "warmth and creative leadership", "using recognition as proof of worth", "may need appreciation without compulsory performance", "Make one meaningful move that does not depend on applause.", ["recognition", "independence"]),
-  Virgo: pattern("improving what is practical", "discernment and useful problem solving", "analysis expanding until action stalls", "may need reliability and respect for effort", "Define what is good enough before refining again.", ["analysis", "structure"]),
-  Libra: pattern("creating balance", "diplomacy and relational awareness", "delaying conflict until resentment grows", "may need mutuality and respectful negotiation", "State the uncomfortable preference before harmony becomes avoidance.", ["harmony", "partnership"]),
-  Scorpio: pattern("testing truth and protecting depth", "focus and loyalty", "holding suspicion past its useful life", "may need privacy and earned trust", "Separate what is known from what is feared before escalating.", ["sensitivity", "directness"]),
-  Sagittarius: pattern("seeking meaning and expansion", "optimism and broad perspective", "leaving depth for the next horizon", "may need truth and room to grow", "Finish one meaningful commitment before chasing the next possibility.", ["freedom", "speed"]),
-  Capricorn: pattern("building through discipline", "strategy and endurance", "measuring worth mainly through output", "may need respect and dependable commitments", "Protect recovery as part of the plan rather than a reward after collapse.", ["structure", "stability"]),
-  Aquarius: pattern("challenging defaults", "originality and systems perspective", "using detachment when stakes rise", "may need intellectual freedom and authentic difference", "Translate the idea into one human-scale action.", ["independence", "analysis"]),
-  Pisces: pattern("translating feeling into meaning", "empathy and imagination", "weakening boundaries while helping", "may need gentleness and clear emotional boundaries", "Identify which feeling is yours before deciding what to carry.", ["sensitivity", "freedom"]),
-};
-
-const LIFE_PATHS: Record<number, Pattern> = {
-  1: pattern("self-directed initiation", "pioneering independence", "mistaking support for interference", "may need autonomy without isolation", "Lead clearly without making collaboration prove weakness.", ["independence", "directness"]),
-  2: pattern("partnership", "cooperation and sensitivity", "over-adjusting to preserve peace", "may need mutuality", "State one preference before adapting to everyone else.", ["partnership", "harmony"]),
-  3: pattern("expression", "creativity and communication", "using activity to avoid depth", "may need room to be heard", "Finish and share one expression rather than polishing ten possibilities.", ["recognition", "freedom"]),
-  4: pattern("structure", "building systems that last", "confusing control with safety", "may need dependable expectations", "Keep the structure and loosen one unnecessary rule.", ["structure", "consistency"]),
-  5: pattern("freedom", "adaptability and experience", "resisting repetition required for mastery", "may need movement without chaos", "Choose one commitment that creates more freedom later.", ["freedom", "speed"]),
-  6: pattern("responsibility", "service and stewardship", "carrying duties never clearly accepted", "may need reciprocity", "Return one responsibility to its rightful owner.", ["partnership", "consistency"]),
-  7: pattern("analysis", "investigation and private understanding", "waiting for impossible certainty", "may need privacy and intellectual trust", "Set a decision deadline before collecting another layer of evidence.", ["analysis", "independence"]),
-  8: pattern("material mastery", "leadership and execution", "using achievement as the only measure", "may need respect without domination", "Define the ethical boundary before pursuing the result.", ["structure", "recognition"]),
-  9: pattern("completion and legacy", "humanitarian perspective", "overextending for the larger mission", "may need boundaries around service", "Finish one cycle before volunteering for another.", ["partnership", "stability"]),
-  11: pattern("vision and intuition", "inspiration", "treating intensity as certainty", "may need grounding around strong impressions", "Ground the insight in one observable test.", ["sensitivity", "analysis"]),
-  22: pattern("master building", "turning vision into structure", "making scale personally crushing", "may need sustainable delegation", "Reduce the vision to the next testable structure.", ["structure", "stability"]),
-  33: pattern("teaching through service", "uplifting others", "becoming responsible for everyone's healing", "may need compassionate boundaries", "Teach the principle without taking over the person's work.", ["partnership", "sensitivity"]),
-};
-
-function pattern(drive: string, gift: string, shadow: string, relationship: string, action: string, axes: DepthTensionAxis[]): Pattern {
-  return { drive, gift, shadow, relationship, action, axes };
-}
+type Pattern = CanonicalSymbolicPattern;
 
 function parseDate(dateISO: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateISO);
@@ -83,7 +38,8 @@ function sunSignForDate(dateISO: string): string | null {
   const boundaryDay = current?.[1] ?? 22;
   if (Math.abs(day - boundaryDay) <= 1) return null;
   const next = current?.[2] ?? "Capricorn";
-  const previous = SIGNS[(SIGNS.indexOf(next as (typeof SIGNS)[number]) + 11) % 12];
+  const zodiac = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"] as const;
+  const previous = zodiac[(zodiac.indexOf(next as (typeof zodiac)[number]) + 11) % 12];
   return day > boundaryDay ? next : previous;
 }
 
@@ -96,14 +52,11 @@ function elementForSign(sign: string): "Fire" | "Earth" | "Air" | "Water" | null
 }
 
 function signPatternFor(sign: string | null | undefined): Pattern | null {
-  if (!sign || !Object.prototype.hasOwnProperty.call(SIGN_PATTERNS, sign)) return null;
-  return SIGN_PATTERNS[sign] ?? null;
+  return canonicalSignPattern(sign);
 }
 
 function numerologyPatternFor(value: number | null | undefined): Pattern | null {
-  if (typeof value !== "number" || !Number.isInteger(value)) return null;
-  if (!Object.prototype.hasOwnProperty.call(LIFE_PATHS, value)) return null;
-  return LIFE_PATHS[value] ?? null;
+  return canonicalNumberPattern(value);
 }
 
 function preliminarySignatureCode(values: Array<string | number | null | undefined>): string {
