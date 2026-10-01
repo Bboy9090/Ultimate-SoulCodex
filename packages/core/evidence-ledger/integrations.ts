@@ -23,6 +23,7 @@ import {
   calcMaturity,
   calcPersonality,
   calcSoulUrge,
+  isNumerologyNameSupported,
   normalizeNumerologyName,
 } from '../compute/numerology.js';
 import { parseDateOnly } from '../compute/date-only.js';
@@ -41,7 +42,7 @@ function isValidDate(dateStr: string): boolean {
 
 function isValidName(name: string): boolean {
   if (!name || typeof name !== 'string') return false;
-  return normalizeNumerologyName(name).length > 0;
+  return isNumerologyNameSupported(name);
 }
 
 function deriveInputStateForDate(dateStr: string): InputState {
@@ -417,7 +418,7 @@ export function calcExpressionWithEvidence(
         inputsUsed: [`full_name_${fullName || 'missing'}`],
         reasoning: [
           derivedInputState === 'missing' ? 'Full name not provided' :
-          derivedInputState === 'invalid' ? `Name "${fullName}" contains no letters` :
+          derivedInputState === 'invalid' ? `Name "${fullName}" cannot be represented by the configured Latin Pythagorean mapping; provide a Latin transliteration` :
           'Full name could not be processed',
         ],
         limitations: [
@@ -489,7 +490,7 @@ export function calcSoulUrgeWithEvidence(
         inputsUsed: [`full_name_${fullName || 'missing'}`],
         reasoning: [
           derivedInputState === 'missing' ? 'Full name not provided' :
-          derivedInputState === 'invalid' ? `Name "${fullName}" contains no letters` :
+          derivedInputState === 'invalid' ? `Name "${fullName}" cannot be represented by the configured Latin Pythagorean mapping; provide a Latin transliteration` :
           'Full name could not be processed',
         ],
         limitations: [
@@ -562,7 +563,7 @@ export function calcPersonalityWithEvidence(
         inputsUsed: [`full_name_${fullName || 'missing'}`],
         reasoning: [
           derivedInputState === 'missing' ? 'Full name not provided' :
-          derivedInputState === 'invalid' ? `Name "${fullName}" contains no letters` :
+          derivedInputState === 'invalid' ? `Name "${fullName}" cannot be represented by the configured Latin Pythagorean mapping; provide a Latin transliteration` :
           'Full name could not be processed',
         ],
         limitations: [
