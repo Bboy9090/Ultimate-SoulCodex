@@ -56,6 +56,7 @@ export const profiles = pgTable("soul_profiles", {
   userId: varchar("user_id"),
   sessionId: varchar("session_id"),
   name: text("name").notNull(),
+  fullBirthName: text("full_birth_name"),
   birthDate: timestamp("birth_date").notNull(),
   birthTime: text("birth_time"),
   birthLocation: text("birth_location"),
