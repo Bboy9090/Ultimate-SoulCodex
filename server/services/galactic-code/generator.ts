@@ -16,6 +16,91 @@ import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
 import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
 
+
+const ZODIAC_SIGNS = new Set([
+  'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
+  'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
+]);
+
+const HUMAN_DESIGN_TYPES = new Set([
+  'manifestor', 'generator', 'manifesting generator', 'projector', 'reflector',
+]);
+
+const NUMEROLOGY_VALUES = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33]);
+
+function canonicalText(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, ' ');
+  return normalized || null;
+}
+
+function canonicalSign(value: unknown): string | undefined {
+  const normalized = canonicalText(value);
+  return normalized && ZODIAC_SIGNS.has(normalized) ? normalized : undefined;
+}
+
+function canonicalHumanDesignType(value: unknown): string | undefined {
+  const normalized = canonicalText(value);
+  return normalized && HUMAN_DESIGN_TYPES.has(normalized) ? normalized : undefined;
+}
+
+function canonicalProfile(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return /^[1-6]\/[1-6]$/.test(normalized) ? normalized : undefined;
+}
+
+function canonicalNumerologyValue(value: unknown): number | undefined {
+  if (typeof value === 'string' && !/^\d+$/.test(value.trim())) return undefined;
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isInteger(numeric) && NUMEROLOGY_VALUES.has(numeric) ? numeric : undefined;
+}
+
+function filterCanonical(values: string[] | undefined, allowed: ReadonlySet<string>): string[] | undefined {
+  if (!values) return undefined;
+  const filtered = values
+    .map((value) => canonicalText(value))
+    .filter((value): value is string => Boolean(value) && allowed.has(value));
+  return [...new Set(filtered)];
+}
+
+const ELEMENTS = new Set(['fire', 'earth', 'air', 'water']);
+const MODALITIES = new Set(['cardinal', 'fixed', 'mutable']);
+
+function sanitizeAstrology(input: GalacticCodeInput['astrology']): GalacticCodeInput['astrology'] {
+  return {
+    ...input,
+    sun: canonicalSign(input.sun),
+    moon: canonicalSign(input.moon),
+    rising: canonicalSign(input.rising),
+    mercury: canonicalSign(input.mercury),
+    venus: canonicalSign(input.venus),
+    mars: canonicalSign(input.mars),
+    dominantElements: filterCanonical(input.dominantElements, ELEMENTS),
+    dominantModalities: filterCanonical(input.dominantModalities, MODALITIES),
+  };
+}
+
+function sanitizeHumanDesign(input: GalacticCodeInput['humanDesign']): GalacticCodeInput['humanDesign'] {
+  return {
+    ...input,
+    type: canonicalHumanDesignType(input.type),
+    profile: canonicalProfile(input.profile),
+  };
+}
+
+function sanitizeNumerology(input: GalacticCodeInput['numerology']): GalacticCodeInput['numerology'] {
+  return {
+    ...input,
+    lifePath: canonicalNumerologyValue(input.lifePath),
+    birthdayNumber: canonicalNumerologyValue(input.birthdayNumber),
+    expressionNumber: canonicalNumerologyValue(input.expressionNumber),
+    soulUrgeNumber: canonicalNumerologyValue(input.soulUrgeNumber),
+    personalityNumber: canonicalNumerologyValue(input.personalityNumber),
+    maturityNumber: canonicalNumerologyValue(input.maturityNumber),
+  };
+}
+
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   const astrologyAllowed = maySystemInfluenceSynthesis(
     'astrologyCore',
@@ -37,13 +122,13 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   return {
     ...input,
     astrology: astrologyAllowed
-      ? input.astrology
+      ? sanitizeAstrology(input.astrology)
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
     humanDesign: humanDesignAllowed
-      ? input.humanDesign
+      ? sanitizeHumanDesign(input.humanDesign)
       : { coverage: 'missing', evidenceState: input.humanDesign.evidenceState || 'candidate' },
     numerology: numerologyAllowed
-      ? input.numerology
+      ? sanitizeNumerology(input.numerology)
       : { coverage: 'missing', evidenceState: input.numerology.evidenceState || 'candidate' },
     behavior: behaviorAllowed
       ? input.behavior
@@ -85,9 +170,15 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
   const eligibleInput = synthesisEligibleInput(input);
 
   // Step 1: Validate minimum system coverage
-  const hasAstrology = eligibleInput.astrology.coverage !== 'missing' && eligibleInput.astrology.sun;
-  const hasHD = eligibleInput.humanDesign.coverage !== 'missing' && eligibleInput.humanDesign.type;
-  const hasNumerology = eligibleInput.numerology.coverage !== 'missing' && eligibleInput.numerology.lifePath;
+  const hasAstrology = Boolean(
+    eligibleInput.astrology.coverage !== 'missing' && eligibleInput.astrology.sun,
+  );
+  const hasHD = Boolean(
+    eligibleInput.humanDesign.coverage !== 'missing' && eligibleInput.humanDesign.type,
+  );
+  const hasNumerology = Boolean(
+    eligibleInput.numerology.coverage !== 'missing' && eligibleInput.numerology.lifePath,
+  );
   const traitCount = (eligibleInput.behavior.traits || []).length;
 
   const systemCount = [hasAstrology, hasHD, hasNumerology].filter(Boolean).length;
