@@ -215,6 +215,8 @@ export type HumanDesignUnresolvedReason =
   | 'malformed_birth_time'
   | 'invalid_timezone'
   | 'timezone_resolution_failed'
+  | 'nonexistent_local_time'
+  | 'ambiguous_local_time'
   | 'invalid_coordinates'
   | 'missing_birth_date'
   | 'missing_birth_time'
