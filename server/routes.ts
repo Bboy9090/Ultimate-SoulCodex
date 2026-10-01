@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timezone: birthData.timezone,
       });
       const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
-      const numerologyData = calculateNumerology(birthData.name, birthData.birthDate);
+      const numerologyData = calculateNumerology(birthData.fullBirthName, birthData.birthDate);
       const tarotCards = getTarotBirthCards(birthData.birthDate);
       const archetypeData = synthesizeArchetype(astrologyData, numerologyData, {});
       const biography = await generateBiography({
