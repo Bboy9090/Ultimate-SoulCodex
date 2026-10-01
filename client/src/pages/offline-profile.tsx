@@ -179,6 +179,7 @@ export default function OfflineProfilePage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href={readingHref} className="sc-button-primary">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 <Link href="/compatibility" className="sc-button-secondary">Explore compatibility</Link>
+                <Link href="/systems" className="sc-button-secondary">View underlying systems</Link>
                 {shouldOfferVerification(needsOnlineVerification, verificationAttempt) && canRequestOnlineEvidence && (
                   <button
                     type="button"
