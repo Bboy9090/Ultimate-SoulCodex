@@ -235,6 +235,7 @@ export class MemStorage implements IStorage {
     const profile: schema.Profile = { 
       ...insertProfile,
       // Optional birth fields (inclusivity for adoptees, incomplete records)
+      fullBirthName: insertProfile.fullBirthName || null,
       birthTime: insertProfile.birthTime || null,
       birthLocation: insertProfile.birthLocation || null,
       timezone: insertProfile.timezone || null,
