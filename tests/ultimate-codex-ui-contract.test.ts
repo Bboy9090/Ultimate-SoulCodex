@@ -41,10 +41,13 @@ test("Human Design chart exposes verified centers channels gates and activations
   assert.match(bodygraph, /Variables and Incarnation Cross naming remain outside the verified core/);
 });
 
-test("combined Codex explains resonance tension coping stelliums and unresolved evidence", () => {
-  assert.match(panel, /What works together/);
-  assert.match(panel, /What works against or pulls differently/);
-  assert.match(panel, /How to cope when the systems pull in different directions/);
+test("combined Codex separates cross-system reinforcement tension jobs and experiments", () => {
+  assert.match(panel, /Cross-system synthesis/);
+  assert.match(panel, /Reinforcement/);
+  assert.match(panel, /Tension/);
+  assert.match(panel, /Different jobs/);
+  assert.match(panel, /Test it/);
+  assert.match(panel, /symbolic intersections, not verified psychology/);
   assert.match(panel, /Stellium \/ concentration ledger/);
   assert.match(panel, /Verified angles, Nodes &amp; Chiron/);
   assert.match(panel, /Excluded \/ inspect-only system ledger/);
