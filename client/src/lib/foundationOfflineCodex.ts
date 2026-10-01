@@ -4,6 +4,7 @@ import {
   calcLifePath,
   calcMaturity,
   calcPersonality,
+  calcPersonalYear,
   calcSoulUrge,
   synthesizeDepthInterpretationV1,
   validateDepthInterpretationV1,
@@ -84,19 +85,6 @@ function sunSignForDate(dateISO: string): string | null {
   const next = current?.[2] ?? "Capricorn";
   const previous = SIGNS[(SIGNS.indexOf(next as (typeof SIGNS)[number]) + 11) % 12];
   return day > boundaryDay ? next : previous;
-}
-
-function reduceNumber(input: number): number {
-  let value = Math.abs(Math.trunc(input));
-  while (value > 9 && value !== 11 && value !== 22 && value !== 33) {
-    value = String(value).split("").reduce((sum, digit) => sum + Number(digit), 0);
-  }
-  return value;
-}
-
-function personalYear(dateISO: string, year: number) {
-  const date = parseDate(dateISO);
-  return reduceNumber(date.day + date.month + year);
 }
 
 function elementForSign(sign: string): "Fire" | "Earth" | "Air" | "Water" | null {
@@ -293,7 +281,7 @@ export function generateFoundationOfflineCodexProfile(
   const soulUrge = fullBirthName ? calcSoulUrge(fullBirthName) : null;
   const personality = fullBirthName ? calcPersonality(fullBirthName) : null;
   const maturity = fullBirthName ? calcMaturity(input.birthDate, fullBirthName) : null;
-  const yearNumber = personalYear(input.birthDate, currentYear);
+  const yearNumber = calcPersonalYear(input.birthDate, currentYear);
   const pathPattern = numerologyPatternFor(lifePath);
   const expressionPattern = numerologyPatternFor(expression);
   const soulUrgePattern = numerologyPatternFor(soulUrge);
