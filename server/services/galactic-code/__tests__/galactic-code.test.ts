@@ -52,7 +52,7 @@ const testInput: GalacticCodeInput = {
     expressionNumber: 8,
     soulUrgeNumber: 3,
     personalityNumber: 5,
-    maturityNumber: 12,
+    maturityNumber: 4,
     coverage: 'partial',
   },
   behavior: {
@@ -138,6 +138,29 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
 
     const result = generateGalacticCode(noHDInput);
     assert.ok(['partial', 'insufficient'].includes(result.coverage));
+  });
+
+
+  await t.test('bogus nonempty values cannot satisfy governed system coverage', () => {
+    const spoofed: GalacticCodeInput = {
+      profileId: 'spoofed',
+      astrology: { evidenceState: 'verified', sun: 'NotASign', coverage: 'complete' },
+      humanDesign: {
+        evidenceState: 'verified',
+        type: 'Wizard',
+        strategy: 'Do Magic',
+        authority: 'Cosmic Authority',
+        profile: '9/9',
+        coverage: 'complete',
+      },
+      numerology: { evidenceState: 'deterministic', lifePath: 99, coverage: 'complete' },
+      behavior: { traits: [], evidenceState: 'assessed' },
+    };
+
+    assert.throws(
+      () => generateGalacticCode(spoofed),
+      /requires at least 2 of 3 systems/,
+    );
   });
 
   await t.test('Sun sign alone cannot generate verified code', () => {
@@ -234,6 +257,35 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
 
     const result = generateGalacticCode(changedInput);
     assert.notStrictEqual(result.fingerprint, baseResult.fingerprint);
+  });
+
+
+  await t.test('changed scoring inputs change fingerprint', () => {
+    const variants: GalacticCodeInput[] = [
+      {
+        ...testInput,
+        humanDesign: { ...testInput.humanDesign, channels: ['Channel 57-20'] },
+      },
+      {
+        ...testInput,
+        numerology: { ...testInput.numerology, soulUrgeNumber: 9 },
+      },
+      {
+        ...testInput,
+        behavior: { ...testInput.behavior, relationalPattern: 'Highly collaborative' },
+      },
+      {
+        ...testInput,
+        astrology: { ...testInput.astrology, houseEmphasis: ['House 10'] },
+      },
+    ];
+
+    for (const variant of variants) {
+      assert.notStrictEqual(
+        generateGalacticCode(variant).fingerprint,
+        baseResult.fingerprint,
+      );
+    }
   });
 
   await t.test('changed Authority produces different fingerprint', () => {
