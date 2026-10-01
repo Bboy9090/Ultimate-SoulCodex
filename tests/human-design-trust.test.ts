@@ -77,6 +77,12 @@ test("qualified Human Design core becomes verified only through the approved rec
       authority: "Lunar Authority",
       profile: "2/5",
     },
+    timeConversion: {
+      timezone: "America/New_York",
+      utcOffsetMinutes: -240,
+      conversionMethod: "standard-iana-tzdb",
+      runtimeTzdbVersion: "2026a",
+    },
   });
 
   assert.equal(record.status, "verified");
@@ -88,6 +94,12 @@ test("qualified Human Design core becomes verified only through the approved rec
   assert.equal(getVerifiedHumanDesignField(record, "type"), "Reflector");
   assert.equal(getVerifiedHumanDesignField(record, "profile"), "2/5");
   assert.equal(mayUseHumanDesignForCompatibility(record), true);
+  assert.deepEqual(record.timeConversion, {
+    timezone: "America/New_York",
+    utcOffsetMinutes: -240,
+    conversionMethod: "standard-iana-tzdb",
+    runtimeTzdbVersion: "2026a",
+  });
   assert.match(record.limitations.join(" "), /Variables/i);
   assert.match(record.limitations.join(" "), /Incarnation Cross/i);
 });
