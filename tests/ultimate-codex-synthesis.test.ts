@@ -116,6 +116,11 @@ test("Ultimate Codex detects verified stellium-style clusters and contradictions
   assert.ok(result.systemSummary.some((row) => row.system === "Astrocartography" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Palmistry" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Personality assessments" && /not assessed \/ excluded/.test(row.status)));
+  assert.ok(result.crossSystemInsights.some((item) => item.kind === "reinforcement"));
+  assert.ok(result.crossSystemInsights.some((item) => item.kind === "different-jobs"));
+  assert.ok(result.crossSystemInsights.some((item) => item.kind === "experiment"));
+  assert.ok(result.crossSystemInsights.every((item) => item.systems.length >= 1));
+  assert.ok(result.crossSystemInsights.every((item) => item.systems.every((system) => ["Astrology", "Numerology", "Human Design"].includes(system))));
 });
 
 test("Ultimate Codex does not let astrology monopolize the derived archetype headline", () => {
@@ -268,4 +273,35 @@ test("verified supporting points alter the Codex fingerprint", () => {
   const b = buildUltimateCodexSynthesis(second);
   assert.notEqual(a.fingerprint, b.fingerprint);
   assert.notEqual(a.codexNumber, b.codexNumber);
+});
+
+
+test("cross-system synthesis does not over-attribute single-system evidence", () => {
+  const result = buildUltimateCodexSynthesis(profile());
+  const reinforcement = result.crossSystemInsights.filter((item) => item.kind === "reinforcement");
+  assert.ok(reinforcement.length > 0);
+  assert.ok(reinforcement.some((item) => item.systems.includes("Human Design")));
+  assert.ok(reinforcement.some((item) => item.systems.includes("Numerology")));
+  assert.equal(
+    result.crossSystemInsights.some((item) =>
+      item.kind === "tension" &&
+      /square|opposition/i.test(item.text) &&
+      item.systems.length > 1
+    ),
+    false,
+    "single-system natal hard aspects must not be mislabeled as cross-system tension",
+  );
+  assert.ok(
+    result.crossSystemInsights.some((item) =>
+      item.kind === "different-jobs" &&
+      item.systems.includes("Astrology") &&
+      item.systems.includes("Human Design")
+    ),
+  );
+  assert.ok(
+    result.crossSystemInsights.some((item) =>
+      item.kind === "experiment" &&
+      /lived evidence|real decision|concrete example/i.test(item.text)
+    ),
+  );
 });
