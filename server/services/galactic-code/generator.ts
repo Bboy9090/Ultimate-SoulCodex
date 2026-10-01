@@ -15,6 +15,35 @@ import { createGalacticFingerprint } from './fingerprint';
 import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
 import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
+import { canonicalNumberPattern, canonicalSignPattern } from '../../../shared/symbolic-vocabulary';
+
+const HD_CORE = {
+  manifestor: { strategy: 'to inform', authorities: ['emotional authority', 'splenic authority', 'ego authority'] },
+  generator: { strategy: 'to respond', authorities: ['emotional authority', 'sacral authority'] },
+  'manifesting generator': { strategy: 'to respond & inform', authorities: ['emotional authority', 'sacral authority'] },
+  projector: { strategy: 'to wait for invitation', authorities: ['emotional authority', 'splenic authority', 'ego authority', 'self-projected authority', 'mental authority'] },
+  reflector: { strategy: 'to wait a lunar cycle', authorities: ['lunar authority'] },
+} as const;
+
+function governedSign(value: string | undefined): string | undefined {
+  return value && canonicalSignPattern(value) ? value : undefined;
+}
+
+function governedNumber(value: number | string | undefined): number | string | undefined {
+  return value !== undefined && canonicalNumberPattern(value) ? value : undefined;
+}
+
+function governedHumanDesign(input: GalacticCodeInput['humanDesign']) {
+  const type = input.type?.trim().toLowerCase() as keyof typeof HD_CORE | undefined;
+  if (!type || !HD_CORE[type]) return null;
+  const strategy = input.strategy?.trim().toLowerCase();
+  const authority = input.authority?.trim().toLowerCase();
+  const profile = input.profile?.trim();
+  if (!strategy || strategy !== HD_CORE[type].strategy) return null;
+  if (!authority || !(HD_CORE[type].authorities as readonly string[]).includes(authority)) return null;
+  if (!profile || !/^[1-6]\/[1-6]$/.test(profile)) return null;
+  return input;
+}
 
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
   const astrologyAllowed = maySystemInfluenceSynthesis(
@@ -34,16 +63,34 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
     input.behavior.evidenceState || 'candidate',
   );
 
+  const governedHd = humanDesignAllowed ? governedHumanDesign(input.humanDesign) : null;
+
   return {
     ...input,
     astrology: astrologyAllowed
-      ? input.astrology
+      ? {
+          ...input.astrology,
+          sun: governedSign(input.astrology.sun),
+          moon: governedSign(input.astrology.moon),
+          rising: governedSign(input.astrology.rising),
+          mercury: governedSign(input.astrology.mercury),
+          venus: governedSign(input.astrology.venus),
+          mars: governedSign(input.astrology.mars),
+        }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
-    humanDesign: humanDesignAllowed
-      ? input.humanDesign
+    humanDesign: governedHd
+      ? governedHd
       : { coverage: 'missing', evidenceState: input.humanDesign.evidenceState || 'candidate' },
     numerology: numerologyAllowed
-      ? input.numerology
+      ? {
+          ...input.numerology,
+          lifePath: governedNumber(input.numerology.lifePath),
+          birthdayNumber: governedNumber(input.numerology.birthdayNumber),
+          expressionNumber: governedNumber(input.numerology.expressionNumber),
+          soulUrgeNumber: governedNumber(input.numerology.soulUrgeNumber),
+          personalityNumber: governedNumber(input.numerology.personalityNumber),
+          maturityNumber: governedNumber(input.numerology.maturityNumber),
+        }
       : { coverage: 'missing', evidenceState: input.numerology.evidenceState || 'candidate' },
     behavior: behaviorAllowed
       ? input.behavior
