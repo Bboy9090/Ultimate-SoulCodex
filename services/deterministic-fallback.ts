@@ -133,44 +133,35 @@ function extractCoreData(profile: any) {
  * HIGH-FIDELITY BEHAVIORAL ENGINE
  * Injects surgical behavioral nuances based on specific sign combinations.
  */
-function getSurgicalNuance(d: any): string {
-  if (d.sunSign === "Capricorn" && d.moonSign === "Pisces") {
-    return "I build rigid structures to protect my soft interior. I work until I'm exhausted to avoid feeling my own sensitivity.";
-  }
-  if (d.sunSign === "Leo" && d.moonSign === "Scorpio") {
-    return "I crave the spotlight but keep my true intentions hidden. My power comes from the tension between my public warmth and private intensity.";
-  }
-  if (d.sunSign === "Virgo" && d.moonSign === "Gemini") {
-    return "I am a nervous system in search of an anchor. My mind moves at a speed that my physical form cannot always support.";
-  }
-  if (d.sunSign === "Taurus" && d.moonSign === "Aries") {
-    return "I am a fortress that strikes with precision. I demand stability, but I have a short fuse for anything that feels like a delay.";
-  }
-  if (d.sunSign === "Aquarius" && d.moonSign === "Cancer") {
-    return "I am a visionary with a heavy heart. I want to save the future, but I am often pulled back by the nostalgia of what I've lost.";
-  }
-  if (d.hdType === "Projector" && d.sunSign === "Aries") {
-    return "I have the vision to lead but not the sustained energy to labor. I burn out when I try to run the race I've already finished in my mind.";
-  }
-  if (d.hdType === "Manifesting Generator") {
-    return "I move fast to find what works, skipping steps that others find essential. My frustration comes from having to go back and fix the foundations I rushed past.";
-  }
-  if (d.hdType === "Manifestor") {
-    return "I am designed to impact, not to be liked. My presence alone changes the room, and I feel trapped when I have to ask for permission.";
-  }
-  if (d.hdType === "Reflector") {
-    return "I am a mirror of my environment. I do not have a fixed center, only a lunar cycle that reveals the truth of where I am standing.";
-  }
-  const supported = [
-    d.myPattern,
-    d.stressPattern,
-    d.themes[0] ? `A supported symbolic theme in this profile is ${d.themes[0]}.` : "",
-  ].filter(Boolean);
-  return supported.length
-    ? supported.join(" ")
-    : "The saved profile does not contain enough evidence-backed behavioral material for a specific fallback interpretation.";
-}
+function getGroundedProfileObservation(d: any): string {
+  const observations: string[] = [];
 
+  if (d.sunSign) {
+    observations.push(`Verified natal Sun: ${d.sunSign}. Treat any interpretation as symbolic, not as proof of behavior.`);
+  }
+  if (d.moonSign) {
+    observations.push(`Verified natal Moon: ${d.moonSign}. Compare its themes with lived experience before keeping them.`);
+  }
+  if (d.hdType) {
+    observations.push(
+      `Verified Human Design core: ${d.hdType}${d.hdAuthority ? ` with ${d.hdAuthority}` : ""}. Use it as a decision experiment, not an identity verdict.`,
+    );
+  }
+  if (d.lifePath) {
+    observations.push(
+      `Life Path ${d.lifePath} is a deterministic numerology result. Its meaning stays optional and symbolic.`,
+    );
+  }
+  if (d.themes[0]) {
+    observations.push(`Saved profile theme: ${d.themes[0]}. Keep it only where it matches observable experience.`);
+  }
+
+  if (observations.length === 0) {
+    return "This profile does not contain enough verified material for a specific fallback interpretation.";
+  }
+
+  return observations.slice(0, 2).join(" ");
+}
 function soulGuideFallback(
   profile: any,
   timeline?: any,
@@ -180,14 +171,14 @@ function soulGuideFallback(
   const phase = timeline?.phase || timeline?.currentPhase || "your current phase";
   const focus = dailyCard?.focus || "one grounded next step";
   const topTheme = d.themes[0] || "clarity";
-  const nuance = getSurgicalNuance(d);
+  const nuance = getGroundedProfileObservation(d);
 
   const lines: string[] = [];
 
-  lines.push(`## 👁️ THE SURGICAL MIRROR`);
+  lines.push(`## PROFILE CHECK`);
   lines.push(`${nuance}`);
   lines.push("");
-  lines.push(`### THE PATTERN`);
+  lines.push(`### WHAT IS ACTUALLY AVAILABLE`);
   if (d.sunSign && d.moonSign) {
     lines.push(
       `Your verified ${d.sunSign} Sun and ${d.moonSign} Moon are both available as symbolic lenses. Compare the identity and emotional themes they describe against what is actually happening rather than treating either placement as a fixed behavior claim.`
@@ -200,7 +191,7 @@ function soulGuideFallback(
   }
 
   lines.push("");
-  lines.push(`### THE MECHANICS`);
+  lines.push(`### DECISION FRAME`);
   if (d.hdType) {
     lines.push(
       `Verified Human Design core: ${d.hdType}${d.hdStrategy ? ` · Strategy: ${d.hdStrategy}` : ""}${d.hdAuthority ? ` · Authority: ${d.hdAuthority}` : ""}. Treat this as a symbolic decision framework, not a diagnosis or command.`
@@ -212,18 +203,18 @@ function soulGuideFallback(
   }
 
   lines.push("");
-  lines.push(`### THE STRIKE`);
+  lines.push(`### NEXT MOVE`);
   lines.push(`**Do this now:** ${focus}. Keep the action small enough to observe the result before adding another interpretation.`);
 
   return {
-    title: "Codex Failsafe: Deep Alignment",
+    title: "Codex Failsafe: Grounded Read",
     content: lines.join("\n"),
   };
 }
 
 function dailyGuidanceFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
-  const nuance = getSurgicalNuance(d);
+  const nuance = getGroundedProfileObservation(d);
 
   const lines: string[] = [];
   lines.push(`## ⚓ DAILY ANCHOR`);
@@ -231,7 +222,7 @@ function dailyGuidanceFallback(profile: any): FallbackResult {
   lines.push("");
   lines.push(
     d.themes[1]
-      ? `**Observation**: The saved profile includes the symbolic theme "${d.themes[1]}". Use it as a reflection prompt, not evidence that today's conditions caused a particular mood.`
+      ? `**Profile cue**: "${d.themes[1]}" appears in the saved profile. Test it against one concrete event today before giving it weight.`
       : `**Observation**: No current-day astrological evidence was supplied to this fallback, so it will not invent a daily cosmic condition.`
   );
   lines.push("");
@@ -260,7 +251,7 @@ function dailyHoroscopeFallback(profile: any): FallbackResult {
   }
   if (d.moonSign) {
     lines.push(
-      `Your verified natal Moon is ${d.moonSign}. Use its interpretation only as a reflection lens, not as a claim about your present mood.`
+      `Your verified natal Moon is ${d.moonSign}. The placement is factual; any emotional meaning should be checked against what you are actually experiencing.`
     );
   }
   lines.push("");
@@ -276,31 +267,35 @@ function dailyHoroscopeFallback(profile: any): FallbackResult {
 
 function codexReadingFallback(profile: any): FallbackResult {
   const d = extractCoreData(profile);
-  const nuance = getSurgicalNuance(d);
+  const nuance = getGroundedProfileObservation(d);
 
   const sections: string[] = [];
 
   sections.push(`## 🧬 THE SOUL BLUEPRINT`);
   sections.push(`${nuance}`);
   sections.push("");
-  sections.push(`### IDENTITY ARCHITECTURE`);
-  sections.push(`As a ${d.archetype}${d.sunSign ? ` with a ${d.sunSign} Sun` : ""}, you are designed for ${d.themes[0] || "high-fidelity execution"}. You see the gaps before others even see the structure.`);
+  sections.push(`### PROFILE MATERIAL`);
+  sections.push(
+    d.themes[0]
+      ? `The saved profile includes "${d.themes[0]}" as a theme${d.sunSign ? `, alongside a verified ${d.sunSign} Sun` : ""}. Treat that combination as material to test, not a fixed identity statement.`
+      : `This fallback has ${d.sunSign ? `a verified ${d.sunSign} Sun but ` : ""}no evidence-backed theme strong enough for an identity claim.`,
+  );
 
   if (d.moonSign) {
     sections.push(
-      `**Emotional Lens**: Your verified ${d.moonSign} Moon can be used as a symbolic lens for emotional processing. Keep only the interpretation that matches observed experience; the placement itself does not prove a behavior.`
+      `**Moon context**: Your verified ${d.moonSign} Moon can be used as a symbolic lens for emotional processing. Keep only the interpretation that matches observed experience; the placement itself does not prove a behavior.`
     );
   }
 
   if (d.hdType) {
     sections.push(
-      `**System Logic**: Verified Human Design core: ${d.hdType}${d.hdStrategy ? ` · ${d.hdStrategy}` : ""}${d.hdAuthority ? ` · ${d.hdAuthority}` : ""}. Treat the system as a symbolic experiment and compare it against lived decisions.`
+      `**HD context**: Verified Human Design core: ${d.hdType}${d.hdStrategy ? ` · ${d.hdStrategy}` : ""}${d.hdAuthority ? ` · ${d.hdAuthority}` : ""}. Treat the system as a symbolic experiment and compare it against lived decisions.`
     );
   }
 
   if (d.lifePath) {
     sections.push(
-      `**Long-Game**: Life Path ${d.lifePath} is a deterministic numerology result. Its interpretation is symbolic; use it as a planning lens rather than a prediction.`
+      `**Numerology context**: Life Path ${d.lifePath} is a deterministic numerology result. Its interpretation is symbolic; use it as a planning lens rather than a prediction.`
     );
   }
 
@@ -315,7 +310,7 @@ function todayCardFallback(profile: any): FallbackResult {
   
   const lines: string[] = [
     `**RECOGNITION**: I can separate what is verified, what is calculated, and what is only interpretive.`,
-    `**FOCUS**: ${d.themes[0] ? `Use "${d.themes[0]}" as a reflection prompt` : "Choose one observable priority"}.`,
+    `**FOCUS**: ${d.themes[0] ? `Test whether "${d.themes[0]}" helps prioritize one real task` : "Choose one observable priority"}.`,
     `**DO**:`,
     `- Zero-out one lingering obligation.`,
     `- Close the tabs that are leaking my attention.`,
@@ -347,8 +342,8 @@ function biographyFallback(profile: any): FallbackResult {
     how_i_move: d.hdType
       ? `My verified Human Design core is ${d.hdType}${d.hdStrategy ? ` with strategy ${d.hdStrategy}` : ""}; I use it as an experiment, not a command.`
       : `No verified Human Design movement strategy is available in this fallback.`,
-    what_i_wont_tolerate: "Vagueness, generic advice, and misaligned energy.",
-    what_im_building: `A legacy of ${d.themes[1] || "truth"} and ${d.themes[2] || "impact"}.`
+    what_i_wont_tolerate: "Vagueness, generic advice, and claims that outrun the evidence.",
+    what_im_building: `Work that can be checked against ${d.themes[1] || "clear evidence"} and ${d.themes[2] || "real outcomes"}.`
   };
 
   return {
@@ -361,7 +356,7 @@ function compatibilityFallback(profile: any): FallbackResult {
   return {
     title: "Compatibility Failsafe",
     content:
-      "Compatibility analysis requires a dual-profile sync. Ensure both soul blueprints are fully loaded into the Codex to reveal the friction points and harmonic resonances between your specific placements.",
+      "Compatibility needs two evidence-qualified profiles. Until both are available, this fallback will not manufacture friction, chemistry, or relationship conclusions.",
   };
 }
 

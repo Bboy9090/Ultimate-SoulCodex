@@ -1,90 +1,79 @@
 import type { SoulSignals, CompatibilityScore, CompatibilityDimension } from "../types";
 
-function scoreMatch(a: string | undefined, b: string | undefined): number {
-  if (!a || !b) return 50;
-  return a.toLowerCase() === b.toLowerCase() ? 90 : 55;
-}
-
-function signalOverlap(a: string[] | undefined, b: string[] | undefined): number {
-  if (!a?.length || !b?.length) return 0;
-  const left = new Set(a.map((value) => value.toLowerCase()));
-  return b.filter((value) => left.has(value.toLowerCase())).length;
-}
-
-function scoreSignalSets(a: string[] | undefined, b: string[] | undefined): number {
-  if (!a?.length || !b?.length) return 50;
-  return signalOverlap(a, b) > 0 ? 85 : 50;
+function normalizedValues(values: string[] | undefined): string[] {
+  if (!Array.isArray(values)) return [];
+  return values
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 function overlapCount(a: string[], b: string[]): number {
-  const set = new Set(a.map((s) => s.toLowerCase()));
-  return b.filter((s) => set.has(s.toLowerCase())).length;
+  const set = new Set(normalizedValues(a));
+  return normalizedValues(b).filter((value) => set.has(value)).length;
+}
+
+function withheld(label: string, note: string): CompatibilityDimension {
+  return { label, score: null, note };
 }
 
 export function compatibility(a: SoulSignals, b: SoulSignals): CompatibilityScore {
-  const identity: CompatibilityDimension = {
-    label: "Identity",
-    score: Math.round((scoreMatch(a.sunSign, b.sunSign) + scoreMatch(a.moonSign, b.moonSign)) / 2),
-    note:
-      !a.sunSign || !b.sunSign
-        ? "Verified Sun-sign evidence is incomplete, so this identity comparison stays neutral."
-        : a.sunSign === b.sunSign
-          ? "You share the same Sun sign, so the same symbolic identity lens is active for both profiles."
-          : "Your verified Sun signs differ, so this symbolic identity lens describes different emphases.",
-  };
+  // This legacy signal shape carries values, but it does not carry the provenance
+  // required to prove astrology verification or distinguish direct behavioral
+  // self-report from inferred/defaulted legacy fields. Those dimensions therefore
+  // fail closed instead of manufacturing neutral or positive compatibility scores.
+  const identity = withheld(
+    "Identity",
+    "Not scored here. Identity compatibility requires field-level verified astrology evidence for both people.",
+  );
 
-  const stress: CompatibilityDimension = {
-    label: "Stress",
-    score: scoreSignalSets(a.stressElement, b.stressElement),
-    note:
-      !a.stressElement?.length || !b.stressElement?.length
-        ? "There is not enough shared stress-response evidence yet to compare this dimension."
-        : signalOverlap(a.stressElement, b.stressElement) > 0
-          ? "You share at least one stress-response signal, which can make each other's pressure patterns easier to recognize."
-          : `Your recorded stress-response signals differ (${a.stressElement.join(", ")} vs ${b.stressElement.join(", ")}); learn each other's shutdown and escalation cues.`,
-  };
+  const stress = withheld(
+    "Stress",
+    "Not scored here. Legacy stress-element fields may be inferred from questionnaire answers and are supporting reflection, not stable compatibility evidence.",
+  );
 
-  const valuesOverlap = overlapCount(a.nonNegotiables, b.nonNegotiables);
-  const valuesScore = Math.min(100, 40 + valuesOverlap * 20);
+  const decisions = withheld(
+    "Decisions",
+    "Not scored here. Decision-style compatibility requires direct self-report provenance for both people; legacy defaults are excluded.",
+  );
+
+  const aValues = normalizedValues(a.nonNegotiables);
+  const bValues = normalizedValues(b.nonNegotiables);
+  const hasDirectValues = aValues.length > 0 && bValues.length > 0;
+  const valuesOverlap = hasDirectValues ? overlapCount(a.nonNegotiables, b.nonNegotiables) : 0;
+  const valuesScore = hasDirectValues ? Math.min(100, 40 + valuesOverlap * 20) : null;
   const values: CompatibilityDimension = {
     label: "Values",
     score: valuesScore,
     note:
-      valuesOverlap >= 2
-        ? "Your deal-breakers line up — that's a strong foundation."
-        : "Your non-negotiables differ; talk about them early.",
+      valuesScore === null
+        ? "Not scored. Both people need directly supplied non-negotiables before values compatibility can be compared."
+        : valuesOverlap >= 2
+          ? "Several directly supplied non-negotiables overlap. Treat this as a conversation starting point, not a relationship verdict."
+          : "Few directly supplied non-negotiables overlap. Compare the actual priorities before drawing conclusions.",
   };
 
-  const decisions: CompatibilityDimension = {
-    label: "Decisions",
-    score: scoreSignalSets(a.decisionStyle, b.decisionStyle),
-    note:
-      !a.decisionStyle?.length || !b.decisionStyle?.length
-        ? "There is not enough direct decision-style evidence yet to compare this dimension."
-        : signalOverlap(a.decisionStyle, b.decisionStyle) > 0
-          ? "You share at least one decision-style signal, so part of your decision process should feel familiar to each other."
-          : `Your recorded decision styles differ (${a.decisionStyle.join(", ")} vs ${b.decisionStyle.join(", ")}); agree on a process before high-stakes calls.`,
-  };
-
-  const overall = Math.round(
-    (identity.score + stress.score + values.score + decisions.score) / 4
+  // A single available dimension is not enough to claim an overall compatibility
+  // percentage. Future evidence-aware callers may score additional dimensions.
+  const scoredDimensions = [identity, stress, values, decisions].filter(
+    (dimension) => typeof dimension.score === "number",
   );
+  const overall =
+    scoredDimensions.length >= 2
+      ? Math.round(
+          scoredDimensions.reduce((sum, dimension) => sum + (dimension.score ?? 0), 0) /
+            scoredDimensions.length,
+        )
+      : null;
 
   const friction: string[] = [];
-  if (identity.score < 60) friction.push("Core drives differ — you'll need to translate for each other.");
-  if (a.stressElement?.length && b.stressElement?.length && stress.score < 60) {
-    friction.push("You handle pressure differently — don't take the other's shutdown personally.");
-  }
-  if (values.score < 60) friction.push("Your boundaries don't match — negotiate them before a crisis.");
-  if (a.decisionStyle?.length && b.decisionStyle?.length && decisions.score < 60) {
-    friction.push("Decision pace mismatch — agree on a process before big calls.");
-  }
-
   const synergy: string[] = [];
-  if (identity.score >= 75) synergy.push("Your identities complement each other well.");
-  if (stress.score >= 75) synergy.push("You can support each other through tough times naturally.");
-  if (values.score >= 75) synergy.push("Shared values make trust easy to build.");
-  if (decisions.score >= 75) synergy.push("You make decisions at a similar speed and style.");
+
+  if (typeof values.score === "number" && values.score < 60) {
+    friction.push("Your stated non-negotiables overlap only lightly; discuss the differences directly.");
+  }
+  if (typeof values.score === "number" && values.score >= 75) {
+    synergy.push("Your stated non-negotiables show substantial overlap.");
+  }
 
   return {
     overall,

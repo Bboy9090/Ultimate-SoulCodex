@@ -1,7 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { resolveApiUrlWithBase } from "./api-url";
 
-const configuredApiBase = import.meta.env.VITE_API_URL || "";
+const configuredApiBase = import.meta.env?.VITE_API_URL || "";
 
 export function resolveApiUrl(url: string): string {
   return resolveApiUrlWithBase(url, configuredApiBase);
@@ -14,10 +14,39 @@ export async function apiFetch(url: string, init: RequestInit = {}): Promise<Res
   });
 }
 
+const MAX_PUBLIC_ERROR_MESSAGE_LENGTH = 240;
+
+function boundedPublicMessage(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return null;
+  return normalized.slice(0, MAX_PUBLIC_ERROR_MESSAGE_LENGTH);
+}
+
+export async function publicApiErrorMessage(res: Response): Promise<string> {
+  const fallback = boundedPublicMessage(res.statusText) || "Request failed";
+  const contentType = res.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      const payload = await res.json();
+      const message = boundedPublicMessage(payload?.message);
+      const code = boundedPublicMessage(payload?.code);
+      if (message && code) return `${message} (${code})`;
+      if (message) return message;
+      if (code) return code;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const message = await publicApiErrorMessage(res);
+    throw new Error(`${res.status}: ${message}`);
   }
 }
 

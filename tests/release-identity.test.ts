@@ -13,6 +13,11 @@ describe("release identity contract", () => {
     assert.equal(identity.releaseSha, "unknown");
     assert.equal(identity.appVersion, DEFAULT_FOUNDATION_RELEASE_VERSION);
     assert.equal(identity.apiContract, FOUNDATION_API_CONTRACT);
+    assert.deepEqual(identity.persistence, {
+      mode: "memory",
+      durable: false,
+      durableFeaturesAvailable: true,
+    });
   });
 
   it("uses Railway's Git commit SHA when supplied by the deployment runtime", () => {
@@ -39,3 +44,28 @@ describe("release identity contract", () => {
     assert.equal(identity.apiContract, "foundation-v4");
   });
 });
+
+
+  it("reports production memory mode as non-durable and unavailable for durable features", () => {
+    const identity = resolveReleaseIdentity({
+      NODE_ENV: "production",
+      RAILWAY_GIT_COMMIT_SHA: "candidate",
+    });
+    assert.deepEqual(identity.persistence, {
+      mode: "memory",
+      durable: false,
+      durableFeaturesAvailable: false,
+    });
+  });
+
+  it("reports configured production Postgres as durable", () => {
+    const identity = resolveReleaseIdentity({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://example.invalid/soulcodex",
+    });
+    assert.deepEqual(identity.persistence, {
+      mode: "postgres",
+      durable: true,
+      durableFeaturesAvailable: true,
+    });
+  });

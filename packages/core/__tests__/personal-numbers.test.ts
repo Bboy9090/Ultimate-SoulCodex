@@ -237,7 +237,16 @@ test('Edge Cases', async (t) => {
 
 
 test('calcPersonalYear rejects explicit zero inputs instead of silently defaulting them', () => {
-  assert.throws(() => calcPersonalYear('1990-08-15', 0), /targetYear must be a positive integer/);
-  assert.throws(() => calcPersonalYear(8, 0, 2026), /birthDay must be an integer from 1 to 31/);
-  assert.throws(() => calcPersonalYear(0, 15, 2026), /birthMonth must be an integer from 1 to 12/);
+  assert.throws(
+    () => calcPersonalYear('1990-08-15', 0),
+    /Personal Year requires a valid birth month\/day and target year/,
+  );
+  assert.throws(
+    () => calcPersonalYear(8, 0, 2026),
+    /Personal Year requires a valid birth month\/day and target year/,
+  );
+  assert.throws(
+    () => calcPersonalYear(0, 15, 2026),
+    /Personal Year requires a valid birth month\/day and target year/,
+  );
 });

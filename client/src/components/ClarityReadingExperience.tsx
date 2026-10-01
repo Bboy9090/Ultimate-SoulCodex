@@ -55,19 +55,15 @@ function DepthChapterCard({
   index,
   fit,
   onFit,
-  expanded,
-  onToggleExpanded,
 }: {
   chapter: DepthChapter;
   depth: ReadingDepth;
   index: number;
   fit?: ReadingFit;
   onFit: (fit: ReadingFit) => void;
-  expanded: boolean;
-  onToggleExpanded: () => void;
 }) {
   const Icon = chapterIcons[index] ?? Sparkles;
-  const showStandard = depth === "standard" || depth === "deep";
+  const showStandard = depth !== "quick";
   const showDeep = depth === "deep";
 
   return (
@@ -87,47 +83,47 @@ function DepthChapterCard({
         <p className="relative mb-4 leading-7 text-[var(--sc-ivory-soft)]">{chapter.observation}</p>
 
         {showStandard && (
-          <button
-            type="button"
-            onClick={onToggleExpanded}
-            aria-expanded={expanded}
-            className="relative mb-1 inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-[var(--sc-line)] bg-white/[0.025] px-4 py-2.5 text-left text-sm font-semibold text-[var(--sc-ivory-soft)] transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)]"
-          >
-            <span>{expanded ? "Hide chapter detail" : depth === "deep" ? "Open deep chapter" : "Open chapter detail"}</span>
-            <ChevronDown aria-hidden="true" className={`h-4 w-4 text-[var(--sc-gold)] transition ${expanded ? "rotate-180" : ""}`} />
-          </button>
+          <>
+            <section className="relative mt-5 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.05)] p-4">
+              <h3 className="mb-2 flex items-center gap-2 font-semibold text-[#c9f2e6]"><CheckCircle2 aria-hidden="true" className="h-4 w-4" /> One grounded move</h3>
+              <p className="leading-7 text-[var(--sc-ivory)]">{chapter.practicalTakeaway || chapter.action}</p>
+            </section>
+
+            <details className="group relative mt-4 rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-[var(--sc-ivory-soft)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)]">
+                Plain language and real-life examples
+                <ChevronDown aria-hidden="true" className="h-4 w-4 text-[var(--sc-gold)] transition group-open:rotate-180" />
+              </summary>
+              <div className="space-y-5 pt-4">
+                <section>
+                  <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.translation}</p>
+                </section>
+                <section>
+                  <h3 className="mb-2 text-sm font-bold uppercase tracking-[0.13em] text-[var(--sc-teal)]">In real life</h3>
+                  <ul className="space-y-2 text-[var(--sc-ivory-soft)]">
+                    {chapter.dailyLife.map((item) => <li key={item} className="flex gap-2 leading-7"><span aria-hidden="true" className="text-[var(--sc-gold)]">•</span><span>{item}</span></li>)}
+                  </ul>
+                </section>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <section className="rounded-2xl border border-[rgba(114,216,197,.16)] bg-[rgba(114,216,197,.045)] p-4">
+                    <h3 className="mb-2 font-semibold text-[var(--sc-teal)]">Strength</h3>
+                    <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.strength}</p>
+                  </section>
+                  <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.045)] p-4">
+                    <h3 className="mb-2 font-semibold text-[var(--sc-gold-bright)]">Tradeoff</h3>
+                    <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.cost}</p>
+                  </section>
+                </div>
+                <section className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.035] p-4">
+                  <h3 className="mb-2 font-semibold text-[var(--sc-ivory-soft)]">Possible misread</h3>
+                  <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.misunderstanding}</p>
+                </section>
+              </div>
+            </details>
+          </>
         )}
 
-        {showStandard && expanded && (
-          <div className="relative space-y-5 border-t border-[var(--sc-line)] pt-5">
-            <section>
-              <h3 className="mb-2 text-sm font-bold uppercase tracking-[0.13em] text-[var(--sc-violet)]">What this means in plain language</h3>
-              <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.translation}</p>
-            </section>
-            <section>
-              <h3 className="mb-2 text-sm font-bold uppercase tracking-[0.13em] text-[var(--sc-teal)]">What this may look like in real life</h3>
-              <ul className="space-y-2 text-[var(--sc-ivory-soft)]">
-                {chapter.dailyLife.map((item) => <li key={item} className="flex gap-2 leading-7"><span aria-hidden="true" className="text-[var(--sc-gold)]">•</span><span>{item}</span></li>)}
-              </ul>
-            </section>
-            <div className="grid gap-4 md:grid-cols-2">
-              <section className="rounded-2xl border border-[rgba(114,216,197,.16)] bg-[rgba(114,216,197,.045)] p-4">
-                <h3 className="mb-2 font-semibold text-[var(--sc-teal)]">What this gives you</h3>
-                <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.strength}</p>
-              </section>
-              <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.045)] p-4">
-                <h3 className="mb-2 font-semibold text-[var(--sc-gold-bright)]">What it may cost</h3>
-                <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.cost}</p>
-              </section>
-            </div>
-            <section className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.035] p-4">
-              <h3 className="mb-2 font-semibold text-[var(--sc-ivory-soft)]">How this may be misunderstood</h3>
-              <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.misunderstanding}</p>
-            </section>
-          </div>
-        )}
-
-        {showDeep && expanded && (
+        {showDeep && (
           <div className="relative mt-5 space-y-5 border-t border-[var(--sc-line)] pt-5">
             <section>
               <h3 className="mb-2 font-semibold text-[var(--sc-violet)]">How other people may experience it</h3>
@@ -137,22 +133,14 @@ function DepthChapterCard({
               <h3 className="mb-2 font-semibold text-[var(--sc-gold-bright)]">What changes under stress</h3>
               <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.stressView}</p>
             </section>
-            <section>
-              <h3 className="mb-2 font-semibold text-[var(--sc-teal)]">What to do with this insight</h3>
-              <p className="leading-7 text-[var(--sc-ivory-soft)]">{chapter.practicalTakeaway}</p>
-            </section>
             <section className="rounded-2xl border border-[rgba(154,116,220,.2)] bg-[rgba(154,116,220,.05)] p-4">
               <h3 className="mb-2 font-semibold text-[#e4d9fa]">Reflection check</h3>
               <p className="leading-7 text-[var(--sc-ivory)]">{chapter.reflection}</p>
             </section>
-            <section className="rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.05)] p-4">
-              <h3 className="mb-2 flex items-center gap-2 font-semibold text-[#c9f2e6]"><CheckCircle2 aria-hidden="true" className="h-4 w-4" /> One grounded move</h3>
-              <p className="leading-7 text-[var(--sc-ivory)]">{chapter.action}</p>
-            </section>
           </div>
         )}
 
-        {(depth === "quick" || expanded) && (
+        {(
         <section className="relative mt-5 border-t border-[var(--sc-line)] pt-5" aria-label={`Does ${chapter.title.toLowerCase()} fit your experience?`}>
           <p className="mb-3 text-sm font-semibold text-[var(--sc-ivory-soft)]">Does this fit your experience?</p>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Reading fit feedback">
@@ -178,7 +166,6 @@ function DepthChapterCard({
 
 export default function ClarityReadingExperience({ profileId, profileName, model, offline = false }: ClarityReadingExperienceProps) {
   const [depth, setDepth] = useState<ReadingDepth>("standard");
-  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(() => new Set());
   const [fits, setFits] = useState<FitMap>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -189,18 +176,8 @@ export default function ClarityReadingExperience({ profileId, profileName, model
   });
   const chapters = useMemo(() => buildDepthChapters(model, fits), [model, fits]);
 
-  const toggleChapter = (chapterId: string) => {
-    setExpandedChapters((current) => {
-      const next = new Set(current);
-      if (next.has(chapterId)) next.delete(chapterId);
-      else next.add(chapterId);
-      return next;
-    });
-  };
-
   const changeDepth = (nextDepth: ReadingDepth) => {
     setDepth(nextDepth);
-    if (nextDepth === "quick") setExpandedChapters(new Set());
   };
 
   const recordFit = (chapterId: string, fit: ReadingFit) => {
@@ -234,7 +211,7 @@ export default function ClarityReadingExperience({ profileId, profileName, model
         />
         <div className="relative mb-4 flex items-center gap-3 text-[var(--sc-gold-bright)]"><Sparkles aria-hidden="true" className="h-5 w-5" /><span className="text-[11px] font-bold uppercase tracking-[0.18em]">Core synthesis</span></div>
         <h2 id="core-synthesis-title" className="relative mb-4 font-serif text-3xl font-medium text-[var(--sc-ivory)] sm:text-5xl">{model.title}</h2>
-        <p className="relative max-w-3xl text-base leading-8 text-[var(--sc-stone)]">The goal is not to hand you another list of traits. Each chapter follows the pattern into decisions, work, relationships, stress, misunderstanding, tradeoffs, and one action you can test.</p>
+        <p className="relative max-w-3xl text-base leading-8 text-[var(--sc-stone)]">One pattern. One tension worth noticing. One action you can test in real life.</p>
         {model.coreContradiction && (
           <div className="relative mt-6 rounded-2xl border border-[rgba(154,116,220,.2)] bg-[rgba(154,116,220,.06)] p-4 sm:p-5" aria-label="Cross-system tension">
             <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#d6c8f5]">Cross-system tension</p>
@@ -264,19 +241,17 @@ export default function ClarityReadingExperience({ profileId, profileName, model
             index={index}
             fit={fits[chapter.id]}
             onFit={(fit) => recordFit(chapter.id, fit)}
-            expanded={expandedChapters.has(chapter.id)}
-            onToggleExpanded={() => toggleChapter(chapter.id)}
           />
         ))}
       </section>
 
       <section aria-labelledby="evidence-title" className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.035] p-5 sm:p-6">
-        <div className="mb-4 flex items-center gap-2 text-[var(--sc-teal)]"><ShieldCheck aria-hidden="true" className="h-5 w-5" /><h2 id="evidence-title" className="font-semibold text-[var(--sc-ivory)]">Evidence remains inspectable</h2></div>
-        <p className="mb-4 text-sm leading-6 text-[var(--sc-stone)]">Depth does not grant certainty. Open the details to inspect sources, confidence, and unresolved limits.</p>
+        <div className="mb-4 flex items-center gap-2 text-[var(--sc-teal)]"><ShieldCheck aria-hidden="true" className="h-5 w-5" /><h2 id="evidence-title" className="font-semibold text-[var(--sc-ivory)]">Evidence Trace</h2></div>
+        <p className="mb-4 text-sm leading-6 text-[var(--sc-stone)]">The reading stays human-first. Sources, confidence, and unresolved limits remain available here when you want the receipts.</p>
         <details className="group rounded-xl border border-[var(--sc-line)] bg-black/20 p-4">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg text-sm font-semibold text-[var(--sc-ivory-soft)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)]">Evidence and confidence details<ChevronDown aria-hidden="true" className="h-4 w-4 text-[var(--sc-gold)] transition group-open:rotate-180" /></summary>
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg text-sm font-semibold text-[var(--sc-ivory-soft)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)]">View Evidence Trace<ChevronDown aria-hidden="true" className="h-4 w-4 text-[var(--sc-gold)] transition group-open:rotate-180" /></summary>
           <div className="pt-4">
-            {model.signals.length > 0 ? <ul className="mb-5 grid gap-2 sm:grid-cols-2" aria-label="Reading evidence signals">{model.signals.map((signal) => <li key={signal.id} className={`rounded-xl border px-3 py-2.5 text-sm ${confidenceClass[signal.confidence]}`}><div><span className="font-semibold">{signal.label}:</span> {signal.value}</div><div className="mt-1 text-xs opacity-80">Why this result: {signal.source}</div><div className="mt-1 text-xs opacity-70">Calculation certainty: {signal.calculationCertainty}</div><div className="text-xs opacity-70">Evidence status: {signal.evidenceStatus}</div><div className="text-xs opacity-70">Interpretation confidence: {signal.interpretationConfidence}</div></li>)}</ul> : <p className="mb-5 text-[var(--sc-stone)]">No supported summary signals are available.</p>}
+            {model.signals.length > 0 ? <ul className="mb-5 grid gap-2 sm:grid-cols-2" aria-label="Reading evidence signals">{model.signals.map((signal) => <li key={signal.id} className={`rounded-xl border px-3 py-2.5 text-sm ${confidenceClass[signal.confidence]}`}><div><span className="font-semibold">{signal.label}:</span> {signal.value}</div><div className="mt-1 text-xs opacity-70">{signal.confidence} · {signal.source}</div></li>)}</ul> : <p className="mb-5 text-[var(--sc-stone)]">No supported summary signals are available.</p>}
             <h3 className="mb-2 text-sm font-semibold text-[var(--sc-ivory-soft)]">Limits and corrections</h3>
             <ul className="space-y-2 text-sm leading-6 text-[var(--sc-stone)]">{model.limitations.map((limitation) => <li key={limitation} className="flex gap-2"><span aria-hidden="true" className="text-[var(--sc-gold)]">•</span><span>{limitation}</span></li>)}</ul>
           </div>

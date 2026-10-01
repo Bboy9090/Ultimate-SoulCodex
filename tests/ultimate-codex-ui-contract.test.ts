@@ -6,12 +6,16 @@ const offline = readFileSync("client/src/pages/offline-profile.tsx", "utf8");
 const natal = readFileSync("client/src/components/VerifiedNatalChart.tsx", "utf8");
 const bodygraph = readFileSync("client/src/components/HumanDesignBodygraph.tsx", "utf8");
 const panel = readFileSync("client/src/components/UltimateCodexPanel.tsx", "utf8");
+const systems = readFileSync("client/src/pages/SystemsDetailsPage.tsx", "utf8");
 
-test("Identity wires the full governed chart surfaces", () => {
+test("Identity keeps governed charts visible while technical fusion moves to Systems", () => {
   assert.match(offline, /VerifiedNatalChart/);
   assert.match(offline, /HumanDesignBodygraph/);
-  assert.match(offline, /UltimateCodexPanel/);
+  assert.doesNotMatch(offline, /<UltimateCodexPanel/);
+  assert.match(offline, /View underlying systems/);
   assert.match(offline, /buildUltimateCodexSynthesis/);
+  assert.match(systems, /<UltimateCodexPanel synthesis={ultimateCodex}/);
+  assert.match(systems, /See the underlying systems/);
 });
 
 test("natal chart exposes planets houses degrees cusps and aspects without sample geometry", () => {

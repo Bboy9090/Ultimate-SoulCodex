@@ -141,6 +141,24 @@ test("daily insight system eligibility", async (suite) => {
     assert.equal(summary.sunSign, "Virgo");
   });
 
+
+
+  await suite.test("affirmations rotate across dates without mystical filler loops", () => {
+    const seen = new Set<string>();
+    for (let day = 1; day <= 14; day += 1) {
+      const date = `2026-10-${String(day).padStart(2, "0")}`;
+      for (const item of generateDailyAffirmations(profile(), 3, date)) {
+        seen.add(item.text);
+        assert.doesNotMatch(
+          item.text,
+          /universe conspires|divine timing|highest self|natural leader|spiritual messenger|abundance flows to me/i,
+        );
+      }
+    }
+
+    assert.ok(seen.size >= 8, `expected broad affirmation rotation, saw ${seen.size} distinct lines`);
+  });
+
   await suite.test("affirmations do not promote unverified astrology, HD, or legacy systems", () => {
     const affirmations = generateDailyAffirmations(profile({
       astrologyData: { sunSign: "Scorpio" },

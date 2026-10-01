@@ -1,73 +1,79 @@
 import type { SoulSignals, CompatibilityScore, CompatibilityDimension } from "../types.js";
 
-function scoreMatch(a: string | undefined, b: string | undefined): number {
-  if (!a || !b) return 50;
-  return a.toLowerCase() === b.toLowerCase() ? 90 : 55;
-}
-
-function scoreSame(a: string, b: string): number {
-  return a === b ? 85 : 50;
+function normalizedValues(values: string[] | undefined): string[] {
+  if (!Array.isArray(values)) return [];
+  return values
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 function overlapCount(a: string[], b: string[]): number {
-  const set = new Set(a.map((s) => s.toLowerCase()));
-  return b.filter((s) => set.has(s.toLowerCase())).length;
+  const set = new Set(normalizedValues(a));
+  return normalizedValues(b).filter((value) => set.has(value)).length;
+}
+
+function withheld(label: string, note: string): CompatibilityDimension {
+  return { label, score: null, note };
 }
 
 export function compatibility(a: SoulSignals, b: SoulSignals): CompatibilityScore {
-  const identity: CompatibilityDimension = {
-    label: "Identity",
-    score: Math.round((scoreMatch(a.sunSign, b.sunSign) + scoreMatch(a.moonSign, b.moonSign)) / 2),
-    note:
-      a.sunSign === b.sunSign
-        ? "You share the same sun sign — you'll understand each other's drive."
-        : "Different sun signs means different core drives; respect that gap.",
-  };
+  // This legacy signal shape carries values, but it does not carry the provenance
+  // required to prove astrology verification or distinguish direct behavioral
+  // self-report from inferred/defaulted legacy fields. Those dimensions therefore
+  // fail closed instead of manufacturing neutral or positive compatibility scores.
+  const identity = withheld(
+    "Identity",
+    "Not scored here. Identity compatibility requires field-level verified astrology evidence for both people.",
+  );
 
-  const stress: CompatibilityDimension = {
-    label: "Stress",
-    score: scoreSame(a.stressElement, b.stressElement),
-    note:
-      a.stressElement === b.stressElement
-        ? "You stress the same way — you'll get each other, but you can also spiral together."
-        : `One of you goes ${a.stressElement}, the other goes ${b.stressElement} — learn each other's shutdown signals.`,
-  };
+  const stress = withheld(
+    "Stress",
+    "Not scored here. Legacy stress-element fields may be inferred from questionnaire answers and are supporting reflection, not stable compatibility evidence.",
+  );
 
-  const valuesOverlap = overlapCount(a.nonNegotiables, b.nonNegotiables);
-  const valuesScore = Math.min(100, 40 + valuesOverlap * 20);
+  const decisions = withheld(
+    "Decisions",
+    "Not scored here. Decision-style compatibility requires direct self-report provenance for both people; legacy defaults are excluded.",
+  );
+
+  const aValues = normalizedValues(a.nonNegotiables);
+  const bValues = normalizedValues(b.nonNegotiables);
+  const hasDirectValues = aValues.length > 0 && bValues.length > 0;
+  const valuesOverlap = hasDirectValues ? overlapCount(a.nonNegotiables, b.nonNegotiables) : 0;
+  const valuesScore = hasDirectValues ? Math.min(100, 40 + valuesOverlap * 20) : null;
   const values: CompatibilityDimension = {
     label: "Values",
     score: valuesScore,
     note:
-      valuesOverlap >= 2
-        ? "Your deal-breakers line up — that's a strong foundation."
-        : "Your non-negotiables differ; talk about them early.",
+      valuesScore === null
+        ? "Not scored. Both people need directly supplied non-negotiables before values compatibility can be compared."
+        : valuesOverlap >= 2
+          ? "Several directly supplied non-negotiables overlap. Treat this as a conversation starting point, not a relationship verdict."
+          : "Few directly supplied non-negotiables overlap. Compare the actual priorities before drawing conclusions.",
   };
 
-  const decisions: CompatibilityDimension = {
-    label: "Decisions",
-    score: scoreSame(a.decisionStyle, b.decisionStyle),
-    note:
-      a.decisionStyle === b.decisionStyle
-        ? "You make decisions the same way — fewer surprises."
-        : `One decides by ${a.decisionStyle}, the other by ${b.decisionStyle} — expect friction when stakes are high.`,
-  };
-
-  const overall = Math.round(
-    (identity.score + stress.score + values.score + decisions.score) / 4
+  // A single available dimension is not enough to claim an overall compatibility
+  // percentage. Future evidence-aware callers may score additional dimensions.
+  const scoredDimensions = [identity, stress, values, decisions].filter(
+    (dimension) => typeof dimension.score === "number",
   );
+  const overall =
+    scoredDimensions.length >= 2
+      ? Math.round(
+          scoredDimensions.reduce((sum, dimension) => sum + (dimension.score ?? 0), 0) /
+            scoredDimensions.length,
+        )
+      : null;
 
   const friction: string[] = [];
-  if (identity.score < 60) friction.push("Core drives differ — you'll need to translate for each other.");
-  if (stress.score < 60) friction.push("You handle pressure differently — don't take the other's shutdown personally.");
-  if (values.score < 60) friction.push("Your boundaries don't match — negotiate them before a crisis.");
-  if (decisions.score < 60) friction.push("Decision pace mismatch — agree on a process before big calls.");
-
   const synergy: string[] = [];
-  if (identity.score >= 75) synergy.push("Your identities complement each other well.");
-  if (stress.score >= 75) synergy.push("You can support each other through tough times naturally.");
-  if (values.score >= 75) synergy.push("Shared values make trust easy to build.");
-  if (decisions.score >= 75) synergy.push("You make decisions at a similar speed and style.");
+
+  if (typeof values.score === "number" && values.score < 60) {
+    friction.push("Your stated non-negotiables overlap only lightly; discuss the differences directly.");
+  }
+  if (typeof values.score === "number" && values.score >= 75) {
+    synergy.push("Your stated non-negotiables show substantial overlap.");
+  }
 
   return {
     overall,

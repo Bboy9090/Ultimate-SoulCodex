@@ -4,24 +4,34 @@ import test from "node:test";
 
 const sourceUrl = new URL("../client/src/components/ClarityReadingExperience.tsx", import.meta.url);
 
-test("standard and deep reading chapters use per-chapter progressive disclosure", async () => {
+test("standard reading is flat by default with one optional plain-language drawer", async () => {
   const source = await readFile(sourceUrl, "utf8");
-  assert.match(source, /expandedChapters/);
-  assert.match(source, /Open chapter detail/);
-  assert.match(source, /Open deep chapter/);
-  assert.match(source, /aria-expanded=\{expanded\}/);
-  assert.match(source, /showStandard && expanded/);
-  assert.match(source, /showDeep && expanded/);
+  assert.doesNotMatch(source, /Open chapter detail/);
+  assert.doesNotMatch(source, /Open deep chapter/);
+  assert.doesNotMatch(source, /expandedChapters/);
+  assert.match(source, /One grounded move/);
+  assert.match(source, /Plain language and real-life examples/);
+  assert.match(source, /<details className="group relative mt-4/);
 });
 
-test("chapter depth remains collapsed by default and quick mode stays compact", async () => {
+test("deep reading adds substantive layers inline without a second chapter gate", async () => {
   const source = await readFile(sourceUrl, "utf8");
-  assert.match(source, /useState<Set<string>>\(\(\) => new Set\(\)\)/);
-  assert.match(source, /nextDepth === "quick"\) setExpandedChapters\(new Set\(\)\)/);
-  assert.doesNotMatch(source, /new Set\(chapters\.map/);
+  assert.match(source, /showDeep && \(/);
+  assert.match(source, /How other people may experience it/);
+  assert.match(source, /What changes under stress/);
+  assert.match(source, /Reflection check/);
+  assert.doesNotMatch(source, /aria-expanded=\{expanded\}/);
 });
 
-test("progressive disclosure preserves all substantive chapter layers", async () => {
+test("evidence is decoupled from primary prose into one global trace drawer", async () => {
+  const source = await readFile(sourceUrl, "utf8");
+  assert.match(source, />Evidence Trace</);
+  assert.match(source, />View Evidence Trace</);
+  assert.match(source, /model\.signals/);
+  assert.match(source, /model\.limitations/);
+});
+
+test("flattened reading preserves all substantive chapter layers", async () => {
   const source = await readFile(sourceUrl, "utf8");
   for (const field of [
     "chapter.translation",

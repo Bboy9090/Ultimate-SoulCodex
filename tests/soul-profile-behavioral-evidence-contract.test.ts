@@ -52,7 +52,7 @@ test("Soul Profile behavioral evidence contract", async (suite) => {
     assert.doesNotMatch(profile.synthesis.relationshipPattern, /show up consistently|stabilizing my circle/i);
   });
 
-  await suite.test("compatibility compares signal arrays by value, not array identity", () => {
+  await suite.test("legacy behavioral arrays remain supporting reflection, not compatibility scores", () => {
     const firstInput = baseInput();
     firstInput.mirror.reaction = ["analyze"];
     firstInput.mirror.drain = ["chaos"];
@@ -66,13 +66,13 @@ test("Soul Profile behavioral evidence contract", async (suite) => {
     const second = buildSoulProfile(secondInput).signals;
     const result = compareProfiles(first, second);
 
-    assert.equal(result.dimensions.stress.score, 85);
-    assert.equal(result.dimensions.decisions.score, 85);
-    assert.match(result.dimensions.stress.note, /share at least one stress-response signal/i);
-    assert.match(result.dimensions.decisions.note, /share at least one decision-style signal/i);
+    assert.equal(result.dimensions.stress.score, null);
+    assert.equal(result.dimensions.decisions.score, null);
+    assert.match(result.dimensions.stress.note, /supporting reflection/i);
+    assert.match(result.dimensions.decisions.note, /direct self-report provenance/i);
   });
 
-  await suite.test("missing behavioral evidence stays neutral instead of creating false compatibility friction", () => {
+  await suite.test("missing behavioral evidence stays withheld instead of creating false compatibility friction", () => {
     const first = buildSoulProfile(baseInput()).signals;
     const secondInput = baseInput();
     secondInput.birthData.name = "Second Signal";
@@ -80,10 +80,9 @@ test("Soul Profile behavioral evidence contract", async (suite) => {
 
     const result = compareProfiles(first, second);
 
-    assert.equal(result.dimensions.stress.score, 50);
-    assert.equal(result.dimensions.decisions.score, 50);
-    assert.match(result.dimensions.stress.note, /not enough shared stress-response evidence/i);
-    assert.match(result.dimensions.decisions.note, /not enough direct decision-style evidence/i);
+    assert.equal(result.dimensions.stress.score, null);
+    assert.equal(result.dimensions.decisions.score, null);
+    assert.equal(result.overall, null);
     assert.equal(result.friction.includes("Decision pace mismatch — agree on a process before big calls."), false);
   });
 });

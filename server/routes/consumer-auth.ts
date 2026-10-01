@@ -1,6 +1,10 @@
 import type { Express } from "express";
 import { storage, type IStorage } from "../storage";
 import {
+  durableFeatureUnavailable,
+  DURABLE_STORAGE_UNAVAILABLE_RESPONSE,
+} from "../lib/persistence-capabilities";
+import {
   AppleAuthConfigurationError,
   AppleAuthVerificationError,
   verifyAppleIdentityToken,
@@ -44,6 +48,9 @@ export function registerConsumerAuthRoutes(
   deps: ConsumerAuthDependencies = { storage, verifyApple: verifyAppleIdentityToken },
 ) {
   app.post("/api/auth/apple", async (req: any, res) => {
+    if (durableFeatureUnavailable()) {
+      return res.status(503).json(DURABLE_STORAGE_UNAVAILABLE_RESPONSE);
+    }
     try {
       const identityToken = typeof req.body?.identityToken === "string" ? req.body.identityToken : "";
       const identity = await deps.verifyApple(identityToken);

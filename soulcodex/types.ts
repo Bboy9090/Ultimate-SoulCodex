@@ -101,12 +101,12 @@ export interface SoulProfile {
 
 export interface CompatibilityDimension {
   label: string;
-  score: number;
+  score: number | null;
   note: string;
 }
 
 export interface CompatibilityScore {
-  overall: number;
+  overall: number | null;
   dimensions: {
     identity: CompatibilityDimension;
     stress: CompatibilityDimension;

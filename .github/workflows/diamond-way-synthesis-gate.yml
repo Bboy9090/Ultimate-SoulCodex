@@ -74,10 +74,14 @@ jobs:
             tests/system-registry-contract.test.ts \
             tests/aspect-interpretation-fallback-contract.test.ts \
             tests/soul-profile-behavioral-evidence-contract.test.ts \
+            tests/compatibility-evidence-authority.test.ts \
             tests/deterministic-fallback-evidence-contract.test.ts \
             tests/prompt-sanitization-evidence-contract.test.ts \
             tests/daily-horoscope-evidence-contract.test.ts \
             tests/daily-insight-system-eligibility.test.ts \
+            tests/daily-guidance-differentiation-corpus.test.ts \
+            tests/daily-context-authority.test.ts \
+            tests/ai-structure-repetition.test.ts \
             packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts \
             packages/core/__tests__/personal-numbers.test.ts
 

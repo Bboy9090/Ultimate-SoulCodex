@@ -46,7 +46,7 @@ export default function Navigation() {
         <div className="flex h-[62px] items-center justify-between px-3 sm:px-4">
           <Link
             href="/"
-            className="group flex items-center gap-2.5 rounded-xl px-1.5 py-1 text-[var(--sc-ivory)] no-underline"
+            className="group flex min-h-11 items-center gap-2.5 rounded-xl px-1.5 py-1 text-[var(--sc-ivory)] no-underline"
             data-testid="link-home"
             aria-label="Soul Codex home"
           >
@@ -70,7 +70,7 @@ export default function Navigation() {
                     href={href}
                     data-testid={`link-${label.toLowerCase()}`}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold no-underline transition-colors ${
+                    className={`flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold no-underline transition-colors ${
                       active
                         ? "bg-white/[0.065] text-[var(--sc-ivory)] shadow-[inset_0_0_0_1px_rgba(217,182,111,.1)]"
                         : "text-[var(--sc-stone)] hover:bg-white/[0.035] hover:text-[var(--sc-ivory)]"
@@ -86,7 +86,7 @@ export default function Navigation() {
             {profile && (
               <Link
                 href="/systems"
-                className={`grid h-9 w-9 place-items-center rounded-lg border no-underline transition-colors ${
+                className={`grid h-11 w-11 place-items-center rounded-lg border no-underline transition-colors ${
                   isActive(pathname, "/systems")
                     ? "border-[rgba(114,216,197,.24)] bg-[rgba(114,216,197,.08)] text-[var(--sc-teal)]"
                     : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"
@@ -101,7 +101,7 @@ export default function Navigation() {
 
             <Link
               href="/settings"
-              className={`grid h-9 w-9 place-items-center rounded-lg border no-underline transition-colors ${
+              className={`grid h-11 w-11 place-items-center rounded-lg border no-underline transition-colors ${
                 isActive(pathname, "/settings")
                   ? "border-[rgba(217,182,111,.22)] bg-[rgba(217,182,111,.08)] text-[var(--sc-gold)]"
                   : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"
@@ -112,7 +112,7 @@ export default function Navigation() {
             </Link>
 
             <Link href="/create" className="ml-1 no-underline">
-              <Button className="h-9 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105" data-testid="button-create-profile-nav">
+              <Button className="h-11 rounded-lg border border-[rgba(239,208,141,.28)] bg-[linear-gradient(135deg,#efd08d,#cda458)] px-3.5 text-[12px] font-bold text-[#170f07] shadow-[0_9px_24px_rgba(217,182,111,.13)] hover:brightness-105" data-testid="button-create-profile-nav">
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                 Create profile
               </Button>
@@ -121,11 +121,11 @@ export default function Navigation() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] md:hidden" data-testid="button-menu" aria-label="Open navigation menu">
+              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] md:hidden" data-testid="button-menu" aria-label="Open navigation menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[min(88vw,360px)] border-l border-white/[0.07] bg-[var(--sc-ink)]/[.98] px-5 text-[var(--sc-ivory)] backdrop-blur-2xl">
+            <SheetContent className="w-[min(88vw,360px)] border-l border-white/[0.07] bg-[var(--sc-ink)]/[.98] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[var(--sc-ivory)] backdrop-blur-2xl">
               <div className="mt-[max(2rem,env(safe-area-inset-top))]">
                 <div className="mb-7 flex items-center gap-3 border-b border-white/[0.07] pb-5">
                   <span className="grid h-10 w-10 place-items-center rounded-full border border-[rgba(217,182,111,.25)] bg-[rgba(217,182,111,.06)] text-[var(--sc-gold-bright)]">
@@ -145,6 +145,7 @@ export default function Navigation() {
                         key={label}
                         href={href}
                         data-testid={`link-${label.toLowerCase()}-mobile`}
+                        aria-current={active ? "page" : undefined}
                         className={`flex min-h-12 items-center gap-3 rounded-xl border px-3.5 text-sm font-semibold no-underline ${
                           active
                             ? "border-[rgba(217,182,111,.2)] bg-[rgba(217,182,111,.07)] text-[var(--sc-ivory)]"
@@ -157,12 +158,16 @@ export default function Navigation() {
                     );
                   })}
                   {profile && (
-                    <Link href="/systems" data-testid="link-underlying-systems-mobile" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
+                    <Link href="/systems" aria-current={isActive(pathname, "/systems") ? "page" : undefined} data-testid="link-underlying-systems-mobile" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
                       <Database className="h-4.5 w-4.5 text-[var(--sc-stone)]" strokeWidth={1.8} />
                       Underlying systems
                     </Link>
                   )}
-                  <Link href="/settings" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
+                  <Link
+                    href="/settings"
+                    aria-current={isActive(pathname, "/settings") ? "page" : undefined}
+                    className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline"
+                  >
                     <Settings className="h-4.5 w-4.5 text-[var(--sc-stone)]" strokeWidth={1.8} />
                     Settings
                   </Link>

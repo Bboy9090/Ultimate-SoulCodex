@@ -11,6 +11,11 @@ type BackendIdentity = {
   appVersion?: string;
   releaseSha?: string;
   apiContract?: string;
+  persistence?: {
+    mode?: "postgres" | "memory";
+    durable?: boolean;
+    durableFeaturesAvailable?: boolean;
+  };
 };
 
 type CheckState = {
@@ -128,6 +133,16 @@ export default function DiagnosticsPage() {
                 <Row label="App version" value={state.backend.appVersion || "unknown"} />
                 <Row label="Release SHA" value={shortSha(state.backend.releaseSha)} mono />
                 <Row label="API contract" value={state.backend.apiContract || "unknown"} mono />
+                <Row
+                  label="Server persistence"
+                  value={
+                    state.backend.persistence?.durable
+                      ? "durable (Postgres)"
+                      : state.backend.persistence?.mode === "memory"
+                        ? "ephemeral (memory)"
+                        : "unknown"
+                  }
+                />
               </dl>
             ) : (
               <p className="mt-5 text-sm text-[var(--sc-stone)]">No backend identity received.</p>
@@ -158,7 +173,7 @@ export default function DiagnosticsPage() {
               </button>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatusCard
                 ok={contractMatches}
                 label="API contract"
@@ -168,6 +183,17 @@ export default function DiagnosticsPage() {
                 ok={state.compatibilityOk === true}
                 label="Compatibility route"
                 detail={state.compatibilityOk ? "responding" : "missing or incompatible"}
+              />
+              <StatusCard
+                ok={state.backend?.persistence?.durable === true}
+                label="Server persistence"
+                detail={
+                  state.backend?.persistence?.durable === true
+                    ? "durable"
+                    : state.backend?.persistence?.mode === "memory"
+                      ? "ephemeral; durable account/share features are unavailable"
+                      : "unknown"
+                }
               />
               <StatusCard
                 ok={exactShaMatches}

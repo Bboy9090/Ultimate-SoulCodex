@@ -38,14 +38,19 @@ jobs:
           node --import tsx --test
           tests/trusted-mutation-origin.test.ts
           tests/production-schema-preflight.test.ts
+          tests/production-persistence-truth.test.ts
+          tests/persistence-readiness.test.ts
           tests/public-profile-projection.test.ts
           tests/share-privacy-accessibility-contract.test.ts
+          tests/pwa-update-lifecycle-contract.test.ts
+          tests/public-api-error-privacy.test.ts
           tests/storage-public-share-deletion.test.ts
           tests/account-deletion-local-cleanup-truth.test.ts
           tests/privacy-public-share-truth.test.ts
           tests/store-release-candidate-contract.test.ts
           tests/offline-profile-lazy-chart-contract.test.ts
           tests/human-design-bodygraph-bundle-boundary.test.ts
+          tests/accessibility-device-acceptance-contract.test.ts
           tests/profile-verification-reconciliation.test.ts
           tests/local-first-verification-failure-truth.test.ts
           tests/verified-profile-differentiation-corpus.test.ts
@@ -58,6 +63,9 @@ jobs:
             echo "Destructive schema operation detected in production preflight."
             exit 1
           fi
+
+      - name: Audit production dependencies for high-severity vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Typecheck
         run: npm run check
@@ -88,8 +96,12 @@ jobs:
             echo "SHA=$GITHUB_SHA"
             echo "policy=session-backed-mutations-require-trusted-origin"
             echo "policy=public-share-schema-preflight-is-idempotent-and-non-destructive"
+            echo "policy=production-persistence-mode-is-explicit-and-durable-features-fail-closed"
+            echo "policy=railway-promotion-requires-live-database-readiness"
             echo "policy=account-deletion-removes-public-shares"
             echo "policy=public-share-projection-excludes-private-birth-and-assessment-data"
+            echo "policy=pwa-updates-preserve-current-and-previous-shells"
+            echo "policy=client-api-errors-never-echo-arbitrary-response-bodies"
             echo "policy=public-share-disclosures-match-product"
             echo "policy=canonical-offline-profile-persistence-regression"
             echo "policy=partial-verification-cannot-downgrade-local-profile"

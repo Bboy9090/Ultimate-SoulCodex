@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { MotionConfig } from "framer-motion";
 import { Switch, Route, useParams } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -34,7 +35,7 @@ const PublicSharedProfilePage = lazy(() => import("./pages/PublicSharedProfilePa
 
 function RouteLoadingFallback() {
   return (
-    <div className="min-h-screen bg-[#08060d] text-[#f5ead7] grid place-items-center px-6">
+    <div className="min-h-screen bg-[#08060d] text-[#f5ead7] grid place-items-center px-6" role="status" aria-live="polite" aria-label="Soul Codex route is loading">
       <div className="text-center">
         <div className="font-serif text-xl font-semibold">Soul Codex</div>
         <div className="mt-2 text-sm opacity-60">Opening…</div>
@@ -75,8 +76,16 @@ function TimelineRoute() {
 
 function Router() {
   return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <Switch>
+    <>
+      <a
+        href="#main-content"
+        className="sr-only fixed left-3 top-3 z-[100] rounded-lg bg-[var(--sc-gold-bright)] px-4 py-3 font-semibold text-[#170f07] focus:not-sr-only"
+      >
+        Skip to main content
+      </a>
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <div id="main-content" tabIndex={-1}>
+          <Switch>
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
       {/* Backward-compatible alias for older onboarding/deep links. */}
@@ -101,16 +110,20 @@ function Router() {
       <Route path="/account-deletion" component={AccountDeletionPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
-      </Switch>
-    </Suspense>
+          </Switch>
+        </div>
+      </Suspense>
+    </>
   );
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider><Toaster /><Router /></TooltipProvider>
-    </QueryClientProvider>
+    <MotionConfig reducedMotion="user">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider><Toaster /><Router /></TooltipProvider>
+      </QueryClientProvider>
+    </MotionConfig>
   );
 }
 
