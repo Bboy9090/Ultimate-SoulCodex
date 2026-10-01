@@ -335,7 +335,15 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
       .map((entry) => String(entry.id ?? ""))
       .filter(Boolean),
   );
+  const governedProtectiveLayer =
+    depth.protectiveFunction &&
+    typeof depth.protectiveFunction === "object" &&
+    (
+      typeof depth.protectiveFunction.claimKind === "string" ||
+      Array.isArray(depth.protectiveFunction.evidenceIds)
+    );
   const protectiveBehavioralSupport =
+    !governedProtectiveLayer ||
     depth.protectiveFunction?.claimKind === "observed" ||
     protectiveEvidenceIds.some((id: string) => behavioralEvidenceIds.has(id));
 
