@@ -59,6 +59,7 @@ export interface RangeEvidence {
   validLocalMinutes?: number;
   nonexistentLocalMinutes?: number;
   ambiguousLocalMinutes?: number;
+  invalidLocalMinutes?: number;
 }
 
 export type SynthesisEvidenceMode = "use" | "branch_only" | "exclude";
