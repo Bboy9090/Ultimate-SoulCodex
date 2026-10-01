@@ -257,7 +257,7 @@ describe("clarityReadingModel", () => {
     expect(model.visiblePattern).toContain("You notice pressure before other people name it.");
     expect(model.visiblePattern).toContain("Expression 4");
     expect(model.protectiveFunction).toContain("Preparedness protects emotional safety.");
-    expect(model.protectiveFunction).toContain("Soul Urge 5");
+    expect(model.protectiveFunction).not.toContain("Soul Urge 5");
     expect(model.gift).toContain("Expression 4");
     expect(model.cost).toContain("Responsibility can become silent resentment.");
     expect(model.relationshipImpact).toContain("Expression 4");
@@ -270,6 +270,64 @@ describe("clarityReadingModel", () => {
         expect.objectContaining({ id: "soul-urge", confidence: "deterministic" }),
       ]),
     );
+  });
+
+
+  it("withholds governed protective-function claims that only cite symbolic evidence", () => {
+    const model = buildClarityReadingModel({
+      depthInterpretation: {
+        evidence: [
+          {
+            id: "verified.astrology.saturn",
+            system: "astrology",
+            field: "saturn",
+            value: "Capricorn",
+            confidence: "high",
+            provenanceStatus: "externally-verified",
+          },
+        ],
+        protectiveFunction: {
+          title: "Possible protective function",
+          summary: "Structure may protect against uncertainty.",
+          explanation: "Symbolic Saturn interpretation.",
+          claimKind: "inferred",
+          evidenceIds: ["verified.astrology.saturn"],
+          confidence: "moderate",
+          limitations: [],
+        },
+      },
+    });
+
+    expect(model.protectiveFunction).toMatch(/No protective function is established/i);
+    expect(model.protectiveFunction).not.toContain("Structure may protect against uncertainty.");
+  });
+
+  it("surfaces governed protective-function claims when behavioral evidence supports them", () => {
+    const model = buildClarityReadingModel({
+      depthInterpretation: {
+        evidence: [
+          {
+            id: "mirror.shadow-trigger",
+            system: "mirror",
+            field: "mirror.shadowTrigger",
+            value: "shifting expectations",
+            confidence: "high",
+            provenanceStatus: "partially-verified",
+          },
+        ],
+        protectiveFunction: {
+          title: "Possible protective function",
+          summary: "Withdrawal may reduce exposure to shifting expectations.",
+          explanation: "Supported by the reported stress trigger.",
+          claimKind: "observed",
+          evidenceIds: ["mirror.shadow-trigger"],
+          confidence: "high",
+          limitations: [],
+        },
+      },
+    });
+
+    expect(model.protectiveFunction).toContain("Withdrawal may reduce exposure to shifting expectations.");
   });
 
   it("turns Expression 1 and Soul Urge 6 into a visible independence-versus-responsibility tension", () => {
@@ -292,7 +350,8 @@ describe("clarityReadingModel", () => {
     expect(model.coreContradiction).toContain("Soul Urge 6 (Responsibility)");
     expect(model.coreContradiction).toContain("Both can be active at once");
     expect(model.visiblePattern).toContain("self-directed initiation and leadership");
-    expect(model.protectiveFunction).toContain("care, loyalty, and dependable belonging");
+    expect(model.protectiveFunction).toContain("Preparation can protect against preventable chaos.");
+    expect(model.protectiveFunction).not.toContain("Soul Urge 6");
     expect(model.relationshipImpact).toContain("Expression 1");
     expect(model.relationshipImpact).toContain("Soul Urge 6");
     expect(model.limitations).toContain(
