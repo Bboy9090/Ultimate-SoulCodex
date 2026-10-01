@@ -8,6 +8,7 @@ import {
 
 const birthInput = {
   name: "Bobby Example",
+  fullBirthName: "Bobby Example",
   birthDate: "1990-09-17",
   birthTime: "11:11",
   birthLocation: "Bronx, New York",
@@ -28,10 +29,35 @@ test("Offline Codex runtime", async (suite) => {
 
     assert.deepStrictEqual(first, second);
     assert.equal(first.astrologyData.sunSign, "Virgo");
+    assert.equal(first.astrologyData.moonSign, "");
+    assert.equal(first.astrologyData.risingSign, "");
+    assert.deepStrictEqual(first.astrologyData.planets, {});
+    assert.deepStrictEqual(first.astrologyData.houses, []);
+    assert.deepStrictEqual(first.astrologyData.aspects, []);
+    assert.equal(first.astrologyData.northNode, null);
+    assert.equal(first.astrologyData.southNode, null);
+    assert.equal(first.astrologyData.chiron, null);
     assert.equal(first.numerologyData.lifePath, 9);
     assert.equal(first.localOnly, true);
     assert.equal(first.syncStatus, "local-only");
     assert.equal(isOfflineCodexProfile(first), true);
+  });
+
+  await suite.test("uses the canonical numerology engine for normalized names", () => {
+    const accented = generateOfflineCodexProfile(
+      { ...birthInput, name: "José Núñez", fullBirthName: "José Núñez" },
+      {
+        id: "local-canonical-numerology",
+        generatedAt: "2026-07-24T20:00:00.000Z",
+        currentYear: 2026,
+      },
+    );
+
+    assert.equal(accented.numerologyData.lifePath, 9);
+    assert.equal(accented.numerologyData.expression, 3);
+    assert.equal(accented.numerologyData.soulUrge, 1);
+    assert.equal(accented.numerologyData.personality, 2);
+    assert.equal(accented.numerologyData.personalYear, 9);
   });
 
   await suite.test("produces a contract-valid evidence-linked depth interpretation", () => {
@@ -45,7 +71,7 @@ test("Offline Codex runtime", async (suite) => {
     });
 
     assert.equal(validation.valid, true);
-    assert.ok(profile.depthInterpretation.evidence.length >= 5);
+    assert.ok(profile.depthInterpretation.evidence.length >= 3);
     assert.ok(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.expression"));
     assert.ok(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.soul-urge"));
     assert.notEqual(profile.depthInterpretation.claritySummary.claimKind, "unavailable");
@@ -54,7 +80,7 @@ test("Offline Codex runtime", async (suite) => {
 
   await suite.test("uses Expression 1 and Soul Urge 6 as first-class contradiction evidence", () => {
     const profile = generateOfflineCodexProfile(
-      { ...birthInput, name: "Bobby" },
+      { ...birthInput, name: "Bobby", fullBirthName: "Bobby" },
       {
         id: "local-name-number-tension",
         generatedAt: "2026-07-24T20:00:00.000Z",
@@ -90,5 +116,23 @@ test("Offline Codex runtime", async (suite) => {
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.astrology.moon"), false);
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.expression"), true);
     assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.soul-urge"), true);
+    assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.astrology.sun"), false);
+  });
+
+  await suite.test("does not derive name numerology from a display name", () => {
+    const profile = generateOfflineCodexProfile(
+      { ...birthInput, fullBirthName: undefined },
+      {
+        id: "local-display-name-only",
+        generatedAt: "2026-07-24T20:00:00.000Z",
+        currentYear: 2026,
+      },
+    );
+    assert.equal(profile.numerologyData.expression, null);
+    assert.equal(profile.numerologyData.soulUrge, null);
+    assert.equal(profile.numerologyData.personality, null);
+    assert.equal(profile.numerologyData.maturity, null);
+    assert.equal(profile.numerologyData.evidenceStates.expression, "unavailable");
+    assert.equal(profile.depthInterpretation.evidence.some((item) => item.id === "offline.numerology.expression"), false);
   });
 });

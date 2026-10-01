@@ -32,7 +32,8 @@ describe("clarityReadingModel", () => {
         sunSign: "Leo",
         moonSign: "Gemini",
       },
-      numerologyData: { lifePath: 9 },
+      birthDate: "1990-09-17",
+      numerologyData: { lifePath: 4 },
       archetypeData: { title: "Sacred Guardian" },
     });
 
@@ -48,20 +49,78 @@ describe("clarityReadingModel", () => {
     );
   });
 
-  it("labels local symbolic Sun as supported rather than verified", () => {
+  it("does not let a local calendar Sun candidate enter Clarity synthesis", () => {
     const model = buildClarityReadingModel({
+      birthDate: "1990-09-17",
       astrologyData: { sunSign: "Virgo" },
-      numerologyData: { lifePath: 9 },
+      numerologyData: { lifePath: 4 },
     });
 
+    expect(model.signals.some((signal) => signal.id === "sun-symbolic")).toBe(false);
+    expect(model.signals).toContainEqual(
+      expect.objectContaining({ id: "life-path", value: "9", confidence: "deterministic" }),
+    );
+    expect(model.limitations[0]).toMatch(/No independently verified or full-range-stable/);
+  });
+
+  it("excludes malformed core numerology instead of labeling it deterministic", () => {
+    const model = buildClarityReadingModel({
+      numerologyData: { lifePath: 99, expression: -4, soulUrge: "banana" },
+    });
+
+    expect(model.signals.some((signal) => signal.id === "life-path")).toBe(false);
+    expect(model.signals.some((signal) => signal.id === "expression")).toBe(false);
+    expect(model.signals.some((signal) => signal.id === "soul-urge")).toBe(false);
+  });
+
+  it("separates verified, stable-range, and deterministic evidence labels", () => {
+    const rangeEvidence = {
+      resolutionMinutes: 1,
+      rangeStartLocal: "1990-09-17T00:00",
+      rangeEndLocal: "1990-09-17T23:59",
+      timezone: "America/New_York",
+      testedValues: 1440,
+    };
+    const model = buildClarityReadingModel({
+      birthDate: "1990-09-17",
+      verifiedAstrologyData: {
+        sun: {
+          sign: "Virgo",
+          verificationStatus: "calculated",
+          evidenceState: "stable_across_range",
+          rangeEvidence,
+        },
+        moon: {
+          sign: null,
+          verificationStatus: "unresolved",
+          evidenceState: "conditional",
+          rangeEvidence,
+          conditionalValues: [
+            { value: "Virgo", startLocalTime: "00:00", endLocalTime: "12:00" },
+            { value: "Libra", startLocalTime: "12:01", endLocalTime: "23:59" },
+          ],
+        },
+      },
+      numerologyData: { lifePath: 44 },
+    });
     expect(model.signals).toContainEqual(
       expect.objectContaining({
-        id: "sun-symbolic",
-        value: "Virgo",
-        confidence: "supported",
+        id: "sun",
+        confidence: "stable",
+        calculationCertainty: "range-stable",
+        evidenceStatus: "stable-across-range",
+        interpretationConfidence: "not-applicable",
       }),
     );
-    expect(model.limitations[0]).toMatch(/No independently verified/);
+    expect(model.signals.some((signal) => signal.id === "moon")).toBe(false);
+    expect(model.signals).toContainEqual(
+      expect.objectContaining({
+        id: "life-path",
+        value: "9",
+        calculationCertainty: "deterministic",
+        evidenceStatus: "calculated",
+      }),
+    );
   });
 
   it("does not invent Moon or Rising signals when they are missing", () => {
@@ -69,6 +128,7 @@ describe("clarityReadingModel", () => {
       astrologyData: { sunSign: "Virgo" },
     });
 
+    expect(model.signals.some((signal) => signal.id === "sun")).toBe(false);
     expect(model.signals.some((signal) => signal.id === "moon")).toBe(false);
     expect(model.signals.some((signal) => signal.id === "rising")).toBe(false);
   });
@@ -187,7 +247,9 @@ describe("clarityReadingModel", () => {
         relationshipImpact: { summary: "You may help before asking whether help is wanted." },
         action: { summary: "Ask one direct question before solving the problem." },
       },
-      numerologyData: { lifePath: 9, expression: 4, soulUrge: 5 },
+      birthDate: "1990-09-17",
+      fullBirthName: "Paul Ray",
+      numerologyData: { lifePath: 44, expression: 99, soulUrge: 99 },
     });
 
     expect(model.title).toBe("The Quiet Guardian");
@@ -212,8 +274,10 @@ describe("clarityReadingModel", () => {
 
   it("turns Expression 1 and Soul Urge 6 into a visible independence-versus-responsibility tension", () => {
     const model = buildClarityReadingModel({
+      birthDate: "1990-09-17",
+      fullBirthName: "Jax White",
       astrologyData: { sunSign: "Virgo" },
-      numerologyData: { lifePath: 9, expression: 1, soulUrge: 6 },
+      numerologyData: { lifePath: 44, expression: 99, soulUrge: 99 },
       depthInterpretation: {
         claritySummary: { summary: "Precision and service are prominent symbolic themes." },
         behavior: { summary: "You tend to look for the weak link before you commit." },

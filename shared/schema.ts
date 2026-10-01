@@ -150,12 +150,13 @@ export function isCoordinateWithinRange(
 }
 
 export const birthDataSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Display name is required"),
+  fullBirthName: z.string().optional(),
   birthDate: z.string().min(1, "Birth date is required"),
   // Empty string is an explicit unknown-time state. Never force the user to
   // invent a clock time just to satisfy validation.
   birthTime: birthTimeSchema,
-  birthLocation: z.string().min(1, "Birth location is required"),
+  birthLocation: z.string(),
   timezone: z.string(),
   latitude: z.union([z.string(), z.number()]).optional(),
   longitude: z.union([z.string(), z.number()]).optional(),

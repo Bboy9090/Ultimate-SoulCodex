@@ -3,6 +3,7 @@ import test from "node:test";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
+  getSynthesisAstrologySign,
   getVerifiedAstrologySign,
   hasVerifiedBigThree,
   hasVerifiedFullNatalChart,
@@ -17,6 +18,7 @@ import {
 const local = generateOfflineCodexProfile(
   {
     name: "Robert Example",
+    fullBirthName: "Robert Example",
     birthDate: "1990-09-17",
     birthTime: "11:11",
     birthLocation: "Bronx, New York",
@@ -567,7 +569,7 @@ test("verified Human Design is reconciled into active and offline profiles", () 
 });
 
 
-test("partial verification never erases existing local astrology context", () => {
+test("partial verification preserves local metadata but never promotes legacy aliases as facts", () => {
   const active = reconcileActiveProfile(
     {
       id: "local-partial",
@@ -593,11 +595,126 @@ test("partial verification never erases existing local astrology context", () =>
     "2026-09-27T20:40:00.000Z",
   );
 
-  assert.equal(active.sunSign, "Virgo");
-  assert.equal(active.moonSign, "Libra");
-  assert.equal(active.risingSign, "Scorpio");
-  assert.equal(active.astrologyData?.sunSign, "Virgo");
-  assert.equal(active.astrologyData?.moonSign, "Libra");
-  assert.equal(active.astrologyData?.risingSign, "Scorpio");
+  assert.equal(active.sunSign, null);
+  assert.equal(active.moonSign, null);
+  assert.equal(active.risingSign, null);
+  assert.equal(active.astrologyData?.sunSign, null);
+  assert.equal(active.astrologyData?.moonSign, null);
+  assert.equal(active.astrologyData?.risingSign, null);
   assert.equal(active.astrologyData?.localCandidateNote, "preserve-me");
+});
+
+
+test("stable unknown-time placements become synthesis facts while conditional placements remain branches", () => {
+  const rangeEvidence = {
+    resolutionMinutes: 1,
+    rangeStartLocal: "1990-09-17T00:00",
+    rangeEndLocal: "1990-09-17T23:59",
+    timezone: "America/New_York",
+    testedValues: 1440,
+  };
+  const astrologyData = {
+    sun: {
+      sign: "Virgo",
+      verificationStatus: "calculated",
+      evidenceState: "stable_across_range" as const,
+      rangeEvidence,
+    },
+    moon: {
+      sign: null,
+      verificationStatus: "unresolved",
+      evidenceState: "conditional" as const,
+      rangeEvidence,
+      conditionalValues: [
+        { value: "Virgo", startLocalTime: "00:00", endLocalTime: "14:11" },
+        { value: "Libra", startLocalTime: "14:12", endLocalTime: "23:59" },
+      ],
+    },
+  };
+
+  assert.equal(getVerifiedAstrologySign(astrologyData, "sun"), null);
+  assert.equal(getSynthesisAstrologySign(astrologyData, "sun"), "Virgo");
+  assert.equal(getSynthesisAstrologySign(astrologyData, "moon"), null);
+});
+
+test("completed unknown-time range analysis is terminal even when Moon remains conditional", () => {
+  const rangeEvidence = {
+    resolutionMinutes: 1,
+    rangeStartLocal: "1990-09-17T00:00",
+    rangeEndLocal: "1990-09-17T23:59",
+    timezone: "America/New_York",
+    testedValues: 1440,
+  };
+  const unknownLocal = {
+    ...local,
+    birthTime: null,
+    verifiedAstrologyData: {
+      sun: { sign: "Virgo", verificationStatus: "calculated", evidenceState: "stable_across_range" as const, rangeEvidence },
+      moon: {
+        sign: null,
+        verificationStatus: "unresolved",
+        evidenceState: "conditional" as const,
+        rangeEvidence,
+        conditionalValues: [
+          { value: "Virgo", startLocalTime: "00:00", endLocalTime: "14:11" },
+          { value: "Libra", startLocalTime: "14:12", endLocalTime: "23:59" },
+        ],
+      },
+    },
+  } satisfies ReconciledOfflineProfile;
+
+  assert.equal(profileNeedsOnlineVerification(unknownLocal), false);
+});
+
+test("complete range-analyzed Human Design survives offline reconciliation without becoming verified", () => {
+  const rangeEvidence = {
+    resolutionMinutes: 1,
+    rangeStartLocal: "1990-09-17T00:00",
+    rangeEndLocal: "1990-09-17T23:59",
+    timezone: "America/New_York",
+    testedValues: 1440,
+  };
+  const component = (value: string, evidenceState: "stable_across_range" | "conditional" = "stable_across_range") => ({
+    evidenceState,
+    value: evidenceState === "stable_across_range" ? value : null,
+    conditionalValues: evidenceState === "conditional" ? [
+      { value, startLocalTime: "00:00", endLocalTime: "11:59" },
+      { value: "Other", startLocalTime: "12:00", endLocalTime: "23:59" },
+    ] : [],
+    rangeEvidence,
+    reason: "test",
+  });
+  const hdRange = {
+    status: "range_analyzed",
+    evidenceState: "conditional",
+    components: {
+      type: component("Reflector"),
+      strategy: component("To Wait a Lunar Cycle"),
+      authority: component("Lunar Authority"),
+      profile: component("2/5", "conditional"),
+      definition: component("No Definition"),
+      centers: component(""),
+      channels: component(""),
+      gates: component("18,28"),
+      incarnationCross: component("Cross", "conditional"),
+    },
+  };
+  const hydrated = reconcileOfflineProfile(local, { humanDesignData: hdRange }, "2026-09-30T00:00:00.000Z");
+  assert.equal((hydrated.humanDesignData as any)?.status, "range_analyzed");
+  assert.equal(hasVerifiedHumanDesignTrust(hydrated.humanDesignData), false);
+  assert.equal((hydrated.humanDesignData as any)?.components?.type?.evidenceState, "stable_across_range");
+  assert.equal((hydrated.humanDesignData as any)?.components?.profile?.evidenceState, "conditional");
+});
+
+test("exact birth instant without coordinates stops retrying after planetary core verifies", () => {
+  const noLocation = {
+    ...local,
+    latitude: null,
+    longitude: null,
+    verifiedAstrologyData: {
+      sun: verifiedRemote.astrologyData.sun,
+      moon: verifiedRemote.astrologyData.moon,
+    },
+  } satisfies ReconciledOfflineProfile;
+  assert.equal(profileNeedsOnlineVerification(noLocation), false);
 });

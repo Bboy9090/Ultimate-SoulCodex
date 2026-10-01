@@ -6,6 +6,11 @@ import {
 } from "../services/astrology-production";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
 import { createVerifiedHumanDesignTrustRecord } from "../services/human-design-trust";
+import {
+  calculateUnknownTimeAstrologyRange,
+  calculateUnknownTimeHumanDesignRange,
+  type UnknownTimeAstrologyRange,
+} from "../services/unknown-time-range";
 import { fromZonedTime } from "date-fns-tz";
 
 const numericCoordinate = z
@@ -58,6 +63,94 @@ function withVerifiedLegacyAliases(astrologyData: AstrologyData) {
   };
 }
 
+function placementFromRange(
+  original: any,
+  range: UnknownTimeAstrologyRange["planets"][string],
+  label: string,
+) {
+  if (range.evidenceState === "stable_across_range" && range.value) {
+    return {
+      ...original,
+      sign: range.value,
+      verificationStatus: "calculated",
+      evidenceState: "stable_across_range",
+      rangeEvidence: range.rangeEvidence,
+      conditionalValues: range.conditionalValues,
+      evidence: {
+        source: "Soul Codex full-day minute sweep",
+        engine: "unknown-time-range-v1",
+        calculatedAt: new Date().toISOString(),
+      },
+      reason: `${label} is stable across every possible HH:MM birth time for the supplied date/timezone.`,
+    };
+  }
+  return {
+    ...original,
+    sign: null,
+    verificationStatus: "unresolved",
+    evidenceState: range.evidenceState,
+    rangeEvidence: range.rangeEvidence,
+    conditionalValues: range.conditionalValues,
+    reason: range.reason,
+  };
+}
+
+function withUnknownTimeRange(
+  astrologyData: AstrologyData,
+  range: UnknownTimeAstrologyRange,
+): AstrologyData {
+  if (!astrologyData.planets) return astrologyData;
+  const planets = {
+    sun: placementFromRange(astrologyData.planets.sun, range.planets.sun, "Sun"),
+    moon: placementFromRange(astrologyData.planets.moon, range.planets.moon, "Moon"),
+    mercury: placementFromRange(astrologyData.planets.mercury, range.planets.mercury, "Mercury"),
+    venus: placementFromRange(astrologyData.planets.venus, range.planets.venus, "Venus"),
+    mars: placementFromRange(astrologyData.planets.mars, range.planets.mars, "Mars"),
+    jupiter: placementFromRange(astrologyData.planets.jupiter, range.planets.jupiter, "Jupiter"),
+    saturn: placementFromRange(astrologyData.planets.saturn, range.planets.saturn, "Saturn"),
+    uranus: placementFromRange(astrologyData.planets.uranus, range.planets.uranus, "Uranus"),
+    neptune: placementFromRange(astrologyData.planets.neptune, range.planets.neptune, "Neptune"),
+    pluto: placementFromRange(astrologyData.planets.pluto, range.planets.pluto, "Pluto"),
+  };
+  const rising = {
+    ...astrologyData.rising,
+    sign: range.ascendant.evidenceState === "stable_across_range" ? range.ascendant.value : null,
+    verificationStatus:
+      range.ascendant.evidenceState === "stable_across_range" ? "calculated" : "unresolved",
+    evidenceState: range.ascendant.evidenceState,
+    rangeEvidence: range.ascendant.rangeEvidence,
+    conditionalValues: range.ascendant.conditionalValues,
+    reason: range.ascendant.reason,
+  } as AstrologyData["rising"];
+
+  return {
+    ...astrologyData,
+    sun: planets.sun,
+    moon: planets.moon,
+    rising,
+    planets,
+    houses: undefined,
+    midheaven: undefined,
+    planetaryHouses: undefined,
+    aspects: undefined,
+    verification: {
+      ...astrologyData.verification,
+      complete: false,
+      unresolvedBodies: [
+        ...new Set([
+          ...astrologyData.verification.unresolvedBodies,
+          "Ascendant",
+          "Houses",
+          "Midheaven",
+        ]),
+      ],
+      suggestions:
+        "Birth time is unknown. Stable-across-range placements may be interpreted with range provenance; conditional placements must branch by time window; Ascendant, houses, and Midheaven are not certified.",
+      lastUpdated: new Date().toISOString(),
+    },
+  };
+}
+
 /**
  * Minimal online evidence endpoint for a local-first profile.
  *
@@ -79,15 +172,52 @@ export function registerProfileVerificationRoutes(app: Express) {
     }
 
     try {
-      const astrologyData = await calculateVerifiedAstrology({
+      const exactBirthTime = parsed.data.birthTime?.trim() || undefined;
+      let astrologyData = await calculateVerifiedAstrology({
         birthDate: parsed.data.birthDate,
-        birthTime: parsed.data.birthTime?.trim() || undefined,
+        birthTime: exactBirthTime,
         timezone: parsed.data.timezone,
         latitude: parsed.data.latitude,
         longitude: parsed.data.longitude,
       });
       const updatedAt = new Date().toISOString();
       let humanDesignData: Record<string, unknown> | null = null;
+      let astrologyRange = null as ReturnType<typeof calculateUnknownTimeAstrologyRange> | null;
+      let humanDesignRange = null as ReturnType<typeof calculateUnknownTimeHumanDesignRange> | null;
+
+      if (!exactBirthTime) {
+        astrologyRange = calculateUnknownTimeAstrologyRange({
+          birthDate: parsed.data.birthDate,
+          timezone: parsed.data.timezone,
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
+        });
+        astrologyData = withUnknownTimeRange(astrologyData, astrologyRange);
+        humanDesignRange = calculateUnknownTimeHumanDesignRange({
+          birthDate: parsed.data.birthDate,
+          timezone: parsed.data.timezone,
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
+        });
+        const componentStates = humanDesignRange.components
+          ? Object.values(humanDesignRange.components).map((component) => component.evidenceState)
+          : [];
+        const humanDesignEvidenceState =
+          componentStates.length === 0
+            ? "unavailable"
+            : componentStates.every((state) => state === "stable_across_range")
+              ? "stable_across_range"
+              : componentStates.some((state) => state === "conditional")
+                ? "conditional"
+                : "unavailable";
+        humanDesignData = {
+          status: "range_analyzed",
+          evidenceState: humanDesignEvidenceState,
+          components: humanDesignRange.components,
+          reason: humanDesignRange.reason ??
+            "Only Human Design components stable across every possible birth minute may be used; conditional components remain excluded from synthesis.",
+        };
+      }
 
       if (
         parsed.data.birthTime?.trim() &&
@@ -150,6 +280,29 @@ export function registerProfileVerificationRoutes(app: Express) {
       return res.json({
         astrologyData: withVerifiedLegacyAliases(astrologyData),
         humanDesignData,
+        rangeEvidence: exactBirthTime
+          ? null
+          : {
+              astrology: astrologyRange,
+              humanDesign: humanDesignRange,
+            },
+        evidenceModel: {
+          states: ["verified", "stable_across_range", "conditional", "unavailable"],
+          synthesisRules: {
+            verified: "use",
+            stable_across_range: "use_with_range_provenance",
+            conditional: "branch_only",
+            unavailable: "exclude",
+          },
+        },
+        unlocks: [
+          ...(!exactBirthTime
+            ? ["Add an exact birth time to collapse conditional branches and unlock exact degrees, Ascendant, houses, Midheaven, and time-sensitive Human Design components."]
+            : []),
+          ...(parsed.data.latitude === undefined || parsed.data.longitude === undefined
+            ? ["Add the nearest known birth city or coordinates to unlock location-sensitive astronomy. Soul Codex will not insert a default birthplace."]
+            : []),
+        ],
         updatedAt,
         processing: {
           persistedProfile: false,

@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import express from "express";
 import { registerCodexToolRoutes } from "../server/routes/codex-tools.ts";
+import { extractCore } from "../services/codex-tools/types.ts";
 
 async function withToolServer(run: (baseUrl: string) => Promise<void>) {
   const app = express();
@@ -30,6 +31,43 @@ async function withToolServer(run: (baseUrl: string) => Promise<void>) {
 async function json(response: Response) {
   return response.json() as Promise<any>;
 }
+
+test("legacy codex tool core extractor rejects unverified astrology and mismatched numerology", () => {
+  const raw = extractCore({
+    birthDate: "1990-09-17",
+    astrologyData: {
+      sunSign: "Virgo",
+      moonSign: "Scorpio",
+      risingSign: "Capricorn",
+    },
+    numerologyData: { lifePath: 4 },
+  });
+
+  assert.equal(raw.sunSign, "");
+  assert.equal(raw.moonSign, "");
+  assert.equal(raw.risingSign, "");
+  assert.equal(raw.lifePath, "");
+
+  const evidence = {
+    source: "independent ephemeris comparison",
+    engine: "codex-tool-contract@1",
+    calculatedAt: "2026-09-28T13:00:00.000Z",
+  };
+  const verified = extractCore({
+    birthDate: "1990-09-17",
+    verifiedAstrologyData: {
+      sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+      moon: { sign: "Scorpio", verificationStatus: "verified", evidence },
+      rising: { sign: "Capricorn", verificationStatus: "verified", evidence },
+    },
+    numerologyData: { lifePath: 9 },
+  });
+
+  assert.equal(verified.sunSign, "Virgo");
+  assert.equal(verified.moonSign, "Scorpio");
+  assert.equal(verified.risingSign, "Capricorn");
+  assert.equal(verified.lifePath, 9);
+});
 
 test("production catalog exposes only the three truth-labeled recovered tools", async () => {
   await withToolServer(async (baseUrl) => {

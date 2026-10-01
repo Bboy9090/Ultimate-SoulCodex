@@ -39,28 +39,28 @@ const tooltips: Record<TooltipPattern, { label: string; explanation: string }> =
       "Full synthesis: astrology + numerology + human design. All major systems verified and integrated.",
   },
   "estimated-calculation": {
-    label: "Estimated Calculation",
+    label: "Estimated / Non-Authoritative",
     explanation:
-      "Calculated from available data without full verification. May change with additional information.",
+      "A historical or incomplete-input estimate. Soul Codex does not use this state in certified chart data or main synthesis; supported range analysis must replace estimation where possible.",
   },
   "verified-ephemeris": {
     label: "Verified Ephemeris",
     explanation: "Calculated from precise birth time and location. Most accurate astronomical position.",
   },
   "legacy-approximation": {
-    label: "Legacy Approximation",
+    label: "Legacy Approximation — Excluded",
     explanation:
-      "Simplified calculation when birth time is unavailable. Less accurate than verified ephemeris.",
+      "Retained only for legacy inspection. Approximate noon, midnight, default-location, or simplified chart values are excluded from certified data and synthesis.",
   },
   "human-design-profile": {
     label: "Human Design Profile",
     explanation:
-      "Individual life strategy determined by birth time, date, and location. Example: Reflector 2/5.",
+      "A Human Design Profile is a symbolic bodygraph component calculated from birth inputs. With unknown time, it is used only if it remains identical across the complete supported time range; otherwise it stays conditional."
   },
   "life-path-number": {
     label: "Life Path Number",
     explanation:
-      "Calculated from birth date numerology. Represents core life purpose and principal lessons.",
+      "Calculated deterministically from the birth date under Soul Codex's numerology rules. Its life-purpose or lesson language is symbolic interpretation, not an established fact."
   },
   "astrological-house": {
     label: "Astrological House",
@@ -75,7 +75,7 @@ const tooltips: Record<TooltipPattern, { label: string; explanation: string }> =
   "date-only-limitation": {
     label: "Date Only (No Time)",
     explanation:
-      "When birth time is unknown, moon sign and rising sign cannot be calculated. Sun sign remains accurate.",
+      "When birth time is unknown, Soul Codex evaluates the full supported time range. Placements that stay identical may be used as stable-across-range evidence; placements that change are shown as conditional branches. Ascendant, houses, and Midheaven are not guessed."
   },
 };
 

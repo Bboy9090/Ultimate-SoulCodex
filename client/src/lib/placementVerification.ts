@@ -7,10 +7,20 @@ import type {
   VerificationState,
   PlacementEvidence,
   PlacementLike,
-  VerifiedPlacement
+  VerifiedPlacement,
+  RangeEvidence
 } from '@soulcodex/core';
 
-export type { VerificationState, PlacementEvidence, PlacementLike, VerifiedPlacement };
+export type { VerificationState, PlacementEvidence, PlacementLike, VerifiedPlacement, RangeEvidence };
+
+export interface SynthesisPlacement {
+  sign: string;
+  degree?: number;
+  evidenceState: "verified" | "stable_across_range";
+  verificationStatus: string;
+  evidence?: PlacementEvidence | null;
+  rangeEvidence?: RangeEvidence | null;
+}
 
 /**
  * Interpretation code may consume a placement only when the calculation layer
@@ -40,7 +50,49 @@ export function getVerifiedPlacement(value: PlacementLike | null | undefined): V
   };
 }
 
+export function getSynthesisPlacement(value: PlacementLike | null | undefined): SynthesisPlacement | null {
+  const verified = getVerifiedPlacement(value);
+  if (verified) {
+    return {
+      sign: verified.sign,
+      ...(typeof verified.degree === "number" ? { degree: verified.degree } : {}),
+      evidenceState: "verified",
+      verificationStatus: "verified",
+      evidence: verified.evidence,
+      rangeEvidence: null,
+    };
+  }
+
+  if (!value?.sign || value.evidenceState !== "stable_across_range") return null;
+  const range = value.rangeEvidence;
+  if (
+    !range ||
+    range.resolutionMinutes !== 1 ||
+    range.testedValues !== 1440 ||
+    typeof range.rangeStartLocal !== "string" ||
+    typeof range.rangeEndLocal !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    sign: value.sign,
+    ...(typeof value.degree === "number" ? { degree: value.degree } : {}),
+    evidenceState: "stable_across_range",
+    verificationStatus: String(value.verificationStatus ?? value.status ?? "calculated"),
+    evidence: value.provenance ?? value.evidence ?? null,
+    rangeEvidence: range,
+  };
+}
+
 export function placementDisplayStatus(value: PlacementLike | null | undefined): string {
+  const evidenceState = value?.evidenceState;
+  if (evidenceState === "stable_across_range") {
+    return getSynthesisPlacement(value) ? "Stable across full-day range" : "Range evidence incomplete";
+  }
+  if (evidenceState === "conditional") return "Conditional — branches by birth-time window";
+  if (evidenceState === "unavailable") return "Unavailable — required input missing";
+
   const state = value?.verificationStatus ?? value?.status ?? "unresolved";
   switch (state) {
     case "pending_independent_verification":

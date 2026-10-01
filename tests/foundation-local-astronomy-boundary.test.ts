@@ -33,11 +33,15 @@ test("known birth time does not authorize fabricated local Moon, Rising, planets
   assert.equal(profile.astrologyData.chiron, null);
 
   const serialized = evidenceIds(profile);
-  assert.match(serialized, /offline\.astrology\.sun/);
+  assert.doesNotMatch(serialized, /offline\.astrology\.sun/);
   assert.doesNotMatch(serialized, /offline\.astrology\.moon/);
   assert.doesNotMatch(serialized, /offline\.astrology\.rising/);
+  assert.match(serialized, /Sun sign candidate .* excluded from synthesis/);
   assert.match(serialized, /Moon sign is unavailable in local mode/);
   assert.match(serialized, /Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable/);
+  assert.match(profile.archetypeData.title, /Foundation Numerology Signature/);
+  assert.doesNotMatch(profile.archetypeData.title, /Virgo/);
+  assert.doesNotMatch(profile.archetypeData.strengths.join(" "), /discernment and useful problem solving/);
 });
 
 test("blank birth time remains an explicit unknown state without changing the no-fabrication boundary", () => {
@@ -54,6 +58,23 @@ test("blank birth time remains an explicit unknown state without changing the no
   assert.deepEqual(profile.astrologyData.aspects, []);
 });
 
+test("local calendar Sun stays unresolved near ingress and never shapes local synthesis", () => {
+  const profile = generateFoundationOfflineCodexProfile(
+    {
+      ...baseInput,
+      birthDate: "1987-01-19",
+      birthTime: "",
+    },
+    { id: "local-ingress", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
+  );
+
+  assert.equal(profile.astrologyData.sunSign, "");
+  assert.match(profile.biography, /Sun remains unresolved locally/);
+  assert.match(profile.archetypeData.title, /Foundation Numerology Signature/);
+  assert.doesNotMatch(profile.archetypeData.title, /Capricorn|Aquarius/);
+  assert.match(JSON.stringify(profile.depthInterpretation), /Sun sign is unresolved locally near a sign-ingress boundary/);
+});
+
 test("production create and Identity surfaces use the Foundation-safe path and never render the random chart", () => {
   const createSource = readFileSync("client/src/pages/local-first-input-form.tsx", "utf8");
   const identitySource = readFileSync("client/src/pages/offline-profile.tsx", "utf8");
@@ -68,4 +89,21 @@ test("production create and Identity surfaces use the Foundation-safe path and n
   // The legacy component still exists for archival/refactor purposes, so guard
   // the production router from ever importing it while it contains sample math.
   assert.match(chartSource, /Math\.random\(\)/);
+});
+
+
+test("missing full birth name leaves name-based numerology unavailable instead of using display name", () => {
+  const profile = generateFoundationOfflineCodexProfile(
+    { ...baseInput, birthTime: "" },
+    { id: "local-no-birth-name", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
+  );
+
+  assert.equal(profile.numerologyData.lifePath, 9);
+  assert.equal(profile.numerologyData.birthday, 8);
+  assert.equal(profile.numerologyData.expression, null);
+  assert.equal(profile.numerologyData.soulUrge, null);
+  assert.equal(profile.numerologyData.personality, null);
+  assert.equal(profile.numerologyData.maturity, null);
+  assert.equal(profile.numerologyData.evidenceStates.expression, "unavailable");
+  assert.doesNotMatch(JSON.stringify(profile.depthInterpretation), /offline\.numerology\.expression/);
 });

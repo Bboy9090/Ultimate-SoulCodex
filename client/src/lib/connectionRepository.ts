@@ -61,7 +61,7 @@ function cleanBirthDate(value: unknown): string | undefined {
   return value.trim();
 }
 
-export function deriveConnectionSunSignFromBirthDate(birthDate: string): AtlasSign {
+export function deriveConnectionSunSignFromBirthDate(birthDate: string): AtlasSign | undefined {
   const safeBirthDate = cleanBirthDate(birthDate);
   if (!safeBirthDate) throw new RangeError("Birth date must use YYYY-MM-DD.");
   const [, monthText, dayText] = safeBirthDate.split("-");
@@ -72,9 +72,17 @@ export function deriveConnectionSunSignFromBirthDate(birthDate: string): AtlasSi
     [9, 23, "Libra"], [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
   ];
   const current = boundaries.find(([candidate]) => candidate === month);
+  const boundaryDay = current?.[1] ?? 22;
+
+  // A calendar cutoff is not an ephemeris. Around sign-ingress dates the Sun
+  // can change sign during the civil day and the exact instant varies by year
+  // and timezone. Leave these dates unresolved until the range engine or exact
+  // birth data proves the sign instead of inventing a date-only certainty.
+  if (Math.abs(day - boundaryDay) <= 1) return undefined;
+
   const next = current?.[2] ?? "Capricorn";
   const previous = ATLAS_SIGNS[(ATLAS_SIGNS.indexOf(next) + 11) % 12];
-  return day >= (current?.[1] ?? 22) ? next : previous;
+  return day > boundaryDay ? next : previous;
 }
 
 export function placementLabel(key: ConnectionPlacementKey): string {
@@ -229,6 +237,9 @@ export function connectionProfileSummary(connection: Pick<SavedConnection, "name
     if (placements.length > 4) evidence.push(`${placements.length - 4} more saved placements`);
   }
   if (evidence.length === 0) {
+    if (connection.birthDate) {
+      return `${name}: birthday ${connection.birthDate} is saved, but the Sun sign is unresolved because the date is near a sign-ingress boundary. Add birth time plus timezone/location, or a verified Sun placement, to resolve the branch before chart comparison.`;
+    }
     return `${name} is saved as a contact only. Add a birthday or a known Sun placement before Soul Codex compares charts for this person.`;
   }
   const missing = placements.length > 0

@@ -51,6 +51,28 @@ test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
     assert.strictEqual(reading.meta.confidence, "high");
   });
 
+  await t.test("raw Phase-1 Human Design and name numerology cannot self-promote", () => {
+    const reading = generateSoulCodexReadingV1({
+      ...verifiedRobertInput,
+      numerology: {
+        lifePathNumber: 9,
+        birthdayNumber: 8,
+        expressionNumber: 4,
+        soulUrgeNumber: 7,
+      },
+      humanDesign: {
+        profileType: "5/1",
+        strategy: "Wait",
+        authority: "Emotional",
+      },
+    });
+    assert.equal(reading.verifiedSystems.humanDesign, undefined);
+    assert.equal(reading.verifiedSystems.numerology?.expressionNumber, undefined);
+    assert.equal(reading.verifiedSystems.numerology?.soulUrgeNumber, undefined);
+    assert.equal(reading.verifiedSystems.numerology?.lifePathNumber, 9);
+    assert.equal(reading.verifiedSystems.numerology?.birthdayNumber, 8);
+  });
+
   await t.test("verified_ephemeris: remark says 'Verified', not 'approximation'", () => {
     const reading = generateSoulCodexReadingV1(verifiedRobertInput);
     assert(reading.verifiedSystems.astrology.remark.includes("Verified"));
@@ -78,10 +100,11 @@ test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
       },
     };
 
-    await t.test("shows Sun when date_only", () => {
+    await t.test("does not promote naked date-only Sun without range provenance", () => {
       const reading = generateSoulCodexReadingV1(dateOnlyInput);
-      assert.strictEqual(reading.verifiedSystems.astrology.sunSign, "Virgo");
+      assert.strictEqual(reading.verifiedSystems.astrology.sunSign, "");
       assert.strictEqual(reading.meta.calculationStatus, "date_only");
+      assert.match(reading.verifiedSystems.astrology.remark || "", /full-day range verifier/);
     });
 
     await t.test("does not guess Moon or Ascendant when date_only", () => {
@@ -92,7 +115,7 @@ test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
 
     await t.test("provides helpful remark about birth time requirement", () => {
       const reading = generateSoulCodexReadingV1(dateOnlyInput);
-      assert(reading.verifiedSystems.astrology.remark.includes("Birth time required"));
+      assert.match(reading.verifiedSystems.astrology.remark || "", /not synthesis-eligible/);
     });
   });
 
@@ -116,12 +139,14 @@ test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
       },
     };
 
-    await t.test("shows all three with caveat about time dependency", () => {
+    await t.test("does not promote single-value estimated Moon or Rising", () => {
       const reading = generateSoulCodexReadingV1(estimatedInput);
       assert.strictEqual(reading.verifiedSystems.astrology.status, "estimated_birth_window");
-      assert.strictEqual(reading.verifiedSystems.astrology.moonSign, "Virgo");
-      assert(reading.verifiedSystems.astrology.remark.includes("time"));
-      assert.strictEqual(reading.meta.confidence, "moderate");
+      assert.strictEqual(reading.verifiedSystems.astrology.sunSign, "");
+      assert.strictEqual(reading.verifiedSystems.astrology.moonSign, "");
+      assert.strictEqual(reading.verifiedSystems.astrology.ascendant, undefined);
+      assert.match(reading.verifiedSystems.astrology.remark || "", /full-day range verifier/);
+      assert.strictEqual(reading.meta.confidence, "low");
     });
   });
 
@@ -145,10 +170,13 @@ test("Phase 1: Data Integrity - Verified Ephemeris vs Legacy", async (t) => {
       },
     };
 
-    await t.test("shows all three but marks as legacy", () => {
+    await t.test("retains legacy status but exposes no chart placements", () => {
       const reading = generateSoulCodexReadingV1(legacyInput);
       assert.strictEqual(reading.verifiedSystems.astrology.status, "legacy_approximation");
-      assert(reading.verifiedSystems.astrology.remark.includes("simplified formula"));
+      assert.strictEqual(reading.verifiedSystems.astrology.sunSign, "");
+      assert.strictEqual(reading.verifiedSystems.astrology.moonSign, "");
+      assert.strictEqual(reading.verifiedSystems.astrology.ascendant, undefined);
+      assert.match(reading.verifiedSystems.astrology.remark || "", /excluded from synthesis/);
     });
 
     await t.test("has low confidence when legacy_approximation", () => {

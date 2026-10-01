@@ -8,7 +8,7 @@ const evidence = {
   calculatedAt: "2026-08-14T00:00:00Z",
 };
 
-test("compatibility payload keeps supported Sun evidence and Life Path while dropping unrelated personal data", () => {
+test("compatibility payload keeps only Sun evidence and drops numerology plus unrelated personal data", () => {
   const payload = buildCompatibilityProfilePayload({
     id: "local-secret-id",
     name: "Private Name",
@@ -31,8 +31,6 @@ test("compatibility payload keeps supported Sun evidence and Life Path while dro
       sun: { sign: "Virgo", verificationStatus: "verified", evidence },
       sunSign: "Virgo",
     },
-    lifePathNumber: 9,
-    numerologyData: { lifePath: 9 },
   });
 
   const serialized = JSON.stringify(payload);
@@ -45,6 +43,7 @@ test("compatibility payload keeps supported Sun evidence and Life Path while dro
     "moon",
     "rising",
     "humanDesign",
+    "lifePath",
     "expression",
     "soulUrge",
   ]) {
@@ -52,7 +51,7 @@ test("compatibility payload keeps supported Sun evidence and Life Path while dro
   }
 });
 
-test("symbolic-only profiles are reduced to symbolic Sun and optional Life Path", () => {
+test("symbolic-only profiles are reduced to symbolic Sun only", () => {
   assert.deepEqual(
     buildCompatibilityProfilePayload({
       sunSign: "Pisces",
@@ -61,8 +60,6 @@ test("symbolic-only profiles are reduced to symbolic Sun and optional Life Path"
     }),
     {
       astrologyData: { sunSign: "Pisces" },
-      lifePathNumber: 3,
-      numerologyData: { lifePath: 3 },
     },
   );
 });

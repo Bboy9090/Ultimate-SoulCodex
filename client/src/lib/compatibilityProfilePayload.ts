@@ -8,9 +8,9 @@ function firstDefined(...values: unknown[]) {
  * Build the minimum server payload required by Foundation compatibility.
  *
  * Compatibility does not need a person's name, birth date, birth location,
- * biography, behavioral answers, account data, or unrelated astrology layers.
- * Keeping this projection explicit prevents future UI work from accidentally
- * uploading the entire active profile for a narrow symbolic calculation.
+ * biography, behavioral answers, account data, numerology, or unrelated
+ * astrology layers. This caller-supplied projection is symbolic-only; verified
+ * and deterministic layers must come from server-owned evidence, not payload claims.
  */
 export function buildCompatibilityProfilePayload(profile: UnknownRecord | null | undefined) {
   const astrologyData = profile?.astrologyData ?? {};
@@ -26,23 +26,10 @@ export function buildCompatibilityProfilePayload(profile: UnknownRecord | null |
     astrology?.sunSign,
     profile?.sunSign,
   );
-  const lifePath = firstDefined(
-    profile?.lifePathNumber,
-    profile?.numerologyData?.lifePathNumber,
-    profile?.numerologyData?.lifePath,
-    profile?.numerology?.lifePath?.value,
-  );
-
   return {
     astrologyData: {
       ...(verifiedSun ? { sun: verifiedSun } : {}),
       ...(symbolicSun ? { sunSign: symbolicSun } : {}),
     },
-    ...(lifePath !== undefined
-      ? {
-          lifePathNumber: lifePath,
-          numerologyData: { lifePath },
-        }
-      : {}),
   };
 }

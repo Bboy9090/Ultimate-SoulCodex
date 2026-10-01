@@ -25,7 +25,7 @@ describe("compatibility saved-profile contract", () => {
     });
 
     assert.equal(input.sunSign, undefined);
-    assert.equal(input.lifePathNumber, 9);
+    assert.equal(input.lifePathNumber, undefined);
     assert.ok(input.unresolved.astrology.includes("Sun"));
   });
 
@@ -52,7 +52,8 @@ describe("compatibility saved-profile contract", () => {
           evidence,
         },
       },
-      numerologyData: { lifePath: 9 },
+      birthDate: "1990-09-17",
+      numerologyData: { lifePath: 4 },
     });
 
     assert.equal(input.sunSign, "Virgo");
@@ -60,13 +61,19 @@ describe("compatibility saved-profile contract", () => {
     assert.equal(input.unresolved.astrology.includes("Sun"), false);
   });
 
-  it("preserves deterministic master Life Paths through the Compatibility route contract", () => {
-    for (const master of [11, 22, 33]) {
-      assert.equal(deterministicLifePath({ numerologyData: { lifePath: master } }), master);
+  it("preserves canonical master Life Paths only when recomputed from birth date", () => {
+    const fixtures = [
+      ["1966-12-31", 11],
+      ["1950-01-06", 22],
+    ] as const;
+
+    for (const [birthDate, master] of fixtures) {
+      assert.equal(deterministicLifePath({ birthDate, numerologyData: { lifePath: 9 } }), master);
 
       const explorer = buildMatchResponse({
+        birthDate,
         astrologyData: { sunSign: "Virgo" },
-        numerologyData: { lifePath: master },
+        numerologyData: { lifePath: 9 },
       });
       assert.equal(explorer.available, true);
       assert.equal(explorer.formula.inputs.lifePathNumber, master);
@@ -74,14 +81,21 @@ describe("compatibility saved-profile contract", () => {
 
       const person = buildPersonComparisonResponse(
         {
+          birthDate,
           astrologyData: { sunSign: "Virgo" },
-          numerologyData: { lifePath: master },
+          numerologyData: { lifePath: 9 },
         },
         { name: "Alex", sunSign: "Pisces" },
       );
       assert.equal(person.available, true);
       assert.equal(person.formula.inputs.lifePathNumber, master);
       assert.equal(person.formula.version, COMPATIBILITY_FORMULA_VERSION);
+    }
+  });
+
+  it("does not trust a supported-looking Life Path when birth date is absent", () => {
+    for (const claimed of [1, 9, 11, 22, 33]) {
+      assert.equal(deterministicLifePath({ numerologyData: { lifePath: claimed } }), undefined);
     }
   });
 
@@ -128,7 +142,8 @@ describe("compatibility saved-profile contract", () => {
   it("allows a supported symbolic Sun without promoting it into verified astrology", () => {
     const result = buildMatchResponse({
       astrologyData: { sunSign: "virgo" },
-      numerologyData: { lifePath: 9 },
+      birthDate: "1990-09-17",
+      numerologyData: { lifePath: 4 },
       humanDesignType: "Reflector",
     });
 
@@ -149,7 +164,8 @@ describe("compatibility saved-profile contract", () => {
           internalCandidate: { sign: "virgo" },
         },
       },
-      numerologyData: { lifePath: 11 },
+      birthDate: "1966-12-31",
+      numerologyData: { lifePath: 4 },
     };
 
     const verified = buildCompatibilityProfileInput(profile);
@@ -192,7 +208,8 @@ describe("compatibility saved-profile contract", () => {
         astrologyData: {
           sun: { sign: "Virgo", verificationStatus: "verified", evidence },
         },
-        numerologyData: { lifePath: 9 },
+        birthDate: "1990-09-17",
+        numerologyData: { lifePath: 4 },
         humanDesignType: "Reflector",
       },
       { name: "Alex", sunSign: "pisces" },

@@ -1,6 +1,14 @@
+import {
+  calcBirthday,
+  calcExpression,
+  calcLifePath,
+  calcMaturity,
+  calcPersonality,
+  calcSoulUrge,
+} from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
-import { getVerifiedPlacement } from "./placementVerification";
+import { getSynthesisPlacement, getVerifiedPlacement } from "./placementVerification";
 import { hasVerifiedHumanDesignTrust } from "./profileVerificationReconciliation";
 
 type AnyRecord = Record<string, any>;
@@ -109,6 +117,7 @@ export interface UltimateCodexPlacement {
   longitude: number | null;
   element: string | null;
   modality: string | null;
+  evidenceState: "verified" | "stable_across_range";
 }
 
 export interface UltimateCodexPoint {
@@ -182,7 +191,7 @@ function verifiedSupportingPoint(
   point: AnyRecord | undefined,
 ): boolean {
   if (!point || !validSign(point.sign)) return false;
-  if (key === "rising") return Boolean(getVerifiedPlacement(point));
+  if (key === "rising") return Boolean(getSynthesisPlacement(point));
   if (key === "midheaven") return governedEvidence(point, "ASTRO-EQUAL-HOUSE-v1");
   if (key === "northNode" || key === "southNode") {
     return governedEvidence(point, "ASTRO-MEAN-NODE-v1") &&
@@ -216,8 +225,53 @@ function placementDegree(placement: AnyRecord | undefined): number | null {
 }
 
 function numericValue(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isInteger(n) ? n : null;
+}
+
+function canonicalNumerology(profile: AnyRecord, numerology: AnyRecord) {
+  const birthDate = typeof profile?.birthDate === "string" ? profile.birthDate.slice(0, 10) : null;
+  const fullBirthName = typeof profile?.fullBirthName === "string" && profile.fullBirthName.trim()
+    ? profile.fullBirthName.trim()
+    : null;
+
+  let lifePath: number | null = null;
+  let birthday: number | null = null;
+  let expression: number | null = null;
+  let soulUrge: number | null = null;
+  let personality: number | null = null;
+  let maturity: number | null = null;
+
+  if (birthDate) {
+    try {
+      lifePath = calcLifePath(birthDate);
+      birthday = calcBirthday(birthDate);
+    } catch {
+      lifePath = null;
+      birthday = null;
+    }
+  }
+
+  if (birthDate && fullBirthName) {
+    try {
+      expression = calcExpression(fullBirthName);
+      soulUrge = calcSoulUrge(fullBirthName);
+      personality = calcPersonality(fullBirthName);
+      maturity = calcMaturity(birthDate, fullBirthName);
+    } catch {
+      expression = null;
+      soulUrge = null;
+      personality = null;
+      maturity = null;
+    }
+  }
+
+  const personalYear = numerology?.evidenceStates?.personalYear === "verified"
+    ? numericValue(numerology.personalYear ?? numerology.personalYearNumber)
+    : null;
+
+  return { lifePath, birthday, expression, soulUrge, personality, maturity, personalYear };
 }
 
 function fnv1a(value: string, seed = 0x811c9dc5): number {
@@ -272,9 +326,9 @@ function findStelliums(placements: UltimateCodexPlacement[]): UltimateCodexStell
     result.push({
       kind: "sign",
       key: sign,
-      label: `${sign} sign cluster · ${planetKeys.length} verified natal planets`,
+      label: `${sign} sign cluster · ${planetKeys.length} synthesis-eligible natal placements`,
       planetKeys,
-      rule: "Soul Codex flags 3+ verified natal planets in one sign as a stellium-style concentration. Definitions vary across astrological traditions.",
+      rule: "Soul Codex flags 3+ verified or full-day-stable natal sign placements as a stellium-style concentration. Range-stable placements retain their provenance; definitions vary across astrological traditions.",
     });
   }
   for (const [house, planetKeys] of houseGroups) {
@@ -303,17 +357,20 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const placements: UltimateCodexPlacement[] = [];
   for (const key of PLANETS) {
     const placement = astrology?.planets?.[key] as AnyRecord | undefined;
-    if (!getVerifiedPlacement(placement) || !validSign(placement?.sign)) continue;
-    const house = validHouse(astrology?.planetaryHouses?.[key]);
+    const synthesisPlacement = getSynthesisPlacement(placement);
+    if (!synthesisPlacement || !validSign(synthesisPlacement.sign)) continue;
+    const exactVerified = synthesisPlacement.evidenceState === "verified";
+    const house = exactVerified ? validHouse(astrology?.planetaryHouses?.[key]) : null;
     placements.push({
       key,
       label: PLANET_LABELS[key],
-      sign: placement.sign,
+      sign: synthesisPlacement.sign,
       house,
-      degree: placementDegree(placement),
-      longitude: placementLongitude(placement),
-      element: SIGN_META[placement.sign].element,
-      modality: SIGN_META[placement.sign].modality,
+      degree: exactVerified ? placementDegree(placement) : null,
+      longitude: exactVerified ? placementLongitude(placement) : null,
+      element: SIGN_META[synthesisPlacement.sign].element,
+      modality: SIGN_META[synthesisPlacement.sign].modality,
+      evidenceState: synthesisPlacement.evidenceState,
     });
   }
 
@@ -378,30 +435,48 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   }
   const dominantElement = topKey(elementCounts);
   const dominantModality = topKey(modalityCounts);
+  const verifiedPlacementCount = placements.filter((placement) => placement.evidenceState === "verified").length;
+  const stablePlacementCount = placements.filter((placement) => placement.evidenceState === "stable_across_range").length;
   const stelliums = findStelliums(placements);
 
-  // Normalize only documented producer aliases. Alias handling prevents the same
-  // deterministic number from changing coverage or fingerprint merely because
-  // a legacy producer used a different field name.
-  const lifePath = numericValue(numerology.lifePath ?? numerology.lifePathNumber);
-  const birthday = numericValue(numerology.birthday ?? numerology.birthDay ?? numerology.birthdayNumber);
-  const expression = numericValue(numerology.expression ?? numerology.expressionNumber);
-  const soulUrge = numericValue(numerology.soulUrge ?? numerology.soulUrgeNumber);
-  const personality = numericValue(numerology.personality ?? numerology.personalityNumber);
-  const maturity = numericValue(numerology.maturity ?? numerology.maturityNumber);
-  const personalYear = numericValue(numerology.personalYear ?? numerology.personalYearNumber);
+  // Deterministic numerology is recomputed from its required source inputs.
+  // Stored numbers are a cache, not authority. Missing full birth name means
+  // name-based numerology is unavailable rather than inferred from display name.
+  const {
+    lifePath,
+    birthday,
+    expression,
+    soulUrge,
+    personality,
+    maturity,
+    personalYear,
+  } = canonicalNumerology(profile, numerology);
 
   const verifiedHd = hasVerifiedHumanDesignTrust(hd);
-  const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : null;
-  const hdStrategy = verifiedHd && typeof hd.strategy === "string" ? hd.strategy.trim() : null;
-  const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : null;
-  const hdProfile = verifiedHd && typeof hd.profile === "string" ? hd.profile.trim() : null;
-  const hdDefinition = verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : null;
-  const hdCenters = verifiedHd ? normalizeHumanDesignCenters(hd.centers) : { defined: [], undefined: [] };
+  const stableHdComponent = (key: string): string | null => {
+    const component = hd?.components?.[key];
+    return component?.evidenceState === "stable_across_range" &&
+      typeof component?.value === "string" &&
+      component.value.trim()
+      ? component.value.trim()
+      : null;
+  };
+  const hdEvidenceMode = verifiedHd ? "verified" as const :
+    stableHdComponent("type") ? "stable_across_range" as const : null;
+  const hdType = verifiedHd && typeof hd.type === "string" ? hd.type.trim() : stableHdComponent("type");
+  const hdStrategy = verifiedHd && typeof hd.strategy === "string" ? hd.strategy.trim() : stableHdComponent("strategy");
+  const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : stableHdComponent("authority");
+  const hdProfile = verifiedHd && typeof hd.profile === "string" ? hd.profile.trim() : stableHdComponent("profile");
+  const hdDefinition = verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : stableHdComponent("definition");
+  const hdCenters = verifiedHd
+    ? normalizeHumanDesignCenters(hd.centers)
+    : { defined: (stableHdComponent("centers") ?? "").split("|").filter(Boolean), undefined: [] };
   const hdChannels = verifiedHd
     ? humanDesignDefinedChannels(hd.channels).map(humanDesignChannelLabel)
-    : [];
-  const hdGates = verifiedHd && Array.isArray(hd.activatedGates) ? hd.activatedGates.map(String) : [];
+    : (stableHdComponent("channels") ?? "").split("|").filter(Boolean);
+  const hdGates = verifiedHd && Array.isArray(hd.activatedGates)
+    ? hd.activatedGates.map(String)
+    : (stableHdComponent("gates") ?? "").split(",").filter(Boolean);
   const hdActivationSignature: string[] = [];
   if (verifiedHd) {
     for (const side of ["conscious", "unconscious"] as const) {
@@ -418,7 +493,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   }
 
   const evidenceSignature = [
-    ...placements.map((p) => `astro:${p.key}:${p.sign}:${p.degree ?? "?"}:H${p.house ?? "?"}`),
+    ...placements.map((p) => `astro:${p.evidenceState}:${p.key}:${p.sign}:${p.degree ?? "?"}:H${p.house ?? "?"}`),
     ...houseCusps.map((h) => `house:${h.house}:${h.sign}:${h.degree ?? "?"}`),
     ...supportingPoints.map((p) => `point:${p.key}:${p.sign}:${p.degree ?? "?"}:H${p.house ?? "angle"}`),
     ...aspects.map((a) => `aspect:${a.planet1}:${a.aspect}:${a.planet2}:${a.orb.toFixed(2)}`),
@@ -429,11 +504,11 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     soulUrge ? `num:soul:${soulUrge}` : null,
     personality ? `num:personality:${personality}` : null,
     maturity ? `num:maturity:${maturity}` : null,
-    hdType ? `hd:type:${hdType}` : null,
-    hdStrategy ? `hd:strategy:${hdStrategy}` : null,
-    hdAuthority ? `hd:authority:${hdAuthority}` : null,
-    hdProfile ? `hd:profile:${hdProfile}` : null,
-    hdDefinition ? `hd:definition:${hdDefinition}` : null,
+    hdType ? `hd:${hdEvidenceMode ?? "unresolved"}:type:${hdType}` : null,
+    hdStrategy ? `hd:${hdEvidenceMode ?? "unresolved"}:strategy:${hdStrategy}` : null,
+    hdAuthority ? `hd:${hdEvidenceMode ?? "unresolved"}:authority:${hdAuthority}` : null,
+    hdProfile ? `hd:${hdEvidenceMode ?? "unresolved"}:profile:${hdProfile}` : null,
+    hdDefinition ? `hd:${hdEvidenceMode ?? "unresolved"}:definition:${hdDefinition}` : null,
     ...hdCenters.defined.map((center) => `hd:center:${center}`),
     ...hdChannels.map((channel) => `hd:channel:${channel}`),
     ...hdGates.map((gate) => `hd:gate:${gate}`),
@@ -443,12 +518,14 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const hashedIdentity = identityHash(evidenceSignature);
 
   const unresolved: string[] = [];
-  if (placements.length < PLANETS.length) unresolved.push(`${PLANETS.length - placements.length} natal planet placement(s) are not verified and are excluded.`);
+  if (placements.length < PLANETS.length) unresolved.push(`${PLANETS.length - placements.length} natal planet placement(s) are neither verified nor stable across the full range and are excluded.`);
   if (houseCusps.length < 12) unresolved.push(`${12 - houseCusps.length} house cusp(s) are not verified and are excluded.`);
   for (const [key, label] of [["rising","Rising"],["midheaven","Midheaven"],["northNode","North Node"],["southNode","South Node"],["chiron","Chiron"]] as const) {
-    if (!supportingPoints.some((point) => point.key === key)) unresolved.push(`${label} is unresolved or not verified and is excluded.`);
+    if (!supportingPoints.some((point) => point.key === key)) unresolved.push(`${label} is unavailable or conditional under the current evidence and is excluded from the main synthesis.`);
   }
-  if (!verifiedHd) unresolved.push("Human Design core is unresolved or not verified and does not influence combined identity synthesis.");
+  if (!hdType) unresolved.push("Human Design Type is unavailable or conditional and does not influence combined identity synthesis.");
+  if (!hdAuthority) unresolved.push("Human Design Authority is unavailable or conditional and does not influence combined identity synthesis.");
+  if (!hdProfile) unresolved.push("Human Design Profile is unavailable or conditional and does not influence combined identity synthesis.");
   if (!lifePath) unresolved.push("Life Path is unavailable to the combined synthesis.");
   if (!birthday) unresolved.push("Birthday number is unavailable to the combined synthesis.");
   if (!expression) unresolved.push("Expression number is unavailable to the combined synthesis.");
@@ -459,7 +536,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const systemsPresent = [
     placements.length >= 3 || houseCusps.length === 12,
     Boolean(lifePath || expression || soulUrge),
-    Boolean(verifiedHd && hdType && hdAuthority),
+    Boolean(hdType && hdAuthority),
   ].filter(Boolean).length;
   const completeNumerology = Boolean(lifePath && birthday && expression && soulUrge && personality && maturity);
   const completeSupportingPoints = supportingPoints.length === 5;
@@ -479,21 +556,45 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ? primaryStellium.key
     : placements.find((p) => p.key === "sun")?.sign ?? placements[0]?.sign ?? null;
   const risingPoint = supportingPoints.find((point) => point.key === "rising");
-  const identityParts = unique([
-    leadSign && validSign(leadSign) ? `${leadSign} ${SIGN_META[leadSign].word}` : null,
+  const astrologyIdentity =
+    leadSign && validSign(leadSign) ? `${leadSign} ${SIGN_META[leadSign].word}` : null;
+  const humanDesignIdentity =
+    hdType && HD_WORD[hdType] ? `${hdType} ${HD_WORD[hdType]}${hdProfile ? ` ${hdProfile}` : ""}` : null;
+  const numerologyIdentity =
+    lifePath && LIFE_PATH_WORD[lifePath] ? `Life Path ${lifePath} ${LIFE_PATH_WORD[lifePath]}` : null;
+  const secondaryAstrologyIdentity = unique([
     risingPoint ? `${risingPoint.sign} Rising` : null,
     primaryStellium ? primaryStellium.label.replace(" · ", " / ") : null,
-    hdType && HD_WORD[hdType] ? `${hdType} ${HD_WORD[hdType]}${hdProfile ? ` ${hdProfile}` : ""}` : null,
-    lifePath && LIFE_PATH_WORD[lifePath] ? `Life Path ${lifePath} ${LIFE_PATH_WORD[lifePath]}` : null,
     dominantElement ? `${dominantElement} emphasis` : null,
+  ]);
+
+  // Cross-system representatives come first. No single symbolic family may take
+  // every headline slot merely because it emits more internal details.
+  const identityParts = unique([
+    astrologyIdentity,
+    humanDesignIdentity,
+    numerologyIdentity,
+    ...secondaryAstrologyIdentity,
   ]);
   const identitySignature = identityParts.length
     ? identityParts.join(" · ")
     : "Governed identity signature unavailable from current evidence";
+
+  const archetypeRepresentatives = unique([
+    astrologyIdentity,
+    humanDesignIdentity,
+    numerologyIdentity,
+  ]);
+  const derivedArchetypeParts = archetypeRepresentatives.length >= 2
+    ? archetypeRepresentatives
+    : unique([
+        ...archetypeRepresentatives,
+        ...secondaryAstrologyIdentity,
+      ]).slice(0, 3);
   const derivedArchetype =
-    coverage === "insufficient" || identityParts.length < 2
+    coverage === "insufficient" || derivedArchetypeParts.length < 2
       ? null
-      : `${identityParts.slice(0, 3).join(" × ")} · ${(fingerprint ?? hashedIdentity.fingerprint).slice(0, 4).toUpperCase()}`;
+      : `${derivedArchetypeParts.slice(0, 3).join(" × ")} · ${(fingerprint ?? hashedIdentity.fingerprint).slice(0, 4).toUpperCase()}`;
 
   const resonances: string[] = [];
   if (dominantElement && lifePath && LIFE_PATH_AXIS[lifePath]) {
@@ -563,8 +664,15 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const systemSummary = [
     {
       system: "Natal planets / Big Three",
-      status: placements.length === 10 && supportingPoints.some((point) => point.key === "rising") ? "verified" : placements.length ? "partial verified" : "unresolved",
-      detail: `${placements.length}/10 verified natal planets · Rising ${supportingPoints.some((point) => point.key === "rising") ? "verified" : "unresolved"}`,
+      status:
+        verifiedPlacementCount === 10 && supportingPoints.some((point) => point.key === "rising" && (astrology?.rising?.verificationStatus === "verified"))
+          ? "verified"
+          : placements.length
+            ? stablePlacementCount
+              ? "mixed verified / stable across range"
+              : "partial verified"
+            : "unresolved",
+      detail: `${verifiedPlacementCount} verified · ${stablePlacementCount} stable across range · ${PLANETS.length - placements.length} excluded natal planets · Rising ${supportingPoints.some((point) => point.key === "rising") ? ((astrology?.rising?.verificationStatus === "verified") ? "verified" : "stable across range") : "conditional/unavailable"}`,
     },
     {
       system: "Houses / Midheaven",
@@ -596,10 +704,12 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     },
     {
       system: "Human Design",
-      status: verifiedHd ? "verified core" : "unresolved",
+      status: verifiedHd ? "verified core" : hdEvidenceMode === "stable_across_range" ? "stable across full-day range" : "unresolved",
       detail: verifiedHd
         ? unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")
-        : "Excluded from synthesis until HUMAN-DESIGN-CORE-v1 passes.",
+        : hdEvidenceMode === "stable_across_range"
+          ? `${unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")} · only invariant components are admitted; conditional components remain excluded.`
+          : "Excluded from synthesis until verified or stable across the full unknown-time range.",
     },
     {
       system: "Personality assessments",
@@ -674,4 +784,4 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
 }
 
 export const ULTIMATE_CODEX_STELLIUM_RULE =
-  "Soul Codex flags 3+ verified natal planets in one sign or verified house as a stellium-style concentration; traditions vary, so the UI names the rule instead of pretending there is one universal definition.";
+  "Soul Codex flags 3+ synthesis-eligible natal sign placements (verified or stable across the full unknown-time range), or 3+ verified planets in one verified house, as a stellium-style concentration; provenance stays visible and traditions vary.";

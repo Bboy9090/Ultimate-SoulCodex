@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { calcExpression, calcMaturity, calcPersonality, calcSoulUrge } from "../packages/core/compute/numerology.ts";
 import { buildUltimateCodexSynthesis } from "../client/src/lib/ultimateCodexSynthesis.ts";
 
 const placementEvidence = {
@@ -36,6 +37,8 @@ function profile(moonSign = "Virgo") {
 
   const zodiac = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
   return {
+    birthDate: "1990-09-17",
+    fullBirthName: "Bobby Example",
     verifiedAstrologyData: {
       planets,
       planetaryHouses,
@@ -58,7 +61,7 @@ function profile(moonSign = "Virgo") {
         { planet1: "moon", planet2: "venus", aspect: "trine", orb: 1.2, policyId: "ASTRO-ASPECT-MAJOR-v1" },
       ],
     },
-    numerologyData: { lifePath: 9, birthday: 8, expression: 5, soulUrge: 2, personality: 7, maturity: 5, personalYear: 9 },
+    numerologyData: { lifePath: 4, birthday: 1, expression: 9, soulUrge: 9, personality: 9, maturity: 9, personalYear: 9, evidenceStates: { personalYear: "verified" } },
     humanDesignData: {
       status: "verified",
       ...hdTrust,
@@ -91,19 +94,37 @@ test("Ultimate Codex detects verified stellium-style clusters and contradictions
   assert.equal(result.coverage, "complete");
   assert.ok(result.evidenceSignature.some((value) => value.startsWith("point:northNode:Taurus")));
   assert.ok(result.evidenceSignature.includes("num:birthday:8"));
-  assert.ok(result.evidenceSignature.includes("num:maturity:5"));
+  assert.ok(result.evidenceSignature.includes(`num:maturity:${calcMaturity("1990-09-17", "Bobby Example")}`));
+  assert.ok(result.evidenceSignature.includes(`num:expression:${calcExpression("Bobby Example")}`));
+  assert.ok(result.evidenceSignature.includes(`num:soul:${calcSoulUrge("Bobby Example")}`));
+  assert.ok(result.evidenceSignature.includes(`num:personality:${calcPersonality("Bobby Example")}`));
   assert.ok(!result.evidenceSignature.some((value) => value.startsWith("num:personalYear:")));
   assert.ok(result.stelliums.some((cluster) => cluster.kind === "sign" && cluster.key === "Virgo"));
   assert.ok(result.stelliums.some((cluster) => cluster.kind === "house" && cluster.key === "10"));
   assert.ok(result.tensions.some((value) => /square/i.test(value)));
-  assert.ok(result.tensions.some((value) => /Expression 5/i.test(value)));
+  assert.ok(result.tensions.some((value) => new RegExp(`Expression ${calcExpression("Bobby Example")}`, "i").test(value)));
   assert.match(result.codexNumber, /^\d{12}$/);
   assert.match(result.codexId, /^GCX-/);
   assert.ok(result.derivedArchetype);
+  assert.match(result.derivedArchetype!, /Reflector/);
+  assert.match(result.derivedArchetype!, /Life Path 9/);
+  const astroIndex = result.identitySignature.indexOf("Virgo");
+  const hdIndex = result.identitySignature.indexOf("Reflector");
+  const numIndex = result.identitySignature.indexOf("Life Path 9");
+  assert.ok(astroIndex >= 0 && hdIndex > astroIndex && numIndex > hdIndex);
   assert.ok(result.systemSummary.some((row) => row.system === "Numerology" && /deterministic stable core/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Astrocartography" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Palmistry" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Personality assessments" && /not assessed \/ excluded/.test(row.status)));
+});
+
+test("Ultimate Codex does not let astrology monopolize the derived archetype headline", () => {
+  const result = buildUltimateCodexSynthesis(profile());
+  const parts = result.derivedArchetype?.split(" · ")[0].split(" × ") ?? [];
+  assert.equal(parts.length, 3);
+  assert.ok(parts.some((part) => /Virgo/.test(part)));
+  assert.ok(parts.some((part) => /Reflector/.test(part)));
+  assert.ok(parts.some((part) => /Life Path 9/.test(part)));
 });
 
 test("Ultimate Codex fingerprint changes when governed chart evidence changes", () => {
@@ -129,9 +150,65 @@ test("Ultimate Codex excludes label-only verified evidence from the stable finge
   } as any;
 
   const result = buildUltimateCodexSynthesis(unsafe);
-  assert.equal(result.evidenceSignature.some((value) => value.startsWith("astro:sun:")), false);
-  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:type:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("astro:") && value.includes(":sun:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.includes(":type:Reflector")), false);
   assert.ok(result.unresolved.some((value) => /Human Design/i.test(value)));
+});
+
+test("Ultimate Codex admits stable range placements but excludes conditional branches", () => {
+  const rangeEvidence = {
+    resolutionMinutes: 1,
+    rangeStartLocal: "1990-09-17T00:00",
+    rangeEndLocal: "1990-09-17T23:59",
+    timezone: "America/New_York",
+    testedValues: 1440,
+  };
+  const result = buildUltimateCodexSynthesis({
+    birthDate: "1990-09-17",
+    astrologyData: {
+      planets: {
+        sun: {
+          sign: "Virgo",
+          verificationStatus: "calculated",
+          evidenceState: "stable_across_range",
+          rangeEvidence,
+        },
+        moon: {
+          sign: null,
+          verificationStatus: "unresolved",
+          evidenceState: "conditional",
+          rangeEvidence,
+          conditionalValues: [
+            { value: "Aries", startLocalTime: "00:00", endLocalTime: "20:13" },
+            { value: "Taurus", startLocalTime: "20:14", endLocalTime: "23:59" },
+          ],
+        },
+      },
+    },
+    numerologyData: {},
+  });
+
+  assert.ok(result.evidenceSignature.includes("astro:stable_across_range:sun:Virgo:?:H?"));
+  assert.equal(result.evidenceSignature.some((value) => value.includes(":moon:")), false);
+  assert.equal(result.placements.some((placement) => placement.key === "sun" && placement.evidenceState === "stable_across_range"), true);
+  assert.equal(result.placements.some((placement) => placement.key === "moon"), false);
+});
+
+test("Ultimate Codex ignores stored name numerology when full birth name is missing", () => {
+  const result = buildUltimateCodexSynthesis({
+    birthDate: "1990-09-17",
+    numerologyData: {
+      lifePath: 44,
+      expression: 33,
+      soulUrge: 22,
+      personality: 11,
+      maturity: 33,
+    },
+  });
+  assert.ok(result.evidenceSignature.includes("num:lp:9"));
+  assert.ok(result.evidenceSignature.includes("num:birthday:8"));
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("num:expression:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("num:soul:")), false);
 });
 
 test("Ultimate Codex fails closed instead of manufacturing unsupported systems", () => {

@@ -12,17 +12,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import Navigation from "@/components/navigation";
-import UltimateCodexPanel from "@/components/UltimateCodexPanel";
+import type { PlacementLike } from "@soulcodex/core";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
-import { getVerifiedPlacement } from "@/lib/placementVerification";
+import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
-import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
-type Placement = {
-  sign?: string | null;
-  verificationStatus?: string;
-  status?: string;
+type Placement = PlacementLike & {
   reason?: string;
   internalCandidate?: {
     sign?: string;
@@ -53,6 +49,8 @@ function PlacementRow({
   legacyValue?: unknown;
 }) {
   const verified = textValue(getVerifiedPlacement(placement)?.sign);
+  const synthesisPlacement = getSynthesisPlacement(placement);
+  const stable = synthesisPlacement?.evidenceState === "stable_across_range" ? textValue(synthesisPlacement.sign) : null;
   const candidate = textValue(placement?.internalCandidate?.sign);
   const legacy = textValue(legacyValue);
 
@@ -65,6 +63,16 @@ function PlacementRow({
     value = verified;
     state = "Verified chart fact";
     stateClass = "text-[var(--sc-teal)]";
+  } else if (stable) {
+    value = stable;
+    state = "Stable across full-day range";
+    stateClass = "text-[var(--sc-gold-bright)]";
+    explanation = placement?.reason || "This sign stayed identical across every supported birth-time value in the full-day range. It may influence synthesis with range provenance but is not relabeled independently verified.";
+  } else if (placement?.evidenceState === "conditional") {
+    value = "Multiple possibilities";
+    state = "Conditional · branch only";
+    stateClass = "text-amber-300";
+    explanation = placement?.reason || "This placement changes across the supported birth-time range and is excluded from the main synthesis.";
   } else if (candidate) {
     value = candidate;
     state = "Calculated candidate · not promoted";
@@ -78,7 +86,7 @@ function PlacementRow({
     stateClass = "text-[var(--sc-violet)]";
     explanation =
       label === "Sun"
-        ? "This Sun sign is available from the local date-based Foundation calculation. It can support symbolic reflection but is not labeled independently verified here."
+        ? "This is a local calendar Sun candidate only. It is excluded from personality synthesis until ephemeris evidence independently verifies it or proves it stable across the full supported time range."
         : "This value exists in saved profile data but does not carry the current verified placement contract, so it is not promoted as verified evidence.";
   }
 
@@ -92,6 +100,14 @@ function PlacementRow({
         <span className={`text-xs font-semibold ${stateClass}`}>{state}</span>
       </div>
       <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">{explanation}</p>
+      {placement?.evidenceState === "conditional" && Array.isArray(placement.conditionalValues) && placement.conditionalValues.length > 0 && (
+        <div className="mt-2 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] px-3 py-2 text-[11px] leading-5 text-amber-100/80">
+          <strong>Rectification branches:</strong>{" "}
+          {placement.conditionalValues.map((branch) =>
+            `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`
+          ).join(" · ")}
+        </div>
+      )}
       {candidate && typeof placement?.internalCandidate?.longitude === "number" && (
         <p className="mt-2 text-[11px] text-[var(--sc-stone)]">
           Candidate longitude: {placement.internalCandidate.longitude.toFixed(4)}°
@@ -148,8 +164,17 @@ export default function SystemsDetailsPage() {
   const humanDesign = (profile.humanDesignData ?? {}) as Record<string, any>;
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
+  const humanDesignRange = humanDesign.status === "range_analyzed" && humanDesign.components ? humanDesign.components : null;
+  const stableHdEntries = humanDesignRange
+    ? Object.entries(humanDesignRange).filter(([, value]: any) =>
+        value?.evidenceState === "stable_across_range" &&
+        value?.rangeEvidence?.resolutionMinutes === 1 &&
+        value?.rangeEvidence?.testedValues === 1440)
+    : [];
+  const conditionalHdEntries = humanDesignRange
+    ? Object.entries(humanDesignRange).filter(([, value]: any) => value?.evidenceState === "conditional")
+    : [];
   const humanDesignCenters = normalizeHumanDesignCenters(humanDesign.centers);
-  const ultimateCodex = buildUltimateCodexSynthesis(profile as Record<string, unknown>);
 
   const latitude = textValue(profile.latitude);
   const longitude = textValue(profile.longitude);
@@ -168,10 +193,6 @@ export default function SystemsDetailsPage() {
             Soul Codex keeps the main experience synthesis-first. This page is for the moment you think, “Wait, what did it calculate for my Moon, Rising, or Life Path?” It shows what was calculated, what was verified, what was withheld, and why.
           </p>
         </header>
-
-        <div className="mx-auto max-w-5xl">
-          <UltimateCodexPanel synthesis={ultimateCodex} />
-        </div>
 
         <div className="mx-auto max-w-5xl space-y-5">
           <Link href="/systems/atlas" className="sc-panel block p-5">
@@ -208,7 +229,7 @@ export default function SystemsDetailsPage() {
                 <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                   {exactTimedInputs
                     ? "Moon and Ascendant candidates can be calculated from the saved inputs. If either remains unresolved below, the remaining problem is evidence/verification, not missing birth data."
-                    : "Moon/Rising stay unresolved when exact time, birth-place timezone, or coordinates are missing. Soul Codex does not manufacture the missing precision."}
+                    : "Missing inputs reduce scope rather than honesty. With a known birthplace timezone and unknown time, Soul Codex can run a full-day range analysis: invariant placements become stable-across-range evidence, changing placements stay conditional, and location/time-sensitive geometry remains unavailable until its required inputs exist."}
                 </p>
               </div>
             </div>
@@ -246,7 +267,7 @@ export default function SystemsDetailsPage() {
               <NumberRow label="Maturity" value={numerology.maturity} />
               <NumberRow label="Personal Year" value={numerology.personalYear} />
             </div>
-            <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path, Birthday, Expression, Soul Urge, Personality, and Maturity are stable deterministic inputs for the governed identity layer. Personal Year is a changing cycle and is kept out of the permanent Codex fingerprint.</p>
+            <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path and Birthday are deterministic from birth date. Expression, Soul Urge, Personality Number, and Maturity require the explicit full birth name and remain unavailable when it is missing. Personal Year is a date-based changing cycle and is kept out of the permanent Codex fingerprint.</p>
             <div className="mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 text-xs leading-6 text-[var(--sc-stone)]">
               <strong className="text-[var(--sc-ivory)]">Why another app might show a different Life Path:</strong> systems can differ in date normalization, reduction order, and treatment of master numbers. Soul Codex preserves 11, 22, and 33 where the current formula defines them instead of silently reducing them.
             </div>
@@ -274,12 +295,44 @@ export default function SystemsDetailsPage() {
                   <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
                 </div>
               </div>
+            ) : stableHdEntries.length > 0 || conditionalHdEntries.length > 0 ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-[rgba(217,182,111,.22)] bg-[rgba(217,182,111,.04)] p-4">
+                  <p className="text-sm font-semibold text-[var(--sc-ivory)]">Human Design partially available from full-day range analysis</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Stable components may support synthesis with range provenance. Changing components remain conditional and are not promoted into the main reading.</p>
+                </div>
+                {stableHdEntries.length > 0 && (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {stableHdEntries.map(([key, value]: any) => (
+                      <NumberRow key={key} label={key.replace(/([A-Z])/g, " $1")} value={value.value || "None"} />
+                    ))}
+                  </div>
+                )}
+                {conditionalHdEntries.length > 0 && (
+                  <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.035] p-4 text-xs leading-6 text-[var(--sc-stone)]">
+                    <strong className="text-[var(--sc-ivory)]">Conditional until birth time · branch-only:</strong>
+                    <div className="mt-2 space-y-2">
+                      {conditionalHdEntries.map(([key, value]: any) => (
+                        <div key={key}>
+                          <span className="font-semibold capitalize text-[var(--sc-ivory-soft)]">{key.replace(/([A-Z])/g, " $1")}:</span>{" "}
+                          {Array.isArray(value?.conditionalValues) && value.conditionalValues.length
+                            ? value.conditionalValues.map((branch: any) =>
+                                `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`
+                              ).join(" · ")
+                            : "Changes across the supported day."}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-2">These windows are rectification evidence, not certified Human Design data, and do not enter the main synthesis.</p>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="flex gap-3 rounded-2xl border border-amber-400/15 bg-amber-400/[0.035] p-4">
                 <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-200/80" />
                 <div>
-                  <p className="text-sm font-semibold text-[var(--sc-ivory)]">Not promoted as verified Human Design evidence</p>
-                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Stored status: {humanDesignStatus}. Candidate fields may exist internally, but this inspector will not relabel them as authoritative chart facts.</p>
+                  <p className="text-sm font-semibold text-[var(--sc-ivory)]">Human Design unavailable under the current evidence</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Stored status: {humanDesignStatus}. Soul Codex will not guess missing components or relabel incomplete data as verified.</p>
                 </div>
               </div>
             )}

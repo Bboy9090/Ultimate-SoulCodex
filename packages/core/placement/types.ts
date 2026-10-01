@@ -34,6 +34,36 @@
  * - Has time + location → 'calculated'
  */
 
+export type EvidenceState =
+  | "verified"
+  | "stable_across_range"
+  | "conditional"
+  | "unavailable";
+
+export interface ConditionalValueRange {
+  value: string;
+  startLocalTime?: string | null;
+  endLocalTime?: string | null;
+}
+
+export interface RangeEvidence {
+  resolutionMinutes: number;
+  rangeStartLocal: string;
+  rangeEndLocal: string;
+  timezone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  testedValues: number;
+}
+
+export type SynthesisEvidenceMode = "use" | "branch_only" | "exclude";
+
+export function synthesisModeForEvidenceState(state: EvidenceState): SynthesisEvidenceMode {
+  if (state === "verified" || state === "stable_across_range") return "use";
+  if (state === "conditional") return "branch_only";
+  return "exclude";
+}
+
 export type VerificationState =
   | "verified"                         // Independent verification complete
   | "calculated"                       // Calculated but not independently verified
@@ -71,11 +101,15 @@ export interface PlacementLike {
   status?: VerificationState | string | null;
   provenance?: PlacementEvidence | null;
   evidence?: PlacementEvidence | null;
+  evidenceState?: EvidenceState | null;
+  rangeEvidence?: RangeEvidence | null;
+  conditionalValues?: ConditionalValueRange[] | null;
 }
 
 export interface VerifiedPlacement {
   sign: string;
   degree?: number;
   verificationStatus: "verified";
+  evidenceState?: "verified";
   evidence: PlacementEvidence;
 }

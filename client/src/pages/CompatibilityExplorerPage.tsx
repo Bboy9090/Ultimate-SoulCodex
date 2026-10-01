@@ -192,7 +192,7 @@ export default function CompatibilityExplorerPage() {
           </p>
           {profile ? (
             <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-              The request sends only supported Sun evidence and deterministic Life Path. Name, raw birth date, birth location, biography, Moon, Rising, and Human Design stay out of this request.
+              The request sends only a supported Sun symbol. Name, raw birth date, birth location, biography, numerology, Moon, Rising, and Human Design stay out of this privacy-minimized request.
             </p>
           ) : null}
         </header>

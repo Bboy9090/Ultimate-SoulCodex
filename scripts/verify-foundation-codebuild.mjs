@@ -12,6 +12,7 @@ const files = {
   localFirst: read("client/src/pages/local-first-input-form.tsx"),
   offlineProfile: read("client/src/pages/offline-profile.tsx"),
   foundationOffline: read("client/src/lib/foundationOfflineCodex.ts"),
+  unknownTimeRange: read("server/services/unknown-time-range.ts"),
   verificationRoute: read("server/routes/profile-verification.ts"),
   schema: read("shared/schema.ts"),
   billing: read("server/billing.ts"),
@@ -51,10 +52,11 @@ check("PRIVACY-01", "Local creation uploads only after explicit opt-in", files.l
 check("PRIVACY-02", "Opening an offline profile does not upload it", files.offlineProfile.includes("const requestOnlineVerification = async () =>") && files.offlineProfile.includes('data-testid="button-verify-online-profile"') && files.offlineProfile.includes("Merely opening this local profile does not upload it."));
 check("PRIVACY-03", "Local-first UI explains verification boundary", files.localFirst.includes("Online astronomy verification happens only when you explicitly choose it.") && files.localFirst.includes("Leave this off to keep profile creation entirely on-device."));
 check("PRIVACY-04", "Profile ownership tests remain in external CI", files.serverRoutes.includes("profileBelongsToActor") && files.serverRoutes.includes("requestOwnsProfile") && files.codebuild.includes("tests/server-profile-ownership.test.ts"));
-check("PRIVACY-05", "Compatibility uploads are minimized", files.compatibilityPayload.includes("minimum server payload required by Foundation compatibility") && files.codebuild.includes("tests/compatibility-data-minimization.test.ts"));
+check("PRIVACY-05", "Compatibility uploads are minimized to a symbolic Sun projection", files.compatibilityPayload.includes("minimum server payload required by Foundation compatibility") && files.codebuild.includes("tests/compatibility-data-minimization.test.ts"));
 check("PRIVACY-06", "Astronomy verification is evidence-only", files.verificationRoute.includes('app.post("/api/verification/profile"') && files.verificationRoute.includes("persistedProfile: false") && files.verificationRoute.includes("aiGeneration: false") && !/^import .*storage/im.test(files.verificationRoute) && !/^import .*openai/im.test(files.verificationRoute));
 
 check("TRUTH-01", "Local generation does not fabricate time-dependent astronomy", files.foundationOffline.includes('moonSign: ""') && files.foundationOffline.includes('risingSign: ""') && files.foundationOffline.includes("planets: {}") && files.foundationOffline.includes("houses: []") && files.foundationOffline.includes("aspects: []"));
+check("TRUTH-RANGE-01", "Unknown-time range analysis and full-birth-name numerology boundaries are present", files.unknownTimeRange.includes("minute < 1440") && files.unknownTimeRange.includes('"stable_across_range"') && files.unknownTimeRange.includes('"conditional"') && files.foundationOffline.includes("fullBirthName") && files.foundationOffline.includes("Name-based numerology is unavailable"));
 check("TRUTH-02", "Unknown birth time remains explicit", files.schema.includes('z.literal("")') && files.schema.includes("birthTime: birthTimeSchema") && files.localFirst.includes("Unknown time is better than invented precision."));
 
 check("BILLING-01", "Client does not collect raw payment fields", !/\b(cardNumber|expiryDate|cvv|cvc)\b/.test(files.premiumModal));

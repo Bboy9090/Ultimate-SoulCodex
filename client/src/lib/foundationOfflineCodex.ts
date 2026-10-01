@@ -71,7 +71,7 @@ function parseDate(dateISO: string) {
   return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
 }
 
-function sunSignForDate(dateISO: string): string {
+function sunSignForDate(dateISO: string): string | null {
   const { month, day } = parseDate(dateISO);
   const boundaries: Array<[number, number, string]> = [
     [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"], [4, 20, "Taurus"],
@@ -79,9 +79,11 @@ function sunSignForDate(dateISO: string): string {
     [9, 23, "Libra"], [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
   ];
   const current = boundaries.find(([candidate]) => candidate === month);
+  const boundaryDay = current?.[1] ?? 22;
+  if (Math.abs(day - boundaryDay) <= 1) return null;
   const next = current?.[2] ?? "Capricorn";
   const previous = SIGNS[(SIGNS.indexOf(next as (typeof SIGNS)[number]) + 11) % 12];
-  return day >= (current?.[1] ?? 22) ? next : previous;
+  return day > boundaryDay ? next : previous;
 }
 
 function reduceNumber(input: number): number {
@@ -201,6 +203,35 @@ function archetypeFor(
   };
 }
 
+function numerologyOnlyArchetype(
+  lifePath: number,
+  expression?: number | null,
+  soulUrge?: number | null,
+) {
+  const path = numerologyPatternFor(lifePath);
+  const expressionPattern = numerologyPatternFor(expression);
+  const soulUrgePattern = numerologyPatternFor(soulUrge);
+  const labels = [
+    path ? `Life Path ${lifePath}` : null,
+    expressionPattern ? `Expression ${expression}` : null,
+    soulUrgePattern ? `Soul Urge ${soulUrge}` : null,
+  ].filter((value): value is string => Boolean(value));
+  const code = preliminarySignatureCode([lifePath, expressionPattern ? expression : null, soulUrgePattern ? soulUrge : null]);
+  return {
+    title: `Foundation Numerology Signature · ${labels.join(" / ") || "numerology unresolved"} · ${code}`,
+    description: `Preliminary local synthesis uses deterministic numerology only: ${labels.join(", ") || "no supported number"}. Astrology remains outside synthesis until verified or stable across the supported range.`,
+    strengths: Array.from(new Set([path?.gift, expressionPattern?.gift, soulUrgePattern?.gift].filter((value): value is string => Boolean(value)))),
+    shadows: Array.from(new Set([path?.shadow, expressionPattern?.shadow, soulUrgePattern?.shadow].filter((value): value is string => Boolean(value)))),
+    themes: [...labels, "Preliminary local numerology synthesis"],
+    guidance: [path?.action, expressionPattern?.action, soulUrgePattern?.action].filter((value): value is string => Boolean(value)).slice(0, 3).join(" "),
+    tarotCards: {
+      card1: "Unresolved locally",
+      card2: "Unresolved locally",
+      interpretation: "Tarot birth-card interpretation is not used as evidence in the Foundation local profile.",
+    },
+  };
+}
+
 function evidence(input: Omit<InterpretationEvidenceRef, "provenanceStatus" | "notes"> & { notes?: string[] }): InterpretationEvidenceRef {
   return {
     ...input,
@@ -255,13 +286,13 @@ export function generateFoundationOfflineCodexProfile(
   const generatedAt = options.generatedAt ?? new Date().toISOString();
   const currentYear = options.currentYear ?? new Date(generatedAt).getUTCFullYear();
   const sunSign = sunSignForDate(input.birthDate);
-  const signPattern = SIGN_PATTERNS[sunSign];
   const lifePath = calcLifePath(input.birthDate);
   const birthday = calcBirthday(input.birthDate);
-  const expression = calcExpression(input.name);
-  const soulUrge = calcSoulUrge(input.name);
-  const personality = calcPersonality(input.name);
-  const maturity = calcMaturity(input.birthDate, input.name);
+  const fullBirthName = input.fullBirthName?.trim() || null;
+  const expression = fullBirthName ? calcExpression(fullBirthName) : null;
+  const soulUrge = fullBirthName ? calcSoulUrge(fullBirthName) : null;
+  const personality = fullBirthName ? calcPersonality(fullBirthName) : null;
+  const maturity = fullBirthName ? calcMaturity(input.birthDate, fullBirthName) : null;
   const yearNumber = personalYear(input.birthDate, currentYear);
   const pathPattern = numerologyPatternFor(lifePath);
   const expressionPattern = numerologyPatternFor(expression);
@@ -269,9 +300,13 @@ export function generateFoundationOfflineCodexProfile(
   if (!pathPattern) {
     throw new Error(`Calculated Life Path ${lifePath} is outside the governed numerology set.`);
   }
-  const archetypeData = archetypeFor(sunSign, lifePath, expression, soulUrge);
+  const archetypeData = numerologyOnlyArchetype(lifePath, expression, soulUrge);
+  archetypeData.description = `${sunSign
+    ? `Local calendar Sun candidate: ${sunSign}. It is display-only and does not influence identity synthesis.`
+    : "Sun sign unresolved locally because this date is near a sign-ingress boundary."
+  } ${archetypeData.description}`;
 
-  const numerologyData = {
+  const numerologyData: OfflineCodexProfile["numerologyData"] = {
     lifePath,
     birthday,
     expression,
@@ -279,13 +314,30 @@ export function generateFoundationOfflineCodexProfile(
     personality,
     maturity,
     personalYear: yearNumber,
+    evidenceStates: {
+      lifePath: "verified",
+      birthday: "verified",
+      expression: expression === null ? "unavailable" : "verified",
+      soulUrge: soulUrge === null ? "unavailable" : "verified",
+      personality: personality === null ? "unavailable" : "verified",
+      maturity: maturity === null ? "unavailable" : "verified",
+      personalYear: "verified",
+    },
     interpretations: {
       lifePath: `Life Path ${lifePath}: deterministic number, symbolic interpretation.`,
       birthday: `Birthday ${birthday}: deterministic day-of-birth reduction, symbolic interpretation.`,
-      expression: `Expression ${expression}: deterministic name number, symbolic interpretation.`,
-      soulUrge: `Soul Urge ${soulUrge}: deterministic vowel-number calculation, symbolic interpretation.`,
-      personality: `Personality ${personality}: deterministic consonant-number calculation, symbolic interpretation.`,
-      maturity: `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
+      expression: expression === null
+        ? "Expression unavailable: full birth name was not supplied."
+        : `Expression ${expression}: deterministic full-birth-name number, symbolic interpretation.`,
+      soulUrge: soulUrge === null
+        ? "Soul Urge unavailable: full birth name was not supplied."
+        : `Soul Urge ${soulUrge}: deterministic full-birth-name vowel calculation, symbolic interpretation.`,
+      personality: personality === null
+        ? "Personality Number unavailable: full birth name was not supplied."
+        : `Personality ${personality}: deterministic full-birth-name consonant calculation, symbolic interpretation.`,
+      maturity: maturity === null
+        ? "Maturity Number unavailable: full birth name was not supplied."
+        : `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
       personalYear: `Personal Year ${yearNumber}: reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
   };
@@ -295,20 +347,21 @@ export function generateFoundationOfflineCodexProfile(
     generatedAt,
     birthTimeStatus: input.birthTime ? "known" : "unknown",
     seeds: [
-      makeSeed("offline.astrology.sun", "astrology", "sunSign", sunSign, `${sunSign} Sun symbolism`, signPattern, 100),
       makeSeed("offline.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 95),
-      ...(expressionPattern
+      ...(expression !== null && expressionPattern
         ? [makeSeed("offline.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 92)]
         : []),
-      ...(soulUrgePattern
+      ...(soulUrge !== null && soulUrgePattern
         ? [makeSeed("offline.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 91)]
         : []),
     ],
     missingData: [
-      "Moon sign is unavailable in local mode until independently verified astronomy is requested.",
+      sunSign ? `Sun sign candidate (${sunSign}) is retained for display only and excluded from synthesis until verified or stable across the full-day range.` : "Sun sign is unresolved locally near a sign-ingress boundary and requires full-day range verification.",
+      "Moon sign is unavailable in local mode until independently verified or range-stable astronomy is requested.",
       "Rising sign is unavailable in local mode until exact birth time, coordinates, timezone, and independent astronomy verification are available.",
       "Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable in local mode.",
       "Human Design is unavailable without its separate calculation and evidence contract.",
+      ...(fullBirthName ? [] : ["Expression, Soul Urge, Personality Number, and Maturity are unavailable until the full birth name is supplied."]),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
     ],
   });
@@ -321,7 +374,7 @@ export function generateFoundationOfflineCodexProfile(
   }
 
   const unresolvedAstrology = {
-    sunSign,
+    sunSign: sunSign ?? "",
     moonSign: "",
     risingSign: "",
     planets: {},
@@ -337,6 +390,7 @@ export function generateFoundationOfflineCodexProfile(
     userId: null,
     sessionId: null,
     name: input.name.trim(),
+    fullBirthName,
     birthDate: input.birthDate,
     birthTime: input.birthTime || null,
     birthLocation: input.birthLocation.trim(),
@@ -348,8 +402,8 @@ export function generateFoundationOfflineCodexProfile(
     numerologyData,
     personalityData: {},
     archetypeData,
-    biography: `${input.name.trim()}'s local Codex uses only ${sunSign} Sun symbolism and deterministic numerology in this first-pass synthesis. Life Path ${lifePath}, Expression ${expression}, and Soul Urge ${soulUrge} are calculated from entered date/name data; their meanings remain symbolic. Moon, Rising, planets, houses, aspects, nodes, and Chiron are deliberately absent rather than approximated.`,
-    dailyGuidance: `${pathPattern.action} ${signPattern.action}`,
+    biography: `${input.name.trim()}'s local Codex begins with deterministic numerology only. Life Path ${lifePath}, Birthday ${birthday}, and Personal Year ${yearNumber} are date-based calculations. ${fullBirthName ? `Expression ${expression}, Soul Urge ${soulUrge}, Personality ${personality}, and Maturity ${maturity} use the supplied full birth name.` : "Name-based numerology is unavailable because a full birth name was not supplied."} ${sunSign ? `The local ${sunSign} Sun is retained only as a display candidate and does not influence synthesis.` : "The Sun remains unresolved locally because this date is near an ingress boundary."} Time-sensitive astronomy remains absent rather than approximated.`,
+    dailyGuidance: [pathPattern.action, expressionPattern?.action, soulUrgePattern?.action].filter((value): value is string => Boolean(value)).join(" "),
     depthInterpretation,
     localOnly: true,
     syncStatus: "local-only",
@@ -361,7 +415,19 @@ export function generateFoundationOfflineCodexProfile(
 
 type VerifiedPlacementForSynthesis = {
   verificationStatus?: string;
+  evidenceState?: "verified" | "stable_across_range" | "conditional" | "unavailable";
   sign?: string | null;
+  rangeEvidence?: {
+    resolutionMinutes?: number;
+    testedValues?: number;
+    rangeStartLocal?: string;
+    rangeEndLocal?: string;
+  } | null;
+  conditionalValues?: Array<{
+    value?: string;
+    startLocalTime?: string | null;
+    endLocalTime?: string | null;
+  }> | null;
 };
 
 export type VerifiedAstrologyForSynthesis = {
@@ -463,6 +529,75 @@ function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "mo
   const placement = astrology[key];
   if (placement?.verificationStatus !== "verified" || typeof placement.sign !== "string") return null;
   return signPatternFor(placement.sign) ? placement.sign : null;
+}
+
+function completeRangeEvidence(placement: VerifiedPlacementForSynthesis | undefined): boolean {
+  return Boolean(
+    placement?.rangeEvidence?.resolutionMinutes === 1 &&
+    placement?.rangeEvidence?.testedValues === 1440 &&
+    typeof placement?.rangeEvidence?.rangeStartLocal === "string" &&
+    typeof placement?.rangeEvidence?.rangeEndLocal === "string"
+  );
+}
+
+function rangeStableSign(placement: VerifiedPlacementForSynthesis | undefined): string | null {
+  if (
+    placement?.evidenceState !== "stable_across_range" ||
+    !completeRangeEvidence(placement) ||
+    typeof placement.sign !== "string"
+  ) return null;
+  return signPatternFor(placement.sign) ? placement.sign : null;
+}
+
+function rangeStableEvidence(
+  id: string,
+  field: string,
+  value: string | number,
+  notes: string[] = [],
+): InterpretationEvidenceRef {
+  return {
+    id,
+    system: "astrology",
+    field,
+    value,
+    confidence: "high",
+    provenanceStatus: "partially-verified",
+    timeSensitivity: "none",
+    notes: [
+      "Birth time is unknown. This placement remained identical across all 1,440 possible HH:MM values for the supplied date and timezone.",
+      "Range stability certifies the sign across the missing-time range; it does not supply an exact degree, house, or birth instant.",
+      ...notes,
+    ],
+  };
+}
+
+function rangeStablePlacementSeed(input: {
+  id: string;
+  field: string;
+  bodyLabel: string;
+  sign: string;
+  priority: number;
+  facets: DepthSynthesisSeed["facets"];
+}): DepthSynthesisSeed {
+  const patternValue = signPatternFor(input.sign);
+  if (!patternValue) throw new Error(`Unsupported range-stable sign cannot influence synthesis: ${input.sign}`);
+  return {
+    evidence: rangeStableEvidence(
+      input.id,
+      input.field,
+      input.sign,
+      [`${input.bodyLabel} is stable across the complete unknown-time sweep; interpretation remains symbolic.`],
+    ),
+    label: `${input.bodyLabel} in ${input.sign} · stable across range`,
+    priority: input.priority,
+    claimKind: "derived",
+    facets: input.facets,
+    tensionAxes: patternValue.axes,
+    limitations: [
+      "The sign is stable across the full unknown-time range, but exact degree and house remain unavailable.",
+      "Symbolic interpretation must not be promoted to a psychological fact.",
+    ],
+  };
 }
 
 const HOUSE_THEMES: Record<number, { theme: string; action: string }> = {
@@ -817,6 +952,178 @@ function verifiedAggregateSeeds(
   return seeds;
 }
 
+export function synthesizeRangeStableFoundationProfile(
+  local: OfflineCodexProfile,
+  astrology: VerifiedAstrologyForSynthesis,
+  generatedAt = new Date().toISOString(),
+  humanDesign?: Record<string, unknown> | null,
+): Pick<OfflineCodexProfile, "biography" | "dailyGuidance" | "depthInterpretation" | "archetypeData"> {
+  const stablePlanets = Object.entries(astrology.planets ?? {})
+    .map(([key, placement]) => ({ key, placement, sign: rangeStableSign(placement) }))
+    .filter((row): row is { key: string; placement: VerifiedPlacementForSynthesis; sign: string } => Boolean(row.sign));
+
+  const seeds: DepthSynthesisSeed[] = [];
+  const lifePath = local.numerologyData.lifePath;
+  const pathPattern = numerologyPatternFor(lifePath);
+  if (pathPattern) {
+    seeds.push(makeSeed(
+      "range.numerology.life-path",
+      "numerology",
+      "lifePath",
+      lifePath,
+      `Life Path ${lifePath} symbolism`,
+      pathPattern,
+      100,
+    ));
+  }
+  const expression = local.numerologyData.expression;
+  const expressionPattern = numerologyPatternFor(expression);
+  if (expression !== null && expressionPattern) {
+    seeds.push(makeSeed(
+      "range.numerology.expression",
+      "numerology",
+      "expression",
+      expression,
+      `Expression ${expression} symbolism`,
+      expressionPattern,
+      96,
+    ));
+  }
+  const soulUrge = local.numerologyData.soulUrge;
+  const soulUrgePattern = numerologyPatternFor(soulUrge);
+  if (soulUrge !== null && soulUrgePattern) {
+    seeds.push(makeSeed(
+      "range.numerology.soul-urge",
+      "numerology",
+      "soulUrge",
+      soulUrge,
+      `Soul Urge ${soulUrge} symbolism`,
+      soulUrgePattern,
+      95,
+    ));
+  }
+
+  const labels: Record<string, string> = {
+    sun: "Sun", moon: "Moon", mercury: "Mercury", venus: "Venus", mars: "Mars",
+    jupiter: "Jupiter", saturn: "Saturn", uranus: "Uranus", neptune: "Neptune", pluto: "Pluto",
+  };
+  const priorities: Record<string, number> = {
+    sun: 120, moon: 118, mercury: 108, venus: 107, mars: 107,
+    jupiter: 96, saturn: 96, uranus: 90, neptune: 90, pluto: 90,
+  };
+  for (const row of stablePlanets) {
+    const patternValue = signPatternFor(row.sign);
+    if (!patternValue) continue;
+    const label = labels[row.key] ?? row.key;
+    seeds.push(rangeStablePlacementSeed({
+      id: `range.astrology.${row.key}`,
+      field: row.key,
+      bodyLabel: label,
+      sign: row.sign,
+      priority: priorities[row.key] ?? 90,
+      facets: row.key === "sun"
+        ? { claritySummary: `The range-stable Sun sign is ${row.sign}; symbolically, this may emphasize ${patternValue.drive}.` }
+        : row.key === "moon"
+          ? {
+              innerExperience: `The range-stable Moon sign is ${row.sign}; symbolically, this may point toward ${patternValue.drive}.`,
+              relationshipImpact: `Moon-in-${row.sign} symbolism ${patternValue.relationship}.`,
+            }
+          : row.key === "mercury"
+            ? { decisionImpact: `Range-stable Mercury in ${row.sign} adds a symbolic communication/processing theme around ${patternValue.drive}.` }
+            : row.key === "venus"
+              ? { relationshipImpact: `Range-stable Venus in ${row.sign} adds a symbolic preference theme around ${patternValue.drive}.` }
+              : row.key === "mars"
+                ? { action: `Range-stable Mars in ${row.sign} adds a symbolic action theme around ${patternValue.drive}.` }
+                : { gift: `Range-stable ${label} in ${row.sign} adds a supporting symbolic theme around ${patternValue.gift}.` },
+    }));
+  }
+
+  const hdComponents = humanDesign?.status === "range_analyzed"
+    ? (humanDesign as any).components
+    : null;
+  const stableHd = hdComponents && typeof hdComponents === "object"
+    ? Object.entries(hdComponents)
+        .filter(([, value]: any) =>
+          value?.evidenceState === "stable_across_range" &&
+          value?.value &&
+          value?.rangeEvidence?.resolutionMinutes === 1 &&
+          value?.rangeEvidence?.testedValues === 1440 &&
+          typeof value?.rangeEvidence?.rangeStartLocal === "string" &&
+          typeof value?.rangeEvidence?.rangeEndLocal === "string"
+        )
+        .map(([key, value]: any) => `${key}: ${value.value}`)
+    : [];
+  if (stableHd.length) {
+    seeds.push({
+      evidence: {
+        id: "range.human-design.stable-components",
+        system: "human-design",
+        field: "stableComponents",
+        value: stableHd.join(" · "),
+        confidence: "high",
+        provenanceStatus: "partially-verified",
+        timeSensitivity: "none",
+        notes: [
+          "These Human Design components remained identical across all 1,440 possible birth minutes.",
+          "Any component that changed during the day remains conditional and is excluded from synthesis.",
+        ],
+      },
+      label: "Human Design · stable across range",
+      priority: 105,
+      claimKind: "derived",
+      facets: {
+        claritySummary: `The Human Design range sweep found stable components: ${stableHd.join(", ")}. Treat them as symbolic reflection inputs, not verified psychology.`,
+      },
+      tensionAxes: [],
+      limitations: [
+        "Only invariant Human Design components are represented here.",
+        "Conditional Type, Authority, Profile, Centers, Channels, Gates, or Incarnation Cross remain excluded.",
+      ],
+    });
+  }
+
+  const conditional = [
+    astrology.moon?.evidenceState === "conditional" ? "Moon" : null,
+    astrology.rising?.evidenceState === "conditional" ? "Ascendant" : null,
+  ].filter((value): value is string => Boolean(value));
+
+  const depthInterpretation = synthesizeDepthInterpretationV1({
+    version: 1,
+    generatedAt,
+    birthTimeStatus: "unknown",
+    seeds,
+    missingData: [
+      ...(conditional.length ? [`${conditional.join(" and ")} remain conditional across the unknown-time range and are excluded from personality conclusions.`] : []),
+      "Houses and Midheaven remain unavailable without an exact birth time.",
+      "Exact degrees remain unavailable for range-stable placements.",
+    ],
+  });
+  const validation = validateDepthInterpretationV1(depthInterpretation, { birthTimeStatus: "unknown" });
+  if (!validation.valid) {
+    throw new Error(`Range-stable synthesis failed validation: ${validation.findings.map((finding) => finding.code).join(", ")}`);
+  }
+
+  const stableLabels = stablePlanets.map((row) => `${labels[row.key] ?? row.key} ${row.sign}`);
+  const conditionalNote = conditional.length
+    ? ` ${conditional.join(" and ")} vary across the day and are shown only as conditional rectification branches.`
+    : "";
+
+  return {
+    biography: `${local.name}'s range-aware Codex uses deterministic numerology plus only placements proven invariant across every possible birth minute. ${stableLabels.length ? `Stable placements: ${stableLabels.join(", ")}.` : "No planetary sign was promoted from the unknown-time sweep."}${conditionalNote} Houses, Midheaven, and exact degrees remain locked until birth time is known.`,
+    dailyGuidance: local.dailyGuidance,
+    depthInterpretation,
+    archetypeData: {
+      ...local.archetypeData,
+      description: `${local.archetypeData.description} Range-stable placements may support synthesis with explicit provenance; conditional branches do not.`,
+      themes: Array.from(new Set([
+        ...local.archetypeData.themes,
+        ...stableLabels.map((label) => `${label} · stable across range`),
+        ...stableHd.map((label) => `${label} · stable across range`),
+      ])),
+    },
+  };
+}
+
 /**
  * Rebuild narrative synthesis only after the full astronomy verification
  * contract has passed. This prevents the richer chart from being stored merely
@@ -869,10 +1176,10 @@ export function synthesizeVerifiedFoundationProfile(
     ...(pathPattern
       ? [makeSeed("verified.numerology.life-path", "numerology", "lifePath", lifePath, `Life Path ${lifePath} symbolism`, pathPattern, 100)]
       : []),
-    ...(expressionPattern
+    ...(expression !== null && expressionPattern
       ? [makeSeed("verified.numerology.expression", "numerology", "expression", expression, `Expression ${expression} symbolism`, expressionPattern, 96)]
       : []),
-    ...(soulUrgePattern
+    ...(soulUrge !== null && soulUrgePattern
       ? [makeSeed("verified.numerology.soul-urge", "numerology", "soulUrge", soulUrge, `Soul Urge ${soulUrge} symbolism`, soulUrgePattern, 95)]
       : []),
     verifiedPlacementSeed({
@@ -1255,6 +1562,7 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
   const rebuilt = generateFoundationOfflineCodexProfile(
     {
       name: profile.name,
+      fullBirthName: profile.fullBirthName ?? undefined,
       birthDate: profile.birthDate,
       birthTime: profile.birthTime ?? "",
       birthLocation: profile.birthLocation,
@@ -1279,15 +1587,32 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
 
   if (verifiedAstrologyData) {
     try {
-      repairedNarrative = synthesizeVerifiedFoundationProfile(
-        rebuilt,
-        verifiedAstrologyData,
-        repairedAt,
-        profile.humanDesignData ?? undefined,
-      );
+      const hasCompleteRange = ["sun", "moon"].every((key) => {
+        const placement = (verifiedAstrologyData as any)?.[key];
+        return (
+          ["stable_across_range", "conditional"].includes(String(placement?.evidenceState)) &&
+          placement?.rangeEvidence?.resolutionMinutes === 1 &&
+          placement?.rangeEvidence?.testedValues === 1440 &&
+          typeof placement?.rangeEvidence?.rangeStartLocal === "string" &&
+          typeof placement?.rangeEvidence?.rangeEndLocal === "string"
+        );
+      });
+      repairedNarrative = hasCompleteRange
+        ? synthesizeRangeStableFoundationProfile(
+            rebuilt,
+            verifiedAstrologyData,
+            repairedAt,
+            profile.humanDesignData ?? undefined,
+          )
+        : synthesizeVerifiedFoundationProfile(
+            rebuilt,
+            verifiedAstrologyData,
+            repairedAt,
+            profile.humanDesignData ?? undefined,
+          );
     } catch {
-      // Do not discard verified evidence or corrupt a stored profile when a
-      // legacy snapshot cannot be safely re-synthesized.
+      // Do not discard verified/range-stable evidence or corrupt a stored
+      // profile when a legacy snapshot cannot be safely re-synthesized.
       return profile;
     }
   }

@@ -105,6 +105,7 @@ export interface StoredProfile {
   remoteId?: string;
   name?: string;
   codename?: string;
+  fullBirthName?: string;
   birthDate?: string;
   birthTime?: string;
   birthLocation?: string;
