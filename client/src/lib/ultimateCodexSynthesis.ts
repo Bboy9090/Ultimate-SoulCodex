@@ -137,6 +137,12 @@ export interface UltimateCodexStellium {
   rule: string;
 }
 
+export interface CrossSystemInsight {
+  kind: "reinforcement" | "tension" | "different-jobs" | "experiment";
+  text: string;
+  systems: Array<"Astrology" | "Numerology" | "Human Design">;
+}
+
 export interface UltimateCodexSynthesis {
   version: "ultimate-codex-v1";
   coverage: UltimateCodexCoverage;
@@ -155,6 +161,7 @@ export interface UltimateCodexSynthesis {
   resonances: string[];
   tensions: string[];
   integrationMoves: string[];
+  crossSystemInsights: CrossSystemInsight[];
   systemSummary: Array<{ system: string; status: string; detail: string }>;
   unresolved: string[];
   evidenceSignature: string[];
@@ -656,6 +663,79 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     "When systems disagree, prefer observed lived experience over symbolic interpretation. Keep the evidence, revise the meaning.",
   ]);
 
+
+  const differentJobs = unique([
+    placements.length
+      ? "Astrology describes symbolic style, emphasis, and life-area context; it does not decide what behavior is factually true about you."
+      : null,
+    lifePath || expression || soulUrge
+      ? "Numerology supplies deterministic number calculations with symbolic themes; Life Path, Expression, and Soul Urge can describe different questions rather than one fixed personality."
+      : null,
+    hdType || hdAuthority
+      ? "Human Design contributes an optional mechanics/timing lens. Strategy and Authority are practices to test, not commands and not verified psychology."
+      : null,
+    expression && soulUrge && expression !== soulUrge
+      ? "Expression and Soul Urge have different jobs: one is an outward-development symbol, the other an inward-motivation symbol. Difference is not automatically conflict."
+      : null,
+    hdStrategy && (dominantElement || lifePath)
+      ? "Astrology or numerology may describe style while Human Design Strategy describes a timing practice. Keep those domains separate before labeling them contradictory."
+      : null,
+  ]);
+
+  const experiments = unique([
+    systemsPresent >= 2
+      ? "Pick one real decision this week. Write the Astrology theme, Numerology theme, and available Human Design timing cue separately. Act using the context that fits, record what happened, and keep, revise, or reject the symbolic interpretation."
+      : null,
+    hdAuthority
+      ? `For one low-stakes decision, try ${hdAuthority} as an optional ritual and compare the result with your usual decision process. Treat the outcome as lived evidence, not proof of the system.`
+      : null,
+    resonances.length
+      ? "Choose one repeated theme from the reinforcement list and look for one concrete example that supports it and one that contradicts it before deciding whether the theme is useful."
+      : null,
+    tensions.length
+      ? "Choose one listed tension and test whether it is a real-life conflict, a context-dependent tradeoff, or simply two systems doing different jobs."
+      : null,
+  ]);
+
+  const crossSystemInsights: CrossSystemInsight[] = [
+    ...resonances.map((text) => ({
+      kind: "reinforcement" as const,
+      text,
+      systems: unique([
+        placements.length ? "Astrology" : null,
+        lifePath || expression || soulUrge ? "Numerology" : null,
+        hdType || hdAuthority ? "Human Design" : null,
+      ]) as CrossSystemInsight["systems"],
+    })),
+    ...tensions.map((text) => ({
+      kind: "tension" as const,
+      text,
+      systems: unique([
+        placements.length || aspects.length ? "Astrology" : null,
+        lifePath || expression || soulUrge ? "Numerology" : null,
+        hdType || hdStrategy || hdAuthority ? "Human Design" : null,
+      ]) as CrossSystemInsight["systems"],
+    })),
+    ...differentJobs.map((text) => ({
+      kind: "different-jobs" as const,
+      text,
+      systems: unique([
+        placements.length ? "Astrology" : null,
+        lifePath || expression || soulUrge ? "Numerology" : null,
+        hdType || hdAuthority ? "Human Design" : null,
+      ]) as CrossSystemInsight["systems"],
+    })),
+    ...experiments.map((text) => ({
+      kind: "experiment" as const,
+      text,
+      systems: unique([
+        placements.length ? "Astrology" : null,
+        lifePath || expression || soulUrge ? "Numerology" : null,
+        hdType || hdAuthority ? "Human Design" : null,
+      ]) as CrossSystemInsight["systems"],
+    })),
+  ];
+
   const personalityEvidenceState =
     typeof personalityData.evidenceState === "string" ? personalityData.evidenceState : null;
   const personalityAssessed =
@@ -777,6 +857,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     resonances: resonances.length ? resonances : ["No cross-system reinforcement is asserted beyond the currently available governed evidence."],
     tensions: tensions.length ? tensions : ["No governed contradiction is currently strong enough to assert; this is not the same as having no inner conflict."],
     integrationMoves,
+    crossSystemInsights,
     systemSummary,
     unresolved,
     evidenceSignature,
