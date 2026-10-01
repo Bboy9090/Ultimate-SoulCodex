@@ -52,6 +52,7 @@ node --import tsx --test \
   tests/native-api-routing.test.ts \
   tests/unknown-time-input-contract.test.ts \
   tests/unknown-time-dst-range.test.ts \
+  tests/legacy-astrology-quarantine.test.ts \
   tests/foundation-local-astronomy-boundary.test.ts \
   tests/profile-verification-boundary.test.ts \
   tests/no-simulated-release-routes.test.ts
