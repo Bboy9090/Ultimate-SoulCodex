@@ -189,17 +189,12 @@ function buildUtcBirthTimestamp(birthData: BirthData, requiresTime: boolean): Da
   const localTimestamp = `${birthData.birthDate}T${time}:00`;
 
   if (birthData.timezone) {
-    if (birthTime) {
-      const resolution = resolveCivilTimeStrict(
-        birthData.birthDate,
-        time,
-        birthData.timezone,
-      );
-      return resolution.status === "valid" ? resolution.utc : null;
-    }
-
-    const zoned = new Date(`${localTimestamp}Z`);
-    return Number.isNaN(zoned.getTime()) ? null : zoned;
+    const resolution = resolveCivilTimeStrict(
+      birthData.birthDate,
+      time,
+      birthData.timezone,
+    );
+    return resolution.status === "valid" ? resolution.utc : null;
   }
 
   // Date-only Sun candidates remain useful for evidence collection, but the
