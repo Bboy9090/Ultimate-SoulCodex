@@ -111,35 +111,43 @@ export default function UltimateCodexPanel({ synthesis }: { synthesis: UltimateC
         </div>
       </article>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.035)] p-5">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-[var(--sc-teal)]" />
-            <h3 className="font-serif text-xl text-[var(--sc-ivory)]">What works together</h3>
-          </div>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--sc-stone)]">
-            {synthesis.resonances.map((item, index) => <li key={index}>• {item}</li>)}
-          </ul>
-        </article>
-
-        <article className="rounded-2xl border border-[rgba(255,180,120,.18)] bg-[rgba(255,180,120,.035)] p-5">
-          <div className="flex items-center gap-2">
-            <TriangleAlert className="h-4 w-4 text-amber-300" />
-            <h3 className="font-serif text-xl text-[var(--sc-ivory)]">What works against or pulls differently</h3>
-          </div>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--sc-stone)]">
-            {synthesis.tensions.map((item, index) => <li key={index}>• {item}</li>)}
-          </ul>
-        </article>
-      </div>
-
-      <article className="mt-4 rounded-2xl border border-[rgba(168,145,255,.18)] bg-[rgba(168,145,255,.035)] p-5">
-        <p className="sc-eyebrow">Contradiction integration</p>
-        <h3 className="mt-2 font-serif text-xl text-[var(--sc-ivory)]">How to cope when the systems pull in different directions</h3>
-        <ol className="mt-4 space-y-3 text-sm leading-6 text-[var(--sc-stone)]">
-          {synthesis.integrationMoves.map((item, index) => <li key={index}><strong className="text-[var(--sc-gold-bright)]">{index + 1}.</strong> {item}</li>)}
-        </ol>
-      </article>
+      <section className="mt-6" aria-label="Cross-system synthesis">
+        <div className="mb-4">
+          <p className="sc-eyebrow">Cross-system synthesis</p>
+          <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Where the systems reinforce, pull differently, or simply do different jobs.</h3>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-[var(--sc-stone)]">
+            These are symbolic intersections, not verified psychology. Each category stays separate so overlap is not mistaken for proof and difference is not automatically labeled conflict.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {([
+            ["reinforcement", "Reinforcement", "Multiple systems repeat a similar symbolic theme."],
+            ["tension", "Tension", "Two supported themes pull toward different priorities or timing."],
+            ["different-jobs", "Different jobs", "The systems may be describing different domains rather than disagreeing."],
+            ["experiment", "Test it", "Turn the synthesis into something observable in real life."],
+          ] as const).map(([kind, title, description]) => {
+            const items = synthesis.crossSystemInsights.filter((item) => item.kind === kind);
+            return (
+              <article key={kind} className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-5">
+                <h4 className="font-serif text-xl text-[var(--sc-ivory)]">{title}</h4>
+                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{description}</p>
+                <div className="mt-4 space-y-3">
+                  {items.length ? items.map((item, index) => (
+                    <div key={index} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
+                      <p className="text-sm leading-6 text-[var(--sc-ivory-soft)]">{item.text}</p>
+                      <p className="mt-2 text-[10px] font-semibold uppercase tracking-[.1em] text-[var(--sc-gold)]">
+                        {item.systems.join(" · ") || "Governed synthesis"}
+                      </p>
+                    </div>
+                  )) : (
+                    <p className="text-sm text-[var(--sc-stone)]">No governed insight is strong enough to place in this category yet.</p>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       {synthesis.stelliums.length > 0 && (
         <article className="mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-5">
