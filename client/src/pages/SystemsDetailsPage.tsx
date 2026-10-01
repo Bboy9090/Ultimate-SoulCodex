@@ -12,11 +12,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import Navigation from "@/components/navigation";
+import UltimateCodexPanel from "@/components/UltimateCodexPanel";
 import type { PlacementLike } from "@soulcodex/core";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
+import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 type Placement = PlacementLike & {
   reason?: string;
@@ -162,6 +164,7 @@ export default function SystemsDetailsPage() {
   const risingPlacement = (astrology.rising ?? placements.rising) as Placement | undefined;
   const numerology = (profile.numerologyData ?? profile.personalNumbers ?? {}) as Record<string, any>;
   const humanDesign = (profile.humanDesignData ?? {}) as Record<string, any>;
+  const ultimateCodex = buildUltimateCodexSynthesis(profile);
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
   const humanDesignRange = humanDesign.status === "range_analyzed" && humanDesign.components ? humanDesign.components : null;
@@ -337,6 +340,8 @@ export default function SystemsDetailsPage() {
               </div>
             )}
           </section>
+
+          <UltimateCodexPanel synthesis={ultimateCodex} />
 
           <section className="sc-panel border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.025)] p-5 sm:p-7">
             <div className="flex gap-3">
