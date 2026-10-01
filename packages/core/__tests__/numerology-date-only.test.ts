@@ -9,6 +9,7 @@ import {
   calcMaturity,
   calcPersonality,
   calcSoulUrge,
+  isNumerologyNameSupported,
   normalizeNumerologyName,
   reduceNumerology,
 } from '../compute/numerology.js';
@@ -61,6 +62,26 @@ test('name normalization is stable across accents and punctuation', () => {
   assert.equal(
     calcExpression("Anne-Marie O'Neill"),
     calcExpression('Anne Marie ONeill'),
+  );
+});
+
+test('name numerology rejects silent partial transliteration', () => {
+  assert.equal(isNumerologyNameSupported('José González'), true);
+  assert.equal(isNumerologyNameSupported("Anne-Marie O'Neill"), true);
+  assert.equal(isNumerologyNameSupported('José 李'), false);
+  assert.equal(isNumerologyNameSupported('李雷'), false);
+
+  assert.throws(
+    () => calcExpression('José 李'),
+    /provide an explicit Latin transliteration/,
+  );
+  assert.throws(
+    () => calcSoulUrge('李雷'),
+    /provide an explicit Latin transliteration/,
+  );
+  assert.throws(
+    () => calcPersonality('李雷'),
+    /provide an explicit Latin transliteration/,
   );
 });
 
