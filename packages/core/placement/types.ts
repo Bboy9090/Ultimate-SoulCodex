@@ -44,6 +44,7 @@ export interface ConditionalValueRange {
   value: string;
   startLocalTime?: string | null;
   endLocalTime?: string | null;
+  utcOffsetMinutes?: number | null;
 }
 
 export interface RangeEvidence {
@@ -54,6 +55,10 @@ export interface RangeEvidence {
   latitude?: number | null;
   longitude?: number | null;
   testedValues: number;
+  expectedValues?: number;
+  validLocalMinutes?: number;
+  nonexistentLocalMinutes?: number;
+  ambiguousLocalMinutes?: number;
 }
 
 export type SynthesisEvidenceMode = "use" | "branch_only" | "exclude";
