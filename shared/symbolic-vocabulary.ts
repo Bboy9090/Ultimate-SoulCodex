@@ -19,7 +19,7 @@ export interface CanonicalSymbolicPattern {
   shadow: string;
   relationship: string;
   action: string;
-  axes: readonly SymbolicAxis[];
+  axes: SymbolicAxis[];
 }
 
 export const CANONICAL_SIGN_PATTERNS: Readonly<Record<string, CanonicalSymbolicPattern>> = {
