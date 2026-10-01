@@ -4,7 +4,6 @@ import { Link, useParams } from "wouter";
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { ArrowLeft, ArrowRight, BookOpen, Check, CloudOff, Compass, Crown, Infinity, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import DepthSoulGuide from "@/components/DepthSoulGuide";
-import UltimateCodexPanel from "@/components/UltimateCodexPanel";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
@@ -180,6 +179,7 @@ export default function OfflineProfilePage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href={readingHref} className="sc-button-primary">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 <Link href="/compatibility" className="sc-button-secondary">Explore compatibility</Link>
+                <Link href="/systems" className="sc-button-secondary">View underlying systems</Link>
                 {shouldOfferVerification(needsOnlineVerification, verificationAttempt) && canRequestOnlineEvidence && (
                   <button
                     type="button"
@@ -301,7 +301,6 @@ export default function OfflineProfilePage() {
           <div className="sc-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="sc-icon-well"><Compass className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div></div><p className="text-sm leading-7 text-[var(--sc-ivory-soft)]">{profile.dailyGuidance}</p><div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div></div>
         </section>
 
-        <UltimateCodexPanel synthesis={ultimateCodex} />
 
         {verifiedHumanDesign && (
           <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="verified-human-design-panel">
