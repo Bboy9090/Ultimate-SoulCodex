@@ -12,10 +12,10 @@ interface ResolvedNumerologyData {
   status: 'resolved';
   lifePath: number;
   birthday: number;
-  expression: number;
-  soulUrge: number;
-  personality: number;
-  maturity: number;
+  expression: number | null;
+  soulUrge: number | null;
+  personality: number | null;
+  maturity: number | null;
   personalYear: number;
   interpretations: {
     lifePath: string;
@@ -89,15 +89,9 @@ const interpretations = {
   }
 };
 
-export function calculateNumerology(fullName: string, birthDate: string): NumerologyData {
-  // FAIL-CLOSED: Validate inputs before calculating
-  if (!isValidName(fullName)) {
-    return {
-      status: 'unresolved',
-      reason: fullName ? `Name "${fullName}" contains no usable letters` : 'Name is required',
-    };
-  }
-
+export function calculateNumerology(fullBirthName: string | null | undefined, birthDate: string): NumerologyData {
+  // Date-based numerology must remain available even when the full birth name
+  // is unknown. Name-based numerology is never inferred from a display name.
   if (!isValidDate(birthDate)) {
     return {
       status: 'unresolved',
@@ -105,14 +99,22 @@ export function calculateNumerology(fullName: string, birthDate: string): Numero
     };
   }
 
-  // Only calculate if inputs are valid
   const lifePath = calcLifePath(birthDate);
   const birthday = calcBirthday(birthDate);
-  const expression = calcExpression(fullName);
-  const soulUrge = calcSoulUrge(fullName);
-  const personality = calcPersonality(fullName);
-  const maturity = calcMaturity(birthDate, fullName);
   const personalYear = calcPersonalYear(birthDate);
+
+  const normalizedBirthName =
+    typeof fullBirthName === 'string' && fullBirthName.trim()
+      ? fullBirthName.trim()
+      : null;
+  const usableBirthName =
+    normalizedBirthName && isValidName(normalizedBirthName)
+      ? normalizedBirthName
+      : null;
+  const expression = usableBirthName ? calcExpression(usableBirthName) : null;
+  const soulUrge = usableBirthName ? calcSoulUrge(usableBirthName) : null;
+  const personality = usableBirthName ? calcPersonality(usableBirthName) : null;
+  const maturity = usableBirthName ? calcMaturity(birthDate, usableBirthName) : null;
 
   return {
     status: 'resolved',
@@ -126,10 +128,18 @@ export function calculateNumerology(fullName: string, birthDate: string): Numero
     interpretations: {
       lifePath: interpretations.lifePath[lifePath as keyof typeof interpretations.lifePath] || "Unique path of spiritual growth",
       birthday: `Birthday Number ${birthday}: a deterministic reduction of the calendar day of birth used as symbolic reflection.`,
-      expression: `Expression Number ${expression}: Your talents and abilities shine through creative manifestation.`,
-      soulUrge: `Soul Urge ${soulUrge}: Your heart's deepest desires drive you toward meaningful experiences.`,
-      personality: `Personality Number ${personality}: Others perceive you as someone with distinctive character traits.`,
-      maturity: `Maturity Number ${maturity}: a deterministic combination of Life Path and Expression used as symbolic reflection.`,
+      expression: expression === null
+        ? "Expression unavailable: full birth name was not supplied."
+        : `Expression Number ${expression}: deterministic from the supplied full birth name; interpretation is symbolic.`,
+      soulUrge: soulUrge === null
+        ? "Soul Urge unavailable: full birth name was not supplied."
+        : `Soul Urge ${soulUrge}: deterministic from vowels in the supplied full birth name; interpretation is symbolic.`,
+      personality: personality === null
+        ? "Personality Number unavailable: full birth name was not supplied."
+        : `Personality Number ${personality}: deterministic from consonants in the supplied full birth name; interpretation is symbolic.`,
+      maturity: maturity === null
+        ? "Maturity Number unavailable: full birth name was not supplied."
+        : `Maturity Number ${maturity}: deterministic from Life Path plus Expression using the supplied full birth name; interpretation is symbolic.`,
       personalYear: `Personal Year ${personalYear}: This year brings opportunities aligned with your current growth cycle.`
     }
   };
