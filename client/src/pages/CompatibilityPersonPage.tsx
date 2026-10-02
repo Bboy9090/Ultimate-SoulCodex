@@ -98,17 +98,29 @@ function dimensionPunchline(
 function placementComparisonLine(
   yours: { sign: AtlasSign; house?: number },
   theirs: { sign: AtlasSign; house: number },
-): string {
+): { label: string; text: string } {
   if (yours.sign === theirs.sign && yours.house === theirs.house) {
-    return "Same style, same life area. This theme may feel immediately familiar between you.";
+    return {
+      label: "Instant familiarity",
+      text: "Same style, same life area. This part of the connection may feel obvious before either person explains it.",
+    };
   }
   if (yours.sign === theirs.sign) {
-    return "Same style, different arena. You may approach this planet similarly but notice it in different parts of life.";
+    return {
+      label: "Same language, different stage",
+      text: "You approach this planet in a similar style, but it gets activated in different parts of life.",
+    };
   }
   if (yours.house === theirs.house) {
-    return "Same arena, different style. You may care about the same life area but move through it differently.";
+    return {
+      label: "Same arena, different moves",
+      text: "The same life area matters to both of you, but your instincts for handling it can be noticeably different.",
+    };
   }
-  return "Different style, different arena. This is more contrast than match, which can make the difference easier to notice.";
+  return {
+    label: "Contrast",
+    text: "Different style, different arena. This can create fascination, confusion, or useful perspective depending on the moment.",
+  };
 }
 
 function profileName(profile: any) {
@@ -269,26 +281,30 @@ export default function CompatibilityPersonPage() {
                 {placementComparisons.map(({ yours, theirs }) => {
                   const yourMeaning = personalPlacementMeaning(yours.key, yours.sign, yours.house!);
                   const theirMeaning = personalPlacementMeaning(theirs.key, theirs.sign, theirs.house);
+                  const comparison = placementComparisonLine(yours, theirs);
                   return (
                     <article key={yours.key} className="rounded-2xl border border-[var(--sc-line)] bg-black/10 p-4" data-testid={`friend-placement-${yours.key}`}>
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                         <h3 className="font-serif text-xl text-[var(--sc-ivory)]">{placementLabel(theirs.key)}</h3>
-                        <span className="rounded-full border border-[var(--sc-line-gold)] px-3 py-1 text-xs text-[var(--sc-gold-bright)]">
-                          {placementComparisonLine(yours, theirs)}
+                        <span className="rounded-full border border-[var(--sc-line-gold)] px-3 py-1 text-xs font-semibold text-[var(--sc-gold-bright)]">
+                          {comparison.label}
                         </span>
                       </div>
                       <div className="grid gap-3 md:grid-cols-2">
                         <div className="rounded-xl border border-[rgba(217,182,111,.18)] bg-[rgba(217,182,111,.035)] p-4">
                           <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">You</p>
                           <h4 className="mt-1 font-serif text-lg">{yours.sign} · House {yours.house}</h4>
-                          <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{yourMeaning.headline}</p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">{yourMeaning.feedLabel}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{yourMeaning.headline}</p>
                         </div>
                         <div className="rounded-xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.035)] p-4">
                           <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-teal)]">{initialConnection.name}</p>
                           <h4 className="mt-1 font-serif text-lg">{theirs.sign} · House {theirs.house}</h4>
-                          <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{theirMeaning.headline}</p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-teal)]">{theirMeaning.feedLabel}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{theirMeaning.headline}</p>
                         </div>
                       </div>
+                      <p className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-sm leading-6 text-[var(--sc-stone)]">{comparison.text}</p>
                     </article>
                   );
                 })}
