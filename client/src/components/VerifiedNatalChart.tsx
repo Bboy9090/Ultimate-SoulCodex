@@ -155,37 +155,45 @@ export default function VerifiedNatalChart({
             })}
           </div>
 
-          <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
-            <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">
-              Placement meanings · planet + sign + house
-            </summary>
-            <div className="mt-3 space-y-3">
+          <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.025)] p-4" aria-labelledby="placement-story-title">
+            <div className="mb-4">
+              <p className="sc-eyebrow">Your placements</p>
+              <h3 id="placement-story-title" className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">What each planet is doing in your chart</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">Planet = what. Sign = how. House = where. Read the takeaway first; open the technical evidence only when you want it.</p>
+            </div>
+            <div className="space-y-3">
               {synthesis.placements.map((placement) => {
                 if (!placement.house) {
                   return (
-                    <div key={placement.key} className="rounded-xl border border-[var(--sc-line)] p-3">
-                      <strong className="text-sm text-[var(--sc-ivory)]">{placement.label} in {placement.sign}</strong>
-                      <p className="mt-1 text-xs text-[var(--sc-stone)]">House interpretation withheld because a verified house assignment is unavailable.</p>
-                    </div>
+                    <article key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4">
+                      <h4 className="font-serif text-lg text-[var(--sc-ivory)]">{placement.label} in {placement.sign}</h4>
+                      <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">The sign is supported, but the house is unresolved, so Soul Codex stops before inventing where this theme lands in life.</p>
+                    </article>
                   );
                 }
                 const meaning = personalPlacementMeaning(placement.key, placement.sign as AtlasSign, placement.house);
                 return (
-                  <article key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4">
-                    <h3 className="font-serif text-lg text-[var(--sc-ivory)]">{placement.label} in {placement.sign} · House {placement.house}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.synthesis}</p>
-                    <dl className="mt-3 grid gap-3 sm:grid-cols-3">
-                      <div><dt className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">What</dt><dd className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.what}</dd></div>
-                      <div><dt className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">How</dt><dd className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.how}</dd></div>
-                      <div><dt className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">Where</dt><dd className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.where}</dd></div>
-                    </dl>
-                    <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Reflection:</strong> {meaning.question}</p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Practice:</strong> {meaning.practice}</p>
+                  <article key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4" data-testid={`placement-story-${placement.key}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">{GLYPH[placement.key]} {placement.label}</p>
+                        <h4 className="mt-1 font-serif text-xl text-[var(--sc-ivory)]">{placement.label} in {placement.sign} · House {placement.house}</h4>
+                      </div>
+                      <span className="rounded-full border border-[var(--sc-line)] px-2.5 py-1 text-xs text-[var(--sc-stone)]">{placement.degree !== null ? placement.degree.toFixed(1) + "°" : "degree unavailable"}</span>
+                    </div>
+                    <p className="mt-3 text-base font-medium leading-7 text-[var(--sc-ivory-soft)]">{meaning.headline}</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.synthesis}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                      <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">Planet</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.what}</p></div>
+                      <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">Sign</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.how}</p></div>
+                      <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">House</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.where}</p></div>
+                    </div>
+                    <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Try this:</strong> {meaning.practice}</p>
                   </article>
                 );
               })}
             </div>
-          </details>
+          </section>
 
           <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">All 12 verified house cusps · sign-on-house meanings</summary>
