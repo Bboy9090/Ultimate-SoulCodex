@@ -1,3 +1,4 @@
+import { canonicalNumberPattern } from '@shared/symbolic-vocabulary';
 import {
   calcLifePath,
   calcBirthday,
@@ -72,22 +73,11 @@ function isValidName(name: string): boolean {
   return letters.length > 0;
 }
 
-const interpretations = {
-  lifePath: {
-    1: "The Leader - You are here to pioneer new paths and lead with independence and innovation.",
-    2: "The Peacemaker - Your purpose involves cooperation, diplomacy, and bringing harmony to relationships.",
-    3: "The Creative Communicator - You're meant to express yourself creatively and inspire others through art and communication.",
-    4: "The Builder - Your mission is to create stable foundations and work systematically toward practical goals.",
-    5: "The Freedom Seeker - You're here to experience variety, adventure, and help others embrace change.",
-    6: "The Nurturer - Your path involves caring for others, creating harmony in home and community.",
-    7: "The Seeker - You're meant to search for deeper truths and develop your spiritual understanding.",
-    8: "The Achiever - Your purpose involves material mastery and learning to balance power with wisdom.",
-    9: "The Humanitarian - You're here to serve the greater good and help humanity evolve.",
-    11: "The Intuitive Master - You have a special mission to inspire others through your heightened sensitivity and intuition.",
-    22: "The Master Builder - You're here to manifest grand visions that benefit humanity on a large scale.",
-    33: "The Master Healer - Your purpose involves healing and uplifting others through unconditional love."
-  }
-};
+function lifePathInterpretation(lifePath: number): string {
+  const pattern = canonicalNumberPattern(lifePath);
+  if (!pattern) return `Life Path ${lifePath}: deterministic number, symbolic interpretation.`;
+  return `Life Path ${lifePath} is a deterministic calculation. In Soul Codex's symbolic vocabulary, it emphasizes ${pattern.drive}, with a constructive expression of ${pattern.gift} and a possible overuse pattern of ${pattern.shadow}. Treat this as a reflection prompt, not a fixed purpose or destiny.`;
+}
 
 export function calculateNumerology(fullBirthName: string | null | undefined, birthDate: string): NumerologyData {
   // Date-based numerology must remain available even when the full birth name
@@ -126,7 +116,7 @@ export function calculateNumerology(fullBirthName: string | null | undefined, bi
     maturity,
     personalYear,
     interpretations: {
-      lifePath: interpretations.lifePath[lifePath as keyof typeof interpretations.lifePath] || "Unique path of spiritual growth",
+      lifePath: lifePathInterpretation(lifePath),
       birthday: `Birthday Number ${birthday}: a deterministic reduction of the calendar day of birth used as symbolic reflection.`,
       expression: expression === null
         ? "Expression unavailable: full birth name was not supplied."
