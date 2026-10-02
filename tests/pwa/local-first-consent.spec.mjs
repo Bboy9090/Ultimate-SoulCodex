@@ -16,13 +16,15 @@ test("local profile creation and reopen stay on-device until verification is exp
 
   try {
     await page.goto("/create", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("checkbox-online-verification")).not.toBeChecked();
-
     await page.getByTestId("input-name").fill("Consent Boundary Test");
     await page.getByTestId("input-birth-date").fill("1990-09-17");
     // Leave time blank deliberately to exercise the unknown-time contract.
+    await page.getByTestId("button-onboarding-next").click();
     await page.getByTestId("input-birth-location").fill("Bronx, New York");
     await page.getByTestId("button-location-lookup").click();
+    await page.getByTestId("button-onboarding-next").click();
+    await expect(page.getByTestId("checkbox-online-verification")).not.toBeChecked();
+    await expect(page.getByTestId("button-create-profile")).toBeVisible();
 
     await Promise.all([
       page.waitForURL(/\/profile\/local-/),
