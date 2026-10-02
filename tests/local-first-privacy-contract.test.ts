@@ -71,8 +71,8 @@ test("first-time profile creation uses three progressive steps instead of one de
   assert.match(createSource, /Birth details/);
   assert.match(createSource, /Verify and create/);
   assert.match(createSource, /data-testid="button-onboarding-next"/);
-  assert.match(createSource, /form\.trigger\(\["name", "birthDate"\]\)/);
-  assert.match(createSource, /form\.trigger\(\["birthLocation"\]\)/);
+  assert.match(createSource, /form\.trigger\(\["name", "birthDate", "birthTime", "fullBirthName"\]\)/);
+  assert.match(createSource, /form\.trigger\(\["birthLocation", "timezone", "latitude", "longitude"\]\)/);
   assert.match(createSource, /step === 3/);
   assert.match(createSource, /data-testid="button-create-profile"/);
 });
