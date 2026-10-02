@@ -105,7 +105,8 @@ describe("Depth Engine", () => {
     expect(source).toContain("Quick insight");
     expect(source).toContain("Standard reading");
     expect(source).toContain("Deep dive");
-    expect(source).toContain("What this means in plain language");
+    expect(source).toContain("Plain language and real-life examples");
+    expect(source).toContain("One grounded move");
     expect(source).toContain("How other people may experience it");
     expect(source).toContain("Reflection check");
     expect(source).toContain("buildDepthChapters(model, fits)");
