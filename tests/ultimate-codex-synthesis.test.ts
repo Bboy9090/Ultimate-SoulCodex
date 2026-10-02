@@ -106,25 +106,34 @@ test("Ultimate Codex detects verified stellium-style clusters and contradictions
   assert.match(result.codexNumber, /^\d{12}$/);
   assert.match(result.codexId, /^GCX-/);
   assert.ok(result.derivedArchetype);
-  assert.match(result.derivedArchetype!, /Reflector/);
-  assert.match(result.derivedArchetype!, /Life Path 9/);
-  const astroIndex = result.identitySignature.indexOf("Virgo");
-  const hdIndex = result.identitySignature.indexOf("Reflector");
+  assert.match(result.derivedArchetype!, /Virgo Sun/);
+  assert.match(result.derivedArchetype!, /Virgo Moon/);
+  assert.match(result.derivedArchetype!, /Scorpio Rising/);
+  assert.match(result.derivedArchetype!, /Reflector 2\/5/);
+  assert.doesNotMatch(result.derivedArchetype!, /Refiner|Mirror|Integrator|GCX-|[A-F0-9]{4}$/);
+  const sunIndex = result.identitySignature.indexOf("Virgo Sun");
+  const moonIndex = result.identitySignature.indexOf("Virgo Moon");
+  const risingIndex = result.identitySignature.indexOf("Scorpio Rising");
+  const hdIndex = result.identitySignature.indexOf("Reflector 2/5");
   const numIndex = result.identitySignature.indexOf("Life Path 9");
-  assert.ok(astroIndex >= 0 && hdIndex > astroIndex && numIndex > hdIndex);
+  assert.ok(sunIndex >= 0 && moonIndex > sunIndex && risingIndex > moonIndex && hdIndex > risingIndex && numIndex > hdIndex);
+  assert.match(result.identitySignature, /Virgo stellium/);
+  assert.match(result.identitySignature, /Capricorn stellium/);
+  assert.doesNotMatch(result.identitySignature, /Refiner|Mirror|Integrator|Earth emphasis/);
   assert.ok(result.systemSummary.some((row) => row.system === "Numerology" && /deterministic stable core/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Astrocartography" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Palmistry" && /unavailable \/ excluded/.test(row.status)));
   assert.ok(result.systemSummary.some((row) => row.system === "Personality assessments" && /not assessed \/ excluded/.test(row.status)));
 });
 
-test("Ultimate Codex does not let astrology monopolize the derived archetype headline", () => {
+test("Ultimate Codex human-facing identity uses familiar labels instead of invented archetype names", () => {
   const result = buildUltimateCodexSynthesis(profile());
-  const parts = result.derivedArchetype?.split(" · ")[0].split(" × ") ?? [];
-  assert.equal(parts.length, 3);
-  assert.ok(parts.some((part) => /Virgo/.test(part)));
-  assert.ok(parts.some((part) => /Reflector/.test(part)));
-  assert.ok(parts.some((part) => /Life Path 9/.test(part)));
+  assert.equal(
+    result.derivedArchetype,
+    "Virgo Sun · Virgo Moon · Scorpio Rising · Reflector 2/5",
+  );
+  assert.match(result.identitySignature, /^Virgo Sun · Virgo Moon · Scorpio Rising · Reflector 2\/5 · Life Path 9/);
+  assert.doesNotMatch(result.identitySignature, /Pioneer|Anchor|Messenger|Keeper|Radiant|Refiner|Mediator|Alchemist|Seeker|Architect|Reformer|Dreamer|Mirror|Integrator/);
 });
 
 test("Ultimate Codex fingerprint changes when governed chart evidence changes", () => {
