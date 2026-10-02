@@ -148,7 +148,7 @@ export default function CompatibilityPersonPage() {
   const dimensionScores = result?.dimensions ?? null;
 
   const yourPlacements = useMemo(
-    () => personalAtlasPlacements((profile?.verifiedAstrologyData ?? profile?.astrologyData ?? {}) as any),
+    () => personalAtlasPlacements((((profile as any)?.verifiedAstrologyData ?? profile?.astrologyData) ?? {}) as any),
     [profile],
   );
   const friendPlacements = initialConnection?.placements ?? [];
