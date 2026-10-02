@@ -22,6 +22,7 @@ node --import tsx --test \
   server/services/galactic-code/__tests__/galactic-code.test.ts \
   packages/astrology/__tests__/astrology-evidence.test.ts \
   tests/astrology-candidate.test.ts \
+  tests/accuracy-reconciliation-v2.test.ts \
   tests/astrology-independent-verification.test.ts \
   tests/jpl-horizons-reference.test.ts \
   tests/astrology-evidence-matrix.test.ts \
