@@ -41,7 +41,11 @@ function isValidDate(dateStr: string): boolean {
 
 function isValidName(name: string): boolean {
   if (!name || typeof name !== 'string') return false;
-  return normalizeNumerologyName(name).length > 0;
+  try {
+    return normalizeNumerologyName(name).length > 0;
+  } catch {
+    return false;
+  }
 }
 
 function deriveInputStateForDate(dateStr: string): InputState {
