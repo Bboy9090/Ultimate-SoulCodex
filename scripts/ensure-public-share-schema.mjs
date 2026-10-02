@@ -52,6 +52,7 @@ const statements = [
     "user_id" varchar,
     "session_id" varchar,
     "name" text NOT NULL,
+    "full_birth_name" text,
     "birth_date" timestamp NOT NULL,
     "birth_time" text,
     "birth_location" text,
@@ -85,6 +86,7 @@ const statements = [
     "created_at" timestamp DEFAULT now(),
     "updated_at" timestamp DEFAULT now()
   )`,
+  `ALTER TABLE "soul_profiles" ADD COLUMN IF NOT EXISTS "full_birth_name" text`,
   `CREATE TABLE IF NOT EXISTS "assessment_responses" (
     "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
     "profile_id" varchar NOT NULL,
@@ -134,6 +136,7 @@ const requiredSchema = {
   soul_profiles: {
     id: "character varying",
     name: "text",
+    full_birth_name: "text",
     birth_date: "timestamp without time zone",
     astrology_data: "jsonb",
     numerology_data: "jsonb",
