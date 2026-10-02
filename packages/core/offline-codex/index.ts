@@ -8,6 +8,7 @@ import {
   reduceNumerology,
 } from "../compute/numerology.js";
 import { calcPersonalYear } from "../compute/personal-numbers.js";
+import { resolveOfflineSun } from "../compute/offline-sun.js";
 import {
   synthesizeDepthInterpretationV1,
   validateDepthInterpretationV1,
@@ -220,8 +221,12 @@ function calculateSunSign(month: number, day: number): string {
 }
 
 function calculateAstrology(input: OfflineBirthInput): OfflineAstrologyData {
-  const date = parseDate(input.birthDate);
-  const sunSign = calculateSunSign(date.month, date.day);
+  const sunResolution = resolveOfflineSun(
+    input.birthDate,
+    input.birthTime || null,
+    input.timezone,
+  );
+  const sunSign = sunResolution.status === "resolved" ? sunResolution.sign : "";
 
   return {
     sunSign,

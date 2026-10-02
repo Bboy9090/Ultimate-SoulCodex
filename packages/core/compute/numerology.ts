@@ -88,11 +88,26 @@ export function normalizeNumerologyName(fullName: string): string {
     .map((character) => PRE_NORMALIZATION_TRANSLITERATION[character] ?? character)
     .join('');
 
-  return transliterated
+  const decomposed = transliterated
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase()
-    .replace(/[^A-Z]/g, '');
+    .toUpperCase();
+
+  const unsupportedLetters = [...decomposed].filter(
+    (character) => /\p{L}/u.test(character) && !/[A-Z]/.test(character),
+  );
+  if (unsupportedLetters.length > 0) {
+    throw new RangeError(
+      'Numerology name contains letters outside the supported Latin transliteration policy',
+    );
+  }
+
+  const normalized = decomposed.replace(/[^A-Z]/g, '');
+  if (fullName.trim().length > 0 && normalized.length === 0) {
+    throw new RangeError('Numerology name does not contain supported letters');
+  }
+
+  return normalized;
 }
 
 function getLetterValue(letter: string): number {

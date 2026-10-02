@@ -20,6 +20,7 @@ npm test
 node --import tsx --test \
   server/tests/gate1-foundation.test.ts \
   server/services/galactic-code/__tests__/galactic-code.test.ts \
+  tests/galactic-code-trust-boundary.test.ts \
   packages/astrology/__tests__/astrology-evidence.test.ts \
   tests/astrology-candidate.test.ts \
   tests/accuracy-reconciliation-v2.test.ts \
@@ -31,6 +32,7 @@ node --import tsx --test \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
   tests/polar-angle-accuracy.test.ts \
+  tests/offline-ephemeris-accuracy.test.ts \
   tests/bobby-big-three-golden.test.ts \
   tests/human-design-trust.test.ts \
   tests/profile-verification-reconciliation.test.ts \
