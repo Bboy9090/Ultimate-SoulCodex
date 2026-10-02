@@ -134,3 +134,36 @@ test("an incomplete Human Design object is never labeled verified", () => {
   });
   assert.equal(model.signals.some((signal) => signal.id.startsWith("hd-")), false);
 });
+
+
+test("primary clarity prose stays direct while technical framing remains in evidence metadata", () => {
+  const model = buildClarityReadingModel({
+    numerologyData: {
+      expression: 6,
+      soulUrge: 5,
+      lifePath: 9,
+    },
+    archetypeData: {
+      title: "The Builder",
+      description: "You notice what can be improved and want the result to matter.",
+      strengths: ["discernment"],
+      shadows: ["over-responsibility"],
+    },
+  });
+
+  const primary = [
+    model.summary,
+    model.visiblePattern,
+    model.protectiveFunction,
+    model.gift,
+    model.cost,
+    model.relationshipImpact,
+    model.coreContradiction ?? "",
+  ].join(" ");
+
+  assert.doesNotMatch(primary, /deterministic name-number theme/i);
+  assert.doesNotMatch(primary, /as symbolic interpretation/i);
+  assert.doesNotMatch(primary, /the name-number layer adds/i);
+  assert.match(primary, /Notice|Watch|useful question|chosen skill/i);
+  assert.match(model.limitations.join(" "), /symbolic|deterministic|verified/i);
+});
