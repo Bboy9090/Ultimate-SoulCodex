@@ -44,6 +44,7 @@ jobs:
           tests/share-privacy-accessibility-contract.test.ts
           tests/pwa-update-lifecycle-contract.test.ts
           tests/public-api-error-privacy.test.ts
+          tests/safe-diagnostics-security-headers.test.ts
           tests/storage-public-share-deletion.test.ts
           tests/account-deletion-local-cleanup-truth.test.ts
           tests/privacy-public-share-truth.test.ts

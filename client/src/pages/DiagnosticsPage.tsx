@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, RefreshCw, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Copy, RefreshCw, TriangleAlert } from "lucide-react";
 import { Link } from "wouter";
 import Navigation from "../components/navigation";
 import FeatureState from "../components/FeatureState";
 import { apiFetch } from "../lib/queryClient";
 import { getClientReleaseIdentity } from "../lib/releaseIdentity";
+import { buildSafeDiagnosticBundle } from "../lib/safeDiagnosticBundle";
 
 type BackendIdentity = {
   status?: string;
@@ -34,6 +35,8 @@ function shortSha(value?: string) {
 export default function DiagnosticsPage() {
   const client = useMemo(() => getClientReleaseIdentity(), []);
   const [revision, setRevision] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
   const [state, setState] = useState<CheckState>({
     loading: true,
     error: "",
@@ -93,6 +96,30 @@ export default function DiagnosticsPage() {
     && state.backend.releaseSha !== "unknown"
     && client.releaseSha === state.backend.releaseSha,
   );
+
+  const safeSummary = useMemo(
+    () => buildSafeDiagnosticBundle({
+      checkedAt: state.checkedAt,
+      client,
+      backend: state.backend,
+      contractMatches,
+      exactShaMatches,
+      compatibilityOk: state.compatibilityOk,
+      online: typeof navigator !== "undefined" ? navigator.onLine : true,
+    }),
+    [client, contractMatches, exactShaMatches, state.backend, state.checkedAt, state.compatibilityOk],
+  );
+
+  const copySafeSummary = async () => {
+    setCopyError("");
+    try {
+      await navigator.clipboard.writeText(safeSummary);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopyError("Clipboard access was blocked. You can still read the release values above and send only those facts to support.");
+    }
+  };
 
   return (
     <div className="sc-app-shell">
@@ -211,6 +238,23 @@ export default function DiagnosticsPage() {
             <p className="mb-0 mt-5 text-xs leading-5 text-[var(--sc-stone)]">
               A healthy server is not automatically the right server. Release qualification requires the expected API contract and, when exact-SHA validation is claimed, matching non-unknown release SHAs.
             </p>
+
+            <div className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <strong className="text-sm text-[var(--sc-ivory)]">Safe support summary</strong>
+                  <p className="mb-0 mt-1 max-w-2xl text-xs leading-5 text-[var(--sc-stone)]">
+                    Copies release and connectivity facts only. Birth data, profile content, account identifiers, assessment answers, payment data, and share tokens are excluded.
+                  </p>
+                </div>
+                <button type="button" className="sc-button-secondary min-h-11" onClick={() => void copySafeSummary()}>
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Copied" : "Copy safe summary"}
+                </button>
+              </div>
+              {copyError ? <p role="alert" className="mb-0 mt-3 text-xs leading-5 text-amber-300">{copyError}</p> : null}
+            </div>
+
             {state.checkedAt ? <p className="mb-0 mt-2 font-mono text-[10px] text-[var(--sc-stone)]">Checked {state.checkedAt}</p> : null}
           </section>
         ) : null}
