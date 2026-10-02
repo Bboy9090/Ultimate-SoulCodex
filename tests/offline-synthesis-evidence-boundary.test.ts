@@ -68,3 +68,25 @@ test("unverified time and coordinates cannot alter offline synthesis", () => {
     stripGeneratedAt(night.depthInterpretation),
   );
 });
+
+
+test("symbolic numerology does not manufacture a protective function without behavioral evidence", () => {
+  const profile = generateOfflineCodexProfile(
+    {
+      ...BASE,
+      name: "Bobby",
+      fullBirthName: "Bobby",
+      birthTime: "11:11",
+      latitude: "40.8448",
+      longitude: "-73.8648",
+    },
+    {
+      id: "boundary-protection",
+      generatedAt: "2026-09-20T00:10:00.000Z",
+      currentYear: 2026,
+    },
+  );
+
+  assert.equal(profile.depthInterpretation.protectiveFunction.claimKind, "unavailable");
+  assert.match(profile.depthInterpretation.protectiveFunction.summary, /^Unavailable:/);
+});
