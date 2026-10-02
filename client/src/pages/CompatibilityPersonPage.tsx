@@ -55,6 +55,46 @@ function symbolicBand(score: number): string {
   return "more adjustment";
 }
 
+function dimensionPunchline(
+  key: (typeof DIMENSIONS)[number]["key"],
+  score: number,
+): string {
+  const strong = score >= 80;
+  const supportive = score >= 65;
+  const mixed = score >= 50;
+  const copy = {
+    romantic: strong
+      ? "This connection wants steadiness, trust, and room to deepen."
+      : supportive
+        ? "There is relationship potential here, but consistency matters."
+        : mixed
+          ? "The bond can work, but emotional rhythm may need negotiation."
+          : "This pairing may ask for more adjustment than ease.",
+    chemistry: strong
+      ? "The pull is immediate. The question is whether intensity can stay grounded."
+      : supportive
+        ? "There is noticeable attraction without needing constant friction."
+        : mixed
+          ? "Chemistry may come in waves instead of staying constant."
+          : "Attraction may need context, timing, or shared experience to build.",
+    mentalFriendship: strong
+      ? "Conversation can move fast here without losing the thread."
+      : supportive
+        ? "You can usually find common ground if both people stay curious."
+        : mixed
+          ? "Communication may click in some areas and miss in others."
+          : "Different mental rhythms may require more translation than usual.",
+    growth: strong
+      ? "This connection can challenge both people without automatically destabilizing them."
+      : supportive
+        ? "There is useful friction here if repair stays mutual."
+        : mixed
+          ? "Growth is possible, but recurring pressure points may need explicit repair."
+          : "This pairing may expose hard lessons faster than either person prefers.",
+  } as const;
+  return copy[key];
+}
+
 function placementComparisonLine(
   yours: { sign: AtlasSign; house?: number },
   theirs: { sign: AtlasSign; house: number },
@@ -359,7 +399,8 @@ export default function CompatibilityPersonPage() {
                           {symbolicBand(dimensionScores[dimension.key])}
                         </span>
                       </div>
-                      <p className="mb-0 mt-3 text-sm leading-6 text-[var(--sc-stone)]">{dimension.detail}</p>
+                      <p className="mb-0 mt-3 text-base leading-7 text-[var(--sc-ivory-soft)]">{dimensionPunchline(dimension.key, dimensionScores[dimension.key])}</p>
+                      <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{dimension.detail}</p>
                     </article>
                   ))}
                 </section>
