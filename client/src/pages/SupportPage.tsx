@@ -31,13 +31,14 @@ export default function SupportPage() {
           <article className="support-primary">
             <p className="support-label">Direct support</p>
             <h2>Email Soul Codex Support</h2>
-            <p>Include your browser or device type, the page you were using, what you expected to happen, and what actually happened. Screenshots are useful when they do not expose private credentials.</p>
-            <div className="support-warning"><IconLock size={17}/><span>Do not send passwords, profile-access tokens, payment details, private keys, or Apple credentials.</span></div>
+            <p>Include your device type, the page you were using, what you expected to happen, and what actually happened. The Diagnostics page can copy a safe release summary without profile or birth data.</p>
+            <div className="support-warning"><IconLock size={17}/><span>Do not send passwords, birth date/time/place, assessment answers, profile contents, active public-share tokens, payment details, private keys, or Apple credentials.</span></div>
             <a className="support-email" href="mailto:support@soulcodex.app?subject=Soul%20Codex%20support">support@soulcodex.app</a>
           </article>
 
           <aside className="support-links">
             <p className="support-label">Self-service</p>
+            <Link href="/diagnostics"><strong>Safe diagnostics</strong><span>Copy release and connectivity facts without personal profile data</span></Link>
             <Link href="/settings"><strong>Settings & account</strong><span>Sign-in state and local data controls</span></Link>
             <Link href="/privacy"><strong>Privacy policy</strong><span>What is stored and where</span></Link>
             <Link href="/delete-account" className="danger"><strong>Delete Account & Data</strong><span>Permanent server deletion flow</span></Link>
