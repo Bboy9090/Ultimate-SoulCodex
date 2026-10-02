@@ -47,7 +47,13 @@ describe("Human Depth interpretation surfaces", () => {
     expect(person).toContain("dimensionPunchline");
     expect(person).toContain("The pull is immediate");
     expect(person).toContain("Conversation can move fast");
-    expect(person).toContain("Four independent signals. No single score gets to define the relationship.");
+    expect(person).toContain("friend-placement-comparison");
+    expect(person).toContain("placementComparisonLine");
+    expect(person).toContain("Same style, same life area");
+    expect(person).toContain("Different style, different arena");
+    expect(person).toContain("dimensionPunchline");
+    expect(person).toContain("The pull is immediate");
+    expect(person).toContain("Conversation can move fast");
     expect(person).not.toContain("overallScore");
   });
 
