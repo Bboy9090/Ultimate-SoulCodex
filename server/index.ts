@@ -37,6 +37,17 @@ app.use(
   }),
 );
 
+app.use((_req, res, next) => {
+  // Soul Codex currently resolves birth places from explicit user input and
+  // does not require ambient device sensors. Keep unrelated browser
+  // capabilities unavailable without restricting clipboard or hosted payment.
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+  next();
+});
+
 const allowedOrigins = [
   "soulcodex://localhost",
   "capacitor://localhost",
