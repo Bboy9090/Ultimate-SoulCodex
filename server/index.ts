@@ -37,6 +37,18 @@ app.use(
   }),
 );
 
+app.use((_req, res, next) => {
+  // Birthplace resolution uses explicit user input; Soul Codex does not need
+  // ambient camera, microphone, or geolocation access in the browser shell.
+  // Clipboard remains available for safe diagnostics and hosted payment is
+  // deliberately not restricted by this policy.
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+  next();
+});
+
 const allowedOrigins = [
   "soulcodex://localhost",
   "capacitor://localhost",
