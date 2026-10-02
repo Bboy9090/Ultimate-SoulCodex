@@ -63,10 +63,11 @@ export function personalPlacementMeaning(body: string, sign: AtlasSign, house: n
   const entry = atlasEntry(sign, house);
   const area = ATLAS_HOUSES[house - 1];
   return {
+    headline: `${titleBody(body)} in ${sign}, House ${house}: ${styles[sign].gift} in ${area.name.toLowerCase()}.`,
     what: `${planet.function}.`,
-    how: `${sign} describes a style of ${styles[sign].approach}.`,
-    where: `House ${house} brings attention to ${area.domain}.`,
-    synthesis: `Symbolically, ${titleBody(body)} in ${sign} in House ${house} explores ${planet.function} through ${styles[sign].approach}, within ${area.domain}.`,
+    how: `${sign} brings ${styles[sign].approach}.`,
+    where: `House ${house} focuses this on ${area.domain}.`,
+    synthesis: `${titleBody(body)} describes ${planet.function}; ${sign} describes the style; House ${house} shows the life area where that theme is most likely to be noticed.`,
     question: `${planet.question} ${area.question}`,
     practice: entry.practice,
   };
