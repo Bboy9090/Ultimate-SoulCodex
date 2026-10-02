@@ -7,6 +7,7 @@
  */
 
 import { calcPersonalYear, calcPersonalMonth } from './personal-numbers.js';
+import { reduceNumerology } from './numerology.js';
 
 export { calcPersonalYear, calcPersonalMonth };
 
@@ -22,12 +23,19 @@ export function getCycleTransitionState(currentMonth: number) {
   };
 }
 
+function nextReducedCycleValue(current: number): number {
+  if (!Number.isInteger(current) || current < 1) {
+    throw new RangeError("Cycle value must be a positive integer");
+  }
+  return reduceNumerology(current + 1).value;
+}
+
 export function getNextYearNum(py: number): number {
-  return py === 9 ? 1 : py + 1;
+  return nextReducedCycleValue(py);
 }
 
 export function getNextMonthNum(pm: number): number {
-  return pm === 9 ? 1 : pm + 1;
+  return nextReducedCycleValue(pm);
 }
 
 export const DAY_LABELS: Record<number, { label: string; theme: string }> = {
