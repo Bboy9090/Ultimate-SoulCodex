@@ -32,6 +32,34 @@ const styles: Record<AtlasSign, { approach: string; gift: string; tension: strin
   Aquarius: { approach: 'independent thought, experimentation, and collective concerns', gift: 'imagining arrangements that serve more than familiar interests', tension: 'distance can protect an idea at the expense of connection', practice: 'ask how an abstract principle feels to the person beside you' },
   Pisces: { approach: 'imagination, sensitivity, and openness to experience', gift: 'recognizing nuance that a rigid explanation can miss', tension: 'empathy can blur the line between caring and taking everything on', practice: 'give a compassionate intention a clear practical boundary' },
 };
+
+const FEED_BODY_COPY: Record<string, { label: string; lead: string }> = {
+  sun: { label: "Identity", lead: "You become more yourself when" },
+  moon: { label: "Inner world", lead: "You settle emotionally when" },
+  mercury: { label: "Mind", lead: "Your mind works best when" },
+  venus: { label: "Love & taste", lead: "You move toward closeness when" },
+  mars: { label: "Drive", lead: "You act decisively when" },
+  jupiter: { label: "Growth", lead: "You expand when" },
+  saturn: { label: "Pressure & mastery", lead: "You get stronger when" },
+  uranus: { label: "Freedom", lead: "You need room to" },
+  neptune: { label: "Imagination", lead: "You are most porous to" },
+  pluto: { label: "Power", lead: "You transform most when" },
+  northNode: { label: "Stretch", lead: "Growth may ask you to" },
+  southNode: { label: "Familiar pattern", lead: "You already know how to" },
+  chiron: { label: "Tender edge", lead: "Care may deepen when you" },
+};
+
+function feedBodyCopy(body: string, sign: AtlasSign, house: number) {
+  const feed = FEED_BODY_COPY[body] ?? { label: titleBody(body), lead: "This placement becomes clearer when" };
+  const style = styles[sign];
+  const area = ATLAS_HOUSES[house - 1];
+  return {
+    feedLabel: feed.label,
+    punchline: `${feed.lead} ${style.gift}, especially around ${area.domain}.`,
+    friction: `Watch for this: ${style.tension}.`,
+  };
+}
+
 export const ATLAS_HOUSES = [
   { name: 'Presence & beginnings', domain: 'self-presentation, embodiment, and first responses', question: 'How do I enter an unfamiliar situation?', action: 'Notice the first move you make when meeting someone new.' },
   { name: 'Resources & values', domain: 'personal resources, possessions, and what feels worth protecting', question: 'What does enough mean to me?', action: 'Choose one use of your time or money that reflects a stated value.' },
@@ -62,11 +90,15 @@ export function personalPlacementMeaning(body: string, sign: AtlasSign, house: n
   if (!planet) throw new RangeError('Choose a supported planet or point.');
   const entry = atlasEntry(sign, house);
   const area = ATLAS_HOUSES[house - 1];
+  const feed = feedBodyCopy(body, sign, house);
   return {
+    feedLabel: feed.feedLabel,
+    headline: feed.punchline,
+    friction: feed.friction,
     what: `${planet.function}.`,
-    how: `${sign} describes a style of ${styles[sign].approach}.`,
-    where: `House ${house} brings attention to ${area.domain}.`,
-    synthesis: `Symbolically, ${titleBody(body)} in ${sign} in House ${house} explores ${planet.function} through ${styles[sign].approach}, within ${area.domain}.`,
+    how: `${sign} brings ${styles[sign].approach}.`,
+    where: `House ${house} focuses this on ${area.domain}.`,
+    synthesis: `${titleBody(body)} is about ${planet.function}. ${sign} colors the style; House ${house} shows where the theme gets loudest.`,
     question: `${planet.question} ${area.question}`,
     practice: entry.practice,
   };

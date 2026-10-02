@@ -10,12 +10,15 @@ test('all 144 combinations have distinct domain-aware content', () => {
   assert.throws(() => atlasEntry('Aries',0),RangeError);
   assert.throws(() => atlasEntry('Aries',13),RangeError);
 });
-test('planet-sign-house explanations keep what, how, and where distinct', () => {
+test('planet-sign-house explanations keep what, how, and where distinct while leading with feed copy', () => {
   const meaning = personalPlacementMeaning('moon','Virgo',10);
+  assert.equal(meaning.feedLabel,'Inner world');
+  assert.match(meaning.headline,/You settle emotionally when/);
+  assert.match(meaning.friction,/Watch for this:/);
   assert.match(meaning.what,/emotional needs/);
   assert.match(meaning.how,/Virgo/);
   assert.match(meaning.where,/House 10/);
-  assert.match(meaning.synthesis,/Moon in Virgo in House 10/);
+  assert.match(meaning.synthesis,/Moon is about/);
   assert.throws(() => personalPlacementMeaning('fortune','Virgo',10),RangeError);
 });
 test('every supported planet or point can explain every sign-house placement', () => {
@@ -25,7 +28,9 @@ test('every supported planet or point can explain every sign-house placement', (
         const meaning = personalPlacementMeaning(body, sign, house);
         assert.match(meaning.how, new RegExp(sign));
         assert.match(meaning.where, new RegExp(`House ${house}`));
-        assert.match(meaning.synthesis, new RegExp(`${sign} in House ${house}`));
+        assert.ok(meaning.feedLabel.length > 2);
+        assert.ok(meaning.headline.length > 20);
+        assert.ok(meaning.friction.length > 15);
         assert.ok(meaning.practice.length > 20);
       }
     }
@@ -56,8 +61,8 @@ test('different chart signatures do not collapse into the same placement profile
     personalPlacementMeaning('mars','Virgo',10).synthesis,
   ].join('\n');
   assert.notEqual(virgoSignature, geminiSagittariusSignature);
-  assert.match(virgoSignature,/Sun in Virgo in House 1/);
-  assert.match(geminiSagittariusSignature,/Moon in Sagittarius in House 4/);
+  assert.match(virgoSignature,/Sun is about/);
+  assert.match(geminiSagittariusSignature,/Moon is about/);
 });
 test('unknown time overrides a stored default and never blocks educational exploration', () => {
   const profile = {birthDate:'1990-09-17',birthTime:'12:00',birthTimeStatus:'unknown'};
@@ -71,4 +76,24 @@ test('unknown time overrides a stored default and never blocks educational explo
 test('valid time needs a birthplace timezone and house conventions remain explicit', () => {
   assert.match(birthInputGuidance({birthDate:'1990-09-17',birthTime:'11:11'}).title,/timezone/);
   assert.match(birthInputGuidance({birthDate:'1990-09-17',birthTime:'11:11',timezone:'America/New_York'}).detail,/Porphyry/);
+});
+
+
+test('major planets have distinct feed categories instead of one generic template label', () => {
+  const expected = new Map([
+    ['sun','Identity'],
+    ['moon','Inner world'],
+    ['mercury','Mind'],
+    ['venus','Love & taste'],
+    ['mars','Drive'],
+    ['jupiter','Growth'],
+    ['saturn','Pressure & mastery'],
+    ['uranus','Freedom'],
+    ['neptune','Imagination'],
+    ['pluto','Power'],
+  ]);
+  for (const [body, label] of expected) {
+    const meaning = personalPlacementMeaning(body,'Virgo',10);
+    assert.equal(meaning.feedLabel,label);
+  }
 });

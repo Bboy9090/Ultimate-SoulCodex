@@ -25,9 +25,13 @@ test("natal chart exposes planets houses degrees cusps and aspects without sampl
   assert.match(natal, /A cusp sign describes the symbolic style of a house/);
   assert.match(natal, /verified major aspect/);
   assert.match(natal, /degree unavailable/);
-  assert.match(natal, /Placement meanings · planet \+ sign \+ house/);
-  assert.match(natal, /Reflection:/);
-  assert.match(natal, /Practice:/);
+  assert.match(natal, /What each planet is doing in your chart/);
+  assert.match(natal, /Planet = what\. Sign = how\. House = where\./);
+  assert.match(natal, /data-testid=\{`placement-story-\$\{placement\.key\}`\}/);
+  assert.match(natal, /Watch point/);
+  assert.match(natal, /Why this placement says that/);
+  assert.match(natal, /Try this:/);
+  assert.doesNotMatch(natal, /<summary[^>]*>\s*Placement meanings · planet \+ sign \+ house/);
   assert.doesNotMatch(natal, /sample planet|random aspect/i);
 });
 

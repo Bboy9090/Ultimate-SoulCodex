@@ -6,7 +6,9 @@ import EvidenceLimitations from "../components/EvidenceLimitations";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import { buildCompatibilityProfilePayload } from "../lib/compatibilityProfilePayload";
-import { connectionComparableSunSign, findConnectionById, loadConnections } from "../lib/connectionRepository";
+import { connectionComparableSunSign, findConnectionById, loadConnections, placementLabel } from "../lib/connectionRepository";
+import { personalAtlasPlacements } from "../lib/personalAstrologyAtlas";
+import { personalPlacementMeaning, type AtlasSign } from "../lib/astrologyAtlas";
 import { apiFetch } from "../lib/queryClient";
 
 const SIGNS = [
@@ -53,6 +55,74 @@ function symbolicBand(score: number): string {
   return "more adjustment";
 }
 
+function dimensionPunchline(
+  key: (typeof DIMENSIONS)[number]["key"],
+  score: number,
+): string {
+  const strong = score >= 80;
+  const supportive = score >= 65;
+  const mixed = score >= 50;
+  const copy = {
+    romantic: strong
+      ? "This connection wants steadiness, trust, and room to deepen."
+      : supportive
+        ? "There is relationship potential here, but consistency matters."
+        : mixed
+          ? "The bond can work, but emotional rhythm may need negotiation."
+          : "This pairing may ask for more adjustment than ease.",
+    chemistry: strong
+      ? "The pull is immediate. The question is whether intensity can stay grounded."
+      : supportive
+        ? "There is noticeable attraction without needing constant friction."
+        : mixed
+          ? "Chemistry may come in waves instead of staying constant."
+          : "Attraction may need context, timing, or shared experience to build.",
+    mentalFriendship: strong
+      ? "Conversation can move fast here without losing the thread."
+      : supportive
+        ? "You can usually find common ground if both people stay curious."
+        : mixed
+          ? "Communication may click in some areas and miss in others."
+          : "Different mental rhythms may require more translation than usual.",
+    growth: strong
+      ? "This connection can challenge both people without automatically destabilizing them."
+      : supportive
+        ? "There is useful friction here if repair stays mutual."
+        : mixed
+          ? "Growth is possible, but recurring pressure points may need explicit repair."
+          : "This pairing may expose hard lessons faster than either person prefers.",
+  } as const;
+  return copy[key];
+}
+
+function placementComparisonLine(
+  yours: { sign: AtlasSign; house?: number },
+  theirs: { sign: AtlasSign; house: number },
+): { label: string; text: string } {
+  if (yours.sign === theirs.sign && yours.house === theirs.house) {
+    return {
+      label: "Instant familiarity",
+      text: "Same style, same life area. This part of the connection may feel obvious before either person explains it.",
+    };
+  }
+  if (yours.sign === theirs.sign) {
+    return {
+      label: "Same language, different stage",
+      text: "You approach this planet in a similar style, but it gets activated in different parts of life.",
+    };
+  }
+  if (yours.house === theirs.house) {
+    return {
+      label: "Same arena, different moves",
+      text: "The same life area matters to both of you, but your instincts for handling it can be noticeably different.",
+    };
+  }
+  return {
+    label: "Contrast",
+    text: "Different style, different arena. This can create fascination, confusion, or useful perspective depending on the moment.",
+  };
+}
+
 function profileName(profile: any) {
   return profile?.name || profile?.firstName || profile?.codename || "Your saved Identity";
 }
@@ -76,6 +146,24 @@ export default function CompatibilityPersonPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const dimensionScores = result?.dimensions ?? null;
+
+  const yourPlacements = useMemo(
+    () => personalAtlasPlacements((((profile as any)?.verifiedAstrologyData ?? profile?.astrologyData) ?? {}) as any),
+    [profile],
+  );
+  const friendPlacements = initialConnection?.placements ?? [];
+  const placementComparisons = yourPlacements
+    .filter((placement) => placement.kind === "planet" && placement.house)
+    .flatMap((placement) => {
+      const friend = friendPlacements.find((row) => row.key === placement.key);
+      return friend ? [{ yours: placement, theirs: friend }] : [];
+    });
+
+  const placementSignalCounts = placementComparisons.reduce<Record<string, number>>((counts, { yours, theirs }) => {
+    const label = placementComparisonLine(yours, theirs).label;
+    counts[label] = (counts[label] ?? 0) + 1;
+    return counts;
+  }, {});
 
   async function runComparison() {
     if (!profile || !sunSign) return;
@@ -177,12 +265,76 @@ export default function CompatibilityPersonPage() {
             One person. Four signals. No universal verdict.
           </h1>
           <p className="sc-lede mt-5">
-            {profileName(profile)} stays loaded. Add only the other person’s symbolic Sun sign. The current Foundation model sends only your supported Sun symbol for this privacy-minimized comparison. Deterministic numerology stays out until it can be proven at a server-owned boundary.
+            {profileName(profile)} stays loaded. The four-dimension model still uses its privacy-minimized Sun comparison, while saved friend chart placements can now be explored locally side by side when both charts contain the same planet and verified house context.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
           </p>
         </header>
+
+        {initialConnection && friendPlacements.length > 0 ? (
+          <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
+            <div className="mb-5">
+              <p className="sc-eyebrow">Chart-to-chart</p>
+              <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+                A placement-by-placement comparison using only chart facts actually saved for both people. Missing planets stay missing.
+              </p>
+            </div>
+
+            {placementComparisons.length ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4" data-testid="friend-placement-snapshot">
+                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Connection snapshot</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {Object.entries(placementSignalCounts).map(([label, count]) => (
+                      <span key={label} className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] px-3 py-1.5 text-xs font-semibold text-[var(--sc-gold-bright)]">
+                        {label} · {count}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
+                    Counts describe only the planet/sign/house rows present on both charts. They are not compatibility percentages or relationship predictions.
+                  </p>
+                </div>
+                {placementComparisons.map(({ yours, theirs }) => {
+                  const yourMeaning = personalPlacementMeaning(yours.key, yours.sign, yours.house!);
+                  const theirMeaning = personalPlacementMeaning(theirs.key, theirs.sign, theirs.house);
+                  const comparison = placementComparisonLine(yours, theirs);
+                  return (
+                    <article key={yours.key} className="rounded-2xl border border-[var(--sc-line)] bg-black/10 p-4" data-testid={`friend-placement-${yours.key}`}>
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                        <h3 className="font-serif text-xl text-[var(--sc-ivory)]">{placementLabel(theirs.key)}</h3>
+                        <span className="rounded-full border border-[var(--sc-line-gold)] px-3 py-1 text-xs font-semibold text-[var(--sc-gold-bright)]">
+                          {comparison.label}
+                        </span>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="rounded-xl border border-[rgba(217,182,111,.18)] bg-[rgba(217,182,111,.035)] p-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">You</p>
+                          <h4 className="mt-1 font-serif text-lg">{yours.sign} · House {yours.house}</h4>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-gold)]">{yourMeaning.feedLabel}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{yourMeaning.headline}</p>
+                        </div>
+                        <div className="rounded-xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.035)] p-4">
+                          <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-teal)]">{initialConnection.name}</p>
+                          <h4 className="mt-1 font-serif text-lg">{theirs.sign} · House {theirs.house}</h4>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-teal)]">{theirMeaning.feedLabel}</p>
+                          <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{theirMeaning.headline}</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-sm leading-6 text-[var(--sc-stone)]">{comparison.text}</p>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm leading-6 text-[var(--sc-stone)]">
+                This friend has saved placements, but none overlap with your currently verified planet-and-house placements. Soul Codex will not invent the missing side just to fill the comparison.
+              </p>
+            )}
+          </section>
+        ) : null}
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]">
           <form onSubmit={submit} className="sc-panel p-6" aria-label="Compare a person">
@@ -282,7 +434,8 @@ export default function CompatibilityPersonPage() {
                           {symbolicBand(dimensionScores[dimension.key])}
                         </span>
                       </div>
-                      <p className="mb-0 mt-3 text-sm leading-6 text-[var(--sc-stone)]">{dimension.detail}</p>
+                      <p className="mb-0 mt-3 text-base leading-7 text-[var(--sc-ivory-soft)]">{dimensionPunchline(dimension.key, dimensionScores[dimension.key])}</p>
+                      <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{dimension.detail}</p>
                     </article>
                   ))}
                 </section>
