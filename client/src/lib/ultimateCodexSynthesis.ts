@@ -552,49 +552,47 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const codexId = coverage === "insufficient" ? null : hashedIdentity.codexId;
 
   const primaryStellium = stelliums[0] ?? null;
-  const leadSign = primaryStellium?.kind === "sign"
-    ? primaryStellium.key
-    : placements.find((p) => p.key === "sun")?.sign ?? placements[0]?.sign ?? null;
+  const sunPlacement = placements.find((placement) => placement.key === "sun") ?? null;
+  const moonPlacement = placements.find((placement) => placement.key === "moon") ?? null;
   const risingPoint = supportingPoints.find((point) => point.key === "rising");
-  const astrologyIdentity =
-    leadSign && validSign(leadSign) ? `${leadSign} ${SIGN_META[leadSign].word}` : null;
-  const humanDesignIdentity =
-    hdType && HD_WORD[hdType] ? `${hdType} ${HD_WORD[hdType]}${hdProfile ? ` ${hdProfile}` : ""}` : null;
-  const numerologyIdentity =
-    lifePath && LIFE_PATH_WORD[lifePath] ? `Life Path ${lifePath} ${LIFE_PATH_WORD[lifePath]}` : null;
-  const secondaryAstrologyIdentity = unique([
-    risingPoint ? `${risingPoint.sign} Rising` : null,
-    primaryStellium ? primaryStellium.label.replace(" · ", " / ") : null,
-    dominantElement ? `${dominantElement} emphasis` : null,
-  ]);
 
-  // Cross-system representatives come first. No single symbolic family may take
-  // every headline slot merely because it emits more internal details.
+  // Human-facing identity labels stay literal and familiar. Technical archetype
+  // nicknames, fingerprint fragments, element jargon, and internal synthesis
+  // labels belong in the Systems inspector rather than the profile headline.
+  const astrologyIdentity = sunPlacement ? `${sunPlacement.sign} Sun` : null;
+  const moonIdentity = moonPlacement ? `${moonPlacement.sign} Moon` : null;
+  const risingIdentity = risingPoint ? `${risingPoint.sign} Rising` : null;
+  const humanDesignIdentity = hdType ? `${hdType}${hdProfile ? ` ${hdProfile}` : ""}` : null;
+  const numerologyIdentity = lifePath ? `Life Path ${lifePath}` : null;
+  const signConcentrations = stelliums
+    .filter((cluster) => cluster.kind === "sign")
+    .slice(0, 2)
+    .map((cluster) => `${cluster.key} stellium`);
+
   const identityParts = unique([
     astrologyIdentity,
+    moonIdentity,
+    risingIdentity,
     humanDesignIdentity,
     numerologyIdentity,
-    ...secondaryAstrologyIdentity,
+    ...signConcentrations,
   ]);
   const identitySignature = identityParts.length
     ? identityParts.join(" · ")
-    : "Governed identity signature unavailable from current evidence";
+    : "Core identity summary unavailable from current evidence";
 
-  const archetypeRepresentatives = unique([
+  const derivedArchetypeParts = unique([
     astrologyIdentity,
+    moonIdentity,
+    risingIdentity,
     humanDesignIdentity,
     numerologyIdentity,
-  ]);
-  const derivedArchetypeParts = archetypeRepresentatives.length >= 2
-    ? archetypeRepresentatives
-    : unique([
-        ...archetypeRepresentatives,
-        ...secondaryAstrologyIdentity,
-      ]).slice(0, 3);
+    ...signConcentrations,
+  ]).slice(0, 4);
   const derivedArchetype =
     coverage === "insufficient" || derivedArchetypeParts.length < 2
       ? null
-      : `${derivedArchetypeParts.slice(0, 3).join(" × ")} · ${(fingerprint ?? hashedIdentity.fingerprint).slice(0, 4).toUpperCase()}`;
+      : derivedArchetypeParts.join(" · ");
 
   const resonances: string[] = [];
   if (dominantElement && lifePath && LIFE_PATH_AXIS[lifePath]) {
