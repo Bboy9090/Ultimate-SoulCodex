@@ -3,13 +3,17 @@ import { expect, test } from "@playwright/test";
 async function createProfile(page) {
   await page.goto("/create", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("input-name")).toBeVisible();
-  await expect(page.getByTestId("button-create-profile")).toBeVisible();
+  await expect(page.getByTestId("button-onboarding-next")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Clarity Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
   await page.getByTestId("input-birth-time").fill("11:11");
+  await page.getByTestId("button-onboarding-next").click();
   await page.getByTestId("input-birth-location").fill("Bronx, New York");
   await page.getByTestId("button-location-lookup").click();
+  await page.getByTestId("button-onboarding-next").click();
+  await expect(page.getByTestId("checkbox-online-verification")).not.toBeChecked();
+  await expect(page.getByTestId("button-create-profile")).toBeVisible();
 
   await Promise.all([
     page.waitForURL(/\/profile\/local-/),
@@ -21,8 +25,8 @@ async function createProfile(page) {
 
 test("Project Clarity reuses one saved profile across home, identity, timeline, and compatibility", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("link-home")).toBeVisible();
-  await expect(page.locator("main")).toContainText(/Soul Codex|identity|reading/i);
+  await page.waitForURL(/\/create$/);
+  await expect(page.getByTestId("input-name")).toBeVisible();
 
   await page.goto("/compatibility", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: /Compatibility starts with one saved identity\./i })).toBeVisible();
