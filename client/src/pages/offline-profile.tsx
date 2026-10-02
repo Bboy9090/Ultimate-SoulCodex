@@ -7,7 +7,7 @@ import DepthSoulGuide from "@/components/DepthSoulGuide";
 import Navigation from "@/components/navigation";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
-import { getSynthesisAstrologySign, getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDesignTrust, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
+import { getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDesignTrust, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
@@ -22,6 +22,16 @@ function DeepChartFallback({ label }: { label: string }) {
       Loading {label}…
     </div>
   );
+}
+
+function splitDailyGuidance(value: string): { headline: string; detail: string } {
+  const text = value.trim();
+  const match = text.match(/^(.+?[.!?])(?:\s+|$)([\s\S]*)$/);
+  if (!match) return { headline: text, detail: "" };
+  return {
+    headline: match[1].trim(),
+    detail: match[2].trim(),
+  };
 }
 
 export default function OfflineProfilePage() {
@@ -46,10 +56,6 @@ export default function OfflineProfilePage() {
 
   const requestOnlineVerification = async () => {
     if (!reconciledProfile || verificationAttempt === "running" || !profileNeedsOnlineVerification(reconciledProfile)) return;
-    if (!reconciledProfile.timezone?.trim()) {
-      setVerificationAttempt("deferred");
-      return;
-    }
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       setVerificationAttempt("deferred");
       return;
@@ -91,9 +97,6 @@ export default function OfflineProfilePage() {
   const verifiedSun = useMemo(() => getVerifiedAstrologySign(verifiedAstrology, "sun"), [verifiedAstrology]);
   const verifiedMoon = useMemo(() => getVerifiedAstrologySign(verifiedAstrology, "moon"), [verifiedAstrology]);
   const verifiedRising = useMemo(() => getVerifiedAstrologySign(verifiedAstrology, "rising"), [verifiedAstrology]);
-  const synthesisSun = useMemo(() => getSynthesisAstrologySign(verifiedAstrology, "sun"), [verifiedAstrology]);
-  const synthesisMoon = useMemo(() => getSynthesisAstrologySign(verifiedAstrology, "moon"), [verifiedAstrology]);
-  const synthesisRising = useMemo(() => getSynthesisAstrologySign(verifiedAstrology, "rising"), [verifiedAstrology]);
   const verifiedFullNatal = useMemo(
     () => hasVerifiedFullNatalChart(verifiedAstrology),
     [verifiedAstrology],
@@ -105,9 +108,8 @@ export default function OfflineProfilePage() {
   const verifiedNorthNode = verifiedAstrology?.northNode;
   const verifiedSouthNode = verifiedAstrology?.southNode;
   const verifiedChiron = verifiedAstrology?.chiron;
-  const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, any>;
+  const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, unknown>;
   const verifiedHumanDesign = hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
-  const rangeHumanDesign = humanDesign.status === "range_analyzed" ? humanDesign : null;
   const ultimateCodex = useMemo(
     () => buildUltimateCodexSynthesis(reconciledProfile ?? {}),
     [reconciledProfile],
@@ -120,38 +122,14 @@ export default function OfflineProfilePage() {
   const numerology = profile.numerologyData;
   const archetype = profile.archetypeData;
   const hasVerifiedCore = Boolean(verifiedSun && verifiedMoon);
-  const hasRangeEvidence = Boolean(
-    !profile.birthTime &&
-    verifiedAstrology &&
-    ["stable_across_range", "conditional"].includes(String((verifiedAstrology as any)?.sun?.evidenceState)) &&
-    ["stable_across_range", "conditional"].includes(String((verifiedAstrology as any)?.moon?.evidenceState)),
-  );
-  const conditionalAstrology = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto", "rising"]
-    .map((key) => {
-      const placement = key === "rising"
-        ? (verifiedAstrology as any)?.rising
-        : (verifiedAstrology as any)?.planets?.[key];
-      return placement?.evidenceState === "conditional"
-        ? { key, values: Array.isArray(placement.conditionalValues) ? placement.conditionalValues : [] }
-        : null;
-    })
-    .filter(Boolean) as Array<{ key: string; values: Array<{ value?: string; startLocalTime?: string; endLocalTime?: string }> }>;
-  const stableHdEntries = rangeHumanDesign?.components
-    ? Object.entries(rangeHumanDesign.components)
-        .filter(([, value]: any) => value?.evidenceState === "stable_across_range" && value?.value)
-    : [];
-  const conditionalHdEntries = rangeHumanDesign?.components
-    ? Object.entries(rangeHumanDesign.components)
-        .filter(([, value]: any) => value?.evidenceState === "conditional")
-    : [];
   const needsOnlineVerification = profileNeedsOnlineVerification(reconciledProfile);
-  const canRequestOnlineEvidence = Boolean(reconciledProfile.timezone?.trim());
   const readingHref = `/reading/${profile.id}`;
   const identityTitle =
     ultimateCodex.derivedArchetype ??
     (ultimateCodex.coverage !== "insufficient"
       ? ultimateCodex.identitySignature
       : "Identity synthesis pending governed evidence");
+  const dailyGuidance = splitDailyGuidance(profile.dailyGuidance);
 
   return (
     <div className="sc-app-shell">
@@ -179,8 +157,7 @@ export default function OfflineProfilePage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href={readingHref} className="sc-button-primary">Open depth reading <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 <Link href="/compatibility" className="sc-button-secondary">Explore compatibility</Link>
-                <Link href="/systems" className="sc-button-secondary">View underlying systems</Link>
-                {shouldOfferVerification(needsOnlineVerification, verificationAttempt) && canRequestOnlineEvidence && (
+                {shouldOfferVerification(needsOnlineVerification, verificationAttempt) && (
                   <button
                     type="button"
                     className="flex h-11 items-center rounded-xl border border-[rgba(114,216,197,.25)] bg-[rgba(114,216,197,.04)] px-5 text-sm font-semibold text-[#bdeee0] transition hover:bg-[rgba(114,216,197,.08)] disabled:opacity-60"
@@ -192,13 +169,8 @@ export default function OfflineProfilePage() {
                   </button>
                 )}
               </div>
-              {needsOnlineVerification && !canRequestOnlineEvidence && (
-                <p className="mt-3 max-w-2xl text-xs leading-5 text-[var(--sc-stone)]">
-                  Add the nearest known birth city or a valid birthplace timezone to unlock online astronomy/range analysis. Soul Codex will not use your device timezone or invent a location.
-                </p>
-              )}
-              {needsOnlineVerification && canRequestOnlineEvidence && verificationAttempt !== "complete" && (
-                <p className="mt-3 max-w-2xl text-xs leading-5 text-[var(--sc-stone)]">Optional. Choosing Verify online sends only the birth date, optional birth time, birthplace timezone, and coordinates needed for exact verification or a full-day unknown-time range analysis. It does not send your name or birthplace label. It does not create a server profile or invoke AI generation. Merely opening this local profile does not upload it. Local unresolved astronomy remains excluded until you explicitly request independent astronomical verification and it succeeds.</p>
+              {needsOnlineVerification && verificationAttempt !== "complete" && (
+                <p className="mt-3 max-w-2xl text-xs leading-5 text-[var(--sc-stone)]">Optional. Choosing Verify online sends only the birth date, exact time, birthplace timezone, and coordinates needed to verify the natal chart and governed Human Design core. It does not send your name or birthplace label. It does not create a server profile or invoke AI generation. Merely opening this local profile does not upload it.</p>
               )}
             </div>
             <div className="relative mx-auto flex aspect-square w-full max-w-[260px] items-center justify-center rounded-full border border-[var(--sc-line-gold)] bg-black/20 shadow-[inset_0_0_60px_rgba(123,97,255,.08)]"><div className="absolute inset-4 rounded-full border border-dashed border-[rgba(154,116,220,.25)]" /><Crown className="h-12 w-12 text-[var(--sc-gold-bright)]" /><div className="absolute bottom-8 text-center"><p className="sc-eyebrow justify-center">governed identity</p><p className="mt-1 max-w-[210px] text-sm font-semibold text-[var(--sc-ivory)]">{identityTitle}</p></div></div>
@@ -210,97 +182,38 @@ export default function OfflineProfilePage() {
         {verificationAttempt === "partial" && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Online verification returned some supported evidence, but this timed profile still has unresolved chart fields. The verified results were saved; you can retry without losing them.</div>}
         {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.04)] p-4 text-sm text-[var(--sc-stone)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
-        {hasRangeEvidence && (
-          <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="unknown-time-evidence-panel">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="sc-eyebrow">Unknown-time evidence map</p>
-                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Known, conditional, and locked are kept separate.</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                  Soul Codex evaluated every HH:MM birth time across this civil day. Stable results may influence synthesis with range provenance. Conditional results stay as branches and do not become personality facts.
-                </p>
-              </div>
-              <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-3 py-1 text-xs font-semibold text-[var(--sc-stone)]">1,440-minute sweep</span>
-            </div>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-2xl border border-[rgba(114,216,197,.24)] bg-[rgba(114,216,197,.045)] p-4" data-testid="evidence-state-verified">
-                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-teal)]">Verified</p>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Exact required input exists and the calculation/verification contract completed.</p>
-                <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
-                  {verifiedSun && <p>Sun: <strong>{verifiedSun}</strong></p>}
-                  {verifiedMoon && <p>Moon: <strong>{verifiedMoon}</strong></p>}
-                  {verifiedRising && <p>Ascendant: <strong>{verifiedRising}</strong></p>}
-                  <p>Life Path: <strong>{numerology.lifePath}</strong> · deterministic from birth date</p>
-                  <p>Birthday: <strong>{numerology.birthday}</strong> · deterministic from birth date</p>
-                  <p>Personal Year: <strong>{numerology.personalYear}</strong> · deterministic date cycle</p>
-                  {verifiedHumanDesign && <p>Human Design core: <strong>{String(verifiedHumanDesign.type ?? "verified")}</strong></p>}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[rgba(217,182,111,.24)] bg-[rgba(217,182,111,.04)] p-4" data-testid="evidence-state-stable-range">
-                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-gold-bright)]">Stable across range</p>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Birth time is missing, but the value stayed identical across all 1,440 tested minutes. It may influence synthesis with range provenance.</p>
-                <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
-                  {synthesisSun && !verifiedSun && <p>Sun: <strong>{synthesisSun}</strong></p>}
-                  {synthesisMoon && !verifiedMoon && <p>Moon: <strong>{synthesisMoon}</strong></p>}
-                  {synthesisRising && !verifiedRising && <p>Ascendant: <strong>{synthesisRising}</strong></p>}
-                  {Object.entries((verifiedAstrology as any)?.planets ?? {})
-                    .filter(([key, value]: any) => !["sun","moon"].includes(key) && value?.evidenceState === "stable_across_range" && value?.sign)
-                    .map(([key, value]: any) => <p key={key}><span className="capitalize">{key}</span>: <strong>{value.sign}</strong></p>)}
-                  {stableHdEntries.map(([key, value]: any) => <p key={key}>Human Design · <span className="capitalize">{key}</span>: <strong>{String(value.value)}</strong></p>)}
-                  {!synthesisSun && !synthesisMoon && stableHdEntries.length === 0 && <p>No range-stable supported fields were found.</p>}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.035] p-4" data-testid="evidence-state-conditional">
-                <p className="text-xs font-semibold uppercase tracking-[.12em] text-amber-300">Conditional</p>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Multiple legitimate values exist. These are rectification branches only and do not enter the main synthesis.</p>
-                <div className="mt-3 space-y-3 text-sm text-[var(--sc-ivory-soft)]">
-                  {conditionalAstrology.length === 0 && conditionalHdEntries.length === 0 ? <p>No range-changing supported fields were found.</p> : null}
-                  {conditionalAstrology.map((item) => (
-                    <div key={item.key}>
-                      <p className="font-semibold capitalize">{item.key}{item.key === "rising" ? " · rectification evidence" : ""}</p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
-                        {item.values.map((value) => `${value.value ?? "?"} ${value.startLocalTime ?? ""}–${value.endLocalTime ?? ""}`).join(" · ")}
-                      </p>
-                    </div>
-                  ))}
-                  {conditionalHdEntries.map(([key, value]: any) => (
-                    <div key={key}>
-                      <p className="font-semibold">Human Design · <span className="capitalize">{key}</span></p>
-                      <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
-                        {Array.isArray(value?.conditionalValues) && value.conditionalValues.length
-                          ? value.conditionalValues.map((branch: any) => `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`).join(" · ")
-                          : "Changes across the day."}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4" data-testid="evidence-state-unavailable">
-                <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-stone)]">Unavailable</p>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Required information is missing. These fields contribute nothing until the missing input is added.</p>
-                <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
-                  <p>Houses: add an exact birth time.</p>
-                  <p>Midheaven: add an exact birth time.</p>
-                  <p>One certified Ascendant: add an exact birth time to collapse the rectification branches.</p>
-                  {!profile.fullBirthName && <p>Expression, Soul Urge, Personality Number, and Maturity: add the full birth name.</p>}
-                  {conditionalHdEntries.length > 0 && <p>Changing Human Design components: add birth time to collapse the conditional branches.</p>}
-                  {!profile.birthLocation && <p>Location-sensitive astronomy: add the nearest known birth city; Soul Codex will not insert one.</p>}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
-          <div className="sc-panel p-5"><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3"><div className="sc-icon-well"><Sparkles className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Astrology core</p><p className="text-xs text-[var(--sc-stone)]">verified where available</p></div></div></div><div className="space-y-3">{[["Sun", synthesisSun || "Unresolved", Boolean(verifiedSun)], ["Moon", synthesisMoon || "Unresolved", Boolean(verifiedMoon)], ["Rising", synthesisRising || "Unresolved", Boolean(verifiedRising)]].map(([label, value, verified]) => <div key={String(label)} className="flex items-center justify-between border-b border-[var(--sc-line)] pb-3 last:border-0 last:pb-0"><span className="text-sm text-[var(--sc-stone)]">{String(label)}</span><span className="flex items-center gap-2 text-sm font-semibold text-[var(--sc-ivory)]">{String(value)} {verified && <Check className="h-3.5 w-3.5 text-[var(--sc-teal)]" />}</span></div>)}</div></div>
+          <div className="sc-panel p-5"><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3"><div className="sc-icon-well"><Sparkles className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Astrology core</p><p className="text-xs text-[var(--sc-stone)]">verified where available</p></div></div></div><div className="space-y-3">{[["Sun", verifiedSun || astrology.sunSign, Boolean(verifiedSun)], ["Moon", verifiedMoon || "Unresolved", Boolean(verifiedMoon)], ["Rising", verifiedRising || "Unresolved", Boolean(verifiedRising)]].map(([label, value, verified]) => <div key={String(label)} className="flex items-center justify-between border-b border-[var(--sc-line)] pb-3 last:border-0 last:pb-0"><span className="text-sm text-[var(--sc-stone)]">{String(label)}</span><span className="flex items-center gap-2 text-sm font-semibold text-[var(--sc-ivory)]">{String(value)} {verified && <Check className="h-3.5 w-3.5 text-[var(--sc-teal)]" />}</span></div>)}</div></div>
           <div className="sc-panel p-5"><div className="mb-5 flex items-center gap-3"><div className="sc-icon-well"><Infinity className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Core numbers</p><p className="text-xs text-[var(--sc-stone)]">numerology layer</p></div></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{[["Life Path", numerology.lifePath], ["Birthday", numerology.birthday], ["Expression", numerology.expression], ["Soul Urge", numerology.soulUrge], ["Personality", numerology.personality], ["Maturity", numerology.maturity], ["Personal Year", numerology.personalYear]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3"><p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p><p className="mt-1 font-serif text-2xl font-medium text-[var(--sc-gold-bright)]">{value === undefined || value === null ? "Unresolved" : String(value)}</p>{label === "Personal Year" && <p className="mt-1 text-[10px] leading-4 text-[var(--sc-stone)]">current cycle · not part of stable Codex ID</p>}</div>)}</div></div>
-          <div className="sc-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="sc-icon-well"><Compass className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div></div><p className="text-sm leading-7 text-[var(--sc-ivory-soft)]">{profile.dailyGuidance}</p><div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div></div>
+          <div className="sc-panel p-5" data-testid="daily-guidance-card">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="sc-icon-well"><Compass className="h-5 w-5" /></div>
+              <div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div>
+            </div>
+            <p className="font-serif text-2xl font-medium leading-snug text-[var(--sc-ivory)]" data-testid="daily-guidance-headline">{dailyGuidance.headline}</p>
+            {dailyGuidance.detail && <p className="mt-3 text-sm leading-7 text-[var(--sc-stone)]">{dailyGuidance.detail}</p>}
+            <div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div>
+          </div>
         </section>
 
+        <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="underlying-systems-handoff">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-2 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[var(--sc-teal)]" />
+                <p className="sc-eyebrow m-0">Underlying systems</p>
+              </div>
+              <h2 className="font-serif text-2xl font-medium text-[var(--sc-ivory)]">Keep the main reading clear. Inspect the machinery when you want it.</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">
+                Codex ID, fingerprint, system coverage, verification ledgers, and unresolved technical details now live in the Systems inspector instead of interrupting the main narrative.
+              </p>
+            </div>
+            <Link href="/systems" className="sc-button-secondary shrink-0 self-start sm:self-auto">
+              View underlying systems
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </section>
 
         {verifiedHumanDesign && (
           <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="verified-human-design-panel">
@@ -439,9 +352,7 @@ export default function OfflineProfilePage() {
                 ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, major aspects, Mean North/South Nodes, and Chiron are evidence-qualified or deterministically derived from verified inputs. Chiron uses live JPL Horizons qualified against Swiss Ephemeris; no approximation fallback is used."
                 : hasVerifiedCore
                   ? "Sun and Moon are independently verified. Exact-input profiles can now request the full qualified natal chart; any still-unverified planets, Rising, Midheaven, houses, aspects, nodes, and Chiron remain withheld."
-                  : hasRangeEvidence
-                    ? "Unknown-time range analysis is complete. Stable-across-range placements may influence synthesis with explicit range provenance. Conditional placements remain branch-only; houses and Midheaven stay unavailable until birth time is known."
-                    : "This local reading uses deterministic numerology only. The calendar Sun candidate is display-only until ephemeris verification or full-day range analysis. Time-sensitive astronomy remains unresolved rather than guessed."}</p></div></div></div>
+                  : "This local reading uses symbolic Sun and deterministic numerology only. Moon, Rising, planets, Midheaven, houses, aspects, nodes, Chiron, and chart geometry remain unresolved until you explicitly request independent astronomical verification and it succeeds."}</p></div></div></div>
 
         <DepthSoulGuide interpretation={profile.depthInterpretation} />
       </main>
