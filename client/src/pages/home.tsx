@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import {
@@ -27,8 +27,13 @@ function getProfileIdentity(profile: any) {
 }
 
 export default function Home() {
-  const { profile } = useActiveProfile();
+  const { profile, isHydrated, isEmpty } = useActiveProfile();
+  const [, setLocation] = useLocation();
   const [connections, setConnections] = useState<SavedConnection[]>([]);
+
+  useEffect(() => {
+    if (isHydrated && isEmpty) setLocation("/create");
+  }, [isHydrated, isEmpty, setLocation]);
 
   useEffect(() => {
     const refreshConnections = () => setConnections(loadConnections());
@@ -40,6 +45,17 @@ export default function Home() {
       window.removeEventListener("storage", refreshConnections);
     };
   }, []);
+  if (!isHydrated || isEmpty) {
+    return (
+      <div className="sc-app-shell">
+        <Navigation />
+        <main className="sc-page flex min-h-[70vh] items-center justify-center" role="status" aria-live="polite">
+          <p className="text-sm text-[var(--sc-stone)]">Opening profile setup…</p>
+        </main>
+      </div>
+    );
+  }
+
   const { id, name } = getProfileIdentity(profile);
   const identityHref = id ? `/profile/${id}` : "/create";
   const readingHref = id ? `/reading/${id}` : "/create";
