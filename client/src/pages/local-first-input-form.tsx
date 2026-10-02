@@ -98,7 +98,6 @@ async function requestVerificationWhenOnline(
   data: BirthData,
   localProfile: OfflineCodexProfile,
 ): Promise<boolean> {
-  if (!isValidIanaTimezone(data.timezone)) return false;
   if (typeof navigator !== "undefined" && !navigator.onLine) return false;
 
   try {
@@ -151,12 +150,12 @@ export default function LocalFirstInputForm() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [verifyOnline, setVerifyOnline] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const form = useForm<BirthData>({
     resolver: zodResolver(birthDataSchema),
     defaultValues: {
       name: "",
-      fullBirthName: "",
       birthDate: "",
       birthTime: "",
       birthLocation: "",
@@ -170,13 +169,26 @@ export default function LocalFirstInputForm() {
   const timezone = form.watch("timezone");
   const latitude = form.watch("latitude");
   const longitude = form.watch("longitude");
-  const onlineEvidenceInputsReady = isValidIanaTimezone(timezone);
   const exactChartInputsReady = Boolean(
     birthTime &&
       isValidIanaTimezone(timezone) &&
       isCoordinateWithinRange(latitude, -90, 90) &&
       isCoordinateWithinRange(longitude, -180, 180),
   );
+
+  const advanceStep = async () => {
+    if (step === 1) {
+      const valid = await form.trigger(["name", "birthDate"]);
+      if (!valid) return;
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      const valid = await form.trigger(["birthLocation"]);
+      if (!valid) return;
+      setStep(3);
+    }
+  };
 
   const resolveLocation = async () => {
     const location = form.getValues("birthLocation");
@@ -246,7 +258,6 @@ export default function LocalFirstInputForm() {
         id: profile.id,
         name: profile.name,
         codename: profile.name,
-        fullBirthName: profile.fullBirthName ?? undefined,
         birthDate: profile.birthDate,
         birthTime: profile.birthTime ?? undefined,
         birthLocation: profile.birthLocation,
@@ -274,18 +285,16 @@ export default function LocalFirstInputForm() {
 
       let verificationCompleted = false;
       if (verifyOnline) {
-        if (onlineEvidenceInputsReady) {
-          // The user explicitly opted in, so finish the evidence reconciliation
-          // before opening the profile. Navigating while this request was still
-          // in flight allowed the profile query to cache the unresolved local
-          // snapshot even though verified Moon/Rising data arrived moments later.
-          verificationCompleted = await requestVerificationWhenOnline(data, profile);
-        }
+        // The user explicitly opted in, so finish the evidence reconciliation
+        // before opening the profile. Navigating while this request was still
+        // in flight allowed the profile query to cache the unresolved local
+        // snapshot even though verified Moon/Rising data arrived moments later.
+        verificationCompleted = await requestVerificationWhenOnline(data, profile);
       }
 
       toast({
         title: "Soul Codex created on this device",
-        description: verifyOnline && onlineEvidenceInputsReady
+        description: verifyOnline
           ? verificationCompleted
             ? "Your local reading is ready. The online verification request completed and supported evidence was reconciled into this same local profile."
             : "Your local reading is ready, but online verification did not complete. Nothing was guessed or promoted; you can retry verification from the profile when connectivity is available."
@@ -324,7 +333,7 @@ export default function LocalFirstInputForm() {
             Start with the facts.<br />Then go deeper.
           </h1>
           <p className="sc-lede mx-auto mt-5 max-w-2xl">
-            Your birth information anchors the Codex. The first reading is created locally on this device. Online astronomy verification happens only when you explicitly choose it.
+            Three short steps: identity basics, birth details, then an optional verification choice. Your first reading is still created locally on this device.
           </p>
         </section>
 
@@ -334,37 +343,43 @@ export default function LocalFirstInputForm() {
               <div className="flex items-start gap-3">
                 <div className="sc-icon-well"><Compass className="h-5 w-5" /></div>
                 <div>
-                  <p className="font-semibold text-[var(--sc-ivory)]">Birth coordinates</p>
+                  <p className="font-semibold text-[var(--sc-ivory)]">Step {step} of 3 · {step === 1 ? "Identity basics" : step === 2 ? "Birth details" : "Verify and create"}</p>
                   <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">
-                    Use the most accurate information you have. Unknown time is better than invented precision.
+                    {step === 1
+                      ? "Start with only the basics needed to build your local Codex."
+                      : step === 2
+                        ? "Add the birth details you know. Unknown time is better than invented precision."
+                        : "Review the evidence status, choose whether to verify online, and create your Codex."}
                   </p>
                 </div>
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-2 border-b border-[var(--sc-line)] px-5 py-4 sm:px-8" aria-label="Onboarding progress">
+              {[
+                [1, "Basics"],
+                [2, "Birth"],
+                [3, "Create"],
+              ].map(([number, label]) => (
+                <div key={String(number)} className="min-w-0">
+                  <div className={`h-1.5 rounded-full ${step >= Number(number) ? "bg-[var(--sc-gold)]" : "bg-white/[0.08]"}`} />
+                  <p className={`mt-2 text-[10px] font-semibold uppercase tracking-[.12em] ${step === Number(number) ? "text-[var(--sc-gold-bright)]" : "text-[var(--sc-stone)]"}`}>{label}</p>
+                </div>
+              ))}
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7 p-5 sm:p-8">
+                {step === 1 && (
+                  <>
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><User className="h-4 w-4" /> Display name</FormLabel>
-                      <FormControl><Input {...field} className={inputClass} placeholder="Name or alias for this profile" data-testid="input-name" /></FormControl>
+                      <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><User className="h-4 w-4" /> Full name</FormLabel>
+                      <FormControl><Input {...field} className={inputClass} placeholder="Enter your full name" data-testid="input-name" /></FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="fullBirthName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><User className="h-4 w-4" /> Full birth name <span className="ml-auto text-[11px] font-normal text-[var(--sc-stone)]">optional if unknown</span></FormLabel>
-                      <FormControl><Input {...field} className={inputClass} placeholder="Full name at birth, if known" data-testid="input-full-birth-name" /></FormControl>
-                      <FormMessage />
-                      <p className="text-xs leading-5 text-[var(--sc-stone)]">Used only for name-based numerology: Expression/Destiny, Soul Urge, Personality Number, and Maturity. Leave blank if you do not know the full birth name; those values will stay unavailable rather than being approximated from a nickname.</p>
                     </FormItem>
                   )}
                 />
@@ -395,6 +410,11 @@ export default function LocalFirstInputForm() {
                   />
                 </div>
 
+                  </>
+                )}
+
+                {step === 2 && (
+                  <>
                 <FormField
                   control={form.control}
                   name="birthLocation"
@@ -402,14 +422,14 @@ export default function LocalFirstInputForm() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-1.5 text-[var(--sc-ivory-soft)]"><MapPin className="h-4 w-4" /> Birth location</FormLabel>
                       <div className="flex flex-col gap-2 sm:flex-row">
-                        <FormControl><Input {...field} className={inputClass} placeholder="Nearest known city, state/province, country" data-testid="input-birth-location" /></FormControl>
+                        <FormControl><Input {...field} className={inputClass} placeholder="City, state/province, country" data-testid="input-birth-location" /></FormControl>
                         <button type="button" className="flex h-12 items-center justify-center rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.06)] px-5 text-sm font-semibold text-[var(--sc-gold-bright)] transition hover:bg-[rgba(217,182,111,.12)] disabled:opacity-60" onClick={resolveLocation} disabled={isLocating} data-testid="button-location-lookup">
                           {isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}Resolve place
                         </button>
                       </div>
                       <FormMessage />
                       <p className="text-xs leading-5 text-[var(--sc-stone)]">
-                        If the exact birthplace is unknown, enter the nearest known city when available. Leave it blank rather than guessing. Built-in cities resolve on-device; otherwise Resolve place sends only the entered place text to Soul Codex&apos;s location resolver. Your current device timezone or location is never substituted for the birthplace.
+                        Built-in cities resolve on-device. Otherwise, pressing Resolve place sends only the entered place text to Soul Codex&apos;s location resolver; coordinates determine the birth location&apos;s IANA timezone. Your current device timezone is never substituted for a remote birthplace.
                       </p>
                     </FormItem>
                   )}
@@ -430,6 +450,11 @@ export default function LocalFirstInputForm() {
                   </div>
                 </div>
 
+                  </>
+                )}
+
+                {step === 3 && (
+                  <>
                 <div className={`rounded-2xl border p-4 ${exactChartInputsReady ? "border-[rgba(114,216,197,.28)] bg-[rgba(114,216,197,.05)]" : "border-[var(--sc-line)] bg-white/[0.02]"}`} data-testid="chart-input-readiness">
                   <div className="flex gap-3">
                     <ShieldCheck className={`mt-0.5 h-5 w-5 shrink-0 ${exactChartInputsReady ? "text-[var(--sc-teal)]" : "text-[var(--sc-stone)]"}`} />
@@ -440,9 +465,7 @@ export default function LocalFirstInputForm() {
                       <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">
                         {exactChartInputsReady
                           ? "You supplied birth time, birth-place timezone, latitude, and longitude. Soul Codex can calculate Moon and Rising candidates. Independent online verification is the only remaining step before those values are promoted as chart facts."
-                          : birthTime
-                            ? "Planetary zodiac positions can still be calculated when the birth instant is known, but Ascendant, houses, Midheaven, and other location-sensitive geometry require the birthplace timezone and coordinates. Add the nearest known city to unlock those layers."
-                            : "With birth time unknown, Soul Codex can use a full-day range sweep when the birth-place timezone is known. Stable placements may be used with range provenance; changing placements branch by time window. Missing location/timezone stays unavailable rather than guessed."}
+                          : "Moon and Rising require an exact birth time plus the birth location's timezone and coordinates. Missing pieces stay unresolved rather than being guessed."}
                       </p>
                     </div>
                   </div>
@@ -454,24 +477,45 @@ export default function LocalFirstInputForm() {
                     data-testid="checkbox-online-verification"
                     type="checkbox"
                     checked={verifyOnline}
-                    disabled={!onlineEvidenceInputsReady}
                     onChange={(event) => setVerifyOnline(event.target.checked)}
-                    className="mt-1 h-4 w-4 accent-[var(--sc-gold)] disabled:opacity-40"
+                    className="mt-1 h-4 w-4 accent-[var(--sc-gold)]"
                   />
                   <span>
                     <span className="block text-sm font-semibold text-[var(--sc-ivory)]">Verify supported placements online after creation</span>
                     <span className="mt-1 block text-xs leading-5 text-[var(--sc-stone)]">
-                      {onlineEvidenceInputsReady
-                        ? "Optional. Soul Codex sends only birth date, optional birth time, birthplace timezone, and available coordinates to the evidence endpoint. Unknown time triggers a full-day range analysis; missing coordinates keep location-sensitive layers unavailable. It does not create a server profile or invoke AI generation for this check."
-                        : "Add the birthplace timezone—usually by resolving the nearest known birth city—before online evidence analysis can run. Soul Codex will not substitute your device timezone or a default city."}
-                      {" "}Leave this off to keep profile creation entirely on-device.
+                      Optional. Soul Codex sends only birth date, optional birth time, timezone, and coordinates to the astronomy verification endpoint. It does not create a server profile or invoke AI generation for this check.
+                      Leave this off to keep profile creation entirely on-device.
                     </span>
                   </span>
                 </label>
 
                 <button type="submit" className="sc-button-primary h-14 w-full justify-center text-[15px]" disabled={isCreating} data-testid="button-create-profile">
                   {isCreating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Building your Codex...</> : <>Create my Soul Codex <ArrowRight className="ml-2 h-4 w-4" /></>}
-                </button>
+                </button>                  </>
+                )}
+
+                <div className="flex flex-col-reverse gap-3 border-t border-[var(--sc-line)] pt-2 sm:flex-row sm:justify-between">
+                  {step > 1 ? (
+                    <button
+                      type="button"
+                      className="sc-button-secondary justify-center"
+                      onClick={() => setStep((step - 1) as 1 | 2 | 3)}
+                    >
+                      Back
+                    </button>
+                  ) : <span />}
+                  {step < 3 ? (
+                    <button
+                      type="button"
+                      className="sc-button-primary justify-center"
+                      onClick={() => void advanceStep()}
+                      data-testid="button-onboarding-next"
+                    >
+                      Continue <ArrowRight className="ml-2 h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
               </form>
             </Form>
           </div>
