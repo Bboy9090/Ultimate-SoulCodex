@@ -26,6 +26,7 @@ export const profiles = pgTable("soul_profiles", {
   userId: varchar("user_id"),
   sessionId: varchar("session_id"),
   name: text("name").notNull(),
+  fullBirthName: text("full_birth_name"),
   birthDate: timestamp("birth_date").notNull(),
   birthTime: text("birth_time"),
   birthLocation: text("birth_location"),
@@ -88,6 +89,7 @@ const birthTimeSchema = z.union([
 // Additional schemas for API requests
 export const birthDataSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  fullBirthName: z.string().optional(),
   birthDate: z.string().min(1, "Birth date is required"),
   // Empty string represents an explicitly unknown birth time.
   birthTime: birthTimeSchema,

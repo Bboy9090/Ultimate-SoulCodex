@@ -19,6 +19,9 @@ test("production schema preflight is idempotent, complete, and non-destructive",
     assert.match(source, new RegExp(`CREATE TABLE IF NOT EXISTS "${table}"`));
   }
 
+  assert.match(source, /"full_birth_name" text/);
+  assert.match(source, /ALTER TABLE "soul_profiles" ADD COLUMN IF NOT EXISTS "full_birth_name" text/);
+  assert.match(source, /full_birth_name: "text"/);
   assert.match(source, /"birth_date" timestamp NOT NULL/);
   assert.match(source, /birth_date: "timestamp without time zone"/);
   assert.match(source, /CREATE INDEX IF NOT EXISTS "public_profile_shares_profile_idx"/);
