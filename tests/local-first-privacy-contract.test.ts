@@ -84,3 +84,13 @@ test("fresh installs enter the stepped onboarding flow after profile hydration",
   assert.match(homeSource, /if \(!isHydrated \|\| isEmpty\)/);
   assert.match(homeSource, /Opening profile setup/);
 });
+
+
+test("local profile front-loads daily guidance before supporting copy", () => {
+  assert.match(profileSource, /function splitDailyGuidance\(value: string\)/);
+  assert.match(profileSource, /data-testid="daily-guidance-card"/);
+  assert.match(profileSource, /data-testid="daily-guidance-headline"/);
+  assert.match(profileSource, /dailyGuidance\.headline/);
+  assert.match(profileSource, /dailyGuidance\.detail/);
+  assert.doesNotMatch(profileSource, /<p className="text-sm leading-7 text-\[var\(--sc-ivory-soft\)\]">\{profile\.dailyGuidance\}<\/p>/);
+});
