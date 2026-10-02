@@ -151,6 +151,7 @@ export default function LocalFirstInputForm() {
   const [isCreating, setIsCreating] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [verifyOnline, setVerifyOnline] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const form = useForm<BirthData>({
     resolver: zodResolver(birthDataSchema),
@@ -177,6 +178,20 @@ export default function LocalFirstInputForm() {
       isCoordinateWithinRange(latitude, -90, 90) &&
       isCoordinateWithinRange(longitude, -180, 180),
   );
+
+  const advanceStep = async () => {
+    if (step === 1) {
+      const valid = await form.trigger(["name", "birthDate", "birthTime", "fullBirthName"]);
+      if (!valid) return;
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      const valid = await form.trigger(["birthLocation", "timezone", "latitude", "longitude"]);
+      if (!valid) return;
+      setStep(3);
+    }
+  };
 
   const resolveLocation = async () => {
     const location = form.getValues("birthLocation");
@@ -324,7 +339,7 @@ export default function LocalFirstInputForm() {
             Start with the facts.<br />Then go deeper.
           </h1>
           <p className="sc-lede mx-auto mt-5 max-w-2xl">
-            Your birth information anchors the Codex. The first reading is created locally on this device. Online astronomy verification happens only when you explicitly choose it.
+            Three short steps: identity basics, birth details, then an optional verification choice. Your first reading is still created locally on this device.
           </p>
         </section>
 
@@ -334,16 +349,35 @@ export default function LocalFirstInputForm() {
               <div className="flex items-start gap-3">
                 <div className="sc-icon-well"><Compass className="h-5 w-5" /></div>
                 <div>
-                  <p className="font-semibold text-[var(--sc-ivory)]">Birth coordinates</p>
+                  <p className="font-semibold text-[var(--sc-ivory)]">Step {step} of 3 · {step === 1 ? "Identity basics" : step === 2 ? "Birth details" : "Verify and create"}</p>
                   <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">
-                    Use the most accurate information you have. Unknown time is better than invented precision.
+                    {step === 1
+                      ? "Start with only the basics needed to build your local Codex."
+                      : step === 2
+                        ? "Add the birth details you know. Unknown information can stay unknown."
+                        : "Review the evidence status, choose whether to verify online, and create your Codex."}
                   </p>
                 </div>
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-2 border-b border-[var(--sc-line)] px-5 py-4 sm:px-8" aria-label="Onboarding progress">
+              {[
+                [1, "Basics"],
+                [2, "Birth"],
+                [3, "Create"],
+              ].map(([number, label]) => (
+                <div key={String(number)} className="min-w-0">
+                  <div className={`h-1.5 rounded-full ${step >= Number(number) ? "bg-[var(--sc-gold)]" : "bg-white/[0.08]"}`} />
+                  <p className={`mt-2 text-[10px] font-semibold uppercase tracking-[.12em] ${step === Number(number) ? "text-[var(--sc-gold-bright)]" : "text-[var(--sc-stone)]"}`}>{label}</p>
+                </div>
+              ))}
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7 p-5 sm:p-8">
+                {step === 1 && (
+                  <>
                 <FormField
                   control={form.control}
                   name="name"
@@ -394,6 +428,12 @@ export default function LocalFirstInputForm() {
                     )}
                   />
                 </div>
+                  </>
+                )}
+
+                {step === 2 && (
+                  <>
+
 
                 <FormField
                   control={form.control}
@@ -430,6 +470,11 @@ export default function LocalFirstInputForm() {
                   </div>
                 </div>
 
+                  </>
+                )}
+
+                {step === 3 && (
+                  <>
                 <div className={`rounded-2xl border p-4 ${exactChartInputsReady ? "border-[rgba(114,216,197,.28)] bg-[rgba(114,216,197,.05)]" : "border-[var(--sc-line)] bg-white/[0.02]"}`} data-testid="chart-input-readiness">
                   <div className="flex gap-3">
                     <ShieldCheck className={`mt-0.5 h-5 w-5 shrink-0 ${exactChartInputsReady ? "text-[var(--sc-teal)]" : "text-[var(--sc-stone)]"}`} />
@@ -472,6 +517,30 @@ export default function LocalFirstInputForm() {
                 <button type="submit" className="sc-button-primary h-14 w-full justify-center text-[15px]" disabled={isCreating} data-testid="button-create-profile">
                   {isCreating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Building your Codex...</> : <>Create my Soul Codex <ArrowRight className="ml-2 h-4 w-4" /></>}
                 </button>
+                  </>
+                )}
+
+                <div className="flex flex-col-reverse gap-3 border-t border-[var(--sc-line)] pt-2 sm:flex-row sm:justify-between">
+                  {step > 1 ? (
+                    <button
+                      type="button"
+                      className="sc-button-secondary justify-center"
+                      onClick={() => setStep((step - 1) as 1 | 2 | 3)}
+                    >
+                      Back
+                    </button>
+                  ) : <span />}
+                  {step < 3 ? (
+                    <button
+                      type="button"
+                      className="sc-button-primary justify-center"
+                      onClick={() => void advanceStep()}
+                      data-testid="button-onboarding-next"
+                    >
+                      Continue <ArrowRight className="ml-2 h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
               </form>
             </Form>
           </div>
