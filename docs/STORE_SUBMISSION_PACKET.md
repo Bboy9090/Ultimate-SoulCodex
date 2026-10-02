@@ -12,7 +12,7 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 |---|---|
 | App name | Soul Codex |
 | iOS bundle ID | `app.soulcodex.ios` |
-| Android application ID | `app.soulcodex.main` |
+| Android application ID | `soulcodex.app` |
 | Android release | 4.0.1 / versionCode 4000008 |
 | iOS release | 4.0.2 / build 4000009 |
 | Primary category | Lifestyle |
@@ -184,7 +184,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 
 1. Capture final Android phone screenshots from the actual final build.
 2. Complete physical-device Android smoke testing.
-3. In Play Console, select/create Soul Codex for package `app.soulcodex.main`.
+3. In Play Console, select/create Soul Codex for package `soulcodex.app`.
 4. Upload the exact-current signed `app-release.aab` from the latest exact-head Android store artifact; verify its `RELEASE-CANDIDATE-SHA.txt` matches current release authority before upload.
 5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
 6. Use the verified Railway URLs for privacy, support, and account deletion unless a custom domain is attached and verified first.

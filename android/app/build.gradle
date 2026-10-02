@@ -4,7 +4,7 @@ android {
     namespace = "app.soulcodex.main"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.soulcodex.main"
+        applicationId "soulcodex.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 4000008

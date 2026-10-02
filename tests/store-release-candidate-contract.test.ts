@@ -19,6 +19,8 @@ test("Soul Codex platform release identities are aligned", async () => {
 
   assert.match(android, /versionCode\s+4000008/);
   assert.match(android, /versionName\s+"4\.0\.1"/);
+  assert.match(android, /applicationId\s+"soulcodex\.app"/);
+  assert.match(android, /namespace\s*=\s*"app\.soulcodex\.main"/);
   assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.0\.2<\/string>/);
   assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000009<\/string>/);
   assert.match(project, /CURRENT_PROJECT_VERSION = 4000009;/);
@@ -61,7 +63,7 @@ test("store workflow binds exact release branch and Play production upload", asy
   assert.match(workflow, /Detect Google Play publishing credentials/);
   assert.match(workflow, /steps\.play\.outputs\.available/);
   assert.match(workflow, /r0adkll\/upload-google-play@v1\.1\.3/);
-  assert.match(workflow, /packageName:\s*app\.soulcodex\.main/);
+  assert.match(workflow, /packageName:\s*soulcodex\.app/);
   assert.match(workflow, /track:\s*production/);
   assert.match(workflow, /status:\s*completed/);
   assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.0\.2/);
