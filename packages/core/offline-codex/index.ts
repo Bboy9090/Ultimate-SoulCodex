@@ -363,7 +363,7 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       label: `Life Path ${numerology.lifePath} symbolism`, priority: 95, claimKind: "derived",
       facets: {
         claritySummary: `The numerology layer adds a theme of ${path.theme}.`, innerExperience: `Internally, attention may return to ${path.drive}.`,
-        protectiveFunction: `The pattern may protect the ability to continue ${path.drive}.`, shadow: `Under pressure, the cost may appear as ${path.shadow}.`,
+        shadow: `Under pressure, the cost may appear as ${path.shadow}.`,
         decisionImpact: `Decisions may become clearer when they support ${path.drive} without repeating ${path.shadow}.`, action: path.action,
       },
       tensionAxes: path.axes,
@@ -386,7 +386,6 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       label: "Soul Urge " + numerology.soulUrge + " " + (NUMBER_LABELS[numerology.soulUrge!] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
       facets: {
         hiddenNeed: "Soul Urge " + numerology.soulUrge + " adds " + soulUrge.drive + " as a symbolic inner-motivation theme.",
-        protectiveFunction: "Protection may become organized around preserving room for " + soulUrge.drive + ".",
         relationshipImpact: "The Soul Urge layer may make " + soulUrge.drive + " especially noticeable around trust and belonging.",
         shadow: "When overused, the Soul Urge theme may repeat " + soulUrge.shadow + ".",
       },
