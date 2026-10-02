@@ -28,6 +28,8 @@ test("natal chart exposes planets houses degrees cusps and aspects without sampl
   assert.match(natal, /What each planet is doing in your chart/);
   assert.match(natal, /Planet = what\. Sign = how\. House = where\./);
   assert.match(natal, /data-testid=\{`placement-story-\$\{placement\.key\}`\}/);
+  assert.match(natal, /Watch point/);
+  assert.match(natal, /Why this placement says that/);
   assert.match(natal, /Try this:/);
   assert.doesNotMatch(natal, /<summary[^>]*>\s*Placement meanings · planet \+ sign \+ house/);
   assert.doesNotMatch(natal, /sample planet|random aspect/i);
