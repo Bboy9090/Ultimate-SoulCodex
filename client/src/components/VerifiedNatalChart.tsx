@@ -176,19 +176,26 @@ export default function VerifiedNatalChart({
                   <article key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4" data-testid={`placement-story-${placement.key}`}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">{GLYPH[placement.key]} {placement.label}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">{meaning.feedLabel}</p>
                         <h4 className="mt-1 font-serif text-xl text-[var(--sc-ivory)]">{placement.label} in {placement.sign} · House {placement.house}</h4>
                       </div>
                       <span className="rounded-full border border-[var(--sc-line)] px-2.5 py-1 text-xs text-[var(--sc-stone)]">{placement.degree !== null ? placement.degree.toFixed(1) + "°" : "degree unavailable"}</span>
                     </div>
-                    <p className="mt-3 text-base font-medium leading-7 text-[var(--sc-ivory-soft)]">{meaning.headline}</p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.synthesis}</p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <p className="mt-3 font-serif text-[clamp(1.35rem,3vw,1.8rem)] font-medium leading-tight text-[var(--sc-ivory)]">{meaning.headline}</p>
+                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{meaning.synthesis}</p>
+                    <div className="mt-3 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-amber-200/80">Watch point</p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.friction}</p>
+                    </div>
+                    <details className="mt-3 rounded-xl border border-[var(--sc-line)] bg-white/[0.015] p-3">
+                      <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[.1em] text-[var(--sc-stone)]">Why this placement says that</summary>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-3">
                       <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">Planet</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.what}</p></div>
                       <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">Sign</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.how}</p></div>
                       <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">House</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.where}</p></div>
-                    </div>
-                    <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Try this:</strong> {meaning.practice}</p>
+                      </div>
+                    </details>
+                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
                   </article>
                 );
               })}
