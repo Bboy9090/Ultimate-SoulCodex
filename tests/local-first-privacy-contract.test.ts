@@ -4,6 +4,7 @@ import test from "node:test";
 
 const createSource = readFileSync("client/src/pages/local-first-input-form.tsx", "utf8");
 const profileSource = readFileSync("client/src/pages/offline-profile.tsx", "utf8");
+const homeSource = readFileSync("client/src/pages/home.tsx", "utf8");
 
 test("local profile creation keeps online verification opt-in and off by default", () => {
   assert.match(createSource, /const \[verifyOnline, setVerifyOnline\] = useState\(false\)/);
@@ -23,7 +24,7 @@ test("local-first creation uses the minimal astronomy-only verification endpoint
 });
 
 test("local-first creation copy discloses the upload boundary in plain language", () => {
-  assert.match(createSource, /Online astronomy verification happens only when you explicitly choose it\./);
+  assert.match(createSource, /Three short steps: identity basics, birth details, then an optional verification choice\./);
   assert.match(createSource, /does not create a server profile or invoke AI generation for this check\./);
   assert.match(createSource, /Leave this off to keep profile creation entirely on-device\./);
   assert.match(createSource, /No profile data was uploaded for verification\./);
@@ -60,4 +61,35 @@ test("offline profile verification sends only calculation inputs and explains th
   assert.match(profileSource, /It does not create a server profile or invoke AI generation\./);
   assert.match(profileSource, /Merely opening this local profile does not upload it\./);
   assert.match(profileSource, /until you explicitly request independent astronomical verification and it succeeds\./);
+});
+
+
+test("first-time profile creation uses three progressive steps instead of one dense form", () => {
+  assert.match(createSource, /const \[step, setStep\] = useState<1 \| 2 \| 3>\(1\)/);
+  assert.match(createSource, /Step \{step\} of 3/);
+  assert.match(createSource, /Identity basics/);
+  assert.match(createSource, /Birth details/);
+  assert.match(createSource, /Verify and create/);
+  assert.match(createSource, /data-testid="button-onboarding-next"/);
+  assert.match(createSource, /form\.trigger\(\["name", "birthDate", "birthTime", "fullBirthName"\]\)/);
+  assert.match(createSource, /form\.trigger\(\["birthLocation", "timezone", "latitude", "longitude"\]\)/);
+  assert.match(createSource, /step === 3/);
+  assert.match(createSource, /data-testid="button-create-profile"/);
+});
+
+
+test("fresh installs enter the stepped onboarding flow after profile hydration", () => {
+  assert.match(homeSource, /const \{ profile, isHydrated, isEmpty \} = useActiveProfile\(\)/);
+  assert.match(homeSource, /if \(isHydrated && isEmpty\) setLocation\("\/create"\)/);
+  assert.match(homeSource, /if \(!isHydrated \|\| isEmpty\)/);
+  assert.match(homeSource, /Opening profile setup/);
+});
+
+test("local profile front-loads daily guidance before supporting copy", () => {
+  assert.match(profileSource, /function splitDailyGuidance\(value: string\)/);
+  assert.match(profileSource, /data-testid="daily-guidance-card"/);
+  assert.match(profileSource, /data-testid="daily-guidance-headline"/);
+  assert.match(profileSource, /dailyGuidance\.headline/);
+  assert.match(profileSource, /dailyGuidance\.detail/);
+  assert.doesNotMatch(profileSource, /<p className="text-sm leading-7 text-\[var\(--sc-ivory-soft\)\]">\{profile\.dailyGuidance\}<\/p>/);
 });

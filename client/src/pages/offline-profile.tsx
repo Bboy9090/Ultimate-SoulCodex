@@ -24,6 +24,13 @@ function DeepChartFallback({ label }: { label: string }) {
   );
 }
 
+function splitDailyGuidance(value: string): { headline: string; detail: string } {
+  const text = value.trim();
+  const match = text.match(/^(.+?[.!?])(?:\s+|$)([\s\S]*)$/);
+  if (!match) return { headline: text, detail: "" };
+  return { headline: match[1].trim(), detail: match[2].trim() };
+}
+
 export default function OfflineProfilePage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
@@ -147,6 +154,7 @@ export default function OfflineProfilePage() {
   const needsOnlineVerification = profileNeedsOnlineVerification(reconciledProfile);
   const canRequestOnlineEvidence = Boolean(reconciledProfile.timezone?.trim());
   const readingHref = `/reading/${profile.id}`;
+  const dailyGuidance = splitDailyGuidance(profile.dailyGuidance);
   const identityTitle =
     ultimateCodex.derivedArchetype ??
     (ultimateCodex.coverage !== "insufficient"
@@ -298,7 +306,15 @@ export default function OfflineProfilePage() {
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
           <div className="sc-panel p-5"><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3"><div className="sc-icon-well"><Sparkles className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Astrology core</p><p className="text-xs text-[var(--sc-stone)]">verified where available</p></div></div></div><div className="space-y-3">{[["Sun", synthesisSun || "Unresolved", Boolean(verifiedSun)], ["Moon", synthesisMoon || "Unresolved", Boolean(verifiedMoon)], ["Rising", synthesisRising || "Unresolved", Boolean(verifiedRising)]].map(([label, value, verified]) => <div key={String(label)} className="flex items-center justify-between border-b border-[var(--sc-line)] pb-3 last:border-0 last:pb-0"><span className="text-sm text-[var(--sc-stone)]">{String(label)}</span><span className="flex items-center gap-2 text-sm font-semibold text-[var(--sc-ivory)]">{String(value)} {verified && <Check className="h-3.5 w-3.5 text-[var(--sc-teal)]" />}</span></div>)}</div></div>
           <div className="sc-panel p-5"><div className="mb-5 flex items-center gap-3"><div className="sc-icon-well"><Infinity className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Core numbers</p><p className="text-xs text-[var(--sc-stone)]">numerology layer</p></div></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{[["Life Path", numerology.lifePath], ["Birthday", numerology.birthday], ["Expression", numerology.expression], ["Soul Urge", numerology.soulUrge], ["Personality", numerology.personality], ["Maturity", numerology.maturity], ["Personal Year", numerology.personalYear]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3"><p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p><p className="mt-1 font-serif text-2xl font-medium text-[var(--sc-gold-bright)]">{value === undefined || value === null ? "Unresolved" : String(value)}</p>{label === "Personal Year" && <p className="mt-1 text-[10px] leading-4 text-[var(--sc-stone)]">current cycle · not part of stable Codex ID</p>}</div>)}</div></div>
-          <div className="sc-panel p-5"><div className="mb-4 flex items-center gap-3"><div className="sc-icon-well"><Compass className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div></div><p className="text-sm leading-7 text-[var(--sc-ivory-soft)]">{profile.dailyGuidance}</p><div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div></div>
+          <div className="sc-panel p-5" data-testid="daily-guidance-card">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="sc-icon-well"><Compass className="h-5 w-5" /></div>
+              <div><p className="font-semibold text-[var(--sc-ivory)]">Current guidance</p><p className="text-xs text-[var(--sc-stone)]">local interpretation</p></div>
+            </div>
+            <p className="font-serif text-2xl font-medium leading-snug text-[var(--sc-ivory)]" data-testid="daily-guidance-headline">{dailyGuidance.headline}</p>
+            {dailyGuidance.detail && <p className="mt-3 text-sm leading-7 text-[var(--sc-stone)]">{dailyGuidance.detail}</p>}
+            <div className="mt-5 flex flex-wrap gap-2">{archetype.strengths.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-[var(--sc-line)] bg-white/[0.035] px-3 py-1 text-xs text-[var(--sc-stone)]">{item}</span>)}</div>
+          </div>
         </section>
 
 

@@ -39,11 +39,12 @@ async function assertStoredProfileVisible(page) {
 async function createLocalCodex(page) {
   await page.goto(`${BASE_URL}/create`, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("input-name")).toBeVisible();
-  await expect(page.getByTestId("button-create-profile")).toBeVisible();
+  await expect(page.getByTestId("button-onboarding-next")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Offline Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
   await page.getByTestId("input-birth-time").fill("11:11");
+  await page.getByTestId("button-onboarding-next").click();
   await page.getByTestId("input-birth-location").fill("Bronx, New York");
   await page.getByTestId("button-location-lookup").click();
 
