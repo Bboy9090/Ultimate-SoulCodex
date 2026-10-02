@@ -197,6 +197,17 @@ export default function SystemsDetailsPage() {
           </p>
         </header>
 
+        <nav className="mx-auto mb-5 flex max-w-5xl flex-wrap gap-2" aria-label="System view navigation">
+          <a href="#combined-synthesis" className="sc-button-primary">Combined synthesis</a>
+          <a href="#astrology-system" className="sc-button-secondary">Astrology</a>
+          <a href="#numerology-system" className="sc-button-secondary">Numerology</a>
+          <a href="#human-design-system" className="sc-button-secondary">Human Design</a>
+        </nav>
+
+        <section id="combined-synthesis" className="mx-auto mb-5 max-w-5xl scroll-mt-28">
+          <UltimateCodexPanel synthesis={ultimateCodex} />
+        </section>
+
         <div className="mx-auto max-w-5xl space-y-5">
           <Link href="/systems/atlas" className="sc-panel block p-5">
             <h2 className="font-serif text-2xl">Explore the Astrology Atlas</h2>
@@ -238,7 +249,7 @@ export default function SystemsDetailsPage() {
             </div>
           </section>
 
-          <section className="sc-panel p-5 sm:p-7">
+          <section id="astrology-system" className="sc-panel scroll-mt-28 p-5 sm:p-7">
             <div className="mb-5 flex items-start gap-3">
               <div className="sc-icon-well"><Sparkles className="h-5 w-5" /></div>
               <div>
@@ -253,7 +264,7 @@ export default function SystemsDetailsPage() {
             </div>
           </section>
 
-          <section className="sc-panel p-5 sm:p-7">
+          <section id="numerology-system" className="sc-panel scroll-mt-28 p-5 sm:p-7">
             <div className="mb-5 flex items-start gap-3">
               <div className="sc-icon-well"><Calculator className="h-5 w-5" /></div>
               <div>
@@ -276,7 +287,7 @@ export default function SystemsDetailsPage() {
             </div>
           </section>
 
-          <section className="sc-panel p-5 sm:p-7">
+          <section id="human-design-system" className="sc-panel scroll-mt-28 p-5 sm:p-7">
             <div className="mb-5 flex items-start gap-3">
               <div className="sc-icon-well"><Fingerprint className="h-5 w-5" /></div>
               <div>
@@ -340,8 +351,6 @@ export default function SystemsDetailsPage() {
               </div>
             )}
           </section>
-
-          <UltimateCodexPanel synthesis={ultimateCodex} />
 
           <section className="sc-panel border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.025)] p-5 sm:p-7">
             <div className="flex gap-3">

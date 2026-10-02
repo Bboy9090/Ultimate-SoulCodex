@@ -137,6 +137,12 @@ export interface UltimateCodexStellium {
   rule: string;
 }
 
+export interface CrossSystemInsight {
+  kind: "reinforcement" | "tension" | "different-jobs" | "experiment";
+  text: string;
+  systems: Array<"Astrology" | "Numerology" | "Human Design">;
+}
+
 export interface UltimateCodexSynthesis {
   version: "ultimate-codex-v1";
   coverage: UltimateCodexCoverage;
@@ -155,6 +161,7 @@ export interface UltimateCodexSynthesis {
   resonances: string[];
   tensions: string[];
   integrationMoves: string[];
+  crossSystemInsights: CrossSystemInsight[];
   systemSummary: Array<{ system: string; status: string; detail: string }>;
   unresolved: string[];
   evidenceSignature: string[];
@@ -654,6 +661,122 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     "When systems disagree, prefer observed lived experience over symbolic interpretation. Keep the evidence, revise the meaning.",
   ]);
 
+  const crossSystemInsights: CrossSystemInsight[] = [];
+
+  if (dominantElement && lifePath && LIFE_PATH_AXIS[lifePath]) {
+    const overlap = ELEMENT_AXES[dominantElement]?.filter((axis) => LIFE_PATH_AXIS[lifePath].includes(axis)) ?? [];
+    if (overlap.length) {
+      crossSystemInsights.push({
+        kind: "reinforcement",
+        text: `${dominantElement} astrology emphasis and Life Path ${lifePath} both repeat ${overlap.join(" + ")} themes. Treat the overlap as a symbolic pattern to test, not independent proof.`,
+        systems: ["Astrology", "Numerology"],
+      });
+    }
+  }
+
+  if ((hdType === "Generator" || hdType === "Manifesting Generator") &&
+      (dominantElement === "Earth" || [4, 8, 22].includes(lifePath ?? -1))) {
+    crossSystemInsights.push({
+      kind: "reinforcement",
+      text: `${hdType} response/sustained-energy language overlaps with the profile's structure/building symbolism.`,
+      systems: [
+        "Human Design",
+        ...(dominantElement === "Earth" ? ["Astrology" as const] : []),
+        ...([4, 8, 22].includes(lifePath ?? -1) ? ["Numerology" as const] : []),
+      ],
+    });
+  }
+
+  if (hdType === "Projector" && (dominantElement === "Air" || [7, 11].includes(lifePath ?? -1))) {
+    crossSystemInsights.push({
+      kind: "reinforcement",
+      text: "Projector guidance/recognition language overlaps with analysis, perspective, or pattern-reading symbolism elsewhere in the Codex.",
+      systems: [
+        "Human Design",
+        ...(dominantElement === "Air" ? ["Astrology" as const] : []),
+        ...([7, 11].includes(lifePath ?? -1) ? ["Numerology" as const] : []),
+      ],
+    });
+  }
+
+  if (hdType === "Reflector" && (dominantElement === "Water" || dominantElement === "Air" || [2, 7, 9, 11].includes(lifePath ?? -1))) {
+    crossSystemInsights.push({
+      kind: "reinforcement",
+      text: "Reflector sampling/mirroring language overlaps with sensitivity, observation, or integration symbolism elsewhere in the Codex.",
+      systems: [
+        "Human Design",
+        ...(dominantElement === "Water" || dominantElement === "Air" ? ["Astrology" as const] : []),
+        ...([2, 7, 9, 11].includes(lifePath ?? -1) ? ["Numerology" as const] : []),
+      ],
+    });
+  }
+
+  if (hdStrategy && /wait/i.test(hdStrategy) && (dominantModality === "Cardinal" || dominantElement === "Fire" || [1, 8].includes(lifePath ?? -1))) {
+    crossSystemInsights.push({
+      kind: "tension",
+      text: `Initiatory symbolism appears alongside Human Design Strategy "${hdStrategy}". Treat this as a timing-versus-style question, not proof of an inner conflict.`,
+      systems: [
+        "Human Design",
+        ...(dominantModality === "Cardinal" || dominantElement === "Fire" ? ["Astrology" as const] : []),
+        ...([1, 8].includes(lifePath ?? -1) ? ["Numerology" as const] : []),
+      ],
+    });
+  }
+
+  if (placements.length && (hdType || hdAuthority)) {
+    crossSystemInsights.push({
+      kind: "different-jobs",
+      text: "Astrology describes symbolic style, emphasis, and life-area context. Human Design contributes an optional mechanics or timing practice. They answer different questions before they ever become a contradiction.",
+      systems: ["Astrology", "Human Design"],
+    });
+  }
+
+  if ((lifePath || expression || soulUrge) && (hdType || hdAuthority)) {
+    crossSystemInsights.push({
+      kind: "different-jobs",
+      text: "Numerology supplies deterministic number calculations with symbolic themes, while Human Design offers a separate decision-mechanics lens. Keep the domains separate before combining them.",
+      systems: ["Numerology", "Human Design"],
+    });
+  }
+
+  if (placements.length && (lifePath || expression || soulUrge)) {
+    crossSystemInsights.push({
+      kind: "different-jobs",
+      text: "Astrology can describe where and how a symbolic theme appears; Numerology can describe a recurring symbolic motif. Similar language does not make one system independent proof of the other.",
+      systems: ["Astrology", "Numerology"],
+    });
+  }
+
+  if (systemsPresent >= 2) {
+    crossSystemInsights.push({
+      kind: "experiment",
+      text: "Pick one real decision this week. Write each available system's cue separately, act using the context that fits, record what happened, and keep, revise, or reject the symbolic interpretation.",
+      systems: unique([
+        placements.length ? "Astrology" : null,
+        lifePath || expression || soulUrge ? "Numerology" : null,
+        hdType || hdAuthority ? "Human Design" : null,
+      ]) as CrossSystemInsight["systems"],
+    });
+  }
+
+  if (hdAuthority) {
+    crossSystemInsights.push({
+      kind: "experiment",
+      text: `For one low-stakes decision, try ${hdAuthority} as an optional ritual and compare the result with your usual process. Treat the outcome as lived evidence, not proof of Human Design.`,
+      systems: ["Human Design"],
+    });
+  }
+
+  if (crossSystemInsights.some((item) => item.kind === "reinforcement")) {
+    crossSystemInsights.push({
+      kind: "experiment",
+      text: "Choose one repeated cross-system theme. Find one concrete example that supports it and one that contradicts it before deciding whether the theme is useful.",
+      systems: unique(crossSystemInsights
+        .filter((item) => item.kind === "reinforcement")
+        .flatMap((item) => item.systems)) as CrossSystemInsight["systems"],
+    });
+  }
+
   const personalityEvidenceState =
     typeof personalityData.evidenceState === "string" ? personalityData.evidenceState : null;
   const personalityAssessed =
@@ -775,6 +898,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     resonances: resonances.length ? resonances : ["No cross-system reinforcement is asserted beyond the currently available governed evidence."],
     tensions: tensions.length ? tensions : ["No governed contradiction is currently strong enough to assert; this is not the same as having no inner conflict."],
     integrationMoves,
+    crossSystemInsights,
     systemSummary,
     unresolved,
     evidenceSignature,
