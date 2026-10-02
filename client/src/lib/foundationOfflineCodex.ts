@@ -746,7 +746,6 @@ function verifiedAggregateSeeds(
         claritySummary: `The verified sign pattern combines a ${sunSign} Sun, ${moonSign} Moon, and ${risingSign} Rising with Mercury in ${mercurySign}.`,
         visiblePattern: `${risingSign} Rising meets Mars in ${marsSign}, blending outward style with a distinct action signature.`,
         innerExperience: `${moonSign} Moon, Saturn in ${saturnSign}, and Neptune in ${neptuneSign} form the verified emotional, structural, and imaginative context.`,
-        protectiveFunction: `${moonSign} Moon and Saturn in ${saturnSign} describe a distinct symbolic pairing between emotional regulation and self-protection.`,
         gift: `${sunSign} Sun and Jupiter in ${jupiterSign} combine the core identity pattern with a specific style of growth and contribution.`,
         commonMisreading: `${risingSign} Rising can make Mercury in ${mercurySign} appear more one-dimensional from the outside than the full verified pattern supports.`,
         relationshipImpact: `${moonSign} Moon and Venus in ${venusSign} create a specific symbolic pairing between emotional needs and relational preference.`,
@@ -1193,7 +1192,6 @@ export function synthesizeVerifiedFoundationProfile(
           claritySummary: `${type} with ${authority} and a ${profile} profile adds a verified Human Design decision-making lens to the chart and numerology synthesis.`,
           innerExperience: `${type} symbolism frames how energy and attention may be experienced; the verified strategy is ${strategy}.${definition ? ` The calculated definition is ${definition}.` : ""}`,
           hiddenNeed: `Decision-making may work best when there is room to follow ${strategy} and consult ${authority}.`,
-          protectiveFunction: `Under pressure, this pattern may protect itself by moving away from ${strategy} or overriding ${authority}; use that as a reflection prompt, not a diagnosis.`,
           decisionImpact: `For important decisions, test the choice through ${authority} rather than treating immediate mental certainty as final.`,
           relationshipImpact: `Profile ${profile} may add a symbolic lens for how learning, projection, and relationships interact.${definedCenters.length ? ` Defined centers (${definedCenters.join(", ")}) describe the consistently activated parts of this symbolic bodygraph.` : ""}`,
           gift: channels.length ? `The verified bodygraph contains ${channels.length} defined channel${channels.length === 1 ? "" : "s"}: ${channels.slice(0, 4).join(", ")}${channels.length > 4 ? ", and more" : ""}.` : undefined,
@@ -1219,7 +1217,7 @@ export function synthesizeVerifiedFoundationProfile(
     { key: "venus", label: "Venus", priority: 121, facet: "relationshipImpact", prefix: "Relational preferences may emphasize" },
     { key: "mars", label: "Mars", priority: 120, facet: "action", prefix: "Action and assertion may emphasize" },
     { key: "jupiter", label: "Jupiter", priority: 116, facet: "gift", prefix: "Growth and confidence may expand through" },
-    { key: "saturn", label: "Saturn", priority: 119, facet: "protectiveFunction", prefix: "Structure and restraint may organize around" },
+    { key: "saturn", label: "Saturn", priority: 119, facet: "boundaryOrRepair", prefix: "Structure and restraint may organize around" },
     { key: "uranus", label: "Uranus", priority: 112, facet: "commonMisreading", prefix: "Change and nonconformity may be expressed through" },
     { key: "neptune", label: "Neptune", priority: 111, facet: "innerExperience", prefix: "Imagination and sensitivity may color" },
     { key: "pluto", label: "Pluto", priority: 118, facet: "shadow", prefix: "Pressure for transformation may intensify" },
@@ -1281,7 +1279,7 @@ export function synthesizeVerifiedFoundationProfile(
         priority: key === "northNode" ? 114 : 109,
         facets: key === "northNode"
           ? { decisionImpact: `Developmental-direction symbolism may invite more ${nodePattern.drive}.` }
-          : { protectiveFunction: `Familiar-pattern symbolism may fall back toward ${nodePattern.drive}.` },
+          : { innerExperience: `Familiar-pattern symbolism may return attention toward ${nodePattern.drive}.` },
       }));
     }
   }
