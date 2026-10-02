@@ -159,6 +159,12 @@ export default function CompatibilityPersonPage() {
       return friend ? [{ yours: placement, theirs: friend }] : [];
     });
 
+  const placementSignalCounts = placementComparisons.reduce<Record<string, number>>((counts, { yours, theirs }) => {
+    const label = placementComparisonLine(yours, theirs).label;
+    counts[label] = (counts[label] ?? 0) + 1;
+    return counts;
+  }, {});
+
   async function runComparison() {
     if (!profile || !sunSign) return;
 
@@ -278,6 +284,19 @@ export default function CompatibilityPersonPage() {
 
             {placementComparisons.length ? (
               <div className="space-y-4">
+                <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4" data-testid="friend-placement-snapshot">
+                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Connection snapshot</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {Object.entries(placementSignalCounts).map(([label, count]) => (
+                      <span key={label} className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] px-3 py-1.5 text-xs font-semibold text-[var(--sc-gold-bright)]">
+                        {label} · {count}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
+                    Counts describe only the planet/sign/house rows present on both charts. They are not compatibility percentages or relationship predictions.
+                  </p>
+                </div>
                 {placementComparisons.map(({ yours, theirs }) => {
                   const yourMeaning = personalPlacementMeaning(yours.key, yours.sign, yours.house!);
                   const theirMeaning = personalPlacementMeaning(theirs.key, theirs.sign, theirs.house);
