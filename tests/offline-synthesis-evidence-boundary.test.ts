@@ -68,3 +68,36 @@ test("unverified time and coordinates cannot alter offline synthesis", () => {
     stripGeneratedAt(night.depthInterpretation),
   );
 });
+
+test("offline depth prose avoids legacy repetitive synthesis stems", () => {
+  const profiles = [
+    generateOfflineCodexProfile(
+      { ...BASE, name: "Ada Lovelace", birthDate: "1815-12-10" },
+      { id: "offline-repetition-a", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
+    ),
+    generateOfflineCodexProfile(
+      { ...BASE, name: "Grace Hopper", birthDate: "1906-12-09" },
+      { id: "offline-repetition-b", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
+    ),
+    generateOfflineCodexProfile(
+      { ...BASE, name: "Katherine Johnson", birthDate: "1918-08-26" },
+      { id: "offline-repetition-c", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
+    ),
+  ];
+
+  const rendered = profiles.flatMap((profile) =>
+    Object.values(profile.depthInterpretation)
+      .filter((value): value is { summary: string; explanation: string } =>
+        Boolean(value) &&
+        typeof value === "object" &&
+        "summary" in value &&
+        "explanation" in value,
+      )
+      .flatMap((layer) => [layer.summary, layer.explanation]),
+  ).join("\n");
+
+  assert.doesNotMatch(rendered, /A central pattern emphasizes/i);
+  assert.doesNotMatch(rendered, /The pattern may be trying to preserve/i);
+  assert.doesNotMatch(rendered, /The numerology layer adds a theme/i);
+  assert.doesNotMatch(rendered, /Protection may become organized around/i);
+});
