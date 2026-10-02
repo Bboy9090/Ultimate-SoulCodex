@@ -85,10 +85,15 @@ interface SynastryResult {
 
 // Convert sign + degree to absolute longitude (0-360°)
 function getAbsoluteLongitude(sign: string, degree: number): number {
-  const signOrder = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
+  const signOrder = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                      'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
   const signIndex = signOrder.indexOf(sign);
-  if (signIndex === -1) return 0;
+  if (signIndex === -1) {
+    throw new RangeError(`Unsupported zodiac sign: ${sign}`);
+  }
+  if (!Number.isFinite(degree) || degree < 0 || degree >= 30) {
+    throw new RangeError(`Degree within sign must be finite and in [0, 30): ${degree}`);
+  }
   return signIndex * 30 + degree;
 }
 
