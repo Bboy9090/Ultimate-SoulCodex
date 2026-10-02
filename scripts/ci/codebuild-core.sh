@@ -30,6 +30,7 @@ node --import tsx --test \
   tests/astrology-production-verification.test.ts \
   tests/ascendant-verification.test.ts \
   tests/ascendant-retry-contract.test.ts \
+  tests/polar-angle-accuracy.test.ts \
   tests/bobby-big-three-golden.test.ts \
   tests/human-design-trust.test.ts \
   tests/profile-verification-reconciliation.test.ts \
@@ -38,6 +39,7 @@ node --import tsx --test \
   tests/compatibility-data-minimization.test.ts \
   tests/compatibility-profile-contract.test.ts \
   tests/compatibility-http-integration.test.ts \
+  tests/synastry-input-validation.test.ts \
   tests/compatibility-evidence-boundary.test.ts \
   tests/release-identity.test.ts \
   tests/billing-security.test.ts \
