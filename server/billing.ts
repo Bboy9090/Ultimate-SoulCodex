@@ -637,6 +637,7 @@ export function registerBillingRoutes(app: Express): void {
         "apple_product_mismatch",
         "apple_transaction_mismatch",
         "apple_product_not_allowed",
+        "apple_account_binding_mismatch",
         "google_play_verifier_not_configured",
         "google_play_service_account_invalid",
         "google_play_oauth_failed",
@@ -645,6 +646,8 @@ export function registerBillingRoutes(app: Express): void {
         "google_play_product_not_allowed",
         "google_play_purchase_time_invalid",
         "google_play_expiry_time_invalid",
+        "google_play_acknowledgement_failed",
+        "google_play_account_binding_mismatch",
         "billing_event_replay_mismatch",
         "billing_subject_user_not_found",
       ]);
