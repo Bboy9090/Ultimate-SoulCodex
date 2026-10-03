@@ -133,8 +133,6 @@
     "sharp": "0.35.4",
     "stripe": "^20.1.0",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
-    "tw-animate-css": "^1.2.5",
     "vaul": "^1.1.2",
     "vite": "8.2.0",
     "web-push": "^3.6.7",
@@ -166,13 +164,17 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "tailwindcss-animate": "^1.0.7",
+    "tw-animate-css": "^1.2.5"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
   },
   "overrides": {
     "qs": "$qs",
-    "brace-expansion": "5.0.12"
+    "brace-expansion": "5.0.12",
+    "dompurify": "3.4.16",
+    "ip-address": "10.7.3"
   }
 }
