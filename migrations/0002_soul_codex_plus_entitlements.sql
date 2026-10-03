@@ -18,6 +18,7 @@ CREATE TABLE "billing_transaction_events" (
   "plan" text NOT NULL,
   "environment" text NOT NULL,
   "event_type" text NOT NULL,
+  "provider_occurred_at" timestamp NOT NULL,
   "verification_state" text NOT NULL,
   "purchased_at" timestamp,
   "expires_at" timestamp,
