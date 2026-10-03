@@ -134,6 +134,34 @@ function stripePriceIdForPlan(plan: "monthly" | "annual"): string | null {
   return plan === "annual" ? stripeAnnualPriceId() : stripeMonthlyPriceId();
 }
 
+export function buildStripeCheckoutSessionParams(input: {
+  userId: string;
+  email?: string | null;
+  plan: "monthly" | "annual";
+  priceId: string;
+  appUrl: string;
+}): Stripe.Checkout.SessionCreateParams {
+  return {
+    mode: "subscription",
+    line_items: [{ price: input.priceId, quantity: 1 }],
+    success_url: `${input.appUrl}/pricing?checkout=success`,
+    cancel_url: `${input.appUrl}/pricing?checkout=canceled`,
+    client_reference_id: input.userId,
+    customer_email: input.email ?? undefined,
+    metadata: {
+      soulCodexUserId: input.userId,
+      soulCodexPlan: input.plan,
+    },
+    subscription_data: {
+      metadata: {
+        soulCodexUserId: input.userId,
+        soulCodexPlan: input.plan,
+      },
+    },
+    allow_promotion_codes: false,
+  };
+}
+
 function secondsToDate(value: unknown): Date | null {
   const seconds = typeof value === "number" ? value : Number(value);
   return Number.isFinite(seconds) && seconds > 0
@@ -403,25 +431,15 @@ export function registerBillingRoutes(app: Express): void {
     }
 
     try {
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${appUrl}/pricing?checkout=success`,
-        cancel_url: `${appUrl}/pricing?checkout=canceled`,
-        client_reference_id: userId,
-        customer_email: user.email ?? undefined,
-        metadata: {
-          soulCodexUserId: userId,
-          soulCodexPlan: parsed.data.plan,
-        },
-        subscription_data: {
-          metadata: {
-            soulCodexUserId: userId,
-            soulCodexPlan: parsed.data.plan,
-          },
-        },
-        allow_promotion_codes: false,
-      });
+      const session = await stripe.checkout.sessions.create(
+        buildStripeCheckoutSessionParams({
+          userId,
+          email: user.email,
+          plan: parsed.data.plan,
+          priceId,
+          appUrl,
+        }),
+      );
 
       if (!session.url) {
         throw new Error("stripe_checkout_url_missing");
