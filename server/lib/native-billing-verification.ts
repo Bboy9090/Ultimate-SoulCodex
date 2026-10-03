@@ -175,7 +175,10 @@ function dateFromMilliseconds(value: unknown): Date | null {
 }
 
 function environmentFromApple(value: unknown): "sandbox" | "production" {
-  return String(value).toLowerCase() === "sandbox" ? "sandbox" : "production";
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (normalized === "sandbox") return "sandbox";
+  if (normalized === "production") return "production";
+  throw new Error("apple_environment_invalid");
 }
 
 function allowedAppleEnvironments(): Set<"sandbox" | "production"> {
