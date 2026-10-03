@@ -65,5 +65,5 @@ CREATE TABLE "billing_verification_receipts" (
   "created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX "billing_verification_receipts_transaction_idx"
+CREATE UNIQUE INDEX "billing_verification_receipts_transaction_unique"
   ON "billing_verification_receipts" ("transaction_event_id");
