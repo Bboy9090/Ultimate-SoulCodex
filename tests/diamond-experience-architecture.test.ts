@@ -57,3 +57,20 @@ test("monetization contract requires durable subscription entitlement truth", ()
   assert.match(contract, /server owns the entitlement state/i);
   assert.match(contract, /Restore Purchases works after reinstall/i);
 });
+
+
+test("connections surface uses the five transparent relationship dimensions", () => {
+  const compatibility = readFileSync(new URL("../client/src/pages/CompatibilityHubPage.tsx", import.meta.url), "utf8");
+  for (const label of [
+    "Communication",
+    "Emotional rhythm",
+    "Attraction & chemistry",
+    "Life direction",
+    "Human Design context",
+  ]) {
+    assert.ok(compatibility.includes(label), `missing relationship dimension: ${label}`);
+  }
+  assert.match(compatibility, /advanced_connections/);
+  assert.match(compatibility, /Unlock with Soul Codex\+/);
+  assert.match(compatibility, /No universal verdict/);
+});
