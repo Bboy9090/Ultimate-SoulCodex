@@ -1,7 +1,7 @@
 import { Link } from "wouter";
-import { Capacitor } from "@capacitor/core";
 import { Check, Crown, ShieldCheck } from "lucide-react";
 import Navigation from "@/components/navigation";
+import SoulCodexPlusBillingPanel from "@/components/SoulCodexPlusBillingPanel";
 
 const foundationFeatures = [
   "One active profile with your supported Big 3",
@@ -12,7 +12,7 @@ const foundationFeatures = [
   "Diamond Way clarity, depth, and one next move",
 ];
 
-const plannedPremiumFeatures = [
+const livePremiumFeatures = [
   "Everything in Free",
   "Full governed numerology: Expression, Soul Urge, Personality, and Maturity when a complete birth name is available",
   "Verified Human Design Type, Strategy, Authority, and Profile",
@@ -29,8 +29,6 @@ const roadmapFeatures = [
 ];
 
 export default function PricingPage() {
-  const isNative = Capacitor.isNativePlatform();
-
   return (
     <div className="sc-app-shell">
       <Navigation />
@@ -63,14 +61,10 @@ export default function PricingPage() {
             </div>
             <h2 className="mt-3 font-serif text-3xl font-semibold">Soul Codex+</h2>
             <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">
-              {isNative
-                ? "Monthly and annual Soul Codex+ access will activate only after StoreKit / Play Billing and durable entitlement verification pass release gates."
-                : "Soul Codex+ will use monthly and annual plans once the verified subscription path is enabled. Pricing comes from the active store catalog, not hard-coded app logic."}
+              Soul Codex+ uses the same accuracy standard as Free. Purchase availability and localized pricing come from the qualified platform billing path rather than hard-coded app values.
             </p>
-            <FeatureList features={plannedPremiumFeatures} />
-            <div className="mt-auto rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-stone)]">
-              Soul Codex+ · activation pending billing certification
-            </div>
+            <FeatureList features={livePremiumFeatures} />
+            <SoulCodexPlusBillingPanel />
           </article>
         </section>
 
@@ -89,8 +83,8 @@ export default function PricingPage() {
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <Faq question="Do I need to recreate my profile?" answer="No. Identity, Reading, Timeline, and Compatibility reuse the same saved profile." />
             <Faq question="What does Soul Codex+ actually unlock?" answer="Only the capabilities listed as included now: full-name numerology, verified Human Design core, up to five qualified Daily influences, and the evidence-aware natal PDF report. Roadmap features are shown separately and are not sold yet. Accuracy is never paywalled." />
-            <Faq question="Where would card details be entered?" answer="Soul Codex does not contain raw card-number, expiration, CVC, or CVV fields. The server also rejects those fields if they are sent to retired or hosted-checkout boundaries." />
-            <Faq question="Why is purchasing unavailable here?" answer={isNative ? "This native release candidate exposes no purchase action until StoreKit / Play Billing, restore, revocation, and durable entitlement verification pass." : "The paid layer is defined, but purchase activation remains a separate release gate. The app will not imply an active subscription path before billing truth is verified."} />
+            <Faq question="When does paid access begin?" answer="Only after the payment provider's signed subscription evidence is verified by Soul Codex and creates a valid durable entitlement. A return page or local flag never grants Plus." />
+            <Faq question="Where are card details entered?" answer="Soul Codex does not contain raw card-number, expiration, CVC, or CVV fields. When a qualified purchase path is active, payment details stay on the approved provider or app-store surface." />
           </div>
         </section>
 
