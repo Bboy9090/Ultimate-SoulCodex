@@ -64,6 +64,22 @@ Current phase:
 - Native StoreKit 2 and Google Play Billing purchase initiation and restore are not yet active.
 - A configured verification adapter does not imply that purchasing is enabled.
 
+### Web checkout implementation status
+
+The server now contains an authenticated monthly/annual Stripe Checkout session boundary, but activation remains explicitly feature-flagged off by default.
+
+Requirements before enabling `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=true`:
+- durable PostgreSQL entitlement storage is ready;
+- signed subscription webhook verification is configured;
+- both monthly and annual Stripe price IDs are configured;
+- production `PUBLIC_APP_URL` is valid;
+- the request resolves an authenticated server session account;
+- sandbox subscription creation, renewal, cancellation, expiration, refund/revocation, and restore/access checks pass;
+- the web product has a supported canonical sign-in path.
+
+Native iOS/Android builds must not use this web Stripe switch as a substitute for StoreKit 2 or Google Play Billing.
+
+
 ## Non-negotiable gates
 
 - Additive database migration matches the active schema and has a tested rollback.
