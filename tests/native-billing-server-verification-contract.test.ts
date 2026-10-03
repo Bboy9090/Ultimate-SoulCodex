@@ -56,3 +56,16 @@ test("native purchase passes authenticated account id into store account binding
   assert.match(verifier, /payload\.appAccountToken\.toLowerCase\(\) !== userId\.toLowerCase\(\)/);
   assert.match(verifier, /obfuscatedExternalAccountId !== userId/);
 });
+
+
+test("native entitlement effective time is not pushed to the future by a current period expiry", () => {
+  assert.match(verifier, /accessStatus === "expired" \? expiresAt : null/);
+  assert.match(verifier, /purchaseDate \?\? now/);
+  assert.match(verifier, /accessStatus === "expired"[\s\S]*expiresAt \?\? purchasedAt \?\? now[\s\S]*purchasedAt \?\? now/);
+});
+
+test("Apple environment parsing fails closed for unknown signed values", () => {
+  assert.match(verifier, /normalized === "sandbox"/);
+  assert.match(verifier, /normalized === "production"/);
+  assert.match(verifier, /throw new Error\("apple_environment_invalid"\)/);
+});
