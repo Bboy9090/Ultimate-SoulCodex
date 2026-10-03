@@ -100,6 +100,58 @@ export const publicProfileShares = pgTable("public_profile_shares", {
   revokedAt: timestamp("revoked_at"),
 });
 
+
+export const billingSubjects = pgTable("billing_subjects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  status: text("status").notNull().default("active"),
+  anonymizedAt: timestamp("anonymized_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const storeTransactionEvents = pgTable("store_transaction_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  billingSubjectId: varchar("billing_subject_id").notNull(),
+  provider: text("provider").notNull(),
+  environment: text("environment").notNull(),
+  externalTransactionId: text("external_transaction_id").notNull(),
+  originalTransactionId: text("original_transaction_id"),
+  productId: text("product_id").notNull(),
+  eventType: text("event_type").notNull(),
+  purchaseStatus: text("purchase_status").notNull(),
+  purchasedAt: timestamp("purchased_at"),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  payloadDigest: text("payload_digest").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const entitlementGrants = pgTable("entitlement_grants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  billingSubjectId: varchar("billing_subject_id").notNull(),
+  capability: text("capability").notNull(),
+  sourceEventId: varchar("source_event_id").notNull(),
+  status: text("status").notNull(),
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at"),
+  revokedAt: timestamp("revoked_at"),
+  lastVerifiedAt: timestamp("last_verified_at").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const billingVerificationReceipts = pgTable("billing_verification_receipts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storeEventId: varchar("store_event_id").notNull(),
+  providerEventId: text("provider_event_id").notNull(),
+  verifier: text("verifier").notNull(),
+  outcome: text("outcome").notNull(),
+  reasonCode: text("reason_code"),
+  payloadDigest: text("payload_digest").notNull(),
+  verifiedAt: timestamp("verified_at").notNull().default(sql`now()`),
+});
+
 export const assessmentResponses = pgTable("assessment_responses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull(),
