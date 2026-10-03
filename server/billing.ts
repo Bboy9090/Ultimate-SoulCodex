@@ -633,6 +633,7 @@ export function registerBillingRoutes(app: Express): void {
         "apple_jws_malformed",
         "apple_jws_header_invalid",
         "apple_jws_signature_invalid",
+        "apple_environment_invalid",
         "apple_bundle_mismatch",
         "apple_product_mismatch",
         "apple_transaction_mismatch",
