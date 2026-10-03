@@ -25,7 +25,10 @@ test("Apple verification checks signed JWS, trusted chain, app, product, account
   assert.match(verifier, /apple_transaction_mismatch/);
   assert.match(verifier, /apple_account_binding_mismatch/);
   assert.match(verifier, /APPLE_IAP_ALLOWED_ENVIRONMENTS/);
+  assert.match(verifier, /apple_environment_invalid/);
+  assert.match(verifier, /normalized === "production"/);
   assert.match(verifier, /apple_environment_mismatch/);
+  assert.match(billing, /"apple_environment_invalid"/);
 });
 
 test("Google verification uses Play Developer API, binds account, and acknowledges only after verification", () => {
