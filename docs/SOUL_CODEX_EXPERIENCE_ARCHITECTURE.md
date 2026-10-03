@@ -163,23 +163,28 @@ Free must remain useful enough to establish trust. Do not deliberately degrade c
 
 ### Paid — Soul Codex+
 
-Paid access unlocks:
+The current paid promise includes only capabilities marked live in the central product-access registry:
 
-- full natal chart interpretation;
-- all verified planets, houses, aspects, Midheaven, Nodes, and Chiron;
-- full governed numerology including Expression, Soul Urge, Personality, and Maturity when full birth name is available;
-- verified Human Design Type, Strategy, Authority, Profile, centers, channels, and deeper synthesis;
-- richer Daily synthesis with up to five strongest current influences;
-- advanced transit interpretation and timeline history;
-- multi-system cross-synthesis across astrology, numerology, Human Design, and behavioral self-report;
-- full Connections analysis across Communication, Emotional Rhythm, Attraction & Chemistry, Life Direction, and verified Human Design context;
-- deeper chart-to-chart comparisons;
-- saved relationship history and recurring comparison updates;
-- advanced Diamond Way readings and deeper drill-downs;
-- premium personalized tarot/card generation when available;
-- expanded profile and relationship storage;
-- premium export/share formats;
-- future premium intelligence features governed by the same evidence rules.
+- full governed numerology including Expression, Soul Urge, Personality, and Maturity when a complete birth name is available;
+- verified Human Design Type, Strategy, Authority, and Profile;
+- richer Daily synthesis with up to five qualified current influences;
+- the evidence-aware downloadable natal PDF report.
+
+These capabilities must have an end-to-end implementation path, entitlement gate, and regression coverage before they appear as included paid value.
+
+### Paid roadmap — not sold yet
+
+The following remain planned and must not be advertised as included in current Soul Codex+ until their complete product paths are qualified:
+
+- full natal chart premium surface with all qualified planets, houses, aspects, Midheaven, Nodes, and Chiron;
+- Human Design centers, channels, and deeper interaction synthesis;
+- advanced transit interpretation;
+- Timeline history;
+- five-dimension multi-system Connections;
+- deeper cross-system synthesis;
+- premium personalized tarot/card generation.
+
+A planned capability is unavailable to both Free and Plus users until its registry state changes from `planned` to `live`.
 
 ### Paywall rule
 
