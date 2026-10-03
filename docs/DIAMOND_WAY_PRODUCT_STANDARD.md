@@ -23,6 +23,18 @@ Every meaningful reading follows six moves.
 
 This is the default quality bar for Identity, Compatibility, Timeline, Daily Pulse, Soul Guide, and future AI-generated interpretation.
 
+## Closure Protocol
+
+Every interaction, screen, and generated insight must resolve through three final moves:
+
+1. **Clarity** — state the one thing that matters most in plain language.
+2. **Depth** — show the smallest sufficient explanation of the evidence and systems supporting that conclusion.
+3. **Next move** — end with one concrete action, experiment, boundary, question, or conversation.
+
+This closure is mandatory for Home/Today, Identity, Compatibility, Timeline, and AI-generated readings.
+
+A reading that ends in theory without a next move is incomplete.
+
 ## Identity Integrity
 
 No profile may silently inherit another profile's language.
