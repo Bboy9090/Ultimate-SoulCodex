@@ -69,6 +69,7 @@ jobs:
             tests/diamond-depth-engine.test.ts \
             tests/ultimate-codex-synthesis.test.ts \
             tests/ultimate-codex-ui-contract.test.ts \
+            tests/diamond-experience-architecture.test.ts \
             tests/astrology-atlas.test.ts \
             tests/personal-astrology-atlas.test.ts \
             tests/system-registry-contract.test.ts \
