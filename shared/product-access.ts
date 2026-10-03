@@ -19,68 +19,81 @@ export type SoulCodexCapability =
   | "premium_exports"
   | "premium_tarot";
 
+export type CapabilityAvailability = "live" | "planned";
+
 export type CapabilityDefinition = {
   minimumTier: SoulCodexTier;
+  availability: CapabilityAvailability;
   label: string;
   upgradeReason?: string;
 };
 
 export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefinition> = {
-  core_profile: { minimumTier: "free", label: "Core profile" },
-  big_three: { minimumTier: "free", label: "Supported Big 3" },
-  date_numerology: { minimumTier: "free", label: "Date-based numerology" },
-  evidence_provenance: { minimumTier: "free", label: "Evidence and provenance" },
-  diamond_closure: { minimumTier: "free", label: "Diamond Way closure" },
-  basic_connections: { minimumTier: "free", label: "Basic Connections" },
-  basic_compatibility: { minimumTier: "free", label: "Basic compatibility" },
+  core_profile: { minimumTier: "free", availability: "live", label: "Core profile" },
+  big_three: { minimumTier: "free", availability: "live", label: "Supported Big 3" },
+  date_numerology: { minimumTier: "free", availability: "live", label: "Date-based numerology" },
+  evidence_provenance: { minimumTier: "free", availability: "live", label: "Evidence and provenance" },
+  diamond_closure: { minimumTier: "free", availability: "live", label: "Diamond Way closure" },
+  basic_connections: { minimumTier: "free", availability: "live", label: "Basic Connections" },
+  basic_compatibility: { minimumTier: "free", availability: "live", label: "Basic compatibility" },
 
   full_natal_chart: {
     minimumTier: "plus",
+    availability: "planned",
     label: "Full natal chart",
     upgradeReason: "Unlock all qualified planets, houses, aspects, angles, Nodes, and Chiron.",
   },
   full_name_numerology: {
     minimumTier: "plus",
+    availability: "live",
     label: "Full name numerology",
     upgradeReason: "Unlock Expression, Soul Urge, Personality, and Maturity when a complete birth name is available.",
   },
   human_design_depth: {
     minimumTier: "plus",
+    availability: "live",
     label: "Human Design depth",
     upgradeReason: "Unlock verified Type, Strategy, Authority, Profile, centers, channels, and deeper synthesis.",
   },
   advanced_daily: {
     minimumTier: "plus",
+    availability: "live",
     label: "Advanced Daily",
     upgradeReason: "See up to five strongest qualified influences and deeper cross-system synthesis.",
   },
   advanced_transits: {
     minimumTier: "plus",
+    availability: "planned",
     label: "Advanced transits",
     upgradeReason: "Unlock deeper transit interpretation and timing intelligence.",
   },
   timeline_history: {
     minimumTier: "plus",
+    availability: "planned",
     label: "Timeline history",
     upgradeReason: "Unlock deeper historical timing context and continuity.",
   },
   advanced_connections: {
     minimumTier: "plus",
+    availability: "planned",
     label: "Advanced Connections",
     upgradeReason: "Unlock communication, emotional rhythm, attraction, life direction, and verified Human Design context.",
   },
   cross_system_synthesis: {
     minimumTier: "plus",
+    availability: "planned",
     label: "Cross-system synthesis",
     upgradeReason: "Unlock deeper synthesis across qualified astrology, numerology, Human Design, and behavioral evidence.",
   },
   premium_exports: {
     minimumTier: "plus",
+    availability: "live",
     label: "Premium exports",
     upgradeReason: "Unlock premium report and sharing formats.",
   },
   premium_tarot: {
     minimumTier: "plus",
+    availability: "planned",
     label: "Premium personalized tarot",
     upgradeReason: "Unlock premium personalized card generation when the feature is available.",
   },
@@ -95,7 +108,9 @@ export function tierAllowsCapability(
   tier: SoulCodexTier,
   capability: SoulCodexCapability,
 ): boolean {
-  return TIER_RANK[tier] >= TIER_RANK[SOUL_CODEX_CAPABILITIES[capability].minimumTier];
+  const definition = SOUL_CODEX_CAPABILITIES[capability];
+  return definition.availability === "live" &&
+    TIER_RANK[tier] >= TIER_RANK[definition.minimumTier];
 }
 
 export function capabilityUpgradeReason(capability: SoulCodexCapability): string | null {
@@ -113,6 +128,7 @@ export type CapabilityGate = {
   allowed: boolean;
   label: string;
   upgradeReason: string | null;
+  availability: CapabilityAvailability;
 };
 
 export function resolveCapabilityGate(
@@ -126,5 +142,6 @@ export function resolveCapabilityGate(
     allowed: tierAllowsCapability(tier, capability),
     label: definition.label,
     upgradeReason: definition.upgradeReason ?? null,
+    availability: definition.availability,
   };
 }
