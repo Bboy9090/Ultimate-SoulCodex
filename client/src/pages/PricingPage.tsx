@@ -41,7 +41,7 @@ export default function PricingPage() {
             Start with the Foundation.
           </h1>
           <p className="sc-lede mx-auto mt-5 max-w-3xl">
-            Free gives you a real Soul Codex experience. Soul Codex+ unlocks more depth, continuity, and cross-system intelligence without changing the accuracy standard.
+            Free gives you a real Soul Codex experience. Soul Codex+ unlocks the additional qualified capabilities listed below without changing the accuracy standard.
           </p>
         </header>
 
