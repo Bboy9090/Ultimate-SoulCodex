@@ -289,7 +289,10 @@ export class MemStorage implements IStorage {
     if (!subject) return undefined;
     return [...this.entitlementRecords.values()]
       .filter((grant) => grant.billingSubjectId === subject.id && grant.capability === capability)
-      .sort((a, b) => b.lastVerifiedAt.getTime() - a.lastVerifiedAt.getTime())[0];
+      .sort((a, b) => {
+        const occurrenceDelta = b.effectiveAt.getTime() - a.effectiveAt.getTime();
+        return occurrenceDelta || b.lastVerifiedAt.getTime() - a.lastVerifiedAt.getTime();
+      })[0];
   }
   async deleteSessionData(sessionId: string): Promise<void> {
     const profileIds = [...this.profiles.values()]
@@ -485,7 +488,7 @@ class PostgresStorage implements IStorage {
         eq(entitlementGrants.billingSubjectId, subject.id),
         eq(entitlementGrants.capability, capability),
       ))
-      .orderBy(desc(entitlementGrants.lastVerifiedAt))
+      .orderBy(desc(entitlementGrants.effectiveAt), desc(entitlementGrants.lastVerifiedAt))
       .limit(1))[0];
   }
   async deleteSessionData(sessionId: string): Promise<void> {
