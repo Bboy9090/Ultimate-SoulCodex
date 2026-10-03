@@ -8,7 +8,6 @@ import {
   verifiedStripeSubscriptionEvent,
 } from "../server/billing.ts";
 
-const profileId = "profile-12345678";
 const serverRoutesSource = readFileSync("server/routes.ts", "utf8");
 const billingSource = readFileSync("server/billing.ts", "utf8");
 
@@ -19,6 +18,8 @@ function withStripeCatalog<T>(fn: () => T): T {
     monthly: process.env.STRIPE_PLUS_MONTHLY_PRICE_ID,
     annual: process.env.STRIPE_PLUS_ANNUAL_PRICE_ID,
     databaseUrl: process.env.DATABASE_URL,
+    publicAppUrl: process.env.PUBLIC_APP_URL,
+    checkoutEnabled: process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED,
   };
 
   try {
@@ -27,6 +28,7 @@ function withStripeCatalog<T>(fn: () => T): T {
     process.env.STRIPE_PLUS_MONTHLY_PRICE_ID = "price_plus_monthly";
     process.env.STRIPE_PLUS_ANNUAL_PRICE_ID = "price_plus_annual";
     process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/soulcodex";
+    process.env.PUBLIC_APP_URL = "https://soulcodex.example.com";
     return fn();
   } finally {
     for (const [key, value] of Object.entries(previous)) {
@@ -35,47 +37,57 @@ function withStripeCatalog<T>(fn: () => T): T {
         key === "webhook" ? "STRIPE_WEBHOOK_SECRET" :
         key === "monthly" ? "STRIPE_PLUS_MONTHLY_PRICE_ID" :
         key === "annual" ? "STRIPE_PLUS_ANNUAL_PRICE_ID" :
-        "DATABASE_URL";
+        key === "databaseUrl" ? "DATABASE_URL" :
+        key === "publicAppUrl" ? "PUBLIC_APP_URL" :
+        "SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED";
       if (value === undefined) delete process.env[envKey];
       else process.env[envKey] = value;
     }
   }
 }
 
-test("checkout accepts only the retired profile capability request shape", () => {
-  assert.deepEqual(parseCheckoutRequest({ profileId }), { profileId });
+test("checkout accepts only a monthly or annual plan; account identity is not client-supplied", () => {
+  assert.deepEqual(parseCheckoutRequest({ plan: "monthly" }), { plan: "monthly" });
+  assert.deepEqual(parseCheckoutRequest({ plan: "annual" }), { plan: "annual" });
 
   assert.throws(
-    () =>
-      parseCheckoutRequest({
-        profileId,
-        cardNumber: "4111111111111111",
-      }),
+    () => parseCheckoutRequest({ plan: "monthly", userId: "spoofed-user" }),
     /unrecognized/i,
+  );
+  assert.throws(
+    () => parseCheckoutRequest({ plan: "monthly", profileId: "profile-12345678" }),
+    /unrecognized/i,
+  );
+  assert.throws(
+    () => parseCheckoutRequest({ plan: "weekly" }),
   );
 });
 
 test("raw payment fields are rejected before any checkout handling", () => {
-  assert.equal(containsRawPaymentFields({ profileId }), false);
-  assert.equal(containsRawPaymentFields({ profileId, cardNumber: "4111" }), true);
-  assert.equal(containsRawPaymentFields({ profileId, cvv: "123" }), true);
-  assert.equal(containsRawPaymentFields({ profileId, cvc: "123" }), true);
-  assert.equal(containsRawPaymentFields({ profileId, expiryDate: "12/30" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly" }), false);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", cardNumber: "4111" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", cvv: "123" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", cvc: "123" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", expiryDate: "12/30" }), true);
 });
 
 test("legacy profile upgrade and one-time Stripe payment stay retired", () => {
   assert.match(serverRoutesSource, /direct_card_upgrade_retired/);
-  assert.match(billingSource, /legacy_checkout_retired/);
   assert.doesNotMatch(billingSource, /mode:\s*"payment"/);
+  assert.match(billingSource, /mode:\s*"subscription"/);
   assert.doesNotMatch(serverRoutesSource, /updateProfile\([^)]*\{\s*isPremium:\s*true\s*\}/);
 });
 
-test("billing status separates webhook verification from purchase activation", () => {
-  const previousDatabase = process.env.DATABASE_URL;
-  const previousSecret = process.env.STRIPE_SECRET_KEY;
-  const previousWebhook = process.env.STRIPE_WEBHOOK_SECRET;
-  const previousMonthly = process.env.STRIPE_PLUS_MONTHLY_PRICE_ID;
-  const previousAnnual = process.env.STRIPE_PLUS_ANNUAL_PRICE_ID;
+test("billing status keeps checkout disabled until the explicit feature flag is on", () => {
+  const previous = {
+    database: process.env.DATABASE_URL,
+    secret: process.env.STRIPE_SECRET_KEY,
+    webhook: process.env.STRIPE_WEBHOOK_SECRET,
+    monthly: process.env.STRIPE_PLUS_MONTHLY_PRICE_ID,
+    annual: process.env.STRIPE_PLUS_ANNUAL_PRICE_ID,
+    appUrl: process.env.PUBLIC_APP_URL,
+    enabled: process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED,
+  };
 
   try {
     delete process.env.DATABASE_URL;
@@ -83,6 +95,8 @@ test("billing status separates webhook verification from purchase activation", (
     delete process.env.STRIPE_WEBHOOK_SECRET;
     delete process.env.STRIPE_PLUS_MONTHLY_PRICE_ID;
     delete process.env.STRIPE_PLUS_ANNUAL_PRICE_ID;
+    delete process.env.PUBLIC_APP_URL;
+    delete process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED;
 
     assert.deepEqual(getBillingStatus(), {
       enabled: false,
@@ -92,10 +106,12 @@ test("billing status separates webhook verification from purchase activation", (
       subscriptionWebhookVerification: false,
       monthlyProductConfigured: false,
       annualProductConfigured: false,
+      authenticatedCheckout: false,
       reason: "not_configured",
     });
 
     withStripeCatalog(() => {
+      delete process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED;
       assert.deepEqual(getBillingStatus(), {
         enabled: false,
         provider: "stripe_checkout",
@@ -104,20 +120,31 @@ test("billing status separates webhook verification from purchase activation", (
         subscriptionWebhookVerification: true,
         monthlyProductConfigured: true,
         annualProductConfigured: true,
+        authenticatedCheckout: false,
         reason: "subscription_checkout_not_qualified",
+      });
+
+      process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED = "true";
+      assert.deepEqual(getBillingStatus(), {
+        enabled: true,
+        provider: "stripe_checkout",
+        collectsCardDataOnSoulCodex: false,
+        persistentEntitlements: true,
+        subscriptionWebhookVerification: true,
+        monthlyProductConfigured: true,
+        annualProductConfigured: true,
+        authenticatedCheckout: true,
+        reason: null,
       });
     });
   } finally {
-    if (previousDatabase === undefined) delete process.env.DATABASE_URL;
-    else process.env.DATABASE_URL = previousDatabase;
-    if (previousSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
-    else process.env.STRIPE_SECRET_KEY = previousSecret;
-    if (previousWebhook === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
-    else process.env.STRIPE_WEBHOOK_SECRET = previousWebhook;
-    if (previousMonthly === undefined) delete process.env.STRIPE_PLUS_MONTHLY_PRICE_ID;
-    else process.env.STRIPE_PLUS_MONTHLY_PRICE_ID = previousMonthly;
-    if (previousAnnual === undefined) delete process.env.STRIPE_PLUS_ANNUAL_PRICE_ID;
-    else process.env.STRIPE_PLUS_ANNUAL_PRICE_ID = previousAnnual;
+    if (previous.database === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = previous.database;
+    if (previous.secret === undefined) delete process.env.STRIPE_SECRET_KEY; else process.env.STRIPE_SECRET_KEY = previous.secret;
+    if (previous.webhook === undefined) delete process.env.STRIPE_WEBHOOK_SECRET; else process.env.STRIPE_WEBHOOK_SECRET = previous.webhook;
+    if (previous.monthly === undefined) delete process.env.STRIPE_PLUS_MONTHLY_PRICE_ID; else process.env.STRIPE_PLUS_MONTHLY_PRICE_ID = previous.monthly;
+    if (previous.annual === undefined) delete process.env.STRIPE_PLUS_ANNUAL_PRICE_ID; else process.env.STRIPE_PLUS_ANNUAL_PRICE_ID = previous.annual;
+    if (previous.appUrl === undefined) delete process.env.PUBLIC_APP_URL; else process.env.PUBLIC_APP_URL = previous.appUrl;
+    if (previous.enabled === undefined) delete process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED; else process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED = previous.enabled;
   }
 });
 
