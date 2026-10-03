@@ -1,4 +1,4 @@
-import { createHash, createPublicKey, verify as verifySignature, X509Certificate } from "node:crypto";
+import { createHash, verify as verifySignature, X509Certificate } from "node:crypto";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import type { VerifiedBillingEvent } from "./product-entitlement";
@@ -157,7 +157,7 @@ function verifyAppleSignedTransaction(
     "sha256",
     signedContent,
     {
-      key: createPublicKey(chain[0].publicKey),
+      key: chain[0].publicKey,
       dsaEncoding: "ieee-p1363",
     },
     signature,
@@ -176,6 +176,25 @@ function dateFromMilliseconds(value: unknown): Date | null {
 
 function environmentFromApple(value: unknown): "sandbox" | "production" {
   return String(value).toLowerCase() === "sandbox" ? "sandbox" : "production";
+}
+
+function allowedAppleEnvironments(): Set<"sandbox" | "production"> {
+  const configured = process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS?.trim();
+  if (configured) {
+    const values = configured
+      .split(",")
+      .map((value) => value.trim().toLowerCase())
+      .filter((value): value is "sandbox" | "production" =>
+        value === "sandbox" || value === "production",
+      );
+    if (values.length) return new Set(values);
+  }
+
+  return new Set(
+    process.env.NODE_ENV === "production"
+      ? ["production"]
+      : ["sandbox"],
+  );
 }
 
 export async function verifyAppleBillingEvidence(
@@ -202,6 +221,11 @@ export async function verifyAppleBillingEvidence(
   const plan = planForAppleProduct(payload.productId);
   if (!plan) throw new Error("apple_product_not_allowed");
 
+  const appleEnvironment = environmentFromApple(payload.environment);
+  if (!allowedAppleEnvironments().has(appleEnvironment)) {
+    throw new Error("apple_environment_mismatch");
+  }
+
   const purchaseDate = dateFromMilliseconds(payload.purchaseDate);
   const expiresAt = dateFromMilliseconds(payload.expiresDate);
   const revokedAt = dateFromMilliseconds(payload.revocationDate);
@@ -220,7 +244,7 @@ export async function verifyAppleBillingEvidence(
     providerTransactionId: payload.transactionId,
     productId: payload.productId,
     plan,
-    environment: environmentFromApple(payload.environment),
+    environment: appleEnvironment,
     eventType: revokedAt ? "transaction_revoked" : "transaction_verified",
     occurredAt: revokedAt ?? expiresAt ?? purchaseDate ?? now,
     verificationState: "verified",
@@ -231,7 +255,7 @@ export async function verifyAppleBillingEvidence(
     evidenceDigest: sha256Hex(evidence.signedTransaction),
     diagnosticMetadata: {
       source: "storekit2",
-      environment: environmentFromApple(payload.environment),
+      environment: appleEnvironment,
       hasAppAccountToken: Boolean(payload.appAccountToken),
       originalTransactionBound: Boolean(payload.originalTransactionId),
     },
