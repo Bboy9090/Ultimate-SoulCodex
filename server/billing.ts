@@ -24,7 +24,7 @@ export interface BillingStatus {
   provider: "stripe_checkout";
   collectsCardDataOnSoulCodex: false;
   persistentEntitlements: boolean;
-  reason?: "not_configured";
+  reason?: "not_configured" | "subscription_checkout_not_qualified";
 }
 
 function stripeClient(): Stripe | null {
@@ -53,7 +53,7 @@ function persistentStorageConfigured(): boolean {
 
 export function getBillingStatus(): BillingStatus {
   const persistentEntitlements = persistentStorageConfigured();
-  const enabled = Boolean(
+  const legacyCheckoutConfigured = Boolean(
     persistentEntitlements &&
       process.env.STRIPE_SECRET_KEY?.trim() &&
       process.env.STRIPE_PRICE_ID?.trim() &&
@@ -61,20 +61,19 @@ export function getBillingStatus(): BillingStatus {
       configuredPublicAppUrl(),
   );
 
-  return enabled
-    ? {
-        enabled: true,
-        provider: "stripe_checkout",
-        collectsCardDataOnSoulCodex: false,
-        persistentEntitlements: true,
-      }
-    : {
-        enabled: false,
-        provider: "stripe_checkout",
-        collectsCardDataOnSoulCodex: false,
-        persistentEntitlements,
-        reason: "not_configured",
-      };
+  // Soul Codex+ is a monthly/annual durable entitlement product. The older
+  // one-time Stripe payment flow is deliberately disabled even when its
+  // environment variables are present; charging for a legacy flag that does
+  // not grant current Plus access would violate the product promise.
+  return {
+    enabled: false,
+    provider: "stripe_checkout",
+    collectsCardDataOnSoulCodex: false,
+    persistentEntitlements,
+    reason: legacyCheckoutConfigured
+      ? "subscription_checkout_not_qualified"
+      : "not_configured",
+  };
 }
 
 export function parseCheckoutRequest(input: unknown): { profileId: string } {
@@ -228,68 +227,10 @@ export function registerBillingRoutes(app: Express): void {
       });
     }
 
-    const { profileId } = parsed.data;
-    if (!isProfileCapabilityAuthorized(requestAuthorization(req), profileId)) {
-      return res.status(401).json({
-        message: "Profile authorization is required",
-        code: "profile_authorization_required",
-      });
-    }
-
-    const status = getBillingStatus();
-    if (!status.enabled) {
-      return res.status(503).json({
-        message: status.persistentEntitlements
-          ? "Secure checkout is temporarily unavailable"
-          : "Secure checkout requires persistent profile storage",
-        code: "billing_not_configured",
-      });
-    }
-
-    const profile = await storage.getProfile(profileId);
-    if (!profile) {
-      return res.status(404).json({
-        message: "Profile not found",
-        code: "profile_not_found",
-      });
-    }
-
-    if (profile.isPremium) {
-      return res.status(200).json({ alreadyPremium: true });
-    }
-
-    const stripe = stripeClient();
-    const priceId = process.env.STRIPE_PRICE_ID!.trim();
-    const appUrl = configuredPublicAppUrl()!;
-
-    try {
-      const session = await stripe!.checkout.sessions.create({
-        mode: "payment",
-        line_items: [{ price: priceId, quantity: 1 }],
-        client_reference_id: profileId,
-        metadata: { profileId },
-        success_url: `${appUrl}/profile/${encodeURIComponent(profileId)}?checkout=success`,
-        cancel_url: `${appUrl}/profile/${encodeURIComponent(profileId)}?checkout=cancelled`,
-        allow_promotion_codes: true,
-      });
-
-      if (!session.url) {
-        throw new Error("stripe_checkout_url_missing");
-      }
-
-      return res.status(200).json({
-        url: session.url,
-        provider: "stripe_checkout",
-      });
-    } catch (error) {
-      console.error("[billing-checkout] session creation failed", {
-        profileId,
-        error: error instanceof Error ? error.message : "unknown_error",
-      });
-      return res.status(502).json({
-        message: "Secure checkout could not be started",
-        code: "checkout_session_failed",
-      });
-    }
+    return res.status(410).json({
+      message:
+        "The legacy one-time checkout is retired. Soul Codex+ purchasing will activate only through the qualified monthly/annual entitlement flow.",
+      code: "legacy_checkout_retired",
+    });
   });
 }

@@ -4,7 +4,7 @@
 
 Soul Codex 4.0.1 does not sell native premium access. Identity, Reading, Timeline, the educational Astrology Atlas, and the current Compatibility experience remain available without a purchase. A client screen, callback URL, profile flag, or locally edited value must never grant premium access.
 
-The first paid product should be a non-consumable lifetime unlock unless ongoing, independently valuable services are ready at launch. Auto-renewing monthly or annual subscriptions require recurring value such as durable opt-in sync, continuously refreshed premium reports, or advanced exports. A static natal report alone does not justify a subscription.
+The paid product is Soul Codex+, offered as monthly and annual access only when recurring value is live and qualified. Recurring value includes continuously refreshed Daily synthesis, advanced transit/timing intelligence, deeper Connections, Timeline history, multi-system synthesis, and ongoing premium interpretation surfaces. A static natal report alone does not justify a subscription.
 
 ## Entitlement truth
 
@@ -47,9 +47,9 @@ Stripe Checkout may remain the web purchase surface, but its webhook-verified ev
 
 | Tier | Included value | Release condition |
 |---|---|---|
-| Foundation | Identity, Reading, Timeline, Atlas education, current Compatibility | Always available |
-| Lifetime Unlock | Evidence-aware downloadable reports, advanced exports, deeper comparison tools | Store verification, restore, durable entitlement, deletion/privacy tests |
-| Membership | Ongoing refreshed reports, durable opt-in sync, continuing premium content | Only after recurring value exists and cancellation/expiration flows pass |
+| Free | Core profile, supported Big 3, date-based numerology, limited Daily synthesis, basic Connections, evidence/provenance, Diamond Way closure | Always available |
+| Soul Codex+ Monthly | Full qualified chart depth, richer Daily synthesis, advanced Connections, Timeline history, verified Human Design depth, premium synthesis and exports | Store verification, restore, durable entitlement, cancellation/expiration/revocation tests |
+| Soul Codex+ Annual | Same qualified capabilities as Monthly at the best-value annual cadence | Same release conditions as Monthly |
 
 ## Non-negotiable gates
 

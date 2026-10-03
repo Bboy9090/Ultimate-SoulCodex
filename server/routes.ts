@@ -36,6 +36,8 @@ import {
   buildPublicProfileProjection,
   publicShareSelectionSchema,
 } from "./lib/public-profile-projection";
+import { resolveProductEntitlement } from "./lib/product-entitlement";
+import { tierAllowsCapability } from "@shared/product-access";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -90,6 +92,24 @@ function requireDurableFeature(res: any): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
+
+  app.get("/api/access", async (req: any, res) => {
+    try {
+      const userId = req.session?.userId ?? null;
+      const user = userId ? await storage.getUser(userId) : null;
+      const entitlement = resolveProductEntitlement(user);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.status(200).json(entitlement);
+    } catch (error) {
+      console.error("[ProductAccess] Failed to resolve entitlement:", error);
+      res.status(500).json({
+        tier: "free",
+        source: "free",
+        verified: false,
+        expiresAt: null,
+      });
+    }
+  });
 
   const publicShareReadLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -388,10 +408,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profileId = req.params.id;
       const profile = await storage.getProfile(profileId);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
-      if (!profile.isPremium) {
+      const userId = req.session?.userId ?? null;
+      const user = userId ? await storage.getUser(userId) : null;
+      const entitlement = resolveProductEntitlement(user);
+      if (!tierAllowsCapability(entitlement.tier, "premium_exports")) {
         return res.status(403).json({
-          message: "Premium access required",
-          code: "premium_required",
+          message: "Soul Codex+ access required",
+          code: "soul_codex_plus_required",
         });
       }
 

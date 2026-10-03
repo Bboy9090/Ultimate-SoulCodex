@@ -4,18 +4,28 @@ import { Check, Crown, ShieldCheck } from "lucide-react";
 import Navigation from "@/components/navigation";
 
 const foundationFeatures = [
-  "One local-first profile that reopens offline",
-  "Verified astronomy only when the required inputs and evidence contract support it",
-  "Deterministic numerology with symbolic interpretation kept distinct",
-  "Reading, Timeline, and Compatibility that reuse the same Identity",
-  "Inspectable evidence, uncertainty, exclusions, and limitations",
+  "One active profile with your supported Big 3",
+  "Life Path and date-based numerology",
+  "A limited daily synthesis with up to three qualified influences",
+  "Basic Connections and one bounded relationship comparison",
+  "Why am I seeing this? evidence and uncertainty",
+  "Diamond Way clarity, depth, and one next move",
 ];
 
 const plannedPremiumFeatures = [
-  "Everything in the Foundation experience",
-  "Downloadable personalized Soul Codex report tools",
-  "Evidence-aware Big Three and numerology synthesis",
-  "Additional report/export features only after their release gates pass",
+  "Everything in Free",
+  "Full governed numerology: Expression, Soul Urge, Personality, and Maturity when a complete birth name is available",
+  "Verified Human Design Type, Strategy, Authority, and Profile",
+  "Daily synthesis with up to five qualified current influences",
+  "Evidence-aware downloadable natal PDF report",
+];
+
+const roadmapFeatures = [
+  "Full natal chart premium surface: all qualified planets, houses, aspects, Midheaven, Nodes, and Chiron",
+  "Human Design centers, channels, and deeper interaction synthesis",
+  "Advanced transits and Timeline history",
+  "Five-dimension multi-system Connections",
+  "Premium personalized tarot/card generation",
 ];
 
 export default function PricingPage() {
@@ -31,14 +41,14 @@ export default function PricingPage() {
             Start with the Foundation.
           </h1>
           <p className="sc-lede mx-auto mt-5 max-w-3xl">
-            The current release keeps the core Identity, Reading, Timeline, and Compatibility journey available without pretending planned premium systems are already complete.
+            Free gives you a real Soul Codex experience. Soul Codex+ unlocks the additional qualified capabilities listed below without changing the accuracy standard.
           </p>
         </header>
 
         <section className="mt-8 grid gap-4 md:grid-cols-2">
           <article className="sc-panel sc-panel-gold flex flex-col p-6 sm:p-8">
-            <div className="sc-eyebrow">Available now</div>
-            <h2 className="mt-3 font-serif text-3xl font-semibold">Foundation</h2>
+            <div className="sc-eyebrow">Core clarity</div>
+            <h2 className="mt-3 font-serif text-3xl font-semibold">Free</h2>
             <div className="mt-4 text-3xl font-semibold text-[var(--sc-gold-bright)]">Free</div>
             <FeatureList features={foundationFeatures} />
             <Link href="/create" className="sc-button-primary mt-auto w-full">
@@ -48,20 +58,29 @@ export default function PricingPage() {
 
           <article className="sc-panel flex flex-col p-6 sm:p-8">
             <div className="flex items-center gap-2">
-              <div className="sc-eyebrow">Planned expansion</div>
+              <div className="sc-eyebrow">Deeper intelligence</div>
               <Crown className="h-4 w-4 text-[var(--sc-gold)]" aria-hidden="true" />
             </div>
-            <h2 className="mt-3 font-serif text-3xl font-semibold">Premium report tools</h2>
+            <h2 className="mt-3 font-serif text-3xl font-semibold">Soul Codex+</h2>
             <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">
               {isNative
-                ? "Purchasing is not enabled in this native release candidate. No external checkout link or card-entry flow is exposed here."
-                : "Premium purchasing is not part of this release candidate. Price and included tools will be shown only when the purchase path itself has passed its release and platform gates."}
+                ? "Monthly and annual Soul Codex+ access will activate only after StoreKit / Play Billing and durable entitlement verification pass release gates."
+                : "Soul Codex+ will use monthly and annual plans once the verified subscription path is enabled. Pricing comes from the active store catalog, not hard-coded app logic."}
             </p>
             <FeatureList features={plannedPremiumFeatures} />
             <div className="mt-auto rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-stone)]">
-              Coming after native purchase certification
+              Soul Codex+ · activation pending billing certification
             </div>
           </article>
+        </section>
+
+        <section className="sc-panel mt-4 p-6 sm:p-8">
+          <div className="sc-eyebrow">Roadmap · not sold yet</div>
+          <h2 className="mt-2 font-serif text-3xl font-semibold">Planned, not included in the current paid promise</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+            These features stay outside Soul Codex+ until their complete UI, evidence boundary, entitlement gate, and regression coverage are live.
+          </p>
+          <FeatureList features={roadmapFeatures} />
         </section>
 
         <section className="sc-panel mt-4 p-6 sm:p-8">
@@ -69,9 +88,9 @@ export default function PricingPage() {
           <h2 className="mt-2 font-serif text-3xl font-semibold">Access FAQ</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <Faq question="Do I need to recreate my profile?" answer="No. Identity, Reading, Timeline, and Compatibility reuse the same saved profile." />
-            <Faq question="Does premium include every planned system?" answer="No. A system appears only after its calculation, evidence, privacy, and release contracts pass. Planned work is not sold as implemented work." />
+            <Faq question="What does Soul Codex+ actually unlock?" answer="Only the capabilities listed as included now: full-name numerology, verified Human Design core, up to five qualified Daily influences, and the evidence-aware natal PDF report. Roadmap features are shown separately and are not sold yet. Accuracy is never paywalled." />
             <Faq question="Where would card details be entered?" answer="Soul Codex does not contain raw card-number, expiration, CVC, or CVV fields. The server also rejects those fields if they are sent to retired or hosted-checkout boundaries." />
-            <Faq question="Why is purchasing unavailable here?" answer={isNative ? "This native release candidate intentionally exposes no purchase action while distribution and platform-specific purchase requirements are still being qualified." : "The Foundation release is being qualified first. Premium purchase activation is a separate release decision and is not implied by this page."} />
+            <Faq question="Why is purchasing unavailable here?" answer={isNative ? "This native release candidate exposes no purchase action until StoreKit / Play Billing, restore, revocation, and durable entitlement verification pass." : "The paid layer is defined, but purchase activation remains a separate release gate. The app will not imply an active subscription path before billing truth is verified."} />
           </div>
         </section>
 

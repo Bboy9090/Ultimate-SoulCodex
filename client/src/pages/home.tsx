@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
+import DiamondClosure from "../components/DiamondClosure";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import {
   compatibilityLink,
@@ -11,7 +12,6 @@ import {
 } from "../lib/connectionRepository";
 import {
   ArrowRight,
-  BookOpen,
   HeartHandshake,
   Orbit,
   ShieldCheck,
@@ -57,6 +57,7 @@ export default function Home() {
   }
 
   const { id, name } = getProfileIdentity(profile);
+  const dailyGuidance = typeof (profile as any)?.dailyGuidance === "string" ? (profile as any).dailyGuidance : null;
   const identityHref = id ? `/profile/${id}` : "/create";
   const readingHref = id ? `/reading/${id}` : "/create";
   const leadConnection = connections.find(hasComparableConnectionData) ?? connections[0] ?? null;
@@ -93,36 +94,36 @@ export default function Home() {
 
   const destinations = [
     {
-      href: identityHref,
-      icon: UserRound,
-      label: "Identity",
-      title: "Who am I?",
-      description: "Your saved profile, calculated systems, and evidence status in one coherent map.",
-      accent: "gold",
-    },
-    {
       href: readingHref,
-      icon: BookOpen,
-      label: "Reading",
-      title: "Why do I operate this way?",
-      description: "Patterns, protective functions, hidden needs, gifts, costs, and grounded next moves.",
-      accent: "violet",
+      icon: UserRound,
+      label: "Me",
+      title: "Tell me about me.",
+      description: "A clean synthesis of your Big 3, core numbers, Human Design, and supported lived patterns. Tap deeper only when you want the machinery.",
+      accent: "gold",
     },
     {
       href: "/timeline",
       icon: Orbit,
-      label: "Timeline",
-      title: "Where am I now?",
-      description: "Current symbolic cycles, pressure points, timing context, and what deserves your attention today.",
+      label: "Today",
+      title: "Tell me about today.",
+      description: "Current timing, transits when verified, numerology cycles, and Human Design context resolved into a small number of useful influences.",
       accent: "blue",
     },
     {
       href: "/compatibility",
       icon: HeartHandshake,
-      label: "Compatibility",
-      title: "How do I connect?",
-      description: "Romantic connection, chemistry, communication, friendship, growth, and repair without one universal verdict.",
+      label: "Connections",
+      title: "Tell me about me and this person.",
+      description: "Communication, emotional rhythm, attraction, life direction, and verified Human Design context without hiding the reasons behind the comparison.",
       accent: "teal",
+    },
+    {
+      href: "/systems",
+      icon: ShieldCheck,
+      label: "Why",
+      title: "Explain why.",
+      description: "See what was calculated, what was verified, what is symbolic, what came from your own answers, and what remains unknown.",
+      accent: "violet",
     },
   ] as const;
 
@@ -163,8 +164,8 @@ export default function Home() {
 
             <p className="sc-lede mt-6 max-w-[720px]">
               {profile
-                ? "Your Identity is already here. Continue from what is supported, inspect what remains uncertain, and go deeper without starting over."
-                : "A living Identity across astrology, numerology, Human Design, behavior, timing, and relationships, built to explain patterns without pretending every pattern is a fact."}
+                ? "One clean surface for four questions: who you are, what matters today, how you connect, and why the app reached each conclusion."
+                : "Soul Codex keeps the machinery deep and the surface simple: Me, Today, Connections, and Why."}
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -197,24 +198,15 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="sc-panel sc-panel-gold mb-5 overflow-hidden px-5 py-6 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
-          <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden="true" style={{ background: "radial-gradient(circle at 92% 5%, rgba(154,116,220,.16), transparent 31%), radial-gradient(circle at 14% 100%, rgba(217,182,111,.06), transparent 25%)" }} />
-          <div className="relative grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-            <div>
-              <div className="sc-eyebrow mb-3">Today’s clarity</div>
-              <h2 className="m-0 max-w-[820px] font-serif text-[clamp(1.7rem,4vw,2.85rem)] font-medium leading-[1.12] tracking-[-.025em] text-[var(--sc-ivory)]">
-                Depth is useful only when it leaves you with a clearer next move.
-              </h2>
-              <p className="mb-0 mt-3 max-w-[760px] text-sm leading-7 text-[var(--sc-stone)] sm:text-[15px]">
-                One honest pattern. One limit worth respecting. One action small enough to test in real life. The Codex is here to sharpen your judgment, not replace it.
-              </p>
-            </div>
-            <Link href={profile ? readingHref : identityHref} className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
-              {profile ? "Continue reading" : "Create profile"}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </section>
+        <div className="mb-5">
+          <DiamondClosure
+            clarity={dailyGuidance || "Start with the strongest supported signal. Ignore the noise. Make one useful move."}
+            depth="Today combines only the timing and profile signals that have enough evidence to be shown. Symbolic meaning stays separate from verified calculation."
+            nextMove="Open Today, inspect the three to five strongest current influences, then choose one action small enough to test in real life."
+            nextHref="/timeline"
+            nextLabel="Open Today"
+          />
+        </div>
 
         <section className="mb-5 grid gap-4 lg:grid-cols-[1.15fr_.85fr]" aria-label="Daily and social context">
           <div className="sc-panel p-5 sm:p-6">
@@ -294,7 +286,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Soul Codex destinations">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Soul Codex four core questions">
           {destinations.map(({ href, icon: Icon, label, title, description, accent }) => (
             <Link key={label} href={href} className="sc-panel sc-card-link flex min-h-[238px] flex-col p-5 text-[var(--sc-ivory)] no-underline sm:p-5.5">
               <span className={`mb-8 grid h-10 w-10 place-items-center rounded-xl border ${accentClass[accent]}`}>
@@ -315,10 +307,13 @@ export default function Home() {
             <ShieldCheck className="h-[18px] w-[18px] text-[var(--sc-teal)]" strokeWidth={1.8} />
           </div>
           <div>
-            <h2 className="m-0 font-serif text-xl font-semibold tracking-[-.015em] text-[var(--sc-ivory)]">Human meaning first. Evidence always within reach.</h2>
+            <h2 className="m-0 font-serif text-xl font-semibold tracking-[-.015em] text-[var(--sc-ivory)]">Why am I seeing this?</h2>
             <p className="mb-0 mt-2 max-w-[860px] text-[13px] leading-6 text-[var(--sc-stone)] sm:text-sm">
-              Calculated results, independent verification, inference, missing data, and limitations stay distinct. A possibility never gets polished into certainty just because certainty looks prettier on a screen.
+              Every surfaced insight must separate verified calculation, deterministic math, symbolic interpretation, self-report, and unresolved data. The machinery stays available without taking over the reading.
             </p>
+            <Link href="/systems" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
+              Open evidence and systems <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </section>
       </main>
