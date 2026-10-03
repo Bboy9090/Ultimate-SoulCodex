@@ -1,7 +1,9 @@
 import { Link } from "wouter";
 import Navigation from "../components/navigation";
+import { tierAllowsCapability } from "@shared/product-access";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
+import { useProductAccess } from "../hooks/useProductAccess";
 import {
   ArrowRight,
   Heart,
@@ -15,24 +17,34 @@ import {
 
 const DIMENSIONS = [
   {
+    icon: MessageCircleMore,
+    title: "Communication",
+    text: "How each person processes, expresses, and translates ideas. Free keeps a bounded symbolic comparison; deeper Mercury-to-Mercury and aspect context belongs to Soul Codex+.",
+    premium: false,
+  },
+  {
     icon: Heart,
-    title: "Romantic connection",
-    text: "Partnership themes, emotional fit, trust, steadiness, and symbolic relationship flow.",
+    title: "Emotional rhythm",
+    text: "Moon patterns, emotional pacing, stress response, and what each person may need when pressure rises.",
+    premium: true,
   },
   {
     icon: Sparkles,
-    title: "Chemistry & attraction",
-    text: "Symbolic magnetism, activation, intensity, and attraction without treating desire as destiny.",
-  },
-  {
-    icon: MessageCircleMore,
-    title: "Communication & friendship",
-    text: "Conversation, mental rhythm, social ease, curiosity, and day-to-day rapport.",
+    title: "Attraction & chemistry",
+    text: "Venus–Mars and other qualified attraction signals without turning chemistry into a relationship verdict.",
+    premium: true,
   },
   {
     icon: Wrench,
-    title: "Growth & repair",
-    text: "Friction, adaptation, recurring lessons, boundaries, and what may help the connection repair.",
+    title: "Life direction",
+    text: "Numerology timing, long-range priorities, recurring themes, and where two trajectories reinforce or challenge each other.",
+    premium: true,
+  },
+  {
+    icon: HeartHandshake,
+    title: "Human Design context",
+    text: "Type, Strategy, Authority, Profile, and interaction context only when both Human Design records are verified.",
+    premium: true,
   },
 ] as const;
 
@@ -59,6 +71,8 @@ function lifePath(profile: any) {
 
 export default function CompatibilityHubPage() {
   const { profile, isLoading, isCorrupted, reason } = useActiveProfile();
+  const { tier } = useProductAccess();
+  const advancedConnections = tierAllowsCapability(tier, "advanced_connections");
 
   if (isLoading) {
     return (
@@ -129,7 +143,7 @@ export default function CompatibilityHubPage() {
               {profileName(profile)} Compatibility
             </h1>
             <p className="sc-lede mt-5 max-w-3xl">
-              Inspect four separate relationship signals instead of one universal verdict. Strong attraction can coexist with friction; easy conversation can coexist with weak repair.
+              Start with a useful free comparison, then go deeper across communication, emotional rhythm, attraction, life direction, and verified Human Design context. No universal verdict.
             </p>
           </div>
 
@@ -145,15 +159,20 @@ export default function CompatibilityHubPage() {
           </aside>
         </header>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Compatibility dimensions">
-          {DIMENSIONS.map(({ icon: Icon, title, text }, index) => (
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Compatibility dimensions">
+          {DIMENSIONS.map(({ icon: Icon, title, text, premium }, index) => (
             <article key={title} className="sc-panel flex min-h-[220px] flex-col p-5">
               <div className="flex items-start justify-between gap-3">
                 <span className="sc-icon-well"><Icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
-                <span className="font-mono text-xs text-[var(--sc-stone)]">0{index + 1}</span>
+                <span className="font-mono text-xs text-[var(--sc-stone)]">{premium && !advancedConnections ? "PLUS" : `0${index + 1}`}</span>
               </div>
               <h2 className="mb-0 mt-7 font-serif text-xl font-semibold text-[var(--sc-ivory)]">{title}</h2>
               <p className="mb-0 mt-3 text-sm leading-6 text-[var(--sc-stone)]">{text}</p>
+              {premium && !advancedConnections ? (
+                <span className="mt-auto pt-5 text-sm font-semibold text-[var(--sc-stone)]">
+                  Planned · not included in current Soul Codex+
+                </span>
+              ) : null}
             </article>
           ))}
         </section>
@@ -164,7 +183,7 @@ export default function CompatibilityHubPage() {
             <div className="sc-eyebrow mt-5">Explore patterns</div>
             <h2 className="mt-3 font-serif text-3xl font-semibold">All-sign Compatibility map</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">
-              Compare the active Identity with all twelve Sun-sign archetypes across the same four dimensions.
+              Free keeps a bounded symbolic comparison available. The deeper five-dimension relationship model remains planned and is not included in the current Soul Codex+ promise until its end-to-end evidence path ships.
             </p>
             <strong className="mt-6 inline-flex items-center gap-2 text-sm text-[var(--sc-gold-bright)]">Open Compatibility map <ArrowRight className="h-4 w-4" /></strong>
           </Link>

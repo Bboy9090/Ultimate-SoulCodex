@@ -3,11 +3,18 @@ import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Crown, Share2, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
+import { useProductAccess } from "../hooks/useProductAccess";
+import DiamondClosure from "@/components/DiamondClosure";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
 import { ShareModal } from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
+import { tierAllowsCapability } from "@shared/product-access";
+import {
+  getSynthesisAstrologySign,
+  hasVerifiedHumanDesignTrust,
+} from "../lib/profileVerificationReconciliation";
 
 const text = (...values: unknown[]) => values.find((value) => typeof value === "string" && value.trim().length > 0) as string | undefined;
 
@@ -55,6 +62,7 @@ export default function ProfilePage() {
     queryKey: ["/api/profiles", id],
     enabled: Boolean(id),
   });
+  const { tier } = useProductAccess();
 
   const items = useMemo<HumanDepthItem[]>(() => {
     if (!profile) return [];
@@ -87,9 +95,9 @@ export default function ProfilePage() {
     for (const strength of archetype.strengths ?? []) result.push(explainLabel(String(strength), "strength"));
     for (const growth of archetype.shadows ?? archetype.growthAreas ?? []) result.push(explainLabel(String(growth), "growth"));
 
-    const sun = astrology.sunSign ?? astrology.sun?.sign;
-    const moon = astrology.moonSign ?? astrology.moon?.sign;
-    const rising = astrology.risingSign ?? astrology.rising?.sign;
+    const sun = getSynthesisAstrologySign(astrology, "sun");
+    const moon = getSynthesisAstrologySign(astrology, "moon");
+    const rising = getSynthesisAstrologySign(astrology, "rising");
     if (sun || moon || rising) {
       result.push({
         id: "astrology-big-three",
@@ -176,7 +184,15 @@ export default function ProfilePage() {
 
   const astrology = (profile.astrologyData ?? {}) as any;
   const numerology = (profile.numerologyData ?? {}) as any;
+  const humanDesign = (profile.humanDesignData ?? {}) as any;
   const archetype = (profile.archetypeData ?? {}) as any;
+  const sun = getSynthesisAstrologySign(astrology, "sun");
+  const moon = getSynthesisAstrologySign(astrology, "moon");
+  const rising = getSynthesisAstrologySign(astrology, "rising");
+  const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
+  const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
+  const canUsePremiumExports = tierAllowsCapability(tier, "premium_exports");
 
   return (
     <div className="sc-app-shell">
@@ -195,9 +211,9 @@ export default function ProfilePage() {
             <h1 className="sc-display sc-display-gradient">{profile.name}</h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--sc-stone)] sm:text-lg">This page now explains the profile as one connected human story. Labels remain visible, but none of them are allowed to stand alone and pretend they explained you.</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              {astrology.sunSign && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{astrology.sunSign} Sun</span>}
-              {astrology.moonSign && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{astrology.moonSign} Moon</span>}
-              {astrology.risingSign && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{astrology.risingSign} Rising</span>}
+              {sun && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{sun} Sun</span>}
+              {moon && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{moon} Moon</span>}
+              {rising && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{rising} Rising</span>}
               {numerology.lifePath && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">Life Path {numerology.lifePath}</span>}
               {archetype.title && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{archetype.title}</span>}
             </div>
@@ -214,7 +230,82 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        <section className="mb-8 grid gap-3 lg:grid-cols-3" aria-label="Core profile">
+          <details className="sc-panel p-5">
+            <summary className="cursor-pointer list-none">
+              <p className="sc-eyebrow">Your Big 3</p>
+              <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Identity · emotions · first impression</h2>
+              <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
+                {sun ? `${sun} Sun` : "Sun unresolved"} · {moon ? `${moon} Moon` : "Moon unresolved"} · {rising ? `${rising} Rising` : "Rising unresolved"}
+              </p>
+            </summary>
+            <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
+              <p><strong className="text-[var(--sc-ivory)]">Sun</strong> — how identity and conscious expression are symbolically framed.</p>
+              <p><strong className="text-[var(--sc-ivory)]">Moon</strong> — how emotional processing is symbolically framed.</p>
+              <p><strong className="text-[var(--sc-ivory)]">Rising</strong> — how approach and first presentation are symbolically framed.</p>
+              <p>Birth-time-dependent placements remain unresolved unless the underlying chart evidence supports them.</p>
+              <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
+            </div>
+          </details>
+
+          <details className="sc-panel p-5">
+            <summary className="cursor-pointer list-none">
+              <p className="sc-eyebrow">Your Core Numbers</p>
+              <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Life Path · Expression · Soul Urge</h2>
+              <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
+                Life Path {numerology.lifePath ?? "—"} · {canSeeFullNumerology ? `Expression ${numerology.expression ?? "—"} · Soul Urge ${numerology.soulUrge ?? "—"} · Personality ${numerology.personality ?? "—"} · Maturity ${numerology.maturity ?? "—"}` : "Expression + Soul Urge + Personality + Maturity · Soul Codex+"}
+              </p>
+            </summary>
+            <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
+              <p>The number calculations are deterministic when the required birth data is present. Their meanings remain symbolic reflection, not verified psychology.</p>
+              {!canSeeFullNumerology && (
+                <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
+                  Unlock full name numerology with Soul Codex+
+                </Link>
+              )}
+              <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
+            </div>
+          </details>
+
+          <details className="sc-panel p-5">
+            <summary className="cursor-pointer list-none">
+              <p className="sc-eyebrow">Your Human Design</p>
+              <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Type · Strategy · Authority · Profile</h2>
+              <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
+                {humanDesignVerified
+                  ? canSeeHumanDesignDepth
+                    ? `${humanDesign.type ?? "—"} · ${humanDesign.strategy ?? "—"} · ${humanDesign.authority ?? "—"} · ${humanDesign.profile ?? "—"}`
+                    : "Verified · deeper Human Design in Soul Codex+"
+                  : "Not verified yet"}
+              </p>
+            </summary>
+            <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
+              <p>{humanDesignVerified
+                ? canSeeHumanDesignDepth
+                  ? "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary. Their practical meaning is still a symbolic framework to test against lived experience."
+                  : "Human Design is verified for this profile. Soul Codex+ unlocks the verified Type, Strategy, Authority, and Profile. Centers and channels are not sold here until their premium surface is fully qualified."
+                : "Soul Codex will not invent Type, Strategy, Authority, or Profile when the required verification is missing."}</p>
+              {humanDesignVerified && !canSeeHumanDesignDepth && (
+                <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
+                  Unlock Human Design depth
+                </Link>
+              )}
+              <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
+            </div>
+          </details>
+        </section>
+
         <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
+
+        <div className="mt-8">
+          <DiamondClosure
+            clarity="Keep the strongest supported pattern. Do not turn every label into identity."
+            depth="Your Big 3, core numbers, Human Design, and lived evidence each do different jobs. Expand only the layer you need, and use Why when you want provenance."
+            nextMove={profile.dailyGuidance || archetype.guidance || "Choose one pattern from this reading and test it against one real event today."}
+            nextHref={`/reading/${id}`}
+            nextLabel="Continue the reading"
+          />
+        </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href={`/reading/${id}`} className="sc-button-primary">Open full Quick / Standard / Deep Dive reading</Link>
@@ -222,7 +313,7 @@ export default function ProfilePage() {
           <NatalReportDownloadButton
             profileId={String(id)}
             profileName={profile.name}
-            isPremium={Boolean(profile.isPremium)}
+            isPremium={canUsePremiumExports}
           />
         </div>
         {shareOpen && (
