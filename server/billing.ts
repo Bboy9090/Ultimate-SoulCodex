@@ -136,6 +136,18 @@ function appleAccountBinding(userId: string): string | null {
     : null;
 }
 
+function nativeLifecycleFlag(name: string): boolean {
+  return process.env[name]?.trim().toLowerCase() === "true";
+}
+
+function appleNativeLifecycleReady(): boolean {
+  return nativeLifecycleFlag("APPLE_IAP_NOTIFICATIONS_READY");
+}
+
+function googleNativeLifecycleReady(): boolean {
+  return nativeLifecycleFlag("GOOGLE_PLAY_RTDN_READY");
+}
+
 function appleNativeVerifierConfigured(): boolean {
   return Boolean(
     process.env.APPLE_IAP_ROOT_CERTS_BASE64?.trim() &&
@@ -586,22 +598,29 @@ export function registerBillingRoutes(app: Express): void {
       platform === "ios"
         ? appleNativeVerifierConfigured()
         : googleNativeVerifierConfigured();
+    const lifecycleReady =
+      platform === "ios"
+        ? appleNativeLifecycleReady()
+        : googleNativeLifecycleReady();
 
     res.setHeader("Cache-Control", "private, no-store, max-age=0");
     return res.status(200).json({
-      enabled: enabled && configured && verifierConfigured,
+      enabled: enabled && configured && verifierConfigured && lifecycleReady,
       platform,
       monthlyProductId: configured ? monthlyProductId : null,
       annualProductId: configured ? annualProductId : null,
       accountToken: configured ? accountToken : null,
       verifierConfigured,
+      lifecycleReady,
       reason: !enabled
         ? "native_billing_disabled"
         : !configured
           ? "catalog_not_configured"
           : !verifierConfigured
             ? "server_verifier_not_configured"
-            : "ready",
+            : !lifecycleReady
+              ? "lifecycle_notifications_not_ready"
+              : "ready",
     });
   });
 
