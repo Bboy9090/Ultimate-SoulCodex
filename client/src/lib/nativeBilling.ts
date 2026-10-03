@@ -9,6 +9,7 @@ export type NativeBillingCatalog = {
   monthlyProductId: string | null;
   annualProductId: string | null;
   verifierConfigured: boolean;
+  accountToken: string | null;
   reason:
     | "ready"
     | "native_billing_disabled"
@@ -66,10 +67,16 @@ export async function loadNativeBillingProducts(catalog: NativeBillingCatalog) {
 }
 
 export async function purchaseNativeProduct(
+  catalog: NativeBillingCatalog,
   productId: string,
-  appAccountToken?: string,
 ): Promise<NativeBillingEvidence> {
-  return NativeBilling.purchase({ productId, appAccountToken });
+  if (!catalog.enabled || !catalog.accountToken) {
+    throw new Error("Native billing is not ready for this account.");
+  }
+  return NativeBilling.purchase({
+    productId,
+    appAccountToken: catalog.accountToken,
+  });
 }
 
 export async function restoreNativePurchases(
@@ -77,4 +84,50 @@ export async function restoreNativePurchases(
 ): Promise<NativeBillingEvidence[]> {
   const { transactions } = await NativeBilling.restore({ productIds });
   return transactions;
+}
+
+
+export async function verifyNativeBillingEvidence(
+  evidence: NativeBillingEvidence,
+): Promise<{
+  verified: boolean;
+  tier: "free" | "plus";
+  source: "apple" | "google_play";
+  plan: "monthly" | "annual" | null;
+  status: string | null;
+  expiresAt: string | null;
+}> {
+  const body =
+    evidence.platform === "ios"
+      ? {
+          platform: "ios",
+          signedTransaction: evidence.signedTransaction,
+        }
+      : {
+          platform: "android",
+          purchaseToken: evidence.purchaseToken,
+          productId: evidence.productId,
+        };
+
+  const response = await apiFetch("/api/billing/native/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error("Native subscription verification failed.");
+  }
+  return response.json();
+}
+
+export async function verifyRestoredNativePurchases(
+  productIds: string[],
+): Promise<Array<Awaited<ReturnType<typeof verifyNativeBillingEvidence>>>> {
+  const transactions = await restoreNativePurchases(productIds);
+  const verified = [];
+  for (const transaction of transactions) {
+    verified.push(await verifyNativeBillingEvidence(transaction));
+  }
+  return verified;
 }
