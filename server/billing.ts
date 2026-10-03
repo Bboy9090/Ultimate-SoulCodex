@@ -104,6 +104,21 @@ function googleAnnualProductId(): string | null {
   return process.env.GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID?.trim() || null;
 }
 
+function appleNativeVerifierConfigured(): boolean {
+  return Boolean(
+    process.env.APPLE_IAP_ROOT_CERTS_BASE64?.trim() &&
+      process.env.APPLE_APP_ID?.trim() &&
+      process.env.APPLE_CLIENT_ID?.trim(),
+  );
+}
+
+function googleNativeVerifierConfigured(): boolean {
+  return Boolean(
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON?.trim() &&
+      process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim(),
+  );
+}
+
 function stripeMonthlyPriceId(): string | null {
   return process.env.STRIPE_PLUS_MONTHLY_PRICE_ID?.trim() || null;
 }
@@ -514,17 +529,24 @@ export function registerBillingRoutes(app: Express): void {
       platform === "ios" ? appleAnnualProductId() : googleAnnualProductId();
 
     const configured = Boolean(monthlyProductId && annualProductId);
+    const verifierConfigured =
+      platform === "ios"
+        ? appleNativeVerifierConfigured()
+        : googleNativeVerifierConfigured();
     res.setHeader("Cache-Control", "private, no-store, max-age=0");
     return res.status(200).json({
-      enabled: enabled && configured,
+      enabled: enabled && configured && verifierConfigured,
       platform,
       monthlyProductId: configured ? monthlyProductId : null,
       annualProductId: configured ? annualProductId : null,
-      reason: enabled
-        ? configured
-          ? "ready"
-          : "catalog_not_configured"
-        : "native_billing_disabled",
+      verifierConfigured,
+      reason: !enabled
+        ? "native_billing_disabled"
+        : !configured
+          ? "catalog_not_configured"
+          : !verifierConfigured
+            ? "server_verifier_not_configured"
+            : "ready",
     });
   });
 
