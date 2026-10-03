@@ -22,23 +22,34 @@ test("free keeps core clarity capabilities", () => {
   }
 });
 
-test("plus gates depth rather than accuracy", () => {
+test("live Plus capabilities gate depth rather than accuracy", () => {
   for (const capability of [
-    "full_natal_chart",
     "full_name_numerology",
     "human_design_depth",
     "advanced_daily",
+    "premium_exports",
+  ] as const) {
+    assert.equal(SOUL_CODEX_CAPABILITIES[capability].minimumTier, "plus");
+    assert.equal(SOUL_CODEX_CAPABILITIES[capability].availability, "live");
+    assert.equal(tierAllowsCapability("free", capability), false);
+    assert.equal(tierAllowsCapability("plus", capability), true);
+    assert.ok(capabilityUpgradeReason(capability));
+  }
+});
+
+test("planned Plus capabilities cannot be unlocked or sold yet", () => {
+  for (const capability of [
+    "full_natal_chart",
     "advanced_transits",
     "timeline_history",
     "advanced_connections",
     "cross_system_synthesis",
-    "premium_exports",
     "premium_tarot",
   ] as const) {
     assert.equal(SOUL_CODEX_CAPABILITIES[capability].minimumTier, "plus");
+    assert.equal(SOUL_CODEX_CAPABILITIES[capability].availability, "planned");
     assert.equal(tierAllowsCapability("free", capability), false);
-    assert.equal(tierAllowsCapability("plus", capability), true);
-    assert.ok(capabilityUpgradeReason(capability));
+    assert.equal(tierAllowsCapability("plus", capability), false);
   }
 });
 
@@ -52,5 +63,6 @@ test("capability gate returns a usable upgrade explanation", () => {
   assert.equal(gate.allowed, false);
   assert.equal(gate.tier, "free");
   assert.match(gate.label, /Connections/);
+  assert.equal(gate.availability, "planned");
   assert.match(gate.upgradeReason ?? "", /communication/i);
 });
