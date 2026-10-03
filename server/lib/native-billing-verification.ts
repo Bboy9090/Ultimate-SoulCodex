@@ -240,6 +240,12 @@ export async function verifyAppleBillingEvidence(
         ? "expired"
         : "active";
 
+  const occurredAt =
+    revokedAt ??
+    (accessStatus === "expired" ? expiresAt : null) ??
+    purchaseDate ??
+    now;
+
   return {
     userId,
     provider: "apple",
@@ -249,7 +255,7 @@ export async function verifyAppleBillingEvidence(
     plan,
     environment: appleEnvironment,
     eventType: revokedAt ? "transaction_revoked" : "transaction_verified",
-    occurredAt: revokedAt ?? expiresAt ?? purchaseDate ?? now,
+    occurredAt,
     verificationState: "verified",
     accessStatus,
     purchasedAt: purchaseDate,
@@ -410,6 +416,11 @@ export async function verifyGoogleBillingEvidence(
     if (!acknowledge.ok) throw new Error("google_play_acknowledgement_failed");
   }
 
+  const occurredAt =
+    accessStatus === "expired"
+      ? expiresAt ?? purchasedAt ?? now
+      : purchasedAt ?? now;
+
   return {
     userId,
     provider: "google_play",
@@ -419,7 +430,7 @@ export async function verifyGoogleBillingEvidence(
     plan,
     environment: "production",
     eventType: "subscription_verified",
-    occurredAt: expiresAt ?? purchasedAt ?? now,
+    occurredAt,
     verificationState: "verified",
     accessStatus,
     purchasedAt,
