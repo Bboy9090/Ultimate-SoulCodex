@@ -11,7 +11,6 @@ import {
 } from "../lib/connectionRepository";
 import {
   ArrowRight,
-  BookOpen,
   HeartHandshake,
   Orbit,
   ShieldCheck,
