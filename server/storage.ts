@@ -7,6 +7,10 @@ import {
   accessCodeRedemptions,
   localUsers,
   publicProfileShares,
+  billingSubjects,
+  billingTransactionEvents,
+  entitlementGrants,
+  billingVerificationReceipts,
   type User,
   type InsertUser,
   type Profile,
@@ -14,6 +18,13 @@ import {
   type Assessment,
   type InsertAssessment,
   type PublicProfileShare,
+  type BillingSubject,
+  type BillingTransactionEvent,
+  type EntitlementGrant,
+  type BillingVerificationReceipt,
+  type InsertBillingTransactionEvent,
+  type InsertEntitlementGrant,
+  type InsertBillingVerificationReceipt,
 } from "@shared/schema";
 
 function appleUsername(subject: string) {
@@ -36,6 +47,13 @@ export interface IStorage {
   getPublicProfileShareByToken(token: string): Promise<PublicProfileShare | undefined>;
   listPublicProfileShares(profileId: string, limit?: number): Promise<PublicProfileShare[]>;
   revokePublicProfileShare(token: string): Promise<PublicProfileShare | undefined>;
+  getBillingSubjectByUserId(userId: string): Promise<BillingSubject | undefined>;
+  getOrCreateBillingSubject(userId: string): Promise<BillingSubject>;
+  getBillingTransactionEventByProviderEvent(provider: string, providerEventId: string): Promise<BillingTransactionEvent | undefined>;
+  createBillingTransactionEvent(event: InsertBillingTransactionEvent): Promise<BillingTransactionEvent>;
+  createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt>;
+  createEntitlementGrant(grant: InsertEntitlementGrant): Promise<EntitlementGrant>;
+  getLatestEntitlementGrant(userId: string, capability: string): Promise<EntitlementGrant | undefined>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
 }
@@ -45,6 +63,10 @@ export class MemStorage implements IStorage {
   private profiles = new Map<string, Profile>();
   private assessments = new Map<string, Assessment>();
   private publicShares = new Map<string, PublicProfileShare>();
+  private billingSubjects = new Map<string, BillingSubject>();
+  private billingEvents = new Map<string, BillingTransactionEvent>();
+  private entitlementRecords = new Map<string, EntitlementGrant>();
+  private billingReceipts = new Map<string, BillingVerificationReceipt>();
 
   async getUser(id: string) { return this.users.get(id); }
   async getUserByUsername(username: string) {
@@ -201,6 +223,81 @@ export class MemStorage implements IStorage {
     this.publicShares.set(token, revoked);
     return revoked;
   }
+  async getBillingSubjectByUserId(userId: string) {
+    return [...this.billingSubjects.values()].find((subject) => subject.userId === userId);
+  }
+  async getOrCreateBillingSubject(userId: string): Promise<BillingSubject> {
+    const existing = await this.getBillingSubjectByUserId(userId);
+    if (existing) return existing;
+    const now = new Date();
+    const subject: BillingSubject = {
+      id: randomUUID(),
+      userId,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.billingSubjects.set(subject.id, subject);
+    return subject;
+  }
+  async getBillingTransactionEventByProviderEvent(provider: string, providerEventId: string) {
+    return [...this.billingEvents.values()].find(
+      (event) => event.provider === provider && event.providerEventId === providerEventId,
+    );
+  }
+  async createBillingTransactionEvent(event: InsertBillingTransactionEvent): Promise<BillingTransactionEvent> {
+    const existing = await this.getBillingTransactionEventByProviderEvent(event.provider, event.providerEventId);
+    if (existing) return existing;
+    const record: BillingTransactionEvent = {
+      ...event,
+      id: event.id ?? randomUUID(),
+      providerTransactionId: event.providerTransactionId ?? null,
+      purchasedAt: event.purchasedAt ?? null,
+      expiresAt: event.expiresAt ?? null,
+      createdAt: event.createdAt ?? new Date(),
+    };
+    this.billingEvents.set(record.id, record);
+    return record;
+  }
+  async createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt> {
+    const existing = [...this.billingReceipts.values()].find(
+      (record) => record.transactionEventId === receipt.transactionEventId,
+    );
+    if (existing) return existing;
+    const record: BillingVerificationReceipt = {
+      ...receipt,
+      id: receipt.id ?? randomUUID(),
+      createdAt: receipt.createdAt ?? new Date(),
+    };
+    this.billingReceipts.set(record.id, record);
+    return record;
+  }
+  async createEntitlementGrant(grant: InsertEntitlementGrant): Promise<EntitlementGrant> {
+    const existing = [...this.entitlementRecords.values()].find(
+      (record) => record.sourceTransactionEventId === grant.sourceTransactionEventId && record.capability === grant.capability,
+    );
+    if (existing) return existing;
+    const now = new Date();
+    const record: EntitlementGrant = {
+      ...grant,
+      id: grant.id ?? randomUUID(),
+      expiresAt: grant.expiresAt ?? null,
+      revokedAt: grant.revokedAt ?? null,
+      createdAt: grant.createdAt ?? now,
+      updatedAt: grant.updatedAt ?? now,
+    };
+    this.entitlementRecords.set(record.id, record);
+    return record;
+  }
+  async getLatestEntitlementGrant(userId: string, capability: string) {
+    const subject = [...this.billingSubjects.values()].find((item) => item.userId === userId);
+    if (!subject) return undefined;
+    return [...this.entitlementRecords.values()]
+      .filter((grant) => grant.billingSubjectId === subject.id && grant.capability === capability)
+      .sort((a, b) => {
+        const occurrenceDelta = b.effectiveAt.getTime() - a.effectiveAt.getTime();
+        return occurrenceDelta || b.lastVerifiedAt.getTime() - a.lastVerifiedAt.getTime();
+      })[0];
+  }
   async deleteSessionData(sessionId: string): Promise<void> {
     const profileIds = [...this.profiles.values()]
       .filter((profile) => profile.sessionId === sessionId)
@@ -325,6 +422,82 @@ class PostgresStorage implements IStorage {
       .set({ revokedAt: new Date() })
       .where(eq(publicProfileShares.token, token))
       .returning())[0];
+  }
+  async getBillingSubjectByUserId(userId: string) {
+    const db = await this.db();
+    return (await db.select().from(billingSubjects).where(eq(billingSubjects.userId, userId)).limit(1))[0];
+  }
+  async getOrCreateBillingSubject(userId: string): Promise<BillingSubject> {
+    const db = await this.db();
+    const inserted = await db.insert(billingSubjects)
+      .values({ userId })
+      .onConflictDoNothing({ target: billingSubjects.userId })
+      .returning();
+    if (inserted[0]) return inserted[0];
+    const existing = (await db.select().from(billingSubjects).where(eq(billingSubjects.userId, userId)).limit(1))[0];
+    if (!existing) throw new Error("Billing subject could not be resolved after concurrent creation");
+    return existing;
+  }
+  async getBillingTransactionEventByProviderEvent(provider: string, providerEventId: string) {
+    const db = await this.db();
+    return (await db.select().from(billingTransactionEvents)
+      .where(and(
+        eq(billingTransactionEvents.provider, provider),
+        eq(billingTransactionEvents.providerEventId, providerEventId),
+      ))
+      .limit(1))[0];
+  }
+  async createBillingTransactionEvent(event: InsertBillingTransactionEvent): Promise<BillingTransactionEvent> {
+    const db = await this.db();
+    const inserted = await db.insert(billingTransactionEvents)
+      .values(event)
+      .onConflictDoNothing()
+      .returning();
+    if (inserted[0]) return inserted[0];
+    const existing = await this.getBillingTransactionEventByProviderEvent(event.provider, event.providerEventId);
+    if (!existing) throw new Error("Billing event could not be resolved after replay");
+    return existing;
+  }
+  async createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt> {
+    const db = await this.db();
+    const inserted = await db.insert(billingVerificationReceipts)
+      .values(receipt)
+      .onConflictDoNothing()
+      .returning();
+    if (inserted[0]) return inserted[0];
+    const existing = (await db.select().from(billingVerificationReceipts)
+      .where(eq(billingVerificationReceipts.transactionEventId, receipt.transactionEventId))
+      .limit(1))[0];
+    if (!existing) throw new Error("Billing verification receipt could not be resolved after replay");
+    return existing;
+  }
+  async createEntitlementGrant(grant: InsertEntitlementGrant): Promise<EntitlementGrant> {
+    const db = await this.db();
+    const inserted = await db.insert(entitlementGrants)
+      .values(grant)
+      .onConflictDoNothing()
+      .returning();
+    if (inserted[0]) return inserted[0];
+    const existing = (await db.select().from(entitlementGrants)
+      .where(and(
+        eq(entitlementGrants.sourceTransactionEventId, grant.sourceTransactionEventId),
+        eq(entitlementGrants.capability, grant.capability),
+      ))
+      .limit(1))[0];
+    if (!existing) throw new Error("Entitlement grant could not be resolved after replay");
+    return existing;
+  }
+  async getLatestEntitlementGrant(userId: string, capability: string) {
+    const db = await this.db();
+    const subject = (await db.select().from(billingSubjects).where(eq(billingSubjects.userId, userId)).limit(1))[0];
+    if (!subject) return undefined;
+    return (await db.select().from(entitlementGrants)
+      .where(and(
+        eq(entitlementGrants.billingSubjectId, subject.id),
+        eq(entitlementGrants.capability, capability),
+      ))
+      .orderBy(desc(entitlementGrants.effectiveAt), desc(entitlementGrants.lastVerifiedAt))
+      .limit(1))[0];
   }
   async deleteSessionData(sessionId: string): Promise<void> {
     const db = await this.db();

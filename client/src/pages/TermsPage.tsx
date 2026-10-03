@@ -90,8 +90,10 @@ export default function TermsPage() {
               purchase. When web checkout is enabled, payment details are
               entered on Stripe's hosted checkout page. Soul Codex does not
               collect or store card numbers, security codes, or expiration
-              dates. Premium entitlement is activated only after confirmed
-              payment and requires persistent profile storage.
+              dates. Premium entitlement is activated only after provider
+              verification creates a valid durable entitlement for the
+              authenticated account. A checkout success page, local flag, or
+              profile field does not grant paid access.
             </p>
           </Section>
 
@@ -118,7 +120,10 @@ export default function TermsPage() {
               You may clear local profile data through Settings. Account holders
               may request deletion of server-backed account data through the
               available account controls or by contacting support when account
-              access is unavailable. Deletion may be irreversible.
+              access is unavailable. Minimal billing and security audit records
+              may be retained where required for financial integrity, disputes,
+              fraud prevention, or legal obligations, and are not used to
+              restore deleted personalization. Deletion may be irreversible.
             </p>
           </Section>
 

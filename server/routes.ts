@@ -36,7 +36,7 @@ import {
   buildPublicProfileProjection,
   publicShareSelectionSchema,
 } from "./lib/public-profile-projection";
-import { resolveProductEntitlement } from "./lib/product-entitlement";
+import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
 import { tierAllowsCapability } from "@shared/product-access";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
@@ -96,8 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/access", async (req: any, res) => {
     try {
       const userId = req.session?.userId ?? null;
-      const user = userId ? await storage.getUser(userId) : null;
-      const entitlement = resolveProductEntitlement(user);
+      const entitlement = await resolveProductEntitlementForUser(storage, userId);
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
       res.status(200).json(entitlement);
     } catch (error) {
@@ -106,7 +105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tier: "free",
         source: "free",
         verified: false,
+        plan: null,
+        status: null,
         expiresAt: null,
+        lastVerifiedAt: null,
       });
     }
   });
@@ -136,7 +138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const finish = () => {
         res.clearCookie("connect.sid");
-        return res.json({ message: "All your data has been permanently deleted." });
+        return res.json({
+          message: "Your account and profile data have been deleted. Minimal billing and security audit records may be retained where required for financial integrity, fraud prevention, or legal obligations and are not used to restore personalization.",
+        });
       };
       if (!req.session) return finish();
       req.session.destroy((destroyErr: unknown) => {
@@ -409,8 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profile = await storage.getProfile(profileId);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
       const userId = req.session?.userId ?? null;
-      const user = userId ? await storage.getUser(userId) : null;
-      const entitlement = resolveProductEntitlement(user);
+      const entitlement = await resolveProductEntitlementForUser(storage, userId);
       if (!tierAllowsCapability(entitlement.tier, "premium_exports")) {
         return res.status(403).json({
           message: "Soul Codex+ access required",
