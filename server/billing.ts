@@ -5,6 +5,11 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { storage } from "./storage";
 import {
+  nativeBillingEvidenceSchema,
+  verifyAppleBillingEvidence,
+  verifyGoogleBillingEvidence,
+} from "./lib/native-billing-verification";
+import {
   SOUL_CODEX_PLUS_CAPABILITY,
   recordVerifiedBillingEvent,
   resolveProductEntitlementForUser,
@@ -550,6 +555,106 @@ export function registerBillingRoutes(app: Express): void {
     });
   });
 
+
+  app.post("/api/billing/native/verify", checkoutLimiter, async (req: any, res) => {
+    if (!isNativeAppOrigin(requestOrigin(req))) {
+      return res.status(409).json({
+        message: "Native billing verification is only available to the bundled app.",
+        code: "native_billing_origin_required",
+      });
+    }
+
+    if (!nativeBillingFlagEnabled()) {
+      return res.status(503).json({
+        message: "Native Soul Codex+ billing is not enabled",
+        code: "native_billing_disabled",
+      });
+    }
+
+    const userId = req.session?.userId ?? null;
+    if (!userId) {
+      return res.status(401).json({
+        message: "Sign in before verifying a native Soul Codex+ purchase",
+        code: "authentication_required",
+      });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(401).json({
+        message: "Your account session is no longer valid",
+        code: "authentication_required",
+      });
+    }
+
+    const parsed = nativeBillingEvidenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Native billing evidence is invalid",
+        code: "native_billing_evidence_invalid",
+      });
+    }
+
+    try {
+      const verifiedEvent =
+        parsed.data.platform === "ios"
+          ? await verifyAppleBillingEvidence(userId, parsed.data)
+          : await verifyGoogleBillingEvidence(userId, parsed.data);
+
+      await recordVerifiedBillingEvent(storage, verifiedEvent);
+      const access = await resolveProductEntitlementForUser(storage, userId);
+
+      if (access.tier !== "plus") {
+        return res.status(409).json({
+          message: "The store evidence was verified, but it does not currently grant Soul Codex+ access.",
+          code: "native_billing_verified_without_access",
+          access,
+        });
+      }
+
+      return res.status(200).json({
+        verified: true,
+        access,
+      });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "native_billing_verification_failed";
+      console.error("[native-billing-verify] failed", {
+        userId,
+        platform: parsed.data.platform,
+        code,
+      });
+
+      const clientSafeCodes = new Set([
+        "apple_verifier_not_configured",
+        "apple_certificate_chain_missing",
+        "apple_certificate_expired",
+        "apple_certificate_chain_invalid",
+        "apple_certificate_root_untrusted",
+        "apple_jws_malformed",
+        "apple_jws_header_invalid",
+        "apple_jws_signature_invalid",
+        "apple_bundle_mismatch",
+        "apple_product_mismatch",
+        "apple_transaction_mismatch",
+        "apple_product_not_allowed",
+        "google_play_verifier_not_configured",
+        "google_play_service_account_invalid",
+        "google_play_oauth_failed",
+        "google_play_verification_failed",
+        "google_play_product_mismatch",
+        "google_play_product_not_allowed",
+        "google_play_purchase_time_invalid",
+        "google_play_expiry_time_invalid",
+        "billing_event_replay_mismatch",
+        "billing_subject_user_not_found",
+      ]);
+
+      return res.status(clientSafeCodes.has(code) ? 409 : 500).json({
+        message: "Native Soul Codex+ purchase could not be verified",
+        code: clientSafeCodes.has(code) ? code : "native_billing_verification_failed",
+      });
+    }
+  });
 
   app.get("/api/billing/catalog", async (_req, res) => {
     const status = getBillingStatus();
