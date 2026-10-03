@@ -62,6 +62,12 @@ Current phase:
 - Signed Stripe subscription lifecycle verification may populate the ledger only for configured monthly/annual price IDs.
 - Legacy one-time Stripe checkout remains retired.
 - Native StoreKit 2 and Google Play Billing purchase initiation and restore are not yet active.
+- Web monthly/annual checkout plumbing exists behind `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=false` by default.
+- Web checkout requires an authenticated session and never accepts profile IDs as purchase credentials.
+- Browser sign-in is not yet activated in the canonical web experience, so the web checkout flag must remain off in production until browser authentication is qualified.
+- Native app origins are rejected from the web digital-goods checkout path.
+- Web pricing comes from configured Stripe Price objects; no plan price is hard-coded into the client.
+- Stripe Billing Portal is the intended web cancellation/management surface for verified Stripe subscriptions.
 - A configured verification adapter does not imply that purchasing is enabled.
 
 ## Non-negotiable gates
