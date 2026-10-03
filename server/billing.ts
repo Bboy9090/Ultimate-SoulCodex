@@ -3,6 +3,8 @@ import express, { type Express } from "express";
 import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
 import { z } from "zod";
+import { storage } from "./storage";
+import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
 import {
   recordVerifiedBillingEvent,
   type VerifiedBillingEvent,
@@ -10,7 +12,7 @@ import {
 
 const checkoutRequestSchema = z
   .object({
-    profileId: z.string().trim().min(8).max(128),
+    plan: z.enum(["monthly", "annual"]),
   })
   .strict();
 
@@ -24,16 +26,18 @@ const RAW_PAYMENT_FIELD_NAMES = Object.freeze([
 ]);
 
 export interface BillingStatus {
-  enabled: false;
+  enabled: boolean;
   provider: "stripe_checkout";
   collectsCardDataOnSoulCodex: false;
   persistentEntitlements: boolean;
   subscriptionWebhookVerification: boolean;
   monthlyProductConfigured: boolean;
   annualProductConfigured: boolean;
+  authenticatedCheckout: boolean;
   reason:
     | "not_configured"
-    | "subscription_checkout_not_qualified";
+    | "subscription_checkout_not_qualified"
+    | null;
 }
 
 function stripeClient(): Stripe | null {
@@ -43,6 +47,22 @@ function stripeClient(): Stripe | null {
 
 function persistentStorageConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
+}
+
+function configuredPublicAppUrl(): string | null {
+  const raw = process.env.PUBLIC_APP_URL?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" && url.hostname !== "localhost") return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function webCheckoutFeatureEnabled(): boolean {
+  return process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
 }
 
 function stripeMonthlyPriceId(): string | null {
@@ -66,22 +86,32 @@ export function getBillingStatus(): BillingStatus {
   const monthlyProductConfigured = Boolean(stripeMonthlyPriceId());
   const annualProductConfigured = Boolean(stripeAnnualPriceId());
   const subscriptionWebhookVerification = stripeWebhookConfigured();
+  const authenticatedCheckout = Boolean(
+    webCheckoutFeatureEnabled() &&
+      subscriptionWebhookVerification &&
+      monthlyProductConfigured &&
+      annualProductConfigured &&
+      configuredPublicAppUrl(),
+  );
 
   return {
-    enabled: false,
+    enabled: authenticatedCheckout,
     provider: "stripe_checkout",
     collectsCardDataOnSoulCodex: false,
     persistentEntitlements: persistentStorageConfigured(),
     subscriptionWebhookVerification,
     monthlyProductConfigured,
     annualProductConfigured,
-    reason: subscriptionWebhookVerification
-      ? "subscription_checkout_not_qualified"
-      : "not_configured",
+    authenticatedCheckout,
+    reason: authenticatedCheckout
+      ? null
+      : subscriptionWebhookVerification
+        ? "subscription_checkout_not_qualified"
+        : "not_configured",
   };
 }
 
-export function parseCheckoutRequest(input: unknown): { profileId: string } {
+export function parseCheckoutRequest(input: unknown): { plan: "monthly" | "annual" } {
   return checkoutRequestSchema.parse(input);
 }
 
@@ -98,6 +128,10 @@ function planForStripePriceId(
   if (priceId === stripeMonthlyPriceId()) return "monthly";
   if (priceId === stripeAnnualPriceId()) return "annual";
   return null;
+}
+
+function stripePriceIdForPlan(plan: "monthly" | "annual"): string | null {
+  return plan === "annual" ? stripeAnnualPriceId() : stripeMonthlyPriceId();
 }
 
 function secondsToDate(value: unknown): Date | null {
@@ -260,10 +294,7 @@ export function registerBillingRawRoutes(app: Express): void {
           });
         }
 
-        await recordVerifiedBillingEvent(
-          (await import("./storage")).storage,
-          verifiedEvent,
-        );
+        await recordVerifiedBillingEvent(storage, verifiedEvent);
 
         return res.status(200).json({
           received: true,
@@ -304,13 +335,13 @@ const checkoutLimiter = rateLimit({
   },
 });
 
-/** Register parsed JSON billing routes after express.json(). */
+/** Register parsed JSON billing routes after session middleware and express.json(). */
 export function registerBillingRoutes(app: Express): void {
   app.get("/api/billing/status", (_req, res) => {
     res.status(200).json(getBillingStatus());
   });
 
-  app.post("/api/billing/checkout", checkoutLimiter, async (req, res) => {
+  app.post("/api/billing/checkout", checkoutLimiter, async (req: any, res) => {
     if (containsRawPaymentFields(req.body)) {
       return res.status(400).json({
         message:
@@ -322,15 +353,120 @@ export function registerBillingRoutes(app: Express): void {
     const parsed = checkoutRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
-        message: "A valid profile ID is required",
+        message: "Choose a valid Soul Codex+ monthly or annual plan.",
         code: "checkout_request_invalid",
       });
     }
 
-    return res.status(410).json({
-      message:
-        "The legacy one-time checkout is retired. Soul Codex+ purchasing will activate only through the qualified monthly/annual entitlement flow.",
-      code: "legacy_checkout_retired",
+    const userId = req.session?.userId ?? null;
+    if (!userId) {
+      return res.status(401).json({
+        message: "Sign in before starting Soul Codex+ checkout.",
+        code: "authentication_required",
+      });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(401).json({
+        message: "Your authenticated account could not be resolved.",
+        code: "account_not_found",
+      });
+    }
+
+    const existingAccess = await resolveProductEntitlementForUser(storage, userId);
+    if (existingAccess.tier === "plus") {
+      return res.status(409).json({
+        message: "Soul Codex+ is already active for this account.",
+        code: "already_plus",
+        access: existingAccess,
+      });
+    }
+
+    const billingStatus = getBillingStatus();
+    if (!billingStatus.enabled) {
+      return res.status(503).json({
+        message: "Soul Codex+ checkout is not active yet.",
+        code: "checkout_not_enabled",
+        billing: billingStatus,
+      });
+    }
+
+    const stripe = stripeClient();
+    const appUrl = configuredPublicAppUrl();
+    const priceId = stripePriceIdForPlan(parsed.data.plan);
+    if (!stripe || !appUrl || !priceId) {
+      return res.status(503).json({
+        message: "Soul Codex+ checkout configuration is incomplete.",
+        code: "checkout_not_configured",
+      });
+    }
+
+    try {
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${appUrl}/pricing?checkout=success`,
+        cancel_url: `${appUrl}/pricing?checkout=canceled`,
+        client_reference_id: userId,
+        customer_email: user.email ?? undefined,
+        metadata: {
+          soulCodexUserId: userId,
+          soulCodexPlan: parsed.data.plan,
+        },
+        subscription_data: {
+          metadata: {
+            soulCodexUserId: userId,
+            soulCodexPlan: parsed.data.plan,
+          },
+        },
+        allow_promotion_codes: false,
+      });
+
+      if (!session.url) {
+        throw new Error("stripe_checkout_url_missing");
+      }
+
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      return res.status(201).json({
+        url: session.url,
+        plan: parsed.data.plan,
+      });
+    } catch (error) {
+      console.error("[billing-checkout] session creation failed", {
+        userId,
+        plan: parsed.data.plan,
+        error: error instanceof Error ? error.message : "unknown_error",
+      });
+      return res.status(502).json({
+        message: "Soul Codex+ checkout could not be started.",
+        code: "checkout_creation_failed",
+      });
+    }
+  });
+
+  app.post("/api/billing/restore", async (req: any, res) => {
+    const userId = req.session?.userId ?? null;
+    if (!userId) {
+      return res.status(401).json({
+        message: "Sign in to restore Soul Codex+ access.",
+        code: "authentication_required",
+      });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(401).json({
+        message: "Your authenticated account could not be resolved.",
+        code: "account_not_found",
+      });
+    }
+
+    const access = await resolveProductEntitlementForUser(storage, userId);
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    return res.status(200).json({
+      restored: access.tier === "plus",
+      access,
     });
   });
 }
