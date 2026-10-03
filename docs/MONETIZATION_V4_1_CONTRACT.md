@@ -48,8 +48,21 @@ Stripe Checkout may remain the web purchase surface, but its webhook-verified ev
 | Tier | Included value | Release condition |
 |---|---|---|
 | Free | Core profile, supported Big 3, date-based numerology, limited Daily synthesis, basic Connections, evidence/provenance, Diamond Way closure | Always available |
-| Soul Codex+ Monthly | Full qualified chart depth, richer Daily synthesis, advanced Connections, Timeline history, verified Human Design depth, premium synthesis and exports | Store verification, restore, durable entitlement, cancellation/expiration/revocation tests |
-| Soul Codex+ Annual | Same qualified capabilities as Monthly at the best-value annual cadence | Same release conditions as Monthly |
+| Soul Codex+ Monthly | Current live Plus capability set from the central product-access registry | Durable entitlement, provider verification, restore, cancellation/expiration/revocation, and purchase-surface gates |
+| Soul Codex+ Annual | Same live Plus capabilities as Monthly at the annual cadence | Same release conditions as Monthly |
+
+## Current implementation state
+
+The entitlement infrastructure may be merged before sales are activated.
+
+Current phase:
+- Free remains fully available.
+- Soul Codex+ capability definitions exist.
+- Durable billing subjects, immutable provider transaction events, entitlement grants, and redacted verification receipts are the intended authorization source.
+- Signed Stripe subscription lifecycle verification may populate the ledger only for configured monthly/annual price IDs.
+- Legacy one-time Stripe checkout remains retired.
+- Native StoreKit 2 and Google Play Billing purchase initiation and restore are not yet active.
+- A configured verification adapter does not imply that purchasing is enabled.
 
 ## Non-negotiable gates
 
@@ -65,7 +78,7 @@ Stripe Checkout may remain the web purchase surface, but its webhook-verified ev
 
 1. Reconcile active schema and migrations.
 2. Add billing subjects, transaction events, entitlement grants, and verification receipts.
-3. Route existing webhook-confirmed web purchases through the common entitlement service.
-4. Add StoreKit 2 and Google Play Billing behind disabled feature flags.
+3. Route signed subscription lifecycle verification through the common entitlement service without enabling checkout.
+4. Add authenticated monthly/annual web checkout plus StoreKit 2 and Google Play Billing behind disabled feature flags.
 5. Prove sandbox purchase, restore, refund/revocation, reinstall, and cross-device behavior.
 6. Enable the native catalogs only in a dedicated 4.1 release candidate.
