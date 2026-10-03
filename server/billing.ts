@@ -84,6 +84,26 @@ function webCheckoutFlagEnabled(): boolean {
   return process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
 }
 
+function nativeBillingFlagEnabled(): boolean {
+  return process.env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED?.trim().toLowerCase() === "true";
+}
+
+function appleMonthlyProductId(): string | null {
+  return process.env.APPLE_PLUS_MONTHLY_PRODUCT_ID?.trim() || null;
+}
+
+function appleAnnualProductId(): string | null {
+  return process.env.APPLE_PLUS_ANNUAL_PRODUCT_ID?.trim() || null;
+}
+
+function googleMonthlyProductId(): string | null {
+  return process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID?.trim() || null;
+}
+
+function googleAnnualProductId(): string | null {
+  return process.env.GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID?.trim() || null;
+}
+
 function stripeMonthlyPriceId(): string | null {
   return process.env.STRIPE_PLUS_MONTHLY_PRICE_ID?.trim() || null;
 }
@@ -477,6 +497,37 @@ export function registerBillingRoutes(app: Express): void {
   app.get("/api/billing/status", (_req, res) => {
     res.status(200).json(getBillingStatus());
   });
+  app.get("/api/billing/native-catalog", (req: any, res) => {
+    const platform = String(req.query?.platform ?? "").trim().toLowerCase();
+    const enabled = nativeBillingFlagEnabled();
+
+    if (platform !== "ios" && platform !== "android") {
+      return res.status(400).json({
+        message: "platform must be ios or android",
+        code: "native_billing_platform_invalid",
+      });
+    }
+
+    const monthlyProductId =
+      platform === "ios" ? appleMonthlyProductId() : googleMonthlyProductId();
+    const annualProductId =
+      platform === "ios" ? appleAnnualProductId() : googleAnnualProductId();
+
+    const configured = Boolean(monthlyProductId && annualProductId);
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    return res.status(200).json({
+      enabled: enabled && configured,
+      platform,
+      monthlyProductId: configured ? monthlyProductId : null,
+      annualProductId: configured ? annualProductId : null,
+      reason: enabled
+        ? configured
+          ? "ready"
+          : "catalog_not_configured"
+        : "native_billing_disabled",
+    });
+  });
+
 
   app.get("/api/billing/catalog", async (_req, res) => {
     const status = getBillingStatus();
