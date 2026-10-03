@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  buildStripeCheckoutSessionParams,
   containsRawPaymentFields,
   getBillingStatus,
   parseCheckoutRequest,
@@ -232,4 +233,27 @@ test("scheduled cancellation keeps the paid period while unpaid fails closed", (
       "account_hold",
     );
   });
+});
+
+
+test("checkout session builder binds authenticated account and configured plan", () => {
+  const params = buildStripeCheckoutSessionParams({
+    userId: "user-session-bound",
+    email: "buyer@example.test",
+    plan: "annual",
+    priceId: "price_plus_annual",
+    appUrl: "https://soulcodex.example.com",
+  });
+
+  assert.equal(params.mode, "subscription");
+  assert.deepEqual(params.line_items, [{ price: "price_plus_annual", quantity: 1 }]);
+  assert.equal(params.client_reference_id, "user-session-bound");
+  assert.equal(params.customer_email, "buyer@example.test");
+  assert.equal(params.metadata?.soulCodexUserId, "user-session-bound");
+  assert.equal(params.metadata?.soulCodexPlan, "annual");
+  assert.equal(params.subscription_data?.metadata?.soulCodexUserId, "user-session-bound");
+  assert.equal(params.subscription_data?.metadata?.soulCodexPlan, "annual");
+  assert.equal(params.success_url, "https://soulcodex.example.com/pricing?checkout=success");
+  assert.equal(params.cancel_url, "https://soulcodex.example.com/pricing?checkout=canceled");
+  assert.equal((params as any).payment_method_data, undefined);
 });
