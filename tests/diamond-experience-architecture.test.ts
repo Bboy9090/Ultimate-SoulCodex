@@ -39,3 +39,21 @@ test("experience architecture requires Diamond Way closure", () => {
   assert.match(architecture, /### Next move/);
   assert.match(architecture, /No reading ends on abstract theory alone\./);
 });
+
+
+test("pricing defines useful Free and deeper Soul Codex Plus", () => {
+  const pricing = readFileSync(new URL("../client/src/pages/PricingPage.tsx", import.meta.url), "utf8");
+  assert.match(pricing, />Free</);
+  assert.match(pricing, /Soul Codex\+/);
+  assert.match(pricing, /Accuracy is never paywalled/);
+  assert.match(pricing, /up to three qualified influences/);
+  assert.match(pricing, /up to five strongest influences/);
+});
+
+test("monetization contract requires durable subscription entitlement truth", () => {
+  const contract = readFileSync(new URL("../docs/MONETIZATION_V4_1_CONTRACT.md", import.meta.url), "utf8");
+  assert.match(contract, /Soul Codex\+ Monthly/);
+  assert.match(contract, /Soul Codex\+ Annual/);
+  assert.match(contract, /server owns the entitlement state/i);
+  assert.match(contract, /Restore Purchases works after reinstall/i);
+});
