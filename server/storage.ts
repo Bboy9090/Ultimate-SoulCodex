@@ -255,6 +255,10 @@ export class MemStorage implements IStorage {
     return record;
   }
   async createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt> {
+    const existing = [...this.billingReceipts.values()].find(
+      (record) => record.transactionEventId === receipt.transactionEventId,
+    );
+    if (existing) return existing;
     const record: BillingVerificationReceipt = {
       ...receipt,
       id: receipt.id ?? randomUUID(),
@@ -445,7 +449,16 @@ class PostgresStorage implements IStorage {
   }
   async createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt> {
     const db = await this.db();
-    return (await db.insert(billingVerificationReceipts).values(receipt).returning())[0];
+    const inserted = await db.insert(billingVerificationReceipts)
+      .values(receipt)
+      .onConflictDoNothing()
+      .returning();
+    if (inserted[0]) return inserted[0];
+    const existing = (await db.select().from(billingVerificationReceipts)
+      .where(eq(billingVerificationReceipts.transactionEventId, receipt.transactionEventId))
+      .limit(1))[0];
+    if (!existing) throw new Error("Billing verification receipt could not be resolved after replay");
+    return existing;
   }
   async createEntitlementGrant(grant: InsertEntitlementGrant): Promise<EntitlementGrant> {
     const db = await this.db();
