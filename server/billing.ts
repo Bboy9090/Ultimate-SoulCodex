@@ -173,6 +173,7 @@ export function verifiedStripeSubscriptionEvent(
     plan,
     environment: event.livemode ? "production" : "sandbox",
     eventType: event.type,
+    occurredAt: secondsToDate((event as any).created) ?? verifiedAt,
     verificationState: "verified",
     accessStatus: stripeSubscriptionAccessStatus(subscription),
     purchasedAt,
