@@ -103,6 +103,54 @@ const statements = [
     "created_at" timestamp DEFAULT now(),
     "revoked_at" timestamp
   )`,
+  `CREATE TABLE IF NOT EXISTS "billing_subjects" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" varchar NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "updated_at" timestamp DEFAULT now() NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS "billing_transaction_events" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "billing_subject_id" varchar NOT NULL,
+    "provider" text NOT NULL,
+    "provider_event_id" text NOT NULL,
+    "provider_transaction_id" text,
+    "product_id" text NOT NULL,
+    "plan" text NOT NULL,
+    "environment" text NOT NULL,
+    "event_type" text NOT NULL,
+    "verification_state" text NOT NULL,
+    "purchased_at" timestamp,
+    "expires_at" timestamp,
+    "verified_at" timestamp NOT NULL,
+    "evidence_digest" text NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS "entitlement_grants" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "billing_subject_id" varchar NOT NULL,
+    "capability" text NOT NULL,
+    "plan" text NOT NULL,
+    "source_provider" text NOT NULL,
+    "source_transaction_event_id" varchar NOT NULL,
+    "status" text NOT NULL,
+    "effective_at" timestamp NOT NULL,
+    "expires_at" timestamp,
+    "revoked_at" timestamp,
+    "last_verified_at" timestamp NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "updated_at" timestamp DEFAULT now() NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS "billing_verification_receipts" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "transaction_event_id" varchar NOT NULL,
+    "provider" text NOT NULL,
+    "verification_state" text NOT NULL,
+    "evidence_digest" text NOT NULL,
+    "diagnostic_metadata" jsonb NOT NULL,
+    "verified_at" timestamp NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL
+  )`,
   `CREATE INDEX IF NOT EXISTS "soul_profiles_user_idx"
     ON "soul_profiles" ("user_id")`,
   `CREATE INDEX IF NOT EXISTS "soul_profiles_session_idx"
@@ -115,6 +163,18 @@ const statements = [
     ON "access_code_redemptions" ("session_id")`,
   `CREATE INDEX IF NOT EXISTS "public_profile_shares_profile_idx"
     ON "public_profile_shares" ("profile_id")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "billing_subjects_user_unique"
+    ON "billing_subjects" ("user_id")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "billing_transaction_events_provider_event_unique"
+    ON "billing_transaction_events" ("provider", "provider_event_id")`,
+  `CREATE INDEX IF NOT EXISTS "billing_transaction_events_subject_idx"
+    ON "billing_transaction_events" ("billing_subject_id")`,
+  `CREATE INDEX IF NOT EXISTS "entitlement_grants_subject_capability_idx"
+    ON "entitlement_grants" ("billing_subject_id", "capability")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "entitlement_grants_source_event_unique"
+    ON "entitlement_grants" ("source_transaction_event_id", "capability")`,
+  `CREATE INDEX IF NOT EXISTS "billing_verification_receipts_transaction_idx"
+    ON "billing_verification_receipts" ("transaction_event_id")`,
 ];
 
 const requiredSchema = {
@@ -154,6 +214,43 @@ const requiredSchema = {
     token: "character varying",
     profile_id: "character varying",
     snapshot: "jsonb",
+  },
+  billing_subjects: {
+    id: "character varying",
+    user_id: "character varying",
+  },
+  billing_transaction_events: {
+    id: "character varying",
+    billing_subject_id: "character varying",
+    provider: "text",
+    provider_event_id: "text",
+    product_id: "text",
+    plan: "text",
+    environment: "text",
+    event_type: "text",
+    verification_state: "text",
+    verified_at: "timestamp without time zone",
+    evidence_digest: "text",
+  },
+  entitlement_grants: {
+    id: "character varying",
+    billing_subject_id: "character varying",
+    capability: "text",
+    plan: "text",
+    source_provider: "text",
+    source_transaction_event_id: "character varying",
+    status: "text",
+    effective_at: "timestamp without time zone",
+    last_verified_at: "timestamp without time zone",
+  },
+  billing_verification_receipts: {
+    id: "character varying",
+    transaction_event_id: "character varying",
+    provider: "text",
+    verification_state: "text",
+    evidence_digest: "text",
+    diagnostic_metadata: "jsonb",
+    verified_at: "timestamp without time zone",
   },
 };
 
