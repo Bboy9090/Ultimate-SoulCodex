@@ -9,6 +9,7 @@ export type NativeBillingCatalog = {
   monthlyProductId: string | null;
   annualProductId: string | null;
   verifierConfigured: boolean;
+  accountToken: string | null;
   reason:
     | "ready"
     | "native_billing_disabled"
@@ -66,10 +67,16 @@ export async function loadNativeBillingProducts(catalog: NativeBillingCatalog) {
 }
 
 export async function purchaseNativeProduct(
+  catalog: NativeBillingCatalog,
   productId: string,
-  appAccountToken?: string,
 ): Promise<NativeBillingEvidence> {
-  return NativeBilling.purchase({ productId, appAccountToken });
+  if (!catalog.enabled || !catalog.accountToken) {
+    throw new Error("Native billing is not ready for this account.");
+  }
+  return NativeBilling.purchase({
+    productId,
+    appAccountToken: catalog.accountToken,
+  });
 }
 
 export async function restoreNativePurchases(
