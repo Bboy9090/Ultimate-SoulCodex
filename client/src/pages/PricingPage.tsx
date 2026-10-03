@@ -14,13 +14,18 @@ const foundationFeatures = [
 
 const plannedPremiumFeatures = [
   "Everything in Free",
-  "Full natal chart: planets, houses, aspects, Midheaven, Nodes, and Chiron when verified",
-  "Full governed numerology from your complete birth name",
-  "Verified Human Design Type, Strategy, Authority, Profile, centers, and channels",
-  "Daily synthesis with up to five strongest influences",
-  "Advanced transits, Timeline history, and deeper timing intelligence",
-  "Full multi-system Connections: communication, emotional rhythm, attraction, life direction, and Human Design context",
-  "Advanced Diamond Way readings, richer exports, and premium share formats",
+  "Full governed numerology: Expression, Soul Urge, Personality, and Maturity when a complete birth name is available",
+  "Verified Human Design Type, Strategy, Authority, and Profile",
+  "Daily synthesis with up to five qualified current influences",
+  "Evidence-aware downloadable natal PDF report",
+];
+
+const roadmapFeatures = [
+  "Full natal chart premium surface: all qualified planets, houses, aspects, Midheaven, Nodes, and Chiron",
+  "Human Design centers, channels, and deeper interaction synthesis",
+  "Advanced transits and Timeline history",
+  "Five-dimension multi-system Connections",
+  "Premium personalized tarot/card generation",
 ];
 
 export default function PricingPage() {
@@ -70,11 +75,20 @@ export default function PricingPage() {
         </section>
 
         <section className="sc-panel mt-4 p-6 sm:p-8">
+          <div className="sc-eyebrow">Roadmap · not sold yet</div>
+          <h2 className="mt-2 font-serif text-3xl font-semibold">Planned, not included in the current paid promise</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+            These features stay outside Soul Codex+ until their complete UI, evidence boundary, entitlement gate, and regression coverage are live.
+          </p>
+          <FeatureList features={roadmapFeatures} />
+        </section>
+
+        <section className="sc-panel mt-4 p-6 sm:p-8">
           <div className="sc-eyebrow">Clear answers</div>
           <h2 className="mt-2 font-serif text-3xl font-semibold">Access FAQ</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <Faq question="Do I need to recreate my profile?" answer="No. Identity, Reading, Timeline, and Compatibility reuse the same saved profile." />
-            <Faq question="What does Soul Codex+ actually unlock?" answer="More depth and continuity: full qualified chart layers, richer daily intelligence, deeper Connections, verified Human Design detail, advanced Timeline history, and premium synthesis. Accuracy is never paywalled." />
+            <Faq question="What does Soul Codex+ actually unlock?" answer="Only the capabilities listed as included now: full-name numerology, verified Human Design core, up to five qualified Daily influences, and the evidence-aware natal PDF report. Roadmap features are shown separately and are not sold yet. Accuracy is never paywalled." />
             <Faq question="Where would card details be entered?" answer="Soul Codex does not contain raw card-number, expiration, CVC, or CVV fields. The server also rejects those fields if they are sent to retired or hosted-checkout boundaries." />
             <Faq question="Why is purchasing unavailable here?" answer={isNative ? "This native release candidate exposes no purchase action until StoreKit / Play Billing, restore, revocation, and durable entitlement verification pass." : "The paid layer is defined, but purchase activation remains a separate release gate. The app will not imply an active subscription path before billing truth is verified."} />
           </div>
