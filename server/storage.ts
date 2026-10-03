@@ -47,6 +47,7 @@ export interface IStorage {
   getPublicProfileShareByToken(token: string): Promise<PublicProfileShare | undefined>;
   listPublicProfileShares(profileId: string, limit?: number): Promise<PublicProfileShare[]>;
   revokePublicProfileShare(token: string): Promise<PublicProfileShare | undefined>;
+  getBillingSubjectByUserId(userId: string): Promise<BillingSubject | undefined>;
   getOrCreateBillingSubject(userId: string): Promise<BillingSubject>;
   getBillingTransactionEventByProviderEvent(provider: string, providerEventId: string): Promise<BillingTransactionEvent | undefined>;
   createBillingTransactionEvent(event: InsertBillingTransactionEvent): Promise<BillingTransactionEvent>;
@@ -222,8 +223,11 @@ export class MemStorage implements IStorage {
     this.publicShares.set(token, revoked);
     return revoked;
   }
+  async getBillingSubjectByUserId(userId: string) {
+    return [...this.billingSubjects.values()].find((subject) => subject.userId === userId);
+  }
   async getOrCreateBillingSubject(userId: string): Promise<BillingSubject> {
-    const existing = [...this.billingSubjects.values()].find((subject) => subject.userId === userId);
+    const existing = await this.getBillingSubjectByUserId(userId);
     if (existing) return existing;
     const now = new Date();
     const subject: BillingSubject = {
@@ -418,6 +422,10 @@ class PostgresStorage implements IStorage {
       .set({ revokedAt: new Date() })
       .where(eq(publicProfileShares.token, token))
       .returning())[0];
+  }
+  async getBillingSubjectByUserId(userId: string) {
+    const db = await this.db();
+    return (await db.select().from(billingSubjects).where(eq(billingSubjects.userId, userId)).limit(1))[0];
   }
   async getOrCreateBillingSubject(userId: string): Promise<BillingSubject> {
     const db = await this.db();
