@@ -6,6 +6,7 @@ import {
   containsRawPaymentFields,
   getBillingStatus,
   parseCheckoutRequest,
+  stripeCheckoutIdempotencyKey,
   verifiedStripeSubscriptionEvent,
 } from "../server/billing.ts";
 
@@ -256,4 +257,20 @@ test("checkout session builder binds authenticated account and configured plan",
   assert.equal(params.success_url, "https://soulcodex.example.com/pricing?checkout=success");
   assert.equal(params.cancel_url, "https://soulcodex.example.com/pricing?checkout=canceled");
   assert.equal((params as any).payment_method_data, undefined);
+});
+
+
+test("checkout idempotency key is stable per account, plan, and 24-hour bucket", () => {
+  const now = new Date("2026-10-03T12:00:00Z");
+  const same = stripeCheckoutIdempotencyKey("user-1", "monthly", now);
+  const sameRetry = stripeCheckoutIdempotencyKey("user-1", "monthly", new Date("2026-10-03T22:00:00Z"));
+  const differentPlan = stripeCheckoutIdempotencyKey("user-1", "annual", now);
+  const differentUser = stripeCheckoutIdempotencyKey("user-2", "monthly", now);
+  const nextBucket = stripeCheckoutIdempotencyKey("user-1", "monthly", new Date("2026-10-04T12:00:00Z"));
+
+  assert.equal(same, sameRetry);
+  assert.notEqual(same, differentPlan);
+  assert.notEqual(same, differentUser);
+  assert.notEqual(same, nextBucket);
+  assert.match(same, /^[a-f0-9]{64}$/);
 });
