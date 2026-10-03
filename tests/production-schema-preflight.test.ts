@@ -15,6 +15,10 @@ test("production schema preflight is idempotent, complete, and non-destructive",
     "soul_profiles",
     "assessment_responses",
     "public_profile_shares",
+    "billing_subjects",
+    "billing_transaction_events",
+    "entitlement_grants",
+    "billing_verification_receipts",
   ]) {
     assert.match(source, new RegExp(`CREATE TABLE IF NOT EXISTS "${table}"`));
   }
@@ -24,7 +28,15 @@ test("production schema preflight is idempotent, complete, and non-destructive",
   assert.match(source, /full_birth_name: "text"/);
   assert.match(source, /"birth_date" timestamp NOT NULL/);
   assert.match(source, /birth_date: "timestamp without time zone"/);
+  assert.match(source, /provider_event_id: "text"/);
+  assert.match(source, /verification_state: "text"/);
+  assert.match(source, /source_transaction_event_id: "character varying"/);
+  assert.match(source, /diagnostic_metadata: "jsonb"/);
   assert.match(source, /CREATE INDEX IF NOT EXISTS "public_profile_shares_profile_idx"/);
+  assert.match(source, /CREATE UNIQUE INDEX IF NOT EXISTS "billing_subjects_user_unique"/);
+  assert.match(source, /CREATE UNIQUE INDEX IF NOT EXISTS "billing_transaction_events_provider_event_unique"/);
+  assert.match(source, /CREATE INDEX IF NOT EXISTS "entitlement_grants_subject_capability_idx"/);
+  assert.match(source, /CREATE UNIQUE INDEX IF NOT EXISTS "billing_verification_receipts_transaction_unique"/);
   assert.doesNotMatch(source, /DROP\s+TABLE/i);
   assert.doesNotMatch(source, /ALTER\s+TABLE.*DROP/i);
   assert.match(source, /information_schema\.columns/);
