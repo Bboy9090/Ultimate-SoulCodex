@@ -9,12 +9,14 @@ export type NativeBillingCatalog = {
   monthlyProductId: string | null;
   annualProductId: string | null;
   verifierConfigured: boolean;
+  lifecycleReady: boolean;
   accountToken: string | null;
   reason:
     | "ready"
     | "native_billing_disabled"
     | "catalog_not_configured"
-    | "server_verifier_not_configured";
+    | "server_verifier_not_configured"
+    | "lifecycle_notifications_not_ready";
 };
 
 export type NativeBillingProduct = {
