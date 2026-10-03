@@ -253,7 +253,7 @@ export default function ProfilePage() {
               <p className="sc-eyebrow">Your Core Numbers</p>
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Life Path · Expression · Soul Urge</h2>
               <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
-                Life Path {numerology.lifePath ?? "—"} · {canSeeFullNumerology ? `Expression ${numerology.expression ?? "—"} · Soul Urge ${numerology.soulUrge ?? "—"}` : "Expression + Soul Urge · Soul Codex+"}
+                Life Path {numerology.lifePath ?? "—"} · {canSeeFullNumerology ? `Expression ${numerology.expression ?? "—"} · Soul Urge ${numerology.soulUrge ?? "—"} · Personality ${numerology.personality ?? "—"} · Maturity ${numerology.maturity ?? "—"}` : "Expression + Soul Urge + Personality + Maturity · Soul Codex+"}
               </p>
             </summary>
             <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
@@ -282,8 +282,8 @@ export default function ProfilePage() {
             <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
               <p>{humanDesignVerified
                 ? canSeeHumanDesignDepth
-                  ? "These values passed the governed Human Design trust boundary. Their practical meaning is still a symbolic framework to test against lived experience."
-                  : "Human Design is verified for this profile. Soul Codex+ unlocks the deeper Type, Strategy, Authority, Profile, center, and channel interpretation."
+                  ? "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary. Their practical meaning is still a symbolic framework to test against lived experience."
+                  : "Human Design is verified for this profile. Soul Codex+ unlocks the verified Type, Strategy, Authority, and Profile. Centers and channels are not sold here until their premium surface is fully qualified."
                 : "Soul Codex will not invent Type, Strategy, Authority, or Profile when the required verification is missing."}</p>
               {humanDesignVerified && !canSeeHumanDesignDepth && (
                 <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
