@@ -195,7 +195,6 @@ function makeSeed(id: string, system: InterpretationEvidenceRef["system"], field
     facets: {
       claritySummary: `This symbolic layer emphasizes ${patternValue.drive}.`,
       visiblePattern: `A constructive expression may look like ${patternValue.gift}.`,
-      hiddenNeed: `The pattern may be trying to preserve room for ${patternValue.drive}.`,
       gift: patternValue.gift,
       shadow: `When overused, the same pattern may become ${patternValue.shadow}.`,
       relationshipImpact: `In relationships, it ${patternValue.relationship}.`,
