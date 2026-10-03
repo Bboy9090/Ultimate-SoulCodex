@@ -38,6 +38,8 @@ jobs:
           node --import tsx --test
           tests/trusted-mutation-origin.test.ts
           tests/production-schema-preflight.test.ts
+          tests/billing-security.test.ts
+          tests/product-entitlement-contract.test.ts
           tests/full-birth-name-persistence-contract.test.ts
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
@@ -99,6 +101,7 @@ jobs:
             echo "SHA=$GITHUB_SHA"
             echo "policy=session-backed-mutations-require-trusted-origin"
             echo "policy=public-share-schema-preflight-is-idempotent-and-non-destructive"
+            echo "policy=durable-billing-ledger-and-signed-subscription-verification"
             echo "policy=production-persistence-mode-is-explicit-and-durable-features-fail-closed"
             echo "policy=railway-promotion-requires-live-database-readiness"
             echo "policy=account-deletion-removes-public-shares"
