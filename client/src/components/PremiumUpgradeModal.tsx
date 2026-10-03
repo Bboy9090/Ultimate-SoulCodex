@@ -13,12 +13,6 @@ interface PremiumUpgradeModalProps {
   onSuccess?: () => void;
 }
 
-type CheckoutResponse = {
-  url?: string;
-  alreadyPremium?: boolean;
-  message?: string;
-  code?: string;
-};
 
 export function PremiumUpgradeModal({
   profileId: _profileId,
