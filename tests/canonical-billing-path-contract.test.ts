@@ -32,3 +32,21 @@ test("mock subscription services are not imported by canonical production routes
   assert.doesNotMatch(canonicalRoutes, /subscription-service/);
   assert.doesNotMatch(indexSource, /subscription-service/);
 });
+
+
+test("parsed checkout registers only after session setup", () => {
+  assert.doesNotMatch(indexSource, /registerBillingRoutes\(app\)/);
+  assert.match(canonicalRoutes, /setupSession\(app\);[\s\S]*registerConsumerAuthRoutes\(app\);[\s\S]*registerBillingRoutes\(app\);/);
+  assert.match(billing, /req\.session\?\.userId/);
+  assert.match(billing, /authentication_required/);
+  assert.doesNotMatch(billing, /req\.body\?\.userId/);
+});
+
+test("web subscription checkout is feature-flagged and cannot grant access from redirect", () => {
+  assert.match(billing, /SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED/);
+  assert.match(billing, /mode:\s*"subscription"/);
+  assert.match(billing, /subscription_data/);
+  assert.match(billing, /soulCodexUserId/);
+  assert.match(billing, /recordVerifiedBillingEvent/);
+  assert.doesNotMatch(billing, /success_url:[\s\S]{0,300}updateProfile/);
+});
