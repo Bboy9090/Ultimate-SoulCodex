@@ -28,7 +28,10 @@ test("parsed checkout routes run after session setup", () => {
 test("native shells never receive the web checkout path", () => {
   assert.match(billing, /native_store_billing_required/);
   assert.match(panel, /Capacitor\.isNativePlatform/);
-  assert.match(panel, /Web checkout is never opened from the bundled app/);
+  assert.match(panel, /enabled:\s*!isNative/);
+  assert.match(panel, /if \(processingPlan \|\| isNative\) return/);
+  assert.match(panel, /purchaseNativeProduct/);
+  assert.match(panel, /verifyNativeBillingEvidence/);
 });
 
 test("pricing is catalog-backed and never hard-coded", () => {
