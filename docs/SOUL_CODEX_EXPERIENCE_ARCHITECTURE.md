@@ -134,3 +134,126 @@ The advantage is:
 - contradiction-aware interpretation;
 - behavior-aware personalization;
 - actionable closure.
+
+
+## Monetization architecture
+
+Monetization must preserve trust and product clarity.
+
+The free layer should answer the user's four core questions at a useful baseline. Paid access should unlock greater depth, continuity, richer cross-system synthesis, and advanced relationship/timing intelligence.
+
+### Free — Core Clarity
+
+Free users receive:
+
+- one active personal profile;
+- verified or range-stable Big 3 where evidence supports them;
+- basic Sun, Moon, Rising interpretations;
+- Life Path and date-only numerology;
+- a limited Daily synthesis using eligible qualified systems;
+- up to three current influences;
+- basic Connections with saved people;
+- one bounded compatibility view using supported shared evidence;
+- evidence status and "Why am I seeing this?" provenance;
+- Diamond Way Clarity / Depth / Next Move closure;
+- unknown-data fail-closed behavior;
+- basic profile sharing.
+
+Free must remain useful enough to establish trust. Do not deliberately degrade calculation accuracy for free users.
+
+### Paid — Soul Codex+
+
+Paid access unlocks:
+
+- full natal chart interpretation;
+- all verified planets, houses, aspects, Midheaven, Nodes, and Chiron;
+- full governed numerology including Expression, Soul Urge, Personality, and Maturity when full birth name is available;
+- verified Human Design Type, Strategy, Authority, Profile, centers, channels, and deeper synthesis;
+- richer Daily synthesis with up to five strongest current influences;
+- advanced transit interpretation and timeline history;
+- multi-system cross-synthesis across astrology, numerology, Human Design, and behavioral self-report;
+- full Connections analysis across Communication, Emotional Rhythm, Attraction & Chemistry, Life Direction, and verified Human Design context;
+- deeper chart-to-chart comparisons;
+- saved relationship history and recurring comparison updates;
+- advanced Diamond Way readings and deeper drill-downs;
+- premium personalized tarot/card generation when available;
+- expanded profile and relationship storage;
+- premium export/share formats;
+- future premium intelligence features governed by the same evidence rules.
+
+### Paywall rule
+
+The paywall should appear at the moment the user asks for more depth, not before the free answer is useful.
+
+Good paywall moments:
+- "See all five influences"
+- "Open full natal chart"
+- "Compare emotional rhythm"
+- "Add Human Design context"
+- "See the deeper relationship breakdown"
+- "Unlock full Timeline history"
+
+Bad paywall moments:
+- before showing the user's Big 3;
+- before displaying verified evidence status;
+- before basic Daily guidance;
+- by intentionally hiding uncertainty;
+- by making free calculations less accurate.
+
+### Entitlement behavior
+
+Premium access must be controlled by durable entitlements.
+
+Requirements:
+- StoreKit / platform billing receipts are the source of purchase truth;
+- restore purchases must work;
+- entitlement state must survive app reinstall/sign-in;
+- premium UI must fail closed when entitlement cannot be verified;
+- server and client must agree on premium state;
+- no premium feature should rely only on a local boolean.
+
+### Upgrade presentation
+
+Upsells must explain the concrete additional value.
+
+Prefer:
+"Unlock Emotional Rhythm — compare both Moon patterns and verified aspects."
+
+Avoid:
+"Upgrade to Premium for more."
+
+Every premium gate should show:
+- what the user already has;
+- what additional evidence or depth will unlock;
+- why that extra layer requires premium;
+- one clear upgrade action;
+- one clear way to continue free.
+
+### Pricing strategy
+
+Use a simple structure:
+
+- Free
+- Soul Codex+ Monthly
+- Soul Codex+ Annual
+
+Do not launch with multiple confusing paid tiers.
+
+Annual should be the best-value plan, while monthly remains the lower-commitment entry point.
+
+Pricing must be controlled from store configuration rather than hard-coded into interpretation logic.
+
+### Monetization principle
+
+Do not sell certainty.
+
+Sell:
+- depth;
+- continuity;
+- richer synthesis;
+- more complete comparison;
+- history;
+- premium presentation;
+- additional qualified systems.
+
+Accuracy, honesty, provenance, and fail-closed behavior remain product-wide standards for both free and paid users.
