@@ -195,6 +195,9 @@ export async function verifyAppleBillingEvidence(
   if (!payload.transactionId || payload.transactionId !== evidence.transactionId) {
     throw new Error("apple_transaction_mismatch");
   }
+  if (!payload.appAccountToken || payload.appAccountToken.toLowerCase() !== userId.toLowerCase()) {
+    throw new Error("apple_account_binding_mismatch");
+  }
 
   const plan = planForAppleProduct(payload.productId);
   if (!plan) throw new Error("apple_product_not_allowed");
@@ -295,6 +298,9 @@ type GoogleSubscriptionV2 = {
   subscriptionState?: string;
   acknowledgementState?: string;
   latestOrderId?: string;
+  externalAccountIdentifiers?: {
+    obfuscatedExternalAccountId?: string;
+  };
   lineItems?: Array<{
     productId?: string;
     expiryTime?: string;
@@ -348,6 +354,9 @@ export async function verifyGoogleBillingEvidence(
 
   const matchingItem = purchase.lineItems?.find((item) => item.productId === evidence.productId);
   if (!matchingItem) throw new Error("google_play_product_mismatch");
+  if (purchase.externalAccountIdentifiers?.obfuscatedExternalAccountId !== userId) {
+    throw new Error("google_play_account_binding_mismatch");
+  }
 
   const purchasedAt = purchase.startTime ? new Date(purchase.startTime) : null;
   const expiresAt = matchingItem.expiryTime ? new Date(matchingItem.expiryTime) : null;
@@ -356,6 +365,23 @@ export async function verifyGoogleBillingEvidence(
 
   const accessStatus = googleAccessStatus(purchase.subscriptionState, expiresAt, now);
   const providerTransactionId = purchase.latestOrderId || evidence.transactionId;
+
+  if (
+    purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING" &&
+    ["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus)
+  ) {
+    const acknowledgeUrl =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(evidence.productId)}/tokens/${encodeURIComponent(evidence.purchaseToken)}:acknowledge`;
+    const acknowledge = await fetchImpl(acknowledgeUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    });
+    if (!acknowledge.ok) throw new Error("google_play_acknowledgement_failed");
+  }
 
   return {
     userId,
@@ -376,7 +402,9 @@ export async function verifyGoogleBillingEvidence(
     diagnosticMetadata: {
       source: "google_play_developer_api",
       state: purchase.subscriptionState ?? "unknown",
-      acknowledged: purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+      acknowledged:
+        purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" ||
+        purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING",
       hasOrderId: Boolean(purchase.latestOrderId),
     },
   };
