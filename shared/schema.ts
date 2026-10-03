@@ -122,6 +122,7 @@ export const billingTransactionEvents = pgTable("billing_transaction_events", {
   plan: text("plan").notNull(),
   environment: text("environment").notNull(),
   eventType: text("event_type").notNull(),
+  providerOccurredAt: timestamp("provider_occurred_at").notNull(),
   verificationState: text("verification_state").notNull(),
   purchasedAt: timestamp("purchased_at"),
   expiresAt: timestamp("expires_at"),
