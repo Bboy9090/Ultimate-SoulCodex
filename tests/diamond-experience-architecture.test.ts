@@ -71,7 +71,7 @@ test("connections surface uses the five transparent relationship dimensions", ()
     assert.ok(compatibility.includes(label), `missing relationship dimension: ${label}`);
   }
   assert.match(compatibility, /advanced_connections/);
-  assert.match(compatibility, /Unlock with Soul Codex\+/);
+  assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
   assert.match(compatibility, /No universal verdict/);
 });
 
