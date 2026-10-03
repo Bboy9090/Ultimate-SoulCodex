@@ -37,6 +37,7 @@ import {
   publicShareSelectionSchema,
 } from "./lib/public-profile-projection";
 import { resolveProductEntitlement } from "./lib/product-entitlement";
+import { tierAllowsCapability } from "@shared/product-access";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -407,10 +408,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profileId = req.params.id;
       const profile = await storage.getProfile(profileId);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
-      if (!profile.isPremium) {
+      const userId = req.session?.userId ?? null;
+      const user = userId ? await storage.getUser(userId) : null;
+      const entitlement = resolveProductEntitlement(user);
+      if (!tierAllowsCapability(entitlement.tier, "premium_exports")) {
         return res.status(403).json({
-          message: "Premium access required",
-          code: "premium_required",
+          message: "Soul Codex+ access required",
+          code: "soul_codex_plus_required",
         });
       }
 
