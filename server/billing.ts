@@ -1,8 +1,12 @@
-import express, { type Express, type Request } from "express";
+import { createHash } from "node:crypto";
+import express, { type Express } from "express";
 import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
 import { z } from "zod";
-import { storage } from "./storage";
+import {
+  recordVerifiedBillingEvent,
+  type VerifiedBillingEvent,
+} from "./lib/product-entitlement";
 
 const checkoutRequestSchema = z
   .object({
@@ -20,11 +24,16 @@ const RAW_PAYMENT_FIELD_NAMES = Object.freeze([
 ]);
 
 export interface BillingStatus {
-  enabled: boolean;
+  enabled: false;
   provider: "stripe_checkout";
   collectsCardDataOnSoulCodex: false;
   persistentEntitlements: boolean;
-  reason?: "not_configured" | "subscription_checkout_not_qualified";
+  subscriptionWebhookVerification: boolean;
+  monthlyProductConfigured: boolean;
+  annualProductConfigured: boolean;
+  reason:
+    | "not_configured"
+    | "subscription_checkout_not_qualified";
 }
 
 function stripeClient(): Stripe | null {
@@ -32,45 +41,41 @@ function stripeClient(): Stripe | null {
   return secretKey ? new Stripe(secretKey) : null;
 }
 
-function configuredPublicAppUrl(): string | null {
-  const raw = process.env.PUBLIC_APP_URL?.trim();
-  if (!raw) return null;
-
-  try {
-    const url = new URL(raw);
-    if (url.protocol !== "https:" && url.hostname !== "localhost") {
-      return null;
-    }
-    return url.origin;
-  } catch {
-    return null;
-  }
-}
-
 function persistentStorageConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
 }
 
-export function getBillingStatus(): BillingStatus {
-  const persistentEntitlements = persistentStorageConfigured();
-  const legacyCheckoutConfigured = Boolean(
-    persistentEntitlements &&
-      process.env.STRIPE_SECRET_KEY?.trim() &&
-      process.env.STRIPE_PRICE_ID?.trim() &&
-      process.env.STRIPE_WEBHOOK_SECRET?.trim() &&
-      configuredPublicAppUrl(),
-  );
+function stripeMonthlyPriceId(): string | null {
+  return process.env.STRIPE_PLUS_MONTHLY_PRICE_ID?.trim() || null;
+}
 
-  // Soul Codex+ is a monthly/annual durable entitlement product. The older
-  // one-time Stripe payment flow is deliberately disabled even when its
-  // environment variables are present; charging for a legacy flag that does
-  // not grant current Plus access would violate the product promise.
+function stripeAnnualPriceId(): string | null {
+  return process.env.STRIPE_PLUS_ANNUAL_PRICE_ID?.trim() || null;
+}
+
+function stripeWebhookConfigured(): boolean {
+  return Boolean(
+    persistentStorageConfigured() &&
+      process.env.STRIPE_SECRET_KEY?.trim() &&
+      process.env.STRIPE_WEBHOOK_SECRET?.trim() &&
+      (stripeMonthlyPriceId() || stripeAnnualPriceId()),
+  );
+}
+
+export function getBillingStatus(): BillingStatus {
+  const monthlyProductConfigured = Boolean(stripeMonthlyPriceId());
+  const annualProductConfigured = Boolean(stripeAnnualPriceId());
+  const subscriptionWebhookVerification = stripeWebhookConfigured();
+
   return {
     enabled: false,
     provider: "stripe_checkout",
     collectsCardDataOnSoulCodex: false,
-    persistentEntitlements,
-    reason: legacyCheckoutConfigured
+    persistentEntitlements: persistentStorageConfigured(),
+    subscriptionWebhookVerification,
+    monthlyProductConfigured,
+    annualProductConfigured,
+    reason: subscriptionWebhookVerification
       ? "subscription_checkout_not_qualified"
       : "not_configured",
   };
@@ -86,46 +91,120 @@ export function containsRawPaymentFields(input: unknown): boolean {
   return RAW_PAYMENT_FIELD_NAMES.some((field) => keys.has(field));
 }
 
-export function isProfileCapabilityAuthorized(
-  authorizationHeader: string | undefined,
-  profileId: string,
-): boolean {
-  return authorizationHeader === `Bearer ${profileId}`;
+function planForStripePriceId(
+  priceId: string | null | undefined,
+): "monthly" | "annual" | null {
+  if (!priceId) return null;
+  if (priceId === stripeMonthlyPriceId()) return "monthly";
+  if (priceId === stripeAnnualPriceId()) return "annual";
+  return null;
 }
 
-function requestAuthorization(req: Request): string | undefined {
-  const value = req.headers.authorization;
-  return Array.isArray(value) ? value[0] : value;
+function secondsToDate(value: unknown): Date | null {
+  const seconds = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(seconds) && seconds > 0
+    ? new Date(seconds * 1000)
+    : null;
 }
 
-async function grantPremiumFromCheckoutSession(
-  session: Stripe.Checkout.Session,
-): Promise<void> {
-  if (session.payment_status !== "paid") return;
-
-  const profileId = session.metadata?.profileId ?? session.client_reference_id;
-  if (!profileId) {
-    throw new Error("stripe_checkout_profile_id_missing");
+function stripeSubscriptionAccessStatus(subscription: any): VerifiedBillingEvent["accessStatus"] {
+  if (
+    subscription?.cancel_at_period_end === true &&
+    (subscription?.status === "active" || subscription?.status === "trialing")
+  ) {
+    return "canceled_pending_expiry";
   }
 
-  const profile = await storage.getProfile(profileId);
-  if (!profile) {
-    throw new Error("stripe_checkout_profile_not_found");
+  switch (subscription?.status) {
+    case "active":
+      return "active";
+    case "trialing":
+      return "trialing";
+    case "past_due":
+      return "grace_period";
+    case "canceled":
+    case "incomplete_expired":
+      return "expired";
+    case "unpaid":
+    case "paused":
+    case "incomplete":
+      return "account_hold";
+    default:
+      return "account_hold";
   }
+}
 
-  await storage.updateProfile(profileId, { isPremium: true });
+export function verifiedStripeSubscriptionEvent(
+  event: Stripe.Event,
+  rawBody: Buffer,
+  verifiedAt = new Date(),
+): VerifiedBillingEvent | null {
+  if (!event.type.startsWith("customer.subscription.")) return null;
+
+  const subscription = event.data.object as any;
+  const userId =
+    typeof subscription?.metadata?.soulCodexUserId === "string"
+      ? subscription.metadata.soulCodexUserId.trim()
+      : "";
+  if (!userId) return null;
+
+  const firstItem = subscription?.items?.data?.[0];
+  const priceId =
+    typeof firstItem?.price?.id === "string"
+      ? firstItem.price.id
+      : null;
+  const plan = planForStripePriceId(priceId);
+  if (!plan || !priceId) return null;
+
+  const currentPeriodEnd =
+    secondsToDate(subscription?.current_period_end) ??
+    secondsToDate(firstItem?.current_period_end);
+  const purchasedAt =
+    secondsToDate(subscription?.start_date) ??
+    secondsToDate(subscription?.created);
+
+  return {
+    userId,
+    provider: "stripe",
+    providerEventId: event.id,
+    providerTransactionId:
+      typeof subscription?.id === "string" ? subscription.id : null,
+    productId: priceId,
+    plan,
+    environment: event.livemode ? "production" : "sandbox",
+    eventType: event.type,
+    verificationState: "verified",
+    accessStatus: stripeSubscriptionAccessStatus(subscription),
+    purchasedAt,
+    expiresAt: currentPeriodEnd,
+    verifiedAt,
+    evidenceDigest: createHash("sha256").update(rawBody).digest("hex"),
+    diagnosticMetadata: {
+      webhookType: event.type,
+      livemode: Boolean(event.livemode),
+      stripeStatus:
+        typeof subscription?.status === "string"
+          ? subscription.status
+          : "unknown",
+      cancelAtPeriodEnd: Boolean(subscription?.cancel_at_period_end),
+      objectType:
+        typeof subscription?.object === "string"
+          ? subscription.object
+          : "subscription",
+    },
+  };
 }
 
 /**
- * Register routes that must execute before express.json(). Stripe signatures
- * are calculated over the exact raw request bytes, and the retired direct-card
- * endpoint must be rejected without parsing or accepting card fields.
+ * Routes here execute before express.json(): Stripe signatures are verified
+ * against the exact raw bytes. The legacy direct-card and one-time checkout
+ * products remain retired while recurring purchase initiation is qualified.
  */
 export function registerBillingRawRoutes(app: Express): void {
   app.post("/api/profiles/:id/upgrade", (_req, res) => {
     res.status(410).json({
       message:
-        "Direct card entry has been retired. Soul Codex only uses hosted Stripe Checkout.",
+        "Direct card entry has been retired. Soul Codex+ uses verified store or subscription entitlements.",
       code: "direct_card_collection_retired",
     });
   });
@@ -137,12 +216,11 @@ export function registerBillingRawRoutes(app: Express): void {
       const stripe = stripeClient();
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
       const signature = req.headers["stripe-signature"];
-      const billingStatus = getBillingStatus();
 
-      if (!stripe || !webhookSecret || !billingStatus.enabled) {
+      if (!stripe || !webhookSecret || !stripeWebhookConfigured()) {
         return res.status(503).json({
-          message: "Billing webhook is not configured",
-          code: "billing_not_configured",
+          message: "Subscription webhook verification is not configured",
+          code: "billing_webhook_not_configured",
         });
       }
 
@@ -168,22 +246,43 @@ export function registerBillingRawRoutes(app: Express): void {
       }
 
       try {
-        if (
-          event.type === "checkout.session.completed" ||
-          event.type === "checkout.session.async_payment_succeeded"
-        ) {
-          await grantPremiumFromCheckoutSession(
-            event.data.object as Stripe.Checkout.Session,
-          );
+        const verifiedEvent = verifiedStripeSubscriptionEvent(
+          event,
+          req.body as Buffer,
+        );
+
+        if (!verifiedEvent) {
+          return res.status(200).json({
+            received: true,
+            applied: false,
+            reason: "unsupported_or_unbound_subscription_event",
+          });
         }
 
-        return res.status(200).json({ received: true });
+        await recordVerifiedBillingEvent(
+          (await import("./storage")).storage,
+          verifiedEvent,
+        );
+
+        return res.status(200).json({
+          received: true,
+          applied: true,
+        });
       } catch (error) {
-        console.error("[billing-webhook] fulfillment failed", {
+        const message = error instanceof Error ? error.message : "unknown_error";
+        console.error("[billing-webhook] verified event application failed", {
           eventId: event.id,
           eventType: event.type,
-          error: error instanceof Error ? error.message : "unknown_error",
+          error: message,
         });
+
+        if (message === "billing_event_replay_mismatch") {
+          return res.status(409).json({
+            message: "Billing event replay did not match stored evidence",
+            code: "billing_event_replay_mismatch",
+          });
+        }
+
         return res.status(500).json({
           message: "Billing fulfillment failed",
           code: "billing_fulfillment_failed",
