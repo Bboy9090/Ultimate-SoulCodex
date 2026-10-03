@@ -90,10 +90,11 @@ test("billing remains disabled unless checkout and persistent entitlement storag
 
     process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/soulcodex";
     assert.deepEqual(getBillingStatus(), {
-      enabled: true,
+      enabled: false,
       provider: "stripe_checkout",
       collectsCardDataOnSoulCodex: false,
       persistentEntitlements: true,
+      reason: "subscription_checkout_not_qualified",
     });
 
     process.env.PUBLIC_APP_URL = "http://not-secure.example.com";
