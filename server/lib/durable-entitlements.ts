@@ -118,6 +118,8 @@ export async function recordVerifiedBillingEvent(
   input: VerifiedBillingEvent,
 ) {
   const event = verifiedBillingEventSchema.parse(input);
+  const user = await storage.getUser(event.userId);
+  if (!user) throw new Error("billing_subject_user_not_found");
   const subject = await storage.getOrCreateBillingSubject(event.userId);
   const existing = await storage.getBillingTransactionEventByProviderEvent(
     event.provider,
@@ -233,6 +235,8 @@ export async function resolveProductEntitlementForUser(
   now = new Date(),
 ): Promise<ProductEntitlement> {
   if (!userId) return entitlementFromGrant(null, now);
+  const user = await storage.getUser(userId);
+  if (!user) return entitlementFromGrant(null, now);
   const grant = await storage.getLatestEntitlementGrant(
     userId,
     SOUL_CODEX_PLUS_CAPABILITY,
