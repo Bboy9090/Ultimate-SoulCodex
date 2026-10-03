@@ -105,7 +105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tier: "free",
         source: "free",
         verified: false,
+        plan: null,
+        status: null,
         expiresAt: null,
+        lastVerifiedAt: null,
       });
     }
   });
