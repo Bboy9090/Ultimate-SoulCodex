@@ -78,3 +78,30 @@ export async function restoreNativePurchases(
   const { transactions } = await NativeBilling.restore({ productIds });
   return transactions;
 }
+
+
+export async function verifyNativeBillingEvidence(
+  evidence: NativeBillingEvidence,
+): Promise<{
+  verified: boolean;
+  access: {
+    tier: "free" | "plus";
+    source: "free" | "apple" | "google_play" | "stripe";
+    plan: "monthly" | "annual" | null;
+    status: string | null;
+    expiresAt: string | null;
+    lastVerifiedAt: string | null;
+  };
+}> {
+  const response = await apiFetch("/api/billing/native/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(evidence),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    const code = typeof payload?.code === "string" ? payload.code : "native_billing_verification_failed";
+    throw new Error(code);
+  }
+  return response.json();
+}
