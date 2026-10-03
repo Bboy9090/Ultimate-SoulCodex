@@ -138,7 +138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const finish = () => {
         res.clearCookie("connect.sid");
-        return res.json({ message: "All your data has been permanently deleted." });
+        return res.json({
+          message: "Your account and profile data have been deleted. Minimal billing and security audit records may be retained where required for financial integrity, fraud prevention, or legal obligations and are not used to restore personalization.",
+        });
       };
       if (!req.session) return finish();
       req.session.destroy((destroyErr: unknown) => {
