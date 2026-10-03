@@ -60,7 +60,7 @@ test("native purchase passes authenticated account id into store account binding
 
 test("native entitlement effective time is not pushed to the future by a current period expiry", () => {
   assert.match(verifier, /accessStatus === "expired" \? expiresAt : null/);
-  assert.match(verifier, /purchaseDate \?\? now/);
+  assert.match(verifier, /purchaseDate\s*\?\?\s*now/);
   assert.match(verifier, /accessStatus === "expired"[\s\S]*expiresAt \?\? purchasedAt \?\? now[\s\S]*purchasedAt \?\? now/);
 });
 
