@@ -271,3 +271,27 @@ test("unsupported verified signs fail closed instead of inheriting Virgo languag
     archetypeData: local.archetypeData,
   });
 });
+
+
+test("verified symbolic systems do not establish protection without behavioral evidence", () => {
+  const result = synthesizeVerifiedFoundationProfile(
+    local,
+    chart("first"),
+    "2026-09-20T20:00:00.000Z",
+    {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      definition: "No Definition",
+      centers: { defined: [], undefined: ["Head", "Ajna", "Throat", "G", "Heart", "Spleen", "Solar Plexus", "Sacral", "Root"] },
+      channels: [],
+      activatedGates: [64, 47],
+      ...hdTrust,
+    },
+  );
+
+  assert.equal(result.depthInterpretation.protectiveFunction.claimKind, "unavailable");
+  assert.match(result.depthInterpretation.protectiveFunction.summary, /^Unavailable:/);
+});
