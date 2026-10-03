@@ -10,12 +10,28 @@ import {
   resolveProductEntitlementForUser,
   type VerifiedBillingEvent,
 } from "./lib/product-entitlement";
+import {
+  verifyAppleSignedTransaction,
+  verifyGooglePlaySubscription,
+} from "./lib/native-store-verification";
 
 const checkoutRequestSchema = z
   .object({
     plan: z.enum(["monthly", "annual"]),
   })
   .strict();
+
+const nativeVerifyRequestSchema = z.discriminatedUnion("platform", [
+  z.object({
+    platform: z.literal("ios"),
+    signedTransaction: z.string().trim().min(64).max(32_000),
+  }).strict(),
+  z.object({
+    platform: z.literal("android"),
+    purchaseToken: z.string().trim().min(8).max(4_096),
+    productId: z.string().trim().min(1).max(512),
+  }).strict(),
+]);
 
 const RAW_PAYMENT_FIELD_NAMES = Object.freeze([
   "cardNumber",
@@ -550,6 +566,83 @@ export function registerBillingRoutes(app: Express): void {
     });
   });
 
+
+  app.post("/api/billing/native/verify", checkoutLimiter, async (req: any, res) => {
+    const userId = req.session?.userId ?? null;
+    if (!userId) {
+      return res.status(401).json({
+        message: "Sign in before verifying a native Soul Codex+ purchase.",
+        code: "native_billing_auth_required",
+      });
+    }
+
+    if (!nativeBillingFlagEnabled()) {
+      return res.status(503).json({
+        message: "Native Soul Codex+ billing is not enabled.",
+        code: "native_billing_disabled",
+      });
+    }
+
+    const parsed = nativeVerifyRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Native billing verification payload is invalid.",
+        code: "native_billing_verify_invalid",
+      });
+    }
+
+    const verifierReady =
+      parsed.data.platform === "ios"
+        ? appleNativeVerifierConfigured()
+        : googleNativeVerifierConfigured();
+    if (!verifierReady) {
+      return res.status(503).json({
+        message: "Native subscription verification is not configured.",
+        code: "native_billing_verifier_not_configured",
+      });
+    }
+
+    try {
+      const verifiedEvent =
+        parsed.data.platform === "ios"
+          ? verifyAppleSignedTransaction(parsed.data.signedTransaction, userId)
+          : await verifyGooglePlaySubscription(
+              parsed.data.purchaseToken,
+              parsed.data.productId,
+              userId,
+            );
+
+      const recorded = await recordVerifiedBillingEvent(storage, verifiedEvent);
+      const entitlement = await resolveProductEntitlementForUser(storage, userId);
+
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      return res.status(200).json({
+        verified: true,
+        tier: entitlement.tier,
+        source: entitlement.source,
+        plan: entitlement.plan,
+        status: entitlement.status,
+        expiresAt: entitlement.expiresAt,
+        eventId: recorded.transaction.id,
+      });
+    } catch (error) {
+      const code =
+        error instanceof Error
+          ? error.message
+          : "native_billing_verify_failed";
+
+      console.error("[native-billing] verification failed", {
+        platform: parsed.data.platform,
+        code,
+      });
+
+      const clientError = /(?:mismatch|invalid|malformed|untrusted|expired|missing|not_allowed|signature)/i.test(code);
+      return res.status(clientError ? 400 : 502).json({
+        message: "Native subscription verification failed.",
+        code,
+      });
+    }
+  });
 
   app.get("/api/billing/catalog", async (_req, res) => {
     const status = getBillingStatus();
