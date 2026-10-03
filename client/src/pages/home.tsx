@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
+import DiamondClosure from "../components/DiamondClosure";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import {
   compatibilityLink,
@@ -196,24 +197,15 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="sc-panel sc-panel-gold mb-5 overflow-hidden px-5 py-6 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
-          <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden="true" style={{ background: "radial-gradient(circle at 92% 5%, rgba(154,116,220,.16), transparent 31%), radial-gradient(circle at 14% 100%, rgba(217,182,111,.06), transparent 25%)" }} />
-          <div className="relative grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-            <div>
-              <div className="sc-eyebrow mb-3">Today · Diamond Way</div>
-              <h2 className="m-0 max-w-[820px] font-serif text-[clamp(1.7rem,4vw,2.85rem)] font-medium leading-[1.12] tracking-[-.025em] text-[var(--sc-ivory)]">
-                {profile?.dailyGuidance || "Start with the strongest supported signal. Ignore the noise. Make one useful move."}
-              </h2>
-              <p className="mb-0 mt-3 max-w-[760px] text-sm leading-7 text-[var(--sc-stone)] sm:text-[15px]">
-                This is a reflection, not a command or prediction. Open Today to see the timing inputs behind it, then leave with one concrete next move.
-              </p>
-            </div>
-            <Link href={profile ? readingHref : identityHref} className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
-              {profile ? "Continue reading" : "Create profile"}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </section>
+        <div className="mb-5">
+          <DiamondClosure
+            clarity={profile?.dailyGuidance || "Start with the strongest supported signal. Ignore the noise. Make one useful move."}
+            depth="Today combines only the timing and profile signals that have enough evidence to be shown. Symbolic meaning stays separate from verified calculation."
+            nextMove="Open Today, inspect the three to five strongest current influences, then choose one action small enough to test in real life."
+            nextHref="/timeline"
+            nextLabel="Open Today"
+          />
+        </div>
 
         <section className="mb-5 grid gap-4 lg:grid-cols-[1.15fr_.85fr]" aria-label="Daily and social context">
           <div className="sc-panel p-5 sm:p-6">
