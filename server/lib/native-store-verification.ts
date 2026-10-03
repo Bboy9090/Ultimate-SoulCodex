@@ -1,6 +1,7 @@
 import {
   X509Certificate,
   createHash,
+  createHmac,
   createSign,
   createVerify,
   createPrivateKey,
@@ -267,8 +268,8 @@ function googleBindingSecret(): string {
 }
 
 export function googleObfuscatedAccountId(userId: string): string {
-  return createHash("sha256")
-    .update(`${googleBindingSecret()}:${userId}`)
+  return createHmac("sha256", googleBindingSecret())
+    .update(userId)
     .digest("hex");
 }
 
