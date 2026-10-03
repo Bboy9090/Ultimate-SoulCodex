@@ -75,6 +75,7 @@ Requirements before enabling `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=true`:
 - production `PUBLIC_APP_URL` is valid;
 - the request resolves an authenticated server session account;
 - sandbox subscription creation, renewal, cancellation, expiration, refund/revocation, and restore/access checks pass;
+- duplicate/concurrent checkout protection prevents one account from unintentionally starting multiple live subscriptions;
 - the web product has a supported canonical sign-in path.
 
 Native iOS/Android builds must not use this web Stripe switch as a substitute for StoreKit 2 or Google Play Billing.
