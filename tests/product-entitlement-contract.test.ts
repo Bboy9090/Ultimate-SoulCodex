@@ -20,6 +20,7 @@ function event(overrides: Record<string, unknown> = {}) {
     plan: "monthly" as const,
     environment: "sandbox" as const,
     eventType: "subscription_created",
+    occurredAt: new Date("2026-10-01T12:00:00Z"),
     verificationState: "verified" as const,
     accessStatus: "active" as const,
     purchasedAt: new Date("2026-10-01T12:00:00Z"),
@@ -60,6 +61,7 @@ test("canceled pending expiry retains access through the paid period", async () 
   await recordVerifiedBillingEvent(storage, event({
     providerEventId: "evt_cancel",
     eventType: "subscription_cancel_scheduled",
+    occurredAt: new Date("2026-10-10T11:59:00Z"),
     accessStatus: "canceled_pending_expiry",
     verifiedAt: new Date("2026-10-10T12:00:00Z"),
     evidenceDigest: digestB,
@@ -80,6 +82,7 @@ test("expiration event fails closed to Free", async () => {
   await recordVerifiedBillingEvent(storage, event({
     providerEventId: "evt_expired",
     eventType: "subscription_expired",
+    occurredAt: new Date("2026-11-01T12:00:00Z"),
     accessStatus: "expired",
     expiresAt: new Date("2026-11-01T12:00:00Z"),
     verifiedAt: new Date("2026-11-01T12:01:00Z"),
@@ -101,6 +104,7 @@ test("revocation immediately removes Plus", async () => {
   await recordVerifiedBillingEvent(storage, event({
     providerEventId: "evt_refund",
     eventType: "refund",
+    occurredAt: new Date("2026-10-15T11:59:00Z"),
     accessStatus: "refunded",
     verifiedAt: new Date("2026-10-15T12:00:00Z"),
     evidenceDigest: digestB,
@@ -143,4 +147,37 @@ test("raw signed payloads and secrets cannot enter diagnostic metadata", async (
     })),
     /not allowed/,
   );
+});
+
+
+test("out-of-order older provider event cannot override newer entitlement state", async () => {
+  const storage = new MemStorage();
+
+  await recordVerifiedBillingEvent(storage, event({
+    providerEventId: "evt_newer_expired",
+    eventType: "subscription_expired",
+    occurredAt: new Date("2026-11-01T12:00:00Z"),
+    accessStatus: "expired",
+    expiresAt: new Date("2026-11-01T12:00:00Z"),
+    verifiedAt: new Date("2026-11-01T12:01:00Z"),
+    evidenceDigest: digestB,
+  }));
+
+  await recordVerifiedBillingEvent(storage, event({
+    providerEventId: "evt_older_active_delayed",
+    occurredAt: new Date("2026-10-20T12:00:00Z"),
+    accessStatus: "active",
+    expiresAt: new Date("2026-11-20T12:00:00Z"),
+    verifiedAt: new Date("2026-11-02T12:00:00Z"),
+    evidenceDigest: "c".repeat(64),
+  }));
+
+  const entitlement = await resolveProductEntitlementForUser(
+    storage,
+    userId,
+    new Date("2026-11-02T12:01:00Z"),
+  );
+
+  assert.equal(entitlement.tier, "free");
+  assert.equal(entitlement.status, "expired");
 });
