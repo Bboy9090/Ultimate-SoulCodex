@@ -186,7 +186,11 @@ export function verifyAppleSignedTransaction(
   const plan = planForAppleProduct(productId);
   if (!plan) throw new Error("apple_product_not_allowed");
 
-  if (!payload.appAccountToken || payload.appAccountToken.toLowerCase() !== expectedUserId.toLowerCase()) {
+  const expectedAccountToken = appleAppAccountToken(expectedUserId);
+  if (
+    !payload.appAccountToken ||
+    payload.appAccountToken.toLowerCase() !== expectedAccountToken.toLowerCase()
+  ) {
     throw new Error("apple_account_binding_mismatch");
   }
 
@@ -269,6 +273,25 @@ export function googleObfuscatedAccountId(userId: string): string {
   return createHmac("sha256", googleBindingSecret())
     .update(userId)
     .digest("hex");
+}
+
+export function appleAppAccountToken(userId: string): string {
+  const digest = createHmac("sha256", googleBindingSecret())
+    .update(`apple:${userId}`)
+    .digest();
+  const bytes = Buffer.from(digest.subarray(0, 16));
+  // RFC 4122 variant + version-5-shaped deterministic identifier. This is an
+  // opaque account binding, not the user's database identifier.
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join("-");
 }
 
 async function googleAccessToken(now = new Date()): Promise<string> {
