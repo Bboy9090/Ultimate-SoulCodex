@@ -38,6 +38,7 @@ import {
 } from "./lib/public-profile-projection";
 import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
 import { tierAllowsCapability } from "@shared/product-access";
+import { registerBillingRoutes } from "./billing";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -92,6 +93,7 @@ function requireDurableFeature(res: any): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
+  registerBillingRoutes(app);
 
   app.get("/api/access", async (req: any, res) => {
     try {

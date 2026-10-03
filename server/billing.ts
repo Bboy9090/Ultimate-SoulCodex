@@ -1,16 +1,19 @@
 import { createHash } from "node:crypto";
-import express, { type Express } from "express";
+import express, { type Express, type Request } from "express";
 import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
 import { z } from "zod";
+import { storage } from "./storage";
 import {
+  SOUL_CODEX_PLUS_CAPABILITY,
   recordVerifiedBillingEvent,
+  resolveProductEntitlementForUser,
   type VerifiedBillingEvent,
 } from "./lib/product-entitlement";
 
 const checkoutRequestSchema = z
   .object({
-    profileId: z.string().trim().min(8).max(128),
+    plan: z.enum(["monthly", "annual"]),
   })
   .strict();
 
@@ -21,28 +24,64 @@ const RAW_PAYMENT_FIELD_NAMES = Object.freeze([
   "cvc",
   "expiryDate",
   "expiry",
+  "pan",
 ]);
 
+const NATIVE_APP_ORIGINS = new Set([
+  "soulcodex://localhost",
+  "capacitor://localhost",
+  "https://localhost",
+]);
+
+export type SoulCodexPlusPlan = "monthly" | "annual";
+
 export interface BillingStatus {
-  enabled: false;
+  enabled: boolean;
   provider: "stripe_checkout";
   collectsCardDataOnSoulCodex: false;
   persistentEntitlements: boolean;
   subscriptionWebhookVerification: boolean;
   monthlyProductConfigured: boolean;
   annualProductConfigured: boolean;
+  webCheckoutEnabled: boolean;
+  manageSubscriptionEnabled: boolean;
   reason:
+    | "ready"
     | "not_configured"
-    | "subscription_checkout_not_qualified";
+    | "web_checkout_disabled";
 }
+
+export type BillingCatalogPlan = {
+  plan: SoulCodexPlusPlan;
+  currency: string;
+  unitAmount: number;
+  interval: "month" | "year";
+  intervalCount: number;
+};
 
 function stripeClient(): Stripe | null {
   const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
   return secretKey ? new Stripe(secretKey) : null;
 }
 
+function configuredPublicAppUrl(): string | null {
+  const raw = process.env.PUBLIC_APP_URL?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" && url.hostname !== "localhost") return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 function persistentStorageConfigured(): boolean {
   return Boolean(process.env.DATABASE_URL?.trim());
+}
+
+function webCheckoutFlagEnabled(): boolean {
+  return process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
 }
 
 function stripeMonthlyPriceId(): string | null {
@@ -58,7 +97,24 @@ function stripeWebhookConfigured(): boolean {
     persistentStorageConfigured() &&
       process.env.STRIPE_SECRET_KEY?.trim() &&
       process.env.STRIPE_WEBHOOK_SECRET?.trim() &&
-      (stripeMonthlyPriceId() || stripeAnnualPriceId()),
+      stripeMonthlyPriceId() &&
+      stripeAnnualPriceId(),
+  );
+}
+
+function stripeManagementConfigured(): boolean {
+  return Boolean(
+    persistentStorageConfigured() &&
+      process.env.STRIPE_SECRET_KEY?.trim() &&
+      configuredPublicAppUrl(),
+  );
+}
+
+function webCheckoutConfigured(): boolean {
+  return Boolean(
+    webCheckoutFlagEnabled() &&
+      stripeWebhookConfigured() &&
+      configuredPublicAppUrl(),
   );
 }
 
@@ -66,22 +122,27 @@ export function getBillingStatus(): BillingStatus {
   const monthlyProductConfigured = Boolean(stripeMonthlyPriceId());
   const annualProductConfigured = Boolean(stripeAnnualPriceId());
   const subscriptionWebhookVerification = stripeWebhookConfigured();
+  const enabled = webCheckoutConfigured();
 
   return {
-    enabled: false,
+    enabled,
     provider: "stripe_checkout",
     collectsCardDataOnSoulCodex: false,
     persistentEntitlements: persistentStorageConfigured(),
     subscriptionWebhookVerification,
     monthlyProductConfigured,
     annualProductConfigured,
-    reason: subscriptionWebhookVerification
-      ? "subscription_checkout_not_qualified"
-      : "not_configured",
+    webCheckoutEnabled: enabled,
+    manageSubscriptionEnabled: stripeManagementConfigured(),
+    reason: enabled
+      ? "ready"
+      : subscriptionWebhookVerification && configuredPublicAppUrl()
+        ? "web_checkout_disabled"
+        : "not_configured",
   };
 }
 
-export function parseCheckoutRequest(input: unknown): { profileId: string } {
+export function parseCheckoutRequest(input: unknown): { plan: SoulCodexPlusPlan } {
   return checkoutRequestSchema.parse(input);
 }
 
@@ -91,9 +152,22 @@ export function containsRawPaymentFields(input: unknown): boolean {
   return RAW_PAYMENT_FIELD_NAMES.some((field) => keys.has(field));
 }
 
+export function isNativeAppOrigin(origin: string | undefined): boolean {
+  return Boolean(origin && NATIVE_APP_ORIGINS.has(origin));
+}
+
+function requestOrigin(req: Request): string | undefined {
+  const value = req.headers.origin;
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function planPriceId(plan: SoulCodexPlusPlan): string | null {
+  return plan === "annual" ? stripeAnnualPriceId() : stripeMonthlyPriceId();
+}
+
 function planForStripePriceId(
   priceId: string | null | undefined,
-): "monthly" | "annual" | null {
+): SoulCodexPlusPlan | null {
   if (!priceId) return null;
   if (priceId === stripeMonthlyPriceId()) return "monthly";
   if (priceId === stripeAnnualPriceId()) return "annual";
@@ -196,10 +270,107 @@ export function verifiedStripeSubscriptionEvent(
   };
 }
 
+async function stripeCatalogPlan(
+  stripe: Stripe,
+  plan: SoulCodexPlusPlan,
+): Promise<BillingCatalogPlan> {
+  const priceId = planPriceId(plan);
+  if (!priceId) throw new Error("billing_product_not_configured");
+
+  const price = await stripe.prices.retrieve(priceId);
+  const expectedInterval = plan === "monthly" ? "month" : "year";
+
+  if (
+    !price.active ||
+    price.type !== "recurring" ||
+    !price.recurring ||
+    price.recurring.interval !== expectedInterval ||
+    typeof price.unit_amount !== "number"
+  ) {
+    throw new Error("billing_product_catalog_mismatch");
+  }
+
+  return {
+    plan,
+    currency: price.currency,
+    unitAmount: price.unit_amount,
+    interval: expectedInterval,
+    intervalCount: price.recurring.interval_count ?? 1,
+  };
+}
+
+async function createWebCheckoutSession(
+  stripe: Stripe,
+  user: Awaited<ReturnType<typeof storage.getUser>>,
+  plan: SoulCodexPlusPlan,
+): Promise<Stripe.Checkout.Session> {
+  if (!user) throw new Error("billing_user_not_found");
+  const priceId = planPriceId(plan);
+  const appUrl = configuredPublicAppUrl();
+  if (!priceId || !appUrl) throw new Error("billing_not_configured");
+
+  return stripe.checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: priceId, quantity: 1 }],
+    client_reference_id: user.id,
+    customer_email: user.email?.trim() || undefined,
+    metadata: {
+      soulCodexUserId: user.id,
+      soulCodexPlan: plan,
+    },
+    subscription_data: {
+      metadata: {
+        soulCodexUserId: user.id,
+        soulCodexPlan: plan,
+      },
+    },
+    success_url: `${appUrl}/pricing?checkout=success`,
+    cancel_url: `${appUrl}/pricing?checkout=cancelled`,
+    allow_promotion_codes: true,
+  });
+}
+
+async function createStripePortalSession(
+  stripe: Stripe,
+  userId: string,
+): Promise<Stripe.BillingPortal.Session> {
+  const appUrl = configuredPublicAppUrl();
+  if (!appUrl) throw new Error("billing_not_configured");
+
+  const grant = await storage.getLatestEntitlementGrant(
+    userId,
+    SOUL_CODEX_PLUS_CAPABILITY,
+  );
+  if (!grant || grant.sourceProvider !== "stripe") {
+    throw new Error("stripe_subscription_not_found");
+  }
+
+  const transaction = await storage.getBillingTransactionEventById(
+    grant.sourceTransactionEventId,
+  );
+  const subscriptionId = transaction?.providerTransactionId;
+  if (!subscriptionId) throw new Error("stripe_subscription_not_found");
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const customer =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer?.id;
+  if (!customer) throw new Error("stripe_customer_not_found");
+
+  const configuration =
+    process.env.STRIPE_BILLING_PORTAL_CONFIGURATION_ID?.trim() || undefined;
+
+  return stripe.billingPortal.sessions.create({
+    customer,
+    return_url: `${appUrl}/pricing`,
+    ...(configuration ? { configuration } : {}),
+  });
+}
+
 /**
  * Routes here execute before express.json(): Stripe signatures are verified
- * against the exact raw bytes. The legacy direct-card and one-time checkout
- * products remain retired while recurring purchase initiation is qualified.
+ * against the exact raw bytes. Direct-card collection remains retired.
  */
 export function registerBillingRawRoutes(app: Express): void {
   app.post("/api/profiles/:id/upgrade", (_req, res) => {
@@ -260,10 +431,7 @@ export function registerBillingRawRoutes(app: Express): void {
           });
         }
 
-        await recordVerifiedBillingEvent(
-          (await import("./storage")).storage,
-          verifiedEvent,
-        );
+        await recordVerifiedBillingEvent(storage, verifiedEvent);
 
         return res.status(200).json({
           received: true,
@@ -304,13 +472,41 @@ const checkoutLimiter = rateLimit({
   },
 });
 
-/** Register parsed JSON billing routes after express.json(). */
+/** Register parsed billing routes only after session middleware is installed. */
 export function registerBillingRoutes(app: Express): void {
   app.get("/api/billing/status", (_req, res) => {
     res.status(200).json(getBillingStatus());
   });
 
-  app.post("/api/billing/checkout", checkoutLimiter, async (req, res) => {
+  app.get("/api/billing/catalog", async (_req, res) => {
+    const status = getBillingStatus();
+    const stripe = stripeClient();
+
+    if (!status.enabled || !stripe) {
+      return res.status(503).json({
+        message: "Soul Codex+ web checkout is not enabled",
+        code: "web_checkout_disabled",
+      });
+    }
+
+    try {
+      const plans = await Promise.all([
+        stripeCatalogPlan(stripe, "monthly"),
+        stripeCatalogPlan(stripe, "annual"),
+      ]);
+      return res.status(200).json({ plans });
+    } catch (error) {
+      console.error("[billing-catalog] failed", {
+        error: error instanceof Error ? error.message : "unknown_error",
+      });
+      return res.status(503).json({
+        message: "Soul Codex+ product catalog is unavailable",
+        code: "billing_catalog_unavailable",
+      });
+    }
+  });
+
+  app.post("/api/billing/checkout", checkoutLimiter, async (req: any, res) => {
     if (containsRawPaymentFields(req.body)) {
       return res.status(400).json({
         message:
@@ -319,18 +515,135 @@ export function registerBillingRoutes(app: Express): void {
       });
     }
 
+    if (isNativeAppOrigin(requestOrigin(req))) {
+      return res.status(409).json({
+        message: "Use the native app store purchase flow for digital Soul Codex+ access.",
+        code: "native_store_billing_required",
+      });
+    }
+
     const parsed = checkoutRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
-        message: "A valid profile ID is required",
+        message: "Choose a valid Soul Codex+ plan",
         code: "checkout_request_invalid",
       });
     }
 
-    return res.status(410).json({
-      message:
-        "The legacy one-time checkout is retired. Soul Codex+ purchasing will activate only through the qualified monthly/annual entitlement flow.",
-      code: "legacy_checkout_retired",
-    });
+    const status = getBillingStatus();
+    if (!status.enabled) {
+      return res.status(503).json({
+        message: "Soul Codex+ web checkout is not enabled",
+        code: "web_checkout_disabled",
+      });
+    }
+
+    const userId = req.session?.userId ?? null;
+    if (!userId) {
+      return res.status(401).json({
+        message: "Sign in before starting Soul Codex+ checkout",
+        code: "authentication_required",
+      });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(401).json({
+        message: "Your account session is no longer valid",
+        code: "authentication_required",
+      });
+    }
+
+    const currentAccess = await resolveProductEntitlementForUser(storage, userId);
+    if (currentAccess.tier === "plus") {
+      return res.status(409).json({
+        message: "Soul Codex+ is already active for this account",
+        code: "already_plus",
+        access: currentAccess,
+      });
+    }
+
+    const stripe = stripeClient();
+    if (!stripe) {
+      return res.status(503).json({
+        message: "Soul Codex+ web checkout is not configured",
+        code: "billing_not_configured",
+      });
+    }
+
+    try {
+      const session = await createWebCheckoutSession(
+        stripe,
+        user,
+        parsed.data.plan,
+      );
+      if (!session.url) throw new Error("stripe_checkout_url_missing");
+
+      return res.status(200).json({
+        url: session.url,
+        provider: "stripe_checkout",
+        plan: parsed.data.plan,
+      });
+    } catch (error) {
+      console.error("[billing-checkout] failed", {
+        userId,
+        plan: parsed.data.plan,
+        error: error instanceof Error ? error.message : "unknown_error",
+      });
+      return res.status(502).json({
+        message: "Soul Codex+ checkout could not be started",
+        code: "checkout_session_failed",
+      });
+    }
+  });
+
+  app.post("/api/billing/manage", checkoutLimiter, async (req: any, res) => {
+    if (isNativeAppOrigin(requestOrigin(req))) {
+      return res.status(409).json({
+        message: "Manage native subscriptions through the app store purchase flow.",
+        code: "native_store_billing_required",
+      });
+    }
+
+    const userId = req.session?.userId ?? null;
+    if (!userId) {
+      return res.status(401).json({
+        message: "Sign in to manage Soul Codex+",
+        code: "authentication_required",
+      });
+    }
+
+    const currentAccess = await resolveProductEntitlementForUser(storage, userId);
+    if (currentAccess.source !== "stripe") {
+      return res.status(409).json({
+        message: "No web-managed Soul Codex+ subscription is associated with this account",
+        code: "stripe_subscription_not_found",
+      });
+    }
+
+    const stripe = stripeClient();
+    if (!stripe || !stripeManagementConfigured()) {
+      return res.status(503).json({
+        message: "Subscription management is unavailable",
+        code: "billing_management_unavailable",
+      });
+    }
+
+    try {
+      const portal = await createStripePortalSession(stripe, userId);
+      return res.status(200).json({
+        url: portal.url,
+        provider: "stripe_billing_portal",
+      });
+    } catch (error) {
+      console.error("[billing-manage] failed", {
+        userId,
+        error: error instanceof Error ? error.message : "unknown_error",
+      });
+      return res.status(502).json({
+        message: "Subscription management could not be opened",
+        code: "billing_management_failed",
+      });
+    }
   });
 }

@@ -15,10 +15,7 @@ import compatibilityRouter from "./routes/compatibility.js";
 import { resolveReleaseIdentity } from "./lib/release-identity.js";
 import { checkPersistenceReadiness } from "./lib/persistence-readiness.js";
 import { trustedMutationOriginGuard } from "./lib/trusted-mutation-origin.js";
-import {
-  registerBillingRawRoutes,
-  registerBillingRoutes,
-} from "./billing.js";
+import { registerBillingRawRoutes } from "./billing.js";
 
 const app: Express = express();
 
@@ -122,10 +119,6 @@ registerProfileVerificationRoutes(app);
 // tool. They do not accept or infer a profile, birth data, Moon/Rising, Human
 // Design, or any other identity payload.
 registerCodexToolRoutes(app);
-
-// Soul Codex never handles card details. Checkout sessions are created here,
-// while Stripe's hosted page collects payment information.
-registerBillingRoutes(app);
 
 // Mount the evidence-aware Compatibility contract before the canonical route
 // registry. Consumer Compatibility sends only the minimum supported Sun

@@ -4,22 +4,29 @@ import test from "node:test";
 import {
   containsRawPaymentFields,
   getBillingStatus,
+  isNativeAppOrigin,
   parseCheckoutRequest,
   verifiedStripeSubscriptionEvent,
 } from "../server/billing.ts";
 
-const profileId = "profile-12345678";
 const serverRoutesSource = readFileSync("server/routes.ts", "utf8");
 const billingSource = readFileSync("server/billing.ts", "utf8");
+const indexSource = readFileSync("server/index.ts", "utf8");
 
-function withStripeCatalog<T>(fn: () => T): T {
-  const previous = {
-    secret: process.env.STRIPE_SECRET_KEY,
-    webhook: process.env.STRIPE_WEBHOOK_SECRET,
-    monthly: process.env.STRIPE_PLUS_MONTHLY_PRICE_ID,
-    annual: process.env.STRIPE_PLUS_ANNUAL_PRICE_ID,
-    databaseUrl: process.env.DATABASE_URL,
-  };
+function withStripeCatalog<T>(
+  fn: () => T,
+  options: { checkoutEnabled?: boolean } = {},
+): T {
+  const keys = [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_PLUS_MONTHLY_PRICE_ID",
+    "STRIPE_PLUS_ANNUAL_PRICE_ID",
+    "DATABASE_URL",
+    "PUBLIC_APP_URL",
+    "SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED",
+  ] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
 
   try {
     process.env.STRIPE_SECRET_KEY = "sk_test_example";
@@ -27,62 +34,75 @@ function withStripeCatalog<T>(fn: () => T): T {
     process.env.STRIPE_PLUS_MONTHLY_PRICE_ID = "price_plus_monthly";
     process.env.STRIPE_PLUS_ANNUAL_PRICE_ID = "price_plus_annual";
     process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/soulcodex";
+    process.env.PUBLIC_APP_URL = "https://soulcodex.example.com";
+    process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED =
+      options.checkoutEnabled ? "true" : "false";
     return fn();
   } finally {
-    for (const [key, value] of Object.entries(previous)) {
-      const envKey =
-        key === "secret" ? "STRIPE_SECRET_KEY" :
-        key === "webhook" ? "STRIPE_WEBHOOK_SECRET" :
-        key === "monthly" ? "STRIPE_PLUS_MONTHLY_PRICE_ID" :
-        key === "annual" ? "STRIPE_PLUS_ANNUAL_PRICE_ID" :
-        "DATABASE_URL";
-      if (value === undefined) delete process.env[envKey];
-      else process.env[envKey] = value;
+    for (const key of keys) {
+      const value = previous[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
     }
   }
 }
 
-test("checkout accepts only the retired profile capability request shape", () => {
-  assert.deepEqual(parseCheckoutRequest({ profileId }), { profileId });
-
+test("checkout accepts only a monthly or annual plan", () => {
+  assert.deepEqual(parseCheckoutRequest({ plan: "monthly" }), { plan: "monthly" });
+  assert.deepEqual(parseCheckoutRequest({ plan: "annual" }), { plan: "annual" });
+  assert.throws(() => parseCheckoutRequest({ plan: "weekly" }), /invalid/i);
   assert.throws(
-    () =>
-      parseCheckoutRequest({
-        profileId,
-        cardNumber: "4111111111111111",
-      }),
+    () => parseCheckoutRequest({ plan: "monthly", profileId: "profile-123" }),
     /unrecognized/i,
   );
 });
 
 test("raw payment fields are rejected before any checkout handling", () => {
-  assert.equal(containsRawPaymentFields({ profileId }), false);
-  assert.equal(containsRawPaymentFields({ profileId, cardNumber: "4111" }), true);
-  assert.equal(containsRawPaymentFields({ profileId, cvv: "123" }), true);
-  assert.equal(containsRawPaymentFields({ profileId, cvc: "123" }), true);
-  assert.equal(containsRawPaymentFields({ profileId, expiryDate: "12/30" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly" }), false);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", cardNumber: "4111" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", cvv: "123" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", cvc: "123" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", expiryDate: "12/30" }), true);
+  assert.equal(containsRawPaymentFields({ plan: "monthly", pan: "4111" }), true);
 });
 
-test("legacy profile upgrade and one-time Stripe payment stay retired", () => {
-  assert.match(serverRoutesSource, /direct_card_upgrade_retired/);
-  assert.match(billingSource, /legacy_checkout_retired/);
+test("native shell origins cannot use web digital-goods checkout", () => {
+  assert.equal(isNativeAppOrigin("soulcodex://localhost"), true);
+  assert.equal(isNativeAppOrigin("capacitor://localhost"), true);
+  assert.equal(isNativeAppOrigin("https://localhost"), true);
+  assert.equal(isNativeAppOrigin("https://soulcodex.app"), false);
+  assert.match(billingSource, /native_store_billing_required/);
+});
+
+test("direct-card legacy upgrade stays retired and checkout is subscription-only", () => {
+  assert.match(billingSource, /direct_card_collection_retired/);
   assert.doesNotMatch(billingSource, /mode:\s*"payment"/);
+  assert.match(billingSource, /mode:\s*"subscription"/);
   assert.doesNotMatch(serverRoutesSource, /updateProfile\([^)]*\{\s*isPremium:\s*true\s*\}/);
 });
 
-test("billing status separates webhook verification from purchase activation", () => {
-  const previousDatabase = process.env.DATABASE_URL;
-  const previousSecret = process.env.STRIPE_SECRET_KEY;
-  const previousWebhook = process.env.STRIPE_WEBHOOK_SECRET;
-  const previousMonthly = process.env.STRIPE_PLUS_MONTHLY_PRICE_ID;
-  const previousAnnual = process.env.STRIPE_PLUS_ANNUAL_PRICE_ID;
+test("parsed billing routes are registered after session setup", () => {
+  assert.doesNotMatch(indexSource, /registerBillingRoutes\(app\)/);
+  const sessionIndex = serverRoutesSource.indexOf("setupSession(app)");
+  const billingIndex = serverRoutesSource.indexOf("registerBillingRoutes(app)");
+  assert.ok(sessionIndex >= 0);
+  assert.ok(billingIndex > sessionIndex);
+});
+
+test("billing status keeps checkout disabled unless explicit flag is enabled", () => {
+  const keys = [
+    "DATABASE_URL",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_PLUS_MONTHLY_PRICE_ID",
+    "STRIPE_PLUS_ANNUAL_PRICE_ID",
+    "PUBLIC_APP_URL",
+    "SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED",
+  ] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
 
   try {
-    delete process.env.DATABASE_URL;
-    delete process.env.STRIPE_SECRET_KEY;
-    delete process.env.STRIPE_WEBHOOK_SECRET;
-    delete process.env.STRIPE_PLUS_MONTHLY_PRICE_ID;
-    delete process.env.STRIPE_PLUS_ANNUAL_PRICE_ID;
+    for (const key of keys) delete process.env[key];
 
     assert.deepEqual(getBillingStatus(), {
       enabled: false,
@@ -92,33 +112,50 @@ test("billing status separates webhook verification from purchase activation", (
       subscriptionWebhookVerification: false,
       monthlyProductConfigured: false,
       annualProductConfigured: false,
+      webCheckoutEnabled: false,
+      manageSubscriptionEnabled: false,
       reason: "not_configured",
     });
 
     withStripeCatalog(() => {
-      assert.deepEqual(getBillingStatus(), {
-        enabled: false,
-        provider: "stripe_checkout",
-        collectsCardDataOnSoulCodex: false,
-        persistentEntitlements: true,
-        subscriptionWebhookVerification: true,
-        monthlyProductConfigured: true,
-        annualProductConfigured: true,
-        reason: "subscription_checkout_not_qualified",
-      });
+      const status = getBillingStatus();
+      assert.equal(status.enabled, false);
+      assert.equal(status.subscriptionWebhookVerification, true);
+      assert.equal(status.monthlyProductConfigured, true);
+      assert.equal(status.annualProductConfigured, true);
+      assert.equal(status.webCheckoutEnabled, false);
+      assert.equal(status.manageSubscriptionEnabled, true);
+      assert.equal(status.reason, "web_checkout_disabled");
     });
+
+    withStripeCatalog(() => {
+      const status = getBillingStatus();
+      assert.equal(status.enabled, true);
+      assert.equal(status.webCheckoutEnabled, true);
+      assert.equal(status.reason, "ready");
+    }, { checkoutEnabled: true });
   } finally {
-    if (previousDatabase === undefined) delete process.env.DATABASE_URL;
-    else process.env.DATABASE_URL = previousDatabase;
-    if (previousSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
-    else process.env.STRIPE_SECRET_KEY = previousSecret;
-    if (previousWebhook === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
-    else process.env.STRIPE_WEBHOOK_SECRET = previousWebhook;
-    if (previousMonthly === undefined) delete process.env.STRIPE_PLUS_MONTHLY_PRICE_ID;
-    else process.env.STRIPE_PLUS_MONTHLY_PRICE_ID = previousMonthly;
-    if (previousAnnual === undefined) delete process.env.STRIPE_PLUS_ANNUAL_PRICE_ID;
-    else process.env.STRIPE_PLUS_ANNUAL_PRICE_ID = previousAnnual;
+    for (const key of keys) {
+      const value = previous[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
+});
+
+test("web checkout binds subscription metadata to authenticated session user", () => {
+  assert.match(billingSource, /req\.session\?\.userId/);
+  assert.match(billingSource, /soulCodexUserId:\s*user\.id/);
+  assert.match(billingSource, /subscription_data:\s*\{/);
+  assert.doesNotMatch(billingSource, /Authorization:\s*`Bearer \$\{profileId\}`/);
+  assert.doesNotMatch(billingSource, /profileId.*checkout/s);
+});
+
+test("web catalog uses Stripe price objects rather than hard-coded currency amounts", () => {
+  assert.match(billingSource, /stripe\.prices\.retrieve/);
+  assert.match(billingSource, /price\.unit_amount/);
+  assert.doesNotMatch(billingSource, /\$\d+\.\d{2}/);
+  assert.match(billingSource, /price\.recurring\.interval/);
 });
 
 test("verified Stripe subscription event maps only configured products", () => {
