@@ -10,11 +10,12 @@ const deletionItems = [
   "Soul Codex account and saved profiles",
   "Journal entries and shared links",
   "Compatibility contacts and notification subscriptions",
-  "Usage history and premium entitlement history associated with the account or anonymous session",
+  "Product profile and personalization data associated with the account or anonymous session",
   "Soul Codex data stored on this device",
 ];
 
 const retainedItems = [
+  "Minimal billing transaction, entitlement-verification, refund/revocation, and related audit records may be retained where needed for financial integrity, fraud prevention, dispute handling, or legal obligations. They are not used to restore deleted profile personalization.",
   "Operational and security request logs may remain with our hosting provider for up to 7 days before automatic expiration. These logs are not used to restore a deleted Soul Codex account or profile.",
   "No scheduled production database backups are currently enabled. Deleted account and profile records are therefore not intentionally retained in scheduled backups.",
   "If a specific record must be retained to satisfy a legal obligation, it is kept only for the legally required period and is not used for ordinary product personalization.",
