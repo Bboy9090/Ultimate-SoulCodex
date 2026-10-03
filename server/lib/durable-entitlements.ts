@@ -118,9 +118,10 @@ export async function recordVerifiedBillingEvent(
   input: VerifiedBillingEvent,
 ) {
   const event = verifiedBillingEventSchema.parse(input);
+  const retainedSubject = await storage.getBillingSubjectByUserId(event.userId);
   const user = await storage.getUser(event.userId);
-  if (!user) throw new Error("billing_subject_user_not_found");
-  const subject = await storage.getOrCreateBillingSubject(event.userId);
+  if (!retainedSubject && !user) throw new Error("billing_subject_user_not_found");
+  const subject = retainedSubject ?? await storage.getOrCreateBillingSubject(event.userId);
   const existing = await storage.getBillingTransactionEventByProviderEvent(
     event.provider,
     event.providerEventId,
