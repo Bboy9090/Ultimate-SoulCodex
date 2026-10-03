@@ -4,16 +4,22 @@ import { apiFetch } from "../lib/queryClient";
 
 export type ProductAccessResponse = {
   tier: SoulCodexTier;
-  source: "free" | "stripe_subscription";
+  source: "free" | "stripe" | "apple" | "google_play";
   verified: boolean;
+  plan: "monthly" | "annual" | null;
+  status: string | null;
   expiresAt: string | null;
+  lastVerifiedAt: string | null;
 };
 
 const FREE_ACCESS: ProductAccessResponse = {
   tier: "free",
   source: "free",
   verified: true,
+  plan: null,
+  status: null,
   expiresAt: null,
+  lastVerifiedAt: null,
 };
 
 async function loadProductAccess(): Promise<ProductAccessResponse> {
@@ -21,11 +27,22 @@ async function loadProductAccess(): Promise<ProductAccessResponse> {
   if (!response.ok) return FREE_ACCESS;
   const payload = await response.json().catch(() => null);
   if (!payload || (payload.tier !== "free" && payload.tier !== "plus")) return FREE_ACCESS;
+
+  const source =
+    payload.source === "stripe" ||
+    payload.source === "apple" ||
+    payload.source === "google_play"
+      ? payload.source
+      : "free";
+
   return {
     tier: payload.tier,
-    source: payload.source === "stripe_subscription" ? "stripe_subscription" : "free",
+    source,
     verified: Boolean(payload.verified),
+    plan: payload.plan === "annual" ? "annual" : payload.plan === "monthly" ? "monthly" : null,
+    status: typeof payload.status === "string" ? payload.status : null,
     expiresAt: typeof payload.expiresAt === "string" ? payload.expiresAt : null,
+    lastVerifiedAt: typeof payload.lastVerifiedAt === "string" ? payload.lastVerifiedAt : null,
   };
 }
 
