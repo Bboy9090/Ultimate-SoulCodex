@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import { DAILY_INFLUENCE_LIMIT, tierAllowsCapability } from "@shared/product-access";
 import {
   calcPersonalMonth,
   calcPersonalYear,
@@ -21,8 +22,10 @@ import {
   X,
 } from "lucide-react";
 import TimelineIntelligence from "../components/TimelineIntelligence";
+import DiamondClosure from "../components/DiamondClosure";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
+import { useProductAccess } from "../hooks/useProductAccess";
 import {
   getVerifiedAstrologySign,
   hasVerifiedFullNatalChart,
@@ -63,6 +66,7 @@ const MONTH_LABELS: Record<number, string> = {
 export default function TimelinePage() {
   const [, navigate] = useLocation();
   const { profile, isLoading, isCorrupted, reason } = useActiveProfile();
+  const { tier } = useProductAccess();
   const [todayCard, setTodayCard] = useState<any>(null);
 
   useEffect(() => {
@@ -148,6 +152,46 @@ export default function TimelinePage() {
     return signals;
   }, [personalYear, personalMonth, phase, todayCard]);
 
+  const currentInfluences = useMemo(() => {
+    const influences = systemSignals.map((signal) => ({
+      label: signal.description,
+      detail:
+        signal.system === "personal-year"
+          ? "Deterministic numerology timing · symbolic interpretation"
+          : signal.system === "personal-month"
+            ? "Deterministic numerology timing · symbolic interpretation"
+            : signal.system === "personal-day"
+              ? "Deterministic numerology timing · symbolic interpretation"
+              : "Current lunar-cycle context · symbolic interpretation",
+    }));
+
+    if (profileContext.hdVerified) {
+      influences.push({
+        label: `${profileContext.hdType} · ${profileContext.hdAuthority}`,
+        detail: "Verified Human Design context · symbolic decision framework",
+      });
+    }
+
+    if (profileContext.rising || profileContext.midheaven || profileContext.dominantHouse) {
+      const chartBits = [
+        profileContext.rising ? `${profileContext.rising} Rising` : null,
+        profileContext.midheaven ? `${profileContext.midheaven} Midheaven` : null,
+        profileContext.dominantHouse ? `House ${profileContext.dominantHouse} concentration` : null,
+      ].filter(Boolean);
+      influences.push({
+        label: chartBits.join(" · "),
+        detail: "Verified natal context · background lens, not a prediction",
+      });
+    }
+
+    return influences;
+  }, [systemSignals, profileContext]);
+
+  const influenceLimit = DAILY_INFLUENCE_LIMIT[tier];
+  const visibleInfluences = currentInfluences.slice(0, influenceLimit);
+  const hiddenInfluenceCount = Math.max(0, currentInfluences.length - visibleInfluences.length);
+  const advancedDaily = tierAllowsCapability(tier, "advanced_daily");
+
   if (isLoading) {
     return (
       <main className="sc-page !pt-8">
@@ -200,6 +244,42 @@ export default function TimelinePage() {
           </div>
         ) : null}
       </header>
+
+      <section className="sc-panel sc-panel-gold p-6 sm:p-8" aria-label="Your chart today">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="sc-eyebrow">Today</div>
+            <h2 className="mt-2 font-serif text-3xl font-semibold text-[var(--sc-ivory)]">Your chart today</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--sc-stone)]">
+              {phase
+                ? `${phase.label} is the larger numerology theme. The useful move is to read the strongest qualified signals together without treating any symbolic layer as a forecast.`
+                : "Soul Codex is showing only the current influences supported by the data available for this profile."}
+            </p>
+          </div>
+          <span className="sc-trust-chip">{visibleInfluences.length} current influence{visibleInfluences.length === 1 ? "" : "s"}</span>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          {visibleInfluences.map((influence, index) => (
+            <article key={`${influence.label}-${index}`} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+              <div className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Influence {index + 1}</div>
+              <h3 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">{influence.label}</h3>
+              <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{influence.detail}</p>
+            </article>
+          ))}
+        </div>
+
+        {!advancedDaily && hiddenInfluenceCount > 0 ? (
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
+            <p className="m-0 text-sm text-[var(--sc-stone)]">
+              {hiddenInfluenceCount} additional qualified influence{hiddenInfluenceCount === 1 ? "" : "s"} available in Soul Codex+.
+            </p>
+            <button type="button" className="text-sm font-semibold text-[var(--sc-gold-bright)]" onClick={() => navigate("/pricing")}>
+              See all five influences
+            </button>
+          </div>
+        ) : null}
+      </section>
 
       {phase && personalYear ? (
         <section className="sc-panel sc-panel-gold p-6 sm:p-8">
@@ -302,6 +382,16 @@ export default function TimelinePage() {
       ) : null}
 
       {systemSignals.length > 0 ? <section className="mt-4"><TimelineIntelligence systemSignals={systemSignals} /></section> : null}
+
+      <div className="mt-4">
+        <DiamondClosure
+          clarity={phase ? `The strongest current theme is ${phase.label.toLowerCase()}: use it as a reflection lens, not a prediction.` : "Use only the current signals that are actually supported."}
+          depth={`Today is built from ${visibleInfluences.length} qualified influence${visibleInfluences.length === 1 ? "" : "s"} across deterministic timing, verified profile context, and symbolic interpretation.`}
+          nextMove={phase?.lean?.[0] || "Choose one current influence and test it against one real decision today."}
+          nextHref="/systems"
+          nextLabel="Explain why"
+        />
+      </div>
 
       <aside className="mt-4 flex gap-3 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.05)] p-4 text-sm text-[var(--sc-stone)]">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" />
