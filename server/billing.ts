@@ -134,6 +134,17 @@ function stripePriceIdForPlan(plan: "monthly" | "annual"): string | null {
   return plan === "annual" ? stripeAnnualPriceId() : stripeMonthlyPriceId();
 }
 
+export function stripeCheckoutIdempotencyKey(
+  userId: string,
+  plan: "monthly" | "annual",
+  now = new Date(),
+): string {
+  const dayBucket = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));
+  return createHash("sha256")
+    .update(`soul-codex-plus-checkout:${userId}:${plan}:${dayBucket}`)
+    .digest("hex");
+}
+
 export function buildStripeCheckoutSessionParams(input: {
   userId: string;
   email?: string | null;
@@ -439,6 +450,12 @@ export function registerBillingRoutes(app: Express): void {
           priceId,
           appUrl,
         }),
+        {
+          idempotencyKey: stripeCheckoutIdempotencyKey(
+            userId,
+            parsed.data.plan,
+          ),
+        },
       );
 
       if (!session.url) {
