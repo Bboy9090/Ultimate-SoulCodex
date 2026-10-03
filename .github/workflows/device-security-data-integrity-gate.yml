@@ -38,6 +38,7 @@ jobs:
           node --import tsx --test
           tests/trusted-mutation-origin.test.ts
           tests/production-schema-preflight.test.ts
+          tests/full-birth-name-persistence-contract.test.ts
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
           tests/public-profile-projection.test.ts
