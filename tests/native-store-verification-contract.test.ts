@@ -28,6 +28,25 @@ function withEnv<T>(values: Record<string, string>, fn: () => T): T {
   }
 }
 
+async function withEnvAsync<T>(
+  values: Record<string, string>,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const previous = Object.fromEntries(
+    Object.keys(values).map((key) => [key, process.env[key]]),
+  );
+  try {
+    for (const [key, value] of Object.entries(values)) process.env[key] = value;
+    return await fn();
+  } finally {
+    for (const key of Object.keys(values)) {
+      const old = previous[key];
+      if (old === undefined) delete process.env[key];
+      else process.env[key] = old;
+    }
+  }
+}
+
 test("native catalog and verification require authenticated account binding and lifecycle readiness", () => {
   assert.match(billingSource, /native_billing_auth_required/);
   assert.match(billingSource, /SOUL_CODEX_BILLING_BINDING_SECRET/);
@@ -86,7 +105,7 @@ test("Google subscriptionsv2 verification checks account binding then acknowledg
   const originalFetch = globalThis.fetch;
   const calls: Array<{ url: string; method: string }> = [];
 
-  await withEnv({
+  await withEnvAsync({
     SOUL_CODEX_BILLING_BINDING_SECRET: "test-binding-secret-32-bytes-minimum",
     GOOGLE_PLAY_PACKAGE_NAME: "soulcodex.app",
     GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID: productId,
