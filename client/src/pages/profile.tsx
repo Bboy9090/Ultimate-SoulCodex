@@ -3,6 +3,7 @@ import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Crown, Share2, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
+import DiamondClosure from "@/components/DiamondClosure";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
 import { ShareModal } from "@/components/ShareModal";
@@ -275,6 +276,16 @@ export default function ProfilePage() {
         </section>
 
         <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
+
+        <div className="mt-8">
+          <DiamondClosure
+            clarity="Keep the strongest supported pattern. Do not turn every label into identity."
+            depth="Your Big 3, core numbers, Human Design, and lived evidence each do different jobs. Expand only the layer you need, and use Why when you want provenance."
+            nextMove={profile.dailyGuidance || archetype.guidance || "Choose one pattern from this reading and test it against one real event today."}
+            nextHref={`/reading/${id}`}
+            nextLabel="Continue the reading"
+          />
+        </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href={`/reading/${id}`} className="sc-button-primary">Open full Quick / Standard / Deep Dive reading</Link>
