@@ -24,7 +24,8 @@ test("canonical access never authorizes from legacy premium flags", () => {
 test("canonical billing cannot grant premium through legacy profile mutation", () => {
   assert.doesNotMatch(billing, /updateProfile\([^)]*isPremium/);
   assert.doesNotMatch(billing, /mode:\s*"payment"/);
-  assert.match(billing, /legacy_checkout_retired/);
+  assert.match(billing, /mode:\s*"subscription"/);
+  assert.match(billing, /SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED/);
   assert.match(billing, /recordVerifiedBillingEvent/);
 });
 
