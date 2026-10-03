@@ -49,6 +49,7 @@ export interface IStorage {
   revokePublicProfileShare(token: string): Promise<PublicProfileShare | undefined>;
   getBillingSubjectByUserId(userId: string): Promise<BillingSubject | undefined>;
   getOrCreateBillingSubject(userId: string): Promise<BillingSubject>;
+  getBillingTransactionEventById(id: string): Promise<BillingTransactionEvent | undefined>;
   getBillingTransactionEventByProviderEvent(provider: string, providerEventId: string): Promise<BillingTransactionEvent | undefined>;
   createBillingTransactionEvent(event: InsertBillingTransactionEvent): Promise<BillingTransactionEvent>;
   createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt>;
@@ -238,6 +239,9 @@ export class MemStorage implements IStorage {
     };
     this.billingSubjects.set(subject.id, subject);
     return subject;
+  }
+  async getBillingTransactionEventById(id: string) {
+    return this.billingEvents.get(id);
   }
   async getBillingTransactionEventByProviderEvent(provider: string, providerEventId: string) {
     return [...this.billingEvents.values()].find(
@@ -437,6 +441,10 @@ class PostgresStorage implements IStorage {
     const existing = (await db.select().from(billingSubjects).where(eq(billingSubjects.userId, userId)).limit(1))[0];
     if (!existing) throw new Error("Billing subject could not be resolved after concurrent creation");
     return existing;
+  }
+  async getBillingTransactionEventById(id: string) {
+    const db = await this.db();
+    return (await db.select().from(billingTransactionEvents).where(eq(billingTransactionEvents.id, id)).limit(1))[0];
   }
   async getBillingTransactionEventByProviderEvent(provider: string, providerEventId: string) {
     const db = await this.db();
