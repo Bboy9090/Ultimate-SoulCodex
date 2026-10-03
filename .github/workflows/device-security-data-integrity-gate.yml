@@ -39,6 +39,7 @@ jobs:
           tests/trusted-mutation-origin.test.ts
           tests/production-schema-preflight.test.ts
           tests/billing-security.test.ts
+          tests/web-checkout-pricing-contract.test.ts
           tests/product-entitlement-contract.test.ts
           tests/canonical-billing-path-contract.test.ts
           tests/billing-retention-privacy-contract.test.ts
