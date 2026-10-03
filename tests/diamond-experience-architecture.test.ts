@@ -47,7 +47,7 @@ test("pricing defines useful Free and deeper Soul Codex Plus", () => {
   assert.match(pricing, /Soul Codex\+/);
   assert.match(pricing, /Accuracy is never paywalled/);
   assert.match(pricing, /up to three qualified influences/);
-  assert.match(pricing, /up to five strongest influences/);
+  assert.match(pricing, /up to five qualified current influences/);
 });
 
 test("monetization contract requires durable subscription entitlement truth", () => {
