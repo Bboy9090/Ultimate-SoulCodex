@@ -57,6 +57,7 @@ export default function Home() {
   }
 
   const { id, name } = getProfileIdentity(profile);
+  const dailyGuidance = typeof (profile as any)?.dailyGuidance === "string" ? (profile as any).dailyGuidance : null;
   const identityHref = id ? `/profile/${id}` : "/create";
   const readingHref = id ? `/reading/${id}` : "/create";
   const leadConnection = connections.find(hasComparableConnectionData) ?? connections[0] ?? null;
@@ -199,7 +200,7 @@ export default function Home() {
 
         <div className="mb-5">
           <DiamondClosure
-            clarity={profile?.dailyGuidance || "Start with the strongest supported signal. Ignore the noise. Make one useful move."}
+            clarity={dailyGuidance || "Start with the strongest supported signal. Ignore the noise. Make one useful move."}
             depth="Today combines only the timing and profile signals that have enough evidence to be shown. Symbolic meaning stays separate from verified calculation."
             nextMove="Open Today, inspect the three to five strongest current influences, then choose one action small enough to test in real life."
             nextHref="/timeline"
