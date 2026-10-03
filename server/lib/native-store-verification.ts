@@ -155,10 +155,18 @@ export function verifyAppleSignedTransaction(
     throw new Error("apple_jws_header_invalid");
   }
 
+  const payload = safeJson<AppleTransactionPayload>(base64UrlDecode(segments[1]));
+  const signedAt = dateFromMillis(payload.signedDate);
+  if (!signedAt) throw new Error("apple_signed_date_missing");
+
   const chain = header.x5c.map((certificate) =>
     new X509Certificate(Buffer.from(certificate, "base64")),
   );
-  verifyAppleCertificateChain(chain, parseAppleRoots(), now);
+  // Apple documents signedDate as the time to use for validating the
+  // certificate that signed the transaction. The payload is still untrusted
+  // here; any signedDate tampering is rejected by the JWS signature check
+  // immediately below.
+  verifyAppleCertificateChain(chain, parseAppleRoots(), signedAt);
 
   const verifier = createVerify("SHA256");
   verifier.update(`${segments[0]}.${segments[1]}`);
@@ -169,7 +177,6 @@ export function verifyAppleSignedTransaction(
   );
   if (!signatureValid) throw new Error("apple_jws_signature_invalid");
 
-  const payload = safeJson<AppleTransactionPayload>(base64UrlDecode(segments[1]));
   const bundleId = process.env.APPLE_CLIENT_ID?.trim();
   if (!bundleId || payload.bundleId !== bundleId) throw new Error("apple_bundle_id_mismatch");
 
@@ -189,7 +196,7 @@ export function verifyAppleSignedTransaction(
   const purchasedAt = dateFromMillis(payload.purchaseDate);
   const expiresAt = dateFromMillis(payload.expiresDate);
   const revocationAt = dateFromMillis(payload.revocationDate);
-  const signedAt = dateFromMillis(payload.signedDate) ?? now;
+  const verifiedSignedAt = signedAt;
 
   let accessStatus: VerifiedBillingEvent["accessStatus"];
   if (revocationAt) {
@@ -220,7 +227,7 @@ export function verifyAppleSignedTransaction(
     plan,
     environment,
     eventType: revocationAt ? "transaction_revoked" : "transaction_verified",
-    occurredAt: revocationAt ?? purchasedAt ?? signedAt,
+    occurredAt: revocationAt ?? purchasedAt ?? verifiedSignedAt,
     verificationState: "verified",
     accessStatus,
     purchasedAt,
