@@ -3,6 +3,7 @@ import { generateKeyPairSync } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  appleAppAccountToken,
   googleObfuscatedAccountId,
   verifyAppleSignedTransaction,
   verifyGooglePlaySubscription,
@@ -78,9 +79,21 @@ test("Apple verification binds trusted JWS to signedDate, bundle, product, and a
   assert.match(verifierSource, /verifyAppleCertificateChain\(chain, parseAppleRoots\(\), signedAt\)/);
   assert.match(verifierSource, /payload\.bundleId !== bundleId/);
   assert.match(verifierSource, /apple_product_not_allowed/);
+  assert.match(verifierSource, /expectedAccountToken = appleAppAccountToken/);
   assert.match(verifierSource, /apple_account_binding_mismatch/);
   assert.match(verifierSource, /jws_signature_invalid/);
   assert.doesNotMatch(verifierSource, /diagnosticMetadata:[\s\S]{0,400}signedTransaction/);
+});
+
+test("Apple account binding is deterministic, UUID-shaped, and account-specific", () => {
+  withEnv({ SOUL_CODEX_BILLING_BINDING_SECRET: "test-binding-secret-32-bytes-minimum" }, () => {
+    const one = appleAppAccountToken("legacy-user-one");
+    const again = appleAppAccountToken("legacy-user-one");
+    const two = appleAppAccountToken("legacy-user-two");
+    assert.equal(one, again);
+    assert.notEqual(one, two);
+    assert.match(one, /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
 });
 
 test("Google account binding is deterministic and account-specific", () => {
