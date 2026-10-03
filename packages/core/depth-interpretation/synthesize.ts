@@ -167,30 +167,23 @@ function layerFromFacet(
       seed.evidence.system === "mirror" ||
       seed.evidence.system === "tracker",
   );
-  const confidence =
-    psychologicalInference && !hasBehavioralSupport && evidenceConfidence === "high"
-      ? "moderate"
-      : evidenceConfidence;
+  if (psychologicalInference && !hasBehavioralSupport) {
+    return unavailableLayer(
+      FACET_TITLES[facet],
+      `behavioral evidence is required before ${FACET_TITLES[facet].toLowerCase()} can be stated.`,
+    );
+  }
+
+  const confidence = evidenceConfidence;
 
   return {
     title: FACET_TITLES[facet],
     summary,
-    explanation:
-      psychologicalInference && !hasBehavioralSupport
-        ? `${explanation} The source calculation may be verified while this psychological meaning remains a symbolic hypothesis.`
-        : explanation,
-    claimKind:
-      psychologicalInference && !hasBehavioralSupport && claimKind === "derived"
-        ? "inferred"
-        : claimKind,
+    explanation,
+    claimKind,
     evidenceIds: unique(evidence.map((item) => item.id)),
     confidence,
-    limitations: unique([
-      ...limitations,
-      ...(psychologicalInference && !hasBehavioralSupport
-        ? ["Verified source data does not by itself verify a hidden need or protective function."]
-        : []),
-    ]),
+    limitations,
   };
 }
 
