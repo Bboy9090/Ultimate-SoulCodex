@@ -329,6 +329,10 @@ export type BillingSubject = typeof billingSubjects.$inferSelect;
 export type BillingTransactionEvent = typeof billingTransactionEvents.$inferSelect;
 export type EntitlementGrant = typeof entitlementGrants.$inferSelect;
 export type BillingVerificationReceipt = typeof billingVerificationReceipts.$inferSelect;
+export type InsertBillingSubject = typeof billingSubjects.$inferInsert;
+export type InsertBillingTransactionEvent = typeof billingTransactionEvents.$inferInsert;
+export type InsertEntitlementGrant = typeof entitlementGrants.$inferInsert;
+export type InsertBillingVerificationReceipt = typeof billingVerificationReceipts.$inferInsert;
 
 export type BirthData = z.infer<typeof birthDataSchema>;
 export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
