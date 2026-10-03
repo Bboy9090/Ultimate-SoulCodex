@@ -368,7 +368,7 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       label: `Life Path ${numerology.lifePath} symbolism`, priority: 95, claimKind: "derived",
       facets: {
         claritySummary: `Life Path ${numerology.lifePath} contributes the symbolic theme ${path.theme}.`, innerExperience: `From the numerology angle, attention may repeatedly return to ${path.drive}.`,
-        protectiveFunction: `One possible function of this Life Path theme is preserving room to continue ${path.drive}.`, shadow: `Under pressure, Life Path ${numerology.lifePath} symbolism can tilt toward ${path.shadow}.`,
+        shadow: `Under pressure, Life Path ${numerology.lifePath} symbolism can tilt toward ${path.shadow}.`,
         decisionImpact: `A decision test for this number is whether it supports ${path.drive} without reproducing ${path.shadow}.`, action: path.action,
       },
       tensionAxes: path.axes,
@@ -391,7 +391,6 @@ function buildDepthInterpretation(input: OfflineBirthInput, astrology: OfflineAs
       label: "Soul Urge " + numerology.soulUrge + " " + (NUMBER_LABELS[numerology.soulUrge!] ?? soulUrge.theme), priority: 107, claimKind: "derived" as const,
       facets: {
         hiddenNeed: "Soul Urge " + numerology.soulUrge + " frames inner motivation around " + soulUrge.drive + ".",
-        protectiveFunction: "A possible role for this Soul Urge theme is keeping enough space for " + soulUrge.drive + ".",
         relationshipImpact: "Around trust and belonging, Soul Urge " + numerology.soulUrge + " may make " + soulUrge.drive + " more noticeable.",
         shadow: "When pushed too far, Soul Urge " + numerology.soulUrge + " can drift toward " + soulUrge.shadow + ".",
       },

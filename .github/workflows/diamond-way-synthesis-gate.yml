@@ -75,6 +75,7 @@ jobs:
             tests/aspect-interpretation-fallback-contract.test.ts \
             tests/soul-profile-behavioral-evidence-contract.test.ts \
             tests/compatibility-evidence-authority.test.ts \
+            tests/legacy-synthesis-evidence-boundary.test.ts \
             tests/deterministic-fallback-evidence-contract.test.ts \
             tests/prompt-sanitization-evidence-contract.test.ts \
             tests/daily-horoscope-evidence-contract.test.ts \
