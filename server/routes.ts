@@ -36,6 +36,7 @@ import {
   buildPublicProfileProjection,
   publicShareSelectionSchema,
 } from "./lib/public-profile-projection";
+import { resolveProductEntitlement } from "./lib/product-entitlement";
 
 function finiteCoordinate(value: string | number | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -90,6 +91,24 @@ function requireDurableFeature(res: any): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
+
+  app.get("/api/access", async (req: any, res) => {
+    try {
+      const userId = req.session?.userId ?? null;
+      const user = userId ? await storage.getUser(userId) : null;
+      const entitlement = resolveProductEntitlement(user);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.status(200).json(entitlement);
+    } catch (error) {
+      console.error("[ProductAccess] Failed to resolve entitlement:", error);
+      res.status(500).json({
+        tier: "free",
+        source: "free",
+        verified: false,
+        expiresAt: null,
+      });
+    }
+  });
 
   const publicShareReadLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
