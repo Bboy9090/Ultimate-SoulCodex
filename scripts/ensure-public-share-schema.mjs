@@ -173,7 +173,7 @@ const statements = [
     ON "entitlement_grants" ("billing_subject_id", "capability")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "entitlement_grants_source_event_unique"
     ON "entitlement_grants" ("source_transaction_event_id", "capability")`,
-  `CREATE INDEX IF NOT EXISTS "billing_verification_receipts_transaction_idx"
+  `CREATE UNIQUE INDEX IF NOT EXISTS "billing_verification_receipts_transaction_unique"
     ON "billing_verification_receipts" ("transaction_event_id")`,
 ];
 
