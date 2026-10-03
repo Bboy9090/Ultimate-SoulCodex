@@ -169,9 +169,9 @@ export default function CompatibilityHubPage() {
               <h2 className="mb-0 mt-7 font-serif text-xl font-semibold text-[var(--sc-ivory)]">{title}</h2>
               <p className="mb-0 mt-3 text-sm leading-6 text-[var(--sc-stone)]">{text}</p>
               {premium && !advancedConnections ? (
-                <Link href="/pricing" className="mt-auto pt-5 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline">
-                  Unlock with Soul Codex+
-                </Link>
+                <span className="mt-auto pt-5 text-sm font-semibold text-[var(--sc-stone)]">
+                  Planned · not included in current Soul Codex+
+                </span>
               ) : null}
             </article>
           ))}
@@ -183,7 +183,7 @@ export default function CompatibilityHubPage() {
             <div className="sc-eyebrow mt-5">Explore patterns</div>
             <h2 className="mt-3 font-serif text-3xl font-semibold">All-sign Compatibility map</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">
-              Free keeps a bounded symbolic comparison available. Soul Codex+ adds the deeper evidence-backed relationship dimensions when both profiles support them.
+              Free keeps a bounded symbolic comparison available. The deeper five-dimension relationship model remains planned and is not included in the current Soul Codex+ promise until its end-to-end evidence path ships.
             </p>
             <strong className="mt-6 inline-flex items-center gap-2 text-sm text-[var(--sc-gold-bright)]">Open Compatibility map <ArrowRight className="h-4 w-4" /></strong>
           </Link>
