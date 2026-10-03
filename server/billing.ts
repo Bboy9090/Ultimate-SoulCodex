@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import express, { type Express, type Request } from "express";
 import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
@@ -104,6 +104,22 @@ function googleAnnualProductId(): string | null {
   return process.env.GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID?.trim() || null;
 }
 
+function billingBindingSecret(): string | null {
+  return process.env.SOUL_CODEX_BILLING_BINDING_SECRET?.trim() || null;
+}
+
+function googleAccountBinding(userId: string): string | null {
+  const secret = billingBindingSecret();
+  if (!secret) return null;
+  return createHmac("sha256", secret).update(userId).digest("hex");
+}
+
+function appleAccountBinding(userId: string): string | null {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)
+    ? userId.toLowerCase()
+    : null;
+}
+
 function appleNativeVerifierConfigured(): boolean {
   return Boolean(
     process.env.APPLE_IAP_ROOT_CERTS_BASE64?.trim() &&
@@ -115,7 +131,8 @@ function appleNativeVerifierConfigured(): boolean {
 function googleNativeVerifierConfigured(): boolean {
   return Boolean(
     process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON?.trim() &&
-      process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim(),
+      process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim() &&
+      billingBindingSecret(),
   );
 }
 
@@ -512,9 +529,25 @@ export function registerBillingRoutes(app: Express): void {
   app.get("/api/billing/status", (_req, res) => {
     res.status(200).json(getBillingStatus());
   });
-  app.get("/api/billing/native-catalog", (req: any, res) => {
+  app.get("/api/billing/native-catalog", async (req: any, res) => {
     const platform = String(req.query?.platform ?? "").trim().toLowerCase();
     const enabled = nativeBillingFlagEnabled();
+    const userId = req.session?.userId ?? null;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Sign in before starting a native subscription purchase.",
+        code: "native_billing_auth_required",
+      });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(401).json({
+        message: "Account session is no longer valid.",
+        code: "native_billing_auth_required",
+      });
+    }
 
     if (platform !== "ios" && platform !== "android") {
       return res.status(400).json({
@@ -528,17 +561,23 @@ export function registerBillingRoutes(app: Express): void {
     const annualProductId =
       platform === "ios" ? appleAnnualProductId() : googleAnnualProductId();
 
-    const configured = Boolean(monthlyProductId && annualProductId);
+    const accountToken =
+      platform === "ios"
+        ? appleAccountBinding(userId)
+        : googleAccountBinding(userId);
+    const configured = Boolean(monthlyProductId && annualProductId && accountToken);
     const verifierConfigured =
       platform === "ios"
         ? appleNativeVerifierConfigured()
         : googleNativeVerifierConfigured();
+
     res.setHeader("Cache-Control", "private, no-store, max-age=0");
     return res.status(200).json({
       enabled: enabled && configured && verifierConfigured,
       platform,
       monthlyProductId: configured ? monthlyProductId : null,
       annualProductId: configured ? annualProductId : null,
+      accountToken: configured ? accountToken : null,
       verifierConfigured,
       reason: !enabled
         ? "native_billing_disabled"
