@@ -166,6 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: authenticatedUserId,
         sessionId: authenticatedUserId ? null : (req.sessionID ?? null),
         name: birthData.name,
+        fullBirthName: birthData.fullBirthName?.trim() || null,
         birthDate: new Date(birthData.birthDate),
         birthTime: birthData.birthTime,
         birthLocation: birthData.birthLocation,
