@@ -11,6 +11,7 @@ import {
   type VerifiedBillingEvent,
 } from "./lib/product-entitlement";
 import {
+  appleAppAccountToken,
   verifyAppleSignedTransaction,
   verifyGooglePlaySubscription,
 } from "./lib/native-store-verification";
@@ -128,12 +129,6 @@ function googleAccountBinding(userId: string): string | null {
   const secret = billingBindingSecret();
   if (!secret) return null;
   return createHmac("sha256", secret).update(userId).digest("hex");
-}
-
-function appleAccountBinding(userId: string): string | null {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)
-    ? userId.toLowerCase()
-    : null;
 }
 
 function nativeLifecycleFlag(name: string): boolean {
@@ -591,7 +586,7 @@ export function registerBillingRoutes(app: Express): void {
 
     const accountToken =
       platform === "ios"
-        ? appleAccountBinding(userId)
+        ? appleAppAccountToken(userId)
         : googleAccountBinding(userId);
     const configured = Boolean(monthlyProductId && annualProductId && accountToken);
     const verifierConfigured =
