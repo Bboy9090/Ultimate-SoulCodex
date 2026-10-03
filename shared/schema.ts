@@ -162,7 +162,7 @@ export const billingVerificationReceipts = pgTable("billing_verification_receipt
   verifiedAt: timestamp("verified_at").notNull(),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
-  transactionIndex: index("billing_verification_receipts_transaction_idx").on(table.transactionEventId),
+  transactionUnique: uniqueIndex("billing_verification_receipts_transaction_unique").on(table.transactionEventId),
 }));
 
 export const assessmentResponses = pgTable("assessment_responses", {
