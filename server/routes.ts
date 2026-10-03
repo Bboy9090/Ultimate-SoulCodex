@@ -5,6 +5,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSession } from "./session";
 import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
+import { registerBillingRoutes } from "./billing";
 import { profileBelongsToActor } from "./lib/profile-ownership";
 import {
   durableFeatureUnavailable,
@@ -92,6 +93,7 @@ function requireDurableFeature(res: any): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupSession(app);
   registerConsumerAuthRoutes(app);
+  registerBillingRoutes(app);
 
   app.get("/api/access", async (req: any, res) => {
     try {
