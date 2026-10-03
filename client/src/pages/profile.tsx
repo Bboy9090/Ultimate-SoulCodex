@@ -3,12 +3,14 @@ import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Crown, Share2, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
+import { useProductAccess } from "../hooks/useProductAccess";
 import DiamondClosure from "@/components/DiamondClosure";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
 import { ShareModal } from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
+import { tierAllowsCapability } from "@shared/product-access";
 import {
   getSynthesisAstrologySign,
   hasVerifiedHumanDesignTrust,
@@ -60,6 +62,7 @@ export default function ProfilePage() {
     queryKey: ["/api/profiles", id],
     enabled: Boolean(id),
   });
+  const { tier } = useProductAccess();
 
   const items = useMemo<HumanDepthItem[]>(() => {
     if (!profile) return [];
@@ -187,6 +190,9 @@ export default function ProfilePage() {
   const moon = getSynthesisAstrologySign(astrology, "moon");
   const rising = getSynthesisAstrologySign(astrology, "rising");
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
+  const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
+  const canUsePremiumExports = tierAllowsCapability(tier, "premium_exports");
 
   return (
     <div className="sc-app-shell">
@@ -247,11 +253,16 @@ export default function ProfilePage() {
               <p className="sc-eyebrow">Your Core Numbers</p>
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Life Path · Expression · Soul Urge</h2>
               <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
-                Life Path {numerology.lifePath ?? "—"} · Expression {numerology.expression ?? "—"} · Soul Urge {numerology.soulUrge ?? "—"}
+                Life Path {numerology.lifePath ?? "—"} · {canSeeFullNumerology ? `Expression ${numerology.expression ?? "—"} · Soul Urge ${numerology.soulUrge ?? "—"}` : "Expression + Soul Urge · Soul Codex+"}
               </p>
             </summary>
             <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
               <p>The number calculations are deterministic when the required birth data is present. Their meanings remain symbolic reflection, not verified psychology.</p>
+              {!canSeeFullNumerology && (
+                <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
+                  Unlock full name numerology with Soul Codex+
+                </Link>
+              )}
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
             </div>
           </details>
@@ -262,14 +273,23 @@ export default function ProfilePage() {
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Type · Strategy · Authority · Profile</h2>
               <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
                 {humanDesignVerified
-                  ? `${humanDesign.type ?? "—"} · ${humanDesign.strategy ?? "—"} · ${humanDesign.authority ?? "—"} · ${humanDesign.profile ?? "—"}`
+                  ? canSeeHumanDesignDepth
+                    ? `${humanDesign.type ?? "—"} · ${humanDesign.strategy ?? "—"} · ${humanDesign.authority ?? "—"} · ${humanDesign.profile ?? "—"}`
+                    : "Verified · deeper Human Design in Soul Codex+"
                   : "Not verified yet"}
               </p>
             </summary>
             <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
               <p>{humanDesignVerified
-                ? "These values passed the governed Human Design trust boundary. Their practical meaning is still a symbolic framework to test against lived experience."
+                ? canSeeHumanDesignDepth
+                  ? "These values passed the governed Human Design trust boundary. Their practical meaning is still a symbolic framework to test against lived experience."
+                  : "Human Design is verified for this profile. Soul Codex+ unlocks the deeper Type, Strategy, Authority, Profile, center, and channel interpretation."
                 : "Soul Codex will not invent Type, Strategy, Authority, or Profile when the required verification is missing."}</p>
+              {humanDesignVerified && !canSeeHumanDesignDepth && (
+                <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
+                  Unlock Human Design depth
+                </Link>
+              )}
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
             </div>
           </details>
@@ -293,7 +313,7 @@ export default function ProfilePage() {
           <NatalReportDownloadButton
             profileId={String(id)}
             profileName={profile.name}
-            isPremium={Boolean(profile.isPremium)}
+            isPremium={canUsePremiumExports}
           />
         </div>
         {shareOpen && (
