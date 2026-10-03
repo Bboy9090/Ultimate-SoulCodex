@@ -29,6 +29,7 @@ test("production schema preflight is idempotent, complete, and non-destructive",
   assert.match(source, /"birth_date" timestamp NOT NULL/);
   assert.match(source, /birth_date: "timestamp without time zone"/);
   assert.match(source, /provider_event_id: "text"/);
+  assert.match(source, /provider_occurred_at: "timestamp without time zone"/);
   assert.match(source, /verification_state: "text"/);
   assert.match(source, /source_transaction_event_id: "character varying"/);
   assert.match(source, /diagnostic_metadata: "jsonb"/);
