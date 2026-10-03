@@ -7,6 +7,8 @@ import {
   jsonb,
   boolean,
   integer,
+  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -99,6 +101,69 @@ export const publicProfileShares = pgTable("public_profile_shares", {
   createdAt: timestamp("created_at").default(sql`now()`),
   revokedAt: timestamp("revoked_at"),
 });
+
+
+export const billingSubjects = pgTable("billing_subjects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  userUnique: uniqueIndex("billing_subjects_user_unique").on(table.userId),
+}));
+
+export const billingTransactionEvents = pgTable("billing_transaction_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  billingSubjectId: varchar("billing_subject_id").notNull(),
+  provider: text("provider").notNull(),
+  providerEventId: text("provider_event_id").notNull(),
+  providerTransactionId: text("provider_transaction_id"),
+  productId: text("product_id").notNull(),
+  plan: text("plan").notNull(),
+  environment: text("environment").notNull(),
+  eventType: text("event_type").notNull(),
+  verificationState: text("verification_state").notNull(),
+  purchasedAt: timestamp("purchased_at"),
+  expiresAt: timestamp("expires_at"),
+  verifiedAt: timestamp("verified_at").notNull(),
+  evidenceDigest: text("evidence_digest").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  providerEventUnique: uniqueIndex("billing_transaction_events_provider_event_unique").on(table.provider, table.providerEventId),
+  subjectIndex: index("billing_transaction_events_subject_idx").on(table.billingSubjectId),
+}));
+
+export const entitlementGrants = pgTable("entitlement_grants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  billingSubjectId: varchar("billing_subject_id").notNull(),
+  capability: text("capability").notNull(),
+  plan: text("plan").notNull(),
+  sourceProvider: text("source_provider").notNull(),
+  sourceTransactionEventId: varchar("source_transaction_event_id").notNull(),
+  status: text("status").notNull(),
+  effectiveAt: timestamp("effective_at").notNull(),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  lastVerifiedAt: timestamp("last_verified_at").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  subjectCapabilityIndex: index("entitlement_grants_subject_capability_idx").on(table.billingSubjectId, table.capability),
+  sourceEventUnique: uniqueIndex("entitlement_grants_source_event_unique").on(table.sourceTransactionEventId, table.capability),
+}));
+
+export const billingVerificationReceipts = pgTable("billing_verification_receipts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transactionEventId: varchar("transaction_event_id").notNull(),
+  provider: text("provider").notNull(),
+  verificationState: text("verification_state").notNull(),
+  evidenceDigest: text("evidence_digest").notNull(),
+  diagnosticMetadata: jsonb("diagnostic_metadata").notNull(),
+  verifiedAt: timestamp("verified_at").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  transactionIndex: index("billing_verification_receipts_transaction_idx").on(table.transactionEventId),
+}));
 
 export const assessmentResponses = pgTable("assessment_responses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -260,6 +325,11 @@ export type Profile = typeof profiles.$inferSelect;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessmentResponses.$inferSelect;
 export type PublicProfileShare = typeof publicProfileShares.$inferSelect;
+export type BillingSubject = typeof billingSubjects.$inferSelect;
+export type BillingTransactionEvent = typeof billingTransactionEvents.$inferSelect;
+export type EntitlementGrant = typeof entitlementGrants.$inferSelect;
+export type BillingVerificationReceipt = typeof billingVerificationReceipts.$inferSelect;
+
 export type BirthData = z.infer<typeof birthDataSchema>;
 export type EnneagramAssessment = z.infer<typeof enneagramAssessmentSchema>;
 export type MBTIAssessment = z.infer<typeof mbtiAssessmentSchema>;
