@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MemStorage } from "../server/storage";
 import {
+  SOUL_CODEX_PLUS_CAPABILITY,
   recordVerifiedBillingEvent,
   resolveProductEntitlementForUser,
 } from "../server/lib/product-entitlement";
@@ -220,4 +221,34 @@ test("deleting the account disables access even if immutable billing audit recor
     (await resolveProductEntitlementForUser(storage, user.id, new Date("2026-10-03T12:01:00Z"))).tier,
     "free",
   );
+});
+
+
+test("post-deletion refund event remains auditable without restoring access", async () => {
+  const storage = new MemStorage();
+  const user = await testUser(storage, "post-delete-refund");
+  await recordVerifiedBillingEvent(storage, event(user.id));
+  await storage.deleteUserAccount(user.id);
+
+  await recordVerifiedBillingEvent(storage, event(user.id, {
+    providerEventId: "evt_post_delete_refund",
+    eventType: "refund",
+    occurredAt: new Date("2026-10-20T12:00:00Z"),
+    accessStatus: "refunded",
+    verifiedAt: new Date("2026-10-20T12:01:00Z"),
+    evidenceDigest: "d".repeat(64),
+  }));
+
+  const retainedAuditState = await storage.getLatestEntitlementGrant(
+    user.id,
+    SOUL_CODEX_PLUS_CAPABILITY,
+  );
+  assert.equal(retainedAuditState?.status, "refunded");
+
+  const access = await resolveProductEntitlementForUser(
+    storage,
+    user.id,
+    new Date("2026-10-20T12:02:00Z"),
+  );
+  assert.equal(access.tier, "free");
 });
