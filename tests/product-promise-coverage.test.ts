@@ -59,3 +59,16 @@ test("planned capabilities are visibly excluded from the current paid promise", 
   assert.match(pricing, /Planned, not included in the current paid promise/);
   assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
 });
+
+
+test("legacy one-time premium product cannot be sold", () => {
+  const billing = readFileSync(new URL("../server/billing.ts", import.meta.url), "utf8");
+  const modal = readFileSync(new URL("../client/src/components/PremiumUpgradeModal.tsx", import.meta.url), "utf8");
+
+  assert.match(billing, /legacy_checkout_retired/);
+  assert.match(billing, /subscription_checkout_not_qualified/);
+  assert.doesNotMatch(billing, /mode:\s*"payment"/);
+  assert.doesNotMatch(modal, /One-time premium access/i);
+  assert.doesNotMatch(modal, /Lifetime access/i);
+  assert.match(modal, /Purchase path not active yet/);
+});
