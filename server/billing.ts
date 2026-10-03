@@ -84,6 +84,41 @@ function webCheckoutFlagEnabled(): boolean {
   return process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
 }
 
+function nativeBillingFlagEnabled(): boolean {
+  return process.env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED?.trim().toLowerCase() === "true";
+}
+
+function appleMonthlyProductId(): string | null {
+  return process.env.APPLE_PLUS_MONTHLY_PRODUCT_ID?.trim() || null;
+}
+
+function appleAnnualProductId(): string | null {
+  return process.env.APPLE_PLUS_ANNUAL_PRODUCT_ID?.trim() || null;
+}
+
+function googleMonthlyProductId(): string | null {
+  return process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID?.trim() || null;
+}
+
+function googleAnnualProductId(): string | null {
+  return process.env.GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID?.trim() || null;
+}
+
+function appleNativeVerifierConfigured(): boolean {
+  return Boolean(
+    process.env.APPLE_IAP_ROOT_CERTS_BASE64?.trim() &&
+      process.env.APPLE_APP_ID?.trim() &&
+      process.env.APPLE_CLIENT_ID?.trim(),
+  );
+}
+
+function googleNativeVerifierConfigured(): boolean {
+  return Boolean(
+    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON?.trim() &&
+      process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim(),
+  );
+}
+
 function stripeMonthlyPriceId(): string | null {
   return process.env.STRIPE_PLUS_MONTHLY_PRICE_ID?.trim() || null;
 }
@@ -477,6 +512,44 @@ export function registerBillingRoutes(app: Express): void {
   app.get("/api/billing/status", (_req, res) => {
     res.status(200).json(getBillingStatus());
   });
+  app.get("/api/billing/native-catalog", (req: any, res) => {
+    const platform = String(req.query?.platform ?? "").trim().toLowerCase();
+    const enabled = nativeBillingFlagEnabled();
+
+    if (platform !== "ios" && platform !== "android") {
+      return res.status(400).json({
+        message: "platform must be ios or android",
+        code: "native_billing_platform_invalid",
+      });
+    }
+
+    const monthlyProductId =
+      platform === "ios" ? appleMonthlyProductId() : googleMonthlyProductId();
+    const annualProductId =
+      platform === "ios" ? appleAnnualProductId() : googleAnnualProductId();
+
+    const configured = Boolean(monthlyProductId && annualProductId);
+    const verifierConfigured =
+      platform === "ios"
+        ? appleNativeVerifierConfigured()
+        : googleNativeVerifierConfigured();
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    return res.status(200).json({
+      enabled: enabled && configured && verifierConfigured,
+      platform,
+      monthlyProductId: configured ? monthlyProductId : null,
+      annualProductId: configured ? annualProductId : null,
+      verifierConfigured,
+      reason: !enabled
+        ? "native_billing_disabled"
+        : !configured
+          ? "catalog_not_configured"
+          : !verifierConfigured
+            ? "server_verifier_not_configured"
+            : "ready",
+    });
+  });
+
 
   app.get("/api/billing/catalog", async (_req, res) => {
     const status = getBillingStatus();
