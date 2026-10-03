@@ -42,3 +42,18 @@ test("AI biography prompt preserves the calculation-versus-meaning boundary", ()
   const source = readFileSync(new URL("../server/services/openai-service.ts", import.meta.url), "utf8");
   assert.match(source, /symbolic or assessed reflection frameworks, not scientific diagnoses or fixed destiny/i);
 });
+
+
+test("foundation offline symbolic seeds do not invent hidden needs", () => {
+  const source = readFileSync(
+    new URL("../client/src/lib/foundationOfflineCodex.ts", import.meta.url),
+    "utf8",
+  );
+  const makeSeedStart = source.indexOf("function makeSeed");
+  const makeSeedEnd = source.indexOf("function makeId", makeSeedStart);
+  const makeSeedSource = source.slice(makeSeedStart, makeSeedEnd);
+
+  assert.ok(makeSeedStart >= 0 && makeSeedEnd > makeSeedStart);
+  assert.doesNotMatch(makeSeedSource, /hiddenNeed\s*:/);
+  assert.match(makeSeedSource, /This is symbolic interpretation/);
+});
