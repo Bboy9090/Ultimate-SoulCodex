@@ -52,8 +52,8 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
   human_design_depth: {
     minimumTier: "plus",
     availability: "live",
-    label: "Human Design depth",
-    upgradeReason: "Unlock verified Type, Strategy, Authority, Profile, centers, channels, and deeper synthesis.",
+    label: "Human Design core",
+    upgradeReason: "Unlock verified Type, Strategy, Authority, and Profile. Centers, channels, and deeper interaction synthesis remain planned until their paid surfaces are fully qualified.",
   },
   advanced_daily: {
     minimumTier: "plus",
@@ -88,8 +88,8 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
   premium_exports: {
     minimumTier: "plus",
     availability: "live",
-    label: "Premium exports",
-    upgradeReason: "Unlock premium report and sharing formats.",
+    label: "Premium PDF report",
+    upgradeReason: "Unlock the evidence-aware downloadable natal PDF report.",
   },
   premium_tarot: {
     minimumTier: "plus",
