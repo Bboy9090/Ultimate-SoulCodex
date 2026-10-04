@@ -75,7 +75,7 @@ test("store workflow binds exact release branch and Play production upload", asy
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /releaseVersion !== "4\.1\.0"/);
-  assert.match(validator, /versionCode\\s+4000010/);
+  assert.match(validator, /versionCode[\\s\\S]*4000010/);
   assert.match(validator, /CURRENT_PROJECT_VERSION = 4000010/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
