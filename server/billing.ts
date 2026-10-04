@@ -452,6 +452,13 @@ export function registerBillingRawRoutes(app: Express): void {
 
       try {
         const verifiedEvent = verifyAppleServerNotification(signedPayload);
+        if (!verifiedEvent) {
+          return res.status(200).json({
+            received: true,
+            applied: false,
+            reason: "apple_test_notification",
+          });
+        }
         await recordVerifiedBillingEvent(storage, verifiedEvent);
         return res.status(200).json({ received: true, applied: true });
       } catch (error) {
