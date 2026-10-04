@@ -193,3 +193,11 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 6. Use the verified Railway URLs for privacy, support, and account deletion unless a custom domain is attached and verified first.
 7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
 8. For Apple, obtain a fresh signed 4.1.0 (4000010) build from the same exact qualified candidate SHA used for submission evidence.
+
+
+## Soul Codex+ 4.1 subscription catalog
+
+The exact operator handoff for creating and qualifying the paid catalog is
+[`docs/SOUL_CODEX_PLUS_STORE_CATALOG_4_1.md`](SOUL_CODEX_PLUS_STORE_CATALOG_4_1.md).
+
+Do not mark the subscription catalog complete merely because identifiers are documented. Store products, prices, provider credentials, sandbox evidence, and production activation are separate release evidence classes.
