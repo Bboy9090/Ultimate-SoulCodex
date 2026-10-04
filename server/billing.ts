@@ -87,6 +87,68 @@ function priceIdForPlan(plan: "monthly" | "annual"): string | null {
   return plan === "annual" ? stripeAnnualPriceId() : stripeMonthlyPriceId();
 }
 
+export type SubscriptionCatalogPlan = {
+  plan: "monthly" | "annual";
+  currency: string;
+  unitAmount: number;
+  interval: "month" | "year";
+};
+
+function expectedInterval(plan: "monthly" | "annual"): "month" | "year" {
+  return plan === "annual" ? "year" : "month";
+}
+
+async function resolveStripePlan(
+  stripe: Stripe,
+  plan: "monthly" | "annual",
+): Promise<{ priceId: string; catalog: SubscriptionCatalogPlan } | null> {
+  const priceId = priceIdForPlan(plan);
+  if (!priceId) return null;
+
+  const price = await stripe.prices.retrieve(priceId);
+  const interval = price.recurring?.interval;
+  const intervalCount = price.recurring?.interval_count ?? 1;
+
+  if (
+    !price.active ||
+    price.type !== "recurring" ||
+    price.unit_amount === null ||
+    interval !== expectedInterval(plan) ||
+    intervalCount !== 1
+  ) {
+    return null;
+  }
+
+  return {
+    priceId,
+    catalog: {
+      plan,
+      currency: price.currency,
+      unitAmount: price.unit_amount,
+      interval,
+    },
+  };
+}
+
+export async function loadSubscriptionCatalog(): Promise<SubscriptionCatalogPlan[] | null> {
+  const stripe = stripeClient();
+  if (!stripe || !stripeCheckoutConfigured()) return null;
+
+  try {
+    const [monthly, annual] = await Promise.all([
+      resolveStripePlan(stripe, "monthly"),
+      resolveStripePlan(stripe, "annual"),
+    ]);
+    if (!monthly || !annual) return null;
+    return [monthly.catalog, annual.catalog];
+  } catch (error) {
+    console.error("[subscription-catalog] Stripe catalog resolution failed", {
+      error: error instanceof Error ? error.message : "unknown_error",
+    });
+    return null;
+  }
+}
+
 export function getBillingStatus(): BillingStatus {
   const monthlyProductConfigured = Boolean(stripeMonthlyPriceId());
   const annualProductConfigured = Boolean(stripeAnnualPriceId());
@@ -337,6 +399,17 @@ export function registerBillingRoutes(
     res.status(200).json(getBillingStatus());
   });
 
+  app.get("/api/billing/catalog", async (_req, res) => {
+    const catalog = await loadSubscriptionCatalog();
+    if (!catalog) {
+      return res.status(503).json({
+        message: "Soul Codex+ catalog is not available.",
+        code: "subscription_catalog_unavailable",
+      });
+    }
+    return res.status(200).json({ plans: catalog });
+  });
+
   app.post("/api/billing/checkout", checkoutLimiter, async (req: any, res) => {
     if (containsRawPaymentFields(req.body)) {
       return res.status(400).json({
@@ -374,13 +447,21 @@ export function registerBillingRoutes(
     const status = getBillingStatus();
     const stripe = stripeClient();
     const appUrl = configuredPublicAppUrl();
-    const priceId = priceIdForPlan(parsed.data.plan);
-    if (!status.enabled || !stripe || !appUrl || !priceId) {
+    if (!status.enabled || !stripe || !appUrl) {
       return res.status(503).json({
         message: "Soul Codex+ checkout is not configured.",
         code: "subscription_checkout_not_configured",
       });
     }
+
+    const resolvedPlan = await resolveStripePlan(stripe, parsed.data.plan);
+    if (!resolvedPlan) {
+      return res.status(503).json({
+        message: "The selected Soul Codex+ plan is not available.",
+        code: "subscription_plan_unavailable",
+      });
+    }
+    const priceId = resolvedPlan.priceId;
 
     const user = await deps.storage.getUser(userId);
     if (!user) {
