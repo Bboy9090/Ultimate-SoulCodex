@@ -12,6 +12,7 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 |---|---|
 | App name | Soul Codex |
 | iOS bundle ID | `app.soulcodex.ios` |
+| App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
 | Android release | 4.0.1 / versionCode 4000008 |
 | iOS release | 4.0.2 / build 4000009 |
@@ -127,6 +128,7 @@ This draft reflects the final release line and the checked-in privacy policy. Co
 | Other user-generated content | Yes | No* | Journal, profile context, compatibility inputs, and Soul Guide prompts |
 | App interactions | Yes | No | Session/usage history needed to operate and improve app functionality |
 | Diagnostics | Yes | No* | Request logs and error details used for security and troubleshooting |
+| Purchase history | Yes | No* | Store or hosted-payment transaction and subscription state used for entitlement verification, restore, refunds/revocations, fraud prevention, and support |
 
 `*` Some requested profile context or prompts may be processed by contracted AI or infrastructure service providers solely to deliver app functionality. Confirm that each transfer qualifies for Google Play's service-provider exception before selecting “not shared.”
 
@@ -140,7 +142,6 @@ This draft reflects the final release line and the checked-in privacy policy. Co
 - Health or fitness data
 - SMS, call logs, or device contacts
 - Payment card or bank information
-- In-app purchase history from a native store purchase flow
 
 ## App Store Privacy Draft
 
@@ -152,8 +153,9 @@ The checked-in `PrivacyInfo.xcprivacy` currently declares these linked, non-trac
 - Coarse location
 - Sensitive information
 - Other user content
+- Purchase history
 
-The app declares no tracking and no tracking domains. Reconcile this declaration with App Store Connect after the final archive is produced.
+The app declares no tracking and no tracking domains. Reconcile this declaration with App Store Connect after the final archive is produced. The live App Store privacy answers must not remain at “Data Not Collected” for a 4.1 build that transmits account/profile information or receives purchase/subscription state.
 
 ## Content Rating Draft
 
@@ -177,6 +179,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
 - Android manifest native permission surface: `android.permission.INTERNET` only
 - iOS simulator Release and generic-device archive qualification: passed
+- App Store listing: Soul Codex, numeric ID `6764221944`
 - Google Play developer account: active at `harebugz23@gmail.com`
 - Automated Google Play publishing remains optional; the missing `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` blocks only the CI upload path, not manual Play Console AAB upload
 
