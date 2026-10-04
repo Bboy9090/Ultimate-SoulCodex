@@ -26,7 +26,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.0.2
+  VITE_RELEASE_VERSION: 4.1.0
   VITE_API_CONTRACT: foundation-v4
   VITE_RELEASE_SHA: ${{ github.sha }}
 
