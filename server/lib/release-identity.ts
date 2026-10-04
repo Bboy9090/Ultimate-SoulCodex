@@ -1,5 +1,5 @@
 export const FOUNDATION_API_CONTRACT = "foundation-v4";
-export const DEFAULT_FOUNDATION_RELEASE_VERSION = "4.0.1";
+export const DEFAULT_FOUNDATION_RELEASE_VERSION = "4.1.0";
 
 import { resolvePersistenceCapabilities } from "./persistence-capabilities";
 
