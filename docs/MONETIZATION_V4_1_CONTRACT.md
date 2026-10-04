@@ -60,9 +60,10 @@ Current phase:
 - Soul Codex+ capability definitions exist.
 - Durable billing subjects, immutable provider transaction events, entitlement grants, and redacted verification receipts are the intended authorization source.
 - Signed Stripe subscription lifecycle verification may populate the ledger only for configured monthly/annual price IDs.
+- Authenticated web users may start hosted Stripe subscription Checkout only when both recurring catalog prices validate and the durable billing configuration is complete.
+- Checkout return URLs never grant access; only the verified subscription event does.
 - Legacy one-time Stripe checkout remains retired.
 - Native StoreKit 2 and Google Play Billing purchase initiation and restore are not yet active.
-- A configured verification adapter does not imply that purchasing is enabled.
 
 ## Non-negotiable gates
 
@@ -79,6 +80,6 @@ Current phase:
 1. Reconcile active schema and migrations.
 2. Add billing subjects, transaction events, entitlement grants, and verification receipts.
 3. Route signed subscription lifecycle verification through the common entitlement service without enabling checkout.
-4. Add authenticated monthly/annual web checkout plus StoreKit 2 and Google Play Billing behind disabled feature flags.
+4. Add authenticated monthly/annual web checkout, then add StoreKit 2 and Google Play Billing behind disabled feature flags.
 5. Prove sandbox purchase, restore, refund/revocation, reinstall, and cross-device behavior.
 6. Enable the native catalogs only in a dedicated 4.1 release candidate.
