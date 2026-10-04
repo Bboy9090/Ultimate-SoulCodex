@@ -75,7 +75,7 @@ test("store workflow binds exact release branch and Play production upload", asy
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /releaseVersion !== "4\.1\.0"/);
-  assert.match(validator, /versionCode\\s\+4000010/);
+  assert.match(validator, /versionCode\\s+4000010/);
   assert.match(validator, /CURRENT_PROJECT_VERSION = 4000010/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
@@ -118,10 +118,10 @@ test("Store Candidate concurrency is isolated per PR or ref", async () => {
 
   assert.match(
     workflow,
-    /group:\s*soulcodex-store-4-0-0-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/,
+    /group:\s*soulcodex-store-4-1-0-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/,
   );
   assert.match(workflow, /cancel-in-progress:\s*true/);
-  assert.doesNotMatch(workflow, /group:\s*soulcodex-store-4-0-0\s*$/m);
+  assert.doesNotMatch(workflow, /group:\s*soulcodex-store-4-1-0\s*$/m);
 });
 
 
