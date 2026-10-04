@@ -96,16 +96,19 @@ export default function PricingPage() {
   useEffect(() => {
     if (!checkoutReturn || plusActive) return;
     let attempts = 0;
+    let timer: number | null = null;
+    const stop = () => {
+      if (timer !== null) window.clearInterval(timer);
+      timer = null;
+    };
     const verify = async () => {
       attempts += 1;
       const result = await refetchAccess();
-      if (result.data?.tier === "plus" || attempts >= 8) {
-        window.clearInterval(timer);
-      }
+      if (result.data?.tier === "plus" || attempts >= 8) stop();
     };
     void verify();
-    const timer = window.setInterval(() => void verify(), 1500);
-    return () => window.clearInterval(timer);
+    timer = window.setInterval(() => void verify(), 1500);
+    return stop;
   }, [checkoutReturn, plusActive, refetchAccess]);
 
   const startCheckout = async (plan: "monthly" | "annual") => {
