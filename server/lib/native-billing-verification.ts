@@ -128,18 +128,15 @@ type AppleTransactionPayload = {
   appAccountToken?: string;
 };
 
-function verifyAppleSignedTransaction(
-  signedTransaction: string,
-  now = new Date(),
-): AppleTransactionPayload {
-  const parts = signedTransaction.split(".");
+function verifyAppleJws<T>(signedPayload: string, now = new Date()): T {
+  const parts = signedPayload.split(".");
   if (parts.length !== 3) throw new Error("apple_jws_malformed");
 
   let header: AppleJwsHeader;
-  let payload: AppleTransactionPayload;
+  let payload: T;
   try {
     header = JSON.parse(base64UrlBuffer(parts[0]).toString("utf8"));
-    payload = JSON.parse(base64UrlBuffer(parts[1]).toString("utf8"));
+    payload = JSON.parse(base64UrlBuffer(parts[1]).toString("utf8")) as T;
   } catch {
     throw new Error("apple_jws_malformed");
   }
@@ -165,6 +162,13 @@ function verifyAppleSignedTransaction(
   if (!valid) throw new Error("apple_jws_signature_invalid");
 
   return payload;
+}
+
+function verifyAppleSignedTransaction(
+  signedTransaction: string,
+  now = new Date(),
+): AppleTransactionPayload {
+  return verifyAppleJws<AppleTransactionPayload>(signedTransaction, now);
 }
 
 function dateFromMilliseconds(value: unknown): Date | null {
@@ -327,6 +331,7 @@ async function googleAccessToken(fetchImpl: typeof fetch): Promise<string> {
 
 type GoogleSubscriptionV2 = {
   kind?: string;
+  testPurchase?: Record<string, never>;
   startTime?: string;
   subscriptionState?: string;
   acknowledgementState?: string;
@@ -443,6 +448,248 @@ export async function verifyGoogleBillingEvidence(
       acknowledged:
         purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" ||
         purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING",
+      hasOrderId: Boolean(purchase.latestOrderId),
+    },
+  };
+}
+
+
+type AppleServerNotificationPayload = {
+  notificationType?: string;
+  subtype?: string;
+  notificationUUID?: string;
+  signedDate?: number;
+  version?: string;
+  data?: {
+    appAppleId?: number;
+    bundleId?: string;
+    bundleVersion?: string;
+    environment?: string;
+    signedTransactionInfo?: string;
+    signedRenewalInfo?: string;
+  };
+};
+
+function appleNotificationAccessStatus(
+  notificationType: string,
+  subtype: string | undefined,
+  transaction: AppleTransactionPayload,
+  now: Date,
+): VerifiedBillingEvent["accessStatus"] {
+  if (notificationType === "REFUND") return "refunded";
+  if (notificationType === "REVOKE") return "revoked";
+  if (notificationType === "EXPIRED" || notificationType === "GRACE_PERIOD_EXPIRED") return "expired";
+  if (notificationType === "DID_FAIL_TO_RENEW" && subtype === "GRACE_PERIOD") return "grace_period";
+  if (notificationType === "DID_CHANGE_RENEWAL_STATUS" && subtype === "AUTO_RENEW_DISABLED") {
+    return "canceled_pending_expiry";
+  }
+
+  const revokedAt = dateFromMilliseconds(transaction.revocationDate);
+  const expiresAt = dateFromMilliseconds(transaction.expiresDate);
+  if (revokedAt) return "revoked";
+  if (expiresAt && expiresAt.getTime() <= now.getTime()) return "expired";
+  return "active";
+}
+
+export function verifyAppleServerNotification(
+  signedPayload: string,
+  now = new Date(),
+): VerifiedBillingEvent {
+  const notification = verifyAppleJws<AppleServerNotificationPayload>(signedPayload, now);
+  if (notification.version !== "2.0") throw new Error("apple_notification_version_invalid");
+  if (!notification.notificationUUID) throw new Error("apple_notification_uuid_missing");
+  const signedDate = dateFromMilliseconds(notification.signedDate);
+  if (!signedDate) throw new Error("apple_notification_signed_date_invalid");
+
+  const data = notification.data;
+  if (!data?.signedTransactionInfo) throw new Error("apple_notification_transaction_missing");
+
+  const transaction = verifyAppleSignedTransaction(data.signedTransactionInfo, now);
+  const configuredBundleId = process.env.APPLE_CLIENT_ID?.trim();
+  if (!configuredBundleId) throw new Error("apple_verifier_not_configured");
+  if (data.bundleId !== configuredBundleId || transaction.bundleId !== configuredBundleId) {
+    throw new Error("apple_bundle_mismatch");
+  }
+
+  const outerEnvironment = environmentFromApple(data.environment);
+  const transactionEnvironment = environmentFromApple(transaction.environment);
+  if (outerEnvironment !== transactionEnvironment) throw new Error("apple_environment_mismatch");
+  if (!allowedAppleEnvironments().has(transactionEnvironment)) {
+    throw new Error("apple_environment_mismatch");
+  }
+
+  if (!transaction.appAccountToken) throw new Error("apple_account_binding_missing");
+  if (!transaction.transactionId) throw new Error("apple_transaction_missing");
+  if (!transaction.productId) throw new Error("apple_product_mismatch");
+  const plan = planForAppleProduct(transaction.productId);
+  if (!plan) throw new Error("apple_product_not_allowed");
+
+  const notificationType = String(notification.notificationType ?? "").trim();
+  if (!notificationType) throw new Error("apple_notification_type_missing");
+  const accessStatus = appleNotificationAccessStatus(
+    notificationType,
+    notification.subtype,
+    transaction,
+    now,
+  );
+
+  const purchasedAt = dateFromMilliseconds(transaction.purchaseDate);
+  const expiresAt = dateFromMilliseconds(transaction.expiresDate);
+
+  return {
+    userId: transaction.appAccountToken,
+    provider: "apple",
+    providerEventId: `apple_notification:${notification.notificationUUID}`,
+    providerTransactionId: transaction.transactionId,
+    productId: transaction.productId,
+    plan,
+    environment: transactionEnvironment,
+    eventType: `apple_notification:${notificationType}:${notification.subtype ?? "none"}`,
+    occurredAt: signedDate,
+    verificationState: "verified",
+    accessStatus,
+    purchasedAt,
+    expiresAt,
+    verifiedAt: now,
+    evidenceDigest: sha256Hex(signedPayload),
+    diagnosticMetadata: {
+      source: "apple_server_notification_v2",
+      notificationType,
+      subtype: notification.subtype ?? null,
+      environment: transactionEnvironment,
+      notificationUUID: notification.notificationUUID,
+    },
+  };
+}
+
+const googleRtdnEnvelopeSchema = z.object({
+  message: z.object({
+    data: z.string().min(1).max(200_000),
+    messageId: z.string().min(1).max(512).optional(),
+    message_id: z.string().min(1).max(512).optional(),
+    publishTime: z.string().optional(),
+  }),
+  subscription: z.string().optional(),
+}).passthrough();
+
+type GoogleRtdnPayload = {
+  version?: string;
+  packageName?: string;
+  eventTimeMillis?: string;
+  subscriptionNotification?: {
+    version?: string;
+    notificationType?: number;
+    purchaseToken?: string;
+  };
+  testNotification?: {
+    version?: string;
+  };
+};
+
+async function fetchGoogleSubscription(
+  purchaseToken: string,
+  fetchImpl: typeof fetch,
+): Promise<{
+  accessToken: string;
+  packageName: string;
+  purchase: GoogleSubscriptionV2;
+}> {
+  const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim();
+  if (!packageName) throw new Error("google_play_verifier_not_configured");
+  const accessToken = await googleAccessToken(fetchImpl);
+  const url =
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`;
+  const response = await fetchImpl(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new Error("google_play_verification_failed");
+  return {
+    accessToken,
+    packageName,
+    purchase: await response.json() as GoogleSubscriptionV2,
+  };
+}
+
+function googleAllowedLineItem(purchase: GoogleSubscriptionV2) {
+  const allowedIds = new Set(
+    [googleMonthlyProductId(), googleAnnualProductId()].filter((value): value is string => Boolean(value)),
+  );
+  const candidates = (purchase.lineItems ?? []).filter(
+    (item) => Boolean(item.productId && allowedIds.has(item.productId)),
+  );
+  if (!candidates.length) throw new Error("google_play_product_mismatch");
+  return candidates.sort((left, right) => {
+    const leftExpiry = left.expiryTime ? Date.parse(left.expiryTime) : 0;
+    const rightExpiry = right.expiryTime ? Date.parse(right.expiryTime) : 0;
+    return rightExpiry - leftExpiry;
+  })[0];
+}
+
+export async function verifyGoogleRtdnNotification(
+  input: unknown,
+  now = new Date(),
+  fetchImpl: typeof fetch = fetch,
+): Promise<VerifiedBillingEvent | null> {
+  const envelope = googleRtdnEnvelopeSchema.parse(input);
+  let notification: GoogleRtdnPayload;
+  try {
+    notification = JSON.parse(Buffer.from(envelope.message.data, "base64").toString("utf8")) as GoogleRtdnPayload;
+  } catch {
+    throw new Error("google_rtdn_payload_invalid");
+  }
+
+  const configuredPackage = process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim();
+  if (!configuredPackage) throw new Error("google_play_verifier_not_configured");
+  if (notification.packageName !== configuredPackage) throw new Error("google_rtdn_package_mismatch");
+
+  if (notification.testNotification && !notification.subscriptionNotification) {
+    return null;
+  }
+
+  const subscription = notification.subscriptionNotification;
+  if (!subscription?.purchaseToken) throw new Error("google_rtdn_subscription_missing");
+  const messageId = envelope.message.messageId ?? envelope.message.message_id;
+  if (!messageId) throw new Error("google_rtdn_message_id_missing");
+
+  const { purchase } = await fetchGoogleSubscription(subscription.purchaseToken, fetchImpl);
+  const userId = purchase.externalAccountIdentifiers?.obfuscatedExternalAccountId;
+  if (!userId) throw new Error("google_play_account_binding_missing");
+
+  const item = googleAllowedLineItem(purchase);
+  if (!item.productId) throw new Error("google_play_product_mismatch");
+  const plan = planForGoogleProduct(item.productId);
+  if (!plan) throw new Error("google_play_product_not_allowed");
+
+  const purchasedAt = purchase.startTime ? new Date(purchase.startTime) : null;
+  const expiresAt = item.expiryTime ? new Date(item.expiryTime) : null;
+  if (purchasedAt && Number.isNaN(purchasedAt.getTime())) throw new Error("google_play_purchase_time_invalid");
+  if (expiresAt && Number.isNaN(expiresAt.getTime())) throw new Error("google_play_expiry_time_invalid");
+
+  const accessStatus = googleAccessStatus(purchase.subscriptionState, expiresAt, now);
+  const eventTime = dateFromMilliseconds(notification.eventTimeMillis) ?? now;
+  const environment: "sandbox" | "production" = purchase.testPurchase ? "sandbox" : "production";
+
+  return {
+    userId,
+    provider: "google_play",
+    providerEventId: `google_rtdn:${messageId}`,
+    providerTransactionId: purchase.latestOrderId ?? sha256Hex(subscription.purchaseToken),
+    productId: item.productId,
+    plan,
+    environment,
+    eventType: `google_rtdn:${subscription.notificationType ?? 0}`,
+    occurredAt: eventTime,
+    verificationState: "verified",
+    accessStatus,
+    purchasedAt,
+    expiresAt,
+    verifiedAt: now,
+    evidenceDigest: sha256Hex(envelope.message.data),
+    diagnosticMetadata: {
+      source: "google_play_rtdn",
+      notificationType: subscription.notificationType ?? 0,
+      state: purchase.subscriptionState ?? "unknown",
+      environment,
       hasOrderId: Boolean(purchase.latestOrderId),
     },
   };
