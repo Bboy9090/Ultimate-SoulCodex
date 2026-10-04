@@ -43,6 +43,7 @@ jobs:
           tests/product-entitlement-contract.test.ts
           tests/canonical-billing-path-contract.test.ts
           tests/billing-retention-privacy-contract.test.ts
+          tests/auth-billing-privacy-contract.test.ts
           tests/native-billing-bridge-contract.test.ts
           tests/native-billing-server-verification-contract.test.ts
           tests/full-birth-name-persistence-contract.test.ts

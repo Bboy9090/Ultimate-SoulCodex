@@ -325,6 +325,7 @@ async function stripeCatalogPlan(
     price.type !== "recurring" ||
     !price.recurring ||
     price.recurring.interval !== expectedInterval ||
+    (price.recurring.interval_count ?? 1) !== 1 ||
     typeof price.unit_amount !== "number"
   ) {
     throw new Error("billing_product_catalog_mismatch");
@@ -345,9 +346,14 @@ async function createWebCheckoutSession(
   plan: SoulCodexPlusPlan,
 ): Promise<Stripe.Checkout.Session> {
   if (!user) throw new Error("billing_user_not_found");
-  const priceId = planPriceId(plan);
   const appUrl = configuredPublicAppUrl();
-  if (!priceId || !appUrl) throw new Error("billing_not_configured");
+  if (!appUrl) throw new Error("billing_not_configured");
+
+  const validatedPlan = await stripeCatalogPlan(stripe, plan);
+  const priceId = planPriceId(plan);
+  if (!priceId || validatedPlan.intervalCount !== 1) {
+    throw new Error("billing_product_catalog_mismatch");
+  }
 
   return stripe.checkout.sessions.create({
     mode: "subscription",

@@ -46,7 +46,7 @@ test("checkout return only refreshes durable access", () => {
   assert.match(panel, /checkout/);
   assert.match(panel, /invalidateQueries\(\{ queryKey: \["\/api\/access"\] \}\)/);
   assert.match(panel, /refetchAccess/);
-  assert.match(panel, /not verified yet/);
+  assert.match(panel, /still awaiting verified provider evidence/);
   assert.doesNotMatch(panel, /setQueryData\(\["\/api\/access"\].*tier:\s*"plus"/s);
 });
 
@@ -61,4 +61,22 @@ test("pricing page mounts one centralized Plus billing surface", () => {
   assert.match(pricing, /SoulCodexPlusBillingPanel/);
   assert.match(pricing, /livePremiumFeatures/);
   assert.doesNotMatch(pricing, /plannedPremiumFeatures/);
+});
+
+
+test("catalog rejects multi-period recurring prices and checkout reuses validated catalog", () => {
+  assert.match(billing, /\(price\.recurring\.interval_count \?\? 1\) !== 1/);
+  const checkoutFunction = billing.slice(
+    billing.indexOf("async function createWebCheckoutSession"),
+    billing.indexOf("async function createStripePortalSession"),
+  );
+  assert.match(checkoutFunction, /stripeCatalogPlan\(stripe, plan\)/);
+  assert.match(checkoutFunction, /billing_product_catalog_mismatch/);
+});
+
+test("checkout return retries durable access for bounded webhook delay", () => {
+  assert.match(panel, /for \(let attempt = 1; attempt <= 8/);
+  assert.match(panel, /window\.setTimeout\(resolve, 1500\)/);
+  assert.match(panel, /still awaiting verified provider evidence/);
+  assert.doesNotMatch(panel, /tier:\s*"plus"/);
 });
