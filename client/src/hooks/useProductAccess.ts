@@ -75,6 +75,9 @@ export function useProductAccess() {
     queryKey: ["/api/access"],
     queryFn: loadProductAccess,
     staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: true,
+    networkMode: "always",
   });
 
   return {
