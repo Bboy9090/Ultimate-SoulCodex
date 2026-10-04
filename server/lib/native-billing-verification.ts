@@ -494,12 +494,16 @@ function appleNotificationAccessStatus(
 export function verifyAppleServerNotification(
   signedPayload: string,
   now = new Date(),
-): VerifiedBillingEvent {
+): VerifiedBillingEvent | null {
   const notification = verifyAppleJws<AppleServerNotificationPayload>(signedPayload, now);
   if (notification.version !== "2.0") throw new Error("apple_notification_version_invalid");
   if (!notification.notificationUUID) throw new Error("apple_notification_uuid_missing");
   const signedDate = dateFromMilliseconds(notification.signedDate);
   if (!signedDate) throw new Error("apple_notification_signed_date_invalid");
+
+  const notificationType = String(notification.notificationType ?? "").trim();
+  if (!notificationType) throw new Error("apple_notification_type_missing");
+  if (notificationType === "TEST") return null;
 
   const data = notification.data;
   if (!data?.signedTransactionInfo) throw new Error("apple_notification_transaction_missing");
@@ -524,8 +528,6 @@ export function verifyAppleServerNotification(
   const plan = planForAppleProduct(transaction.productId);
   if (!plan) throw new Error("apple_product_not_allowed");
 
-  const notificationType = String(notification.notificationType ?? "").trim();
-  if (!notificationType) throw new Error("apple_notification_type_missing");
   const accessStatus = appleNotificationAccessStatus(
     notificationType,
     notification.subtype,
@@ -651,7 +653,7 @@ export async function verifyGoogleRtdnNotification(
   const messageId = envelope.message.messageId ?? envelope.message.message_id;
   if (!messageId) throw new Error("google_rtdn_message_id_missing");
 
-  const { purchase } = await fetchGoogleSubscription(subscription.purchaseToken, fetchImpl);
+  const { accessToken, packageName, purchase } = await fetchGoogleSubscription(subscription.purchaseToken, fetchImpl);
   const userId = purchase.externalAccountIdentifiers?.obfuscatedExternalAccountId;
   if (!userId) throw new Error("google_play_account_binding_missing");
 
@@ -666,6 +668,24 @@ export async function verifyGoogleRtdnNotification(
   if (expiresAt && Number.isNaN(expiresAt.getTime())) throw new Error("google_play_expiry_time_invalid");
 
   const accessStatus = googleAccessStatus(purchase.subscriptionState, expiresAt, now);
+
+  if (
+    purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING" &&
+    ["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus)
+  ) {
+    const acknowledgeUrl =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(item.productId)}/tokens/${encodeURIComponent(subscription.purchaseToken)}:acknowledge`;
+    const acknowledgement = await fetchImpl(acknowledgeUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    });
+    if (!acknowledgement.ok) throw new Error("google_play_acknowledgement_failed");
+  }
+
   const eventTime = dateFromMilliseconds(notification.eventTimeMillis) ?? now;
   const environment: "sandbox" | "production" = purchase.testPurchase ? "sandbox" : "production";
 
