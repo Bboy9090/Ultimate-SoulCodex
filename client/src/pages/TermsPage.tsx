@@ -99,9 +99,7 @@ export default function TermsPage() {
               web subscriptions are managed through the configured hosted
               billing portal. Premium entitlement is activated or removed only
               after provider verification creates a valid durable entitlement
-              state for the authenticated account. A checkout success page,
-              local flag, or profile field does not grant paid access. An
-              unverified device receipt does not grant paid access either.
+              state for the authenticated account. A checkout success page, local flag, or profile field does not grant paid access. An unverified device receipt does not grant paid access either.
             </p>
           </Section>
 
