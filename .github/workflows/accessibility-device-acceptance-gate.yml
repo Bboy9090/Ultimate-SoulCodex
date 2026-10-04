@@ -48,7 +48,7 @@ jobs:
       - name: Validate iOS release configuration
         env:
           VITE_API_URL: https://soulcodex.up.railway.app
-          VITE_RELEASE_VERSION: 4.0.2
+          VITE_RELEASE_VERSION: 4.1.0
           VITE_RELEASE_SHA: ${{ github.sha }}
           VITE_API_CONTRACT: foundation-v4
         run: npm run mobile:validate:ios
@@ -56,7 +56,7 @@ jobs:
       - name: Validate Android release configuration
         env:
           VITE_API_URL: https://soulcodex.up.railway.app
-          VITE_RELEASE_VERSION: 4.0.1
+          VITE_RELEASE_VERSION: 4.1.0
           VITE_RELEASE_SHA: ${{ github.sha }}
           VITE_API_CONTRACT: foundation-v4
         run: npm run mobile:validate:android
