@@ -39,7 +39,7 @@ export default function TermsPage() {
                 opacity: 0.85,
               }}
             >
-              Effective: September 27, 2026
+              Effective: October 4, 2026
             </p>
           </div>
 
@@ -86,14 +86,22 @@ export default function TermsPage() {
 
           <Section title="5. Premium Access and Payments">
             <p>
-              Premium availability, included tools, and price are shown before
-              purchase. When web checkout is enabled, payment details are
-              entered on Stripe's hosted checkout page. Soul Codex does not
-              collect or store card numbers, security codes, or expiration
-              dates. Premium entitlement is activated only after provider
-              verification creates a valid durable entitlement for the
-              authenticated account. A checkout success page, local flag, or
-              profile field does not grant paid access.
+              Premium availability, included tools, billing period, and price
+              are shown before purchase. When web checkout is enabled, payment
+              details are entered on Stripe's hosted checkout page. When native
+              purchasing is enabled, subscriptions are processed by the Apple
+              App Store or Google Play under the terms and renewal disclosures
+              shown by that store. Soul Codex does not collect or store card
+              numbers, security codes, or card expiration dates. Recurring
+              subscriptions remain active until canceled or otherwise ended
+              under the applicable provider's rules; native cancellation and
+              refund requests are handled through the applicable app store, and
+              web subscriptions are managed through the configured hosted
+              billing portal. Premium entitlement is activated or removed only
+              after provider verification creates a valid durable entitlement
+              state for the authenticated account. A checkout success page,
+              local flag, profile field, or unverified device receipt does not
+              grant paid access.
             </p>
           </Section>
 
