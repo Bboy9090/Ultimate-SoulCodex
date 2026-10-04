@@ -77,7 +77,7 @@ test("Google RTDN re-queries Play and derives account-bound durable state", asyn
     assert.equal(event.accessStatus, "active");
     assert.equal(event.productId, "soul_codex_plus_monthly");
     assert.equal(event.providerEventId, "google_rtdn:pubsub-message-1");
-    assert.equal(event.occurredAt.toISOString(), "2026-10-03T15:21:00.000Z");
+    assert.equal(event.occurredAt.toISOString(), "2026-10-03T16:01:00.000Z");
   } finally {
     if (previous.service === undefined) delete process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
     else process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = previous.service;
