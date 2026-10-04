@@ -90,14 +90,34 @@ export default function SoulCodexPlusBillingPanel() {
     }
 
     setBillingMessage("Payment returned successfully. Confirming verified Soul Codex+ access…");
-    void queryClient.invalidateQueries({ queryKey: ["/api/access"] }).then(async () => {
-      const refreshed = await refetchAccess();
-      setBillingMessage(
-        refreshed.data?.tier === "plus"
-          ? "Soul Codex+ is verified and active."
-          : "Payment returned, but Soul Codex+ is not verified yet. Access stays Free until the signed billing event is confirmed.",
-      );
-    });
+
+    let cancelled = false;
+    const verifyAccess = async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/access"] });
+
+      for (let attempt = 1; attempt <= 8 && !cancelled; attempt += 1) {
+        const refreshed = await refetchAccess();
+        if (refreshed.data?.tier === "plus") {
+          setBillingMessage("Soul Codex+ is verified and active.");
+          return;
+        }
+
+        if (attempt < 8) {
+          await new Promise((resolve) => window.setTimeout(resolve, 1500));
+        }
+      }
+
+      if (!cancelled) {
+        setBillingMessage(
+          "Payment returned, but Soul Codex+ is still awaiting verified provider evidence. Access stays Free until the signed billing event is confirmed.",
+        );
+      }
+    };
+
+    void verifyAccess();
+    return () => {
+      cancelled = true;
+    };
   }, [isNative, refetchAccess]);
 
   const startCheckout = async (plan: "monthly" | "annual") => {
