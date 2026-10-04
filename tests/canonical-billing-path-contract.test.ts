@@ -24,11 +24,23 @@ test("canonical access never authorizes from legacy premium flags", () => {
 test("canonical billing cannot grant premium through legacy profile mutation", () => {
   assert.doesNotMatch(billing, /updateProfile\([^)]*isPremium/);
   assert.doesNotMatch(billing, /mode:\s*"payment"/);
-  assert.match(billing, /legacy_checkout_retired/);
+  assert.match(billing, /mode:\s*"subscription"/);
+  assert.match(billing, /req\.session\?\.userId/);
+  assert.doesNotMatch(billing, /profileId.*checkout/i);
   assert.match(billing, /recordVerifiedBillingEvent/);
 });
 
 test("mock subscription services are not imported by canonical production routes", () => {
   assert.doesNotMatch(canonicalRoutes, /subscription-service/);
   assert.doesNotMatch(indexSource, /subscription-service/);
+});
+
+
+test("parsed checkout routes are mounted after session setup while raw webhook stays pre-parser", () => {
+  const setupIndex = canonicalRoutes.indexOf("setupSession(app)");
+  const billingIndex = canonicalRoutes.indexOf("registerBillingRoutes(app)");
+  assert.ok(setupIndex >= 0);
+  assert.ok(billingIndex > setupIndex);
+  assert.match(indexSource, /registerBillingRawRoutes\(app\)/);
+  assert.doesNotMatch(indexSource, /registerBillingRoutes\(app\)/);
 });
