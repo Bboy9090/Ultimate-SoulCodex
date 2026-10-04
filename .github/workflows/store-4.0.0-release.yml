@@ -1,4 +1,4 @@
-name: Soul Codex Store Candidate — Android 4.0.1 / iOS 4.0.2
+name: Soul Codex Store Candidate — Android 4.1.0 / iOS 4.1.0
 
 on:
   push:
@@ -21,12 +21,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: soulcodex-store-4-0-0-${{ github.event.pull_request.number || github.ref }}
+  group: soulcodex-store-4-1-0-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.0.1
+  VITE_RELEASE_VERSION: 4.1.0
   VITE_API_CONTRACT: foundation-v4
 
 jobs:
@@ -69,7 +69,7 @@ jobs:
         run: npm run mobile:validate:android
       - name: Validate iOS release metadata
         env:
-          VITE_RELEASE_VERSION: 4.0.2
+          VITE_RELEASE_VERSION: 4.1.0
           VITE_RELEASE_SHA: ${{ github.sha }}
         run: npm run mobile:validate:ios
       - name: Generate release receipt
@@ -77,19 +77,19 @@ jobs:
           cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
           Soul Codex store candidate
           SHA=${GITHUB_SHA}
-          Android versionName=4.0.1
+          Android versionName=4.1.0
           Android applicationId=soulcodex.app
-          Android versionCode=4000008
-          iOS marketingVersion=4.0.2
+          Android versionCode=4000010
+          iOS marketingVersion=4.1.0
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000009
+          iOS build=4000010
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
       - name: Upload release-gate receipt
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.1-release-gate
+          name: soulcodex-4.1.0-release-gate
           path: STORE-CANDIDATE-RECEIPT.txt
           retention-days: 90
 
@@ -180,15 +180,15 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "versionName=4.0.1"
-            echo "versionCode=4000008"
+            echo "versionName=4.1.0"
+            echo "versionCode=4000010"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
           } > android-store-state.txt
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.1-android
+          name: soulcodex-4.1.0-android
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/debug/*.apk
@@ -228,7 +228,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     env:
-      VITE_RELEASE_VERSION: 4.0.2
+      VITE_RELEASE_VERSION: 4.1.0
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v5
@@ -259,14 +259,14 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "marketingVersion=4.0.2"
-            echo "buildNumber=4000009"
+            echo "marketingVersion=4.1.0"
+            echo "buildNumber=4000010"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
       - name: Upload iOS qualification receipt
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.0.2-ios-qualification
+          name: soulcodex-4.1.0-ios-qualification
           path: ios-store-state.txt
           retention-days: 90
