@@ -20,7 +20,16 @@ type ConsumerAuthDependencies = {
 
 function publicUser(user: Awaited<ReturnType<IStorage["getUser"]>>) {
   if (!user) return null;
-  const { password: _password, ...safe } = user;
+  const {
+    password: _password,
+    stripeCustomerId: _stripeCustomerId,
+    stripeSubscriptionId: _stripeSubscriptionId,
+    subscriptionStatus: _subscriptionStatus,
+    subscriptionPlan: _subscriptionPlan,
+    subscriptionEndsAt: _subscriptionEndsAt,
+    isPremium: _isPremium,
+    ...safe
+  } = user;
   return safe;
 }
 
