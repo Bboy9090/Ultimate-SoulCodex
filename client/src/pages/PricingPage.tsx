@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
@@ -34,13 +34,22 @@ const roadmapFeatures = [
 
 export default function PricingPage() {
   const isNative = Capacitor.isNativePlatform();
-  const { access } = useProductAccess();
+  const { access, refetch: refetchAccess } = useProductAccess();
   const [checkoutPlan, setCheckoutPlan] = useState<"monthly" | "annual" | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const { data: billingStatus } = useQuery({
     queryKey: ["/api/billing/status"],
     queryFn: async () => {
       const response = await apiFetch("/api/billing/status");
+      if (!response.ok) return null;
+      return response.json();
+    },
+    staleTime: 30_000,
+  });
+  const { data: billingCatalog } = useQuery({
+    queryKey: ["/api/billing/catalog"],
+    queryFn: async () => {
+      const response = await apiFetch("/api/billing/catalog");
       if (!response.ok) return null;
       return response.json();
     },
@@ -58,6 +67,46 @@ export default function PricingPage() {
 
   const webCheckoutReady = !isNative && Boolean(billingStatus?.enabled);
   const plusActive = access.tier === "plus";
+
+  const checkoutReturn =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("checkout") === "return";
+
+  const catalogByPlan = useMemo(() => {
+    const entries = Array.isArray(billingCatalog?.plans) ? billingCatalog.plans : [];
+    return Object.fromEntries(entries.map((entry: any) => [entry.plan, entry])) as Record<
+      "monthly" | "annual",
+      { currency: string; unitAmount: number; interval: "month" | "year" } | undefined
+    >;
+  }, [billingCatalog]);
+
+  const formatPlanPrice = (plan: "monthly" | "annual") => {
+    const entry = catalogByPlan[plan];
+    if (!entry) return null;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: entry.currency.toUpperCase(),
+      }).format(entry.unitAmount / 100);
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!checkoutReturn || plusActive) return;
+    let attempts = 0;
+    const verify = async () => {
+      attempts += 1;
+      const result = await refetchAccess();
+      if (result.data?.tier === "plus" || attempts >= 8) {
+        window.clearInterval(timer);
+      }
+    };
+    void verify();
+    const timer = window.setInterval(() => void verify(), 1500);
+    return () => window.clearInterval(timer);
+  }, [checkoutReturn, plusActive, refetchAccess]);
 
   const startCheckout = async (plan: "monthly" | "annual") => {
     if (!webCheckoutReady || plusActive || checkoutPlan) return;
@@ -99,6 +148,17 @@ export default function PricingPage() {
             Free gives you a real Soul Codex experience. Soul Codex+ unlocks the additional qualified capabilities listed below without changing the accuracy standard.
           </p>
         </header>
+
+        {checkoutReturn && !plusActive ? (
+          <section className="mt-6 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]" aria-live="polite">
+            <strong className="text-[var(--sc-ivory)]">Verifying your Soul Codex+ subscription…</strong>
+            <span className="ml-2">Access activates only after the signed subscription event reaches the server.</span>
+          </section>
+        ) : checkoutReturn && plusActive ? (
+          <section className="mt-6 rounded-2xl border border-[rgba(114,216,197,.22)] bg-[rgba(114,216,197,.06)] p-4 text-sm text-[var(--sc-teal)]" aria-live="polite">
+            Soul Codex+ is verified and active on this account.
+          </section>
+        ) : null}
 
         <section className="mt-8 grid gap-4 md:grid-cols-2">
           <article className="sc-panel sc-panel-gold flex flex-col p-6 sm:p-8">
@@ -143,7 +203,9 @@ export default function PricingPage() {
                       disabled={checkoutPlan !== null}
                       onClick={() => void startCheckout("monthly")}
                     >
-                      {checkoutPlan === "monthly" ? "Opening secure checkout…" : "Choose Monthly"}
+                      {checkoutPlan === "monthly"
+                        ? "Opening secure checkout…"
+                        : `Choose Monthly${formatPlanPrice("monthly") ? ` · ${formatPlanPrice("monthly")}/month` : ""}`}
                     </button>
                     <button
                       type="button"
@@ -151,7 +213,9 @@ export default function PricingPage() {
                       disabled={checkoutPlan !== null}
                       onClick={() => void startCheckout("annual")}
                     >
-                      {checkoutPlan === "annual" ? "Opening secure checkout…" : "Choose Annual"}
+                      {checkoutPlan === "annual"
+                        ? "Opening secure checkout…"
+                        : `Choose Annual${formatPlanPrice("annual") ? ` · ${formatPlanPrice("annual")}/year` : ""}`}
                     </button>
                   </>
                 ) : (
