@@ -100,7 +100,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session?.userId ?? null;
       const entitlement = await resolveProductEntitlementForUser(storage, userId);
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
-      res.status(200).json(entitlement);
+      res.status(200).json({
+        ...entitlement,
+        resolvedAt: new Date().toISOString(),
+      });
     } catch (error) {
       console.error("[ProductAccess] Failed to resolve entitlement:", error);
       res.status(500).json({
@@ -111,6 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: null,
         expiresAt: null,
         lastVerifiedAt: null,
+        resolvedAt: null,
       });
     }
   });
