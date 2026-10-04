@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import express, { type Express, type Request } from "express";
 import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
@@ -7,7 +7,9 @@ import { storage } from "./storage";
 import {
   nativeBillingEvidenceSchema,
   verifyAppleBillingEvidence,
+  verifyAppleServerNotification,
   verifyGoogleBillingEvidence,
+  verifyGoogleRtdnNotification,
 } from "./lib/native-billing-verification";
 import {
   SOUL_CODEX_PLUS_CAPABILITY,
@@ -91,6 +93,15 @@ function webCheckoutFlagEnabled(): boolean {
 
 function nativeBillingFlagEnabled(): boolean {
   return process.env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED?.trim().toLowerCase() === "true";
+}
+
+function googleRtdnVerificationTokenMatches(candidate: unknown): boolean {
+  const expected = process.env.GOOGLE_PLAY_RTDN_VERIFICATION_TOKEN?.trim();
+  if (!expected || typeof candidate !== "string" || !candidate) return false;
+  const expectedBuffer = Buffer.from(expected, "utf8");
+  const candidateBuffer = Buffer.from(candidate, "utf8");
+  return expectedBuffer.length === candidateBuffer.length &&
+    timingSafeEqual(expectedBuffer, candidateBuffer);
 }
 
 function appleMonthlyProductId(): string | null {
@@ -419,6 +430,82 @@ async function createStripePortalSession(
  * against the exact raw bytes. Direct-card collection remains retired.
  */
 export function registerBillingRawRoutes(app: Express): void {
+  app.post(
+    "/api/billing/apple/notifications",
+    express.json({ limit: "256kb" }),
+    async (req, res) => {
+      if (!persistentStorageConfigured() || !appleNativeVerifierConfigured()) {
+        return res.status(503).json({
+          message: "Apple subscription lifecycle verification is not configured",
+          code: "apple_lifecycle_not_configured",
+        });
+      }
+
+      const signedPayload =
+        typeof req.body?.signedPayload === "string" ? req.body.signedPayload : "";
+      if (!signedPayload) {
+        return res.status(400).json({
+          message: "Apple signedPayload is required",
+          code: "apple_notification_payload_missing",
+        });
+      }
+
+      try {
+        const verifiedEvent = verifyAppleServerNotification(signedPayload);
+        await recordVerifiedBillingEvent(storage, verifiedEvent);
+        return res.status(200).json({ received: true, applied: true });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "apple_notification_verification_failed";
+        console.error("[apple-billing-notification] rejected", { code });
+        return res.status(code === "billing_event_replay_mismatch" ? 409 : 400).json({
+          message: "Apple subscription lifecycle notification could not be verified",
+          code,
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/billing/google/rtdn",
+    express.json({ limit: "256kb" }),
+    async (req, res) => {
+      if (!persistentStorageConfigured() || !googleNativeVerifierConfigured()) {
+        return res.status(503).json({
+          message: "Google Play subscription lifecycle verification is not configured",
+          code: "google_rtdn_not_configured",
+        });
+      }
+
+      if (!googleRtdnVerificationTokenMatches(req.query?.token)) {
+        return res.status(401).json({
+          message: "Google Play notification authentication failed",
+          code: "google_rtdn_authentication_failed",
+        });
+      }
+
+      try {
+        const verifiedEvent = await verifyGoogleRtdnNotification(req.body);
+        if (!verifiedEvent) {
+          return res.status(200).json({
+            received: true,
+            applied: false,
+            reason: "google_rtdn_test_notification",
+          });
+        }
+
+        await recordVerifiedBillingEvent(storage, verifiedEvent);
+        return res.status(200).json({ received: true, applied: true });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "google_rtdn_verification_failed";
+        console.error("[google-billing-rtdn] rejected", { code });
+        return res.status(code === "billing_event_replay_mismatch" ? 409 : 400).json({
+          message: "Google Play subscription lifecycle notification could not be verified",
+          code,
+        });
+      }
+    },
+  );
+
   app.post("/api/profiles/:id/upgrade", (_req, res) => {
     res.status(410).json({
       message:
