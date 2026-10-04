@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import type { SoulCodexTier } from "@shared/product-access";
 import { apiFetch } from "../lib/queryClient";
+import {
+  clearOfflineEntitlementCache,
+  readBoundedOfflinePlus,
+  rememberVerifiedPlus,
+} from "../lib/offlineEntitlementCache";
 
 export type ProductAccessResponse = {
   tier: SoulCodexTier;
@@ -10,6 +15,8 @@ export type ProductAccessResponse = {
   status: string | null;
   expiresAt: string | null;
   lastVerifiedAt: string | null;
+  resolvedAt: string | null;
+  offlineCache: boolean;
 };
 
 const FREE_ACCESS: ProductAccessResponse = {
@@ -20,13 +27,23 @@ const FREE_ACCESS: ProductAccessResponse = {
   status: null,
   expiresAt: null,
   lastVerifiedAt: null,
+  resolvedAt: null,
+  offlineCache: false,
 };
 
 async function loadProductAccess(): Promise<ProductAccessResponse> {
-  const response = await apiFetch("/api/access", { method: "GET" });
-  if (!response.ok) return FREE_ACCESS;
+  let response: Response;
+  try {
+    response = await apiFetch("/api/access", { method: "GET" });
+  } catch {
+    return readBoundedOfflinePlus() ?? FREE_ACCESS;
+  }
+
+  if (!response.ok) return readBoundedOfflinePlus() ?? FREE_ACCESS;
   const payload = await response.json().catch(() => null);
-  if (!payload || (payload.tier !== "free" && payload.tier !== "plus")) return FREE_ACCESS;
+  if (!payload || (payload.tier !== "free" && payload.tier !== "plus")) {
+    return readBoundedOfflinePlus() ?? FREE_ACCESS;
+  }
 
   const source =
     payload.source === "stripe" ||
@@ -35,7 +52,7 @@ async function loadProductAccess(): Promise<ProductAccessResponse> {
       ? payload.source
       : "free";
 
-  return {
+  const access: ProductAccessResponse = {
     tier: payload.tier,
     source,
     verified: Boolean(payload.verified),
@@ -43,7 +60,14 @@ async function loadProductAccess(): Promise<ProductAccessResponse> {
     status: typeof payload.status === "string" ? payload.status : null,
     expiresAt: typeof payload.expiresAt === "string" ? payload.expiresAt : null,
     lastVerifiedAt: typeof payload.lastVerifiedAt === "string" ? payload.lastVerifiedAt : null,
+    resolvedAt: typeof payload.resolvedAt === "string" ? payload.resolvedAt : null,
+    offlineCache: false,
   };
+
+  if (access.tier === "plus" && access.verified) rememberVerifiedPlus(access);
+  else clearOfflineEntitlementCache();
+
+  return access;
 }
 
 export function useProductAccess() {
