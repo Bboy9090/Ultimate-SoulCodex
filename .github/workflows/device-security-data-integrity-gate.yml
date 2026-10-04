@@ -53,6 +53,7 @@ jobs:
           tests/billing-production-readiness-contract.test.ts
           tests/store-privacy-billing-disclosure-contract.test.ts
           tests/release-4.1-identity-contract.test.ts
+          tests/store-catalog-handoff-contract.test.ts
           tests/full-birth-name-persistence-contract.test.ts
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
