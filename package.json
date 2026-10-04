@@ -36,7 +36,9 @@
     "mobile:validate:android": "node scripts/validate-mobile-release.mjs android",
     "mobile:patch:ios": "node scripts/patch-apple-sign-in-swiftpm.mjs",
     "cap:ios": "npx cap open ios",
-    "cap:android": "npx cap open android"
+    "cap:android": "npx cap open android",
+    "billing:preflight": "node scripts/validate-billing-production-readiness.mjs",
+    "billing:preflight:strict": "node scripts/validate-billing-production-readiness.mjs --require-all"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
