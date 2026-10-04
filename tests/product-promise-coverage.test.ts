@@ -61,14 +61,25 @@ test("planned capabilities are visibly excluded from the current paid promise", 
 });
 
 
-test("legacy one-time premium product cannot be sold", () => {
+test("legacy one-time premium product cannot be sold and current web checkout stays subscription-only", () => {
   const billing = readFileSync(new URL("../server/billing.ts", import.meta.url), "utf8");
   const modal = readFileSync(new URL("../client/src/components/PremiumUpgradeModal.tsx", import.meta.url), "utf8");
 
-  assert.match(billing, /legacy_checkout_retired/);
-  assert.match(billing, /subscription_checkout_not_qualified/);
   assert.doesNotMatch(billing, /mode:\s*"payment"/);
+  assert.match(billing, /mode:\s*"subscription"/);
+  assert.match(billing, /req\.session\?\.userId/);
   assert.doesNotMatch(modal, /One-time premium access/i);
   assert.doesNotMatch(modal, /Lifetime access/i);
-  assert.match(modal, /Purchase path not active yet/);
+  assert.match(modal, /Verified subscription only/);
+});
+
+
+test("pricing exposes monthly and annual web purchase only through qualified billing status", () => {
+  assert.match(pricing, /billingStatus\?\.enabled/);
+  assert.match(pricing, /Choose Monthly/);
+  assert.match(pricing, /Choose Annual/);
+  assert.match(pricing, /\/api\/billing\/checkout/);
+  assert.match(pricing, /JSON\.stringify\(\{ plan \}\)/);
+  assert.match(pricing, /Returning from checkout does not grant Plus by itself/);
+  assert.match(pricing, /Native purchase activation pending StoreKit \/ Play Billing certification/);
 });
