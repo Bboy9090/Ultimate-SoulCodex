@@ -44,6 +44,7 @@ jobs:
           tests/canonical-billing-path-contract.test.ts
           tests/billing-retention-privacy-contract.test.ts
           tests/native-billing-bridge-contract.test.ts
+          tests/native-billing-server-verification-contract.test.ts
           tests/full-birth-name-persistence-contract.test.ts
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
@@ -106,6 +107,7 @@ jobs:
             echo "policy=session-backed-mutations-require-trusted-origin"
             echo "policy=public-share-schema-preflight-is-idempotent-and-non-destructive"
             echo "policy=durable-billing-ledger-and-signed-subscription-verification"
+            echo "policy=native-store-evidence-requires-server-verification-and-account-binding"
             echo "policy=production-persistence-mode-is-explicit-and-durable-features-fail-closed"
             echo "policy=railway-promotion-requires-live-database-readiness"
             echo "policy=account-deletion-removes-public-shares"
