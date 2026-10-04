@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
 import { Check, Crown, ShieldCheck } from "lucide-react";
 import Navigation from "@/components/navigation";
+import { apiFetch, publicApiErrorMessage } from "../lib/queryClient";
+import { useProductAccess } from "../hooks/useProductAccess";
 
 const foundationFeatures = [
   "One active profile with your supported Big 3",
@@ -30,6 +34,57 @@ const roadmapFeatures = [
 
 export default function PricingPage() {
   const isNative = Capacitor.isNativePlatform();
+  const { access } = useProductAccess();
+  const [checkoutPlan, setCheckoutPlan] = useState<"monthly" | "annual" | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const { data: billingStatus } = useQuery({
+    queryKey: ["/api/billing/status"],
+    queryFn: async () => {
+      const response = await apiFetch("/api/billing/status");
+      if (!response.ok) return null;
+      return response.json();
+    },
+    staleTime: 30_000,
+  });
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
+    queryFn: async () => {
+      const response = await apiFetch("/api/auth/user");
+      if (!response.ok) return null;
+      return response.json();
+    },
+    staleTime: 30_000,
+  });
+
+  const webCheckoutReady = !isNative && Boolean(billingStatus?.enabled);
+  const plusActive = access.tier === "plus";
+
+  const startCheckout = async (plan: "monthly" | "annual") => {
+    if (!webCheckoutReady || plusActive || checkoutPlan) return;
+    setCheckoutPlan(plan);
+    setCheckoutError(null);
+    try {
+      const response = await apiFetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      if (!response.ok) {
+        setCheckoutError(await publicApiErrorMessage(response));
+        return;
+      }
+      const payload = await response.json();
+      if (typeof payload?.url !== "string" || !payload.url.startsWith("https://")) {
+        setCheckoutError("Secure checkout did not return a valid hosted URL.");
+        return;
+      }
+      window.location.assign(payload.url);
+    } catch {
+      setCheckoutError("Secure checkout could not be started.");
+    } finally {
+      setCheckoutPlan(null);
+    }
+  };
 
   return (
     <div className="sc-app-shell">
@@ -64,13 +119,55 @@ export default function PricingPage() {
             <h2 className="mt-3 font-serif text-3xl font-semibold">Soul Codex+</h2>
             <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">
               {isNative
-                ? "Monthly and annual Soul Codex+ access will activate only after StoreKit / Play Billing and durable entitlement verification pass release gates."
-                : "Soul Codex+ will use monthly and annual plans once the verified subscription path is enabled. Pricing comes from the active store catalog, not hard-coded app logic."}
+                ? "Monthly and annual Soul Codex+ access will activate here only after StoreKit / Play Billing and durable entitlement verification pass release gates."
+                : webCheckoutReady
+                  ? "Monthly and annual subscriptions use Stripe-hosted checkout. Soul Codex does not receive raw card details, and Plus activates only after the signed subscription event is verified by the server."
+                  : "Monthly and annual web plans appear here only when the verified subscription catalog and webhook path are configured."}
             </p>
             <FeatureList features={plannedPremiumFeatures} />
-            <div className="mt-auto rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-stone)]">
-              Soul Codex+ · activation pending billing certification
-            </div>
+            {plusActive ? (
+              <div className="mt-auto rounded-xl border border-[rgba(114,216,197,.22)] bg-[rgba(114,216,197,.06)] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-teal)]">
+                Soul Codex+ active · {access.plan ?? "verified plan"}
+              </div>
+            ) : isNative ? (
+              <div className="mt-auto rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-stone)]">
+                Native purchase activation pending StoreKit / Play Billing certification
+              </div>
+            ) : webCheckoutReady ? (
+              <div className="mt-auto space-y-3">
+                {currentUser ? (
+                  <>
+                    <button
+                      type="button"
+                      className="sc-button-primary w-full"
+                      disabled={checkoutPlan !== null}
+                      onClick={() => void startCheckout("monthly")}
+                    >
+                      {checkoutPlan === "monthly" ? "Opening secure checkout…" : "Choose Monthly"}
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full rounded-xl border border-[var(--sc-line-gold)] px-4 py-3 text-sm font-semibold text-[var(--sc-gold-bright)]"
+                      disabled={checkoutPlan !== null}
+                      onClick={() => void startCheckout("annual")}
+                    >
+                      {checkoutPlan === "annual" ? "Opening secure checkout…" : "Choose Annual"}
+                    </button>
+                  </>
+                ) : (
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm text-[var(--sc-stone)]">
+                    Sign in to subscribe. Your subscription belongs to your account so it can be restored across devices.
+                  </div>
+                )}
+                {checkoutError ? (
+                  <p role="alert" className="m-0 text-center text-sm text-red-300">{checkoutError}</p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-auto rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-center text-sm font-semibold text-[var(--sc-stone)]">
+                Soul Codex+ web checkout is not configured yet
+              </div>
+            )}
           </article>
         </section>
 
@@ -90,7 +187,7 @@ export default function PricingPage() {
             <Faq question="Do I need to recreate my profile?" answer="No. Identity, Reading, Timeline, and Compatibility reuse the same saved profile." />
             <Faq question="What does Soul Codex+ actually unlock?" answer="Only the capabilities listed as included now: full-name numerology, verified Human Design core, up to five qualified Daily influences, and the evidence-aware natal PDF report. Roadmap features are shown separately and are not sold yet. Accuracy is never paywalled." />
             <Faq question="Where would card details be entered?" answer="Soul Codex does not contain raw card-number, expiration, CVC, or CVV fields. The server also rejects those fields if they are sent to retired or hosted-checkout boundaries." />
-            <Faq question="Why is purchasing unavailable here?" answer={isNative ? "This native release candidate exposes no purchase action until StoreKit / Play Billing, restore, revocation, and durable entitlement verification pass." : "The paid layer is defined, but purchase activation remains a separate release gate. The app will not imply an active subscription path before billing truth is verified."} />
+            <Faq question="How does purchase activation work?" answer={isNative ? "This native release candidate exposes no purchase action until StoreKit / Play Billing, restore, revocation, and durable entitlement verification pass." : "Web checkout uses a hosted subscription page only when the billing catalog is configured. Returning from checkout does not grant Plus by itself; the server waits for a verified subscription event."} />
           </div>
         </section>
 
