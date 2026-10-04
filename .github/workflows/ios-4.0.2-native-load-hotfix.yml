@@ -3,6 +3,7 @@ name: Soul Codex iOS 4.1.0 Native Load Hotfix
 on:
   push:
     branches:
+      - release/4.1.0-rc1
       - hotfix/ios-4.1.0-native-load
   workflow_dispatch:
 
