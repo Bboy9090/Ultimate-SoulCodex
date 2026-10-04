@@ -52,6 +52,7 @@ jobs:
           tests/offline-entitlement-cache-behavior.test.ts
           tests/billing-production-readiness-contract.test.ts
           tests/store-privacy-billing-disclosure-contract.test.ts
+          tests/release-4.1-identity-contract.test.ts
           tests/full-birth-name-persistence-contract.test.ts
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
@@ -93,7 +94,7 @@ jobs:
       - name: Validate iOS release configuration
         env:
           VITE_API_URL: https://soulcodex.up.railway.app
-          VITE_RELEASE_VERSION: 4.0.2
+          VITE_RELEASE_VERSION: 4.1.0
           VITE_RELEASE_SHA: ${{ github.sha }}
           VITE_API_CONTRACT: foundation-v4
         run: npm run mobile:validate:ios
@@ -101,7 +102,7 @@ jobs:
       - name: Validate Android release configuration
         env:
           VITE_API_URL: https://soulcodex.up.railway.app
-          VITE_RELEASE_VERSION: 4.0.1
+          VITE_RELEASE_VERSION: 4.1.0
           VITE_RELEASE_SHA: ${{ github.sha }}
           VITE_API_CONTRACT: foundation-v4
         run: npm run mobile:validate:android
