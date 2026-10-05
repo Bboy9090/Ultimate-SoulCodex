@@ -121,6 +121,73 @@ export function personalAngleMeaning(body: "rising" | "midheaven", sign: AtlasSi
   };
 }
 
+const ASPECT_DYNAMICS: Record<string, {
+  label: string;
+  connection: string;
+  strength: string;
+  tension: string;
+  practice: string;
+}> = {
+  conjunction: {
+    label: "Conjunction",
+    connection: "operate in the same zone, blending their functions into one concentrated signal",
+    strength: "focus and intensity",
+    tension: "the two functions can become difficult to separate",
+    practice: "Name which function is speaking before acting on the combined impulse",
+  },
+  sextile: {
+    label: "Sextile",
+    connection: "can support one another when you deliberately create an opening between them",
+    strength: "cooperation and usable opportunity",
+    tension: "the potential can remain dormant when nobody initiates it",
+    practice: "Choose one small action that lets the two functions cooperate",
+  },
+  square: {
+    label: "Square",
+    connection: "push against one another, creating friction that demands a practical response",
+    strength: "motivation, pressure, and earned capability",
+    tension: "reactivity can turn productive pressure into repetition",
+    practice: "Slow the conflict down and give each function a separate job",
+  },
+  trine: {
+    label: "Trine",
+    connection: "move easily together, making their shared pattern feel natural or familiar",
+    strength: "flow, fluency, and instinctive coordination",
+    tension: "ease can become automatic behavior that goes unexamined",
+    practice: "Use the natural ability deliberately instead of assuming it will direct itself",
+  },
+  opposition: {
+    label: "Opposition",
+    connection: "face one another across a polarity, asking for balance rather than a permanent winner",
+    strength: "perspective, awareness, and the capacity to hold two truths",
+    tension: "one side may be projected onto other people",
+    practice: "Ask what the opposite position is carrying that you have not claimed yet",
+  },
+};
+
+/** Symbolic aspect language for already-governed chart aspects. This never qualifies an aspect. */
+export function personalAspectMeaning(planet1: string, aspect: string, planet2: string, orb: number) {
+  const firstKey = planet1.trim().toLowerCase();
+  const secondKey = planet2.trim().toLowerCase();
+  const first = PLANET_FUNCTIONS[firstKey];
+  const second = PLANET_FUNCTIONS[secondKey];
+  const dynamic = ASPECT_DYNAMICS[aspect.trim().toLowerCase()];
+  if (!first || !second || !dynamic || !Number.isFinite(orb) || orb < 0) {
+    throw new RangeError("Choose two supported planets, a governed major aspect, and a finite orb.");
+  }
+  const firstLabel = titleBody(firstKey);
+  const secondLabel = titleBody(secondKey);
+  return {
+    label: `${firstLabel} ${dynamic.label} ${secondLabel}`,
+    headline: `${firstLabel} and ${secondLabel} ${dynamic.connection}.`,
+    what: `${firstLabel} represents ${first.function}; ${secondLabel} represents ${second.function}.`,
+    dynamic: `${dynamic.label} symbolizes ${dynamic.strength}.`,
+    tension: `Watch for this: ${dynamic.tension}.`,
+    practice: `${dynamic.practice}.`,
+    orb: `${orb.toFixed(2)}° orb`,
+  };
+}
+
 function titleBody(value: string): string {
   if (value === 'northNode') return 'North Node';
   if (value === 'southNode') return 'South Node';
