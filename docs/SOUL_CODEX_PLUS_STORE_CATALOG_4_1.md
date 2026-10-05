@@ -32,7 +32,7 @@ After the products exist and are available to the intended sandbox/TestFlight/pr
 - `APPLE_PLUS_MONTHLY_PRODUCT_ID=app.soulcodex.plus.monthly`
 - `APPLE_PLUS_ANNUAL_PRODUCT_ID=app.soulcodex.plus.annual`
 
-Do not enable `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED` until the server verifier, sandbox purchase, restore, cancellation/expiry, refund/revocation, and App Store Server Notifications V2 path all pass.
+Do not enable `SOUL_CODEX_PLUS_IOS_BILLING_ENABLED` until the server verifier, sandbox purchase, restore, cancellation/expiry, refund/revocation, and App Store Server Notifications V2 path all pass.
 
 ### Google Play Console
 
