@@ -197,31 +197,35 @@ jobs:
             RELEASE-CANDIDATE-SHA.txt
           if-no-files-found: error
           retention-days: 90
-      - name: Publish signed AAB to Google Play production
-        if: github.ref == 'refs/heads/main' && steps.signing.outputs.available == 'true' && steps.play.outputs.available == 'true'
-        uses: r0adkll/upload-google-play@v1.1.3
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: soulcodex.app
-          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-          track: production
-          status: completed
-      - name: Record Google Play credential blocker on qualification branches
-        if: github.ref != 'refs/heads/main'
-        run: |
-          echo "Qualification completed without a Google Play production upload; production publishing is main-only."
-
-      - name: Block false Google Play deployment claims on main
-        if: github.ref == 'refs/heads/main' && (steps.signing.outputs.available != 'true' || steps.play.outputs.available != 'true')
+      - name: Require signed Android candidate on main
+        if: github.ref == 'refs/heads/main' && steps.signing.outputs.available != 'true'
         shell: bash
         run: |
-          if [[ "${{ steps.signing.outputs.available }}" != "true" ]]; then
-            echo "::error title=Android signing credential blocker::Signed Google Play publishing is blocked because one or more ANDROID_KEYSTORE credentials are unavailable."
-          fi
-          if [[ "${{ steps.play.outputs.available }}" != "true" ]]; then
-            echo "::error title=Google Play service-account blocker::Signed AAB qualification passed, but automated Google Play production publishing is blocked because GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is unavailable."
-          fi
+          echo "::error title=Android signing credential blocker::4.1 store qualification on main requires a signed Android AAB."
           exit 2
+
+      - name: Record Google Play production handoff state
+        shell: bash
+        run: |
+          {
+            echo "production_publish_attempted=false"
+            echo "production_publish_ready=${{ steps.play.outputs.available }}"
+            echo "production_publish_deferred=true"
+            echo "reason=Store Candidate qualification never publishes production; final store-launch workflow owns submission."
+          } > google-play-production-handoff.txt
+
+          if [[ "${{ steps.play.outputs.available }}" == "true" ]]; then
+            echo "::notice title=Google Play production handoff ready::Publishing credentials are available, but production upload is intentionally deferred to the final store-launch pass."
+          else
+            echo "::warning title=Google Play production handoff blocked::Signed AAB qualification passed. Production upload remains blocked until GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is configured for the final launch pass."
+          fi
+
+      - name: Upload Google Play production handoff receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.1.0-google-play-production-handoff
+          path: google-play-production-handoff.txt
+          retention-days: 90
 
   ios-store-validation:
     needs: release-gates
