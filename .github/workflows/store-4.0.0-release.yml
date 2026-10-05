@@ -211,7 +211,7 @@ jobs:
             echo "production_publish_attempted=false"
             echo "production_publish_ready=${{ steps.play.outputs.available }}"
             echo "production_publish_deferred=true"
-            echo "reason=Store Candidate qualification never publishes production; final store-launch workflow owns submission."
+            echo "reason=Store Candidate qualification never publishes production; submission is deferred until the owner authorizes and completes a separate store-launch process."
           } > google-play-production-handoff.txt
 
           if [[ "${{ steps.play.outputs.available }}" == "true" ]]; then
