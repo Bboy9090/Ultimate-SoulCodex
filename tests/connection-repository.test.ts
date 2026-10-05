@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { compatibilityLink, connectionComparableSunSign, connectionProfileSummary, deriveConnectionSunSignFromBirthDate, findConnectionById, hasComparableConnectionData, parseConnections, placementLabel, sanitizeConnectionPlacements, searchConnections } from "../client/src/lib/connectionRepository";
+import { buildSoulCodexInvite, compatibilityLink, connectionComparableSunSign, connectionProfileSummary, deriveConnectionSunSignFromBirthDate, findConnectionById, hasComparableConnectionData, parseConnections, placementLabel, relationshipLabel, sanitizeConnectionPlacements, searchConnections } from "../client/src/lib/connectionRepository";
 
 test("connections parser rejects malformed or overlong private records", () => {
   assert.deepEqual(parseConnections("bad"),[]);
@@ -30,6 +30,23 @@ test("connections parser preserves sanitized local phone numbers", () => {
     createdAt: "now",
     updatedAt: "now",
   }]);
+});
+
+test("connections preserve sanitized email and relationship labels", () => {
+  const [person] = parseConnections(JSON.stringify({
+    version: 1,
+    connections: [{
+      id: "1",
+      name: "Amy",
+      email: " AMY@Example.COM ",
+      relationship: "family",
+      createdAt: "now",
+      updatedAt: "now",
+    }],
+  }));
+  assert.equal(person.email, "amy@example.com");
+  assert.equal(person.relationship, "family");
+  assert.equal(relationshipLabel(person.relationship), "Family");
 });
 
 test("birthday derives concrete Sun sign data for saved people", () => {
@@ -149,15 +166,31 @@ test("saved people can be searched by name phone number or sun sign", () => {
   const people = parseConnections(JSON.stringify({
     version: 1,
     connections: [
-      { id: "1", name: "Amy", phone: "+1 (718) 555-1212", sunSign: "Scorpio", createdAt: "now", updatedAt: "now" },
-      { id: "2", name: "Sam", phone: "917.555.9900", birthDate: "1993-06-01", createdAt: "now", updatedAt: "now" },
+      { id: "1", name: "Amy", phone: "+1 (718) 555-1212", email: "amy@example.com", relationship: "family", sunSign: "Scorpio", createdAt: "now", updatedAt: "now" },
+      { id: "2", name: "Sam", phone: "917.555.9900", email: "sam@example.com", relationship: "friend", birthDate: "1993-06-01", createdAt: "now", updatedAt: "now" },
     ],
   }));
   assert.deepEqual(searchConnections(people, "amy").map(person => person.id), ["1"]);
   assert.deepEqual(searchConnections(people, "5559900").map(person => person.id), ["2"]);
   assert.deepEqual(searchConnections(people, "gem").map(person => person.id), ["2"]);
   assert.deepEqual(searchConnections(people, "1993-06").map(person => person.id), ["2"]);
+  assert.deepEqual(searchConnections(people, "amy@example").map(person => person.id), ["1"]);
+  assert.deepEqual(searchConnections(people, "family").map(person => person.id), ["1"]);
   assert.deepEqual(searchConnections(people, "").map(person => person.id), ["1","2"]);
+});
+
+test("contact invites address SMS or email without leaking contact data into the app URL", () => {
+  const invite = buildSoulCodexInvite({
+    name: "Amy",
+    phone: "+1 (718) 555-1212",
+    email: "amy@example.com",
+  }, "https://soulcodex.example/path");
+  assert.equal(invite.url, "https://soulcodex.example/create?source=connection-invite");
+  assert.match(invite.text, /Hey Amy, join me on Soul Codex/);
+  assert.match(invite.smsHref ?? "", /^sms:17185551212\?body=/);
+  assert.match(invite.emailHref ?? "", /^mailto:amy%40example\.com\?/);
+  assert.doesNotMatch(invite.url, /Amy|718|example\.com/);
+  assert.throws(() => buildSoulCodexInvite({ name: "Amy" }, "javascript:alert(1)"), RangeError);
 });
 
 test("people profile summaries stay evidence-bound instead of generic", () => {

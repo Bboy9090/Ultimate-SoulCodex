@@ -10,12 +10,12 @@ interface ShareModalProps {
   onClose: () => void;
 }
 
-type ShareField = "displayName" | "sunSign" | "moonSign" | "risingSign" | "lifePath" | "archetypeTitle";
+type ShareField = "displayName" | "sunSign" | "moonSign" | "risingSign" | "lifePath" | "archetypeTitle" | "comparisonChart";
 
 type ShareHistoryItem = {
   token: string;
   path: string;
-  snapshot: { version: 1; fields: Partial<Record<ShareField, string | number>> };
+  snapshot: { version: 1; fields: Partial<Record<Exclude<ShareField, "comparisonChart">, string | number>> & { comparisonChart?: Array<{ key: string; sign: string; house: number }> } };
   createdAt: string | null;
   revokedAt: string | null;
 };
@@ -27,6 +27,7 @@ const FIELD_OPTIONS: Array<{ id: ShareField; label: string; description: string 
   { id: "risingSign", label: "Verified Rising sign", description: "Included only when the stored placement has complete verification evidence." },
   { id: "lifePath", label: "Life Path", description: "Deterministic numerology value only; no private birth date is shared." },
   { id: "archetypeTitle", label: "Archetype title", description: "Symbolic title only; biography and private interpretation remain excluded." },
+  { id: "comparisonChart", label: "Verified comparison chart", description: "Verified planets and governed Nodes/Chiron with sign and house only. Birth inputs, exact degrees, evidence receipts, and private readings stay excluded." },
 ];
 
 export function ShareModal({ profileId, profileName, onClose }: ShareModalProps) {
@@ -263,7 +264,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
         </div>
 
         <p id="share-soul-codex-description" className="text-sm leading-6 text-[var(--sc-stone)]">
-          Nothing is shared automatically. Choose each field below. Birth date, birth time, birthplace, timezone, coordinates, assessment answers, private profile ID, evidence internals, biography, and daily guidance are never included in this public card.
+          Nothing is shared automatically. Choose each field below. Birth date, birth time, birthplace, timezone, coordinates, assessment answers, private profile ID, exact degrees, evidence internals, biography, and daily guidance are never included in this public card.
         </p>
 
         {!shareToken ? (

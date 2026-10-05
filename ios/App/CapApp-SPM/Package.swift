@@ -11,10 +11,11 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.2"),
+        .package(url: "https://github.com/ionic-team/capacitor-contacts.git", exact: "1.0.1"),
         .package(url: "https://github.com/ionic-team/capacitor-keyboard.git", exact: "8.0.3"),
         .package(name: "CapacitorSplashScreen", path: "../Vendor/CapacitorSplashScreen"),
         .package(name: "CapacitorStatusBar", path: "../Vendor/CapacitorStatusBar"),
-        .package(name: "CapawesomeCapacitorAppleSignIn", path: "../Vendor/CapawesomeCapacitorAppleSignIn"),
+        .package(name: "CapawesomeCapacitorAppleSignIn", path: "../Vendor/CapawesomeCapacitorAppleSignIn")
     ],
     targets: [
         .target(
@@ -22,6 +23,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm"),
+                .product(name: "CapacitorContacts", package: "capacitor-contacts"),
                 .product(name: "CapacitorKeyboard", package: "capacitor-keyboard"),
                 .product(name: "CapacitorSplashScreen", package: "CapacitorSplashScreen"),
                 .product(name: "CapacitorStatusBar", package: "CapacitorStatusBar"),
