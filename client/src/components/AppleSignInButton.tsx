@@ -15,42 +15,126 @@ function randomState(): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+type AppleWebConfig = {
+  enabled: boolean;
+  clientId: string | null;
+  redirectURI: string | null;
+  reason: string;
+};
+
+type AppleWebResponse = {
+  authorization?: {
+    id_token?: string;
+    state?: string;
+  };
+};
+
+declare global {
+  interface Window {
+    AppleID?: {
+      auth: {
+        init(config: {
+          clientId: string;
+          scope: string;
+          redirectURI: string;
+          state: string;
+          nonce: string;
+          usePopup: boolean;
+        }): void;
+        signIn(): Promise<AppleWebResponse>;
+      };
+    };
+  }
+}
+
+let appleWebScriptPromise: Promise<void> | null = null;
+
+function loadAppleWebScript(): Promise<void> {
+  if (window.AppleID?.auth) return Promise.resolve();
+  if (appleWebScriptPromise) return appleWebScriptPromise;
+  appleWebScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-soulcodex-apple-auth="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Apple Sign-In JS failed to load")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+    script.async = true;
+    script.dataset.soulcodexAppleAuth = "true";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Apple Sign-In JS failed to load"));
+    document.head.appendChild(script);
+  });
+  return appleWebScriptPromise;
+}
+
+async function finishSoulCodexAppleLogin(identityToken: string): Promise<any> {
+  const response = await apiRequest("POST", "/api/auth/apple", { identityToken });
+  const loginData = await response.json() as { user: any };
+  queryClient.setQueryData(["/api/user"], loginData.user);
+  queryClient.setQueryData(["/api/auth/user"], loginData.user);
+  return loginData.user;
+}
+
 export default function AppleSignInButton({ onSuccess, text = "Sign in with Apple", className = "" }: Props) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const native = Capacitor.isNativePlatform();
 
   const handleAppleSignIn = async () => {
-    if (!native) {
-      setMessage("Sign in with Apple is available inside the iPhone and iPad app. Your local profile still works without signing in.");
-      return;
-    }
-
     setLoading(true);
     setMessage(null);
     try {
       const state = randomState();
-      const result = await AppleSignIn.signIn({
-        state,
-        scopes: [SignInScope.Email, SignInScope.FullName],
-      });
+      let identityToken = "";
 
-      if (result.state && result.state !== state) {
-        throw new Error("Apple Sign-In state validation failed");
+      if (native) {
+        const result = await AppleSignIn.signIn({
+          state,
+          scopes: [SignInScope.Email, SignInScope.FullName],
+        });
+        if (result.state && result.state !== state) {
+          throw new Error("Apple Sign-In state validation failed");
+        }
+        identityToken = result.idToken ?? "";
+      } else {
+        const configResponse = await fetch("/api/auth/apple/config", {
+          credentials: "include",
+          headers: { Accept: "application/json" },
+        });
+        if (!configResponse.ok) throw new Error("Apple web sign-in configuration unavailable");
+        const config = await configResponse.json() as AppleWebConfig;
+        if (!config.enabled || !config.clientId || !config.redirectURI) {
+          setMessage("Web Sign in with Apple is not configured yet. Your local profile still works without signing in.");
+          return;
+        }
+        await loadAppleWebScript();
+        if (!window.AppleID?.auth) throw new Error("Apple Sign-In JS unavailable");
+        const nonce = randomState();
+        window.AppleID.auth.init({
+          clientId: config.clientId,
+          scope: "name email",
+          redirectURI: config.redirectURI,
+          state,
+          nonce,
+          usePopup: true,
+        });
+        const result = await window.AppleID.auth.signIn();
+        if (result.authorization?.state !== state) {
+          throw new Error("Apple Sign-In state validation failed");
+        }
+        identityToken = result.authorization?.id_token ?? "";
       }
-      if (!result.idToken) {
+
+      if (!identityToken) {
         throw new Error("Apple did not return an ID token");
       }
 
-      const response = await apiRequest("POST", "/api/auth/apple", {
-        identityToken: result.idToken,
-      });
-      const loginData = await response.json() as { user: any };
-
-      queryClient.setQueryData(["/api/user"], loginData.user);
-      queryClient.setQueryData(["/api/auth/user"], loginData.user);
+      const user = await finishSoulCodexAppleLogin(identityToken);
       setMessage("Apple account connected.");
-      onSuccess?.(loginData.user);
+      onSuccess?.(user);
     } catch (err: any) {
       console.error("[AppleAuth] Sign-in failed:", err);
       if (!err?.message || !String(err.message).toLowerCase().includes("cancel")) {

@@ -5,6 +5,11 @@ function providerReadiness(env = process.env) {
   const persistent = present(env.DATABASE_URL);
   const publicAppUrl = present(env.PUBLIC_APP_URL);
 
+  const webAuth = {
+    configured: present(env.APPLE_WEB_CLIENT_ID) && publicAppUrl,
+    missing: ["APPLE_WEB_CLIENT_ID"].filter((key) => !present(env[key])),
+  };
+
   const stripe = {
     configured: [
       "STRIPE_SECRET_KEY",
@@ -66,9 +71,10 @@ function providerReadiness(env = process.env) {
     stripe,
     apple,
     google,
-    webActivationSafe: !stripe.enabled || stripe.configured,
+    webAuth,
+    webActivationSafe: !stripe.enabled || (stripe.configured && webAuth.configured),
     nativeActivationSafe: !nativeEnabled || nativeConfigured,
-    fullyConfigured: stripe.configured && nativeConfigured,
+    fullyConfigured: stripe.configured && webAuth.configured && nativeConfigured,
     flags: {
       webCheckoutEnabled: stripe.enabled,
       nativeBillingEnabled: nativeEnabled,

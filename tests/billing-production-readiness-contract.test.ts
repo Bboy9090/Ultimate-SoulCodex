@@ -11,6 +11,7 @@ test("billing readiness preflight covers all production provider boundaries", ()
     "STRIPE_PLUS_MONTHLY_PRICE_ID",
     "STRIPE_PLUS_ANNUAL_PRICE_ID",
     "APPLE_CLIENT_ID",
+    "APPLE_WEB_CLIENT_ID",
     "APPLE_APP_ID",
     "APPLE_IAP_ROOT_CERTS_BASE64",
     "APPLE_PLUS_MONTHLY_PRODUCT_ID",
@@ -25,6 +26,7 @@ test("billing readiness preflight covers all production provider boundaries", ()
   }
   assert.match(source, /APPLE_IAP_ALLOWED_ENVIRONMENTS/);
   assert.match(source, /SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED/);
+  assert.match(source, /stripe\.configured && webAuth\.configured/);
   assert.match(source, /SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED/);
   assert.match(source, /process\.exit\(2\)/);
   assert.match(source, /--require-all/);
