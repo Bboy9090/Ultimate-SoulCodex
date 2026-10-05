@@ -1,11 +1,30 @@
+import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
-import { atlasEntry, personalPlacementMeaning } from "@/lib/astrologyAtlas";
+import { atlasEntry, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
 import type { AtlasSign } from "@/lib/astrologyAtlas";
 
 const GLYPH: Record<string, string> = {
   sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
   jupiter: "♃", saturn: "♄", uranus: "♅", neptune: "♆", pluto: "♇",
 };
+
+const POINT_GLYPH: Record<string, string> = {
+  rising: "ASC", midheaven: "MC", northNode: "☊", southNode: "☋", chiron: "⚷",
+};
+
+type ChartSelection =
+  | { kind: "planet"; key: string }
+  | { kind: "house"; house: number }
+  | { kind: "aspect"; index: number }
+  | { kind: "point"; key: string };
+
+function selectWithKeyboard(event: React.KeyboardEvent<SVGGElement>, action: () => void) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    action();
+  }
+}
 
 const SIGN_GLYPH: Record<string, string> = {
   Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋", Leo: "♌", Virgo: "♍",
@@ -30,6 +49,8 @@ export default function VerifiedNatalChart({
   astrology: Record<string, any>;
   synthesis: UltimateCodexSynthesis;
 }) {
+  const reducedMotion = useReducedMotion();
+  const [selection, setSelection] = useState<ChartSelection | null>(null);
   const ascendant =
     validLongitude(astrology?.rising?.internalCandidate?.longitude) ??
     synthesis.houseCusps.find((house) => house.house === 1)?.longitude ??
@@ -61,6 +82,19 @@ export default function VerifiedNatalChart({
       return a && b ? { ...aspect, a, b } : null;
     })
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
+
+  const selectedPlanet = selection?.kind === "planet"
+    ? synthesis.placements.find((placement) => placement.key === selection.key) ?? null
+    : null;
+  const selectedHouse = selection?.kind === "house"
+    ? synthesis.houseCusps.find((house) => house.house === selection.house) ?? null
+    : null;
+  const selectedAspect = selection?.kind === "aspect"
+    ? synthesis.aspects[selection.index] ?? null
+    : null;
+  const selectedPoint = selection?.kind === "point"
+    ? synthesis.supportingPoints.find((point) => point.key === selection.key) ?? null
+    : null;
 
   return (
     <section className="sc-panel p-5 sm:p-6" data-testid="verified-natal-chart">
@@ -100,34 +134,75 @@ export default function VerifiedNatalChart({
               const inner = pointFor(house.longitude as number, ascendant, 103);
               const label = pointFor((house.longitude as number) + 15, ascendant, 90);
               const angular = house.house === 1 || house.house === 10;
+              const selected = selection?.kind === "house" && selection.house === house.house;
               return (
-                <g key={house.house}>
-                  <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke={angular ? "var(--sc-gold-bright)" : "rgba(255,255,255,.16)"} strokeWidth={angular ? 1.8 : 1} />
-                  <text x={label.x} y={label.y + 4} textAnchor="middle" fill="var(--sc-stone)" fontSize="10">{house.house}</text>
-                </g>
+                <motion.g
+                  key={house.house}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open House ${house.house} in ${house.sign}`}
+                  aria-pressed={selected}
+                  className="cursor-pointer outline-none"
+                  onClick={() => setSelection({ kind: "house", house: house.house })}
+                  onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "house", house: house.house }))}
+                  animate={{ opacity: selection && !selected ? 0.68 : 1 }}
+                  transition={{ duration: reducedMotion ? 0 : 0.2 }}
+                >
+                  <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke={selected || angular ? "var(--sc-gold-bright)" : "rgba(255,255,255,.16)"} strokeWidth={selected ? 3 : angular ? 1.8 : 1} />
+                  <circle cx={label.x} cy={label.y} r={selected ? 12 : 10} fill={selected ? "rgba(217,182,111,.18)" : "rgba(8,6,14,.01)"} stroke={selected ? "var(--sc-line-gold)" : "transparent"} />
+                  <text x={label.x} y={label.y + 4} textAnchor="middle" fill={selected ? "var(--sc-gold-bright)" : "var(--sc-stone)"} fontSize={selected ? "12" : "10"}>{house.house}</text>
+                </motion.g>
               );
             })}
 
-            {aspectLines.map((line, index) => (
-              <line
+            {aspectLines.map((line, index) => {
+              const sourceIndex = synthesis.aspects.findIndex((aspect) =>
+                aspect.planet1 === line.planet1 && aspect.planet2 === line.planet2 && aspect.aspect === line.aspect && aspect.orb === line.orb
+              );
+              const selected = selection?.kind === "aspect" && selection.index === sourceIndex;
+              return <motion.line
                 key={line.planet1 + "-" + line.aspect + "-" + line.planet2 + "-" + index}
                 x1={line.a.x} y1={line.a.y} x2={line.b.x} y2={line.b.y}
                 stroke={line.aspect === "square" || line.aspect === "opposition" ? "rgba(255,150,160,.42)" : "rgba(147,214,196,.34)"}
-                strokeWidth="1"
+                strokeWidth={selected ? "4" : "1"}
                 strokeDasharray={line.aspect === "conjunction" ? "2 4" : undefined}
+                opacity={selection && !selected ? 0.35 : 1}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open ${line.planet1} ${line.aspect} ${line.planet2}`}
+                aria-pressed={selected}
+                className="cursor-pointer outline-none"
+                onClick={() => setSelection({ kind: "aspect", index: sourceIndex })}
+                onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "aspect", index: sourceIndex }))}
+                animate={{ pathLength: selected ? 1 : 0.96 }}
+                transition={{ duration: reducedMotion ? 0 : 0.25 }}
               />
-            ))}
+            })}
 
             {drawablePlacements.map((placement, index) => {
               const p = planetPoints.get(placement.key)!;
               const jitter = ((index % 3) - 1) * 6;
+              const selected = selection?.kind === "planet" && selection.key === placement.key;
               return (
-                <g key={placement.key}>
-                  <circle cx={p.x + jitter} cy={p.y + jitter} r="11" fill="rgba(25,18,39,.96)" stroke="var(--sc-line-gold)" />
+                <motion.g
+                  key={placement.key}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open ${placement.label} in ${placement.sign}${placement.house ? `, House ${placement.house}` : ""}`}
+                  aria-pressed={selected}
+                  className="cursor-pointer outline-none"
+                  onClick={() => setSelection({ kind: "planet", key: placement.key })}
+                  onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "planet", key: placement.key }))}
+                  animate={{ scale: selected ? 1.18 : 1, opacity: selection && !selected ? 0.72 : 1 }}
+                  transition={{ type: "spring", stiffness: 360, damping: 24, duration: reducedMotion ? 0 : undefined }}
+                  style={{ transformOrigin: `${p.x + jitter}px ${p.y + jitter}px` }}
+                >
+                  <circle cx={p.x + jitter} cy={p.y + jitter} r="18" fill="transparent" />
+                  <circle cx={p.x + jitter} cy={p.y + jitter} r={selected ? "13" : "11"} fill="rgba(25,18,39,.96)" stroke={selected ? "var(--sc-gold-bright)" : "var(--sc-line-gold)"} strokeWidth={selected ? "2.4" : "1"} />
                   <text x={p.x + jitter} y={p.y + jitter + 5} textAnchor="middle" fill="var(--sc-gold-bright)" fontSize="14">
                     {GLYPH[placement.key] ?? placement.label.slice(0, 1)}
                   </text>
-                </g>
+                </motion.g>
               );
             })}
 
@@ -137,11 +212,105 @@ export default function VerifiedNatalChart({
         </div>
 
         <div className="space-y-4">
+          <section className="min-h-[280px] rounded-2xl border border-[var(--sc-line-gold)] bg-[radial-gradient(circle_at_top,rgba(217,182,111,.09),transparent_62%)] p-5" aria-live="polite" aria-atomic="true" data-testid="interactive-chart-guide">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="sc-eyebrow">Tap the chart · Meet your placements</p>
+                <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Your interactive soul guide</h3>
+              </div>
+              {selection && <button type="button" className="sc-button-ghost" onClick={() => setSelection(null)}>Close</button>}
+            </div>
+
+            <AnimatePresence mode="wait">
+              {!selection && (
+                <motion.div key="guide-empty" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-6 rounded-2xl border border-dashed border-[var(--sc-line)] p-5 text-center">
+                  <p className="font-serif text-xl text-[var(--sc-ivory)]">Every symbol has a job.</p>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">Tap a planet to learn what it represents, how its sign moves, and where its house makes the story personal. Tap a house number for that life area. Tap an aspect line—or one of the aspect buttons below—to see how two planets interact.</p>
+                </motion.div>
+              )}
+
+              {selectedPlanet && (
+                <motion.article key={`planet-${selectedPlanet.key}`} initial={reducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: reducedMotion ? 0 : 0.22 }} className="mt-5">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">{GLYPH[selectedPlanet.key]} Planet story</p>
+                  <h4 className="mt-2 font-serif text-3xl text-[var(--sc-ivory)]">{selectedPlanet.label} in {selectedPlanet.sign}{selectedPlanet.house ? ` · House ${selectedPlanet.house}` : ""}</h4>
+                  {selectedPlanet.house ? (() => {
+                    const meaning = personalPlacementMeaning(selectedPlanet.key, selectedPlanet.sign as AtlasSign, selectedPlanet.house);
+                    return <>
+                      <p className="mt-4 font-serif text-2xl leading-tight text-[var(--sc-ivory-soft)]">{meaning.headline}</p>
+                      <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{meaning.synthesis}</p>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Planet · what</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
+                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Sign · how</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.how}</p></div>
+                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">House · where</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.where}</p></div>
+                      </div>
+                      <div className="mt-4 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] p-3"><p className="text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.friction}</p></div>
+                      <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                    </>;
+                  })() : <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">The sign is verified, but the house is unresolved. Soul Codex stops before inventing where this theme lands in life.</p>}
+                </motion.article>
+              )}
+
+              {selectedHouse && (() => {
+                const meaning = atlasEntry(selectedHouse.sign as AtlasSign, selectedHouse.house);
+                return <motion.article key={`house-${selectedHouse.house}`} initial={reducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: reducedMotion ? 0 : 0.22 }} className="mt-5">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">House {selectedHouse.house} · life area</p>
+                  <h4 className="mt-2 font-serif text-3xl text-[var(--sc-ivory)]">{selectedHouse.sign} on House {selectedHouse.house}</h4>
+                  <p className="mt-4 text-base leading-7 text-[var(--sc-ivory-soft)]">{meaning.meaning}</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Strength</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.gift}</p></div>
+                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Watch point</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.tension}</p></div>
+                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Ground it</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.practice}</p></div>
+                  </div>
+                  <p className="mt-4 text-xs leading-5 text-[var(--sc-stone)]">A cusp sign describes the house’s symbolic style. It is not the same as a planet occupying that house.</p>
+                </motion.article>;
+              })()}
+
+              {selectedAspect && (() => {
+                const meaning = personalAspectMeaning(selectedAspect.planet1, selectedAspect.aspect, selectedAspect.planet2, selectedAspect.orb);
+                return <motion.article key={`aspect-${selection?.kind === "aspect" ? selection.index : 0}`} initial={reducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: reducedMotion ? 0 : 0.22 }} className="mt-5">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">Aspect · planetary conversation</p>
+                  <h4 className="mt-2 font-serif text-3xl capitalize text-[var(--sc-ivory)]">{meaning.label}</h4>
+                  <p className="mt-1 text-xs text-[var(--sc-gold-bright)]">{meaning.orb}</p>
+                  <p className="mt-4 font-serif text-2xl leading-tight text-[var(--sc-ivory-soft)]">{meaning.headline}</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">The two jobs</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
+                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">The connection</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.dynamic}</p></div>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.tension}</p>
+                  <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                </motion.article>;
+              })()}
+
+              {selectedPoint && (() => {
+                const angle = selectedPoint.key === "rising" || selectedPoint.key === "midheaven";
+                const meaning = angle
+                  ? personalAngleMeaning(selectedPoint.key as "rising" | "midheaven", selectedPoint.sign as AtlasSign)
+                  : selectedPoint.house
+                    ? personalPlacementMeaning(selectedPoint.key, selectedPoint.sign as AtlasSign, selectedPoint.house)
+                    : null;
+                return <motion.article key={`point-${selectedPoint.key}`} initial={reducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: reducedMotion ? 0 : 0.22 }} className="mt-5">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">{POINT_GLYPH[selectedPoint.key]} Verified chart point</p>
+                  <h4 className="mt-2 font-serif text-3xl text-[var(--sc-ivory)]">{selectedPoint.label} in {selectedPoint.sign}{selectedPoint.house ? ` · House ${selectedPoint.house}` : ""}</h4>
+                  {meaning ? <>
+                    <p className="mt-4 text-base leading-7 text-[var(--sc-ivory-soft)]">{meaning.synthesis}</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">What</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
+                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">How</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.how}</p></div>
+                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">Where</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.where}</p></div>
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Reflection:</strong> {meaning.question}</p>
+                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                  </> : <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">This point is verified, but Soul Codex does not have enough governed context to produce a house interpretation.</p>}
+                </motion.article>;
+              })()}
+            </AnimatePresence>
+          </section>
+
           <div className="grid gap-2 sm:grid-cols-2">
             {synthesis.placements.map((placement) => {
               const cusp = placement.house ? synthesis.houseCusps.find((house) => house.house === placement.house) : null;
               return (
-                <div key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3">
+                <button type="button" key={placement.key} aria-pressed={selection?.kind === "planet" && selection.key === placement.key} onClick={() => setSelection({ kind: "planet", key: placement.key })} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3 text-left transition hover:-translate-y-0.5 hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
                   <div className="flex items-center justify-between gap-3">
                     <strong className="text-sm text-[var(--sc-ivory)]">{GLYPH[placement.key]} {placement.label}</strong>
                     <span className="text-sm font-semibold text-[var(--sc-gold-bright)]">{placement.sign}</span>
@@ -150,57 +319,24 @@ export default function VerifiedNatalChart({
                     {placement.degree !== null ? placement.degree.toFixed(2) + "°" : "degree unavailable"}
                     {placement.house ? " · House " + placement.house + " · " + (cusp?.sign ?? "unresolved") + " cusp" : " · house unresolved"}
                   </p>
-                </div>
+                </button>
               );
             })}
           </div>
 
-          <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.025)] p-4" aria-labelledby="placement-story-title">
-            <div className="mb-4">
-              <p className="sc-eyebrow">Your placements</p>
-              <h3 id="placement-story-title" className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">What each planet is doing in your chart</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">Planet = what. Sign = how. House = where. Read the takeaway first; open the technical evidence only when you want it.</p>
+          {synthesis.supportingPoints.length > 0 && <section className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4" aria-labelledby="supporting-points-title">
+            <p className="sc-eyebrow">Angles, Nodes &amp; Chiron</p>
+            <h3 id="supporting-points-title" className="mt-2 font-serif text-xl text-[var(--sc-ivory)]">Other important chart points</h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {synthesis.supportingPoints.map((point) => <button
+                type="button"
+                key={point.key}
+                aria-pressed={selection?.kind === "point" && selection.key === point.key}
+                onClick={() => setSelection({ kind: "point", key: point.key })}
+                className="rounded-full border border-[var(--sc-line)] px-3 py-2 text-sm text-[var(--sc-ivory-soft)] transition hover:border-[var(--sc-gold)] hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2"
+              >{POINT_GLYPH[point.key]} {point.label} · {point.sign}{point.house ? ` · H${point.house}` : ""}</button>)}
             </div>
-            <div className="space-y-3">
-              {synthesis.placements.map((placement) => {
-                if (!placement.house) {
-                  return (
-                    <article key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4">
-                      <h4 className="font-serif text-lg text-[var(--sc-ivory)]">{placement.label} in {placement.sign}</h4>
-                      <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">The sign is supported, but the house is unresolved, so Soul Codex stops before inventing where this theme lands in life.</p>
-                    </article>
-                  );
-                }
-                const meaning = personalPlacementMeaning(placement.key, placement.sign as AtlasSign, placement.house);
-                return (
-                  <article key={placement.key} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-4" data-testid={`placement-story-${placement.key}`}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">{meaning.feedLabel}</p>
-                        <h4 className="mt-1 font-serif text-xl text-[var(--sc-ivory)]">{placement.label} in {placement.sign} · House {placement.house}</h4>
-                      </div>
-                      <span className="rounded-full border border-[var(--sc-line)] px-2.5 py-1 text-xs text-[var(--sc-stone)]">{placement.degree !== null ? placement.degree.toFixed(1) + "°" : "degree unavailable"}</span>
-                    </div>
-                    <p className="mt-3 font-serif text-[clamp(1.35rem,3vw,1.8rem)] font-medium leading-tight text-[var(--sc-ivory)]">{meaning.headline}</p>
-                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{meaning.synthesis}</p>
-                    <div className="mt-3 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-amber-200/80">Watch point</p>
-                      <p className="mt-1 text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.friction}</p>
-                    </div>
-                    <details className="mt-3 rounded-xl border border-[var(--sc-line)] bg-white/[0.015] p-3">
-                      <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[.1em] text-[var(--sc-stone)]">Why this placement says that</summary>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                      <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">Planet</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.what}</p></div>
-                      <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">Sign</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.how}</p></div>
-                      <div className="rounded-lg border border-white/[0.06] p-3"><p className="text-[10px] uppercase tracking-[.1em] text-[var(--sc-gold)]">House</p><p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">{meaning.where}</p></div>
-                      </div>
-                    </details>
-                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
+          </section>}
 
           <details className="rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
             <summary className="cursor-pointer font-semibold text-[var(--sc-ivory)]">All 12 verified house cusps · sign-on-house meanings</summary>
@@ -208,21 +344,15 @@ export default function VerifiedNatalChart({
               A cusp sign describes the symbolic style of a house. It is not the same thing as a planet occupying that house.
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {synthesis.houseCusps.map((house) => {
-                const meaning = atlasEntry(house.sign as AtlasSign, house.house);
-                return (
-                  <article key={house.house} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3">
+              {synthesis.houseCusps.map((house) => (
+                  <button type="button" key={house.house} aria-pressed={selection?.kind === "house" && selection.house === house.house} onClick={() => setSelection({ kind: "house", house: house.house })} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3 text-left transition hover:border-[var(--sc-gold)] hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2">
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <strong className="text-[var(--sc-ivory)]">House {house.house} · {house.sign}</strong>
                       <span className="text-xs text-[var(--sc-gold-bright)]">{house.degree !== null ? house.degree.toFixed(2) + "°" : ""}</span>
                     </div>
-                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">{meaning.meaning}</p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Possible strength:</strong> {meaning.gift}</p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Tension:</strong> {meaning.tension}</p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory-soft)]">Practice:</strong> {meaning.practice}</p>
-                  </article>
-                );
-              })}
+                    <p className="mt-2 text-xs text-[var(--sc-stone)]">Tap to open this sign-and-house story.</p>
+                  </button>
+              ))}
             </div>
           </details>
 
@@ -233,10 +363,12 @@ export default function VerifiedNatalChart({
             <ul className="mt-3 space-y-2 text-sm text-[var(--sc-stone)]">
               {synthesis.aspects.length ? synthesis.aspects.map((aspect, index) => (
                 <li key={aspect.planet1 + "-" + aspect.planet2 + "-" + index}>
-                  <strong className="capitalize text-[var(--sc-ivory-soft)]">{aspect.planet1}</strong>
-                  {" "}{aspect.aspect}{" "}
-                  <strong className="capitalize text-[var(--sc-ivory-soft)]">{aspect.planet2}</strong>
-                  {" · "}{aspect.orb.toFixed(2)}° orb
+                  <button type="button" aria-pressed={selection?.kind === "aspect" && selection.index === index} onClick={() => setSelection({ kind: "aspect", index })} className="w-full rounded-xl border border-transparent p-2 text-left transition hover:border-[var(--sc-line)] hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2">
+                    <strong className="capitalize text-[var(--sc-ivory-soft)]">{aspect.planet1}</strong>
+                    {" "}{aspect.aspect}{" "}
+                    <strong className="capitalize text-[var(--sc-ivory-soft)]">{aspect.planet2}</strong>
+                    {" · "}{aspect.orb.toFixed(2)}° orb
+                  </button>
                 </li>
               )) : <li>No governed major aspects were stored.</li>}
             </ul>
