@@ -27,7 +27,11 @@ test("billing readiness preflight covers all production provider boundaries", ()
   assert.match(source, /APPLE_IAP_ALLOWED_ENVIRONMENTS/);
   assert.match(source, /SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED/);
   assert.match(source, /stripe\.configured && webAuth\.configured/);
+  assert.match(source, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED/);
+  assert.match(source, /SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED/);
   assert.match(source, /SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED/);
+  assert.match(source, /iosActivationSafe/);
+  assert.match(source, /androidActivationSafe/);
   assert.match(source, /process\.exit\(2\)/);
   assert.match(source, /--require-all/);
 });
