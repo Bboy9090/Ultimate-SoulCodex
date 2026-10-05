@@ -1,21 +1,19 @@
 # Portfolio Resource Utilization Foundation
 
-Status: planned integration contract. Production activation remains disabled until provider credentials, consent configuration, and test evidence exist.
+Status: Google-only integration lane. Production activation remains disabled until provider credentials, consent configuration, and test evidence exist. AWS is intentionally paused.
 
 ## Principles
 
-- Use paid services for measurable product work.
+- Use paid Google services for measurable product work.
 - Keep verified astrology, Human Design, numerology, and astronomy calculations authoritative.
 - AI may personalize presentation, recommendations, and assistance; it must not fabricate verified chart facts.
 - Keep provider credentials in deployment secrets, never in source.
 - Every provider integration must have a kill switch, telemetry, privacy review, and a documented fallback.
 
-## Shared platform lanes
+## Google / Firebase lane
 
-### Google / Firebase
-
-- Authentication and account identity
-- Analytics events for activation, retention, subscriptions, ads, and feature usage
+- Firebase Authentication and account identity
+- Firebase Analytics events for activation, retention, subscriptions, ads, and feature usage
 - Crashlytics for iOS and Android crash evidence
 - Remote Config for safe feature flags and experiments
 - App Check for abuse resistance
@@ -24,39 +22,35 @@ Status: planned integration contract. Production activation remains disabled unt
 - AdMob for the free tier only, with verified premium ad suppression
 - Gemini / Vertex AI for assisted explanations and recommendations
 - Speech-to-Text and Text-to-Speech for Sonic Codex and accessibility
+- Google Play services for Android identity, achievements, leaderboards, and cloud saves
+- YouTube Data API for trailers, readings, and the Bobby Blanco theater showcase
+- Drive APIs for controlled production asset workflows
 
-### AWS
+## Product-specific ownership
 
-- CodeBuild for reproducible CI where already configured
-- S3 for release artifacts and large media
-- CloudFront for distribution of stable public assets
-- Secrets Manager / KMS for protected credentials and signing material
-- CloudWatch for operational logs, metrics, and alarms
-- Lambda or ECS only where a workload is justified by measured traffic or job duration
-
-### Product-specific ownership
-
-- Soul Codex: shared identity, analytics, crash reporting, remote configuration, AI gateway, ads, and subscription telemetry.
+- Soul Codex: identity, analytics, crash reporting, remote configuration, AI gateway, ads, and subscription telemetry.
 - Kai-Jax: game identity, cloud saves, asset delivery, gameplay telemetry, and future adaptive systems.
 - Alazai's Palace: mobile client foundation, player inventory, farming timers, social data, and future recommendation models.
-- BootForge / PhoenixCore: signed release artifacts, verification receipts, CI evidence, and operational monitoring.
 - Sonic Codex: audio uploads, transcription, speaker labels, synthesis, and protected media storage.
 - Books / comics / theater showcase: asset cataloging, previews, delivery, YouTube distribution, and production analytics.
 
-## Initial activation order
+## Initial Google activation order
 
-1. Provider inventory and account/project IDs.
+1. Google project and Firebase project inventory.
 2. Shared environment configuration and kill switches.
-3. Analytics event contract.
-4. Crash/error telemetry.
-5. Secure storage and artifact ownership.
-6. AI gateway observability and budget limits.
-7. AdMob free-tier lane.
-8. TensorFlow/Flutter lanes after the shared contracts are stable.
+3. Consent and privacy boundary.
+4. Analytics event contract.
+5. Crashlytics and error telemetry.
+6. Secure Storage and App Check.
+7. Gemini gateway observability and budget limits.
+8. AdMob free-tier lane.
+9. BigQuery and Looker reporting.
+10. YouTube, Drive, Speech, and media workflows.
+11. TensorFlow/Flutter lanes after the shared contracts are stable.
 
 ## Required evidence before production activation
 
-- Provider project/account ownership confirmed.
+- Google project ownership confirmed.
 - Privacy and consent behavior tested.
 - Test identifiers used in development.
 - No secrets committed.
