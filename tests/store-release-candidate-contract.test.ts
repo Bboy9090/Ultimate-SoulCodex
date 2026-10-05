@@ -45,7 +45,7 @@ test("Soul Codex platform release identities are aligned", async () => {
   }
 });
 
-test("store workflow binds exact release branch and Play production upload", async () => {
+test("store workflow qualifies exact candidate without auto-publishing production", async () => {
   const workflow = await text(".github/workflows/store-4.0.0-release.yml");
   for (const secret of [
     "ANDROID_KEYSTORE",
@@ -62,10 +62,12 @@ test("store workflow binds exact release branch and Play production upload", asy
   assert.match(workflow, /actions\/setup-java@v5/);
   assert.match(workflow, /Detect Google Play publishing credentials/);
   assert.match(workflow, /steps\.play\.outputs\.available/);
-  assert.match(workflow, /r0adkll\/upload-google-play@v1\.1\.3/);
-  assert.match(workflow, /packageName:\s*soulcodex\.app/);
-  assert.match(workflow, /track:\s*production/);
-  assert.match(workflow, /status:\s*completed/);
+  assert.match(workflow, /Require signed Android candidate on main/);
+  assert.match(workflow, /production_publish_attempted=false/);
+  assert.match(workflow, /production_publish_deferred=true/);
+  assert.match(workflow, /final store-launch workflow owns submission/);
+  assert.doesNotMatch(workflow, /r0adkll\/upload-google-play/);
+  assert.doesNotMatch(workflow, /track:\s*production/);
   assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.0/);
   assert.match(workflow, /iOS marketingVersion=4\.1\.0/);
   assert.match(workflow, /iOS build=4000010/);
