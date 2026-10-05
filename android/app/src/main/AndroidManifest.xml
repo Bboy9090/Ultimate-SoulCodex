@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="false"
@@ -38,4 +39,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Soul Codex only opens the system picker. It never creates, edits, or deletes device contacts. -->
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" tools:node="remove" />
 </manifest>

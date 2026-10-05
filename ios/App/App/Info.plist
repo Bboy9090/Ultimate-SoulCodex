@@ -24,6 +24,8 @@
 	<string>4000010</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>Choose a friend or family member to save locally in Soul Codex and prepare an invitation. Soul Codex does not upload your address book.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UILaunchStoryboardName</key>

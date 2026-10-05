@@ -3,6 +3,10 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 const manifestPath = "ios/App/CapApp-SPM/Package.swift";
 const dependencyReplacements = [
   {
+    generated: '.package(name: "CapacitorContacts", path: "../../../node_modules/@capacitor/contacts")',
+    cloneReady: '.package(url: "https://github.com/ionic-team/capacitor-contacts.git", exact: "1.0.1")',
+  },
+  {
     generated: '.package(name: "CapacitorKeyboard", path: "../../../node_modules/@capacitor/keyboard")',
     cloneReady: '.package(url: "https://github.com/ionic-team/capacitor-keyboard.git", exact: "8.0.3")',
   },
@@ -21,6 +25,10 @@ const dependencyReplacements = [
 ];
 
 const productIdentityReplacements = [
+  {
+    generated: '.product(name: "CapacitorContacts", package: "CapacitorContacts")',
+    cloneReady: '.product(name: "CapacitorContacts", package: "capacitor-contacts")',
+  },
   {
     generated: '.product(name: "CapacitorKeyboard", package: "CapacitorKeyboard")',
     cloneReady: '.product(name: "CapacitorKeyboard", package: "capacitor-keyboard")',
@@ -46,6 +54,10 @@ for (const vendorSource of requiredVendorSources) {
 }
 
 let manifest = readFileSync(manifestPath, "utf8");
+manifest = manifest.replace(
+  "// DO NOT MODIFY THIS FILE - managed by Capacitor CLI commands",
+  "// Clone-safe dependency graph. Capacitor sync may regenerate node_modules-backed\n// paths; scripts/patch-capapp-spm-vendored-packages.mjs restores this shape.",
+);
 for (const { generated, cloneReady } of [...dependencyReplacements, ...productIdentityReplacements]) {
   if (manifest.includes(generated)) manifest = manifest.replace(generated, cloneReady);
   else if (!manifest.includes(cloneReady)) throw new Error(`CapApp-SPM is missing generated or clone-ready declaration: ${generated}`);
