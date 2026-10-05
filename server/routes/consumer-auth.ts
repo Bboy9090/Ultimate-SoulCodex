@@ -56,6 +56,29 @@ export function registerConsumerAuthRoutes(
   app: Express,
   deps: ConsumerAuthDependencies = { storage, verifyApple: verifyAppleIdentityToken },
 ) {
+  app.get("/api/auth/apple/config", (_req, res) => {
+    const clientId = process.env.APPLE_WEB_CLIENT_ID?.trim() || null;
+    const publicAppUrl = process.env.PUBLIC_APP_URL?.trim() || null;
+    let redirectURI: string | null = null;
+    if (clientId && publicAppUrl) {
+      try {
+        const url = new URL(publicAppUrl);
+        if (url.protocol === "https:" && url.hostname && url.hostname !== "localhost") {
+          redirectURI = new URL("/auth/apple/callback", url.origin).toString();
+        }
+      } catch {
+        redirectURI = null;
+      }
+    }
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    return res.json({
+      enabled: Boolean(clientId && redirectURI),
+      clientId,
+      redirectURI,
+      reason: clientId && redirectURI ? "ready" : "web_apple_signin_not_configured",
+    });
+  });
+
   app.post("/api/auth/apple", async (req: any, res) => {
     if (durableFeatureUnavailable()) {
       return res.status(503).json(DURABLE_STORAGE_UNAVAILABLE_RESPONSE);
