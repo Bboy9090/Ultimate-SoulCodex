@@ -65,7 +65,7 @@ test("store workflow qualifies exact candidate without auto-publishing productio
   assert.match(workflow, /Require signed Android candidate on main/);
   assert.match(workflow, /production_publish_attempted=false/);
   assert.match(workflow, /production_publish_deferred=true/);
-  assert.match(workflow, /final store-launch workflow owns submission/);
+  assert.match(workflow, /submission is deferred until the owner authorizes and completes a separate store-launch process/);
   assert.doesNotMatch(workflow, /r0adkll\/upload-google-play/);
   assert.doesNotMatch(workflow, /track:\s*production/);
   assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.0/);
