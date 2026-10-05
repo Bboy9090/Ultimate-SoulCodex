@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ATLAS_SIGNS, PLANET_FUNCTIONS, atlasEntry, birthInputGuidance, personalAngleMeaning, personalPlacementMeaning } from '../client/src/lib/astrologyAtlas';
+import { ATLAS_SIGNS, PLANET_FUNCTIONS, atlasEntry, birthInputGuidance, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from '../client/src/lib/astrologyAtlas';
 test('all 144 combinations have distinct domain-aware content', () => {
   const entries = ATLAS_SIGNS.flatMap(sign => Array.from({length:12}, (_,i) => atlasEntry(sign,i+1)));
   assert.equal(new Set(entries.map(x => x.meaning)).size,144);
@@ -96,4 +96,19 @@ test('major planets have distinct feed categories instead of one generic templat
     const meaning = personalPlacementMeaning(body,'Virgo',10);
     assert.equal(meaning.feedLabel,label);
   }
+});
+
+test('governed major aspects explain both planetary jobs and the relationship without qualifying new geometry', () => {
+  for (const aspect of ['conjunction','sextile','square','trine','opposition']) {
+    const meaning = personalAspectMeaning('sun', aspect, 'moon', 2.45);
+    assert.match(meaning.label, /Sun/);
+    assert.match(meaning.label, /Moon/);
+    assert.match(meaning.what, /identity/);
+    assert.match(meaning.what, /emotional needs/);
+    assert.match(meaning.orb, /2\.45° orb/);
+    assert.ok(meaning.headline.length > 35);
+    assert.ok(meaning.practice.length > 20);
+  }
+  assert.throws(() => personalAspectMeaning('sun', 'invented', 'moon', 1), RangeError);
+  assert.throws(() => personalAspectMeaning('sun', 'trine', 'moon', Number.NaN), RangeError);
 });
