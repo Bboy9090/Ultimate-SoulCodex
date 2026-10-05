@@ -33,7 +33,11 @@ test("4.1 RC does not turn on purchase surfaces by source default", () => {
   const envExample = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
   const billing = readFileSync(new URL("../server/billing.ts", import.meta.url), "utf8");
   assert.doesNotMatch(envExample, /^SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=true$/m);
+  assert.doesNotMatch(envExample, /^SOUL_CODEX_PLUS_IOS_BILLING_ENABLED=true$/m);
+  assert.doesNotMatch(envExample, /^SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED=true$/m);
   assert.doesNotMatch(envExample, /^SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED=true$/m);
   assert.match(billing, /SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED\?\.trim\(\)\.toLowerCase\(\) === "true"/);
+  assert.match(billing, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED/);
+  assert.match(billing, /SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED/);
   assert.match(billing, /SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED\?\.trim\(\)\.toLowerCase\(\) === "true"/);
 });
