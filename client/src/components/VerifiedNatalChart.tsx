@@ -265,8 +265,8 @@ export default function VerifiedNatalChart({
           <section className="min-h-[280px] rounded-2xl border border-[var(--sc-line-gold)] bg-[radial-gradient(circle_at_top,rgba(217,182,111,.09),transparent_62%)] p-5" aria-live="polite" aria-atomic="true" data-testid="interactive-chart-guide">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="sc-eyebrow">Bronx Soul Guide · Walk the chart</p>
-                <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Your interactive soul guide</h3>
+                <p className="sc-eyebrow">Aureon · Walk the chart</p>
+                <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Aureon walks your chart</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {guideIndex === null && <button type="button" className="sc-button-secondary" onClick={startGuide}>Walk me through it</button>}
@@ -282,14 +282,14 @@ export default function VerifiedNatalChart({
                   <button type="button" className="sc-button-secondary" onClick={() => moveGuide(1)}>{guideIndex === guideStops.length - 1 ? "Finish walk" : "Next"}</button>
                 </div>
               </div>
-              <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Planet = who pulled up. Sign = how they move. House = which life block they operate on. Aspects = how the placements get along or push back. Read it as a mirror, not a life sentence.</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Aureon’s quick key: planet is what’s moving, sign is its style, house is where it shows up, and aspects are how the parts work together—or rub each other wrong. Take what rings true; your chart is a mirror, never a sentence.</p>
             </div>}
 
             <AnimatePresence mode="wait">
               {!selection && (
                 <motion.div key="guide-empty" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-6 rounded-2xl border border-dashed border-[var(--sc-line)] p-5 text-center">
                   <p className="font-serif text-xl text-[var(--sc-ivory)]">Every symbol has a job.</p>
-                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">Welcome to the chart, block by block. Planet = who pulled up; sign = how they move; house = which part of life they work in; aspects = who cooperates or throws friction. Tap a planet to learn its role, sign, and house. Tap a house number for its life area. Tap an aspect line to see how two placements work together. Choose a sign for its story, or start the full walkthrough and move at your own pace.</p>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">Aureon’s got you—let’s read this chart one piece at a time. A planet points to what’s active; its sign shows the style; its house shows where it lands; aspects show which parts flow and which need a little work. Tap any symbol for the story behind it, or start the walkthrough and move at your own pace.</p>
                 </motion.div>
               )}
 

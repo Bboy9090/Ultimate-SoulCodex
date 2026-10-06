@@ -267,10 +267,10 @@ export default function CompatibilityPersonPage() {
         <header className="mt-7 max-w-4xl">
           <div className="sc-eyebrow">Compare a person</div>
           <h1 className="mt-4 font-serif text-[clamp(3rem,7vw,5.5rem)] font-medium leading-[.97] tracking-[-.04em] text-[var(--sc-ivory)]">
-            Two charts. Four relationship lenses. No universal verdict.
+            Two charts. Four relationship lenses. Your connection, in context.
           </h1>
           <p className="sc-lede mt-5">
-            {profileName(profile)} stays loaded. Chart scores below use every planet, Node, and Chiron placement actually shared by both charts. The optional Sun-sign foundation adds four broad relationship lenses; it does not replace the full chart comparison.
+            {profileName(profile)} stays loaded. Chart scores below use every planet, Node, and Chiron placement actually shared by both charts. The optional Sun-sign foundation adds four broad relationship lenses; it does not replace the full chart comparison. Aureon keeps the read grounded in what you both actually shared.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
@@ -280,10 +280,10 @@ export default function CompatibilityPersonPage() {
         {initialConnection && friendPlacements.length > 0 ? (
           <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
             <div className="mb-5">
-              <p className="sc-eyebrow">Bronx Soul Guide · Chart-to-chart</p>
+              <p className="sc-eyebrow">Aureon · Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                Same planet, two charts: see where your styles line up, where you work different life blocks, and what each placement brings. Planet = who pulled up; sign = how they move; house = where that energy works. This uses only chart facts saved for both of you. Missing placements stay missing.
+                Aureon’s read, chart to chart: see where your styles line up, where you move through different life areas, and what each placement brings. A planet points to what’s active; its sign gives the style; its house shows where it plays out. This uses only chart facts saved for both of you. Missing placements stay missing.
               </p>
             </div>
 
@@ -445,7 +445,7 @@ export default function CompatibilityPersonPage() {
             {result?.available && dimensionScores && !error ? (
               <>
                 <section className="sc-panel sc-panel-gold p-6">
-                  <div className="sc-eyebrow">Bronx Soul Guide · Sun-sign foundation</div>
+                  <div className="sc-eyebrow">Aureon · Sun-sign foundation</div>
                   <h2 className="mt-3 font-serif text-3xl font-semibold">{result.person.name} · {result.person.sunSign}</h2>
                   {result.evidenceLabel ? <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{result.evidenceLabel}</p> : null}
                   <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">These four 0–100 scores are the Sun-sign foundation. The shared chart resonance and friendship scores above use every matching saved placement and show their data coverage separately.</p>
