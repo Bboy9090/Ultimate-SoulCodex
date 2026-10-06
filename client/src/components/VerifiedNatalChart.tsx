@@ -289,7 +289,7 @@ export default function VerifiedNatalChart({
               {!selection && (
                 <motion.div key="guide-empty" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-6 rounded-2xl border border-dashed border-[var(--sc-line)] p-5 text-center">
                   <p className="font-serif text-xl text-[var(--sc-ivory)]">Every symbol has a job.</p>
-                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">Aureon’s got you—let’s read this chart one piece at a time. A planet points to what’s active; its sign shows the style; its house shows where it lands; aspects show which parts flow and which need a little work. Tap any symbol for the story behind it, or start the walkthrough and move at your own pace.</p>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">Aureon’s got you—let’s read this chart one piece at a time. A planet points to what’s active; its sign shows the style; its house shows where it lands; aspects show which parts flow and which need a little work. Tap a planet to learn its role, sign, and house. Tap a house number for its life area. Tap an aspect line to see how two placements work together. Choose a sign for its story, or start the walkthrough and move at your own pace.</p>
                 </motion.div>
               )}
 
