@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
-import { atlasEntry, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
+import { atlasEntry, atlasSignMeaning, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
 import type { AtlasSign } from "@/lib/astrologyAtlas";
 
 const GLYPH: Record<string, string> = {
@@ -16,6 +16,7 @@ const POINT_GLYPH: Record<string, string> = {
 type ChartSelection =
   | { kind: "planet"; key: string }
   | { kind: "house"; house: number }
+  | { kind: "sign"; sign: AtlasSign }
   | { kind: "aspect"; index: number }
   | { kind: "point"; key: string };
 
@@ -42,6 +43,14 @@ function validLongitude(value: unknown): number | null {
   return Number.isFinite(n) ? ((n % 360) + 360) % 360 : null;
 }
 
+function guideStopLabel(stop: ChartSelection): string {
+  if (stop.kind === "sign") return `${stop.sign} sign`;
+  if (stop.kind === "house") return `House ${stop.house}`;
+  if (stop.kind === "planet") return `${stop.key} placement`;
+  if (stop.kind === "point") return `${stop.key} point`;
+  return `Aspect ${stop.index + 1}`;
+}
+
 export default function VerifiedNatalChart({
   astrology,
   synthesis,
@@ -51,6 +60,7 @@ export default function VerifiedNatalChart({
 }) {
   const reducedMotion = useReducedMotion();
   const [selection, setSelection] = useState<ChartSelection | null>(null);
+  const [guideIndex, setGuideIndex] = useState<number | null>(null);
   const ascendant =
     validLongitude(astrology?.rising?.internalCandidate?.longitude) ??
     synthesis.houseCusps.find((house) => house.house === 1)?.longitude ??
@@ -82,6 +92,33 @@ export default function VerifiedNatalChart({
       return a && b ? { ...aspect, a, b } : null;
     })
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
+
+  const guideStops: ChartSelection[] = [
+    ...Object.keys(SIGN_GLYPH).map((sign) => ({ kind: "sign", sign: sign as AtlasSign } as const)),
+    ...synthesis.placements.map((placement) => ({ kind: "planet", key: placement.key } as const)),
+    ...synthesis.houseCusps.map((house) => ({ kind: "house", house: house.house } as const)),
+    ...synthesis.supportingPoints.map((point) => ({ kind: "point", key: point.key } as const)),
+    ...synthesis.aspects.map((_, index) => ({ kind: "aspect", index } as const)),
+  ];
+
+  function startGuide() {
+    if (!guideStops.length) return;
+    setSelection(guideStops[0]);
+    setGuideIndex(0);
+  }
+
+  function moveGuide(direction: -1 | 1) {
+    if (guideIndex === null) return;
+    const next = guideIndex + direction;
+    if (next < 0) return;
+    if (next >= guideStops.length) {
+      setGuideIndex(null);
+      setSelection(null);
+      return;
+    }
+    setGuideIndex(next);
+    setSelection(guideStops[next]);
+  }
 
   const selectedPlanet = selection?.kind === "planet"
     ? synthesis.placements.find((placement) => placement.key === selection.key) ?? null
@@ -122,10 +159,23 @@ export default function VerifiedNatalChart({
               const edge = pointFor(index * 30, ascendant, 166);
               const inner = pointFor(index * 30, ascendant, 144);
               return (
-                <g key={sign}>
+                <motion.g
+                  key={sign}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open ${sign} sign meaning`}
+                  aria-pressed={selection?.kind === "sign" && selection.sign === sign}
+                  className="cursor-pointer outline-none"
+                  onClick={() => setSelection({ kind: "sign", sign: sign as AtlasSign })}
+                  onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "sign", sign: sign as AtlasSign }))}
+                  animate={{ opacity: selection && !(selection.kind === "sign" && selection.sign === sign) ? 0.6 : 1, scale: selection?.kind === "sign" && selection.sign === sign ? 1.22 : 1 }}
+                  transition={{ duration: reducedMotion ? 0 : 0.2 }}
+                  style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+                >
                   <line x1={edge.x} y1={edge.y} x2={inner.x} y2={inner.y} stroke="var(--sc-line)" />
-                  <text x={p.x} y={p.y + 5} textAnchor="middle" fill="var(--sc-stone)" fontSize="15">{SIGN_GLYPH[sign]}</text>
-                </g>
+                  <circle cx={p.x} cy={p.y} r="13" fill={selection?.kind === "sign" && selection.sign === sign ? "rgba(217,182,111,.17)" : "transparent"} />
+                  <text x={p.x} y={p.y + 5} textAnchor="middle" fill={selection?.kind === "sign" && selection.sign === sign ? "var(--sc-gold-bright)" : "var(--sc-stone)"} fontSize="15">{SIGN_GLYPH[sign]}</text>
+                </motion.g>
               );
             })}
 
@@ -214,20 +264,65 @@ export default function VerifiedNatalChart({
         <div className="space-y-4">
           <section className="min-h-[280px] rounded-2xl border border-[var(--sc-line-gold)] bg-[radial-gradient(circle_at_top,rgba(217,182,111,.09),transparent_62%)] p-5" aria-live="polite" aria-atomic="true" data-testid="interactive-chart-guide">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="sc-eyebrow">Tap the chart · Meet your placements</p>
-                <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Your interactive soul guide</h3>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/images/aureon-guide.webp"
+                  alt="Aureon, Soul Guide"
+                  data-testid="soul-guide-avatar"
+                  className="h-16 w-16 rounded-2xl border border-[var(--sc-line-gold)] object-cover shadow-[0_0_22px_rgba(217,182,111,.18)]"
+                  loading="lazy"
+                />
+                <div>
+                  <p className="sc-eyebrow">Soul Guide</p>
+                  <h3 className="mt-1 font-serif text-2xl text-[var(--sc-ivory)]">Aureon</h3>
+                  <p className="mt-1 text-xs text-[var(--sc-stone)]">Your chart, one placement at a time.</p>
+                </div>
               </div>
-              {selection && <button type="button" className="sc-button-ghost" onClick={() => setSelection(null)}>Close</button>}
+              <div className="flex flex-wrap gap-2">
+                {guideIndex === null && <button type="button" className="sc-button-secondary" onClick={startGuide}>Walk me through it</button>}
+                {selection && <button type="button" className="sc-button-ghost" onClick={() => { setSelection(null); setGuideIndex(null); }}>Close</button>}
+              </div>
             </div>
+
+            {guideIndex !== null && <div className="mt-4 rounded-xl border border-[var(--sc-line-gold)] bg-black/10 p-3" data-testid="soul-guide-walkthrough" aria-live="polite">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-[var(--sc-ivory-soft)]"><strong className="text-[var(--sc-gold-bright)]">Block {guideIndex + 1} of {guideStops.length}:</strong> {guideStopLabel(guideStops[guideIndex])}</p>
+                <div className="flex gap-2">
+                  <button type="button" className="sc-button-ghost" onClick={() => moveGuide(-1)} disabled={guideIndex === 0}>Back</button>
+                  <button type="button" className="sc-button-secondary" onClick={() => moveGuide(1)}>{guideIndex === guideStops.length - 1 ? "Finish walk" : "Next"}</button>
+                </div>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Chart key: planet is what’s moving, sign is its style, house is where it shows up, and aspects are how the parts work together—or rub each other wrong. Take what rings true; your chart is a mirror, never a sentence.</p>
+            </div>}
 
             <AnimatePresence mode="wait">
               {!selection && (
                 <motion.div key="guide-empty" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-6 rounded-2xl border border-dashed border-[var(--sc-line)] p-5 text-center">
                   <p className="font-serif text-xl text-[var(--sc-ivory)]">Every symbol has a job.</p>
-                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">Tap a planet to learn what it represents, how its sign moves, and where its house makes the story personal. Tap a house number for that life area. Tap an aspect line—or one of the aspect buttons below—to see how two planets interact.</p>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">Let’s read this chart one piece at a time. A planet points to what’s active; its sign shows the style; its house shows where it lands; aspects show which parts flow and which need a little work. Tap a planet to learn its role, sign, and house. Tap a house number for its life area. Tap an aspect line to see how two placements work together. Choose a sign for its story, or start the walkthrough and move at your own pace.</p>
                 </motion.div>
               )}
+
+              {selection?.kind === "sign" && (() => {
+                const meaning = atlasSignMeaning(selection.sign);
+                const placements = synthesis.placements.filter((placement) => placement.sign === selection.sign);
+                const points = synthesis.supportingPoints.filter((point) => point.sign === selection.sign);
+                const houses = synthesis.houseCusps.filter((house) => house.sign === selection.sign);
+                return <motion.article key={`sign-${selection.sign}`} initial={reducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: reducedMotion ? 0 : 0.22 }} className="mt-5">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">{SIGN_GLYPH[selection.sign]} Zodiac sign · chart guide</p>
+                  <h4 className="mt-2 font-serif text-3xl text-[var(--sc-ivory)]">{selection.sign} in your chart</h4>
+                  <p className="mt-4 text-base leading-7 text-[var(--sc-ivory-soft)]">This sign’s symbolic style is {meaning.approach}. Its possible gift is {meaning.gift.toLowerCase()}.</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Watch point</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.tension}.</p></div>
+                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Ground it</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.practice}.</p></div>
+                  </div>
+                  <div className="mt-4 space-y-2 text-sm text-[var(--sc-stone)]">
+                    <p><strong className="text-[var(--sc-ivory)]">Planets here:</strong> {placements.length ? placements.map((item) => `${item.label}${item.house ? ` · House ${item.house}` : ""}`).join(", ") : "No verified planetary placements in this sign."}</p>
+                    {points.length > 0 && <p><strong className="text-[var(--sc-ivory)]">Chart points here:</strong> {points.map((item) => item.label).join(", ")}.</p>}
+                    {houses.length > 0 && <p><strong className="text-[var(--sc-ivory)]">House cusps here:</strong> {houses.map((item) => `House ${item.house}`).join(", ")}.</p>}
+                  </div>
+                </motion.article>;
+              })()}
 
               {selectedPlanet && (
                 <motion.article key={`planet-${selectedPlanet.key}`} initial={reducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: reducedMotion ? 0 : 0.22 }} className="mt-5">
