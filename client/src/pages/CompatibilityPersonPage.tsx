@@ -265,12 +265,24 @@ export default function CompatibilityPersonPage() {
         </Link>
 
         <header className="mt-7 max-w-4xl">
+          <div className="mb-5 inline-flex items-center gap-3">
+            <img
+              src="/images/aureon-guide.webp"
+              alt="Aureon, Soul Guide"
+              className="h-12 w-12 rounded-xl border border-[var(--sc-line-gold)] object-cover shadow-[0_0_18px_rgba(217,182,111,.14)]"
+              loading="lazy"
+            />
+            <div>
+              <p className="sc-eyebrow">Soul Guide</p>
+              <p className="font-serif text-xl text-[var(--sc-ivory)]">Aureon</p>
+            </div>
+          </div>
           <div className="sc-eyebrow">Compare a person</div>
           <h1 className="mt-4 font-serif text-[clamp(3rem,7vw,5.5rem)] font-medium leading-[.97] tracking-[-.04em] text-[var(--sc-ivory)]">
             Two charts. Four relationship lenses. Your connection, in context.
           </h1>
           <p className="sc-lede mt-5">
-            {profileName(profile)} stays loaded. Chart scores below use every planet, Node, and Chiron placement actually shared by both charts. The optional Sun-sign foundation adds four broad relationship lenses; it does not replace the full chart comparison. Aureon keeps the read grounded in what you both actually shared.
+            {profileName(profile)} stays loaded. Chart scores below use every planet, Node, and Chiron placement actually shared by both charts. The optional Sun-sign foundation adds four broad relationship lenses; it does not replace the full chart comparison. The comparison stays grounded in what you both actually shared.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
@@ -280,10 +292,10 @@ export default function CompatibilityPersonPage() {
         {initialConnection && friendPlacements.length > 0 ? (
           <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
             <div className="mb-5">
-              <p className="sc-eyebrow">Aureon · Chart-to-chart</p>
+              <p className="sc-eyebrow">Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                Aureon’s read, chart to chart: see where your styles line up, where you move through different life areas, and what each placement brings. A planet points to what’s active; its sign gives the style; its house shows where it plays out. This uses only chart facts saved for both of you. Missing placements stay missing.
+                See where your styles line up, where you move through different life areas, and what each placement brings. A planet points to what’s active; its sign gives the style; its house shows where it plays out. This uses only chart facts saved for both of you. Missing placements stay missing.
               </p>
             </div>
 
@@ -445,7 +457,7 @@ export default function CompatibilityPersonPage() {
             {result?.available && dimensionScores && !error ? (
               <>
                 <section className="sc-panel sc-panel-gold p-6">
-                  <div className="sc-eyebrow">Aureon · Sun-sign foundation</div>
+                  <div className="sc-eyebrow">Sun-sign foundation</div>
                   <h2 className="mt-3 font-serif text-3xl font-semibold">{result.person.name} · {result.person.sunSign}</h2>
                   {result.evidenceLabel ? <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{result.evidenceLabel}</p> : null}
                   <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">These four 0–100 scores are the Sun-sign foundation. The shared chart resonance and friendship scores above use every matching saved placement and show their data coverage separately.</p>
