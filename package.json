@@ -49,7 +49,7 @@
     "@capacitor/keyboard": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
-    "@capawesome/capacitor-apple-sign-in": "^0.1.2",
+    "@capawesome/capacitor-apple-sign-in": "^0.1.4",
     "@google/genai": "^1.34.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",
