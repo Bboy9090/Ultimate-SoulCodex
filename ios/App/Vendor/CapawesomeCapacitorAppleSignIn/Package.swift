@@ -1,7 +1,7 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
-// Vendored from @capawesome/capacitor-apple-sign-in 0.1.2 (MIT).
+// Vendored from @capawesome/capacitor-apple-sign-in 0.1.2 (MIT); Capacitor SwiftPM pin aligned with the patched 8.5.2 runtime.
 // Kept in-repository so Xcode Cloud can resolve native dependencies before
 // JavaScript dependencies and custom build scripts are available.
 let package = Package(
@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/ionic-team/capacitor-swift-pm.git",
-            exact: "8.4.2"
+            exact: "8.5.2"
         )
     ],
     targets: [
