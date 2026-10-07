@@ -32,7 +32,7 @@ After the products exist and are available to the intended sandbox/TestFlight/pr
 - `APPLE_PLUS_MONTHLY_PRODUCT_ID=app.soulcodex.plus.monthly`
 - `APPLE_PLUS_ANNUAL_PRODUCT_ID=app.soulcodex.plus.annual`
 
-Do not enable `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED` until the server verifier, sandbox purchase, restore, cancellation/expiry, refund/revocation, and App Store Server Notifications V2 path all pass.
+Do not enable `SOUL_CODEX_PLUS_IOS_BILLING_ENABLED` until the server verifier, sandbox purchase, restore, cancellation/expiry, refund/revocation, and App Store Server Notifications V2 path all pass.
 
 ### Google Play Console
 
@@ -54,6 +54,8 @@ RTDN endpoint:
 - `https://soulcodex.up.railway.app/api/billing/google/rtdn?token=<configured secret>`
 
 The RTDN token is already treated as an independent push-authentication secret. RTDN itself never grants access; the backend re-queries Google Play.
+
+Do not enable `SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED` until the Developer API verifier, internal-test purchase, restore, cancellation/expiry, refund/revocation, and RTDN lifecycle path all pass.
 
 ### Stripe web checkout
 
@@ -80,13 +82,15 @@ The Stripe catalog is re-read server-side before checkout; inactive, wrong-caden
 2. Create Google monthly and annual products.
 3. Connect the Google Play service account and verify Developer API access.
 4. Create Stripe monthly and annual recurring Prices plus webhook endpoint.
-5. Enter the real production values in Railway while both billing flags remain `false`.
+5. Enter the real production values in Railway while web, iOS, and Android billing flags remain `false`.
 6. Run `npm run billing:preflight:strict` against the production variable set.
-7. Run sandbox/TestFlight/internal-test purchase, restore, renewal, cancellation, expiry, refund/revocation, and reinstall/second-device tests.
+7. Run sandbox/TestFlight/internal-test purchase, restore, renewal, cancellation, expiry, refund/revocation, and reinstall/second-device tests per provider.
 8. Update live App Store Connect / Play privacy and subscription disclosures to match the 4.1 packet.
 9. Enable only the purchase surface that has completed its own qualification:
-   - `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=true`
-   - `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED=true`
+   - web: `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=true`
+   - iOS: `SOUL_CODEX_PLUS_IOS_BILLING_ENABLED=true`
+   - Android: `SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED=true`
+   - legacy `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED` remains a compatibility fallback only and should stay `false` for staged provider rollout.
 10. Re-run the exact-head release gates and preserve the resulting receipts.
 
 ## Non-claims

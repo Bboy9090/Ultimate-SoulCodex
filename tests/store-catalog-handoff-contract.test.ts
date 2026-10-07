@@ -21,3 +21,11 @@ test("handoff refuses to claim uncreated store products or enable billing premat
   assert.match(handoff, /sandbox\/TestFlight\/internal-test purchase/);
   assert.match(handoff, /Free remains available/);
 });
+
+
+test("4.1 handoff permits provider-by-provider native activation", () => {
+  assert.match(handoff, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED=true/);
+  assert.match(handoff, /SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED=true/);
+  assert.match(handoff, /legacy `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED` remains a compatibility fallback/);
+  assert.match(handoff, /per provider/);
+});
