@@ -60,6 +60,7 @@ jobs:
         run: |
           node --import tsx --test \
             tests/primary-synthesis-system-policy.test.ts \
+            tests/profile-label-explanation.test.ts \
             tests/offline-synthesis-evidence-boundary.test.ts \
             tests/verified-profile-differentiation.test.ts \
             tests/verified-profile-differentiation-corpus.test.ts \

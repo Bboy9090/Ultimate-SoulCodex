@@ -9,7 +9,7 @@ import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileReposit
 import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
 import { getSynthesisAstrologySign, getVerifiedAstrologySign, hasVerifiedFullNatalChart, hasVerifiedHumanDesignTrust, profileNeedsOnlineVerification, reconcileActiveProfile, reconcileOfflineProfile, type ReconciledOfflineProfile } from "@/lib/profileVerificationReconciliation";
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
-import { apiFetch } from "@/lib/queryClient";
+import { apiFetch, publicApiErrorMessage } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { humanDesignAvailability } from "@/lib/humanDesignAvailability";
 
@@ -80,8 +80,7 @@ export default function OfflineProfilePage() {
         }),
       });
       if (!response.ok) {
-        const failure = await response.json().catch(() => null);
-        throw new Error(typeof failure?.message === "string" ? failure.message : `Verification service returned ${response.status}. Retry without re-entering your birth information.`);
+        throw new Error(await publicApiErrorMessage(response));
       }
       const verification = await response.json();
       const syncedAt = verification.updatedAt || new Date().toISOString();
