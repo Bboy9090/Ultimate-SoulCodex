@@ -138,6 +138,8 @@ export type RemoteProfileSnapshot = {
 };
 
 export type ReconciledOfflineProfile = OfflineCodexProfile & {
+  birthTimeStatus?: "known" | "unknown";
+  humanDesignVerificationDiagnostic?: { status: string; reason?: string };
   verifiedAstrologyData?: RemoteProfileSnapshot["astrologyData"];
   remoteSync?: {
     remoteId: string;
@@ -385,12 +387,12 @@ export function hasVerifiedFullNatalChart(
 }
 
 function hasExactBirthInstant(profile: ReconciledOfflineProfile): boolean {
-  return Boolean(profile.birthTime && profile.timezone);
+  return Boolean(profile.birthTimeStatus !== "unknown" && profile.birthTime && profile.timezone);
 }
 
 function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
   return Boolean(
-    profile.birthTime &&
+    profile.birthTimeStatus !== "unknown" && profile.birthTime &&
       profile.timezone &&
       profile.latitude !== null &&
       profile.latitude !== undefined &&
@@ -448,6 +450,9 @@ export function reconcileActiveProfile(
     moonSign,
     risingSign,
     astrologyData: mergedAstrologyData,
+    ...(remote.astrologyData || remote.humanDesignData
+      ? { foundationNarrativeRevision: undefined }
+      : {}),
     numerologyData: remote.numerologyData ?? local.numerologyData,
     humanDesignData:
       remote.humanDesignData && typeof remote.humanDesignData === "object"
@@ -497,8 +502,8 @@ export function reconcileOfflineProfile(
           mergedLocal,
           remote.astrologyData as VerifiedAstrologyForSynthesis,
           syncedAt,
-          hasVerifiedHumanDesignTrust(remote.humanDesignData)
-            ? remote.humanDesignData ?? undefined
+          hasVerifiedHumanDesignTrust(mergedLocal.humanDesignData)
+            ? mergedLocal.humanDesignData ?? undefined
             : undefined,
         )
       : remote.astrologyData && hasCompletedUnknownTimeRange(remote.astrologyData)
@@ -506,13 +511,23 @@ export function reconcileOfflineProfile(
             mergedLocal,
             remote.astrologyData as VerifiedAstrologyForSynthesis,
             syncedAt,
-            remote.humanDesignData ?? undefined,
+            acceptedHumanDesignEvidence(mergedLocal.humanDesignData)
+              ? mergedLocal.humanDesignData ?? undefined
+              : undefined,
           )
         : null;
 
   return {
     ...local,
     numerologyData,
+    ...(remote.humanDesignData && !acceptedHumanDesignEvidence(remote.humanDesignData)
+      ? { humanDesignVerificationDiagnostic: {
+          status: String(remote.humanDesignData.status ?? "unavailable"),
+          ...(typeof remote.humanDesignData.reason === "string" ? { reason: remote.humanDesignData.reason } : {}),
+        } }
+      : acceptedHumanDesignEvidence(remote.humanDesignData)
+        ? { humanDesignVerificationDiagnostic: undefined }
+        : {}),
     humanDesignData: acceptedHumanDesignEvidence(remote.humanDesignData)
       ? remote.humanDesignData
       : local.humanDesignData,

@@ -23,6 +23,23 @@ const local = generateFoundationOfflineCodexProfile(
   },
 );
 
+test("different birth dates retain different Life Paths in rendered profile prose", () => {
+  const readings = ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07", "2000-01-08", "2000-01-09"].map((birthDate) =>
+    generateFoundationOfflineCodexProfile({
+      name: "Birthday Control",
+      birthDate,
+      birthLocation: "Bronx, New York",
+      timezone: "America/New_York",
+    }, { generatedAt: "2026-10-07T12:00:00.000Z", currentYear: 2026 }),
+  );
+  assert.equal(new Set(readings.map((reading) => reading.numerologyData.lifePath)).size, 9);
+  assert.equal(readings.filter((reading) => reading.numerologyData.lifePath === 9).length, 1);
+  assert.equal(new Set(readings.map((reading) => reading.depthInterpretation.claritySummary)).size, 9);
+  for (const reading of readings) {
+    assert.match(reading.biography, new RegExp(`Life Path ${reading.numerologyData.lifePath}\\b`));
+  }
+});
+
 const hdTrust = {
   engine: "soulcodex-hd-geocentric-v1",
   source: "Soul Codex deterministic Human Design core engine",

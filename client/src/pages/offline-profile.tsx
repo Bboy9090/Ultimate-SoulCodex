@@ -11,6 +11,7 @@ import { getSynthesisAstrologySign, getVerifiedAstrologySign, hasVerifiedFullNat
 import { shouldOfferVerification, verificationOutcome, type VerificationAttempt } from "@/lib/profileVerificationUi";
 import { apiFetch } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
+import { humanDesignAvailability } from "@/lib/humanDesignAvailability";
 
 const HumanDesignBodygraph = lazy(() => import("@/components/HumanDesignBodygraph"));
 const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
@@ -35,6 +36,7 @@ export default function OfflineProfilePage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const [verificationAttempt, setVerificationAttempt] = useState<VerificationAttempt>("idle");
+  const [verificationFailure, setVerificationFailure] = useState<{ profileId: string; message: string } | null>(null);
   const { data: profile, isLoading, error } = useQuery<OfflineCodexProfile>({ queryKey: ["offline-profile", id], enabled: !!id, queryFn: async () => { if (!id) throw new Error("Profile id is missing"); const stored = await loadOfflineProfile(id); if (!stored) throw new Error("Offline profile not found on this device"); return stored; } });
   const reconciledProfile = profile as ReconciledOfflineProfile | undefined;
 
@@ -63,6 +65,7 @@ export default function OfflineProfilePage() {
     }
 
     const currentProfile = reconciledProfile;
+    setVerificationFailure(null);
     setVerificationAttempt("running");
     try {
       const response = await apiFetch("/api/verification/profile", {
@@ -70,13 +73,16 @@ export default function OfflineProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           birthDate: currentProfile.birthDate,
-          ...(currentProfile.birthTime ? { birthTime: currentProfile.birthTime } : {}),
+          ...(currentProfile.birthTimeStatus !== "unknown" && currentProfile.birthTime ? { birthTime: currentProfile.birthTime } : {}),
           timezone: currentProfile.timezone,
           latitude: currentProfile.latitude ?? undefined,
           longitude: currentProfile.longitude ?? undefined,
         }),
       });
-      if (!response.ok) throw new Error(`verification_refresh_failed_${response.status}`);
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        throw new Error(typeof failure?.message === "string" ? failure.message : `Verification service returned ${response.status}. Retry without re-entering your birth information.`);
+      }
       const verification = await response.json();
       const syncedAt = verification.updatedAt || new Date().toISOString();
       const hydrated = reconcileOfflineProfile(currentProfile, verification, syncedAt);
@@ -90,6 +96,7 @@ export default function OfflineProfilePage() {
       setVerificationAttempt(verificationOutcome(profileNeedsOnlineVerification(hydrated)));
     } catch (cause) {
       console.warn("[offline-profile] Requested online verification could not complete", cause);
+      setVerificationFailure({ profileId: currentProfile.id, message: cause instanceof Error ? cause.message : "Verification could not complete. Retry without re-entering your birth information." });
       setVerificationAttempt("deferred");
     }
   };
@@ -113,6 +120,7 @@ export default function OfflineProfilePage() {
   const verifiedSouthNode = verifiedAstrology?.southNode;
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, any>;
+  const humanDesignState = humanDesignAvailability(reconciledProfile ?? {});
   const verifiedHumanDesign = hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
   const rangeHumanDesign = humanDesign.status === "range_analyzed" ? humanDesign : null;
   const ultimateCodex = useMemo(
@@ -217,6 +225,9 @@ export default function OfflineProfilePage() {
         {verificationAttempt === "deferred" && !verifiedFullNatal && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">The requested online verification could not complete. Local symbolic layers remain visible; any unsupported planets, Rising, MC, houses, aspects, nodes, and Chiron stay unresolved rather than guessed.</div>}
         {verificationAttempt === "partial" && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Online verification returned some supported evidence, but this timed profile still has unresolved chart fields. The verified results were saved; you can retry without losing them.</div>}
         {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.04)] p-4 text-sm text-[var(--sc-stone)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
+
+        {!verifiedHumanDesign && !rangeHumanDesign && <section className="sc-panel mb-6 p-5" data-testid="human-design-availability"><p className="sc-eyebrow">Human Design</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{humanDesignState.message}</p></section>}
+        {verificationFailure?.profileId === reconciledProfile.id && <p role="alert" className="mb-6 text-sm text-[var(--sc-stone)]">{verificationFailure.message}</p>}
 
         {hasRangeEvidence && (
           <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="unknown-time-evidence-panel">

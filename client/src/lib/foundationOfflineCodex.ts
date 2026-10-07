@@ -12,7 +12,7 @@ import {
   type DepthSynthesisSeed,
   type DepthTensionAxis,
   type InterpretationEvidenceRef,
-  type OfflineCodexProfile,
+  type OfflineCodexProfile as CoreOfflineCodexProfile,
 } from "@soulcodex/core";
 import type { BirthData } from "@shared/schema";
 import { maySystemInfluenceSynthesis } from "@shared/system-visibility";
@@ -21,6 +21,12 @@ import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
 
 type Pattern = CanonicalSymbolicPattern;
+
+export const FOUNDATION_NARRATIVE_REVISION = 1;
+export type OfflineCodexProfile = CoreOfflineCodexProfile & {
+  foundationNarrativeRevision?: number;
+  birthTimeStatus?: "known" | "unknown";
+};
 
 function parseDate(dateISO: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateISO);
@@ -342,6 +348,7 @@ export function generateFoundationOfflineCodexProfile(
     fullBirthName,
     birthDate: input.birthDate,
     birthTime: input.birthTime || null,
+    birthTimeStatus: input.birthTime ? "known" : "unknown",
     birthLocation: input.birthLocation.trim(),
     timezone: input.timezone,
     latitude: input.latitude === undefined || input.latitude === "" ? null : String(input.latitude),
@@ -358,6 +365,7 @@ export function generateFoundationOfflineCodexProfile(
     syncStatus: "local-only",
     createdAt: generatedAt,
     updatedAt: generatedAt,
+    foundationNarrativeRevision: FOUNDATION_NARRATIVE_REVISION,
   };
 }
 
@@ -1505,7 +1513,13 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
 
   const lifePathNeedsRepair = profile.numerologyData?.lifePath !== expectedLifePath;
   const archetypeNeedsRepair = LEGACY_FOUNDATION_ARCHETYPE_TITLES.has(profile.archetypeData?.title ?? "");
-  if (!lifePathNeedsRepair && !archetypeNeedsRepair) return profile;
+  const narrativeNeedsRepair = profile.foundationNarrativeRevision !== FOUNDATION_NARRATIVE_REVISION;
+  if (!lifePathNeedsRepair && !archetypeNeedsRepair && !narrativeNeedsRepair) return profile;
+  if (profile.depthInterpretation?.evidence?.some((entry) =>
+    ["user-stated", "mirror", "tracker"].includes(entry.system))) return profile;
+
+  const birthTimeUnknown = profile.birthTimeStatus === "unknown" ||
+    (profile.depthInterpretation as { birthTimeStatus?: string } | undefined)?.birthTimeStatus === "unknown";
 
   const repairedAt = options.repairedAt ?? new Date().toISOString();
   const rebuilt = generateFoundationOfflineCodexProfile(
@@ -1513,7 +1527,7 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
       name: profile.name,
       fullBirthName: profile.fullBirthName ?? undefined,
       birthDate: profile.birthDate,
-      birthTime: profile.birthTime ?? "",
+      birthTime: birthTimeUnknown ? "" : profile.birthTime ?? "",
       birthLocation: profile.birthLocation,
       timezone: profile.timezone,
       latitude: profile.latitude ?? "",
@@ -1553,7 +1567,7 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
             repairedAt,
             profile.humanDesignData ?? undefined,
           )
-        : synthesizeVerifiedFoundationProfile(
+        : birthTimeUnknown ? repairedNarrative : synthesizeVerifiedFoundationProfile(
             rebuilt,
             verifiedAstrologyData,
             repairedAt,
@@ -1570,6 +1584,8 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
     ...profile,
     numerologyData: rebuilt.numerologyData,
     ...repairedNarrative,
+    birthTimeStatus: birthTimeUnknown ? "unknown" : rebuilt.birthTimeStatus,
+    foundationNarrativeRevision: FOUNDATION_NARRATIVE_REVISION,
     updatedAt: repairedAt,
   };
 }

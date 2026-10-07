@@ -651,6 +651,7 @@ type TimezoneResolutionResult =
 
 function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: number): TimezoneResolutionResult | null {
   const timezoneMap: { [key: string]: string } = {
+    'UTC': 'Etc/UTC',
     'EST': 'America/New_York',
     'EDT': 'America/New_York',
     'CST': 'America/Chicago',

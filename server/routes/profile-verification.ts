@@ -35,7 +35,43 @@ export const profileVerificationRequestSchema = z
       .refine((value) => value >= -180 && value <= 180, "Longitude must be between -180 and 180")
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((input, context) => {
+    const civilTime = resolveCivilTimeStrict(input.birthDate, input.birthTime || "12:00", input.timezone);
+    if (civilTime.status !== "valid") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["birthTime"],
+        message: `Birth date, time, and timezone do not identify a unique valid instant (${civilTime.status}). Correct the inputs before verification.`,
+      });
+    }
+  });
+
+export class HumanDesignVerificationError extends Error {
+  readonly code = "human_design_verification_unavailable";
+}
+
+export function calculateKnownTimeHumanDesign(input: {
+  birthDate: string;
+  birthTime: string;
+  timezone: string;
+  latitude: number;
+  longitude: number;
+}) {
+  const result = calculateHumanDesign({
+    name: "Private profile",
+    birthDate: input.birthDate,
+    birthTime: input.birthTime,
+    birthLocation: "Resolved birthplace",
+    timezone: input.timezone,
+    latitude: String(input.latitude),
+    longitude: String(input.longitude),
+  });
+  if (result.status !== "resolved") {
+    throw new HumanDesignVerificationError(`Human Design could not be calculated (${result.reason}). Check the birth inputs and retry verification; no substitute design has been assigned.`);
+  }
+  return result;
+}
 
 function verifiedLegacySign(placement: any): string | null {
   const evidence = placement?.provenance ?? placement?.evidence;
@@ -224,14 +260,12 @@ export function registerProfileVerificationRoutes(app: Express) {
         parsed.data.latitude !== undefined &&
         parsed.data.longitude !== undefined
       ) {
-        const humanDesign = calculateHumanDesign({
-          name: "Private profile",
+        const humanDesign = calculateKnownTimeHumanDesign({
           birthDate: parsed.data.birthDate,
           birthTime: parsed.data.birthTime,
-          birthLocation: "Resolved birthplace",
           timezone: parsed.data.timezone,
-          latitude: String(parsed.data.latitude),
-          longitude: String(parsed.data.longitude),
+          latitude: parsed.data.latitude,
+          longitude: parsed.data.longitude,
         });
 
         if (humanDesign.status === "resolved") {
@@ -256,7 +290,7 @@ export function registerProfileVerificationRoutes(app: Express) {
             },
           });
           if (trust.status !== "verified") {
-            throw new Error("human_design_verified_contract_not_produced");
+            throw new HumanDesignVerificationError("Human Design calculation did not meet the verified core contract. Retry verification; no substitute design has been assigned.");
           }
 
           humanDesignData = {
@@ -317,6 +351,9 @@ export function registerProfileVerificationRoutes(app: Express) {
       });
     } catch (error) {
       console.error("[ProfileVerification] Verification failed safely:", error);
+      if (error instanceof HumanDesignVerificationError) {
+        return res.status(503).json({ message: error.message, code: error.code });
+      }
       return res.status(503).json({
         message: "Independent astronomy verification is temporarily unavailable",
         code: "verification_unavailable",
