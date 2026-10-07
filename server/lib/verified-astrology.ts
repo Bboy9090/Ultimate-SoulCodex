@@ -3,6 +3,7 @@
  * Re-exported for backwards compatibility with existing server imports
  */
 import type { PlacementEvidence, PlacementLike } from '@soulcodex/core';
+import { canonicalSignPattern } from "@shared/symbolic-vocabulary";
 
 export type { PlacementEvidence, PlacementLike };
 
@@ -14,12 +15,16 @@ export interface VerifiedAstrology {
 }
 
 function verifiedSign(value: PlacementLike | null | undefined): string | undefined {
-  if (!value?.sign) return undefined;
+  if (typeof value?.sign !== "string" || !canonicalSignPattern(value.sign)) return undefined;
   const state = value.verificationStatus ?? value.status;
   if (state !== "verified") return undefined;
   const evidence = value.provenance ?? value.evidence;
-  if (!evidence?.source || !evidence?.engine || !evidence?.calculatedAt) return undefined;
-  return value.sign;
+  if (typeof evidence?.source !== "string" || !evidence.source.trim() ||
+    typeof evidence?.engine !== "string" || !evidence.engine.trim() ||
+    typeof evidence?.calculatedAt !== "string" || !evidence.calculatedAt.trim() ||
+    !Number.isFinite(Date.parse(evidence.calculatedAt))) return undefined;
+  const sign = value.sign.trim().toLowerCase();
+  return sign.charAt(0).toUpperCase() + sign.slice(1);
 }
 
 function placementFromProfile(profile: any, key: "sun" | "moon" | "rising"): PlacementLike | undefined {

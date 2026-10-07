@@ -7,6 +7,7 @@ import { useProductAccess } from "../hooks/useProductAccess";
 import DiamondClosure from "@/components/DiamondClosure";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
+import ProfileSystemVerificationButton from "@/components/ProfileSystemVerificationButton";
 import { ShareModal } from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
@@ -259,6 +260,7 @@ export default function ProfilePage() {
           </details>
         </section>
 
+        <ProfileSystemVerificationButton profile={profile} />
         <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
 
         <div className="mt-8">
