@@ -10,6 +10,7 @@ import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
 import { getSynthesisPlacement, getVerifiedPlacement } from "./placementVerification";
 import { hasVerifiedHumanDesignTrust } from "./profileVerificationReconciliation";
+import { humanDesignAvailability } from "./humanDesignAvailability";
 
 type AnyRecord = Record<string, any>;
 
@@ -530,9 +531,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   for (const [key, label] of [["rising","Rising"],["midheaven","Midheaven"],["northNode","North Node"],["southNode","South Node"],["chiron","Chiron"]] as const) {
     if (!supportingPoints.some((point) => point.key === key)) unresolved.push(`${label} is unavailable or conditional under the current evidence and is excluded from the main synthesis.`);
   }
-  if (!hdType) unresolved.push("Human Design Type is unavailable or conditional and does not influence combined identity synthesis.");
-  if (!hdAuthority) unresolved.push("Human Design Authority is unavailable or conditional and does not influence combined identity synthesis.");
-  if (!hdProfile) unresolved.push("Human Design Profile is unavailable or conditional and does not influence combined identity synthesis.");
+  if (!hdType || !hdAuthority || !hdProfile) unresolved.push(humanDesignAvailability(profile).message);
   if (!lifePath) unresolved.push("Life Path is unavailable to the combined synthesis.");
   if (!birthday) unresolved.push("Birthday number is unavailable to the combined synthesis.");
   if (!expression) unresolved.push("Expression number is unavailable to the combined synthesis.");

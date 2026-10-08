@@ -32,6 +32,12 @@ const local = generateOfflineCodexProfile(
     currentYear: 2026,
   },
 );
+
+test("new active verification invalidates prose revision but metadata-only reconciliation does not", () => {
+  const active = { id: "local-revision", birthDate: "1990-09-17", foundationNarrativeRevision: 1 };
+  assert.equal(reconcileActiveProfile(active, { astrologyData: {} }).foundationNarrativeRevision, undefined);
+  assert.equal(reconcileActiveProfile(active, { name: "Updated name" }).foundationNarrativeRevision, 1);
+});
 const placementEvidence = {
   source: "independent ephemeris comparison",
   engine: "soulcodex-test-reference@1",
@@ -568,6 +574,34 @@ test("verified Human Design is reconciled into active and offline profiles", () 
   );
 });
 
+test("astronomy refresh keeps saved trusted Human Design in the resulting reading", () => {
+  const saved = reconcileOfflineProfile(local, verifiedRemote);
+  assert.equal(hasVerifiedHumanDesignTrust(saved.humanDesignData), true);
+
+  for (const humanDesignData of [undefined, { status: "verified", type: "Generator" }]) {
+    const refreshed = reconcileOfflineProfile(saved, {
+      ...verifiedRemote,
+      humanDesignData,
+    });
+    assert.deepEqual(refreshed.humanDesignData, saved.humanDesignData);
+    assert.match(refreshed.biography, /Verified Human Design core: Reflector/);
+    assert.equal(refreshed.depthInterpretation.evidence.some(
+      (entry) => entry.id === "verified.human-design.core",
+    ), true);
+  }
+});
+
+test("astronomy refresh never promotes an untrusted saved Human Design record", () => {
+  const refreshed = reconcileOfflineProfile({
+    ...local,
+    humanDesignData: { status: "verified", type: "Reflector" },
+  }, { ...verifiedRemote, humanDesignData: undefined });
+  assert.equal(refreshed.depthInterpretation.evidence.some(
+    (entry) => entry.id === "verified.human-design.core",
+  ), false);
+  assert.doesNotMatch(refreshed.biography, /Verified Human Design core:/);
+});
+
 
 test("partial verification preserves local metadata but never promotes legacy aliases as facts", () => {
   const active = reconcileActiveProfile(
@@ -717,4 +751,29 @@ test("exact birth instant without coordinates stops retrying after planetary cor
     },
   } satisfies ReconciledOfflineProfile;
   assert.equal(profileNeedsOnlineVerification(noLocation), false);
+});
+
+test("complete exact profile keeps retry available when natal evidence exists but HD is missing", () => {
+  const hydrated = reconcileOfflineProfile(local, { astrologyData: verifiedRemote.astrologyData });
+  assert.equal(hasVerifiedFullNatalChart(hydrated.verifiedAstrologyData), true);
+  assert.equal(profileNeedsOnlineVerification({ ...hydrated, humanDesignData: undefined }), true);
+});
+
+test("unavailable HD response preserves a diagnostic without promoting candidate fields", () => {
+  const response = { status: "unavailable", reason: "calculation_failed", type: "Pretend Reflector" };
+  const hydrated = reconcileOfflineProfile(local, { humanDesignData: response });
+  assert.deepEqual(hydrated.humanDesignVerificationDiagnostic, { status: "unavailable", reason: "calculation_failed" });
+  assert.notEqual(hydrated.humanDesignData?.type, "Pretend Reflector");
+});
+
+test("explicit unknown time with a legacy default cannot enter the exact-instant retry branch", () => {
+  const unknown = {
+    ...local,
+    birthTime: "12:00",
+    birthTimeStatus: "unknown" as const,
+    verifiedAstrologyData: verifiedRemote.astrologyData,
+    humanDesignData: verifiedRemote.humanDesignData,
+    remoteSync: { remoteId: "remote", syncedAt: "2026-10-07T00:00:00Z", status: "verified-online" as const, verificationVersion: CURRENT_ASTROLOGY_VERIFICATION_VERSION },
+  };
+  assert.equal(profileNeedsOnlineVerification(unknown), true);
 });
