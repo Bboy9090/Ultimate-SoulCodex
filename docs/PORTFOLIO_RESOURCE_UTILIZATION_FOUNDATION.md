@@ -48,10 +48,18 @@ Status: Google-only integration lane. Production activation remains disabled unt
 10. YouTube, Drive, Speech, and media workflows.
 11. TensorFlow/Flutter lanes after the shared contracts are stable.
 
+## Configuration readiness gate
+
+Run `npm run validate:integrations` before enabling provider flags in a deployment.
+
+The gate reports only provider status, missing environment-variable names, and policy blockers. It does not print credential values. Disabled providers pass safely. An explicitly enabled provider fails closed when its runtime contract is incomplete. AWS remains policy-blocked by this portfolio plan even if an AWS region is configured.
+
+A passing configuration gate does **not** mean production activation is approved. The report deliberately returns `claimsProductionActivationReady: false` because privacy, consent, fallbacks, entitlements, ownership, and cost controls require independent evidence.
+
 ## Required evidence before production activation
 
 - Google project ownership confirmed.
-- Privacy and consent behavior tested.
+- Privacy and persisted-consent behavior tested.
 - Test identifiers used in development.
 - No secrets committed.
 - Offline and provider-failure fallbacks verified.

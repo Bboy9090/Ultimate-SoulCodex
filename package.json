@@ -38,7 +38,8 @@
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
     "billing:preflight": "node scripts/validate-billing-production-readiness.mjs",
-    "billing:preflight:strict": "node scripts/validate-billing-production-readiness.mjs --require-all"
+    "billing:preflight:strict": "node scripts/validate-billing-production-readiness.mjs --require-all",
+    "validate:integrations": "node --import tsx scripts/validate-integration-readiness.ts"
   },
   "dependencies": {
     "@capacitor/android": "8.4.3",
