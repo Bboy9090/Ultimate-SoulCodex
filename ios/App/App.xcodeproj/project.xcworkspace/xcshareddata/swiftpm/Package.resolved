@@ -2,6 +2,15 @@
   "originHash" : "e262877c424266b85b2facc6f66c86505caee9bc7d0627c3486da02d9602eb93",
   "pins" : [
     {
+      "identity" : "capacitor-contacts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ionic-team/capacitor-contacts.git",
+      "state" : {
+        "revision" : "0c5449401da5bc076bcb9ca2b741627918b05507",
+        "version" : "1.0.1"
+      }
+    },
+    {
       "identity" : "capacitor-keyboard",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ionic-team/capacitor-keyboard.git",
