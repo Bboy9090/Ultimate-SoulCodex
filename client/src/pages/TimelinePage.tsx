@@ -26,6 +26,7 @@ import DiamondClosure from "../components/DiamondClosure";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import { useProductAccess } from "../hooks/useProductAccess";
+import { localTimelineDate, readTimelineTodayCard, type TimelineTodayCard } from "../lib/timelineTodayCard";
 import {
   getVerifiedAstrologySign,
   hasVerifiedFullNatalChart,
@@ -67,16 +68,19 @@ export default function TimelinePage() {
   const [, navigate] = useLocation();
   const { profile, isLoading, isCorrupted, reason } = useActiveProfile();
   const { tier } = useProductAccess();
-  const [todayCard, setTodayCard] = useState<any>(null);
+  const [cachedTodayCard, setTodayCard] = useState<TimelineTodayCard | null>(null);
+  const todayDate = localTimelineDate(new Date());
+  const todayCard = cachedTodayCard?.profileId === profile?.id && cachedTodayCard?.date === todayDate
+    ? cachedTodayCard : null;
 
   useEffect(() => {
     try {
       const savedToday = localStorage.getItem("soulTodayCard");
-      setTodayCard(savedToday ? JSON.parse(savedToday) : null);
+      setTodayCard(readTimelineTodayCard(savedToday, profile?.id, new Date()));
     } catch {
       setTodayCard(null);
     }
-  }, []);
+  }, [profile?.id, todayDate]);
 
   const birthData = useMemo(() => {
     const birthDate = profile?.birthDate;

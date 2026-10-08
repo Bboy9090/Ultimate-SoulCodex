@@ -667,6 +667,21 @@ function resolveHDTimezone(inputTimezone: string, latitude: number, longitude: n
 
   // Case 1: Timezone supplied - validate and accept if real
   if (inputTimezone && inputTimezone.trim().length > 0) {
+    // Preserve the same database timezone interpretation used by strict civil
+    // time and the trust receipt. Mapping valid EST to New York would silently
+    // change summer instants by an hour. Legacy maps apply only when Intl does
+    // not recognize the supplied zone.
+    try {
+      const canonical = new Intl.DateTimeFormat(undefined, {
+        timeZone: inputTimezone.trim(),
+      }).resolvedOptions().timeZone;
+      if (canonical === 'UTC' || canonical === 'Etc/UTC' || canonical === 'Etc/GMT') {
+        return { timezone: 'Etc/UTC', source: 'supplied_iana' };
+      }
+      return { timezone: inputTimezone.trim(), source: 'supplied_iana' };
+    } catch {
+      // Existing validation below rejects unrecognized zones explicitly.
+    }
     // Check if it's a mappable abbreviation
     const mapped = timezoneMap[inputTimezone.toUpperCase()];
     if (mapped) {

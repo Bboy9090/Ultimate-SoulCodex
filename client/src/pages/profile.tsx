@@ -7,53 +7,18 @@ import { useProductAccess } from "../hooks/useProductAccess";
 import DiamondClosure from "@/components/DiamondClosure";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
+import ProfileSystemVerificationButton from "@/components/ProfileSystemVerificationButton";
 import { ShareModal } from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
 import { tierAllowsCapability } from "@shared/product-access";
+import { explainProfileLabel } from "../lib/profileLabelExplanation";
 import {
   getSynthesisAstrologySign,
   hasVerifiedHumanDesignTrust,
 } from "../lib/profileVerificationReconciliation";
 
 const text = (...values: unknown[]) => values.find((value) => typeof value === "string" && value.trim().length > 0) as string | undefined;
-
-function explainLabel(label: string, kind: "strength" | "growth"): HumanDepthItem {
-  const clean = label.trim();
-  const strength = kind === "strength";
-  return {
-    id: `${kind}-${clean.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-    title: clean,
-    observation: strength
-      ? `${clean} is more useful as a lived pattern than as a flattering label. It may describe the way you respond when responsibility, loyalty, care, judgment, or contribution matters to you.`
-      : `${clean} is not a verdict about your character. It points to a response that may once have protected you, but can become costly when it is repeated without checking what the present situation actually requires.`,
-    realLife: strength
-      ? [
-          `In decisions, ${clean.toLowerCase()} may show up as taking time to make the choice useful, dependable, or aligned rather than merely fast.`,
-          `At work or while creating, people may rely on this quality before they fully recognize how much attention and effort it requires from you.`,
-          `In conflict, the same strength may be visible in what you repair, organize, protect, explain, or continue carrying after others have stepped back.`,
-        ]
-      : [
-          `Under pressure, ${clean.toLowerCase()} may become faster and less flexible, making an old protective response feel like the only available option.`,
-          `In relationships, another person may notice the behavior while missing the fear, need, or unfinished experience underneath it.`,
-          `In work or creativity, this pattern may appear as delay, overwork, withdrawal, control, repetition, or difficulty declaring a version complete.`,
-        ],
-    benefit: strength
-      ? `Used deliberately, ${clean.toLowerCase()} can make you steady, useful, trustworthy, perceptive, or capable of turning good intentions into something other people can actually feel and depend on.`
-      : `Even a difficult pattern often began as protection. It may have helped you avoid chaos, rejection, helplessness, conflict, wasted effort, or the feeling of being controlled.`,
-    tradeoff: strength
-      ? `The cost begins when ${clean.toLowerCase()} becomes an obligation rather than a choice. You may carry too much, expect yourself to remain composed, or keep proving a strength that other people have started taking for granted.`
-      : `The tradeoff is that protection can outlive the danger. What once created safety may now reduce honesty, flexibility, closeness, completion, or your ability to respond to the situation in front of you.`,
-    misunderstanding: strength
-      ? `People may see the result and miss the internal work behind it. Calm can be mistaken for indifference, loyalty for endless tolerance, independence for distance, and careful thought for hesitation.`
-      : `Other people may judge the visible response without understanding its purpose. Explanation matters, but the pattern still remains your responsibility to notice and update.`,
-    relationshipView: `The clearest relationship move is to name the hidden need directly. Do not require another person to decode care, fear, boundaries, or overwhelm from silence, intensity, over-explaining, control, or disappearance.`,
-    practicalTakeaway: strength
-      ? `Choose one place where this strength deserves a boundary. Keep the useful part, but stop performing the version that requires you to abandon your own limits.`
-      : `The next time this response appears, pause long enough to ask: “What am I protecting, and is that protection still necessary here?” Then choose one smaller, direct action instead of repeating the full reflex.`,
-    evidence: `This item came from the saved archetype ${kind === "strength" ? "strength" : "growth"} list. It is symbolic interpretation, not a diagnosis or independently verified fact.`,
-  };
-}
 
 export default function ProfilePage() {
   const { id } = useParams();
@@ -81,7 +46,7 @@ export default function ProfilePage() {
         realLife: [
           "Notice where this theme appears in actual decisions rather than only in words that sound meaningful.",
           "Compare how the pattern changes at work, with family, in close relationships, and when you are alone.",
-          "Pay attention to the contradiction: a real pattern often contains both a strength and the behavior that protects it.",
+          "Compare any symbolic tension with a specific event; a chart does not establish your motives.",
         ],
         benefit: "A useful core story can organize scattered details into a pattern you can recognize and work with.",
         tradeoff: "A story becomes limiting when it hardens into identity and makes contradictory experiences feel invalid.",
@@ -92,8 +57,8 @@ export default function ProfilePage() {
       });
     }
 
-    for (const strength of archetype.strengths ?? []) result.push(explainLabel(String(strength), "strength"));
-    for (const growth of archetype.shadows ?? archetype.growthAreas ?? []) result.push(explainLabel(String(growth), "growth"));
+    for (const strength of archetype.strengths ?? []) result.push(explainProfileLabel(String(strength), "strength", profile));
+    for (const growth of archetype.shadows ?? archetype.growthAreas ?? []) result.push(explainProfileLabel(String(growth), "growth", profile));
 
     const sun = getSynthesisAstrologySign(astrology, "sun");
     const moon = getSynthesisAstrologySign(astrology, "moon");
@@ -295,6 +260,7 @@ export default function ProfilePage() {
           </details>
         </section>
 
+        <ProfileSystemVerificationButton profile={profile} />
         <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
 
         <div className="mt-8">

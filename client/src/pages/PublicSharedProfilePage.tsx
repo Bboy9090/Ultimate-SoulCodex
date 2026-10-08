@@ -1,19 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
-import { ArrowLeft, Sparkles, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Sparkles, ShieldCheck, UserRoundPlus } from "lucide-react";
 import Navigation from "@/components/navigation";
+import { compatibilityLink, sanitizeConnectionPlacements, saveConnection, type SavedConnection } from "@/lib/connectionRepository";
 
 type PublicProjection = {
   version: 1;
   fields: Partial<Record<
     "displayName" | "sunSign" | "moonSign" | "risingSign" | "lifePath" | "archetypeTitle",
     string | number
-  >>;
+  >> & { comparisonChart?: Array<{ key: string; sign: string; house: number }> };
 };
 
 export default function PublicSharedProfilePage() {
   const { token } = useParams();
+  const [savedConnection, setSavedConnection] = useState<SavedConnection | null>(null);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     const existing = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
@@ -72,6 +75,23 @@ export default function PublicSharedProfilePage() {
   }
 
   const fields = data.fields;
+  const comparisonChart = sanitizeConnectionPlacements(fields.comparisonChart);
+  const sharedSun = comparisonChart.find(placement => placement.key === "sun")?.sign;
+  const saveSharedConnection = () => {
+    setSaveError("");
+    try {
+      const name = typeof fields.displayName === "string" ? fields.displayName : "Shared Soul Codex";
+      const next = saveConnection({
+        name,
+        relationship: "friend",
+        sunSign: sharedSun ?? "",
+        placements: comparisonChart,
+      });
+      setSavedConnection(next[0] ?? null);
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : "This shared card could not be saved.");
+    }
+  };
   const rows = [
     ["Sun", fields.sunSign],
     ["Moon", fields.moonSign],
@@ -107,6 +127,22 @@ export default function PublicSharedProfilePage() {
               </div>
             ))}
           </div>
+
+          {comparisonChart.length > 0 && (
+            <section className="mt-6 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4" data-testid="shared-comparison-chart">
+              <p className="sc-eyebrow">Shared for comparison</p>
+              <h2 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">{comparisonChart.length} verified chart placement{comparisonChart.length === 1 ? "" : "s"}</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">Only sign and house rows deliberately included by the profile owner are available. Exact birth data, degrees, evidence receipts, and private interpretations remain hidden.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {comparisonChart.map(placement => <span key={placement.key} className="rounded-full border border-[var(--sc-line)] px-3 py-1.5 text-xs text-[var(--sc-ivory-soft)]">{placement.key} · {placement.sign} · H{placement.house}</span>)}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {!savedConnection ? <button type="button" className="sc-button-primary" onClick={saveSharedConnection}><UserRoundPlus className="mr-2 h-4 w-4"/>Save to Connections</button> : <Link href={compatibilityLink(savedConnection)} className="sc-button-primary">Compare our charts</Link>}
+                <Link href="/connections" className="sc-button-secondary">Open Connections</Link>
+              </div>
+              {saveError && <p role="alert" className="mt-3 text-sm text-[var(--sc-danger)]">{saveError}</p>}
+            </section>
+          )}
 
           <div className="mt-6 rounded-xl border border-[var(--sc-line)] bg-black/10 p-4 text-xs leading-5 text-[var(--sc-stone)]">
             Astrology appears here only when the stored placement passed the app’s verified-evidence boundary. Numerology arithmetic may be deterministic while its interpretation remains symbolic.

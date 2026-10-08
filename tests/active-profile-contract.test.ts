@@ -23,6 +23,49 @@ const evidence = {
   calculatedAt: "2026-08-02T20:15:00Z",
 };
 
+test("local active snapshot refreshes stale prose while preserving chart aliases and assessments", () => {
+  Object.defineProperty(globalThis, "localStorage", { value: new MemoryStorage(), configurable: true });
+  const astrologyData = { sunSign: "Capricorn", planets: { sun: { sign: "Capricorn", verificationStatus: "verified", evidence } } };
+  const assessmentMetadata = { answers: ["a private answer"] };
+  localStorage.setItem("soulcodex.activeProfile.v1", JSON.stringify({
+    id: "local-prose-refresh", name: "Avery Cole", fullBirthName: "Avery Cole",
+    birthDate: "1986-01-14", birthTime: "12:00", birthTimeStatus: "unknown",
+    birthLocation: "Bronx, New York", timezone: "America/New_York", schemaVersion: 1,
+    createdAt: "2026-09-01T00:00:00Z", astrologyData, assessmentMetadata,
+    biography: "Everyone has discernment and Life Path 9.", numerologyData: { lifePath: 9 },
+  }));
+  const refreshed = loadActiveProfile() as any;
+  assert.ok(refreshed);
+  assert.notEqual(refreshed.biography, "Everyone has discernment and Life Path 9.");
+  assert.notEqual(refreshed.numerologyData.lifePath, 9);
+  assert.equal(refreshed.birthTimeStatus, "unknown");
+  assert.deepEqual(refreshed.astrologyData, astrologyData);
+  assert.deepEqual(refreshed.assessmentMetadata, assessmentMetadata);
+  assert.equal(refreshed.createdAt, "2026-09-01T00:00:00Z");
+  assert.equal(refreshed.fullBirthName, "Avery Cole");
+  assert.deepEqual(refreshed.synthesis, refreshed.depthInterpretation);
+  assert.deepEqual(loadActiveProfile(), refreshed);
+});
+
+test("server active snapshots never enter the local narrative migration", () => {
+  Object.defineProperty(globalThis, "localStorage", { value: new MemoryStorage(), configurable: true });
+  saveActiveProfile({ id: "remote-123", name: "Avery Cole", birthDate: "1986-01-14",
+    birthLocation: "Bronx, New York", timezone: "America/New_York", synthesis: { custom: true } });
+  const restored = loadActiveProfile();
+  assert.deepEqual(restored?.synthesis, { custom: true });
+  assert.equal(restored?.foundationNarrativeRevision, undefined);
+});
+
+test("local narrative refresh defers when an existing reading carries user behavioral evidence", () => {
+  Object.defineProperty(globalThis, "localStorage", { value: new MemoryStorage(), configurable: true });
+  const synthesis = { evidence: [{ id: "assessment-1", system: "user-stated", value: "Observed behavior" }] };
+  saveActiveProfile({ id: "local-assessed", name: "Avery Cole", birthDate: "1986-01-14",
+    birthLocation: "Bronx, New York", timezone: "America/New_York", synthesis });
+  const restored = loadActiveProfile();
+  assert.deepEqual(restored?.synthesis, synthesis);
+  assert.equal(restored?.foundationNarrativeRevision, undefined);
+});
+
 test("canonical active Soul Profile contract", async (t) => {
   await t.test("sets up memory storage before each test", () => {
     Object.defineProperty(globalThis, "localStorage", {

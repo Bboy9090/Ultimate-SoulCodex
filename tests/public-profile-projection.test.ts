@@ -118,3 +118,45 @@ test("unverified astrology never enters a public projection", () => {
     { version: 1, fields: { risingSign: "Scorpio" } },
   );
 });
+
+test("comparison chart shares only verified sign-and-house rows selected by the owner", () => {
+  const comparisonProfile = {
+    ...profile,
+    astrologyData: {
+      ...profile.astrologyData,
+      planets: {
+        sun: verified("Virgo"),
+        moon: verified("Virgo"),
+        mars: verified("Scorpio"),
+        venus: { sign: "Libra", verificationStatus: "calculated" },
+      },
+      planetaryHouses: { sun: 10, moon: 10, mars: 1, venus: 11 },
+      northNode: {
+        sign: "Taurus", house: 7, verificationStatus: "verified", mode: "mean",
+        policyId: "ASTRO-MEAN-NODE-v1", evidenceArtifactId: "node-receipt",
+      },
+      southNode: {
+        sign: "Scorpio", house: 1, verificationStatus: "verified", mode: "mean",
+        policyId: "ASTRO-MEAN-NODE-v1", evidenceArtifactId: "node-receipt",
+      },
+      chiron: {
+        sign: "Cancer", house: 4, verificationStatus: "verified",
+        policyId: "ASTRO-CHIRON-v1", evidenceArtifactId: "chiron-receipt",
+        qualificationMethod: "live-jpl-qualified-against-swiss",
+      },
+    },
+  } satisfies Profile;
+
+  const projection = buildPublicProfileProjection(comparisonProfile, { fields: ["comparisonChart"] });
+  assert.deepEqual(projection.fields.comparisonChart, [
+    { key: "sun", sign: "Virgo", house: 10 },
+    { key: "moon", sign: "Virgo", house: 10 },
+    { key: "mars", sign: "Scorpio", house: 1 },
+    { key: "northNode", sign: "Taurus", house: 7 },
+    { key: "southNode", sign: "Scorpio", house: 1 },
+    { key: "chiron", sign: "Cancer", house: 4 },
+  ]);
+  const serialized = JSON.stringify(projection);
+  assert.doesNotMatch(serialized, /birthDate|birthTime|longitude|degree|evidenceArtifactId|rawEvidence/);
+  assert.doesNotMatch(serialized, /venus/i);
+});

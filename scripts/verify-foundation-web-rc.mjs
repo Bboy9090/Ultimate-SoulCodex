@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 
@@ -40,6 +41,14 @@ const files = {
 };
 
 const checks = [];
+
+// Exercise the built client's actual generator and shared input schema. Prose
+// edits must not silently break this gate or hide fabricated chart evidence.
+const localTruth = spawnSync(process.execPath, [
+  "--import", "tsx", "--test", "tests/foundation-local-truth-invariants.test.ts",
+], { cwd: root, encoding: "utf8", timeout: 30_000 });
+const localTruthPassed = localTruth.status === 0 && !localTruth.error;
+if (!localTruthPassed) console.error(localTruth.stdout, localTruth.stderr, localTruth.error ?? "");
 
 function check(id, description, condition) {
   checks.push({ id, description, passed: Boolean(condition) });
@@ -113,7 +122,9 @@ check(
 check(
   "PRIVACY-03",
   "Local-first UI explains the online verification boundary",
-  files.localFirst.includes("Online astronomy verification happens only when you explicitly choose it.") &&
+  files.localFirst.includes("Verify supported placements online after creation") &&
+    files.localFirst.includes("Soul Codex sends only birth date, optional birth time, birthplace timezone, and available coordinates to the evidence endpoint.") &&
+    files.localFirst.includes("It does not create a server profile or invoke AI generation for this check.") &&
     files.localFirst.includes("Leave this off to keep profile creation entirely on-device.") &&
     files.localFirst.includes("No profile data was uploaded for verification."),
 );
@@ -150,14 +161,7 @@ check(
 check(
   "TRUTH-01",
   "Foundation local generation does not fabricate time-dependent astronomy",
-  files.localFirst.includes("generateFoundationOfflineCodexProfile") &&
-    files.foundationOffline.includes("moonSign: \"\"") &&
-    files.foundationOffline.includes("risingSign: \"\"") &&
-    files.foundationOffline.includes("planets: {}") &&
-    files.foundationOffline.includes("houses: []") &&
-    files.foundationOffline.includes("aspects: []") &&
-    files.foundationOffline.includes("calendar Sun candidate") &&
-    files.foundationOffline.includes("excluded from personality synthesis"),
+  files.localFirst.includes("generateFoundationOfflineCodexProfile") && localTruthPassed,
 );
 check(
   "TRUTH-RANGE-01",
@@ -173,9 +177,7 @@ check(
 check(
   "TRUTH-02",
   "Unknown birth time is accepted explicitly instead of forcing invented precision",
-  files.schema.includes('z.literal("")') &&
-    files.schema.includes("birthTime: birthTimeSchema") &&
-    files.localFirst.includes("Unknown time is better than invented precision."),
+  files.schema.includes("birthTime: birthTimeSchema") && localTruthPassed,
 );
 
 check(
@@ -336,7 +338,7 @@ check(
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
   audit: "Soul Codex Foundation Web RC invariant audit",
-  version: 9,
+  version: 10,
   generatedAt: new Date().toISOString(),
   passed: failures.length === 0,
   totalChecks: checks.length,

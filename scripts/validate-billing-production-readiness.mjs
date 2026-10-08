@@ -5,6 +5,11 @@ function providerReadiness(env = process.env) {
   const persistent = present(env.DATABASE_URL);
   const publicAppUrl = present(env.PUBLIC_APP_URL);
 
+  const webAuth = {
+    configured: present(env.APPLE_WEB_CLIENT_ID) && publicAppUrl,
+    missing: ["APPLE_WEB_CLIENT_ID"].filter((key) => !present(env[key])),
+  };
+
   const stripe = {
     configured: [
       "STRIPE_SECRET_KEY",
@@ -57,8 +62,18 @@ function providerReadiness(env = process.env) {
     ].filter((key) => !present(env[key])),
   };
 
-  const nativeEnabled = truthy(env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED);
-  const nativeConfigured = apple.configured && google.configured && apple.productionOnly;
+  const legacyNativeEnabled = truthy(env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED);
+  const iosEnabled =
+    env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED === undefined
+      ? legacyNativeEnabled
+      : truthy(env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED);
+  const androidEnabled =
+    env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED === undefined
+      ? legacyNativeEnabled
+      : truthy(env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED);
+  const iosConfigured = apple.configured && apple.productionOnly;
+  const androidConfigured = google.configured;
+  const nativeConfigured = iosConfigured && androidConfigured;
 
   return {
     persistenceConfigured: persistent,
@@ -66,12 +81,18 @@ function providerReadiness(env = process.env) {
     stripe,
     apple,
     google,
-    webActivationSafe: !stripe.enabled || stripe.configured,
-    nativeActivationSafe: !nativeEnabled || nativeConfigured,
-    fullyConfigured: stripe.configured && nativeConfigured,
+    webAuth,
+    webActivationSafe: !stripe.enabled || (stripe.configured && webAuth.configured),
+    iosActivationSafe: !iosEnabled || iosConfigured,
+    androidActivationSafe: !androidEnabled || androidConfigured,
+    nativeActivationSafe:
+      (!iosEnabled || iosConfigured) && (!androidEnabled || androidConfigured),
+    fullyConfigured: stripe.configured && webAuth.configured && nativeConfigured,
     flags: {
       webCheckoutEnabled: stripe.enabled,
-      nativeBillingEnabled: nativeEnabled,
+      iosBillingEnabled: iosEnabled,
+      androidBillingEnabled: androidEnabled,
+      legacyNativeBillingEnabled: legacyNativeEnabled,
     },
   };
 }
@@ -79,7 +100,11 @@ function providerReadiness(env = process.env) {
 const readiness = providerReadiness();
 console.log(JSON.stringify(readiness, null, 2));
 
-if (!readiness.webActivationSafe || !readiness.nativeActivationSafe) {
+if (
+  !readiness.webActivationSafe ||
+  !readiness.iosActivationSafe ||
+  !readiness.androidActivationSafe
+) {
   console.error("Soul Codex+ billing activation is unsafe: an enabled purchase surface is missing required production configuration.");
   process.exit(2);
 }

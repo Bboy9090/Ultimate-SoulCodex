@@ -115,7 +115,7 @@ export default function SettingsPage() {
             <div className="mt-5 border-t border-white/[0.07] pt-4 text-xs leading-5 text-[var(--sc-stone)]">
               {nativeApple
                 ? "Native Apple authentication is available on this device."
-                : "Apple authentication is offered inside the iPhone and iPad app."}
+                : "Web Apple authentication becomes available when the production Apple Services ID is configured."}
             </div>
           </section>
         </header>
@@ -141,7 +141,7 @@ export default function SettingsPage() {
             ) : (
               <div className="mt-5">
                 <p className="text-sm leading-6 text-[var(--sc-stone)]">
-                  Your local profile works without sign-in. On iPhone or iPad, Apple sign-in can attach server-backed data to one account without changing the local-first profile model.
+                  Your local profile works without sign-in. Apple sign-in can attach server-backed data to one account without changing the local-first profile model. On the web, the button activates only after the production Apple Services ID is configured.
                 </p>
                 <AppleSignInButton
                   onSuccess={(user) => queryClient.setQueryData(["/api/auth/user"], { ...user, authProvider: "apple" })}

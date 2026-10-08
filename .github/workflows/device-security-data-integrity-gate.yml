@@ -54,6 +54,7 @@ jobs:
           tests/store-privacy-billing-disclosure-contract.test.ts
           tests/release-4.1-identity-contract.test.ts
           tests/store-catalog-handoff-contract.test.ts
+          tests/web-apple-auth-billing-contract.test.ts
           tests/full-birth-name-persistence-contract.test.ts
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
@@ -71,6 +72,17 @@ jobs:
           tests/accessibility-device-acceptance-contract.test.ts
           tests/form-accessibility-recovery-contract.test.ts
           tests/profile-verification-reconciliation.test.ts
+          tests/profile-verification-boundary.test.ts
+          tests/known-time-profile-verification-http.test.ts
+          tests/human-design-complete-input-matrix.test.ts
+          tests/human-design-availability.test.ts
+          tests/server-profile-human-design-parity.test.ts
+          tests/stored-profile-system-verification.test.ts
+          tests/server-symbolic-fallback.test.ts
+          tests/foundation-local-truth-invariants.test.ts
+          tests/active-profile-contract.test.ts
+          tests/timeline-today-card.test.ts
+          client/src/lib/__tests__/foundationOfflineCodexRepair.test.ts
           tests/local-first-verification-failure-truth.test.ts
           tests/verified-profile-differentiation-corpus.test.ts
           server/tests/gate1-foundation.test.ts
@@ -85,6 +97,9 @@ jobs:
 
       - name: Audit production dependencies for high-severity vulnerabilities
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Foundation truth and privacy invariants
+        run: node scripts/verify-foundation-web-rc.mjs
 
       - name: Typecheck
         run: npm run check

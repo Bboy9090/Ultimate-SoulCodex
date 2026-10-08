@@ -5,6 +5,7 @@ on:
     branches:
       - release/4.1.0-rc1
       - hotfix/ios-4.1.0-native-load
+      - fix/profile-narrative-refresh-federation
   workflow_dispatch:
 
 permissions:
@@ -139,6 +140,10 @@ jobs:
           except SystemExit as exc:
               raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
 
+          # A booted headless device may not have a ready display service yet.
+          # Open the simulator so screenshot capture has an initialized surface.
+          run(["open", "-a", "Simulator", "--args", "-CurrentDeviceUDID", udid], timeout=30)
+
           app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
           if not pathlib.Path(app_path).is_dir():
               raise SystemExit("SIMULATOR_APP_PATH_MISSING")
@@ -156,7 +161,7 @@ jobs:
           time.sleep(12)
 
           screenshot = pathlib.Path("ios-4.1.0-launch.png")
-          run(["xcrun", "simctl", "io", udid, "screenshot", str(screenshot)], timeout=30)
+          run(["xcrun", "simctl", "io", udid, "screenshot", str(screenshot)], timeout=120)
           if not screenshot.exists() or screenshot.stat().st_size < 10000:
               raise SystemExit("SIMULATOR_SCREENSHOT_MISSING_OR_EMPTY")
 
@@ -243,14 +248,14 @@ jobs:
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000010"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000011"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000010"
+            echo "buildNumber=4000011"
             echo "native_pwa_service_worker_registration=disabled"
             echo "simulator_launch=passed"
           } > IOS-4.1.0-HOTFIX-RECEIPT.txt
@@ -445,14 +450,14 @@ jobs:
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000010"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000011"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000010"
+            echo "buildNumber=4000011"
             echo "signature=verified"
             echo "app_store_profile=verified"
             echo "native_launch_gate=passed"

@@ -7,10 +7,17 @@ export type PublicShareField =
   | "moonSign"
   | "risingSign"
   | "lifePath"
-  | "archetypeTitle";
+  | "archetypeTitle"
+  | "comparisonChart";
+
+export type PublicComparisonPlacement = {
+  key: "sun" | "moon" | "mercury" | "venus" | "mars" | "jupiter" | "saturn" | "uranus" | "neptune" | "pluto" | "northNode" | "southNode" | "chiron";
+  sign: string;
+  house: number;
+};
 
 export const publicShareSelectionSchema = z.object({
-  fields: z.array(z.enum(["displayName", "sunSign", "moonSign", "risingSign", "lifePath", "archetypeTitle"])).min(1).max(6),
+  fields: z.array(z.enum(["displayName", "sunSign", "moonSign", "risingSign", "lifePath", "archetypeTitle", "comparisonChart"])).min(1).max(7),
   displayName: z.string().trim().min(1).max(80).optional(),
 }).superRefine((value, context) => {
   if (value.fields.includes("displayName") && !value.displayName) {
@@ -26,8 +33,14 @@ export type PublicShareSelection = z.infer<typeof publicShareSelectionSchema>;
 
 export interface PublicProfileProjection {
   version: 1;
-  fields: Partial<Record<PublicShareField, string | number>>;
+  fields: Partial<Record<Exclude<PublicShareField, "comparisonChart">, string | number>> & {
+    comparisonChart?: PublicComparisonPlacement[];
+  };
 }
+
+const ZODIAC_SIGNS = new Set(["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]);
+const COMPARISON_PLANETS = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"] as const;
+const COMPARISON_POINTS = ["northNode", "southNode", "chiron"] as const;
 
 function cleanText(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -35,9 +48,7 @@ function cleanText(value: unknown): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-function verifiedSign(container: unknown, key: "sun" | "moon" | "rising"): string | undefined {
-  if (!container || typeof container !== "object") return undefined;
-  const placement = (container as Record<string, unknown>)[key];
+function verifiedPlacementSign(placement: unknown): string | undefined {
   if (!placement || typeof placement !== "object") return undefined;
   const record = placement as Record<string, unknown>;
   if (record.verificationStatus !== "verified") return undefined;
@@ -51,6 +62,11 @@ function verifiedSign(container: unknown, key: "sun" | "moon" | "rising"): strin
   return cleanText(record.sign);
 }
 
+function verifiedSign(container: unknown, key: "sun" | "moon" | "rising"): string | undefined {
+  if (!container || typeof container !== "object") return undefined;
+  return verifiedPlacementSign((container as Record<string, unknown>)[key]);
+}
+
 function safeLifePath(profile: Profile): number | undefined {
   const numerology = profile.numerologyData as Record<string, unknown> | null;
   const value = numerology?.lifePath;
@@ -60,6 +76,42 @@ function safeLifePath(profile: Profile): number | undefined {
 function safeArchetypeTitle(profile: Profile): string | undefined {
   const archetype = profile.archetypeData as Record<string, unknown> | null;
   return cleanText(archetype?.title);
+}
+
+function validHouse(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12;
+}
+
+function verifiedComparisonChart(container: unknown): PublicComparisonPlacement[] {
+  if (!container || typeof container !== "object") return [];
+  const astrology = container as Record<string, any>;
+  const planetaryHouses = astrology.planetaryHouses as Record<string, unknown> | undefined;
+  const planets = astrology.planets as Record<string, any> | undefined;
+  const rows: PublicComparisonPlacement[] = [];
+
+  for (const key of COMPARISON_PLANETS) {
+    const placement = planets?.[key] ?? astrology[key];
+    const sign = verifiedPlacementSign(placement);
+    const actualSign = cleanText(placement?.sign);
+    const house = planetaryHouses?.[key];
+    if (!sign || sign !== actualSign || !ZODIAC_SIGNS.has(actualSign) || !validHouse(house)) continue;
+    rows.push({ key, sign: actualSign, house });
+  }
+
+  for (const key of COMPARISON_POINTS) {
+    const point = astrology[key] as Record<string, unknown> | undefined;
+    const sign = cleanText(point?.sign);
+    const policyId = key === "chiron" ? "ASTRO-CHIRON-v1" : "ASTRO-MEAN-NODE-v1";
+    if (
+      point?.verificationStatus !== "verified" || !sign || !ZODIAC_SIGNS.has(sign) ||
+      !validHouse(point.house) || point.policyId !== policyId || !cleanText(point.evidenceArtifactId)
+    ) continue;
+    if (key === "chiron" && point.qualificationMethod !== "live-jpl-qualified-against-swiss") continue;
+    if ((key === "northNode" || key === "southNode") && point.mode !== "mean") continue;
+    rows.push({ key, sign, house: point.house });
+  }
+
+  return rows;
 }
 
 export function buildPublicProfileProjection(
@@ -96,6 +148,11 @@ export function buildPublicProfileProjection(
   if (requested.has("archetypeTitle")) {
     const value = safeArchetypeTitle(profile);
     if (value) fields.archetypeTitle = value;
+  }
+
+  if (requested.has("comparisonChart")) {
+    const value = verifiedComparisonChart(astrology);
+    if (value.length > 0) fields.comparisonChart = value;
   }
 
   return { version: 1, fields };

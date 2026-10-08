@@ -14,6 +14,7 @@ const natalChartUrl = new URL("../client/src/components/VerifiedNatalChart.tsx",
 
 test("verified natal interpretation detail stays collapsed on first paint", async () => {
   const source = await readFile(natalChartUrl, "utf8");
-  assert.match(source, /Placement meanings · planet \+ sign \+ house/);
-  assert.doesNotMatch(source, /<details\s+open[^>]*>[\s\S]*?Placement meanings · planet \+ sign \+ house/);
+  assert.match(source, /useState<ChartSelection \| null>\(null\)/);
+  assert.match(source, /Every symbol has a job/);
+  assert.doesNotMatch(source, /useState<ChartSelection \| null>\(\{\s*kind:/);
 });

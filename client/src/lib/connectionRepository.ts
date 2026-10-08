@@ -17,10 +17,14 @@ export const CONNECTION_PLACEMENT_KEYS = [
 ] as const;
 export type ConnectionPlacementKey = typeof CONNECTION_PLACEMENT_KEYS[number];
 export type ConnectionPlacement = { key: ConnectionPlacementKey; sign: AtlasSign; house: number };
+export const CONNECTION_RELATIONSHIPS = ["friend", "family", "partner", "other"] as const;
+export type ConnectionRelationship = typeof CONNECTION_RELATIONSHIPS[number];
 export type SavedConnection = {
   id: string;
   name: string;
   phone?: string;
+  email?: string;
+  relationship?: ConnectionRelationship;
   birthDate?: string;
   sunSign?: AtlasSign;
   placements?: ConnectionPlacement[];
@@ -49,6 +53,19 @@ function cleanPhone(value: unknown): string | undefined {
 
 function phoneDigits(value: string | undefined): string {
   return value?.replace(/\D/g, "") ?? "";
+}
+
+function cleanEmail(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized || normalized.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return undefined;
+  return normalized;
+}
+
+function cleanRelationship(value: unknown): ConnectionRelationship | undefined {
+  return typeof value === "string" && CONNECTION_RELATIONSHIPS.includes(value as ConnectionRelationship)
+    ? value as ConnectionRelationship
+    : undefined;
 }
 
 function cleanBirthDate(value: unknown): string | undefined {
@@ -123,12 +140,16 @@ export function parseConnections(raw: string | null): SavedConnection[] {
       if (hasSunSign && !ATLAS_SIGNS.includes(row.sunSign)) return [];
       const placements = sanitizeConnectionPlacements(row.placements);
       const phone = cleanPhone(row.phone);
+      const email = cleanEmail(row.email);
+      const relationship = cleanRelationship(row.relationship);
       const birthDate = cleanBirthDate(row.birthDate);
       const derivedSunSign = birthDate ? deriveConnectionSunSignFromBirthDate(birthDate) : undefined;
       return [{
         id: row.id,
         name: row.name.trim(),
         ...(phone ? { phone } : {}),
+        ...(email ? { email } : {}),
+        ...(relationship ? { relationship } : {}),
         ...(birthDate ? { birthDate } : {}),
         ...(derivedSunSign || hasSunSign ? { sunSign: derivedSunSign ?? row.sunSign as AtlasSign } : {}),
         ...(placements.length > 0 ? { placements } : {}),
@@ -147,11 +168,14 @@ export function loadConnections(): SavedConnection[] {
   return parseConnections(storage()?.getItem(KEY) ?? null);
 }
 
-export function saveConnection(input: { name: string; phone?: string; birthDate?: string; sunSign?: AtlasSign | ""; placements?: ConnectionPlacement[] }): SavedConnection[] {
+export function saveConnection(input: { name: string; phone?: string; email?: string; relationship?: ConnectionRelationship; birthDate?: string; sunSign?: AtlasSign | ""; placements?: ConnectionPlacement[] }): SavedConnection[] {
   const target = storage();
   if (!target) throw new Error("Connections are available on this device only.");
   const name = input.name.trim();
   const phone = cleanPhone(input.phone);
+  const email = cleanEmail(input.email);
+  if (input.email && !email) throw new Error("Enter a valid email address or leave it blank.");
+  const relationship = cleanRelationship(input.relationship);
   const birthDate = cleanBirthDate(input.birthDate);
   if (input.birthDate && !birthDate) throw new Error("Birth date must be a real date in YYYY-MM-DD format.");
   const derivedSunSign = birthDate ? deriveConnectionSunSignFromBirthDate(birthDate) : undefined;
@@ -165,6 +189,8 @@ export function saveConnection(input: { name: string; phone?: string; birthDate?
     id: crypto.randomUUID(),
     name,
     ...(phone ? { phone } : {}),
+    ...(email ? { email } : {}),
+    ...(relationship ? { relationship } : {}),
     ...(birthDate ? { birthDate } : {}),
     ...(derivedSunSign || input.sunSign ? { sunSign: derivedSunSign ?? input.sunSign as AtlasSign } : {}),
     ...(placements.length > 0 ? { placements } : {}),
@@ -172,6 +198,44 @@ export function saveConnection(input: { name: string; phone?: string; birthDate?
     updatedAt: timestamp,
   };
   const next = [connection, ...current];
+  target.setItem(KEY, JSON.stringify({ version: 1, connections: next }));
+  window.dispatchEvent(new Event("soulcodex:connections-updated"));
+  return next;
+}
+
+export function saveImportedContacts(
+  contacts: Array<{ name?: string; phone?: string; email?: string }>,
+  relationship: ConnectionRelationship = "friend",
+): SavedConnection[] {
+  const target = storage();
+  if (!target) throw new Error("Connections are available on this device only.");
+  const current = loadConnections();
+  const next = [...current];
+  const knownPhones = new Set(current.map(row => phoneDigits(row.phone)).filter(Boolean));
+  const knownEmails = new Set(current.map(row => cleanEmail(row.email)).filter(Boolean));
+  const timestamp = new Date().toISOString();
+
+  for (const contact of contacts) {
+    if (next.length >= LIMIT) break;
+    const name = typeof contact.name === "string" ? contact.name.trim().slice(0, 80) : "";
+    const phone = cleanPhone(contact.phone);
+    const email = cleanEmail(contact.email);
+    const digits = phoneDigits(phone);
+    if (!name || (!phone && !email)) continue;
+    if ((digits && knownPhones.has(digits)) || (email && knownEmails.has(email))) continue;
+    next.unshift({
+      id: crypto.randomUUID(),
+      name,
+      ...(phone ? { phone } : {}),
+      ...(email ? { email } : {}),
+      relationship,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    if (digits) knownPhones.add(digits);
+    if (email) knownEmails.add(email);
+  }
+
   target.setItem(KEY, JSON.stringify({ version: 1, connections: next }));
   window.dispatchEvent(new Event("soulcodex:connections-updated"));
   return next;
@@ -212,9 +276,37 @@ export function searchConnections(connections: SavedConnection[], query: string)
     connection.name.toLowerCase().includes(normalized) ||
     (connection.birthDate ?? "").includes(normalized) ||
     (connection.sunSign ?? "").toLowerCase().includes(normalized) ||
+    (connection.email ?? "").toLowerCase().includes(normalized) ||
+    (connection.relationship ?? "").toLowerCase().includes(normalized) ||
     (normalized.length > 0 && (connection.phone ?? "").toLowerCase().includes(normalized)) ||
     (digits.length > 0 && phoneDigits(connection.phone).includes(digits))
   );
+}
+
+export function relationshipLabel(value: ConnectionRelationship | undefined): string {
+  if (value === "family") return "Family";
+  if (value === "partner") return "Partner";
+  if (value === "other") return "Other";
+  return "Friend";
+}
+
+export function buildSoulCodexInvite(
+  connection: Pick<SavedConnection, "name" | "phone" | "email">,
+  origin: string,
+): { url: string; text: string; smsHref?: string; emailHref?: string } {
+  const parsedOrigin = new URL(origin);
+  if (!/^https?:$/.test(parsedOrigin.protocol)) throw new RangeError("Invite origin must use HTTP or HTTPS.");
+  const url = new URL("/create", parsedOrigin);
+  url.searchParams.set("source", "connection-invite");
+  const text = `Hey ${connection.name}, join me on Soul Codex. We can compare only the chart details we each choose to share: ${url.toString()}`;
+  const digits = phoneDigits(connection.phone);
+  const email = cleanEmail(connection.email);
+  return {
+    url: url.toString(),
+    text,
+    ...(digits ? { smsHref: `sms:${digits}?body=${encodeURIComponent(text)}` } : {}),
+    ...(email ? { emailHref: `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent("Join me on Soul Codex")}&body=${encodeURIComponent(text)}` } : {}),
+  };
 }
 
 export function connectionComparableSunSign(connection: Pick<SavedConnection, "sunSign" | "placements">): AtlasSign | undefined {

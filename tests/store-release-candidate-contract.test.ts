@@ -17,13 +17,13 @@ test("Soul Codex platform release identities are aligned", async () => {
   const androidBuildspec = await text("buildspec-android.yml");
   const envExample = await text(".env.example");
 
-  assert.match(android, /versionCode\s+4000010/);
+  assert.match(android, /versionCode\s+4000011/);
   assert.match(android, /versionName\s+"4\.1\.0"/);
   assert.match(android, /applicationId\s+"soulcodex\.app"/);
   assert.match(android, /namespace\s*=\s*"app\.soulcodex\.main"/);
   assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.0<\/string>/);
-  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000010<\/string>/);
-  assert.match(project, /CURRENT_PROJECT_VERSION = 4000010;/);
+  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000011<\/string>/);
+  assert.match(project, /CURRENT_PROJECT_VERSION = 4000011;/);
   assert.match(project, /MARKETING_VERSION = 4\.1\.0;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
   assert.match(manifest, /releaseVersion:\s*"4\.1\.0"/);
@@ -45,7 +45,7 @@ test("Soul Codex platform release identities are aligned", async () => {
   }
 });
 
-test("store workflow binds exact release branch and Play production upload", async () => {
+test("store workflow qualifies exact candidate without auto-publishing production", async () => {
   const workflow = await text(".github/workflows/store-4.0.0-release.yml");
   for (const secret of [
     "ANDROID_KEYSTORE",
@@ -62,13 +62,15 @@ test("store workflow binds exact release branch and Play production upload", asy
   assert.match(workflow, /actions\/setup-java@v5/);
   assert.match(workflow, /Detect Google Play publishing credentials/);
   assert.match(workflow, /steps\.play\.outputs\.available/);
-  assert.match(workflow, /r0adkll\/upload-google-play@v1\.1\.3/);
-  assert.match(workflow, /packageName:\s*soulcodex\.app/);
-  assert.match(workflow, /track:\s*production/);
-  assert.match(workflow, /status:\s*completed/);
+  assert.match(workflow, /Require signed Android candidate on main/);
+  assert.match(workflow, /production_publish_attempted=false/);
+  assert.match(workflow, /production_publish_deferred=true/);
+  assert.match(workflow, /submission is deferred until the owner authorizes and completes a separate store-launch process/);
+  assert.doesNotMatch(workflow, /r0adkll\/upload-google-play/);
+  assert.doesNotMatch(workflow, /track:\s*production/);
   assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.0/);
   assert.match(workflow, /iOS marketingVersion=4\.1\.0/);
-  assert.match(workflow, /iOS build=4000010/);
+  assert.match(workflow, /iOS build=4000011/);
   assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
 });
 
@@ -76,8 +78,8 @@ test("release validator refuses stale rc metadata and unknown SHAs", async () =>
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /releaseVersion !== "4\.1\.0"/);
   assert.match(validator, /android\/app\/build\.gradle/);
-  assert.match(validator, /4000010/);
-  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000010/);
+  assert.match(validator, /4000011/);
+  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000011/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
 });
@@ -95,8 +97,8 @@ test("store metadata points at the verified production domain and exact release 
     assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
   }
 
-  assert.match(packet, /4\.1\.0 \/ versionCode 4000010/);
-  assert.match(packet, /4\.1\.0 \/ build 4000010/);
+  assert.match(packet, /4\.1\.0 \/ versionCode 4000011/);
+  assert.match(packet, /4\.1\.0 \/ build 4000011/);
   assert.match(packet, /do not hard-code them into the source tree/);
 
   const movingSha = /\b[0-9a-f]{40}\b/i;
