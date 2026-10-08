@@ -14,8 +14,8 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release | 4.1.0 / versionCode 4000010 |
-| iOS release | 4.1.0 / build 4000010 |
+| Android release | 4.1.0 / versionCode 4000011 |
+| iOS release | 4.1.0 / build 4000011 |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
@@ -192,7 +192,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
 6. Use the verified Railway URLs for privacy, support, and account deletion unless a custom domain is attached and verified first.
 7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
-8. For Apple, obtain a fresh signed 4.1.0 (4000010) build from the same exact qualified candidate SHA used for submission evidence.
+8. For Apple, obtain a fresh signed 4.1.0 (4000011) build from the same exact qualified candidate SHA used for submission evidence.
 
 
 ## Soul Codex+ 4.1 subscription catalog

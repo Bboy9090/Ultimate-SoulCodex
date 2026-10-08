@@ -79,10 +79,10 @@ jobs:
           SHA=${GITHUB_SHA}
           Android versionName=4.1.0
           Android applicationId=soulcodex.app
-          Android versionCode=4000010
+          Android versionCode=4000011
           iOS marketingVersion=4.1.0
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000010
+          iOS build=4000011
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
@@ -181,7 +181,7 @@ jobs:
           {
             echo "SHA=${GITHUB_SHA}"
             echo "versionName=4.1.0"
-            echo "versionCode=4000010"
+            echo "versionCode=4000011"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
           } > android-store-state.txt
@@ -264,7 +264,7 @@ jobs:
           {
             echo "SHA=${GITHUB_SHA}"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000010"
+            echo "buildNumber=4000011"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
